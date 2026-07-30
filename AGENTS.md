@@ -5,7 +5,7 @@
 - **Folia-compatible:** `folia-supported: true` in `paper-plugin.yml`; every task runs on region/entity schedulers (never `Bukkit.getScheduler()`, never async entity access).
 - Entry points: `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader` (declared in `paper-plugin.yml`); runtime orchestration in `core/IceSMPCore.java` (manager construction → `load()` → listeners → commands → schedulers; `save()`/cleanup in `disable()`).
 - Soft dependencies — **all five are runtime-optional reflective bridges in `integration/`; the plugin runs fully without any of them** (declared in `paper-plugin.yml` under `dependencies.server`, `required: false`): **PlaceholderAPI** (`IceSMPPlaceholders`, `compileOnly`, registered reflectively from `IceSMPCore.registerPlaceholders()`; exposes `%icesmp_...%`), **LibsDisguises** (`DruidDisguise`, `compileOnly` with `isTransitive = false`, for Druid form visuals), **FancyNpcs** (`FancyNpcsQuestBridge`, pure reflection — no build dependency — feeding TALK_TO_NPC quest objectives), **WorldGuard** (`ProtectionBridge`, pure reflection — meteor/treasure block-placing events skip WG regions) and **LuckPerms** (`LuckPermsBridge`, pure reflection — the native chat formatter shows LP prefix/suffix). Only PlaceholderAPI and LibsDisguises are build-time (`compileOnly`) dependencies; the other three are reached purely via reflection + `join-classpath`.
-- Human-facing docs have exactly five canonical guides: `docs/FEATURES.md`, `docs/LATEST_CHANGES.md`, `docs/PLAYER_GUIDE.md`, `docs/BUILDER_GUIDE.md` and `docs/ADMIN_GUIDE.md`. `README.md` is only their project index. `docs/ARCHITECTURE.md`, `docs/RESOURCE_PACK_CMD.md`, `docs/LORE*.md`, `docs/TEASER.md` and `ROADMAP.md` are supporting sources, not competing operational guides. `ROADMAP.md` is the single home for open findings and uncommitted ideas. Exact interface inventories are CI artifacts; prefer source files for exact runtime behavior.
+- Human-facing docs have exactly five canonical guides: `docs/FEATURES.md`, `docs/LATEST_CHANGES.md`, `docs/PLAYER_GUIDE.md`, `docs/BUILDER_GUIDE.md` and `docs/ADMIN_GUIDE.md`. `README.md` is only their project index. `docs/ARCHITECTURE.md`, `docs/QUESTS.md`, `docs/RESOURCE_PACK_CMD.md`, `docs/LORE*.md`, `docs/TEASER.md` and `ROADMAP.md` are supporting sources, not competing operational guides. `ROADMAP.md` is the single home for open findings and uncommitted ideas. Exact interface inventories are CI artifacts; prefer source files for exact runtime behavior.
 
 ## Domain snapshot (current, verified against code)
 - **13 classes** (`data/JobType`), **35 specializations** (`data/SpecializationType`), ~390 spells. **One class per player** (the secondary-class system was removed); the choice is permanent — admin reset via `/class admin resetclass <player>` (wipes class + spec + unlocked spells; also clears legacy `job_secondary*` PDC).
@@ -30,7 +30,7 @@
 ./gradlew runServer  # local test server (run/ directory)
 ```
 - A `check` task dependency-free regressziós suite-okat futtat a persistence,
-  DEV-item, moderáció, MOTD, sit, crate, globális AFK és territory-capital területén. Ezek mellett
+  DEV-item, moderáció, MOTD, sit, crate, config-startup, globális AFK és territory-capital területén. Ezek mellett
   a hibátlan build, a consistency gate és az
   `docs/ADMIN_GUIDE.md#release-acceptance-checklist` szerinti kézi playtest is kötelező.
 - **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve): a VALÓDI build a mérvadó, NEM a sandbox-javac.** Elsőként a wrapperrel fuss: `./gradlew build --console=plain --no-daemon`. Ha a környezetben külön rendszer-Gradle van megadva, azt is lehet használni, de ne feltételezz fix `/opt/gradle` útvonalat.
@@ -48,7 +48,7 @@
   - new system/mechanic → `docs/FEATURES.md` + the relevant role guide + an acceptance case in `docs/ADMIN_GUIDE.md` + `docs/LORE_REFERENCE.md` row when lore-bound;
   - every numeric docs claim must match `src/main/resources/config/*.yml`;
   - before closing: compile verification + `python3 scripts/check_consistency.py` + IceSMPGuides mirror sync/check.
-- **IceSMPGuides mirror:** the public guide repo is `MilCsik09/IceSMPGuides`. Mirror every retained Markdown document verbatim with the same relative path: `README.md`, `ROADMAP.md`, the five canonical guides, `docs/ARCHITECTURE.md`, `docs/LORE.md`, `docs/LORE_REFERENCE.md`, `docs/RESOURCE_PACK_CMD.md` and `docs/TEASER.md`. Do not keep duplicate root-level guide copies. `scripts/check_consistency.py` content-checks the mirror when the checkout is available through `ICESMP_GUIDES_DIR` (fallback: `/home/user/IceSMPGuides`).
+- **IceSMPGuides mirror:** the public guide repo is `MilCsik09/IceSMPGuides`. Mirror every retained Markdown document verbatim with the same relative path: `README.md`, `ROADMAP.md`, the five canonical guides, `docs/ARCHITECTURE.md`, `docs/QUESTS.md`, `docs/LORE.md`, `docs/LORE_REFERENCE.md`, `docs/RESOURCE_PACK_CMD.md` and `docs/TEASER.md`. Do not keep duplicate root-level guide copies. `scripts/check_consistency.py` content-checks the mirror when the checkout is available through `ICESMP_GUIDES_DIR` (fallback: `/home/user/IceSMPGuides`).
 
 ## Folia rules (CRITICAL — see docs/ARCHITECTURE.md §4)
 - Events fire on the event entity's region thread. **Mutating (or reading PDC/inventory of) any OTHER entity — including `killer.sendMessage` — requires hopping to that entity's scheduler:** `target.getScheduler().run(plugin, task -> {...}, null)`. The kill-reward listeners, admin target-player subcommands, MarketGUI seller notice and SiegeWeapon remote explosion all follow this pattern — copy it.
@@ -63,7 +63,7 @@
 - Server-owner rebalancing without recompiling: `config/spells-balance.yml` overrides core numeric fields (damage, cooldown, cost-amount, range, radius, knockback, ignite-ticks, freeze-ticks, self-damage, heal-self, feed-self) per spell id — read at CAST TIME by both declarative (`ConfiguredSpell` live accessors) and bespoke (`BaseSpell.balance()`) spells, so `/icesmp reload` applies them without a restart. `IceSMPCore.applySpellBalanceOverrides()` runs once at startup only for the boot log and the unknown-spell-id warning; a restart is needed for spell REGISTRATION (new spells/unlock lists), not for values.
 - Item mechanics ride on PDC tags via the `items/*ItemFactory` classes, guarded by craft-safety listeners.
 - Spell cooldowns ≥ 60s persist via `cd_*` PDC keys; shorter ones are in-memory (`AbilityCatalystListener`).
-- Config lives in `src/main/resources/config/*.yml` (ConfigManager merges all of them); numeric guide claims (XP rates, thresholds) must match those files.
+- Config lives in `src/main/resources/config/*.yml` (ConfigManager merges only the supported files named in `CONFIG_FILES`; unlisted `.yml` files are ignored with a warning); numeric guide claims (XP rates, thresholds) must match those files.
 
 ## When adding features
 - Wire through `IceSMPCore` (construct → `load()` in `enable()` → `save()` in `disable()` for persistent stores).
