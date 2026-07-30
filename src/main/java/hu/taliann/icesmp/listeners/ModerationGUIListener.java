@@ -49,7 +49,7 @@ public final class ModerationGUIListener implements Listener {
                 return;
             }
             final Player target = Bukkit.getPlayer(selected.uniqueId());
-            if (target == null || (!target.getUniqueId().equals(viewer.getUniqueId()) && !viewer.canSee(target))) {
+            if (target == null || !visibleTo(viewer, target)) {
                 viewer.sendMessage(messages.get("moderation.player-offline",
                         "&cA játékos nincs online: &f%s", selected.name()));
                 ModerationGUI.openPlayers(viewer, messages, holder.listPage());
@@ -60,6 +60,12 @@ public final class ModerationGUIListener implements Listener {
         }
 
         final Player target = Bukkit.getPlayer(holder.targetId());
+        if (target != null && !visibleTo(viewer, target)) {
+            viewer.sendMessage(messages.get("moderation.player-offline",
+                    "&cA játékos nincs online: &f%s", holder.targetName()));
+            ModerationGUI.openPlayers(viewer, messages, holder.listPage());
+            return;
+        }
         if (target == null && slot != 29) {
             viewer.sendMessage(messages.get("moderation.player-offline",
                     "&cA játékos nincs online: &f%s", holder.targetName()));
@@ -72,7 +78,7 @@ public final class ModerationGUIListener implements Listener {
                     "&cNincs jogod ehhez a moderációs művelethez."));
             return;
         }
-        final String name = holder.targetName();
+        final String name = target == null ? holder.targetName() : target.getName();
         switch (slot) {
             case 10 -> viewer.performCommand("warn " + name + " Moderációs GUI");
             case 11 -> viewer.performCommand("mute " + name + " 30m Moderációs GUI");
@@ -103,6 +109,10 @@ public final class ModerationGUIListener implements Listener {
             case BACK -> ModerationGUI.openPlayers(viewer, messages, holder.listPage());
             case CLOSE -> viewer.closeInventory();
         }
+    }
+
+    private static boolean visibleTo(final Player viewer, final Player target) {
+        return target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target);
     }
 
     private static String permissionForSlot(final int slot) {
