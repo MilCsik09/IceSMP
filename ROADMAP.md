@@ -75,10 +75,15 @@ implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
 tételek a szervercsapat feladatai:
 
-- ◇ **18 NPC-szerep** fizikai kihelyezése és `/npcbind` kötése;
+- ◇ **18 NPC-szerep** fizikai kihelyezése és `/npcbind` kötése a
+  [teljes quest- és NPC-leltár](docs/QUESTS.md) alapján;
 - ◇ a szükséges **4 territory ID** kijelölése, majd a **4 frakcióspawn**
   pontos állóhelyének és nézési irányának mentése;
 - ◇ a `kezdo_parkour` pálya megépítése és bekötése;
+- ⬜ a `dark-capital` quest-territory és a kanonikus `thanaopolis` ID
+  egységesítése a world build előtt;
+- ⬜ a `merchant_choice` választási időzítésének javítása, valamint a két
+  pályát említő, de mobölést mérő mester-dialógus összehangolása;
 - ◇ a rituáléoltárok és az intro kamera-waypointok megépítése;
 - ◇ a `hidden-spots.spots` tényleges helyszínekkel való feltöltése;
 - ◇ a kazamaták belső tereinek, ládáinak és bosslootjának elkészítése;
