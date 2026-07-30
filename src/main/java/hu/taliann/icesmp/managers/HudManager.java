@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -91,7 +92,7 @@ public final class HudManager {
     /** játékos → az utoljára kiküldött oldalsáv-sorok (diff-cache: azonos sor nem megy ki újra). */
     private final ConcurrentHashMap<UUID, List<Component>> lastLines = new ConcurrentHashMap<>();
     /** A YAML-layout egyszer parse-olódik konfiguráció-példányonként; reloadkor új objektum érkezik. */
-    private volatile Object cachedLayoutSource;
+    private volatile FileConfiguration cachedLayoutSource;
     private volatile List<HudSidebarLayout.Entry> cachedLayout = HudSidebarLayout.defaults();
 
     private final NamespacedKey hiddenSectionsKey;
@@ -559,15 +560,14 @@ public final class HudManager {
 
     /** Reload-barát, lock-minimal layout cache: a ConfigManager reloadkor új YAML-objektumot publikál. */
     private List<HudSidebarLayout.Entry> sidebarLayout() {
-        final Object source = configManager.getConfiguration();
+        final FileConfiguration source = configManager.getConfiguration();
         if (source == null) {
             return HudSidebarLayout.defaults();
         }
         if (source != cachedLayoutSource) {
             synchronized (this) {
                 if (source != cachedLayoutSource) {
-                    cachedLayout = HudSidebarLayout.parse(
-                            configManager.getConfiguration().getMapList("hud.sidebar.layout"));
+                    cachedLayout = HudSidebarLayout.parse(source.getMapList("hud.sidebar.layout"));
                     cachedLayoutSource = source;
                 }
             }
