@@ -9,17 +9,22 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class IceSMP extends JavaPlugin {
 
     private IceSMPCore core;
+    private ResourcePackListener resourcePackListener;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+
+        resourcePackListener = new ResourcePackListener(this);
+        getServer().getPluginManager().registerEvents(resourcePackListener, this);
+
         TransientEntities.install(this);
-        core = new IceSMPCore(this);
+        core = new IceSMPCore(this, resourcePackListener::reloadAndResend);
         core.enable();
 
-        final ResourcePackListener resourcePackListener = new ResourcePackListener(this);
-        getServer().getPluginManager().registerEvents(resourcePackListener, this);
-        getServer().getOnlinePlayers().forEach(resourcePackListener::send);
+        // Hot plugin reloads may enable while players are already online. Every actual call is
+        // scheduled onto the player's owning region thread by the listener.
+        resourcePackListener.reloadAndResend();
     }
 
     @Override
