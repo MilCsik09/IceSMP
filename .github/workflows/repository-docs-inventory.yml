@@ -92,9 +92,11 @@ jobs:
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             BASE_SHA=$(resolve_ref "$DISPATCH_BASE")
+            PATCH_BASE_SHA="$BASE_SHA"
             HEAD_SHA=$(resolve_ref "$DISPATCH_HEAD")
             RELEASE_HEAD_SHA="$HEAD_SHA"
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            PATCH_BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
             HEAD_SHA=$(resolve_ref "$PR_HEAD_SHA")
             if [[ "$PR_HEAD_REF" == "docs/full-release-and-team-guide" ]]; then
               BASE_SHA=$(resolve_ref "49cb32740629f3d91a08b753436f3e16d33a494d")
@@ -111,19 +113,22 @@ jobs:
             else
               BASE_SHA=$(git rev-parse HEAD^)
             fi
+            PATCH_BASE_SHA="$BASE_SHA"
           fi
 
           echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "patch_base_sha=$PATCH_BASE_SHA" >> "$GITHUB_OUTPUT"
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "release_head_sha=$RELEASE_HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "Base: $BASE_SHA"
+          echo "Patch base: $PATCH_BASE_SHA"
           echo "Tested head: $HEAD_SHA"
           echo "Documented release head: $RELEASE_HEAD_SHA"
 
       - name: Check patch whitespace
         id: diff_check
         continue-on-error: true
-        run: git diff --check "${{ steps.refs.outputs.base_sha }}...${{ steps.refs.outputs.head_sha }}"
+        run: git diff --check "${{ steps.refs.outputs.patch_base_sha }}...${{ steps.refs.outputs.head_sha }}"
 
       - name: Java 21 clean build
         id: gradle_build
@@ -242,7 +247,8 @@ jobs:
             echo
             echo "## Compared refs"
             echo
-            echo "- Base: \`${{ steps.refs.outputs.base_sha }}\`"
+            echo "- Release inventory base: \`${{ steps.refs.outputs.base_sha }}\`"
+            echo "- Patch base: \`${{ steps.refs.outputs.patch_base_sha }}\`"
             echo "- Tested documentation head: \`${{ steps.refs.outputs.head_sha }}\`"
             echo "- Documented release head: \`${{ steps.refs.outputs.release_head_sha }}\`"
             echo "- Artifact: \`${ARTIFACT_NAME}\`"
