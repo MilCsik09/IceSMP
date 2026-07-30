@@ -104,7 +104,16 @@ val afkRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.AfkRegressionSuite")
 }
 
+val territoryCapitalRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs exact 3D-capital geometry, wiring and consumer regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.territory.TerritoryCapitalRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
-        motdRegressionTest, sitRegressionTest, crateRegressionTest, afkRegressionTest)
+        motdRegressionTest, sitRegressionTest, crateRegressionTest, afkRegressionTest,
+        territoryCapitalRegressionTest)
 }
