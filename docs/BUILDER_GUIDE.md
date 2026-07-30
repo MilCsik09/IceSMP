@@ -392,14 +392,31 @@ használható. Körzónánál:
 `DOOM_GATE` típusnál a frakció elhagyható; belső tulajdonosként semleges
 érték kerül be.
 
-Főváros:
+Főváros körből, az admin aktuális pozíciója körül:
 
 ```text
 /territory setcapital <frakció> <sugár> [név...]
 ```
 
-Ez a pontos aktív szintaxis. A régi builderleírásban szereplő
-`/territory setcapital <frakció> <id>` forma stale, ne használd.
+Pontos 3D téglatest-főváros a natív claim-kijelöléssel:
+
+```text
+/claim pos1
+/claim pos2
+/territory setcapital <frakció> selection [név...]
+```
+
+A claim-kijelölő pálca két sarka ugyanígy használható. A `selection` mód
+mindhárom tengelyen blokkpontosan a két sarok közti, inkluzív
+`minX..maxX`, `minY..maxY`, `minZ..maxZ` dobozt menti. Siker után a
+kijelölés törlődik; hiba esetén megmarad javításra. Meglévő személyes
+claimet fedő kijelölést előbb a dokumentált `/claim admin unclaim`
+folyamattal kell rendezni.
+
+Mindkét forma pontos aktív szintaxis. A régi builderleírásban szereplő
+`/territory setcapital <frakció> <id>` forma stale, ne használd. A
+`/territory show <id>` a magasságkorlátos zónánál az alsó és felső
+keretet, valamint a függőleges éleket is kirajzolja.
 
 Módosítás és ellenőrzés:
 
