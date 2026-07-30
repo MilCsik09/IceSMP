@@ -43,8 +43,8 @@ public final class ConfigManager {
     public synchronized void load() {
         final YamlConfiguration merged = new YamlConfiguration();
 
-        // Per-subsystem defaults: config/<subsystem>.yml. Extract the bundled set on first run,
-        // then merge every .yml present (deterministic order).
+        // Per-subsystem defaults: config/<subsystem>.yml. Extract and merge only the supported
+        // CONFIG_FILES allowlist; unrelated backups and editor files must never enter runtime config.
         final File dir = new File(plugin.getDataFolder(), "config");
         dir.mkdirs();
         for (final String name : CONFIG_FILES) {
