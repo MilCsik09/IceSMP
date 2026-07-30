@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — economy (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — economy (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 currency:
   default-type: "NEUTRAL"
   symbol: "⛃"
