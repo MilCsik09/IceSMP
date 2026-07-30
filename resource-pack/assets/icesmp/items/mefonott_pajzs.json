@@ -1,0 +1,35 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": [
+          "firstperson_righthand",
+          "firstperson_lefthand",
+          "thirdperson_righthand",
+          "thirdperson_lefthand"
+        ],
+        "model": {
+          "type": "minecraft:condition",
+          "property": "minecraft:using_item",
+          "on_true": {
+            "type": "minecraft:model",
+            "model": "icesmp:item/states/mefonott_pajzs_blocking"
+          },
+          "on_false": {
+            "type": "minecraft:model",
+            "model": "icesmp:item/mefonott_pajzs"
+          }
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "icesmp:item/mefonott_pajzs"
+    }
+  },
+  "hand_animation_on_swap": false,
+  "oversized_in_gui": false,
+  "swap_animation_scale": 1.0
+}

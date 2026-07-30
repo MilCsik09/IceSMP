@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "icesmp:item/states/felepules_iranytuje_angle_06"
+  }
+}

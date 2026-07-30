@@ -1,0 +1,13 @@
+{
+  "pack": {
+    "description": "IceSMP Hybrid — 64×64 2D + contextual 3D — Minecraft 1.21.11",
+    "min_format": [
+      75,
+      0
+    ],
+    "max_format": [
+      75,
+      0
+    ]
+  }
+}

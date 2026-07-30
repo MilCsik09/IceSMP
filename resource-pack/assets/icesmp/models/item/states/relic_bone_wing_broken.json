@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "icesmp:item/states/relic_bone_wing_broken"
+  }
+}
