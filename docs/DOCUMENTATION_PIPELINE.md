@@ -80,6 +80,7 @@ commands: {}
 features: {}
 permissions: {}
 config-sections: {}
+config-resolutions: {}
 components: {}
 explicit-ignores: {}
 ```
@@ -87,17 +88,18 @@ explicit-ignores: {}
 A typical entry is:
 
 ```json
-"command.crate.buy": {
+"route.crate.buy-crate-darab-0123456789": {
+  "kind": "route",
+  "root": "crate",
+  "syntax": "/crate buy <crate> [darab]",
   "audience": ["PLAYER"],
-  "docs": ["docs/player-guide/18-teljes-parancslista.md"]
+  "docs": ["docs/reference/COMMAND_REFERENCE.md"]
 }
 ```
 
 The target document must eventually contain:
 
-```html
-<!-- icesmp-doc-id: command.crate.buy -->
-```
+`&lt;!-- icesmp-doc-id: route.crate.buy-crate-darab-0123456789 --&gt;`
 
 A filename match or a textual occurrence of the command name does **not** count as documentation.
 
@@ -190,7 +192,7 @@ Manual inputs:
 
 | Input | Default | Purpose |
 | --- | --- | --- |
-| `base_ref` | `49cb32740629f3d91a08b753436f3e16d33a494d` | Released baseline. |
+| `base_ref` | `49cb32740629f3d91a08b753436f3e16d33a494d` | Fixed Git-development baseline; not the deployed JAR mapping. |
 | `head_ref` | `master` | Candidate release head. |
 | `strict_docs` | `false` | Enforce final zero-gap policy. |
 | `generate_release_delta` | `true` | Build both inventories and their delta. |

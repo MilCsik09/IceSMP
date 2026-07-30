@@ -2,15 +2,19 @@
 
 This process starts only after the external-plugin replacement implementation round has finished and all implementation pull requests are merged.
 
-## Fixed baseline
+## Fixed Git-development baseline
 
-The last released baseline is:
+The fixed Git-development comparison baseline is:
 
 ```text
 49cb32740629f3d91a08b753436f3e16d33a494d
 ```
 
-The release head must be the final full SHA of `master`; do not use an assumed or moving SHA in the final changelog appendix.
+This SHA is not the deployed binary baseline. The deployed comparison is the
+attached `IceSMP-1.0-TESTING.jar`, whose source mapping remains `BINARY_ONLY`
+unless an exact reproducible match is proven. The release head must be the
+final full SHA of `master`; do not use an assumed or moving SHA in the final
+changelog appendix.
 
 ## Procedure
 
@@ -23,7 +27,7 @@ The release head must be the final full SHA of `master`; do not use an assumed o
 7. Initially set `strict_docs` to `false` and download the `repository-docs-inventory-<run-id>-<attempt>` artifact.
 8. Create the dedicated documentation branch from that exact final `master` SHA.
 9. Update every Player Docs page identified by `documentation-coverage.md`, `review-required.md`, command/config/message/feature inventories and delta reports.
-10. Update the central command reference, planned as `docs/player-guide/18-teljes-parancslista.md`, including audience labels: `JÁTÉKOS`, `MODERÁTOR`, `ADMIN`, `TESZTELŐ`, `FEJLESZTŐI`, `KONZOL`.
+10. Update the central command reference at `docs/reference/COMMAND_REFERENCE.md`, including audience labels: `JÁTÉKOS`, `MODERÁTOR`, `ADMIN`, `TESZTELŐ`, `FEJLESZTŐI`, `KONZOL`.
 11. Update admin/operator documentation for permissions, config defaults, reload/restart behaviour, persistence files, soft dependencies and plugin replacements.
 12. Update tester documentation for multiplayer, Folia-region, restart/reload, persistence, negative and exploit cases.
 13. Write the human changelog from the evidence inventory; do not present raw scanner output as marketing copy.

@@ -135,6 +135,11 @@ jobs:
         continue-on-error: true
         run: python3 scripts/check_consistency.py
 
+      - name: Check repository-local Markdown links
+        id: markdown_links
+        continue-on-error: true
+        run: python3 scripts/check_markdown_links.py --root .
+
       - name: Tooling self-tests
         id: tests
         continue-on-error: true
@@ -253,6 +258,7 @@ jobs:
             echo "| Patch whitespace | ${{ steps.diff_check.outcome }} |"
             echo "| Java 21 clean build | ${{ steps.gradle_build.outcome }} |"
             echo "| Consistency check | ${{ steps.consistency.outcome }} |"
+            echo "| Markdown links | ${{ steps.markdown_links.outcome }} |"
             echo "| Tooling self-tests | ${{ steps.tests.outcome }} |"
             echo "| Repository inventory | ${{ steps.repository_inventory.outcome }} |"
             echo "| Coverage report | ${{ steps.report_coverage.outcome }} |"
@@ -277,6 +283,7 @@ jobs:
           DIFF_CHECK: ${{ steps.diff_check.outcome }}
           GRADLE_BUILD: ${{ steps.gradle_build.outcome }}
           CONSISTENCY: ${{ steps.consistency.outcome }}
+          MARKDOWN_LINKS: ${{ steps.markdown_links.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           INVENTORY: ${{ steps.repository_inventory.outcome }}
           REPORT: ${{ steps.report_coverage.outcome }}
@@ -286,7 +293,7 @@ jobs:
         run: |
           set -euo pipefail
           failed=0
-          for outcome in "$DIFF_CHECK" "$GRADLE_BUILD" "$CONSISTENCY" "$TESTS" "$INVENTORY" "$REPORT" "$JSON"; do
+          for outcome in "$DIFF_CHECK" "$GRADLE_BUILD" "$CONSISTENCY" "$MARKDOWN_LINKS" "$TESTS" "$INVENTORY" "$REPORT" "$JSON"; do
             [[ "$outcome" == "success" ]] || failed=1
           done
           if [[ -n "$RELEASE" && "$RELEASE" != "success" && "$RELEASE" != "skipped" ]]; then failed=1; fi

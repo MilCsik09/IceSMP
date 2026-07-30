@@ -41,7 +41,9 @@ def main() -> int:
     blocking = [item for item in inventory["findings"] if item.get("severity") == "FAIL"]
     print(
         f"Inventory: {len(inventory['commands'])} roots, "
-        f"{len(inventory['subcommands'])} subcommands, "
+        f"{len(inventory.get('routes', inventory['subcommands']))} functional routes, "
+        f"{len(inventory.get('root_aliases', []))} root aliases, "
+        f"{len(inventory.get('routing_aliases', []))} routing aliases, "
         f"{len(inventory['features'])} features, {len(blocking)} blocking findings "
         f"({'enforced' if args.mode == 'strict' else 'reported'})"
     )

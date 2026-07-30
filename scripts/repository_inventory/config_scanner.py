@@ -69,6 +69,10 @@ def scan_config(root: Path, index: JavaIndex, manifest: dict[str, Any]) -> tuple
             if match.group("fallback"):
                 fallbacks.setdefault(inventory_path, set()).add(match.group("fallback").strip())
 
+    resolutions = manifest.get("config-resolutions", {})
+    if not isinstance(resolutions, dict):
+        resolutions = {}
+    seen_resolution_ids: set[str] = set()
     keys: list[dict[str, Any]] = []
     for inventory_path in sorted(set(defaults) | set(reads)):
         context_kind = contexts.get(inventory_path, "DEFAULT_RESOURCE")
@@ -76,25 +80,47 @@ def scan_config(root: Path, index: JavaIndex, manifest: dict[str, Any]) -> tuple
         default_entries = defaults.get(inventory_path, []) if context_kind != "DYNAMIC_SECTION" else []
         readers = reads.get(inventory_path, [])
         type_values = sorted(types.get(inventory_path, {"UNKNOWN"}))
+        stable_id = f"config.{inventory_path}"
+        resolution = resolutions.get(stable_id)
+        if isinstance(resolution, dict):
+            seen_resolution_ids.add(stable_id)
+        else:
+            resolution = {}
+        resolution_reason = str(resolution.get("reason", "")).strip()
+        known_limitation = resolution.get("classification") == "KNOWN_SOURCE_LIMITATION"
         if readers and not default_entries and context_kind == "PRIMARY":
-            findings.append(Finding("FAIL", "CONFIG_KEY_MISSING_DEFAULT",
-                                    f"Primary config key '{key}' is read but no default resource key was found.", f"config.{inventory_path}",
-                                    tuple(Evidence(x["source"], x["line"], x["symbol"]) for x in readers[:3])))
-        if readers and context_kind == "DYNAMIC_SECTION":
+            if known_limitation and resolution_reason:
+                findings.append(Finding("WARN", "KNOWN_CONFIG_DEFAULT_GAP",
+                                        f"Primary config key '{key}' has no bundled default; documented resolution: {resolution_reason}",
+                                        stable_id,
+                                        tuple(Evidence(x["source"], x["line"], x["symbol"]) for x in readers[:3])))
+            else:
+                findings.append(Finding("FAIL", "CONFIG_KEY_MISSING_DEFAULT",
+                                        f"Primary config key '{key}' is read but no default resource key was found.", stable_id,
+                                        tuple(Evidence(x["source"], x["line"], x["symbol"]) for x in readers[:3])))
+        if readers and context_kind == "DYNAMIC_SECTION" and not resolution_reason:
             findings.append(Finding("REVIEW_REQUIRED", "DYNAMIC_CONFIG_PATH",
                                     f"Config/data section key '{key}' has a dynamic parent and cannot be linked to one full YAML path statically.",
-                                    f"config.{inventory_path}", tuple(Evidence(x["source"], x["line"], x["symbol"]) for x in readers[:3])))
+                                    stable_id, tuple(Evidence(x["source"], x["line"], x["symbol"]) for x in readers[:3])))
         if len(type_values) > 1:
-            severity = "FAIL" if context_kind == "PRIMARY" else "REVIEW_REQUIRED"
-            findings.append(Finding(severity, "CONFIG_TYPE_MISMATCH",
-                                    f"Config key '{key}' is read as incompatible types in the same context: {', '.join(type_values)}",
-                                    f"config.{inventory_path}"))
+            if resolution_reason:
+                findings.append(Finding("WARN", "RESOLVED_CONFIG_TYPE_VARIANCE",
+                                        f"Config key '{key}' is read as {', '.join(type_values)}; documented resolution: {resolution_reason}",
+                                        stable_id))
+            else:
+                severity = "FAIL" if context_kind == "PRIMARY" else "REVIEW_REQUIRED"
+                findings.append(Finding(severity, "CONFIG_TYPE_MISMATCH",
+                                        f"Config key '{key}' is read as incompatible types in the same context: {', '.join(type_values)}",
+                                        stable_id))
         symbols = " ".join(item["symbol"].lower() for item in readers)
         lifecycle = "RELOAD" if "reload" in symbols else ("STARTUP" if any(x in symbols for x in ("load", "enable", "constructor")) else "UNKNOWN")
         section = inventory_path.split(".")[0]
         docs_entry = manifest.get("config-sections", {}).get(f"config.{section}", {})
         keys.append({
-            "id": f"config.{inventory_path}", "path": inventory_path, "resolved_yaml_path": key if context_kind != "DYNAMIC_SECTION" else "",
+            "id": stable_id, "path": inventory_path,
+            "resolved_yaml_path": (str(resolution.get("resolved_path", "")).strip()
+                                   if context_kind == "DYNAMIC_SECTION"
+                                   else key),
             "section": section, "source_configs": default_entries,
             "default": default_entries[0]["value"] if default_entries else None,
             "code_fallbacks": sorted(fallbacks.get(inventory_path, set())), "types": type_values,
@@ -102,6 +128,11 @@ def scan_config(root: Path, index: JavaIndex, manifest: dict[str, Any]) -> tuple
             "feature": f"feature.{section.replace('_', '-').replace('.', '-')}", "lifecycle": lifecycle,
             "classification": "DYNAMIC_DATA_SECTION" if context_kind == "DYNAMIC_SECTION" else ("PRIMARY_CONFIG" if readers else "DATA_DRIVEN_DEFAULT"),
             "documentation": docs_entry.get("docs", []) if isinstance(docs_entry, dict) else [],
-            "confidence": "REVIEW_REQUIRED" if context_kind == "DYNAMIC_SECTION" else ("HIGH" if readers and default_entries and len(type_values) == 1 else "MEDIUM"),
+            "confidence": ("HIGH" if resolution_reason else
+                           ("REVIEW_REQUIRED" if context_kind == "DYNAMIC_SECTION" else
+                            ("HIGH" if readers and default_entries and len(type_values) == 1 else "MEDIUM"))),
         })
+    for stale_id in sorted(set(resolutions) - seen_resolution_ids):
+        findings.append(Finding("FAIL", "STALE_CONFIG_RESOLUTION",
+                                f"Config resolution {stale_id} no longer matches an inventory key.", stale_id))
     return keys, findings

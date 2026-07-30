@@ -31,10 +31,20 @@ def check_coverage(root: Path, inventory: dict[str, Any], manifest: dict[str, An
     required: dict[str, tuple[str, dict[str, Any]]] = {}
     for command in inventory.get("commands", []):
         required[command["id"]] = ("commands", command)
-        for alias in command.get("aliases", []):
-            alias_id = f"alias.{command['name']}.{alias}"
-            required[alias_id] = ("commands", {"id": alias_id})
-    for command in inventory.get("subcommands", []): required[command["id"]] = ("commands", command)
+    root_aliases = inventory.get("root_aliases")
+    if root_aliases is None:
+        root_aliases = [
+            {"id": f"alias.{command['name']}.{alias}"}
+            for command in inventory.get("commands", [])
+            for alias in command.get("aliases", [])
+        ]
+    for alias in root_aliases:
+        required[alias["id"]] = ("commands", alias)
+    routes = inventory.get("routes", inventory.get("subcommands", []))
+    for command in routes:
+        required[command["id"]] = ("commands", command)
+    for alias in inventory.get("routing_aliases", []):
+        required[alias["id"]] = ("commands", alias)
     for permission in inventory.get("permissions", []): required[permission["id"]] = ("permissions", permission)
     for feature in inventory.get("features", []):
         if set(feature.get("audience", [])) & {"PLAYER", "MODERATOR", "ADMIN", "TESTER"}:
@@ -73,9 +83,18 @@ def check_coverage(root: Path, inventory: dict[str, Any], manifest: dict[str, An
                 findings.append(Finding("FAIL" if mode == "strict" else "WARN", "DOC_MARKER_WRONG_FILE",
                                         f"Marker for {stable_id} is not in a manifest-listed file.", stable_id))
 
+    # Public/staff audience filtering decides which features require reader
+    # documentation, not whether a valid internal or componentless feature is
+    # known to the inventory. Keep the full feature/component ID set for stale
+    # manifest detection so explicitly classified internal entries are not
+    # reported as stale.
     inventory_ids = set(required)
+    inventory_ids.update(x["id"] for x in inventory.get("features", []))
+    inventory_ids.update(x["id"] for x in inventory.get("components", []))
     for section in ("commands", "features", "permissions", "config-sections", "components"):
         for stable_id in manifest.get(section, {}):
+            if stable_id.startswith("_"):
+                continue
             if stable_id not in inventory_ids:
                 findings.append(Finding("FAIL" if mode == "strict" else "WARN", "STALE_MANIFEST_ENTRY",
                                         f"Manifest entry {stable_id} no longer exists in inventory.", stable_id))
@@ -88,8 +107,10 @@ def check_coverage(root: Path, inventory: dict[str, Any], manifest: dict[str, An
     def percentage(documented: int, total: int) -> float:
         return 100.0 if total == 0 else round(documented * 100.0 / total, 2)
     command_ids = [x["id"] for x in inventory.get("commands", [])]
-    sub_ids = [x["id"] for x in inventory.get("subcommands", [])]
-    alias_ids = [f"alias.{x['name']}.{a}" for x in inventory.get("commands", []) for a in x.get("aliases", [])]
+    sub_ids = [x["id"] for x in routes]
+    root_alias_ids = [x["id"] for x in root_aliases]
+    routing_alias_ids = [x["id"] for x in inventory.get("routing_aliases", [])]
+    alias_ids = [*root_alias_ids, *routing_alias_ids]
     player_features = [x["id"] for x in inventory.get("features", []) if "PLAYER" in x.get("audience", [])]
     admin_features = [x["id"] for x in inventory.get("features", []) if set(x.get("audience", [])) & {"ADMIN", "MODERATOR"}]
     permission_ids = [x["id"] for x in inventory.get("permissions", [])]
@@ -98,6 +119,8 @@ def check_coverage(root: Path, inventory: dict[str, Any], manifest: dict[str, An
     metrics = {
         "commands_documented": percentage(doc_count(command_ids, "commands"), len(command_ids)),
         "subcommands_documented": percentage(doc_count(sub_ids, "commands"), len(sub_ids)),
+        "root_aliases_documented": percentage(doc_count(root_alias_ids, "commands"), len(root_alias_ids)),
+        "routing_aliases_documented": percentage(doc_count(routing_alias_ids, "commands"), len(routing_alias_ids)),
         "aliases_documented": percentage(doc_count(alias_ids, "commands"), len(alias_ids)),
         "player_features_documented": percentage(doc_count(player_features, "features"), len(player_features)),
         "admin_features_documented": percentage(doc_count(admin_features, "features"), len(admin_features)),
