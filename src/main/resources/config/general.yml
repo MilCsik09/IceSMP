@@ -59,6 +59,60 @@ hud:
     # Az oldalsáv címe (legacy &-kódokkal; a ㍐ a resource pack glyph-je — RP nélkül
     # cseréld pl. "&b&l✦ Ice SMP ✦"-re).
     title: "㍐"
+    # A teljes scoreboard sorrendje és kinézete itt szerkeszthető. A dinamikus értékek
+    # tokenek maradnak, ezért a layout szabadon átrendezhető anélkül, hogy a frissítés megállna.
+    #
+    # Típusok:
+    #   text      — egy normál, tokenezhető sor
+    #   spacer    — valódi üres sor (a legfelső alapból helyet hagy a magas logó-glyphnek)
+    #   separator — a tablist.yml / tablist.animations.bar aktuális frame-je; saját texttel felülírható
+    #   target    — harcban a legutóbbi célpont, ha van
+    #   resource  — kaszt-erőforrás, ha van kaszt és a resource rendszer aktív
+    #   info      — az esemény/szezon/napi kihívás rotáló sora
+    #   party     — opcionális fejléc, majd egy-egy dinamikus sor minden csapattagnak
+    #
+    # A section a /hud kapcsolóival és a combat-visible-sections listával kapcsolja össze a sort.
+    # text/spacer/separator típusnál az üres section strukturális, mindig látható sort jelent;
+    # a target/resource/info/party típus automatikusan a saját ismert szekcióját kapja.
+    # Használható tokenek:
+    #   {player}, {online}, {max}, {ping}
+    #   {faction}, {class}, {class_level}, {balance}
+    #   {resource_name}, {resource_value}, {resource_max}, {resource_percent}, {resource_bar}
+    #   {info_label}, {info_value}, {event}, {season_days}
+    #   target típusnál még: {target_name}, {target_health}
+    #   valamint bármely sorban: {anim:<tablist.yml-ben definiált név>}
+    # Ha a kibontott layout (pl. 5 fős partyval) túllépi a vanilla 15 soros limitet,
+    # ezek a szekciók esnek ki először. A kihagyott ismert szekciókat a kód a végére fűzi.
+    eviction-order: [esemeny, valuta, frakcio, kaszt, csapat, eroforras]
+    layout:
+      # Ez az egy sor szünteti meg, hogy a ㍐ logó belelógjon az első elválasztóba.
+      - type: spacer
+        text: " "
+      - type: separator
+      - type: target
+        section: eroforras
+        text: "&c⌖ &f{target_name} {target_health}"
+      - type: text
+        section: frakcio
+        text: "&8┃ &7ꜰʀᴀᴋᴄɪó &8› {faction}"
+      - type: text
+        section: kaszt
+        text: "&8┃ &7ᴋᴀꜱᴢᴛ &8› {class} &8• &fLv. {class_level}"
+      - type: resource
+        section: eroforras
+        text: "&8┃ &7{resource_name} &8› {resource_bar}"
+      - type: info
+        section: esemeny
+        text: "&8┃ &7{info_label} &8› {info_value}"
+      - type: separator
+        section: valuta
+      - type: text
+        section: valuta
+        text: "&6✦ &7ᴠᴀʟᴜᴛᴀ &8› &6{balance}"
+      - type: party
+        section: csapat
+        text: "&d✦ &7ᴄѕᴀᴘᴀᴛ"
+      - type: separator
   # Egyszerű frakció-színes tab-név FALLBACK — csak akkor él, ha a natív tablist
   # (tablist.enabled) KI van kapcsolva; egyébként a TablistManager adja a teljes
   # (LP-prefixes) nevet, és ez a kapcsoló hatástalan.

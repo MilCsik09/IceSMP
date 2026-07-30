@@ -22,8 +22,10 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class HudManager {
 
-    /** Sidebar row budget (scoreboard-maximum): 7 törzs-sor + 7 party-sor + 1 záró elválasztó. */
+    /** A vanilla sidebar scoreboard hard maximuma. */
     private static final int LINES = 15;
     private static final String OBJECTIVE = "icesmp_hud";
     /** Statikus elválasztó, ha nincs 'bar' animáció definiálva a tablist.yml-ben. */
@@ -88,6 +90,9 @@ public final class HudManager {
     private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();
     /** játékos → az utoljára kiküldött oldalsáv-sorok (diff-cache: azonos sor nem megy ki újra). */
     private final ConcurrentHashMap<UUID, List<Component>> lastLines = new ConcurrentHashMap<>();
+    /** A YAML-layout egyszer parse-olódik konfiguráció-példányonként; reloadkor új objektum érkezik. */
+    private volatile Object cachedLayoutSource;
+    private volatile List<HudSidebarLayout.Entry> cachedLayout = HudSidebarLayout.defaults();
 
     private final NamespacedKey hiddenSectionsKey;
     /** Per-player /hud toggle state, cached in memory (PDC is only touched on load/save, never per tick). */
@@ -234,19 +239,30 @@ public final class HudManager {
         return board;
     }
 
+    private Component sidebarTitle() {
+        return hu.taliann.icesmp.utils.TextAnimator.legacy(
+                configManager.getString("hud.sidebar.title", "✦ Ice SMP ✦"));
+    }
+
+    private void syncSidebarTitle(final Objective objective) {
+        final Component title = sidebarTitle();
+        if (!title.equals(objective.displayName())) {
+            objective.displayName(title);
+        }
+    }
+
     /** Registers the IceSMP scoreboard sidebar for the player (only when sidebar-enabled). */
     private void buildSidebar(final Player player) {
         final Scoreboard board = ownBoard(player);
         if (board == null) {
             return;
         }
-        if (board.getObjective(OBJECTIVE) == null) {
-            final String title = configManager.getString("hud.sidebar.title", "✦ Ice SMP ✦");
-            final Objective objective = board.registerNewObjective(OBJECTIVE, Criteria.DUMMY,
-                    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
-                            .deserialize(title.replace('&', '§')));
-            objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        Objective objective = board.getObjective(OBJECTIVE);
+        if (objective == null) {
+            objective = board.registerNewObjective(OBJECTIVE, Criteria.DUMMY, sidebarTitle());
         }
+        syncSidebarTitle(objective);
+        objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         final Team[] teams = new Team[LINES];
         for (int i = 0; i < LINES; i++) {
@@ -282,6 +298,10 @@ public final class HudManager {
                 final List<Component> previous = lastLines.get(player.getUniqueId());
                 final Scoreboard board = player.getScoreboard();
                 final Objective objective = board.getObjective(OBJECTIVE);
+                if (objective != null) {
+                    // /icesmp reload után a cím is azonnal követi a szerkesztett configot.
+                    syncSidebarTitle(objective);
+                }
                 for (int i = 0; i < LINES; i++) {
                     final String entry = entry(i);
                     if (i < lines.size()) {
@@ -443,10 +463,6 @@ public final class HudManager {
         }
     }
 
-    /** Egy oldalsáv-sor a hozzá tartozó szekció-kulccsal (a prioritás-alapú kiszorításhoz). */
-    private record HudRow(String section, Component text) {
-    }
-
     /**
      * Kiszorítási sorrend, ha a tartalom nem fér a 15 soros keretbe: az itt ELÖL álló
      * szekció sorai esnek ki először (a harc-kritikus erőforrás/party marad utoljára).
@@ -455,18 +471,14 @@ public final class HudManager {
             SECTION_EVENT, SECTION_CURRENCY, SECTION_FACTION, SECTION_CLASS, SECTION_PARTY, SECTION_RESOURCE);
 
     /**
-     * DINAMIKUS oldalsáv (TAB-dizájn + kontextus-réteg):
+     * YAML-SZERKESZTHETŐ dinamikus oldalsáv ({@code hud.sidebar.layout}):
      * <ul>
-     *   <li><b>harc-fókusz</b> — harcban (adott/kapott találat a türelmi időn belül) csak a
-     *       {@code hud.dynamic.combat-visible-sections} szekciók látszanak (default: Erő-csík +
-     *       party) — a HUD "kitisztul", pont az marad, ami az összecsapáshoz kell;</li>
-     *   <li><b>rotáló infósor</b> — az esemény-sor helyén időalapon váltakozik az
-     *       esemény-állapot, a szezon-visszaszámláló és a napi kihívás állása;</li>
-     *   <li><b>prioritás-kiszorítás</b> — ha a tartalom túlnőné a 15 soros keretet, a
-     *       {@link #EVICTION_ORDER} szerinti legalacsonyabb prioritású szekció sorai esnek ki,
-     *       sosem a lista vége vágódik le vakon;</li>
-     *   <li>a nem használt sorok egyáltalán nem renderelődnek, a szekciók a /hud togglékkal
-     *       továbbra is rejthetők.</li>
+     *   <li>a sorrend, a statikus szövegek, a színek és az elválasztók configból jönnek;</li>
+     *   <li>a {@code text} sorok tokenjei dinamikus értékekké oldódnak fel;</li>
+     *   <li>a {@code target/resource/info/party} típusok csak akkor adnak sort, amikor van
+     *       megjeleníthető adatuk;</li>
+     *   <li>a /hud szekció-rejtés, a harc-fókusz és a prioritás-kiszorítás változatlanul él;</li>
+     *   <li>a vanilla 15 soros maximumot a teljes, már kibontott layouton tartjuk be.</li>
      * </ul>
      */
     private List<Component> buildLines(final Player player) {
@@ -483,99 +495,171 @@ public final class HudManager {
                 : orDefault(configManager.getConfiguration().getStringList("hud.dynamic.combat-visible-sections"),
                         List.of(SECTION_RESOURCE, SECTION_PARTY));
 
-        final List<HudRow> rows = new ArrayList<>();
-        // Harc-fókuszban a legutóbb megütött célpont neve (+ játékosnál élet-sáv).
-        if (combatFocus && damageIndicators != null) {
-            final hu.taliann.icesmp.listeners.DamageIndicatorListener.LastTarget target =
-                    damageIndicators.lastTarget(player.getUniqueId());
-            if (target != null) {
-                Component line = Component.text("🎯 ", NamedTextColor.RED)
-                        .append(Component.text(target.targetName(), NamedTextColor.WHITE));
-                if (target.player()) {
-                    final Player targetPlayer = Bukkit.getPlayer(target.targetId());
-                    if (targetPlayer != null && targetPlayer.isOnline()) {
-                        try {
-                            // Cross-region mező-olvasás a party-frame try/catch mintájával.
-                            final org.bukkit.attribute.AttributeInstance maxAttr =
-                                    targetPlayer.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-                            final double max = Math.max(1.0D, maxAttr == null ? 20.0D : maxAttr.getValue());
-                            line = line.append(Component.text(" "))
-                                    .append(healthBar(Math.max(0.0D, targetPlayer.getHealth()), max));
-                        } catch (final Exception ignored) {
-                            // Régió-átmenet — ezen a ticken a név magában is elég.
+        final PartyManager.Party party = partyManager.getParty(player.getUniqueId());
+        final InfoFrame info = rotatingInfoFrame(player);
+        final Map<String, String> tokens = sidebarTokens(player, faction, job, balance, info);
+        final List<HudSidebarLayout.Row<Component>> rows = new ArrayList<>();
+
+        for (final HudSidebarLayout.Entry entry : sidebarLayout()) {
+            if (!visible(entry.section(), hidden, combatFocus, combatVisible)) {
+                continue;
+            }
+            switch (entry.type()) {
+                case SPACER -> rows.add(new HudSidebarLayout.Row<>(entry.section(),
+                        renderTemplate(entry.text().isEmpty() ? " " : entry.text(), tokens)));
+                case SEPARATOR -> rows.add(new HudSidebarLayout.Row<>(entry.section(),
+                        entry.text().isEmpty() ? separator() : renderTemplate(entry.text(), tokens)));
+                case TEXT -> rows.add(new HudSidebarLayout.Row<>(entry.section(),
+                        renderTemplate(entry.text(), tokens)));
+                case TARGET -> {
+                    final Component target = combatFocus
+                            ? targetLine(player, entry.text(), tokens) : null;
+                    if (target != null) {
+                        rows.add(new HudSidebarLayout.Row<>(entry.section(), target));
+                    }
+                }
+                case RESOURCE -> {
+                    if (job != null && resourceManager.isEnabled()) {
+                        rows.add(new HudSidebarLayout.Row<>(entry.section(),
+                                renderTemplate(entry.text(), tokens)));
+                    }
+                }
+                case INFO -> rows.add(new HudSidebarLayout.Row<>(entry.section(),
+                        renderTemplate(entry.text(), tokens)));
+                case PARTY -> {
+                    if (party != null && configManager.getBoolean("party.hud-enabled", true)) {
+                        if (!entry.text().isBlank()) {
+                            rows.add(new HudSidebarLayout.Row<>(entry.section(),
+                                    renderTemplate(entry.text(), tokens)));
+                        }
+                        for (final UUID memberId : party.getMembers()) {
+                            rows.add(new HudSidebarLayout.Row<>(entry.section(),
+                                    partyMemberLine(party, memberId)));
                         }
                     }
                 }
-                rows.add(new HudRow(SECTION_RESOURCE, line));
-            }
-        }
-        if (visible(SECTION_FACTION, hidden, combatFocus, combatVisible)) {
-            rows.add(new HudRow(SECTION_FACTION, row("ꜰʀᴀᴋᴄɪó", faction == null
-                    ? Component.text("nincs", NamedTextColor.GRAY)
-                    : Component.text(faction.getDisplayName(), factionColor(faction)))));
-        }
-        if (visible(SECTION_CLASS, hidden, combatFocus, combatVisible)) {
-            rows.add(new HudRow(SECTION_CLASS, row("ᴋᴀꜱᴢᴛ", job == null
-                    ? Component.text("nincs", NamedTextColor.GRAY)
-                    : job.getDisplayName().append(Component.text(" Lvl " + jobManager.getPrimaryLevel(player), NamedTextColor.WHITE)))));
-        }
-        // Per-class power resource bar (only with a class; never a separate boss bar).
-        if (job != null && visible(SECTION_RESOURCE, hidden, combatFocus, combatVisible)) {
-            final Component resourceLine = resourceManager.hudLine(player);
-            if (resourceLine != null) {
-                rows.add(new HudRow(SECTION_RESOURCE,
-                        Component.text("| ", NamedTextColor.DARK_GRAY).append(resourceLine)));
-            }
-        }
-        if (visible(SECTION_EVENT, hidden, combatFocus, combatVisible)) {
-            rows.add(new HudRow(SECTION_EVENT, rotatingInfoRow(player)));
-        }
-        if (visible(SECTION_CURRENCY, hidden, combatFocus, combatVisible)) {
-            rows.add(new HudRow(SECTION_CURRENCY, separator()));
-            rows.add(new HudRow(SECTION_CURRENCY, Component.text("⭐ ", NamedTextColor.GOLD)
-                    .append(Component.text("ᴠᴀʟᴜᴛᴀ", NamedTextColor.GRAY))
-                    .append(Component.text(": ", NamedTextColor.DARK_GRAY))
-                    .append(Component.text(currencyManager.formatBalance(balance), NamedTextColor.GOLD))));
-        }
-
-        // WoW-style party frames: one row per member with a colour-coded health bar,
-        // shown only while the viewer is in a party (otherwise these rows are hidden).
-        final PartyManager.Party party = partyManager.getParty(player.getUniqueId());
-        if (party != null && configManager.getBoolean("party.hud-enabled", true)
-                && visible(SECTION_PARTY, hidden, combatFocus, combatVisible)) {
-            rows.add(new HudRow(SECTION_PARTY, Component.text("  ", NamedTextColor.DARK_GRAY)));
-            rows.add(new HudRow(SECTION_PARTY, Component.text("— Csapat —", NamedTextColor.LIGHT_PURPLE)));
-            for (final UUID memberId : party.getMembers()) {
-                rows.add(new HudRow(SECTION_PARTY, partyMemberLine(party, memberId)));
             }
         }
 
-        // Prioritás-kiszorítás: a keret = LINES mínusz a 2 strukturális elválasztó.
-        final int budget = LINES - 2;
-        for (final String evict : EVICTION_ORDER) {
-            if (rows.size() <= budget) {
-                break;
-            }
-            rows.removeIf(hudRow -> evict.equals(hudRow.section()));
-        }
-
-        final List<Component> lines = new ArrayList<>(rows.size() + 2);
-        lines.add(separator());
-        for (final HudRow hudRow : rows) {
-            lines.add(hudRow.text());
-        }
-        lines.add(separator());
-        return lines.size() > LINES ? lines.subList(0, LINES) : lines;
+        return HudSidebarLayout.fit(rows, LINES, sidebarEvictionOrder()).stream()
+                .map(HudSidebarLayout.Row::value)
+                .toList();
     }
 
     /** Látszik-e a szekció: /hud toggle + (harcban) a harc-fókusz fehérlistája. */
     private boolean visible(final String section, final Set<String> hidden,
                             final boolean combatFocus, final List<String> combatVisible) {
-        return !hidden.contains(section) && (!combatFocus || combatVisible.contains(section));
+        return section == null || section.isBlank()
+                || (!hidden.contains(section) && (!combatFocus || combatVisible.contains(section)));
     }
 
     private static List<String> orDefault(final List<String> value, final List<String> fallback) {
         return value == null || value.isEmpty() ? fallback : value;
+    }
+
+    /** Reload-barát, lock-minimal layout cache: a ConfigManager reloadkor új YAML-objektumot publikál. */
+    private List<HudSidebarLayout.Entry> sidebarLayout() {
+        final Object source = configManager.getConfiguration();
+        if (source == null) {
+            return HudSidebarLayout.defaults();
+        }
+        if (source != cachedLayoutSource) {
+            synchronized (this) {
+                if (source != cachedLayoutSource) {
+                    cachedLayout = HudSidebarLayout.parse(
+                            configManager.getConfiguration().getMapList("hud.sidebar.layout"));
+                    cachedLayoutSource = source;
+                }
+            }
+        }
+        return cachedLayout;
+    }
+
+    /** Configured priorities first; missing known sections are appended to keep overflow safe. */
+    private List<String> sidebarEvictionOrder() {
+        final List<String> configured = configManager.getConfiguration() == null ? List.of()
+                : configManager.getConfiguration().getStringList("hud.sidebar.eviction-order");
+        if (configured.isEmpty()) {
+            return EVICTION_ORDER;
+        }
+        final Set<String> completed = new LinkedHashSet<>();
+        for (final String section : configured) {
+            if (section != null && !section.isBlank()) {
+                completed.add(section.trim().toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        completed.addAll(EVICTION_ORDER);
+        return List.copyOf(completed);
+    }
+
+    private Map<String, String> sidebarTokens(final Player player, final FactionType faction,
+                                               final JobType job, final double balance,
+                                               final InfoFrame info) {
+        final Map<String, String> tokens = new HashMap<>();
+        final Component factionValue = faction == null
+                ? Component.text("nincs", NamedTextColor.GRAY)
+                : Component.text(faction.getDisplayName(), factionColor(faction));
+        final Component classValue = job == null
+                ? Component.text("nincs", NamedTextColor.GRAY)
+                : job.getDisplayName();
+        final boolean hasResource = job != null && resourceManager.isEnabled();
+        final long seasonDays = Math.max(0L,
+                (seasonManager.getSeasonEndMillis() - System.currentTimeMillis())
+                        / (24L * 60L * 60L * 1000L));
+
+        tokens.put("player", player.getName());
+        tokens.put("online", String.valueOf(Bukkit.getOnlinePlayers().size()));
+        tokens.put("max", String.valueOf(Bukkit.getMaxPlayers()));
+        tokens.put("ping", String.valueOf(Math.max(0, player.getPing())));
+        tokens.put("faction", legacy(factionValue));
+        tokens.put("class", legacy(classValue));
+        tokens.put("class_level", String.valueOf(job == null ? 0 : jobManager.getPrimaryLevel(player)));
+        tokens.put("balance", currencyManager.formatBalance(balance));
+        tokens.put("resource_name", hasResource ? resourceManager.resourceName(player) : "");
+        tokens.put("resource_value", hasResource ? String.valueOf(resourceManager.resourceValue(player)) : "");
+        tokens.put("resource_max", hasResource ? String.valueOf(resourceManager.resourceMax(player)) : "");
+        tokens.put("resource_percent", hasResource ? String.valueOf(resourceManager.resourcePercent(player)) : "");
+        tokens.put("resource_bar", hasResource ? resourceManager.resourceBarPlain(player) : "");
+        tokens.put("info_label", info.label());
+        tokens.put("info_value", legacy(info.value()));
+        tokens.put("event", legacy(eventLabel()));
+        tokens.put("season_days", String.valueOf(seasonDays));
+        return tokens;
+    }
+
+    private Component targetLine(final Player viewer, final String configuredTemplate,
+                                 final Map<String, String> baseTokens) {
+        final hu.taliann.icesmp.listeners.DamageIndicatorListener indicators = damageIndicators;
+        if (indicators == null) {
+            return null;
+        }
+        final hu.taliann.icesmp.listeners.DamageIndicatorListener.LastTarget target =
+                indicators.lastTarget(viewer.getUniqueId());
+        if (target == null) {
+            return null;
+        }
+
+        Component health = Component.empty();
+        if (target.player()) {
+            final Player targetPlayer = Bukkit.getPlayer(target.targetId());
+            if (targetPlayer != null && targetPlayer.isOnline()) {
+                try {
+                    // Cross-region mező-olvasás a party-frame try/catch mintájával.
+                    final org.bukkit.attribute.AttributeInstance maxAttr =
+                            targetPlayer.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                    final double max = Math.max(1.0D, maxAttr == null ? 20.0D : maxAttr.getValue());
+                    health = healthBar(Math.max(0.0D, targetPlayer.getHealth()), max);
+                } catch (final Exception ignored) {
+                    // Régió-átmenet — ezen a ticken a név magában is elég.
+                }
+            }
+        }
+        final Map<String, String> tokens = new HashMap<>(baseTokens);
+        tokens.put("target_name", target.targetName());
+        tokens.put("target_health", legacy(health));
+        final String template = configuredTemplate == null || configuredTemplate.isBlank()
+                ? "&c⌖ &f{target_name} {target_health}" : configuredTemplate;
+        return renderTemplate(template, tokens);
     }
 
     /**
@@ -584,37 +668,54 @@ public final class HudManager {
      * nélküli frame-ek kimaradnak (pl. nyugalomban az esemény-frame), így a sor mindig mond
      * valamit; kikapcsolva (hud.dynamic.rotating-line: false) a régi fix esemény-sor él.
      */
-    private Component rotatingInfoRow(final Player player) {
+    private record InfoFrame(String label, Component value) {
+    }
+
+    private InfoFrame rotatingInfoFrame(final Player player) {
         if (!configManager.getBoolean("hud.dynamic.rotating-line", true)) {
-            return row("ᴇꜱᴇᴍéɴʏ", eventLabel());
+            return new InfoFrame("ᴇꜱᴇᴍéɴʏ", eventLabel());
         }
 
-        final List<Component> frames = new ArrayList<>(3);
+        final List<InfoFrame> frames = new ArrayList<>(3);
         final Component event = eventLabel();
         final boolean quiet = "nyugalom".equals(PlainTextComponentSerializer.plainText().serialize(event));
         if (!quiet) {
-            frames.add(row("ᴇꜱᴇᴍéɴʏ", event));
+            frames.add(new InfoFrame("ᴇꜱᴇᴍéɴʏ", event));
         }
         final long remainingDays = Math.max(0L,
                 (seasonManager.getSeasonEndMillis() - System.currentTimeMillis()) / (24L * 60L * 60L * 1000L));
-        frames.add(row("ꜱᴢᴇᴢᴏɴ", Component.text("még ~" + remainingDays + " nap", NamedTextColor.WHITE)));
+        frames.add(new InfoFrame("ꜱᴢᴇᴢᴏɴ",
+                Component.text("még ~" + remainingDays + " nap", NamedTextColor.WHITE)));
         final DailyQuestManager.Daily daily = dailyQuestManager.isEnabled() ? dailyQuestManager.getActive() : null;
         if (daily != null) {
-            frames.add(row("ɴᴀᴘɪ", dailyQuestManager.isDone(player)
+            frames.add(new InfoFrame("ɴᴀᴘɪ", dailyQuestManager.isDone(player)
                     ? Component.text("kész ✔", NamedTextColor.GREEN)
-                    : Component.text(dailyQuestManager.getProgress(player) + "/" + daily.amount(), NamedTextColor.YELLOW)));
+                    : Component.text(dailyQuestManager.getProgress(player) + "/" + daily.amount(),
+                            NamedTextColor.YELLOW)));
         }
 
         final long rotationMillis = Math.max(2L, configManager.getLong("hud.dynamic.rotation-seconds", 4L)) * 1000L;
         return frames.get((int) ((System.currentTimeMillis() / rotationMillis) % frames.size()));
     }
 
-    /** "| címke: érték" formátumú sor a TAB-dizájn szerint. */
-    private Component row(final String smallCapsLabel, final Component value) {
-        return Component.text("| ", NamedTextColor.DARK_GRAY)
-                .append(Component.text(smallCapsLabel, NamedTextColor.GRAY))
-                .append(Component.text(": ", NamedTextColor.DARK_GRAY))
-                .append(value);
+    private Component renderTemplate(final String template, final Map<String, String> tokens) {
+        String rendered = HudSidebarLayout.render(template, tokens);
+        int guard = 0;
+        while (animator != null && rendered.contains("{anim:") && guard++ < 8) {
+            final int start = rendered.indexOf("{anim:");
+            final int end = rendered.indexOf('}', start);
+            if (end < 0) {
+                break;
+            }
+            final String name = rendered.substring(start + 6, end);
+            rendered = rendered.substring(0, start) + animator.frame(name) + rendered.substring(end + 1);
+        }
+        return hu.taliann.icesmp.utils.TextAnimator.legacy(rendered);
+    }
+
+    private static String legacy(final Component component) {
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
+                .serialize(component == null ? Component.empty() : component);
     }
 
     /** Animált elválasztó-sor (a tablist.yml 'bar' animációja; nélküle statikus vonal). */
