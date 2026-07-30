@@ -37,7 +37,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 119 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 120 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 119 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
@@ -109,6 +109,21 @@ A dependency-free `MotdSelector` tesztelhetővé teszi a rotációt és esemény
 `motdRegressionTest` a negatív epoch floor-mod viselkedést, a random stabilitást/pool-lefedést,
 a teljes signed-`long` és strict boolean szabályokat, a placeholder whitelistet, a symlink/TOCTOU
 ikonvédelmet, a generációs interleavinget és a jarban szállított ikonok 64×64 dekódolását is ellenőrzi. Ez nem helyettesíti a valódi Folia ping/reload és proxy nélküli runtime playtestet.
+
+
+### 3.1.2 Natív HUD scoreboard — konfigurálható layout
+
+A jobb oldali natív scoreboard sorait a `hud.sidebar.layout` lista írja le; a dinamikus
+játékállapot nem akadálya a szerkeszthetőségnek. A `text`, `spacer`, `separator`, `target`,
+`resource`, `info` és `party` sortípusok sablonjai futásidőben kapják meg a dokumentált
+`{token}` értékeket. A fejléc címe és a layout reload után élőben frissül, hibás vagy hiányzó
+lista esetén pedig a beépített alapelrendezés lép életbe.
+
+A teljes, már kibontott layout legfeljebb 15 scoreboard-sort használ. Túlcsorduláskor a
+`hud.sidebar.eviction-order` szerinti opcionális szekciók esnek ki; a combat target csak harcban,
+a resource csak aktív kaszt-erőforrásnál, a party pedig tagonként bővül. Az alaplayout első
+`spacer` sora választja el a resource-packből érkező cím-glyphöt a felső vonaltól. A glyph
+`height`/`ascent` metrikája továbbra is a resource pack font-JSON-jának felelőssége.
 
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
@@ -448,11 +463,11 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 551 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 119 fájl).
-  Csomag-megoszlás: listeners 119, managers 119, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,
+- **Méret:** 552 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
+  Csomag-megoszlás: listeners 119, managers 120, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
-  a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK- és territory-capital-regressziós suite-okat.
+  a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
   `python3 scripts/check_consistency.py`. Pull requesten a `scripts/check_consistency_delta.py`
   hasonlítja a base/head eredményt.
