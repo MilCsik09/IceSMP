@@ -878,7 +878,7 @@ Céhkezelés, vezetői/királyi műveletek, tanács, treasury és közösségi p
 
 Területfoglalás, trust, world/régióvédelem, territory típusok és admin törlés/kiválasztó eszköz.
 
-- **Így találkozol vele:** `/claim`, `/territory`; ClaimTrust GUI és selection wand. Parancs: /claim (alias: /birtok); /territory (alias: /terulet). GUI: Megbízottak kezelése.
+- **Így találkozol vele:** `/claim`, `/territory`; ClaimTrust GUI és selection wand. A `/territory setcapital <frakció> selection [név...]` a claim két sarokpontjából pontos X/Y/Z fővárost hoz létre; a régi sugaras forma változatlan. Parancs: /claim (alias: /birtok); /territory (alias: /terulet). GUI: Megbízottak kezelése.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő.
 - **Mitől mozdul meg:** Blokk-interakció, break/place, PvP/használat, claimparancs és GUI.
 - **Ami még kellhet hozzá:** Világpolicy, régióhatárok, spawnok és WorldEdit utáni audit szükséges.
