@@ -11,17 +11,24 @@ public final class CrateSoundResolver {
     private CrateSoundResolver() {
     }
 
-    @SuppressWarnings("deprecation")
-    public static Sound resolve(final String configured) {
+    static String enumName(final String configured) {
         if (configured == null || configured.isBlank()) {
             return null;
         }
-        final String raw = configured.trim();
-        String enumName = raw;
-        if (enumName.regionMatches(true, 0, "minecraft:", 0, "minecraft:".length())) {
-            enumName = enumName.substring("minecraft:".length());
+        String name = configured.trim();
+        if (name.regionMatches(true, 0, "minecraft:", 0, "minecraft:".length())) {
+            name = name.substring("minecraft:".length());
         }
-        enumName = enumName.replace('.', '_').replace('-', '_').toUpperCase(Locale.ROOT);
+        return name.replace('.', '_').replace('-', '_').toUpperCase(Locale.ROOT);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static Sound resolve(final String configured) {
+        final String enumName = enumName(configured);
+        if (enumName == null) {
+            return null;
+        }
+        final String raw = configured.trim();
         try {
             return Sound.valueOf(enumName);
         } catch (final IllegalArgumentException ignored) {
