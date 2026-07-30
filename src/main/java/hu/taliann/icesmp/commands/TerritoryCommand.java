@@ -8,6 +8,7 @@ import hu.taliann.icesmp.data.TerritoryType;
 import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.TerritoryDestination;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Location;
@@ -731,14 +732,15 @@ public final class TerritoryCommand implements BasicCommand {
         final int cz = zone.z() >> 4;
         world.getChunkAtAsync(cx, cz).thenRun(() ->
                 org.bukkit.Bukkit.getRegionScheduler().run(plugin, world, cx, cz, task -> {
-                    int baseY = world.getHighestBlockYAt(zone.x(), zone.z()) + 1;
-                    if (zone.minY() != Territory.NO_MIN_Y) {
-                        baseY = Math.max(baseY, zone.minY());
+                    final Integer safeY = TerritoryDestination.findSafeStandingY(world, zone);
+                    if (safeY == null) {
+                        player.getScheduler().run(plugin, failed -> player.sendMessage(messageManager.get(
+                                "territory-tp-no-safe-destination",
+                                "&cA zóna középpontjában nincs biztonságos, zónán belüli érkezési hely.")), null);
+                        return;
                     }
-                    if (zone.maxY() != Territory.NO_MAX_Y) {
-                        baseY = Math.min(baseY, zone.maxY());
-                    }
-                    player.teleportAsync(new Location(world, zone.x() + 0.5D, baseY, zone.z() + 0.5D, yaw, pitch));
+                    player.teleportAsync(new Location(
+                            world, zone.x() + 0.5D, safeY, zone.z() + 0.5D, yaw, pitch));
                 }));
         sender.sendMessage(messageManager.get("territory-tp-success",
                 "&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…", zone.name(), zone.x(), zone.z()));
