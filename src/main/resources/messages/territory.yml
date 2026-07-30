@@ -73,6 +73,7 @@ messages:
   territory-show-cross-world: '&cEz a zóna másik világban van (&f%s&c) — a rajz csak abban a világban látszik.'
   territory-show-nothing: '&eNincs mit megjeleníteni (nincs határpont, és nem állsz területen).'
   territory-show-started: '&aHatárrajz megjelenítve (8 mp).'
+  territory-tp-no-safe-destination: '&cA zóna középpontjában nincs biztonságos, zónán belüli érkezési hely.'
   territory-tp-success: '&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…'
   territory-tp-usage: '&cHasználat: /territory tp <azonosító>'
   territory-tp-world-missing: '&cA zóna világa (&f%s&c) nincs betöltve.'
