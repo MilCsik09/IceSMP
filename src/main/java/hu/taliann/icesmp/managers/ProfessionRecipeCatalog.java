@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -83,30 +84,22 @@ public final class ProfessionRecipeCatalog {
         // A unique-material eredmény ikonját a profession-materials config adja; a sima eredmény a material.
         final String uniqueResult = resultSection.getString("unique", null);
         final Material result = uniqueResult != null
-                ? Material.matchMaterial(uniqueIconMaterial(uniqueResult))
-                : Material.matchMaterial(resultSection.getString("material", "").toUpperCase(Locale.ROOT));
+                ? ConfigMaterialResolver.match(uniqueIconMaterial(uniqueResult))
+                : ConfigMaterialResolver.match(resultSection.getString("material", ""));
         if (result == null) {
             plugin.getLogger().warning("profession-recipes." + id + ": érvénytelen result — kihagyva.");
             return null;
         }
-        final Map<Material, Integer> ingredients = new LinkedHashMap<>();
-        final Map<String, Integer> uniqueIngredients = new LinkedHashMap<>();
-        for (final String token : section.getStringList("ingredients")) {
-            final String[] parts = token.split(":");
-            if (parts.length >= 3 && "unique".equalsIgnoreCase(parts[0].trim())) {
-                uniqueIngredients.merge(parts[1].trim().toLowerCase(Locale.ROOT), parseCount(parts[2]), Integer::sum);
-                continue;
-            }
-            final Material material = Material.matchMaterial(parts[0].trim().toUpperCase(Locale.ROOT));
-            if (material == null) {
-                continue;
-            }
-            ingredients.merge(material, parts.length > 1 ? parseCount(parts[1]) : 1, Integer::sum);
-        }
-        if (ingredients.isEmpty() && uniqueIngredients.isEmpty()) {
-            plugin.getLogger().warning("profession-recipes." + id + ": nincs érvényes ingredient — kihagyva.");
+        final ProfessionIngredientParser.ParsedIngredients parsedIngredients;
+        try {
+            parsedIngredients = ProfessionIngredientParser.parse(section.getStringList("ingredients"));
+        } catch (final IllegalArgumentException invalidIngredient) {
+            plugin.getLogger().warning("profession-recipes." + id + ": hibás ingredient ("
+                    + invalidIngredient.getMessage() + ") — a teljes recept kihagyva.");
             return null;
         }
+        final Map<Material, Integer> ingredients = parsedIngredients.materials();
+        final Map<String, Integer> uniqueIngredients = parsedIngredients.uniqueMaterials();
         final int level = Math.max(1, section.getInt("level", 1));
         final boolean blueprint = "blueprint".equalsIgnoreCase(section.getString("learn", "level"));
         final String displayName = section.getString("display-name", prettyName(result));
@@ -184,14 +177,6 @@ public final class ProfessionRecipeCatalog {
         return configManager.getConfiguration()
                 .getString("profession-materials." + uniqueId.toLowerCase(Locale.ROOT) + ".material", "PAPER")
                 .toUpperCase(Locale.ROOT);
-    }
-
-    private static int parseCount(final String raw) {
-        try {
-            return Math.max(1, Integer.parseInt(raw.trim()));
-        } catch (final NumberFormatException ignored) {
-            return 1;
-        }
     }
 
     private static String prettyName(final Material material) {
