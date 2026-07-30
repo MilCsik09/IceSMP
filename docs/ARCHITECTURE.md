@@ -4,8 +4,10 @@
 > a tényleges kódra épül: leírja, hogyan áll össze a plugin, milyen mintákat követünk, és
 > lépésről lépésre **hogyan adj hozzá új tartalmat** anélkül, hogy bármit eltörnél.
 >
-> Kapcsolódó dokumentumok: `README.md` (áttekintés), `PLAYER_GUIDE.md` (játékos-kézikönyv),
-> `PLAYTEST.md` (tesztelési útmutató), `ROADMAP.md` (nyitott fejlesztések).
+> Kapcsolódó dokumentumok: [`README.md`](../README.md) (áttekintés),
+> [`PLAYER_GUIDE.md`](PLAYER_GUIDE.md) (játékos-kézikönyv),
+> [`ADMIN_GUIDE.md`](ADMIN_GUIDE.md#release-acceptance-checklist) (tesztelés) és
+> [`ROADMAP.md`](../ROADMAP.md) (nyitott fejlesztések).
 
 ---
 

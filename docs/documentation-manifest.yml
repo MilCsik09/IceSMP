@@ -1,5 +1,15 @@
 {
   "version": 1,
+  "documentation-policy": {
+    "artifact-backed-sections": [
+      "commands",
+      "permissions",
+      "config-sections",
+      "components"
+    ],
+    "artifact": "Repository Docs Inventory",
+    "reason": "A teljes command/route/alias, permission, config és production komponens referencia gépileg generált CI-artifact; az emberi kézikönyvek a használható rendszer- és workflow-leírást tartalmazzák."
+  },
   "commands": {
     "_contract": {
       "version": 1,

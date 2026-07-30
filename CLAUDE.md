@@ -20,7 +20,8 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
   fő-agentet ott, ahol a session-kontextus számít (a delegált agent mindig üresen indul).
 - **Teljes több-agentes audit-kör CSAK kifejezett tulaj-kérésre** — drága (agentenként
   100-340k token), és a gépi drift-ellenőrző + a Definition of Done pont azért él, hogy
-  ne kelljen ismételni. Új leletek az élő `docs/ideas/PROJEKT-AUDIT.md`-be, helyben.
+  ne kelljen ismételni. Új, igazolt nyitott lelet a `ROADMAP.md` megfelelő
+  részébe kerüljön; külön auditnaplót ne hozz létre.
 - Egyszerre max 4-5 párhuzamos agent (a session-limit egyszer már elvitte a teljes kört).
 - **Légy token-takarékos**: tömör válaszok, célzott fájlolvasás, ne duplikáld a subagent
   munkáját.
@@ -58,7 +59,10 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
 - **Verzió-bump ellenőrzés:** MC/Paper-frissítésnél az ELSŐ törési pont a bootstrap
   (unstable registry-API) — a védőháló catch-el és logol, de bumpnál kötelező ellenőrizni:
   a bootstrap fordul, a damage-type-ok és enchantok regisztrálódnak (log), a resist/stamp él.
-- **Tükör-repo (IceSMPGuides):** az aktív, kanonikus szabály az `AGENTS.md` „Docs and IceSMPGuides mirror” szekciójában él. Az öt kézikönyvet (`FEATURES.md`, `LATEST_CHANGES.md`, `PLAYER_GUIDE.md`, `BUILDER_GUIDE.md`, `ADMIN_GUIDE.md`) szó szerint tükrözni kell a `MilCsik09/IceSMPGuides` repó gyökerébe, ugyanarra a célágra.
+- **Tükör-repo (IceSMPGuides):** az aktív, kanonikus szabály az `AGENTS.md`
+  „Docs and IceSMPGuides mirror” szekciójában él. Minden megtartott Markdown-
+  dokumentumot szó szerint, azonos relatív útvonallal kell tükrözni a
+  `MilCsik09/IceSMPGuides` repóba; ne maradjon külön gyökérszintű guide-másolat.
 
 ## Mi ez a projekt
 Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 545 Java-fájl / 90 manager. Minden játékos-szöveg **magyar**.
@@ -93,10 +97,11 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   fail-open ok). TILOS: provenancia ("audit-lelet", "tulaj-döntés", tétel-azonosítók,
   review-hivatkozás), kód-narrálás ("// mentés"), változás-történet ("// mostantól").
   A config-YAML kommentjei kivételek: ott a komment a dokumentáció.
-- **MD-politika:** új .md fájl CSAK kifejezett tulaj-kérésre születhet. Auditok a meglévő
-  `docs/ideas/PROJEKT-AUDIT.md`-t frissítik HELYBEN (nem új fájl körönként); ötletek
-  egyetlen helyre mennek: `docs/ideas/BACKLOG.md`. Embernek szánt új feature/reference/release
-  oldal helyett az öt kanonikus kézikönyv egyikét kell frissíteni.
+- **MD-politika:** új .md fájl CSAK kifejezett tulaj-kérésre születhet.
+  Igazolt nyitott auditpont és még nem vállalt ötlet egyaránt a `ROADMAP.md`
+  megfelelő részébe kerül; külön audit- vagy backlogoldal nem készül.
+  Embernek szánt új feature/reference/release oldal helyett az öt kanonikus
+  kézikönyv egyikét kell frissíteni.
 - **Definition of Done — minden változás UGYANABBAN a commitban propagál:**
   - új parancs → tab-complete + `/menu` csempe (CommandMenus) +
     `docs/PLAYER_GUIDE.md` érintett része + `docs/ADMIN_GUIDE.md` parancsreferenciája + jog-node
@@ -104,7 +109,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   - új config-kulcs → use-site olvasás (élő-config) + ha admin-hangolandó: ConfigMenuGUI
   - új custom item → **ITEM_MODEL** (modern; `item-model:`/`ItemDataFactory.applyItemModel`) +
     `docs/RESOURCE_PACK_CMD.md` manifest-sor. (ÚJ itemnél már NEM adunk régi numerikus modelladatot.)
-  - új quest-NPC / territory-id → a PROJEKT-AUDIT.md világépítő-checklistjére is fel kell kerülnie
+  - új quest-NPC / territory-id → `docs/BUILDER_GUIDE.md` + a `ROADMAP.md` alkalmazható builderkapuja
   - új rendszer/mechanika → `docs/FEATURES.md` + érintett szerepköri kézikönyv +
     acceptance-eset a `docs/ADMIN_GUIDE.md`-ban + `LORE_REFERENCE.md` sor, ha lore-kötött
   - minden doksi-szám a configból származik, nem fejből

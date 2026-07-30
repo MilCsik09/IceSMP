@@ -43,7 +43,8 @@ class InventoryFixtureTest(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
 
     def manifest(self, extra: dict | None = None) -> None:
-        data = {"version": 1, "commands": {}, "features": {}, "permissions": {},
+        data = {"version": 1, "documentation-policy": {"artifact-backed-sections": []},
+                "commands": {}, "features": {}, "permissions": {},
                 "config-sections": {}, "components": {}, "explicit-ignores": {}}
         if extra:
             for key, value in extra.items(): data[key].update(value)
@@ -355,6 +356,43 @@ public final class RootCommand implements BasicCommand {
         inventory = generate_inventory(self.root)
         failures = {item["code"] for item in inventory["findings"] if item["severity"] == "FAIL"}
         self.assertIn("COMMAND_CONTRACT_SOURCE_DRIFT", failures)
+
+    def test_artifact_backed_commands_do_not_need_inline_marker_dump(self) -> None:
+        self.exact_command_fixture()
+        manifest_path = self.root / "docs/documentation-manifest.yml"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["documentation-policy"] = {"artifact-backed-sections": ["commands"]}
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        self.write("docs/commands.md", "# Human command guide\n")
+
+        inventory = generate_inventory(self.root)
+        coverage = inventory["documentation_coverage"]
+        codes = {item["code"] for item in coverage["findings"]}
+        self.assertNotIn("DOC_MARKER_MISSING", codes)
+        self.assertEqual(coverage["metrics"]["commands_documented"], 100.0)
+        self.assertEqual(coverage["metrics"]["subcommands_documented"], 100.0)
+        self.assertEqual(coverage["metrics"]["aliases_documented"], 100.0)
+        self.assertEqual(coverage["artifact_backed_sections"], ["commands"])
+
+    def test_all_exact_reference_sections_can_be_artifact_backed(self) -> None:
+        self.exact_command_fixture()
+        manifest_path = self.root / "docs/documentation-manifest.yml"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["documentation-policy"] = {
+            "artifact-backed-sections": [
+                "commands", "permissions", "config-sections", "components"
+            ]
+        }
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        self.write("docs/commands.md", "# Human-readable workflows\n")
+
+        coverage = generate_inventory(self.root)["documentation_coverage"]
+        codes = {item["code"] for item in coverage["findings"]}
+        self.assertNotIn("DOC_MARKER_MISSING", codes)
+        self.assertEqual(
+            coverage["artifact_backed_sections"],
+            ["commands", "components", "config-sections", "permissions"],
+        )
 
     def test_delta(self) -> None:
         base = {"commands": [{"id": "command.a", "name": "a"}], "subcommands": [], "permissions": [], "config_keys": [], "message_keys": [], "features": [], "components": []}

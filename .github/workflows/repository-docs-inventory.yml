@@ -255,6 +255,10 @@ jobs:
             echo "- \`docs/BUILDER_GUIDE.md\`"
             echo "- \`docs/ADMIN_GUIDE.md\`"
             echo
+            echo "Retained supporting docs: \`README.md\`, \`ROADMAP.md\`, architecture,"
+            echo "lore, lore reference, resource-pack reference and teaser campaign pack."
+            echo "All retained Markdown documents are mirrored with the same relative paths."
+            echo
             echo "Detailed interface inventories remain in this workflow artifact."
             echo
             echo "## Compared refs"

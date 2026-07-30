@@ -12,23 +12,11 @@
 > `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026-07-12,
 > `HIGH_CONFIDENCE`, nem `EXACT`)
 
-Ez a kézikönyv a végleges integrált IceSMP-forrás alapján írja le, hogyan
-kapcsolódik össze a világépítés a plugin tényleges runtime-rendszereivel.
-Buildereknek, world designereknek, eventeseknek, adminoknak és tesztelőknek
-szól. A célja nem az, hogy megmondja, milyen stílusban épüljön egy város,
-hanem hogy egy elkészült helyszín biztonságosan és ellenőrizhetően
-beköthető legyen a pluginba.
+Egy IceSMP-helyszín akkor kész, amikor nemcsak szép, hanem **él is**. A kapu a megfelelő világba vezet, az NPC felismeri a küldetést, a crate nem nyeli el a jutalmat, és a bossnak marad helye megmozdulni.
 
-A csomaghoz adott `LORE.md` és `TEASER.md` kreatív világépítési és
-kommunikációs forrás. Nem runtime-registry: egy lore-ban szereplő város,
-NPC, kazamata vagy mechanika önmagában nem bizonyítja, hogy a release-ben
-aktív. A tényleges azonosítókat mindig az
-[adatvezérelt tartalomkatalógusból](FEATURES.md),
-a pontos parancsokat a
-[parancsreferenciából](ADMIN_GUIDE.md#teljes-parancsreferencia), a beállításokat
-pedig a
-[konfigurációs referenciából](ADMIN_GUIDE.md#konfiguráció-és-reload)
-vedd át.
+Ez a kézikönyv abban segít, hogy az építményből ellenőrzött játéktér legyen. Nem mondja meg, milyen legyen egy város stílusa; azt mutatja meg, milyen azonosító, koordináta, kötés és átadási próba kell ahhoz, hogy a plugin valóban használni tudja.
+
+> A lore és a teaser hangulatot, nevet és irányt ad. A runtime-azonosító viszont mindig a forrás, a config vagy a listázó parancs szerint mérvadó.
 
 Kapcsolódó dokumentumok:
 
@@ -37,7 +25,7 @@ Kapcsolódó dokumentumok:
 - [konfigurációs referencia](ADMIN_GUIDE.md#konfiguráció-és-reload);
 - [GUI-referencia](ADMIN_GUIDE.md#gui-referencia);
 - [adatvezérelt tartalomkatalógus](FEATURES.md);
-- [külső pluginok státusza](LATEST_CHANGES.md#külső-pluginok-rollout-státusza);
+- [külső pluginok státusza](LATEST_CHANGES.md#külső-pluginok-rövid-státusza);
 - [release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).
 
 ## 1. A buildermunka alapszabálya
@@ -243,88 +231,27 @@ config-generációt, világ UUID-t és nevet, blokkkoordinátát, crate ID-t,
 permissiont és világpolicyt. A játékosnak a settlement alatt nyolc blokkon
 belül kell maradnia.
 
-### 4.6. Világcsere és location recovery
+### 4.6. Builderátadás és recovery-határ
 
-A crate location világ UUID-t, világnevet és egész blokkkoordinátát tárol.
-Betöltéskor:
+A crate location világ UUID-t, pontos világnevet és blokkkoordinátát tárol.
+Világ- vagy ID-csere előtt listázd és kontrolláltan mozgasd a placementeket;
+a fizikai blokk másolása nem másolja a runtime-kötést.
 
-- a világ UUID-jának feloldhatónak kell lennie;
-- a tárolt világnévnek pontosan egyeznie kell;
-- a crate ID-nak létező, valid definícióra kell mutatnia;
-- nem lehet két bejegyzés ugyanazon a helyen.
+A crate körül legyen sík, felvehető padló, ne legyen hopper, láva, void,
+mély víz vagy idegen claim. Full inventorynál az overflow ide eshet.
 
-Hiányzó, átnevezett, lecserélt vagy betöltetlen világ, törölt crate ID vagy
-duplikált hely esetén a loader fail-closed módon sérült állapotnak
-minősítheti a store-t és karanténba teheti. Ez adatvédelmi viselkedés, nem
-automatikus migráció.
+Átadáskor teszteld:
 
-Ezért:
+- kulcs nélkül, rossz és helyes kulccsal;
+- main és off handdel, több key stackkel és mass-opennel;
+- tele inventoryval;
+- reload és restart után;
+- világ-, hely- és definíciócsere után.
 
-- crate ID törlése vagy átnevezése előtt minden placementet listázz és
-  távolíts el vagy irányíts át;
-- világ átnevezése vagy cseréje előtt a régi, még betöltött világból
-  migráld a placementeket;
-- a `crates-data.yml` élő kézi szerkesztése helyett kontrollált offline
-  migrációt végezz, mentéssel és staging próbával;
-- indulási karanténnál ne próbáld „vakon” visszanevezni a fájlt.
-
-### 4.7. Full inventory és overflow
-
-Az itemjutalmak, recovery-kulcsok és refundkulcsok a játékos inventoryjába
-kerülnek. Ami nem fér be, természetesen a játékos aktuális helyén esik le.
-Ezért a crate körül:
-
-- legyen tömör, sík, felvehető padló;
-- ne legyen láva, tűz, kaktusz, voidperem vagy mély víz;
-- ne legyen hopper vagy más automatikus felszedő;
-- ne essen a drop másik claimbe vagy elzárt blokkba;
-- legyen elég hely több játékosnak és a spin GUI-ból kilépő játékosnak;
-- teljes inventoryval külön teszteld minden itemes jutalomtípust.
-
-A rendszer nem „virtuális postafiókba” küldi a normál overflow itemet.
-
-### 4.8. Kulcs, kéz és mass-open
-
-- Fizikai crate-kattintásnál a main hand út aktív; off-hand interactiont a
-  listener nem használja nyitásra.
-- Kulcs nélkül a crate információt mutat.
-- Rossz kulccsal nem nyit.
-- Megfelelő main-hand kulccsal nyit.
-- Lopakodva a lehető legnagyobb engedélyezett mass-open kérhető, de csak
-  annyi teljes nyitás történik, amennyire valóban van kulcs.
-- A kulcsfogyasztás több inventory stackből is pontosan összeszámol.
-
-### 4.9. Settlement, recovery és manuális ellenőrzés
-
-A jutalomfolyamat sorrendje:
-
-1. batch feloldása;
-2. kulcsok fogyasztása;
-3. tartós valutajutalom;
-4. globális command batch;
-5. item inventory/drop;
-6. statisztika és cooldown commit.
-
-Ez crash-követő recoveryvel védett, de nem elosztott adatbázis-tranzakció.
-Az operációs rendszer vagy process hirtelen leállítása nem ad minden
-képzelhető mellékhatásra matematikai exactly-once garanciát.
-
-Lehetséges recovery-állapotok:
-
-- `ROLLBACK_ONLY`;
-- `REFUND_KEYS`;
-- `REFUND_CLAIMED`;
-- `MANUAL_REVIEW`.
-
-Csak a biztonságos `REFUND_KEYS` ág ad automatikusan vissza kulcsot
-csatlakozáskor. A többi bizonytalan tétel súlyos logbejegyzést és új
-nyitási blokkot okozhat. A `/crate status` megmutatja a manuális review
-darabszámát, de a forrásban nincs általános „resolve” adminparancs.
-Ilyenkor az auditlog, a store mentése és az üzemeltetői offline
-helyreállítási folyamat az autoritatív út.
-
-Ne távolítsátok el a CrazyCrates JAR-t, amíg a natív crate teljes runtime-
-és fault-injection checklistje nem zöld.
+A settlement, audit, `MANUAL_REVIEW` és fault-injection recovery már
+üzemeltetői felelősség. A
+[teljes crate acceptance](ADMIN_GUIDE.md#natív-crate) lezárásáig a
+CrazyCrates nem távolítható el.
 
 ## 5. Sit-only: ülésre alkalmas építés
 
@@ -412,52 +339,17 @@ Az „unsafe engedélyezése” nem teszi jó designná a láva, tűz vagy
 fulladásveszély melletti ülést. Ezt csak kontrollált, indokolt helyszínnél
 használd.
 
-### 5.5. Foglalás és életciklus
+### 5.5. Átadási próba
 
-Egy blokkkoordinátát egyszerre egy játékos foglalhat. A foglalás atomikus,
-tehát két egyidejű leülésből csak egy lehet sikeres.
+Egy blokkot egyszerre csak egy játékos foglalhat. Minden használt formán
+próbáld ki a jobb kattintást, a `/sit` és `/sit fel` parancsot, két játékos
+egyidejű foglalását, valamint a sebzés, sneak, supporttörés, teleport,
+világváltás, quit és reload utáni felállást.
 
-Az ülés alapból megszűnik:
-
-- pozitív sebzésnél;
-- sneaknél;
-- a support block törésénél;
-- elfogadott teleportnál;
-- világváltásnál;
-- quitnél vagy kicknél;
-- dismountnál;
-- halálnál;
-- reloadnál;
-- plugin disable-nél.
-
-A damage, sneak és block-break reakció külön configolható; a többi
-életciklusvédelmet ne kerüld meg pályadesignnal. A `/sit` ülés közben
-felállít, a `/sit fel` pedig kifejezetten erre való.
-
-Az üléshez használt láthatatlan marker armor stand nem persistent. A
-reload minden aktív ülést lezár. Nagy WorldEdit/FAWE művelet, support-block
-csere vagy világpaste után futtass kontrollált `/icesmp reload` műveletet
-vagy teljes leállítás–indítást, majd ellenőrizd az érintett chunkokat.
-Nincs külön dokumentált „seat sweep” adminparancs.
-
-### 5.6. Ülés runtime teszt builder szemmel
-
-Minden támogatott formán:
-
-1. jobb kattintás üres main handdel;
-2. `/sit`;
-3. `/sit fel`;
-4. két játékos egy blokkra;
-5. sebzés;
-6. sneak;
-7. support block törése;
-8. normál és másik világba teleport;
-9. quit és reconnect;
-10. reload és kontrollált disable.
-
-Külön próbáld az alsó/felső slabeket, alsó/felső stairseket, carpetet,
-moss carpetet, pale moss carpetet és minden snow réteget. A GSit JAR csak
-ezek sikeres átvételi tesztje után távolítható el.
+A GSit csak a teljes
+[sit-only acceptance](ADMIN_GUIDE.md#sit-only) után távolítható el.
+Layre, crawlra, stackingre vagy player/NPC sittingre ne építs pályát:
+ezek tudatosan nem részei a natív rendszernek.
 
 ## 6. Territórium, claim és világvédelem
 
@@ -1065,162 +957,48 @@ Ne adj `icesmp.admin.all` vagy OP jogot pusztán azért, hogy valaki
 építhessen. A builder bypass és az adott domain permissionje külön
 kezelhető.
 
-## 17. Gyors builder-checklist
+## 17. Átadás és kötelező playtest
 
-### Általános átadás
+Egy helyszín átadólapján legyen:
 
-- [ ] A belső ID szerepel az átadólapon, és egyezik a tényleges
-      command/config/quest hivatkozással.
-- [ ] A világ neve és minden releváns koordináta rögzítve van.
-- [ ] Készült mentés a világ és a pluginadat módosítása előtt.
-- [ ] A helyszín normál játékosjoggal megközelíthető.
-- [ ] A zónahatár lefedi a teljes építményt, pincét és tetőt.
-- [ ] A spawn- és teleportpontoknál van szilárd talaj és két blokk fejhely.
-- [ ] Nincs lava, void, hopper vagy claimhatár a jutalom-overflow helyén.
-- [ ] A listázó/status parancs visszaadja a létrehozott kötést.
-- [ ] Reload után működik.
-- [ ] Teljes restart után működik.
-- [ ] A bizonyíték linkje vagy fájlhelye fel van jegyezve.
+- [ ] stabil belső ID, világ és koordináta;
+- [ ] a kapcsolódó config-, quest-, NPC- és parancshivatkozás;
+- [ ] módosítás előtti, visszaállítható mentés;
+- [ ] normál játékosos, builderes és permission nélküli próba;
+- [ ] biztonságos talaj, fejhely, érkezés és jutalom-overflow;
+- [ ] a listázó/status parancs bizonyítéka;
+- [ ] reload és teljes restart utáni próba;
+- [ ] WorldEdit vagy világcsere utáni újraaudit;
+- [ ] resource-pack modell packkel és fallback nélkül;
+- [ ] felelős, eredmény és bizonyíték helye.
 
-### Crate
+Külön ellenőrizd a crate-eket, minden használt ülésformát, a négy
+frakcióspawnt, az introspawn-t, a komp mindkét végét, parkourt, event- és
+bosspontokat, dungeon chest/boss kötést, NPC-k belső nevét, questhelyeket,
+rituáléstruktúrákat és rejtett helyeket.
 
-- [ ] `/crate status` nem jelez definícióhibát.
-- [ ] `/crate list` a várt ID-t, világot és koordinátát mutatja.
-- [ ] Kulcs nélküli, rossz kulcsos és helyes kulcsos út tesztelve.
-- [ ] Main hand és off-hand viselkedés tesztelve.
-- [ ] Több key stack és mass-open tesztelve.
-- [ ] Full inventory overflow felvehető.
-- [ ] Reload, restart, quit és disable tesztelve.
-- [ ] Currency/command failure fault-injection terv megvan.
-- [ ] `MANUAL_REVIEW` adminfolyamat bizonyítéka kijelölt.
+### Ne csináld
 
-### Sit-only
+- Ne törd ki a crate-blokkot a `/crate remove` előtt.
+- Ne nevezz át világot, crate ID-t vagy NPC belső nevet kötésleltár nélkül.
+- Ne várd, hogy a WorldEdit-copy magával vigye a runtime-kötéseket.
+- Ne szerkessz élő state-fájlt mentés és offline migrációs terv nélkül.
+- Ne adj OP vagy `icesmp.admin.all` jogot pusztán az építéshez.
+- Ne forgasd vagy tükrözd a rituálét aktiválási próba nélkül.
+- Ne ígérj jutalmazó AFK-zónát, layt, crawlt vagy player/NPC sittinget.
+- Ne nevezz lore-elemet aktív gameplaynek valódi registry/config/kötés nélkül.
+- Ne tekints zöld CI-t production world playtestnek.
 
-- [ ] Alsó és felső stairs tesztelve.
-- [ ] Alsó, felső és double slab tesztelve.
-- [ ] Carpet, moss carpet és pale moss carpet tesztelve.
-- [ ] Minden használt snow réteg tesztelve.
-- [ ] Két blokk fejhely megvan.
-- [ ] Nincs liquid, waterlogged vagy hazardous support.
-- [ ] Két játékos egy blokkos foglalása tesztelve.
-- [ ] Damage, sneak, break, teleport, world change, quit és reload tesztelve.
-- [ ] Nincs lay/crawl/stacking/player-NPC sitting ígéret vagy jelzés.
+### Ismert határok
 
-### Világ- és tartalomkötések
+- A repository nem tartalmazza az élő világ és a külső pluginok teljes
+  állapotát.
+- Nincs csomagolt kész territory-, frakcióspawn-, parkour-, NPC-binding-,
+  ferry-, caravan-, guard- vagy hidden-spot készlet.
+- A FancyNpcs és WorldGuard soft dependency; az élő világ igénye dönt a
+  használatukról.
+- A profession craft GUI-alapú, nem követel fizikai műhelyblokkot.
+- A crate recovery kritikus ágai admin/üzemeltetői folyamatok.
 
-- [ ] Frakcióspawn pontos állóhelye és nézési iránya jó.
-- [ ] Introspawn új fiókkal tesztelve.
-- [ ] Ferry mindkét iránya tesztelve.
-- [ ] Eventpont listázva és a megfelelő anchor móddal próbálva.
-- [ ] Bossarénában a boss, addok és telegráfok elférnek.
-- [ ] Dungeon chest és bosspont játékosként kipróbálva.
-- [ ] NPC belső neve, bindingja és FancyNpcs runtime-hídja ellenőrizve.
-- [ ] Parkour ID egyezik a questhivatkozással.
-- [ ] Rituálé pontos struktúrával és egy hibás blokkal is tesztelve.
-- [ ] Resource-pack modellek packkel és pack nélkül ellenőrizve.
-- [ ] WorldEdit után minden koordinátakötés újraauditálva.
-
-## 18. Ne csináld
-
-- **Ne** törd ki a crate-blokkot a `/crate remove` előtt.
-- **Ne** törölj vagy nevezz át crate ID-t, amíg placement mutat rá.
-- **Ne** cserélj vagy nevezz át világot a tartós helyek teljes leltára nélkül.
-- **Ne** kézzel szerkeszd az élő `crates-data.yml`, territory, claim,
-  parkour vagy NPC-binding store-t mentés és offline migrációs terv nélkül.
-- **Ne** tegyél crate-et hopper, láva, void vagy idegen claim szélére.
-- **Ne** állítsd, hogy a szakmai craft csak a dekoratív műhelyben működik;
-  a jelenlegi profession craft GUI-alapú.
-- **Ne** építs ülőhelyet felső fejblokkokkal, folyadékba, veszélyes blokkra
-  vagy waterlogged supportra.
-- **Ne** várd, hogy egy WorldEdit-copy magával vigye a crate-, dungeon-,
-  event-, parkour- vagy más runtime-kötést.
-- **Ne** forgasd vagy tükrözd a rituálé-multiblockot aktiválási teszt
-  nélkül.
-- **Ne** használj régi `/territory setcapital <frakció> <id>` példát; az
-  aktív route sugarat kér.
-- **Ne** változtasd meg az NPC belső nevét a bindinglista ellenőrzése
-  nélkül.
-- **Ne** használj command-bindingot permissionmegkerülésre; nem működik és
-  biztonsági szempontból hibás terv.
-- **Ne** ígérj jutalmazó AFK-zónát, layt, crawlt, stackinget vagy
-  player/NPC sittinget.
-- **Ne** dokumentálj lore-elemet aktívként pusztán azért, mert megépült.
-- **Ne** távolíts el GSit, CrazyCrates vagy más külső plugint a kapcsolódó
-  runtime acceptance gate teljesítése előtt.
-- **Ne** tekints egy sikeres CI-t production world playtestnek.
-
-## 19. Deployment előtti builder playtest
-
-A teljes pipálható csapatfolyamat a
-[release acceptance checklistben](ADMIN_GUIDE.md#release-acceptance-checklist)
-található. Builder szempontból minimum:
-
-1. friss staging világmásolat;
-2. normál játékos, builder, admin és permission nélküli tesztfiók;
-3. minden fizikai kötés listázása;
-4. crate és sit teljes mátrix;
-5. spawnok, ferry, parkour, event és dungeon;
-6. NPC-k és questek;
-7. rituálék;
-8. resource pack;
-9. reload;
-10. kontrollált restart;
-11. WorldEdit utáni ismételt leltár;
-12. bizonyítékok archiválása.
-
-Külön fault-injection szükséges a crate currency- és commandhibára,
-settlement közbeni quit/kick/reload/disable ágra, store-írási hibára és
-restart utáni recoveryre.
-
-## 20. Ismert korlátok
-
-- Az élő szerver jelenlegi külső configja és világa nem volt a
-  repository-forrással együtt auditálható; a dokumentum capabilityt és
-  bundled alapértéket ír le.
-- Nincs bundled fizikai territory, parkour, NPC-binding, ferry route,
-  caravan stop, city guard vagy hidden spot készlet. Ezek admin/builder
-  előkészítést igényelnek.
-- A FancyNpcs soft dependency; nélküle a kattintható NPC-alapú quest- és
-  bindingút nem aktív.
-- A WorldGuard soft dependency; jelenléte további regionális spawnvédelmet
-  adhat. A saját territory/claim rendszer és a WorldGuard régiói együtt
-  tesztelendők.
-- A crate recoveryben nincs általános `MANUAL_REVIEW resolve`
-  adminparancs.
-- A crate settlement nem külső rendszereken átívelő elosztott tranzakció.
-- A sit runtime átvételi tesztje szükséges a GSit eltávolítása előtt.
-- A natív profession craft nem követel fizikai stationt.
-- A lore és teaser kreatív állításai közül csak a registryvel, configgal
-  vagy runtime-kötéssel bizonyított elemek aktívak.
-
-## 21. Technikai bizonyítéktérkép
-
-A fő builderfolyamatok forrásbizonyítéka:
-
-| Téma | Autoritatív forrás |
-|---|---|
-| Crate config és jutalmak | `src/main/resources/config/crates.yml` |
-| Crate placement, world identity és recovery | `src/main/java/hu/taliann/icesmp/managers/CrateManager.java`, `crates/CrateLedger.java`, `crates/CrateRecoveryLedger.java` |
-| Crate admin route-ok | `src/main/java/hu/taliann/icesmp/commands/CrateCommand.java` |
-| Sit policy és alapérték | `src/main/resources/config/sit.yml`, `SitPolicy.java` |
-| Sit geometria | `src/main/java/hu/taliann/icesmp/sit/SitGeometry.java` |
-| Sit életciklus | `SitManager.java`, `SitListener.java`, `SitCommand.java` |
-| Territory típusok és route-ok | `TerritoryType.java`, `TerritoryCommand.java`, `TerritoryManager.java` |
-| Claim | `ClaimCommand.java`, `ClaimManager.java`, `ClaimProtectionListener.java` |
-| Frakcióspawn | `FactionSpawnListener.java`, `TerritoryCommand.java` |
-| Introspawn | `config/world.yml`, `IntroManager.java` |
-| Eventpont | `EventSpawnPointManager.java`, `EventsCommand.java` |
-| Komp | `config/economy.yml`, `FerryManager.java`, `KompCommand.java` |
-| Karaván | `config/economy.yml`, `CaravanManager.java` |
-| Dungeon | `TerritoryCommand.java`, `DungeonLootService.java`, `config/world.yml` |
-| NPC-kötés | `NpcBindCommand.java`, `NpcBindingManager.java`, `FancyNpcsQuestBridge.java` |
-| Quest világútjai | `QuestManager.java`, `QuestCommand.java`, `config/quests.yml` |
-| Parkour | `ParkourCommand.java`, `ParkourManager.java` |
-| Rítus | `config/relics.yml`, `RitualListener.java`, `RitualManager.java` |
-| Profession craft | `ProfessionRecipeBookListener.java`, `ProfessionRecipeCatalog.java` |
-| Resource-packes itemmodellek | `ItemDataFactory.java`, a `config/*.yml` `item-model` kulcsai |
-| Hidden spot, monumentum, őrjárat | `config/world.yml`, `HiddenSpotManager.java`, `SeasonMonumentManager.java`, `CityGuardManager.java` |
-
-Ez a bizonyítéktérkép technikai visszakeresésre való. A napi buildermunka
-elsődleges kezelési útja ez a kézikönyv, a pontos interface-adatoké pedig a
-kapcsolt referencia-dokumentumok.
+A teljes pipálható csapatfolyamat:
+[release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).

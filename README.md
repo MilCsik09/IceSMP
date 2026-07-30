@@ -12,7 +12,7 @@ Az embernek szánt, mérvadó dokumentáció öt kézikönyvből áll:
 | Kézikönyv | Mire való? |
 |---|---|
 | [Minden funkció](docs/FEATURES.md) | Az aktív, részleges, letiltott és tervezett rendszerek teljes katalógusa |
-| [Legújabb változások](docs/LATEST_CHANGES.md) | A jelenleg futó JAR és az integrált release közötti eltérések, plugin-rollout |
+| [Legújabb változások](docs/LATEST_CHANGES.md) | A futóként átadott JAR és az integrált release közötti eltérések, plugin-rollout |
 | [Játékos kézikönyv](docs/PLAYER_GUIDE.md) | Kezdés, gameplay, parancsok és játékosoldali korlátok |
 | [Builder kézikönyv](docs/BUILDER_GUIDE.md) | Világhelyszínek, crate-ek, NPC-k, régiók és builder-checklistek |
 | [Admin kézikönyv](docs/ADMIN_GUIDE.md) | Admin/moderáció, parancsok, permissionök, GUI-k, config, recovery és playtest |
@@ -27,7 +27,12 @@ Kiegészítő belső források:
 - [architektúra](docs/ARCHITECTURE.md);
 - [resource pack modelljegyzék](docs/RESOURCE_PACK_CMD.md);
 - [lore-kódex](docs/LORE.md) és [technikai lore-megfeleltetés](docs/LORE_REFERENCE.md);
-- [roadmap](ROADMAP.md) és [ötlet-backlog](docs/ideas/BACKLOG.md).
+- [fejlesztési roadmap és ötletbank](ROADMAP.md);
+- [Discord- és képi teaser-csomag](docs/TEASER.md).
+
+Az aktív dokumentáció minden fenti Markdown-oldala szó szerint tükröződik
+az `IceSMPGuides` repóba, azonos könyvtárszerkezettel. Régi auditnaplók és
+párhuzamos redirect-oldalak nem részei az aktív dokumentációs készletnek.
 
 ## Jelenleg futó baseline
 
@@ -37,7 +42,7 @@ A resource- és bytecode-összevetés alapján a legvalószínűbb forrásállap
 `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026. július 12.).
 Ez `HIGH_CONFIDENCE`, nem exact mapping, mert a JAR nem tartalmaz Git SHA-t
 vagy valódi build-időt. A részletes bizonyíték a
-[legújabb változásokban](docs/LATEST_CHANGES.md#a-július-1213-i-futó-verzió-azonosítása)
+[legújabb változásokban](docs/LATEST_CHANGES.md#bizonyíték-és-ismert-határok)
 olvasható.
 
 ## Build és ellenőrzés

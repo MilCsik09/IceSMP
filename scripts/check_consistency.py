@@ -180,11 +180,18 @@ for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
 
 # ---------- 6. tükör-drift ----------
 MIRROR = [
-    ("docs/FEATURES.md", "FEATURES.md"),
-    ("docs/LATEST_CHANGES.md", "LATEST_CHANGES.md"),
-    ("docs/PLAYER_GUIDE.md", "PLAYER_GUIDE.md"),
-    ("docs/BUILDER_GUIDE.md", "BUILDER_GUIDE.md"),
-    ("docs/ADMIN_GUIDE.md", "ADMIN_GUIDE.md"),
+    ("README.md", "README.md"),
+    ("ROADMAP.md", "ROADMAP.md"),
+    ("docs/FEATURES.md", "docs/FEATURES.md"),
+    ("docs/LATEST_CHANGES.md", "docs/LATEST_CHANGES.md"),
+    ("docs/PLAYER_GUIDE.md", "docs/PLAYER_GUIDE.md"),
+    ("docs/BUILDER_GUIDE.md", "docs/BUILDER_GUIDE.md"),
+    ("docs/ADMIN_GUIDE.md", "docs/ADMIN_GUIDE.md"),
+    ("docs/ARCHITECTURE.md", "docs/ARCHITECTURE.md"),
+    ("docs/LORE.md", "docs/LORE.md"),
+    ("docs/LORE_REFERENCE.md", "docs/LORE_REFERENCE.md"),
+    ("docs/RESOURCE_PACK_CMD.md", "docs/RESOURCE_PACK_CMD.md"),
+    ("docs/TEASER.md", "docs/TEASER.md"),
 ]
 if os.path.isdir(GUIDES):
     for src_rel, dst_rel in MIRROR:
@@ -374,8 +381,6 @@ try:
         ("CLAUDE.md", r"(\d+)\s*manager", _measured["manager"], 0),
         ("docs/ARCHITECTURE.md", r"(\d+) Java-fájl", _measured["java-fajl"], 3),
         ("docs/ARCHITECTURE.md", r"(\d+) `\*Manager` osztály", _measured["manager"], 0),
-        ("docs/FEATURES.md", r"(\d+) Java-fájl", _measured["java-fajl"], 3),
-        ("docs/FEATURES.md", r"(\d+) manager", _measured["manager"], 0),
         ("docs/ARCHITECTURE.md", r"a (\d+) fájlt-író store", _stores, 0),
     ]
     for _path, _pattern, _real, _tol in _CLAIMS:

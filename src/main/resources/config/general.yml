@@ -184,7 +184,7 @@ spell-vfx:
     warlock: DECAY
     demon_hunter: DECAY
     evoker: ARCANE
-    # --- 31 specializáció (spec-spellek felülírják a kaszt-palettát) ---
+    # --- 35 specializáció (spec-spellek felülírják a kaszt-palettát) ---
     lunar: ARCANE
     feral: NATURE
     guardian: NATURE

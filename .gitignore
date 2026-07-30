@@ -16,4 +16,8 @@ Thumbs.db
 
 javac.*.args
 
+# Python ellenőrző tooling helyi cache-e
+__pycache__/
+*.py[cod]
+
 IceSMP-ResourcePack.zip
