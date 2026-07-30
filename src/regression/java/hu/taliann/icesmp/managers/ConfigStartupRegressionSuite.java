@@ -55,16 +55,47 @@ public final class ConfigStartupRegressionSuite {
 
     private static void parsesEveryBundledProfessionIngredient() throws Exception {
         final File recipeFile = Path.of("src/main/resources/config/profession-recipes.yml").toFile();
+        final File materialFile = Path.of("src/main/resources/config/profession-materials.yml").toFile();
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(recipeFile);
+        final YamlConfiguration materialYaml = YamlConfiguration.loadConfiguration(materialFile);
         final ConfigurationSection root = yaml.getConfigurationSection("profession-recipes");
+        final ConfigurationSection materialRoot = materialYaml.getConfigurationSection("profession-materials");
         check(root != null && !root.getKeys(false).isEmpty(), "bundled profession recipes missing");
+        check(materialRoot != null && !materialRoot.getKeys(false).isEmpty(),
+                "bundled profession materials missing");
+
+        for (final String id : materialRoot.getKeys(false)) {
+            final ConfigurationSection definition = materialRoot.getConfigurationSection(id);
+            check(definition != null, "profession material section missing: " + id);
+            check(ConfigMaterialResolver.match(definition.getString("material", "")) != null,
+                    "profession material has invalid Bukkit icon: " + id);
+        }
+
         for (final String id : root.getKeys(false)) {
             final ConfigurationSection recipe = root.getConfigurationSection(id);
             check(recipe != null, "profession recipe section missing: " + id);
-            ProfessionIngredientParser.parse(recipe.getStringList("ingredients"));
+            final ConfigurationSection result = recipe.getConfigurationSection("result");
+            check(result != null, "profession recipe result missing: " + id);
+            final String uniqueResult = result.getString("unique", null);
+            if (uniqueResult == null || uniqueResult.isBlank()) {
+                check(ConfigMaterialResolver.match(result.getString("material", "")) != null,
+                        "profession recipe has invalid Bukkit result: " + id);
+            } else {
+                check(materialRoot.isConfigurationSection(uniqueResult.toLowerCase(java.util.Locale.ROOT)),
+                        "profession recipe has undefined unique result: " + id + " -> " + uniqueResult);
+            }
+
+            final ProfessionIngredientParser.ParsedIngredients parsed =
+                    ProfessionIngredientParser.parse(recipe.getStringList("ingredients"));
+            for (final String uniqueIngredient : parsed.uniqueMaterials().keySet()) {
+                check(materialRoot.isConfigurationSection(uniqueIngredient),
+                        "profession recipe has undefined unique ingredient: " + id
+                                + " -> " + uniqueIngredient);
+            }
         }
+
         final String recipes = Files.readString(recipeFile.toPath());
-        final String materials = Files.readString(Path.of("src/main/resources/config/profession-materials.yml"));
+        final String materials = Files.readString(materialFile.toPath());
         check(!LEGACY_CHAIN.matcher(recipes).find() && !LEGACY_CHAIN.matcher(materials).find(),
                 "bundled profession config still contains obsolete CHAIN");
     }
@@ -81,6 +112,11 @@ public final class ConfigStartupRegressionSuite {
         missingReference.set("pakt.material", "nincs_ilyen");
         check(ConfigValidator.validateConfiguration(missingReference, LOGGER) == 1,
                 "missing pact unique-material reference must be reported");
+
+        final YamlConfiguration legacyMaterial = new YamlConfiguration();
+        legacyMaterial.set("example.material", "CHAIN");
+        check(ConfigValidator.validateConfiguration(legacyMaterial, LOGGER) == 0,
+                "persisted CHAIN alias must not be reported when runtime resolves it");
 
         final YamlConfiguration invalidMaterial = new YamlConfiguration();
         invalidMaterial.set("example.material", "NOT_A_REAL_MATERIAL");
