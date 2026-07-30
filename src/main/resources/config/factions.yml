@@ -206,6 +206,7 @@ factions:
   kings:
     min-votes: 2
     term-days: 7
+    dethrone-on-expiry: true
     excluded:
       - "NEUTRAL"
     # ===== A Néma Királynő átka a koronán (kódex IV. + Az Elveszett Uralkodók) =====
