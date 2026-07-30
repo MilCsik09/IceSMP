@@ -1,0 +1,156 @@
+name: Bootstrap supplied resource pack source
+
+on:
+  push:
+    branches:
+      - agent/editable-scoreboard
+    paths:
+      - ".github/workflows/bootstrap-resource-pack-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download and verify supplied pack
+        env:
+          PACK_URL: https://icesmp.taliann.dev/icesmp-38cc39433b566cd018380fa3de36ad7e003ee36c.zip
+          PACK_SHA1: 38cc39433b566cd018380fa3de36ad7e003ee36c
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --retry 6 --retry-all-errors --retry-delay 5 \
+            "$PACK_URL" --output /tmp/icesmp-resource-pack.zip
+          echo "${PACK_SHA1}  /tmp/icesmp-resource-pack.zip" | sha1sum --check --strict
+
+      - name: Safely import unpacked source
+        run: |
+          set -euo pipefail
+          rm -rf resource-pack
+          mkdir resource-pack
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          from zipfile import ZipFile
+          import stat
+
+          archive_path = Path('/tmp/icesmp-resource-pack.zip')
+          destination = Path('resource-pack')
+          seen = set()
+          with ZipFile(archive_path) as archive:
+              for info in archive.infolist():
+                  name = PurePosixPath(info.filename)
+                  if name.is_absolute() or '..' in name.parts or '\\' in info.filename:
+                      raise SystemExit(f'Unsafe ZIP path: {info.filename}')
+                  mode = (info.external_attr >> 16) & 0xFFFF
+                  if stat.S_ISLNK(mode):
+                      raise SystemExit(f'Symlink is not allowed in pack ZIP: {info.filename}')
+                  folded = info.filename.casefold()
+                  if folded in seen:
+                      raise SystemExit(f'Duplicate/case-colliding ZIP path: {info.filename}')
+                  seen.add(folded)
+              archive.extractall(destination)
+          PY
+          python3 scripts/resource_pack.py validate --source resource-pack
+          python3 scripts/test_resource_pack.py
+
+      - name: Wire reload hook and repair architecture inventory
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path_text: str, old: str, new: str) -> None:
+              path = Path(path_text)
+              text = path.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected exactly one replacement, found {count}: {old!r}')
+              path.write_text(text.replace(old, new), encoding='utf-8')
+
+          core = 'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java'
+          replace_once(
+              core,
+              '    private final JavaPlugin plugin;\n    private final ConfigManager configManager;',
+              '    private final JavaPlugin plugin;\n    private final Runnable resourcePackReloadHook;\n    private final ConfigManager configManager;',
+          )
+          replace_once(
+              core,
+              '    public IceSMPCore(final JavaPlugin plugin) {\n        this.plugin = plugin;\n        this.configManager = new ConfigManager(plugin);',
+              '    public IceSMPCore(final JavaPlugin plugin) {\n        this(plugin, () -> { });\n    }\n\n    public IceSMPCore(final JavaPlugin plugin, final Runnable resourcePackReloadHook) {\n        this.plugin = plugin;\n        this.resourcePackReloadHook = resourcePackReloadHook == null ? () -> { } : resourcePackReloadHook;\n        this.configManager = new ConfigManager(plugin);',
+          )
+          replace_once(
+              core,
+              '            motdListener.reload();\n            sitManager.reload();\n        });',
+              '            motdListener.reload();\n            sitManager.reload();\n            resourcePackReloadHook.run();\n        });',
+          )
+          replace_once(
+              core,
+              '            if (key.startsWith("crates.")) {\n                crateManager.reloadConfig();\n            }\n        };',
+              '            if (key.startsWith("crates.")) {\n                crateManager.reloadConfig();\n            }\n            if (key.startsWith("resource-pack.")) {\n                resourcePackReloadHook.run();\n            }\n        };',
+          )
+
+          architecture = 'docs/ARCHITECTURE.md'
+          replace_once(
+              architecture,
+              '| `listeners/` | 119 |',
+              '| `listeners/` | 120 |',
+          )
+          replace_once(
+              architecture,
+              '**Méret:** 552 Java-fájl,',
+              '**Méret:** 553 Java-fájl,',
+          )
+          replace_once(
+              architecture,
+              'Csomag-megoszlás: listeners 119, managers 120,',
+              'Csomag-megoszlás: listeners 120, managers 120,',
+          )
+          PY
+
+      - name: Document the repository pack source
+        run: |
+          cat > resource-pack/README.md <<'EOF'
+          # IceSMP Hybrid Resource Pack
+
+          Minden item 64×64-es, részletes 2D inventory-ikont használ. A 3D geometria kizárólag hét,
+          világban megjelenített nagy tárgynál kapcsol be; a fegyverek, eszközök és felszerelések az
+          ellenőrzött, részletes 2D változatot tartják meg.
+
+          ## Repository- és kiadási szabály
+
+          Ez a könyvtár a pack **kicsomagolt, szerkeszthető forrása**. Kész ZIP-et ne commitolj ide.
+          A `scripts/resource_pack.py` validálja a JSON/MCMeta- és PNG-fejléceket, majd rendezett
+          fájllistából, rögzített timestamp- és jogosultságadatokkal determinisztikus ZIP-et készít.
+
+          A `Publish resource pack to R2` workflow masterre kerülés után:
+
+          - `resource-packs/icesmp-<sha1>.zip` immutable kiadást tölt fel;
+          - `resource-packs/latest.zip` emberi, rövid cache-es aliast frissít;
+          - `resource-packs/manifest.json` géppel olvasható aktuális manifestet publikál;
+          - frissíti a plugin JAR-ba kerülő `resource-pack.properties` fallback URL/hash értékét.
+
+          A plugin kizárólag a hash-es immutable URL-t használja. A korábbi hash-es objektumokat nem
+          töröljük automatikusan: ezek biztosítják a gyors rollbacket, és az azonos tartalom ugyanarra
+          az objektumnévre épül, ezért nem hoz létre felesleges duplikátumot.
+          EOF
+
+      - name: Commit source and remove bootstrap workflow
+        run: |
+          set -euo pipefail
+          rm .github/workflows/bootstrap-resource-pack-source.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add resource-pack \
+            src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
+            docs/ARCHITECTURE.md \
+            .github/workflows/bootstrap-resource-pack-source.yml
+          git commit -m "Import IceSMP resource pack source"
+          git push
