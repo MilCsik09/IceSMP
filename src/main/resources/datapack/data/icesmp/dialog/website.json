@@ -1,0 +1,39 @@
+{
+  "type": "minecraft:notice",
+  "title": {
+    "text": "IceSMP weboldal",
+    "color": "aqua",
+    "bold": true
+  },
+  "external_title": {
+    "text": "Weboldal",
+    "color": "aqua"
+  },
+  "body": {
+    "type": "minecraft:plain_message",
+    "contents": {
+      "text": "Hírek, útmutatók, frakciók és szerverinformációk az IceSMP hivatalos weboldalán.",
+      "color": "white"
+    },
+    "width": 260
+  },
+  "can_close_with_escape": true,
+  "pause": false,
+  "after_action": "close",
+  "action": {
+    "label": {
+      "text": "Weboldal megnyitása",
+      "color": "aqua",
+      "bold": true
+    },
+    "tooltip": {
+      "text": "https://icesmp.taliann.dev",
+      "color": "gray"
+    },
+    "width": 200,
+    "action": {
+      "type": "open_url",
+      "url": "https://icesmp.taliann.dev"
+    }
+  }
+}

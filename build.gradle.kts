@@ -136,8 +136,17 @@ val hudRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.HudRegressionSuite")
 }
 
+val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs JAR datapack pause-menu website dialog regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.dialog.PauseMenuDialogRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
-        afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest, hudRegressionTest)
+        afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
+        hudRegressionTest, pauseMenuDialogRegressionTest)
 }

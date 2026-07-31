@@ -1,6 +1,6 @@
 {
     "pack": {
-        "description": "IceSMP — haladás-fa és toast-bejegyzések",
+        "description": "IceSMP — haladás-fa, toastok és ESC-menü weboldalgomb",
         "min_format": [
             94,
             1
