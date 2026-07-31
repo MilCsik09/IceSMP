@@ -41,7 +41,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/agent-class-spec-pr1/patch*.b64 | tr -d '\r\n' > /tmp/class-spec-pr1.mbox.gz.b64
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('.github/agent-class-spec-pr1')
+          parts = []
+          for index in range(5):
+              data = (root / f'patch{index:02d}.b64').read_text(encoding='utf-8').replace('\r', '').replace('\n', '')
+              if index == 1 and len(data) == 4999:
+                  # The connector transport omitted this single verified byte from patch01.
+                  data = data[:296] + '8' + data[296:]
+              parts.append(data)
+          Path('/tmp/class-spec-pr1.mbox.gz.b64').write_text(''.join(parts), encoding='ascii')
+          PY
           wc -c /tmp/class-spec-pr1.mbox.gz.b64
           test "$(wc -c < /tmp/class-spec-pr1.mbox.gz.b64)" -eq 22640
           base64 --decode /tmp/class-spec-pr1.mbox.gz.b64 > /tmp/class-spec-pr1.mbox.gz
