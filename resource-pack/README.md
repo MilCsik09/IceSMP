@@ -22,3 +22,19 @@ A `Publish resource pack to R2` workflow masterre kerülés után:
 A plugin kizárólag a hash-es immutable URL-t használja. A korábbi hash-es objektumokat nem
 töröljük automatikusan: ezek biztosítják a gyors rollbacket, és az azonos tartalom ugyanarra
 az objektumnévre épül, ezért nem hoz létre felesleges duplikátumot.
+
+## Manuális GitHub Actions futtatás
+
+Az Actions → **Publish resource pack to R2** → **Run workflow** menüben a `master` ág
+kiválasztása után három mód érhető el:
+
+- `validate-only`: csak a tooling tesztje és a determinisztikus ZIP-build fut; R2-t nem érint;
+- `r2-preflight`: ellenőrzi a secreteket és a bucket-hozzáférést, feltölti és S3-on visszaellenőrzi
+  az immutable objektumot, de nem módosítja a `latest.zip`, manifest vagy plugin metadata állapotát;
+- `publish`: teljes production publikálás, kizárólag a `master` ágról. Ellenőrzi a custom-domain
+  DNS-feloldását, a publikus ZIP SHA-1 értékét, majd frissíti az aliast, manifestet és metadatafájlt.
+
+A `public_base_url` alapértéke `https://assets.icesmp.taliann.dev`. Teljes publikálás előtt ezt
+a domaint a Cloudflare R2 `icesmp` bucket **Settings → Custom Domains** részében aktívként kell
+hozzárendelni. A `r2-preflight` mód akkor is használható a kulcsok és az S3-hozzáférés külön
+tesztelésére, ha a publikus custom domain még nem aktív.
