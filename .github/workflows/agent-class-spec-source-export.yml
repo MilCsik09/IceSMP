@@ -11,26 +11,48 @@ permissions:
 
 jobs:
   export:
-    name: Export repository source for local class/spec validation
+    name: Export repository source and Gradle cache
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout pull-request source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Create source archive
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Warm Gradle dependencies
+        run: ./gradlew classes --no-daemon --stacktrace
+
+      - name: Create source and Gradle archives
         shell: bash
         run: |
           set -euo pipefail
           tar --exclude=.git --exclude=build --exclude=.gradle -czf /tmp/icesmp-source.tgz .
-          sha256sum /tmp/icesmp-source.tgz
+          tar --exclude='.gradle/daemon' --exclude='.gradle/notifications' --exclude='.gradle/.tmp' \
+            -czf /tmp/icesmp-gradle-home.tgz -C "$HOME" .gradle
+          sha256sum /tmp/icesmp-source.tgz /tmp/icesmp-gradle-home.tgz
 
       - name: Upload source archive
         uses: actions/upload-artifact@v4
         with:
           name: icesmp-source-${{ github.event.pull_request.head.sha }}
           path: /tmp/icesmp-source.tgz
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload Gradle home archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-gradle-home-${{ github.event.pull_request.head.sha }}
+          path: /tmp/icesmp-gradle-home.tgz
           retention-days: 1
           if-no-files-found: error
