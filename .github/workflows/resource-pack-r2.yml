@@ -27,7 +27,7 @@ jobs:
       PACK_DIR: resource-pack
       PACK_OUTPUT: build/resource-pack/icesmp.zip
       METADATA_FILE: src/main/resources/resource-pack.properties
-      PUBLIC_BASE_URL: https://icesmp.taliann.dev
+      PUBLIC_BASE_URL: https://assets.icesmp.taliann.dev
       OBJECT_PREFIX: resource-packs
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
