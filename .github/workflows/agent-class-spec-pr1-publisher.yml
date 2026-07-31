@@ -1,0 +1,107 @@
+name: Agent class-spec PR1 publisher
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - master
+    paths:
+      - ".github/agent-class-spec-pr1/**"
+      - ".github/workflows/agent-class-spec-pr1-publisher.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Validate and publish class-spec compatibility foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_SHA: 3867f19640814cc12b2179408f7075cca84877c3
+      TARGET_BRANCH: rework/class-spec-1.21.11-compatibility
+      PATCH_GZIP_SHA256: e64050ceb130a9b794bf866e637b05450f8017e8576abd48bb27b54c44f2c968
+      PATCH_MBOX_SHA256: b2cebd364185cb082808fa4951a695c00514bfcc0f9d48bda1be4fb0c705e0ac
+    steps:
+      - name: Checkout publisher branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Reconstruct and verify patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/agent-class-spec-pr1/part*.b64 > /tmp/class-spec-pr1.mbox.gz.b64
+          test "$(wc -c < /tmp/class-spec-pr1.mbox.gz.b64)" -eq 22528
+          base64 --decode /tmp/class-spec-pr1.mbox.gz.b64 > /tmp/class-spec-pr1.mbox.gz
+          echo "${PATCH_GZIP_SHA256}  /tmp/class-spec-pr1.mbox.gz" | sha256sum --check --strict
+          gzip -t /tmp/class-spec-pr1.mbox.gz
+          gzip -dc /tmp/class-spec-pr1.mbox.gz > /tmp/class-spec-pr1.mbox
+          test "$(wc -c < /tmp/class-spec-pr1.mbox)" -eq 57506
+          echo "${PATCH_MBOX_SHA256}  /tmp/class-spec-pr1.mbox" | sha256sum --check --strict
+
+      - name: Apply patch to the pinned master baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "OpenAI Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout --detach "${BASE_SHA}"
+          git am --committer-date-is-author-date /tmp/class-spec-pr1.mbox
+          test "$(git log -1 --format=%s)" = "feat(class-spec): 1.21.11 kompatibilitási és adapteralap"
+          git diff --check "${BASE_SHA}" HEAD
+
+      - name: Build and run regression suites
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Run consistency checks
+        run: python3 scripts/check_consistency.py
+
+      - name: Check Markdown links
+        run: python3 scripts/check_markdown_links.py --root .
+
+      - name: Run resource-pack tooling tests
+        run: python3 -m unittest discover -s scripts -p "test_*.py"
+
+      - name: Publish feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_REF="refs/heads/${TARGET_BRANCH}"
+          LOCAL_SHA="$(git rev-parse HEAD)"
+          REMOTE_SHA="$(git ls-remote --heads origin "${TARGET_REF}" | awk '{print $1}')"
+
+          if [[ -z "${REMOTE_SHA}" ]]; then
+            git push origin "HEAD:${TARGET_REF}"
+          elif [[ "${REMOTE_SHA}" == "${LOCAL_SHA}" ]]; then
+            echo "Target branch already points to ${LOCAL_SHA}."
+          elif git merge-base --is-ancestor "${REMOTE_SHA}" HEAD; then
+            git push origin "HEAD:${TARGET_REF}"
+          else
+            echo "::error title=Target branch diverged::${TARGET_BRANCH} points to ${REMOTE_SHA}, expected an ancestor of ${LOCAL_SHA}."
+            exit 1
+          fi
+
+          echo "published_sha=${LOCAL_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Write summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Class/spec PR1 publisher"
+            echo
+            echo "- Baseline: \`${BASE_SHA}\`"
+            echo "- Target branch: \`${TARGET_BRANCH}\`"
+            echo "- Resulting commit: \`$(git rev-parse HEAD 2>/dev/null || echo unavailable)\`"
+          } >> "$GITHUB_STEP_SUMMARY"
