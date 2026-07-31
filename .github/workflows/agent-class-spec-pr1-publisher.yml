@@ -63,7 +63,7 @@ jobs:
           test "$(wc -c < /tmp/class-spec-pr1.mbox)" -eq 57905
           echo "${PATCH_MBOX_SHA256}  /tmp/class-spec-pr1.mbox" | sha256sum --check --strict
 
-      - name: Apply patch to the pinned master baseline
+      - name: Apply and normalize patch on the pinned master baseline
         shell: bash
         run: |
           set -euo pipefail
@@ -72,6 +72,19 @@ jobs:
           git checkout --detach "${BASE_SHA}"
           git am --committer-date-is-author-date /tmp/class-spec-pr1.mbox
           test "$(git log -1 --format=%s)" = "feat(class-spec): 1.21.11 kompatibilitási és adapteralap"
+
+          # The source patch used Markdown hard-break spaces on two metadata lines. Repository
+          # policy rejects all trailing whitespace, so normalize only those lines and amend.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('docs/development/CLASS_SPEC_REWORK_GAP_ANALYSIS.md')
+          path.write_text(
+              '\n'.join(line.rstrip() for line in path.read_text(encoding='utf-8').splitlines()) + '\n',
+              encoding='utf-8',
+          )
+          PY
+          git add docs/development/CLASS_SPEC_REWORK_GAP_ANALYSIS.md
+          git commit --amend --no-edit --date="$(git log -1 --format=%aI)"
           git diff --check "${BASE_SHA}" HEAD
 
       - name: Build and run regression suites
