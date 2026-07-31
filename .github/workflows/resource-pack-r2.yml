@@ -1,7 +1,32 @@
 name: Publish resource pack to R2
+run-name: >-
+  Resource pack ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event_name == 'pull_request' && 'validate-only' || 'publish') }}
+  @ ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Futtatási mód"
+        required: true
+        default: publish
+        type: choice
+        options:
+          - validate-only
+          - r2-preflight
+          - publish
+      public_base_url:
+        description: "Publikus R2 custom-domain alapcím"
+        required: true
+        default: "https://assets.icesmp.taliann.dev"
+        type: string
+  pull_request:
+    paths:
+      - "resource-pack/**"
+      - "!resource-pack/README.md"
+      - "scripts/resource_pack.py"
+      - "scripts/test_resource_pack.py"
+      - ".github/workflows/resource-pack-r2.yml"
   push:
     branches:
       - master
@@ -24,10 +49,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      EXECUTION_MODE: >-
+        ${{ github.event_name == 'workflow_dispatch' && inputs.mode
+        || (github.event_name == 'pull_request' && 'validate-only' || 'publish') }}
       PACK_DIR: resource-pack
       PACK_OUTPUT: build/resource-pack/icesmp.zip
       METADATA_FILE: src/main/resources/resource-pack.properties
-      PUBLIC_BASE_URL: https://assets.icesmp.taliann.dev
+      PUBLIC_BASE_URL: >-
+        ${{ github.event_name == 'workflow_dispatch' && inputs.public_base_url
+        || 'https://assets.icesmp.taliann.dev' }}
       OBJECT_PREFIX: resource-packs
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
@@ -43,6 +73,25 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.RESOURCE_PACK_PUSH_TOKEN || github.token }}
+
+      - name: Describe execution
+        shell: bash
+        run: |
+          {
+            echo "Mode: ${EXECUTION_MODE}"
+            echo "Ref: ${GITHUB_REF}"
+            echo "Public base URL: ${PUBLIC_BASE_URL}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Guard production publish source
+        if: env.EXECUTION_MODE == 'publish'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/master" ]]; then
+            echo "::error title=Production publish requires master::Select the master branch in the Run workflow menu, or use r2-preflight for a feature branch."
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -62,13 +111,45 @@ jobs:
             --object-prefix "$OBJECT_PREFIX" \
             --github-output "$GITHUB_OUTPUT"
 
+      - name: Validate public custom-domain DNS
+        if: env.EXECUTION_MODE == 'publish'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PUBLIC_HOST="$(python3 - <<'PY'
+          import os
+          from urllib.parse import urlparse
+
+          parsed = urlparse(os.environ["PUBLIC_BASE_URL"])
+          if parsed.scheme != "https" or not parsed.hostname:
+              raise SystemExit("PUBLIC_BASE_URL must be an absolute HTTPS URL")
+          print(parsed.hostname)
+          PY
+          )"
+
+          resolved=0
+          for attempt in {1..12}; do
+            if getent ahosts "$PUBLIC_HOST" >/dev/null 2>&1; then
+              resolved=1
+              break
+            fi
+            echo "Waiting for DNS: ${PUBLIC_HOST} (${attempt}/12)"
+            sleep 5
+          done
+
+          if [[ "$resolved" != "1" ]]; then
+            echo "::error title=Public R2 domain does not resolve::${PUBLIC_HOST} has no DNS result. Attach it under Cloudflare R2 > icesmp > Settings > Custom Domains before publishing."
+            exit 1
+          fi
+
       - name: Validate R2 credentials and bucket access
+        if: env.EXECUTION_MODE != 'validate-only'
         shell: bash
         run: |
           set -euo pipefail
           for variable in R2_ACCOUNT_ID R2_BUCKET_NAME AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
             if [[ -z "${!variable:-}" ]]; then
-              echo "::error::Missing required GitHub Actions secret for ${variable}."
+              echo "::error title=Missing R2 secret::${variable} is empty."
               exit 1
             fi
           done
@@ -82,6 +163,7 @@ jobs:
             >/dev/null
 
       - name: Upload immutable pack version
+        if: env.EXECUTION_MODE != 'validate-only'
         env:
           OBJECT_KEY: ${{ steps.pack.outputs.object_key }}
           PACK_SIZE: ${{ steps.pack.outputs.size }}
@@ -103,23 +185,28 @@ jobs:
             --query ContentLength \
             --output text)"
           if [[ "$REMOTE_SIZE" != "$PACK_SIZE" ]]; then
-            echo "::error::R2 object size mismatch: expected ${PACK_SIZE}, got ${REMOTE_SIZE}."
+            echo "::error title=R2 object size mismatch::Expected ${PACK_SIZE} bytes, got ${REMOTE_SIZE}."
             exit 1
           fi
 
       - name: Verify the public immutable URL end to end
+        if: env.EXECUTION_MODE == 'publish'
         env:
           PACK_URL: ${{ steps.pack.outputs.url }}
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location \
-            --retry 6 --retry-all-errors --retry-delay 5 \
-            "$PACK_URL" --output build/resource-pack/public-copy.zip
+          if ! curl --fail --silent --show-error --location \
+            --retry 12 --retry-all-errors --retry-delay 5 \
+            "$PACK_URL" --output build/resource-pack/public-copy.zip; then
+            echo "::error title=Public resource-pack download failed::Verify that ${PUBLIC_BASE_URL} is an active custom domain of the ${R2_BUCKET_NAME} R2 bucket."
+            exit 1
+          fi
           echo "${PACK_SHA1}  build/resource-pack/public-copy.zip" | sha1sum --check --strict
 
       - name: Publish latest alias and manifest
+        if: env.EXECUTION_MODE == 'publish'
         env:
           PACK_URL: ${{ steps.pack.outputs.url }}
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
@@ -130,7 +217,6 @@ jobs:
           ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
           MANIFEST="build/resource-pack/manifest.json"
 
-          # Human-friendly alias only. The plugin deliberately never uses this mutable URL.
           aws s3 cp "$PACK_OUTPUT" "s3://${R2_BUCKET_NAME}/${OBJECT_PREFIX}/latest.zip" \
             --endpoint-url "$ENDPOINT" \
             --content-type application/zip \
@@ -151,6 +237,7 @@ jobs:
             --only-show-errors
 
       - name: Update bundled plugin fallback metadata
+        if: env.EXECUTION_MODE == 'publish'
         env:
           PACK_URL: ${{ steps.pack.outputs.url }}
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
@@ -161,6 +248,7 @@ jobs:
             --sha1 "$PACK_SHA1"
 
       - name: Commit generated fallback metadata
+        if: env.EXECUTION_MODE == 'publish' && github.ref == 'refs/heads/master'
         env:
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
         shell: bash
@@ -176,7 +264,33 @@ jobs:
           git add "$METADATA_FILE"
           git commit -m "Update resource pack to ${PACK_SHA1}"
 
-          # A concurrent merge must not make the generated metadata push non-fast-forward.
           git fetch origin master
           git rebase origin/master
           git push origin HEAD:master
+
+      - name: Write result summary
+        if: always()
+        shell: bash
+        env:
+          PACK_URL: ${{ steps.pack.outputs.url }}
+          PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
+        run: |
+          {
+            echo
+            echo "## Resource-pack result"
+            echo
+            echo "- Mode: \`${EXECUTION_MODE}\`"
+            echo "- SHA-1: \`${PACK_SHA1:-not-built}\`"
+            echo "- Public URL: \`${PACK_URL:-not-built}\`"
+            case "$EXECUTION_MODE" in
+              validate-only)
+                echo "- R2 was not accessed."
+                ;;
+              r2-preflight)
+                echo "- Immutable object upload and S3 verification completed; public alias, manifest and plugin metadata were not changed."
+                ;;
+              publish)
+                echo "- Full production publish was requested."
+                ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"
