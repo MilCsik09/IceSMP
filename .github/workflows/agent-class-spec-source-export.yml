@@ -1,0 +1,36 @@
+name: Agent class-spec source export
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export repository source for local class/spec validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pull-request source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --exclude=.git --exclude=build --exclude=.gradle -czf /tmp/icesmp-source.tgz .
+          sha256sum /tmp/icesmp-source.tgz
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-source-${{ github.event.pull_request.head.sha }}
+          path: /tmp/icesmp-source.tgz
+          retention-days: 1
+          if-no-files-found: error
