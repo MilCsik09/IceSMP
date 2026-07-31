@@ -42,7 +42,6 @@ jobs:
         run: |
           set -euo pipefail
           cat .github/agent-class-spec-pr1/part*.b64 > /tmp/class-spec-pr1.mbox.gz.b64
-          test "$(wc -c < /tmp/class-spec-pr1.mbox.gz.b64)" -eq 22528
           base64 --decode /tmp/class-spec-pr1.mbox.gz.b64 > /tmp/class-spec-pr1.mbox.gz
           echo "${PATCH_GZIP_SHA256}  /tmp/class-spec-pr1.mbox.gz" | sha256sum --check --strict
           gzip -t /tmp/class-spec-pr1.mbox.gz
