@@ -243,7 +243,7 @@ def build_parser() -> argparse.ArgumentParser:
     build = subparsers.add_parser("build", help="Build a deterministic ZIP and calculate its SHA-1")
     build.add_argument("--source", type=Path, default=Path("resource-pack"))
     build.add_argument("--output", type=Path, required=True)
-    build.add_argument("--public-base-url", default="https://icesmp.taliann.dev")
+    build.add_argument("--public-base-url", default="https://assets.icesmp.taliann.dev")
     build.add_argument("--object-prefix", default="resource-packs")
     build.add_argument("--github-output", type=Path)
     build.set_defaults(handler=command_build)
