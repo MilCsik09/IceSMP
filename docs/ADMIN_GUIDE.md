@@ -937,6 +937,15 @@ integrációs struktúra módosításakor. Hibás típusnál vagy értéknél az
 alrendszer fallbacket, warningot vagy letiltást használhat; ezért reload
 után mindig ellenőrizd a konzolt.
 
+### Kaszt/spec rework staging-kapu
+
+A rework alapból tiltott: `class-spec-rework.enabled: false`. Bekapcsolás előtt az üzemeltetőnek
+telepítenie kell a `class-spec-dependencies.lock.yml` fájlban pontosan rögzített kötelező plugineket,
+majd stagingen `-Dpaper.disablePluginRemapping=true` kapcsolóval kell indítania a szervert. Ha az
+enforcement aktív és kötelező plugin hiányzik vagy eltérő verziójú, az IceSMP még a tartós gameplay
+betöltése előtt leáll. A részletes mentési, hibakezelési és rollbackfolyamat:
+`docs/admin/CLASS_SPEC_REWORK_RUNBOOK.md`.
+
 ### Konfigurációs fájlok
 
 - `afk.yml`

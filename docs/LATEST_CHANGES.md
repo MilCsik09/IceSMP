@@ -12,6 +12,11 @@ A kód és a CI elkészült állapota még nem egyenlő az élesítéssel. Ahol 
 világbejárásos vagy hibaszimulációs próba hiányzik, azt ezen az oldalon külön
 jelezzük.
 
+A 13 kaszt / 35 specializáció teljes reworkjének 1.21.11-es kompatibilitási
+alapja külön, alapból kikapcsolt rollout-kapu mögé került. Ez még nem játékosnak
+kiadható rework: verziózárt dependency-manifestet, fail-fast preflightot,
+Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződéseit adja.
+
 > **Összehasonlítási alap:** az üzemeltető által futóként átadott
 > `IceSMP-1.0-TESTING.jar`. A tartalma nagy bizonyossággal a
 > **2026. július 12-i** forrásállapotnak felel meg; július 13-án nem volt

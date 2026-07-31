@@ -31,7 +31,7 @@ java {
 tasks {
     runServer {
         minecraftVersion(libs.versions.minecraft.get())
-        jvmArgs("-Xms2G", "-Xmx2G")
+        jvmArgs("-Xms2G", "-Xmx2G", "-Dpaper.disablePluginRemapping=true")
     }
 
     processResources {
@@ -136,6 +136,15 @@ val hudRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.HudRegressionSuite")
 }
 
+
+val classSpecCompatibilityRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs class/spec dependency-lock and portability regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.classspec.compat.ClassSpecCompatibilityRegressionSuite")
+}
+
 val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs JAR datapack pause-menu website dialog regressions."
@@ -148,5 +157,5 @@ tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest)
+        hudRegressionTest, pauseMenuDialogRegressionTest, classSpecCompatibilityRegressionTest)
 }

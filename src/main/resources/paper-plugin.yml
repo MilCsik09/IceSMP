@@ -28,6 +28,9 @@ authors: [ Taliann ]
 #    (LuckPermsBridge) join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
 #  - TAB: csak load-order (az indulási kompatibilitás-tanácsadó megbízhatóan észlelje);
 #    az IceSMP nem hívja az API-ját.
+#  - A class/spec rework új tartalmi motorjai továbbra is soft-depend bejegyzések. A rework
+#    alapból ki van kapcsolva; bekapcsolva a saját verziózárt preflight dönti el, hogy a
+#    kötelező runtime stack hiánytalan és elfogadott verziójú-e.
 dependencies:
   server:
     LibsDisguises:
@@ -56,3 +59,27 @@ dependencies:
     TAB:
       load: BEFORE
       required: false
+    CraftEngine:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    ModelEngine:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    BetterHud:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    MythicMobs:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    FancyDialogs:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    packetevents:
+      load: BEFORE
+      required: false
+      join-classpath: true

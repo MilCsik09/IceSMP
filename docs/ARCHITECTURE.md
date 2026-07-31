@@ -249,6 +249,21 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
 
+### 3.8.1 Kaszt/spec rework — verziózárt kapu és adapterhatárok
+
+A 13 kaszt / 35 specializáció reworkje külön, alapból tiltott rollout-kapu mögött épül. Az
+`IceSMPCore.enable()` a gameplay store-ok betöltése előtt futtatja a
+`ClassSpecDependencyPreflight` ellenőrzést. A kapu csak akkor blokkol, ha a rework és az enforcement
+is aktív; legacy módban a jelenlegi production változatlanul elindul.
+
+A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
+megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil
+UUID-t, string ID-t, immutable snapshotot és saját handle-t engednek át. CraftEngine-, BetterHud-,
+ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jelenhet meg.
+
+A helyi 1.21.11-es runServer feladat `-Dpaper.disablePluginRemapping=true` kapcsolóval indul, hogy a
+26.2-portot blokkoló legacy remapping-függés már fejlesztés közben látható legyen.
+
 ### 3.9 Territórium-zónák és zóna-védelem
 
 A **zóna-modell** három rétegre bomlik, hogy a geometria, a szabály-feloldás és az

@@ -10063,6 +10063,12 @@
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
+    },
+    "config.class-spec-rework": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md",
+        "docs/admin/CLASS_SPEC_REWORK_RUNBOOK.md"
+      ]
     }
   },
   "config-resolutions": {
@@ -10480,6 +10486,26 @@
       "resolved_path": "world-events.orchestration.max-active-minutes",
       "classification": "KNOWN_SOURCE_LIMITATION",
       "reason": "A forrás közvetlenül olvassa ezt az aktív kulcsot, de a bundled YAML-ból hiányzik; a bizonyított kódbeli fallback: 60L. Ez kiadáskor dokumentált konfigurációs hiány, nem runtime-tesztként igazolt garancia."
+    },
+    "config.dynamic.class-spec-dependency-preflight.section.accepted-versions": {
+      "resolved_path": "plugins.<plugin-id>.accepted-versions",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "A class-spec-dependencies.lock.yml plugins.<plugin-id> dinamikus szekciójából olvasott deployment-mező; a teljes runtime sablon az ellenőrzött pluginbejegyzés alatt él."
+    },
+    "config.dynamic.class-spec-dependency-preflight.section.required": {
+      "resolved_path": "plugins.<plugin-id>.required",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "A class-spec-dependencies.lock.yml plugins.<plugin-id> dinamikus szekciójából olvasott deployment-mező; a teljes runtime sablon az ellenőrzött pluginbejegyzés alatt él."
+    },
+    "config.dynamic.class-spec-dependency-preflight.section.server-name": {
+      "resolved_path": "plugins.<plugin-id>.server-name",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "A class-spec-dependencies.lock.yml plugins.<plugin-id> dinamikus szekciójából olvasott deployment-mező; a teljes runtime sablon az ellenőrzött pluginbejegyzés alatt él."
+    },
+    "config.dynamic.class-spec-dependency-preflight.section.verification": {
+      "resolved_path": "plugins.<plugin-id>.verification",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "A class-spec-dependencies.lock.yml plugins.<plugin-id> dinamikus szekciójából olvasott deployment-mező; a teljes runtime sablon az ellenőrzött pluginbejegyzés alatt él."
     }
   },
   "components": {
@@ -13751,6 +13777,55 @@
       "feature": "feature.world.mobs_loot",
       "docs": [
         "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.compat.ClassSpecDependencyPreflight": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.compat.VersionRequirement": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecContentPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecDialogPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecEncounterPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecHudPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecModelPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md"
       ]
     }
   },
