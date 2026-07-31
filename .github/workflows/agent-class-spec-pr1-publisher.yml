@@ -20,8 +20,8 @@ jobs:
     env:
       BASE_SHA: 3867f19640814cc12b2179408f7075cca84877c3
       TARGET_BRANCH: rework/class-spec-1.21.11-compatibility
-      PATCH_GZIP_SHA256: e64050ceb130a9b794bf866e637b05450f8017e8576abd48bb27b54c44f2c968
-      PATCH_MBOX_SHA256: b2cebd364185cb082808fa4951a695c00514bfcc0f9d48bda1be4fb0c705e0ac
+      PATCH_GZIP_SHA256: 266e0f987718076fe05324a6e8487acced1be20d5ca4b81b220d5f652a7c412c
+      PATCH_MBOX_SHA256: 481001ea0f4e2e8dd16db485fa42c03436a88500fd5890420001f11a2927a9bf
     steps:
       - name: Checkout publisher branch
         uses: actions/checkout@v4
@@ -41,12 +41,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/agent-class-spec-pr1/part*.b64 > /tmp/class-spec-pr1.mbox.gz.b64
+          cat .github/agent-class-spec-pr1/patch*.b64 > /tmp/class-spec-pr1.mbox.gz.b64
+          test "$(wc -c < /tmp/class-spec-pr1.mbox.gz.b64)" -eq 22640
           base64 --decode /tmp/class-spec-pr1.mbox.gz.b64 > /tmp/class-spec-pr1.mbox.gz
           echo "${PATCH_GZIP_SHA256}  /tmp/class-spec-pr1.mbox.gz" | sha256sum --check --strict
           gzip -t /tmp/class-spec-pr1.mbox.gz
           gzip -dc /tmp/class-spec-pr1.mbox.gz > /tmp/class-spec-pr1.mbox
-          test "$(wc -c < /tmp/class-spec-pr1.mbox)" -eq 57506
+          test "$(wc -c < /tmp/class-spec-pr1.mbox)" -eq 72464
           echo "${PATCH_MBOX_SHA256}  /tmp/class-spec-pr1.mbox" | sha256sum --check --strict
 
       - name: Apply patch to the pinned master baseline
@@ -69,8 +70,8 @@ jobs:
       - name: Check Markdown links
         run: python3 scripts/check_markdown_links.py --root .
 
-      - name: Run resource-pack tooling tests
-        run: python3 -m unittest discover -s scripts -p "test_*.py"
+      - name: Run repository tooling tests
+        run: python3 -m unittest discover -s scripts/tests -p "test_*.py"
 
       - name: Publish feature branch
         shell: bash
