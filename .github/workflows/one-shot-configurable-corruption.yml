@@ -1,0 +1,360 @@
+name: One-shot configurable corruption migration
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Remove hard ceilings and use normal mob level plus config bonus
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          def sub_once(path: str, pattern: str, replacement: str, flags=re.S) -> None:
+              p = Path(path)
+              text = p.read_text()
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=flags)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match for {pattern[:120]!r}, found {count}")
+              p.write_text(updated)
+
+          manager = "src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java"
+
+          # A fajzatlista is konfigurációból jön; nincs kódba égetett EntityType-pool.
+          sub_once(manager,
+              r'\n\s*/\*\* A rontás fajzatai.*?private static final EntityType\[\] POOL = \{.*?\};\n',
+              '\n')
+
+          # Az összes rontás-limit közvetlenül a configból jön. Nincs absolute-* plafon.
+          helper_block = r'''    private java.util.List<EntityType> configuredMobTypes() {
+        final java.util.List<EntityType> types = new java.util.ArrayList<>();
+        for (final String raw : configManager.getStringList("corruption.mob-types")) {
+            try {
+                final EntityType type = EntityType.valueOf(raw.trim().toUpperCase(java.util.Locale.ROOT));
+                final Class<? extends Entity> entityClass = type.getEntityClass();
+                if (entityClass != null && Mob.class.isAssignableFrom(entityClass)) {
+                    types.add(type);
+                }
+            } catch (final IllegalArgumentException ignored) {
+                // Hibás config-érték kimarad; a ConfigValidator/startup log jelzi a konfigurációs hibát.
+            }
+        }
+        return java.util.List.copyOf(types);
+    }
+
+    private boolean isLikelyLegacyCorruptMob(final Mob mob) {
+        if (!mob.isGlowing() || mob.getRemoveWhenFarAway()
+                || mobScalingManager.getLevel(mob) < 1) {
+            return false;
+        }
+        return configuredMobTypes().contains(mob.getType());
+    }
+
+    private boolean isWithinActiveArea(final Location location) {
+        final double configuredLimit = configuredRadiusLimit();
+        final double referenceRadius = configuredLimit > 0.0D
+                ? Math.max(radius, configuredLimit)
+                : radius;
+        final double searchRadius = referenceRadius
+                + configManager.getDouble("corruption.tracking-padding", 0.0D);
+        return isWithinHorizontalArea(location, worldName, centerX, centerZ, searchRadius);
+    }
+
+    private boolean isWithinCleanupArea(final Location location) {
+        return isWithinHorizontalArea(location, cleanupWorldName,
+                cleanupCenterX, cleanupCenterZ, cleanupRadius);
+    }
+
+    private static boolean isWithinHorizontalArea(final Location location, final String expectedWorld,
+                                                   final int x, final int z, final double areaRadius) {
+        if (location == null || location.getWorld() == null || expectedWorld == null
+                || !expectedWorld.equals(location.getWorld().getName())) {
+            return false;
+        }
+        final double dx = location.getX() - (x + 0.5D);
+        final double dz = location.getZ() - (z + 0.5D);
+        return dx * dx + dz * dz <= areaRadius * areaRadius;
+    }
+
+    private boolean isInsideSpawnExclusion(final World world, final int x, final int z) {
+        final double minimum = configManager.getDouble("corruption.min-world-spawn-distance", 0.0D);
+        if (minimum <= 0.0D) {
+            return false;
+        }
+        final Location spawn = world.getSpawnLocation();
+        final double dx = (x + 0.5D) - spawn.getX();
+        final double dz = (z + 0.5D) - spawn.getZ();
+        return dx * dx + dz * dz < minimum * minimum;
+    }
+
+    private long configuredSpawnGraceMillis() {
+        return configManager.getLong("corruption.spawn-grace-seconds", 0L) * 1000L;
+    }
+
+    private int configuredMobCap() {
+        return configManager.getInt("corruption.mob-cap", 0);
+    }
+
+    private int configuredMobLevel(final Location location) {
+        return mobScalingManager.resolveLevel(location)
+                + configManager.getInt("corruption.mob-level-bonus", 0);
+    }
+
+    private double configuredRadiusLimit() {
+        return configManager.getDouble("corruption.radius-cap", 0.0D);
+    }
+
+    private double configuredSpreadPerNight() {
+        return configManager.getDouble("corruption.spread-per-night", 0.0D);
+    }
+
+'''
+          sub_once(manager,
+              r'    private boolean isLikelyLegacyCorruptMob\(final Mob mob\) \{.*?(?=    private void trackCorruptMob\(final Mob mob\))',
+              helper_block)
+
+          track_block = r'''    private void trackCorruptMob(final Mob mob) {
+        mob.getPersistentDataContainer().set(corruptMobKey, PersistentDataType.BYTE, (byte) 1);
+        mob.setGlowing(configManager.getBoolean("corruption.mob-glowing", false));
+        mob.setPersistent(configManager.getBoolean("corruption.mob-persistent", false));
+        mob.setRemoveWhenFarAway(configManager.getBoolean(
+                "corruption.mob-remove-when-far-away", false));
+        final UUID mobId = mob.getUniqueId();
+        if (!corruptMobs.add(mobId)) {
+            return;
+        }
+        final long seconds = configManager.getLong("corruption.mob-lifespan-seconds", 0L);
+        if (seconds <= 0L) {
+            return;
+        }
+        mob.getScheduler().runDelayed(plugin, task -> {
+            corruptMobs.remove(mobId);
+            if (mob.isValid()) {
+                mob.remove();
+            }
+        }, () -> corruptMobs.remove(mobId), seconds * 20L);
+    }
+
+'''
+          sub_once(manager,
+              r'    private void trackCorruptMob\(final Mob mob\) \{.*?(?=    private void beginLegacyCleanup\(final World world\))',
+              track_block)
+
+          # A régi entitások keresési területe és ideje is teljesen konfigurálható.
+          sub_once(manager,
+              r'        cleanupRadius = Math\.max\(radius, effectiveRadiusCap\(\)\) \+ 32\.0D;\s*final long seconds = Math\.max\(60L, configManager\.getLong\(\s*"corruption\.legacy-cleanup-seconds", 1_800L\)\);\s*legacyCleanupUntil = System\.currentTimeMillis\(\) \+ seconds \* 1000L;',
+              '''        final double configuredLimit = configuredRadiusLimit();
+        final double referenceRadius = configuredLimit > 0.0D
+                ? Math.max(radius, configuredLimit)
+                : radius;
+        cleanupRadius = referenceRadius
+                + configManager.getDouble("corruption.legacy-cleanup-padding", 0.0D);
+        final long seconds = configManager.getLong("corruption.legacy-cleanup-seconds", 0L);
+        legacyCleanupUntil = seconds > 0L
+                ? System.currentTimeMillis() + seconds * 1000L
+                : System.currentTimeMillis();''')
+
+          # A cap 0 vagy negatív értéke a fajzat-spawnt kikapcsolja; nincs rejtett minimum.
+          sub_once(manager,
+              r'            if \(cleanupCandidate \|\| !activeCandidate \|\| corruptMobs\.size\(\) >= cap\) \{',
+              '            if (cleanupCandidate || !activeCandidate || cap <= 0 || corruptMobs.size() >= cap) {')
+
+          sub_once(manager,
+              r'    public int getRequiredPurgeKills\(\) \{\s*return Math\.max\(1, configManager\.getInt\("corruption\.purge-kills-required", 15\)\);\s*\}',
+              '''    public int getRequiredPurgeKills() {
+        return configManager.getInt("corruption.purge-kills-required", 0);
+    }''')
+
+          # Sorsolási idő, esély, távolság és grace mind közvetlen configérték.
+          sub_once(manager,
+              r'nextAttemptAt = now \+ Math\.max\(1L, configManager\.getLong\("corruption\.interval-minutes", 120L\)\) \* 60_000L;',
+              'nextAttemptAt = now + configManager.getLong("corruption.interval-minutes", 0L) * 60_000L;')
+          sub_once(manager,
+              r'final double chance = Math\.max\(0\.0D, Math\.min\(100\.0D, configManager\.getDouble\("corruption\.chance-percent", 25\.0D\)\)\);',
+              'final double chance = configManager.getDouble("corruption.chance-percent", 0.0D);')
+          sub_once(manager,
+              r'System\.currentTimeMillis\(\) \+ 10_000L',
+              'System.currentTimeMillis() + configuredSpawnGraceMillis()')
+          sub_once(manager,
+              r'System\.currentTimeMillis\(\) \+ 10_000L',
+              'System.currentTimeMillis() + configuredSpawnGraceMillis()')
+          sub_once(manager,
+              r'final int offset = Math\.max\(32, configManager\.getInt\("corruption\.spawn-offset", 96\)\);',
+              'final int offset = Math.abs(configManager.getInt("corruption.spawn-offset", 0));')
+
+          # DARK-perem: nincs kódoldali minimum vagy 100%-os plafon.
+          sub_once(manager,
+              r'final double chance = Math\.max\(0\.0D, Math\.min\(100\.0D,\s*configManager\.getDouble\("corruption\.dark-bias\.chance-percent", 50\.0D\)\)\);',
+              'final double chance = configManager.getDouble("corruption.dark-bias.chance-percent", 0.0D);')
+          sub_once(manager,
+              r'        final int minEdge = Math\.max\(4, configManager\.getInt\("corruption\.dark-bias\.min-edge-distance", 24\)\);\s*final int maxEdge = Math\.max\(minEdge, configManager\.getInt\("corruption\.dark-bias\.max-edge-distance", 96\)\);\s*final double angle = ThreadLocalRandom\.current\(\)\.nextDouble\(Math\.PI \* 2\.0D\);\s*final double dist = source\.radius\(\)\s*\+ ThreadLocalRandom\.current\(\)\.nextDouble\(minEdge, maxEdge \+ 1\.0D\);',
+              '''        final int firstEdge = configManager.getInt("corruption.dark-bias.min-edge-distance", 0);
+        final int secondEdge = configManager.getInt("corruption.dark-bias.max-edge-distance", 0);
+        final int lowerEdge = Math.min(firstEdge, secondEdge);
+        final int upperEdge = Math.max(firstEdge, secondEdge);
+        final double edgeDistance = lowerEdge == upperEdge
+                ? lowerEdge
+                : ThreadLocalRandom.current().nextDouble(lowerEdge, upperEdge + 1.0D);
+        final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+        final double dist = source.radius() + edgeDistance;''')
+
+          # A kezdősugár közvetlen configérték; a radius-cap 0 alatt/egyenlőn korlátlan.
+          sub_once(manager,
+              r'        radius = Math\.min\(effectiveRadiusCap\(\),\s*Math\.max\(4\.0D, configManager\.getDouble\("corruption\.initial-radius", 12\.0D\)\)\);',
+              '        radius = configManager.getDouble("corruption.initial-radius", 0.0D);')
+          sub_once(manager,
+              r'            final double cap = effectiveRadiusCap\(\);\s*final double next = Math\.min\(cap, radius \+ effectiveSpreadPerNight\(\)\);\s*if \(next > radius\) \{',
+              '''            final double limit = configuredRadiusLimit();
+            double next = radius + configuredSpreadPerNight();
+            if (limit > 0.0D && next > limit) {
+                next = limit;
+            }
+            if (Double.compare(next, radius) != 0) {''')
+
+          # Mob-cap, batch, pool és szint teljesen configvezérelt.
+          sub_once(manager,
+              r'        final int cap = effectiveMobCap\(\);\s*final int batch = Math\.max\(1, configManager\.getInt\("corruption\.spawn-batch", 1\)\);\s*final int available = cap - corruptMobs\.size\(\) - pendingSpawns\.get\(\);\s*if \(available <= 0\) \{\s*return;\s*\}\s*final int spawnCount = Math\.min\(batch, available\);',
+              '''        final int cap = configuredMobCap();
+        final int batch = configManager.getInt("corruption.spawn-batch", 0);
+        final java.util.List<EntityType> pool = configuredMobTypes();
+        if (cap <= 0 || batch <= 0 || pool.isEmpty()) {
+            return;
+        }
+        final int available = cap - corruptMobs.size() - pendingSpawns.get();
+        if (available <= 0) {
+            return;
+        }
+        final int spawnCount = Math.min(batch, available);''')
+          sub_once(manager,
+              r'final EntityType type = POOL\[ThreadLocalRandom\.current\(\)\.nextInt\(POOL\.length\)\];',
+              'final EntityType type = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));')
+          sub_once(manager,
+              r'                    mobScalingManager\.forceLevel\(mob, effectiveMobLevel\(\)\);\s*trackCorruptMob\(mob\);',
+              '''                    final int level = configuredMobLevel(spot);
+                    if (level > 0) {
+                        mobScalingManager.forceLevel(mob, level);
+                    }
+                    trackCorruptMob(mob);''')
+
+          # A jutalom és a buff 0-val kikapcsolható, nincs rejtett minimum vagy felső korlát.
+          sub_once(manager,
+              r'final int rolls = Math\.max\(1, configManager\.getInt\("corruption\.reward-rolls", 4\)\);',
+              'final int rolls = configManager.getInt("corruption.reward-rolls", 0);')
+          sub_once(manager,
+              r'            final int buffTicks = Math\.max\(1, configManager\.getInt\("corruption\.reward-buff-minutes", 5\)\) \* 60 \* 20;\s*cleanser\.addPotionEffect\(new org\.bukkit\.potion\.PotionEffect\(\s*org\.bukkit\.potion\.PotionEffectType\.REGENERATION, buffTicks, 0, false, true, true\)\);',
+              '''            final int buffMinutes = configManager.getInt("corruption.reward-buff-minutes", 0);
+            if (buffMinutes > 0) {
+                cleanser.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.REGENERATION,
+                        buffMinutes * 60 * 20, 0, false, true, true));
+            }''')
+          sub_once(manager,
+              r'final int minKills = Math\.max\(1, configManager\.getInt\("corruption\.contributor-min-kills", 3\)\);',
+              'final int minKills = configManager.getInt("corruption.contributor-min-kills", 0);')
+          sub_once(manager,
+              r'final double ratio = Math\.max\(0\.0D, Math\.min\(1\.0D,\s*configManager\.getDouble\("corruption\.contributor-loot-ratio", 0\.5D\)\)\);',
+              'final double ratio = configManager.getDouble("corruption.contributor-loot-ratio", 0.0D);')
+          sub_once(manager,
+              r'Math\.max\(0, configManager\.getInt\("corruption\.season-points", 6\)\)',
+              'configManager.getInt("corruption.season-points", 0)')
+
+          # Konfiguráció: az absolute-* kulcsok megszűnnek; minden tulajdonság külön állítható.
+          world = "src/main/resources/config/world.yml"
+          sub_once(world,
+              r'  min-world-spawn-distance: 384.*?  absolute-mob-level: 5\n',
+              '''  min-world-spawn-distance: 384 # 0 = nincs spawn-kizárás
+  spawn-grace-seconds: 10     # párhuzamos spawnpróbák közti foglalási idő
+  tracking-padding: 16.0      # aktív góc entitás-visszavételi keresési ráhagyása
+  legacy-cleanup-seconds: 1800 # 0 = nincs marker nélküli legacy takarítási ablak
+  legacy-cleanup-padding: 32.0
+  initial-radius: 12.0
+  radius-cap: 40.0            # 0 vagy negatív = korlátlan növekedés
+  spread-per-night: 2.0
+  mob-cap: 6                  # 0 vagy negatív = fajzat-spawn kikapcsolva
+  spawn-batch: 1
+  mob-types: [ "ZOMBIE", "SKELETON", "WITHER_SKELETON", "PHANTOM" ]
+  mob-level-bonus: 4          # normál helyfüggő mob-szint + ez az érték
+  mob-glowing: true
+  mob-persistent: false
+  mob-remove-when-far-away: true
+  mob-lifespan-seconds: 300   # 0 vagy negatív = nincs időzített despawn
+''', flags=re.S)
+
+          # Regresszió: ne kényszerítsen konkrét balanszértéket, a konfigurálhatóságot őrizze.
+          suite = "src/regression/java/hu/taliann/icesmp/runtime/RuntimeBugfixRegressionSuite.java"
+          sub_once(suite,
+              r'        corruptionHasHardCapsAndLifecycleCleanup\(\);',
+              '        corruptionIsFullyConfigurable();')
+          configurable_test = r'''    private static void corruptionIsFullyConfigurable() throws IOException {
+        final String source = read("src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java");
+        check(source.contains("pendingSpawns") && source.contains("configuredMobCap()"),
+                "corruption spawns lost pending reservations or the configurable cap");
+        check(source.contains("mobScalingManager.resolveLevel(location)")
+                        && source.contains("corruption.mob-level-bonus"),
+                "corruption mobs must use normal location level plus a configurable bonus");
+        check(source.contains("configuredMobTypes()")
+                        && source.contains("corruption.mob-types")
+                        && !source.contains("EntityType[] POOL"),
+                "corruption mob types are still hardcoded");
+        check(source.contains("corruption.mob-glowing")
+                        && source.contains("corruption.mob-persistent")
+                        && source.contains("corruption.mob-remove-when-far-away")
+                        && source.contains("corruption.mob-lifespan-seconds"),
+                "corruption mob lifecycle/visuals are not fully configurable");
+        check(!source.contains("absolute-mob-")
+                        && !source.contains("absolute-radius-")
+                        && !source.contains("absolute-spread-"),
+                "corruption still contains an absolute hard ceiling");
+        check(!source.contains("86_400L"),
+                "corruption lifespan still has a hardcoded upper ceiling");
+
+        final YamlConfiguration world = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/world.yml").toFile());
+        check(!world.isSet("corruption.absolute-mob-cap")
+                        && !world.isSet("corruption.absolute-mob-level")
+                        && !world.isSet("corruption.absolute-radius-cap")
+                        && !world.isSet("corruption.absolute-spread-per-night"),
+                "packaged config still exposes absolute hard ceilings");
+        check(world.isList("corruption.mob-types")
+                        && !world.getStringList("corruption.mob-types").isEmpty(),
+                "corruption mob pool must be configurable");
+        check(world.isSet("corruption.mob-level-bonus"),
+                "corruption normal-level bonus is missing from config");
+        check(world.isSet("corruption.mob-cap")
+                        && world.isSet("corruption.spawn-batch")
+                        && world.isSet("corruption.radius-cap")
+                        && world.isSet("corruption.spread-per-night"),
+                "corruption balance controls are missing from config");
+    }
+
+'''
+          sub_once(suite,
+              r'    private static void corruptionHasHardCapsAndLifecycleCleanup\(\) throws IOException \{.*?(?=    private static String read\()',
+              configurable_test)
+
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main src/regression
+          if git diff --cached --quiet; then
+            echo "No configurable corruption changes to commit."
+            exit 0
+          fi
+          git commit -m "fix: make corruption scaling fully configurable"
+          git push origin HEAD:${{ github.head_ref }}
