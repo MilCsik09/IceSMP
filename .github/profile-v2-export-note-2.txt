@@ -1,0 +1,1 @@
+Second no-op trigger file to ensure the pull_request workflow sees the final branch state.
