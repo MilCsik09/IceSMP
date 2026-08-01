@@ -5,9 +5,11 @@ import hu.taliann.icesmp.data.FactionType;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -140,6 +142,17 @@ public final class FactionTaxDebtLedger {
     public int getEvasionStrikes(final UUID playerId, final FactionType faction) {
         final State state = state(playerId, faction);
         return state == null ? 0 : state.evasionStrikes;
+    }
+
+    /**
+     * Every player whose durable debt must participate in a collection run. Current membership is
+     * deliberately not part of this model: an assignment reset stops new tax assessments, but it
+     * must never hide an already assessed origin-currency debt.
+     */
+    public Set<UUID> playerIdsWithDebt() {
+        final Set<UUID> playerIds = new HashSet<>(debts.keySet());
+        playerIds.addAll(unresolvedLegacyDebts.keySet());
+        return Set.copyOf(playerIds);
     }
 
     public List<Debt> debtsFor(final UUID playerId) {
