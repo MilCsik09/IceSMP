@@ -37,8 +37,11 @@ public final class FactionPassiveConfig {
         return current;
     }
 
+    /** Publishes one all-old or all-new immutable snapshot under ConfigManager's update monitor. */
     public void reload() {
-        current = buildSnapshot();
+        synchronized (configManager) {
+            current = buildSnapshot();
+        }
     }
 
     private FactionPassiveSettings buildSnapshot() {
