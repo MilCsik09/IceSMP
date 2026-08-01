@@ -57,7 +57,7 @@ public final class FactionPassivePolicy {
             boolean whisperer) {
 
         public TargetContext {
-            contentContexts = contentContexts.isEmpty()
+            contentContexts = contentContexts == null || contentContexts.isEmpty()
                     ? EnumSet.noneOf(ContentContext.class)
                     : EnumSet.copyOf(contentContexts);
         }
@@ -126,14 +126,15 @@ public final class FactionPassivePolicy {
                                       final boolean retaliationActive,
                                       final Set<ContentContext> contentContexts,
                                       final FactionPassiveSettings settings) {
+        final Set<ContentContext> contexts = contentContexts == null ? Set.of() : contentContexts;
         return retaliationActive
                 && settings.enabled()
                 && settings.dark().enabled()
                 && settings.dark().ambientUndead().enabled()
                 && settings.dark().ambientUndead().breakOnDamage()
                 && membership.isMember(FactionType.DARK)
-                && !hasExcludedContent(contentContexts, settings.dark().exclusions())
-                && !(contentContexts.contains(ContentContext.CROWN_CURSE)
+                && !hasExcludedContent(contexts, settings.dark().exclusions())
+                && !(contexts.contains(ContentContext.CROWN_CURSE)
                 && settings.dark().exclusions().crownCurse());
     }
 
