@@ -14,8 +14,10 @@ import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Wither;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -26,14 +28,21 @@ import java.util.UUID;
 /** Bukkit/Paper entity classifier feeding the pure faction-passive policy. */
 public final class FactionMobContextResolver {
 
-    private static final Set<String> RETALIATION_REASONS = Set.of(
-            "TARGET_ATTACKED_ENTITY", "TARGET_ATTACKED_NEARBY_ENTITY", "TARGET_ATTACKED_PLAYER",
-            "REINFORCEMENT_TARGET");
-    private static final Set<String> EXPLICIT_FORCE_REASONS = Set.of(
-            "CUSTOM", "UNKNOWN", "OWNER_ATTACKED", "OWNER_ATTACKED_TARGET",
-            "TARGET_ATTACKED_OWNER", "RAIDER_ATTACKED_TARGET", "DEFEND_VILLAGE");
-    private static final Set<String> SPONTANEOUS_REASONS = Set.of(
-            "CLOSEST_PLAYER", "CLOSEST_ENTITY", "RANDOM_TARGET", "COLLISION");
+    private static final Set<TargetReason> RETALIATION_REASONS = EnumSet.of(
+            TargetReason.TARGET_ATTACKED_ENTITY,
+            TargetReason.TARGET_ATTACKED_NEARBY_ENTITY,
+            TargetReason.REINFORCEMENT_TARGET);
+    private static final Set<TargetReason> EXPLICIT_FORCE_REASONS = EnumSet.of(
+            TargetReason.CUSTOM,
+            TargetReason.UNKNOWN,
+            TargetReason.OWNER_ATTACKED_TARGET,
+            TargetReason.TARGET_ATTACKED_OWNER,
+            TargetReason.DEFEND_VILLAGE);
+    private static final Set<TargetReason> SPONTANEOUS_REASONS = EnumSet.of(
+            TargetReason.CLOSEST_PLAYER,
+            TargetReason.CLOSEST_ENTITY,
+            TargetReason.RANDOM_TARGET,
+            TargetReason.COLLISION);
     private final DarkUndeadAmbienceManager darkUndeadAmbienceManager;
     private final CorruptionManager corruptionManager;
     private final DungeonLootService dungeonLootService;
@@ -75,35 +84,97 @@ public final class FactionMobContextResolver {
             final FactionPassiveService state,
             final FactionPassiveSettings settings) {
         final Entity entity = event.getEntity();
-        final String reason = event.getReason().name();
+        final TargetReason reason = event.getReason();
+        final UUID mobId = entity.getUniqueId();
         final boolean undead = isUndead(entity);
         final boolean enderman = entity instanceof Enderman;
         final boolean ambient = darkUndeadAmbienceManager.isMarked(entity);
         final EnumSet<FactionPassivePolicy.ContentContext> contexts =
                 contentContexts(entity, settings, playerId);
-        final boolean timedRetaliation = state.isNeutralRetaliating(playerId, entity.getUniqueId())
-                || undead && state.isDarkRetaliating(playerId);
+        final boolean timedRetaliation = state.isNeutralRetaliating(playerId, mobId)
+                || undead && state.isDarkRetaliating(playerId, mobId);
         // Ambient/NEUTRAL truce breaks are time-bounded by our own state. Wild undead keep
         // vanilla retaliation semantics; otherwise their natural target reason would be
         // mistaken for fresh spontaneous aggro after the player hit them.
         final boolean retaliating = timedRetaliation
                 || undead && !ambient && RETALIATION_REASONS.contains(reason);
-        final long time = entity.getWorld().getTime();
-        return new FactionPassivePolicy.TargetContext(
+        return targetContext(
+                entity,
+                playerId,
+                whisperer,
+                contexts,
                 EXPLICIT_FORCE_REASONS.contains(reason)
                         && !contexts.contains(FactionPassivePolicy.ContentContext.CROWN_CURSE),
-                contexts,
                 retaliating,
+                enderman && reason == TargetReason.CLOSEST_PLAYER,
+                SPONTANEOUS_REASONS.contains(reason),
+                SPONTANEOUS_REASONS.contains(reason));
+    }
+
+    /**
+     * Rebuilds the live, unprovoked context before a delayed cleanup clears a target. A later
+     * CUSTOM/marked target untracks the old retaliation entry in the listener; this resolver then
+     * only decides whether the current membership/config/world state would still grant truce.
+     */
+    public FactionPassivePolicy.TargetContext resolveCurrentTruce(
+            final Mob mob,
+            final UUID playerId,
+            final boolean whisperer,
+            final FactionPassiveSettings settings) {
+        final boolean enderman = mob instanceof Enderman;
+        return targetContext(
+                mob,
+                playerId,
+                whisperer,
+                contentContexts(mob, settings, playerId),
+                false,
+                false,
+                enderman,
+                true,
+                isUndead(mob));
+    }
+
+    private FactionPassivePolicy.TargetContext targetContext(
+            final Entity entity,
+            final UUID playerId,
+            final boolean whisperer,
+            final Set<FactionPassivePolicy.ContentContext> contexts,
+            final boolean explicitForce,
+            final boolean retaliation,
+            final boolean spontaneousEndermanStare,
+            final boolean spontaneousNeutralAggro,
+            final boolean spontaneousUndeadAggro) {
+        final boolean undead = isUndead(entity);
+        final long time = entity.getWorld().getTime();
+        return new FactionPassivePolicy.TargetContext(
+                explicitForce,
+                contexts,
+                retaliation,
                 bloodMoonManager.isActive(),
                 time >= 13_000L && time <= 23_000L,
                 undead,
-                ambient,
-                isNeutralMob(entity, settings),
-                enderman,
-                enderman && "CLOSEST_PLAYER".equals(reason),
-                SPONTANEOUS_REASONS.contains(reason),
-                SPONTANEOUS_REASONS.contains(reason),
+                undead && darkUndeadAmbienceManager.isMarked(entity),
+                isNeutralMob(entity, settingsForContext(settingsFallback(entity))),
+                entity instanceof Enderman,
+                spontaneousEndermanStare,
+                spontaneousNeutralAggro,
+                spontaneousUndeadAggro,
                 whisperer);
+    }
+
+    /*
+     * Kept as a small overload target so every context is built from the exact snapshot supplied by
+     * the caller. The methods below are intentionally trivial; they prevent accidental live-config
+     * reads from creeping into this read-only adapter.
+     */
+    private FactionPassiveSettings contextSettings;
+
+    private FactionPassiveSettings settingsFallback(final Entity ignored) {
+        return contextSettings;
+    }
+
+    private static FactionPassiveSettings settingsForContext(final FactionPassiveSettings settings) {
+        return settings;
     }
 
     public EnumSet<FactionPassivePolicy.ContentContext> contentContexts(
@@ -111,7 +182,7 @@ public final class FactionMobContextResolver {
         return contentContexts(entity, settings, null);
     }
 
-    private EnumSet<FactionPassivePolicy.ContentContext> contentContexts(
+    public EnumSet<FactionPassivePolicy.ContentContext> contentContexts(
             final Entity entity, final FactionPassiveSettings settings,
             final UUID targetPlayerId) {
         final EnumSet<FactionPassivePolicy.ContentContext> contexts =
@@ -174,5 +245,4 @@ public final class FactionMobContextResolver {
                 .map(Object::toString)
                 .anyMatch(markers::contains);
     }
-
 }
