@@ -8,7 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongSupplier;
 
-/** Thread-safe, transient per-player retaliation state. */
+/** Thread-safe, transient per-player/per-mob retaliation state. */
 public final class FactionPassiveService implements PlayerStateCleanup {
 
     private record PlayerMob(UUID playerId, UUID mobId) {
@@ -16,7 +16,7 @@ public final class FactionPassiveService implements PlayerStateCleanup {
 
     private final LongSupplier clock;
     private final Map<PlayerMob, Long> neutralRetaliationUntil = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> darkRetaliationUntil = new ConcurrentHashMap<>();
+    private final Map<PlayerMob, Long> darkRetaliationUntil = new ConcurrentHashMap<>();
     private final Map<UUID, Long> entityFireUntil = new ConcurrentHashMap<>();
     private final Map<UUID, Long> scriptedCombatFireUntil = new ConcurrentHashMap<>();
     private final Set<UUID> adjustingWitherEffect = ConcurrentHashMap.newKeySet();
@@ -38,27 +38,46 @@ public final class FactionPassiveService implements PlayerStateCleanup {
     }
 
     public boolean isNeutralRetaliating(final UUID playerId, final UUID mobId) {
-        return isLive(neutralRetaliationUntil, new PlayerMob(playerId, mobId));
+        return playerId != null && mobId != null
+                && isLive(neutralRetaliationUntil, new PlayerMob(playerId, mobId));
     }
 
     public long neutralRetaliationRemainingMillis(final UUID playerId, final UUID mobId) {
-        return remainingMillis(neutralRetaliationUntil, new PlayerMob(playerId, mobId));
+        return playerId == null || mobId == null ? 0L
+                : remainingMillis(neutralRetaliationUntil, new PlayerMob(playerId, mobId));
     }
 
-    public void provokeDark(final UUID playerId, final long retaliationMillis) {
-        if (playerId == null || retaliationMillis <= 0L) {
+    public void provokeDark(final UUID playerId, final UUID mobId, final long retaliationMillis) {
+        if (playerId == null || mobId == null || retaliationMillis <= 0L) {
             return;
         }
         pruneExpired();
-        darkRetaliationUntil.put(playerId, expiresAt(retaliationMillis));
+        darkRetaliationUntil.put(new PlayerMob(playerId, mobId), expiresAt(retaliationMillis));
     }
 
-    public boolean isDarkRetaliating(final UUID playerId) {
-        return isLive(darkRetaliationUntil, playerId);
+    public boolean isDarkRetaliating(final UUID playerId, final UUID mobId) {
+        return playerId != null && mobId != null
+                && isLive(darkRetaliationUntil, new PlayerMob(playerId, mobId));
     }
 
-    public long darkRetaliationRemainingMillis(final UUID playerId) {
-        return remainingMillis(darkRetaliationUntil, playerId);
+    public long darkRetaliationRemainingMillis(final UUID playerId, final UUID mobId) {
+        return playerId == null || mobId == null ? 0L
+                : remainingMillis(darkRetaliationUntil, new PlayerMob(playerId, mobId));
+    }
+
+    /**
+     * Converts Paper's floating-point combust duration (seconds) without truncating sub-second
+     * provenance. Invalid or unrepresentable durations fail closed instead of being clamped.
+     */
+    public static long combustDurationMillis(final float durationSeconds) {
+        if (!Float.isFinite(durationSeconds) || durationSeconds <= 0.0F) {
+            return 0L;
+        }
+        final double millis = Math.ceil(durationSeconds * 1_000.0D);
+        if (!Double.isFinite(millis) || millis > Long.MAX_VALUE) {
+            return 0L;
+        }
+        return (long) millis;
     }
 
     public void markEntityFire(final UUID playerId, final long durationMillis) {
@@ -103,7 +122,7 @@ public final class FactionPassiveService implements PlayerStateCleanup {
         if (playerId == null) {
             return;
         }
-        darkRetaliationUntil.remove(playerId);
+        darkRetaliationUntil.keySet().removeIf(key -> key.playerId().equals(playerId));
         entityFireUntil.remove(playerId);
         scriptedCombatFireUntil.remove(playerId);
         adjustingWitherEffect.remove(playerId);
@@ -134,6 +153,9 @@ public final class FactionPassiveService implements PlayerStateCleanup {
     }
 
     private <K> boolean isLive(final Map<K, Long> state, final K key) {
+        if (key == null) {
+            return false;
+        }
         final Long until = state.get(key);
         if (until == null) {
             return false;
@@ -146,6 +168,9 @@ public final class FactionPassiveService implements PlayerStateCleanup {
     }
 
     private <K> long remainingMillis(final Map<K, Long> state, final K key) {
+        if (key == null) {
+            return 0L;
+        }
         final Long until = state.get(key);
         if (until == null) {
             return 0L;
