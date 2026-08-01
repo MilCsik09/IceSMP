@@ -44,28 +44,52 @@ jobs:
               if count != 1:
                   raise SystemExit(f"{path}: expected one match, found {count}: {old[:100]!r}")
               p.write_text(text.replace(old, new, 1))'''
-          tolerant_helper = '''def _restore_literal_baseline(value: str) -> str:
+          tolerant_helper = '''import re
+
+          def _loose_pattern(value: str) -> re.Pattern[str]:
               lines = value.splitlines()
-              if not lines:
-                  return value
-              baseline = len(lines[0]) - len(lines[0].lstrip())
-              if baseline <= 0:
-                  return value
-              return "\\n".join([lines[0]] + [((" " * baseline) + line) if line else line for line in lines[1:]])
+              parts = []
+              for index, line in enumerate(lines):
+                  if index:
+                      parts.append(r"\\r?\\n")
+                  stripped = line.strip()
+                  parts.append(r"[ \\t]*" + re.escape(stripped) + r"[ \\t]*")
+              return re.compile("".join(parts))
+
+          def _render_replacement(path: str, value: str, base: int) -> str:
+              lines = value.splitlines()
+              if path.endswith((".yml", ".yaml")):
+                  return "\\n".join((" " * base) + line.strip() if line.strip() else "" for line in lines)
+              rendered = []
+              depth = 0
+              for line in lines:
+                  stripped = line.strip()
+                  if not stripped:
+                      rendered.append("")
+                      continue
+                  if stripped.startswith("}"):
+                      depth = max(0, depth - 1)
+                  rendered.append((" " * (base + depth * 4)) + stripped)
+                  if stripped.endswith("{"):
+                      depth += 1
+              return "\\n".join(rendered)
 
           def replace_once(path: str, old: str, new: str) -> None:
               p = Path(path)
               text = p.read_text()
-              candidate_old = old
-              candidate_new = new
-              count = text.count(candidate_old)
-              if count == 0:
-                  candidate_old = _restore_literal_baseline(old)
-                  candidate_new = _restore_literal_baseline(new)
-                  count = text.count(candidate_old)
-              if count != 1:
-                  raise SystemExit(f"{path}: expected one match, found {count}: {candidate_old[:100]!r}")
-              p.write_text(text.replace(candidate_old, candidate_new, 1))'''
+              count = text.count(old)
+              if count == 1:
+                  p.write_text(text.replace(old, new, 1))
+                  return
+              pattern = _loose_pattern(old)
+              matches = list(pattern.finditer(text))
+              if len(matches) != 1:
+                  raise SystemExit(f"{path}: expected one loose match, found {len(matches)}: {old[:100]!r}")
+              match = matches[0]
+              first_line = match.group(0).splitlines()[0]
+              base = len(first_line) - len(first_line.lstrip())
+              replacement = _render_replacement(path, new, base)
+              p.write_text(text[:match.start()] + replacement + text[match.end():])'''
           if original_helper not in script:
               raise SystemExit("Embedded replace_once helper shape changed unexpectedly")
           script = script.replace(original_helper, tolerant_helper, 1)
