@@ -55,15 +55,16 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         if (!ClassSpecRuntimePort.requiresRuntimeReconciliation(kind)) {
             return CompletableFuture.completedFuture(null);
         }
-        return scheduleCleanup(playerId, durable.isGameplayUsable(), kind);
+        return scheduleCleanup(playerId, durable, durable.isGameplayUsable(), kind);
     }
 
     @Override
     public CompletionStage<Void> failClosed(final UUID playerId, final String reason) {
-        return scheduleCleanup(playerId, false, null);
+        return scheduleCleanup(playerId, null, false, null);
     }
 
-    private CompletionStage<Void> scheduleCleanup(final UUID playerId, final boolean regrantActive,
+    private CompletionStage<Void> scheduleCleanup(final UUID playerId, final ClassProfile durable,
+                                                   final boolean regrantActive,
                                                    final MutationKind kind) {
         Objects.requireNonNull(playerId, "playerId");
         final CompletableFuture<Void> completion = new CompletableFuture<>();
@@ -89,7 +90,11 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 jobManager.revokeGrantsFrom(player,
                         source -> source.startsWith(JobManager.SOURCE_SPEC_PREFIX));
                 clearUuidOnly(playerId);
-                specializationManager.mirrorActiveClassSpecializationV2(player, durable);
+                if (durable == null) {
+                    specializationManager.mirrorActiveClassSpecializationV2(player);
+                } else {
+                    specializationManager.mirrorActiveClassSpecializationV2(player, durable);
+                }
                 if (regrantActive) {
                     specializationManager.applyClassSpecializationUnlocksV2(player, durable);
                 }

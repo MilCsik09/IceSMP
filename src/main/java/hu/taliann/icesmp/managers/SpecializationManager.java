@@ -222,7 +222,7 @@ public final class SpecializationManager {
         final GateSnapshot gates = captureGateSnapshot(player, specialization);
         return gateway.select(player.getUniqueId(), new ClassSpecProfileGateway.SelectRequest(
                         specialization.getId(), LoadoutSlot.FIRST, gates))
-                .thenApply(ProfileMutationResult::committed);
+                .thenApply(result -> result.committed());
     }
 
     public GateSnapshot captureGateSnapshot(final Player player,
