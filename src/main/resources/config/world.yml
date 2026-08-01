@@ -562,13 +562,20 @@ corruption:
   interval-minutes: 75
   chance-percent: 35
   spawn-offset: 96           # a horgony-játékostól legfeljebb ennyire nyílik
-  initial-radius: 16.0
-  radius-cap: 64.0
-  spread-per-night: 4.0
-  mob-cap: 12                # egyszerre legfeljebb ennyi korrupt mob él (entitás-fék)
-  spawn-batch: 2
-  mob-level: 6
-  purge-kills-required: 15
+  min-world-spawn-distance: 384 # ezen belül góc nem nyílhat; régi aktív góc automatikusan törlődik
+  legacy-cleanup-seconds: 1800  # ennyi ideig takarítja a régi, marker nélküli perzisztens fajzatokat
+  initial-radius: 12.0
+  radius-cap: 40.0
+  absolute-radius-cap: 40.0     # hard cap: régi/túl magas szerverkonfig sem lépheti át
+  spread-per-night: 2.0
+  absolute-spread-per-night: 2.0
+  mob-cap: 6                 # egyszerre legfeljebb ennyi nyilvántartott fajzat él
+  absolute-mob-cap: 8        # hard cap a már meglévő szerverkonfigokra is
+  spawn-batch: 1
+  mob-lifespan-seconds: 300  # öt perc után biztosan eltűnik; nem kerül world-save-ba
+  mob-level: 4
+  absolute-mob-level: 5
+  purge-kills-required: 10
   reward-rolls: 4
   reward-buff-minutes: 5
   season-points: 6   # liga-pont a tisztító frakciójának ("cleanse" forrás, NEUTRAL-erős súly)

@@ -105,8 +105,14 @@ public final class LoreCommand implements BasicCommand {
         final String topic = args.length == 0 ? "" : normalize(args[0]);
         final List<String> defaults = DEFAULTS.get(topic);
         if (defaults == null) {
-            sender.sendMessage(messageManager.get("lore-usage",
-                    "&7A kódex lapjai: &f/lore <lang|fagy|menedek|radicora|kitaszitottak|fa|kapu|suttogok|melyseg|korszakok|bokic>"));
+            sender.sendMessage(messageManager.get("lore-usage-header",
+            "&7A kódex lapjai:"));
+            sender.sendMessage(messageManager.get("lore-usage-factions",
+            "&8• &fFrakciók: &7/lore lang, /lore fagy, /lore menedek, /lore kitaszitottak"));
+            sender.sendMessage(messageManager.get("lore-usage-places",
+            "&8• &fHelyek: &7/lore radicora, /lore fa, /lore kapu, /lore melyseg, /lore bokic"));
+            sender.sendMessage(messageManager.get("lore-usage-chronicles",
+            "&8• &fKrónikák: &7/lore suttogok, /lore korszakok"));
             return;
         }
         for (int i = 0; i < defaults.size(); i++) {

@@ -6,16 +6,20 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +60,7 @@ public final class CorruptionManager implements PersistentStore {
     private final FactionManager factionManager;
     private final SeasonManager seasonManager;
     private final File storageFile;
+    private final NamespacedKey corruptMobKey;
 
     private volatile String worldName;
     private volatile int centerX;
@@ -67,6 +72,14 @@ public final class CorruptionManager implements PersistentStore {
     private volatile long nextAttemptAt;
     private volatile long spawnGraceUntil;
     private final Set<UUID> corruptMobs = ConcurrentHashMap.newKeySet();
+    /** A régió-schedulerre már kiadott, de még le nem futott spawnok foglalásai. */
+    private final AtomicInteger pendingSpawns = new AtomicInteger();
+    /** Rövid átmeneti ablak a régi, marker nélküli, perzisztens fajzatok takarítására. */
+    private volatile long legacyCleanupUntil;
+    private volatile String cleanupWorldName;
+    private volatile int cleanupCenterX;
+    private volatile int cleanupCenterZ;
+    private volatile double cleanupRadius;
     /** Az utolsó terjedés napja (world full-day), hogy éjszakánként csak egyszer nőjön. */
     private volatile long lastSpreadDay = -1L;
     /** Mentésre váró változás (purge-kill számláló) — a globális tick írja ki, nem a kill-szál. */
@@ -85,6 +98,7 @@ public final class CorruptionManager implements PersistentStore {
         this.factionManager = factionManager;
         this.seasonManager = seasonManager;
         this.storageFile = new File(plugin.getDataFolder(), "corruption.yml");
+        this.corruptMobKey = new NamespacedKey(plugin, "corruption_mob");
         plugin.getDataFolder().mkdirs();
     }
 
@@ -105,6 +119,14 @@ public final class CorruptionManager implements PersistentStore {
         radius = yaml.getDouble("radius", 16.0D);
         purgeKills.set(yaml.getInt("purge-kills", 0));
         active = true;
+        final World world = Bukkit.getWorld(worldName);
+        if (world != null && isInsideSpawnExclusion(world, centerX, centerZ)) {
+            plugin.getLogger().warning("Removing persisted corruption zone inside the world-spawn exclusion at "
+            + centerX + "," + centerZ + ".");
+            beginLegacyCleanup(world);
+            deactivate();
+            return;
+        }
         plugin.getLogger().info("Resumed corruption zone at " + centerX + "," + centerZ + " r=" + radius);
     }
 
@@ -136,7 +158,164 @@ public final class CorruptionManager implements PersistentStore {
         return entityId != null && corruptMobs.contains(entityId);
     }
 
-    /** A tisztítás-számláló növelése (a korrupt mob halál-listenere hívja).
+    /**
+    * Chunkbetöltéskor visszafogja a korábbi verziókból megmaradt perzisztens
+    * fajzatokat. A listener a chunk régió-szálán hívja, így az entitások
+    * állapota biztonságosan olvasható és módosítható.
+    */
+    public void handleLoadedEntities(final Collection<? extends Entity> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return;
+        }
+        final long now = System.currentTimeMillis();
+        final int cap = effectiveMobCap();
+        for (final Entity entity : entities) {
+            if (!(entity instanceof Mob mob)) {
+                continue;
+            }
+            final Location location = mob.getLocation();
+            final boolean tagged = mob.getPersistentDataContainer().has(
+            corruptMobKey, PersistentDataType.BYTE);
+            final boolean activeCandidate = active && isWithinActiveArea(location);
+            final boolean cleanupCandidate = now < legacyCleanupUntil && isWithinCleanupArea(location);
+            final boolean legacy = (activeCandidate || cleanupCandidate) && isLikelyLegacyCorruptMob(mob);
+            if (!tagged && !legacy) {
+                continue;
+            }
+            if (cleanupCandidate || !activeCandidate || corruptMobs.size() >= cap) {
+                corruptMobs.remove(mob.getUniqueId());
+                mob.remove();
+                continue;
+            }
+            trackCorruptMob(mob);
+        }
+    }
+
+    private boolean isLikelyLegacyCorruptMob(final Mob mob) {
+        if (!mob.isGlowing() || mob.getRemoveWhenFarAway()
+        || mobScalingManager.getLevel(mob) < 1) {
+            return false;
+        }
+        for (final EntityType type : POOL) {
+            if (mob.getType() == type) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isWithinActiveArea(final Location location) {
+        final double searchRadius = Math.max(radius, effectiveRadiusCap()) + 16.0D;
+        return isWithinHorizontalArea(location, worldName, centerX, centerZ, searchRadius);
+    }
+
+    private boolean isWithinCleanupArea(final Location location) {
+        return isWithinHorizontalArea(location, cleanupWorldName,
+        cleanupCenterX, cleanupCenterZ, cleanupRadius);
+    }
+
+    private static boolean isWithinHorizontalArea(final Location location, final String expectedWorld,
+    final int x, final int z, final double areaRadius) {
+        if (location == null || location.getWorld() == null || expectedWorld == null
+        || !expectedWorld.equals(location.getWorld().getName())) {
+            return false;
+        }
+        final double dx = location.getX() - (x + 0.5D);
+        final double dz = location.getZ() - (z + 0.5D);
+        return dx * dx + dz * dz <= areaRadius * areaRadius;
+    }
+
+    private boolean isInsideSpawnExclusion(final World world, final int x, final int z) {
+        final double minimum = Math.max(0.0D,
+        configManager.getDouble("corruption.min-world-spawn-distance", 384.0D));
+        if (minimum <= 0.0D) {
+            return false;
+        }
+        final Location spawn = world.getSpawnLocation();
+        final double dx = (x + 0.5D) - spawn.getX();
+        final double dz = (z + 0.5D) - spawn.getZ();
+        return dx * dx + dz * dz < minimum * minimum;
+    }
+
+    private int effectiveMobCap() {
+        final int configured = Math.max(1, configManager.getInt("corruption.mob-cap", 6));
+        final int hardCap = Math.max(1, configManager.getInt("corruption.absolute-mob-cap", 8));
+        return Math.min(configured, hardCap);
+    }
+
+    private int effectiveMobLevel() {
+        final int configured = Math.max(1, configManager.getInt("corruption.mob-level", 4));
+        final int hardCap = Math.max(1, configManager.getInt("corruption.absolute-mob-level", 5));
+        return Math.min(configured, hardCap);
+    }
+
+    private double effectiveRadiusCap() {
+        final double configured = Math.max(8.0D,
+        configManager.getDouble("corruption.radius-cap", 40.0D));
+        final double hardCap = Math.max(8.0D,
+        configManager.getDouble("corruption.absolute-radius-cap", 40.0D));
+        return Math.min(configured, hardCap);
+    }
+
+    private double effectiveSpreadPerNight() {
+        final double configured = Math.max(0.0D,
+        configManager.getDouble("corruption.spread-per-night", 2.0D));
+        final double hardCap = Math.max(0.0D,
+        configManager.getDouble("corruption.absolute-spread-per-night", 2.0D));
+        return Math.min(configured, hardCap);
+    }
+
+    private void trackCorruptMob(final Mob mob) {
+        mob.getPersistentDataContainer().set(corruptMobKey, PersistentDataType.BYTE, (byte) 1);
+        mob.setGlowing(true);
+        // A fajzat esemény-entitás: nem kerülhet world-save-ba, és távol lévő
+        // játékos nélkül is eltűnhet. Ez zárja le a restartonkénti felhalmozódást.
+        mob.setPersistent(false);
+        mob.setRemoveWhenFarAway(true);
+        final UUID mobId = mob.getUniqueId();
+        if (!corruptMobs.add(mobId)) {
+            return;
+        }
+        final long seconds = Math.max(1L, Math.min(86_400L,
+        configManager.getLong("corruption.mob-lifespan-seconds", 300L)));
+        mob.getScheduler().runDelayed(plugin, task -> {
+            corruptMobs.remove(mobId);
+            if (mob.isValid()) {
+                mob.remove();
+            }
+        }, () -> corruptMobs.remove(mobId), seconds * 20L);
+    }
+
+    private void beginLegacyCleanup(final World world) {
+        cleanupWorldName = world.getName();
+        cleanupCenterX = centerX;
+        cleanupCenterZ = centerZ;
+        cleanupRadius = Math.max(radius, effectiveRadiusCap()) + 32.0D;
+        final long seconds = Math.max(60L, configManager.getLong(
+        "corruption.legacy-cleanup-seconds", 1_800L));
+        legacyCleanupUntil = System.currentTimeMillis() + seconds * 1000L;
+
+        final int minChunkX = ((int) Math.floor(cleanupCenterX - cleanupRadius)) >> 4;
+        final int maxChunkX = ((int) Math.floor(cleanupCenterX + cleanupRadius)) >> 4;
+        final int minChunkZ = ((int) Math.floor(cleanupCenterZ - cleanupRadius)) >> 4;
+        final int maxChunkZ = ((int) Math.floor(cleanupCenterZ + cleanupRadius)) >> 4;
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                final int chunkX = cx;
+                final int chunkZ = cz;
+                final Location owner = new Location(world, (chunkX << 4) + 8.0D, centerY,
+                (chunkZ << 4) + 8.0D);
+                plugin.getServer().getRegionScheduler().run(plugin, owner, task -> {
+                    if (world.isChunkLoaded(chunkX, chunkZ)) {
+                        handleLoadedEntities(Arrays.asList(
+                        world.getChunkAt(chunkX, chunkZ).getEntities()));
+                    }
+                });
+            }
+        }
+    }
+
+    /** A tisztítás-számlálónövelése (a korrupt mob halál-listenere hívja).
      * A lemezírás DEBOUNCE-olt: a régió-szálon nem blokkolunk minden killnél
      * (tömeges farmolásnál tick-lassulást okozna) — a következő globális tick menti.
      * Restart-vesztés legfeljebb pár kill, nem kritikus. */
@@ -352,7 +531,9 @@ public final class CorruptionManager implements PersistentStore {
     private void placeCore(final World world, final int x, final int z, final boolean fromDarkEdge) {
         final int y = world.getHighestBlockYAt(x, z);
         final Location core = new Location(world, x, y + 1, z);
-        if (spawnGuard.isBlocked("corruption", core) || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
+        if (isInsideSpawnExclusion(world, x, z)
+        || spawnGuard.isBlocked("corruption", core)
+        || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
             return; // Következő intervallum, máshol.
         }
         world.getBlockAt(x, y + 1, z).setType(Material.SCULK_CATALYST, false);
@@ -360,7 +541,8 @@ public final class CorruptionManager implements PersistentStore {
         centerX = x;
         centerY = y + 1;
         centerZ = z;
-        radius = Math.max(4.0D, configManager.getDouble("corruption.initial-radius", 16.0D));
+        radius = Math.min(effectiveRadiusCap(),
+        Math.max(4.0D, configManager.getDouble("corruption.initial-radius", 12.0D)));
         purgeKills.set(0);
         purgeContributors.clear();
         lastSpreadDay = -1L;
@@ -390,12 +572,19 @@ public final class CorruptionManager implements PersistentStore {
         if (world == null) {
             return;
         }
+        if (isInsideSpawnExclusion(world, centerX, centerZ)) {
+            plugin.getLogger().warning("Deactivating corruption zone inside the world-spawn exclusion at "
+            + centerX + "," + centerZ + ".");
+            beginLegacyCleanup(world);
+            deactivate();
+            return;
+        }
         // Terjedés: éjszakánként egyszer, a plafonig.
         final long day = world.getFullTime() / 24000L;
         if (!world.isDayTime() && day != lastSpreadDay) {
             lastSpreadDay = day;
-            final double cap = Math.max(8.0D, configManager.getDouble("corruption.radius-cap", 64.0D));
-            final double next = Math.min(cap, radius + Math.max(0.0D, configManager.getDouble("corruption.spread-per-night", 4.0D)));
+            final double cap = effectiveRadiusCap();
+            final double next = Math.min(cap, radius + effectiveSpreadPerNight());
             if (next > radius) {
                 radius = next;
                 save();
@@ -415,36 +604,45 @@ public final class CorruptionManager implements PersistentStore {
                 return false;
             }
         });
-        final int cap = Math.max(1, configManager.getInt("corruption.mob-cap", 12));
-        final int batch = Math.max(1, configManager.getInt("corruption.spawn-batch", 2));
-        if (corruptMobs.size() >= cap) {
+        final int cap = effectiveMobCap();
+        final int batch = Math.max(1, configManager.getInt("corruption.spawn-batch", 1));
+        final int available = cap - corruptMobs.size() - pendingSpawns.get();
+        if (available <= 0) {
             return;
         }
-        for (int i = 0; i < batch && corruptMobs.size() + i < cap; i++) {
+        final int spawnCount = Math.min(batch, available);
+        for (int i = 0; i < spawnCount; i++) {
             final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
             final double dist = ThreadLocalRandom.current().nextDouble(radius);
             final int x = centerX + (int) Math.round(Math.cos(angle) * dist);
             final int z = centerZ + (int) Math.round(Math.sin(angle) * dist);
+            pendingSpawns.incrementAndGet();
             plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z), task -> {
-                final int y = world.getHighestBlockYAt(x, z) + 1;
-                final Location spot = new Location(world, x + 0.5D, y, z + 0.5D);
-                // A mob-utánpótlás is a spawn-rules mátrixot követi (territory/claim/region/víz):
-                // a góc mellé később épült claim/város belsejébe sem szivárog fajzat.
-                if (spawnGuard.isBlocked("corruption", spot)
-                        || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
-                    return;
+                try {
+                    if (!active || !world.getName().equals(worldName)) {
+                        return;
+                    }
+                    final int y = world.getHighestBlockYAt(x, z) + 1;
+                    final Location spot = new Location(world, x + 0.5D, y, z + 0.5D);
+                    // A mob-utánpótlás is a spawn-rules mátrixot követi (territory/claim/region/víz):
+                    // a góc mellé később épült claim/város belsejébe sem szivárog fajzat.
+                    if (isInsideSpawnExclusion(world, x, z)
+                    || spawnGuard.isBlocked("corruption", spot)
+                    || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
+                        return;
+                    }
+                    final EntityType type = POOL[ThreadLocalRandom.current().nextInt(POOL.length)];
+                    final Class<? extends Entity> entityClass = type.getEntityClass();
+                    if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
+                        return;
+                    }
+                    final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
+                    EventSpawnGuard.prepare(mob);
+                    mobScalingManager.forceLevel(mob, effectiveMobLevel());
+                    trackCorruptMob(mob);
+                } finally {
+                    pendingSpawns.decrementAndGet();
                 }
-                final EntityType type = POOL[ThreadLocalRandom.current().nextInt(POOL.length)];
-                final Class<? extends Entity> entityClass = type.getEntityClass();
-                if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-                    return;
-                }
-                final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
-                EventSpawnGuard.prepare(mob);
-                mob.setGlowing(true);
-                mob.setRemoveWhenFarAway(false);
-                mobScalingManager.forceLevel(mob, Math.max(1, configManager.getInt("corruption.mob-level", 6)));
-                corruptMobs.add(mob.getUniqueId());
             });
         }
     }
