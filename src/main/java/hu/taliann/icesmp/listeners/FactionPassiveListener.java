@@ -23,29 +23,35 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityCombustByEntityEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityExhaustionEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.UUID;
 import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /** Paper/Folia event adapter for the central faction-passive policy. */
 public final class FactionPassiveListener implements Listener, PlayerStateCleanup {
 
-    private record TrackedTarget(WeakReference<Mob> mob, boolean darkRetaliation) {
+    private enum RetaliationKind {
+        NEUTRAL,
+        DARK_AMBIENT,
+        WHISPER
+    }
+
+    private record TrackedTarget(WeakReference<Mob> mob, RetaliationKind kind) {
     }
 
     private final JavaPlugin plugin;
@@ -104,13 +110,8 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         if (!settings.enabled() || !settings.red().enabled()) {
             return;
         }
-        final long durationMillis;
-        if (event.getDuration() <= 0) {
-            return;
-        }
-        try {
-            durationMillis = Math.multiplyExact((long) event.getDuration(), 1_000L);
-        } catch (final ArithmeticException exception) {
+        final long durationMillis = FactionPassiveService.combustDurationMillis(event.getDuration());
+        if (durationMillis <= 0L) {
             return;
         }
         state.markEntityFire(player.getUniqueId(), durationMillis,
@@ -209,12 +210,13 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
             return;
         }
         final FactionMembership membership = factionManager.getMembership(playerId);
+        final UUID victimId = victim.getUniqueId();
         final boolean neutralCreature = mobContexts.isNeutralMob(victim, settings) || victim instanceof Enderman;
         if (settings.neutral().enabled() && settings.neutral().passiveMobTruceEnabled()
                 && membership.isMember(FactionType.NEUTRAL) && neutralCreature
                 && settings.neutral().breakOnDamage()) {
-            state.provokeNeutral(playerId, victim.getUniqueId(), settings.neutral().retaliationMillis());
-            trackRetaliationTarget(playerId, victim, false);
+            state.provokeNeutral(playerId, victimId, settings.neutral().retaliationMillis());
+            trackRetaliationTarget(playerId, victim, RetaliationKind.NEUTRAL);
         }
 
         if (!mobContexts.isUndead(victim)) {
@@ -223,15 +225,16 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         if (settings.dark().enabled() && settings.dark().ambientUndead().enabled()
                 && membership.isMember(FactionType.DARK) && mobContexts.isAmbientUndead(victim)
                 && settings.dark().ambientUndead().breakOnDamage()) {
-            state.provokeDark(playerId, settings.dark().ambientUndead().retaliationMillis());
-            trackRetaliationTarget(playerId, victim, true);
+            state.provokeDark(playerId, victimId,
+                    settings.dark().ambientUndead().retaliationMillis());
+            trackRetaliationTarget(playerId, victim, RetaliationKind.DARK_AMBIENT);
             alertNearbyUndead(victim, playerId, settings);
             return;
         }
         if (settings.whisper().enabled() && whisperManager.isWhispererCached(playerId)
                 && settings.whisper().breakOnDamage()) {
-            state.provokeDark(playerId, settings.whisper().retaliationMillis());
-            trackRetaliationTarget(playerId, victim, true);
+            state.provokeDark(playerId, victimId, settings.whisper().retaliationMillis());
+            trackRetaliationTarget(playerId, victim, RetaliationKind.WHISPER);
         }
     }
 
@@ -280,21 +283,30 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         if (radius <= 0.0D) {
             return;
         }
+        final UUID sourceMobId = victim.getUniqueId();
         for (final Entity nearby : victim.getNearbyEntities(radius, radius, radius)) {
             nearby.getScheduler().run(plugin, task -> {
                 if (!(nearby instanceof Mob mob) || !mobContexts.isUndead(mob)) {
                     return;
                 }
+                final long remaining = state.darkRetaliationRemainingMillis(playerId, sourceMobId);
+                if (remaining <= 0L) {
+                    return;
+                }
                 final FactionPassiveSettings liveSettings = config.snapshot();
                 if (!policy.canAlertDarkUndead(
                         factionManager.getMembership(playerId),
-                        state.isDarkRetaliating(playerId),
-                        mobContexts.contentContexts(mob, liveSettings),
+                        true,
+                        mobContexts.contentContexts(mob, liveSettings, playerId),
                         liveSettings)) {
                     return;
                 }
                 final Player target = Bukkit.getPlayer(playerId);
-                if (target != null && trackRetaliationTarget(playerId, mob, true)) {
+                if (target == null) {
+                    return;
+                }
+                state.provokeDark(playerId, mob.getUniqueId(), remaining);
+                if (trackRetaliationTarget(playerId, mob, RetaliationKind.DARK_AMBIENT)) {
                     mob.setTarget(target);
                 }
             }, null);
@@ -383,15 +395,15 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
     }
 
     private boolean trackRetaliationTarget(final UUID playerId, final Mob mob,
-                                           final boolean darkRetaliation) {
-        final long remaining = darkRetaliation
-                ? state.darkRetaliationRemainingMillis(playerId)
-                : state.neutralRetaliationRemainingMillis(playerId, mob.getUniqueId());
+                                           final RetaliationKind kind) {
+        final UUID mobId = mob.getUniqueId();
+        final long remaining = kind == RetaliationKind.NEUTRAL
+                ? state.neutralRetaliationRemainingMillis(playerId, mobId)
+                : state.darkRetaliationRemainingMillis(playerId, mobId);
         if (remaining <= 0L) {
             return false;
         }
-        final UUID mobId = mob.getUniqueId();
-        final TrackedTarget tracked = new TrackedTarget(new WeakReference<>(mob), darkRetaliation);
+        final TrackedTarget tracked = new TrackedTarget(new WeakReference<>(mob), kind);
         retaliationTargets.computeIfAbsent(playerId, ignored -> new ConcurrentHashMap<>())
                 .put(mobId, tracked);
         return scheduleRetaliationRelease(playerId, mobId, tracked, remaining);
@@ -414,14 +426,14 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
                 if (playerTargets == null || playerTargets.get(mobId) != tracked) {
                     return;
                 }
-                final long remaining = tracked.darkRetaliation()
-                        ? state.darkRetaliationRemainingMillis(playerId)
-                        : state.neutralRetaliationRemainingMillis(playerId, mobId);
+                final long remaining = tracked.kind() == RetaliationKind.NEUTRAL
+                        ? state.neutralRetaliationRemainingMillis(playerId, mobId)
+                        : state.darkRetaliationRemainingMillis(playerId, mobId);
                 if (remaining > 0L) {
                     scheduleRetaliationRelease(playerId, mobId, tracked, remaining);
                     return;
                 }
-                clearTargetOnOwnerThread(mob, playerId);
+                clearTargetIfStillProtected(mob, playerId, mobId, tracked);
                 untrackRetaliationTarget(playerId, mobId, tracked);
             }, () -> untrackRetaliationTarget(playerId, mobId, tracked), delayTicks);
         } catch (final RuntimeException schedulingFailure) {
@@ -435,9 +447,29 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         return true;
     }
 
-    private static void clearTargetOnOwnerThread(final Mob mob, final UUID playerId) {
+    private void clearTargetIfStillProtected(final Mob mob, final UUID playerId,
+                                             final UUID mobId, final TrackedTarget oldTracking) {
+        final Map<UUID, TrackedTarget> currentTargets = retaliationTargets.get(playerId);
+        final TrackedTarget currentTracking = currentTargets == null ? null : currentTargets.get(mobId);
+        if (currentTracking != null && currentTracking != oldTracking) {
+            return;
+        }
         final org.bukkit.entity.LivingEntity current = mob.getTarget();
-        if (current != null && current.getUniqueId().equals(playerId)) {
+        if (current == null || !current.getUniqueId().equals(playerId)) {
+            return;
+        }
+        final Player online = Bukkit.getPlayer(playerId);
+        if (online == null) {
+            mob.setTarget(null);
+            return;
+        }
+        final FactionPassiveSettings liveSettings = config.snapshot();
+        final FactionPassivePolicy.TargetContext liveContext = mobContexts.resolveCurrentTruce(
+                mob, playerId, whisperManager.isWhispererCached(playerId), liveSettings);
+        final FactionPassivePolicy.TargetDecision liveDecision = policy.resolveTarget(
+                factionManager.getMembership(playerId), liveContext, liveSettings,
+                ThreadLocalRandom.current().nextDouble());
+        if (liveDecision != FactionPassivePolicy.TargetDecision.ALLOW) {
             mob.setTarget(null);
         }
     }
@@ -472,30 +504,36 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         if (targets == null) {
             return;
         }
-        for (final TrackedTarget tracked : targets.values()) {
+        targets.forEach((mobId, tracked) -> {
             final Mob mob = tracked.mob().get();
             if (mob != null) {
-                scheduleTargetClear(mob, playerId);
+                scheduleTargetRevalidation(mob, playerId, mobId, tracked);
             }
-        }
+        });
     }
 
     public void clearAllState() {
         state.clearAll();
         final Map<UUID, Map<UUID, TrackedTarget>> snapshot = Map.copyOf(retaliationTargets);
         retaliationTargets.clear();
-        snapshot.forEach((playerId, targets) -> targets.values().forEach(tracked -> {
+        snapshot.forEach((playerId, targets) -> targets.forEach((mobId, tracked) -> {
             final Mob mob = tracked.mob().get();
             if (mob != null) {
-                scheduleTargetClear(mob, playerId);
+                scheduleTargetRevalidation(mob, playerId, mobId, tracked);
             }
         }));
     }
 
-    private void scheduleTargetClear(final Mob mob, final UUID playerId) {
+    private void scheduleTargetRevalidation(final Mob mob, final UUID playerId,
+                                            final UUID mobId, final TrackedTarget tracked) {
         try {
-            mob.getScheduler().run(plugin,
-                    task -> clearTargetOnOwnerThread(mob, playerId), null);
+            final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
+                    mob.getScheduler().run(plugin,
+                            task -> clearTargetIfStillProtected(mob, playerId, mobId, tracked),
+                            null);
+            if (scheduled == null) {
+                return;
+            }
         } catch (final IllegalStateException ignored) {
             // Plugin-disable alatt a scheduler már visszautasíthat új feladatot; a Java-oldali
             // állapot ekkor is kiürült, az entity AI-t pedig a plugin unload újraértékeli.
