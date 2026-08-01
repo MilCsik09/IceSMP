@@ -8,6 +8,7 @@ import hu.taliann.icesmp.storage.YamlStore;
 
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.factions.FactionMembership;
+import hu.taliann.icesmp.factions.FactionMembershipMutation;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -32,6 +33,8 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final File storageFile;
+    /** Assignment/history mutation and full-snapshot persistence boundary. */
+    private final Object stateLock = new Object();
     private final Map<UUID, FactionType> playerFactions = new ConcurrentHashMap<>();
     /** Durable anti-reset history; survives removal/corruption of the current assignment. */
     private final Map<UUID, FactionType> lastChosenFactions = new ConcurrentHashMap<>();
@@ -124,6 +127,13 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     public void save() {
+        synchronized (stateLock) {
+            writeStateLocked();
+        }
+    }
+
+    /** The caller must hold stateLock. */
+    private void writeStateLocked() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
 
@@ -181,7 +191,9 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
      * @return immutable copy of the assignments
      */
     public Map<UUID, FactionType> getFactionAssignments() {
-        return Map.copyOf(playerFactions);
+        synchronized (stateLock) {
+            return Map.copyOf(playerFactions);
+        }
     }
 
     /**
@@ -202,13 +214,25 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     public void setFaction(final UUID uuid, final FactionType factionType) {
         final UUID playerId = Objects.requireNonNull(uuid, "player UUID");
         final FactionType target = Objects.requireNonNull(factionType, "chosen faction");
-        final FactionType previous = playerFactions.put(playerId, target);
-        final boolean changed = previous != target;
-        lastChosenFactions.put(playerId, target);
+        final boolean changed;
+        synchronized (stateLock) {
+            final FactionMembershipMutation.Snapshot previousState =
+                    FactionMembershipMutation.capture(
+                            playerFactions, lastChosenFactions, playerId);
+            changed = previousState.assignment() != target;
+            FactionMembershipMutation.assign(
+                    playerFactions, lastChosenFactions, playerId, target);
+            try {
+                writeStateLocked();
+            } catch (final RuntimeException | Error persistenceFailure) {
+                FactionMembershipMutation.restore(
+                        playerFactions, lastChosenFactions, previousState);
+                throw persistenceFailure;
+            }
+        }
         if (changed) {
             membershipChangeHook.accept(playerId);
         }
-        save();
         final hu.taliann.icesmp.managers.GuildManager guildRef = guildManager;
         if (changed && guildRef != null) {
             guildRef.reconcileFaction(playerId, target);
@@ -392,9 +416,23 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
             return;
         }
 
-        playerFactions.remove(uuid);
+        synchronized (stateLock) {
+            final FactionMembershipMutation.Snapshot previousState =
+                    FactionMembershipMutation.capture(
+                            playerFactions, lastChosenFactions, uuid);
+            if (!previousState.hadAssignment()) {
+                return;
+            }
+            FactionMembershipMutation.removeAssignment(playerFactions, uuid);
+            try {
+                writeStateLocked();
+            } catch (final RuntimeException | Error persistenceFailure) {
+                FactionMembershipMutation.restore(
+                        playerFactions, lastChosenFactions, previousState);
+                throw persistenceFailure;
+            }
+        }
         membershipChangeHook.accept(uuid);
-        save();
         final hu.taliann.icesmp.managers.GuildManager guildRef = guildManager;
         if (guildRef != null) {
             guildRef.reconcileFaction(uuid, null);

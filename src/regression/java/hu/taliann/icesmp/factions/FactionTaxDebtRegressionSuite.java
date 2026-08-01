@@ -17,6 +17,7 @@ public final class FactionTaxDebtRegressionSuite {
 
     public static void main(final String[] args) throws IOException {
         debtAndStrikesStayWithTheirOriginAfterSwitch();
+        debtorsRemainCollectibleAfterAssignmentReset();
         legacyOriginEvidenceIsFailClosed();
         unresolvedLegacyGuestNeverBecomesImplicitNeutral();
         strikeLifecycleIsIsolatedPerOrigin();
@@ -55,6 +56,22 @@ public final class FactionTaxDebtRegressionSuite {
                 "the new BLUE assessment was not isolated");
         checkDouble(15.50D, ledger.getTotalArrears(playerId),
                 "total arrears did not include both origin accounts");
+    }
+
+    private static void debtorsRemainCollectibleAfterAssignmentReset() {
+        final FactionTaxDebtLedger ledger = new FactionTaxDebtLedger();
+        final UUID knownDebtor = UUID.randomUUID();
+        final UUID unresolvedLegacy = UUID.randomUUID();
+        ledger.put(knownDebtor, FactionType.RED, 7.5D, 0);
+        ledger.putUnresolvedLegacy(unresolvedLegacy, 4.0D, 1);
+
+        check(ledger.playerIdsWithDebt().contains(knownDebtor),
+                "known-origin debt disappeared when current assignment was reset");
+        check(ledger.playerIdsWithDebt().contains(unresolvedLegacy),
+                "unresolved legacy debt disappeared from durable collection participants");
+        expectFailure(() -> ledger.playerIdsWithDebt().add(UUID.randomUUID()),
+                UnsupportedOperationException.class,
+                "debtor snapshot must be immutable");
     }
 
     private static void unresolvedLegacyGuestNeverBecomesImplicitNeutral() {
@@ -148,9 +165,11 @@ public final class FactionTaxDebtRegressionSuite {
         check(source.contains("CurrencyType.fromFactionType(originFaction)")
                         && source.contains("collected.merge(originFaction, paid"),
                 "old debt is not collected in its origin currency/treasury");
-        check(source.contains("factionManager.getFactionAssignments().entrySet()")
+        check(source.contains("participants.addAll(taxDebts.playerIdsWithDebt())")
+                        && source.contains("final FactionType currentFaction = assignments.get(citizenId)")
+                        && source.contains("currentFaction == null || exempt.contains")
                         && !source.contains("factionManager.getFaction(citizenId)"),
-                "guest tax collection regained an implicit NEUTRAL fallback");
+                "assignment reset hides known debt or creates a new guest assessment");
         check(source.contains("evasionReportedThisRun.add(citizenId)"),
                 "multiple origin accounts can report multiple sins in one collection run");
         check(source.contains("raw instanceof Number number")

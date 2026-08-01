@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +31,7 @@ public final class FactionPassiveRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         membershipLifecycleFailsClosed();
+        membershipPersistenceRollbackIsAtomic();
         redProvenanceAndCombustDurationRemainIndependent();
         blueOnlySavesExplicitNaturalExhaustion();
         neutralPrecedenceSeparatesSpontaneousAndRetaliation();
@@ -104,6 +107,41 @@ public final class FactionPassiveRegressionSuite {
         check(food.contains("getChosenFaction(player.getUniqueId()).orElse(null)")
                         && food.contains("faction != null && switch (faction)"),
                 "food duty/signature food regained an implicit NEUTRAL assignment");
+    }
+
+    private static void membershipPersistenceRollbackIsAtomic() {
+        final UUID playerId = UUID.randomUUID();
+        final Map<UUID, FactionType> assignments = new HashMap<>();
+        final Map<UUID, FactionType> history = new HashMap<>();
+        assignments.put(playerId, FactionType.RED);
+        history.put(playerId, FactionType.RED);
+
+        final FactionMembershipMutation.Snapshot beforeSwitch =
+                FactionMembershipMutation.capture(assignments, history, playerId);
+        FactionMembershipMutation.assign(
+                assignments, history, playerId, FactionType.BLUE);
+        FactionMembershipMutation.restore(assignments, history, beforeSwitch);
+        check(assignments.get(playerId) == FactionType.RED
+                        && history.get(playerId) == FactionType.RED,
+                "failed membership save did not roll back assignment and history");
+
+        final FactionMembershipMutation.Snapshot beforeReset =
+                FactionMembershipMutation.capture(assignments, history, playerId);
+        FactionMembershipMutation.removeAssignment(assignments, playerId);
+        FactionMembershipMutation.restore(assignments, history, beforeReset);
+        check(assignments.get(playerId) == FactionType.RED
+                        && history.get(playerId) == FactionType.RED,
+                "failed admin reset did not restore durable citizenship");
+
+        try {
+            FactionMembershipMutation.assign(
+                    assignments, history, playerId, FactionType.DARK);
+            throw new IllegalStateException("simulated persistence failure");
+        } catch (final IllegalStateException expected) {
+            FactionMembershipMutation.restore(assignments, history, beforeSwitch);
+        }
+        check(assignments.get(playerId) == FactionType.RED,
+                "simulated save failure left the candidate assignment published");
     }
 
     private static void redProvenanceAndCombustDurationRemainIndependent() {
@@ -509,6 +547,9 @@ public final class FactionPassiveRegressionSuite {
         check(listener.contains("contentContexts(mob, liveSettings, playerId)")
                         && listener.contains("canAlertDarkUndead("),
                 "queued alert ignores live membership/config/content exclusions");
+        check(listener.contains("owningPlayerId(event.getDamageSource().getCausingEntity())")
+                        && listener.contains("instanceof org.bukkit.entity.Tameable"),
+                "indirect or tame-owner provocation is not attributed to the player");
 
         final String service = read(
                 "src/main/java/hu/taliann/icesmp/factions/FactionPassiveService.java");
@@ -525,6 +566,14 @@ public final class FactionPassiveRegressionSuite {
                 "target resolver uses non-existent/stringly Paper reasons");
         check(!resolver.contains("getPersistentDataContainer().set("),
                 "read-only policy adapter mutates entity markers");
+
+        final String membershipManager = read(
+                "src/main/java/hu/taliann/icesmp/managers/FactionManager.java");
+        check(membershipManager.contains("FactionMembershipMutation.restore(")
+                        && membershipManager.contains("writeStateLocked();")
+                        && membershipManager.indexOf("writeStateLocked();")
+                        < membershipManager.indexOf("membershipChangeHook.accept(playerId)"),
+                "membership hook can publish a state whose durable save failed");
 
         final String core = read("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
         check(core.contains("factionPassiveConfig.reload()")

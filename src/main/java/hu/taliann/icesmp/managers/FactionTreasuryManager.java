@@ -88,8 +88,8 @@ public final class FactionTreasuryManager implements PersistentStore {
                                     "Unknown faction in treasury.yml: " + factionKey);
                             continue;
                         }
-                        balances.put(faction,
-                                Math.max(0.0D, section.getDouble(factionKey, 0.0D)));
+                        balances.put(faction, readStoredNonNegative(
+                                section, factionKey, "treasury." + factionKey));
                     }
                 }
 
@@ -98,8 +98,8 @@ public final class FactionTreasuryManager implements PersistentStore {
                     for (final String factionKey : rateSection.getKeys(false)) {
                         final FactionType faction = FactionType.fromInput(factionKey);
                         if (faction != null) {
-                            taxRates.put(faction, Math.max(0.0D,
-                                    rateSection.getDouble(factionKey, 0.0D)));
+                            taxRates.put(faction, readStoredNonNegative(
+                                    rateSection, factionKey, "tax-rates." + factionKey));
                         }
                     }
                 }
@@ -273,6 +273,24 @@ public final class FactionTreasuryManager implements PersistentStore {
         }
     }
 
+    private double readStoredNonNegative(final ConfigurationSection section,
+                                                   final String key, final String path) {
+        final Object raw = section.get(key);
+        if (!(raw instanceof Number number)) {
+            plugin.getLogger().warning(
+                    "Invalid non-numeric persisted amount at " + path + "; value disabled.");
+            return 0.0D;
+        }
+        final double value = number.doubleValue();
+        if (!Double.isFinite(value) || value < 0.0D) {
+            plugin.getLogger().warning(
+                    "Invalid non-finite/negative persisted amount at " + path
+                            + "; value disabled without clamping.");
+            return 0.0D;
+        }
+        return value;
+    }
+
     private double readDebtAmount(final ConfigurationSection section, final String key,
                                   final String path) {
         final Object raw = section.get(key);
@@ -390,28 +408,71 @@ public final class FactionTreasuryManager implements PersistentStore {
         }
     }
 
+    private double nonNegativeFiniteConfig(final String path, final double defaultValue) {
+        final Object raw = configManager.contains(path) && configManager.getConfiguration() != null
+                ? configManager.getConfiguration().get(path) : defaultValue;
+        if (raw instanceof Number number) {
+            final double value = number.doubleValue();
+            if (Double.isFinite(value) && value >= 0.0D) {
+                return value;
+            }
+        }
+        plugin.getLogger().warning("Config: invalid '" + path + "' value (" + raw
+                + "); expected a finite non-negative number — this branch is disabled at 0.0, "
+                + "not silently clamped.");
+        return 0.0D;
+    }
+
+    private int nonNegativeIntConfig(final String path, final int defaultValue) {
+        final Object raw = configManager.contains(path) && configManager.getConfiguration() != null
+                ? configManager.getConfiguration().get(path) : defaultValue;
+        if (raw instanceof Number number) {
+            final double value = number.doubleValue();
+            if (Double.isFinite(value) && value >= 0.0D && value <= Integer.MAX_VALUE
+                    && value == Math.rint(value)) {
+                return (int) value;
+            }
+        }
+        plugin.getLogger().warning("Config: invalid '" + path + "' value (" + raw
+                + "); expected a non-negative integer — this branch is disabled at 0, "
+                + "not silently clamped.");
+        return 0;
+    }
+
     /** Gets a faction's effective citizen-tax rate. */
     public double getTaxRate(final FactionType faction) {
         synchronized (stateLock) {
-            final double configDefault = Math.max(0.0D,
-                    configManager.getDouble("factions.tax.rate-percent", 2.0D));
-            return faction == null
+            final double configDefault = nonNegativeFiniteConfig(
+                    "factions.tax.rate-percent", 2.0D);
+            final double stored = faction == null
                     ? configDefault : taxRates.getOrDefault(faction, configDefault);
+            if (Double.isFinite(stored) && stored >= 0.0D) {
+                return stored;
+            }
+            plugin.getLogger().warning("Invalid persisted tax rate for " + faction
+                    + "; using the validated config default.");
+            return configDefault;
         }
     }
 
-    /** Sets a faction's citizen-tax rate. */
+    /** Sets a faction's citizen-tax rate. The configured maximum is explicit, not hidden. */
     public double setTaxRate(final FactionType faction, final double ratePercent) {
-        final double max = Math.max(0.0D,
-                configManager.getDouble("factions.tax.max-rate-percent", 10.0D));
-        final double safeRate = Double.isFinite(ratePercent) ? ratePercent : 0.0D;
-        final double applied = Math.max(0.0D, Math.min(max, safeRate));
-        if (faction != null) {
-            synchronized (stateLock) {
-                taxRates.put(faction, applied);
-            }
-            requestSave();
+        if (faction == null || !Double.isFinite(ratePercent) || ratePercent < 0.0D) {
+            plugin.getLogger().warning("Rejected invalid faction tax rate: " + ratePercent);
+            return faction == null ? 0.0D : getTaxRate(faction);
         }
+        final double max = nonNegativeFiniteConfig(
+                "factions.tax.max-rate-percent", 10.0D);
+        final double applied = Math.min(max, ratePercent);
+        if (ratePercent > max) {
+            plugin.getLogger().warning("Faction tax rate " + ratePercent
+                    + " exceeds configured factions.tax.max-rate-percent=" + max
+                    + "; applying the documented maximum.");
+        }
+        synchronized (stateLock) {
+            taxRates.put(faction, applied);
+        }
+        requestSave();
         return applied;
     }
 
@@ -495,8 +556,8 @@ public final class FactionTreasuryManager implements PersistentStore {
     /**
      * Collects the periodic citizen tax. A current explicit citizen receives one new assessment
      * in their current faction; every retained debt bucket is settled independently in its
-     * original currency and credited back to its original treasury. Unassigned guests are absent
-     * from the assignment snapshot, so they receive neither a new assessment nor debt collection.
+     * original currency and credited back to its original treasury. Unassigned guests receive no
+     * new assessment, but a previously assessed origin-aware debt remains collectible after reset.
      */
     public void collectTaxes() {
         if (!configManager.getBoolean("factions.tax.enabled", true)) {
@@ -506,29 +567,28 @@ public final class FactionTreasuryManager implements PersistentStore {
         final List<String> exempt = configManager.getStringList("factions.tax.exempt").stream()
                 .map(name -> name.toUpperCase(Locale.ROOT))
                 .toList();
-        final double minimum = Math.max(0.0D,
-                configManager.getDouble("factions.tax.minimum-amount", 2.0D));
-        final double maxArrears = Math.max(0.0D,
-                configManager.getDouble("factions.tax.max-arrears", 50.0D));
-        final int evasionThreshold = Math.max(0,
-                configManager.getInt("factions.tax.evasion-strikes", 3));
+        final double minimum = nonNegativeFiniteConfig(
+                "factions.tax.minimum-amount", 2.0D);
+        final double maxArrears = nonNegativeFiniteConfig(
+                "factions.tax.max-arrears", 50.0D);
+        final int evasionThreshold = nonNegativeIntConfig(
+                "factions.tax.evasion-strikes", 3);
 
         final Map<FactionType, Double> collected = new EnumMap<>(FactionType.class);
         final Set<UUID> evasionReportedThisRun = new HashSet<>();
         boolean arrearsChanged = false;
-        for (final Map.Entry<UUID, FactionType> entry
-                : factionManager.getFactionAssignments().entrySet()) {
-            final FactionType currentFaction = entry.getValue();
-            if (currentFaction == null) {
-                continue;
-            }
-
-            final UUID citizenId = entry.getKey();
-            final CurrencyType currentCurrency = CurrencyType.fromFactionType(currentFaction);
+        final Map<UUID, FactionType> assignments = factionManager.getFactionAssignments();
+        final Set<UUID> participants = new HashSet<>(assignments.keySet());
+        synchronized (stateLock) {
+            participants.addAll(taxDebts.playerIdsWithDebt());
+        }
+        for (final UUID citizenId : participants) {
+            final FactionType currentFaction = assignments.get(citizenId);
             final double newAssessment;
-            if (exempt.contains(currentFaction.name())) {
+            if (currentFaction == null || exempt.contains(currentFaction.name())) {
                 newAssessment = 0.0D;
             } else {
+                final CurrencyType currentCurrency = CurrencyType.fromFactionType(currentFaction);
                 final double ratePercent = getTaxRate(currentFaction);
                 final double balance = currencyManager.getBalance(citizenId, currentCurrency);
                 final double percentDue = ratePercent <= 0.0D
@@ -538,7 +598,8 @@ public final class FactionTreasuryManager implements PersistentStore {
 
             final EnumSet<FactionType> origins = EnumSet.noneOf(FactionType.class);
             synchronized (stateLock) {
-                if (taxDebts.bindUnresolvedLegacy(citizenId, currentFaction)) {
+                if (currentFaction != null
+                        && taxDebts.bindUnresolvedLegacy(citizenId, currentFaction)) {
                     arrearsChanged = true;
                     plugin.getLogger().warning(
                             "Bound origin-less legacy tax debt for " + citizenId + " to "
@@ -560,7 +621,8 @@ public final class FactionTreasuryManager implements PersistentStore {
                     owedBefore = taxDebts.getArrears(citizenId, originFaction);
                     strikesBefore = taxDebts.getEvasionStrikes(citizenId, originFaction);
                 }
-                final double assessed = originFaction == currentFaction ? newAssessment : 0.0D;
+                final double assessed = currentFaction != null && originFaction == currentFaction
+                        ? newAssessment : 0.0D;
                 final double due = owedBefore + assessed;
                 if (due <= 0.0D) {
                     synchronized (stateLock) {

@@ -201,7 +201,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         if (!(event.getEntity() instanceof Mob victim)) {
             return;
         }
-        final UUID playerId = damagingPlayerId(event.getDamager());
+        final UUID playerId = damagingPlayerId(event);
         if (playerId == null) {
             return;
         }
@@ -328,12 +328,22 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
                 task -> whisperManager.addSuspicion(player, whisper.witnessSuspicion()), null);
     }
 
-    private static UUID damagingPlayerId(final Entity damager) {
-        if (damager instanceof Player player) {
+    private static UUID damagingPlayerId(final EntityDamageByEntityEvent event) {
+        final UUID direct = owningPlayerId(event.getDamager());
+        return direct != null
+                ? direct : owningPlayerId(event.getDamageSource().getCausingEntity());
+    }
+
+    private static UUID owningPlayerId(final Object source) {
+        if (source instanceof Player player) {
             return player.getUniqueId();
         }
-        if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Player shooter) {
-            return shooter.getUniqueId();
+        if (source instanceof Projectile projectile) {
+            return owningPlayerId(projectile.getShooter());
+        }
+        if (source instanceof org.bukkit.entity.Tameable tameable
+                && tameable.getOwner() != null) {
+            return tameable.getOwner().getUniqueId();
         }
         return null;
     }
