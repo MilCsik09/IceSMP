@@ -35,6 +35,11 @@ public final class SinManager {
     private final NamespacedKey sinnerKey;
     private final NamespacedKey darkPactKey;
     private final NamespacedKey sinCountKey;
+    private volatile SpecializationManager specializationManager;
+
+    public void setSpecializationManager(final SpecializationManager specializationManager) {
+        this.specializationManager = specializationManager;
+    }
 
     public SinManager(final JavaPlugin plugin, final ConfigManager configManager,
                       final MessageManager messageManager, final FactionManager factionManager) {
@@ -105,6 +110,7 @@ public final class SinManager {
     public void markAsSinner(final Player player) {
         if (player != null) {
             player.getPersistentDataContainer().set(sinnerKey, PersistentDataType.BYTE, (byte) 1);
+            reconcileProfileGates(player);
         }
     }
 
@@ -163,6 +169,7 @@ public final class SinManager {
         player.getPersistentDataContainer().remove(darkPactKey);
         player.getPersistentDataContainer().remove(sinCountKey);
         player.getPersistentDataContainer().remove(sinnerKey);
+        reconcileProfileGates(player);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1.0F, 1.4F);
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0D, 1.0D, 0.0D), 60, 0.5D, 0.8D, 0.5D, 0.05D);
         AdvancementService.award(player, "redeemed");
@@ -195,11 +202,19 @@ public final class SinManager {
         }
 
         player.getPersistentDataContainer().remove(sinnerKey);
+        reconcileProfileGates(player);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 1.6F);
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 0.7F, 1.8F);
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0D, 1.0D, 0.0D), 24, 0.35D, 0.5D, 0.35D, 0.02D);
         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D), 16, 0.25D, 0.4D, 0.25D, 0.01D);
         player.sendMessage(messageManager.getMessage("sinner.cleansed", "<green><i>Megtisztultal a buneidtol...</i></green>"));
         return true;
+    }
+
+    private void reconcileProfileGates(final Player player) {
+        final SpecializationManager specs = specializationManager;
+        if (specs != null && specs.profileV2Enabled()) {
+            specs.reconcileDarkGates(player);
+        }
     }
 }

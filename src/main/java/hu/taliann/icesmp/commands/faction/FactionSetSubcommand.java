@@ -21,6 +21,12 @@ public final class FactionSetSubcommand implements FactionSubcommand {
     private final FactionManager factionManager;
     private final SinManager sinManager;
     private final MessageManager messageManager;
+    private volatile hu.taliann.icesmp.managers.SpecializationManager specializationManager;
+
+    public void setSpecializationManager(
+            final hu.taliann.icesmp.managers.SpecializationManager specializationManager) {
+        this.specializationManager = specializationManager;
+    }
 
     public FactionSetSubcommand(final JavaPlugin plugin, final FactionManager factionManager, final SinManager sinManager,
                                 final MessageManager messageManager) {
@@ -82,6 +88,11 @@ public final class FactionSetSubcommand implements FactionSubcommand {
         if (factionType == FactionType.DARK && target.getPlayer() instanceof Player onlineTarget) {
             onlineTarget.getScheduler().run(plugin, task -> sinManager.sealDarkPact(onlineTarget), null);
         }
+        if (target.getPlayer() instanceof Player onlineTarget && specializationManager != null
+                && specializationManager.profileV2Enabled()) {
+            onlineTarget.getScheduler().run(plugin,
+                    task -> specializationManager.reconcileDarkGates(onlineTarget), null);
+        }
 
         sender.sendMessage(messageManager.get(
                 "messages.faction-set-target-success",
@@ -110,6 +121,5 @@ public final class FactionSetSubcommand implements FactionSubcommand {
         return List.of();
     }
 }
-
 
 

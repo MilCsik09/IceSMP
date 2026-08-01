@@ -33,6 +33,7 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
     /** Join-time durable crate key recovery runs on the joining player owner thread. */
     private final hu.taliann.icesmp.managers.CrateManager crateManager;
+    private final hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge profileSessionBridge;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -61,17 +62,21 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.CombatTagManager combatTagManager,
                                         final hu.taliann.icesmp.managers.ClassHealthService classHealthService,
                                         final hu.taliann.icesmp.listeners.LowHealthBorderListener lowHealthBorderListener,
-                                        final SpellRegistry spellRegistry) {
+                                        final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager,
+                                        final SpellRegistry spellRegistry,
+                                        final hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge profileSessionBridge) {
         // Register every stateful component here; adding a new one needs only this line + the interface.
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
                 metelytepoManager, relicManager, craftingRestrictionManager, resourceManager, partyManager,
                 claimManager, territoryManager, petManager, ritualManager, professionManager,
                 afkManager, sitManager, crateManager, moderationManager, vanishManager, invseeManager, whisperManager, guildManager,
-                honorDuelManager, spyManager, combatTagManager, classHealthService, lowHealthBorderListener);
+                honorDuelManager, spyManager, combatTagManager, classHealthService, lowHealthBorderListener,
+                soulforgeManager);
         this.spellRegistry = spellRegistry;
         this.invseeManager = invseeManager;
         this.moderationManager = moderationManager;
         this.crateManager = crateManager;
+        this.profileSessionBridge = profileSessionBridge;
     }
 
     /**
@@ -87,6 +92,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         moderationManager.openReplySession(event.getPlayer().getUniqueId());
         invseeManager.restorePending(event.getPlayer());
         crateManager.restorePendingRecovery(event.getPlayer());
+        profileSessionBridge.join(event.getPlayer());
     }
 
     /**
@@ -117,12 +123,14 @@ public final class PlayerSessionCleanupListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(final PlayerQuitEvent event) {
+        profileSessionBridge.quit(event.getPlayer().getUniqueId());
         cleanupPlayerState(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerKick(final PlayerKickEvent event) {
         // Cancelelt kicknél a játékos online marad — a session-állapot nem takarítható el.
+        profileSessionBridge.quit(event.getPlayer().getUniqueId());
         cleanupPlayerState(event.getPlayer().getUniqueId());
     }
 
@@ -146,5 +154,3 @@ public final class PlayerSessionCleanupListener implements Listener {
         }
     }
 }
-
-

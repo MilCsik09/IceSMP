@@ -9,6 +9,8 @@ import hu.taliann.icesmp.managers.RespecService;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
+import hu.taliann.icesmp.classspec.application.ProfileDiagnostic;
+import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -81,8 +83,29 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
 
-        final RespecService.Outcome outcome =
-                respecService.respec(player, "class".equalsIgnoreCase(args[1]));
+        final boolean classPool = "class".equalsIgnoreCase(args[1]);
+        if (classPool && specializationManager.profileV2Enabled()) {
+            final long revision = specializationManager.profileGateway()
+                    .diagnostic(player.getUniqueId()).revision();
+            respecService.respecV2(player,
+                            "player-respec:" + player.getUniqueId() + ":" + revision)
+                    .whenComplete((outcome, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (failure != null || outcome == null) {
+                            player.sendMessage(messageManager.get("spec-respec-persistence-failed",
+                                    "&cA Profile v2 tranzakció meghiúsult; a költség nem veszett el."));
+                        } else {
+                            sendRespecOutcome(player, player, outcome);
+                        }
+                    }, null));
+            return;
+        }
+
+        final RespecService.Outcome outcome = respecService.respec(player, classPool);
+        sendRespecOutcome(sender, player, outcome);
+    }
+
+    private void sendRespecOutcome(final CommandSender sender, final Player player,
+                                   final RespecService.Outcome outcome) {
         switch (outcome.status()) {
             case NOTHING_TO_RESPEC -> sender.sendMessage(messageManager.get(
                     "spec-respec-nothing", "&cNincs mit visszaváltani: nincs ilyen specializációd."));
@@ -100,6 +123,15 @@ public final class SpecCommand implements BasicCommand {
                     outcome.currency().getDisplayName(),
                     outcome.refundedTalentPoints()
             ));
+            case PERSISTENCE_FAILED -> sender.sendMessage(messageManager.get(
+                    "spec-respec-persistence-failed",
+                    "&cA Profile v2 mentése meghiúsult; az esetleges költséget visszatérítettük."));
+            case RUNTIME_FAILED -> sender.sendMessage(messageManager.get(
+                    "spec-respec-runtime-failed",
+                    "&4A profil commitolt, de a runtime-befejezés hibázott; a session blokkolva, admin audit szükséges."));
+            case REFUND_FAILED -> sender.sendMessage(messageManager.get(
+                    "spec-respec-refund-failed",
+                    "&4A profil- és valuta-visszaállítás kézi admin auditot igényel; a session blokkolva maradt."));
         }
     }
 
@@ -170,6 +202,21 @@ public final class SpecCommand implements BasicCommand {
 
         final SpecializationType classSpec = SpecializationType.fromId(args[1]);
         if (classSpec != null) {
+            if (specializationManager.profileV2Enabled()) {
+                specializationManager.selectClassSpecializationV2(player, classSpec)
+                        .whenComplete((success, failure) -> player.getScheduler().run(plugin, task -> {
+                            if (failure == null && Boolean.TRUE.equals(success)) {
+                                player.sendMessage(messageManager.getMessage(
+                                                "spec-choose-success", "&aSpecializáció kiválasztva:")
+                                        .append(Component.space()).append(classSpec.getDisplayName()));
+                            } else {
+                                player.sendMessage(messageManager.get(
+                                        "spec-choose-failed",
+                                        "&cA Profile v2 mentés vagy valamelyik kasztkapu miatt a választás meghiúsult."));
+                            }
+                        }, null));
+                return;
+            }
             if (specializationManager.selectClassSpecialization(player, classSpec)) {
                 player.sendMessage(messageManager.getMessage("spec-choose-success", "&aSpecializáció kiválasztva:")
                         .append(Component.space())
@@ -207,6 +254,37 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
 
+        if (specializationManager.profileV2Enabled()) {
+            final ProfileDiagnostic diagnostic = specializationManager.profileGateway()
+                    .diagnostic(player.getUniqueId());
+            player.sendMessage(Component.text("Profile v2: "
+                    + (diagnostic.loaded() ? diagnostic.profileStatus() : "UNAVAILABLE")
+                    + " | schema=" + diagnostic.schemaVersion() + " | revision=" + diagnostic.revision()));
+            player.sendMessage(Component.text("Primary class="
+                    + diagnostic.primaryClassId().orElse("none") + " | activeSlot="
+                    + diagnostic.activeSlot().map(Enum::name).orElse("none")
+                    + " | secondSpecUnlocked=" + diagnostic.secondSpecUnlocked()));
+            for (final LoadoutSlot slot : LoadoutSlot.values()) {
+                final ProfileDiagnostic.SlotDiagnostic state = diagnostic.slots().get(slot);
+                if (state == null) {
+                    player.sendMessage(Component.text(slot.name() + ": unavailable"));
+                    continue;
+                }
+                player.sendMessage(Component.text(slot.name() + ": spec="
+                        + state.specializationId().orElse("none") + " | status=" + state.status()
+                        + " | seal=" + state.sealReason()
+                        .map(reason -> reason.cause() + ":" + reason.gateId()).orElse("none")
+                        + " | mastery=" + state.masteryRank() + "/10 xp=" + state.masteryXp()));
+            }
+            diagnostic.migrationReviewReason().ifPresent(reason ->
+                    player.sendMessage(Component.text("Migration review: " + reason)));
+            diagnostic.quarantineReason().ifPresent(reason ->
+                    player.sendMessage(Component.text("Quarantine: " + reason)));
+            diagnostic.sessionBlockReason().ifPresent(reason ->
+                    player.sendMessage(Component.text("Session block: " + reason)));
+            return;
+        }
+
         final SpecializationType classSpec = specializationManager.getClassSpecialization(player);
         final ProfessionSpecializationType professionSpec = specializationManager.getProfessionSpecialization(player);
 
@@ -239,6 +317,33 @@ public final class SpecCommand implements BasicCommand {
 
         // Folia: resetSpecializations writes the target's PDC — run it on the target's region thread.
         target.getScheduler().run(plugin, task -> {
+            if (specializationManager.profileV2Enabled()) {
+                final long revision = specializationManager.profileGateway()
+                        .diagnostic(target.getUniqueId()).revision();
+                specializationManager.resetClassProfileV2(target, false,
+                                "admin-spec-reset:" + target.getUniqueId() + ":" + revision)
+                        .whenComplete((result, failure) -> target.getScheduler().run(plugin, followup -> {
+                            if (failure == null && result != null && result.committed()) {
+                                specializationManager.resetProfessionSpecialization(target);
+                                sender.sendMessage(messageManager.get("spec-reset-success",
+                                        "&aSpecializációk törölve: &f%s", target.getName()));
+                            } else if (failure == null && result != null
+                                    && result.durableMutationApplied()) {
+                                specializationManager.profileGateway().blockSession(target.getUniqueId(),
+                                        "Admin spec-reset committed, but runtime reconciliation failed");
+                                sender.sendMessage(messageManager.get("spec-reset-runtime-failed",
+                                        "&cA profil commitolt, de a runtime-befejezés hibázott; a session blokkolva: &f%s",
+                                        target.getName()));
+                            } else {
+                                sender.sendMessage(messageManager.get("spec-reset-failed",
+                                        "&cA Profile v2 mentése meghiúsult; semmi nem lett törölve: &f%s",
+                                        target.getName()));
+                            }
+                        }, () -> specializationManager.profileGateway().blockSession(
+                                target.getUniqueId(),
+                                "Admin spec-reset completion scheduler rejected")));
+                return;
+            }
             specializationManager.resetSpecializations(target);
             sender.sendMessage(messageManager.get("spec-reset-success", "&aSpecializációk törölve: &f%s", target.getName()));
         }, null);

@@ -61,6 +61,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();
     /** pet UUID → epoch ms when the pet may attack again. */
     private final Map<UUID, Long> attackReady = new ConcurrentHashMap<>();
+    /** Profile v2 runtime-only owner -> live pet identity; never written to PDC/profile. */
+    private final Map<UUID, UUID> activePetEntities = new ConcurrentHashMap<>();
+    private volatile hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway;
 
     public PetManager(final JavaPlugin plugin, final ConfigManager configManager, final MinionManager minionManager,
                       final SpecializationManager specializationManager, final MessageManager messageManager) {
@@ -81,6 +84,16 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         this.armorKey = new NamespacedKey(plugin, "pet_armor");
         this.armorDefenseModKey = new NamespacedKey(plugin, "pet_armor_defense_mod");
         this.armorHealthModKey = new NamespacedKey(plugin, "pet_armor_health_mod");
+    }
+
+    public void setProfileGateway(
+            final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway) {
+        this.profileGateway = java.util.Objects.requireNonNull(profileGateway, "profileGateway");
+    }
+
+    private boolean profileV2Enabled() {
+        final var gateway = profileGateway;
+        return gateway != null && gateway.enabled();
     }
 
     public boolean isBeastMaster(final Player player) {
@@ -111,6 +124,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     /** Boszorkánymester (kaszt-szintű): állandó démon-familiáris. */
     public boolean isWarlock(final Player player) {
+        if (profileV2Enabled()) {
+            return specializationManager.getClassSpecialization(player) == SpecializationType.DEMONOLOGIST;
+        }
         final hu.taliann.icesmp.managers.JobManager jobs = this.jobManager;
         return jobs != null && jobs.getPrimaryJob(player) == hu.taliann.icesmp.data.JobType.WARLOCK;
     }
@@ -125,15 +141,74 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public int getLevel(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            return gateway.activeCompanion(player.getUniqueId())
+                    .map(hu.taliann.icesmp.classspec.domain.CompanionProfile::level).orElse(1);
+        }
         return Math.max(1, player.getPersistentDataContainer().getOrDefault(levelKey, PersistentDataType.INTEGER, 1));
     }
 
     public int getXp(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            return gateway.activeCompanion(player.getUniqueId())
+                    .map(companion -> (int) Math.min(Integer.MAX_VALUE, companion.experience())).orElse(0);
+        }
         return player.getPersistentDataContainer().getOrDefault(xpKey, PersistentDataType.INTEGER, 0);
     }
 
     public String getName(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            return gateway.activeCompanion(player.getUniqueId())
+                    .map(hu.taliann.icesmp.classspec.domain.CompanionProfile::name).orElse("Társ");
+        }
         return player.getPersistentDataContainer().getOrDefault(nameKey, PersistentDataType.STRING, "Társ");
+    }
+
+    /**
+     * Immutable, entity-free view of the legacy companion fields stored on the
+     * player. This is intentionally a read-only migration adapter: the live pet
+     * UUID is represented only by
+     * {@link PersistentPetSnapshot#liveEntityReferencePresent()} and is never
+     * exposed to a durable profile.
+     */
+    public record PersistentPetSnapshot(boolean present, String typeId, String name, int level, int experience,
+                                        String stance, boolean armored, long resummonAtEpochMillis,
+                                        boolean ritualSummoned, boolean liveEntityReferencePresent) {
+    }
+
+    /**
+     * Captures legacy pet persistence without resolving or touching the live
+     * entity. Must be called on the owning player's scheduler/region thread.
+     */
+    public PersistentPetSnapshot snapshotPersistentState(final Player player) {
+        final var pdc = player.getPersistentDataContainer();
+        final NamespacedKey summonedKey = summonedKey();
+        final boolean present = pdc.getKeys().contains(levelKey)
+                || pdc.getKeys().contains(xpKey)
+                || pdc.getKeys().contains(nameKey)
+                || pdc.getKeys().contains(typeKey)
+                || pdc.getKeys().contains(entityKey)
+                || pdc.getKeys().contains(respawnKey)
+                || pdc.getKeys().contains(stanceKey)
+                || pdc.getKeys().contains(armorKey)
+                || pdc.getKeys().contains(summonedKey);
+        if (!present) {
+            return new PersistentPetSnapshot(false, "", "", 0, 0, "", false, 0L, false, false);
+        }
+        return new PersistentPetSnapshot(
+                true,
+                pdc.getOrDefault(typeKey, PersistentDataType.STRING, ""),
+                pdc.getOrDefault(nameKey, PersistentDataType.STRING, "Társ"),
+                Math.max(1, pdc.getOrDefault(levelKey, PersistentDataType.INTEGER, 1)),
+                Math.max(0, pdc.getOrDefault(xpKey, PersistentDataType.INTEGER, 0)),
+                pdc.getOrDefault(stanceKey, PersistentDataType.STRING, MinionManager.Stance.ACTIVE.name()),
+                pdc.getOrDefault(armorKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1,
+                Math.max(0L, pdc.getOrDefault(respawnKey, PersistentDataType.LONG, 0L)),
+                pdc.getOrDefault(summonedKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1,
+                pdc.getKeys().contains(entityKey));
     }
 
     /** Whether the player may capture the target with their spec's capture item. */
@@ -174,6 +249,13 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public boolean isSummonedPet(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            return gateway.activeCompanion(player.getUniqueId())
+                    .map(companion -> Boolean.parseBoolean(
+                            companion.persistentState().getOrDefault("legacy.ritual_summoned", "false")))
+                    .orElse(false);
+        }
         return player.getPersistentDataContainer()
                 .getOrDefault(summonedKey(), PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
@@ -185,6 +267,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * @return null siker, különben üzenet-kulcs
      */
     public String ritualSummon(final Player player) {
+        if (profileV2Enabled()) {
+            return "pet-profile-v2-roster-required";
+        }
         final boolean unholy = isUnholy(player);
         final boolean warlock = !unholy && isWarlock(player);
         if (!unholy && !warlock) {
@@ -229,6 +314,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * @return null on success, otherwise a message key
      */
     public String capture(final Player player, final Entity target) {
+        if (profileV2Enabled()) {
+            return "pet-profile-v2-roster-required";
+        }
         if (!canOwnPet(player)) {
             return "pet-not-allowed";
         }
@@ -253,8 +341,14 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (!canOwnPet(player)) {
             return "pet-not-allowed";
         }
-        final long respawnAt = player.getPersistentDataContainer()
-                .getOrDefault(respawnKey, PersistentDataType.LONG, 0L);
+        if (profileV2Enabled() && (isUnholy(player) || isWarlock(player))) {
+            return "pet-ritual-required";
+        }
+        final long respawnAt = profileV2Enabled()
+                ? profileGateway.activeCompanion(player.getUniqueId())
+                        .map(hu.taliann.icesmp.classspec.domain.CompanionProfile::resummonAtEpochMillis)
+                        .orElse(0L)
+                : player.getPersistentDataContainer().getOrDefault(respawnKey, PersistentDataType.LONG, 0L);
         if (respawnAt > System.currentTimeMillis()) {
             return "pet-respawn-cooldown";
         }
@@ -301,15 +395,21 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         // jelölést viseli, ezért egy eldobható minion halála leállította volna az ÉLŐ társ
         // vezérlését. Az ellenőrzés a gazda PDC-jét olvassa, tehát a gazda saját szálán fut.
         owner.getScheduler().run(plugin, task -> {
-            final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
-            if (deadId.toString().equals(raw)) {
+            final boolean active = profileV2Enabled()
+                    ? deadId.equals(activePetEntities.get(ownerId))
+                    : deadId.toString().equals(owner.getPersistentDataContainer()
+                            .get(entityKey, PersistentDataType.STRING));
+            if (active) {
                 activeOwners.remove(ownerId);
+                activePetEntities.remove(ownerId, deadId);
                 combatTargets.remove(ownerId);
-                owner.getPersistentDataContainer().remove(entityKey);
+                if (!profileV2Enabled()) {
+                    owner.getPersistentDataContainer().remove(entityKey);
+                }
                 // A halálnak tétje van: újraidézés csak cooldown után.
                 final long cd = Math.max(0L, configManager.getLong(
                         "pets.companion.death-respawn-seconds", 120L)) * 1000L;
-                if (cd > 0L) {
+                if (cd > 0L && !profileV2Enabled()) {
                     owner.getPersistentDataContainer().set(respawnKey, PersistentDataType.LONG,
                             System.currentTimeMillis() + cd);
                 }
@@ -321,6 +421,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public boolean setName(final Player player, final String name) {
+        if (profileV2Enabled()) {
+            return false;
+        }
         if (name == null || name.isBlank() || name.length() > 24) {
             return false;
         }
@@ -340,6 +443,16 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * továbbra is a saját entitás-PDC-jükben van.)
      */
     public MinionManager.Stance getStance(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            final String stored = gateway.activeCompanion(player.getUniqueId())
+                    .map(hu.taliann.icesmp.classspec.domain.CompanionProfile::stance).orElse("ACTIVE");
+            try {
+                return MinionManager.Stance.valueOf(stored.toUpperCase(Locale.ROOT));
+            } catch (final IllegalArgumentException invalid) {
+                return MinionManager.Stance.ACTIVE;
+            }
+        }
         final String raw = player.getPersistentDataContainer().get(stanceKey, PersistentDataType.STRING);
         if (raw == null) {
             return MinionManager.Stance.ACTIVE;
@@ -352,6 +465,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public void setStance(final Player player, final MinionManager.Stance stance) {
+        if (profileV2Enabled()) {
+            return;
+        }
         player.getPersistentDataContainer().set(stanceKey, PersistentDataType.STRING, stance.name());
     }
 
@@ -380,12 +496,24 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public long respawnRemainingSeconds(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            final long at = gateway.activeCompanion(player.getUniqueId())
+                    .map(hu.taliann.icesmp.classspec.domain.CompanionProfile::resummonAtEpochMillis)
+                    .orElse(0L);
+            return Math.max(0L, (at - System.currentTimeMillis() + 999L) / 1000L);
+        }
         final long at = player.getPersistentDataContainer().getOrDefault(respawnKey, PersistentDataType.LONG, 0L);
         return Math.max(0L, (at - System.currentTimeMillis() + 999L) / 1000L);
     }
 
     /** Társvért: a jelzés a gazda PDC-jében él, így újraidézéskor is visszakerül a társra. */
     public boolean hasPetArmor(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            return gateway.activeCompanion(player.getUniqueId())
+                    .map(companion -> !companion.equipmentIds().isEmpty()).orElse(false);
+        }
         return player.getPersistentDataContainer().getOrDefault(armorKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
 
@@ -395,6 +523,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * @return null siker, különben üzenet-kulcs
      */
     public String equipArmor(final Player player, final Entity clicked) {
+        if (profileV2Enabled()) {
+            return "pet-profile-v2-roster-required";
+        }
         if (!canOwnPet(player)) {
             return "pet-not-allowed";
         }
@@ -419,6 +550,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     /** Awards companion XP for the owner; levels up (rebuffing the active pet) on threshold. */
     public void addXp(final Player player, final int amount) {
+        if (profileV2Enabled()) {
+            return;
+        }
         if (amount <= 0 || !canOwnPet(player)) {
             return;
         }
@@ -518,16 +652,12 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     private void tickOwner(final Player owner, final double followSq, final double followStartSq, final double reach,
                            final double aggro, final double leash, final double chaseSpeed, final long cooldownMs) {
-        final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
-        if (raw == null) {
+        final UUID petId = activePetId(owner);
+        if (petId == null) {
             return;
         }
         final Entity entity;
-        try {
-            entity = Bukkit.getEntity(UUID.fromString(raw));
-        } catch (final IllegalArgumentException exception) {
-            return;
-        }
+        entity = Bukkit.getEntity(petId);
         if (!(entity instanceof Mob pet)) {
             return;
         }
@@ -671,6 +801,16 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     private EntityType resolveType(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            final String typeId = gateway.activeCompanion(player.getUniqueId())
+                    .map(hu.taliann.icesmp.classspec.domain.CompanionProfile::typeId).orElse("");
+            try {
+                return typeId.isBlank() ? null : EntityType.valueOf(typeId.toUpperCase(Locale.ROOT));
+            } catch (final IllegalArgumentException invalid) {
+                return null;
+            }
+        }
         final String stored = player.getPersistentDataContainer().get(typeKey, PersistentDataType.STRING);
         if (stored != null) {
             try {
@@ -718,7 +858,12 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         }
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());
-        player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());
+        if (profileV2Enabled()) {
+            activePetEntities.put(player.getUniqueId(), mob.getUniqueId());
+            player.getPersistentDataContainer().remove(entityKey);
+        } else {
+            player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());
+        }
         activeOwners.add(player.getUniqueId());
     }
 
@@ -779,6 +924,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     public void clearPlayerState(final UUID playerId) {
         if (playerId != null) {
             activeOwners.remove(playerId);
+            activePetEntities.remove(playerId);
             combatTargets.remove(playerId);
             // A gazda nélkül maradt társ/minionok despawnolnak (PDC-ből újraidézhető) —
             // nem maradhat árva, örök-persistent entitás a világban.
@@ -787,35 +933,42 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     private Mob activePet(final Player player) {
-        final String raw = player.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
-        if (raw == null) {
+        final UUID petId = activePetId(player);
+        if (petId == null) {
             return null;
         }
-        try {
-            final Entity entity = Bukkit.getEntity(UUID.fromString(raw));
-            return entity instanceof Mob mob && mob.isValid() ? mob : null;
-        } catch (final IllegalArgumentException exception) {
-            return null;
-        }
+        final Entity entity = Bukkit.getEntity(petId);
+        return entity instanceof Mob mob && mob.isValid() ? mob : null;
     }
 
     private boolean removeActive(final Player player) {
         combatTargets.remove(player.getUniqueId());
-        final String raw = player.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
-        if (raw == null) {
+        final UUID petId = activePetId(player);
+        if (petId == null) {
             return false;
         }
-        try {
-            final UUID petId = UUID.fromString(raw);
-            attackReady.remove(petId);
-            final Entity entity = Bukkit.getEntity(petId);
-            if (entity != null) {
-                entity.getScheduler().run(plugin, task -> entity.remove(), null);
-                return true;
-            }
-        } catch (final IllegalArgumentException ignored) {
-            // Malformed stored id.
+        activePetEntities.remove(player.getUniqueId());
+        attackReady.remove(petId);
+        final Entity entity = Bukkit.getEntity(petId);
+        if (entity != null) {
+            entity.getScheduler().run(plugin, task -> entity.remove(), null);
+            return true;
         }
         return false;
+    }
+
+    private UUID activePetId(final Player player) {
+        if (profileV2Enabled()) {
+            return activePetEntities.get(player.getUniqueId());
+        }
+        final String raw = player.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(raw);
+        } catch (final IllegalArgumentException invalid) {
+            return null;
+        }
     }
 }

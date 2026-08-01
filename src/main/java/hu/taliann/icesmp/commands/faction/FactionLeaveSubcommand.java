@@ -8,10 +8,12 @@ import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FactionLeaveSubcommand implements FactionSubcommand {
 
     private final FactionManager factionManager;
+    private final JavaPlugin plugin;
     private final hu.taliann.icesmp.managers.SinManager sinManager;
     private final CurrencyManager currencyManager;
     private final TerritoryManager territoryManager;
@@ -24,10 +26,12 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         this.specializationManager = specializationManager;
     }
 
-    public FactionLeaveSubcommand(final FactionManager factionManager, final hu.taliann.icesmp.managers.SinManager sinManager,
+    public FactionLeaveSubcommand(final JavaPlugin plugin, final FactionManager factionManager,
+                                  final hu.taliann.icesmp.managers.SinManager sinManager,
                                   final CurrencyManager currencyManager,
                                   final TerritoryManager territoryManager, final ConfigManager configManager,
                                   final MessageManager messageManager) {
+        this.plugin = plugin;
         this.factionManager = factionManager;
         this.sinManager = sinManager;
         this.currencyManager = currencyManager;
@@ -92,14 +96,22 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         // bejegyzés" mostantól csak a valóban új játékos állapota.
         factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
         final hu.taliann.icesmp.managers.SpecializationManager specs = this.specializationManager;
-        if (leavingDark && specs != null && specs.resetDarkGatedSpecialization(player)) {
-            player.sendMessage(messageManager.get("messages.dark-spec-lost",
-                    "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
+        if (leavingDark && specs != null) {
+            if (specs.profileV2Enabled()) {
+                specs.reconcileDarkGates(player).whenComplete((result, failure) ->
+                        player.getScheduler().run(plugin, task -> {
+                            if (failure == null && result != null && result.committed()) {
+                                player.sendMessage(messageManager.get("messages.dark-spec-sealed",
+                                        "&5A sötét specializációd lezárult, de minden fejlődése megmaradt."));
+                            }
+                        }, null));
+            } else if (specs.resetDarkGatedSpecialization(player)) {
+                player.sendMessage(messageManager.get("messages.dark-spec-lost",
+                        "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
+            }
         }
         sender.sendMessage(messageManager.get("messages.faction-left", "&eKiléptél a frakciódból."));
         return true;
     }
 }
-
-
 

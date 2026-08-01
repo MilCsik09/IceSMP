@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 
 import hu.taliann.icesmp.data.FactionType;
@@ -18,11 +19,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 public final class JobManager implements PlayerStateCleanup {
 
     public static final int MAX_JOB_LEVEL = 50;
 
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final FactionManager factionManager;
@@ -35,6 +40,7 @@ public final class JobManager implements PlayerStateCleanup {
     // resetClass letakarítja a régi játékosokról maradt bejegyzéseket.
     private final NamespacedKey legacySecondaryKey;
     private final NamespacedKey legacySecondaryXpKey;
+    private volatile ClassSpecProfileGateway profileGateway;
 
     /** Feloldás-forrás: a kaszt szintlépése. */
     public static final String SOURCE_BASE = "BASE";
@@ -51,6 +57,7 @@ public final class JobManager implements PlayerStateCleanup {
 
     public JobManager(final JavaPlugin plugin, final ConfigManager configManager,
                       final MessageManager messageManager, final FactionManager factionManager) {
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.factionManager = factionManager;
@@ -60,6 +67,10 @@ public final class JobManager implements PlayerStateCleanup {
         this.spellGrantsKey = new NamespacedKey(plugin, "spell_grants");
         this.legacySecondaryKey = new NamespacedKey(plugin, "job_secondary");
         this.legacySecondaryXpKey = new NamespacedKey(plugin, "job_secondary_xp");
+    }
+
+    public void setProfileGateway(final ClassSpecProfileGateway profileGateway) {
+        this.profileGateway = Objects.requireNonNull(profileGateway, "profileGateway");
     }
 
     public boolean hasPrimaryJob(final Player player) {
@@ -73,6 +84,19 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     public JobType getPrimaryJob(final Player player) {
+        final ClassSpecProfileGateway gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            if (!gateway.isSessionReady(player.getUniqueId())) {
+                return null;
+            }
+            return JobType.fromId(gateway.diagnostic(player.getUniqueId())
+                    .primaryClassId().orElse(null));
+        }
+        return getLegacyPrimaryJob(player);
+    }
+
+    /** Raw PDC class used only while creating the immutable legacy migration snapshot. */
+    public JobType getLegacyPrimaryJob(final Player player) {
         final String rawPrimary = player.getPersistentDataContainer().get(jobPrimaryKey, PersistentDataType.STRING);
         return JobType.fromId(rawPrimary);
     }
@@ -86,7 +110,13 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     public boolean canSelectPrimary(final Player player, final JobType job) {
-        return job != null && !hasPrimaryJob(player) && meetsFactionRequirement(player, job);
+        if (job == null || hasPrimaryJob(player) || !meetsFactionRequirement(player, job)) {
+            return false;
+        }
+        final ClassSpecProfileGateway gateway = profileGateway;
+        return gateway == null || !gateway.enabled()
+                || (gateway.isSessionReady(player.getUniqueId())
+                && gateway.diagnostic(player.getUniqueId()).primaryClassId().isEmpty());
     }
 
     /**
@@ -107,6 +137,10 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     public boolean setPrimaryJob(final Player player, final JobType job) {
+        final ClassSpecProfileGateway gateway = profileGateway;
+        if (gateway != null && gateway.enabled()) {
+            return false;
+        }
         // Kapcsolható mód: DK csak Kitaszítottnak — itt (és nem csak a GUI-ban)
         // ellenőrizve, hogy jövőbeli hívási út se kerülhesse meg.
         if (job == JobType.DEATH_KNIGHT
@@ -128,6 +162,55 @@ public final class JobManager implements PlayerStateCleanup {
         AdvancementService.award(player, "root");
         AdvancementService.award(player, "first_class");
         return true;
+    }
+
+    /** Profile commit first; legacy JobManager PDC mirror is published only afterwards. */
+    public CompletionStage<Boolean> setPrimaryJobV2(final Player player, final JobType job) {
+        final ClassSpecProfileGateway gateway = profileGateway;
+        if (gateway == null || !gateway.enabled() || !canSelectPrimary(player, job)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        final CompletableFuture<Boolean> completion = new CompletableFuture<>();
+        gateway.assignClass(player.getUniqueId(), new ClassSpecProfileGateway.ClassAssignmentRequest(
+                        job.getId(), 1, "class-assign:" + player.getUniqueId() + ":" + job.getId()))
+                .whenComplete((result, failure) -> {
+                    if (failure != null || result == null || !result.committed()) {
+                        completion.complete(false);
+                        return;
+                    }
+                    player.getScheduler().run(plugin, task -> {
+                        try {
+                            final PersistentDataContainer pdc = player.getPersistentDataContainer();
+                            pdc.set(jobPrimaryKey, PersistentDataType.STRING, job.getId());
+                            pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, 0);
+                            applyAutoUnlocks(player);
+                            AdvancementService.award(player, "root");
+                            AdvancementService.award(player, "first_class");
+                            completion.complete(true);
+                        } catch (final Throwable writeFailure) {
+                            gateway.blockSession(player.getUniqueId(),
+                                    "Class PDC mirror failed after Profile v2 commit: "
+                                            + writeFailure.getClass().getSimpleName());
+                            completion.completeExceptionally(writeFailure);
+                        }
+                    }, () -> {
+                        gateway.blockSession(player.getUniqueId(),
+                                "Player scheduler rejected class PDC mirror after Profile v2 commit");
+                        completion.completeExceptionally(
+                                new IllegalStateException("Player scheduler rejected class PDC mirror"));
+                    });
+                });
+        return completion;
+    }
+
+    public CompletionStage<Boolean> mirrorPrimaryLevelV2(final Player player) {
+        final ClassSpecProfileGateway gateway = profileGateway;
+        if (gateway == null || !gateway.enabled()) {
+            return CompletableFuture.completedFuture(true);
+        }
+        return gateway.mirrorClassLevel(player.getUniqueId(), getPrimaryLevel(player))
+                .thenApply(result -> result.committed()
+                        || result.status() == hu.taliann.icesmp.classspec.application.ProfileMutationResult.Status.NO_CHANGE);
     }
 
     public boolean addXpToJob(final Player player, final int amount) {
@@ -547,4 +630,3 @@ public final class JobManager implements PlayerStateCleanup {
         return level;
     }
 }
-

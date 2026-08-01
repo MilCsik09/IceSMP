@@ -1674,6 +1674,16 @@ public final class QuestManager implements PersistentStore {
             // a paktum nélkül — a vezeklés a specet is elengedi (a kaszt marad).
             final SpecializationManager specs = this.specializationManagerRef;
             if (specs != null) {
+                if (specs.profileV2Enabled()) {
+                    specs.reconcileDarkGates(player).whenComplete((result, failure) ->
+                            player.getScheduler().run(plugin, task -> {
+                                if (failure == null && result != null && result.committed()) {
+                                    player.sendMessage(messageManager.getMessage("penance-spec-sealed",
+                                            "<yellow>A vezekléssel a sötét utad lezárult, de a fejlődésed megmaradt.</yellow>"));
+                                }
+                            }, null));
+                    return;
+                }
                 final hu.taliann.icesmp.data.SpecializationType current = specs.getClassSpecialization(player);
                 if (current != null && (current.getRequiredFaction() == hu.taliann.icesmp.data.FactionType.DARK
                         || current.requiresSinner())) {
@@ -1682,6 +1692,10 @@ public final class QuestManager implements PersistentStore {
                             "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott téged. Új utat választhatsz.</yellow>"));
                 }
             }
+        }
+        final SpecializationManager profileSpecs = this.specializationManagerRef;
+        if (profileSpecs != null && profileSpecs.profileV2Enabled()) {
+            profileSpecs.reconcileDarkGates(player);
         }
     }
 

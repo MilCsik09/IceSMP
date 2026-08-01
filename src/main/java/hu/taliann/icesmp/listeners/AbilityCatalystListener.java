@@ -72,6 +72,12 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     // Az aktív kombó-ablak hint-lánc indítási időbélyege — az újabb cast érvényteleníti.
     private final Map<UUID, Long> hintStartedAt = new ConcurrentHashMap<>();
     private final JavaPlugin plugin;
+    private volatile hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway;
+
+    public void setProfileGateway(
+            final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway) {
+        this.profileGateway = java.util.Objects.requireNonNull(profileGateway, "profileGateway");
+    }
 
     public AbilityCatalystListener(final JavaPlugin plugin, final JobManager jobManager,
                                    final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
@@ -166,6 +172,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
 
+        if (!profileRuntimeReady(player)) {
+            return;
+        }
+
         if (player.isSneaking()) {
             openSpellbook(player);
             return;
@@ -195,6 +205,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (!isUsableCatalyst(player, player.getInventory().getItemInMainHand())) {
             return;
         }
+        if (!profileRuntimeReady(player)) {
+            return;
+        }
 
         final long now = System.currentTimeMillis();
         final long lastCycle = cycleDebounce.getOrDefault(player.getUniqueId(), 0L);
@@ -215,6 +228,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     public void onHotbarScroll(final PlayerItemHeldEvent event) {
         final Player player = event.getPlayer();
         if (!player.isSneaking() || !isUsableCatalyst(player, player.getInventory().getItemInMainHand())) {
+            return;
+        }
+        if (!profileRuntimeReady(player)) {
             return;
         }
         event.setCancelled(true);
@@ -401,6 +417,17 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (stats != null) {
             stats.recordSpellCast(player.getUniqueId());
         }
+    }
+
+    private boolean profileRuntimeReady(final Player player) {
+        final var gateway = profileGateway;
+        if (gateway == null || !gateway.enabled() || gateway.isSessionReady(player.getUniqueId())) {
+            return true;
+        }
+        player.sendActionBar(messageManager.getMessage(
+                "profile-v2.runtime-blocked",
+                "<red>A kaszt/specializáció profilod biztonsági ellenőrzést igényel. /spec info</red>"));
+        return false;
     }
 
     /**

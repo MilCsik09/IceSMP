@@ -224,6 +224,11 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
     private final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager;
+    private final hu.taliann.icesmp.classspec.persistence.YamlClassProfileRepository classProfileRepository;
+    private final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway classSpecProfileGateway;
+    private final hu.taliann.icesmp.classspec.application.ClassProfileLifecycleService classProfileLifecycleService;
+    private final hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter classSpecRuntimeAdapter;
+    private final hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge profileSessionBridge;
     private final hu.taliann.icesmp.managers.ResourceBonusService resourceBonusService;
     private final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
     private final hu.taliann.icesmp.managers.WarWindowManager warWindowManager;
@@ -532,6 +537,24 @@ public final class IceSMPCore {
         // CSAK ide, a resourceManager/soulShardManager/ritualManager felépülte
         // UTÁN köthető (korábbi hívásuk null-mezőn robbant volna a konstruktorban).
         this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
+        this.classProfileRepository = new hu.taliann.icesmp.classspec.persistence.YamlClassProfileRepository(
+                plugin.getDataFolder(), plugin.getLogger());
+        this.classSpecRuntimeAdapter = new hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter(
+                plugin, jobManager, specializationManager, abilityCatalystListener, petManager,
+                resourceManager, spellRegistry);
+        this.classSpecProfileGateway = new hu.taliann.icesmp.classspec.application.DefaultClassSpecProfileGateway(
+                () -> configManager.getBoolean("class-spec-rework.enabled", false),
+                new hu.taliann.icesmp.classspec.persistence.RepositoryMutationStoreAdapter(classProfileRepository),
+                classSpecRuntimeAdapter);
+        this.classProfileLifecycleService = new hu.taliann.icesmp.classspec.application.ClassProfileLifecycleService(
+                () -> configManager.getBoolean("class-spec-rework.enabled", false), classProfileRepository,
+                new hu.taliann.icesmp.classspec.migration.LegacyProfileMigrator());
+        specializationManager.setProfileGateway(classSpecProfileGateway);
+        jobManager.setProfileGateway(classSpecProfileGateway);
+        abilityCatalystListener.setProfileGateway(classSpecProfileGateway);
+        petManager.setProfileGateway(classSpecProfileGateway);
+        soulforgeManager.setProfileGateway(classSpecProfileGateway);
+        sinManager.setSpecializationManager(specializationManager);
         resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // pool-bónuszok
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // pakt-oltár
         hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // statikus híd
@@ -543,7 +566,14 @@ public final class IceSMPCore {
         // A respec EGYETLEN végrehajtója (a parancs és a GUI is ezt hívja) — a TalentManager
         // után épül, mert a talentpont-visszatérítéshez kell.
         this.respecService = new hu.taliann.icesmp.managers.RespecService(
-                specializationManager, talentManager, currencyManager, factionManager);
+                plugin, specializationManager, talentManager, currencyManager, factionManager);
+        final hu.taliann.icesmp.classspec.migration.BukkitLegacyProfileSnapshotReader legacyProfileReader =
+                new hu.taliann.icesmp.classspec.migration.BukkitLegacyProfileSnapshotReader(
+                        plugin, jobManager, specializationManager, spellFavoritesManager,
+                        abilityCatalystListener, petManager, soulforgeManager);
+        this.profileSessionBridge = new hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge(
+                plugin, legacyProfileReader, classProfileLifecycleService, classSpecProfileGateway,
+                specializationManager, classSpecRuntimeAdapter, respecService);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
                 catalystItemFactory, spellRegistry, configManager, respecService);
@@ -628,6 +658,7 @@ public final class IceSMPCore {
             communityGoalManager.contribute(fighter, "WIN_RAID", null, 1);
         });
         jobManager.setXpChangeHook(player -> {
+            jobManager.mirrorPrimaryLevelV2(player);
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
         });
@@ -659,7 +690,9 @@ public final class IceSMPCore {
                 combatTagManager,
                 classHealthService,
                 lowHealthBorderListener,
-                spellRegistry
+                soulforgeManager,
+                spellRegistry,
+                profileSessionBridge
         );
 
         registerSpells();
@@ -877,6 +910,9 @@ public final class IceSMPCore {
         professionRecipeCatalog.load();
         crateManager.reloadConfig();
         advancementService.load();
+        if (configManager.getBoolean("class-spec-rework.enabled", false)) {
+            classProfileRepository.load();
+        }
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
         storeCoordinator.loadAll();
@@ -888,6 +924,7 @@ public final class IceSMPCore {
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             moderationManager.openReplySession(onlinePlayer.getUniqueId());
             afkManager.recordActivity(onlinePlayer.getUniqueId());
+            profileSessionBridge.join(onlinePlayer);
         }
         vanishManager.refreshAll();
         registerCommands();
@@ -1110,6 +1147,18 @@ public final class IceSMPCore {
         }
         if (!invseeManager.prepareShutdown(10_000L)) {
             plugin.getLogger().severe("Az invsee escrow tranzakciók nem álltak le; a shutdown-save megtagadva.");
+            return;
+        }
+        if (!respecService.prepareShutdown(10_000L)) {
+            plugin.getLogger().severe("A Profile v2 respec tranzakciók nem álltak le; a shutdown-save megtagadva.");
+            return;
+        }
+        try {
+            profileSessionBridge.prepareDisable().toCompletableFuture().join();
+            profileSessionBridge.stopRuntime();
+            classProfileRepository.close();
+        } catch (final RuntimeException failure) {
+            plugin.getLogger().severe("Profile v2 disable flush/drain hiba: " + failure);
             return;
         }
         // Atomically wait for any running common autosave and close its gate before shutdown hooks
@@ -1535,7 +1584,8 @@ public final class IceSMPCore {
         plugin.registerCommand("bestiarium", "Bestiárium — a krónikás-lajstromod", List.of("bestiary", "lajstrom"),
                 new hu.taliann.icesmp.commands.BestiaryCommand(bestiaryManager, professionRecipeCatalog, territoryManager, messageManager));
         plugin.registerCommand("soulforge", "Lélek-kovács — a Nekromanta minion-fejlesztései", List.of("lelekkovacs"),
-                new hu.taliann.icesmp.commands.SoulforgeCommand(soulforgeManager, soulShardManager, messageManager));
+                new hu.taliann.icesmp.commands.SoulforgeCommand(
+                        plugin, soulforgeManager, soulShardManager, messageManager));
         plugin.registerCommand("parbaj", "Becsület-párbaj — elégtétel a bűnökért", List.of("duel"),
                 new hu.taliann.icesmp.commands.HonorDuelCommand(plugin, honorDuelManager, messageManager));
         plugin.registerCommand("kem", "Kém-álca — rövid felderítő álöltözet", List.of("spy"),
@@ -1579,7 +1629,7 @@ public final class IceSMPCore {
         final PluginManager pluginManager = plugin.getServer().getPluginManager();
         pluginManager.registerEvents(new CurrencyCraftListener(currencyManager), plugin);
         pluginManager.registerEvents(new CurrencyItemRefreshListener(plugin, currencyManager), plugin);
-        pluginManager.registerEvents(new CharacterGUIListener(characterMenuContext), plugin);
+        pluginManager.registerEvents(new CharacterGUIListener(plugin, characterMenuContext), plugin);
         pluginManager.registerEvents(new CommandMenuListener(commandMenuContext), plugin);
         pluginManager.registerEvents(new HudListener(hudManager, tablistManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.AfkActivityListener(afkManager), plugin);
@@ -1587,7 +1637,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateListener(crateManager, crateKeyFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateSpinGUIListener(), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateBrowserGUIListener(crateManager, currencyManager), plugin);
-        final JobGUIListener jobGUIListener = new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext);
+        final JobGUIListener jobGUIListener = new JobGUIListener(plugin, jobManager, catalystItemFactory,
+                specializationManager, spellRegistry, configManager, messageManager, characterMenuContext);
         jobGUIListener.setFactionManager(factionManager);
         pluginManager.registerEvents(jobGUIListener, plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);

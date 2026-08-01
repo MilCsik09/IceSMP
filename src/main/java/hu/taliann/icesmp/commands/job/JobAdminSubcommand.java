@@ -121,6 +121,51 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
             // resetclass: full class wipe — both job slots + XP/levels, the class specialization,
             // and all unlocked spells + spell state. The player can then pick a fresh class.
+            if (specializationManager.profileV2Enabled()) {
+                final long revision = specializationManager.profileGateway()
+                        .diagnostic(target.getUniqueId()).revision();
+                specializationManager.resetClassProfileV2(target, true,
+                                "admin-class-reset:" + target.getUniqueId() + ":" + revision)
+                        .whenComplete((result, failure) -> target.getScheduler().run(plugin, followup -> {
+                            if (failure != null || result == null || !result.durableMutationApplied()) {
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.persistence-failed",
+                                        "&cA Profile v2 commit meghiúsult; a kaszt-PDC érintetlen maradt: &f%s",
+                                        target.getName()));
+                                return;
+                            }
+                            if (!result.committed()) {
+                                specializationManager.profileGateway().blockSession(target.getUniqueId(),
+                                        "Admin class-reset committed, but runtime reconciliation failed");
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.runtime-failed",
+                                        "&cA profil commitolt, de a runtime-befejezés hibázott; a session blokkolva: &f%s",
+                                        target.getName()));
+                                return;
+                            }
+                            try {
+                                jobManager.resetClass(target);
+                                specializationManager.resetProfessionSpecialization(target);
+                                abilityCatalystListener.resetAllSpellState(target);
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.success",
+                                        "&aKaszt teljesen alaphelyzetbe állítva (kaszt + spec + varázslatok): &f%s",
+                                        target.getName()));
+                                target.sendMessage(messageManager.get("admin.job.reset-class.notify",
+                                        "&eEgy adminisztrátor alaphelyzetbe állította a kasztodat — válassz újat a /profile menüből."));
+                            } catch (final Throwable mirrorFailure) {
+                                specializationManager.profileGateway().blockSession(target.getUniqueId(),
+                                        "Admin class-reset PDC mirror failed after Profile v2 commit");
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.mirror-failed",
+                                        "&cA profil commit sikerült, de a legacy PDC mirror hibázott; a session blokkolva: &f%s",
+                                        target.getName()));
+                            }
+                        }, () -> specializationManager.profileGateway().blockSession(
+                                target.getUniqueId(),
+                                "Admin class-reset PDC mirror scheduler rejected after Profile v2 commit")));
+                return;
+            }
             jobManager.resetClass(target);
             specializationManager.resetClassSpecialization(target);
             abilityCatalystListener.resetAllSpellState(target);
@@ -159,4 +204,3 @@ public final class JobAdminSubcommand implements JobSubcommand {
     }
 
 }
-
