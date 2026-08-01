@@ -36,6 +36,39 @@ jobs:
           nonblank = [line for line in body if line.strip()]
           indent = min(len(line) - len(line.lstrip()) for line in nonblank)
           script = "\n".join(line[indent:] for line in body)
+
+          original_helper = '''def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))'''
+          tolerant_helper = '''def _restore_literal_baseline(value: str) -> str:
+              lines = value.splitlines()
+              if not lines:
+                  return value
+              baseline = len(lines[0]) - len(lines[0].lstrip())
+              if baseline <= 0:
+                  return value
+              return "\\n".join([lines[0]] + [((" " * baseline) + line) if line else line for line in lines[1:]])
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              candidate_old = old
+              candidate_new = new
+              count = text.count(candidate_old)
+              if count == 0:
+                  candidate_old = _restore_literal_baseline(old)
+                  candidate_new = _restore_literal_baseline(new)
+                  count = text.count(candidate_old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {candidate_old[:100]!r}")
+              p.write_text(text.replace(candidate_old, candidate_new, 1))'''
+          if original_helper not in script:
+              raise SystemExit("Embedded replace_once helper shape changed unexpectedly")
+          script = script.replace(original_helper, tolerant_helper, 1)
           exec(compile(script, "embedded-runtime-bugfix", "exec"), {})
           PY
 
