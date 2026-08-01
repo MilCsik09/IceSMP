@@ -478,7 +478,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 553 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
+- **Méret:** 596 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
   Csomag-megoszlás: listeners 120, managers 120, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
