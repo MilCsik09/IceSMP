@@ -45,6 +45,24 @@ jobs:
       - name: Apply evidence-based review patch
         run: python3 scripts/review_autofix.py
 
+      - name: Repair generated warning literals
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          for index, line in enumerate(lines):
+              if "expected a finite non-negative number" in line:
+                  lines[index] = '                + "); expected a finite non-negative number — this branch is disabled at 0.0, "'
+              elif "expected a non-negative integer" in line:
+                  lines[index] = '                + "); expected a non-negative integer — this branch is disabled at 0, "'
+              elif "not silently clamped" in line:
+                  lines[index] = '                + "not silently clamped.");'
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
       - name: Remove one-shot patch machinery
         run: rm scripts/review_autofix.py .github/workflows/review-autofix.yml
 
