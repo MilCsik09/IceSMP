@@ -108,7 +108,7 @@ public final class BestiaryManager {
             }
             if (reward > 0) {
                 currencyManager.payOutTokens(player,
-                        CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId())), reward);
+                        CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId())), reward);
             }
             player.playSound(player.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.1F);
             player.sendMessage(messageManager.getMessage("bestiary-milestone",

@@ -103,7 +103,7 @@ public final class JobManager implements PlayerStateCleanup {
             return true;
         }
 
-        return factionManager.getFaction(player.getUniqueId()) == requiredFaction;
+        return factionManager.isMember(player.getUniqueId(), requiredFaction);
     }
 
     public boolean setPrimaryJob(final Player player, final JobType job) {
@@ -112,8 +112,8 @@ public final class JobManager implements PlayerStateCleanup {
         if (job == JobType.DEATH_KNIGHT
                 && configManager.getBoolean("classes.death-knight.dark-only", false)) {
             final hu.taliann.icesmp.managers.FactionManager factions = this.factionManagerRef;
-            if (factions != null && factions.getFaction(player.getUniqueId())
-                    != hu.taliann.icesmp.data.FactionType.DARK) {
+            if (factions != null && !factions.isMember(player.getUniqueId(),
+                    hu.taliann.icesmp.data.FactionType.DARK)) {
                 return false;
             }
         }
@@ -547,4 +547,3 @@ public final class JobManager implements PlayerStateCleanup {
         return level;
     }
 }
-

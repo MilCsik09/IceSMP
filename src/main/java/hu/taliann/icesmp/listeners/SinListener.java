@@ -84,8 +84,8 @@ public final class SinListener implements Listener {
         // here on the victim's own region thread. Killer-side mutations (PDC sin/stats,
         // messages) hop onto the killer's own region thread, because PlayerDeathEvent runs
         // on the VICTIM's region and the killer may be elsewhere.
-        final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
-        final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
+        final FactionType killerFaction = factionManager.getChosenFaction(killer.getUniqueId()).orElse(null);
+        final FactionType victimFaction = factionManager.getChosenFaction(victim.getUniqueId()).orElse(null);
         if (raidManager.isSanctionedKill(killer.getUniqueId(), victim.getUniqueId())) {
             final boolean scored = raidManager.recordKill(killerFaction, victim.getLocation());
             killer.getScheduler().run(plugin, task -> {
@@ -208,7 +208,8 @@ public final class SinListener implements Listener {
             return;
         }
 
-        final boolean betrayal = killerFaction == victimFaction && killerFaction != FactionType.NEUTRAL;
+        final boolean betrayal = killerFaction != null && killerFaction == victimFaction
+                && killerFaction != FactionType.NEUTRAL;
         final int weight;
         final String messageKey;
         final String messageDefault;

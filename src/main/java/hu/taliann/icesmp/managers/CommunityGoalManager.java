@@ -493,7 +493,11 @@ public final class CommunityGoalManager implements PersistentStore {
             return new AppliedContribution(false, List.of());
         }
         final int amount = Math.max(1, rawAmount);
-        final FactionType playerFaction = factionManager.getFaction(player.getUniqueId());
+        final FactionType playerFaction = factionManager.getChosenFaction(
+                player.getUniqueId()).orElse(null);
+        if (playerFaction == null) {
+            return new AppliedContribution(false, List.of());
+        }
         final List<Completion> completions = new ArrayList<>();
         boolean changed = false;
 
@@ -678,8 +682,8 @@ public final class CommunityGoalManager implements PersistentStore {
         }
         final int durationTicks = pending.buffMinutes() * 60 * 20;
         for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (!pending.serverWide() && factionManager.getFaction(
-                    online.getUniqueId()) != pending.faction()) {
+            if (!pending.serverWide() && !factionManager.isMember(
+                    online.getUniqueId(), pending.faction())) {
                 continue;
             }
             online.getScheduler().run(plugin, task -> {

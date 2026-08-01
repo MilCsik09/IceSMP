@@ -50,7 +50,7 @@ public final class CampfireStoryListener implements Listener {
      */
     private net.kyori.adventure.text.Component pickStory(final org.bukkit.entity.Player player) {
         final hu.taliann.icesmp.data.FactionType faction = factionManager == null
-                ? null : factionManager.getFaction(player.getUniqueId());
+                ? null : factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         final String[] factionPool = faction == null ? null : FACTION_STORIES.get(faction);
         final int factionChance = Math.max(0, Math.min(100,
                 configManager.getInt("campfire-story.faction-chance-percent", 50)));

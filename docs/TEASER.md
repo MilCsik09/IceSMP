@@ -137,8 +137,9 @@ Két mondat rombolta le a régi világot.
 A harmadikat senki élő nem akarja hallani.
 
 Emlék nélkül nyitod ki a szemed Aetrinita, a megrepedt Élet Fája alatt.
-A királyok eltűntek, a trónok üresen állnak, és a romokon négy út osztozik:
-a Láng, a Fagy, a Menedék és a Kitaszítottak.
+A királyok eltűntek, a trónok üresen állnak. Három zászló hív a romok közül:
+a Láng, a Fagy és a Menedék. A negyedik hatalom nem nyílt választás:
+bűn, lelepleződés vagy sötét paktum nyitja meg az útját.
 
 Az elméd felejtett — a véred azonban emlékszik.
 Válassz 13 kaszt és 35 specializáció közül, sajátíts el mesterségeket,
@@ -163,8 +164,9 @@ A világ figyel, változik, és számon tartja, mit tesztek vele.
 Emlék nélkül ébredsz a megrepedt Élet Fája alatt.
 Az elméd felejtett. A véred emlékszik.
 
-Négy út vár:
-🔥 Láng • ❄️ Fagy • ⚖️ Menedék • ⚫ Kitaszítottak
+Három zászló hív:
+🔥 Láng • ❄️ Fagy • ⚖️ Menedék
+⚫ És van egy negyedik hatalom, amelyhez nem választani szoktak.
 
 13 kaszt • 35 specializáció • mesterségek • politika • felfedezés
 
@@ -180,7 +182,7 @@ A következő korszakot a játékosok írják.
 - **A Fa visszahívott. A világ még nem döntötte el, megmentő vagy végzet leszel-e.**
 - **Az elméd felejtett. A véred emlékszik.**
 - **A trónok üresek. A következő korszak még nincs megírva.**
-- **Négy út vezet a romok közül. Egyiket sem járhatod következmények nélkül.**
+- **Három zászló hív. A negyedik hatalom akkor talál rád, amikor a világ eltaszít.**
 - **A múlt nem tűnt el. Csak szétszóródott.**
 
 ---
@@ -392,13 +394,14 @@ A feliratos változatot lehetőleg az elfogadott tiszta képből készítsd a me
 
 ---
 
-## 5.1. Aetrinita és a négy út — fő kampánykép
+## 5.1. Aetrinita és a négy hatalom — fő kampánykép
 
 ### Gyors iterációs prompt
 
 ```text
 A colossal cracked Tree of Life dominates a grounded dark-fantasy voxel world;
-four naturally connected realms appear in the distance, while a few memoryless
+three openly reachable realms and a distant, ominously isolated fourth power
+appear in the distance, while a few memoryless
 adventurers awaken beneath the roots. Hopeful but ominous, cinematic, clean and
 mythic, with no portal as the main subject.
 ```
@@ -412,8 +415,8 @@ organic blue-white luminous fissure running through its cracked trunk. Beneath t
 roots, show three or four small anonymous Felső adventurers awakening or standing
 in awe, seen mostly as silhouettes.
 
-Reveal the four great sides through natural geography and distant architecture,
-not as four equal graphic quadrants: the red Blood Savanna and the sandstone,
+Reveal the four great powers through natural geography and distant architecture,
+not as four equal choices or graphic quadrants: the red Blood Savanna and the sandstone,
 acacia and deepslate silhouette of Pyralingrad; the frozen mountains and severe
 walls of Glatziendorf; the warm Bokic riverland with old Radicora near the roots and
 bright Caldestera beyond the water; and the far, lightless black ruins of
@@ -428,11 +431,12 @@ The mood is awe, second chances and quiet danger. Do not show the Gate of Damnat
 Create a vertical 4:5 IceSMP campaign artwork. A lone memoryless Felső stands at the
 bottom of a broad stone path beneath the immense luminous roots of Aetrinita. The
 Tree of Life rises through most of the image, its ancient trunk split by a subtle
-organic blue-white glow. Four roads or visual routes curve naturally toward a red
-savanna citadel, frozen mountain walls, a green-gold river sanctuary and a distant
-charcoal necropolis. Keep the routes readable on a phone without turning the world
-into a diagram. Reserve generous dark sky space at the top and a clean foreground
-strip at the bottom. Hopeful, mythic and ominous. No portal.
+organic blue-white glow. Three readable roads curve naturally toward a red savanna
+citadel, frozen mountain walls and a green-gold river sanctuary. Show a distant
+charcoal necropolis as an isolated fourth power beyond a broken, uninviting route,
+not as an equal selectable road. Keep the geography readable on a phone without
+turning the world into a diagram. Reserve generous dark sky space at the top and a
+clean foreground strip at the bottom. Hopeful, mythic and ominous. No portal.
 ```
 
 ### Plakátszerkesztő prompt — 16:9
@@ -467,7 +471,7 @@ Melyik zászló alatt ébredsz?
 
 Use bold but elegant fantasy typography with strong mobile readability and wide
 margins. Preserve every Hungarian accent exactly. Do not cover the traveler, the
-four routes or the luminous roots. Add no other text.
+three open roads, the isolated necropolis or the luminous roots. Add no other text.
 ```
 
 ---
@@ -1089,7 +1093,7 @@ FELFEDEZÉS • KAZAMATÁK • VILÁGESEMÉNYEK
 
 | Nap | Poszt | Szöveg | Kép |
 |---|---|---|---|
-| 1. | Első jel | Egymondatos hook | Aetrinita és a négy út, 4:5, felirat nélkül |
+| 1. | Első jel | Egymondatos hook | Aetrinita és a négy hatalom, 4:5, felirat nélkül |
 | 3. | Rövid bemutatkozás | Rövid Discord-teaser | Aetrinita, 4:5 plakát |
 | 5. | A világ emlékezete | Felfedezős teaser | Emlékszilánk, 16:9 |
 | 7. | Láng | Perinfernicitas-teaser | Pyralingrad, 16:9 |

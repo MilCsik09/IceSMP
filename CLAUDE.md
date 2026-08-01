@@ -32,9 +32,12 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
 ./gradlew runServer  # helyi tesztszerver (run/ könyvtár, 1.21.11)
 ```
 - A `check` task dependency-free regressziós suite-okat futtat a persistence,
-  DEV-item, moderáció, MOTD, sit, crate, config-startup, globális AFK és territory-capital területén. Ezek mellett
+  DEV-item, moderáció, MOTD, sit, crate, config-startup, globális AFK,
+  frakciótagság/passzív-policy és territory-capital területén. Ezek mellett
   a hibátlan build, a consistency gate és az
   `docs/ADMIN_GUIDE.md#release-acceptance-checklist` szerinti kézi playtest is kötelező.
+- Célzott frakcióteszt: `./gradlew factionPassiveRegressionTest`; a normál
+  `check` része, de passzív-reworknél külön is futtatandó.
 - **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve):
   a VALÓDI build a mérvadó, NEM a sandbox-javac.** Elsőként a wrapperrel fuss:
   `./gradlew build --console=plain --no-daemon`. Ha a környezetben külön rendszer-Gradle van
@@ -75,6 +78,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - **Config**: `src/main/resources/config/*.yml` — a `ConfigManager` kizárólag a `CONFIG_FILES` allowlist támogatott fájljait fésüli egybe (ÚJ fájlt a listába is fel KELL venni; az ismeretlen `.yml` kimarad és figyelmeztetést kap); üzenetek a `MessageManager`-en át (`messages.yml` kulcsok inline defaultokkal).
 - **Élő-config konvenció**: MINDEN új kulcsot híváskor olvass (`configManager.getX` a use-site-on, ne konstruktorban) → `/icesmp reload` restart nélkül él. Ingame felülbírálás: `/icesmp config get|set|unset|list|find|menu` + kattintható GUI (`ConfigMenuGUI`, jog: `icesmp.admin.config`) — az írás EGYETLEN útja a szerializált `ConfigManager.applyOverride` (data-folder config.yml, utolsóként merge-ölve). Boolean-kulcsok egyértelműek: `allow-<szabály>` séma (true=SZABAD), legacy invertált kulcsok fallbackként olvasva.
 - **Esemény-spawnok**: minden világesemény-spawn az `EventSpawnGuard`-on megy át (`isBlocked(eventKey, loc)` — territory/claim/WG per `world-events.spawn-rules.<event>` mátrix; `isUnsafeSurface`; statikus `prepare(Mob)` zombisodás/nappali égés ellen). Új eseménynél új mátrix-sor + guard-hívás kötelező.
+- **Frakciótagság és passzívok:** assignment nélkül a játékos Menedék-vendég, nem implicit `NEUTRAL`; gameplay-jogosultsághoz mindig `FactionMembership`/`FactionManager.isEligibleForFactionBenefits` kell, a `getEconomyFaction` csak megjelenítési/valuta-fallback. A sebzés-, exhaustion- és targetdöntést a tiszta `FactionPassivePolicy` hozza, a `FactionPassiveListener` csak Paper/Folia adapter. A harci marker, koronaátok, megtorlás és Vérhold megelőzi az ambient/vad truce-ot; a validált snapshot `/icesmp reload` után él, restart nélkül.
 - **Admin item-adás**: `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` (`ItemGiveCommand`, jog: `icesmp.admin.item`) — a recept-út a `ProfessionRecipeBookListener.buildResult` teljes stamp-láncát használja.
 - **Itemek**: PDC-tagekkel (IDENTITÁS: signature_item, unique-id — ez marad) az `items/*ItemFactory`
   osztályokban, craft-safety listenerekkel védve. **Viselkedés/megjelenés = data-component** (1.20.5+,

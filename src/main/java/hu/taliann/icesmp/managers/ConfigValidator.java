@@ -73,6 +73,13 @@ public final class ConfigValidator {
                 problems += checkCurrency(logger, key, config.getString(key));
             } else if (leaf.endsWith("percent")) {
                 problems += checkPercent(logger, key, config.get(key));
+            } else if (leaf.endsWith("-multiplier")) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "szorzó");
+            } else if ((key.startsWith("factions.passives.") || key.startsWith("factions.whisper."))
+                    && leaf.endsWith("-chance")) {
+                problems += checkUnitInterval(logger, key, config.get(key));
+            } else if (key.startsWith("factions.passives.") && leaf.endsWith("-radius")) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "sugár");
             } else if (isDurationKey(leaf)) {
                 problems += checkNonNegative(logger, key, config.get(key));
             }
@@ -145,6 +152,35 @@ public final class ConfigValidator {
         }
         if (number.doubleValue() < 0.0D) {
             logger.warning("Config: a(z) '" + key + "' időtartam nem lehet negatív: " + number + ".");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int checkFiniteNonNegative(final Logger logger, final String key,
+                                              final Object value, final String kind) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key + "' " + kind + " csak szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D) {
+            logger.warning("Config: a(z) '" + key + "' " + kind
+                    + " csak véges, nem negatív szám lehet: " + value + ".");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int checkUnitInterval(final Logger logger, final String key, final Object value) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key + "' esély csak szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D || parsed > 1.0D) {
+            logger.warning("Config: a(z) '" + key + "' esély csak 0 és 1 közötti szám lehet: "
+                    + value + ".");
             return 1;
         }
         return 0;
