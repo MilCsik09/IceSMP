@@ -48,14 +48,14 @@ jobs:
       - name: Apply evidence-based review patch
         run: python3 scripts/review_autofix.py
 
-      - name: Repair generated warning literals
+      - name: Repair generated literals and architecture inventory
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path("src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java")
-          lines = path.read_text(encoding="utf-8").splitlines()
+          treasury = Path("src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java")
+          lines = treasury.read_text(encoding="utf-8").splitlines()
           for index, line in enumerate(lines):
               if "expected a finite non-negative number" in line:
                   lines[index] = '                + "); expected a finite non-negative number — this branch is disabled at 0.0, "'
@@ -63,7 +63,15 @@ jobs:
                   lines[index] = '                + "); expected a non-negative integer — this branch is disabled at 0, "'
               elif "not silently clamped" in line:
                   lines[index] = '                + "not silently clamped.");'
-          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          treasury.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          architecture = Path("docs/ARCHITECTURE.md")
+          text = architecture.read_text(encoding="utf-8")
+          old = "| `factions/` | 8 | Explicit tagsági értékobjektum, immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és frakcióeredetű adósság-ledger. |"
+          new = "| `factions/` | 9 | Explicit tagsági értékobjektum és rollbackelhető membership-mutation, immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és frakcióeredetű adósság-ledger. |"
+          if text.count(old) != 1:
+              raise SystemExit("Unexpected factions/ architecture row")
+          architecture.write_text(text.replace(old, new), encoding="utf-8")
           PY
 
       - name: Remove one-shot patch machinery
