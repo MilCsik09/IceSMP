@@ -15,33 +15,123 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Apply staged configurable corruption migration
+      - name: Migrate corruption config and regression contract
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
+          import re
 
-          manager = Path("src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java")
-          source = manager.read_text()
-          if "effectiveMobCap()" not in source and "absolute-mob-cap" not in source:
-              print("Configurable corruption migration already applied.")
+          world_path = Path("src/main/resources/config/world.yml")
+          world = world_path.read_text()
+          suite_path = Path("src/regression/java/hu/taliann/icesmp/runtime/RuntimeBugfixRegressionSuite.java")
+          suite = suite_path.read_text()
+
+          if "corruption.absolute-mob-cap" not in suite and "absolute-mob-cap:" not in world:
+              print("Configurable corruption config migration already applied.")
               raise SystemExit(0)
 
-          lines = Path(".github/workflows/one-shot-configurable-corruption.yml").read_text().splitlines()
-          start = next(i for i, line in enumerate(lines) if line.strip() == "python3 <<'PY'") + 1
-          end = next(i for i in range(start, len(lines)) if lines[i].strip() == "PY")
-          body = lines[start:end]
-          nonblank = [line for line in body if line.strip()]
-          indent = min(len(line) - len(line.lstrip()) for line in nonblank)
-          script = "\n".join(line[indent:] for line in body)
-          exec(compile(script, "configurable-corruption-migration", "exec"), {})
+          old_block = re.compile(
+              r"  min-world-spawn-distance: 384[^\n]*\n"
+              r"  legacy-cleanup-seconds: 1800[^\n]*\n"
+              r"  initial-radius: 12\.0\n"
+              r"  radius-cap: 40\.0\n"
+              r"  absolute-radius-cap: 40\.0[^\n]*\n"
+              r"  spread-per-night: 2\.0\n"
+              r"  absolute-spread-per-night: 2\.0\n"
+              r"  mob-cap: 6[^\n]*\n"
+              r"  absolute-mob-cap: 8[^\n]*\n"
+              r"  spawn-batch: 1\n"
+              r"  mob-lifespan-seconds: 300[^\n]*\n"
+              r"  mob-level: 4\n"
+              r"  absolute-mob-level: 5\n")
+          new_block = '''  min-world-spawn-distance: 384 # 0 = nincs spawn-kizárás
+  spawn-grace-seconds: 10     # párhuzamos spawnpróbák közti foglalási idő
+  tracking-padding: 16.0      # aktív góc entitás-visszavételi keresési ráhagyása
+  legacy-cleanup-seconds: 1800 # 0 = nincs marker nélküli legacy takarítási ablak
+  legacy-cleanup-padding: 32.0
+  initial-radius: 12.0
+  radius-cap: 40.0            # 0 vagy negatív = korlátlan növekedés
+  spread-per-night: 2.0
+  mob-cap: 6                  # 0 vagy negatív = fajzat-spawn kikapcsolva
+  spawn-batch: 1
+  mob-types: [ "ZOMBIE", "SKELETON", "WITHER_SKELETON", "PHANTOM" ]
+  mob-level-bonus: 4          # normál helyfüggő mob-szint + ez az érték
+  mob-glowing: true
+  mob-persistent: false
+  mob-remove-when-far-away: true
+  mob-lifespan-seconds: 300   # 0 vagy negatív = nincs időzített despawn
+'''
+          world, count = old_block.subn(new_block, world, count=1)
+          if count != 1:
+              raise SystemExit(f"world.yml corruption block match count: {count}")
+          world_path.write_text(world)
+
+          suite = suite.replace(
+              "        corruptionHasHardCapsAndLifecycleCleanup();",
+              "        corruptionIsFullyConfigurable();",
+              1)
+
+          new_test = '''    private static void corruptionIsFullyConfigurable() throws IOException {
+        final String source = read("src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java");
+        check(source.contains("pendingSpawns") && source.contains("configuredMobCap()"),
+                "corruption spawns lost pending reservations or the configurable cap");
+        check(source.contains("mobScalingManager.resolveLevel(location)")
+                        && source.contains("corruption.mob-level-bonus"),
+                "corruption mobs must use normal location level plus a configurable bonus");
+        check(source.contains("configuredMobTypes()")
+                        && source.contains("corruption.mob-types")
+                        && !source.contains("EntityType[] POOL"),
+                "corruption mob types are still hardcoded");
+        check(source.contains("corruption.mob-glowing")
+                        && source.contains("corruption.mob-persistent")
+                        && source.contains("corruption.mob-remove-when-far-away")
+                        && source.contains("corruption.mob-lifespan-seconds"),
+                "corruption mob lifecycle/visuals are not fully configurable");
+        check(!source.contains("absolute-mob-")
+                        && !source.contains("absolute-radius-")
+                        && !source.contains("absolute-spread-"),
+                "corruption still contains an absolute hard ceiling");
+        check(!source.contains("86_400L"),
+                "corruption lifespan still has a hardcoded upper ceiling");
+
+        final YamlConfiguration world = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/world.yml").toFile());
+        check(!world.isSet("corruption.absolute-mob-cap")
+                        && !world.isSet("corruption.absolute-mob-level")
+                        && !world.isSet("corruption.absolute-radius-cap")
+                        && !world.isSet("corruption.absolute-spread-per-night"),
+                "packaged config still exposes absolute hard ceilings");
+        check(world.isList("corruption.mob-types")
+                        && !world.getStringList("corruption.mob-types").isEmpty(),
+                "corruption mob pool must be configurable");
+        check(world.isSet("corruption.mob-level-bonus"),
+                "corruption normal-level bonus is missing from config");
+        check(world.isSet("corruption.mob-cap")
+                        && world.isSet("corruption.spawn-batch")
+                        && world.isSet("corruption.radius-cap")
+                        && world.isSet("corruption.spread-per-night")
+                        && world.isSet("corruption.mob-lifespan-seconds"),
+                "corruption balance controls are missing from config");
+    }
+
+'''
+          suite, count = re.subn(
+              r"    private static void corruptionHasHardCapsAndLifecycleCleanup\(\) throws IOException \{.*?(?=    private static String read\()",
+              new_test,
+              suite,
+              count=1,
+              flags=re.S)
+          if count != 1:
+              raise SystemExit(f"runtime regression method match count: {count}")
+          suite_path.write_text(suite)
           PY
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/main src/regression
+          git add src/main/resources/config/world.yml src/regression/java/hu/taliann/icesmp/runtime/RuntimeBugfixRegressionSuite.java
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "fix: make corruption scaling fully configurable"
+          git commit -m "fix: remove corruption hard ceilings from config"
           git push origin HEAD:fix/pet-lore-corruption-spectator-menu
