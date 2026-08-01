@@ -1,0 +1,640 @@
+name: One-shot runtime bugfix
+
+on:
+  push:
+    branches:
+      - fix/pet-lore-corruption-spectator-menu
+    paths:
+      - .github/workflows/one-shot-runtime-bugfix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply focused fixes and regressions
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          # 1) A vanilla tame-owner örökölte a játékos scoreboard-teamjét, ezért a
+          # játékos rangprefixe a társ neve elé került. A pet mozgását/harcát teljesen
+          # az IceSMP vezérli, így nem tartunk meg vanilla gazdát.
+          pet = "src/main/java/hu/taliann/icesmp/managers/PetManager.java"
+          replace_once(pet,
+          '''        if (mob instanceof Tameable tameable) {
+              tameable.setTamed(true);
+              tameable.setOwner(player);
+          }
+          // A pet BÁRMILYEN mob lehet''',
+          '''        if (mob instanceof Tameable tameable) {
+              // A vanilla gazda scoreboard-teamjét (és így a LuckPerms rangprefixét)
+              // a tameable névtáblája is örökölné. A követést és a harcot az IceSMP
+              // saját vezérlője intézi, ezért a társ nem marad vanilla-szelídített.
+              tameable.setOwner(null);
+              tameable.setTamed(false);
+          }
+          mob.setTarget(null);
+          // A pet BÁRMILYEN mob lehet''')
+          replace_once(pet,
+          '''        if (stance == MinionManager.Stance.STAY) {
+              combatTargets.remove(ownerId);
+              // Világváltásnál a STAY pet sem maradhat árván a régi világban.''',
+          '''        if (stance == MinionManager.Stance.STAY) {
+              combatTargets.remove(ownerId);
+              pet.setTarget(null);
+              pet.getPathfinder().stopPathfinding();
+              // Világváltásnál a STAY pet sem maradhat árván a régi világban.''')
+          replace_once(pet,
+          '''        } else {
+              combatTargets.remove(ownerId); // PASSIVE never fights
+          }
+
+          if (target != null) {''',
+          '''        } else {
+              combatTargets.remove(ownerId); // PASSIVE never fights
+              pet.setTarget(null);
+          }
+
+          if (target != null) {''')
+          replace_once(pet,
+          '''        // No target → follow the owner. Every pet trails its owner by default: it walks toward
+          // them once it lags past the follow-start radius, and teleports to catch up only when it
+          // falls too far behind or ends up in another world.
+          followOwner(pet, ownerLoc, ownerWorld, followSq, followStartSq, chaseSpeed);''',
+          '''        // Ne maradjon meg vanilla célpont (pl. egy untamed farkas birkája): csak az
+          // IceSMP által feloldott combatTargets célponttal harcolhat a társ.
+          pet.setTarget(null);
+          // No target → follow the owner. Every pet trails its owner by default: it walks toward
+          // them once it lags past the follow-start radius, and teleports to catch up only when it
+          // falls too far behind or ends up in another world.
+          followOwner(pet, ownerLoc, ownerWorld, followSq, followStartSq, chaseSpeed);''')
+
+          # 2) A /lore témák nem egy MiniMessage-szerű, egybefolyó ál-tagban jelennek meg,
+          # hanem külön, rövid, olvasható chat-sorokban.
+          lore = "src/main/java/hu/taliann/icesmp/commands/LoreCommand.java"
+          replace_once(lore,
+          '''            sender.sendMessage(messageManager.get("lore-usage",
+                      "&7A kódex lapjai: &f/lore <lang|fagy|menedek|radicora|kitaszitottak|fa|kapu|suttogok|melyseg|korszakok|bokic>"));
+              return;''',
+          '''            sender.sendMessage(messageManager.get("lore-usage-header",
+                      "&7A kódex lapjai:"));
+              sender.sendMessage(messageManager.get("lore-usage-factions",
+                      "&8• &fFrakciók: &7/lore lang, /lore fagy, /lore menedek, /lore kitaszitottak"));
+              sender.sendMessage(messageManager.get("lore-usage-places",
+                      "&8• &fHelyek: &7/lore radicora, /lore fa, /lore kapu, /lore melyseg, /lore bokic"));
+              sender.sendMessage(messageManager.get("lore-usage-chronicles",
+                      "&8• &fKrónikák: &7/lore suttogok, /lore korszakok"));
+              return;''')
+
+          # 3) Spectator módban a kliens/Bukkit már cancelled eseményt adhat tovább.
+          # A saját holderes GUI-t HIGHEST-en akkor is fel kell dolgozni.
+          menu = "src/main/java/hu/taliann/icesmp/listeners/CommandMenuListener.java"
+          replace_once(menu,
+          '''import org.bukkit.event.EventHandler;
+          import org.bukkit.event.Listener;''',
+          '''import org.bukkit.event.EventHandler;
+          import org.bukkit.event.EventPriority;
+          import org.bukkit.event.Listener;''')
+          replace_once(menu,
+          '''    @EventHandler(ignoreCancelled = true)
+              public void onInventoryClick(final InventoryClickEvent event) {''',
+          '''    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+              public void onInventoryClick(final InventoryClickEvent event) {''')
+
+          # 4) Rontás: spawn-távolság, pending-foglalás, abszolút hard cap, marker,
+          # nem perzisztens + időkorlátos mobok és a korábbi felhalmozódás takarítása.
+          corruption = "src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java"
+          replace_once(corruption,
+          '''import org.bukkit.Location;
+          import org.bukkit.Material;
+          import org.bukkit.World;''',
+          '''import org.bukkit.Location;
+          import org.bukkit.Material;
+          import org.bukkit.NamespacedKey;
+          import org.bukkit.World;''')
+          replace_once(corruption,
+          '''import org.bukkit.entity.Player;
+          import org.bukkit.plugin.java.JavaPlugin;''',
+          '''import org.bukkit.entity.Player;
+          import org.bukkit.persistence.PersistentDataType;
+          import org.bukkit.plugin.java.JavaPlugin;''')
+          replace_once(corruption,
+          '''import java.io.IOException;
+          import java.util.List;''',
+          '''import java.io.IOException;
+          import java.util.Arrays;
+          import java.util.Collection;
+          import java.util.List;''')
+          replace_once(corruption,
+          '''    private final SeasonManager seasonManager;
+              private final File storageFile;
+
+              private volatile String worldName;''',
+          '''    private final SeasonManager seasonManager;
+              private final File storageFile;
+              private final NamespacedKey corruptMobKey;
+
+              private volatile String worldName;''')
+          replace_once(corruption,
+          '''    private final Set<UUID> corruptMobs = ConcurrentHashMap.newKeySet();
+              /** Az utolsó terjedés napja''',
+          '''    private final Set<UUID> corruptMobs = ConcurrentHashMap.newKeySet();
+              /** A régió-schedulerre már kiadott, de még le nem futott spawnok foglalásai. */
+              private final AtomicInteger pendingSpawns = new AtomicInteger();
+              /** Rövid átmeneti ablak a régi, marker nélküli, perzisztens fajzatok takarítására. */
+              private volatile long legacyCleanupUntil;
+              private volatile String cleanupWorldName;
+              private volatile int cleanupCenterX;
+              private volatile int cleanupCenterZ;
+              private volatile double cleanupRadius;
+              /** Az utolsó terjedés napja''')
+          replace_once(corruption,
+          '''        this.storageFile = new File(plugin.getDataFolder(), "corruption.yml");
+              plugin.getDataFolder().mkdirs();''',
+          '''        this.storageFile = new File(plugin.getDataFolder(), "corruption.yml");
+              this.corruptMobKey = new NamespacedKey(plugin, "corruption_mob");
+              plugin.getDataFolder().mkdirs();''')
+          replace_once(corruption,
+          '''        active = true;
+              plugin.getLogger().info("Resumed corruption zone at " + centerX + "," + centerZ + " r=" + radius);''',
+          '''        active = true;
+              final World world = Bukkit.getWorld(worldName);
+              if (world != null && isInsideSpawnExclusion(world, centerX, centerZ)) {
+                  plugin.getLogger().warning("Removing persisted corruption zone inside the world-spawn exclusion at "
+                          + centerX + "," + centerZ + ".");
+                  beginLegacyCleanup(world);
+                  deactivate();
+                  return;
+              }
+              plugin.getLogger().info("Resumed corruption zone at " + centerX + "," + centerZ + " r=" + radius);''')
+          replace_once(corruption,
+          '''    public boolean isCorruptMob(final UUID entityId) {
+              return entityId != null && corruptMobs.contains(entityId);
+          }
+
+              /** A tisztítás-számláló''',
+          '''    public boolean isCorruptMob(final UUID entityId) {
+              return entityId != null && corruptMobs.contains(entityId);
+          }
+
+              /**
+               * Chunkbetöltéskor visszafogja a korábbi verziókból megmaradt perzisztens
+               * fajzatokat. A listener a chunk régió-szálán hívja, így az entitások
+               * állapota biztonságosan olvasható és módosítható.
+               */
+              public void handleLoadedEntities(final Collection<? extends Entity> entities) {
+                  if (entities == null || entities.isEmpty()) {
+                      return;
+                  }
+                  final long now = System.currentTimeMillis();
+                  final int cap = effectiveMobCap();
+                  for (final Entity entity : entities) {
+                      if (!(entity instanceof Mob mob)) {
+                          continue;
+                      }
+                      final Location location = mob.getLocation();
+                      final boolean tagged = mob.getPersistentDataContainer().has(
+                              corruptMobKey, PersistentDataType.BYTE);
+                      final boolean activeCandidate = active && isWithinActiveArea(location);
+                      final boolean cleanupCandidate = now < legacyCleanupUntil && isWithinCleanupArea(location);
+                      final boolean legacy = (activeCandidate || cleanupCandidate) && isLikelyLegacyCorruptMob(mob);
+                      if (!tagged && !legacy) {
+                          continue;
+                      }
+                      if (cleanupCandidate || !activeCandidate || corruptMobs.size() >= cap) {
+                          corruptMobs.remove(mob.getUniqueId());
+                          mob.remove();
+                          continue;
+                      }
+                      trackCorruptMob(mob);
+                  }
+              }
+
+              private boolean isLikelyLegacyCorruptMob(final Mob mob) {
+                  if (!mob.isGlowing() || mob.getRemoveWhenFarAway()
+                          || mobScalingManager.getLevel(mob) < 1) {
+                      return false;
+                  }
+                  for (final EntityType type : POOL) {
+                      if (mob.getType() == type) {
+                          return true;
+                      }
+                  }
+                  return false;
+              }
+
+              private boolean isWithinActiveArea(final Location location) {
+                  final double searchRadius = Math.max(radius, effectiveRadiusCap()) + 16.0D;
+                  return isWithinHorizontalArea(location, worldName, centerX, centerZ, searchRadius);
+              }
+
+              private boolean isWithinCleanupArea(final Location location) {
+                  return isWithinHorizontalArea(location, cleanupWorldName,
+                          cleanupCenterX, cleanupCenterZ, cleanupRadius);
+              }
+
+              private static boolean isWithinHorizontalArea(final Location location, final String expectedWorld,
+                                                            final int x, final int z, final double areaRadius) {
+                  if (location == null || location.getWorld() == null || expectedWorld == null
+                          || !expectedWorld.equals(location.getWorld().getName())) {
+                      return false;
+                  }
+                  final double dx = location.getX() - (x + 0.5D);
+                  final double dz = location.getZ() - (z + 0.5D);
+                  return dx * dx + dz * dz <= areaRadius * areaRadius;
+              }
+
+              private boolean isInsideSpawnExclusion(final World world, final int x, final int z) {
+                  final double minimum = Math.max(0.0D,
+                          configManager.getDouble("corruption.min-world-spawn-distance", 384.0D));
+                  if (minimum <= 0.0D) {
+                      return false;
+                  }
+                  final Location spawn = world.getSpawnLocation();
+                  final double dx = (x + 0.5D) - spawn.getX();
+                  final double dz = (z + 0.5D) - spawn.getZ();
+                  return dx * dx + dz * dz < minimum * minimum;
+              }
+
+              private int effectiveMobCap() {
+                  final int configured = Math.max(1, configManager.getInt("corruption.mob-cap", 6));
+                  final int hardCap = Math.max(1, configManager.getInt("corruption.absolute-mob-cap", 8));
+                  return Math.min(configured, hardCap);
+              }
+
+              private int effectiveMobLevel() {
+                  final int configured = Math.max(1, configManager.getInt("corruption.mob-level", 4));
+                  final int hardCap = Math.max(1, configManager.getInt("corruption.absolute-mob-level", 5));
+                  return Math.min(configured, hardCap);
+              }
+
+              private double effectiveRadiusCap() {
+                  final double configured = Math.max(8.0D,
+                          configManager.getDouble("corruption.radius-cap", 40.0D));
+                  final double hardCap = Math.max(8.0D,
+                          configManager.getDouble("corruption.absolute-radius-cap", 40.0D));
+                  return Math.min(configured, hardCap);
+              }
+
+              private double effectiveSpreadPerNight() {
+                  final double configured = Math.max(0.0D,
+                          configManager.getDouble("corruption.spread-per-night", 2.0D));
+                  final double hardCap = Math.max(0.0D,
+                          configManager.getDouble("corruption.absolute-spread-per-night", 2.0D));
+                  return Math.min(configured, hardCap);
+              }
+
+              private void trackCorruptMob(final Mob mob) {
+                  mob.getPersistentDataContainer().set(corruptMobKey, PersistentDataType.BYTE, (byte) 1);
+                  mob.setGlowing(true);
+                  // A fajzat esemény-entitás: nem kerülhet world-save-ba, és távol lévő
+                  // játékos nélkül is eltűnhet. Ez zárja le a restartonkénti felhalmozódást.
+                  mob.setPersistent(false);
+                  mob.setRemoveWhenFarAway(true);
+                  final UUID mobId = mob.getUniqueId();
+                  if (!corruptMobs.add(mobId)) {
+                      return;
+                  }
+                  final long seconds = Math.max(1L, Math.min(86_400L,
+                          configManager.getLong("corruption.mob-lifespan-seconds", 300L)));
+                  mob.getScheduler().runDelayed(plugin, task -> {
+                      corruptMobs.remove(mobId);
+                      if (mob.isValid()) {
+                          mob.remove();
+                      }
+                  }, () -> corruptMobs.remove(mobId), seconds * 20L);
+              }
+
+              private void beginLegacyCleanup(final World world) {
+                  cleanupWorldName = world.getName();
+                  cleanupCenterX = centerX;
+                  cleanupCenterZ = centerZ;
+                  cleanupRadius = Math.max(radius, effectiveRadiusCap()) + 32.0D;
+                  final long seconds = Math.max(60L, configManager.getLong(
+                          "corruption.legacy-cleanup-seconds", 1_800L));
+                  legacyCleanupUntil = System.currentTimeMillis() + seconds * 1000L;
+
+                  final int minChunkX = ((int) Math.floor(cleanupCenterX - cleanupRadius)) >> 4;
+                  final int maxChunkX = ((int) Math.floor(cleanupCenterX + cleanupRadius)) >> 4;
+                  final int minChunkZ = ((int) Math.floor(cleanupCenterZ - cleanupRadius)) >> 4;
+                  final int maxChunkZ = ((int) Math.floor(cleanupCenterZ + cleanupRadius)) >> 4;
+                  for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                      for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                          final int chunkX = cx;
+                          final int chunkZ = cz;
+                          final Location owner = new Location(world, (chunkX << 4) + 8.0D, centerY,
+                                  (chunkZ << 4) + 8.0D);
+                          plugin.getServer().getRegionScheduler().run(plugin, owner, task -> {
+                              if (world.isChunkLoaded(chunkX, chunkZ)) {
+                                  handleLoadedEntities(Arrays.asList(
+                                          world.getChunkAt(chunkX, chunkZ).getEntities()));
+                              }
+                          });
+                      }
+                  }
+              }
+
+              /** A tisztítás-számláló''')
+          replace_once(corruption,
+          '''        final Location core = new Location(world, x, y + 1, z);
+              if (spawnGuard.isBlocked("corruption", core) || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {''',
+          '''        final Location core = new Location(world, x, y + 1, z);
+              if (isInsideSpawnExclusion(world, x, z)
+                      || spawnGuard.isBlocked("corruption", core)
+                      || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {''')
+          replace_once(corruption,
+          '''        radius = Math.max(4.0D, configManager.getDouble("corruption.initial-radius", 16.0D));''',
+          '''        radius = Math.min(effectiveRadiusCap(),
+                  Math.max(4.0D, configManager.getDouble("corruption.initial-radius", 12.0D)));''')
+          replace_once(corruption,
+          '''        if (world == null) {
+              return;
+          }
+          // Terjedés: éjszakánként egyszer, a plafonig.''',
+          '''        if (world == null) {
+              return;
+          }
+          if (isInsideSpawnExclusion(world, centerX, centerZ)) {
+              plugin.getLogger().warning("Deactivating corruption zone inside the world-spawn exclusion at "
+                      + centerX + "," + centerZ + ".");
+              beginLegacyCleanup(world);
+              deactivate();
+              return;
+          }
+          // Terjedés: éjszakánként egyszer, a plafonig.''')
+          replace_once(corruption,
+          '''            final double cap = Math.max(8.0D, configManager.getDouble("corruption.radius-cap", 64.0D));
+              final double next = Math.min(cap, radius + Math.max(0.0D, configManager.getDouble("corruption.spread-per-night", 4.0D)));''',
+          '''            final double cap = effectiveRadiusCap();
+              final double next = Math.min(cap, radius + effectiveSpreadPerNight());''')
+          replace_once(corruption,
+          '''        final int cap = Math.max(1, configManager.getInt("corruption.mob-cap", 12));
+              final int batch = Math.max(1, configManager.getInt("corruption.spawn-batch", 2));
+              if (corruptMobs.size() >= cap) {
+                  return;
+              }
+              for (int i = 0; i < batch && corruptMobs.size() + i < cap; i++) {
+                  final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+                  final double dist = ThreadLocalRandom.current().nextDouble(radius);
+                  final int x = centerX + (int) Math.round(Math.cos(angle) * dist);
+                  final int z = centerZ + (int) Math.round(Math.sin(angle) * dist);
+                  plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z), task -> {
+                      final int y = world.getHighestBlockYAt(x, z) + 1;
+                      final Location spot = new Location(world, x + 0.5D, y, z + 0.5D);
+                      // A mob-utánpótlás is a spawn-rules mátrixot követi (territory/claim/region/víz):
+                      // a góc mellé később épült claim/város belsejébe sem szivárog fajzat.
+                      if (spawnGuard.isBlocked("corruption", spot)
+                              || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
+                          return;
+                      }
+                      final EntityType type = POOL[ThreadLocalRandom.current().nextInt(POOL.length)];
+                      final Class<? extends Entity> entityClass = type.getEntityClass();
+                      if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
+                          return;
+                      }
+                      final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
+                      EventSpawnGuard.prepare(mob);
+                      mob.setGlowing(true);
+                      mob.setRemoveWhenFarAway(false);
+                      mobScalingManager.forceLevel(mob, Math.max(1, configManager.getInt("corruption.mob-level", 6)));
+                      corruptMobs.add(mob.getUniqueId());
+                  });
+              }''',
+          '''        final int cap = effectiveMobCap();
+              final int batch = Math.max(1, configManager.getInt("corruption.spawn-batch", 1));
+              final int available = cap - corruptMobs.size() - pendingSpawns.get();
+              if (available <= 0) {
+                  return;
+              }
+              final int spawnCount = Math.min(batch, available);
+              for (int i = 0; i < spawnCount; i++) {
+                  final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+                  final double dist = ThreadLocalRandom.current().nextDouble(radius);
+                  final int x = centerX + (int) Math.round(Math.cos(angle) * dist);
+                  final int z = centerZ + (int) Math.round(Math.sin(angle) * dist);
+                  pendingSpawns.incrementAndGet();
+                  plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z), task -> {
+                      try {
+                          if (!active || !world.getName().equals(worldName)) {
+                              return;
+                          }
+                          final int y = world.getHighestBlockYAt(x, z) + 1;
+                          final Location spot = new Location(world, x + 0.5D, y, z + 0.5D);
+                          // A mob-utánpótlás is a spawn-rules mátrixot követi (territory/claim/region/víz):
+                          // a góc mellé később épült claim/város belsejébe sem szivárog fajzat.
+                          if (isInsideSpawnExclusion(world, x, z)
+                                  || spawnGuard.isBlocked("corruption", spot)
+                                  || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
+                              return;
+                          }
+                          final EntityType type = POOL[ThreadLocalRandom.current().nextInt(POOL.length)];
+                          final Class<? extends Entity> entityClass = type.getEntityClass();
+                          if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
+                              return;
+                          }
+                          final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
+                          EventSpawnGuard.prepare(mob);
+                          mobScalingManager.forceLevel(mob, effectiveMobLevel());
+                          trackCorruptMob(mob);
+                      } finally {
+                          pendingSpawns.decrementAndGet();
+                      }
+                  });
+              }''')
+
+          # Chunk-load hook for adopting/removing legacy corruption mobs.
+          listener = "src/main/java/hu/taliann/icesmp/listeners/CorruptionListener.java"
+          replace_once(listener,
+          '''import org.bukkit.event.player.PlayerInteractEvent;''',
+          '''import org.bukkit.event.player.PlayerInteractEvent;
+          import org.bukkit.event.world.EntitiesLoadEvent;''')
+          replace_once(listener,
+          '''    @EventHandler(ignoreCancelled = true)
+              public void onCoreInteract''',
+          '''    @EventHandler
+              public void onEntitiesLoad(final EntitiesLoadEvent event) {
+                  corruptionManager.handleLoadedEntities(event.getEntities());
+              }
+
+              @EventHandler(ignoreCancelled = true)
+              public void onCoreInteract''')
+
+          # Packaged balance/safety defaults. Az absolute-* kulcsok a már létező,
+          # agresszívebbre állított szerverkonfigot is hard-cappelik.
+          world = "src/main/resources/config/world.yml"
+          replace_once(world,
+          '''  spawn-offset: 96           # a horgony-játékostól legfeljebb ennyire nyílik
+            initial-radius: 16.0
+            radius-cap: 64.0
+            spread-per-night: 4.0
+            mob-cap: 12                # egyszerre legfeljebb ennyi korrupt mob él (entitás-fék)
+            spawn-batch: 2
+            mob-level: 6
+            purge-kills-required: 15''',
+          '''  spawn-offset: 96           # a horgony-játékostól legfeljebb ennyire nyílik
+            min-world-spawn-distance: 384 # ezen belül góc nem nyílhat; régi aktív góc automatikusan törlődik
+            legacy-cleanup-seconds: 1800  # ennyi ideig takarítja a régi, marker nélküli perzisztens fajzatokat
+            initial-radius: 12.0
+            radius-cap: 40.0
+            absolute-radius-cap: 40.0     # hard cap: régi/túl magas szerverkonfig sem lépheti át
+            spread-per-night: 2.0
+            absolute-spread-per-night: 2.0
+            mob-cap: 6                 # egyszerre legfeljebb ennyi nyilvántartott fajzat él
+            absolute-mob-cap: 8        # hard cap a már meglévő szerverkonfigokra is
+            spawn-batch: 1
+            mob-lifespan-seconds: 300  # öt perc után biztosan eltűnik; nem kerül world-save-ba
+            mob-level: 4
+            absolute-mob-level: 5
+            purge-kills-required: 10''')
+
+          # Focused source/config contracts, wired into Gradle check.
+          regression = Path("src/regression/java/hu/taliann/icesmp/runtime/RuntimeBugfixRegressionSuite.java")
+          regression.parent.mkdir(parents=True, exist_ok=True)
+          regression.write_text(textwrap.dedent('''\
+              package hu.taliann.icesmp.runtime;
+
+              import org.bukkit.configuration.file.YamlConfiguration;
+
+              import java.io.IOException;
+              import java.nio.file.Files;
+              import java.nio.file.Path;
+
+              /** Focused contracts for the 2026-08 pet/lore/corruption/spectator fixes. */
+              public final class RuntimeBugfixRegressionSuite {
+
+                  private RuntimeBugfixRegressionSuite() {
+                  }
+
+                  public static void main(final String[] args) throws IOException {
+                      petDoesNotInheritOwnerScoreboardTeam();
+                      loreUsageIsReadableAndNotAParsedTag();
+                      spectatorClicksReachTheCommandMenu();
+                      corruptionHasHardCapsAndLifecycleCleanup();
+                      System.out.println("Runtime bugfix regression suite passed.");
+                  }
+
+                  private static void petDoesNotInheritOwnerScoreboardTeam() throws IOException {
+                      final String source = read("src/main/java/hu/taliann/icesmp/managers/PetManager.java");
+                      check(source.contains("tameable.setOwner(null)"),
+                              "pet adoption must clear the vanilla owner/team inheritance");
+                      check(!source.contains("tameable.setOwner(player)"),
+                              "pet adoption still assigns the player's scoreboard team");
+                      check(source.contains("pet.setTarget(null)"),
+                              "untamed companion must clear vanilla AI targets");
+                  }
+
+                  private static void loreUsageIsReadableAndNotAParsedTag() throws IOException {
+                      final String source = read("src/main/java/hu/taliann/icesmp/commands/LoreCommand.java");
+                      check(source.contains("lore-usage-header")
+                                      && source.contains("lore-usage-factions")
+                                      && source.contains("lore-usage-places")
+                                      && source.contains("lore-usage-chronicles"),
+                              "lore help must be split into readable lines");
+                      check(!source.contains("<lang|fagy|menedek|"),
+                              "lore help still contains the monolithic angle-bracket topic list");
+                  }
+
+                  private static void spectatorClicksReachTheCommandMenu() throws IOException {
+                      final String source = read("src/main/java/hu/taliann/icesmp/listeners/CommandMenuListener.java");
+                      check(source.contains("priority = EventPriority.HIGHEST, ignoreCancelled = false"),
+                              "command menu still ignores already-cancelled spectator clicks");
+                      check(source.indexOf("event.setCancelled(true)")
+                                      < source.indexOf("holder.getOwnerUuid()"),
+                              "owned GUI must be frozen before action/owner dispatch");
+                  }
+
+                  private static void corruptionHasHardCapsAndLifecycleCleanup() throws IOException {
+                      final String source = read("src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java");
+                      check(source.contains("pendingSpawns") && source.contains("effectiveMobCap()"),
+                              "corruption spawns lack pending reservations or a hard cap");
+                      check(source.contains("mob.setPersistent(false)")
+                                      && source.contains("mob.setRemoveWhenFarAway(true)")
+                                      && source.contains("mob-lifespan-seconds"),
+                              "corruption mobs can still accumulate across distance/restarts");
+                      check(source.contains("min-world-spawn-distance")
+                                      && source.contains("beginLegacyCleanup(world)"),
+                              "corruption lacks spawn exclusion or legacy cleanup");
+                      check(!source.contains("mob.setRemoveWhenFarAway(false)"),
+                              "corruption still forces permanent far-away mobs");
+
+                      final YamlConfiguration world = YamlConfiguration.loadConfiguration(
+                              Path.of("src/main/resources/config/world.yml").toFile());
+                      check(world.getDouble("corruption.min-world-spawn-distance") >= 256.0D,
+                              "packaged corruption spawn exclusion is too small");
+                      check(world.getInt("corruption.mob-cap")
+                                      <= world.getInt("corruption.absolute-mob-cap"),
+                              "configured corruption cap exceeds its absolute ceiling");
+                      check(world.getInt("corruption.spawn-batch") == 1,
+                              "corruption must replenish one mob at a time");
+                      check(world.getLong("corruption.mob-lifespan-seconds") > 0L,
+                              "corruption mobs need a finite lifespan");
+                  }
+
+                  private static String read(final String path) throws IOException {
+                      return Files.readString(Path.of(path));
+                  }
+
+                  private static void check(final boolean condition, final String message) {
+                      if (!condition) {
+                          throw new AssertionError(message);
+                      }
+                  }
+              }
+              '''))
+
+          gradle = "build.gradle.kts"
+          replace_once(gradle,
+          '''val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
+              group = "verification"
+              description = "Runs JAR datapack pause-menu website dialog regressions."
+              dependsOn(tasks.named(regressionTest.classesTaskName))
+              classpath = regressionTest.runtimeClasspath
+              mainClass.set("hu.taliann.icesmp.dialog.PauseMenuDialogRegressionSuite")
+          }
+
+          tasks.check {''',
+          '''val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
+              group = "verification"
+              description = "Runs JAR datapack pause-menu website dialog regressions."
+              dependsOn(tasks.named(regressionTest.classesTaskName))
+              classpath = regressionTest.runtimeClasspath
+              mainClass.set("hu.taliann.icesmp.dialog.PauseMenuDialogRegressionSuite")
+          }
+
+          val runtimeBugfixRegressionTest by tasks.registering(JavaExec::class) {
+              group = "verification"
+              description = "Runs pet nametag, lore output, corruption safety and spectator-menu regressions."
+              dependsOn(tasks.named(regressionTest.classesTaskName))
+              classpath = regressionTest.runtimeClasspath
+              mainClass.set("hu.taliann.icesmp.runtime.RuntimeBugfixRegressionSuite")
+          }
+
+          tasks.check {''')
+          replace_once(gradle,
+          '''        hudRegressionTest, pauseMenuDialogRegressionTest)
+          }''',
+          '''        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest)
+          }''')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build.gradle.kts src/main src/regression
+          git commit -m "fix: harden pets, lore, corruption and spectator menus"
+          git push
