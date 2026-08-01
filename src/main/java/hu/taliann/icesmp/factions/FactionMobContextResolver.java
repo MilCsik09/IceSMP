@@ -87,7 +87,6 @@ public final class FactionMobContextResolver {
         final TargetReason reason = event.getReason();
         final UUID mobId = entity.getUniqueId();
         final boolean undead = isUndead(entity);
-        final boolean enderman = entity instanceof Enderman;
         final boolean ambient = darkUndeadAmbienceManager.isMarked(entity);
         final EnumSet<FactionPassivePolicy.ContentContext> contexts =
                 contentContexts(entity, settings, playerId);
@@ -100,13 +99,13 @@ public final class FactionMobContextResolver {
                 || undead && !ambient && RETALIATION_REASONS.contains(reason);
         return targetContext(
                 entity,
-                playerId,
+                settings,
                 whisperer,
                 contexts,
                 EXPLICIT_FORCE_REASONS.contains(reason)
                         && !contexts.contains(FactionPassivePolicy.ContentContext.CROWN_CURSE),
                 retaliating,
-                enderman && reason == TargetReason.CLOSEST_PLAYER,
+                entity instanceof Enderman && reason == TargetReason.CLOSEST_PLAYER,
                 SPONTANEOUS_REASONS.contains(reason),
                 SPONTANEOUS_REASONS.contains(reason));
     }
@@ -124,7 +123,7 @@ public final class FactionMobContextResolver {
         final boolean enderman = mob instanceof Enderman;
         return targetContext(
                 mob,
-                playerId,
+                settings,
                 whisperer,
                 contentContexts(mob, settings, playerId),
                 false,
@@ -136,7 +135,7 @@ public final class FactionMobContextResolver {
 
     private FactionPassivePolicy.TargetContext targetContext(
             final Entity entity,
-            final UUID playerId,
+            final FactionPassiveSettings settings,
             final boolean whisperer,
             final Set<FactionPassivePolicy.ContentContext> contexts,
             final boolean explicitForce,
@@ -154,27 +153,12 @@ public final class FactionMobContextResolver {
                 time >= 13_000L && time <= 23_000L,
                 undead,
                 undead && darkUndeadAmbienceManager.isMarked(entity),
-                isNeutralMob(entity, settingsForContext(settingsFallback(entity))),
+                isNeutralMob(entity, settings),
                 entity instanceof Enderman,
                 spontaneousEndermanStare,
                 spontaneousNeutralAggro,
                 spontaneousUndeadAggro,
                 whisperer);
-    }
-
-    /*
-     * Kept as a small overload target so every context is built from the exact snapshot supplied by
-     * the caller. The methods below are intentionally trivial; they prevent accidental live-config
-     * reads from creeping into this read-only adapter.
-     */
-    private FactionPassiveSettings contextSettings;
-
-    private FactionPassiveSettings settingsFallback(final Entity ignored) {
-        return contextSettings;
-    }
-
-    private static FactionPassiveSettings settingsForContext(final FactionPassiveSettings settings) {
-        return settings;
     }
 
     public EnumSet<FactionPassivePolicy.ContentContext> contentContexts(
