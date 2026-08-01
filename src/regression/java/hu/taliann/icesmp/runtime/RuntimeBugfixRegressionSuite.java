@@ -16,7 +16,7 @@ public final class RuntimeBugfixRegressionSuite {
         petDoesNotInheritOwnerScoreboardTeam();
         loreUsageIsReadableAndNotAParsedTag();
         spectatorClicksReachTheCommandMenu();
-        corruptionHasHardCapsAndLifecycleCleanup();
+        corruptionIsFullyConfigurable();
         System.out.println("Runtime bugfix regression suite passed.");
     }
 
@@ -50,31 +50,47 @@ public final class RuntimeBugfixRegressionSuite {
                 "owned GUI must be frozen before action/owner dispatch");
     }
 
-    private static void corruptionHasHardCapsAndLifecycleCleanup() throws IOException {
+    private static void corruptionIsFullyConfigurable() throws IOException {
         final String source = read("src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java");
-        check(source.contains("pendingSpawns") && source.contains("effectiveMobCap()"),
-                "corruption spawns lack pending reservations or a hard cap");
-        check(source.contains("mob.setPersistent(false)")
-                        && source.contains("mob.setRemoveWhenFarAway(true)")
-                        && source.contains("mob-lifespan-seconds"),
-                "corruption mobs can still accumulate across distance/restarts");
-        check(source.contains("min-world-spawn-distance")
-                        && source.contains("beginLegacyCleanup(world)"),
-                "corruption lacks spawn exclusion or legacy cleanup");
-        check(!source.contains("mob.setRemoveWhenFarAway(false)"),
-                "corruption still forces permanent far-away mobs");
+        check(source.contains("pendingSpawns") && source.contains("configuredMobCap()"),
+                "corruption spawns lost pending reservations or the configurable cap");
+        check(source.contains("mobScalingManager.resolveLevel(location)")
+                        && source.contains("corruption.mob-level-bonus"),
+                "corruption mobs must use normal location level plus a configurable bonus");
+        check(source.contains("configuredMobTypes()")
+                        && source.contains("corruption.mob-types")
+                        && !source.contains("EntityType[] POOL"),
+                "corruption mob types are still hardcoded");
+        check(source.contains("corruption.mob-glowing")
+                        && source.contains("corruption.mob-persistent")
+                        && source.contains("corruption.mob-remove-when-far-away")
+                        && source.contains("corruption.mob-lifespan-seconds"),
+                "corruption mob lifecycle/visuals are not fully configurable");
+        check(!source.contains("absolute-mob-")
+                        && !source.contains("absolute-radius-")
+                        && !source.contains("absolute-spread-"),
+                "corruption still contains an absolute hard ceiling");
+        check(!source.contains("86_400L"),
+                "corruption lifespan still has a hardcoded upper ceiling");
 
         final YamlConfiguration world = YamlConfiguration.loadConfiguration(
                 Path.of("src/main/resources/config/world.yml").toFile());
-        check(world.getDouble("corruption.min-world-spawn-distance") >= 256.0D,
-                "packaged corruption spawn exclusion is too small");
-        check(world.getInt("corruption.mob-cap")
-                        <= world.getInt("corruption.absolute-mob-cap"),
-                "configured corruption cap exceeds its absolute ceiling");
-        check(world.getInt("corruption.spawn-batch") == 1,
-                "corruption must replenish one mob at a time");
-        check(world.getLong("corruption.mob-lifespan-seconds") > 0L,
-                "corruption mobs need a finite lifespan");
+        check(!world.isSet("corruption.absolute-mob-cap")
+                        && !world.isSet("corruption.absolute-mob-level")
+                        && !world.isSet("corruption.absolute-radius-cap")
+                        && !world.isSet("corruption.absolute-spread-per-night"),
+                "packaged config still exposes absolute hard ceilings");
+        check(world.isList("corruption.mob-types")
+                        && !world.getStringList("corruption.mob-types").isEmpty(),
+                "corruption mob pool must be configurable");
+        check(world.isSet("corruption.mob-level-bonus"),
+                "corruption normal-level bonus is missing from config");
+        check(world.isSet("corruption.mob-cap")
+                        && world.isSet("corruption.spawn-batch")
+                        && world.isSet("corruption.radius-cap")
+                        && world.isSet("corruption.spread-per-night")
+                        && world.isSet("corruption.mob-lifespan-seconds"),
+                "corruption balance controls are missing from config");
     }
 
     private static String read(final String path) throws IOException {
