@@ -144,9 +144,51 @@ val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.dialog.PauseMenuDialogRegressionSuite")
 }
 
+val relicItemRefreshRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs Mélytépő modifier idempotency regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.items.RelicRefreshRegressionSuite")
+}
+
+val relicRefreshPipelineRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs per-slot relic refresh isolation and diagnostic regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.RelicRefreshPipelineRegressionSuite")
+}
+
+val lifecycleShutdownRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs Folia disable/shutdown scheduler regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.lifecycle.LifecycleShutdownRegressionSuite")
+}
+
+val questNpcValidationRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs quest-NPC exact-name, provenance and provisioning regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.quests.QuestNpcValidationRegressionSuite")
+}
+
+val resourcePackRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs additive resource-pack id, hash and immutable URL regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.resourcepack.ResourcePackRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest)
+        hudRegressionTest, pauseMenuDialogRegressionTest, relicItemRefreshRegressionTest,
+        relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
+        questNpcValidationRegressionTest, resourcePackRegressionTest)
 }

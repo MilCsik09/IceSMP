@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -1063,33 +1064,57 @@ public final class QuestManager implements PersistentStore {
         return new ArrayList<>(pool.subList(0, dailyCount));
     }
 
+    /** One quest reference to a FancyNpcs internal name, including its exact config origin. */
+    public record QuestNpcReference(String questId, String configPath, String role) {
+        public QuestNpcReference {
+            questId = questId == null ? "unknown" : questId;
+            configPath = configPath == null ? "unknown" : configPath;
+            role = role == null ? "unknown" : role;
+        }
+    }
+
     /**
-     * Every NPC name the quest system cares about: quest-giver NPCs plus
-     * TALK_TO_NPC objective targets. Used by the marker tick to know which
-     * NPCs may need a per-player particle marker.
+     * Every NPC name the quest system cares about, mapped to every quest/config location that
+     * references it. The richer provenance is used by startup validation and the admin diagnostic
+     * command so a missing NPC never degrades to an unactionable comma-separated name list.
      */
-    public Set<String> getQuestNpcNames() {
-        final Set<String> names = new LinkedHashSet<>();
+    public Map<String, List<QuestNpcReference>> getQuestNpcReferences() {
+        final Map<String, List<QuestNpcReference>> references = new LinkedHashMap<>();
         for (final String questId : getQuestIds()) {
             final ConfigurationSection quest = getQuestSection(questId);
             if (quest == null) {
                 continue;
             }
 
+            final String questPath = quest.getCurrentPath() == null
+                    ? "quests." + questId
+                    : quest.getCurrentPath();
             final String giver = quest.getString("giver-npc");
             if (giver != null && !giver.isBlank()) {
-                names.add(giver);
+                references.computeIfAbsent(giver, ignored -> new ArrayList<>())
+                        .add(new QuestNpcReference(questId, questPath + ".giver-npc", "giver"));
             }
 
-            // Any TALK_TO_NPC or DELIVER_ITEMS objective (across all steps) has a target NPC.
             for (final ConfigurationSection objective : getObjectiveSections(quest)) {
-                final String talkTarget = objective.getString("npc");
-                if (talkTarget != null && !talkTarget.isBlank()) {
-                    names.add(talkTarget);
+                final String target = objective.getString("npc");
+                if (target == null || target.isBlank()) {
+                    continue;
                 }
+                final String objectivePath = objective.getCurrentPath() == null
+                        ? questPath + ".objective.npc"
+                        : objective.getCurrentPath() + ".npc";
+                final String role = objective.getString("type", "objective").toLowerCase(Locale.ROOT);
+                references.computeIfAbsent(target, ignored -> new ArrayList<>())
+                        .add(new QuestNpcReference(questId, objectivePath, role));
             }
         }
-        return names;
+        references.replaceAll((name, values) -> List.copyOf(values));
+        return Collections.unmodifiableMap(references);
+    }
+
+    /** Names-only compatibility view used by marker and fallback completion paths. */
+    public Set<String> getQuestNpcNames() {
+        return Collections.unmodifiableSet(new LinkedHashSet<>(getQuestNpcReferences().keySet()));
     }
 
     /** Whether this NPC has at least one quest the player could accept right now. */

@@ -14,7 +14,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -53,6 +58,7 @@ public final class FancyNpcsQuestBridge {
     private final NpcBindingManager npcBindingManager;
     private final Object npcManager;
     private final Method getNpcByName;
+    private final Method getAllNpcs;
     private final Method npcGetData;
     private final Method dataGetName;
     private final Method dataGetLocation;
@@ -94,6 +100,7 @@ public final class FancyNpcsQuestBridge {
         final Method getNpcManager = apiClass.getMethod("getNpcManager");
         this.npcManager = getNpcManager.invoke(api);
         this.getNpcByName = getNpcManager.getReturnType().getMethod("getNpc", String.class);
+        this.getAllNpcs = getNpcManager.getReturnType().getMethod("getAllNpcs");
         final Class<?> npcClass = Class.forName("de.oliver.fancynpcs.api.Npc");
         this.npcGetData = npcClass.getMethod("getData");
         final Class<?> dataClass = npcGetData.getReturnType();
@@ -198,37 +205,144 @@ public final class FancyNpcsQuestBridge {
         );
     }
 
+    /** One unavailable required NPC with its optional case-only match and every quest reference. */
+    public record MissingQuestNpc(
+            String expectedName,
+            String caseInsensitiveMatch,
+            List<QuestManager.QuestNpcReference> references
+    ) {
+        public MissingQuestNpc {
+            references = List.copyOf(references);
+        }
+
+        public boolean hasCaseMismatch() {
+            return caseInsensitiveMatch != null;
+        }
+    }
+
+    /** Immutable validation result used by startup logging and the admin command. */
+    public record QuestNpcValidationReport(
+            int requiredCount,
+            int availableCount,
+            List<MissingQuestNpc> missing,
+            List<String> lookupErrors
+    ) {
+        public QuestNpcValidationReport {
+            missing = List.copyOf(missing);
+            lookupErrors = List.copyOf(lookupErrors);
+        }
+
+        public boolean healthy() {
+            return missing.isEmpty() && lookupErrors.isEmpty();
+        }
+    }
+
+    /**
+     * Validates exact FancyNpcs internal names and reports every affected quest/config path.
+     * Case-only matches are kept separate: FancyNpcs lookup is exact, so silently accepting them
+     * would leave the corresponding quest unable to progress.
+     */
+    public QuestNpcValidationReport validateNpcs(
+            final Map<String, List<QuestManager.QuestNpcReference>> questNpcReferences) {
+        final Map<String, String> availableNames = new LinkedHashMap<>();
+        final List<String> lookupErrors = new ArrayList<>();
+        try {
+            final Object allNpcs = getAllNpcs.invoke(npcManager);
+            if (allNpcs instanceof Collection<?> collection) {
+                for (final Object npc : collection) {
+                    if (npc == null) {
+                        continue;
+                    }
+                    final Object data = npcGetData.invoke(npc);
+                    if (data != null && dataGetName.invoke(data) instanceof String name && !name.isBlank()) {
+                        availableNames.putIfAbsent(name.toLowerCase(Locale.ROOT), name);
+                    }
+                }
+            } else {
+                lookupErrors.add("FancyNpcs getAllNpcs() nem Collection eredményt adott.");
+            }
+        } catch (final ReflectiveOperationException exception) {
+            lookupErrors.add("FancyNpcs NPC-lista nem olvasható: " + safeMessage(exception));
+        }
+
+        final List<MissingQuestNpc> missing = new ArrayList<>();
+        for (final Map.Entry<String, List<QuestManager.QuestNpcReference>> entry
+                : questNpcReferences.entrySet()) {
+            final String expected = entry.getKey();
+            try {
+                final Object resolved = getNpcByName.invoke(npcManager, expected);
+                final Object data = resolved == null ? null : npcGetData.invoke(resolved);
+                final String resolvedName = data != null && dataGetName.invoke(data) instanceof String name
+                        ? name
+                        : null;
+                if (expected.equals(resolvedName)) {
+                    continue;
+                }
+                final String enumeratedMatch = availableNames.get(expected.toLowerCase(Locale.ROOT));
+                final String caseMatch = resolvedName != null && expected.equalsIgnoreCase(resolvedName)
+                        ? resolvedName
+                        : enumeratedMatch;
+                missing.add(new MissingQuestNpc(expected,
+                        expected.equals(caseMatch) ? null : caseMatch, entry.getValue()));
+            } catch (final ReflectiveOperationException exception) {
+                lookupErrors.add(expected + ": " + safeMessage(exception));
+            }
+        }
+
+        final QuestNpcValidationReport report = new QuestNpcValidationReport(
+                questNpcReferences.size(), availableNames.size(), missing, lookupErrors);
+        logValidationReport(report);
+        return report;
+    }
+
+    private void logValidationReport(final QuestNpcValidationReport report) {
+        if (report.healthy()) {
+            plugin.getLogger().info("Quest-NPC ellenőrzés: mind a(z) "
+                    + report.requiredCount() + " kötelező NPC pontos belső névvel elérhető.");
+            return;
+        }
+
+        plugin.getLogger().warning("Quest-NPC ellenőrzés: required=" + report.requiredCount()
+                + ", available=" + report.availableCount()
+                + ", missingOrMismatched=" + report.missing().size()
+                + ", lookupErrors=" + report.lookupErrors().size() + ".");
+        for (final MissingQuestNpc issue : report.missing()) {
+            final String match = issue.hasCaseMismatch()
+                    ? "; caseInsensitiveMatch=" + issue.caseInsensitiveMatch()
+                    : "";
+            plugin.getLogger().warning("Quest-NPC hiányzik vagy rossz a belső neve: expected="
+                    + issue.expectedName() + match + "; references=" + formatReferences(issue.references()));
+        }
+        for (final String error : report.lookupErrors()) {
+            plugin.getLogger().warning("Quest-NPC lookup hiba: " + error);
+        }
+        plugin.getLogger().warning("A koordináta és világ nem következtethető biztonságosan. "
+                + "Hozd létre/importáld a szükséges NPC-ket, majd futtasd: /quest admin validatenpcs. "
+                + "A quest-npc-fallback.always csak szándékos fejlesztői megkerüléshez állítható true-ra.");
+    }
+
+    public static String formatReferences(final List<QuestManager.QuestNpcReference> references) {
+        return references.stream()
+                .map(reference -> reference.questId() + "@" + reference.configPath()
+                        + "[" + reference.role() + "]")
+                .reduce((left, right) -> left + "," + right)
+                .orElse("none");
+    }
+
+    private static String safeMessage(final ReflectiveOperationException exception) {
+        final Throwable cause = exception.getCause();
+        final String message = cause == null ? exception.getMessage() : cause.getMessage();
+        return message == null || message.isBlank()
+                ? exception.getClass().getSimpleName()
+                : message.replaceAll("[\r\n]+", " ");
+    }
+
     /**
      * Resolves a FancyNpcs NPC's stored location by internal name.
      *
      * @param name the NPC's internal name
      * @return a defensive copy of the location, or null if unknown
      */
-    /**
-     * Quest-NPC létezés-ellenőrzés (indulás után késleltetve hívva): a hiányzó NPC ma
-     * némán teljesíthetetlenné teszi a questjeit — itt hangos figyelmeztetés lesz belőle.
-     */
-    public void validateNpcs(final java.util.Set<String> questNpcNames) {
-        final java.util.List<String> missing = new java.util.ArrayList<>();
-        for (final String name : questNpcNames) {
-            try {
-                if (getNpcByName.invoke(npcManager, name) == null) {
-                    missing.add(name);
-                }
-            } catch (final ReflectiveOperationException exception) {
-                plugin.getLogger().warning("Quest-NPC ellenőrzés hiba (" + name + "): " + exception.getMessage());
-                return;
-            }
-        }
-        if (!missing.isEmpty()) {
-            plugin.getLogger().warning("HIÁNYZÓ quest-NPC-k (" + missing.size() + "): " + String.join(", ", missing)
-                    + " — az érintett questek NPC nélkül nem haladnak! Hozd létre őket (FancyNpcs), "
-                    + "vagy a /quest talk tartalék-út a quest-npc-fallback.always kulccsal bekapcsolható.");
-        } else {
-            plugin.getLogger().info("Quest-NPC ellenőrzés: mind a(z) " + questNpcNames.size() + " NPC a helyén van.");
-        }
-    }
-
     public Location locateNpc(final String name) {
         try {
             final Object npc = getNpcByName.invoke(npcManager, name);

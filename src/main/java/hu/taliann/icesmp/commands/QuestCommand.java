@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.commands;
 
 import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
+import hu.taliann.icesmp.integration.FancyNpcsQuestBridge;
 import hu.taliann.icesmp.listeners.QuestBuilderListener;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -18,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * /quest — küldetések: list (elérhető), info (aktív + haladás), accept,
@@ -31,17 +33,20 @@ public final class QuestCommand implements BasicCommand {
     private final QuestManager questManager;
     private final MessageManager messageManager;
     private final QuestBuilderListener questBuilderListener;
+    private final Supplier<FancyNpcsQuestBridge> npcBridgeSupplier;
 
     private final hu.taliann.icesmp.managers.ConfigManager configManager;
 
     public QuestCommand(final JavaPlugin plugin, final QuestManager questManager,
                         final hu.taliann.icesmp.managers.ConfigManager configManager,
-                        final MessageManager messageManager, final QuestBuilderListener questBuilderListener) {
+                        final MessageManager messageManager, final QuestBuilderListener questBuilderListener,
+                        final Supplier<FancyNpcsQuestBridge> npcBridgeSupplier) {
         this.plugin = plugin;
         this.questManager = questManager;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.questBuilderListener = questBuilderListener;
+        this.npcBridgeSupplier = npcBridgeSupplier;
     }
 
     @Override
@@ -90,6 +95,7 @@ public final class QuestCommand implements BasicCommand {
             case "info" -> handleAdminInfo(sender, args);
             case "list" -> handleAdminList(sender);
             case "builder" -> handleAdminBuilder(sender, args);
+            case "validatenpcs" -> handleAdminValidateNpcs(sender);
             default -> sendAdminHelp(sender);
         }
     }
@@ -237,6 +243,50 @@ public final class QuestCommand implements BasicCommand {
         }
     }
 
+    private void handleAdminValidateNpcs(final CommandSender sender) {
+        final Map<String, List<QuestManager.QuestNpcReference>> references = questManager.getQuestNpcReferences();
+        final FancyNpcsQuestBridge bridge = npcBridgeSupplier == null ? null : npcBridgeSupplier.get();
+        if (bridge == null) {
+            sender.sendMessage(messageManager.get(
+                    "quest-admin-npc-validation-unavailable",
+                    "&cA FancyNpcs quest-híd nem aktív; &f%s &ckötelező belső név nem ellenőrizhető. "
+                            + "Ellenőrizd a FancyNpcs betöltését, majd futtasd újra ezt a parancsot.",
+                    references.size()));
+            return;
+        }
+
+        final FancyNpcsQuestBridge.QuestNpcValidationReport report = bridge.validateNpcs(references);
+        if (report.healthy()) {
+            sender.sendMessage(messageManager.get(
+                    "quest-admin-npc-validation-ok",
+                    "&aQuest-NPC ellenőrzés sikeres: mind a(z) &f%s &akötelező NPC pontos belső névvel elérhető.",
+                    report.requiredCount()));
+            return;
+        }
+
+        sender.sendMessage(messageManager.get(
+                "quest-admin-npc-validation-summary",
+                "&eQuest-NPC ellenőrzés: required=&f%s&e, available=&f%s&e, missing/mismatch=&c%s&e, lookup errors=&c%s&e.",
+                report.requiredCount(), report.availableCount(), report.missing().size(), report.lookupErrors().size()));
+        for (final FancyNpcsQuestBridge.MissingQuestNpc issue : report.missing()) {
+            final String match = issue.hasCaseMismatch()
+                    ? " &7(case-match: &f" + issue.caseInsensitiveMatch() + "&7)"
+                    : "";
+            sender.sendMessage(messageManager.get(
+                    "quest-admin-npc-validation-missing",
+                    "&c- &f%s%s &7-> %s",
+                    issue.expectedName(), match, FancyNpcsQuestBridge.formatReferences(issue.references())));
+        }
+        for (final String error : report.lookupErrors()) {
+            sender.sendMessage(messageManager.get(
+                    "quest-admin-npc-validation-error", "&c- lookup: &f%s", error));
+        }
+        sender.sendMessage(messageManager.get(
+                "quest-admin-npc-validation-manual",
+                "&7A világot és koordinátát nem találjuk ki automatikusan. Hozd létre/importáld az NPC-ket, "
+                        + "majd futtasd újra: &f/quest admin validatenpcs&7."));
+    }
+
     private String defaultAdminErrorFor(final String errorKey) {
         return switch (errorKey) {
             case "quest-admin-bad-id" -> "&cAz azonosító csak kisbetűt, számot és aláhúzást tartalmazhat.";
@@ -264,6 +314,8 @@ public final class QuestCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("quest-admin-help-list", "&e/quest admin list &7- Admin-készítette küldetések."));
         sender.sendMessage(messageManager.get("quest-admin-help-builder",
                 "&e/quest admin builder <id> &7- Kattintós küldetés-szerkesztő (új id-vel varázsló)."));
+        sender.sendMessage(messageManager.get("quest-admin-help-validatenpcs",
+                "&e/quest admin validatenpcs &7- Kötelező FancyNpcs belső nevek és quest-hivatkozások ellenőrzése."));
     }
 
     private void handleLog(final CommandSender sender) {
@@ -515,7 +567,7 @@ public final class QuestCommand implements BasicCommand {
             return List.of();
         }
 
-        final List<String> actions = List.of("create", "addobjective", "set", "delete", "info", "list", "builder");
+        final List<String> actions = List.of("create", "addobjective", "set", "delete", "info", "list", "builder", "validatenpcs");
         final String action = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "";
         if (args.length == 1 || (args.length == 2 && !actions.contains(action))) {
             final String prefix = prefixAt(args, 1);

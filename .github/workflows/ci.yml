@@ -83,6 +83,9 @@ jobs:
             --source resource-pack \
             --output build/resource-pack/ci-pack.zip
 
+      - name: Validate FancyNpcs deployment snapshot
+        run: python3 scripts/validate_fancynpcs_snapshot.py
+
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
@@ -113,6 +116,11 @@ jobs:
           grep -F "AFK regression suite passed." gradle-build.log
           grep -F "HUD regression suite passed." gradle-build.log
           grep -F "Pause-menu dialog regression suite passed." gradle-build.log
+          grep -F "Relic refresh regression suite passed." gradle-build.log
+          grep -F "Relic refresh pipeline regression suite passed." gradle-build.log
+          grep -F "Lifecycle shutdown regression suite passed." gradle-build.log
+          grep -F "Quest NPC validation regression suite passed." gradle-build.log
+          grep -F "Resource pack regression suite passed." gradle-build.log
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py

@@ -1016,7 +1016,7 @@ public final class IceSMPCore {
             // betöltése után éleszti) — hiányzó NPC hangos figyelmeztetést kap.
             final hu.taliann.icesmp.integration.FancyNpcsQuestBridge bridgeRef = npcQuestBridge;
             Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task ->
-                    bridgeRef.validateNpcs(questManager.getQuestNpcNames()), 20L * 60L);
+                    bridgeRef.validateNpcs(questManager.getQuestNpcReferences()), 20L * 60L);
             plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
         } catch (final Throwable throwable) {
             plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
@@ -1522,7 +1522,7 @@ public final class IceSMPCore {
         final TerritoryCommand territoryCommand = new TerritoryCommand(plugin, territoryManager, claimManager, messageManager);
         territoryCommand.setDungeonLootService(dungeonLootService);
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), territoryCommand);
-        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, configManager, messageManager, questBuilderListener));
+        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, configManager, messageManager, questBuilderListener, () -> npcQuestBridge));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, configManager, messageManager));
         plugin.registerCommand("adomany", "Közösségi adomány-láda", List.of("donate", "adomanylada"), new DonationChestCommand(donationChestManager, messageManager));
         plugin.registerCommand("party", "Party (csapat) parancsok", List.of("p", "parti"), new hu.taliann.icesmp.commands.PartyCommand(partyManager, messageManager));
