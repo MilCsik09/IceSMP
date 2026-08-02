@@ -1,0 +1,97 @@
+name: PlayerProfile clean authenticated checkout export (temporary)
+
+on:
+  push:
+    branches:
+      - agent/player-profile-checkout-clean-20260802
+    paths-ignore:
+      - .github/player-profile-checkout-run.txt
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out authenticated repository
+        uses: actions/checkout@v4
+        with:
+          ref: agent/player-profile-checkout-clean-20260802
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Publish run locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'run-id=%s\nworkflow-sha=%s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" \
+            > .github/player-profile-checkout-run.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- .github/player-profile-checkout-run.txt
+          git commit -m 'chore(player-profile): publish authenticated checkout run'
+          git push origin HEAD:refs/heads/agent/player-profile-checkout-clean-20260802
+
+      - name: Build partial sparse checkout with original Git DAG
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROFILE_HEAD='b6f4492766675f718f73fd947bf92a388a3090fb'
+          PROFILE_BASE='62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
+          mkdir -p build/player-profile-checkout
+          exec > >(tee build/player-profile-checkout/package.log) 2>&1
+          test "$(git rev-parse origin/rework/class-spec-profile-v2)" = "$PROFILE_HEAD"
+          test "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" = "$PROFILE_BASE"
+          test "$(git merge-base origin/rework/class-spec-profile-v2 origin/rework/class-spec-1.21.11-compatibility)" = "$PROFILE_BASE"
+
+          git -c protocol.version=2 clone --quiet --filter=blob:none --no-checkout --depth=10 \
+            --single-branch --branch rework/class-spec-profile-v2 \
+            https://github.com/MilCsik09/IceSMP.git build/player-profile-checkout/repo
+          cd build/player-profile-checkout/repo
+          git sparse-checkout init --no-cone
+          cat > .git/info/sparse-checkout <<'PATTERNS'
+/*
+!/*/
+/.github/
+/docs/
+/gradle/
+/scripts/
+/src/
+/AGENTS.md
+/CLAUDE.md
+/LICENSE
+/README.md
+/ROADMAP.md
+/build.gradle.kts
+/gradle.properties
+/gradlew
+/gradlew.bat
+/settings.gradle.kts
+PATTERNS
+          git checkout --quiet rework/class-spec-profile-v2
+          test "$(git rev-parse HEAD)" = "$PROFILE_HEAD"
+          test "$(git rev-parse HEAD~7)" = "$PROFILE_BASE"
+          test -f .git/shallow
+          test "$(git config --get remote.origin.promisor)" = 'true'
+          git fsck --connectivity-only
+          git status --short --branch > ../status.txt
+          git show-ref > ../refs.txt
+          git log --decorate --oneline --graph --all > ../history.txt
+          git rev-list --count HEAD > ../commit-count.txt
+          git count-objects -vH > ../object-size.txt
+          cd ..
+          tar -czf authenticated-checkout.tar.gz repo
+          sha256sum authenticated-checkout.tar.gz > SHA256SUMS
+          printf 'workflow-head=%s\nprofile-head=%s\nprofile-base=%s\n' \
+            "$GITHUB_SHA" "$PROFILE_HEAD" "$PROFILE_BASE" > manifest.txt
+          du -h authenticated-checkout.tar.gz
+
+      - name: Upload authenticated checkout
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-profile-authenticated-checkout-${{ github.run_id }}
+          path: build/player-profile-checkout/
+          retention-days: 1
+          if-no-files-found: error
