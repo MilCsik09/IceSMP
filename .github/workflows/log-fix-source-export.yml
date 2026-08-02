@@ -1,0 +1,41 @@
+name: Log fix source export
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/log-fix-source-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    if: github.head_ref == 'fix/log-errors-2026-08-02' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove persisted checkout credentials
+        shell: bash
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git remote set-url origin https://github.com/MilCsik09/IceSMP.git
+
+      - name: Create byte-preserving checkout archive
+        shell: bash
+        run: |
+          tar --exclude='./.gradle' --exclude='./build' -czf /tmp/icesmp-log-fix-checkout.tgz .
+
+      - name: Upload checkout archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-log-fix-checkout-${{ github.sha }}
+          path: /tmp/icesmp-log-fix-checkout.tgz
+          retention-days: 1
+          if-no-files-found: error
