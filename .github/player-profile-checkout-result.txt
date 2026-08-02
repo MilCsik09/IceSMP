@@ -1,4 +1,5 @@
-run-id=30763480446
-artifact-id=8838199086
-artifact-url=https://github.com/MilCsik09/IceSMP/actions/runs/30763480446/artifacts/8838199086
-export-head=fe6bbcdf6187911e6130d9d2b6d6ffa0c588ac7b
+run-id=30763556059
+artifact-id=8838221484
+artifact-url=https://github.com/MilCsik09/IceSMP/actions/runs/30763556059/artifacts/8838221484
+export-head=cb095a77eefbd0b563f7811ae5d5f2041622669d
+package-outcome=success
