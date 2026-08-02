@@ -40,8 +40,8 @@ jobs:
           import re
           import urllib.request
 
-          comment_id = 5160075890
-          expected_sha = "d12d91e683ac09b55fcdba4bb889ee251f4a884065e21c0e9df9e775f85fe12d"
+          comment_id = 5160101566
+          expected_sha = "3758a048af996f08b0b821dcd40285aa1509b59d23cbf5427c22213258a5356e"
           request = urllib.request.Request(
               f"https://api.github.com/repos/MilCsik09/IceSMP/issues/comments/{comment_id}",
               headers={
@@ -55,7 +55,7 @@ jobs:
               body = json.load(response)["body"]
           lines = body.splitlines()
           marker = re.fullmatch(
-              r"<!-- pr76-ci-fix-v1 sha256=([0-9a-f]{64}) -->",
+              r"<!-- pr76-ci-fix-v2 sha256=([0-9a-f]{64}) -->",
               lines[0].strip(),
           )
           if marker is None or marker.group(1) != expected_sha:
@@ -82,8 +82,8 @@ jobs:
           ./gradlew factionPassiveRegressionTest --console=plain --no-daemon --stacktrace
           git config user.name "OpenAI Codex"
           git config user.email "noreply@openai.com"
-          git commit -m "Fix faction food source contract regression"
+          git commit -m "Fix faction passive source contracts"
           echo "CI_FIX_RESULT_BEGIN"
           git log -1 --format='RESULT_COMMIT %H parent=%P tree=%T subject=%s'
           echo "CI_FIX_RESULT_END"
-          git push origin HEAD:refs/heads/automation/pr76-ci-fix-result
+          git push origin HEAD:refs/heads/automation/pr76-ci-fix-result-v2
