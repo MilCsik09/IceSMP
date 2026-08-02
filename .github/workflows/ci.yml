@@ -123,3 +123,36 @@ jobs:
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
+
+      - name: Package authenticated source checkout (temporary)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/player-profile-source
+          git status --short --branch > build/player-profile-source/git-status.txt
+          git show-ref > build/player-profile-source/git-refs.txt
+          git log --decorate --oneline --graph -n 100 > build/player-profile-source/git-history.txt
+          printf 'head=%s\nbase=%s\nmerge-base=%s\n' \
+            "$(git rev-parse HEAD)" \
+            "${PR_BASE_SHA:-}" \
+            "$(git merge-base HEAD "${PR_BASE_SHA:-HEAD^}")" \
+            > build/player-profile-source/manifest.txt
+          tar -czf build/player-profile-source/source.tar.gz \
+            --exclude='.git' \
+            --exclude='build' \
+            --exclude='.gradle' \
+            --exclude='resource-pack' \
+            .github docs gradle scripts src \
+            AGENTS.md CLAUDE.md LICENSE README.md ROADMAP.md \
+            build.gradle.kts gradle.properties gradlew gradlew.bat settings.gradle.kts
+          sha256sum build/player-profile-source/source.tar.gz > build/player-profile-source/SHA256SUMS
+
+      - name: Upload authenticated source checkout (temporary)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-profile-source-${{ github.run_id }}
+          path: build/player-profile-source/
+          retention-days: 1
+          if-no-files-found: error
