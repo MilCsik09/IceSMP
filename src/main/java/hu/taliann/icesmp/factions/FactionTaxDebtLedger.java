@@ -5,10 +5,8 @@ import hu.taliann.icesmp.data.FactionType;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -60,16 +58,6 @@ public final class FactionTaxDebtLedger {
         unresolvedLegacyDebts.clear();
     }
 
-    /** Active citizenship is strongest evidence; durable history is the fail-closed fallback. */
-    public static Optional<FactionType> resolveLegacyOrigin(
-            final Optional<FactionType> activeFaction,
-            final Optional<FactionType> durableLastFaction) {
-        if (activeFaction == null || durableLastFaction == null) {
-            throw new IllegalArgumentException("Legacy origin evidence cannot be null");
-        }
-        return activeFaction.isPresent() ? activeFaction : durableLastFaction;
-    }
-
     public void put(final UUID playerId, final FactionType faction,
                     final double amount, final int evasionStrikes) {
         validateKey(playerId, faction);
@@ -95,31 +83,20 @@ public final class FactionTaxDebtLedger {
         unresolvedLegacyDebts.put(playerId, new State(amount, evasionStrikes));
     }
 
-    /**
-     * Binds an origin-less legacy record only after the player has an explicit faction again.
-     * New records never use this path; it exists solely because the old scalar YAML format did
-     * not retain the assessing faction. A null faction deliberately leaves the debt untouched.
-     */
-    public boolean bindUnresolvedLegacy(final UUID playerId, final FactionType explicitFaction) {
-        if (playerId == null || explicitFaction == null) {
-            return false;
+    /** Unknown-origin legacy data remains quarantined until an explicit offline admin migration. */
+    public boolean hasQuarantinedLegacy(final UUID playerId) {
+        return playerId != null && unresolvedLegacyDebts.containsKey(playerId);
+    }
+
+    public FactionTaxDebtLedger copy() {
+        final FactionTaxDebtLedger copy = new FactionTaxDebtLedger();
+        for (final Debt debt : snapshot()) {
+            copy.put(debt.playerId(), debt.faction(), debt.amount(), debt.evasionStrikes());
         }
-        final State legacy = unresolvedLegacyDebts.remove(playerId);
-        if (legacy == null) {
-            return false;
+        for (final UnresolvedLegacyDebt debt : unresolvedLegacySnapshot()) {
+            copy.putUnresolvedLegacy(debt.playerId(), debt.amount(), debt.evasionStrikes());
         }
-        final State existing = debts
-                .computeIfAbsent(playerId, ignored -> new EnumMap<>(FactionType.class))
-                .get(explicitFaction);
-        if (existing == null) {
-            debts.get(playerId).put(explicitFaction,
-                    new State(legacy.amount, legacy.evasionStrikes));
-        } else {
-            existing.amount = saturatingAmountAdd(existing.amount, legacy.amount);
-            existing.evasionStrikes = saturatingIntAdd(
-                    existing.evasionStrikes, legacy.evasionStrikes);
-        }
-        return true;
+        return copy;
     }
 
     public double getTotalArrears(final UUID playerId) {
@@ -150,9 +127,11 @@ public final class FactionTaxDebtLedger {
      * must never hide an already assessed origin-currency debt.
      */
     public Set<UUID> playerIdsWithDebt() {
-        final Set<UUID> playerIds = new HashSet<>(debts.keySet());
-        playerIds.addAll(unresolvedLegacyDebts.keySet());
-        return Set.copyOf(playerIds);
+        return Set.copyOf(debts.keySet());
+    }
+
+    public Set<UUID> quarantinedLegacyPlayerIds() {
+        return Set.copyOf(unresolvedLegacyDebts.keySet());
     }
 
     public List<Debt> debtsFor(final UUID playerId) {
@@ -266,7 +245,4 @@ public final class FactionTaxDebtLedger {
         return Double.isFinite(sum) ? sum : Double.MAX_VALUE;
     }
 
-    private static int saturatingIntAdd(final int first, final int second) {
-        return first > Integer.MAX_VALUE - second ? Integer.MAX_VALUE : first + second;
-    }
 }

@@ -6,9 +6,13 @@ import hu.taliann.icesmp.session.PlayerStateCleanup;
 
 import hu.taliann.icesmp.storage.YamlStore;
 
+import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.factions.FactionMembership;
 import hu.taliann.icesmp.factions.FactionMembershipMutation;
+import hu.taliann.icesmp.factions.DurableRecoveryPolicy;
+import hu.taliann.icesmp.factions.DurableTransactionProtocol;
+import hu.taliann.icesmp.factions.FactionSwitchJournal;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -17,11 +21,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -32,12 +36,26 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
+    private final CurrencyManager currencyManager;
     private final File storageFile;
+    private final FactionSwitchJournal switchJournal;
     /** Assignment/history mutation and full-snapshot persistence boundary. */
     private final Object stateLock = new Object();
-    private final Map<UUID, FactionType> playerFactions = new ConcurrentHashMap<>();
-    /** Durable anti-reset history; survives removal/corruption of the current assignment. */
-    private final Map<UUID, FactionType> lastChosenFactions = new ConcurrentHashMap<>();
+
+    private record MembershipState(Map<UUID, FactionType> assignments,
+                                   Map<UUID, FactionType> history) {
+        private MembershipState {
+            assignments = Map.copyOf(assignments);
+            history = Map.copyOf(history);
+        }
+
+        private static MembershipState empty() {
+            return new MembershipState(Map.of(), Map.of());
+        }
+    }
+
+    /** One all-old or all-new durable membership generation. */
+    private volatile MembershipState liveState = MembershipState.empty();
     private static final String HISTORY_SECTION = "_membership-history";
     /** PDC key storing the epoch-millis timestamp of the player's last PAID faction switch. */
     private final NamespacedKey lastSwitchKey;
@@ -51,15 +69,20 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     private volatile SeasonManager seasonManager;
     private volatile Consumer<UUID> membershipChangeHook = ignored -> { };
 
-    public FactionManager(final JavaPlugin plugin, final ConfigManager configManager) {
+    public FactionManager(final JavaPlugin plugin, final ConfigManager configManager,
+                          final CurrencyManager currencyManager) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.currencyManager = currencyManager;
         this.storageFile = new File(plugin.getDataFolder(), "factions.yml");
+        this.switchJournal = new FactionSwitchJournal(
+                new File(plugin.getDataFolder(), "faction-switch-journal.yml"), plugin.getLogger());
         this.lastSwitchKey = new NamespacedKey(plugin, "faction_last_switch");
         this.switchSeasonKey = new NamespacedKey(plugin, "faction_switch_season");
         this.switchCountKey = new NamespacedKey(plugin, "faction_switch_count");
         this.everChosenKey = new NamespacedKey(plugin, "faction_ever_chosen");
         this.lastChosenFactionKey = new NamespacedKey(plugin, "faction_last_chosen");
+        YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
     }
 
@@ -68,33 +91,30 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     public void load() {
-        playerFactions.clear();
-        lastChosenFactions.clear();
+        final Map<UUID, FactionType> loadedAssignments = new HashMap<>();
+        final Map<UUID, FactionType> loadedHistory = new HashMap<>();
 
-        if (!storageFile.exists()) {
-            return;
-        }
-
-        try {
-            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
-
+        if (storageFile.exists()) {
+            final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
             final org.bukkit.configuration.ConfigurationSection history =
                     yaml.getConfigurationSection(HISTORY_SECTION);
             if (history != null) {
                 for (final String uuidKey : history.getKeys(false)) {
+                    final UUID uuid;
                     try {
-                        final UUID uuid = UUID.fromString(uuidKey);
-                        final String factionName = history.getString(uuidKey);
-                        final FactionType faction = FactionType.fromInput(factionName);
-                        if (faction == null) {
-                            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                                    "Érvénytelen tagsági előzmény: " + uuidKey + " -> " + factionName);
-                        }
-                        lastChosenFactions.put(uuid, faction);
+                        uuid = UUID.fromString(uuidKey);
                     } catch (final IllegalArgumentException exception) {
                         YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                                 "Érvénytelen UUID a tagsági előzményben: " + uuidKey);
+                        return;
                     }
+                    final String factionName = history.getString(uuidKey);
+                    final FactionType faction = FactionType.fromInput(factionName);
+                    if (faction == null) {
+                        YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                "Érvénytelen tagsági előzmény: " + uuidKey + " -> " + factionName);
+                    }
+                    loadedHistory.put(uuid, faction);
                 }
             }
 
@@ -102,53 +122,53 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
                 if (HISTORY_SECTION.equals(uuidKey)) {
                     continue;
                 }
+                final UUID uuid;
                 try {
-                    final UUID uuid = UUID.fromString(uuidKey);
-                    final String factionName = yaml.getString(uuidKey);
-                    final FactionType faction = FactionType.fromInput(factionName);
-                    if (faction == null) {
-                        YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                                "Érvénytelen frakció a factions.yml-ben: " + uuidKey + " -> " + factionName);
-                    }
-                    playerFactions.put(uuid, faction);
-                    lastChosenFactions.putIfAbsent(uuid, faction);
-                } catch (final IllegalArgumentException e) {
-                    // Fail-closed: a hibás rekord átugrása után a következő teljes-snapshot
-                    // mentés VÉGLEG eltüntetné a kézzel még javítható bejegyzést.
+                    uuid = UUID.fromString(uuidKey);
+                } catch (final IllegalArgumentException exception) {
                     YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                            "Érvénytelen UUID vagy frakció a factions.yml-ben: " + uuidKey);
+                            "Érvénytelen UUID a factions.yml-ben: " + uuidKey);
+                    return;
                 }
+                final String factionName = yaml.getString(uuidKey);
+                final FactionType faction = FactionType.fromInput(factionName);
+                if (faction == null) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Érvénytelen frakció a factions.yml-ben: " + uuidKey + " -> " + factionName);
+                }
+                loadedAssignments.put(uuid, faction);
+                loadedHistory.putIfAbsent(uuid, faction);
             }
-
-            plugin.getLogger().info("Loaded " + playerFactions.size() + " faction assignments.");
-        } catch (final Exception e) {
-            plugin.getLogger().severe("Failed to load factions: " + e.getMessage());
         }
+
+        liveState = new MembershipState(loadedAssignments, loadedHistory);
+        switchJournal.load();
+        recoverPendingSwitch();
+        plugin.getLogger().info("Loaded " + liveState.assignments().size() + " faction assignments.");
     }
 
     public void save() {
         synchronized (stateLock) {
-            writeStateLocked();
+            writeStateLocked(liveState);
         }
     }
 
-    /** The caller must hold stateLock. */
-    private void writeStateLocked() {
+    /** The caller must hold stateLock. Candidate is persisted before publication. */
+    private void writeStateLocked(final MembershipState candidate) {
+        final YamlConfiguration yaml = new YamlConfiguration();
+        for (final Map.Entry<UUID, FactionType> entry : candidate.assignments().entrySet()) {
+            yaml.set(entry.getKey().toString(), entry.getValue().name());
+        }
+        for (final Map.Entry<UUID, FactionType> entry : candidate.history().entrySet()) {
+            yaml.set(HISTORY_SECTION + "." + entry.getKey(), entry.getValue().name());
+        }
         try {
-            final YamlConfiguration yaml = new YamlConfiguration();
-
-            for (final Map.Entry<UUID, FactionType> entry : playerFactions.entrySet()) {
-                yaml.set(entry.getKey().toString(), entry.getValue().name());
-            }
-            for (final Map.Entry<UUID, FactionType> entry : lastChosenFactions.entrySet()) {
-                yaml.set(HISTORY_SECTION + "." + entry.getKey(), entry.getValue().name());
-            }
-
             YamlStore.saveAtomic(storageFile, yaml);
-            plugin.getLogger().info("Saved " + playerFactions.size() + " faction assignments.");
-        } catch (final IOException e) {
-            plugin.getLogger().severe("Failed to save factions: " + e.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save factions", e);
+            plugin.getLogger().info("Saved " + candidate.assignments().size()
+                    + " faction assignments.");
+        } catch (final IOException exception) {
+            plugin.getLogger().severe("Failed to save factions: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save factions", exception);
         }
     }
 
@@ -159,29 +179,30 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
      * @return the chosen faction, or NEUTRAL for an unassigned Menedék guest
      */
     public FactionType getEconomyFaction(final UUID uuid) {
-        return playerFactions.getOrDefault(uuid, FactionType.NEUTRAL);
+        return liveState.assignments().getOrDefault(uuid, FactionType.NEUTRAL);
     }
 
     public FactionMembership getMembership(final UUID uuid) {
-        final FactionType chosen = playerFactions.get(uuid);
+        final FactionType chosen = liveState.assignments().get(uuid);
         return chosen == null ? FactionMembership.guest() : FactionMembership.citizen(chosen);
     }
 
     public Optional<FactionType> getChosenFaction(final UUID uuid) {
-        return Optional.ofNullable(playerFactions.get(uuid));
+        return Optional.ofNullable(liveState.assignments().get(uuid));
     }
 
     public boolean isEligibleForFactionBenefits(final UUID uuid) {
-        return playerFactions.containsKey(uuid);
+        return liveState.assignments().containsKey(uuid);
     }
 
     public boolean isMember(final UUID uuid, final FactionType faction) {
-        return faction != null && playerFactions.get(uuid) == faction;
+        return faction != null && liveState.assignments().get(uuid) == faction;
     }
 
     public boolean sameChosenFaction(final UUID first, final UUID second) {
-        final FactionType faction = playerFactions.get(first);
-        return faction != null && faction == playerFactions.get(second);
+        final Map<UUID, FactionType> assignments = liveState.assignments();
+        final FactionType faction = assignments.get(first);
+        return faction != null && faction == assignments.get(second);
     }
 
     /**
@@ -191,9 +212,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
      * @return immutable copy of the assignments
      */
     public Map<UUID, FactionType> getFactionAssignments() {
-        synchronized (stateLock) {
-            return Map.copyOf(playerFactions);
-        }
+        return liveState.assignments();
     }
 
     /**
@@ -216,20 +235,20 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         final FactionType target = Objects.requireNonNull(factionType, "chosen faction");
         final boolean changed;
         synchronized (stateLock) {
-            final FactionMembershipMutation.Snapshot previousState =
-                    FactionMembershipMutation.capture(
-                            playerFactions, lastChosenFactions, playerId);
-            changed = previousState.assignment() != target;
-            FactionMembershipMutation.assign(
-                    playerFactions, lastChosenFactions, playerId, target);
-            try {
-                writeStateLocked();
-            } catch (final RuntimeException | Error persistenceFailure) {
-                FactionMembershipMutation.restore(
-                        playerFactions, lastChosenFactions, previousState);
-                throw persistenceFailure;
-            }
+            final MembershipState previous = liveState;
+            final Map<UUID, FactionType> assignments = new HashMap<>(previous.assignments());
+            final Map<UUID, FactionType> history = new HashMap<>(previous.history());
+            changed = assignments.get(playerId) != target;
+            FactionMembershipMutation.assign(assignments, history, playerId, target);
+            final MembershipState candidate = new MembershipState(assignments, history);
+            writeStateLocked(candidate);
+            liveState = candidate;
         }
+        publishMembershipChange(playerId, target, changed);
+    }
+
+    private void publishMembershipChange(final UUID playerId, final FactionType target,
+                                         final boolean changed) {
         if (changed) {
             membershipChangeHook.accept(playerId);
         }
@@ -249,6 +268,164 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     /**
+     * Paid switch transaction: WAL prepare -> durable wallet deduction -> durable membership
+     * snapshot -> journal completion. A rejected membership write compensates the wallet before
+     * the failure escapes; an uncompleted journal is recovered during the next startup.
+     */
+    public boolean switchFactionDurably(final UUID playerId,
+                                        final FactionType expectedCurrent,
+                                        final FactionType target,
+                                        final CurrencyType currency,
+                                        final double cost) {
+        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(currency, "currency");
+        if (!Double.isFinite(cost) || cost < 0.0D) {
+            throw new IllegalArgumentException("Invalid faction switch cost");
+        }
+        final boolean changed;
+        synchronized (stateLock) {
+            final MembershipState previous = liveState;
+            if (previous.assignments().get(playerId) != expectedCurrent) {
+                return false;
+            }
+            if (cost == 0.0D) {
+                final Map<UUID, FactionType> assignments =
+                        new HashMap<>(previous.assignments());
+                final Map<UUID, FactionType> history = new HashMap<>(previous.history());
+                FactionMembershipMutation.assign(assignments, history, playerId, target);
+                final MembershipState candidate = new MembershipState(assignments, history);
+                writeStateLocked(candidate);
+                liveState = candidate;
+                changed = expectedCurrent != target;
+            } else {
+                final CurrencyManager.DurableMutation wallet =
+                        currencyManager.planDurableDeduction(playerId, currency, cost);
+                if (wallet == null) {
+                    return false;
+                }
+                final FactionMembershipMutation.Snapshot membershipBefore =
+                        FactionMembershipMutation.capture(previous.assignments(),
+                                previous.history(), playerId);
+                final MembershipState candidate;
+                {
+                    final Map<UUID, FactionType> assignments =
+                            new HashMap<>(previous.assignments());
+                    final Map<UUID, FactionType> history = new HashMap<>(previous.history());
+                    FactionMembershipMutation.assign(assignments, history, playerId, target);
+                    candidate = new MembershipState(assignments, history);
+                }
+                final FactionSwitchJournal.Entry[] journalEntry =
+                        new FactionSwitchJournal.Entry[1];
+                final DurableTransactionProtocol.ExecutionResult transactionResult =
+                        DurableTransactionProtocol.execute(new DurableTransactionProtocol.Steps() {
+                    @Override
+                    public void prepare() {
+                        journalEntry[0] = switchJournal.prepare(
+                                membershipBefore, target, currency, cost, wallet);
+                    }
+
+                    @Override
+                    public boolean hasWalletMutation() {
+                        return true;
+                    }
+
+                    @Override
+                    public void applyWallet() {
+                        currencyManager.applyDurably(wallet);
+                    }
+
+                    @Override
+                    public void commitDomain() {
+                        writeStateLocked(candidate);
+                        liveState = candidate;
+                    }
+
+                    @Override
+                    public void rollbackWallet() {
+                        currencyManager.rollbackDurably(wallet);
+                    }
+
+                    @Override
+                    public void completeJournal() {
+                        switchJournal.complete(journalEntry[0]);
+                    }
+                });
+                if (transactionResult.recoveryPending()) {
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                            "Faction switch committed, but WAL cleanup failed; startup recovery will finalize it",
+                            transactionResult.cleanupFailure());
+                }
+                changed = expectedCurrent != target;
+            }
+        }
+        publishMembershipChange(playerId, target, changed);
+        return true;
+    }
+
+    private void recoverPendingSwitch() {
+        final FactionSwitchJournal.Entry entry = switchJournal.pending();
+        if (entry == null) {
+            return;
+        }
+        synchronized (stateLock) {
+            final FactionMembershipMutation.Snapshot before = entry.membershipBefore();
+            final Map<UUID, FactionType> assignments = liveState.assignments();
+            final Map<UUID, FactionType> history = liveState.history();
+            final boolean membershipBefore =
+                    assignments.containsKey(entry.playerId()) == before.hadAssignment()
+                    && assignments.get(entry.playerId()) == before.assignment()
+                    && history.containsKey(entry.playerId()) == before.hadHistory()
+                    && history.get(entry.playerId()) == before.lastChosenFaction();
+            final boolean membershipAfter =
+                    assignments.get(entry.playerId()) == entry.targetFaction()
+                    && history.get(entry.playerId()) == entry.targetFaction();
+            final boolean walletBefore = currencyManager.walletMatches(
+                    entry.walletMutation(), false);
+            final boolean walletAfter = currencyManager.walletMatches(
+                    entry.walletMutation(), true);
+
+            switch (DurableRecoveryPolicy.decide(
+                    membershipBefore, membershipAfter, walletBefore, walletAfter, true)) {
+                case COMPLETE_COMMITTED -> {
+                    switchJournal.complete(entry);
+                    plugin.getLogger().warning(
+                            "Recovered committed faction switch " + entry.id());
+                }
+                case DISCARD_UNAPPLIED -> {
+                    switchJournal.complete(entry);
+                    plugin.getLogger().warning(
+                            "Discarded unapplied faction switch " + entry.id());
+                }
+                case ROLLBACK_WALLET -> {
+                    currencyManager.rollbackDurably(entry.walletMutation());
+                    switchJournal.complete(entry);
+                    plugin.getLogger().warning(
+                            "Rolled back interrupted faction switch " + entry.id());
+                }
+                case ROLLBACK_DOMAIN -> {
+                    final MembershipState currentState = liveState;
+                    final Map<UUID, FactionType> restoredAssignments =
+                            new HashMap<>(currentState.assignments());
+                    final Map<UUID, FactionType> restoredHistory =
+                            new HashMap<>(currentState.history());
+                    FactionMembershipMutation.restore(
+                            restoredAssignments, restoredHistory, before);
+                    final MembershipState restored = new MembershipState(
+                            restoredAssignments, restoredHistory);
+                    writeStateLocked(restored);
+                    liveState = restored;
+                    switchJournal.complete(entry);
+                    plugin.getLogger().warning(
+                            "Rolled back unpaid faction switch " + entry.id());
+                }
+                case AMBIGUOUS -> switchJournal.failCorrupt(
+                        "Ambiguous faction-switch recovery state for " + entry.id());
+            }
+        }
+    }
+
+    /**
      * Checks whether the player currently has an explicit faction assignment. A missing record is
      * the benefit-free guest state; durable prior-choice history is queried separately.
      *
@@ -261,7 +438,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
 
     /** Durable anti-reset history; a missing current assignment cannot recreate a first choice. */
     public boolean hasEverChosenFaction(final Player player) {
-        return lastChosenFactions.containsKey(player.getUniqueId())
+        return liveState.history().containsKey(player.getUniqueId())
                 || player.getPersistentDataContainer().getOrDefault(
                 everChosenKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
@@ -279,12 +456,12 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
 
     /** Durable history lookup without inventing a faction for an unresolved legacy record. */
     public Optional<FactionType> getLastChosenFaction(final UUID uuid) {
-        return Optional.ofNullable(uuid == null ? null : lastChosenFactions.get(uuid));
+        return Optional.ofNullable(uuid == null ? null : liveState.history().get(uuid));
     }
 
     /** Called on the player's owner thread at join to backfill history for pre-rework citizens. */
     public void reconcileMembershipHistory(final Player player) {
-        final FactionType chosen = playerFactions.get(player.getUniqueId());
+        final FactionType chosen = liveState.assignments().get(player.getUniqueId());
         if (chosen != null) {
             markMembershipHistory(player, chosen);
         }
@@ -415,24 +592,22 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         if (uuid == null) {
             return;
         }
-
+        final boolean changed;
         synchronized (stateLock) {
-            final FactionMembershipMutation.Snapshot previousState =
-                    FactionMembershipMutation.capture(
-                            playerFactions, lastChosenFactions, uuid);
-            if (!previousState.hadAssignment()) {
+            final MembershipState previous = liveState;
+            if (!previous.assignments().containsKey(uuid)) {
                 return;
             }
-            FactionMembershipMutation.removeAssignment(playerFactions, uuid);
-            try {
-                writeStateLocked();
-            } catch (final RuntimeException | Error persistenceFailure) {
-                FactionMembershipMutation.restore(
-                        playerFactions, lastChosenFactions, previousState);
-                throw persistenceFailure;
-            }
+            final Map<UUID, FactionType> assignments = new HashMap<>(previous.assignments());
+            assignments.remove(uuid);
+            final MembershipState candidate = new MembershipState(assignments, previous.history());
+            writeStateLocked(candidate);
+            liveState = candidate;
+            changed = true;
         }
-        membershipChangeHook.accept(uuid);
+        if (changed) {
+            membershipChangeHook.accept(uuid);
+        }
         final hu.taliann.icesmp.managers.GuildManager guildRef = guildManager;
         if (guildRef != null) {
             guildRef.reconcileFaction(uuid, null);

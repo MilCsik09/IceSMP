@@ -112,8 +112,11 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
-        // Szezon-szabályok MINDEN váltásra (az ingyenes utakra is): hajrá-zár + szezon-plafon.
-        if (!FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
+        // Az első kifejezett választás nem szezonváltás. A hajrá-zár és a szezonplafon
+        // csak a tartós historyval rendelkező játékos további oldalváltásaira vonatkozik.
+        if (hasPriorChoice
+                && !FactionSwitchRules.passesSeasonRules(
+                player, factionManager, messageManager)) {
             return true;
         }
 
@@ -154,10 +157,6 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                 darkConfirmPending.remove(uuid);
             }
 
-            if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
-                return true;
-            }
-
             factionManager.setFaction(uuid, FactionType.DARK);
             if (hasPriorChoice) {
                 factionManager.recordSeasonSwitch(player); // ingyenes út is a szezon-plafonba számít
@@ -174,12 +173,15 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
-        if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
-            return true;
-        }
-
         final boolean leavingDark = hasPriorChoice && currentFaction == FactionType.DARK;
-        factionManager.setFaction(uuid, factionType);
+        if (isSwitch) {
+            if (!FactionSwitchRules.commitPaidSwitch(player, currentFaction, factionType,
+                    factionManager, currencyManager, messageManager)) {
+                return true;
+            }
+        } else {
+            factionManager.setFaction(uuid, factionType);
+        }
         if (leavingDark && specializationManager != null
                 && specializationManager.resetDarkGatedSpecialization(player)) {
             player.sendMessage(messageManager.get("messages.dark-spec-lost",

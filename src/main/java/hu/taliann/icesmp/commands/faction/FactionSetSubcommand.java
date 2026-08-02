@@ -100,6 +100,9 @@ public final class FactionSetSubcommand implements FactionSubcommand {
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
                     onlineTarget.getScheduler().run(plugin, task -> {
                         final FactionType livePrevious = factionManager.getChosenFaction(targetId).orElse(null);
+                        // Membership persistence commits first. PDC/spec side effects must never
+                        // advertise a transition whose factions.yml write failed.
+                        factionManager.setFaction(targetId, factionType);
                         if (livePrevious == FactionType.DARK && factionType != FactionType.DARK) {
                             sinManager.clearDarkPactForFactionOverride(onlineTarget);
                             final hu.taliann.icesmp.managers.SpecializationManager specs = specializationManager;
@@ -107,7 +110,6 @@ public final class FactionSetSubcommand implements FactionSubcommand {
                                 specs.resetDarkGatedSpecialization(onlineTarget);
                             }
                         }
-                        factionManager.setFaction(targetId, factionType);
                         if (factionType == FactionType.DARK) {
                             sinManager.sealDarkPact(onlineTarget);
                         }

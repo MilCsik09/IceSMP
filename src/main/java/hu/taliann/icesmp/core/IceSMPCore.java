@@ -348,7 +348,7 @@ public final class IceSMPCore {
         configManager.load();
         this.messageManager = new MessageManager(plugin, configManager);
         this.currencyManager = new CurrencyManager(plugin, configManager);
-        this.factionManager = new FactionManager(plugin, configManager);
+        this.factionManager = new FactionManager(plugin, configManager, currencyManager);
         this.factionPassiveConfig = new FactionPassiveConfig(configManager, plugin.getLogger());
         this.factionPassivePolicy = new FactionPassivePolicy();
         this.factionPassiveService = new FactionPassiveService();

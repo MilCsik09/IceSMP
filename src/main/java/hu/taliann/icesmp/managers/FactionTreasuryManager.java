@@ -4,6 +4,9 @@ import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.factions.FactionTaxDebtLedger;
+import hu.taliann.icesmp.factions.DurableRecoveryPolicy;
+import hu.taliann.icesmp.factions.DurableTransactionProtocol;
+import hu.taliann.icesmp.factions.FactionTaxJournal;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -20,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +38,7 @@ public final class FactionTreasuryManager implements PersistentStore {
     private final FactionManager factionManager;
     private final MessageManager messageManager;
     private final File storageFile;
+    private final FactionTaxJournal taxJournal;
     /** Minden store-mutáció, snapshot, tartós írás és rollback közös monitora. */
     private final Object stateLock = new Object();
     private final Map<FactionType, Double> balances = new ConcurrentHashMap<>();
@@ -45,7 +48,7 @@ public final class FactionTreasuryManager implements PersistentStore {
     // hibája miatt hosszan nyitva maradó outbox replaye különben duplán jóváírhatna.
     private final Map<FactionType, Double> taxRates = new ConcurrentHashMap<>();
     /** Unpaid tax and evasion strikes, retained per assessing faction/currency. */
-    private final FactionTaxDebtLedger taxDebts = new FactionTaxDebtLedger();
+    private FactionTaxDebtLedger taxDebts = new FactionTaxDebtLedger();
     private final SinManager sinManager;
     private final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
             new java.util.concurrent.atomic.AtomicBoolean(false);
@@ -62,79 +65,98 @@ public final class FactionTreasuryManager implements PersistentStore {
         this.sinManager = sinManager;
         this.messageManager = messageManager;
         this.storageFile = new File(plugin.getDataFolder(), "treasury.yml");
+        this.taxJournal = new FactionTaxJournal(
+                new File(plugin.getDataFolder(), "faction-tax-journal.yml"), plugin.getLogger());
+        YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
     }
 
     public void load() {
         synchronized (stateLock) {
-            balances.clear();
-            taxRates.clear();
-            appliedGrants.clear();
-            taxDebts.clear();
-
-            if (!storageFile.exists()) {
-                return;
-            }
-
+            final Map<FactionType, Double> previousBalances = Map.copyOf(balances);
+            final Map<FactionType, Double> previousRates = Map.copyOf(taxRates);
+            final Map<String, Long> previousGrants = Map.copyOf(appliedGrants);
+            final FactionTaxDebtLedger previousDebts = taxDebts.copy();
             try {
-                final YamlConfiguration yaml = YamlStore.loadTracked(
-                        storageFile, plugin.getLogger());
-                final ConfigurationSection section = yaml.getConfigurationSection("treasury");
-                if (section != null) {
-                    for (final String factionKey : section.getKeys(false)) {
-                        final FactionType faction = FactionType.fromInput(factionKey);
-                        if (faction == null) {
-                            plugin.getLogger().warning(
-                                    "Unknown faction in treasury.yml: " + factionKey);
-                            continue;
-                        }
-                        balances.put(faction, readStoredNonNegative(
-                                section, factionKey, "treasury." + factionKey));
-                    }
-                }
+                balances.clear();
+                taxRates.clear();
+                appliedGrants.clear();
+                taxDebts = new FactionTaxDebtLedger();
 
-                final ConfigurationSection rateSection = yaml.getConfigurationSection("tax-rates");
-                if (rateSection != null) {
-                    for (final String factionKey : rateSection.getKeys(false)) {
-                        final FactionType faction = FactionType.fromInput(factionKey);
-                        if (faction != null) {
+                if (storageFile.exists()) {
+                    final YamlConfiguration yaml = YamlStore.loadTracked(
+                            storageFile, plugin.getLogger());
+                    final ConfigurationSection section = yaml.getConfigurationSection("treasury");
+                    if (section != null) {
+                        for (final String factionKey : section.getKeys(false)) {
+                            final FactionType faction = FactionType.fromInput(factionKey);
+                            if (faction == null) {
+                                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                        "Unknown faction in treasury.yml: " + factionKey);
+                                return;
+                            }
+                            balances.put(faction, readStoredNonNegative(
+                                    section, factionKey, "treasury." + factionKey));
+                        }
+                    }
+
+                    final ConfigurationSection rateSection = yaml.getConfigurationSection("tax-rates");
+                    if (rateSection != null) {
+                        for (final String factionKey : rateSection.getKeys(false)) {
+                            final FactionType faction = FactionType.fromInput(factionKey);
+                            if (faction == null) {
+                                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                        "Unknown faction in treasury.yml tax-rates: " + factionKey);
+                                return;
+                            }
                             taxRates.put(faction, readStoredNonNegative(
                                     rateSection, factionKey, "tax-rates." + factionKey));
                         }
                     }
-                }
 
-                final boolean migratedLegacyTaxDebt = loadTaxDebtState(yaml);
-
-                final ConfigurationSection grants =
-                        yaml.getConfigurationSection("applied-grants");
-                if (grants != null) {
-                    for (final String key : grants.getKeys(false)) {
-                        appliedGrants.put(key,
-                                grants.getLong(key, System.currentTimeMillis()));
+                    final boolean migratedLegacyTaxDebt = loadTaxDebtState(yaml);
+                    final ConfigurationSection grants =
+                            yaml.getConfigurationSection("applied-grants");
+                    if (grants != null) {
+                        for (final String key : grants.getKeys(false)) {
+                            appliedGrants.put(key, readStoredTimestamp(
+                                    grants, key, "applied-grants." + key));
+                        }
                     }
-                }
-                if (migratedLegacyTaxDebt) {
-                    if (YamlStore.isLoadFailed(storageFile) || !writeStateLocked()) {
-                        plugin.getLogger().severe(
-                                "Legacy faction tax debt migration could not be persisted; "
-                                        + "the in-memory state remains available for this session.");
-                    } else {
+                    if (migratedLegacyTaxDebt) {
+                        if (YamlStore.isLoadFailed(storageFile) || !writeStateLocked()) {
+                            throw new IllegalStateException(
+                                    "Legacy faction tax debt migration could not be persisted");
+                        }
                         plugin.getLogger().info(
-                                "Migrated legacy scalar faction tax debt to origin-faction buckets.");
+                                "Quarantined legacy scalar faction tax debt without inferring an origin.");
                     }
+                }
+
+                taxJournal.load();
+                recoverPendingTaxTransaction();
+                if (!taxDebts.quarantinedLegacyPlayerIds().isEmpty()) {
+                    plugin.getLogger().warning("Quarantined unknown-origin legacy tax debt for "
+                            + taxDebts.quarantinedLegacyPlayerIds().size()
+                            + " player(s); no runtime collection or automatic faction binding occurs.");
                 }
                 plugin.getLogger().info("Loaded faction treasury balances.");
-            } catch (final Exception exception) {
-                plugin.getLogger().severe(
-                        "Failed to load faction treasury: " + exception.getMessage());
+            } catch (final RuntimeException | Error failure) {
+                balances.clear();
+                balances.putAll(previousBalances);
+                taxRates.clear();
+                taxRates.putAll(previousRates);
+                appliedGrants.clear();
+                appliedGrants.putAll(previousGrants);
+                taxDebts = previousDebts;
+                throw failure;
             }
         }
     }
 
     /**
-     * Loads the origin-aware schema, or migrates the pre-rework scalar maps once. A mixed file
-     * prefers the new schema so a stale legacy section cannot duplicate an already migrated debt.
+     * Loads the origin-aware schema, or quarantines the pre-rework scalar maps once. A mixed file
+     * prefers the new schema so a stale legacy section cannot duplicate an already preserved debt.
      */
     private boolean loadTaxDebtState(final YamlConfiguration yaml) {
         final ConfigurationSection debtRoot = yaml.getConfigurationSection("tax-debts");
@@ -177,26 +199,15 @@ public final class FactionTreasuryManager implements PersistentStore {
             if (amount == 0.0D && evasionStrikes == 0) {
                 continue;
             }
-            final Optional<FactionType> activeOrigin =
-                    factionManager.getChosenFaction(playerId);
-            final FactionType inferredOrigin = FactionTaxDebtLedger.resolveLegacyOrigin(
-                    activeOrigin, factionManager.getLastChosenFaction(playerId)).orElse(null);
-            if (inferredOrigin == null) {
-                taxDebts.putUnresolvedLegacy(playerId, amount, evasionStrikes);
-                plugin.getLogger().warning(
-                        "Legacy tax debt for " + playerId + " has no explicit faction. "
-                                + "It is preserved without an origin and will bind only after "
-                                + "the player's next explicit faction membership; the old scalar "
-                                + "schema cannot reconstruct its original currency.");
-            } else {
-                taxDebts.put(playerId, inferredOrigin, amount, evasionStrikes);
-                if (activeOrigin.isEmpty()) {
-                    plugin.getLogger().info(
-                            "Recovered legacy tax-debt origin for " + playerId
-                                    + " from durable membership history: "
-                                    + inferredOrigin.name());
-                }
-            }
+            // The scalar legacy schema never recorded the assessing faction/currency. Even an
+            // active or last-chosen membership is only a guess after a historical switch, so the
+            // greenfield runtime never auto-converts it. Preserve it byte-for-value in quarantine
+            // until an explicit offline admin migration supplies a proven origin.
+            taxDebts.putUnresolvedLegacy(playerId, amount, evasionStrikes);
+            plugin.getLogger().warning(
+                    "Legacy tax debt for " + playerId + " has no proven origin. "
+                            + "It is quarantined and excluded from runtime collection until an "
+                            + "explicit offline admin migration supplies the original faction/currency.");
         }
         return true;
     }
@@ -210,7 +221,7 @@ public final class FactionTreasuryManager implements PersistentStore {
             final ConfigurationSection playerSection = root.getConfigurationSection(playerKey);
             if (playerId == null || playerSection == null) {
                 if (playerSection == null) {
-                    plugin.getLogger().warning(
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                             "Invalid non-section tax-debts record for " + playerKey);
                 }
                 continue;
@@ -220,7 +231,7 @@ public final class FactionTreasuryManager implements PersistentStore {
                 final ConfigurationSection debtSection =
                         playerSection.getConfigurationSection(factionKey);
                 if (origin == null || debtSection == null) {
-                    plugin.getLogger().warning(
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                             "Invalid tax-debts origin record: " + playerKey + "." + factionKey);
                     continue;
                 }
@@ -246,7 +257,7 @@ public final class FactionTreasuryManager implements PersistentStore {
             final ConfigurationSection debtSection = root.getConfigurationSection(playerKey);
             if (playerId == null || debtSection == null) {
                 if (debtSection == null) {
-                    plugin.getLogger().warning(
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                             "Invalid unresolved legacy tax-debt record for " + playerKey);
                 }
                 continue;
@@ -267,7 +278,7 @@ public final class FactionTreasuryManager implements PersistentStore {
         try {
             return UUID.fromString(raw);
         } catch (final IllegalArgumentException ignored) {
-            plugin.getLogger().warning(
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                     "Invalid UUID in treasury.yml " + section + ": " + raw);
             return null;
         }
@@ -277,15 +288,14 @@ public final class FactionTreasuryManager implements PersistentStore {
                                                    final String key, final String path) {
         final Object raw = section.get(key);
         if (!(raw instanceof Number number)) {
-            plugin.getLogger().warning(
-                    "Invalid non-numeric persisted amount at " + path + "; value disabled.");
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-numeric persisted amount at " + path);
             return 0.0D;
         }
         final double value = number.doubleValue();
         if (!Double.isFinite(value) || value < 0.0D) {
-            plugin.getLogger().warning(
-                    "Invalid non-finite/negative persisted amount at " + path
-                            + "; value disabled without clamping.");
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-finite/negative persisted amount at " + path);
             return 0.0D;
         }
         return value;
@@ -298,14 +308,14 @@ public final class FactionTreasuryManager implements PersistentStore {
             return 0.0D;
         }
         if (!(raw instanceof Number number)) {
-            plugin.getLogger().warning(
-                    "Invalid non-numeric tax debt at " + path + "; amount disabled.");
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-numeric tax debt at " + path);
             return 0.0D;
         }
         final double value = number.doubleValue();
         if (!Double.isFinite(value) || value < 0.0D) {
-            plugin.getLogger().warning(
-                    "Invalid non-finite/negative tax debt at " + path + "; amount disabled.");
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-finite/negative tax debt at " + path);
             return 0.0D;
         }
         return value;
@@ -318,20 +328,37 @@ public final class FactionTreasuryManager implements PersistentStore {
             return 0;
         }
         if (!(raw instanceof Number number)) {
-            plugin.getLogger().warning(
-                    "Invalid non-numeric tax-evasion strike count at " + path
-                            + "; strikes disabled.");
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-numeric tax-evasion strike count at " + path);
             return 0;
         }
         final double value = number.doubleValue();
         if (!Double.isFinite(value) || value < 0.0D || value > Integer.MAX_VALUE
                 || value != Math.rint(value)) {
-            plugin.getLogger().warning(
-                    "Invalid non-integral/out-of-range tax-evasion strike count at " + path
-                            + "; strikes disabled.");
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-integral/out-of-range tax-evasion strike count at " + path);
             return 0;
         }
         return (int) value;
+    }
+
+
+    private long readStoredTimestamp(final ConfigurationSection section, final String key,
+                                     final String path) {
+        final Object raw = section.get(key);
+        if (!(raw instanceof Number number)) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-numeric persisted timestamp at " + path);
+            return 0L;
+        }
+        final double value = number.doubleValue();
+        if (!Double.isFinite(value) || value < 0.0D || value > Long.MAX_VALUE
+                || value != Math.rint(value)) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid non-integral/out-of-range persisted timestamp at " + path);
+            return 0L;
+        }
+        return number.longValue();
     }
 
     /** Debounced asynchronous save request. */
@@ -409,8 +436,13 @@ public final class FactionTreasuryManager implements PersistentStore {
     }
 
     private double nonNegativeFiniteConfig(final String path, final double defaultValue) {
-        final Object raw = configManager.contains(path) && configManager.getConfiguration() != null
-                ? configManager.getConfiguration().get(path) : defaultValue;
+        return nonNegativeFiniteConfig(configManager.snapshot(), path, defaultValue);
+    }
+
+    private double nonNegativeFiniteConfig(final ConfigManager.ConfigSnapshot snapshot,
+                                           final String path, final double defaultValue) {
+        final Object raw = snapshot.isSet(path) && snapshot.configuration() != null
+                ? snapshot.configuration().get(path) : defaultValue;
         if (raw instanceof Number number) {
             final double value = number.doubleValue();
             if (Double.isFinite(value) && value >= 0.0D) {
@@ -424,8 +456,13 @@ public final class FactionTreasuryManager implements PersistentStore {
     }
 
     private int nonNegativeIntConfig(final String path, final int defaultValue) {
-        final Object raw = configManager.contains(path) && configManager.getConfiguration() != null
-                ? configManager.getConfiguration().get(path) : defaultValue;
+        return nonNegativeIntConfig(configManager.snapshot(), path, defaultValue);
+    }
+
+    private int nonNegativeIntConfig(final ConfigManager.ConfigSnapshot snapshot,
+                                     final String path, final int defaultValue) {
+        final Object raw = snapshot.isSet(path) && snapshot.configuration() != null
+                ? snapshot.configuration().get(path) : defaultValue;
         if (raw instanceof Number number) {
             final double value = number.doubleValue();
             if (Double.isFinite(value) && value >= 0.0D && value <= Integer.MAX_VALUE
@@ -441,9 +478,14 @@ public final class FactionTreasuryManager implements PersistentStore {
 
     /** Gets a faction's effective citizen-tax rate. */
     public double getTaxRate(final FactionType faction) {
+        return getTaxRate(faction, configManager.snapshot());
+    }
+
+    private double getTaxRate(final FactionType faction,
+                              final ConfigManager.ConfigSnapshot snapshot) {
         synchronized (stateLock) {
             final double configDefault = nonNegativeFiniteConfig(
-                    "factions.tax.rate-percent", 2.0D);
+                    snapshot, "factions.tax.rate-percent", 2.0D);
             final double stored = faction == null
                     ? configDefault : taxRates.getOrDefault(faction, configDefault);
             if (Double.isFinite(stored) && stored >= 0.0D) {
@@ -560,28 +602,31 @@ public final class FactionTreasuryManager implements PersistentStore {
      * new assessment, but a previously assessed origin-aware debt remains collectible after reset.
      */
     public void collectTaxes() {
-        if (!configManager.getBoolean("factions.tax.enabled", true)) {
+        final ConfigManager.ConfigSnapshot config = configManager.snapshot();
+        final org.bukkit.configuration.file.FileConfiguration live = config.configuration();
+        if ((live == null || !live.getBoolean("factions.tax.enabled", true))
+                || YamlStore.hasCriticalWriteFailure()) {
             return;
         }
 
-        final List<String> exempt = configManager.getStringList("factions.tax.exempt").stream()
+        final List<String> exempt = live == null ? List.of() : live
+                .getStringList("factions.tax.exempt").stream()
                 .map(name -> name.toUpperCase(Locale.ROOT))
                 .toList();
         final double minimum = nonNegativeFiniteConfig(
-                "factions.tax.minimum-amount", 2.0D);
+                config, "factions.tax.minimum-amount", 2.0D);
         final double maxArrears = nonNegativeFiniteConfig(
-                "factions.tax.max-arrears", 50.0D);
+                config, "factions.tax.max-arrears", 50.0D);
         final int evasionThreshold = nonNegativeIntConfig(
-                "factions.tax.evasion-strikes", 3);
+                config, "factions.tax.evasion-strikes", 3);
 
-        final Map<FactionType, Double> collected = new EnumMap<>(FactionType.class);
-        final Set<UUID> evasionReportedThisRun = new HashSet<>();
-        boolean arrearsChanged = false;
         final Map<UUID, FactionType> assignments = factionManager.getFactionAssignments();
         final Set<UUID> participants = new HashSet<>(assignments.keySet());
         synchronized (stateLock) {
             participants.addAll(taxDebts.playerIdsWithDebt());
         }
+        final Set<UUID> evasionReportedThisRun = new HashSet<>();
+
         for (final UUID citizenId : participants) {
             final FactionType currentFaction = assignments.get(citizenId);
             final double newAssessment;
@@ -589,7 +634,7 @@ public final class FactionTreasuryManager implements PersistentStore {
                 newAssessment = 0.0D;
             } else {
                 final CurrencyType currentCurrency = CurrencyType.fromFactionType(currentFaction);
-                final double ratePercent = getTaxRate(currentFaction);
+                final double ratePercent = getTaxRate(currentFaction, config);
                 final double balance = currencyManager.getBalance(citizenId, currentCurrency);
                 final double percentDue = ratePercent <= 0.0D
                         ? 0.0D : Math.floor(balance * ratePercent) / 100.0D;
@@ -598,14 +643,6 @@ public final class FactionTreasuryManager implements PersistentStore {
 
             final EnumSet<FactionType> origins = EnumSet.noneOf(FactionType.class);
             synchronized (stateLock) {
-                if (currentFaction != null
-                        && taxDebts.bindUnresolvedLegacy(citizenId, currentFaction)) {
-                    arrearsChanged = true;
-                    plugin.getLogger().warning(
-                            "Bound origin-less legacy tax debt for " + citizenId + " to "
-                                    + currentFaction.name() + " after explicit membership. "
-                                    + "This is the first origin recoverable after the legacy schema.");
-                }
                 for (final FactionTaxDebtLedger.Debt debt : taxDebts.debtsFor(citizenId)) {
                     origins.add(debt.faction());
                 }
@@ -614,116 +651,211 @@ public final class FactionTreasuryManager implements PersistentStore {
                 origins.add(currentFaction);
             }
 
-            for (final FactionType originFaction : origins) {
-                final double owedBefore;
-                final int strikesBefore;
-                synchronized (stateLock) {
-                    owedBefore = taxDebts.getArrears(citizenId, originFaction);
-                    strikesBefore = taxDebts.getEvasionStrikes(citizenId, originFaction);
-                }
-                final double assessed = currentFaction != null && originFaction == currentFaction
+            for (final FactionType origin : origins) {
+                final double assessed = currentFaction != null && origin == currentFaction
                         ? newAssessment : 0.0D;
-                final double due = owedBefore + assessed;
-                if (due <= 0.0D) {
-                    synchronized (stateLock) {
-                        arrearsChanged |= taxDebts.clearEvasionStrikes(
-                                citizenId, originFaction);
-                    }
+                final Player online = Bukkit.getPlayer(citizenId);
+                final boolean mayReportSin = online != null
+                        && !evasionReportedThisRun.contains(citizenId);
+                final TaxCommit commit = commitTaxTransaction(citizenId, origin, assessed,
+                        maxArrears, evasionThreshold, mayReportSin);
+                if (!commit.changed()) {
                     continue;
                 }
-
-                final CurrencyType originCurrency =
-                        CurrencyType.fromFactionType(originFaction);
-                final double paid = collectDebt(citizenId, originCurrency, due);
-                final double owedAfter = Math.min(maxArrears,
-                        Math.max(0.0D, Math.round((due - paid) * 100.0D) / 100.0D));
-                synchronized (stateLock) {
-                    arrearsChanged |= taxDebts.setArrears(
-                            citizenId, originFaction, owedAfter);
-                }
-
-                if (paid > 0.0D) {
-                    collected.merge(originFaction, paid, Double::sum);
-                }
-
-                if (evasionThreshold > 0 && maxArrears > 0.0D
-                        && paid <= 0.0D && owedAfter >= maxArrears) {
-                    final int strikes;
-                    synchronized (stateLock) {
-                        strikes = taxDebts.incrementEvasionStrikes(
-                                citizenId, originFaction, evasionThreshold);
-                    }
-                    arrearsChanged |= strikes != strikesBefore;
-                    if (strikes >= evasionThreshold) {
-                        final Player evader = Bukkit.getPlayer(citizenId);
-                        if (evader != null && evasionReportedThisRun.add(citizenId)) {
-                            synchronized (stateLock) {
-                                arrearsChanged |= taxDebts.clearEvasionStrikes(
-                                        citizenId, originFaction);
-                            }
-                            evader.getScheduler().run(plugin, task -> {
-                                sinManager.addSin(evader, 1);
-                                evader.sendMessage(messageManager.getMessage(
-                                        "faction-tax-evasion",
-                                        "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!"));
-                            }, null);
+                if (commit.reportSin() && online != null
+                        && evasionReportedThisRun.add(citizenId)) {
+                    online.getScheduler().run(plugin, task -> {
+                        if (online.isOnline()) {
+                            sinManager.addSin(online, 1);
+                            online.sendMessage(messageManager.getMessage(
+                                    "faction-tax-evasion",
+                                    "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!"));
                         }
-                    }
-                } else if (owedAfter <= 0.0D || owedAfter < maxArrears) {
-                    synchronized (stateLock) {
-                        arrearsChanged |= taxDebts.clearEvasionStrikes(
-                                citizenId, originFaction);
-                    }
+                    }, null);
                 }
-
-                final Player citizen = Bukkit.getPlayer(citizenId);
-                if (citizen != null && (paid > 0.0D || owedAfter > owedBefore)) {
-                    final net.kyori.adventure.text.Component notice = owedAfter > 0.0D
+                if (online != null && (commit.paid() > 0.0D
+                        || commit.owedAfter() > commit.owedBefore())) {
+                    final CurrencyType currency = CurrencyType.fromFactionType(origin);
+                    final net.kyori.adventure.text.Component notice = commit.owedAfter() > 0.0D
                             ? messageManager.getMessage(
-                                    "faction-tax-arrears",
-                                    "&6Állampolgári adó: &f{amount} {currency}&6 levonva, hátralékod: &c{arrears} {currency}&7 — a Számvevők a következő beszedéskor is behajtják.",
-                                    Map.of("amount", currencyManager.formatBalance(paid),
-                                            "arrears", currencyManager.formatBalance(owedAfter),
-                                            "currency", originCurrency.getDisplayName()))
+                            "faction-tax-arrears",
+                            "&6Állampolgári adó: &f{amount} {currency}&6 levonva, hátralékod: &c{arrears} {currency}&7 — a Számvevők a következő beszedéskor is behajtják.",
+                            Map.of("amount", currencyManager.formatBalance(commit.paid()),
+                                    "arrears", currencyManager.formatBalance(commit.owedAfter()),
+                                    "currency", currency.getDisplayName()))
                             : messageManager.getMessage(
-                                    "faction-tax-notice",
-                                    "&6Állampolgári adó levonva: &f{amount} {currency} &7(a frakciókasszába került).",
-                                    Map.of("amount", currencyManager.formatBalance(paid),
-                                            "currency", originCurrency.getDisplayName()));
-                    citizen.getScheduler().run(plugin,
-                            task -> citizen.sendMessage(notice), null);
+                            "faction-tax-notice",
+                            "&6Állampolgári adó levonva: &f{amount} {currency} &7(a frakciókasszába került).",
+                            Map.of("amount", currencyManager.formatBalance(commit.paid()),
+                                    "currency", currency.getDisplayName()));
+                    online.getScheduler().run(plugin, task -> {
+                        if (online.isOnline()) {
+                            online.sendMessage(notice);
+                        }
+                    }, null);
                 }
             }
         }
+    }
 
-        if (collected.isEmpty() && !arrearsChanged) {
+    private record TaxCommit(boolean changed, double paid, double owedBefore,
+                             double owedAfter, boolean reportSin) {
+    }
+
+    private TaxCommit commitTaxTransaction(final UUID playerId, final FactionType origin,
+                                           final double assessed, final double maxArrears,
+                                           final int evasionThreshold,
+                                           final boolean mayReportSin) {
+        synchronized (stateLock) {
+            final FactionTaxJournal.DomainState before = domainState(playerId, origin);
+            final double due = before.debtAmount() + assessed;
+            if (due <= 0.0D && before.evasionStrikes() == 0) {
+                return new TaxCommit(false, 0.0D, before.debtAmount(),
+                        before.debtAmount(), false);
+            }
+
+            final CurrencyType currency = CurrencyType.fromFactionType(origin);
+            final double fresh = currencyManager.getBalance(playerId, currency);
+            final double plannedPayment = Math.floor(Math.min(Math.max(0.0D, due), fresh)
+                    * 100.0D) / 100.0D;
+            CurrencyManager.DurableMutation wallet = plannedPayment > 0.0D
+                    ? currencyManager.planDurableDeduction(playerId, currency, plannedPayment)
+                    : null;
+            final double paid = wallet == null ? 0.0D : plannedPayment;
+            final double owedAfter = Math.min(maxArrears,
+                    Math.max(0.0D, Math.round((due - paid) * 100.0D) / 100.0D));
+
+            int strikesAfter = before.evasionStrikes();
+            boolean reportSin = false;
+            if (evasionThreshold > 0 && maxArrears > 0.0D
+                    && paid <= 0.0D && owedAfter >= maxArrears) {
+                strikesAfter = Math.min(evasionThreshold, strikesAfter + 1);
+                if (strikesAfter >= evasionThreshold && mayReportSin) {
+                    reportSin = true;
+                    strikesAfter = 0;
+                }
+            } else if (owedAfter <= 0.0D || owedAfter < maxArrears) {
+                strikesAfter = 0;
+            }
+
+            final FactionTaxJournal.DomainState after = new FactionTaxJournal.DomainState(
+                    before.treasuryBalance() + paid, owedAfter, strikesAfter);
+            if (before.equals(after) && wallet == null) {
+                return new TaxCommit(false, 0.0D, before.debtAmount(), owedAfter, false);
+            }
+
+            final FactionTaxJournal.Entry[] journalEntry = new FactionTaxJournal.Entry[1];
+            final CurrencyManager.DurableMutation walletMutation = wallet;
+            final DurableTransactionProtocol.ExecutionResult transactionResult =
+                    DurableTransactionProtocol.execute(new DurableTransactionProtocol.Steps() {
+                @Override
+                public void prepare() {
+                    journalEntry[0] = taxJournal.prepare(
+                            playerId, origin, before, after, walletMutation);
+                }
+
+                @Override
+                public boolean hasWalletMutation() {
+                    return walletMutation != null;
+                }
+
+                @Override
+                public void applyWallet() {
+                    currencyManager.applyDurably(walletMutation);
+                }
+
+                @Override
+                public void commitDomain() {
+                    applyDomainState(playerId, origin, after);
+                    if (!writeStateLocked()) {
+                        applyDomainState(playerId, origin, before);
+                        throw new IllegalStateException("Faction tax state could not be persisted");
+                    }
+                }
+
+                @Override
+                public void rollbackWallet() {
+                    currencyManager.rollbackDurably(walletMutation);
+                }
+
+                @Override
+                public void completeJournal() {
+                    taxJournal.complete(journalEntry[0]);
+                }
+            });
+            if (transactionResult.recoveryPending()) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                        "Tax transaction committed, but WAL cleanup failed; startup recovery will finalize it",
+                        transactionResult.cleanupFailure());
+            }
+            return new TaxCommit(true, paid, before.debtAmount(), owedAfter, reportSin);
+        }
+    }
+
+    private FactionTaxJournal.DomainState domainState(final UUID playerId,
+                                                       final FactionType origin) {
+        return new FactionTaxJournal.DomainState(
+                balances.getOrDefault(origin, 0.0D),
+                taxDebts.getArrears(playerId, origin),
+                taxDebts.getEvasionStrikes(playerId, origin));
+    }
+
+    private void applyDomainState(final UUID playerId, final FactionType origin,
+                                  final FactionTaxJournal.DomainState state) {
+        if (state.treasuryBalance() == 0.0D) {
+            balances.remove(origin);
+        } else {
+            balances.put(origin, state.treasuryBalance());
+        }
+        taxDebts.put(playerId, origin, state.debtAmount(), state.evasionStrikes());
+    }
+
+    private void recoverPendingTaxTransaction() {
+        final FactionTaxJournal.Entry entry = taxJournal.pending();
+        if (entry == null) {
             return;
         }
+        final FactionTaxJournal.DomainState current = domainState(
+                entry.playerId(), entry.origin());
+        final boolean domainBefore = current.equals(entry.before());
+        final boolean domainAfter = current.equals(entry.after());
+        final boolean walletBefore = entry.walletMutation() == null
+                || currencyManager.walletMatches(entry.walletMutation(), false);
+        final boolean walletAfter = entry.walletMutation() == null
+                || currencyManager.walletMatches(entry.walletMutation(), true);
 
-        synchronized (stateLock) {
-            for (final Map.Entry<FactionType, Double> entry : collected.entrySet()) {
-                balances.merge(entry.getKey(), entry.getValue(), Double::sum);
-                plugin.getLogger().info("Faction tax collected: "
-                        + currencyManager.formatBalance(entry.getValue())
-                        + " -> " + entry.getKey().name() + " treasury");
+        switch (DurableRecoveryPolicy.decide(domainBefore, domainAfter, walletBefore,
+                walletAfter, entry.walletMutation() != null)) {
+            case COMPLETE_COMMITTED -> {
+                taxJournal.complete(entry);
+                plugin.getLogger().warning(
+                        "Recovered committed tax transaction " + entry.id());
             }
-            writeStateLocked();
+            case DISCARD_UNAPPLIED -> {
+                taxJournal.complete(entry);
+                plugin.getLogger().warning(
+                        "Discarded unapplied tax transaction " + entry.id());
+            }
+            case ROLLBACK_WALLET -> {
+                currencyManager.rollbackDurably(entry.walletMutation());
+                taxJournal.complete(entry);
+                plugin.getLogger().warning(
+                        "Rolled back interrupted tax transaction " + entry.id());
+            }
+            case ROLLBACK_DOMAIN -> {
+                applyDomainState(entry.playerId(), entry.origin(), entry.before());
+                if (!writeStateLocked()) {
+                    applyDomainState(entry.playerId(), entry.origin(), entry.after());
+                    throw new IllegalStateException(
+                            "Could not roll back unpaid tax transaction");
+                }
+                taxJournal.complete(entry);
+                plugin.getLogger().warning(
+                        "Rolled back unpaid tax transaction " + entry.id());
+            }
+            case AMBIGUOUS -> taxJournal.failCorrupt(
+                    "Ambiguous tax transaction recovery state for " + entry.id());
         }
     }
 
-    /** Atomic balance deduction with one retry against a concurrently changed account. */
-    private double collectDebt(final UUID citizenId, final CurrencyType currency,
-                               final double due) {
-        for (int attempt = 0; attempt < 2; attempt++) {
-            final double fresh = currencyManager.getBalance(citizenId, currency);
-            final double payable = Math.floor(Math.min(due, fresh) * 100.0D) / 100.0D;
-            if (payable <= 0.0D) {
-                return 0.0D;
-            }
-            if (currencyManager.deductFromBalance(citizenId, currency, payable)) {
-                return payable;
-            }
-        }
-        return 0.0D;
-    }
 }

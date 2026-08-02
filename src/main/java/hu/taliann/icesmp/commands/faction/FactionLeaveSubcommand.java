@@ -87,7 +87,8 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
             if (!FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
                 return true;
             }
-            if (!FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
+            if (!FactionSwitchRules.commitPaidSwitch(player, currentFaction, FactionType.NEUTRAL,
+                    factionManager, currencyManager, messageManager)) {
                 return true;
             }
         }
@@ -97,7 +98,9 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         // /faction join „első választásnak" látta, ezért a leave+join páros megkerülte a
         // semleges-főváros kaput, a szezon-hajrá zárát és a váltás-cooldownt. „Nincs
         // bejegyzés" mostantól csak a valóban új játékos állapota.
-        factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
+        if (!leavingKingdom) {
+            factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
+        }
         final hu.taliann.icesmp.managers.SpecializationManager specs = this.specializationManager;
         if (leavingDark && specs != null && specs.resetDarkGatedSpecialization(player)) {
             player.sendMessage(messageManager.get("messages.dark-spec-lost",
