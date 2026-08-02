@@ -27,15 +27,17 @@ jobs:
           git config --local --unset-all http.https://github.com/.extraheader || true
           git remote set-url origin https://github.com/MilCsik09/IceSMP.git
 
-      - name: Create byte-preserving checkout archive
+      - name: Create complete Git bundle
         shell: bash
         run: |
-          tar --exclude='./.gradle' --exclude='./build' -czf /tmp/icesmp-log-fix-checkout.tgz .
+          git bundle create /tmp/icesmp-log-fix.bundle --all
+          git bundle verify /tmp/icesmp-log-fix.bundle
 
-      - name: Upload checkout archive
+      - name: Upload complete Git bundle
         uses: actions/upload-artifact@v4
         with:
-          name: icesmp-log-fix-checkout-${{ github.sha }}
-          path: /tmp/icesmp-log-fix-checkout.tgz
+          name: icesmp-log-fix-git-${{ github.sha }}
+          path: /tmp/icesmp-log-fix.bundle
+          compression-level: 0
           retention-days: 1
           if-no-files-found: error
