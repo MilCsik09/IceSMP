@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - agent/player-profile-checkout-20260802
+    paths-ignore:
+      - .github/player-profile-checkout-result.txt
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   export:
@@ -16,32 +18,51 @@ jobs:
       - name: Check out complete authenticated Git history
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: agent/player-profile-checkout-20260802
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Verify refs and package genuine Git DAG
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = 'b6f4492766675f718f73fd947bf92a388a3090fb'
+          test "$(git rev-parse origin/rework/class-spec-profile-v2)" = 'b6f4492766675f718f73fd947bf92a388a3090fb'
+          test "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" = '62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
+          test "$(git merge-base origin/rework/class-spec-profile-v2 origin/rework/class-spec-1.21.11-compatibility)" = '62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
           git fsck --full
           mkdir -p build/player-profile-checkout
           git show-ref > build/player-profile-checkout/refs.txt
           git log --all --decorate --oneline --graph -n 250 > build/player-profile-checkout/history.txt
           git bundle create build/player-profile-checkout/icesmp.bundle --all
           git bundle verify build/player-profile-checkout/icesmp.bundle
-          git archive --format=tar.gz --output=build/player-profile-checkout/working-tree.tar.gz HEAD
+          git archive --format=tar.gz --output=build/player-profile-checkout/working-tree.tar.gz origin/rework/class-spec-profile-v2
           sha256sum build/player-profile-checkout/icesmp.bundle build/player-profile-checkout/working-tree.tar.gz > build/player-profile-checkout/SHA256SUMS
           printf 'export-head=%s\n' "$(git rev-parse HEAD)" > build/player-profile-checkout/manifest.txt
-          printf 'profile-head=%s\n' "$(git rev-parse HEAD^)" >> build/player-profile-checkout/manifest.txt
+          printf 'profile-head=%s\n' "$(git rev-parse origin/rework/class-spec-profile-v2)" >> build/player-profile-checkout/manifest.txt
           printf 'profile-base=%s\n' "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" >> build/player-profile-checkout/manifest.txt
-          printf 'merge-base=%s\n' "$(git merge-base HEAD^ origin/rework/class-spec-1.21.11-compatibility)" >> build/player-profile-checkout/manifest.txt
+          printf 'merge-base=%s\n' "$(git merge-base origin/rework/class-spec-profile-v2 origin/rework/class-spec-1.21.11-compatibility)" >> build/player-profile-checkout/manifest.txt
 
       - name: Upload checkout bundle
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: player-profile-checkout-${{ github.run_id }}
           path: build/player-profile-checkout/
           retention-days: 1
           if-no-files-found: error
+
+      - name: Publish artifact locator
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          printf 'run-id=%s\nartifact-id=%s\nartifact-url=%s\nexport-head=%s\n' \
+            "$GITHUB_RUN_ID" "$ARTIFACT_ID" "$ARTIFACT_URL" "$(git rev-parse HEAD)" \
+            > .github/player-profile-checkout-result.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- .github/player-profile-checkout-result.txt
+          git commit -m 'chore(player-profile): publish checkout artifact locator [checkout-export-result]'
+          git push origin HEAD:refs/heads/agent/player-profile-checkout-20260802
