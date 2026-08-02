@@ -23,8 +23,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * P7 — data-component réteg (1.20.5+). Deklaratív item-viselkedés a listener-kód helyett:
