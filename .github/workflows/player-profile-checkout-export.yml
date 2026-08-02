@@ -22,27 +22,41 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Verify refs and package genuine Git DAG
+      - name: Build genuine shallow checkout of the Profile v2 branch
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse origin/rework/class-spec-profile-v2)" = 'b6f4492766675f718f73fd947bf92a388a3090fb'
-          test "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" = '62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
-          test "$(git merge-base origin/rework/class-spec-profile-v2 origin/rework/class-spec-1.21.11-compatibility)" = '62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
+          PROFILE_HEAD='b6f4492766675f718f73fd947bf92a388a3090fb'
+          PROFILE_BASE='62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
+          test "$(git rev-parse origin/rework/class-spec-profile-v2)" = "$PROFILE_HEAD"
+          test "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" = "$PROFILE_BASE"
+          test "$(git merge-base origin/rework/class-spec-profile-v2 origin/rework/class-spec-1.21.11-compatibility)" = "$PROFILE_BASE"
           git fsck --full
-          mkdir -p build/player-profile-checkout
-          git show-ref > build/player-profile-checkout/refs.txt
-          git log --all --decorate --oneline --graph -n 250 > build/player-profile-checkout/history.txt
-          git bundle create build/player-profile-checkout/icesmp.bundle --all
-          git bundle verify build/player-profile-checkout/icesmp.bundle
-          git archive --format=tar.gz --output=build/player-profile-checkout/working-tree.tar.gz origin/rework/class-spec-profile-v2
-          sha256sum build/player-profile-checkout/icesmp.bundle build/player-profile-checkout/working-tree.tar.gz > build/player-profile-checkout/SHA256SUMS
-          printf 'export-head=%s\n' "$(git rev-parse HEAD)" > build/player-profile-checkout/manifest.txt
-          printf 'profile-head=%s\n' "$(git rev-parse origin/rework/class-spec-profile-v2)" >> build/player-profile-checkout/manifest.txt
-          printf 'profile-base=%s\n' "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" >> build/player-profile-checkout/manifest.txt
-          printf 'merge-base=%s\n' "$(git merge-base origin/rework/class-spec-profile-v2 origin/rework/class-spec-1.21.11-compatibility)" >> build/player-profile-checkout/manifest.txt
 
-      - name: Upload checkout bundle
+          git branch --force rework/class-spec-profile-v2 origin/rework/class-spec-profile-v2
+          rm -rf build/player-profile-checkout
+          mkdir -p build/player-profile-checkout
+          git clone --quiet --depth=10 --single-branch --branch rework/class-spec-profile-v2 \
+            "file://$GITHUB_WORKSPACE" build/player-profile-checkout/repo
+          cd build/player-profile-checkout/repo
+          git remote set-url origin https://github.com/MilCsik09/IceSMP.git
+          test "$(git rev-parse HEAD)" = "$PROFILE_HEAD"
+          test "$(git rev-parse HEAD~7)" = "$PROFILE_BASE"
+          test -f .git/shallow
+          git fsck --full
+          git status --short --branch > ../status.txt
+          git show-ref > ../refs.txt
+          git log --decorate --oneline --graph --all > ../history.txt
+          git rev-list --count HEAD > ../commit-count.txt
+          cd ..
+          tar -czf authenticated-checkout.tar.gz repo
+          sha256sum authenticated-checkout.tar.gz > SHA256SUMS
+          printf 'export-head=%s\nprofile-head=%s\nprofile-base=%s\n' \
+            "$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)" "$PROFILE_HEAD" "$PROFILE_BASE" \
+            > manifest.txt
+          du -h authenticated-checkout.tar.gz
+
+      - name: Upload authenticated checkout
         id: upload
         uses: actions/upload-artifact@v4
         with:
