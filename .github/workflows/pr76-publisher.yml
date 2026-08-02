@@ -54,8 +54,10 @@ jobs:
               ("03a", 5159952122, "199295fabdd2a41c6eecd32a467ada7a2b146f9d14c509de83d8fdfce0370e86"),
               ("03b1", 5159989741, "b63c6e705acb5c93177fc99e2fd09f6cbf8937f72037dbdfec7718ae0a0f14d7"),
               ("03b2", 5159991086, "c2327083aef7a1fe1ff218bdd59160a8087b0c2a4e1a64d7e1f0aa3c6246046a"),
-              ("03c", 5159957118, "95556ee878331506bf23e8132ae653a57621f20be15bf1713efe4811e19bd2e6"),
-              ("03d", 5159959380, "45fad6d99e4dc7caeedcea56264edb2a0fe84b0d68cbf84bb921d9d693796917"),
+              ("03c1", 5159995474, "2adb7acff5508a54eacaa13963e2accf6b9c2964f1820c3e742468fda7977df5"),
+              ("03c2", 5159996638, "bb932abb64f9f3fc18b056215ec914a12d411242bfa106e9574f8334abfec4ee"),
+              ("03d1", 5159997957, "f55da5c28aed1049661674f709688a18fee260e1c87244d6801e31484e2dfc14"),
+              ("03d2", 5159999240, "9d66142a929d0c5b540dce3812eeb986f6c36d2e2670e89f81cab86a4568378c"),
           ]
           token = os.environ["GH_TOKEN"]
           payloads = []
