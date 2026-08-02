@@ -4,19 +4,28 @@ on:
   push:
     branches:
       - automation/pr76-publisher
+  pull_request:
+    branches:
+      - automation/pr76-publisher
+    types:
+      - edited
 
 permissions:
   contents: write
 
 jobs:
   publish:
+    if: github.event_name == 'push' || github.event.pull_request.head.ref == 'balance/faction-passives-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - name: Checkout publisher payload
         uses: actions/checkout@v4
         with:
+          repository: MilCsik09/IceSMP
+          ref: automation/pr76-publisher
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Assemble and verify patch
         shell: bash
