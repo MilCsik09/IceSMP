@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Build genuine shallow checkout of the Profile v2 branch
+      - name: Build genuine partial Git checkout of the Profile v2 branch
         id: package
         continue-on-error: true
         shell: bash
@@ -35,22 +35,44 @@ jobs:
           test "$(git rev-parse origin/rework/class-spec-profile-v2)" = "$PROFILE_HEAD"
           test "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" = "$PROFILE_BASE"
           test "$(git merge-base origin/rework/class-spec-profile-v2 origin/rework/class-spec-1.21.11-compatibility)" = "$PROFILE_BASE"
-          git fsck --full
 
-          git branch --force rework/class-spec-profile-v2 origin/rework/class-spec-profile-v2
           rm -rf build/player-profile-checkout/repo
-          git clone --quiet --depth=10 --single-branch --branch rework/class-spec-profile-v2 \
-            "file://$GITHUB_WORKSPACE" build/player-profile-checkout/repo
+          git -c protocol.version=2 clone --quiet --filter=blob:none --no-checkout --depth=10 \
+            --single-branch --branch rework/class-spec-profile-v2 \
+            https://github.com/MilCsik09/IceSMP.git build/player-profile-checkout/repo
           cd build/player-profile-checkout/repo
-          git remote set-url origin https://github.com/MilCsik09/IceSMP.git
+          git sparse-checkout init --no-cone
+          cat > .git/info/sparse-checkout <<'PATTERNS'
+/*
+!/*/
+/.github/
+/docs/
+/gradle/
+/scripts/
+/src/
+/AGENTS.md
+/CLAUDE.md
+/LICENSE
+/README.md
+/ROADMAP.md
+/build.gradle.kts
+/gradle.properties
+/gradlew
+/gradlew.bat
+/settings.gradle.kts
+PATTERNS
+          git checkout --quiet "$PROFILE_HEAD"
+          git switch --quiet -c rework/class-spec-profile-v2 "$PROFILE_HEAD"
           test "$(git rev-parse HEAD)" = "$PROFILE_HEAD"
           test "$(git rev-parse HEAD~7)" = "$PROFILE_BASE"
           test -f .git/shallow
-          git fsck --full
+          test "$(git config --get remote.origin.promisor)" = 'true'
+          git fsck --connectivity-only
           git status --short --branch > ../status.txt
           git show-ref > ../refs.txt
           git log --decorate --oneline --graph --all > ../history.txt
           git rev-list --count HEAD > ../commit-count.txt
+          git count-objects -vH > ../object-size.txt
           cd ..
           tar -czf authenticated-checkout.tar.gz repo
           sha256sum authenticated-checkout.tar.gz > SHA256SUMS
