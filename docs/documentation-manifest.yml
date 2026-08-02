@@ -75,7 +75,7 @@
         "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "b2159f78f7cf8888e6d4e010ba6a7a2e78cf6b11d8cd4eaf5d96c0d340b2c905",
         "src/main/java/hu/taliann/icesmp/commands/SpellCommand.java": "d276d570d9681c90165403257f76fbd0889826d82cb54ca467bbdfd270629302",
         "src/main/java/hu/taliann/icesmp/commands/SpellbookCommand.java": "ff19ef2f0d2d7f5853039739232db525788045cf12833b9a0b8b477f46cecba3",
-        "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "8261555e3beb760d23d99787fff9605bf92038824345a9ff4ffea7ef917578ca",
+        "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "9240cfbcd0388de9bb57430280c073456ec1f76a8b9cbd324fe9bf68f7f7f287",
         "src/main/java/hu/taliann/icesmp/commands/StatsCommand.java": "643a8914fb27ee5f92c4525a1613b49f5b53f5d5c9174f59bc81132aae3b6c9b",
         "src/main/java/hu/taliann/icesmp/commands/TalentCommand.java": "de964bcbb9257772ad436175075891e6b1589314ac12793fd23b804f38268e62",
         "src/main/java/hu/taliann/icesmp/commands/TanacsCommand.java": "0f991aff492b266cfbfa5b2f2feafebd48a49a4556e2f70e9ebd41ab035f414f",
@@ -92,11 +92,11 @@
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionCaravanSubcommand.java": "c2457a6abf674f7021f6faea7a3b10c5b6404b94cf77fe4332251edc08696c74",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionDonateSubcommand.java": "5c3ff809af6c5fe55a29eda556fc317d2f53077ee1ac5ee2c82197c2b3732d16",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java": "601110305161acff9656a7c49e3580088268630781c031c39f7c4065a9d3ec9e",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java": "69874fe8d8f375b59bd1c39fc53b65d2293151a4632c90547fc6aeea88b38cbd",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cac1a548993b58d2ca6cb8d584814cf24304247978ed49f953dac39b8907a96d",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java": "ae5aa9528b02e5011450be15afd22ba54f159691fb9745777e49e18196552458",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java": "70400c49cc67bea53dbdd8369557fa503d01cf22e79ed7dac407b34b12c885a7",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionRaidSubcommand.java": "0dc9d0c1dd046ea90f5ca2b84d17f4b35f8be0ba30813323dba1c1edbfe0f950",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "bbcdd94212301091ace415ea06a62945dfe155f2b713af806eb8e37d45deea12",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "1b6715b4df9c4c284e1ab3e5744116b07ba95f7f90be0960e17ad6ee21759422",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "f74405d61bd044ad30129845c9be3287bc541a71b9d480ddd33c76066c0cc6b8",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
         "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "9290feb43a1e8bc6bf63742fe5bd6dd37b5763e26f14eb03cafb99bce8bb6131",
@@ -106,7 +106,7 @@
         "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "02bfb9c5b7c498f14659c4926cfbbe8ce9de2d63d7c756504563e8b20fdaa524",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "ce9dc018a5845bc8ddd29892d2b037716d0f4c8e1bace1f92d254b3aff3b83bc"
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "766ace809d1c7ab922b0a3d33731c22fc20b7a54d01c5b3764fb716ac8298ce0"
       },
       "entries_sha256": "796d6905e8343d3465e9be4ed9139e97eebe5c9919df543da56903bb8095d1bb"
     },
@@ -9054,7 +9054,7 @@
         "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cac1a548993b58d2ca6cb8d584814cf24304247978ed49f953dac39b8907a96d",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "bbcdd94212301091ace415ea06a62945dfe155f2b713af806eb8e37d45deea12",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "1b6715b4df9c4c284e1ab3e5744116b07ba95f7f90be0960e17ad6ee21759422",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "f74405d61bd044ad30129845c9be3287bc541a71b9d480ddd33c76066c0cc6b8",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
         "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "9290feb43a1e8bc6bf63742fe5bd6dd37b5763e26f14eb03cafb99bce8bb6131",
@@ -9064,7 +9064,7 @@
         "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "02bfb9c5b7c498f14659c4926cfbbe8ce9de2d63d7c756504563e8b20fdaa524",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "ce9dc018a5845bc8ddd29892d2b037716d0f4c8e1bace1f92d254b3aff3b83bc",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "766ace809d1c7ab922b0a3d33731c22fc20b7a54d01c5b3764fb716ac8298ce0",
         "src/main/java/hu/taliann/icesmp/core/Permissions.java": "9cc28bb9d32e4d60bb75bc723c6362f470cb8dbe3f6e85a6362534866f76c474",
         "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "fc2559f4ee0c1be34dcfc114e2d53994bd11f3023da3e2a96a501429b2ec8643",
         "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "66d2b668bddb3dc241c3c2038b069a7ce07e06c42574c23b08cd931a7c0d4d71",
@@ -10156,41 +10156,6 @@
       "classification": "EXACT_RUNTIME_TEMPLATE",
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java:70 adatfolyamából feloldható; a dokumentált teljes path-sablon: players. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.hamukenyer-buff-seconds": {
-      "resolved_path": "factions.food-duty.hamukenyer-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:455 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.hamukenyer-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.hamulakoma-buff-seconds": {
-      "resolved_path": "factions.food-duty.hamulakoma-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:450 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.hamulakoma-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.lepeny-buff-seconds": {
-      "resolved_path": "factions.food-duty.lepeny-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:445 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.lepeny-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.pisztrang-buff-seconds": {
-      "resolved_path": "factions.food-duty.pisztrang-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:434 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.pisztrang-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.porkolt-buff-seconds": {
-      "resolved_path": "factions.food-duty.porkolt-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:438 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.porkolt-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.rantotta-buff-seconds": {
-      "resolved_path": "factions.food-duty.rantotta-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:436 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.rantotta-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.vadlakoma-buff-seconds": {
-      "resolved_path": "factions.food-duty.vadlakoma-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:440 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.vadlakoma-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
     "config.dynamic.item-data-factory.section.always-edible": {
       "resolved_path": "profession-recipes.<recipe-id>.result.consumable.always-edible",
       "classification": "EXACT_RUNTIME_TEMPLATE",
@@ -10480,6 +10445,76 @@
       "resolved_path": "world-events.orchestration.max-active-minutes",
       "classification": "KNOWN_SOURCE_LIMITATION",
       "reason": "A forrás közvetlenül olvassa ezt az aktív kulcsot, de a bundled YAML-ból hiányzik; a bizonyított kódbeli fallback: 60L. Ez kiadáskor dokumentált konfigurációs hiány, nem runtime-tesztként igazolt garancia."
+    },
+    "config.dynamic.faction-switch-journal.section.currency": {
+      "resolved_path": "faction-switch-journal.yml:entry.currency",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.id": {
+      "resolved_path": "faction-switch-journal.yml:entry.id",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.assignment": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.assignment",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.assignment-present": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.assignment-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.history": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.history",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.history-present": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.history-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.player": {
+      "resolved_path": "faction-switch-journal.yml:entry.player",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.target-faction": {
+      "resolved_path": "faction-switch-journal.yml:entry.target-faction",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.wallet.previous-present": {
+      "resolved_path": "faction-switch-journal.yml:entry.wallet.previous-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.id": {
+      "resolved_path": "faction-tax-journal.yml:entry.id",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.origin": {
+      "resolved_path": "faction-tax-journal.yml:entry.origin",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.player": {
+      "resolved_path": "faction-tax-journal.yml:entry.player",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.wallet.present": {
+      "resolved_path": "faction-tax-journal.yml:entry.wallet.present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.wallet.previous-present": {
+      "resolved_path": "faction-tax-journal.yml:entry.wallet.previous-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
     }
   },
   "components": {
@@ -13807,6 +13842,55 @@
       "feature": "feature.world.mobs_loot",
       "docs": [
         "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.DurableTransactionProtocol": {
+      "feature": "feature.core.persistence",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionFoodPolicy": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionMembershipMutation": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionPassiveAdapterPolicy": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionSwitchJournal": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionTaxJournal": {
+      "feature": "feature.factions.guilds_leadership",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.DurableRecoveryPolicy": {
+      "feature": "feature.core.persistence",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
       ]
     }
   },

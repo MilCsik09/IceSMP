@@ -145,14 +145,19 @@ Belépés: `/faction join <red|blue|neutral|dark>`.
   markerelt boss-/eventsebzés alapból felülírhatja a környezeti védelmet.
 - A Fagy exhaustion-előnye csak a konfigurált természetes mozgásforrásokra
   vonatkozik. Hunger-effektet, scripted éhséget, adminműveletet vagy az
-  elmaradt hazai étel miatti food-duty következményét nem törli.
+  elmaradt hazai étel miatti food-duty következményét nem törli. A signature
+  ételek buffja fogyasztáskor ellenőrzi az aktuális explicit tagságot: egy
+  vendég, másik frakció tagja vagy időközben resetelt játékos nem örökli a
+  tárgy korábbi tulajdonosának frakcióelőnyét.
 - A Menedék békéje nem támadhatatlanság: a megtámadott lény visszaüthet, az
   Enderman az ütésre reagál, a scripted és eventes célzás pedig működik. A
   fél zuhanássebzés parkourban is megmarad.
 - Thanaopolis markerelt, ambient élőhalott lakói a DARK játékost felismerik,
-  amíg nem provokálja őket. Támadás után 60 másodpercig ő és a 16 blokkon
-  belüli közeli undead csoport is megtorolhatja. A vadonban csak éjjel és
-  célzásonként 50% esélyű az előny; Vérhold alatt alapból megszűnik.
+  amíg nem provokálja őket. Támadás után 60 másodpercig az adott játékos–mob
+  pár, valamint a 16 blokkon belül ténylegesen riasztott undead példányok
+  megtorolhatják a támadást; ez nem old fel globális békét minden élőholtnál.
+  A vadonban csak éjjel és célzásonként 50% esélyű az előny. Vérhold alatt az
+  ambient és a vad DARK béke is alapból megszűnik.
 - Rontás-fajzat, dungeonmob vagy miniboss, inváziós mob/bajnok, világboss,
   scripted event- és questmob, valamint a koronaátok célzása nem kap DARK
   truce-ot.

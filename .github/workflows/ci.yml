@@ -115,10 +115,11 @@ jobs:
           grep -F "HUD regression suite passed." gradle-build.log
           grep -F "Pause-menu dialog regression suite passed." gradle-build.log
           grep -F "Faction passive regression suite passed." gradle-build.log
+          grep -F "Faction passive hardening regression suite passed." gradle-build.log
           grep -F "Faction tax debt regression suite passed." gradle-build.log
 
       - name: Run faction regressions explicitly
-        run: ./gradlew factionPassiveRegressionTest factionTreasuryRegressionTest --console=plain --no-daemon --stacktrace
+        run: ./gradlew factionPassiveRegressionTest factionPassiveHardeningRegressionTest factionTreasuryRegressionTest --console=plain --no-daemon --stacktrace
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py

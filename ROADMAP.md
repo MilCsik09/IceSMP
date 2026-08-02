@@ -107,8 +107,13 @@ koordinátája, pozitív és negatív próbája, valamint visszaállítható men
   season-source termelést. Csak ezután indokolt a `0.25/0.50/0.75` damage,
   `0.25` exhaustion és `0.50` wild-undead defaultok újrahangolása.
 - ◇ Külön nyitott kapu a DARK/non-DARK és NEUTRAL/non-NEUTRAL párok ugyanazon
-  mobnál, provokációval és nélküle, régióhatáron át; target-függetlenséget,
-  scheduler rejectiont és state-cleanupot loggal kell bizonyítani.
+  mobnál, provokációval és nélküle, régióhatáron át; a játékos–mob retaliation
+  lease-ek target-függetlenségét, scheduler rejectiont, retired callbacket és
+  state-cleanupot loggal kell bizonyítani.
+- ◇ Fault-injection stagingen külön bizonyítandó a fizetős frakcióváltás és az
+  adóbeszedés WAL-recoveryje: wallet-write hiba, domain-write hiba, sikeres és
+  sikertelen kompenzáció, journal-cleanup hiba, circuit-open és kontrollált
+  restart utáni idempotens folytatás.
 - ◇ Az Íjász és az Orgyilkos tényleges DPS-ét célbábun és valódi
   harchelyzetben is mérni kell; a DoT és a vanília sebzésréteg miatt a
   papírérték nem elég.

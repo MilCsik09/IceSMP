@@ -79,9 +79,16 @@ vagy adócsalási strike-ot sem.
 
 Az adóhátralék most eredet-frakciónként külön ledgerben él. Frakcióváltás nem
 konvertálja a régi tartozást vagy strike-ot: a következő beszedés az eredeti
-valutából az eredeti kasszába rendezi. A legacy scalar séma bizonyítható
-tagsági előzménnyel migrál; enélkül adatvesztés helyett unresolved rekord
-marad, implicit `NEUTRAL` hozzárendelés nélkül.
+valutából az eredeti kasszába rendezi. A legacy scalar séma egyáltalán nem őriz eredet-frakciót, ezért aktív vagy korábbi
+tagságból sem találunk ki hozzá valutát. Minden ilyen adat explicit adminmigrációt
+igénylő karanténban marad: nem veszhet el, de a játékos következő frakciójához
+sem kötődik automatikusan.
+
+A fizetős frakcióváltás és az adóbeszedés külön write-ahead journalban rögzíti
+a wallet és a domain előtte/utána állapotát. A live tagság csak a tartós
+assignment+history snapshot sikeres mentése után változik; treasury/debt hiba
+esetén a wallet tartós kompenzációt kap, rollbackhiba pedig fail-closed recovery
+állapotot hagy.
 
 A passzívok teljes immunitások helyett kontextusos, konfigurálható policyt
 használnak:
@@ -96,12 +103,17 @@ használnak:
   békés/semleges mob- vagy Enderman-szemkontaktus-aggrót szűri; provokáció és
   scriptelt/event célzás működik;
 - DARK fele Wither-sebzést és felezett Wither-időt kap. Thanaopolis markerelt
-  ambient lakói békések, de támadás után 60 másodperces, 16 blokkos csoportos
-  megtorlás indul; a vad undead előny csak éjjel, 50% eséllyel él, Vérhold alatt
-  alapból nem.
+  ambient lakói békések, de támadás után 60 másodperces, játékos–mob páronkénti
+  megtorlás indul; a 16 blokkos riadó csak a ténylegesen riasztott példányokra
+  nyit külön lease-t. A vad undead előny csak éjjel, 50% eséllyel él. Vérhold
+  alatt az ambient és a vad DARK béke is alapból megszűnik.
 
 Boss-, dungeon-, rontás-, invázió-, event-, quest- és koronaátok-célzás
-megelőzi a truce-ot. Az értékek `/icesmp reload` után restart nélkül frissülnek.
+megelőzi a truce-ot. A target adapter a szűrt célpontot ténylegesen `null`-ra
+állítja, nem hagyja bent egy cancel miatt. A signature-food buff fogyasztáskor
+az aktuális explicit tagságot ellenőrzi, a régi itemstackből pedig eltávolítja
+a korábban beégetett feltétel nélküli potion effectet. Az összetartozó merged
+config és override-lista egyetlen immutable generációként frissül.
 Az automatizált tesztek a policyt bizonyítják, nem a valódi szerveres AI- és
 szezonbalanszt; a stagingmátrix továbbra is nyitott.
 

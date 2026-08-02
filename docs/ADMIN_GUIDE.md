@@ -538,9 +538,10 @@ gyanúsan hiányos reportlista esetén a fájlt és a startup logot is vizsgáld
 A plugin reload:
 
 - újratölti a configot és az üzeneteket;
-- új validált frakciópasszív-snapshotot készít, és kiüríti a mulandó
-  provokációs/megtorlási állapotot; minden passzív gameplay-érték azonnal él,
-  restart nélkül;
+- egyetlen új, immutable config-generációt publikál a merged YAML-lal és az
+  összetartozó override-pathokkal, majd ebből új validált frakciópasszív-snapshotot
+  készít és kiüríti a mulandó provokációs/megtorlási állapotot; minden passzív
+  gameplay-érték azonnal él, restart nélkül;
 - új validált moderációs config-snapshotot készít;
 - bezárja az élő invsee sessionöket, és visszaadja vagy escrow-ba teszi a
   mozgásban lévő itemeket;
@@ -1035,11 +1036,11 @@ a `factions.tax.exempt` defaultlistája alapján adómentes.
 Az új `treasury.yml` séma a tartozást eredet szerint tárolja:
 `tax-debts.<uuid>.<FACTION>.amount|evasion-strikes`. Frakcióváltáskor a régi
 tartozás az eredeti valutában és az eredeti frakció kasszája felé marad fenn;
-az új frakció következő rendes beszedése külön bucketet nyithat. A régi scalar
-`tax-arrears` / `tax-evasion-strikes` egyszer migrálódik (aktív explicit
-tagság → tartós utolsó választás → `legacy-tax-debts-unresolved`). Az utolsó
-ág adatot őriz, de nem talál ki `NEUTRAL` eredetet; a következő explicit
-tagságnál warning mellett kötődik hozzá. Több eredet egyszerre is rendezhető,
+az új frakció következő rendes beszedése külön bucketet nyithat. A régi scalar `tax-arrears` / `tax-evasion-strikes` nem tartalmaz bizonyítható
+eredet-frakciót vagy valutát, ezért sem az aktív assignmentből, sem a tartós
+utolsó választásból nem konvertálódik automatikusan. Minden ilyen rekord a
+`legacy-tax-debts-unresolved` karanténba kerül, és a következő explicit tagság
+sem köti hozzá automatikusan. Több eredet egyszerre is rendezhető,
 de egy beszedési kör játékosonként legfeljebb egy adócsalási bűnt jelent.
 
 ### Konfigurációs fájlok
@@ -1226,6 +1227,22 @@ eloszlásra.
 | [ ] | MEM-09 Frakcióváltás | Tesztelő | mind a négy explicit frakció egymás után, szabályos admin/staging út | régi passzív azonnal megszűnik, új azonnal él; transient retaliation ürül | játékos relog, state/log mentése | `faction-passives/MEM-09/` |
 | [ ] | MEM-10 Leave | Tesztelő | explicit RED vagy BLUE, szabályos leave | explicit `NEUTRAL` assignment keletkezik, nem vendégállapot; váltási kapuk és history megmaradnak | assignment visszaállítása | `faction-passives/MEM-10/` |
 
+#### Durable membership-, wallet- és tax-tranzakciók
+
+Ezek a próbák csak elkülönített staging-adatmásolaton, fault-injectionnel futtathatók. A
+WAL-fájlokat, walletet, `factions.yml`-t és `treasury.yml`-t minden megszakítás
+előtt és után mentsd el. Ismeretlen eredetű legacy debt nem része a normál
+beszedési útvonalnak: karanténban marad explicit adminmigrációig.
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | TX-01 Wallet-write hiba | Üzemeltető | fizetős váltás és tax közben a wallet-store első durable írása hibázik | membership/treasury/debt live és disk state változatlan; sikerüzenet, hook és jutalom nem fut; WAL tisztán lezárható | fault kikapcsolása, store-összevetés | `faction-passives/TX-01/` |
+| [ ] | TX-02 Domain-write hiba + sikeres rollback | Üzemeltető | wallet durable commit után `factions.yml` vagy `treasury.yml` írás hibázik | exact wallet snapshot tartósan visszaáll; live domain state visszaáll; retry nem terhel kétszer | store backup visszaállítása | `faction-passives/TX-02/` |
+| [ ] | TX-03 Rollbackhiba/circuit open | Üzemeltető | domain-write és wallet-kompenzáció is hibázik, kritikus write circuit nyitva | a művelet nem látszik sikeresnek; WAL megmarad, új kritikus írás fail-closed; kontrollált restart recovery vagy egyértelmű corrupt-stop történik | szerver stop, WAL+store mentése | `faction-passives/TX-03/` |
+| [ ] | TX-04 Commit utáni journal-cleanup hiba | Üzemeltető | wallet és domain tartósan sikeres, csak a WAL törlése hibázik | nincs téves wallet-visszagörgetés; restart az all-after állapotot idempotensen felismeri és lezárja | szerver stop, WAL elemzés | `faction-passives/TX-04/` |
+| [ ] | TX-05 Assignment nélküli history-visszaállítás | Admin | korábban választott, admin reset után assignment nélküli játékos fizetős újraválasztása, majd mentési hiba | a teljes előállapot — assignment hiánya és tartós history — pontosan visszaáll; nincs ingyenes első-választás bypass | assignment/history backup | `faction-passives/TX-05/` |
+| [ ] | TX-06 Unknown-origin debt karantén | Admin | ismeretlen eredetű fejlesztői legacy debt, majd explicit frakcióválasztás és adókör | a rekord nem kötődik az új frakcióhoz, nem kerül levonásra; csak explicit adminmigráció után válik beszedhetővé | treasury scheduler stop | `faction-passives/TX-06/` |
+
 #### RED, BLUE és NEUTRAL
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
@@ -1259,7 +1276,7 @@ eloszlásra.
 | [ ] | FP-D02 Ambient provokáció + alert | Tesztelő | DARK megüti az ambient undeadet; undead 16 blokkon belül és kívül | áldozat és nem kizárt közeli undead reagálhat; sugáron kívüli nem kap alertet | mobok eltávolítása | `faction-passives/FP-D02/` |
 | [ ] | FP-D03 Retaliation lejár | Tesztelő | FP-D02 után 60 s megfigyelés | lejárat előtt target engedett, utána az ambient béke újra él | relog/state mentése | `faction-passives/FP-D03/` |
 | [ ] | FP-D04 Vad zombi nappal/éjjel | Tesztelő | wild undead; chance `1.0`, majd `0.0`; nappal és éjjel | nappal nincs truce; éjjel a konfigurált chance dönt; default `0.50` visszaáll | override unset | `faction-passives/FP-D04/` |
-| [ ] | FP-D05 Vérhold | Eventes | wild és markerelt ambient undead aktív Vérhold alatt | wild target nem törlődik; valódi ambient lakó provokációig békés maradhat | Vérhold stop | `faction-passives/FP-D05/` |
+| [ ] | FP-D05 Vérhold | Eventes | wild és markerelt ambient undead aktív Vérhold alatt | sem wild, sem ambient DARK target nem törlődik; provokált, scripted és boss target is megmarad | Vérhold stop | `faction-passives/FP-D05/` |
 | [ ] | FP-D06 Rontás-góc | Eventes | corruption manager/PDC által jelölt undead | target mindig engedett, nincs DARK truce | rontás stop | `faction-passives/FP-D06/` |
 | [ ] | FP-D07 Dungeon + miniboss | Eventes | DUNGEON/DOOM_GATE zóna, dungeonmob és miniboss | target mindig engedett | dungeon lezárása | `faction-passives/FP-D07/` |
 | [ ] | FP-D08 Invázió + bajnok | Eventes | invasion manager által nyilvántartott mob/bajnok | target mindig engedett | invázió stop | `faction-passives/FP-D08/` |
@@ -1270,14 +1287,14 @@ eloszlásra.
 | [ ] | FP-W01 Suttogó undead-policy | Tesztelő | nem-DARK Suttogó; chance `1.0/0.0`; nappal, éjjel, provokáció után és Vérholdban | csak éjjel/chance szerint szűr; provokáció 60 s-re és Vérhold teljesen felülírja; markerelt content harcol | státusz/config visszaállítása | `faction-passives/FP-W01/` |
 | [ ] | FP-M01 DARK + nem-DARK ugyanazon mobnál | Két tesztelő | egy undead, DARK és más frakciójú célpont | döntés játékosonkénti; DARK-béke nem törli/módosítja a másik targetjét | mob reset | `faction-passives/FP-M01/` |
 | [ ] | FP-M02 NEUTRAL + nem-NEUTRAL ugyanazon mobnál | Két tesztelő | egy neutral mob, két külön frakció | csak az explicit NEUTRAL spontán targetje szűrhető | mob reset | `faction-passives/FP-M02/` |
-| [ ] | FP-M03 Egyik provokál, másik nem | Két tesztelő | DARK/non-DARK, majd NEUTRAL/non-NEUTRAL pár | retaliation per-player; a nem provokáló passzív állapota nem törik meg | state cleanup | `faction-passives/FP-M03/` |
+| [ ] | FP-M03 Egyik provokál, másik nem | Két tesztelő | két DARK és két NEUTRAL tesztelő, több külön mob | retaliation játékos–mob páronkénti; csak a provokált vagy explicit riadóval megjelölt mob lease-e nyílik, a másik játékos és másik mob state-je változatlan | state cleanup | `faction-passives/FP-M03/` |
 
 #### Frakciócsomag-átfedések
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
 |---|---|---|---|---|---|---|
-| [ ] | FP-P01 RED étel és signature | Tesztelő | RED alap passzív, Főnix-Tollköpeny és Főnixtojás-Rántotta külön | a részleges alappasszív mellett a köpeny/étel saját erősebb védelme és a tojás-duty értékes marad; `TUZ` továbbra sem véletlenül immunis | item/passzív rollout stop | `faction-passives/FP-P01/` |
-| [ ] | FP-P02 BLUE étel és signature | Tesztelő | BLUE Pisztráng, Sárkány-pörkölt, Jégvért és duty | az Absorption/Strength/Jégvért saját hatása él; a hal teljesíti a duty-t, a passzív nem törli a lejárati Hungert | item/passzív rollout stop | `faction-passives/FP-P02/` |
+| [ ] | FP-P01 RED étel és signature | Tesztelő | RED, más frakció és vendég ugyanazzal az új és legacy Főnixtojás-Rántottával; item megszerzése után váltás/reset | csak az elfogyasztás pillanatában explicit RED kapja a buffot és duty-creditet; régi item feltétel nélküli komponenshatása eltűnik; `TUZ` továbbra sem véletlenül immunis | item/passzív rollout stop | `faction-passives/FP-P01/` |
+| [ ] | FP-P02 BLUE étel és signature | Tesztelő | BLUE, más frakció és vendég új/legacy Pisztránggal és Sárkány-pörkölttel; váltás/reset fogyasztás előtt | csak az elfogyasztás pillanatában explicit BLUE kap Absorption/Strength buffot és duty-creditet; hamis vagy hiányos metadata nem ad frakcióbuffot; a lejárati Hunger megmarad | item/passzív rollout stop | `faction-passives/FP-P02/` |
 | [ ] | FP-P03 NEUTRAL gazdaság és mobilitás | Tesztelő | explicit NEUTRAL signature szerszámok, Szellemszarvas és parkour | item saját drop/fogás/mount értéke él; a fél zuhanás nem ad cél- vagy jutalomkerülőt | pálya/item stop | `faction-passives/FP-P03/` |
 | [ ] | FP-P04 DARK loot/spec/étel | Tesztelő | DARK Hamukenyér, undead kill, soulstone/shard és DARK-kapus spec | Night Vision és spec-kapu él; a truce/Wither-védelem nem ad tiltott undead soulstone- vagy shard-farmot, food-duty továbbra sincs | DARK reward rollout stop | `faction-passives/FP-P04/` |
 | [ ] | FP-P05 Raid/war/duel/spy | Két tesztelő | guest és explicit tag, aktív hadiablak és jelölt combat content | csak explicit tag kap frakciós jogot/creditet; a combat marker megelőzi az AI-truce-ot | conflict rollout stop | `faction-passives/FP-P05/` |
@@ -1286,7 +1303,7 @@ eloszlásra.
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
 |---|---|---|---|---|---|---|
-| [ ] | FP-L01 `/icesmp reload` | Admin | aktív retaliation, majd több multiplier/chance módosítása | transient state ürül; minden gameplay-érték azonnal új, restart nélkül | config rollback + reload | `faction-passives/FP-L01/` |
+| [ ] | FP-L01 `/icesmp reload` | Admin | aktív retaliation, majd egymással átfedő config-set/reload és BLUE legacy/new override kombináció | transient state ürül; egy döntés mindig egyetlen config-generációból olvas, ezért régi YAML + új override-lista vagy új YAML + régi override-lista nem keveredhet; minden gameplay-érték restart nélkül új | config rollback + reload | `faction-passives/FP-L01/` |
 | [ ] | FP-L02 Quit/kick/relog | Tesztelő | aktív NEUTRAL és DARK retaliation, quit és kick külön | relog után nincs régi retaliation/entity-fire/Wither-adjustment state | session dump, rollout stop | `faction-passives/FP-L02/` |
 | [ ] | FP-L03 Kontrollált restart | Üzemeltető | aktív transient state és ismert assignment | assignment megmarad, transient state nem; passzív a config szerint újra él | backupból rollback | `faction-passives/FP-L03/` |
 | [ ] | FP-L04 Plugin disable/enable | Üzemeltető | aktív targetek és retaliation stagingen | nincs leak/stale callback; újraengedélyezés tiszta state-ből indul | teljes server restart | `faction-passives/FP-L04/` |

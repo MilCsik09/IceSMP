@@ -101,8 +101,9 @@ A kód generikus `RED/BLUE/NEUTRAL/DARK` azonosítókat használ; a lore ezekre 
 - **✅ K9 — Suttogók (KÉSZ):** rejtett státusz a látható frakció fölött — Sötét Rítus
   (Suttogás-meghívó, éjjel/sculk/egyedül/vér-ár), /suttogas titkos csatorna + tanú-vád,
   gyanú→leleplezés→bűn→száműzetés a meglévő pipeline-on. A rejtett undead-előny nem teljes
-  truce: alapból éjszakai `0.35` target-cancel, provokációra `60 s` retaliation, Vérhold alatt
-  kikapcsol, és a szemtanú `0.02` eséllyel gyanút adhat (`factions.whisper.*`).
+  truce: alapból éjszakai `0.35` target-cancel, provokációra játékos–mob páronként
+  `60 s` retaliation, Vérhold alatt kikapcsol, és a szemtanú `0.02` eséllyel
+  gyanút adhat (`factions.whisper.*`).
 - **✅ K10 — Caldestera feketepiac (KÉSZ):** fegyvertilalom + körözött-kapu a NEUTRAL
   fővárosban (CapitalLawListener); Botera-negyed feketepiac-bolt Csontveretért — Bokic-menti
   Sétapálca (rejtett penge) és Hamisított Menlevél (`territory.capital-law.*`).
@@ -124,17 +125,17 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Glatziendorfi Jégtörő | BLUE | csatabárd (2. hullám) | ✅ implementálva: lassított célon +25% sebzés (`signature.jegtoro.slowed-bonus`) |
 | V. Miinus Haragja | BLUE | kard (2. hullám, loot-only tervrajz) | ✅ implementálva: a viselő alacsony HP-ján +20% sebzés (`signature.miinus.*`) |
 | Sárkánycsont Íj | BLUE | íj (2. hullám) | ✅ implementálva: a nyíl pierce-szintje +2 (`signature.sarkanycsont.pierce-add`) |
-| Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6 + 2. hullám) | ✅ mindkettő implementálva: Pisztráng = felszívódás; Pörkölt = rövid Erő; mindkettő hal-kötelezettséget teljesít |
+| Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6 + 2. hullám) | ✅ mindkettő implementálva: Pisztráng = felszívódás; Pörkölt = rövid Erő; mindkettő hal-kötelezettséget teljesít; a buff fogyasztáskor élő BLUE-tagságot kér, nem az itembe égetett feltétel nélküli hatás |
 | Pyralingradi Tűzköpő / Ostrom-számszeríj | RED | számszeríj (K3) | ✅ Tűzköpő implementálva: Quick Charge II + lövedék ×1.5 (`signature.tuzkopo.*`) |
 | A Vérszavanna Agyara | RED | kard/lándzsa (K3) | ✅ implementálva: +15% sebzés, off-hand baltával +30% (`signature.agyar.*`) |
 | Főnix-Tollköpeny | RED | kiegészítő (K3) | ✅ implementálva: viselve tűz/láva/forró-blokk immunitás (`signature.tollkopeny.fire-immunity`) |
 | I. Zhoris Lángnyelve | RED | kard (2. hullám, loot-only tervrajz) | ✅ implementálva: gyújtás-esély + égő célon +15% (`signature.langnyelv.*`) |
 | Napfogyatkozás | RED | íj (2. hullám) | ✅ implementálva: éjjel gyorsabb lövedék + +25% sebzés (`signature.napfogyatkozas.*`) |
-| Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | ✅ implementálva: séf-recept + tűz-ellenállás; tojás-kötelezettség él (`factions.food-duty`) |
+| Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | ✅ implementálva: séf-recept + tűz-ellenállás; tojás-kötelezettség él (`factions.food-duty`); a buff fogyasztáskor élő RED-tagságot kér |
 | Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | ✅ implementálva: érc-töréskor +20% extra drop, bányász-láz alatt szünetel (`signature.csakany.*`) |
 | Bokic-menti Horgászbot | NEUTRAL | szerszám (K4) | ✅ implementálva: +20% dupla fogás, halászati láz alatt szünetel (`signature.horgaszbot.*`) |
 | Asterlayna Gyümölcse (Tiltott Kakaóbabos Sütemény) | NEUTRAL | süti (K6) | ✅ implementálva: „robbanó csemege" — feldobás + Speed II + effekt |
-| Mortengradi Hamukenyér | DARK | étel (K6) | ✅ implementálva: éjjellátás-buff; a DARK-nak NINCS honvágy-kötelezettsége (nincs otthonuk) |
+| Mortengradi Hamukenyér | DARK | étel (K6) | ✅ implementálva: élő DARK-tagságnál éjjellátás-buff; a DARK-nak NINCS honvágy-kötelezettsége (nincs otthonuk) |
 | Smaragdkő Bankbetét | NEUTRAL | értékpapír (K4) | ✅ implementálva: jobb-katt atomi beváltás Creutzérre (`signature.bankbetet.value`) |
 | Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | ✅ implementálva: cooldownos ideiglenes gyors hátas (`signature.szarvas.*`) |
 | Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | ✅ implementálva: undead-only nevesített drop (loot.yml `named` sor), rarity-affixekkel |

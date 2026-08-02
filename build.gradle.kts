@@ -160,6 +160,14 @@ val factionPassiveRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.factions.FactionPassiveRegressionSuite")
 }
 
+val factionPassiveHardeningRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs pure adapter, retaliation, Blood Moon and signature-food hardening regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.factions.FactionPassiveHardeningRegressionSuite")
+}
+
 val factionTreasuryRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs faction tax origin, legacy migration and collection regressions."
@@ -173,5 +181,5 @@ tasks.check {
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
         hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
-        factionPassiveRegressionTest, factionTreasuryRegressionTest)
+        factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest)
 }
