@@ -1,0 +1,4 @@
+run-id=30763410222
+artifact-id=8838173811
+artifact-url=https://github.com/MilCsik09/IceSMP/actions/runs/30763410222/artifacts/8838173811
+export-head=22c63a5196a865d780587abd9ab389e83b059712
