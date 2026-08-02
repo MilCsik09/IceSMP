@@ -9,14 +9,16 @@ on:
 
 permissions:
   contents: write
+  issues: read
+  pull-requests: read
 
 jobs:
   publish:
     if: github.event.pull_request.head.ref == 'balance/faction-passives-v2'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Checkout publisher payload
+      - name: Checkout publisher base
         uses: actions/checkout@v4
         with:
           repository: MilCsik09/IceSMP
@@ -24,16 +26,84 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Assemble and verify patch
+      - name: Retrieve and verify review patch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/pr76-publisher/chunk-*.txt > /tmp/changes.patch.gz.b64
-          base64 --decode /tmp/changes.patch.gz.b64 | gzip -dc > /tmp/changes.patch
-          echo "636bc2721e8da195b21abc952fed8ad8c0680bf1930dfc0139533867063c8bd8  /tmp/changes.patch" | sha256sum -c -
-          grep -q '^From 06a3261f0d73f8b08f7d60f3719bafb937204d3d ' /tmp/changes.patch
-          grep -q '^From 3631ded338804c6ed80745bff82291e85aed6c28 ' /tmp/changes.patch
-          grep -q '^From b4e4b75d3155ab9ebc06cef299a88c2ddfd41ee0 ' /tmp/changes.patch
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import lzma
+          import os
+          import pathlib
+          import re
+          import urllib.request
+
+          repository = "MilCsik09/IceSMP"
+          parts = [
+              ("00", 5159896652, "4e1e4c371f111e082fdbd1e0cbf70d71aa8374874eca3d9b91fb690fbe5fe557"),
+              ("01", 5159909082, "06b609e4518808b1915a234b190c23715aca9f4a5c0b2ae33c1a40c8602844af"),
+              ("02a", 5159942219, "f48198568bf16d2c17818ed2b436d482997fdbcc99f935a78bf5f9c995589418"),
+              ("02b", 5159944618, "161b359cd6b6c4d4e345745b86650fe360348b608a51c0d8259aeff9acc81ad7"),
+              ("02c", 5159947002, "958d6474d18e07e537121bacc30abe51fd30189b9afd8845185f64d9b88ae3f6"),
+              ("02d", 5159949433, "2708695ee9bcced48cbee6b383ec4859e98924aea8e521cc475b11b1752d952a"),
+              ("03a", 5159952122, "199295fabdd2a41c6eecd32a467ada7a2b146f9d14c509de83d8fdfce0370e86"),
+              ("03b", 5159954504, "1970ae2e93143a583ccfdecf977b43c2f58448bdfa94379b1ea54468455d14c7"),
+              ("03c", 5159957118, "95556ee878331506bf23e8132ae653a57621f20be15bf1713efe4811e19bd2e6"),
+              ("03d", 5159959380, "45fad6d99e4dc7caeedcea56264edb2a0fe84b0d68cbf84bb921d9d693796917"),
+          ]
+          token = os.environ["GH_TOKEN"]
+          payloads = []
+          for part, comment_id, expected_sha in parts:
+              request = urllib.request.Request(
+                  f"https://api.github.com/repos/{repository}/issues/comments/{comment_id}",
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "pr76-publisher",
+                  },
+              )
+              with urllib.request.urlopen(request) as response:
+                  body = json.load(response)["body"]
+              lines = body.splitlines()
+              if not lines:
+                  raise RuntimeError(f"Empty payload comment for {part}")
+              marker = re.fullmatch(
+                  rf"<!-- pr76-payload-v3 part={re.escape(part)} sha256=([0-9a-f]{{64}}) -->",
+                  lines[0].strip(),
+              )
+              if marker is None or marker.group(1) != expected_sha:
+                  raise RuntimeError(f"Invalid marker for {part}")
+              payload = "".join(lines[1:]).strip()
+              actual_sha = hashlib.sha256(payload.encode("ascii")).hexdigest()
+              if actual_sha != expected_sha:
+                  raise RuntimeError(f"Payload SHA mismatch for {part}: {actual_sha}")
+              payloads.append(payload)
+
+          encoded = "".join(payloads)
+          compressed = base64.b64decode(encoded, validate=True)
+          compressed_sha = hashlib.sha256(compressed).hexdigest()
+          if compressed_sha != "5f375c8fe1c27bb2a48318b5d580212175d0534a1b7e30b34ef96fb711dd14d8":
+              raise RuntimeError(f"XZ SHA mismatch: {compressed_sha}")
+          patch = lzma.decompress(compressed)
+          patch_sha = hashlib.sha256(patch).hexdigest()
+          if patch_sha != "636bc2721e8da195b21abc952fed8ad8c0680bf1930dfc0139533867063c8bd8":
+              raise RuntimeError(f"Patch SHA mismatch: {patch_sha}")
+          text = patch.decode("utf-8")
+          for commit_sha in (
+              "06a3261f0d73f8b08f7d60f3719bafb937204d3d",
+              "3631ded338804c6ed80745bff82291e85aed6c28",
+              "b4e4b75d3155ab9ebc06cef299a88c2ddfd41ee0",
+          ):
+              if f"From {commit_sha} " not in text:
+                  raise RuntimeError(f"Missing commit marker {commit_sha}")
+          pathlib.Path("/tmp/changes.patch").write_bytes(patch)
+          print(f"Verified {len(patch)} byte patch")
+          PY
 
       - name: Apply to exact feature head and publish result
         shell: bash
@@ -45,9 +115,9 @@ jobs:
           git switch --detach "$BASE_SHA"
           git config user.name "OpenAI Codex"
           git config user.email "noreply@openai.com"
-          git am /tmp/changes.patch
+          git am --3way /tmp/changes.patch
           test "$(git rev-list --count "$BASE_SHA"..HEAD)" = "3"
           test "$(git rev-parse 'HEAD^{tree}')" = "f4174ba7b504fb106777ab7c630f7a173eb33f3b"
           git diff --check "$BASE_SHA"...HEAD
-          git push origin HEAD:refs/heads/automation/pr76-publish-result
+          git push origin HEAD:refs/heads/automation/pr76-publish-result-v3
           echo "Published verified result $(git rev-parse HEAD)"
