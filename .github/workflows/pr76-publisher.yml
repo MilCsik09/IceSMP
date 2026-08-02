@@ -1,4 +1,4 @@
-name: PR 76 verified patch publisher
+name: PR 76 CI fix publisher
 
 on:
   pull_request:
@@ -16,9 +16,9 @@ jobs:
   publish:
     if: github.event.pull_request.head.ref == 'balance/faction-passives-v2'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - name: Checkout publisher base
+      - name: Checkout helper branch
         uses: actions/checkout@v4
         with:
           repository: MilCsik09/IceSMP
@@ -26,106 +26,64 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Retrieve and verify review patch
+      - name: Retrieve verified CI fix
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import base64
           import hashlib
           import json
-          import lzma
           import os
           import pathlib
           import re
           import urllib.request
 
-          repository = "MilCsik09/IceSMP"
-          parts = [
-              ("00", 5159896652, "4e1e4c371f111e082fdbd1e0cbf70d71aa8374874eca3d9b91fb690fbe5fe557"),
-              ("01", 5159909082, "06b609e4518808b1915a234b190c23715aca9f4a5c0b2ae33c1a40c8602844af"),
-              ("02a", 5159942219, "f48198568bf16d2c17818ed2b436d482997fdbcc99f935a78bf5f9c995589418"),
-              ("02b", 5159944618, "161b359cd6b6c4d4e345745b86650fe360348b608a51c0d8259aeff9acc81ad7"),
-              ("02c1", 5159975852, "eb8bd7e1e3529188f4377e463bc2c0b85baa0a052fd696e47de17212e799fd76"),
-              ("02c2", 5159977403, "485a224e445b4b9281efc8a3057c7df1b78e69594fc4f49069e4d46a8b87b7ea"),
-              ("02d", 5159949433, "2708695ee9bcced48cbee6b383ec4859e98924aea8e521cc475b11b1752d952a"),
-              ("03a", 5159952122, "199295fabdd2a41c6eecd32a467ada7a2b146f9d14c509de83d8fdfce0370e86"),
-              ("03b1", 5159989741, "b63c6e705acb5c93177fc99e2fd09f6cbf8937f72037dbdfec7718ae0a0f14d7"),
-              ("03b2a", 5160009021, "e8b6b1e1887c7b14fd1a64312b63c5f9218235d14c9e359158b15236b398dcbb"),
-              ("03b2b", 5160010155, "376fe3c6ff2d443ee2f2ca250e219f26267597ac0caaf4720365f13d9fd06c15"),
-              ("03c1", 5159995474, "2adb7acff5508a54eacaa13963e2accf6b9c2964f1820c3e742468fda7977df5"),
-              ("03c2", 5159996638, "bb932abb64f9f3fc18b056215ec914a12d411242bfa106e9574f8334abfec4ee"),
-              ("03d1", 5159997957, "f55da5c28aed1049661674f709688a18fee260e1c87244d6801e31484e2dfc14"),
-              ("03d2", 5159999240, "9d66142a929d0c5b540dce3812eeb986f6c36d2e2670e89f81cab86a4568378c"),
-          ]
-          token = os.environ["GH_TOKEN"]
-          payloads = []
-          for part, comment_id, expected_sha in parts:
-              request = urllib.request.Request(
-                  f"https://api.github.com/repos/{repository}/issues/comments/{comment_id}",
-                  headers={
-                      "Authorization": f"Bearer {token}",
-                      "Accept": "application/vnd.github+json",
-                      "X-GitHub-Api-Version": "2022-11-28",
-                      "User-Agent": "pr76-publisher",
-                  },
-              )
-              with urllib.request.urlopen(request) as response:
-                  body = json.load(response)["body"]
-              lines = body.splitlines()
-              if not lines:
-                  raise RuntimeError(f"Empty payload comment for {part}")
-              marker = re.fullmatch(
-                  rf"<!-- pr76-payload-v3 part={re.escape(part)} sha256=([0-9a-f]{{64}}) -->",
-                  lines[0].strip(),
-              )
-              if marker is None or marker.group(1) != expected_sha:
-                  raise RuntimeError(f"Invalid marker for {part}")
-              payload = "".join(lines[1:]).strip()
-              actual_sha = hashlib.sha256(payload.encode("ascii")).hexdigest()
-              if actual_sha != expected_sha:
-                  raise RuntimeError(f"Payload SHA mismatch for {part}: {actual_sha}")
-              payloads.append(payload)
-
-          encoded = "".join(payloads)
-          compressed = base64.b64decode(encoded, validate=True)
-          compressed_sha = hashlib.sha256(compressed).hexdigest()
-          if compressed_sha != "5f375c8fe1c27bb2a48318b5d580212175d0534a1b7e30b34ef96fb711dd14d8":
-              raise RuntimeError(f"XZ SHA mismatch: {compressed_sha}")
-          patch = lzma.decompress(compressed)
-          patch_sha = hashlib.sha256(patch).hexdigest()
-          if patch_sha != "636bc2721e8da195b21abc952fed8ad8c0680bf1930dfc0139533867063c8bd8":
-              raise RuntimeError(f"Patch SHA mismatch: {patch_sha}")
-          text = patch.decode("utf-8")
-          for commit_sha in (
-              "06a3261f0d73f8b08f7d60f3719bafb937204d3d",
-              "3631ded338804c6ed80745bff82291e85aed6c28",
-              "b4e4b75d3155ab9ebc06cef299a88c2ddfd41ee0",
-          ):
-              if f"From {commit_sha} " not in text:
-                  raise RuntimeError(f"Missing commit marker {commit_sha}")
-          pathlib.Path("/tmp/changes.patch").write_bytes(patch)
-          print(f"Verified {len(patch)} byte patch")
+          comment_id = 5160075890
+          expected_sha = "d12d91e683ac09b55fcdba4bb889ee251f4a884065e21c0e9df9e775f85fe12d"
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/MilCsik09/IceSMP/issues/comments/{comment_id}",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "pr76-ci-fix-publisher",
+              },
+          )
+          with urllib.request.urlopen(request) as response:
+              body = json.load(response)["body"]
+          lines = body.splitlines()
+          marker = re.fullmatch(
+              r"<!-- pr76-ci-fix-v1 sha256=([0-9a-f]{64}) -->",
+              lines[0].strip(),
+          )
+          if marker is None or marker.group(1) != expected_sha:
+              raise RuntimeError("Invalid CI fix marker")
+          patch = "\n".join(lines[1:]) + "\n"
+          actual_sha = hashlib.sha256(patch.encode("utf-8")).hexdigest()
+          if actual_sha != expected_sha:
+              raise RuntimeError(f"CI fix SHA mismatch: {actual_sha}")
+          pathlib.Path("/tmp/pr76-ci-fix.patch").write_text(patch)
+          print(f"Verified {len(patch.encode())} byte CI fix")
           PY
 
-      - name: Apply to exact feature head and expose result objects
+      - name: Apply, test and expose result object
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin refs/heads/balance/faction-passives-v2:refs/remotes/origin/balance/faction-passives-v2
           BASE_SHA="$(git rev-parse refs/remotes/origin/balance/faction-passives-v2)"
-          test "$BASE_SHA" = "c34519d8816abab7df3a31f648f6160493882bf3"
+          test "$BASE_SHA" = "8ab8796cbcee415424e75e65e8e8c6cbb4d6d800"
           git switch --detach "$BASE_SHA"
+          git apply --check /tmp/pr76-ci-fix.patch
+          git apply --index /tmp/pr76-ci-fix.patch
+          git diff --cached --check
+          ./gradlew factionPassiveRegressionTest --console=plain --no-daemon --stacktrace
           git config user.name "OpenAI Codex"
           git config user.email "noreply@openai.com"
-          git am --3way /tmp/changes.patch
-          test "$(git rev-list --count "$BASE_SHA"..HEAD)" = "3"
-          test "$(git rev-parse 'HEAD^{tree}')" = "f4174ba7b504fb106777ab7c630f7a173eb33f3b"
-          git diff --check "$BASE_SHA"...HEAD
-          echo "RESULT_COMMITS_BEGIN"
-          git log --reverse --format='RESULT_COMMIT %H parent=%P tree=%T subject=%s' "$BASE_SHA"..HEAD
-          echo "FINAL_RESULT_SHA=$(git rev-parse HEAD)"
-          echo "RESULT_COMMITS_END"
-          git push origin HEAD:refs/heads/automation/pr76-publish-result-v3
+          git commit -m "Fix faction food source contract regression"
+          echo "CI_FIX_RESULT_BEGIN"
+          git log -1 --format='RESULT_COMMIT %H parent=%P tree=%T subject=%s'
+          echo "CI_FIX_RESULT_END"
+          git push origin HEAD:refs/heads/automation/pr76-ci-fix-result
