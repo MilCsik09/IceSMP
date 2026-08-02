@@ -5,6 +5,7 @@ on:
     branches:
       - agent/player-profile-checkout-20260802
     paths-ignore:
+      - .github/player-profile-checkout-start-*.txt
       - .github/player-profile-checkout-result-*.txt
 
 permissions:
@@ -21,6 +22,20 @@ jobs:
           ref: agent/player-profile-checkout-20260802
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Publish unique run locator
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT_PATH=".github/player-profile-checkout-start-${GITHUB_SHA}.txt"
+          RESULT=$(printf 'run-id=%s\nworkflow-sha=%s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA")
+          ENCODED=$(printf '%s' "$RESULT" | base64 -w0)
+          gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/${RESULT_PATH}" \
+            -f message='chore(player-profile): publish checkout run locator [checkout-export-result]' \
+            -f content="$ENCODED" \
+            -f branch='agent/player-profile-checkout-20260802'
 
       - name: Build genuine partial Git checkout of the Profile v2 branch
         id: package
