@@ -23,8 +23,12 @@ jobs:
           persist-credentials: true
 
       - name: Build genuine shallow checkout of the Profile v2 branch
+        id: package
+        continue-on-error: true
         shell: bash
         run: |
+          mkdir -p build/player-profile-checkout
+          exec > >(tee build/player-profile-checkout/package.log) 2>&1
           set -euo pipefail
           PROFILE_HEAD='b6f4492766675f718f73fd947bf92a388a3090fb'
           PROFILE_BASE='62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
@@ -34,8 +38,7 @@ jobs:
           git fsck --full
 
           git branch --force rework/class-spec-profile-v2 origin/rework/class-spec-profile-v2
-          rm -rf build/player-profile-checkout
-          mkdir -p build/player-profile-checkout
+          rm -rf build/player-profile-checkout/repo
           git clone --quiet --depth=10 --single-branch --branch rework/class-spec-profile-v2 \
             "file://$GITHUB_WORKSPACE" build/player-profile-checkout/repo
           cd build/player-profile-checkout/repo
@@ -56,7 +59,8 @@ jobs:
             > manifest.txt
           du -h authenticated-checkout.tar.gz
 
-      - name: Upload authenticated checkout
+      - name: Upload authenticated checkout or diagnostics
+        if: always()
         id: upload
         uses: actions/upload-artifact@v4
         with:
@@ -66,17 +70,25 @@ jobs:
           if-no-files-found: error
 
       - name: Publish artifact locator
+        if: always()
         shell: bash
         env:
           ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
           ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          PACKAGE_OUTCOME: ${{ steps.package.outcome }}
         run: |
           set -euo pipefail
-          printf 'run-id=%s\nartifact-id=%s\nartifact-url=%s\nexport-head=%s\n' \
-            "$GITHUB_RUN_ID" "$ARTIFACT_ID" "$ARTIFACT_URL" "$(git rev-parse HEAD)" \
+          git reset --hard "$GITHUB_SHA"
+          printf 'run-id=%s\nartifact-id=%s\nartifact-url=%s\nexport-head=%s\npackage-outcome=%s\n' \
+            "$GITHUB_RUN_ID" "$ARTIFACT_ID" "$ARTIFACT_URL" "$GITHUB_SHA" "$PACKAGE_OUTCOME" \
             > .github/player-profile-checkout-result.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- .github/player-profile-checkout-result.txt
           git commit -m 'chore(player-profile): publish checkout artifact locator [checkout-export-result]'
           git push origin HEAD:refs/heads/agent/player-profile-checkout-20260802
+
+      - name: Enforce export success
+        if: always()
+        shell: bash
+        run: test '${{ steps.package.outcome }}' = 'success'
