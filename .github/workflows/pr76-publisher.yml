@@ -110,7 +110,7 @@ jobs:
           print(f"Verified {len(patch)} byte patch")
           PY
 
-      - name: Apply to exact feature head and publish result
+      - name: Apply to exact feature head and expose result objects
         shell: bash
         run: |
           set -euo pipefail
@@ -124,5 +124,8 @@ jobs:
           test "$(git rev-list --count "$BASE_SHA"..HEAD)" = "3"
           test "$(git rev-parse 'HEAD^{tree}')" = "f4174ba7b504fb106777ab7c630f7a173eb33f3b"
           git diff --check "$BASE_SHA"...HEAD
+          echo "RESULT_COMMITS_BEGIN"
+          git log --reverse --format='RESULT_COMMIT %H parent=%P tree=%T subject=%s' "$BASE_SHA"..HEAD
+          echo "FINAL_RESULT_SHA=$(git rev-parse HEAD)"
+          echo "RESULT_COMMITS_END"
           git push origin HEAD:refs/heads/automation/pr76-publish-result-v3
-          echo "Published verified result $(git rev-parse HEAD)"
