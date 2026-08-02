@@ -1,0 +1,92 @@
+name: PR 76 CI fix v4 direct publisher
+
+on:
+  pull_request:
+    branches:
+      - automation/pr76-ci-fix-v4-direct-base
+    types:
+      - reopened
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
+jobs:
+  publish:
+    if: github.event.pull_request.head.ref == 'balance/faction-passives-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout helper base
+        uses: actions/checkout@v4
+        with:
+          repository: MilCsik09/IceSMP
+          ref: automation/pr76-ci-fix-v4-direct-base
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Retrieve exact v4 patch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import pathlib
+          import urllib.request
+
+          comments = []
+          page = 1
+          while True:
+              request = urllib.request.Request(
+                  f"https://api.github.com/repos/MilCsik09/IceSMP/issues/76/comments?per_page=100&page={page}",
+                  headers={
+                      "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "pr76-ci-fix-v4-direct",
+                  },
+              )
+              with urllib.request.urlopen(request) as response:
+                  batch = json.load(response)
+              comments.extend(batch)
+              if len(batch) < 100:
+                  break
+              page += 1
+          matches = [c for c in comments if c.get("body", "").startswith("<!-- pr76-ci-fix-v4 -->\n")]
+          if len(matches) != 1:
+              raise RuntimeError(f"Expected exactly one v4 patch comment, found {len(matches)}")
+          patch = matches[0]["body"].split("\n", 1)[1]
+          required = [
+              'final String compactListener = listener.replaceAll("\\\\s+", "");',
+              'compactListener.contains("source.getDirectEntity()")',
+              'compactListener.contains("source.getCausingEntity()")',
+              'compactListener.contains("resolvePlayerOwner(direct,causing)")',
+          ]
+          for token in required:
+              if token not in patch:
+                  raise RuntimeError(f"Missing expected patch token: {token}")
+          pathlib.Path("/tmp/pr76-ci-fix-v4.patch").write_text(patch + ("" if patch.endswith("\n") else "\n"))
+          print(f"Using comment {matches[0]['id']} with {len(patch.encode())} bytes")
+          PY
+
+      - name: Apply, test, commit and fast-forward feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/balance/faction-passives-v2:refs/remotes/origin/balance/faction-passives-v2
+          BASE_SHA="$(git rev-parse refs/remotes/origin/balance/faction-passives-v2)"
+          test "$BASE_SHA" = "8ab8796cbcee415424e75e65e8e8c6cbb4d6d800"
+          git switch --detach "$BASE_SHA"
+          git apply --check /tmp/pr76-ci-fix-v4.patch
+          git apply --index /tmp/pr76-ci-fix-v4.patch
+          git diff --cached --check
+          ./gradlew factionPassiveRegressionTest --console=plain --no-daemon --stacktrace
+          git config user.name "OpenAI Codex"
+          git config user.email "noreply@openai.com"
+          git commit -m "Fix faction passive source contracts"
+          git push origin HEAD:refs/heads/balance/faction-passives-v2
+          echo "PUBLISHED_SHA=$(git rev-parse HEAD)"
