@@ -1,37 +1,50 @@
 name: PlayerProfile bootstrap authenticated checkout (temporary)
 
 on:
-  pull_request:
+  push:
     branches:
-      - rework/class-spec-1.21.11-compatibility
+      - rework/class-spec-profile-v2
+    paths-ignore:
+      - .github/player-profile-bootstrap-run.txt
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   export:
-    if: github.event.pull_request.head.ref == 'rework/class-spec-profile-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out exact pull request head
+      - name: Check out exact branch event SHA
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
+
+      - name: Publish bootstrap run locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'run-id=%s\nworkflow-sha=%s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" \
+            > .github/player-profile-bootstrap-run.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- .github/player-profile-bootstrap-run.txt
+          git commit -m 'chore(player-profile): publish bootstrap run locator'
+          git push origin HEAD:refs/heads/rework/class-spec-profile-v2
 
       - name: Build partial sparse checkout with original Git DAG
         shell: bash
         run: |
           set -euo pipefail
-          PROFILE_HEAD='${{ github.event.pull_request.head.sha }}'
-          PROFILE_BASE='${{ github.event.pull_request.base.sha }}'
-          test "$(git rev-parse HEAD)" = "$PROFILE_HEAD"
-          test "$(git merge-base HEAD "$PROFILE_BASE")" = "$PROFILE_BASE"
+          PROFILE_HEAD="$GITHUB_SHA"
+          PROFILE_BASE='62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
+          test "$(git rev-parse HEAD^)" = "$PROFILE_HEAD"
+          test "$(git merge-base "$PROFILE_HEAD" "$PROFILE_BASE")" = "$PROFILE_BASE"
 
           mkdir -p build/player-profile-bootstrap
-          git -c protocol.version=2 clone --quiet --filter=blob:none --no-checkout --depth=12 \
+          git -c protocol.version=2 clone --quiet --filter=blob:none --no-checkout --depth=16 \
             --single-branch --branch rework/class-spec-profile-v2 \
             https://github.com/MilCsik09/IceSMP.git build/player-profile-bootstrap/repo
           cd build/player-profile-bootstrap/repo
@@ -55,7 +68,8 @@ jobs:
 /gradlew.bat
 /settings.gradle.kts
 PATTERNS
-          git checkout --quiet rework/class-spec-profile-v2
+          git checkout --quiet "$PROFILE_HEAD"
+          git switch --quiet -c rework/class-spec-profile-v2-work "$PROFILE_HEAD"
           test "$(git rev-parse HEAD)" = "$PROFILE_HEAD"
           test "$(git merge-base HEAD "$PROFILE_BASE")" = "$PROFILE_BASE"
           test -f .git/shallow
@@ -69,7 +83,7 @@ PATTERNS
           tar -czf authenticated-checkout.tar.gz repo
           sha256sum authenticated-checkout.tar.gz > SHA256SUMS
           printf 'profile-head=%s\nprofile-base=%s\nmerge-base=%s\n' \
-            "$PROFILE_HEAD" "$PROFILE_BASE" "$(git -C "$GITHUB_WORKSPACE" merge-base HEAD "$PROFILE_BASE")" \
+            "$PROFILE_HEAD" "$PROFILE_BASE" "$(git -C "$GITHUB_WORKSPACE" merge-base "$PROFILE_HEAD" "$PROFILE_BASE")" \
             > manifest.txt
           du -h authenticated-checkout.tar.gz
 
