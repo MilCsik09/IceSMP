@@ -40,6 +40,7 @@ public final class SpyCommand implements BasicCommand {
             player.sendMessage(messageManager.get("spy-error." + error, switch (error) {
                 case "spy-no-library" -> "&cAz álca-mesterség most nem elérhető (hiányzó LibsDisguises).";
                 case "spy-active" -> "&cMár álcában jársz.";
+                case "spy-no-faction" -> "&cA kémálca csak választott frakció tagjaként használható.";
                 case "spy-raid" -> "&cRaid alatt nincs álca — a háború nyílt sisakkal megy.";
                 case "spy-cooldown" -> "&cAz álca-mester még pihen — nézz vissza később.";
                 default -> "&cAz álca most nem vehető fel.";

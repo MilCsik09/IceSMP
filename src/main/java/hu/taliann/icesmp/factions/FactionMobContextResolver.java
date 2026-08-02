@@ -16,6 +16,7 @@ import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
+import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Wither;
 import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -161,6 +162,42 @@ public final class FactionMobContextResolver {
                 whisperer);
     }
 
+    /**
+     * Explicit source identity for damage provenance. Unlike {@link #contentContexts(Entity,
+     * FactionPassiveSettings)}, this method never infers scripted combat merely from location.
+     */
+    public EnumSet<FactionPassivePolicy.ContentContext> explicitCombatContexts(
+            final Entity entity, final FactionPassiveSettings settings) {
+        final EnumSet<FactionPassivePolicy.ContentContext> contexts =
+                EnumSet.noneOf(FactionPassivePolicy.ContentContext.class);
+        final UUID entityId = entity.getUniqueId();
+        if (corruptionManager.isCorruptMob(entityId)
+                || entity.getPersistentDataContainer().has(
+                FactionCombatMarkers.CORRUPTION_MOB, PersistentDataType.BYTE)) {
+            contexts.add(FactionPassivePolicy.ContentContext.CORRUPTION);
+        }
+        if (dungeonLootService.isDungeonBoss(entity)
+                || entity.getPersistentDataContainer().has(
+                FactionCombatMarkers.DUNGEON_COMBAT, PersistentDataType.BYTE)) {
+            contexts.add(FactionPassivePolicy.ContentContext.DUNGEON);
+        }
+        if (invasionManager.isInvasionMob(entityId)) {
+            contexts.add(FactionPassivePolicy.ContentContext.INVASION);
+        }
+        if (worldBossManager.isWorldBoss(entity) || entity instanceof Wither) {
+            contexts.add(FactionPassivePolicy.ContentContext.WORLD_BOSS);
+        }
+        if (cultistEventManager.isCultist(entity) || escortManager.isWaveMob(entityId)
+                || wildHuntManager.isWildHunt(entityId)
+                || hasConfiguredMarker(entity, settings.dark().combatMarkerKeys())) {
+            contexts.add(FactionPassivePolicy.ContentContext.EVENT_MOB);
+        }
+        if (hasConfiguredMarker(entity, settings.dark().questMarkerKeys())) {
+            contexts.add(FactionPassivePolicy.ContentContext.QUEST_MOB);
+        }
+        return contexts;
+    }
+
     public EnumSet<FactionPassivePolicy.ContentContext> contentContexts(
             final Entity entity, final FactionPassiveSettings settings) {
         return contentContexts(entity, settings, null);
@@ -217,6 +254,12 @@ public final class FactionMobContextResolver {
     }
 
     public boolean isNeutralMob(final Entity entity, final FactionPassiveSettings settings) {
+        if (entity instanceof Tameable tameable && tameable.getOwner() != null) {
+            return false;
+        }
+        if (!explicitCombatContexts(entity, settings).isEmpty()) {
+            return false;
+        }
         return settings.neutral().includeNonMonsters() && !(entity instanceof Monster)
                 || settings.neutral().additionalNeutralEntityTypes().contains(entity.getType().name());
     }

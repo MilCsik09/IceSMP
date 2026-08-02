@@ -65,6 +65,20 @@ public final class FactionPassiveService implements PlayerStateCleanup {
                 : remainingMillis(darkRetaliationUntil, new PlayerMob(playerId, mobId));
     }
 
+    /** Clears exactly one mob lease after entity retirement or rejected scheduling. */
+    public void clearNeutralRetaliation(final UUID playerId, final UUID mobId) {
+        if (playerId != null && mobId != null) {
+            neutralRetaliationUntil.remove(new PlayerMob(playerId, mobId));
+        }
+    }
+
+    /** Clears exactly one mob lease after entity retirement or rejected scheduling. */
+    public void clearDarkRetaliation(final UUID playerId, final UUID mobId) {
+        if (playerId != null && mobId != null) {
+            darkRetaliationUntil.remove(new PlayerMob(playerId, mobId));
+        }
+    }
+
     /**
      * Converts Paper's floating-point combust duration (seconds) without truncating sub-second
      * provenance. Invalid or unrepresentable durations fail closed instead of being clamped.
@@ -78,6 +92,17 @@ public final class FactionPassiveService implements PlayerStateCleanup {
             return 0L;
         }
         return (long) millis;
+    }
+
+    /**
+     * Paper combustion cannot shorten an already longer fire duration. Provenance therefore lives
+     * for the effective post-event fire window, not merely for the newly requested duration.
+     */
+    public static long effectiveCombustDurationMillis(final float durationSeconds,
+                                                       final int existingFireTicks) {
+        final long requested = combustDurationMillis(durationSeconds);
+        final long existing = Math.max(0L, (long) existingFireTicks) * 50L;
+        return Math.max(requested, existing);
     }
 
     public void markEntityFire(final UUID playerId, final long durationMillis) {

@@ -121,8 +121,19 @@ public final class SinListener implements Listener {
         final hu.taliann.icesmp.managers.WarWindowManager warRef = warWindowManager;
         if (warRef != null && warRef.isSanctionedWarKill(killerFaction, victimFaction)) {
             final java.util.UUID victimId = victim.getUniqueId();
-            killer.getScheduler().run(plugin, task ->
-                    warRef.handleWarKill(killer, victimId, killerFaction), null);
+            final long rewardWindow = warRef.rewardWindowToken();
+            killer.getScheduler().run(plugin, task -> {
+                final FactionType liveFaction = factionManager.getChosenFaction(
+                        killer.getUniqueId()).orElse(null);
+                final FactionType liveVictimFaction = factionManager.getChosenFaction(
+                        victimId).orElse(null);
+                if (killer.isOnline() && liveFaction == killerFaction
+                        && liveVictimFaction == victimFaction
+                        && warRef.isCurrentRewardWindow(rewardWindow)
+                        && warRef.isSanctionedWarKill(liveFaction, liveVictimFaction)) {
+                    warRef.handleWarKill(killer, victimId, liveFaction);
+                }
+            }, null);
             return;
         }
 

@@ -32,6 +32,8 @@ public final class FactionPassiveRegressionSuite {
     public static void main(final String[] args) throws Exception {
         membershipLifecycleFailsClosed();
         membershipPersistenceRollbackIsAtomic();
+        targetAdapterClearsExistingTargets();
+        signatureFoodRequiresLiveMembership();
         redProvenanceAndCombustDurationRemainIndependent();
         blueOnlySavesExplicitNaturalExhaustion();
         neutralPrecedenceSeparatesSpontaneousAndRetaliation();
@@ -144,6 +146,38 @@ public final class FactionPassiveRegressionSuite {
                 "simulated save failure left the candidate assignment published");
     }
 
+
+    private static void targetAdapterClearsExistingTargets() {
+        final FactionPassiveAdapterPolicy.TargetMutation allow =
+                FactionPassiveAdapterPolicy.targetMutation(FactionPassivePolicy.TargetDecision.ALLOW);
+        check(!allow.cancelEvent() && !allow.clearRequestedTarget(),
+                "ALLOW decision mutated a scripted or explicit target");
+        for (final FactionPassivePolicy.TargetDecision decision
+                : FactionPassivePolicy.TargetDecision.values()) {
+            if (decision == FactionPassivePolicy.TargetDecision.ALLOW) {
+                continue;
+            }
+            final FactionPassiveAdapterPolicy.TargetMutation mutation =
+                    FactionPassiveAdapterPolicy.targetMutation(decision);
+            check(!mutation.cancelEvent() && mutation.clearRequestedTarget(),
+                    "truce cancellation retained an existing target: " + decision);
+        }
+    }
+
+    private static void signatureFoodRequiresLiveMembership() {
+        check(FactionFoodPolicy.mayApplyBuff(FactionType.RED, "fonixtojas_rantotta", true),
+                "RED signature food rejected its live citizen");
+        check(!FactionFoodPolicy.mayApplyBuff(FactionType.BLUE, "fonixtojas_rantotta", true)
+                        && !FactionFoodPolicy.mayApplyBuff(null, "fonixtojas_rantotta", true),
+                "signature food buff ignored live faction/guest state");
+        check(FactionFoodPolicy.mayApplyBuff(FactionType.NEUTRAL, "kakaobabos_sutemeny", true)
+                        && !FactionFoodPolicy.mayApplyBuff(FactionType.RED, "kakaobabos_sutemeny", true),
+                "NEUTRAL food remained usable after a faction switch");
+        check(!FactionFoodPolicy.mayApplyBuff(FactionType.DARK, "forged_metadata", true)
+                        && FactionFoodPolicy.requiredFaction(null) == null,
+                "unknown or partial signature metadata granted a buff");
+    }
+
     private static void redProvenanceAndCombustDurationRemainIndependent() {
         final FactionMembership red = FactionMembership.citizen(FactionType.RED);
         final FactionPassiveSettings settings = defaults();
@@ -184,6 +218,9 @@ public final class FactionPassiveRegressionSuite {
                         && FactionPassiveService.combustDurationMillis(
                         Float.POSITIVE_INFINITY) == 0L,
                 "invalid combust duration did not fail closed");
+        check(FactionPassiveService.effectiveCombustDurationMillis(1.0F, 100) == 5_000L
+                        && FactionPassiveService.effectiveCombustDurationMillis(8.0F, 20) == 8_000L,
+                "combust provenance shortened existing fire or ignored the requested duration");
     }
 
     private static void blueOnlySavesExplicitNaturalExhaustion() {
@@ -275,8 +312,11 @@ public final class FactionPassiveRegressionSuite {
                         == FactionPassivePolicy.TargetDecision.ALLOW,
                 "Blood Moon did not override wild truce");
         check(POLICY.resolveTarget(dark, darkAmbient(false, true), settings, 0.0D)
-                        == FactionPassivePolicy.TargetDecision.CANCEL_DARK_AMBIENT,
-                "Blood Moon incorrectly removed ambient citizenship");
+                        == FactionPassivePolicy.TargetDecision.ALLOW,
+                "Blood Moon did not override ambient DARK truce");
+        check(POLICY.resolveTarget(dark, darkAmbient(true, true), settings, 0.0D)
+                        == FactionPassivePolicy.TargetDecision.ALLOW,
+                "provoked DARK mob was incorrectly pacified during Blood Moon");
         check(POLICY.resolveTarget(dark, forcedDark(), settings, 0.0D)
                         == FactionPassivePolicy.TargetDecision.ALLOW,
                 "forced targeting did not outrank DARK truce");
@@ -495,8 +535,12 @@ public final class FactionPassiveRegressionSuite {
 
         final String source = read(
                 "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java");
+        final String managerSource = read(
+                "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java");
         check(source.contains("synchronized (configManager)")
-                        && source.contains("current = buildSnapshot()"),
+                        && source.contains("current = buildSnapshot()")
+                        && managerSource.contains("volatile ConfigSnapshot liveSnapshot")
+                        && managerSource.contains("liveSnapshot = new ConfigSnapshot("),
                 "reload can publish a half-old/half-new config snapshot");
     }
 
@@ -516,6 +560,7 @@ public final class FactionPassiveRegressionSuite {
                 "factions.passives.blue.affected-exhaustion-reasons",
                 "factions.passives.neutral.passive-mob-truce.retaliation-seconds",
                 "factions.passives.dark.ambient-undead.alert-nearby-radius",
+                "factions.passives.dark.ambient-undead.disabled-during-blood-moon",
                 "factions.passives.dark.wild-undead.target-cancel-chance",
                 "factions.passives.dark.exclusions.combat-marker-keys",
                 "factions.whisper.night-undead-target-cancel-chance")) {
@@ -531,12 +576,22 @@ public final class FactionPassiveRegressionSuite {
         check(listener.contains("EntityExhaustionEvent")
                         && !listener.contains("FoodLevelChangeEvent"),
                 "BLUE returned to blanket food-level cancellation");
+        check(listener.contains("FactionPassiveAdapterPolicy.targetMutation(decision)")
+                        && listener.contains("event.setTarget(null)")
+                        && listener.contains("EventPriority.HIGHEST"),
+                "target cancellation does not clear the requested target after other plugins");
         check(listener.contains("SpellDamageUtil.schoolOf")
                         && listener.contains("ICE_SMP_FIRE_MAGIC")
-                        && listener.contains("RED_ENTITY_FIRE"),
+                        && listener.contains("RED_ENTITY_FIRE")
+                        && listener.contains("explicitCombatContexts(source, settings)"),
                 "RED no longer separates TUZ and entity fire");
-        check(listener.contains("combustDurationMillis(event.getDuration())"),
-                "Paper float combust duration is truncated before provenance storage");
+        check(listener.contains("effectiveCombustDurationMillis(event.getDuration(), player.getFireTicks())"),
+                "Paper float combust duration or existing fire ticks are ignored before provenance storage");
+        check(listener.contains("getDamageSource().getDirectEntity()")
+                        && listener.contains("getDamageSource().getCausingEntity()")
+                        && listener.contains("owningPlayerId(projectile.getShooter())")
+                        && listener.contains("instanceof org.bukkit.entity.Tameable"),
+                "RED/provocation provenance ignores direct, causing, projectile or tame owners");
         check(listener.contains("darkRetaliationRemainingMillis(playerId, sourceMobId)")
                         && listener.contains("state.provokeDark(playerId, mob.getUniqueId(), remaining)"),
                 "nearby alert no longer derives mob-specific retaliation from the source pair");
@@ -556,6 +611,10 @@ public final class FactionPassiveRegressionSuite {
         check(service.contains("record PlayerMob(UUID playerId, UUID mobId)")
                         && service.contains("Map<PlayerMob, Long> darkRetaliationUntil"),
                 "DARK retaliation regressed to global per-player state");
+        check(listener.contains("retireTrackedTarget(playerId, mobId, tracked)")
+                        && listener.contains("state.clearDarkRetaliation(playerId, mobId)")
+                        && listener.contains("a newer lease replaced this callback"),
+                "retired/rejected callbacks can leak or erase a newer retaliation lease");
 
         final String resolver = read(
                 "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java");
@@ -569,11 +628,46 @@ public final class FactionPassiveRegressionSuite {
 
         final String membershipManager = read(
                 "src/main/java/hu/taliann/icesmp/managers/FactionManager.java");
-        check(membershipManager.contains("FactionMembershipMutation.restore(")
-                        && membershipManager.contains("writeStateLocked();")
-                        && membershipManager.indexOf("writeStateLocked();")
-                        < membershipManager.indexOf("membershipChangeHook.accept(playerId)"),
-                "membership hook can publish a state whose durable save failed");
+        check(membershipManager.contains("writeStateLocked(candidate);")
+                        && membershipManager.contains("liveState = candidate;")
+                        && membershipManager.indexOf("writeStateLocked(candidate);")
+                        < membershipManager.indexOf("liveState = candidate;")
+                        && membershipManager.indexOf("liveState = candidate;")
+                        < membershipManager.indexOf("publishMembershipChange(playerId"),
+                "membership state or hook can publish before its durable save");
+        check(membershipManager.contains("FactionMembershipMutation.capture(")
+                        && membershipManager.contains("DurableTransactionProtocol.execute(")
+                        && membershipManager.contains("currencyManager.rollbackDurably(wallet)")
+                        && membershipManager.contains("recoverPendingSwitch()"),
+                "paid membership switches bypass the durable WAL/rollback/recovery protocol");
+
+        final String foodListener = read(
+                "src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java");
+        final String itemFactory = read(
+                "src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java");
+        check(foodListener.contains("withoutEmbeddedSignatureFoodEffects(item)")
+                        && foodListener.contains("event.setItem(sanitized)")
+                        && foodListener.contains("FactionFoodPolicy.mayApplyBuff(faction, sig, trustedFoodMarker)")
+                        && itemFactory.contains("toBuilder().effects(List.of())"),
+                "signature food keeps embedded or acquisition-time faction entitlement");
+
+        final String worldBoss = read(
+                "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java");
+        final String honorDuel = read(
+                "src/main/java/hu/taliann/icesmp/managers/HonorDuelManager.java");
+        final String spy = read("src/main/java/hu/taliann/icesmp/managers/SpyManager.java");
+        check(worldBoss.contains("world-boss-slain-guest")
+                        && honorDuel.contains("victimFaction != null")
+                        && spy.contains("!factionManager.hasChosenFaction(player.getUniqueId())"),
+                "guest reward/authority boundaries are not enforced");
+
+        final String raid = read("src/main/java/hu/taliann/icesmp/managers/RaidManager.java");
+        final String war = read("src/main/java/hu/taliann/icesmp/managers/WarWindowManager.java");
+        check(raid.contains("lifecycleRevision")
+                        && raid.contains("factionManager.isMember(online.getUniqueId(), winner)")
+                        && war.contains("rewardWindowToken()")
+                        && war.contains("isCurrentRewardWindow"),
+                "delayed raid/war rewards use stale captured faction or event identity");
 
         final String core = read("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
         check(core.contains("factionPassiveConfig.reload()")
@@ -612,7 +706,7 @@ public final class FactionPassiveRegressionSuite {
                         true, 60_000L, true, true),
                 new FactionPassiveSettings.Dark(
                         true, true, 0.50D, true, 0.50D,
-                        new FactionPassiveSettings.AmbientUndead(true, true, 60_000L, 16.0D),
+                        new FactionPassiveSettings.AmbientUndead(true, true, 60_000L, 16.0D, true),
                         new FactionPassiveSettings.WildUndead(true, true, 0.50D, true),
                         new FactionPassiveSettings.Exclusions(
                                 true, true, true, true, true, true, true),
@@ -729,8 +823,8 @@ public final class FactionPassiveRegressionSuite {
     private static ConfigHarness config(final YamlConfiguration configuration,
                                         final Set<String> overridePaths) throws Exception {
         final ConfigManager manager = new ConfigManager(null);
-        setField(manager, "configuration", configuration);
-        setField(manager, "overridePaths", Set.copyOf(overridePaths));
+        setField(manager, "liveSnapshot", new ConfigManager.ConfigSnapshot(
+                configuration, Set.copyOf(overridePaths), 1L));
         final CapturingHandler handler = new CapturingHandler();
         final Logger logger = Logger.getLogger(
                 FactionPassiveRegressionSuite.class.getName() + "." + UUID.randomUUID());

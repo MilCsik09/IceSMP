@@ -1671,8 +1671,10 @@ public final class QuestManager implements PersistentStore {
 
         // The penance chain's final mercy: even the dark pact can be broken.
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
-            sinManager.breakDarkPact(player);
+            // Commit citizenship first: a failed factions.yml write must not clear the pact/spec
+            // while the player remains durably DARK.
             factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
+            sinManager.breakDarkPact(player);
             // A DARK-kapus spec (Nekromanta, Szentségtelen, jövőbeliek) nem élhet tovább
             // a paktum nélkül — a vezeklés a specet is elengedi (a kaszt marad).
             final SpecializationManager specs = this.specializationManagerRef;

@@ -1,12 +1,14 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.factions.FactionFoodPolicy;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -81,16 +83,33 @@ public final class FactionFoodListener implements Listener {
     public void onConsume(final PlayerItemConsumeEvent event) {
         final Player player = event.getPlayer();
         final ItemStack item = event.getItem();
+        final boolean trustedFoodMarker = item.hasItemMeta()
+                && item.getItemMeta().getPersistentDataContainer().has(
+                hu.taliann.icesmp.items.ItemDataFactory.FOOD_V2_KEY, PersistentDataType.BYTE);
         final String sig = item.hasItemMeta()
-                ? item.getItemMeta().getPersistentDataContainer().get(signatureKey, PersistentDataType.STRING)
-                : null;
-        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+                ? item.getItemMeta().getPersistentDataContainer().get(
+                signatureKey, PersistentDataType.STRING) : null;
+        final String trustedSignature = trustedFoodMarker ? sig : null;
+        final FactionType faction = factionManager.getChosenFaction(
+                player.getUniqueId()).orElse(null);
+        final FileConfiguration liveConfig = configManager.snapshot().configuration();
+
+        // Régi fejlesztői FOOD_V2 stackek a buffot még a CONSUMABLE komponensben hordozhatták.
+        // A Paper csak setItem esetén használja a módosított itemet; így a régi payloadot a
+        // fogyasztás előtt eltávolítjuk, majd ugyanazt a live-membership policyt alkalmazzuk.
+        final ItemStack sanitized = hu.taliann.icesmp.items.ItemDataFactory
+                .withoutEmbeddedSignatureFoodEffects(item);
+        if (sanitized != item) {
+            event.setItem(sanitized);
+        }
 
         // A kötelezettség teljesítése: a frakcióhoz illő (vanília vagy signature) étel frissíti
         // az időbélyeget — a honvágy-debuff visszaszámlálója újraindul.
         final boolean homeFood = faction != null && switch (faction) {
-            case BLUE -> FISH_FOODS.contains(item.getType()) || PISZTRANG.equals(sig) || PORKOLT.equals(sig);
-            case RED -> EGG_FOODS.contains(item.getType()) || RANTOTTA.equals(sig) || VADLAKOMA.equals(sig);
+            case BLUE -> FISH_FOODS.contains(item.getType())
+                    || PISZTRANG.equals(trustedSignature) || PORKOLT.equals(trustedSignature);
+            case RED -> EGG_FOODS.contains(item.getType())
+                    || RANTOTTA.equals(trustedSignature) || VADLAKOMA.equals(trustedSignature);
             default -> false;
         };
         if (homeFood) {
@@ -98,45 +117,43 @@ public final class FactionFoodListener implements Listener {
             player.getPersistentDataContainer().set(foodFactionKey, PersistentDataType.STRING, faction.name());
         }
 
-        // Signature étel-buffok: a CONSUMABLE-migrált (food_v2) ételekre a KOMPONENS adja a
-        // buffot (deklaratívan, evéskor) — a legacy-ágat csak a régi/nem-migrált ételekre és
-        // a Sütire (lökés+partikel, nem potion-effekt) futtatjuk, hogy ne legyen dupla buff.
-        final boolean migratedFood = item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer()
-                .has(hu.taliann.icesmp.items.ItemDataFactory.FOOD_V2_KEY, PersistentDataType.BYTE);
-        if (!migratedFood) {
+        // A tárgy csak stabil signature azonosítót hordoz. Minden buffot az elfogyasztás
+        // pillanatában, a live explicit tagság alapján adunk; régi item és frakcióváltás sem
+        // tud itembe égetett jogosultságot megtartani.
+        if (FactionFoodPolicy.mayApplyBuff(faction, sig, trustedFoodMarker)) {
             if (PISZTRANG.equals(sig)) {
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.pisztrang-buff-seconds", 60));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.pisztrang-buff-seconds", 60));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, seconds * 20, 0, true, true, true));
             } else if (RANTOTTA.equals(sig)) {
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.rantotta-buff-seconds", 60));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.rantotta-buff-seconds", 60));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, seconds * 20, 0, true, true, true));
             } else if (PORKOLT.equals(sig)) {
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.porkolt-buff-seconds", 45));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.porkolt-buff-seconds", 45));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, seconds * 20, 0, true, true, true));
             } else if (VADLAKOMA.equals(sig)) {
                 // RED ünnepi étel: a vadászok lakomája — gyorsaság + rövid tűz-oltalom.
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.vadlakoma-buff-seconds", 45));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.vadlakoma-buff-seconds", 45));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, seconds * 20, 0, true, true, true));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, seconds * 20, 0, true, true, true));
             } else if (LEPENY.equals(sig)) {
                 // NEUTRAL ünnepi étel: aratóünnep — szerencse a piachoz/zsákmányhoz + fürgeség.
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.lepeny-buff-seconds", 60));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.lepeny-buff-seconds", 60));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, seconds * 20, 0, true, true, true));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, seconds * 20, 0, true, true, true));
             } else if (HAMULAKOMA.equals(sig)) {
                 // DARK ünnepi étel: a megosztott keserű tál — felszívódás + éjjellátás.
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.hamulakoma-buff-seconds", 60));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.hamulakoma-buff-seconds", 60));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, seconds * 20, 0, true, true, true));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, seconds * 20, 0, true, true, true));
             } else if (HAMUKENYER.equals(sig)) {
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.hamukenyer-buff-seconds", 60));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.hamukenyer-buff-seconds", 60));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, seconds * 20, 0, true, true, true));
             } else if (SUTI.equals(sig)) {
                 // "Robbanó csemege": effekt-robbanás blokk-kár nélkül + felfelé lökés + gyorsaság.
-                final int seconds = Math.max(1, configManager.getInt("factions.food-duty.suti-speed-seconds", 30));
+                final int seconds = Math.max(1, getInt(liveConfig, "factions.food-duty.suti-speed-seconds", 30));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, seconds * 20, 1, true, true, true));
                 player.setVelocity(player.getVelocity().setY(Math.max(0.4D,
-                        configManager.getDouble("factions.food-duty.suti-launch-y", 0.6D))));
+                        getDouble(liveConfig, "factions.food-duty.suti-launch-y", 0.6D))));
                 player.getWorld().playSound(player.getLocation(), org.bukkit.Sound.ENTITY_FIREWORK_ROCKET_BLAST, 0.8F, 1.2F);
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), org.bukkit.Particle.FIREWORK,
                         player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.5D, 0.6D, 0.5D, 0.08D);
@@ -151,26 +168,36 @@ public final class FactionFoodListener implements Listener {
      * beállítja az időbélyeget (türelmi idő indul), debuff nélkül.
      */
     public void tick() {
-        if (!configManager.getBoolean("factions.food-duty.enabled", true)) {
+        final FileConfiguration liveConfig = configManager.snapshot().configuration();
+        if (!getBoolean(liveConfig, "factions.food-duty.enabled", true)) {
             return;
         }
         final long now = System.currentTimeMillis();
         if (now < nextCheckAt) {
             return;
         }
-        nextCheckAt = now + Math.max(1L, configManager.getLong("factions.food-duty.check-minutes", 5L)) * 60_000L;
-
-        final long graceMillis = Math.max(1L, configManager.getLong("factions.food-duty.grace-hours", 12L)) * 3_600_000L;
-        final int debuffSeconds = Math.max(1, configManager.getInt("factions.food-duty.debuff-seconds", 10));
+        nextCheckAt = now + Math.max(1L, getLong(liveConfig, "factions.food-duty.check-minutes", 5L)) * 60_000L;
 
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-            if (faction != FactionType.BLUE && faction != FactionType.RED) {
-                continue;
-            }
             player.getScheduler().run(plugin, task -> {
-                final Long last = player.getPersistentDataContainer().get(lastHomeFoodKey, PersistentDataType.LONG);
-                final String tsFaction = player.getPersistentDataContainer().get(foodFactionKey, PersistentDataType.STRING);
+                if (!player.isOnline()) {
+                    return;
+                }
+                final FactionType faction = factionManager.getChosenFaction(
+                        player.getUniqueId()).orElse(null);
+                if (faction != FactionType.BLUE && faction != FactionType.RED) {
+                    return;
+                }
+                final FileConfiguration callbackConfig =
+                        configManager.snapshot().configuration();
+                final long graceMillis = Math.max(1L, getLong(callbackConfig,
+                        "factions.food-duty.grace-hours", 12L)) * 3_600_000L;
+                final int debuffSeconds = Math.max(1, getInt(callbackConfig,
+                        "factions.food-duty.debuff-seconds", 10));
+                final Long last = player.getPersistentDataContainer().get(
+                        lastHomeFoodKey, PersistentDataType.LONG);
+                final String tsFaction = player.getPersistentDataContainer().get(
+                        foodFactionKey, PersistentDataType.STRING);
                 if (last == null || !faction.name().equals(tsFaction)) {
                     // Új játékos VAGY frissen váltó (a bélyeg a régi frakció konyhájáé):
                     // türelmi idő indul — először csak jegyezzük az időt, debuff nélkül.
@@ -190,5 +217,25 @@ public final class FactionFoodListener implements Listener {
                                 : "<gray>🔥 Hiányzik az otthon íze — a Vérszavanna népe tojás-ételen él. Egyél rántottát, sütőtökös pitét vagy tortát!</gray>"));
             }, null);
         }
+    }
+
+    private static boolean getBoolean(final FileConfiguration config, final String path,
+                                      final boolean fallback) {
+        return config == null ? fallback : config.getBoolean(path, fallback);
+    }
+
+    private static int getInt(final FileConfiguration config, final String path,
+                              final int fallback) {
+        return config == null ? fallback : config.getInt(path, fallback);
+    }
+
+    private static long getLong(final FileConfiguration config, final String path,
+                                final long fallback) {
+        return config == null ? fallback : config.getLong(path, fallback);
+    }
+
+    private static double getDouble(final FileConfiguration config, final String path,
+                                    final double fallback) {
+        return config == null ? fallback : config.getDouble(path, fallback);
     }
 }

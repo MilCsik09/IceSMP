@@ -176,6 +176,13 @@ public final class FactionPassivePolicy {
             if (membership.isMember(FactionType.DARK) && settings.dark().enabled()
                     && context.ambientUndead()
                     && settings.dark().ambientUndead().enabled()
+                    && context.bloodMoon()
+                    && settings.dark().ambientUndead().disabledDuringBloodMoon()) {
+                return TargetDecision.ALLOW;
+            }
+            if (membership.isMember(FactionType.DARK) && settings.dark().enabled()
+                    && context.ambientUndead()
+                    && settings.dark().ambientUndead().enabled()
                     && !settings.dark().ambientUndead().breakOnDamage()) {
                 return TargetDecision.CANCEL_DARK_AMBIENT;
             }
@@ -192,6 +199,10 @@ public final class FactionPassivePolicy {
                 && settings.dark().enabled() && context.undead()) {
             if (context.spontaneousUndeadAggro()
                     && context.ambientUndead() && settings.dark().ambientUndead().enabled()) {
+                if (context.bloodMoon()
+                        && settings.dark().ambientUndead().disabledDuringBloodMoon()) {
+                    return TargetDecision.ALLOW;
+                }
                 return TargetDecision.CANCEL_DARK_AMBIENT;
             }
             final FactionPassiveSettings.WildUndead wild = settings.dark().wildUndead();

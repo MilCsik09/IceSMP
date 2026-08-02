@@ -801,15 +801,22 @@ public final class WorldBossManager {
             }
         }, null);
 
-        Bukkit.getServer().broadcast(messageManager.getMessage(
-                "world-boss-slain",
-                "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>",
-                Map.of(
-                        "player", killer.getName(),
-                        "faction", faction.getDisplayName(),
-                        "reward", String.valueOf(reward),
-                        "points", String.valueOf(configManager.getInt("world-events.world-boss.season-points", 10))
-                )
-        ));
+        if (faction == null) {
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "world-boss-slain-guest",
+                    "<gold>⚔ {player}, a Menedék vendége legyőzte a világbosst! Személyes jutalma jár, de frakciókassza- és liga-jóváírás nem.</gold>",
+                    Map.of("player", killer.getName())));
+        } else {
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "world-boss-slain",
+                    "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>",
+                    Map.of(
+                            "player", killer.getName(),
+                            "faction", faction.getDisplayName(),
+                            "reward", String.valueOf(reward),
+                            "points", String.valueOf(configManager.getInt("world-events.world-boss.season-points", 10))
+                    )
+            ));
+        }
     }
 }

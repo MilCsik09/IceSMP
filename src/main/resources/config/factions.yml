@@ -140,6 +140,7 @@ factions:
         retaliation-seconds: 60
         # Provokációnál ekkora körben riaszthatók a közeli, nem harci-markerelt undead társak.
         alert-nearby-radius: 16.0
+        disabled-during-blood-moon: true # Vérhold felülírja az ambient városi békét is
       wild-undead:
         enabled: true
         night-only: true

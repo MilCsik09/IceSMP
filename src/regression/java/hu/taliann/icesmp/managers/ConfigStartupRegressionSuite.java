@@ -25,6 +25,7 @@ public final class ConfigStartupRegressionSuite {
         rejectsPartialProfessionRecipes();
         parsesEveryBundledProfessionIngredient();
         validatesPactUniqueMaterialReference();
+        rejectsNonFiniteAndWrongTypeNumericConfig();
         verifiesPackagedDefaults();
         verifiesSupportedFirstSpawnEvent();
         System.out.println("Config startup regression suite passed.");
@@ -122,6 +123,30 @@ public final class ConfigStartupRegressionSuite {
         invalidMaterial.set("example.material", "NOT_A_REAL_MATERIAL");
         check(ConfigValidator.validateConfiguration(invalidMaterial, LOGGER) == 1,
                 "ordinary invalid Bukkit Material must still be reported");
+    }
+
+
+    private static void rejectsNonFiniteAndWrongTypeNumericConfig() {
+        final YamlConfiguration invalid = new YamlConfiguration();
+        invalid.set("factions.passives.red.fire-damage-multiplier", Double.NaN);
+        invalid.set("factions.passives.dark.wither.duration-multiplier", Double.POSITIVE_INFINITY);
+        invalid.set("factions.passives.blue.natural-exhaustion-save-chance", Double.NEGATIVE_INFINITY);
+        invalid.set("factions.passives.dark.wild-undead.target-cancel-chance", "0.5");
+        invalid.set("factions.passives.dark.ambient-undead.retaliation-seconds", "60");
+        invalid.set("factions.whisper.night-undead-retaliation-seconds", 2.5D);
+        invalid.set("factions.tax.rate-percent", "2.0");
+        invalid.set("factions.tax.minimum-amount", Double.NaN);
+        invalid.set("factions.switch.cost", "500");
+        check(ConfigValidator.validateConfiguration(invalid, LOGGER) == 9,
+                "wrong-type, NaN and infinite numeric config must be reported independently");
+
+        final YamlConfiguration valid = new YamlConfiguration();
+        valid.set("factions.passives.red.fire-damage-multiplier", 0.25D);
+        valid.set("factions.passives.blue.natural-exhaustion-save-chance", 0.25D);
+        valid.set("factions.passives.dark.ambient-undead.retaliation-seconds", 60);
+        valid.set("factions.tax.rate-percent", 2.0D);
+        check(ConfigValidator.validateConfiguration(valid, LOGGER) == 0,
+                "valid finite numeric config was rejected");
     }
 
     private static void verifiesPackagedDefaults() {

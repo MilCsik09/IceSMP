@@ -73,7 +73,8 @@ public record FactionPassiveSettings(
             boolean enabled,
             boolean breakOnDamage,
             long retaliationMillis,
-            double alertNearbyRadius) {
+            double alertNearbyRadius,
+            boolean disabledDuringBloodMoon) {
     }
 
     public record WildUndead(

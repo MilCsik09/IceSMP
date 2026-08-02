@@ -85,7 +85,8 @@ public final class FactionPassiveConfig {
                                 toggle(ROOT + "dark.ambient-undead.enabled", true),
                                 toggle(ROOT + "dark.ambient-undead.break-on-damage", true),
                                 durationMillis(ROOT + "dark.ambient-undead.retaliation-seconds", 60L),
-                                nonNegative(ROOT + "dark.ambient-undead.alert-nearby-radius", 16.0D)),
+                                nonNegative(ROOT + "dark.ambient-undead.alert-nearby-radius", 16.0D),
+                                toggle(ROOT + "dark.ambient-undead.disabled-during-blood-moon", true)),
                         new FactionPassiveSettings.WildUndead(
                                 toggle(ROOT + "dark.wild-undead.enabled", true),
                                 toggle(ROOT + "dark.wild-undead.night-only", true),

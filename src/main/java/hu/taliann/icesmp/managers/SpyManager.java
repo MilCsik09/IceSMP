@@ -59,6 +59,9 @@ public final class SpyManager implements PlayerStateCleanup {
         if (!configManager.getBoolean("spy.enabled", true)) {
             return "spy-disabled";
         }
+        if (!factionManager.hasChosenFaction(player.getUniqueId())) {
+            return "spy-no-faction";
+        }
         if (!SpyDisguise.isAvailable()) {
             return "spy-no-library";
         }
@@ -81,7 +84,8 @@ public final class SpyManager implements PlayerStateCleanup {
         }
         final int seconds = Math.max(10, configManager.getInt("spy.duration-seconds", 60));
         final long cooldownMinutes = Math.max(1, configManager.getInt("spy.cooldown-minutes", 15));
-        activeUntil.put(player.getUniqueId(), now + seconds * 1000L);
+        final long sessionUntil = now + seconds * 1000L;
+        activeUntil.put(player.getUniqueId(), sessionUntil);
         player.getPersistentDataContainer().set(cooldownKey, PersistentDataType.LONG,
                 now + cooldownMinutes * 60_000L);
         player.sendMessage(messageManager.getMessage("spy-started",
@@ -89,9 +93,12 @@ public final class SpyManager implements PlayerStateCleanup {
                 Map.of("name", fakeName, "seconds", String.valueOf(seconds))));
         // Időzített lejárat a játékos SAJÁT schedulerén (halál/kilépésnél magától nyugdíjazódik).
         player.getScheduler().runDelayed(plugin, task -> {
-            if (isSpying(player.getUniqueId())) {
+            if (player.isOnline() && activeUntil.remove(
+                    player.getUniqueId(), sessionUntil)) {
                 awardMissionPoints(player);
-                reveal(player, "spy-expired", "<gray>🕵 Az álca lefoszlott — az idő lejárt.</gray>");
+                SpyDisguise.remove(player);
+                player.sendMessage(messageManager.getMessage(
+                        "spy-expired", "<gray>🕵 Az álca lefoszlott — az idő lejárt.</gray>"));
             }
         }, null, seconds * 20L);
         return null;

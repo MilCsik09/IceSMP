@@ -181,7 +181,8 @@ public final class HonorDuelManager implements PlayerStateCleanup {
                 killer.getUniqueId()).orElse(null);
         final FactionType victimFaction = factionManager.getChosenFaction(
                 victim.getUniqueId()).orElse(null);
-        if (killerFaction != null && killerFaction != victimFaction) {
+        if (killerFaction != null && victimFaction != null
+                && killerFaction != victimFaction) {
             seasonManager.addPoints(killerFaction,
                     Math.max(0, configManager.getInt("honor-duel.season-points", 2)), "duel");
         }

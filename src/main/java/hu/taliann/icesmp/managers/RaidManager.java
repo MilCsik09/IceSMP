@@ -67,6 +67,8 @@ public final class RaidManager implements PersistentStore {
     private ScheduledTask combatStartTask;
     private ScheduledTask captureTask;
     private ScheduledTask endTask;
+    /** Invalidates queued winner callbacks after a new raid/reload/shutdown lifecycle. */
+    private volatile long lifecycleRevision;
     private java.util.function.Consumer<Player> winHook;
 
     /** Sets the callback fired for every ONLINE winning-side fighter when a raid is won (quest bridge). */
@@ -250,6 +252,7 @@ public final class RaidManager implements PersistentStore {
         final long now = System.currentTimeMillis();
         points.clear();
         participants.clear();
+        lifecycleRevision++;
         activeRaid = new ActiveRaid(attacker, defender,
                 territory == null ? null : territory.id(),
                 now + (warmupMinutes * 60_000L),
@@ -474,6 +477,7 @@ public final class RaidManager implements PersistentStore {
         save();
         activeRaid = null;
         cancelTasks();
+        final long rewardRevision = ++lifecycleRevision;
 
         final int attackerPoints = points.getOrDefault(raid.attacker(), 0);
         final int defenderPoints = points.getOrDefault(raid.defender(), 0);
@@ -515,12 +519,18 @@ public final class RaidManager implements PersistentStore {
             }
             final org.bukkit.entity.Player online = Bukkit.getPlayer(fighter.getKey());
             if (online != null) {
-                AdvancementService.award(online, "raid_win");
+                online.getScheduler().run(plugin, task -> {
+                    if (online.isOnline()
+                            && lifecycleRevision == rewardRevision
+                            && factionManager.isMember(online.getUniqueId(), winner)) {
+                        AdvancementService.award(online, "raid_win");
+                    }
+                }, null);
             }
         }
 
         // Victor's spoils buff: a temporary boon for the winning faction's online members.
-        applyWinnerBuff(winner);
+        applyWinnerBuff(winner, rewardRevision);
 
         // Quest bridge (WIN_RAID objectives): only registered fighters on the winning
         // side count, each on their own region thread.
@@ -531,7 +541,13 @@ public final class RaidManager implements PersistentStore {
                 }
                 final Player online = Bukkit.getPlayer(fighter.getKey());
                 if (online != null) {
-                    online.getScheduler().run(plugin, task -> winHook.accept(online), null);
+                    online.getScheduler().run(plugin, task -> {
+                        if (online.isOnline()
+                                && lifecycleRevision == rewardRevision
+                                && factionManager.isMember(online.getUniqueId(), winner)) {
+                            winHook.accept(online);
+                        }
+                    }, null);
                 }
             }
         }
@@ -576,7 +592,7 @@ public final class RaidManager implements PersistentStore {
         ));
     }
 
-    private void applyWinnerBuff(final FactionType winner) {
+    private void applyWinnerBuff(final FactionType winner, final long rewardRevision) {
         final int buffMinutes = Math.max(0, configManager.getInt("factions.raid.winner-buff-minutes", 30));
         if (buffMinutes <= 0) {
             return;
@@ -593,6 +609,11 @@ public final class RaidManager implements PersistentStore {
             // Folia: endRaid() runs on the global region scheduler, so each player's
             // potion effects must be applied on that player's own region thread.
             online.getScheduler().run(plugin, task -> {
+                if (!online.isOnline()
+                        || lifecycleRevision != rewardRevision
+                        || !factionManager.isMember(online.getUniqueId(), winner)) {
+                    return;
+                }
                 online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, strengthLevel, false, true, true));
                 online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, regenLevel, false, true, true));
                 online.sendMessage(messageManager.getMessage(
@@ -636,6 +657,7 @@ public final class RaidManager implements PersistentStore {
                             + "a krónikák nem jegyzik, a nevezési díj visszakerült a kasszába.</yellow>"));
         }
         cancelTasks();
+        lifecycleRevision++;
         activeRaid = null;
         participants.clear();
         save();
