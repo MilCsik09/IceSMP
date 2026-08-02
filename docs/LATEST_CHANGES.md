@@ -39,6 +39,20 @@ A 420 konfigurált spell-balance azonosító nem 420 automatikusan elérhető
 képességet jelent: a registry, a kaszt, a specializáció és a feloldási
 feltételek együtt döntik el, mit használhat a játékos.
 
+## Naplóalapú stabilitási javítások (2026. július 30. – augusztus 2.)
+
+- A Mélytépő attribútumfrissítése stabil kulcsú, idempotens csere: ismételt join
+  és refresh nem dupláz sebzést, a nem IceSMP modifier megmarad.
+- Egy hibás relikvia-slot nem szakítja félbe a teljes inventory frissítését;
+  throttlingolt, UUID/slot/item/relic kontextusú hiba marad utána.
+- Plugin-disable alatt az Escort/mulandó entity cleanup nem regisztrál új Folia
+  taskot, a shutdown többször hívva is biztonságos.
+- Új `/quest admin validatenpcs` mutatja az exact FancyNpcs belsőnév-hiányokat,
+  case eltéréseket és az érintett quest/config útvonalakat. A jelenlegi exportban
+  a 18 kötelező NPC továbbra is manuális builder/deployment kapu.
+- A FancyNpcs-snapshot validátor ellenőrzi a lokális skinfájlokat és az NPC-hez
+  kötve listázza a remote URL-eket anélkül, hogy hálózati hibától blokkolná a buildet.
+
 ## Amit játékosként észreveszel
 
 ### Új utak a karakterednek

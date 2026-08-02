@@ -82,6 +82,29 @@ A 18 ID-t pontosan kisbetűvel és aláhúzással használd. Átnevezés előtt
 ellenőrizd a questkonfigot, a FancyNpcs állapotot és az `npc-bindings.yml`
 leltárát.
 
+A repositoryban jelenleg csomagolt `Other/plugins/FancyNpcs/npcs.yml` export
+**egyik kötelező quest-NPC-t sem tartalmazza**; ez világ-/deploymentkapu, nem
+olyan hiba, amelyhez a kód biztonságosan koordinátát találhatna ki. Telepítés
+után vagy bármely átnevezéskor futtasd:
+
+```text
+/quest admin validatenpcs
+```
+
+A parancs és az indulási validáció exact belső nevet kér, külön jelzi a csak
+kis-/nagybetűben eltérő találatot, és minden hiányhoz kiírja az érintett
+quest-ID-t, configútvonalat és szerepet. A helyes provisioning sorrend:
+
+1. a lenti lore- és builderleltár alapján válaszd ki a világot és helyet;
+2. készíts backupot, majd hozd létre vagy importáld az NPC-t a pontos belső ID-val;
+3. állíts be skint és megjelenést anélkül, hogy a belső ID-t átírnád;
+4. szükség esetén add hozzá a `/npcbind` kötést;
+5. futtasd a validátort, majd kattintással teszteld a giver- és objective-ágat.
+
+A `quest-npc-fallback.always: true` nem provisioning: aktív FancyNpcs-híd
+mellett is megkerülhetővé teszi a fizikai NPC-t, ezért csak tudatos fejlesztői
+staginghez használd. Normál értéke `false`.
+
 Egy NPC-kattintás runtime sorrendje forrásból biztos:
 
 1. minden aktív `TALK_TO_NPC` cél teljesül, illetve a megfelelő

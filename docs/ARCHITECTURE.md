@@ -37,7 +37,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 120 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 121 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 120 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
@@ -293,6 +293,22 @@ támadó saját `getScheduler()`-ére hoppol.
 
 ---
 
+### 3.10 Relikvia ItemMeta-frissítés — stabil kulcs és per-slot izoláció
+
+A relikvia `refresh` műveletének idempotensnek kell lennie ugyanazon
+`ItemStack` tetszőleges számú ismételt feldolgozásakor. A Mélytépő kezelt
+attribútumkulcsai stabilak:
+
+- `icesmp:metelytepo_damage_bonus` — `ADD_NUMBER`, `5.0`, `mainhand`;
+- `icesmp:metelytepo_speed_baseline` — a cél attack speed korrekciója.
+
+Frissítéskor kizárólag az adott IceSMP-kulccsal rendelkező modifier összes régi
+példánya távolítható el, majd a vanilla alap-attribútumok seedelése után pontosan
+egy új példány kerül vissza. Más plugin vagy vanilla modifierét tilos törölni.
+A `RelicRefreshPipeline` inventory-slotonként izolálja a `RuntimeException`-t:
+egy hibás tárgy nem állítja le a többi relikvia frissítését, de UUID-, slot-,
+itemtípus- és relikvia-ID-kontextussal, throttling mellett látható marad.
+
 ## 4. Folia szálkezelés (KRITIKUS)
 
 Nincs egyetlen fő-szál. A megfelelő ütemezőt használd:
@@ -325,7 +341,10 @@ minták, amelyeket új kódnál is tartani kell:
   az idézett entitás további léptetése annak saját ütemezőjén (`minion.getScheduler()`, `chicken.getScheduler()`).
 - **`getAsyncScheduler`** kizárólag IO-ra (debounce-olt mentés a `CurrencyManager`-ben) — **soha** entitásra.
 - **Kivétel — `disable()`:** leállításkor a player-cleanup *közvetlenül* fut (nem ütemezve), mert a
-  Folia ütemező a shutdown alatt már nem fogad új taskot; ez a szándékos best-effort minta.
+  Folia ütemező a shutdown alatt már nem fogad új taskot. A `TransientEntities.removeById` letiltott
+  plugin mellett csak nyugdíjazza a handle-t; az Escort shutdown előbb nullázza az autoritatív
+  állapotot, és csak aktív plugin mellett próbál player/entity taskot regisztrálni. A disable-race
+  pontos `IllegalPluginAccessException` kezelése nem általános exception-elnyelés.
 
 **Ökölszabály új kódhoz:** ha entitást/játékost/világot érintesz egy esemény-kezelőn KÍVÜLi
 kontextusból (tick, callback, másik entitás), előbb hopp az adott entitás/régió ütemezőjére.

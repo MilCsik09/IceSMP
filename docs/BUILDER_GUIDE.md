@@ -606,6 +606,21 @@ Aktív kötések:
 
 Szükséges permission: `icesmp.admin.npc`.
 
+
+A jelenlegi repository-exportban a 18 kötelező quest-NPC még nincs fizikailag
+provisionálva. Ne másold át találomra a teszt-NPC-k koordinátáit, és ne készíts
+azonos nevű NPC-t más világban csak azért, hogy a startup warning eltűnjön.
+A builderátadás előtt és után futtasd a pontos ellenőrzést:
+
+```text
+/quest admin validatenpcs
+```
+
+A kimenet az érintett `quests.<id>...` configútvonalat is megadja. Akkor kész
+egy NPC, ha a validátor zöld, a helyszín megközelíthető, a megfelelő questet
+adja/haladja, és az esetleges `/npcbind` nem nyomja el véletlenül a legacy
+`giver-npc` viselkedést.
+
 Az NPC-hely legyen:
 
 - normál játékos számára megközelíthető;

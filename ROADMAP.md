@@ -75,8 +75,10 @@ implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
 tételek a szervercsapat feladatai:
 
-- ◇ **18 NPC-szerep** fizikai kihelyezése és `/npcbind` kötése a
-  [teljes quest- és NPC-leltár](docs/QUESTS.md) alapján;
+- ◇ **18 NPC-szerep** fizikai kihelyezése és szükséges `/npcbind` kötése a
+  [teljes quest- és NPC-leltár](docs/QUESTS.md) alapján; a jelenlegi FancyNpcs
+  exportban 0/18 található, a kilépési kapu a zöld `/quest admin validatenpcs`
+  és a kattintásos quest-próba;
 - ◇ a szükséges **4 territory ID** kijelölése, majd a **4 frakcióspawn**
   pontos állóhelyének és nézési irányának mentése;
 - ◇ a `kezdo_parkour` pálya megépítése és bekötése;

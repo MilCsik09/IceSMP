@@ -560,8 +560,10 @@ Disablekor:
    műveletek kifutására;
 4. lezárja az autosave-kaput;
 5. rendezi az invsee és vanish transient állapotot;
-6. végső közös mentést végez;
-7. ezután takarítja a játékossessionöket.
+6. az Escort és más mulandó entitás-tulajdonosok előbb idempotensen lezárják
+   saját állapotukat; letiltott plugin mellett nem regisztrálnak új Folia taskot;
+7. végső közös mentést végez;
+8. ezután takarítja a játékossessionöket.
 
 Ha bármely 10 másodperces drain nem fejeződik be, a core megtagadja a
 végső shutdown-save-et és súlyos hibát ír a konzolra. Ilyen leállás után a
@@ -642,6 +644,58 @@ Az egyeztetési sorrend:
 4. szerverkonzol időrendje;
 5. admin és cél vallomása/ticketje;
 6. kézi, dokumentált döntés.
+
+### 13.6. 2026. július 30. – augusztus 2. naplóhibák runbookja
+
+**Relikvia join-hiba.** A Mélytépő frissítése stabil
+`icesmp:metelytepo_damage_bonus` kulccsal idempotens. Többszöri join vagy
+reload után pontosan egy `5.0`, `ADD_NUMBER`, mainhand modifier maradhat; a
+frissítő egy hibás slotot izolál, a többi inventoryt tovább dolgozza fel.
+Ismételt `Cannot register AttributeModifier` esetén rögzítsd a JAR SHA-ját, a
+játékos UUID-ját, a slotot, az itemtípust és a relikvia-ID-t; ne töröld vakon a
+tárgy összes attribútumát.
+
+**Quest-NPC.** Futtasd konzolból vagy adminnal:
+
+```text
+/quest admin validatenpcs
+```
+
+A jelenlegi repository FancyNpcs-exportban mind a 18 kötelező quest-NPC hiányzik.
+A parancs exact név-, case-mismatch- és quest/configútvonal-diagnosztikát ad.
+Világot vagy koordinátát nem generál; a [questleltár](QUESTS.md) és a
+[builderfolyamat](BUILDER_GUIDE.md#82-npc-integráció) alapján kell elhelyezni.
+A `quest-npc-fallback.always` normál production értéke `false`.
+
+**FancyNpcs skin.** A repository-snapshot ellenőrzése:
+
+```bash
+python3 scripts/validate_fancynpcs_snapshot.py
+```
+
+A validátor minden lokális PNG létezését és 64×32/64×64 méretét ellenőrzi, a
+remote skinhez pedig NPC-nevet és `npcs.<uuid>.skin.identifier` kulcsot ír ki.
+A URL query/fragment nem kerül a logba. A snapshot jelenleg 24 lokális, hibátlan
+skint és 7 remote `minecraftskins.com` hivatkozást tartalmaz (`test`, `han`,
+`puzser`, `cartman`, `vader`, `hermione`, `gyozike`). `bad_gateway` és timeout
+átmeneti MineSkin/FancyNpcs hiba lehet; ismétlődő `404 invalid_image_url` esetén
+a kiírt NPC/kulcs remote hivatkozását az **eredeti kép megőrzésével** migráld
+lokális skinfájlra. Ne cseréld véletlen másik karakter skinjére. Az IceSMP nem
+kezeli a FancyNpcs hálózati retry- vagy texture/signature-cache rétegét.
+
+**Resource pack.** A plugin stabil ID-ja
+`7c847f1e-d942-3c8f-bd46-5c43bb1a3e67`; hashváltozáskor az ID marad, az
+immutable R2 URL és SHA-1 együtt frissül a publikáló workflow-val. A natív
+Paper/server packbe ne duplikáld ugyanazt az URL-t.
+
+**Külső pluginfigyelmeztetések.** A GrimAC/PacketEvents 32767 byte payload stack
+nem bizonyított IceSMP-hiba, és GrimAC eltávolításával megszűnt; ne foltozd az
+IceSMP packetkódját bizonyíték nélkül. A Paper, ViaVersion, FAWE,
+FastAsyncVoxelSniper, CoreProtect, FancyNpcs és ProtocolLib update warningja
+nem automatikus frissítési utasítás. Csak staginggel igazolt, támogatott buildet
+cserélj; a ProtocolLib „nem tesztelt szerververzió” warningját ne rejtsd el.
+A tablist team-colour és a WorldGuard bridge korábbi hibáját célzott regresszió
+védi; újabb előfordulásnál először a futó JAR SHA-ját hasonlítsd a release-hez.
 
 ## 14. Deployment előtti playtest
 
@@ -1214,7 +1268,7 @@ jelölje: az alatta megadott bizonyítékhelyet is töltse ki.
 | [ ] | WORLD-01 Crate helyek | Builder/admin | minden final crate block és világ | location, block és world policy egyezik | hely újrakötése | `world/WORLD-01/` |
 | [ ] | WORLD-02 Territórium/claim | Builder/admin | határpontok és bypass profil | védelem, trust és zónaszabály helyes | építés stop | `world/WORLD-02/` |
 | [ ] | WORLD-02B 3D főváros | Builder/admin | radiusos és claim-kijelöléses főváros stagingen | radius mód változatlan; a hat XYZ-határ, vertikális/világváltás, restart, `/territory show`, claim-konfliktus, kijelölés-életciklus és biztonságos tp/home helyes | rollout stop; hibánál kijelölés megtartása | `world/WORLD-02B/` |
-| [ ] | WORLD-03 Quest/NPC | Builder/eventes | minden használt NPC és questhely | FancyNpcs-kötés és fallback út működik | kötés újraépítése | `world/WORLD-03/` |
+| [ ] | WORLD-03 Quest/NPC | Builder/eventes | minden használt NPC és questhely; `/quest admin validatenpcs` | mind a 18 exact belső ID zöld, kattintás és fallback policy helyes | kötés/provisioning újraépítése | `world/WORLD-03/` |
 | [ ] | WORLD-04 Boss/event anchor | Eventes | minden fix spawnhely | biztonságos, nem WG/claim-konfliktusos | anchor eltávolítása | `world/WORLD-04/` |
 | [ ] | WORLD-05 WorldEdit/világcsere | Builder | staging másolat utáni bejárás | crate, territory, NPC, ritual, dungeon ép | rollback snapshot | `world/WORLD-05/` |
 | [ ] | WORLD-06 Resource pack | Builder/tartalomkészítő | final pack és fallback kliens | ITEM_MODEL helyes, fallback használható | pack rollout stop | `world/WORLD-06/` |
