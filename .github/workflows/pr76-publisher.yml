@@ -1,0 +1,114 @@
+name: PR 76 verified patch publisher
+
+on:
+  push:
+    branches:
+      - automation/pr76-publisher
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout publisher payload
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assemble and verify patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/pr76-publisher/chunk-*.txt > /tmp/changes.patch.gz.b64
+          base64 --decode /tmp/changes.patch.gz.b64 | gzip -dc > /tmp/changes.patch
+          echo "636bc2721e8da195b21abc952fed8ad8c0680bf1930dfc0139533867063c8bd8  /tmp/changes.patch" | sha256sum -c -
+          grep -q '^From 06a3261f0d73f8b08f7d60f3719bafb937204d3d ' /tmp/changes.patch
+          grep -q '^From 3631ded338804c6ed80745bff82291e85aed6c28 ' /tmp/changes.patch
+          grep -q '^From b4e4b75d3155ab9ebc06cef299a88c2ddfd41ee0 ' /tmp/changes.patch
+
+      - name: Apply to exact current feature head
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/balance/faction-passives-v2:refs/remotes/origin/balance/faction-passives-v2
+          BASE_SHA="$(git rev-parse refs/remotes/origin/balance/faction-passives-v2)"
+          test "$BASE_SHA" = "c34519d8816abab7df3a31f648f6160493882bf3"
+          git switch --detach "$BASE_SHA"
+          git config user.name "OpenAI Codex"
+          git config user.email "noreply@openai.com"
+          git am /tmp/changes.patch
+          test "$(git rev-list --count "$BASE_SHA"..HEAD)" = "3"
+          test "$(git rev-parse 'HEAD^{tree}')" = "f4174ba7b504fb106777ab7c630f7a173eb33f3b"
+          git diff --check "$BASE_SHA"...HEAD
+
+      - name: Java 21 clean build
+        run: ./gradlew clean build --console=plain --no-daemon --stacktrace
+
+      - name: Gradle check
+        run: ./gradlew check --console=plain --no-daemon --stacktrace
+
+      - name: Faction regression suites
+        run: ./gradlew factionPassiveRegressionTest factionPassiveHardeningRegressionTest factionTreasuryRegressionTest --console=plain --no-daemon --stacktrace
+
+      - name: Repository consistency
+        run: python3 scripts/check_consistency.py
+
+      - name: Markdown links
+        run: python3 scripts/check_markdown_links.py --root .
+
+      - name: Inventory tooling self-tests
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+
+      - name: Generate repository inventory
+        run: |
+          python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report
+          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode report
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          files = sorted(Path('build').rglob('*.json'))
+          if not files:
+              raise SystemExit('No JSON inventory generated')
+          for path in files:
+              with path.open(encoding='utf-8') as handle:
+                  json.load(handle)
+          print(f'Validated {len(files)} JSON files')
+          PY
+
+      - name: Publish verified result branch
+        id: result
+        shell: bash
+        run: |
+          set -euo pipefail
+          FINAL_SHA="$(git rev-parse HEAD)"
+          git push origin HEAD:refs/heads/automation/pr76-publish-result
+          echo "final_sha=$FINAL_SHA" >> "$GITHUB_OUTPUT"
+          echo "FINAL_SHA=$FINAL_SHA" >> "$GITHUB_ENV"
+          echo "Verified result: $FINAL_SHA"
+
+      - name: Upload verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr76-publisher-evidence
+          path: |
+            build/repository-inventory/
+            /tmp/changes.patch
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Wait for external fast-forward and clean temporary branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 90); do
+            TARGET_SHA="$(git ls-remote origin refs/heads/balance/faction-passives-v2 | awk '{print $1}')"
+            if [[ "$TARGET_SHA" == "$FINAL_SHA" ]]; then
+              git push origin --delete automation/pr76-publisher automation/pr76-publish-result || true
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Target was not externally advanced during the cleanup window; temporary branches remain for inspection."
