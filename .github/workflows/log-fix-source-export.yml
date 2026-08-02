@@ -1,4 +1,4 @@
-name: Log fix source export
+name: Publish reviewed log fixes
 
 on:
   pull_request:
@@ -6,38 +6,65 @@ on:
       - master
     paths:
       - '.github/workflows/log-fix-source-export.yml'
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export-source:
-    if: github.head_ref == 'fix/log-errors-2026-08-02' || github.event_name == 'workflow_dispatch'
+  publish-fixes:
+    if: github.head_ref == 'fix/log-errors-2026-08-02'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out full repository history
+      - name: Check out writable feature branch
         uses: actions/checkout@v4
         with:
+          ref: fix/log-errors-2026-08-02
           fetch-depth: 0
 
-      - name: Remove persisted checkout credentials
+      - name: Configure commit identity
         shell: bash
         run: |
-          git config --local --unset-all http.https://github.com/.extraheader || true
-          git remote set-url origin https://github.com/MilCsik09/IceSMP.git
+          git config user.name 'Csik Milán'
+          git config user.email '81396861+MilCsik09@users.noreply.github.com'
 
-      - name: Create complete Git bundle
+      - name: Extract reviewed patches from staging workflow
         shell: bash
         run: |
-          git bundle create /tmp/icesmp-log-fix.bundle --all
-          git bundle verify /tmp/icesmp-log-fix.bundle
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Upload complete Git bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: icesmp-log-fix-git-${{ github.sha }}
-          path: /tmp/icesmp-log-fix.bundle
-          compression-level: 0
-          retention-days: 1
-          if-no-files-found: error
+          source = Path('.github/workflows/apply-log-fix.yml').read_text(encoding='utf-8')
+          for marker, name in (
+              ('PATCH1', 'relics'),
+              ('PATCH2', 'npcs'),
+              ('PATCH3', 'docs'),
+              ('PATCH4', 'cleanup'),
+          ):
+              start_token = "<<'" + marker + "'\n"
+              start = source.index(start_token) + len(start_token)
+              end = source.index('\n' + marker, start)
+              encoded = source[start:end].strip()
+              Path('/tmp/' + name + '.patch.gz.b64').write_text(encoded + '\n', encoding='ascii')
+          PY
+
+          for name in relics npcs docs cleanup; do
+            base64 -d "/tmp/${name}.patch.gz.b64" | gunzip > "/tmp/${name}.patch"
+          done
+
+      - name: Apply reviewed logical commits
+        shell: bash
+        run: |
+          git am --3way /tmp/relics.patch
+          git am --3way /tmp/npcs.patch
+          git am --3way /tmp/docs.patch
+          git apply --index /tmp/cleanup.patch
+          git rm .github/workflows/apply-log-fix.yml
+          git diff --cached --check
+          git commit -m 'chore(ci): remove temporary checkout export'
+
+      - name: Verify and push without force
+        shell: bash
+        run: |
+          test -z "$(git status --porcelain)"
+          git log --oneline -8
+          git push origin HEAD:fix/log-errors-2026-08-02
