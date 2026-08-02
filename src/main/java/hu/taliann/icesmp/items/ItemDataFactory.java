@@ -161,15 +161,27 @@ public final class ItemDataFactory {
         seedDefaultAttributeModifiers(item.getType(), meta);
     }
 
-    /** Ugyanaz Material-ból, ha a hívónak nincs kéznél ItemStack-je (pl. csak metát épít). */
+    /**
+     * Ugyanaz Material-ból, ha a hívónak nincs kéznél ItemStack-je (pl. csak metát épít).
+     * A defaultokat kulcsonként egyesíti: egy idegen custom modifier nem akadályozhatja meg a
+     * vanilla alapstat visszaállítását, de egy már jelen lévő defaultot sem duplikálhatunk.
+     */
     public static void seedDefaultAttributeModifiers(final Material material, final ItemMeta meta) {
-        if (material == null || meta == null || meta.hasAttributeModifiers()) {
+        if (material == null || meta == null) {
             return;
         }
         final com.google.common.collect.Multimap<Attribute, AttributeModifier> defaults =
                 material.getDefaultAttributeModifiers();
-        if (defaults != null && !defaults.isEmpty()) {
-            meta.setAttributeModifiers(com.google.common.collect.HashMultimap.create(defaults));
+        if (defaults == null || defaults.isEmpty()) {
+            return;
+        }
+        for (final Map.Entry<Attribute, AttributeModifier> entry : defaults.entries()) {
+            final Collection<AttributeModifier> current = meta.getAttributeModifiers(entry.getKey());
+            final boolean alreadyPresent = current != null && current.stream()
+                    .anyMatch(modifier -> modifier.getKey().equals(entry.getValue().getKey()));
+            if (!alreadyPresent) {
+                meta.addAttributeModifier(entry.getKey(), entry.getValue());
+            }
         }
     }
 

@@ -21,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -30,6 +31,10 @@ import java.util.logging.Logger;
 public final class RelicItemFactory {
 
     private static final String METELYTEPO_ID = "metelytepo";
+    static final NamespacedKey METELYTEPO_DAMAGE_KEY =
+            new NamespacedKey("icesmp", "metelytepo_damage_bonus");
+    static final NamespacedKey METELYTEPO_SPEED_KEY =
+            new NamespacedKey("icesmp", "metelytepo_speed_baseline");
     private static final Logger LOGGER = Logger.getLogger(RelicItemFactory.class.getName());
 
     private final NamespacedKey relicTypeKey;
@@ -156,6 +161,13 @@ public final class RelicItemFactory {
             meta.setTool(tool);
         }
 
+        // A frissítés ugyanazon ItemMeta példányon is ismételhető: az IceSMP saját, stabil
+        // kulcsú módosítóit teljesen lecseréljük, a vanilla és más plugin módosítóit érintetlenül
+        // hagyjuk. A két kulcs eltávolítása a defaultok seedelése előtt történik, hogy egy régi,
+        // csak IceSMP-modifieres tárgy visszakaphassa a vanilla alap-attribútumait is.
+        removeManagedAttributeModifiers(meta, Attribute.ATTACK_DAMAGE, METELYTEPO_DAMAGE_KEY);
+        removeManagedAttributeModifiers(meta, Attribute.ATTACK_SPEED, METELYTEPO_SPEED_KEY);
+
         // A lenti bónuszok a vanília alapra ÉPÜLNEK RÁ (arany balta 7 + 5 = 12 összsebzés), ezért az
         // alap-módosítókat át kell menteni: az első explicit módosító különben felülírná a tárgy
         // teljes attribute_modifiers komponensét, és csak a bónusz maradna.
@@ -169,15 +181,7 @@ public final class RelicItemFactory {
 
         final double targetDamage = 12.0D;
         final double damageBonus = Math.max(0.0D, targetDamage - defaultDamage);
-        meta.addAttributeModifier(
-                Attribute.ATTACK_DAMAGE,
-                new AttributeModifier(
-                        new NamespacedKey("icesmp", "metelytepo_damage_bonus"),
-                        damageBonus,
-                        AttributeModifier.Operation.ADD_NUMBER,
-                        EquipmentSlotGroup.MAINHAND
-                )
-        );
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, metelytepoDamageModifier(damageBonus));
 
         final double defaultSpeed = switch (definition.material()) {
             case NETHERITE_AXE, GOLDEN_AXE -> 1.0D;
@@ -185,18 +189,46 @@ public final class RelicItemFactory {
         };
         final double targetSpeed = 1.0D;
         final double speedDelta = targetSpeed - defaultSpeed;
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED, metelytepoSpeedModifier(speedDelta));
+    }
 
-        meta.addAttributeModifier(
-                Attribute.ATTACK_SPEED,
-                new AttributeModifier(
-                        new NamespacedKey("icesmp", "metelytepo_speed_baseline"),
-                        speedDelta,
-                        AttributeModifier.Operation.ADD_NUMBER,
-                        EquipmentSlotGroup.MAINHAND
-                )
+
+    static AttributeModifier metelytepoDamageModifier(final double amount) {
+        return new AttributeModifier(
+                METELYTEPO_DAMAGE_KEY,
+                amount,
+                AttributeModifier.Operation.ADD_NUMBER,
+                EquipmentSlotGroup.MAINHAND
         );
     }
 
+    static AttributeModifier metelytepoSpeedModifier(final double amount) {
+        return new AttributeModifier(
+                METELYTEPO_SPEED_KEY,
+                amount,
+                AttributeModifier.Operation.ADD_NUMBER,
+                EquipmentSlotGroup.MAINHAND
+        );
+    }
+
+    static List<AttributeModifier> managedModifiers(final Collection<AttributeModifier> modifiers,
+                                                    final NamespacedKey managedKey) {
+        if (modifiers == null || modifiers.isEmpty()) {
+            return List.of();
+        }
+        return modifiers.stream()
+                .filter(modifier -> managedKey.equals(modifier.getKey()))
+                .toList();
+    }
+
+    private static void removeManagedAttributeModifiers(final ItemMeta meta,
+                                                        final Attribute attribute,
+                                                        final NamespacedKey managedKey) {
+        for (final AttributeModifier modifier : managedModifiers(
+                meta.getAttributeModifiers(attribute), managedKey)) {
+            meta.removeAttributeModifier(attribute, modifier);
+        }
+    }
 
     private ToolRule createPickaxeToolRule() {
         try {

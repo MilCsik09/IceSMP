@@ -38,9 +38,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public final class RelicManager implements PlayerStateCleanup, PersistentStore {
+
+    private static final long REFRESH_FAILURE_LOG_INTERVAL_MILLIS = 5L * 60L * 1000L;
+    private static final int REFRESH_FAILURE_LOG_CACHE_LIMIT = 512;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -51,6 +55,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     // Reload (clear+rebuild) közben régió-szálak olvassák — concurrent szerkezet kell.
     private final Map<String, EnumMap<RelicTrigger, RelicTriggerConfig>> triggerConfigs = new ConcurrentHashMap<>();
     private final Map<String, RelicOwnership> ownerships = new ConcurrentHashMap<>();
+    private final Map<String, Long> refreshFailureLogTimes = new ConcurrentHashMap<>();
     /**
      * "Elveszett" passzív relikviák (halálkor a tárgy megsemmisül, de a tulajdon marad):
      * relicId → az elvesztés időpontja. Amíg él, CSAK a tulajdonos idézheti újra az
@@ -658,28 +663,55 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
         final PlayerInventory inventory = player.getInventory();
         final ItemStack[] contents = inventory.getContents();
-        boolean changed = false;
-
-        for (int slot = 0; slot < contents.length; slot++) {
-            final ItemStack itemStack = contents[slot];
-            final RelicDefinition definition = identify(itemStack);
-            if (definition == null) {
-                continue;
-            }
-
-            itemFactory.refresh(itemStack, definition);
-            contents[slot] = itemStack;
-            changed = true;
-        }
+        final int changed = RelicRefreshPipeline.refresh(
+                contents,
+                this::identify,
+                itemFactory::refresh,
+                (slot, itemStack, definition, exception) ->
+                        logRelicRefreshFailure(player, slot, itemStack, definition, exception)
+        );
 
         // A getContents() a páncél- és offhand-slotokat IS tartalmazza, ezért a viselt
         // relikviák (a szárnyak jellemzően a mellvért-slotban élnek) itt frissülnek — külön
-        // páncél-/offhand-kör csak duplikált munka lenne.
-        if (changed) {
+        // páncél-/offhand-kör csak duplikált munka lenne. A join event a játékos saját
+        // entity-régiószálán fut; az inventory írása nem kerül globális vagy async taskba.
+        if (changed > 0) {
             inventory.setContents(contents);
         }
     }
 
+
+    private void logRelicRefreshFailure(final Player player,
+                                        final int slot,
+                                        final ItemStack itemStack,
+                                        final RelicDefinition definition,
+                                        final RuntimeException exception) {
+        final String relicId = definition == null ? "<azonosítatlan>" : definition.id();
+        final String itemType = itemStack == null ? "<null>" : itemStack.getType().getKey().asString();
+        final String signature = player.getUniqueId() + "|" + slot + "|" + itemType + "|" + relicId
+                + "|" + exception.getClass().getName() + "|" + String.valueOf(exception.getMessage());
+        final long now = System.currentTimeMillis();
+        final Long previous = refreshFailureLogTimes.put(signature, now);
+        if (previous != null && now - previous < REFRESH_FAILURE_LOG_INTERVAL_MILLIS) {
+            return;
+        }
+        if (refreshFailureLogTimes.size() > REFRESH_FAILURE_LOG_CACHE_LIMIT) {
+            refreshFailureLogTimes.entrySet().removeIf(entry ->
+                    now - entry.getValue() >= REFRESH_FAILURE_LOG_INTERVAL_MILLIS);
+            while (refreshFailureLogTimes.size() > REFRESH_FAILURE_LOG_CACHE_LIMIT) {
+                refreshFailureLogTimes.entrySet().stream()
+                        .min(Map.Entry.comparingByValue())
+                        .ifPresent(entry -> refreshFailureLogTimes.remove(entry.getKey(), entry.getValue()));
+            }
+        }
+        plugin.getLogger().log(Level.SEVERE,
+                "Relikvia-frissítés hibázott; playerUuid=" + player.getUniqueId()
+                        + ", slot=" + slot
+                        + ", itemType=" + itemType
+                        + ", relicId=" + relicId
+                        + ". A többi inventory-slot frissítése folytatódik.",
+                exception);
+    }
 
     private String toLegacyColorCode(final String rawColor, final String fallback) {
         if (rawColor == null || rawColor.isBlank()) {
