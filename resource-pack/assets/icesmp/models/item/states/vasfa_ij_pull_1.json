@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "icesmp:item/states/vasfa_ij_pull_1"
-  }
-}

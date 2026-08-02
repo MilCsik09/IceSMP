@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "icesmp:item/states/melysegi_iranytu_angle_11"
-  }
-}

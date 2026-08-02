@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "icesmp:item/states/feszitett_szaru_ij_pull_0"
-  }
-}

@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "icesmp:item/loot_elit_pancel"
-  }
-}
