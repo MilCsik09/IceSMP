@@ -582,37 +582,43 @@ public final class FactionPassiveRegressionSuite {
     private static void runtimeAdaptersKeepTheBehaviouralContracts() throws IOException {
         final String listener = read(
                 "src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java");
-        check(listener.contains("EntityExhaustionEvent")
-                        && !listener.contains("FoodLevelChangeEvent"),
+        final String compactListener = listener.replaceAll("\\s+", "");
+        check(compactListener.contains("EntityExhaustionEvent")
+                        && !compactListener.contains("FoodLevelChangeEvent"),
                 "BLUE returned to blanket food-level cancellation");
-        check(listener.contains("FactionPassiveAdapterPolicy.targetMutation(decision)")
-                        && listener.contains("event.setTarget(null)")
-                        && listener.contains("EventPriority.HIGHEST"),
+        check(compactListener.contains(
+                        "FactionPassiveAdapterPolicy.targetMutation(decision)")
+                        && compactListener.contains("event.setTarget(null)")
+                        && compactListener.contains("EventPriority.HIGHEST"),
                 "target cancellation does not clear the requested target after other plugins");
-        check(listener.contains("SpellDamageUtil.schoolOf")
-                        && listener.contains("ICE_SMP_FIRE_MAGIC")
-                        && listener.contains("RED_ENTITY_FIRE")
-                        && listener.contains("explicitCombatContexts(source, settings)"),
+        check(compactListener.contains("SpellDamageUtil.schoolOf")
+                        && compactListener.contains("ICE_SMP_FIRE_MAGIC")
+                        && compactListener.contains("RED_ENTITY_FIRE")
+                        && compactListener.contains("explicitCombatContexts(source,settings)"),
                 "RED no longer separates TUZ and entity fire");
-        check(listener.contains("effectiveCombustDurationMillis(event.getDuration(), player.getFireTicks())"),
+        check(compactListener.contains(
+                        "effectiveCombustDurationMillis(event.getDuration(),player.getFireTicks())"),
                 "Paper float combust duration or existing fire ticks are ignored before provenance storage");
-        check(listener.contains("getDamageSource().getDirectEntity()")
-                        && listener.contains("getDamageSource().getCausingEntity()")
-                        && listener.contains("owningPlayerId(projectile.getShooter())")
-                        && listener.contains("instanceof org.bukkit.entity.Tameable"),
+        check(compactListener.contains("getDamageSource().getDirectEntity()")
+                        && compactListener.contains("getDamageSource().getCausingEntity()")
+                        && compactListener.contains("owningPlayerId(projectile.getShooter())")
+                        && compactListener.contains("instanceoforg.bukkit.entity.Tameable"),
                 "RED/provocation provenance ignores direct, causing, projectile or tame owners");
-        check(listener.contains("darkRetaliationRemainingMillis(playerId, sourceMobId)")
-                        && listener.contains("state.provokeDark(playerId, mob.getUniqueId(), remaining)"),
+        check(compactListener.contains(
+                        "darkRetaliationRemainingMillis(playerId,sourceMobId)")
+                        && compactListener.contains(
+                        "state.provokeDark(playerId,mob.getUniqueId(),remaining)"),
                 "nearby alert no longer derives mob-specific retaliation from the source pair");
-        check(listener.contains("resolveCurrentTruce(")
-                        && listener.contains("clearTargetIfStillProtected(")
-                        && listener.contains("if (scheduled == null)"),
+        check(compactListener.contains("resolveCurrentTruce(")
+                        && compactListener.contains("clearTargetIfStillProtected(")
+                        && compactListener.contains("if(scheduled==null)"),
                 "delayed cleanup does not revalidate live policy or scheduler rejection");
-        check(listener.contains("contentContexts(mob, liveSettings, playerId)")
-                        && listener.contains("canAlertDarkUndead("),
+        check(compactListener.contains("contentContexts(mob,liveSettings,playerId)")
+                        && compactListener.contains("canAlertDarkUndead("),
                 "queued alert ignores live membership/config/content exclusions");
-        check(listener.contains("owningPlayerId(event.getDamageSource().getCausingEntity())")
-                        && listener.contains("instanceof org.bukkit.entity.Tameable"),
+        check(compactListener.contains(
+                        "owningPlayerId(event.getDamageSource().getCausingEntity())")
+                        && compactListener.contains("instanceoforg.bukkit.entity.Tameable"),
                 "indirect or tame-owner provocation is not attributed to the player");
 
         final String service = read(
@@ -620,8 +626,9 @@ public final class FactionPassiveRegressionSuite {
         check(service.contains("record PlayerMob(UUID playerId, UUID mobId)")
                         && service.contains("Map<PlayerMob, Long> darkRetaliationUntil"),
                 "DARK retaliation regressed to global per-player state");
-        check(listener.contains("retireTrackedTarget(playerId, mobId, tracked)")
-                        && listener.contains("state.clearDarkRetaliation(playerId, mobId)")
+        check(compactListener.contains("retireTrackedTarget(playerId,mobId,tracked)")
+                        && compactListener.contains(
+                        "state.clearDarkRetaliation(playerId,mobId)")
                         && listener.contains("a newer lease replaced this callback"),
                 "retired/rejected callbacks can leak or erase a newer retaliation lease");
 
