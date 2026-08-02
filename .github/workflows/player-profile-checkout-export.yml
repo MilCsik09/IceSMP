@@ -1,0 +1,47 @@
+name: PlayerProfile authenticated checkout export (temporary)
+
+on:
+  push:
+    branches:
+      - agent/player-profile-checkout-20260802
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out complete authenticated Git history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify refs and package genuine Git DAG
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = 'b6f4492766675f718f73fd947bf92a388a3090fb'
+          git fsck --full
+          mkdir -p build/player-profile-checkout
+          git show-ref > build/player-profile-checkout/refs.txt
+          git log --all --decorate --oneline --graph -n 250 > build/player-profile-checkout/history.txt
+          git bundle create build/player-profile-checkout/icesmp.bundle --all
+          git bundle verify build/player-profile-checkout/icesmp.bundle
+          git archive --format=tar.gz --output=build/player-profile-checkout/working-tree.tar.gz HEAD
+          sha256sum build/player-profile-checkout/icesmp.bundle build/player-profile-checkout/working-tree.tar.gz > build/player-profile-checkout/SHA256SUMS
+          printf 'export-head=%s\n' "$(git rev-parse HEAD)" > build/player-profile-checkout/manifest.txt
+          printf 'profile-head=%s\n' "$(git rev-parse HEAD^)" >> build/player-profile-checkout/manifest.txt
+          printf 'profile-base=%s\n' "$(git rev-parse origin/rework/class-spec-1.21.11-compatibility)" >> build/player-profile-checkout/manifest.txt
+          printf 'merge-base=%s\n' "$(git merge-base HEAD^ origin/rework/class-spec-1.21.11-compatibility)" >> build/player-profile-checkout/manifest.txt
+
+      - name: Upload checkout bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-profile-checkout-${{ github.run_id }}
+          path: build/player-profile-checkout/
+          retention-days: 1
+          if-no-files-found: error
