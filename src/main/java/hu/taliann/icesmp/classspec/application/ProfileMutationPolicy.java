@@ -26,10 +26,10 @@ public final class ProfileMutationPolicy {
         if (profile.diagnostics().sessionBlocked()) {
             return Decision.rejected("session blocked: " + profile.diagnostics().sessionBlockReason());
         }
-        if (profile.status() == ProfileStatus.MIGRATION_REVIEW) {
-            return Decision.rejected("profile requires migration review");
+        if (profile.status() == ProfileStatus.REVIEW) {
+            return Decision.rejected("profile requires explicit review");
         }
-        if (profile.status() == ProfileStatus.CORRUPT_QUARANTINE) {
+        if (profile.status() == ProfileStatus.QUARANTINED) {
             return Decision.rejected("profile is quarantined");
         }
         return Decision.permit();
@@ -42,8 +42,10 @@ public final class ProfileMutationPolicy {
         EXPLICIT_SEAL,
         GATE_RECONCILE,
         CLASS_ASSIGN,
-        CLASS_LEVEL_MIRROR,
+        CLASS_EXPERIENCE,
         SOULFORGE_UPGRADE,
+        SOUL_SHARD_MUTATION,
+        COMPANION_MUTATION,
         EXPLICIT_RECOVERY
     }
 

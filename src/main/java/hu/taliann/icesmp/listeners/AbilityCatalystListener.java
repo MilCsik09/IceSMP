@@ -421,7 +421,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     private boolean profileRuntimeReady(final Player player) {
         final var gateway = profileGateway;
-        if (gateway == null || !gateway.enabled() || gateway.isSessionReady(player.getUniqueId())) {
+        if (gateway != null && gateway.isSessionReady(player.getUniqueId())) {
             return true;
         }
         player.sendActionBar(messageManager.getMessage(

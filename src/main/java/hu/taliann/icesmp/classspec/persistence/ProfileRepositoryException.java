@@ -3,6 +3,8 @@ package hu.taliann.icesmp.classspec.persistence;
 /** A durable profile operation failed before the candidate became authoritative. */
 public class ProfileRepositoryException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     public ProfileRepositoryException(final String message) {
         super(message);
     }
@@ -13,6 +15,7 @@ public class ProfileRepositoryException extends RuntimeException {
 
     /** The caller used a stale or skipped revision. */
     public static final class RevisionConflict extends ProfileRepositoryException {
+        private static final long serialVersionUID = 1L;
         private final long expected;
         private final long actual;
 

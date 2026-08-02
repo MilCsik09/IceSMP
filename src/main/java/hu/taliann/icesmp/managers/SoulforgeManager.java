@@ -1,182 +1,121 @@
 package hu.taliann.icesmp.managers;
 
-import org.bukkit.NamespacedKey;
+import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
+import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
-/**
- * E1 — Nekromanta lélek-kovácsolás: a lélekszilánk tartós, presztízs-befektetése
- * a minion-seregbe. 3 ág (ELET/SEBZES/LETSZAM), áganként 5 rang, növekvő
- * szilánk-árral; a rangok player-PDC-ben élnek, a SummonMinionsSpell cast-kor
- * olvassa a szorzókat (statikus híd — LootTable-minta). A Létszám-ág extra
- * minion-slotokat ad ([0,0,1,1,2,3] — max +3 az alap fölé, a spec cap-je).
- * Folia: minden művelet a játékos saját régió-szálán fut (parancs/cast).
- */
-public final class SoulforgeManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
-
+/** Restart-durable, atomic Profile v2 Soulforge upgrades. */
+public final class SoulforgeManager implements PlayerStateCleanup {
     public enum Branch { ELET, SEBZES, LETSZAM }
-
     public static final int MAX_RANK = 5;
     private static final int[] EXTRA_SLOTS = {0, 0, 1, 1, 2, 3};
 
     private final ConfigManager configManager;
-    private final JavaPlugin plugin;
-    private final SoulShardManager soulShardManager;
-    private final java.util.Map<Branch, NamespacedKey> keys = new java.util.EnumMap<>(Branch.class);
-    private volatile hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway;
-    private final java.util.Map<java.util.UUID, java.util.Map<String,
-            java.util.concurrent.CompletableFuture<String>>> upgradeReceipts =
-            new java.util.concurrent.ConcurrentHashMap<>();
+    private volatile ClassSpecProfileGateway profileGateway;
 
-    public SoulforgeManager(final JavaPlugin plugin, final ConfigManager configManager,
+    public SoulforgeManager(final org.bukkit.plugin.java.JavaPlugin plugin,
+                            final ConfigManager configManager,
                             final SoulShardManager soulShardManager) {
-        this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
-        this.configManager = configManager;
-        this.soulShardManager = soulShardManager;
-        for (final Branch branch : Branch.values()) {
-            keys.put(branch, new NamespacedKey(plugin, "soulforge_" + branch.name().toLowerCase(Locale.ROOT)));
-        }
+        Objects.requireNonNull(plugin, "plugin");
+        this.configManager = Objects.requireNonNull(configManager, "configManager");
+        Objects.requireNonNull(soulShardManager, "soulShardManager");
     }
 
-    public void setProfileGateway(
-            final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway) {
-        this.profileGateway = java.util.Objects.requireNonNull(profileGateway, "profileGateway");
+    public void setProfileGateway(final ClassSpecProfileGateway gateway) {
+        profileGateway = Objects.requireNonNull(gateway, "profileGateway");
     }
 
-    public boolean isProfileV2Enabled() {
-        final var gateway = profileGateway;
-        return gateway != null && gateway.enabled();
+    private ClassSpecProfileGateway gateway() {
+        final ClassSpecProfileGateway gateway = profileGateway;
+        if (gateway == null) throw new IllegalStateException("Profile v2 gateway is not initialized");
+        return gateway;
     }
 
     public int getRank(final Player player, final Branch branch) {
-        final var gateway = profileGateway;
-        if (gateway != null && gateway.enabled()) {
-            final String key = "necromancer.soulforge." + branch.name().toLowerCase(Locale.ROOT);
-            try {
-                return gateway.activeMechanic(player.getUniqueId(), key)
-                        .map(Integer::parseInt).map(rank -> Math.max(0, Math.min(MAX_RANK, rank)))
-                        .orElse(0);
-            } catch (final NumberFormatException invalid) {
+        if (player == null || branch == null) return 0;
+        final String key = "necromancer.soulforge." + branch.name().toLowerCase(Locale.ROOT);
+        try {
+            final int rank = gateway().activeMechanic(player.getUniqueId(), key)
+                    .map(Integer::parseInt).orElse(0);
+            if (rank < 0 || rank > MAX_RANK) {
+                gateway().blockSession(player.getUniqueId(), "Invalid durable Soulforge rank");
                 return 0;
             }
+            return rank;
+        } catch (final NumberFormatException invalid) {
+            gateway().blockSession(player.getUniqueId(), "Invalid durable Soulforge rank");
+            return 0;
         }
-        return Math.max(0, Math.min(MAX_RANK, player.getPersistentDataContainer()
-                .getOrDefault(keys.get(branch), PersistentDataType.INTEGER, 0)));
     }
 
-    /**
-     * Read-only migration view of the exact persisted ranks. Unlike
-     * {@link #getRank(Player, Branch)}, values are not clamped so corrupt or
-     * future legacy data can be sent to migration review instead of silently
-     * changing it.
-     */
-    public Map<Branch, Integer> snapshotPersistedRanks(final Player player) {
-        final Map<Branch, Integer> ranks = new EnumMap<>(Branch.class);
-        final var pdc = player.getPersistentDataContainer();
-        for (final Branch branch : Branch.values()) {
-            final NamespacedKey key = keys.get(branch);
-            if (pdc.has(key, PersistentDataType.INTEGER)) {
-                ranks.put(branch, pdc.getOrDefault(key, PersistentDataType.INTEGER, 0));
-            }
-        }
-        return Map.copyOf(ranks);
+    /** No legacy PDC snapshot is supported in greenfield mode. */
+    public java.util.Map<Branch, Integer> snapshotPersistedRanks(final Player player) {
+        final java.util.EnumMap<Branch, Integer> ranks = new java.util.EnumMap<>(Branch.class);
+        for (final Branch branch : Branch.values()) ranks.put(branch, getRank(player, branch));
+        return java.util.Map.copyOf(ranks);
     }
 
-    /** A következő rang szilánk-ára (rang-index szerint a config-listából). */
     public int nextCost(final Player player, final Branch branch) {
         final int rank = getRank(player, branch);
-        if (rank >= MAX_RANK) {
-            return -1;
-        }
-        final List<Integer> costs = configManager.getConfiguration() == null ? List.of()
+        if (rank >= MAX_RANK) return -1;
+        final List<Integer> configured = configManager.getConfiguration() == null ? List.of()
                 : configManager.getConfiguration().getIntegerList("soulforge.rank-costs");
-        if (costs.size() >= MAX_RANK) {
-            return costs.get(rank);
-        }
-        return switch (rank) { case 0 -> 5; case 1 -> 8; case 2 -> 12; case 3 -> 18; default -> 25; };
+        final int cost = configured.size() >= MAX_RANK ? configured.get(rank)
+                : switch (rank) { case 0 -> 5; case 1 -> 8; case 2 -> 12; case 3 -> 18; default -> 25; };
+        if (cost <= 0) throw new IllegalStateException("Soulforge rank cost must be positive");
+        return cost;
     }
 
-    /** Fejlesztés; hibakulcs vagy null. A szilánk-levonás a SoulShardManageren át. */
+    /** Legacy direct upgrade is disabled. */
     public String upgrade(final Player player, final Branch branch) {
-        final var gateway = profileGateway;
-        if (gateway != null && gateway.enabled()) {
-            return "soulforge-profile-v2-async-required";
-        }
-        if (!configManager.getBoolean("soulforge.enabled", true)) {
-            return "soulforge-disabled";
-        }
-        final int cost = nextCost(player, branch);
-        if (cost < 0) {
-            return "soulforge-max";
-        }
-        if (!soulShardManager.spendShards(player, cost)) {
-            return "soulforge-poor";
-        }
-        player.getPersistentDataContainer().set(keys.get(branch), PersistentDataType.INTEGER,
-                getRank(player, branch) + 1);
-        return null;
+        return "soulforge-profile-v2-async-required";
     }
 
-    /** Revision/CAS protected Profile v2 upgrade with exact shard refund on failure. */
-    public java.util.concurrent.CompletionStage<String> upgradeV2(final Player player,
-                                                                  final Branch branch) {
-        final var gateway = profileGateway;
-        if (gateway == null || !gateway.enabled()
-                || !gateway.activeSpecId(player.getUniqueId()).filter("necromancer"::equals).isPresent()) {
-            return java.util.concurrent.CompletableFuture.completedFuture("soulforge-necromancer-only");
+    public CompletionStage<String> upgradeV2(final Player player, final Branch branch) {
+        if (player == null || branch == null || !configManager.getBoolean("soulforge.enabled", true)) {
+            return CompletableFuture.completedFuture("soulforge-disabled");
+        }
+        final ClassSpecProfileGateway gateway = gateway();
+        if (!gateway.isSessionReady(player.getUniqueId())
+                || gateway.activeSpecId(player.getUniqueId()).filter("necromancer"::equals).isEmpty()) {
+            return CompletableFuture.completedFuture("soulforge-necromancer-only");
         }
         final int cost = nextCost(player, branch);
-        if (cost < 0) {
-            return java.util.concurrent.CompletableFuture.completedFuture("soulforge-max");
-        }
+        if (cost < 0) return CompletableFuture.completedFuture("soulforge-max");
         final long revision = gateway.diagnostic(player.getUniqueId()).revision();
-        final String operationId = "soulforge:" + player.getUniqueId() + ":"
-                + branch.name() + ":" + revision;
-        final var playerReceipts = upgradeReceipts.computeIfAbsent(player.getUniqueId(),
-                ignored -> new java.util.concurrent.ConcurrentHashMap<>());
-        return playerReceipts.computeIfAbsent(operationId, ignored -> {
-            final java.util.concurrent.CompletableFuture<String> completion =
-                    new java.util.concurrent.CompletableFuture<>();
-            if (!soulShardManager.spendShards(player, cost)) {
-                completion.complete("soulforge-poor");
-                return completion;
-            }
-            gateway.incrementSoulforge(player.getUniqueId(), branch.name(), operationId)
-                    .whenComplete((result, failure) -> {
-                        if (failure == null && result != null && result.durableMutationApplied()) {
-                            if (result.committed()) {
-                                completion.complete(null);
-                            } else {
-                                gateway.blockSession(player.getUniqueId(),
-                                        "Soulforge rank committed, but runtime reconciliation failed: "
-                                                + result.detail());
-                                completion.complete("soulforge-runtime-failed");
-                            }
-                            return;
-                        }
-                        player.getScheduler().run(plugin, task -> {
-                                    try {
-                                        soulShardManager.addShards(player, cost);
-                                        completion.complete("soulforge-persistence-failed");
-                                    } catch (final Throwable refundFailure) {
-                                        gateway.blockSession(player.getUniqueId(),
-                                                "Soulforge shard refund failed after Profile v2 mutation failure");
-                                        completion.complete("soulforge-refund-failed");
-                                    }
-                                }, () -> {
-                                    gateway.blockSession(player.getUniqueId(),
-                                            "Soulforge shard refund scheduler rejected");
-                                    completion.complete("soulforge-refund-failed");
-                                });
-                    });
-            return completion;
-        });
+        final String operationId = "soulforge:" + player.getUniqueId() + ':'
+                + branch.name().toLowerCase(Locale.ROOT) + ':' + revision;
+        return upgradeV2(player, branch, cost, operationId);
+    }
+
+    /** Explicit operation-id entry used by deterministic retry tests and recovery paths. */
+    public CompletionStage<String> upgradeV2(final Player player, final Branch branch,
+                                              final int cost, final String operationId) {
+        final ClassSpecProfileGateway gateway = gateway();
+        if (player == null || branch == null || cost <= 0 || operationId == null || operationId.isBlank()) {
+            return CompletableFuture.completedFuture("soulforge-invalid-operation");
+        }
+        return gateway.incrementSoulforge(player.getUniqueId(),
+                        branch.name().toLowerCase(Locale.ROOT), cost, operationId)
+                .handle((result, failure) -> {
+                    if (failure != null) return "soulforge-persistence-failed";
+                    if (result.committed() || result.status() == ProfileMutationResult.Status.NO_CHANGE) return null;
+                    if (result.status() == ProfileMutationResult.Status.RUNTIME_EFFECT_FAILED) {
+                        gateway.blockSession(player.getUniqueId(),
+                                "Soulforge durable commit requires runtime reconciliation: " + result.detail());
+                        return "soulforge-runtime-failed";
+                    }
+                    return result.detail().contains("insufficient") ? "soulforge-poor"
+                            : "soulforge-persistence-failed";
+                });
     }
 
     public double healthMultiplier(final Player player) {
@@ -189,12 +128,6 @@ public final class SoulforgeManager implements hu.taliann.icesmp.session.PlayerS
                 * Math.max(0.0D, configManager.getDouble("soulforge.damage-per-rank", 0.06D));
     }
 
-    public int extraSlots(final Player player) {
-        return EXTRA_SLOTS[getRank(player, Branch.LETSZAM)];
-    }
-
-    @Override
-    public void clearPlayerState(final java.util.UUID playerId) {
-        upgradeReceipts.remove(playerId);
-    }
+    public int extraSlots(final Player player) { return EXTRA_SLOTS[getRank(player, Branch.LETSZAM)]; }
+    @Override public void clearPlayerState(final UUID playerId) { }
 }

@@ -1619,7 +1619,11 @@ public final class QuestManager implements PersistentStore {
     private void applyRewards(final Player player, final ConfigurationSection quest) {
         final int classXp = quest.getInt("rewards.class-xp", 0);
         if (classXp > 0 && jobManager.hasPrimaryJob(player)) {
-            jobManager.addXpToJob(player, classXp);
+            jobManager.addXpToJobV2(player, classXp, "quest-xp:" + quest.getName().toLowerCase(Locale.ROOT) + ":" + player.getUniqueId())
+                    .exceptionally(failure -> {
+                        plugin.getLogger().severe("Quest class XP persistence failed for " + player.getUniqueId() + ": " + failure.getMessage());
+                        return false;
+                    });
         }
 
         final ConfigurationSection currencyReward = quest.getConfigurationSection("rewards.currency");
@@ -1674,27 +1678,17 @@ public final class QuestManager implements PersistentStore {
             // a paktum nélkül — a vezeklés a specet is elengedi (a kaszt marad).
             final SpecializationManager specs = this.specializationManagerRef;
             if (specs != null) {
-                if (specs.profileV2Enabled()) {
-                    specs.reconcileDarkGates(player).whenComplete((result, failure) ->
-                            player.getScheduler().run(plugin, task -> {
-                                if (failure == null && result != null && result.committed()) {
-                                    player.sendMessage(messageManager.getMessage("penance-spec-sealed",
-                                            "<yellow>A vezekléssel a sötét utad lezárult, de a fejlődésed megmaradt.</yellow>"));
-                                }
-                            }, null));
-                    return;
-                }
-                final hu.taliann.icesmp.data.SpecializationType current = specs.getClassSpecialization(player);
-                if (current != null && (current.getRequiredFaction() == hu.taliann.icesmp.data.FactionType.DARK
-                        || current.requiresSinner())) {
-                    specs.resetClassSpecialization(player);
-                    player.sendMessage(messageManager.getMessage("penance-spec-reset",
-                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott téged. Új utat választhatsz.</yellow>"));
-                }
+                specs.reconcileDarkGates(player).whenComplete((result, failure) ->
+                        player.getScheduler().run(plugin, task -> {
+                            if (failure == null && result != null && result.durableMutationApplied()) {
+                                player.sendMessage(messageManager.getMessage("penance-spec-sealed",
+                                        "<yellow>A vezekléssel a sötét utad lezárult, de a fejlődésed megmaradt.</yellow>"));
+                            }
+                        }, null));
             }
         }
         final SpecializationManager profileSpecs = this.specializationManagerRef;
-        if (profileSpecs != null && profileSpecs.profileV2Enabled()) {
+        if (profileSpecs != null) {
             profileSpecs.reconcileDarkGates(player);
         }
     }

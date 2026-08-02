@@ -442,21 +442,22 @@ Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Választás, XP-források, szintlépés, képességfeloldás és kapcsolódó combat/craft esemény.
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; resource-pack ikonok és balance-adatok tesztelendők.
-- **Fontos határ:** A konkrét élő balance és már létező játékosadat-migráció az élő config nélkül nem bizonyítható.
+- **Fontos határ:** A konkrét élő balance és több-régiós Folia viselkedés stagingben ellenőrizendő; production legacy játékosadat-migráció nincs.
 
-A teljes, 13 kasztot és 35 specializációt érintő rework kompatibilitási alapja már bekerült, de
-alapból ki van kapcsolva. A jelenlegi kaszt- és specjátékmenet marad mérvadó mindaddig, amíg a
-`class-spec-rework.enabled` flag nem aktív. Bekapcsolás előtt az IceSMP a verziózárt dependency
-manifest alapján ellenőrzi a teljes kötelező megjelenítési és content stacket; eltérésnél nem enged
-félaktív profilt betölteni.
+A teljes, 13 kasztot és 35 specializációt kiszolgáló Profile v2 alap a kaszt/spec egyetlen
+autoritatív adatmodellje és persistence-rétege. Nincs legacy player-profile migráció, PDC fallback,
+dual authority vagy runtime kill switch. Hiányzó profil determinisztikus revision-0 greenfield
+aggregátumként jön létre; hibás vagy owner-eltérő profil quarantine-ba kerül és fail-closed marad.
+Az IceSMP a verziózárt dependency manifest alapján ellenőrzi a kötelező megjelenítési és content
+stacket; eltérésnél nem aktivál félkész profilt.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin`; `icesmp.admin.job`; `icesmp.admin.spec`; `icesmp.job.admin`
+- Permission: `icesmp.admin.job`; `icesmp.admin.spec`; quarantine recovery: `icesmp.admin.spec.recover`
 - Config: `classes.*`, `spells.*`, specialization- és ability-definíciók.
-- Rework staging config: `class-spec-rework.*`; dependency lock: `class-spec-dependencies.lock.yml`.
-- Tartós állapot: Kaszt, XP, specializáció és unlockok játékosonként tartósak.
+- Startup dependency policy: `class-spec-rework.dependencies.enforce`; dependency lock: `class-spec-dependencies.lock.yml`. Nincs runtime rollout flag.
+- Tartós állapot: ownerhez kötött Profile v2 kaszt, XP/szint, loadout, companion, Soulforge és operation receipt; explicit spell-provenance ledger.
 - Reload: Balance részben reloadolható; új enum/registry-szerkezet restartot igényel.
 
 </details>

@@ -17,11 +17,10 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Fail-fast compatibility gate for the opt-in class/spec rework.
+ * Fail-fast compatibility gate for the mandatory Profile v2 runtime.
  *
- * <p>The legacy runtime remains available while {@code class-spec-rework.enabled} is false. Once the
- * rework is enabled, every required engine in the checked-in lock manifest must be present at an
- * explicitly accepted version. This prevents a partially-rendered profile from becoming authoritative.</p>
+ * <p>Every required engine in the checked-in lock manifest must be present at an explicitly accepted
+ * version before class/spec gameplay starts. There is deliberately no legacy-runtime bypass.</p>
  */
 public final class ClassSpecDependencyPreflight {
 
@@ -39,15 +38,9 @@ public final class ClassSpecDependencyPreflight {
 
     /** Runs the gate and throws before gameplay startup when strict rework dependencies are invalid. */
     public Report verify() {
-        final boolean enabled = configManager.getBoolean("class-spec-rework.enabled", false);
         final boolean enforce = configManager.getBoolean("class-spec-rework.dependencies.enforce", true);
-        if (!enabled) {
-            plugin.getLogger().info("A class/spec rework ki van kapcsolva; a verziózárt dependency "
-                    + "preflight nem futott le.");
-            return new Report(false, enforce, List.of());
-        }
         final List<Result> results = inspect(plugin.getServer().getPluginManager(), requirements);
-        final Report report = new Report(enabled, enforce, results);
+        final Report report = new Report(true, enforce, results);
 
         for (final Result result : results) {
             final String prefix = result.ok() ? "Class/spec dependency OK: " : "Class/spec dependency HIBA: ";
@@ -61,7 +54,7 @@ public final class ClassSpecDependencyPreflight {
             }
         }
 
-        if (enabled && enforce && !report.requiredDependenciesValid()) {
+        if (enforce && !report.requiredDependenciesValid()) {
             throw new IllegalStateException("A class/spec rework nem indulhat: hiányzó vagy nem zárolt "
                     + "kötelező pluginverzió. Lásd: " + RESOURCE);
         }

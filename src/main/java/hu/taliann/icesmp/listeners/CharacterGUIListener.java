@@ -131,30 +131,20 @@ public final class CharacterGUIListener implements Listener {
 
         final SpecializationType classSpec = SpecGUI.resolveClassSpec(player, ctx, slot);
         if (classSpec != null) {
-            if (ctx.specializationManager().profileV2Enabled()) {
-                player.closeInventory();
-                ctx.specializationManager().selectClassSpecializationV2(player, classSpec)
-                        .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
-                            if (failure == null && Boolean.TRUE.equals(selected)) {
-                                success(player, ctx.messageManager().getMessage(
-                                                "spec-choose-success", "&aSpecializáció kiválasztva:")
-                                        .append(Component.space()).append(classSpec.getDisplayName()));
-                            } else {
-                                fail(player, ctx.messageManager().getComponent("spec-choose-failed",
-                                        "&cA Profile v2 mentés vagy valamelyik kasztkapu miatt a választás meghiúsult."));
-                            }
-                            SpecGUI.open(player, ctx);
-                        }, null));
-                return;
-            }
-            if (ctx.specializationManager().selectClassSpecialization(player, classSpec)) {
-                success(player, ctx.messageManager().getMessage("spec-choose-success", "&aSpecializáció kiválasztva:")
-                        .append(Component.space()).append(classSpec.getDisplayName()));
-            } else {
-                fail(player, ctx.messageManager().getComponent("spec-choose-failed",
-                        "&cNem választhatod ezt a specializációt (kaszt, szint, frakció vagy bűnös feltétel hiányzik)."));
-            }
-            SpecGUI.open(player, ctx);
+            player.closeInventory();
+            ctx.specializationManager().selectClassSpecializationV2(player, classSpec)
+                    .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (failure == null && Boolean.TRUE.equals(selected)) {
+                            success(player, ctx.messageManager().getMessage(
+                                            "spec-choose-success", "&aSpecializáció kiválasztva:")
+                                    .append(Component.space()).append(classSpec.getDisplayName()));
+                        } else {
+                            fail(player, ctx.messageManager().getComponent("spec-choose-failed",
+                                    "&cA Profile v2 mentés vagy valamelyik kasztkapu miatt a választás meghiúsult."));
+                        }
+                        SpecGUI.open(player, ctx);
+                    }, () -> ctx.specializationManager().profileGateway().blockSession(
+                            player.getUniqueId(), "Spec GUI completion scheduler rejected")));
             return;
         }
 
@@ -224,7 +214,7 @@ public final class CharacterGUIListener implements Listener {
 
     /** Respecs the class or profession specialization for the faction-currency cost. */
     private void respec(final Player player, final boolean classPool) {
-        if (classPool && ctx.specializationManager().profileV2Enabled()) {
+        if (classPool) {
             player.closeInventory();
             final long revision = ctx.specializationManager().profileGateway()
                     .diagnostic(player.getUniqueId()).revision();

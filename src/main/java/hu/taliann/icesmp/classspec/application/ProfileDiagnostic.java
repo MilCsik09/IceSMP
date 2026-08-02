@@ -13,23 +13,25 @@ import java.util.Optional;
 
 /** Immutable projection used by {@code /spec info} and mutation responses. */
 public record ProfileDiagnostic(
-        boolean featureEnabled,
+        boolean authorityAvailable,
         boolean loaded,
         int schemaVersion,
         long revision,
         ProfileStatus profileStatus,
         Optional<String> primaryClassId,
+        int classLevel,
+        int classExperience,
         Optional<LoadoutSlot> activeSlot,
         boolean secondSpecUnlocked,
         Map<LoadoutSlot, SlotDiagnostic> slots,
-        Optional<String> migrationReviewReason,
+        Optional<String> reviewReason,
         Optional<String> quarantineReason,
         Optional<String> sessionBlockReason) {
 
     public ProfileDiagnostic {
         primaryClassId = safeOptional(primaryClassId);
         activeSlot = safeOptional(activeSlot);
-        migrationReviewReason = safeOptional(migrationReviewReason);
+        reviewReason = safeOptional(reviewReason);
         quarantineReason = safeOptional(quarantineReason);
         sessionBlockReason = safeOptional(sessionBlockReason);
         Objects.requireNonNull(slots, "slots");
@@ -41,30 +43,29 @@ public record ProfileDiagnostic(
         if (loaded && profileStatus == null) {
             throw new IllegalArgumentException("A loaded diagnostic requires profile status");
         }
-    }
-
-    public static ProfileDiagnostic disabled() {
-        return unavailable(false, "");
+        if (classLevel < 0 || classExperience < 0) {
+            throw new IllegalArgumentException("Class level/experience diagnostics cannot be negative");
+        }
     }
 
     public static ProfileDiagnostic loading() {
-        return unavailable(true, "profile loading");
+        return unavailable("profile loading");
     }
 
     public static ProfileDiagnostic quarantined(final String reason) {
-        return new ProfileDiagnostic(true, true, 2, -1L, ProfileStatus.CORRUPT_QUARANTINE,
-                Optional.empty(), Optional.empty(), false, Map.of(), Optional.empty(),
+        return new ProfileDiagnostic(true, true, 2, -1L, ProfileStatus.QUARANTINED,
+                Optional.empty(), 0, 0, Optional.empty(), false, Map.of(), Optional.empty(),
                 optionalText(reason), optionalText(reason));
     }
 
-    public static ProfileDiagnostic unavailable(final boolean featureEnabled, final String reason) {
-        return new ProfileDiagnostic(featureEnabled, false, 0, -1L, null,
-                Optional.empty(), Optional.empty(), false, Map.of(), Optional.empty(),
+    public static ProfileDiagnostic unavailable(final String reason) {
+        return new ProfileDiagnostic(true, false, 0, -1L, null,
+                Optional.empty(), 0, 0, Optional.empty(), false, Map.of(), Optional.empty(),
                 Optional.empty(), optionalText(reason));
     }
 
     public boolean gameplayUsable() {
-        return featureEnabled && loaded && profileStatus == ProfileStatus.READY
+        return authorityAvailable && loaded && profileStatus == ProfileStatus.READY
                 && sessionBlockReason.isEmpty();
     }
 

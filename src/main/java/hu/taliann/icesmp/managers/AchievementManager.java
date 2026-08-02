@@ -187,7 +187,9 @@ public final class AchievementManager {
         final boolean xpReward = achievement.metric() == Metric.WEALTH;
         if (achievement.reward() > 0) {
             if (xpReward) {
-                jobManager.addXpToJob(player, (int) Math.min(Integer.MAX_VALUE, achievement.reward()));
+                jobManager.addXpToJobV2(player, (int) Math.min(Integer.MAX_VALUE, achievement.reward()),
+                        "achievement:" + player.getUniqueId() + ":" + achievement.id())
+                        .exceptionally(failure -> { plugin.getLogger().warning("Achievement class XP failed: " + failure.getMessage()); return false; });
             } else {
                 final FactionType faction = factionManager.getFaction(player.getUniqueId());
                 currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), achievement.reward());

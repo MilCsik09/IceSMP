@@ -1,132 +1,69 @@
-# Kaszt- és specializáció-rework — Profile v2 üzemeltetői runbook
+# Profile v2 operations runbook
 
-Ez a kiegészítő runbook nem helyettesíti a `docs/ADMIN_GUIDE.md` kézikönyvet. A Profile v2
-alapértelmezetten kikapcsolt, és az első rollout mindig staging/cohort alapú.
+## Authority model
 
-## Állapotok röviden
+Profile v2 is always enabled and is the sole class/spec authority. There is no migration mode, legacy fallback,
+dual-write period or kill switch. `class-spec-rework.dependencies.enforce` controls dependency validation only; it
+does not select another runtime.
 
-| Állapot | Class/spec runtime | Üzemeltetői jelentés |
-| --- | --- | --- |
-| `READY` | gate- és loadoutfüggően használható | Érvényes, tartós profil. |
-| `MIGRATION_REVIEW` | blokkolt | Bizonytalan legacy adat megmaradt; explicit recovery kell. |
-| `CORRUPT_QUARANTINE` | blokkolt | Sérült payload; az eredetit változatlanul meg kell őrizni. |
-| session persistence block | blokkolt | A tartós profil lehet ép, de az aktuális session mentése/loadja nem biztonságos. |
-| `SEALED` loadout | az adott spec blokkolt | A progressz megmaradt, valamely kapu hiányzik vagy admin/recovery seal aktív. |
+## Normal states
 
-A blokk csak a class/spec rendszert érinti; a játékos más szerverfunkciókat tovább használhat.
+| State | Gameplay | Operator action |
+|---|---:|---|
+| `READY` | allowed when session is READY and no operation is pending | none |
+| `REVIEW` | blocked | inspect diagnostic and recovery-required operation |
+| `QUARANTINED` | blocked | preserve evidence and use explicit recovery |
+| `SEALED` loadout | that loadout blocked | restore all eligible gates or use documented admin action |
+| reconciliation required | blocked | inspect runtime failure, retry cleanup/reconnect |
 
-## Engedélyezés előtti kapu
+## Diagnostics
 
-1. Készüljön visszaállítható mentés a világról, playerdatáról, teljes IceSMP pluginadatról és
-   resource packről.
-2. Pontosan a `class-spec-dependencies.lock.yml` fájlban rögzített pluginverziók legyenek telepítve.
-3. A staging szerver induljon `-Dpaper.disablePluginRemapping=true` kapcsolóval.
-4. A `class-spec-rework.enabled` maradjon `false`, amíg a dependency preflight és az összes Profile
-   v2 regresszió nem zöld.
-5. Ellenőrizd a repository-inventory findingokat is; a workflow zöld színe önmagában nem bizonyít
-   nulla review-required komponenst.
-6. Készíts cohortot: új játékos, spec nélküli legacy játékos, normál spec, mind az öt DARK spec,
-   companionos spec, Soulforge, valamint szándékosan review/quarantine fixture.
-7. Csak sikeres rollbackpróba után kapcsold be a flaget belső cohorton; globális rollout külön lépés.
+Use `/spec info` for schema, revision, class, slots, complete seal reasons and session block detail. Repository logs
+include owner UUID, bounded error detail and evidence ID; raw payloads are not dumped into logs.
 
-Ha a flag `false`, a Profile v2 nem olvas, nem ír és nem migrál. Ha `true`, egy játékos sessionjében
-nem futhat egyszerre legacy és v2 spec runtime.
+## Quarantine recovery
 
-## Join, quit és leállítás ellenőrzése
+1. Stop repeated login attempts for the target while investigating.
+2. Record the owner UUID, evidence ID, quarantine reason and filesystem backup.
+3. Confirm that the evidence/marker belongs to the target UUID.
+4. Run:
 
-Joinkor a class/spec funkció addig blokkolt, amíg a profil load vagy legacy migráció, a validáció és
-a gate/spell reconcile sikeresen be nem fejeződik. A játékosnak nem kell az egész szerverről
-kiesnie. Ellenőrizd, hogy ugyanarra a játékosra nincs ismételt migráció vagy dupla grant.
+   ```text
+   /spec recover <player|uuid> confirm
+   ```
 
-Quitkor előbb transient spell/pet/minion/form cleanup, majd `flush(player)` és cache cleanup történik.
-Plugin disablekor új mutation nem indulhat; minden runtime cleanup és `flushAll` befejeződik, majd a
-cache ürül. Leállítás előtt figyeld a logban a flush hibákat; sikertelen flush mellett ne tekintsd a
-deploymentet tisztán leállítottnak.
+   Permission: `icesmp.admin.spec.recover`.
+5. The command preserves evidence, records an audit ID and creates a clean, inactive revision-0 profile.
+6. Have the player reconnect and choose class/spec again.
 
-## `/spec info` diagnosztika
+Do not use normal reset for a quarantined profile and do not copy another player's profile file into place.
 
-A diagnosztika legalább ezt mutatja:
+## Runtime reconciliation failure
 
-- profile status, schema version és revision;
-- primary class és ellenőrzött class-level tükör;
-- active slot és second-spec unlock;
-- slotonként spec ID, loadout status és seal ok;
-- mastery rang és XP;
-- migration-review vagy quarantine ok;
-- session persistence block oka.
+A durable profile commit and runtime application are separate reported phases. If persistence succeeded but
+spell/pet/form cleanup or rebuild failed, the session is marked reconciliation-required. Do not refund or replay
+economic operations manually. Correct the scheduler/runtime cause, perform idempotent cleanup, then reconnect.
 
-A parancs diagnosztika, nem recovery-művelet. Nem old fel sealt, nem ír felül payloadot és nem töröl
-legacy snapshotot. Kimenetét a játékos UUID-jével, időponttal, szerverbuilddel és a kapcsolódó log-
-korrelációs azonosítóval együtt rögzítsd; nyers payloadot ne másolj publikus csatornára.
+## Respec recovery
 
-## Decode-hiba és quarantine
+On startup/login the recovery protocol compares the respec journal, wallet witness and Profile v2 receipt. It
+finishes or rolls back a partial operation deterministically. Do not edit only one of these stores. Preserve all
+three before manual intervention.
 
-1. Ne futtass általános class/spec resetet.
-2. Állítsd le az érintett játékos class/spec módosításait; más rendszerek maradhatnak elérhetők.
-3. Mentsd ki változatlanul az eredeti payloadot, checksumot, fájlt és vonatkozó logot.
-4. Ellenőrizd, hogy nem keletkezett üres helyettesítő profil és a cache sem aktivált részállapotot.
-5. Hasonlítsd össze backupból és stagingen a payloadot; recovery csak verziózott, explicit admin
-   folyamattal történhet.
-6. Faction-, sinner- és questeseménytől quarantine vagy persistence seal nem oldódhat fel.
+## Soulforge and companion incidents
 
-## `MIGRATION_REVIEW`
+Soulforge rank and shard balance commit in one profile revision and are protected by a durable operation ID.
+Repeated committed IDs are no-ops. Companion roster state is durable; live entity UUIDs are runtime-only. If
+spawn/rebuild fails, keep the roster and repair/retry the runtime side rather than deleting the profile.
 
-Review esetén az ismeretlen spec, spell-preview, companionadat, orphaned Soulforge, mechanikai
-snapshot és okkód megmarad. Általános reset nem használható. Az operátor előbb exportálja és
-ellenőrzi a snapshotot, majd csak olyan explicit resolve/recovery eljárást futtat, amely a választott
-adatvesztést naplózza és új CAS-revisionnel ment. Ha ilyen recovery még nincs implementálva, a profil
-maradjon blokkolt; kézi YAML/PDC törlés nem elfogadott megoldás.
+## Shutdown
 
-## Mentési hiba
+Disable closes mutation admission, drains accepted operations for bounded intervals, flushes the repository,
+invalidates sessions and then stops executors/runtime adapters. A timeout is an operational failure: preserve logs
+and stores, perform a controlled restart and let recovery protocols evaluate pending operations. Never wait
+indefinitely or repeatedly reload the plugin in-process.
 
-- a korábbi tartós profil marad autoritatív;
-- a sikertelen mutation nem jelenhet meg sikeresnek a játékosnak;
-- respec- vagy Soulforge-költség teljesen visszajár;
-- spell/pet/transient runtime biztonságos állapotba kerül;
-- a session persistence block csak explicit recovery vagy sikeres teljes reload után oldható;
-- ugyanazt a gazdasági műveletet csak az eredeti idempotency tokennel szabad újrapróbálni.
+## Backup and restore
 
-Ha a diagnosztika `RUNTIME_FAILED` respecet jelez, a profilcommit már tartós: ne térítsd vissza
-automatikusan a költséget és ne ismételd új tokennel a műveletet. Ellenőrizd a `/spec info`
-revisiont és session blockot, majd explicit runtime/profile recoveryt végezz.
-Ugyanez érvényes `soulforge-runtime-failed` esetén: a rang és a szilánkköltség már commitolt.
-
-ENOSPC, permission denied vagy fájlrendszerhiba után előbb az infrastruktúrát javítsd és a tartós
-payloadot ellenőrizd; a flag ki-be kapcsolása nem recovery.
-
-## DARK seal/unseal ellenőrzés
-
-A DARK specek: `necromancer`, `plaguebringer`, `unholy`, `bone_priest`, `demonologist`.
-
-Gate-vesztéskor a loadout `SEALED`, az aktív slot üres, a spec-grant és aktív companion/transient
-runtime eltűnik, miközben mastery, doctrine, signature, capstone és roster megmarad. Második spec nem
-aktiválódik automatikusan.
-
-Automatikus unseal csak az eredeti faction-, sinner- vagy questok helyreállásakor engedett, és a
-loadout `INACTIVE` állapotba tér vissza. Admin-, persistence-, recovery- és quarantine-sealt gate
-event nem oldhat fel. Ha seal-persist hiba történt, a session blokkot ne oldd fel pusztán a kapu
-helyreállításával.
-
-## Companion és Soulforge incidens
-
-Élő entity UUID nem tartós adat. Gazdátlan runtime entitynél a profil rosterét ne töröld; a scheduler-
-cleanupot és az újraidézési állapotot javítsd. Másik slotból látható roster adatvédelmi/invariáns-
-incidens: az érintett profilt azonnal blokkolni és kivizsgálni kell.
-
-Soulforge csak aktív, használható `necromancer` loadoutból adhat hatást. Nekromanta nélküli adat
-orphaned review, nem automatikusan törlendő. Párhuzamos upgrade vagy mentési hiba után ellenőrizd a
-revisiont, a rangot és a költség-visszatérítést; kézi rangnöveléssel ne kompenzálj.
-
-## Rollback
-
-1. Állítsd le az új belépéseket és várd meg a determinisztikus `flushAll` eredményét.
-2. Készíts incidensmentést a jelenlegi v2 payloadokról és logokról akkor is, ha korábbi backupra
-   állsz vissza.
-3. Kapcsold ki a rework flaget és állítsd vissza az előző IceSMP buildet, pluginbundle-t és resource
-   packet a jóváhagyott mentési pontról.
-4. A v2 és legacy recovery-mirrort ne töröld és ne konvertáld kézzel.
-5. Production forgalom előtt staging backup-másolaton ellenőrizd a class/spec, inventory, quest,
-   spell provenance és companion folytonosságot.
-
-Újabb Minecraft DataVersionre frissített világot tilos régebbi szerverre visszaengedni. A Profile v2
-flag rollback nem egyenlő világ-downgrade-del.
+Back up the complete Profile v2 directory, quarantine evidence, respec journal and currency store together.
+Restore them as one consistent set. Restoring legacy class/spec PDC is not a supported rollback.

@@ -1,8 +1,8 @@
 package hu.taliann.icesmp.classspec.domain;
 
-/** Durable usability state of a class profile. */
+/** Lifecycle state of a canonical Profile v2 aggregate. */
 public enum ProfileStatus {
     READY,
-    MIGRATION_REVIEW,
-    CORRUPT_QUARANTINE
+    REVIEW,
+    QUARANTINED
 }

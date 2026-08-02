@@ -31,24 +31,27 @@ public record GateSnapshot(GateState state, Map<GateState.Gate, String> gateIds)
     }
 
     public SealReason missingReason() {
+        final EnumMap<SealCause, String> missing = new EnumMap<>(SealCause.class);
         for (final GateState.Gate gate : GateState.Gate.values()) {
             if (state.isMissing(gate)) {
-                return reasonFor(gate);
+                missing.put(causeFor(gate), gateIds.get(gate));
             }
         }
-        return null;
+        return missing.isEmpty() ? null
+                : new SealReason(missing, "one or more DARK gate requirements are not satisfied");
     }
 
     public boolean authorizesRecovery(final SealReason reason) {
-        if (reason == null || !reason.cause().gateRestorable()) {
+        if (reason == null || !reason.gateRestorableOnly()) {
             return false;
         }
-        final GateState.Gate gate = gateFor(reason.cause());
-        return state.isRecovered(gate) && reason.gateId().equals(gateIds.get(gate));
-    }
-
-    private SealReason reasonFor(final GateState.Gate gate) {
-        return new SealReason(causeFor(gate), gateIds.get(gate), "gate requirement is not satisfied");
+        for (final Map.Entry<SealCause, String> entry : reason.gateIds().entrySet()) {
+            final GateState.Gate gate = gateFor(entry.getKey());
+            if (!state.isRecovered(gate) || !entry.getValue().equals(gateIds.get(gate))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static SealCause causeFor(final GateState.Gate gate) {

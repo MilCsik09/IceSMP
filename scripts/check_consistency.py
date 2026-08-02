@@ -406,7 +406,7 @@ except Exception as e:
 # ===== Spell-feloldas provenancia: minden grant nevezze meg a forrasat =====
 # Forras nelkul a spec-reset nem tudta visszavenni a sajat spelljeit (a specek hatarlan
 # halmozhatoak lettek), a talent-visszavonas pedig elvitte a kaszt-szintbol IS jaro spellt.
-# A ket-argumentumu unlockSpell csak legacy fallback (SOURCE_LEGACY) — uj hivo ne hasznalja.
+# Source nélküli unlockSpell nincs támogatva — minden hívó explicit provenance-t adjon.
 try:
     def _top_level_args(text, open_index):
         """Argumentumok a nyito zarojeltol a hozza tartozo CSUKOTIG (beagyazott hivasokkal)."""
@@ -431,7 +431,7 @@ try:
 
     for _jp in pathlib.Path(JAVA).rglob("*.java"):
         if _jp.name == "JobManager.java":
-            continue  # a delegalo ket-argumentumu overload itt EL
+            continue  # az implementáció belső hívásait nem vizsgáljuk call-site guardként
         _src = _jp.read_text(encoding="utf-8", errors="ignore")
         for _match in re.finditer(r"unlockSpell\(", _src):
             _args = _top_level_args(_src, _match.end() - 1)

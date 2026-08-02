@@ -49,14 +49,9 @@ public final class SoulforgeCommand implements BasicCommand {
                         "&cÁgak: elet | sebzes | letszam"));
                 return;
             }
-            if (soulforgeManager.isProfileV2Enabled()) {
-                soulforgeManager.upgradeV2(player, branch).whenComplete((error, failure) ->
-                        player.getScheduler().run(plugin, task -> showUpgradeResult(
-                                player, branch, failure == null ? error : "soulforge-persistence-failed"), null));
-                return;
-            }
-            final String error = soulforgeManager.upgrade(player, branch);
-            showUpgradeResult(player, branch, error);
+            soulforgeManager.upgradeV2(player, branch).whenComplete((error, failure) ->
+                    player.getScheduler().run(plugin, task -> showUpgradeResult(
+                            player, branch, failure == null ? error : "soulforge-persistence-failed"), null));
             return;
         }
         player.sendMessage(messageManager.get("soulforge-header",

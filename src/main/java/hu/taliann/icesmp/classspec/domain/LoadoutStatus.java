@@ -1,10 +1,9 @@
 package hu.taliann.icesmp.classspec.domain;
 
-/** Durable lifecycle state of one specialization loadout. */
+/** Durable state of one class/spec loadout slot. */
 public enum LoadoutStatus {
     EMPTY,
     ACTIVE,
     INACTIVE,
-    SEALED,
-    MIGRATION_REVIEW
+    SEALED
 }

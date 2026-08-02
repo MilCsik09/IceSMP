@@ -40,6 +40,7 @@ public final class Permissions {
     public static final String TERRITORY = "icesmp.admin.territory";
     public static final String TERRITORY_BYPASS = "icesmp.admin.territory.bypass";
     public static final String SPEC = "icesmp.admin.spec";
+    public static final String SPEC_RECOVER = "icesmp.admin.spec.recover";
     public static final String PROFESSION = "icesmp.admin.profession";
     public static final String JOB = "icesmp.admin.job";
     public static final String CURRENCY = "icesmp.admin.currency";
@@ -90,6 +91,7 @@ public final class Permissions {
         canonical.put(TERRITORY, "Territórium- és claim-admin (/territory, /claim admin)");
         canonical.put(TERRITORY_BYPASS, "Zóna- és claim-védelem teljes megkerülése");
         canonical.put(SPEC, "Specializáció-admin (/spec más játékosra)");
+        canonical.put(SPEC_RECOVER, "Quarantine Profile v2 explicit recovery (/spec recover)");
         canonical.put(PROFESSION, "Szakma-admin (/profession más játékosra)");
         canonical.put(JOB, "Kaszt-admin (/class addxp/setxp/givecatalyst/unlockspell/admin)");
         canonical.put(CURRENCY, "Egyenleg-admin (/currency set)");

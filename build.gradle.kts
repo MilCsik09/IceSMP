@@ -161,14 +161,6 @@ val classSpecApplicationRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.classspec.application.ClassSpecApplicationRegressionSuite")
 }
 
-val classProfileMigrationRegressionTest by tasks.registering(JavaExec::class) {
-    group = "verification"
-    description = "Runs idempotent legacy-to-Profile-v2 migration and preservation regressions."
-    dependsOn(tasks.named(regressionTest.classesTaskName))
-    classpath = regressionTest.runtimeClasspath
-    mainClass.set("hu.taliann.icesmp.classspec.migration.LegacyProfileMigrationRegressionSuite")
-}
-
 val classProfileRepositoryRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs Profile v2 YAML persistence, CAS, quarantine and flush regressions."
@@ -179,10 +171,27 @@ val classProfileRepositoryRegressionTest by tasks.registering(JavaExec::class) {
 
 val classProfileLifecycleRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
-    description = "Runs Profile v2 join, migration, logout and disable lifecycle regressions."
+    description = "Runs greenfield Profile v2 join, initialization, logout and disable lifecycle regressions."
     dependsOn(tasks.named(regressionTest.classesTaskName))
     classpath = regressionTest.runtimeClasspath
     mainClass.set("hu.taliann.icesmp.classspec.application.ClassProfileLifecycleRegressionSuite")
+}
+
+val respecTransactionRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs Profile v2 respec WAL, restart recovery and crash-decision regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.classspec.transaction.RespecTransactionRegressionSuite")
+}
+
+
+val spellGrantLedgerRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs explicit BASE/SPEC/TALENT/QUEST/ADMIN spell provenance regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.classspec.domain.SpellGrantLedgerRegressionSuite")
 }
 
 val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
@@ -199,6 +208,6 @@ tasks.check {
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
         hudRegressionTest, pauseMenuDialogRegressionTest, classSpecCompatibilityRegressionTest,
         classProfileV2RegressionTest, classSpecApplicationRegressionTest,
-        classProfileMigrationRegressionTest, classProfileRepositoryRegressionTest,
-        classProfileLifecycleRegressionTest)
+        classProfileRepositoryRegressionTest, classProfileLifecycleRegressionTest,
+        respecTransactionRegressionTest, spellGrantLedgerRegressionTest)
 }

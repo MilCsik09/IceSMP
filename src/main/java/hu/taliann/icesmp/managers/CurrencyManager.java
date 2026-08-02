@@ -19,9 +19,14 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -38,6 +43,11 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
     private final CurrencyItemFactory itemFactory;
     private final File storageFile;
     private final Map<UUID, EnumMap<CurrencyType, Double>> balances = new ConcurrentHashMap<>();
+    /** Restart-durable exact-once wallet witnesses used by Profile v2 cross-store operations. */
+    private final Map<String, DurableWalletOperation> durableWalletOperations = new ConcurrentHashMap<>();
+    private static final int MAX_DURABLE_WALLET_OPERATIONS = 4096;
+    private static final Set<String> DURABLE_OPERATION_KEYS = Set.of("operation-id", "player-id",
+            "currency", "amount", "created-at", "status", "previous-present", "previous", "expected");
     /** Serializes every wallet mutation with the durable snapshot writer. */
     private final Object saveLock = new Object();
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
@@ -50,6 +60,33 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         public DurableMutation {
             previous = Map.copyOf(previous);
             expected = Map.copyOf(expected);
+        }
+    }
+
+    public enum DurableWalletOperationStatus { DEBITED, COMMITTED, ROLLED_BACK }
+
+    public record DurableWalletOperation(String operationId, UUID playerId, CurrencyType currency,
+                                         double amount, long createdAtEpochMillis,
+                                         DurableWalletOperationStatus status,
+                                         boolean previousPresent,
+                                         Map<CurrencyType, Double> previous,
+                                         Map<CurrencyType, Double> expected) {
+        public DurableWalletOperation {
+            operationId = requireDurableOperationId(operationId);
+            java.util.Objects.requireNonNull(playerId, "playerId");
+            java.util.Objects.requireNonNull(currency, "currency");
+            java.util.Objects.requireNonNull(status, "status");
+            if (!Double.isFinite(amount) || amount <= 0.0D || createdAtEpochMillis <= 0L) {
+                throw new IllegalArgumentException("Invalid durable wallet operation");
+            }
+            previous = Map.copyOf(previous);
+            expected = Map.copyOf(expected);
+            validateWalletSnapshot(previous, "previous");
+            validateWalletSnapshot(expected, "expected");
+        }
+        DurableWalletOperation withStatus(final DurableWalletOperationStatus next) {
+            return new DurableWalletOperation(operationId, playerId, currency, amount,
+                    createdAtEpochMillis, next, previousPresent, previous, expected);
         }
     }
 
@@ -106,10 +143,64 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                 loaded.put(uuid, wallet);
             }
         }
+        final Map<String, DurableWalletOperation> loadedOperations = new HashMap<>();
+        final Object rawOperations = configuration.get("operations");
+        final ConfigurationSection operationsSection = configuration.getConfigurationSection("operations");
+        if (rawOperations != null && operationsSection == null) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "The durable wallet operations root must be a section");
+            return;
+        }
+        if (operationsSection != null) {
+            for (final String storageKey : operationsSection.getKeys(false)) {
+                final ConfigurationSection section = operationsSection.getConfigurationSection(storageKey);
+                if (section == null || !section.getKeys(false).equals(DURABLE_OPERATION_KEYS)) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Invalid durable wallet operation fields: " + storageKey);
+                    return;
+                }
+                try {
+                    final String operationId = requireDurableOperationId(requireString(section,
+                            "operation-id", 192));
+                    if (!storageKey.equals(durableOperationKey(operationId))) {
+                        throw new IllegalArgumentException("operation storage key mismatch");
+                    }
+                    final UUID playerId = UUID.fromString(requireString(section, "player-id", 64));
+                    final CurrencyType currency = CurrencyType.valueOf(requireString(section,
+                            "currency", 64));
+                    final double amount = requireFinitePositive(section.get("amount"), "amount");
+                    final long createdAt = requireIntegralLong(section.get("created-at"), 1L,
+                            Long.MAX_VALUE, "created-at");
+                    final DurableWalletOperationStatus status = DurableWalletOperationStatus.valueOf(
+                            requireString(section, "status", 32));
+                    final Object rawPreviousPresent = section.get("previous-present");
+                    if (!(rawPreviousPresent instanceof Boolean previousPresent)) {
+                        throw new IllegalArgumentException("previous-present must be boolean");
+                    }
+                    final EnumMap<CurrencyType, Double> previous = readWalletSnapshot(
+                            section.getConfigurationSection("previous"), "previous");
+                    final EnumMap<CurrencyType, Double> expected = readWalletSnapshot(
+                            section.getConfigurationSection("expected"), "expected");
+                    final DurableWalletOperation operation = new DurableWalletOperation(operationId,
+                            playerId, currency, amount, createdAt, status, previousPresent,
+                            previous, expected);
+                    if (loadedOperations.putIfAbsent(operationId, operation) != null) {
+                        throw new IllegalArgumentException("duplicate durable operation id");
+                    }
+                } catch (final RuntimeException invalidOperation) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Invalid durable wallet operation " + storageKey + ": "
+                                    + invalidOperation.getMessage());
+                    return;
+                }
+            }
+        }
         synchronized (saveLock) {
             defaultCurrencyType = loadedDefault;
             balances.clear();
             balances.putAll(loaded);
+            durableWalletOperations.clear();
+            durableWalletOperations.putAll(loadedOperations);
         }
     }
 
@@ -182,6 +273,23 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                             + "/" + currencyType.name());
                 }
                 configuration.set(basePath + "." + currencyType.name(), value);
+            }
+        }
+        for (final DurableWalletOperation operation : durableWalletOperations.values().stream()
+                .sorted(java.util.Comparator.comparing(DurableWalletOperation::operationId)).toList()) {
+            final String basePath = "operations." + durableOperationKey(operation.operationId());
+            configuration.set(basePath + ".operation-id", operation.operationId());
+            configuration.set(basePath + ".player-id", operation.playerId().toString());
+            configuration.set(basePath + ".currency", operation.currency().name());
+            configuration.set(basePath + ".amount", operation.amount());
+            configuration.set(basePath + ".created-at", operation.createdAtEpochMillis());
+            configuration.set(basePath + ".status", operation.status().name());
+            configuration.set(basePath + ".previous-present", operation.previousPresent());
+            for (final CurrencyType type : CurrencyType.values()) {
+                configuration.set(basePath + ".previous." + type.name(),
+                        operation.previous().getOrDefault(type, 0.0D));
+                configuration.set(basePath + ".expected." + type.name(),
+                        operation.expected().getOrDefault(type, 0.0D));
             }
         }
         try {
@@ -459,6 +567,113 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         if (!success) {
             throw unavailable("Piaci tranzakció alatt a wallet rollback nem indítható.");
         }
+    }
+
+    /** Creates or replays an exact restart-durable wallet debit. */
+    public DurableWalletOperation debitOperation(final UUID playerId, final CurrencyType currency,
+                                                  final double amount, final String operationId) {
+        if (playerId == null || currency == null || !Double.isFinite(amount) || amount <= 0.0D) {
+            throw new IllegalArgumentException("Invalid durable wallet debit");
+        }
+        final String id = requireDurableOperationId(operationId);
+        final Object result = TransactionJournal.withCurrencyMutationPermit(() -> {
+            synchronized (saveLock) {
+                final DurableWalletOperation existing = durableWalletOperations.get(id);
+                if (existing != null) {
+                    if (!existing.playerId().equals(playerId) || existing.currency() != currency
+                            || Double.compare(existing.amount(), amount) != 0) {
+                        throw new IllegalStateException("Durable wallet operation identity conflict");
+                    }
+                    return existing;
+                }
+                if (durableWalletOperations.size() >= MAX_DURABLE_WALLET_OPERATIONS) {
+                    pruneDurableOperationsLocked();
+                }
+                if (durableWalletOperations.size() >= MAX_DURABLE_WALLET_OPERATIONS) {
+                    throw unavailable("A durable wallet operation ledger megtelt.");
+                }
+                final boolean previousPresent = balances.containsKey(playerId);
+                final EnumMap<CurrencyType, Double> previous = previousPresent
+                        ? new EnumMap<>(balances.get(playerId)) : createEmptyBalanceMap();
+                final double current = previous.getOrDefault(currency, 0.0D);
+                if (!Double.isFinite(current) || current < amount) return Boolean.FALSE;
+                final EnumMap<CurrencyType, Double> expected = new EnumMap<>(previous);
+                expected.put(currency, current - amount);
+                final DurableWalletOperation created = new DurableWalletOperation(id, playerId,
+                        currency, amount, System.currentTimeMillis(), DurableWalletOperationStatus.DEBITED,
+                        previousPresent, previous, expected);
+                balances.put(playerId, expected);
+                durableWalletOperations.put(id, created);
+                try {
+                    writeBalancesLocked();
+                } catch (final RuntimeException failure) {
+                    durableWalletOperations.remove(id);
+                    restoreWalletUnsafe(playerId, previousPresent, previous);
+                    throw failure;
+                }
+                return created;
+            }
+        }, null);
+        if (result == null) throw unavailable("A durable wallet debit nem indítható.");
+        return result instanceof DurableWalletOperation operation ? operation : null;
+    }
+
+    public Optional<DurableWalletOperation> durableOperation(final String operationId) {
+        if (operationId == null || operationId.isBlank()) return Optional.empty();
+        synchronized (saveLock) { return Optional.ofNullable(durableWalletOperations.get(operationId.trim())); }
+    }
+
+    public DurableWalletOperation commitOperation(final String operationId) {
+        return transitionOperation(operationId, DurableWalletOperationStatus.COMMITTED, false);
+    }
+
+    public DurableWalletOperation rollbackOperation(final String operationId) {
+        return transitionOperation(operationId, DurableWalletOperationStatus.ROLLED_BACK, true);
+    }
+
+    private DurableWalletOperation transitionOperation(final String operationId,
+                                                        final DurableWalletOperationStatus target,
+                                                        final boolean restoreWallet) {
+        final String id = requireDurableOperationId(operationId);
+        final Object result = TransactionJournal.withCurrencyMutationPermit(() -> {
+            synchronized (saveLock) {
+                final DurableWalletOperation current = durableWalletOperations.get(id);
+                if (current == null) throw new IllegalStateException("Unknown durable wallet operation");
+                if (current.status() == target) return current;
+                if (current.status() != DurableWalletOperationStatus.DEBITED) {
+                    throw new IllegalStateException("Durable wallet operation is already terminal");
+                }
+                final EnumMap<CurrencyType, Double> live = balances.get(current.playerId());
+                if (live == null || !live.equals(current.expected())) {
+                    throw new IllegalStateException("Durable wallet witness no longer matches live wallet");
+                }
+                if (restoreWallet) {
+                    restoreWalletUnsafe(current.playerId(), current.previousPresent(),
+                            new EnumMap<>(current.previous()));
+                }
+                final DurableWalletOperation updated = current.withStatus(target);
+                durableWalletOperations.put(id, updated);
+                try {
+                    writeBalancesLocked();
+                } catch (final RuntimeException failure) {
+                    durableWalletOperations.put(id, current);
+                    if (restoreWallet) balances.put(current.playerId(), new EnumMap<>(current.expected()));
+                    throw failure;
+                }
+                return updated;
+            }
+        }, null);
+        if (result == null) throw unavailable("A durable wallet operation transition nem indítható.");
+        return (DurableWalletOperation) result;
+    }
+
+    private void pruneDurableOperationsLocked() {
+        durableWalletOperations.values().stream()
+                .filter(operation -> operation.status() != DurableWalletOperationStatus.DEBITED)
+                .sorted(java.util.Comparator.comparingLong(DurableWalletOperation::createdAtEpochMillis))
+                .limit(Math.max(0, durableWalletOperations.size() - MAX_DURABLE_WALLET_OPERATIONS + 64L))
+                .map(DurableWalletOperation::operationId).toList()
+                .forEach(durableWalletOperations::remove);
     }
 
     private EnumMap<CurrencyType, Double> validatePositiveBatch(
@@ -763,6 +978,79 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
             map.put(currencyType, 0.0D);
         }
         return map;
+    }
+
+    private static String requireDurableOperationId(final String operationId) {
+        if (operationId == null || operationId.isBlank() || operationId.trim().length() > 192) {
+            throw new IllegalArgumentException("Durable operation id must be non-blank and bounded");
+        }
+        return operationId.trim();
+    }
+
+    private static String durableOperationKey(final String operationId) {
+        try {
+            final byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(requireDurableOperationId(operationId).getBytes(StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (final NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 unavailable", impossible);
+        }
+    }
+
+    private static String requireString(final ConfigurationSection section, final String key,
+                                        final int maximum) {
+        final Object raw = section.get(key);
+        if (!(raw instanceof String value) || value.isBlank() || value.length() > maximum) {
+            throw new IllegalArgumentException(key + " must be a bounded string");
+        }
+        return value;
+    }
+
+    private static long requireIntegralLong(final Object raw, final long minimum,
+                                            final long maximum, final String key) {
+        if (!(raw instanceof Byte || raw instanceof Short || raw instanceof Integer || raw instanceof Long)) {
+            throw new IllegalArgumentException(key + " must be an integral scalar");
+        }
+        final long value = ((Number) raw).longValue();
+        if (value < minimum || value > maximum) throw new IllegalArgumentException(key + " out of range");
+        return value;
+    }
+
+    private static double requireFinitePositive(final Object raw, final String key) {
+        if (!(raw instanceof Number number)) throw new IllegalArgumentException(key + " must be numeric");
+        final double value = number.doubleValue();
+        if (!Double.isFinite(value) || value <= 0.0D) throw new IllegalArgumentException(key + " invalid");
+        return value;
+    }
+
+    private static EnumMap<CurrencyType, Double> readWalletSnapshot(
+            final ConfigurationSection section, final String label) {
+        if (section == null || !section.getKeys(false).equals(java.util.Arrays.stream(CurrencyType.values())
+                .map(Enum::name).collect(java.util.stream.Collectors.toUnmodifiableSet()))) {
+            throw new IllegalArgumentException(label + " wallet snapshot fields differ");
+        }
+        final EnumMap<CurrencyType, Double> result = new EnumMap<>(CurrencyType.class);
+        for (final CurrencyType type : CurrencyType.values()) {
+            final Object raw = section.get(type.name());
+            if (!(raw instanceof Number number)) throw new IllegalArgumentException(label + " value not numeric");
+            final double value = number.doubleValue();
+            if (!Double.isFinite(value) || value < 0.0D) throw new IllegalArgumentException(label + " value invalid");
+            result.put(type, value);
+        }
+        return result;
+    }
+
+    private static void validateWalletSnapshot(final Map<CurrencyType, Double> snapshot,
+                                               final String label) {
+        for (final CurrencyType type : CurrencyType.values()) {
+            final Double value = snapshot.get(type);
+            if (value == null || !Double.isFinite(value) || value < 0.0D) {
+                throw new IllegalArgumentException(label + " wallet snapshot is incomplete or invalid");
+            }
+        }
+        if (snapshot.size() != CurrencyType.values().length) {
+            throw new IllegalArgumentException(label + " wallet snapshot has unknown keys");
+        }
     }
 
     private CurrencyType resolveDefaultCurrencyType() {

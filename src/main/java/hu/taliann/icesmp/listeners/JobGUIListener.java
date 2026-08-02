@@ -137,7 +137,7 @@ public final class JobGUIListener implements Listener {
             }
             classConfirmPending.remove(player.getUniqueId());
         }
-        if (specializationManager.profileV2Enabled()) {
+
             player.closeInventory();
             jobManager.setPrimaryJobV2(player, selectedJob)
                     .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
@@ -156,16 +156,7 @@ public final class JobGUIListener implements Listener {
                         }
                     }, null));
             return;
-        }
-        if (jobManager.setPrimaryJob(player, selectedJob)) {
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.0F);
-            player.sendMessage(messageManager.getComponent("messages.job-select-primary-success", "&aElsodleges kaszt kivalasztva:").append(Component.space()).append(selectedJob.getDisplayName()));
-            JobGUI.openJobMenu(player, jobManager, catalystItemFactory, messageManager);
-            return;
-        }
 
-        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
-        player.sendMessage(messageManager.getComponent("messages.job-select-failed", "&cJelenleg nem valaszthatsz uj kasztot!"));
     }
 
     private void handleCatalystClaim(final Player player) {

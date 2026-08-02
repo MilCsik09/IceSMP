@@ -1,14 +1,10 @@
-# Class/spec rework rollout gate. Legacy gameplay remains authoritative while disabled.
+# Profile v2 is the sole class/spec runtime. This section configures startup dependency
+# validation only; it is not a feature flag and cannot reactivate an older runtime.
 class-spec-rework:
-  enabled: false
   dependencies:
-    # When the rework is enabled, refuse startup if a required plugin is absent or outside
-    # class-spec-dependencies.lock.yml. Keep true in staging and production.
+    # Refuse startup if a required plugin is absent or outside class-spec-dependencies.lock.yml.
+    # Keep true in staging and production.
     enforce: true
-  second-spec: false
-  mastery: false
-  classes: {}
-  specializations: {}
 
 # IceSMP konfiguráció — classes (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Kasztok: progresszió és szint-alapú skill feloldás =====

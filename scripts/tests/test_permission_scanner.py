@@ -249,8 +249,8 @@ class RepositoryPermissionContractTest(unittest.TestCase):
             if any(source["kind"] == "CONFIG" for source in item["sources"])
         }
 
-        self.assertEqual(44, len(permissions))
-        self.assertEqual(43, len(static))
+        self.assertEqual(45, len(permissions))
+        self.assertEqual(44, len(static))
         self.assertEqual({"icesmp.crate.ritka"}, dynamic)
         self.assertTrue(by_node["icesmp.admin"]["legacy_alias"])
         self.assertTrue(by_node["icesmp.job.admin"]["legacy_alias"])

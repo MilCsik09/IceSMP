@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.classspec.persistence;
 
 import hu.taliann.icesmp.classspec.domain.ClassProfile;
+import hu.taliann.icesmp.classspec.domain.ProfileDiagnostics;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -10,370 +11,63 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.Clock;
-import java.util.Base64;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
-/**
- * Per-player YAML envelope around the deterministic ICS2 payload. A single I/O executor is the
- * serialization point for all critical mutations, so an older asynchronous write cannot publish
- * after a newer one. Files are atomically replaced through {@link YamlStore}.
- */
+/** Strict, owner-bound, player-CAS YAML repository. */
 public final class YamlClassProfileRepository implements ClassProfileRepository, PersistentStore, AutoCloseable {
+    private static final String FORMAT="ICS2-YAML-2",MARKER_FORMAT="ICS2-QUARANTINE-1";
+    private static final Set<String> ENVELOPE_KEYS=Set.of("format","owner","schema","revision","digest","payload");
+    private static final Set<String> MARKER_KEYS=Set.of("format","owner","evidence-id","evidence-file","created-at","reason","recovered","recovery-audit-id","recovered-at");
+    private static final int MAX_BYTES=1_500_000,MAX_REASON=512;
+    private static final Pattern SHA=Pattern.compile("[0-9a-f]{64}");
+    private static final Map<String,ReentrantLock> JVM_LOCKS=new ConcurrentHashMap<>();
+    private final File root,quarantineDir,lockDir;private final Logger logger;private final ClassProfileCodec codec;private final AtomicWriter writer;private final Clock clock;private final ExecutorService io;
+    private final Object lifecycleLock=new Object();private final Map<UUID,ClassProfile> cache=new ConcurrentHashMap<>();private final Map<UUID,String> blocks=new ConcurrentHashMap<>(),quarantineReasons=new ConcurrentHashMap<>(),evidenceIds=new ConcurrentHashMap<>();private final Set<CompletableFuture<?>> inFlight=ConcurrentHashMap.newKeySet();private final Map<UUID,Set<CompletableFuture<?>>> inFlightByPlayer=new ConcurrentHashMap<>();private final AtomicLong sequence=new AtomicLong();private volatile boolean loaded,accepting=true;
 
-    private static final String ENVELOPE_FORMAT = "ICS2";
+    public YamlClassProfileRepository(File dataFolder,Logger logger){this(new File(Objects.requireNonNull(dataFolder),"class-profiles-v2"),Objects.requireNonNull(logger),new ClassProfileCodec(),YamlStore::saveAtomic,Clock.systemUTC());}
+    YamlClassProfileRepository(File profileDirectory,Logger logger,ClassProfileCodec codec,AtomicWriter writer,Clock clock){root=Objects.requireNonNull(profileDirectory);quarantineDir=new File(root,"quarantine");lockDir=new File(root,".locks");this.logger=Objects.requireNonNull(logger);this.codec=Objects.requireNonNull(codec);this.writer=Objects.requireNonNull(writer);this.clock=Objects.requireNonNull(clock);AtomicInteger n=new AtomicInteger();io=Executors.newFixedThreadPool(4,r->{Thread t=new Thread(r,"IceSMP-profile-v2-io-"+n.incrementAndGet());t.setDaemon(true);return t;});}
+    @Override public void load(){try{Files.createDirectories(root.toPath());Files.createDirectories(quarantineDir.toPath());Files.createDirectories(lockDir.toPath());loaded=true;}catch(IOException e){throw new ProfileRepositoryException("Profile v2 directory cannot be created",e);}}
+    @Override public void save(){await(flushAll(),Duration.ofSeconds(10));}
+    @Override public CompletionStage<LoadResult> load(UUID id){Objects.requireNonNull(id);return submit(id,()->locked(id,()->loadLocked(id,true)));}
+    @Override public CompletionStage<ClassProfile> save(UUID id,long expected,ClassProfile next){Objects.requireNonNull(id);Objects.requireNonNull(next);if(!id.equals(next.ownerId()))return CompletableFuture.failedFuture(new ProfileRepositoryException("Candidate owner mismatch"));return submit(id,()->locked(id,()->saveLocked(id,expected,next)));}
+    private ClassProfile saveLocked(UUID id,long expected,ClassProfile next){LoadResult current=loadLocked(id,false);if(current.status()==Status.QUARANTINED)throw block(id,"Quarantined profile cannot be overwritten",null);long actual=current.status()==Status.MISSING?MISSING_REVISION:current.profile().revision();if(actual!=expected)throw conflict(id,expected,actual);long required;try{required=Math.addExact(actual,1L);}catch(ArithmeticException e){throw block(id,"Profile revision exhausted",e);}if(next.revision()!=required)throw conflict(id,required,next.revision());writeEnvelope(id,next);cache.put(id,next);blocks.remove(id);quarantineReasons.remove(id);evidenceIds.remove(id);return next;}
+    private ProfileRepositoryException.RevisionConflict conflict(UUID id,long expected,long actual){String d="Profile revision conflict: expected="+expected+", actual="+actual;blocks.put(id,d);return new ProfileRepositoryException.RevisionConflict(expected,actual,d);}
+    @Override public CompletionStage<QuarantineRecord> quarantine(UUID id,byte[] bytes,String reason){Objects.requireNonNull(id);byte[] copy=bytes==null?new byte[0]:bytes.clone();return submit(id,()->locked(id,()->quarantineLocked(id,copy,cleanReason(reason))));}
+    @Override public CompletionStage<ClassProfile> recover(UUID id,String evidenceId,String auditId){Objects.requireNonNull(id);String e=required(evidenceId,"evidenceId",160),a=required(auditId,"auditId",160);return submit(id,()->locked(id,()->recoverLocked(id,e,a)));}
+    private ClassProfile recoverLocked(UUID id,String evidenceId,String auditId){File markerFile=marker(id);if(!markerFile.isFile())throw new ProfileRepositoryException("No active quarantine marker");YamlConfiguration m=loadYaml(markerFile);exact(m,MARKER_KEYS,"marker");expectString(m,"format",64,false,MARKER_FORMAT);if(!id.equals(uuid(expectString(m,"owner",64,false,null))))throw new ProfileRepositoryException("Marker owner mismatch");if(!evidenceId.equals(expectString(m,"evidence-id",160,false,null)))throw new ProfileRepositoryException("Evidence id mismatch");File evidence=new File(quarantineDir,expectString(m,"evidence-file",255,false,null));try{if(!evidence.isFile()||!evidence.getCanonicalFile().getParentFile().equals(quarantineDir.getCanonicalFile()))throw new ProfileRepositoryException("Evidence file invalid");}catch(IOException x){throw new ProfileRepositoryException("Evidence path invalid",x);}boolean recovered=expectBoolean(m,"recovered");String previousAudit=expectString(m,"recovery-audit-id",160,true,null);if(recovered){if(!auditId.equals(previousAudit))throw new ProfileRepositoryException("Already recovered by another audit id");LoadResult r=loadIgnoringMarker(id,true);if(r.status()!=Status.FOUND)throw new ProfileRepositoryException("Recovered marker has no profile");return r.profile();}
+        ClassProfile clean=ClassProfile.builder(id).revision(0L).diagnostics(ProfileDiagnostics.none().withRecoveryAudit(auditId)).build();writeEnvelope(id,clean);m.set("recovered",true);m.set("recovery-audit-id",auditId);m.set("recovered-at",clock.millis());try{writer.write(markerFile,m);}catch(IOException|RuntimeException x){cache.remove(id);throw block(id,"Recovery marker commit failed after profile write: "+safe(x),x);}cache.put(id,clean);blocks.remove(id);quarantineReasons.remove(id);evidenceIds.remove(id);logger.warning("Profile v2 explicit recovery owner="+id+" evidence="+evidenceId+" audit="+auditId);return clean;}
+    @Override public CompletionStage<Void> flush(UUID id){Objects.requireNonNull(id);synchronized(lifecycleLock){if(!accepting)return CompletableFuture.failedFuture(new ProfileRepositoryException("Profile v2 repository stopped"));return barrier(inFlightByPlayer.get(id));}}
+    @Override public CompletionStage<Void> flushAll(){synchronized(lifecycleLock){if(!accepting)return CompletableFuture.failedFuture(new ProfileRepositoryException("Profile v2 repository stopped"));return barrier(inFlight);}}
+    @Override public CompletionStage<ShutdownResult> shutdown(Duration timeout){Objects.requireNonNull(timeout);if(timeout.isZero()||timeout.isNegative())return CompletableFuture.failedFuture(new IllegalArgumentException("timeout must be positive"));synchronized(lifecycleLock){accepting=false;io.shutdown();}return CompletableFuture.supplyAsync(()->{try{boolean drained=io.awaitTermination(timeout.toMillis(),TimeUnit.MILLISECONDS);int pending=inFlight.size();if(!drained){io.shutdownNow();String d="Profile v2 I/O drain timeout; pending="+pending;logger.severe(d);return new ShutdownResult(false,pending,d);}cache.clear();return new ShutdownResult(true,pending,"");}catch(InterruptedException x){Thread.currentThread().interrupt();io.shutdownNow();return new ShutdownResult(false,inFlight.size(),"Profile v2 I/O drain interrupted");}});}
+    @Override public void invalidate(UUID id){if(id!=null)cache.remove(id);}@Override public Optional<ClassProfile> cached(UUID id){return Optional.ofNullable(id==null?null:cache.get(id));}@Override public Optional<String> sessionBlockReason(UUID id){return Optional.ofNullable(id==null?null:blocks.get(id));}@Override public Optional<String> quarantineReason(UUID id){return Optional.ofNullable(id==null?null:quarantineReasons.get(id));}public Optional<String> quarantineEvidenceId(UUID id){return Optional.ofNullable(id==null?null:evidenceIds.get(id));}@Override public void blockSession(UUID id,String reason){if(id!=null)blocks.put(id,cleanReason(reason));}
 
-    private final File profileDirectory;
-    private final File quarantineDirectory;
-    private final Logger logger;
-    private final ClassProfileCodec codec;
-    private final AtomicWriter writer;
-    private final Clock clock;
-    private final ExecutorService ioExecutor;
-    private final Object lifecycleLock = new Object();
-    private final Map<UUID, ClassProfile> cache = new ConcurrentHashMap<>();
-    private final Map<UUID, String> sessionBlocks = new ConcurrentHashMap<>();
-    private final Map<UUID, String> quarantineReasons = new ConcurrentHashMap<>();
-    private final AtomicLong quarantineSequence = new AtomicLong();
-    private volatile boolean loaded;
-    private volatile boolean accepting = true;
-
-    public YamlClassProfileRepository(final File dataFolder, final Logger logger) {
-        this(new File(Objects.requireNonNull(dataFolder, "dataFolder"), "class-profiles-v2"),
-                Objects.requireNonNull(logger, "logger"), new ClassProfileCodec(),
-                YamlStore::saveAtomic, Clock.systemUTC());
-    }
-
-    YamlClassProfileRepository(final File profileDirectory, final Logger logger,
-                               final ClassProfileCodec codec, final AtomicWriter writer,
-                               final Clock clock) {
-        this.profileDirectory = Objects.requireNonNull(profileDirectory, "profileDirectory");
-        this.quarantineDirectory = new File(profileDirectory, "quarantine");
-        this.logger = Objects.requireNonNull(logger, "logger");
-        this.codec = Objects.requireNonNull(codec, "codec");
-        this.writer = Objects.requireNonNull(writer, "writer");
-        this.clock = Objects.requireNonNull(clock, "clock");
-        final AtomicInteger sequence = new AtomicInteger();
-        this.ioExecutor = Executors.newSingleThreadExecutor(task -> {
-            final Thread thread = new Thread(task,
-                    "IceSMP-profile-v2-io-" + sequence.incrementAndGet());
-            thread.setDaemon(true);
-            return thread;
-        });
-    }
-
-    @Override
-    public void load() {
-        try {
-            Files.createDirectories(profileDirectory.toPath());
-            Files.createDirectories(quarantineDirectory.toPath());
-            loaded = true;
-        } catch (final IOException failure) {
-            throw new ProfileRepositoryException("Profile v2 könyvtár nem hozható létre", failure);
-        }
-    }
-
-    @Override
-    public void save() {
-        await(flushAll());
-    }
-
-    @Override
-    public CompletionStage<LoadResult> load(final UUID playerId) {
-        Objects.requireNonNull(playerId, "playerId");
-        return submit(() -> loadAuthoritative(playerId, true));
-    }
-
-    @Override
-    public CompletionStage<ClassProfile> save(final UUID playerId, final long expectedRevision,
-                                               final ClassProfile nextProfile) {
-        Objects.requireNonNull(playerId, "playerId");
-        Objects.requireNonNull(nextProfile, "nextProfile");
-        return submit(() -> {
-            final LoadResult currentResult = loadAuthoritative(playerId, false);
-            if (currentResult.status() == Status.QUARANTINED) {
-                throw block(playerId, "A karanténban levő profil nem írható felül", null);
-            }
-            final long actualRevision = currentResult.status() == Status.MISSING
-                    ? MISSING_REVISION : currentResult.profile().revision();
-            if (actualRevision != expectedRevision) {
-                final String detail = "Profile revision conflict: expected=" + expectedRevision
-                        + ", actual=" + actualRevision;
-                sessionBlocks.put(playerId, detail);
-                throw new ProfileRepositoryException.RevisionConflict(expectedRevision, actualRevision, detail);
-            }
-            final long requiredNext = actualRevision + 1L;
-            if (nextProfile.revision() != requiredNext) {
-                final String detail = "Profile revision must advance exactly once: expected next="
-                        + requiredNext + ", candidate=" + nextProfile.revision();
-                sessionBlocks.put(playerId, detail);
-                throw new ProfileRepositoryException.RevisionConflict(requiredNext,
-                        nextProfile.revision(), detail);
-            }
-
-            final byte[] encoded = codec.encode(nextProfile);
-            final YamlConfiguration envelope = new YamlConfiguration();
-            envelope.set("format", ENVELOPE_FORMAT);
-            envelope.set("payload", Base64.getEncoder().encodeToString(encoded));
-            try {
-                writer.write(profileFile(playerId), envelope);
-            } catch (final IOException | RuntimeException failure) {
-                throw block(playerId, "Profile v2 mentési hiba: " + safeMessage(failure), failure);
-            }
-
-            cache.put(playerId, nextProfile);
-            sessionBlocks.remove(playerId);
-            return nextProfile;
-        });
-    }
-
-    @Override
-    public CompletionStage<QuarantineRecord> quarantine(final UUID playerId,
-                                                         final byte[] originalPayload,
-                                                         final String reason) {
-        Objects.requireNonNull(playerId, "playerId");
-        final byte[] immutablePayload = originalPayload == null ? new byte[0] : originalPayload.clone();
-        final String diagnostic = reason == null || reason.isBlank() ? "ismeretlen decode-hiba" : reason.trim();
-        return submit(() -> quarantineNow(playerId, immutablePayload, diagnostic));
-    }
-
-    @Override
-    public CompletionStage<Void> flush(final UUID playerId) {
-        Objects.requireNonNull(playerId, "playerId");
-        return submit(() -> null);
-    }
-
-    @Override
-    public CompletionStage<Void> flushAll() {
-        return submit(() -> null);
-    }
-
-    @Override
-    public void invalidate(final UUID playerId) {
-        if (playerId != null) {
-            cache.remove(playerId);
-        }
-    }
-
-    @Override
-    public Optional<ClassProfile> cached(final UUID playerId) {
-        return Optional.ofNullable(playerId == null ? null : cache.get(playerId));
-    }
-
-    @Override
-    public Optional<String> sessionBlockReason(final UUID playerId) {
-        return Optional.ofNullable(playerId == null ? null : sessionBlocks.get(playerId));
-    }
-
-    @Override
-    public Optional<String> quarantineReason(final UUID playerId) {
-        return Optional.ofNullable(playerId == null ? null : quarantineReasons.get(playerId));
-    }
-
-    @Override
-    public void blockSession(final UUID playerId, final String reason) {
-        if (playerId == null) {
-            return;
-        }
-        final String detail = reason == null || reason.isBlank()
-                ? "Profile v2 session blocked" : reason.trim();
-        sessionBlocks.put(playerId, detail);
-    }
-
-    private LoadResult loadAuthoritative(final UUID playerId, final boolean explicitReload) {
-        ensureLoaded();
-        final ClassProfile cachedProfile = cache.get(playerId);
-        if (cachedProfile != null) {
-            return LoadResult.found(cachedProfile);
-        }
-
-        final File file = profileFile(playerId);
-        if (!file.exists()) {
-            if (explicitReload) {
-                sessionBlocks.remove(playerId);
-                quarantineReasons.remove(playerId);
-            }
-            return LoadResult.missing();
-        }
-
-        final byte[] envelopeBytes;
-        try {
-            envelopeBytes = Files.readAllBytes(file.toPath());
-        } catch (final IOException failure) {
-            throw block(playerId, "Profile v2 olvasási hiba: " + safeMessage(failure), failure);
-        }
-
-        final byte[] payload;
-        try {
-            final YamlConfiguration yaml = new YamlConfiguration();
-            yaml.loadFromString(decodeUtf8(envelopeBytes));
-            if (!ENVELOPE_FORMAT.equals(yaml.getString("format"))) {
-                throw new IllegalArgumentException("Ismeretlen profil-envelope formátum");
-            }
-            final String base64 = yaml.getString("payload");
-            if (base64 == null || base64.isBlank()) {
-                throw new IllegalArgumentException("Hiányzó profil payload");
-            }
-            payload = Base64.getDecoder().decode(base64);
-        } catch (final InvalidConfigurationException | IllegalArgumentException
-                       | CharacterCodingException failure) {
-            final String reason = "Sérült Profile v2 envelope: " + safeMessage(failure);
-            quarantineNow(playerId, envelopeBytes, reason);
-            return LoadResult.quarantined(reason);
-        }
-
-        final ClassProfile decoded;
-        try {
-            decoded = codec.decode(payload);
-        } catch (final ClassProfileCodec.DecodeException | RuntimeException failure) {
-            final String reason = "Sérült ICS2 payload: " + safeMessage(failure);
-            quarantineNow(playerId, payload, reason);
-            return LoadResult.quarantined(reason);
-        }
-        cache.put(playerId, decoded);
-        quarantineReasons.remove(playerId);
-        if (explicitReload) {
-            sessionBlocks.remove(playerId);
-        }
-        return LoadResult.found(decoded);
-    }
-
-    private QuarantineRecord quarantineNow(final UUID playerId, final byte[] originalPayload,
-                                            final String reason) {
-        final long timestamp = clock.millis();
-        final File target = new File(quarantineDirectory,
-                playerId + "-" + timestamp + "-" + quarantineSequence.incrementAndGet() + ".yml");
-        final YamlConfiguration quarantine = new YamlConfiguration();
-        quarantine.set("player", playerId.toString());
-        quarantine.set("created-at", timestamp);
-        quarantine.set("reason", reason);
-        quarantine.set("original-base64", Base64.getEncoder().encodeToString(originalPayload));
-        try {
-            Files.createDirectories(quarantineDirectory.toPath());
-            writer.write(target, quarantine);
-        } catch (final IOException | RuntimeException failure) {
-            final String detail = reason + "; karanténmentés is hibázott: " + safeMessage(failure);
-            sessionBlocks.put(playerId, detail);
-            logger.severe("Profile v2 quarantine write failed for " + playerId + ": " + detail);
-            throw new ProfileRepositoryException(detail, failure);
-        }
-        cache.remove(playerId);
-        quarantineReasons.put(playerId, reason);
-        sessionBlocks.put(playerId, reason);
-        logger.severe("Profile v2 quarantine: " + playerId + " -> " + target.getName()
-                + " (" + reason + ")");
-        return new QuarantineRecord(playerId, timestamp, reason, target.getName());
-    }
-
-    private File profileFile(final UUID playerId) {
-        return new File(profileDirectory, playerId + ".yml");
-    }
-
-    private void ensureLoaded() {
-        if (!loaded) {
-            throw new ProfileRepositoryException("Profile v2 repository nincs betöltve");
-        }
-    }
-
-    private ProfileRepositoryException block(final UUID playerId, final String detail,
-                                             final Throwable cause) {
-        sessionBlocks.put(playerId, detail);
-        return cause == null ? new ProfileRepositoryException(detail)
-                : new ProfileRepositoryException(detail, cause);
-    }
-
-    private <T> CompletableFuture<T> submit(final CheckedSupplier<T> work) {
-        final CompletableFuture<T> future = new CompletableFuture<>();
-        synchronized (lifecycleLock) {
-            if (!accepting) {
-                future.completeExceptionally(new ProfileRepositoryException(
-                        "Profile v2 lifecycle már leállt"));
-                return future;
-            }
-            try {
-                ioExecutor.execute(() -> {
-                    try {
-                        future.complete(work.get());
-                    } catch (final Throwable failure) {
-                        future.completeExceptionally(failure);
-                    }
-                });
-            } catch (final RejectedExecutionException failure) {
-                future.completeExceptionally(new ProfileRepositoryException(
-                        "Profile v2 I/O executor nem fogad munkát", failure));
-            }
-        }
-        return future;
-    }
-
-    @Override
-    public void close() {
-        final CompletableFuture<Void> barrier = new CompletableFuture<>();
-        synchronized (lifecycleLock) {
-            if (!accepting) {
-                return;
-            }
-            accepting = false;
-            ioExecutor.execute(() -> barrier.complete(null));
-        }
-        await(barrier);
-        ioExecutor.shutdown();
-        try {
-            if (!ioExecutor.awaitTermination(10L, TimeUnit.SECONDS)) {
-                throw new ProfileRepositoryException("Profile v2 I/O drain timeout");
-            }
-        } catch (final InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new ProfileRepositoryException("Profile v2 I/O drain megszakadt", interrupted);
-        }
-        cache.clear();
-        quarantineReasons.clear();
-    }
-
-    private static String decodeUtf8(final byte[] bytes) throws CharacterCodingException {
-        final CharBuffer decoded = StandardCharsets.UTF_8.newDecoder()
-                .onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT)
-                .decode(ByteBuffer.wrap(bytes));
-        return decoded.toString();
-    }
-
-    private static String safeMessage(final Throwable failure) {
-        return failure.getMessage() == null ? failure.getClass().getSimpleName() : failure.getMessage();
-    }
-
-    private static void await(final CompletionStage<Void> stage) {
-        try {
-            stage.toCompletableFuture().join();
-        } catch (final RuntimeException failure) {
-            throw failure;
-        }
-    }
-
-    @FunctionalInterface
-    interface AtomicWriter {
-        void write(File file, YamlConfiguration yaml) throws IOException;
-    }
-
-    @FunctionalInterface
-    private interface CheckedSupplier<T> {
-        T get() throws Exception;
-    }
+    private LoadResult loadLocked(UUID id,boolean explicit){ensureLoaded();File marker=marker(id);if(marker.isFile()){MarkerSummary ms=readMarker(id,marker);if(!ms.recovered()){cache.remove(id);quarantineReasons.put(id,ms.reason());evidenceIds.put(id,ms.evidenceId());blocks.put(id,ms.reason());return LoadResult.quarantined(ms.reason(),ms.evidenceId());}}return loadIgnoringMarker(id,explicit);}
+    private LoadResult loadIgnoringMarker(UUID id,boolean explicit){File file=profile(id);if(!file.isFile()){cache.remove(id);if(explicit){blocks.remove(id);quarantineReasons.remove(id);evidenceIds.remove(id);}return LoadResult.missing();}byte[] bytes;try{long size=Files.size(file.toPath());if(size<1||size>MAX_BYTES)throw new IllegalArgumentException("Envelope size out of bounds: "+size);bytes=Files.readAllBytes(file.toPath());}catch(IOException|IllegalArgumentException x){throw block(id,"Profile read failed: "+safe(x),x);}try{YamlConfiguration y=parse(bytes);exact(y,ENVELOPE_KEYS,"profile envelope");expectString(y,"format",64,false,FORMAT);UUID owner=uuid(expectString(y,"owner",64,false,null));if(!id.equals(owner))throw new IllegalArgumentException("Envelope owner mismatch");long schema=expectInteger(y,"schema",0,Integer.MAX_VALUE),revision=expectInteger(y,"revision",0,Long.MAX_VALUE);String digest=expectString(y,"digest",64,false,null);if(!SHA.matcher(digest).matches())throw new IllegalArgumentException("Invalid SHA-256 digest");byte[] payload=Base64.getDecoder().decode(expectString(y,"payload",MAX_BYTES,false,null));if(!digest.equals(ClassProfileCodec.digestHex(payload)))throw new IllegalArgumentException("Envelope digest mismatch");ClassProfile p=codec.decodeForOwner(payload,id);if(p.schemaVersion()!=schema||p.revision()!=revision)throw new IllegalArgumentException("Envelope metadata mismatch");cache.put(id,p);quarantineReasons.remove(id);evidenceIds.remove(id);if(explicit)blocks.remove(id);return LoadResult.found(p);}catch(InvalidConfigurationException|CharacterCodingException|IllegalArgumentException|ClassProfileCodec.DecodeException x){String reason="Corrupt Profile v2 envelope: "+safe(x);QuarantineRecord q=quarantineLocked(id,bytes,reason);return LoadResult.quarantined(reason,q.evidenceId());}}
+    private void writeEnvelope(UUID id,ClassProfile p){byte[] encoded=codec.encode(p);YamlConfiguration y=new YamlConfiguration();y.set("format",FORMAT);y.set("owner",id.toString());y.set("schema",p.schemaVersion());y.set("revision",p.revision());y.set("digest",ClassProfileCodec.digestHex(encoded));y.set("payload",Base64.getEncoder().encodeToString(encoded));try{writer.write(profile(id),y);}catch(IOException|RuntimeException x){throw block(id,"Profile write failed: "+safe(x),x);}}
+    private QuarantineRecord quarantineLocked(UUID id,byte[] original,String reason){long time=clock.millis();String evidenceId=id+":"+time+":"+sequence.incrementAndGet(),safeId=evidenceId.replace(':','-');File evidence=new File(quarantineDir,safeId+".yml");YamlConfiguration q=new YamlConfiguration();q.set("format","ICS2-EVIDENCE-1");q.set("owner",id.toString());q.set("evidence-id",evidenceId);q.set("created-at",time);q.set("reason",reason);q.set("original-digest",ClassProfileCodec.digestHex(original));q.set("original-base64",Base64.getEncoder().encodeToString(original));YamlConfiguration m=new YamlConfiguration();m.set("format",MARKER_FORMAT);m.set("owner",id.toString());m.set("evidence-id",evidenceId);m.set("evidence-file",evidence.getName());m.set("created-at",time);m.set("reason",reason);m.set("recovered",false);m.set("recovery-audit-id","");m.set("recovered-at",0L);try{writer.write(evidence,q);writer.write(marker(id),m);}catch(IOException|RuntimeException x){throw block(id,reason+"; quarantine write failed: "+safe(x),x);}cache.remove(id);quarantineReasons.put(id,reason);evidenceIds.put(id,evidenceId);blocks.put(id,reason);logger.severe("Profile v2 quarantine owner="+id+" evidence="+evidenceId+" reason="+reason);return new QuarantineRecord(id,time,reason,evidenceId,evidence.getName());}
+    private MarkerSummary readMarker(UUID id,File file){YamlConfiguration m=loadYaml(file);exact(m,MARKER_KEYS,"marker");expectString(m,"format",64,false,MARKER_FORMAT);if(!id.equals(uuid(expectString(m,"owner",64,false,null))))throw block(id,"Quarantine marker owner mismatch",null);return new MarkerSummary(expectString(m,"evidence-id",160,false,null),expectString(m,"reason",MAX_REASON,false,null),expectBoolean(m,"recovered"));}
+    private <T>T locked(UUID id,Checked<T> work)throws Exception{ensureLoaded();String key=root.getCanonicalPath()+"::"+id;ReentrantLock lock=JVM_LOCKS.computeIfAbsent(key,k->new ReentrantLock(true));lock.lockInterruptibly();try{File lf=new File(lockDir,id+".lck");Files.createDirectories(lockDir.toPath());try(FileChannel c=FileChannel.open(lf.toPath(),StandardOpenOption.CREATE,StandardOpenOption.WRITE);FileLock ignored=c.lock()){return work.get();}}finally{lock.unlock();if(!lock.hasQueuedThreads())JVM_LOCKS.remove(key,lock);}}
+    private <T>CompletableFuture<T> submit(UUID id,Checked<T> work){CompletableFuture<T> f=new CompletableFuture<>();synchronized(lifecycleLock){if(!accepting){f.completeExceptionally(new ProfileRepositoryException("Profile v2 repository stopped"));return f;}inFlight.add(f);if(id!=null)inFlightByPlayer.computeIfAbsent(id,ignored->ConcurrentHashMap.newKeySet()).add(f);try{io.execute(()->{try{f.complete(work.get());}catch(Throwable x){f.completeExceptionally(x);}finally{inFlight.remove(f);if(id!=null){Set<CompletableFuture<?>> player=inFlightByPlayer.get(id);if(player!=null){player.remove(f);if(player.isEmpty())inFlightByPlayer.remove(id,player);}}}});}catch(RejectedExecutionException x){inFlight.remove(f);if(id!=null){Set<CompletableFuture<?>> player=inFlightByPlayer.get(id);if(player!=null){player.remove(f);if(player.isEmpty())inFlightByPlayer.remove(id,player);}}f.completeExceptionally(new ProfileRepositoryException("Profile I/O rejected",x));}}return f;}
+    private static CompletionStage<Void> barrier(Collection<? extends CompletableFuture<?>> futures){if(futures==null||futures.isEmpty())return CompletableFuture.completedFuture(null);CompletableFuture<?>[] snapshot=futures.toArray(CompletableFuture[]::new);return CompletableFuture.allOf(snapshot);}
+    private File profile(UUID id){return new File(root,id+".yml");}private File marker(UUID id){return new File(quarantineDir,id+".marker.yml");}private void ensureLoaded(){if(!loaded)throw new ProfileRepositoryException("Profile v2 repository not loaded");}private ProfileRepositoryException block(UUID id,String d,Throwable c){blocks.put(id,d);return c==null?new ProfileRepositoryException(d):new ProfileRepositoryException(d,c);}
+    private static YamlConfiguration parse(byte[] bytes)throws CharacterCodingException,InvalidConfigurationException{YamlConfiguration y=new YamlConfiguration();y.loadFromString(decode(bytes));return y;}private static YamlConfiguration loadYaml(File f){try{long size=Files.size(f.toPath());if(size<1||size>MAX_BYTES)throw new IllegalArgumentException("YAML size out of bounds");return parse(Files.readAllBytes(f.toPath()));}catch(IOException|InvalidConfigurationException x){throw new ProfileRepositoryException("Strict YAML load failed",x);}}
+    private static void exact(YamlConfiguration y,Set<String> expected,String label){Set<String> actual=new LinkedHashSet<>(y.getKeys(false));if(!actual.equals(expected))throw new IllegalArgumentException(label+" keys differ: "+actual);}private static String expectString(YamlConfiguration y,String key,int max,boolean blank,String expected){Object raw=y.get(key);if(!(raw instanceof String s))throw new IllegalArgumentException(key+" must be string");if((!blank&&s.isBlank())||s.length()>max)throw new IllegalArgumentException(key+" string out of bounds");if(expected!=null&&!expected.equals(s))throw new IllegalArgumentException(key+" unexpected");return s;}private static long expectInteger(YamlConfiguration y,String key,long min,long max){Object raw=y.get(key);if(!(raw instanceof Byte||raw instanceof Short||raw instanceof Integer||raw instanceof Long))throw new IllegalArgumentException(key+" must be integral scalar");long v=((Number)raw).longValue();if(v<min||v>max)throw new IllegalArgumentException(key+" out of bounds");return v;}private static boolean expectBoolean(YamlConfiguration y,String key){Object raw=y.get(key);if(!(raw instanceof Boolean b))throw new IllegalArgumentException(key+" must be boolean");return b;}private static UUID uuid(String s){try{return UUID.fromString(s);}catch(IllegalArgumentException x){throw new IllegalArgumentException("Invalid UUID",x);}}private static String required(String s,String label,int max){if(s==null||s.isBlank()||s.trim().length()>max)throw new IllegalArgumentException(label+" invalid");return s.trim();}private static String cleanReason(String s){String r=s==null||s.isBlank()?"unspecified Profile v2 failure":s.trim();return r.length()<=MAX_REASON?r:r.substring(0,MAX_REASON);}private static String decode(byte[] b)throws CharacterCodingException{CharBuffer c=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(b));return c.toString();}private static String safe(Throwable x){return x.getMessage()==null?x.getClass().getSimpleName():x.getMessage();}
+    private static void await(CompletionStage<Void> stage,Duration timeout){try{stage.toCompletableFuture().get(timeout.toMillis(),TimeUnit.MILLISECONDS);}catch(InterruptedException x){Thread.currentThread().interrupt();throw new ProfileRepositoryException("Flush interrupted",x);}catch(ExecutionException|TimeoutException x){throw new ProfileRepositoryException("Flush failed/timed out",x);}}
+    @Override public void close(){try{ShutdownResult r=shutdown(Duration.ofSeconds(10)).toCompletableFuture().get(11,TimeUnit.SECONDS);if(!r.drained())throw new ProfileRepositoryException(r.detail());}catch(InterruptedException x){Thread.currentThread().interrupt();io.shutdownNow();throw new ProfileRepositoryException("Shutdown interrupted",x);}catch(ExecutionException|TimeoutException x){io.shutdownNow();throw new ProfileRepositoryException("Shutdown failed",x);}}
+    @FunctionalInterface interface AtomicWriter{void write(File file,YamlConfiguration yaml)throws IOException;}@FunctionalInterface private interface Checked<T>{T get()throws Exception;}private record MarkerSummary(String evidenceId,String reason,boolean recovered){}
 }

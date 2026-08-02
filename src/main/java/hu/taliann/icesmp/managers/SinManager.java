@@ -213,7 +213,7 @@ public final class SinManager {
 
     private void reconcileProfileGates(final Player player) {
         final SpecializationManager specs = specializationManager;
-        if (specs != null && specs.profileV2Enabled()) {
+        if (specs != null) {
             specs.reconcileDarkGates(player);
         }
     }

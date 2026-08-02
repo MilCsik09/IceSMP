@@ -937,13 +937,16 @@ integrációs struktúra módosításakor. Hibás típusnál vagy értéknél az
 alrendszer fallbacket, warningot vagy letiltást használhat; ezért reload
 után mindig ellenőrizd a konzolt.
 
-### Kaszt/spec rework staging-kapu
+### Profile v2 kaszt/spec üzemeltetési kapu
 
-A rework alapból tiltott: `class-spec-rework.enabled: false`. Bekapcsolás előtt az üzemeltetőnek
-telepítenie kell a `class-spec-dependencies.lock.yml` fájlban pontosan rögzített kötelező plugineket,
-majd stagingen `-Dpaper.disablePluginRemapping=true` kapcsolóval kell indítania a szervert. Ha az
-enforcement aktív és kötelező plugin hiányzik vagy eltérő verziójú, az IceSMP még a tartós gameplay
-betöltése előtt leáll. A részletes mentési, hibakezelési és rollbackfolyamat:
+A Profile v2 mindig aktív és a kaszt/spec egyetlen autoritatív rendszere; nincs legacy migráció,
+fallback vagy kill switch. Az üzemeltetőnek telepítenie kell a
+`class-spec-dependencies.lock.yml` fájlban rögzített kötelező plugineket, majd stagingen
+`-Dpaper.disablePluginRemapping=true` kapcsolóval kell indítania a szervert. Aktív dependency
+enforcement mellett hiányzó vagy eltérő kötelező plugin fail-closed startup hibát okoz.
+Quarantine esetén az evidence megőrzendő, és csak az explicit
+`/spec recover <player|uuid> confirm` parancs használható (`icesmp.admin.spec.recover`).
+A részletes persistence-, recovery- és shutdown-folyamat:
 `docs/admin/CLASS_SPEC_REWORK_RUNBOOK.md`.
 
 ### Konfigurációs fájlok

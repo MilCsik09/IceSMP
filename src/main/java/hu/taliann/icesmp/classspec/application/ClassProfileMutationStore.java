@@ -23,6 +23,13 @@ public interface ClassProfileMutationStore {
 
     CompletionStage<SaveResult> save(UUID playerId, long expectedRevision, ClassProfile candidate);
 
+    /** Explicit quarantine recovery. The evidence remains preserved and audit-linked. */
+    CompletionStage<ClassProfile> recover(UUID playerId, String evidenceId, String auditId);
+
+    default Optional<String> quarantineEvidenceId(final UUID playerId) {
+        return Optional.empty();
+    }
+
     void blockSession(UUID playerId, String reason);
 
     record SaveResult(Status status, ClassProfile durableProfile, long actualRevision, String detail) {

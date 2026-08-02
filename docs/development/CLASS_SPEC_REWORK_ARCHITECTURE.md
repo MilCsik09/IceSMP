@@ -1,177 +1,184 @@
-# Kaszt- és specializáció-rework — Profile v2 architektúra
+# Class/spec rework — Profile v2 greenfield architecture
 
-## Hatókör és tulajdonjog
+## Status and scope
 
-A Profile v2 a kaszt- és specializációállapot új, IceSMP-tulajdonú tartós modellje. Ebben a
-fázisban nem valósít meg kasztmagot, harci primitívet, doktrínahatást, mastery contributiont,
-második-spec váltást vagy fizikai Lélekkapocs-itemet. A `JobManager` marad a kaszt-XP és a
-kasztszint igazságforrása; a profilban levő szint csak ellenőrzött tükör.
+Profile v2 is the only authoritative class/spec domain model, persistence format and runtime admission source.
+The server has no production player data that must be imported, therefore this implementation deliberately has:
 
-A külső pluginok megjeleníthetnek vagy végrehajthatnak egy IceSMP-kérést, de nem birtokolhatnak
-profiladatot. CraftEngine-, BetterHud-, ModelEngine-, MythicMobs-, Fancy-, WorldGuard- vagy más
-külső API-típus nem kerülhet a domain- vagy persistence-rétegbe. A profilból minden eldobható
-runtime állapot újraépíthető.
+- no legacy class/spec migration;
+- no dual read or dual write;
+- no legacy PDC fallback;
+- no runtime kill switch;
+- no supported downgrade to the previous class/spec runtime.
 
-## Réteghatárok
+The compatibility base PR still owns Paper/Folia 1.21.11 integration boundaries. This PR does not implement
+mechanics-core, doctrine runtime, mastery contribution, second-spec channeling or the 35 specialization kits.
+
+## Aggregate
+
+`ClassProfile` is immutable and requires an owner UUID. It contains:
+
+- schema version and monotonic revision;
+- `READY`, `REVIEW` or `QUARANTINED` profile status;
+- canonical primary class, class XP and calculated class level;
+- exactly two slot-addressed `ClassLoadout` values;
+- the single active slot and second-slot unlock state;
+- mastery, doctrine, Soulbond, capstone, spell selection and favorites;
+- slot-bound companion rosters and mechanic state;
+- bounded, restart-durable operation receipts;
+- quarantine, recovery and session-block diagnostics.
+
+Construction, decoding and every copy/build path execute the same domain validation. Collections are defensively
+copied and deterministically ordered for persistence.
+
+Important invariants include:
+
+1. a classless profile has zero XP/level and no class/spec/loadout state;
+2. only one slot may be `ACTIVE`, and `activeSlot` must identify it;
+3. `EMPTY`, `SEALED`, review and quarantine state cannot activate gameplay;
+4. the same specialization cannot occupy both slots;
+5. a specialization must belong to the profile's primary class;
+6. a locked second slot is empty;
+7. Soulforge state is valid only for the Necromancer loadout;
+8. companion namespaces belong to their owning specialization and slot;
+9. live Bukkit entity UUIDs are never durable profile state;
+10. at most one recovery-requiring durable operation may be pending;
+11. revisions and all counters are non-negative and use checked arithmetic.
+
+## ICS2 codec and envelope
+
+`ClassProfileCodec` emits deterministic ICS2 codec version 2 bytes with explicit UTF-8, bounded strings and
+collections, duplicate/collision detection, exact enum decoding, truncation and trailing-byte rejection.
+The owner UUID is encoded inside the payload.
+
+The codec appends an unkeyed SHA-256 digest. Its documented purpose is accidental corruption detection only.
+It is **not authentication** and does not claim to prevent an offline operator who can rewrite the file from
+recomputing the digest. Filesystem permissions and deployment access controls are the trust boundary.
+
+The YAML envelope has an exact, type-checked field set:
+
+- `format`;
+- `owner`;
+- `schema`;
+- `revision`;
+- `digest`;
+- `payload`.
+
+The repository verifies that the repository key/file name UUID, envelope owner and decoded payload owner all
+match. Floating revisions, booleans in string fields, scientific notation, unknown keys, invalid UUIDs, invalid
+digests and oversized payloads fail closed.
+
+## Persistence and CAS
+
+The repository contract is:
+
+- absent profile: expected revision `-1`;
+- first durable profile: revision `0`;
+- mutation: exactly `n -> n+1`.
+
+Load, expected-revision validation, encode and atomic replacement execute in one per-player critical section.
+Locks are keyed by canonical repository directory and player UUID, so separate repository instances in the same
+JVM serialize the same player but do not globally serialize unrelated players. A per-profile filesystem lock also
+protects the CAS section when multiple processes touch the same directory.
+
+The supported deployment model remains one authoritative IceSMP process per profile directory. The file lock
+prevents a second cooperating process from bypassing CAS; shared-network-filesystem lock semantics are not
+promised beyond the filesystem provider's guarantees.
+
+Writes use a temporary file, flush/sync and atomic replacement where supported. Cache authority changes only
+after the durable replacement succeeds.
+
+## Greenfield initialization
+
+A missing profile becomes `ClassProfile.empty(owner, 0)`. Parallel first-login initialization is resolved by CAS:
+exactly one revision-0 profile wins, and the loser reloads that winner instead of blocking the session or falling
+back to legacy data.
+
+Existing class/spec PDC values are not read, imported or used to select class, specialization, spell, companion or
+Soulforge state.
+
+## Session-generation fencing
+
+`ProfileSessionRegistry` creates a fresh UUID token for every activation attempt. The token is carried through:
+
+- lifecycle load and initialization;
+- gateway mutation admission;
+- durable completion callbacks;
+- runtime reconciliation;
+- pet and companion callbacks;
+- logout, reconnect and disable invalidation.
+
+Every scheduler hop rechecks the token. A completion from a retired session can neither mutate the new cached
+profile nor grant spells, spawn/claim companions, rebuild runtime state or clear the new session's fail-closed
+status.
+
+## DARK seal lifecycle
+
+All five DARK specializations use the same `GateSnapshot`/`SealReason` model. `SealReason` stores the complete,
+deterministically ordered missing-gate map, not only the first failure.
+
+A seal commit:
+
+1. persists the complete reason set;
+2. clears the active slot without activating another slot;
+3. revokes specialization provenance;
+4. removes pet/minion/form/transient runtime state;
+5. preserves mastery, doctrine, Soulbond, capstone and durable roster.
+
+Gate reconciliation is idempotent. Recovering one gate does not unseal while another remains missing. Automatic
+unseal happens once only after all restorable gates pass; admin, persistence and quarantine seals are never
+removed by faction or quest events.
+
+## Spell provenance
+
+`SpellGrantLedger` records explicit `BASE:<class>`, `SPEC:<spec>`, `TALENT:<id>`, `QUEST:<id>` or `ADMIN`
+provenance. Source-less and `LEGACY` grants are rejected.
+
+Spec reset/seal revokes `SPEC:*`. Admin class reset revokes `BASE:*` and `SPEC:*`. Talent, quest and admin grants
+survive unless their own authority explicitly revokes them. No login-time provenance inference depends on a
+partially activated session.
+
+## Pet, minion and Soulforge state
+
+Durable companion mutation (`ADD`, `REMOVE`, `RENAME`, `STANCE`, `PROGRESS`, `EQUIPMENT`, `STATE`,
+`RESPAWN_AT`, `SET_ACTIVE`, `DISMISS`) passes through the Profile v2 gateway and CAS. Rosters are owner-, slot-
+and namespace-bound. Entity UUIDs remain only in token-fenced runtime registries and cleanup is idempotent.
+
+Soulforge shard debit and rank update are one Profile v2 mutation. Operation IDs and receipts survive restart;
+a repeated committed ID is a no-op. A durable commit followed by runtime failure is reported as reconciliation
+failure and is not refunded or applied twice.
+
+## Respec transaction and recovery
+
+Respec spans the currency wallet and Profile v2 repository. `RespecTransactionJournal` persists an owner-bound
+operation intent before debit. The wallet stores an exact operation witness. Recovery examines the journal,
+wallet witness and Profile v2 receipt to deterministically commit or roll back each crash point.
+
+The protocol is idempotent across duplicate callbacks and restart. A player cannot lose currency for an
+uncommitted respec or receive a free second respec through repeated recovery.
+
+## Quarantine and admin recovery
+
+Decode/envelope/owner failures preserve evidence and create a quarantine marker. They never overwrite the
+original with an empty profile and never activate legacy runtime.
+
+Recovery is explicit:
 
 ```text
-classspec/domain
-    immutable profil, loadoutok, invariánsok, katalógus és értékobjektumok
-        │
-classspec/application
-    sorosított mutation, seal/unseal, respec/reset és lifecycle
-        │
-classspec/persistence              classspec/migration
-    codec, CAS repository, cache   legacy snapshot, migrátor, diagnosztika
-        │                                  │
-classspec/integration
-    Bukkit/Folia és meglévő manager-adapterek; spell/pet/runtime cleanup
+/spec recover <player|uuid> confirm
 ```
 
-A domain csak stabil string ID-t, UUID értéket, időbélyeget és saját immutable értékobjektumot
-tárolhat. Bukkit `Player`, `Entity`, élő entity UUID, `ItemStack`, scheduler task vagy külső plugin
-handle nem lehet tartós profilmező. Az élő companion- és transient runtime-azonosítók külön,
-session-határú cache-ben maradnak.
+Permission: `icesmp.admin.spec.recover`.
 
-## ClassProfile v2
+Recovery validates target owner, marker and evidence ID, preserves the evidence, records an audit ID and writes a
+clean, inactive Profile v2 revision 0. The player must reconnect; recovery does not auto-activate a loadout.
+General reset cannot bypass quarantine.
 
-Minden profil `schemaVersion = 2` értékkel és monoton `revision` számmal rendelkezik. A profilszintű
-állapot legalább ezt tartalmazza:
+## Shutdown and Folia boundary
 
-- `ProfileStatus`: `READY`, `MIGRATION_REVIEW` vagy `CORRUPT_QUARANTINE`;
-- elsődleges kaszt stabil ID-je és a `JobManager` által birtokolt kasztszint tükre;
-- opcionális aktív slot és a `secondSpecUnlocked` jelző;
-- pontosan két loadout slot;
-- migrációs állapot, az utolsó sikeres migráció azonosítója és korlátozott diagnosztika;
-- quarantine- vagy session-block ok úgy, hogy hibás decode után se jöhessen létre részleges runtime.
+New mutations are rejected after shutdown admission closes. Existing per-player mutation tails, repository I/O,
+respec recovery and runtime callbacks drain with bounded timeouts. Timeout or rejected scheduler callbacks are
+logged and leave a fail-closed/recovery-required state; disable never waits indefinitely.
 
-Minden loadout külön tárolja a spec ID-t, `LoadoutStatus` értéket, opcionális seal okot, doktrína-
-döntéseket, mastery rangot és XP-t, a Lélekkapocs logikai állapotát, kedvenc és kiválasztott
-spelleket, a zárópróba állapotát, companion rostert, specenkénti tartós mechanikai állapotot és
-migrációs megjegyzést.
-
-A loadout státuszai: `EMPTY`, `ACTIVE`, `INACTIVE`, `SEALED`, `MIGRATION_REVIEW`. A mastery rang
-0–10 közötti, XP-je nem negatív; a későbbi konfigurált küszöbök és contribution motor nem részei
-ennek a fázisnak. A zárópróba állapota `LOCKED`, `AVAILABLE`, `IN_PROGRESS` vagy `COMPLETED`.
-
-A Lélekkapocs fizikai tárgya nem igazságforrás. A profil stabil signature UUID-t, evolúciós fokot,
-modulokat, saját revisiont és recovery/rebind információt őriz; a tényleges item későbbi adapter.
-
-## Domaininvariánsok
-
-Minden konstrukció, decode és mutation ugyanazt a központi validációt használja. Érvénytelen profil
-nem kerülhet cache-be és nem aktiválhat gameplayt. Kötelező invariánsok:
-
-1. legfeljebb egy loadout lehet `ACTIVE`, és az `activeSlot` csak erre mutathat;
-2. `EMPTY`, `SEALED` vagy `MIGRATION_REVIEW` slot nem lehet aktív;
-3. ugyanaz a spec nem szerepelhet mindkét slotban, és minden specnek a primary classhoz kell tartoznia;
-4. a második slot feloldás nélkül üres, az `EMPTY` slot pedig semmilyen rejtett állapotot nem hordoz;
-5. review vagy quarantine profil normál mutationt és class/spec runtime-ot nem aktiválhat;
-6. sealed loadoutból nincs aktív grant, companion, forma vagy transient state;
-7. általános reset nem törölhet review/quarantine snapshotot vagy diagnosztikát;
-8. Soulforge csak a `necromancer` loadout mechanikai névterében fejthet ki hatást;
-9. companion roster csak a hozzá tartozó spec saját loadoutjából olvasható és módosítható;
-10. decode- vagy mentési hiba után a profil nem aktiválódhat részlegesen.
-
-A stabil 13/35 katalógus és az öt DARK spec (`necromancer`, `plaguebringer`, `unholy`,
-`bone_priest`, `demonologist`) közös domainkatalógusból validálódik. A régi lore-dokumentumok nem
-spec-lista igazságforrások.
-
-## Codec és persistence
-
-A teljes profil egyetlen verziózott codec-borítékon halad át:
-
-- magic: `ICS2`;
-- explicit codec- és schema-verzió;
-- determinisztikus, UTF-8-alapú payload;
-- CRC32 vagy erősebb checksum;
-- teljes payload-, string-, lista-, halmaz- és mapméret-korlát.
-
-A writer stabil sorrendben írja a mapeket és halmazokat. A reader elutasítja a hibás checksumot,
-csonkolást, trailing adatot, ismeretlen enumot, ismételt vagy normalizálás után ütköző kulcsot,
-hibás UTF-8-at, negatív vagy túlméretes hosszmezőt. Java natív object serialization nem használható.
-
-A repository a `load`, `save(expectedRevision, nextProfile)`, `quarantine`, `flush`, `flushAll` és
-cache-invalidation műveletek egyetlen tulajdonosa. A hiányzó profil elvárt revíziója `-1`, az első
-sikeres mentésé `0`; utána kizárólag `n → n+1` engedélyezett. Játékosonként egy lock vagy sorosított
-mutation-lánc védi a kritikus módosításokat. Stale vagy kihagyott revision nem írhat, régebbi async
-completion nem publikálhat újabb cache fölé.
-
-A mentés az IceSMP meglévő atomikus persistent-store/YAML infrastruktúráját használja. A teljes
-profil nem szóródik PDC-kulcsokra; PDC-ben csak kis identity, migration és rollback mirror maradhat.
-Sikertelen íráskor a korábbi tartós profil marad autoritatív, a jelölt új profil nem válik cache-
-igazsággá, a session class/spec része pedig fail-closed blokkot kap.
-
-## Feature flag és lifecycle
-
-Az egyetlen rollout-kapu a már létező `class-spec-rework.enabled`, alapértéke `false`.
-
-- `false`: nincs Profile v2 read, write vagy migráció; a legacy runtime változatlan;
-- `true`: joinkor kizárólag Profile v2 load vagy legacy migráció indul, ugyanazon játékosnál nincs
-  kettős legacy/v2 spec runtime;
-- a cache-ben már betöltött profil is activation-pending marad a gate-reconcile és runtime rebuild
-  végéig; ezalatt csak diagnosztika olvasható, gameplay/spec/pet/mechanika nem;
-- decode- vagy migrációs bizonytalanság csak az érintett class/spec gameplayt blokkolja;
-- sikeres load/migrate után gate-revalidáció és provenance-alapú spell reconcile fut;
-- quitkor transient cleanup és determinisztikus `flush(player)`;
-- disablekor új mutation nem fogadható, minden runtime cleanup és `flushAll` lezárul, majd a cache ürül.
-
-Fájl-I/O nem futhat player/entity region threaden. Player/PDC/inventory snapshot a játékos saját
-schedulerén készül, az aszinkron rétegbe csak immutable adat kerül. Entity- és modell-cleanup az
-adott entity schedulerén fut; disable után callback nem indíthat új taskot.
-
-## DARK seal/unseal
-
-A kapu elvesztése nem törli a loadoutot. A sikeres CAS-mutation `SEALED` állapotot és tartós
-`SealReason` értéket rögzít; ha az aktív slot sealelődik, az `activeSlot` kiürül, második spec nem
-aktiválódik automatikusan. Ezután a provenance-rendszer csak a sealed spec grantjeit vonja vissza,
-és a scheduler-adapter takarítja a pet/minion/form/transient runtime-ot. Mastery, doktrína,
-signature, zárópróba és roster megmarad.
-
-Megkülönböztetett okok: frakcióhiány, sinner-jel hiánya, questfeltétel hiánya, adminisztratív seal,
-persistence/recovery blokk és quarantine. Automatikus unseal csak ugyanannak a frakció-, sinner-
-vagy questkapunak a helyreállásakor engedett. Admin-, persistence- és quarantine-sealt esemény nem
-oldhat fel. Unseal után a loadout `INACTIVE`; korábbi aktivitás nem áll vissza automatikusan.
-
-Ha a seal mentése hibázik, a régi tartós profil marad autoritatív, de a session blokkolódik és az
-aktív class/spec runtime biztonságosan kitakarításra kerül. Így persistence-hiba sem hagy használható
-DARK grantet vagy társat.
-
-## Companion- és Soulforge-izoláció
-
-Tartós companion roster csak ezekben a loadoutnévterekben létezhet:
-
-- `beast_master.stable`;
-- `necromancer.court`;
-- `unholy.ghoul`;
-- `demonologist.roster`.
-
-A companion rekord logikai ID-t, típust, nevet, szintet/XP-t, traitet vagy mutációt, stance-et,
-modul-/páncélazonosítókat, újraidézési időt és tartós státuszt őrizhet, élő entity UUID-t nem.
-Rituális `unholy` és `demonologist` társ nem érhető el az általános `/pet summon` útvonalon.
-
-A Soulforge kizárólag a Nekromanta mechanikai állapotában él. Fejlesztése revision/CAS-védett
-mutation; mentési hiba visszatéríti a lefoglalt költséget, ugyanaz az idempotency token nem számolható
-el kétszer. Tartós rangcommit utáni runtime-hiba nem refundol szilánkot, hanem blokkolt sessiont és
-admin recoveryt eredményez. Nekromanta nélküli legacy Soulforge adat nem vész el: orphaned migrációs snapshotként
-`MIGRATION_REVIEW` állapotot okoz.
-
-## Respec, admin reset és spell provenance
-
-A respec és admin reset a profil commitját tekinti döntési határnak. Gazdasági levonás vagy más
-kompenzálható költség reservation/token alapján történik; mentési hiba refundot és sikertelen
-parancseredményt ad. A class PDC és legacy adatok csak sikeres profile commit után módosíthatók.
-Retry ugyanazzal a tokennel nem vonhat le kétszer. Ha a CAS commit már tartós, de az utólagos
-scheduler/runtime reconcile hibázik, a költség nem jár vissza: a session blokkolódik, az eredmény
-`RUNTIME_FAILED`, és admin recovery szükséges. Ez megakadályozza a tartós respec ingyenessé válását.
-
-Spell reconcile forrásonként dolgozik: csak az érintett `SPEC:*` provenance szűnik meg; questből,
-talentből, kasztszintből vagy adminforrásból kapott azonos spell megmarad. Review/quarantine profil
-általános resetje elutasított, így a megőrzött bizonytalan legacy snapshot nem veszhet el.
-
-## Kapcsolódó dokumentumok
-
-- [Legacy migráció](CLASS_SPEC_REWORK_MIGRATION.md)
-- [Regressziós tesztterv](CLASS_SPEC_REWORK_TEST_PLAN.md)
-- [1.21.11 → 26.2 portterv](CLASS_SPEC_REWORK_1_21_11_TO_26_2.md)
-- [Üzemeltetői runbook](../admin/CLASS_SPEC_REWORK_RUNBOOK.md)
+Bukkit entity, inventory, PDC and message operations run on the owning player/entity scheduler. Persistence and
+codec work run off region threads. No durable object retains a live `Player` or `Entity` reference.

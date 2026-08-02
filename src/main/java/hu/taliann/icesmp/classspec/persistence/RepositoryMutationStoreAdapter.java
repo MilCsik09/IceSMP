@@ -54,6 +54,19 @@ public final class RepositoryMutationStoreAdapter implements ClassProfileMutatio
                 });
     }
 
+
+    @Override
+    public CompletionStage<ClassProfile> recover(final UUID playerId, final String evidenceId,
+                                                  final String auditId) {
+        return repository.recover(playerId, evidenceId, auditId);
+    }
+
+    @Override
+    public Optional<String> quarantineEvidenceId(final UUID playerId) {
+        return repository instanceof YamlClassProfileRepository yaml
+                ? yaml.quarantineEvidenceId(playerId) : Optional.empty();
+    }
+
     @Override
     public void blockSession(final UUID playerId, final String reason) {
         repository.blockSession(playerId, reason);

@@ -1,10 +1,6 @@
 package hu.taliann.icesmp.classspec.integration;
 
-import hu.taliann.icesmp.classspec.application.ClassProfileLifecycleService;
-import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
-import hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort;
-import hu.taliann.icesmp.classspec.migration.BukkitLegacyProfileSnapshotReader;
-import hu.taliann.icesmp.classspec.migration.LegacyProfileSnapshot;
+import hu.taliann.icesmp.classspec.application.*;
 import hu.taliann.icesmp.managers.RespecService;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import org.bukkit.Bukkit;
@@ -18,202 +14,83 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Paper/Folia owner-scheduler bridge for join, logout and disable profile lifecycle. */
+/** Folia owner-scheduler bridge with generation fencing across every callback hop. */
 public final class BukkitClassProfileSessionBridge {
-
-    private final JavaPlugin plugin;
-    private final BukkitLegacyProfileSnapshotReader legacyReader;
-    private final ClassProfileLifecycleService lifecycle;
-    private final ClassSpecProfileGateway gateway;
-    private final SpecializationManager specializationManager;
-    private final BukkitClassSpecRuntimeAdapter runtime;
-    private final RespecService respecService;
-    private final AtomicBoolean accepting = new AtomicBoolean(true);
-    private final Object sessionLock = new Object();
-    private final ConcurrentHashMap<UUID, UUID> sessionGenerations = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, CompletableFuture<Void>> pendingLogouts =
-            new ConcurrentHashMap<>();
-
-    public BukkitClassProfileSessionBridge(final JavaPlugin plugin,
-                                           final BukkitLegacyProfileSnapshotReader legacyReader,
-                                           final ClassProfileLifecycleService lifecycle,
-                                           final ClassSpecProfileGateway gateway,
-                                           final SpecializationManager specializationManager,
-                                           final BukkitClassSpecRuntimeAdapter runtime,
-                                           final RespecService respecService) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin");
-        this.legacyReader = Objects.requireNonNull(legacyReader, "legacyReader");
-        this.lifecycle = Objects.requireNonNull(lifecycle, "lifecycle");
-        this.gateway = Objects.requireNonNull(gateway, "gateway");
-        this.specializationManager = Objects.requireNonNull(specializationManager, "specializationManager");
-        this.runtime = Objects.requireNonNull(runtime, "runtime");
-        this.respecService = Objects.requireNonNull(respecService, "respecService");
-    }
-
-    /** Called on the joining player's owner thread; only the immutable snapshot crosses threads. */
-    public void join(final Player player) {
-        if (!gateway.enabled() || !accepting.get()) {
-            return;
-        }
-        final LegacyProfileSnapshot snapshot = legacyReader.read(player);
-        final UUID playerId = snapshot.playerId();
-        final UUID generation;
-        final CompletableFuture<Void> priorLogout;
-        synchronized (sessionLock) {
-            if (!accepting.get()) {
+    private final JavaPlugin plugin;private final ClassProfileLifecycleService lifecycle;private final ClassSpecProfileGateway gateway;private final ProfileSessionRegistry sessions;private final SpecializationManager specializationManager;private final BukkitClassSpecRuntimeAdapter runtime;private final RespecService respecService;private final AtomicBoolean accepting=new AtomicBoolean(true);private final Object lock=new Object();private final ConcurrentHashMap<UUID,CompletableFuture<Void>> pendingLogouts=new ConcurrentHashMap<>();
+    public BukkitClassProfileSessionBridge(JavaPlugin plugin,ClassProfileLifecycleService lifecycle,ClassSpecProfileGateway gateway,ProfileSessionRegistry sessions,SpecializationManager specializationManager,BukkitClassSpecRuntimeAdapter runtime,RespecService respecService){this.plugin=Objects.requireNonNull(plugin);this.lifecycle=Objects.requireNonNull(lifecycle);this.gateway=Objects.requireNonNull(gateway);this.sessions=Objects.requireNonNull(sessions);this.specializationManager=Objects.requireNonNull(specializationManager);this.runtime=Objects.requireNonNull(runtime);this.respecService=Objects.requireNonNull(respecService);}
+    public void join(Player player){if(!accepting.get())return;UUID id=player.getUniqueId(),token;CompletableFuture<Void> prior;synchronized(lock){if(!accepting.get())return;token=sessions.begin(id);gateway.beginSessionActivation(id,token);prior=pendingLogouts.get(id);}CompletionStage<Void> admission=prior==null?CompletableFuture.completedFuture(null):prior.handle((v,x)->null);admission.thenRun(()->startJoin(id,token));}
+    public CompletionStage<Void> quit(UUID id){Objects.requireNonNull(id);if(!accepting.get())return CompletableFuture.completedFuture(null);UUID token=sessions.currentToken(id).orElse(null);if(token==null)return CompletableFuture.completedFuture(null);sessions.markClosing(id,token);CompletableFuture<Void> completion=new CompletableFuture<>(),previous=pendingLogouts.put(id,completion);CompletionStage<Void> start=previous==null?CompletableFuture.completedFuture(null):previous.handle((v,x)->null);respecService.closeSession(id);start.thenCompose(v->gateway.awaitPlayerMutations(id)).thenCompose(v->respecService.awaitPlayerTransactions(id)).thenCompose(v->lifecycle.logout(id)).whenComplete((v,x)->{gateway.clearSession(id);respecService.clearSession(id);sessions.close(id,token);pendingLogouts.remove(id,completion);if(x==null)completion.complete(null);else{plugin.getLogger().severe("Profile v2 logout failed for "+id+": "+message(x));completion.completeExceptionally(x);}});return completion;}
+    public CompletionStage<Void> prepareDisable(){CompletableFuture<?>[] logouts;synchronized(lock){accepting.set(false);logouts=pendingLogouts.values().toArray(CompletableFuture[]::new);}return gateway.prepareShutdown().thenCompose(v->CompletableFuture.allOf(logouts)).thenCompose(v->lifecycle.prepareDisable());}
+    public void stopRuntime(){runtime.stop();}
+    private void startJoin(final UUID id, final UUID token) {
+        if (!sessions.isCurrent(id, token)) return;
+        respecService.openSession(id);
+        lifecycle.join(id).whenComplete((result, failure) -> {
+            if (!sessions.isCurrent(id, token)) return;
+            final Player online = Bukkit.getPlayer(id);
+            if (online == null) return;
+            if (failure != null || result == null
+                    || result.status() != ClassProfileLifecycleService.Status.READY) {
+                final String reason = failure != null ? message(failure)
+                        : result == null ? "missing profile result" : result.diagnostic();
+                plugin.getLogger().warning("Profile v2 blocked for " + id + ": " + reason);
+                gateway.blockSession(id, reason);
                 return;
             }
-            generation = nextGeneration(playerId);
-            gateway.beginSessionActivation(playerId);
-            priorLogout = pendingLogouts.get(playerId);
-        }
-        final CompletionStage<Void> admission = priorLogout == null
-                ? CompletableFuture.completedFuture(null)
-                : priorLogout.handle((ignored, failure) -> null);
-        admission.thenRun(() -> startJoin(snapshot, generation));
-    }
-
-    public CompletionStage<Void> quit(final UUID playerId) {
-        Objects.requireNonNull(playerId, "playerId");
-        if (!gateway.enabled() || !accepting.get()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        final CompletableFuture<Void> completion = new CompletableFuture<>();
-        final UUID generation;
-        final CompletableFuture<Void> previous;
-        synchronized (sessionLock) {
-            if (!accepting.get()) {
-                return CompletableFuture.completedFuture(null);
-            }
-            generation = nextGeneration(playerId);
-            respecService.closeSession(playerId);
-            previous = pendingLogouts.put(playerId, completion);
-        }
-        final CompletionStage<Void> start = previous == null
-                ? CompletableFuture.completedFuture(null)
-                : previous.handle((ignored, failure) -> null);
-        start.thenCompose(ignored -> respecService.awaitPlayerTransactions(playerId))
-                .thenCompose(ignored -> lifecycle.logout(playerId))
-                .whenComplete((ignored, failure) -> {
-                    synchronized (sessionLock) {
-                        if (sessionGenerations.remove(playerId, generation)) {
-                            gateway.cancelSessionActivation(playerId);
-                        }
-                    }
-                    gateway.clearSession(playerId);
-                    respecService.clearSession(playerId);
-                    if (failure != null) {
-                        plugin.getLogger().severe("Profile v2 logout flush failed for " + playerId
-                                + ": " + safeMessage(failure));
-                        completion.completeExceptionally(failure);
-                    } else {
-                        completion.complete(null);
-                    }
-                    pendingLogouts.remove(playerId, completion);
-                });
-        return completion;
-    }
-
-    public CompletionStage<Void> prepareDisable() {
-        final CompletableFuture<?>[] logouts;
-        synchronized (sessionLock) {
-            accepting.set(false);
-            logouts = pendingLogouts.values().toArray(CompletableFuture[]::new);
-        }
-        return gateway.prepareShutdown()
-                .thenCompose(ignored -> CompletableFuture.allOf(logouts))
-                .thenCompose(ignored -> lifecycle.prepareDisable());
-    }
-
-    public void stopRuntime() {
-        runtime.stop();
-    }
-
-    private void startJoin(final LegacyProfileSnapshot snapshot, final UUID generation) {
-        final UUID playerId = snapshot.playerId();
-        if (!isCurrent(playerId, generation)) {
-            return;
-        }
-        respecService.openSession(playerId);
-        lifecycle.join(snapshot).whenComplete((result, failure) -> {
-            if (!isCurrent(playerId, generation)) {
-                return;
-            }
-            final Player online = Bukkit.getPlayer(playerId);
-            if (online == null) {
-                return;
-            }
-            online.getScheduler().run(plugin, task -> {
-                if (!isCurrent(playerId, generation)) {
+            respecService.recoverPending(online).whenComplete((ignored, recoveryFailure) -> {
+                if (!sessions.isCurrent(id, token)) return;
+                if (recoveryFailure != null) {
+                    gateway.blockSession(id, "Respec recovery blocked activation: "
+                            + message(recoveryFailure));
                     return;
                 }
-                if (failure != null || result == null
-                        || result.status() != ClassProfileLifecycleService.Status.READY) {
-                    final String reason = failure != null ? safeMessage(failure)
-                            : result == null ? "missing profile load result" : result.diagnostic();
-                    plugin.getLogger().warning("Profile v2 blocked for " + playerId + ": " + reason);
-                    gateway.blockSession(playerId, reason);
-                    return;
-                }
-                final var profile = result.profileOptional().orElseThrow();
-                specializationManager.reconcileDarkGates(online).whenComplete((gateResult, gateFailure) -> {
-                    if (!isCurrent(playerId, generation)) {
-                        return;
-                    }
-                    if (gateFailure != null || gateResult == null) {
-                        gateway.blockSession(playerId, gateFailure == null
-                                ? "missing DARK gate reconcile result"
-                                : "DARK gate reconcile failed: " + safeMessage(gateFailure));
-                        return;
-                    }
-                    if (gateResult.committed()) {
-                        gateway.completeSessionActivation(playerId);
-                        return;
-                    }
-                    if (gateResult.status()
-                            != hu.taliann.icesmp.classspec.application.ProfileMutationResult.Status.NO_CHANGE) {
-                        gateway.blockSession(playerId,
-                                "DARK gate reconcile blocked login: " + gateResult.detail());
-                        return;
-                    }
-                    runtime.profileCommitted(playerId, profile, profile,
-                                    ClassSpecRuntimePort.MutationKind.GATE_RECONCILE)
-                            .whenComplete((runtimeIgnored, runtimeFailure) -> {
-                                if (!isCurrent(playerId, generation)) {
-                                    return;
-                                }
-                                if (runtimeFailure != null) {
-                                    gateway.blockSession(playerId,
-                                            "Profile login runtime rebuild failed: "
-                                                    + safeMessage(runtimeFailure));
-                                } else {
-                                    gateway.completeSessionActivation(playerId);
-                                }
-                            });
-                });
-            }, () -> {
-                if (isCurrent(playerId, generation)) {
-                    gateway.blockSession(playerId, "Player scheduler rejected Profile v2 login activation");
-                }
+                scheduleActivation(online, id, token);
             });
         });
     }
 
-    private UUID nextGeneration(final UUID playerId) {
-        final UUID token = UUID.randomUUID();
-        sessionGenerations.put(playerId, token);
-        return token;
+    private void scheduleActivation(final Player online, final UUID id, final UUID token) {
+        online.getScheduler().run(plugin, task -> {
+            if (!sessions.isCurrent(id, token)) return;
+            specializationManager.reconcileDarkGates(online).whenComplete((gateResult, gateFailure) -> {
+                if (!sessions.isCurrent(id, token)) return;
+                if (gateFailure != null || gateResult == null) {
+                    gateway.blockSession(id, gateFailure == null ? "missing DARK gate result"
+                            : "DARK gate reconciliation failed: " + message(gateFailure));
+                    return;
+                }
+                if (gateResult.status() != ProfileMutationResult.Status.NO_CHANGE
+                        && !gateResult.committed()) {
+                    gateway.blockSession(id, "DARK gate reconciliation blocked login: "
+                            + gateResult.detail());
+                    return;
+                }
+                final var durable = gateway.currentProfile(id).orElse(null);
+                if (durable == null) {
+                    gateway.blockSession(id, "Profile disappeared before runtime activation");
+                    return;
+                }
+                if (gateResult.committed()) {
+                    gateway.completeSessionActivation(id, token);
+                    return;
+                }
+                runtime.profileCommitted(id, token, durable, durable,
+                        ClassSpecRuntimePort.MutationKind.GATE_RECONCILE)
+                        .whenComplete((runtimeIgnored, runtimeFailure) -> {
+                            if (!sessions.isCurrent(id, token)) return;
+                            if (runtimeFailure != null) {
+                                gateway.blockSession(id, "Profile login runtime rebuild failed: "
+                                        + message(runtimeFailure));
+                            } else {
+                                gateway.completeSessionActivation(id, token);
+                            }
+                        });
+            });
+        }, () -> {
+            if (sessions.isCurrent(id, token)) {
+                gateway.blockSession(id, "Player scheduler rejected Profile v2 activation");
+            }
+        });
     }
-
-    private boolean isCurrent(final UUID playerId, final UUID generation) {
-        return accepting.get() && generation.equals(sessionGenerations.get(playerId));
-    }
-
-    private static String safeMessage(final Throwable failure) {
-        Throwable current = failure;
-        while (current instanceof java.util.concurrent.CompletionException && current.getCause() != null) {
-            current = current.getCause();
-        }
-        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
-    }
+    private static String message(Throwable x){Throwable c=x;while(c instanceof java.util.concurrent.CompletionException&&c.getCause()!=null)c=c.getCause();return c.getMessage()==null?c.getClass().getSimpleName():c.getMessage();}
 }

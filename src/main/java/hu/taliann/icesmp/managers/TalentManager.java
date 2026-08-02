@@ -443,12 +443,6 @@ public final class TalentManager {
      * (backfill left it {@code LEGACY}) belongs to the lapsing talent, so it goes.
      */
     private void revokeGrantedSpell(final Player player, final String spellId, final String talentId) {
-        jobManager.backfillSpellGrants(player);
-        final java.util.Set<String> sources = jobManager.getGrantSources(player, spellId);
-        if (sources.isEmpty() || sources.equals(java.util.Set.of(JobManager.SOURCE_LEGACY))) {
-            jobManager.revokeGrant(player, spellId, JobManager.SOURCE_LEGACY);
-            return;
-        }
         jobManager.revokeGrant(player, spellId,
                 JobManager.SOURCE_TALENT_PREFIX + talentId.trim().toLowerCase(java.util.Locale.ROOT));
     }

@@ -170,7 +170,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                     "messages.faction-dark-pact-sealed",
                     "&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad."
             ));
-            if (specializationManager != null && specializationManager.profileV2Enabled()) {
+            if (specializationManager != null) {
                 specializationManager.reconcileDarkGates(player);
             }
             teleportToFactionSpawn(player, FactionType.DARK);
@@ -184,18 +184,13 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         final boolean leavingDark = hasFaction && currentFaction == FactionType.DARK;
         factionManager.setFaction(uuid, factionType);
         if (leavingDark && specializationManager != null) {
-            if (specializationManager.profileV2Enabled()) {
-                specializationManager.reconcileDarkGates(player).whenComplete((result, failure) ->
-                        player.getScheduler().run(plugin, task -> {
-                            if (failure == null && result != null && result.committed()) {
-                                player.sendMessage(messageManager.get("messages.dark-spec-sealed",
-                                        "&5A sötét specializációd lezárult, de minden fejlődése megmaradt."));
-                            }
-                        }, null));
-            } else if (specializationManager.resetDarkGatedSpecialization(player)) {
-                player.sendMessage(messageManager.get("messages.dark-spec-lost",
-                        "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
-            }
+            specializationManager.reconcileDarkGates(player).whenComplete((result, failure) ->
+                    player.getScheduler().run(plugin, task -> {
+                        if (failure == null && result != null && result.committed()) {
+                            player.sendMessage(messageManager.get("messages.dark-spec-sealed",
+                                    "&5A sötét specializációd lezárult, de minden fejlődése megmaradt."));
+                        }
+                    }, null));
         }
         if (hasFaction && !isSwitch) {
             factionManager.recordSeasonSwitch(player); // Semlegesből ingyen váltás is számít

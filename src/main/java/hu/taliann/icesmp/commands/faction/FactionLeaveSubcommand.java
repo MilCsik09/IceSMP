@@ -97,18 +97,13 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
         final hu.taliann.icesmp.managers.SpecializationManager specs = this.specializationManager;
         if (leavingDark && specs != null) {
-            if (specs.profileV2Enabled()) {
-                specs.reconcileDarkGates(player).whenComplete((result, failure) ->
-                        player.getScheduler().run(plugin, task -> {
-                            if (failure == null && result != null && result.committed()) {
-                                player.sendMessage(messageManager.get("messages.dark-spec-sealed",
-                                        "&5A sötét specializációd lezárult, de minden fejlődése megmaradt."));
-                            }
-                        }, null));
-            } else if (specs.resetDarkGatedSpecialization(player)) {
-                player.sendMessage(messageManager.get("messages.dark-spec-lost",
-                        "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
-            }
+            specs.reconcileDarkGates(player).whenComplete((result, failure) ->
+                    player.getScheduler().run(plugin, task -> {
+                        if (failure == null && result != null && result.committed()) {
+                            player.sendMessage(messageManager.get("messages.dark-spec-sealed",
+                                    "&5A sötét specializációd lezárult, de minden fejlődése megmaradt."));
+                        }
+                    }, null));
         }
         sender.sendMessage(messageManager.get("messages.faction-left", "&eKiléptél a frakciódból."));
         return true;

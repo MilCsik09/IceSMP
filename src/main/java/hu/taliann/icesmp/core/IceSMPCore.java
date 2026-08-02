@@ -225,6 +225,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
     private final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager;
     private final hu.taliann.icesmp.classspec.persistence.YamlClassProfileRepository classProfileRepository;
+    private final hu.taliann.icesmp.classspec.application.ProfileSessionRegistry profileSessionRegistry;
     private final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway classSpecProfileGateway;
     private final hu.taliann.icesmp.classspec.application.ClassProfileLifecycleService classProfileLifecycleService;
     private final hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter classSpecRuntimeAdapter;
@@ -539,21 +540,21 @@ public final class IceSMPCore {
         this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
         this.classProfileRepository = new hu.taliann.icesmp.classspec.persistence.YamlClassProfileRepository(
                 plugin.getDataFolder(), plugin.getLogger());
+        this.profileSessionRegistry = new hu.taliann.icesmp.classspec.application.ProfileSessionRegistry();
         this.classSpecRuntimeAdapter = new hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter(
                 plugin, jobManager, specializationManager, abilityCatalystListener, petManager,
-                resourceManager, spellRegistry);
+                resourceManager, spellRegistry, profileSessionRegistry);
         this.classSpecProfileGateway = new hu.taliann.icesmp.classspec.application.DefaultClassSpecProfileGateway(
-                () -> configManager.getBoolean("class-spec-rework.enabled", false),
                 new hu.taliann.icesmp.classspec.persistence.RepositoryMutationStoreAdapter(classProfileRepository),
-                classSpecRuntimeAdapter);
+                classSpecRuntimeAdapter, profileSessionRegistry);
         this.classProfileLifecycleService = new hu.taliann.icesmp.classspec.application.ClassProfileLifecycleService(
-                () -> configManager.getBoolean("class-spec-rework.enabled", false), classProfileRepository,
-                new hu.taliann.icesmp.classspec.migration.LegacyProfileMigrator());
+                classProfileRepository);
         specializationManager.setProfileGateway(classSpecProfileGateway);
         jobManager.setProfileGateway(classSpecProfileGateway);
         abilityCatalystListener.setProfileGateway(classSpecProfileGateway);
         petManager.setProfileGateway(classSpecProfileGateway);
         soulforgeManager.setProfileGateway(classSpecProfileGateway);
+        soulShardManager.setProfileGateway(classSpecProfileGateway);
         sinManager.setSpecializationManager(specializationManager);
         resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // pool-bónuszok
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // pakt-oltár
@@ -567,12 +568,8 @@ public final class IceSMPCore {
         // után épül, mert a talentpont-visszatérítéshez kell.
         this.respecService = new hu.taliann.icesmp.managers.RespecService(
                 plugin, specializationManager, talentManager, currencyManager, factionManager);
-        final hu.taliann.icesmp.classspec.migration.BukkitLegacyProfileSnapshotReader legacyProfileReader =
-                new hu.taliann.icesmp.classspec.migration.BukkitLegacyProfileSnapshotReader(
-                        plugin, jobManager, specializationManager, spellFavoritesManager,
-                        abilityCatalystListener, petManager, soulforgeManager);
         this.profileSessionBridge = new hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge(
-                plugin, legacyProfileReader, classProfileLifecycleService, classSpecProfileGateway,
+                plugin, classProfileLifecycleService, classSpecProfileGateway, profileSessionRegistry,
                 specializationManager, classSpecRuntimeAdapter, respecService);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
@@ -658,7 +655,6 @@ public final class IceSMPCore {
             communityGoalManager.contribute(fighter, "WIN_RAID", null, 1);
         });
         jobManager.setXpChangeHook(player -> {
-            jobManager.mirrorPrimaryLevelV2(player);
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
         });
@@ -910,9 +906,8 @@ public final class IceSMPCore {
         professionRecipeCatalog.load();
         crateManager.reloadConfig();
         advancementService.load();
-        if (configManager.getBoolean("class-spec-rework.enabled", false)) {
-            classProfileRepository.load();
-        }
+        // Profile v2 is the sole class/spec authority and must initialize fail-closed.
+        classProfileRepository.load();
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
         storeCoordinator.loadAll();
@@ -1154,10 +1149,20 @@ public final class IceSMPCore {
             return;
         }
         try {
-            profileSessionBridge.prepareDisable().toCompletableFuture().join();
+            profileSessionBridge.prepareDisable().toCompletableFuture().get(10, java.util.concurrent.TimeUnit.SECONDS);
             profileSessionBridge.stopRuntime();
-            classProfileRepository.close();
-        } catch (final RuntimeException failure) {
+            final var shutdown = classProfileRepository.shutdown(java.time.Duration.ofSeconds(10))
+                    .toCompletableFuture().get(11, java.util.concurrent.TimeUnit.SECONDS);
+            if (!shutdown.drained()) {
+                plugin.getLogger().severe("Profile v2 disable drain incomplete: " + shutdown.detail());
+                return;
+            }
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            plugin.getLogger().severe("Profile v2 disable interrupted: " + interrupted);
+            return;
+        } catch (final java.util.concurrent.ExecutionException
+                       | java.util.concurrent.TimeoutException failure) {
             plugin.getLogger().severe("Profile v2 disable flush/drain hiba: " + failure);
             return;
         }

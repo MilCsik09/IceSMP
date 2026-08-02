@@ -108,7 +108,6 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
             if ("resetskills".equals(action)) {
                 jobManager.clearSpellGrants(target);
-                jobManager.setUnlockedSpellIds(target, List.of());
                 abilityCatalystListener.resetAllSpellState(target);
                 sender.sendMessage(messageManager.get(
                         "admin.job.reset-skills.success",
@@ -121,7 +120,6 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
             // resetclass: full class wipe — both job slots + XP/levels, the class specialization,
             // and all unlocked spells + spell state. The player can then pick a fresh class.
-            if (specializationManager.profileV2Enabled()) {
                 final long revision = specializationManager.profileGateway()
                         .diagnostic(target.getUniqueId()).revision();
                 specializationManager.resetClassProfileV2(target, true,
@@ -158,24 +156,13 @@ public final class JobAdminSubcommand implements JobSubcommand {
                                         "Admin class-reset PDC mirror failed after Profile v2 commit");
                                 sender.sendMessage(messageManager.get(
                                         "admin.job.reset-class.mirror-failed",
-                                        "&cA profil commit sikerült, de a legacy PDC mirror hibázott; a session blokkolva: &f%s",
+                                        "&cA profil commit sikerült, de a runtime/XP cleanup hibázott; a session blokkolva: &f%s",
                                         target.getName()));
                             }
                         }, () -> specializationManager.profileGateway().blockSession(
                                 target.getUniqueId(),
                                 "Admin class-reset PDC mirror scheduler rejected after Profile v2 commit")));
                 return;
-            }
-            jobManager.resetClass(target);
-            specializationManager.resetClassSpecialization(target);
-            abilityCatalystListener.resetAllSpellState(target);
-            sender.sendMessage(messageManager.get(
-                    "admin.job.reset-class.success",
-                    "&aKaszt teljesen alaphelyzetbe állítva (kaszt + spec + varázslatok): &f%s",
-                    target.getName()
-            ));
-            target.sendMessage(messageManager.get("admin.job.reset-class.notify",
-                    "&eEgy adminisztrátor alaphelyzetbe állította a kasztodat — válassz újat a /profile menüből."));
         }, null);
         return true;
     }

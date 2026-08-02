@@ -88,8 +88,7 @@ public final class FactionSetSubcommand implements FactionSubcommand {
         if (factionType == FactionType.DARK && target.getPlayer() instanceof Player onlineTarget) {
             onlineTarget.getScheduler().run(plugin, task -> sinManager.sealDarkPact(onlineTarget), null);
         }
-        if (target.getPlayer() instanceof Player onlineTarget && specializationManager != null
-                && specializationManager.profileV2Enabled()) {
+        if (target.getPlayer() instanceof Player onlineTarget && specializationManager != null) {
             onlineTarget.getScheduler().run(plugin,
                     task -> specializationManager.reconcileDarkGates(onlineTarget), null);
         }
