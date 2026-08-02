@@ -1,0 +1,82 @@
+name: PlayerProfile bootstrap authenticated checkout (temporary)
+
+on:
+  pull_request:
+    branches:
+      - rework/class-spec-1.21.11-compatibility
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.event.pull_request.head.ref == 'rework/class-spec-profile-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build partial sparse checkout with original Git DAG
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROFILE_HEAD='${{ github.event.pull_request.head.sha }}'
+          PROFILE_BASE='${{ github.event.pull_request.base.sha }}'
+          test "$(git rev-parse HEAD)" = "$PROFILE_HEAD"
+          test "$(git merge-base HEAD "$PROFILE_BASE")" = "$PROFILE_BASE"
+
+          mkdir -p build/player-profile-bootstrap
+          git -c protocol.version=2 clone --quiet --filter=blob:none --no-checkout --depth=12 \
+            --single-branch --branch rework/class-spec-profile-v2 \
+            https://github.com/MilCsik09/IceSMP.git build/player-profile-bootstrap/repo
+          cd build/player-profile-bootstrap/repo
+          git sparse-checkout init --no-cone
+          cat > .git/info/sparse-checkout <<'PATTERNS'
+/*
+!/*/
+/.github/
+/docs/
+/gradle/
+/scripts/
+/src/
+/AGENTS.md
+/CLAUDE.md
+/LICENSE
+/README.md
+/ROADMAP.md
+/build.gradle.kts
+/gradle.properties
+/gradlew
+/gradlew.bat
+/settings.gradle.kts
+PATTERNS
+          git checkout --quiet rework/class-spec-profile-v2
+          test "$(git rev-parse HEAD)" = "$PROFILE_HEAD"
+          test "$(git merge-base HEAD "$PROFILE_BASE")" = "$PROFILE_BASE"
+          test -f .git/shallow
+          test "$(git config --get remote.origin.promisor)" = 'true'
+          git fsck --connectivity-only
+          git status --short --branch > ../status.txt
+          git show-ref > ../refs.txt
+          git log --decorate --oneline --graph --all > ../history.txt
+          git count-objects -vH > ../object-size.txt
+          cd ..
+          tar -czf authenticated-checkout.tar.gz repo
+          sha256sum authenticated-checkout.tar.gz > SHA256SUMS
+          printf 'profile-head=%s\nprofile-base=%s\nmerge-base=%s\n' \
+            "$PROFILE_HEAD" "$PROFILE_BASE" "$(git -C "$GITHUB_WORKSPACE" merge-base HEAD "$PROFILE_BASE")" \
+            > manifest.txt
+          du -h authenticated-checkout.tar.gz
+
+      - name: Upload authenticated checkout
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-profile-bootstrap-${{ github.run_id }}
+          path: build/player-profile-bootstrap/
+          retention-days: 1
+          if-no-files-found: error
