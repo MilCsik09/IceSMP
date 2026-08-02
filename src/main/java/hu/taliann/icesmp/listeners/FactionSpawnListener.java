@@ -17,7 +17,8 @@ import org.bukkit.event.player.PlayerRespawnEvent;
  *   <li><b>First join:</b> a brand-new player appears at the NEUTRAL kingdom's admin-set spawn
  *       ({@code /territory setspawn neutral}) instead of the vanilla world spawn — set via
  *       {@link AsyncPlayerSpawnLocationEvent} BEFORE the player materialises, so there is no visible
- *       teleport. New players default to the NEUTRAL faction, so this is where they belong.</li>
+ *       teleport. New players are Menedék guests until they explicitly choose a faction, so this
+ *       is their safe arrival point without granting NEUTRAL membership benefits.</li>
  *   <li><b>Respawn:</b> a player with no bed/anchor respawns at their OWN faction's kingdom spawn
  *       (falling back to the NEUTRAL spawn), steering everyone back to the capitals.</li>
  * </ul>
@@ -59,7 +60,9 @@ public final class FactionSpawnListener implements Listener {
             return;
         }
         final Player player = event.getPlayer();
-        Location spawn = territoryManager.getFactionSpawn(factionManager.getFaction(player.getUniqueId()));
+        // A Menedék a hozzárendelés nélküli vendég biztonságos fogadóhelye, nem tagsági fallback.
+        Location spawn = territoryManager.getFactionSpawn(
+                factionManager.getChosenFaction(player.getUniqueId()).orElse(FactionType.NEUTRAL));
         if (spawn == null) {
             spawn = territoryManager.getFactionSpawn(FactionType.NEUTRAL);
         }

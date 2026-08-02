@@ -151,7 +151,8 @@ public final class KingManager implements PersistentStore {
     }
 
     public UUID getKing(final FactionType faction) {
-        return faction == null ? null : kings.get(faction);
+        final UUID king = faction == null ? null : kings.get(faction);
+        return king != null && factionManager.isMember(king, faction) ? king : null;
     }
 
     /**
@@ -165,8 +166,35 @@ public final class KingManager implements PersistentStore {
             return false;
         }
 
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
-        return player.getUniqueId().equals(kings.get(faction));
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        return faction != null && player.getUniqueId().equals(kings.get(faction));
+    }
+
+    /** Removes stale ballots and a stale throne as part of the central membership transition. */
+    public void onMembershipChange(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        synchronized (electionLock) {
+            boolean changed = false;
+            for (final Map<UUID, UUID> factionVotes : votes.values()) {
+                changed |= factionVotes.remove(playerId) != null;
+                changed |= factionVotes.entrySet().removeIf(entry -> entry.getValue().equals(playerId));
+            }
+            final java.util.List<FactionType> abandonedThrones = kings.entrySet().stream()
+                    .filter(entry -> entry.getValue().equals(playerId))
+                    .map(Map.Entry::getKey)
+                    .toList();
+            for (final FactionType faction : abandonedThrones) {
+                kings.remove(faction);
+                reignStart.remove(faction);
+                electionStart.put(faction, System.currentTimeMillis());
+                changed = true;
+            }
+            if (changed) {
+                save();
+            }
+        }
     }
 
     public boolean isFactionExcluded(final FactionType faction) {
@@ -185,12 +213,12 @@ public final class KingManager implements PersistentStore {
      * @return true if the vote was accepted
      */
     public boolean vote(final Player voter, final UUID candidate) {
-        final FactionType faction = factionManager.getFaction(voter.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(voter.getUniqueId()).orElse(null);
         if (isFactionExcluded(faction) || candidate == null) {
             return false;
         }
 
-        if (factionManager.getFaction(candidate) != faction) {
+        if (!factionManager.isMember(candidate, faction)) {
             return false;
         }
 
@@ -214,8 +242,16 @@ public final class KingManager implements PersistentStore {
      */
     public Map<UUID, Integer> getTally(final FactionType faction) {
         final Map<UUID, Integer> tally = new HashMap<>();
-        for (final UUID candidate : votes.getOrDefault(faction, Map.of()).values()) {
-            tally.merge(candidate, 1, Integer::sum);
+        if (faction == null) {
+            return tally;
+        }
+        for (final Map.Entry<UUID, UUID> vote
+                : votes.getOrDefault(faction, Map.of()).entrySet()) {
+            if (!factionManager.isMember(vote.getKey(), faction)
+                    || !factionManager.isMember(vote.getValue(), faction)) {
+                continue;
+            }
+            tally.merge(vote.getValue(), 1, Integer::sum);
         }
         return tally;
     }
@@ -314,7 +350,7 @@ public final class KingManager implements PersistentStore {
         for (final Map.Entry<UUID, Integer> entry : getTally(faction).entrySet()) {
             // Csak AKTUÁLIS frakciótag koronázható — a frakcióváltás után bent ragadt
             // szavazatok ne ültethessenek idegen "királyt" a trónra.
-            if (factionManager.getFaction(entry.getKey()) != faction) {
+            if (!factionManager.isMember(entry.getKey(), faction)) {
                 continue;
             }
             if (entry.getValue() > leaderVotes) {

@@ -58,10 +58,17 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
             return true;
         }
 
+        if (!factionManager.hasChosenFaction(player.getUniqueId())) {
+            sender.sendMessage(messageManager.get("messages.faction-guest-cannot-leave",
+                    "&eMég csak a Menedék vendége vagy — nincs frakció, amelyből kiléphetnél."));
+            return true;
+        }
+
         // A kilépés szabályos frakcióváltásnak számít Semlegesbe: ugyanaz a főváros-kapu,
         // ár és cooldown vonatkozik rá, mint a /faction join váltásra — különben a
         // leave+join páros ingyenes, kapu nélküli kerülőút lenne.
-        final FactionType currentFaction = factionManager.getFaction(player.getUniqueId());
+        final FactionType currentFaction = factionManager.getChosenFaction(
+                player.getUniqueId()).orElseThrow();
         // Az örök paktum nem pénz-kérdés: paktumos Kitaszított nem léphet ki — az
         // egyetlen kiút a vezeklés-lánc (breakDarkPact); anélkül a leave fizetős
         // forgóajtóvá tenné a száműzetést.
@@ -100,6 +107,5 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         return true;
     }
 }
-
 
 

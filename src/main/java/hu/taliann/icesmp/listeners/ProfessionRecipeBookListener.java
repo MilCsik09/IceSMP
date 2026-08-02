@@ -131,7 +131,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         }
         // Signature (frakció-kötött) receptek: csak a megfelelő frakció mesterei készíthetik.
         // ConcurrentHashMap-olvasás — szál-biztos a játékos régió-szálán.
-        if (recipe.faction() != null && factionManager.getFaction(player.getUniqueId()) != recipe.faction()) {
+        if (recipe.faction() != null && !factionManager.isMember(player.getUniqueId(), recipe.faction())) {
             player.sendMessage(messageManager.get("profession-recipe-faction",
                     "&cEzt a receptet csak a(z) &f%s&c frakció mesterei készíthetik.",
                     recipe.faction().getDisplayName() + " (" + recipe.faction().getFullName() + ")"));

@@ -139,7 +139,15 @@ public final class RaidManager implements PersistentStore {
     }
 
     public boolean isParticipant(final UUID playerId) {
-        return playerId != null && participants.containsKey(playerId);
+        final FactionType side = playerId == null ? null : participants.get(playerId);
+        return side != null && factionManager.isMember(playerId, side);
+    }
+
+    /** Immediate transition cleanup; lazy membership checks remain a second line of defence. */
+    public void onMembershipChange(final UUID playerId) {
+        if (playerId != null) {
+            participants.remove(playerId);
+        }
     }
 
     /**
@@ -155,7 +163,9 @@ public final class RaidManager implements PersistentStore {
 
         final FactionType killerSide = participants.get(killerId);
         final FactionType victimSide = participants.get(victimId);
-        return killerSide != null && victimSide != null && killerSide != victimSide;
+        return killerSide != null && victimSide != null && killerSide != victimSide
+                && factionManager.isMember(killerId, killerSide)
+                && factionManager.isMember(victimId, victimSide);
     }
 
     /**
@@ -170,7 +180,8 @@ public final class RaidManager implements PersistentStore {
         }
 
         final FactionType looterSide = participants.get(looterId);
-        if (looterSide == null || looterSide == territoryOwner) {
+        if (looterSide == null || looterSide == territoryOwner
+                || !factionManager.isMember(looterId, looterSide)) {
             return false;
         }
 
@@ -290,7 +301,7 @@ public final class RaidManager implements PersistentStore {
             return "faction-raid-none";
         }
 
-        final FactionType side = factionManager.getFaction(player.getUniqueId());
+        final FactionType side = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         if (side != raid.attacker() && side != raid.defender()) {
             return "faction-raid-not-party";
         }
@@ -314,7 +325,10 @@ public final class RaidManager implements PersistentStore {
     }
 
     public long countParticipants(final FactionType side) {
-        return participants.values().stream().filter(faction -> faction == side).count();
+        return participants.entrySet().stream()
+                .filter(entry -> entry.getValue() == side
+                        && factionManager.isMember(entry.getKey(), side))
+                .count();
     }
 
     public int getPoints(final FactionType side) {
@@ -381,6 +395,10 @@ public final class RaidManager implements PersistentStore {
             final FactionType side = entry.getValue();
             fighter.getScheduler().run(plugin, task -> {
                 if (activeRaid == null || !fighter.isOnline() || fighter.isDead()) {
+                    return;
+                }
+                if (!factionManager.isMember(fighter.getUniqueId(), side)) {
+                    participants.remove(fighter.getUniqueId(), side);
                     return;
                 }
 
@@ -491,7 +509,8 @@ public final class RaidManager implements PersistentStore {
         // használni: a participants map ennek a metódusnak az elején már kiürült, tehát az
         // isParticipant() itt mindenkire false-t adna (a bejegyzés holt maradna).
         for (final Map.Entry<UUID, FactionType> fighter : fighters.entrySet()) {
-            if (fighter.getValue() != winner) {
+            if (fighter.getValue() != winner
+                    || !factionManager.isMember(fighter.getKey(), winner)) {
                 continue;
             }
             final org.bukkit.entity.Player online = Bukkit.getPlayer(fighter.getKey());
@@ -567,7 +586,7 @@ public final class RaidManager implements PersistentStore {
         final int strengthLevel = Math.max(0, configManager.getInt("factions.raid.winner-buff-strength", 0));
         final int regenLevel = Math.max(0, configManager.getInt("factions.raid.winner-buff-regen", 0));
         for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (factionManager.getFaction(online.getUniqueId()) != winner) {
+            if (!factionManager.isMember(online.getUniqueId(), winner)) {
                 continue;
             }
 

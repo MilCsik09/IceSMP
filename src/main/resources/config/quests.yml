@@ -2352,7 +2352,7 @@ quests:
       npc: "hirnok"
     rewards:
       currency:
-        type: "OWN"
+        type: "NEUTRAL" # Caldesterai vendég-útravaló (Creutzér), nem frakciójutalom.
         amount: 15
   onboarding_hunt:
     display-name: "Első csata"
@@ -2364,7 +2364,7 @@ quests:
       count: 5
     rewards:
       currency:
-        type: "OWN"
+        type: "NEUTRAL" # Caldesterai vendég-útravaló (Creutzér), nem frakciójutalom.
         amount: 20
   onboarding_gather:
     display-name: "Első gyűjtögetés"
@@ -2385,7 +2385,7 @@ quests:
         - "CHERRY_LOG"
     rewards:
       currency:
-        type: "OWN"
+        type: "NEUTRAL" # Caldesterai vendég-útravaló (Creutzér), nem frakciójutalom.
         amount: 25
       crate-key: "koznapi:1"
       items:
@@ -2410,7 +2410,7 @@ quests:
     rewards:
       class-xp: 50
       currency:
-        type: "OWN"
+        type: "NEUTRAL" # Caldesterai vendég-útravaló (Creutzér), nem frakciójutalom.
         amount: 25
 
 # ===== Quest-NPC markerek =====

@@ -160,9 +160,10 @@ public final class WhisperListener implements Listener {
         if (killer == null || killer.getUniqueId().equals(victim.getUniqueId())) {
             return;
         }
-        final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
-        final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
-        if (killerFaction != victimFaction || killerFaction == FactionType.NEUTRAL || killerFaction == FactionType.DARK) {
+        final FactionType killerFaction = factionManager.getChosenFaction(killer.getUniqueId()).orElse(null);
+        final FactionType victimFaction = factionManager.getChosenFaction(victim.getUniqueId()).orElse(null);
+        if (killerFaction == null || killerFaction != victimFaction
+                || killerFaction == FactionType.NEUTRAL || killerFaction == FactionType.DARK) {
             return;
         }
         if (raidManager.isSanctionedKill(killer.getUniqueId(), victim.getUniqueId())) {

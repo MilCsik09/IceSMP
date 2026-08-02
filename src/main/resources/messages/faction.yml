@@ -29,6 +29,11 @@ messages:
   faction-king-vote-failed: '&cNem szavazhatsz: a jelöltnek a te frakciód tagjának kell lennie (és a frakciódnak lehet uralkodója).'
   faction-king-vote-success: '&aSzavazat leadva: &f%s'
   faction-left: '&6Kiléptél a frakcióból.'
+  faction-guest-cannot-leave: '&eMég csak a Menedék vendége vagy — nincs frakció, amelyből kiléphetnél.'
+  faction-set-dark-online-required: '&cDARK tagságot csak online játékosnál módosíthatsz, mert a paktum és a specializáció állapotát együtt kell egyeztetni.'
+  faction-set-target-retired: '&cA frakcióváltás meghiúsult, mert a céljátékos közben lecsatlakozott: &f%s'
+  faction-caravan-error:
+    pcaravan-no-faction: '&cA Menedék vendégeként nincs frakciókasszád; előbb válassz frakciót.'
   faction-raid-already-active: '&cMár zajlik egy raid.'
   faction-raid-already-joined: '&7Már jelentkeztél ebbe a raidbe.'
   faction-raid-combat-locked: '&cA harci szakasz már megkezdődött — nevezni csak a felkészülés alatt lehet.'

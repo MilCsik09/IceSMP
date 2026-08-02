@@ -105,7 +105,11 @@ public final class SpyManager implements PlayerStateCleanup {
      * régió-szálán fut (a runDelayed onnan hívja) — a hely/PDC-olvasás biztonságos.
      */
     private void awardMissionPoints(final Player player) {
-        final FactionType own = factionManager.getFaction(player.getUniqueId());
+        final FactionType own = factionManager.getChosenFaction(
+                player.getUniqueId()).orElse(null);
+        if (own == null) {
+            return;
+        }
         final hu.taliann.icesmp.data.Territory at = territoryManager.getTerritoryAt(player.getLocation());
         if (at == null || at.faction() == null || at.faction() == own) {
             return; // nem ellenséges földön járt le az álca — nincs pont
@@ -130,7 +134,13 @@ public final class SpyManager implements PlayerStateCleanup {
 
     @Override
     public void clearPlayerState(final UUID playerId) {
-        activeUntil.remove(playerId);
+        if (activeUntil.remove(playerId) == null) {
+            return;
+        }
+        final Player online = org.bukkit.Bukkit.getPlayer(playerId);
+        if (online != null) {
+            online.getScheduler().run(plugin, task -> SpyDisguise.remove(online), null);
+        }
     }
 
     /** Plugin-leállás/reload: az élő álcák levétele (különben az új példány már nem tudna róluk). */

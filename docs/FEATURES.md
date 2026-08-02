@@ -828,21 +828,23 @@ A zászló szövetségest, törvényt és ellenséget is jelent. A játékosok k
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Belépés/kilépés/váltás, frakciókapcsolatok, étel/passzív/spawn hatások és frakcióspecifikus játékmenet.
+Belépés/kilépés/váltás, frakciókapcsolatok, étel/passzív/spawn hatások és frakcióspecifikus játékmenet. A frakciórekord nélküli új játékos a Menedék **vendége**, nem automatikus `NEUTRAL` polgár: frakcióelőny csak kifejezett választás után jár.
 
 - **Így találkozol vele:** `/faction`; főmenü frakciónézete. Parancs: /faction (alias: /f).
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Tagságváltás, join/quit, combat, fogyasztás, spawn és passzív esemény.
+- **Passzív defaultok:** RED környezeti hőnél `0.25/0.25/0.50/0.25` megtartott FIRE/FIRE_TICK/LAVA/HOT_FLOOR sebzés, entitás-tűznél `0.75`; a `TUZ` spelliskola változatlan. BLUE: fagyás `0`, fulladás `0.50`, a konfigurált természetes exhaustion okoknál `25%` megtakarítás. NEUTRAL: zuhanás `0.50`, csak spontán békés/semleges aggró és Enderman-szemkontaktus szűrhető. DARK: Wither sebzés/idő `0.50/0.50`, markerelt ambient undead-béke `60 s` megtorlással és `16` blokkos riadóval, vad undeadnél éjszakai `50%` target-cancel.
+- **Harci precedencia:** admin/scriptelt célzás → markerelt boss/dungeon/rontás/invázió/event/quest → koronaátok → provokáció/megtorlás → Vérhold → ambient polgárjog → vad passzív → vanilla. A passzív nem támadhatatlanság.
 - **Ami még kellhet hozzá:** Frakcióspawnokat, védett területeket és váltási feltételeket elő kell készíteni.
-- **Fontos határ:** Élő LuckPerms/group és világconfig nélkül a tényleges rollout nem bizonyítható.
+- **Fontos határ:** Az automatizált policy- és regressziós tesztek nem bizonyítják a productionközeli mob-AI-t, többjátékos viselkedést vagy szezonbalanszt; ehhez az admin acceptance mátrix szerinti staging playtest kell.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.faction`; `icesmp.admin.war`; `icesmp.faction.admin`; `király`; `király vagy icesmp.admin.faction`; `király vagy tanácstag`
-- Config: `factions.*`, relation-, passive-, food- és spawn-definíciók.
-- Tartós állapot: Tagság, relation és frakcióállapot tartós.
-- Reload: Balance reloadolható; tagság- és world-kötés változása migrációtesztet igényel.
+- Config: `factions.*`, különösen `factions.passives.*`, továbbá relation-, food- és spawn-definíciók.
+- Tartós állapot: Az explicit tagság, relation és frakcióállapot tartós; a vendégállapot assignment hiánya. A provokációs/truce-állapot mulandó és lifecycle cleanupot kap.
+- Reload: Minden frakciópasszív gameplay-érték `/icesmp reload` után élőben frissül; restart nem kell. A tagság- és world-kötés változása külön migrációtesztet igényel.
 
 </details>
 

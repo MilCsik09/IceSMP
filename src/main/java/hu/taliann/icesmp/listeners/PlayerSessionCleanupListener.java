@@ -33,11 +33,13 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
     /** Join-time durable crate key recovery runs on the joining player owner thread. */
     private final hu.taliann.icesmp.managers.CrateManager crateManager;
+    private final FactionManager factionManager;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
                                         final CurrencyManager currencyManager,
                                         final FactionManager factionManager,
+                                        final FactionPassiveListener factionPassiveListener,
                                         final MetelytepoManager metelytepoManager,
                                         final RelicManager relicManager,
                                         final CraftingRestrictionManager craftingRestrictionManager,
@@ -64,6 +66,7 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final SpellRegistry spellRegistry) {
         // Register every stateful component here; adding a new one needs only this line + the interface.
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
+                factionPassiveListener,
                 metelytepoManager, relicManager, craftingRestrictionManager, resourceManager, partyManager,
                 claimManager, territoryManager, petManager, ritualManager, professionManager,
                 afkManager, sitManager, crateManager, moderationManager, vanishManager, invseeManager, whisperManager, guildManager,
@@ -72,6 +75,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         this.invseeManager = invseeManager;
         this.moderationManager = moderationManager;
         this.crateManager = crateManager;
+        this.factionManager = factionManager;
     }
 
     /**
@@ -87,6 +91,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         moderationManager.openReplySession(event.getPlayer().getUniqueId());
         invseeManager.restorePending(event.getPlayer());
         crateManager.restorePendingRecovery(event.getPlayer());
+        factionManager.reconcileMembershipHistory(event.getPlayer());
     }
 
     /**
@@ -146,5 +151,3 @@ public final class PlayerSessionCleanupListener implements Listener {
         }
     }
 }
-
-

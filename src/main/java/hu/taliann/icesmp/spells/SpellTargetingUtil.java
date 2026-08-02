@@ -62,9 +62,9 @@ public final class SpellTargetingUtil {
         final FactionManager factions = factionManager;
         if (factions != null && config != null
                 && config.getBoolean("spells.friendly-fire.protect-faction", false)) {
-            final FactionType casterFaction = factions.getFaction(caster.getUniqueId());
+            final FactionType casterFaction = factions.getChosenFaction(caster.getUniqueId()).orElse(null);
             return casterFaction != null && casterFaction != FactionType.NEUTRAL
-                    && casterFaction == factions.getFaction(other.getUniqueId());
+                    && factions.isMember(other.getUniqueId(), casterFaction);
         }
         return false;
     }
@@ -91,9 +91,9 @@ public final class SpellTargetingUtil {
         final FactionManager factions = factionManager;
         if (factions != null && config != null
                 && config.getBoolean("spells.friendly-fire.protect-faction", false)) {
-            final FactionType casterFaction = factions.getFaction(casterId);
+            final FactionType casterFaction = factions.getChosenFaction(casterId).orElse(null);
             return casterFaction != null && casterFaction != FactionType.NEUTRAL
-                    && casterFaction == factions.getFaction(other.getUniqueId());
+                    && factions.isMember(other.getUniqueId(), casterFaction);
         }
         return false;
     }

@@ -373,16 +373,16 @@ public final class HudManager {
     }
 
     private HudSnapshot buildSnapshot(final Player player) {
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         final JobType job = jobManager.getPrimaryJob(player);
         final boolean hasClass = job != null;
         // The snapshot's hasClass flag is solely the resource-display gate in the PlaceholderAPI
         // bridge, so it also folds in the resource system's enabled state — with the system off,
         // %icesmp_resource...% goes blank instead of showing a phantom full bar.
         final boolean showResource = hasClass && resourceManager.isEnabled();
-        final double balance = currencyManager.getBalance(player, faction == null ? FactionType.NEUTRAL : faction);
+        final double balance = currencyManager.getBalance(player, factionManager.getEconomyFaction(player.getUniqueId()));
         return new HudSnapshot(
-                faction == null ? "nincs" : faction.getDisplayName(),
+                faction == null ? "Menedék vendége" : faction.getDisplayName(),
                 faction == null ? "" : faction.name(),
                 hasClass ? PlainTextComponentSerializer.plainText().serialize(job.getDisplayName()) : "nincs",
                 hasClass ? jobManager.getPrimaryLevel(player) : 0,
@@ -483,8 +483,8 @@ public final class HudManager {
      * </ul>
      */
     private List<Component> buildLines(final Player player) {
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
-        final double balance = currencyManager.getBalance(player, faction == null ? FactionType.NEUTRAL : faction);
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        final double balance = currencyManager.getBalance(player, factionManager.getEconomyFaction(player.getUniqueId()));
         final JobType job = jobManager.getPrimaryJob(player);
         final Set<String> hidden = hiddenSections(player);
 
@@ -597,7 +597,7 @@ public final class HudManager {
                                                final InfoFrame info) {
         final Map<String, String> tokens = new HashMap<>();
         final Component factionValue = faction == null
-                ? Component.text("nincs", NamedTextColor.GRAY)
+                ? Component.text("Menedék vendége", NamedTextColor.GRAY)
                 : Component.text(faction.getDisplayName(), factionColor(faction));
         final Component classValue = job == null
                 ? Component.text("nincs", NamedTextColor.GRAY)
@@ -808,7 +808,7 @@ public final class HudManager {
 
     private Component tabName(final Player player) {
         // A név MAGA kapja a frakció színét — külön [Frakció] tag nélkül (rövidebb tab-lista).
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         return Component.text(player.getName(), faction == null ? NamedTextColor.WHITE : factionColor(faction));
     }
 

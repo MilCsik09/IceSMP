@@ -152,9 +152,26 @@ val runtimeBugfixRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.runtime.RuntimeBugfixRegressionSuite")
 }
 
+val factionPassiveRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs faction membership, damage, exhaustion, truce and lifecycle regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.factions.FactionPassiveRegressionSuite")
+}
+
+val factionTreasuryRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs faction tax origin, legacy migration and collection regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.factions.FactionTaxDebtRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest)
+        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
+        factionPassiveRegressionTest, factionTreasuryRegressionTest)
 }

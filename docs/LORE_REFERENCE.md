@@ -9,15 +9,26 @@
 
 ## Frakció ↔ kód megfeleltetés
 
-A kód generikus `RED/BLUE/NEUTRAL/DARK` azonosítókat használ; a lore ezekre képződik le. A **passzívok
-már a lore szerint működnek** — csak a nevek/valuták placeholderek.
+A kód generikus `RED/BLUE/NEUTRAL/DARK` azonosítókat használ; a lore ezekre képződik le. A
+`FactionType` mind a négy esetben valódi frakciót jelent. A hiányzó assignment külön
+**Menedék-vendég** állapot, nem ötödik frakció és nem implicit `NEUTRAL` polgárság.
 
 | Kód | Frakció | Passzív (kész) | Főváros | Valuta | Örökség |
 |---|---|---|---|---|---|
-| `RED` | **Perinfernicitas** | tűz/láva-immunitás | Pyralingrad | **Parázsló Parals** | Soleil / Főnix |
-| `BLUE` | **Cryghaliris** | fagy + fulladás-immunitás | Glatziendorf | **Hópihér-veret** | Kallan / Sárkány |
-| `NEUTRAL` | **Ryanora & Caldestera** | zuhanás-immunitás, békés mobok, adómentes | Caldestera | **Creutzér / Smaragdkő** | Arkynn / Szarvas |
-| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | **Thanaopolis** (rom) | **Csontveret** | Eleftheria / Néma Királynő |
+| `RED` | **Perinfernicitas** | erős környezeti hővédelem: FIRE/FIRE_TICK/HOT_FLOOR `0.25`, LAVA `0.50`, entitás-tűz `0.75`; `TUZ` alapból változatlan | Pyralingrad | **Parázsló Parals** | Soleil / Főnix |
+| `BLUE` | **Cryghaliris** | fagyás `0`, fulladás `0.50`; a kijelölt természetes exhaustion okok `25%`-a elmarad | Glatziendorf | **Hópihér-veret** | Kallan / Sárkány |
+| `NEUTRAL` | **Ryanora & Caldestera** | zuhanás `0.50`; csak spontán békés/semleges mob- és Enderman-stare aggró szűrése; adómentes polgár | Caldestera | **Creutzér / Smaragdkő** | Arkynn / Szarvas |
+| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | Wither sebzés/idő `0.50/0.50`; ambient városi és enyhített éjszakai vad undead-truce, harci kivételekkel | **Thanaopolis** (rom) | **Csontveret** | Eleftheria / Néma Királynő |
+
+> **Vendég ≠ NEUTRAL:** az új Felső a Menedék oltalmában érkezik, de explicit
+> `/faction join neutral` nélkül nem Menedék-polgár. Nem kap frakciópasszívot,
+> frakcióquestet, tanácsi szavazatot, community- vagy season-creditet, és nem
+> kerül az aktuális polgári adóbeszedési körbe. Egy korábban választott játékos
+> assignment-hiánya azonban nem törli a már fennálló hátralékot vagy
+> adócsalási strike-ot; az adósság az azt kivető frakció valutájához és
+> kasszájához kötődik, így a zászlóváltás sem mossa vagy konvertálja át. Az
+> onboarding fix `NEUTRAL` valutája caldesterai
+> Creutzér-útravaló, nem tagsági jutalom.
 
 > **DARK vizuális azonosító (textúra/art irányelv):** csont-törtfehér + éjfekete-lila alap,
 > és a jellegzetes **hideg türkiz derengés** („lich-fény”) a szemekben, rúnákban, pengeélek
@@ -35,9 +46,10 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Kódex-elem | Mechanika / kód-kötés |
 |---|---|
 | A Felsők halhatatlansága (V.) | respawn a frakció-spawnon (`/territory setspawn`) |
-| Szent Zóna (V.) | a Semleges kezdő-spawn a Fa alatt; védett, PvP-tiltott territórium-zóna; a frakcióválasztó hírnök Caldesterában — az út a kettő közt a zarándoklat |
+| Szent Zóna (V.) | benefit-free Menedék-vendég introspawn a Fa alatt; védett, PvP-tiltott territórium-zóna; a frakcióválasztó hírnök Caldesterában — az út a kettő közt a zarándoklat, nem automatikus `NEUTRAL` assignment |
 | A Fa fényköre (V.) | táv-alapú mob-skálázás (`world.zone-ramp`): blocks-per-level blokkonként +1 mob-szint (max 10), több XP + lélekkő-esély; spawner-mobok nem skálázódnak |
-| **A negyedik hatalom nem választás** (VII.) | A világban négy hatalom van, de a játékos HÁROM közül választ: a Menedékben kezd (`settings.default-faction`), onnan a Lánghoz vagy a Fagyhoz állhat. A Kitaszítottak közé KERÜLNI lehet: 4 bűnnél automatikus száműzetés (`SinManager.exileToDark`), vagy lelepleződött Suttogóként — önként is csak BŰNÖS léphet be (`faction-dark-sinners-only`), kétlépcsős megerősítéssel és örök paktummal. A haladás-fa ezt tükrözi: `faction_join` → rejtett `exiled` → `redeemed`, és mindhárom Kitaszított-út (bűn-küszöb, Suttogó-lelepleződés, önkéntes paktum) UGYANEZT az `exiled` bejegyzést adja. A Suttogó-lét külön, rejtett bejegyzés (`whisperer`), toast és chat-broadcast NÉLKÜL — az álca a mechanika lényege, egy felugró toast lebuktatná. **Szabály: SEHOL ne írjuk, hogy a játékos négyből választ** — a „négy hatalom" világ-állításként helyes, választás-állításként nem. |
+| **A negyedik hatalom nem választás** (VII.) | A világban négy hatalom van, de három nyílt polgári út áll a vendég előtt: Láng, Fagy vagy Menedék (`RED/BLUE/NEUTRAL`). A Fa és Caldestera oltalma nem választ helyette; az első explicit join hozza létre a tagságot. A Kitaszítottak közé KERÜLNI lehet: 4 bűnnél automatikus száműzetés (`SinManager.exileToDark`), vagy lelepleződött Suttogóként — önként is csak BŰNÖS léphet be (`faction-dark-sinners-only`), kétlépcsős megerősítéssel és örök paktummal. A haladás-fa ezt tükrözi: `faction_join` → rejtett `exiled` → `redeemed`, és mindhárom Kitaszított-út (bűn-küszöb, Suttogó-lelepleződés, önkéntes paktum) UGYANEZT az `exiled` bejegyzést adja. A Suttogó-lét külön, rejtett bejegyzés (`whisperer`), toast és chat-broadcast NÉLKÜL — az álca a mechanika lényege, egy felugró toast lebuktatná. **Szabály: SEHOL ne írjuk, hogy a játékos négyből választ** — a „négy hatalom" világ-állításként helyes, választás-állításként nem. |
+| **Frakciópasszív-precedencia** (III./VII./VIII.) | `FactionPassivePolicy`: admin/scriptelt kényszercélzás → boss/dungeon/rontás/invázió/event/quest marker → koronaátok → provokáció/megtorlás → Vérhold → markerelt ambient polgárjog → vad passzív → vanilla. Thanaopolis ambient lakói provokációig békések; támadás után a DARK játékos `60 s`-re elveszíti a békét és `16` blokkon belül közeli undead reagálhat. A vad DARK előny csak éjjel és `50%` target-cancel, Vérhold alatt alapból leáll. A kódteszt nem production-AI vagy szezonbalansz bizonyíték. |
 | **A hálózat két fele** (VII.) | A Suttogók a Néma Királynő REJTETT népe, a Kitaszítottak a NYÍLT — kódban ez egyetlen csatorna: `WhisperManager.deliverWhisper` a Suttogók MELLETT a DARK-frakciónak is kézbesít (`factions.whisper.dark-hears-channel`), és DARK-ból is lehet írni bele. Ára: a csatorna-sor kiírja a feladó nevét, tehát a Kitaszítottak megtudják, ki Suttogó — ez tudatos tét, nem hiba. A DARK-játékos maga NEM lehet Suttogó (`canBecomeWhisperer`), mert a rejtőzésnek nincs értelme, ha a bélyeg már látszik. |
 | Király-választás (IV.) | frakciónkénti szavazás (`KingManager`); király = raid-indítás + kassza |
 | Királyok Átka / Felsők (IV.) | a király/raid/szezon/claim rendszerek lore-indoklása |
@@ -76,7 +88,8 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 
 ## Tervezett világ-rendszerek (✅ = él)
 
-- **✅ Már a lore szerint él:** frakció-passzívák; territórium/claim (fővárosok, védett zónák);
+- **✅ Már a lore szerint él:** explicit polgárság + benefit-free Menedék-vendég; kontextusos,
+  konfigurálható frakciópasszív-policy; territórium/claim (fővárosok, védett zónák);
   bűn/vérdíj + `DARK`-száműzetés; valuta-slotok; király/raid/szezon; lélekkő-szabály; Lélekkapocs-védelem.
 - **✅ K7 — Kárhozat Kapuja (KÉSZ):** `DOOM_GATE` territórium-típus — legális PvP (belépő-grace,
   a támadó elveszti), ölés nem bűn, +3 mob-szint (jobb loot-tier), aréna-védelem (build/robbanás/
@@ -87,7 +100,9 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
   (a kaszt állandó — kánon); költségek: `memory-shards.*`.
 - **✅ K9 — Suttogók (KÉSZ):** rejtett státusz a látható frakció fölött — Sötét Rítus
   (Suttogás-meghívó, éjjel/sculk/egyedül/vér-ár), /suttogas titkos csatorna + tanú-vád,
-  gyanú→leleplezés→bűn→száműzetés a meglévő pipeline-on (`factions.whisper.*`).
+  gyanú→leleplezés→bűn→száműzetés a meglévő pipeline-on. A rejtett undead-előny nem teljes
+  truce: alapból éjszakai `0.35` target-cancel, provokációra `60 s` retaliation, Vérhold alatt
+  kikapcsol, és a szemtanú `0.02` eséllyel gyanút adhat (`factions.whisper.*`).
 - **✅ K10 — Caldestera feketepiac (KÉSZ):** fegyvertilalom + körözött-kapu a NEUTRAL
   fővárosban (CapitalLawListener); Botera-negyed feketepiac-bolt Csontveretért — Bokic-menti
   Sétapálca (rejtett penge) és Hamisított Menlevél (`territory.capital-law.*`).

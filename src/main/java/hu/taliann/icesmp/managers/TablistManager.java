@@ -186,7 +186,7 @@ public final class TablistManager {
 
     private void publishSnapshot(final Player player) {
         final UUID id = player.getUniqueId();
-        final FactionType faction = factionManager.getFaction(id);
+        final FactionType faction = factionManager.getChosenFaction(id).orElse(null);
         final String group = LuckPermsBridge.primaryGroup(id);
         // AFK-jelzés a tab-név (és a fej fölötti nametag) végén — a diff-cache miatt a
         // váltás csak egyszer megy ki csomagként.
@@ -333,7 +333,7 @@ public final class TablistManager {
             // Relációs szín — a néző frakciója + az aktív raid dönti el, hogy egy
             // célpont ellenségként (piros) jelenjen-e meg ENNEK a nézőnek. Per-viewer boardon
             // ez legálisan nézőnként más — a rendezési kulcsot nem érinti (nincs sorrend-ugrálás).
-            final FactionType viewerFaction = factionManager.getFaction(viewer.getUniqueId());
+            final FactionType viewerFaction = factionManager.getChosenFaction(viewer.getUniqueId()).orElse(null);
             final RaidManager raids = raidManager;
             final RaidManager.ActiveRaid raid = raids == null ? null : raids.getActiveRaid();
             for (final TabInfo info : snapshots.values()) {

@@ -98,7 +98,7 @@ public final class BuyerService {
         }
         hand.setAmount(hand.getAmount() - sellable);
         final CurrencyType currency = CurrencyType.fromFactionType(
-                factionManager.getFaction(player.getUniqueId()));
+                factionManager.getEconomyFaction(player.getUniqueId()));
         currencyManager.payOutTokens(player, currency, value);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_TRADE, 0.8F, 1.1F);
         player.sendMessage(messageManager.getMessage("buyer-sold",

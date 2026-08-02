@@ -225,8 +225,8 @@ public final class MarketManager implements PersistentStore {
      */
     public double getEffectivePrice(final org.bukkit.entity.Player buyer, final Listing listing) {
         final double multiplier = relationManager.getMarketPriceMultiplier(
-                factionManager.getFaction(buyer.getUniqueId()),
-                factionManager.getFaction(listing.seller()));
+                factionManager.getChosenFaction(buyer.getUniqueId()).orElse(null),
+                factionManager.getChosenFaction(listing.seller()).orElse(null));
         return listing.price() * multiplier;
     }
 

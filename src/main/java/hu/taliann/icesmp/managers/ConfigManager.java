@@ -7,6 +7,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Manager for loading and accessing configuration values.
@@ -29,6 +30,7 @@ public final class ConfigManager {
     // volatile: load()/reload() runs from the (admin command) thread that fires /icesmp reload, while
     // every manager reads this reference from arbitrary region threads — publish the reload safely.
     private volatile FileConfiguration configuration;
+    private volatile Set<String> overridePaths = Set.of();
 
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
@@ -73,6 +75,9 @@ public final class ConfigManager {
 
         // Optional main config.yml override (loaded last so its keys win).
         plugin.reloadConfig();
+        this.overridePaths = plugin.getConfig().getKeys(true).stream()
+                .filter(key -> !plugin.getConfig().isConfigurationSection(key))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
         mergeInto(merged, plugin.getConfig());
 
         this.configuration = merged;
@@ -117,6 +122,16 @@ public final class ConfigManager {
     /** Returns null if not yet loaded. */
     public FileConfiguration getConfiguration() {
         return configuration;
+    }
+
+    /** Whether the merged live configuration contains an explicit value at this path. */
+    public boolean contains(final String path) {
+        return configuration != null && configuration.isSet(path);
+    }
+
+    /** Whether config.yml itself explicitly overrides this path (not merely a bundled default). */
+    public boolean hasOverride(final String path) {
+        return overridePaths.contains(path);
     }
 
     public String getString(final String path, final String fallback) {
@@ -168,5 +183,3 @@ public final class ConfigManager {
         return configuration.getDoubleList(path);
     }
 }
-
-
