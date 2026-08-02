@@ -96,6 +96,7 @@ public final class FactionPassiveRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java");
         final String council = read("src/main/java/hu/taliann/icesmp/managers/CouncilManager.java");
         final String food = read("src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java");
+        final String compactFood = food.replaceAll("\\s+", "");
         check(quests.contains("isStillFactionEligible")
                         && quests.contains("factionManager.isMember("),
                 "faction quest progress/completion no longer revalidates membership");
@@ -106,8 +107,13 @@ public final class FactionPassiveRegressionSuite {
                         "factionManager.isMember(voter.getUniqueId(), FactionType.NEUTRAL)")
                         && council.contains("onMembershipChange(final UUID playerId)"),
                 "council authority is no longer tied to live explicit citizenship");
-        check(food.contains("getChosenFaction(player.getUniqueId()).orElse(null)")
-                        && food.contains("faction != null && switch (faction)"),
+        check(compactFood.contains(
+                        "factionManager.getChosenFaction(player.getUniqueId()).orElse(null)")
+                        && compactFood.contains("faction!=null&&switch(faction)")
+                        && compactFood.contains(
+                        "FactionFoodPolicy.mayApplyBuff(faction,sig,trustedFoodMarker)")
+                        && !compactFood.contains("getEconomyFaction(")
+                        && !compactFood.contains(".orElse(FactionType.NEUTRAL)"),
                 "food duty/signature food regained an implicit NEUTRAL assignment");
     }
 
@@ -171,8 +177,11 @@ public final class FactionPassiveRegressionSuite {
                         && !FactionFoodPolicy.mayApplyBuff(null, "fonixtojas_rantotta", true),
                 "signature food buff ignored live faction/guest state");
         check(FactionFoodPolicy.mayApplyBuff(FactionType.NEUTRAL, "kakaobabos_sutemeny", true)
-                        && !FactionFoodPolicy.mayApplyBuff(FactionType.RED, "kakaobabos_sutemeny", true),
-                "NEUTRAL food remained usable after a faction switch");
+                        && !FactionFoodPolicy.mayApplyBuff(FactionType.RED,
+                        "kakaobabos_sutemeny", true)
+                        && !FactionFoodPolicy.mayApplyBuff(null,
+                        "kakaobabos_sutemeny", true),
+                "NEUTRAL food remained usable after a faction switch or by a guest");
         check(!FactionFoodPolicy.mayApplyBuff(FactionType.DARK, "forged_metadata", true)
                         && FactionFoodPolicy.requiredFaction(null) == null,
                 "unknown or partial signature metadata granted a buff");
