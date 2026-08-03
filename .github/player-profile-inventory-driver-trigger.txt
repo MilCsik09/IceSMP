@@ -1,0 +1,5 @@
+Trigger the guaranteed Repository Docs Inventory PlayerProfile cleanup driver.
+Validation base head: 4c269fd7ba67caf8249a40b48cc3858ff7d86f46
+Expected recovery head: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
+Expected #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
+Must never be merged.
