@@ -31,13 +31,5 @@ replace_once(path,
 '''                final String model = materials.getString("profession-materials."
                         + unique.toLowerCase(Locale.ROOT) + ".item-model");''')
 
-# All scalar DARK/doom-gate mob safety switches must have exactly one GUI component.
-path = "src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUI.java"
-anchor = '''                Entry.toggle("factions.passives.dark.wild-undead.disabled-during-blood-moon", "Vérhold felülírja a vad békét"))));'''
-insert = '''                Entry.toggle("factions.passives.dark.wild-undead.disabled-during-blood-moon", "Vérhold felülírja a vad békét"),
-                Entry.integer("territory.mob-rules.doom-gate.bonus-levels", "Kapu mob szint-bónusz", 1, 0, 100),
-                Entry.toggle("territory.mob-rules.doom-gate.no-daylight-burn", "Kapu nappali égésvédelem"),
-                Entry.toggle("territory.mob-rules.doom-gate.no-zombification", "Kapu zombifikáció-védelem"))));'''
-replace_once(path, anchor, insert)
-
+# The canonical ConfigMenuGUI already exposes all three doom-gate scalar entries exactly once.
 print("stage3 fixups applied")
