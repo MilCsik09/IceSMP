@@ -50,6 +50,35 @@ jobs:
           git diff --stat
           git grep -n 'findSafeNear\|min-horizontal-distance-blocks\|EventSpawnGuardListener' -- src/main src/regression build.gradle.kts
 
+      - name: Update measured architecture inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          architecture = Path('docs/ARCHITECTURE.md')
+          text = architecture.read_text(encoding='utf-8')
+          replacements = {
+              '| `managers/` | 120 |': '| `managers/` | 121 |',
+              '| `listeners/` | 120 |': '| `listeners/` | 121 |',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'architecture inventory assertion failed: {old}')
+              text = text.replace(old, new, 1)
+          architecture.write_text(text, encoding='utf-8')
+
+          claude = Path('CLAUDE.md')
+          ctext = claude.read_text(encoding='utf-8')
+          old = 'A dokumentált release 569 Java-fájl / 90 manager.'
+          new = 'A dokumentált release 571 Java-fájl / 90 manager.'
+          if ctext.count(old) != 1:
+              raise SystemExit('CLAUDE Java inventory assertion failed')
+          claude.write_text(ctext.replace(old, new, 1), encoding='utf-8')
+          PY
+          git diff --check
+
       - name: Compile and run runtime regressions
         shell: bash
         run: |
@@ -80,7 +109,9 @@ jobs:
             src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUI.java \
             src/main/resources/config/world.yml \
             src/regression/java/hu/taliann/icesmp/runtime/EventSpawnSafetyRegressionSuite.java \
-            build.gradle.kts
+            build.gradle.kts \
+            docs/ARCHITECTURE.md \
+            CLAUDE.md
           git commit -m "Fix unsafe world-event spawn placement" \
             -m "Enforce configurable player, spawn, border, protected-area and surface safety through one bounded Folia-aware guard. Invasions and world bosses now abort instead of falling back near players, and concurrent events reserve distinct areas." \
             -m "Adds deterministic distance and finite-search regressions plus live GUI controls." \
