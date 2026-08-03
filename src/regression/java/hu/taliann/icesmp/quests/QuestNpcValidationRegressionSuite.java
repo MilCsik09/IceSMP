@@ -1,12 +1,9 @@
 package hu.taliann.icesmp.quests;
 
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -32,45 +29,83 @@ public final class QuestNpcValidationRegressionSuite {
         System.out.println("Quest NPC validation regression suite passed.");
     }
 
-    private static void packagedQuestsReferenceTheExpectedNpcContract() {
-        final YamlConfiguration quests = YamlConfiguration.loadConfiguration(
-                new File("src/main/resources/config/quests.yml"));
-        final ConfigurationSection questRoot = quests.getConfigurationSection("quests");
-        check(questRoot != null, "packaged quests root is missing");
-
-        final Set<String> referenced = new LinkedHashSet<>();
-        for (final Object value : questRoot.getValues(true).entrySet().stream()
-                .filter(entry -> entry.getKey().equals("giver-npc")
-                        || entry.getKey().endsWith(".giver-npc")
-                        || entry.getKey().equals("npc")
-                        || entry.getKey().endsWith(".npc"))
-                .map(java.util.Map.Entry::getValue)
-                .toList()) {
-            if (value instanceof String name && !name.isBlank()) {
-                referenced.add(name);
-            }
-        }
+    private static void packagedQuestsReferenceTheExpectedNpcContract() throws Exception {
+        final Set<String> referenced = collectYamlScalars(
+                Path.of("src/main/resources/config/quests.yml"),
+                Set.of("giver-npc", "npc"),
+                -1
+        );
         check(referenced.equals(EXPECTED_REQUIRED_NPCS),
                 "packaged quest NPC contract drifted: " + referenced);
     }
 
-    private static void deploymentSnapshotKeepsMissingPlacementExplicit() {
-        final YamlConfiguration snapshot = YamlConfiguration.loadConfiguration(
-                new File("Other/plugins/FancyNpcs/npcs.yml"));
-        final ConfigurationSection npcs = snapshot.getConfigurationSection("npcs");
-        check(npcs != null, "packaged FancyNpcs deployment snapshot is missing");
-
-        final Set<String> actualNames = new LinkedHashSet<>();
-        for (final String key : npcs.getKeys(false)) {
-            final String name = npcs.getString(key + ".name");
-            if (name != null) {
-                actualNames.add(name.toLowerCase(Locale.ROOT));
-            }
+    private static void deploymentSnapshotKeepsMissingPlacementExplicit() throws Exception {
+        final Set<String> actualNames = collectYamlScalars(
+                Path.of("Other/plugins/FancyNpcs/npcs.yml"),
+                Set.of("name"),
+                4
+        );
+        final Set<String> normalizedNames = new LinkedHashSet<>();
+        for (final String name : actualNames) {
+            normalizedNames.add(name.toLowerCase(Locale.ROOT));
         }
+
         final Set<String> placedRequired = new LinkedHashSet<>(EXPECTED_REQUIRED_NPCS);
-        placedRequired.retainAll(actualNames);
+        placedRequired.retainAll(normalizedNames);
         check(placedRequired.isEmpty(),
                 "deployment snapshot changed; update the manual provisioning evidence: " + placedRequired);
+    }
+
+    /**
+     * Reads only simple scalar keys from the deployment YAML source. This intentionally avoids
+     * Bukkit's object deserializer: quests.yml contains serialized ItemStacks whose test-only
+     * deserialization requires a live Bukkit server and otherwise emits misleading SEVERE logs.
+     */
+    private static Set<String> collectYamlScalars(final Path path, final Set<String> keys,
+                                                   final int requiredIndent) throws Exception {
+        final List<String> lines = Files.readAllLines(path);
+        final Set<String> values = new LinkedHashSet<>();
+        for (final String line : lines) {
+            final int indent = leadingSpaces(line);
+            if (requiredIndent >= 0 && indent != requiredIndent) {
+                continue;
+            }
+            final String trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("#")) {
+                continue;
+            }
+            for (final String key : keys) {
+                final String prefix = key + ":";
+                if (!trimmed.startsWith(prefix)) {
+                    continue;
+                }
+                final String value = unquote(trimmed.substring(prefix.length()).trim());
+                if (!value.isBlank()) {
+                    values.add(value);
+                }
+                break;
+            }
+        }
+        return values;
+    }
+
+    private static int leadingSpaces(final String value) {
+        int index = 0;
+        while (index < value.length() && value.charAt(index) == ' ') {
+            index++;
+        }
+        return index;
+    }
+
+    private static String unquote(final String value) {
+        if (value.length() >= 2) {
+            final char first = value.charAt(0);
+            final char last = value.charAt(value.length() - 1);
+            if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+                return value.substring(1, value.length() - 1);
+            }
+        }
+        return value;
     }
 
     private static void validationReportsExactConfigProvenanceAndCaseMismatch() throws Exception {
