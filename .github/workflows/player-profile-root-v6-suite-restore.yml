@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Extract reviewed regression sources from validation workflow
+      - name: Extract and normalize reviewed regression sources
         shell: bash
         run: |
           set -euo pipefail
@@ -59,6 +59,26 @@ jobs:
                   raise SystemExit(f'invalid package in {variable}')
               if 'ClassProfile' in java or 'ClassProfileCodec' in java:
                   raise SystemExit(f'legacy class-profile symbol leaked into {variable}')
+
+              if variable == 'DOMAIN':
+                  old_entry = 'FactionSection.class, EconomySection.class, ClassSpecSection.class,'
+                  if java.count(old_entry) != 1:
+                      raise SystemExit('unexpected ClassSpecSection record-list occurrence count')
+                  java = java.replace(old_entry, 'FactionSection.class, EconomySection.class,')
+                  marker = '        for (Class<?> type : records) {'
+                  if java.count(marker) != 1:
+                      raise SystemExit('unexpected domain record-loop marker count')
+                  replacement = '''        check(java.lang.reflect.Modifier.isFinal(
+                  ClassSpecSection.class.getModifiers()), "final ClassSpecSection");
+          for (java.lang.reflect.Field field : ClassSpecSection.class.getDeclaredFields()) {
+              check(!field.getType().getName().startsWith("org.bukkit."),
+                      "no Bukkit field ClassSpecSection." + field.getName());
+          }
+          for (Class<?> type : records) {'''
+                  replacement = textwrap.dedent(replacement).rstrip()
+                  replacement = textwrap.indent(replacement, '        ')
+                  java = java.replace(marker, replacement, 1)
+
               path = Path('/tmp/player-profile-suites') / filename
               path.write_text(java, encoding='utf-8', newline='\n')
               print(f'{variable}: {len(java.encode("utf-8"))} bytes -> {path}')
@@ -118,6 +138,8 @@ jobs:
           done
           ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec' "$DOMAIN" "$YAML" "$TX"
           grep -F 'contains("ICS2")' "$YAML"
+          grep -F 'final ClassSpecSection' "$DOMAIN"
+          grep -F 'no Bukkit field ClassSpecSection.' "$DOMAIN"
           git diff --check
           git status --short
           git diff --stat
