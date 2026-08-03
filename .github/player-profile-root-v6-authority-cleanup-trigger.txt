@@ -1,0 +1,4 @@
+Trigger exact-head PlayerProfile legacy-authority cleanup.
+Expected recovery head: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
+Expected #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
+Scope: restore reviewed PlayerProfile domain/YAML/transaction regressions; remove obsolete ClassProfile/ICS2 authority; rename the section mutation adapter; update core wiring and CI; run every gate before fast-forward push.
