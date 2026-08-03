@@ -225,43 +225,43 @@ public final class FactionPassiveHardeningRegressionSuite {
     }
 
     private static void taxEvasionSinStaysPendingUntilOwnerAck() {
-        final FactionTaxEvasionPolicy.Decision rejected =
-                FactionTaxEvasionPolicy.afterCollection(
+        final FactionTaxDebtLedger.EvasionDecision rejected =
+                FactionTaxDebtLedger.afterCollection(
                         2, 0.0D, 50.0D, 50.0D, 3, false);
         check(rejected.strikesAfter() == 3 && !rejected.reportSin(),
                 "scheduler rejection cleared the durable tax-evasion threshold");
 
-        final FactionTaxEvasionPolicy.Decision offlineRetry =
-                FactionTaxEvasionPolicy.afterCollection(
+        final FactionTaxDebtLedger.EvasionDecision offlineRetry =
+                FactionTaxDebtLedger.afterCollection(
                         3, 50.0D, 0.0D, 50.0D, 3, false);
         check(offlineRetry.strikesAfter() == 3 && !offlineRetry.reportSin(),
                 "offline repayment erased a pending tax-evasion delivery");
 
-        final FactionTaxEvasionPolicy.Decision ownerThreadRetry =
-                FactionTaxEvasionPolicy.afterCollection(
+        final FactionTaxDebtLedger.EvasionDecision ownerThreadRetry =
+                FactionTaxDebtLedger.afterCollection(
                         3, 50.0D, 0.0D, 50.0D, 3, true);
         check(ownerThreadRetry.strikesAfter() == 3 && ownerThreadRetry.reportSin(),
                 "pending tax-evasion sin was not retried on an available owner thread");
 
-        final FactionTaxEvasionPolicy.Decision ordinaryPayment =
-                FactionTaxEvasionPolicy.afterCollection(
+        final FactionTaxDebtLedger.EvasionDecision ordinaryPayment =
+                FactionTaxDebtLedger.afterCollection(
                         2, 5.0D, 20.0D, 50.0D, 3, true);
         check(ordinaryPayment.strikesAfter() == 0 && !ordinaryPayment.reportSin(),
                 "sub-threshold strikes survived a normal arrears recovery");
-        check(FactionTaxEvasionPolicy.afterCollection(
+        check(FactionTaxDebtLedger.afterCollection(
                         3, 0.0D, 50.0D, 50.0D, 0, true).strikesAfter() == 0,
                 "disabled evasion policy retained a stale pending threshold");
     }
 
     private static void treasuryAmountsStayFinite() {
-        check(FactionTreasuryAmountPolicy.checkedAdd(10.0D, 2.5D) == 12.5D,
+        check(FactionTaxDebtLedger.checkedAmountAdd(10.0D, 2.5D) == 12.5D,
                 "normal treasury addition changed");
-        check(Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(
+        check(Double.isNaN(FactionTaxDebtLedger.checkedAmountAdd(
                         Double.MAX_VALUE, Double.MAX_VALUE))
-                        && Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(
+                        && Double.isNaN(FactionTaxDebtLedger.checkedAmountAdd(
                         Double.POSITIVE_INFINITY, 1.0D))
-                        && Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(1.0D, 0.0D))
-                        && Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(-1.0D, 1.0D)),
+                        && Double.isNaN(FactionTaxDebtLedger.checkedAmountAdd(1.0D, 0.0D))
+                        && Double.isNaN(FactionTaxDebtLedger.checkedAmountAdd(-1.0D, 1.0D)),
                 "invalid or overflowing treasury balance was accepted");
     }
 
