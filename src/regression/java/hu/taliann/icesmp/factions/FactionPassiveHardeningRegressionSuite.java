@@ -19,6 +19,7 @@ public final class FactionPassiveHardeningRegressionSuite {
         whisperRetaliationPreservesWildTruceConstraints();
         signatureFoodUsesLiveMembership();
         foodDutyCallbackUsesLiveConfigAndMembership();
+        foodDurationsFailClosedOnOverflow();
         combustProvenanceNeverShortensExistingFire();
         System.out.println("Faction passive hardening regression suite passed.");
     }
@@ -146,6 +147,25 @@ public final class FactionPassiveHardeningRegressionSuite {
                         && !FactionFoodPolicy.mayRunDutyCallback(true, FactionType.NEUTRAL)
                         && !FactionFoodPolicy.mayRunDutyCallback(true, FactionType.DARK),
                 "guest or non-duty faction received a food-duty callback");
+    }
+
+    private static void foodDurationsFailClosedOnOverflow() {
+        check(FactionFoodPolicy.durationMillis(5L, 60_000L) == 300_000L,
+                "normal food-duty interval conversion changed");
+        check(FactionFoodPolicy.durationMillis(Long.MAX_VALUE, 60_000L) == 0L
+                        && FactionFoodPolicy.durationMillis(0L, 60_000L) == 0L,
+                "invalid/overflowing food-duty interval did not fail closed");
+        check(FactionFoodPolicy.deadline(1_000L, 300_000L) == 301_000L
+                        && FactionFoodPolicy.deadline(Long.MAX_VALUE - 1L, 2L) == 0L,
+                "food-duty deadline wrapped into the past");
+        check(FactionFoodPolicy.hasGraceElapsed(10_000L, 1_000L, 9_000L)
+                        && !FactionFoodPolicy.hasGraceElapsed(10_000L, 10_001L, 1L)
+                        && !FactionFoodPolicy.hasGraceElapsed(10_000L, -1L, 1L),
+                "future/corrupt food-duty timestamp triggered a debuff");
+        check(FactionFoodPolicy.durationTicks(60) == 1_200
+                        && FactionFoodPolicy.durationTicks(Integer.MAX_VALUE) == 0
+                        && FactionFoodPolicy.durationTicks(0) == 0,
+                "food potion duration overflowed Paper's int tick range");
     }
 
     private static FactionPassivePolicy.TargetContext context(final boolean bloodMoon,
