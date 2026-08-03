@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import json
 import struct
 import sys
 from dataclasses import dataclass
@@ -67,17 +69,68 @@ def sanitized_url(identifier: str) -> str:
     return urlunsplit((split.scheme, split.netloc, split.path, "", ""))
 
 
-def validate(config_path: Path, skins_dir: Path, strict_remote: bool) -> int:
+def cache_path_for_identifier(cache_dir: Path, identifier: str) -> Path:
+    encoded = base64.b64encode(identifier.encode("utf-8")).decode("ascii")
+    return cache_dir / f"{encoded}.json"
+
+
+def validate_remote_cache(reference: SkinReference, cache_dir: Path) -> str | None:
+    cache_path = cache_path_for_identifier(cache_dir, reference.identifier)
+    if not cache_path.is_file():
+        return (
+            f"CACHE_MISSING npc={reference.npc_name} path={reference.config_path} "
+            f"url={sanitized_url(reference.identifier)}"
+        )
+    try:
+        payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exception:
+        return (
+            f"CACHE_INVALID npc={reference.npc_name} path={reference.config_path} "
+            f"url={sanitized_url(reference.identifier)} reason={type(exception).__name__}"
+        )
+    skin_data = payload.get("skinData")
+    if not isinstance(skin_data, dict):
+        return (
+            f"CACHE_INVALID npc={reference.npc_name} path={reference.config_path} "
+            f"url={sanitized_url(reference.identifier)} reason=missing_skinData"
+        )
+    if skin_data.get("identifier") != reference.identifier:
+        return (
+            f"CACHE_INVALID npc={reference.npc_name} path={reference.config_path} "
+            f"url={sanitized_url(reference.identifier)} reason=identifier_mismatch"
+        )
+    if not isinstance(skin_data.get("textureValue"), str) or not skin_data["textureValue"].strip():
+        return (
+            f"CACHE_INVALID npc={reference.npc_name} path={reference.config_path} "
+            f"url={sanitized_url(reference.identifier)} reason=missing_textureValue"
+        )
+    if not isinstance(skin_data.get("textureSignature"), str) or not skin_data["textureSignature"].strip():
+        return (
+            f"CACHE_INVALID npc={reference.npc_name} path={reference.config_path} "
+            f"url={sanitized_url(reference.identifier)} reason=missing_textureSignature"
+        )
+    return None
+
+
+def validate(config_path: Path, skins_dir: Path, cache_dir: Path, strict_remote: bool) -> int:
     failures: list[str] = []
     remote: list[SkinReference] = []
     local_count = 0
+    cached_remote = 0
     for reference in parse_references(config_path):
         if reference.identifier.startswith(("https://", "http://")):
             remote.append(reference)
             continue
 
         local_count += 1
-        skin_path = skins_dir / reference.identifier
+        skin_path = (skins_dir / reference.identifier).resolve()
+        try:
+            skin_path.relative_to(skins_dir.resolve())
+        except ValueError:
+            failures.append(
+                f"UNSAFE_PATH npc={reference.npc_name} path={reference.config_path} file={reference.identifier}"
+            )
+            continue
         if not skin_path.is_file():
             failures.append(
                 f"MISSING npc={reference.npc_name} path={reference.config_path} file={reference.identifier}"
@@ -85,7 +138,7 @@ def validate(config_path: Path, skins_dir: Path, strict_remote: bool) -> int:
             continue
         try:
             width, height = png_dimensions(skin_path)
-        except ValueError as exception:
+        except (OSError, ValueError) as exception:
             failures.append(
                 f"INVALID npc={reference.npc_name} path={reference.config_path} "
                 f"file={reference.identifier} reason={exception}"
@@ -98,14 +151,23 @@ def validate(config_path: Path, skins_dir: Path, strict_remote: bool) -> int:
             )
 
     for reference in remote:
+        cache_failure = validate_remote_cache(reference, cache_dir)
+        cache_state = "missing-or-invalid"
+        if cache_failure is None:
+            cached_remote += 1
+            cache_state = "texture+signature"
+        else:
+            failures.append(cache_failure)
         print(
             "REMOTE_SKIN "
             f"npc={reference.npc_name} path={reference.config_path} "
-            f"url={sanitized_url(reference.identifier)}"
+            f"url={sanitized_url(reference.identifier)} cache={cache_state}"
         )
 
     print(
-        f"FancyNpcs snapshot: local={local_count}, remote={len(remote)}, failures={len(failures)}"
+        "FancyNpcs snapshot: "
+        f"local={local_count}, remote={len(remote)}, cached_remote={cached_remote}, "
+        f"failures={len(failures)}"
     )
     for failure in failures:
         print(failure, file=sys.stderr)
@@ -123,9 +185,12 @@ def main() -> int:
     parser.add_argument(
         "--skins-dir", type=Path, default=Path("Other/plugins/FancyNpcs/skins")
     )
+    parser.add_argument(
+        "--cache-dir", type=Path, default=Path("Other/plugins/FancyNpcs/.data/skins")
+    )
     parser.add_argument("--strict-remote", action="store_true")
     args = parser.parse_args()
-    return validate(args.config, args.skins_dir, args.strict_remote)
+    return validate(args.config, args.skins_dir, args.cache_dir, args.strict_remote)
 
 
 if __name__ == "__main__":
