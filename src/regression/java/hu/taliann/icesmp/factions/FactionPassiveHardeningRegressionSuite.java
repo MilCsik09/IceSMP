@@ -22,6 +22,7 @@ public final class FactionPassiveHardeningRegressionSuite {
         signatureFoodUsesLiveMembership();
         foodDutyCallbackUsesLiveConfigAndMembership();
         foodDurationsFailClosedOnOverflow();
+        taxEvasionSinStaysPendingUntilOwnerAck();
         combustProvenanceNeverShortensExistingFire();
         System.out.println("Faction passive hardening regression suite passed.");
     }
@@ -220,6 +221,35 @@ public final class FactionPassiveHardeningRegressionSuite {
                         && FactionFoodPolicy.durationTicks(Integer.MAX_VALUE) == 0
                         && FactionFoodPolicy.durationTicks(0) == 0,
                 "food potion duration overflowed Paper's int tick range");
+    }
+
+    private static void taxEvasionSinStaysPendingUntilOwnerAck() {
+        final FactionTaxEvasionPolicy.Decision rejected =
+                FactionTaxEvasionPolicy.afterCollection(
+                        2, 0.0D, 50.0D, 50.0D, 3, false);
+        check(rejected.strikesAfter() == 3 && !rejected.reportSin(),
+                "scheduler rejection cleared the durable tax-evasion threshold");
+
+        final FactionTaxEvasionPolicy.Decision offlineRetry =
+                FactionTaxEvasionPolicy.afterCollection(
+                        3, 50.0D, 0.0D, 50.0D, 3, false);
+        check(offlineRetry.strikesAfter() == 3 && !offlineRetry.reportSin(),
+                "offline repayment erased a pending tax-evasion delivery");
+
+        final FactionTaxEvasionPolicy.Decision ownerThreadRetry =
+                FactionTaxEvasionPolicy.afterCollection(
+                        3, 50.0D, 0.0D, 50.0D, 3, true);
+        check(ownerThreadRetry.strikesAfter() == 3 && ownerThreadRetry.reportSin(),
+                "pending tax-evasion sin was not retried on an available owner thread");
+
+        final FactionTaxEvasionPolicy.Decision ordinaryPayment =
+                FactionTaxEvasionPolicy.afterCollection(
+                        2, 5.0D, 20.0D, 50.0D, 3, true);
+        check(ordinaryPayment.strikesAfter() == 0 && !ordinaryPayment.reportSin(),
+                "sub-threshold strikes survived a normal arrears recovery");
+        check(FactionTaxEvasionPolicy.afterCollection(
+                        3, 0.0D, 50.0D, 50.0D, 0, true).strikesAfter() == 0,
+                "disabled evasion policy retained a stale pending threshold");
     }
 
     private static FactionPassivePolicy.TargetContext context(final boolean bloodMoon,
