@@ -1,0 +1,649 @@
+name: PlayerProfile recovered root missing suites (temporary)
+
+on:
+  pull_request:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths:
+      - .github/player-profile-root-v6-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+  EXPECTED_RECOVERY_HEAD: b139a509598ce7791045c2f15bd3a59eab8b088b
+  TARGET_BRANCH: rework/class-spec-profile-v2
+  EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
+
+jobs:
+  restore-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Check out authenticated recovered branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RECOVERY_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify exact remote heads
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$EXPECTED_TARGET_HEAD"
+          git status --short
+
+      - name: Restore ClassSpec section lifecycle and domain suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p \
+            src/regression/java/hu/taliann/icesmp/classspec/application \
+            src/regression/java/hu/taliann/icesmp/classspec/profile
+
+          cat > src/regression/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionLifecycleRegressionSuite.java <<'JAVA'
+          package hu.taliann.icesmp.classspec.application;
+
+          import hu.taliann.icesmp.classspec.domain.ProfileStatus;
+          import hu.taliann.icesmp.classspec.persistence.ClassSpecSectionRepository;
+          import hu.taliann.icesmp.classspec.persistence.ProfileRepositoryException;
+          import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+          import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
+
+          import java.time.Duration;
+          import java.util.List;
+          import java.util.Optional;
+          import java.util.UUID;
+          import java.util.concurrent.CompletableFuture;
+          import java.util.concurrent.CompletionStage;
+          import java.util.concurrent.CopyOnWriteArrayList;
+          import java.util.concurrent.TimeUnit;
+
+          /** PlayerProfile-backed class/spec initialization, quarantine, logout and disable regressions. */
+          public final class ClassSpecSectionLifecycleRegressionSuite {
+              private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000000701");
+              private static int assertions;
+
+              private ClassSpecSectionLifecycleRegressionSuite() {}
+
+              public static void main(final String[] args) {
+                  missingInitializesRevisionZero();
+                  repeatedJoinDoesNotResetRevision();
+                  parallelInitializationReloadsWinner();
+                  quarantineNeverCreatesEmptySection();
+                  corruptLoadFailureBlocksWithoutOverwrite();
+                  logoutFlushesBeforeInvalidation();
+                  disableWaitsForAdmittedJoinAndRejectsLateJoin();
+                  System.out.println("Class spec section lifecycle regression suite passed. assertions=" + assertions);
+              }
+
+              private static void missingInitializesRevisionZero() {
+                  final FakeRepo repository = new FakeRepo();
+                  final var result = new ClassSpecSectionLifecycleService(repository)
+                      .join(PLAYER).toCompletableFuture().join();
+                  check(result.status() == ClassSpecSectionLifecycleService.Status.READY, "ready");
+                  check(result.initialized(), "initialized");
+                  check(result.profile().sectionId() == ProfileSectionId.CLASS_SPEC, "section identity");
+                  check(result.profile().revision() == 0L, "revision zero");
+                  check(repository.lastExpected == ClassSpecSectionRepository.MISSING_REVISION, "missing revision contract");
+                  check(repository.saves == 1, "one save");
+              }
+
+              private static void repeatedJoinDoesNotResetRevision() {
+                  final FakeRepo repository = new FakeRepo();
+                  final ClassSpecSectionLifecycleService service = new ClassSpecSectionLifecycleService(repository);
+                  final ClassSpecSection first = service.join(PLAYER).toCompletableFuture().join().profile();
+                  repository.profile = first.toBuilder()
+                      .revision(1L)
+                      .primaryClassId("wizard")
+                      .classLevel(1)
+                      .build();
+                  final var second = service.join(PLAYER).toCompletableFuture().join();
+                  check(!second.initialized(), "not reinitialized");
+                  check(second.profile().revision() == 1L, "revision retained");
+                  check(repository.saves == 1, "no second initialization save");
+              }
+
+              private static void parallelInitializationReloadsWinner() {
+                  final RaceRepo repository = new RaceRepo();
+                  final ClassSpecSectionLifecycleService first = new ClassSpecSectionLifecycleService(repository);
+                  final ClassSpecSectionLifecycleService second = new ClassSpecSectionLifecycleService(repository);
+                  final var firstJoin = first.join(PLAYER).toCompletableFuture();
+                  final var secondJoin = second.join(PLAYER).toCompletableFuture();
+                  repository.awaitSaveCalls(2);
+                  repository.commitWinner();
+                  final var firstResult = firstJoin.join();
+                  final var secondResult = secondJoin.join();
+                  check(firstResult.status() == ClassSpecSectionLifecycleService.Status.READY
+                      && secondResult.status() == ClassSpecSectionLifecycleService.Status.READY, "both ready");
+                  check(repository.profile != null && repository.profile.revision() == 0L, "one canonical revision zero");
+                  check(firstResult.profile().equals(secondResult.profile()), "loser reloads winner");
+                  check(repository.committedSaves == 1, "exactly one first commit");
+              }
+
+              private static void quarantineNeverCreatesEmptySection() {
+                  final FakeRepo repository = new FakeRepo();
+                  repository.loadResult = ClassSpecSectionRepository.LoadResult.quarantined("bad digest", "ev-1");
+                  final var result = new ClassSpecSectionLifecycleService(repository)
+                      .join(PLAYER).toCompletableFuture().join();
+                  check(result.status() == ClassSpecSectionLifecycleService.Status.QUARANTINED, "quarantined");
+                  check(result.evidenceId().equals("ev-1"), "evidence retained");
+                  check(repository.saves == 0, "no empty overwrite");
+              }
+
+              private static void corruptLoadFailureBlocksWithoutOverwrite() {
+                  final FakeRepo repository = new FakeRepo();
+                  repository.loadFailure = new IllegalStateException("decode failed");
+                  final var result = new ClassSpecSectionLifecycleService(repository)
+                      .join(PLAYER).toCompletableFuture().join();
+                  check(result.status() == ClassSpecSectionLifecycleService.Status.BLOCKED, "blocked");
+                  check(repository.saves == 0, "no write");
+                  check(repository.blockReason.contains("decode failed"), "diagnostic");
+              }
+
+              private static void logoutFlushesBeforeInvalidation() {
+                  final FakeRepo repository = new FakeRepo();
+                  repository.profile = ClassSpecSection.empty(0L);
+                  new ClassSpecSectionLifecycleService(repository).logout(PLAYER).toCompletableFuture().join();
+                  check(repository.events.equals(List.of("flush", "invalidate")), "flush then invalidate");
+              }
+
+              private static void disableWaitsForAdmittedJoinAndRejectsLateJoin() {
+                  final FakeRepo repository = new FakeRepo();
+                  repository.loadGate = new CompletableFuture<>();
+                  final ClassSpecSectionLifecycleService service = new ClassSpecSectionLifecycleService(repository);
+                  final var admitted = service.join(PLAYER).toCompletableFuture();
+                  final var disable = service.prepareDisable().toCompletableFuture();
+                  check(!disable.isDone(), "disable waits");
+                  final var late = service.join(UUID.randomUUID()).toCompletableFuture().join();
+                  check(late.status() == ClassSpecSectionLifecycleService.Status.BLOCKED, "late blocked");
+                  repository.loadGate.complete(ClassSpecSectionRepository.LoadResult.missing());
+                  check(admitted.join().status() == ClassSpecSectionLifecycleService.Status.READY, "admitted join completes");
+                  disable.join();
+                  check(repository.events.contains("flushAll"), "flush all after join");
+                  check(!service.accepting(), "admission stopped");
+              }
+
+              private static class FakeRepo implements ClassSpecSectionRepository {
+                  volatile ClassSpecSection profile;
+                  volatile LoadResult loadResult;
+                  volatile RuntimeException loadFailure;
+                  volatile CompletableFuture<LoadResult> loadGate;
+                  volatile String blockReason = "";
+                  long lastExpected = Long.MIN_VALUE;
+                  int saves;
+                  final List<String> events = new CopyOnWriteArrayList<>();
+
+                  @Override
+                  public CompletionStage<LoadResult> load(final UUID playerId) {
+                      if (loadFailure != null) {
+                          return CompletableFuture.failedFuture(loadFailure);
+                      }
+                      if (loadGate != null) {
+                          return loadGate;
+                      }
+                      return CompletableFuture.completedFuture(loadResult != null
+                          ? loadResult
+                          : profile == null ? LoadResult.missing() : LoadResult.found(profile));
+                  }
+
+                  @Override
+                  public CompletionStage<ClassSpecSection> save(
+                      final UUID playerId,
+                      final long expectedRevision,
+                      final ClassSpecSection next
+                  ) {
+                      saves++;
+                      lastExpected = expectedRevision;
+                      if (profile != null || expectedRevision != MISSING_REVISION) {
+                          return CompletableFuture.failedFuture(new ProfileRepositoryException.RevisionConflict(
+                              expectedRevision,
+                              profile == null ? MISSING_REVISION : profile.revision(),
+                              "conflict"
+                          ));
+                      }
+                      profile = next;
+                      return CompletableFuture.completedFuture(next);
+                  }
+
+                  @Override
+                  public CompletionStage<QuarantineRecord> quarantine(
+                      final UUID playerId,
+                      final byte[] payload,
+                      final String reason
+                  ) {
+                      return CompletableFuture.completedFuture(
+                          new QuarantineRecord(playerId, 1L, reason, "ev", "file")
+                      );
+                  }
+
+                  @Override
+                  public CompletionStage<ClassSpecSection> recover(
+                      final UUID playerId,
+                      final String evidenceId,
+                      final String auditId
+                  ) {
+                      return CompletableFuture.failedFuture(new UnsupportedOperationException());
+                  }
+
+                  @Override
+                  public CompletionStage<Void> flush(final UUID playerId) {
+                      events.add("flush");
+                      return CompletableFuture.completedFuture(null);
+                  }
+
+                  @Override
+                  public CompletionStage<Void> flushAll() {
+                      events.add("flushAll");
+                      return CompletableFuture.completedFuture(null);
+                  }
+
+                  @Override
+                  public CompletionStage<ShutdownResult> shutdown(final Duration timeout) {
+                      return CompletableFuture.completedFuture(new ShutdownResult(true, 0, ""));
+                  }
+
+                  @Override
+                  public void invalidate(final UUID playerId) {
+                      events.add("invalidate");
+                  }
+
+                  @Override
+                  public Optional<ClassSpecSection> cached(final UUID playerId) {
+                      return Optional.ofNullable(profile);
+                  }
+
+                  @Override
+                  public Optional<String> sessionBlockReason(final UUID playerId) {
+                      return blockReason.isBlank() ? Optional.empty() : Optional.of(blockReason);
+                  }
+
+                  @Override
+                  public Optional<String> quarantineReason(final UUID playerId) {
+                      return Optional.empty();
+                  }
+
+                  @Override
+                  public void blockSession(final UUID playerId, final String reason) {
+                      blockReason = reason;
+                  }
+              }
+
+              private static final class RaceRepo extends FakeRepo {
+                  final List<CompletableFuture<ClassSpecSection>> pending = new CopyOnWriteArrayList<>();
+                  int saveCalls;
+                  int committedSaves;
+
+                  @Override
+                  public CompletionStage<ClassSpecSection> save(
+                      final UUID playerId,
+                      final long expectedRevision,
+                      final ClassSpecSection next
+                  ) {
+                      saveCalls++;
+                      final CompletableFuture<ClassSpecSection> future = new CompletableFuture<>();
+                      pending.add(future);
+                      return future;
+                  }
+
+                  void awaitSaveCalls(final int expected) {
+                      final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+                      while (saveCalls < expected && System.nanoTime() < deadline) {
+                          Thread.onSpinWait();
+                      }
+                      check(saveCalls == expected, "parallel saves admitted");
+                  }
+
+                  void commitWinner() {
+                      profile = ClassSpecSection.empty(0L);
+                      committedSaves = 1;
+                      pending.get(0).complete(profile);
+                      pending.get(1).completeExceptionally(new ProfileRepositoryException.RevisionConflict(
+                          MISSING_REVISION,
+                          0L,
+                          "concurrent initialization"
+                      ));
+                  }
+              }
+
+              private static void check(final boolean value, final String message) {
+                  assertions++;
+                  if (!value) {
+                      throw new AssertionError(message);
+                  }
+              }
+          }
+          JAVA
+
+          cat > src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java <<'JAVA'
+          package hu.taliann.icesmp.classspec.profile;
+
+          import hu.taliann.icesmp.classspec.domain.*;
+          import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+          import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
+
+          import java.util.LinkedHashMap;
+          import java.util.List;
+          import java.util.Map;
+          import java.util.Set;
+          import java.util.UUID;
+
+          /** Executable ClassSpec section domain regressions without opaque binary persistence. */
+          public final class ClassSpecSectionV2RegressionSuite {
+              private static int assertions;
+
+              private ClassSpecSectionV2RegressionSuite() {}
+
+              public static void main(final String[] args) {
+                  emptySectionIsGreenfield();
+                  domainInvariants();
+                  numericBounds();
+                  operationAndCollectionInvariants();
+                  System.out.println("ClassSpec section regression suite passed. assertions=" + assertions);
+              }
+
+              private static void emptySectionIsGreenfield() {
+                  final ClassSpecSection section = ClassSpecSection.empty(0L);
+                  check(section.sectionId() == ProfileSectionId.CLASS_SPEC, "section id");
+                  check(section.schemaVersion() == ClassSpecSection.SCHEMA_VERSION, "schema version");
+                  check(section.revision() == 0L, "revision zero");
+                  check(section.status() == ProfileStatus.READY, "ready");
+                  check(section.activeSlot() == null, "inactive");
+                  check(section.loadouts().size() == 2, "two slots");
+                  check(section.primaryClassId().isEmpty(), "classless");
+                  check(section.isGameplayUsable(), "greenfield usable");
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.empty(-1L));
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder().schemaVersion(1).build());
+              }
+
+              private static void domainInvariants() {
+                  final ClassLoadout necromancer = loadout(
+                      "necromancer", LoadoutStatus.ACTIVE, null, Map.of(), Map.of()
+                  );
+                  final ClassSpecSection active = ClassSpecSection.builder()
+                      .revision(4L)
+                      .primaryClassId("wizard")
+                      .classLevel(20)
+                      .classExperience(900)
+                      .activeSlot(LoadoutSlot.FIRST)
+                      .loadout(LoadoutSlot.FIRST, necromancer)
+                      .build();
+                  check(active.isGameplayUsable(), "active section usable");
+                  check(active.loadout(LoadoutSlot.FIRST).specializationId().equals("necromancer"), "spec stored");
+
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .primaryClassId("wizard")
+                      .classLevel(10)
+                      .activeSlot(LoadoutSlot.FIRST)
+                      .loadout(LoadoutSlot.FIRST, loadout(
+                          "guardian", LoadoutStatus.ACTIVE, null, Map.of(), Map.of()
+                      ))
+                      .build());
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .primaryClassId("wizard")
+                      .classLevel(10)
+                      .activeSlot(LoadoutSlot.FIRST)
+                      .loadout(LoadoutSlot.FIRST, loadout(
+                          "necromancer",
+                          LoadoutStatus.SEALED,
+                          new SealReason(SealCause.FACTION_MISSING, "dark", ""),
+                          Map.of(),
+                          Map.of()
+                      ))
+                      .build());
+                  expect(IllegalArgumentException.class, () -> new ClassLoadout(
+                      "", LoadoutStatus.EMPTY, null, Map.of(), MasteryProgress.empty(), null,
+                      Set.of(), "", CapstoneStatus.LOCKED, Map.of(), Map.of("hidden", "x"), ""
+                  ));
+
+                  final CompanionProfile beast = new CompanionProfile(
+                      UUID.randomUUID(), "beast_master.stable", "WOLF", "Fang", 1, 0,
+                      "", "ACTIVE", List.of(), 0, Map.of()
+                  );
+                  expect(IllegalArgumentException.class, () -> loadout(
+                      "necromancer",
+                      LoadoutStatus.INACTIVE,
+                      null,
+                      Map.of(beast.companionId(), beast),
+                      Map.of()
+                  ));
+
+                  final ClassSpecSection review = ClassSpecSection.builder()
+                      .status(ProfileStatus.REVIEW)
+                      .diagnostics(new ProfileDiagnostics("", "", "", "manual review"))
+                      .build();
+                  expect(IllegalStateException.class, review::toBuilder);
+                  expect(IllegalStateException.class, review::withoutClass);
+
+                  final ClassSpecSection quarantined = ClassSpecSection.builder()
+                      .status(ProfileStatus.QUARANTINED)
+                      .diagnostics(new ProfileDiagnostics("ev-1", "bad digest", "", "quarantined"))
+                      .build();
+                  expect(IllegalStateException.class, quarantined::toBuilder);
+                  check(!quarantined.isGameplayUsable(), "quarantine blocked");
+
+                  final SealReason both = new SealReason(
+                      Map.of(
+                          SealCause.FACTION_MISSING, "dark",
+                          SealCause.SINNER_MARK_MISSING, "sinner"
+                      ),
+                      "gates"
+                  );
+                  check(both.causes().size() == 2, "complete seal set");
+                  check(both.gateRestorableOnly(), "restorable gates");
+
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .primaryClassId("wizard")
+                      .classLevel(20)
+                      .secondSpecUnlocked(true)
+                      .loadout(LoadoutSlot.FIRST, loadout(
+                          "necromancer", LoadoutStatus.INACTIVE, null, Map.of(), Map.of()
+                      ))
+                      .loadout(LoadoutSlot.SECOND, loadout(
+                          "necromancer", LoadoutStatus.INACTIVE, null, Map.of(), Map.of()
+                      ))
+                      .build());
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .primaryClassId("wizard")
+                      .classLevel(20)
+                      .loadout(LoadoutSlot.SECOND, loadout(
+                          "elementalist", LoadoutStatus.INACTIVE, null, Map.of(), Map.of()
+                      ))
+                      .build());
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .primaryClassId("wizard")
+                      .classLevel(20)
+                      .loadout(LoadoutSlot.FIRST, necromancer)
+                      .build());
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .status(ProfileStatus.REVIEW)
+                      .primaryClassId("wizard")
+                      .classLevel(20)
+                      .activeSlot(LoadoutSlot.FIRST)
+                      .loadout(LoadoutSlot.FIRST, necromancer)
+                      .diagnostics(new ProfileDiagnostics("", "", "audit-1", ""))
+                      .build());
+              }
+
+              private static void numericBounds() {
+                  check(NumericGuards.addInt(2, 3, "x") == 5, "safe int");
+                  check(NumericGuards.addLong(2L, 3L, "x") == 5L, "safe long");
+                  check(NumericGuards.nextRevision(9L) == 10L, "next revision");
+                  expect(IllegalArgumentException.class, () -> NumericGuards.addInt(Integer.MAX_VALUE, 1, "x"));
+                  expect(IllegalArgumentException.class, () -> NumericGuards.addLong(Long.MAX_VALUE, 1L, "x"));
+                  expect(IllegalStateException.class, () -> NumericGuards.nextRevision(Long.MAX_VALUE));
+                  expect(IllegalArgumentException.class, () -> new MasteryProgress(-1, 0));
+                  expect(IllegalArgumentException.class, () -> new CompanionProfile(
+                      UUID.randomUUID(), "beast_master.stable", "WOLF", "", 0, 0,
+                      "", "", List.of(), 0, Map.of()
+                  ));
+              }
+
+              private static void operationAndCollectionInvariants() {
+                  final ProfileOperation pending = operation(
+                      "pending-1", ProfileOperationType.RESPEC, ProfileOperationStatus.PENDING
+                  );
+                  final ClassSpecSection blocked = ClassSpecSection.builder()
+                      .operation(pending)
+                      .build();
+                  check(!blocked.isGameplayUsable(), "pending operation blocks gameplay");
+                  check(blocked.pendingOperation().orElseThrow().operationId().equals("pending-1"), "pending exposed");
+
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .operation(pending)
+                      .operation(operation(
+                          "pending-2", ProfileOperationType.CLASS_EXPERIENCE, ProfileOperationStatus.PENDING
+                      ))
+                      .build());
+                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
+                      .operations(Map.of("wrong-key", operation(
+                          "actual-key", ProfileOperationType.COMPANION_MUTATION, ProfileOperationStatus.COMMITTED
+                      )))
+                      .build());
+
+                  final ProfileOperation first = operation(
+                      "a", ProfileOperationType.COMPANION_MUTATION, ProfileOperationStatus.COMMITTED
+                  );
+                  final ProfileOperation second = operation(
+                      "b", ProfileOperationType.CLASS_EXPERIENCE, ProfileOperationStatus.COMMITTED
+                  );
+                  final Map<String, ProfileOperation> left = new LinkedHashMap<>();
+                  left.put(first.operationId(), first);
+                  left.put(second.operationId(), second);
+                  final Map<String, ProfileOperation> right = new LinkedHashMap<>();
+                  right.put(second.operationId(), second);
+                  right.put(first.operationId(), first);
+                  check(
+                      ClassSpecSection.builder().operations(left).build()
+                          .equals(ClassSpecSection.builder().operations(right).build()),
+                      "operation insertion order does not change section value"
+                  );
+              }
+
+              private static ProfileOperation operation(
+                  final String id,
+                  final ProfileOperationType type,
+                  final ProfileOperationStatus status
+              ) {
+                  return new ProfileOperation(id, type, status, "MODE", "0", "none", 0L, "ok");
+              }
+
+              private static ClassLoadout loadout(
+                  final String specialization,
+                  final LoadoutStatus status,
+                  final SealReason seal,
+                  final Map<UUID, CompanionProfile> roster,
+                  final Map<String, String> mechanics
+              ) {
+                  return new ClassLoadout(
+                      specialization,
+                      status,
+                      seal,
+                      Map.of(),
+                      MasteryProgress.empty(),
+                      null,
+                      Set.of(),
+                      "",
+                      CapstoneStatus.LOCKED,
+                      roster,
+                      mechanics,
+                      ""
+                  );
+              }
+
+              private static void check(final boolean value, final String message) {
+                  assertions++;
+                  if (!value) {
+                      throw new AssertionError(message);
+                  }
+              }
+
+              private static void expect(
+                  final Class<? extends Throwable> type,
+                  final ThrowingRunnable runnable
+              ) {
+                  assertions++;
+                  try {
+                      runnable.run();
+                      throw new AssertionError("Expected " + type.getSimpleName());
+                  } catch (final Throwable failure) {
+                      if (!type.isInstance(failure)) {
+                          throw new AssertionError(
+                              "Expected " + type.getSimpleName() + " but got " + failure,
+                              failure
+                          );
+                      }
+                  }
+              }
+
+              @FunctionalInterface
+              private interface ThrowingRunnable {
+                  void run() throws Exception;
+              }
+          }
+          JAVA
+
+          git diff --check
+          test -f src/regression/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionLifecycleRegressionSuite.java
+          test -f src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java
+          git status --short
+          git diff --stat
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Compile and run restored section suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean compileRegressionTestJava \
+            classSpecSectionRegressionTest \
+            classSpecLifecycleRegressionTest \
+            --no-daemon --stacktrace
+
+      - name: Run complete Java 21 build
+        shell: bash
+        run: ./gradlew build --no-daemon --stacktrace
+
+      - name: Run complete Gradle check
+        shell: bash
+        run: ./gradlew check --no-daemon --stacktrace
+
+      - name: PlayerProfile authority and OpenAPI gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_player_profile_authority.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_player_profile_openapi.py
+
+      - name: Commit only after every validation gate succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$EXPECTED_TARGET_HEAD"
+          git diff --check
+          test -z "$(git status --short --untracked-files=all | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$' || true)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/regression/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionLifecycleRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java
+          git diff --cached --check
+          test "$(git diff --cached --name-only | wc -l)" = "2"
+          git commit -m "test(player-profile): restore section lifecycle regressions"
+          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
