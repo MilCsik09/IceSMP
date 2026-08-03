@@ -77,32 +77,30 @@ jobs:
               expected_sha = match.group(2)
               expected_size = int(match.group(3))
               compact = re.sub(r"\s+", "", match.group(4))
-              encoded_length = 4 * ((expected_size + 2) // 3)
-              if len(compact) < encoded_length:
+              raw_all = base64.b64decode(compact, validate=True)
+              if len(raw_all) < expected_size:
                   raise SystemExit(
-                      f"chunk {index:02d} base64 shorter than declared size: "
-                      f"{len(compact)} < {encoded_length}"
+                      f"chunk {index:02d} decoded shorter than declared: "
+                      f"{len(raw_all)} < {expected_size}"
                   )
-              encoded = compact[:encoded_length]
-              trailing = compact[encoded_length:]
-              raw = base64.b64decode(encoded, validate=True)
+              raw = raw_all[:expected_size]
+              trailing = raw_all[expected_size:]
               actual_sha = hashlib.sha256(raw).hexdigest()
-              if len(raw) != expected_size:
-                  raise SystemExit(f"chunk {index:02d} size mismatch: {len(raw)} != {expected_size}")
               if actual_sha != expected_sha:
                   raise SystemExit(f"chunk {index:02d} sha mismatch: {actual_sha} != {expected_sha}")
               if trailing:
                   anomalies.append({
                       "index": f"{index:02d}",
-                      "type": "trailing-base64-ignored-after-verified-prefix",
-                      "trailing_characters": len(trailing),
+                      "type": "trailing-decoded-bytes-ignored-after-verified-prefix",
+                      "trailing_bytes": len(trailing),
+                      "trailing_sha256": hashlib.sha256(trailing).hexdigest(),
                   })
               (root / "chunks" / f"{index:02d}.bin").write_bytes(raw)
               selected[index] = {
                   "size": len(raw),
                   "sha256": actual_sha,
                   "comment_id": comment.get("id"),
-                  "trailing_characters": len(trailing),
+                  "trailing_bytes": len(trailing),
               }
 
           missing = sorted(set(range(13)) - set(selected))
