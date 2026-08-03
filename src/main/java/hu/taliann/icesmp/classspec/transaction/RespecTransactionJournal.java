@@ -29,7 +29,7 @@ import java.util.UUID;
  * strict, bounded, fsync'ed and atomically replaced.
  */
 public final class RespecTransactionJournal {
-    private static final String FORMAT = "ICS2-RESPEC-WAL-1";
+    private static final String FORMAT = "ICESMP-PLAYER-PROFILE-RESPEC-WAL-1";
     private static final int MAX_FILE_BYTES = 64 * 1024;
     private static final int MAX_OPERATION_ID = 192;
     private static final int MAX_DETAIL = 512;
@@ -68,7 +68,7 @@ public final class RespecTransactionJournal {
         writeMap(properties, "wallet.expected.", entry.walletExpected());
         try {
             final ByteArrayOutputStream output = new ByteArrayOutputStream();
-            properties.store(output, "IceSMP Profile v2 respec WAL");
+            properties.store(output, "IceSMP PlayerProfile respec WAL");
             final byte[] bytes = output.toByteArray();
             if (bytes.length > MAX_FILE_BYTES) {
                 throw new JournalException("Respec journal entry exceeds size limit");

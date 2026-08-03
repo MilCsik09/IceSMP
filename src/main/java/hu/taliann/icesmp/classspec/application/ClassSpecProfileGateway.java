@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.classspec.application;
 
 import hu.taliann.icesmp.classspec.domain.*;
+import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -13,7 +14,7 @@ public interface ClassSpecProfileGateway {
     void beginSessionActivation(UUID playerId,UUID sessionToken);
     void completeSessionActivation(UUID playerId,UUID sessionToken);
     void cancelSessionActivation(UUID playerId,UUID sessionToken);
-    Optional<ClassProfile> currentProfile(UUID playerId);
+    Optional<ClassSpecSection> currentProfile(UUID playerId);
     Optional<String> activeSpecId(UUID playerId);
     Optional<String> activeMechanic(UUID playerId,String key);
     Optional<CompanionProfile> activeCompanion(UUID playerId);
@@ -55,7 +56,7 @@ public interface ClassSpecProfileGateway {
         public enum Kind{ADD,REMOVE,RENAME,STANCE,PROGRESS,EQUIPMENT,STATE,RESPAWN_AT,SET_ACTIVE,DISMISS}
     }
 
-    record RecoveryResult(ClassProfile profile,String evidenceId,String auditId,boolean idempotent){
+    record RecoveryResult(ClassSpecSection profile,String evidenceId,String auditId,boolean idempotent){
         public RecoveryResult{Objects.requireNonNull(profile);evidenceId=requireId(evidenceId,"evidenceId");auditId=requireId(auditId,"auditId");}
     }
     enum ResetMode{LOADOUT_RESPEC,ADMIN_CLASS}

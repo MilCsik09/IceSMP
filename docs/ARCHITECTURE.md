@@ -16,7 +16,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~90 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~92 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -610,7 +610,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 615 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
+- **Méret:** 642 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 120 fájl).
   Csomag-megoszlás: listeners 120, managers 120, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -661,3 +661,6 @@ single-winner gate-et és race-biztos task lease-t használ. Az üzemeltetési
 és recovery-szerződést az
 [admin kézikönyv crate acceptance szakasza](ADMIN_GUIDE.md#natív-crate)
 foglalja össze.
+## PlayerProfile authority
+
+The canonical player-state architecture is documented in [PLAYER_PROFILE_ARCHITECTURE.md](PLAYER_PROFILE_ARCHITECTURE.md). All IceSMP-owned durable player state must enter a registered PlayerProfile section; PDC may only be runtime, item/entity metadata or a deterministic derived mirror.

@@ -1,0 +1,268 @@
+package hu.taliann.icesmp.playerprofile.application;
+
+import hu.taliann.icesmp.playerprofile.api.AdminPlayerProfileDto;
+import hu.taliann.icesmp.playerprofile.api.IceSMPPlayerProfileApi;
+import hu.taliann.icesmp.playerprofile.api.PlayerProfileQueryService;
+import hu.taliann.icesmp.playerprofile.api.PublicPlayerProfileDto;
+import hu.taliann.icesmp.playerprofile.api.SelfPlayerProfileDto;
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionData;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionSnapshot;
+import hu.taliann.icesmp.playerprofile.domain.SectionHealth;
+import hu.taliann.icesmp.playerprofile.domain.section.IdentitySection;
+import hu.taliann.icesmp.playerprofile.domain.section.LifecycleSection;
+import hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepository;
+import hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryException;
+import hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+
+/** Storage-independent facade used by gameplay, Bukkit API and HTTP query adapters. */
+public final class PlayerProfileService implements IceSMPPlayerProfileApi {
+    private final PlayerProfileRepository repository;
+    private final PlayerProfileTransactionManager transactions;
+    private final PlayerProfileQueryService queries;
+    private final Clock clock;
+    private final List<PlayerProfileListener> listeners = new CopyOnWriteArrayList<>();
+    private final ConcurrentMap<UUID, AtomicLong> generationCounters = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Long> currentGenerations = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, CompletableFuture<Void>> sessionTails = new ConcurrentHashMap<>();
+    private final AtomicBoolean accepting = new AtomicBoolean(true);
+
+    public PlayerProfileService(final PlayerProfileRepository repository,
+                                final PlayerProfileTransactionManager transactions) {
+        this(repository, transactions, Clock.systemUTC());
+    }
+
+    public PlayerProfileService(final PlayerProfileRepository repository,
+                                final PlayerProfileTransactionManager transactions,
+                                final Clock clock) {
+        this.repository = Objects.requireNonNull(repository, "repository");
+        this.transactions = Objects.requireNonNull(transactions, "transactions");
+        this.queries = new PlayerProfileQueryService(repository);
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
+
+    @Override public CompletionStage<Optional<PlayerProfileSnapshot>> find(final UUID id) { return queries.find(id); }
+    @Override public CompletionStage<Optional<PlayerProfileSnapshot>> findByName(final String name) { return queries.findByName(name); }
+    @Override public CompletionStage<Optional<ProfileSectionSnapshot<?>>> section(final UUID id,
+                                                                                  final ProfileSectionId section) {
+        return queries.section(id, section);
+    }
+    @Override public CompletionStage<PublicPlayerProfileDto> publicProfile(final UUID id) { return queries.publicDto(id); }
+    @Override public CompletionStage<SelfPlayerProfileDto> selfProfile(final UUID id) { return queries.selfDto(id); }
+    @Override public CompletionStage<AdminPlayerProfileDto> adminProfile(final UUID id) { return queries.adminDto(id); }
+
+    @Override public AutoCloseable subscribe(final PlayerProfileListener listener) {
+        listeners.add(Objects.requireNonNull(listener, "listener"));
+        return () -> listeners.remove(listener);
+    }
+
+    /** Initializes a greenfield profile when missing and durably fences a new login generation. */
+    public CompletionStage<PlayerProfileSession> join(final UUID playerId, final String playerName) {
+        Objects.requireNonNull(playerId, "playerId");
+        final String cleanName = playerName == null ? "" : playerName.trim();
+        if (cleanName.length() > 64) return CompletableFuture.failedFuture(
+                new IllegalArgumentException("playerName exceeds 64 characters"));
+        if (!accepting.get()) return CompletableFuture.failedFuture(
+                new IllegalStateException("PlayerProfile lifecycle stopped"));
+        return enqueue(playerId, () -> repository.loadSnapshot(playerId).thenCompose(snapshot -> {
+            if (!accepting.get()) return CompletableFuture.failedFuture(
+                    new IllegalStateException("PlayerProfile lifecycle stopped"));
+            final long durableGeneration = snapshot.lifecycle().value().sessionGeneration();
+            final AtomicLong counter = generationCounters.computeIfAbsent(playerId,
+                    ignored -> new AtomicLong(durableGeneration));
+            final long generation = counter.updateAndGet(current ->
+                    Math.addExact(Math.max(current, durableGeneration), 1L));
+            currentGenerations.put(playerId, generation);
+            final Instant now = clock.instant();
+            final long millis = now.toEpochMilli();
+            final IdentitySection identity = snapshot.identity().value();
+            final LifecycleSection lifecycle = snapshot.lifecycle().value();
+            final IdentitySection nextIdentity = new IdentitySection(cleanName,
+                    identity.firstSeenAt(), millis, millis, identity.publicVisible(), identity.apiVisible(),
+                    identity.accountLinks(), identity.extensions());
+            final LifecycleSection nextLifecycle = new LifecycleSection("active", lifecycle.profileCreatedAt(),
+                    millis, millis, lifecycle.lastQuitAt(), generation, lifecycle.extensions());
+            final String operationId = "session-join-" + generation;
+            final String fingerprint = "join:" + playerId + ':' + generation + ':'
+                    + cleanName.toLowerCase(Locale.ROOT);
+            return transactions.execute(playerId, current -> {
+                if (current.lifecycle().value().sessionGeneration() >= generation) {
+                    throw new IllegalStateException("stale session generation");
+                }
+                return new PlayerProfileTransactionManager.TransactionPlan<>(operationId, "session-join",
+                        fingerprint, List.of(
+                        new PlayerProfileTransactionManager.SectionUpdate(ProfileSectionId.IDENTITY,
+                                current.identity().revision(), nextIdentity),
+                        new PlayerProfileTransactionManager.SectionUpdate(ProfileSectionId.LIFECYCLE,
+                                current.lifecycle().revision(), nextLifecycle)), generation);
+            }).thenCompose(committedGeneration -> repository.loadSnapshot(playerId))
+                    .thenApply(durable -> new PlayerProfileSession(generation, durable.profileRevision()))
+                    .whenComplete((session, failure) -> {
+                        if (failure != null) currentGenerations.remove(playerId, generation);
+                    });
+        }));
+    }
+
+    /** A stale generation is a no-op; a current generation is durably closed before cache invalidation. */
+    public CompletionStage<Void> quit(final UUID playerId, final long sessionGeneration) {
+        Objects.requireNonNull(playerId, "playerId");
+        return enqueue(playerId, () -> {
+            if (!Objects.equals(currentGenerations.get(playerId), sessionGeneration)) {
+                return CompletableFuture.completedFuture(null);
+            }
+            final Instant now = clock.instant();
+            final long millis = now.toEpochMilli();
+            final String operationId = "session-quit-" + sessionGeneration;
+            final String fingerprint = "quit:" + playerId + ':' + sessionGeneration;
+            return transactions.execute(playerId, current -> {
+                final LifecycleSection lifecycle = current.lifecycle().value();
+                if (lifecycle.sessionGeneration() != sessionGeneration
+                        || !Objects.equals(currentGenerations.get(playerId), sessionGeneration)) {
+                    throw new StaleSessionException();
+                }
+                final LifecycleSection next = new LifecycleSection("offline", lifecycle.profileCreatedAt(),
+                        millis, lifecycle.lastJoinAt(), millis, sessionGeneration, lifecycle.extensions());
+                return new PlayerProfileTransactionManager.TransactionPlan<>(operationId, "session-quit",
+                        fingerprint, List.of(new PlayerProfileTransactionManager.SectionUpdate(
+                        ProfileSectionId.LIFECYCLE, current.lifecycle().revision(), next)), null);
+            }).handle((ignored, failure) -> {
+                if (failure != null && !isStale(failure)) throw new java.util.concurrent.CompletionException(failure);
+                return null;
+            }).thenCompose(ignored -> repository.flush(playerId)).thenRun(() -> {
+                repository.invalidate(playerId);
+                currentGenerations.remove(playerId, sessionGeneration);
+            });
+        });
+    }
+
+    public boolean isCurrentSession(final UUID playerId, final long generation) {
+        return Objects.equals(currentGenerations.get(playerId), generation);
+    }
+
+    public CompletionStage<PlayerProfileSnapshot> load(final UUID id) { return repository.loadSnapshot(id); }
+
+    public <T extends ProfileSectionData> CompletionStage<PlayerProfileSnapshot> mutateSection(
+            final UUID id, final ProfileSectionId sectionId, final Class<T> type,
+            final UnaryOperator<T> mutation) {
+        return mutateSection(id, sectionId, type, mutation, 4);
+    }
+
+    private <T extends ProfileSectionData> CompletionStage<PlayerProfileSnapshot> mutateSection(
+            final UUID id, final ProfileSectionId sectionId, final Class<T> type,
+            final UnaryOperator<T> mutation, final int attempts) {
+        return repository.loadSnapshot(id).thenCompose(snapshot -> {
+            final ProfileSectionSnapshot<?> raw = snapshot.section(sectionId).orElseThrow();
+            if (!raw.health().usable()) return CompletableFuture.failedFuture(
+                    new PlayerProfileRepositoryException.Quarantined(raw.health().diagnostic()));
+            final T current = type.cast(raw.value());
+            final T next = Objects.requireNonNull(mutation.apply(current), "mutation result");
+            final ProfileSectionSnapshot<T> candidate = new ProfileSectionSnapshot<>(sectionId,
+                    raw.schema(), Math.addExact(raw.revision(), 1L), clock.instant(), next,
+                    SectionHealth.healthy(), raw.extensions());
+            return repository.saveSection(id, sectionId, raw.revision(), snapshot.profileRevision(), candidate)
+                    .thenCompose(result -> {
+                        if (result.status() == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED) {
+                            notifyChanged(id, result.snapshot().profileRevision(), Set.of(sectionId));
+                            return CompletableFuture.completedFuture(result.snapshot());
+                        }
+                        if ((result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_REVISION
+                                || result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_GENERATION)
+                                && attempts > 1) {
+                            repository.invalidate(id);
+                            return mutateSection(id, sectionId, type, mutation, attempts - 1);
+                        }
+                        return CompletableFuture.failedFuture(
+                                new PlayerProfileRepositoryException(result.detail()));
+                    });
+        });
+    }
+
+    public <T> CompletionStage<T> transact(final UUID id,
+                                            final PlayerProfileTransactionManager.ProfileTransactionWork<T> work) {
+        return transactions.execute(id, work).thenApply(result -> {
+            repository.cached(id).ifPresent(profile -> notifyChanged(id, profile.profileRevision(),
+                    profile.sectionMap().keySet()));
+            return result;
+        });
+    }
+
+    public CompletionStage<Void> flush(final UUID id) { return repository.flush(id); }
+    public void invalidate(final UUID id) { repository.invalidate(id); }
+
+    public CompletionStage<PlayerProfileRepository.ShutdownResult> shutdown(final Duration timeout) {
+        accepting.set(false);
+        final CompletableFuture<?>[] sessions = sessionTails.values().toArray(CompletableFuture[]::new);
+        return CompletableFuture.allOf(sessions).thenCompose(ignored -> repository.shutdown(timeout));
+    }
+
+    private <T> CompletionStage<T> enqueue(final UUID playerId,
+                                            final Supplier<CompletionStage<T>> work) {
+        final CompletableFuture<T> result = new CompletableFuture<>();
+        sessionTails.compute(playerId, (ignored, previous) -> {
+            final CompletableFuture<Void> start = previous == null
+                    ? CompletableFuture.completedFuture(null)
+                    : previous.handle((value, failure) -> null);
+            final CompletableFuture<Void> tail = start.thenCompose(nothing -> {
+                final CompletionStage<T> stage;
+                try { stage = Objects.requireNonNull(work.get(), "session work"); }
+                catch (Throwable failure) { result.completeExceptionally(failure); return CompletableFuture.<Void>completedFuture(null); }
+                return stage.<Void>handle((value, failure) -> {
+                    if (failure == null) result.complete(value); else result.completeExceptionally(failure);
+                    return null;
+                }).toCompletableFuture();
+            });
+            tail.whenComplete((value, failure) -> sessionTails.remove(playerId, tail));
+            return tail;
+        });
+        return result;
+    }
+
+    private void notifyChanged(final UUID id, final long revision,
+                               final Set<ProfileSectionId> changed) {
+        for (PlayerProfileListener listener : listeners) {
+            try { listener.changed(id, revision, Set.copyOf(changed)); }
+            catch (RuntimeException ignored) { }
+        }
+    }
+
+    private static boolean isStale(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof java.util.concurrent.CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current instanceof StaleSessionException;
+    }
+
+    public record PlayerProfileSession(long sessionGeneration, long profileRevision) {
+        public PlayerProfileSession {
+            if (sessionGeneration < 1 || profileRevision < 0) {
+                throw new IllegalArgumentException("invalid PlayerProfile session metadata");
+            }
+        }
+    }
+
+    private static final class StaleSessionException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+    }
+}

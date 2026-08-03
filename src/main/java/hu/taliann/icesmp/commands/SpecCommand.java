@@ -284,7 +284,7 @@ public final class SpecCommand implements BasicCommand {
         target.getScheduler().run(plugin, task -> {
             final long revision = specializationManager.profileGateway()
                     .diagnostic(target.getUniqueId()).revision();
-            specializationManager.resetClassProfileV2(target, false,
+            specializationManager.resetClassSpecSectionV2(target, false,
                             "admin-spec-reset:" + target.getUniqueId() + ":" + revision)
                     .whenComplete((result, failure) -> target.getScheduler().run(plugin, followup -> {
                         if (failure == null && result != null && result.committed()) {
