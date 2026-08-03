@@ -26,6 +26,25 @@ mob-scaling:
 world-events:
   check-interval-seconds: 60
   spawn-rules-enabled: true
+  safety:
+    enabled: true
+    # Every relevant online player must be at least this far away horizontally.
+    min-horizontal-distance-blocks: 96.0
+    # 0 disables the optional full 3D distance check; horizontal safety still applies.
+    min-3d-distance-blocks: 0.0
+    ignore-spectators: true
+    ignore-vanished: true
+    ignore-admins: true
+    min-world-spawn-distance-blocks: 128.0
+    world-border-margin-blocks: 16.0
+    require-loaded-chunk: true
+    # Bounded search: no valid candidate means controlled abort, never a close fallback.
+    search-attempts: 24
+    search-min-radius-blocks: 96.0
+    search-max-radius-blocks: 256.0
+    # Prevent different events from selecting the same area concurrently.
+    reservation-distance-blocks: 64.0
+    reservation-seconds: 120
   spawn-rules:
     world-boss: { territory: true, claim: true, region: true, water: true }
     invasion: { territory: true, claim: true, region: true, water: true }

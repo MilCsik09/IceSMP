@@ -92,6 +92,12 @@ public final class ConfigMenuGUI {
         )));
         categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
                 Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
+                Entry.toggle("world-events.safety.enabled", "Játékos-/border spawn-biztonság"),
+                Entry.number("world-events.safety.min-horizontal-distance-blocks", "Minimum játékostávolság (blokk)", 8, 0, 2048),
+                Entry.number("world-events.safety.min-3d-distance-blocks", "Minimum 3D távolság (0=kikapcsolva)", 8, 0, 2048),
+                Entry.integer("world-events.safety.search-attempts", "Biztonságos hely keresési próbák", 1, 1, 128),
+                Entry.number("world-events.safety.search-max-radius-blocks", "Keresési sugár maximum", 16, 16, 4096),
+                Entry.number("world-events.safety.world-border-margin-blocks", "World border biztonsági margó", 8, 0, 1024),
                 Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció (1 nagy esemény egyszerre)"),
                 Entry.toggle("world-events.blood-moon.enabled", "Vérhold"),
                 Entry.number("world-events.blood-moon.chance-percent", "Vérhold esély (%)", 5, 0, 100),

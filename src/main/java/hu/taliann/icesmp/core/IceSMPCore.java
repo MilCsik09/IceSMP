@@ -283,6 +283,7 @@ public final class IceSMPCore {
     private final MeteorEventManager meteorEventManager;
     private final PartyManager partyManager;
     private final ClaimManager claimManager;
+    private final hu.taliann.icesmp.managers.EventSpawnGuard eventSpawnGuard;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -442,8 +443,8 @@ public final class IceSMPCore {
         // Közös, esemény×védelem mátrixszal configolható spawn-hely szabályok (world-events.
         // spawn-rules) minden világeseménynek. A világboss/invázió/vad hajsza setter-t kap,
         // mert a DI-sorrendben a ClaimManager ELŐTT épülnek.
-        final hu.taliann.icesmp.managers.EventSpawnGuard eventSpawnGuard =
-                new hu.taliann.icesmp.managers.EventSpawnGuard(configManager, territoryManager, claimManager);
+        this.eventSpawnGuard = new hu.taliann.icesmp.managers.EventSpawnGuard(
+                plugin, configManager, territoryManager, claimManager);
         worldBossManager.setSpawnGuard(eventSpawnGuard);
         invasionManager.setSpawnGuard(eventSpawnGuard);
         // PlayerCaravan + DarkUndead az EventSpawnGuardot igényli — az a ClaimManager után
@@ -616,6 +617,7 @@ public final class IceSMPCore {
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
         this.vanishManager = new hu.taliann.icesmp.managers.VanishManager(plugin, moderationManager, configManager);
+        this.eventSpawnGuard.setVanishedPredicate(moderationManager::isVanished);
         this.motdListener = new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager,
                 bloodMoonManager, worldBossManager, seasonManager, vanishManager);
         this.invseeManager = new hu.taliann.icesmp.managers.InvseeManager(plugin, messageManager, moderationManager);
@@ -919,6 +921,7 @@ public final class IceSMPCore {
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             moderationManager.openReplySession(onlinePlayer.getUniqueId());
             afkManager.recordActivity(onlinePlayer.getUniqueId());
+            onlinePlayer.getScheduler().run(plugin, task -> eventSpawnGuard.trackPlayer(onlinePlayer), null);
         }
         vanishManager.refreshAll();
         registerCommands();
@@ -1212,6 +1215,7 @@ public final class IceSMPCore {
         shutdownStep("invseeManager", invseeManager::shutdown);
         shutdownStep("motdListener", motdListener::shutdown);
         shutdownStep("vanishManager", vanishManager::shutdown);
+        shutdownStep("eventSpawnGuard", eventSpawnGuard::clearReservations);
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
@@ -1741,6 +1745,7 @@ public final class IceSMPCore {
                 moderationManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.VanishListener(
                 plugin, moderationManager, vanishManager, configManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EventSpawnGuardListener(eventSpawnGuard), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.InvseeGUIListener(invseeManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ModerationGUIListener(plugin, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ReportFeedbackListener(reportManager), plugin);
