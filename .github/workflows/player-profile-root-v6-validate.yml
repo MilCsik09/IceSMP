@@ -1,0 +1,145 @@
+name: PlayerProfile root PPROOT2 validation (temporary)
+
+on:
+  push:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths-ignore:
+      - .github/player-profile-root-v6/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+
+env:
+  PAYLOAD_ISSUE: "79"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out authenticated Git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Reconstruct and validate exact PPROOT2 payload
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/pproot2-validation
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/chunks"
+
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${PAYLOAD_ISSUE}/comments?per_page=100" > "$ROOT/comments.json"
+
+          python3 - "$ROOT" <<'PY'
+          import base64
+          import hashlib
+          import json
+          import pathlib
+          import re
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          comments = json.loads((root / "comments.json").read_text(encoding="utf-8"))
+          pattern = re.compile(
+              r"\APPROOT2-(\d{2})/13 sha256=([0-9a-f]{64}) bytes=(\d+)\n([A-Za-z0-9+/=\r\n\t ]+)\Z"
+          )
+          selected = {}
+          observed = []
+          for comment in comments:
+              body = str(comment.get("body", "")).replace("\r\n", "\n").strip()
+              first = body.split("\n", 1)[0]
+              if first.startswith("PPROOT2-"):
+                  observed.append(first)
+              match = pattern.fullmatch(body)
+              if not match:
+                  continue
+              index = int(match.group(1))
+              if index not in range(13):
+                  continue
+              if index in selected:
+                  raise SystemExit(f"duplicate exact PPROOT2 chunk {index:02d}")
+              expected_sha = match.group(2)
+              expected_size = int(match.group(3))
+              compact = re.sub(r"\s+", "", match.group(4))
+              try:
+                  raw = base64.b64decode(compact, validate=True)
+              except Exception as exc:
+                  raise SystemExit(f"chunk {index:02d} invalid base64: {exc}") from exc
+              actual_sha = hashlib.sha256(raw).hexdigest()
+              if len(raw) != expected_size:
+                  raise SystemExit(f"chunk {index:02d} size mismatch: {len(raw)} != {expected_size}")
+              if actual_sha != expected_sha:
+                  raise SystemExit(f"chunk {index:02d} sha mismatch: {actual_sha} != {expected_sha}")
+              (root / "chunks" / f"{index:02d}.bin").write_bytes(raw)
+              selected[index] = {
+                  "size": len(raw),
+                  "sha256": actual_sha,
+                  "comment_id": comment.get("id"),
+              }
+
+          missing = sorted(set(range(13)) - set(selected))
+          if missing:
+              raise SystemExit(
+                  "missing exact PPROOT2 chunks: " + ",".join(f"{i:02d}" for i in missing)
+                  + "\nobserved headers:\n" + "\n".join(observed)
+              )
+
+          compressed = b"".join(
+              (root / "chunks" / f"{i:02d}.bin").read_bytes() for i in range(13)
+          )
+          (root / "root.patch.xz").write_bytes(compressed)
+          result = {
+              "payload": "PPROOT2",
+              "parts": 13,
+              "compressed_bytes": len(compressed),
+              "compressed_sha256": hashlib.sha256(compressed).hexdigest(),
+              "chunks": selected,
+              "observed_headers": observed,
+          }
+          (root / "result-pre-xz.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+
+          xz --test "$ROOT/root.patch.xz"
+          xz --decompress --stdout "$ROOT/root.patch.xz" > "$ROOT/root.patch"
+          file "$ROOT/root.patch" | tee "$ROOT/payload-type.txt"
+
+          python3 - "$ROOT" <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          result = json.loads((root / "result-pre-xz.json").read_text(encoding="utf-8"))
+          patch = (root / "root.patch").read_bytes()
+          result.update({
+              "uncompressed_bytes": len(patch),
+              "uncompressed_sha256": hashlib.sha256(patch).hexdigest(),
+              "first_128_hex": patch[:128].hex(),
+              "first_40_lines": patch[:32768].decode("utf-8", errors="replace").splitlines()[:40],
+              "payload_type": (root / "payload-type.txt").read_text(encoding="utf-8").strip(),
+          })
+          (root / "validation-result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+
+          cat "$ROOT/validation-result.json"
+
+          mkdir -p .github/player-profile-root-v6
+          cp "$ROOT/validation-result.json" .github/player-profile-root-v6/validation-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/player-profile-root-v6/validation-result.json
+          git commit -m "chore(player-profile): record verified PPROOT2 reconstruction"
+          git push origin HEAD:refs/heads/agent/player-profile-root-reconstruct-20260803-v6
