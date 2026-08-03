@@ -1,5 +1,6 @@
 Fresh one-file trigger for exact-head PlayerProfile authority cleanup.
-Validation workflow head: 2bcd42135b754fded4937cd5949555c1f34eaab0
+Attempt: 2 — use the already registered suite-restoration workflow ID, now replaced with the cleanup definition.
+Validation workflow head: 2828b2e158c4e1b2b2cad021a413f314a44eae92
 Expected recovery head: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
 Expected #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
 This trigger must never be merged.
