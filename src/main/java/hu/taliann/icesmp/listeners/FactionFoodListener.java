@@ -183,13 +183,14 @@ public final class FactionFoodListener implements Listener {
                 if (!player.isOnline()) {
                     return;
                 }
-                final FactionType faction = factionManager.getChosenFaction(
-                        player.getUniqueId()).orElse(null);
-                if (faction != FactionType.BLUE && faction != FactionType.RED) {
-                    return;
-                }
                 final FileConfiguration callbackConfig =
                         configManager.snapshot().configuration();
+                final FactionType faction = factionManager.getChosenFaction(
+                        player.getUniqueId()).orElse(null);
+                if (!FactionFoodPolicy.mayRunDutyCallback(
+                        getBoolean(callbackConfig, "factions.food-duty.enabled", true), faction)) {
+                    return;
+                }
                 final long graceMillis = Math.max(1L, getLong(callbackConfig,
                         "factions.food-duty.grace-hours", 12L)) * 3_600_000L;
                 final int debuffSeconds = Math.max(1, getInt(callbackConfig,
