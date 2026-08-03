@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 13 — port the recovered class/spec application regression suite from the removed ClassProfile aggregate to ClassSpecSection and ClassSpecSectionMutationStore, then run the full Java 21 build and PlayerProfile guards.
+Attempt: 14 — port the recovered lifecycle suite to ClassSpecSectionLifecycleService and replace the legacy ICS2 domain suite with ClassSpecSection-only invariants, then run the full Java 21 build and PlayerProfile guards.
