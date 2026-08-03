@@ -1,0 +1,160 @@
+name: PlayerProfile restore remaining platform suites (temporary)
+
+on:
+  pull_request:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths:
+      - .github/player-profile-root-v6-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  VALIDATION_BRANCH: agent/player-profile-root-reconstruct-20260803-v6
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+  EXPECTED_RECOVERY_HEAD: 2f56830489ffafbe337f3b637e91d4fb9f37df34
+  TARGET_BRANCH: rework/class-spec-profile-v2
+  EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out authenticated validation history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VALIDATION_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Extract reviewed regression sources from validation workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/player-profile-suites
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import textwrap
+
+          source = Path('.github/workflows/player-profile-root-v6-validate.yml').read_text(encoding='utf-8')
+          destinations = {
+              'DOMAIN': 'PlayerProfileDomainRegressionSuite.java',
+              'YAML': 'PlayerProfileYamlRegressionSuite.java',
+              'TX': 'PlayerProfileTransactionRegressionSuite.java',
+          }
+          for variable, filename in destinations.items():
+              pattern = re.compile(
+                  rf'^\s*cat > "\${variable}" <<\'JAVA\'\n(.*?)^\s*JAVA\s*$',
+                  re.MULTILINE | re.DOTALL,
+              )
+              match = pattern.search(source)
+              if match is None:
+                  raise SystemExit(f'missing reviewed heredoc for {variable}')
+              java = textwrap.dedent(match.group(1)).rstrip() + '\n'
+              if not java.startswith('package hu.taliann.icesmp.playerprofile.'):
+                  raise SystemExit(f'invalid package in {variable}')
+              if 'ClassProfile' in java or 'ClassProfileCodec' in java or 'ICS2' in java:
+                  raise SystemExit(f'legacy symbol leaked into {variable}')
+              path = Path('/tmp/player-profile-suites') / filename
+              path.write_text(java, encoding='utf-8', newline='\n')
+              print(f'{variable}: {len(java.encode("utf-8"))} bytes -> {path}')
+          PY
+
+      - name: Check out exact recovered branch and restore suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            "+refs/heads/${RECOVERY_BRANCH}:refs/remotes/origin/${RECOVERY_BRANCH}" \
+            "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+          test "$(git rev-parse refs/remotes/origin/${RECOVERY_BRANCH})" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
+          git switch --detach "$EXPECTED_RECOVERY_HEAD"
+          git switch -c local-suite-restore
+          git reset --hard "$EXPECTED_RECOVERY_HEAD"
+          git clean -fdx
+
+          DOMAIN=src/regression/java/hu/taliann/icesmp/playerprofile/domain/PlayerProfileDomainRegressionSuite.java
+          YAML=src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java
+          TX=src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java
+          API=src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
+          test ! -e "$DOMAIN"
+          test ! -e "$YAML"
+          test ! -e "$TX"
+          test -s "$API"
+
+          mkdir -p "$(dirname "$DOMAIN")" "$(dirname "$YAML")" "$(dirname "$TX")"
+          cp /tmp/player-profile-suites/PlayerProfileDomainRegressionSuite.java "$DOMAIN"
+          cp /tmp/player-profile-suites/PlayerProfileYamlRegressionSuite.java "$YAML"
+          cp /tmp/player-profile-suites/PlayerProfileTransactionRegressionSuite.java "$TX"
+
+          test "$(grep -F 'dto.profileHealth().equals("QUARANTINED")' "$API" | wc -l)" -eq 1
+          perl -pi -e 's/dto\.profileHealth\(\)\.equals\("QUARANTINED"\)/dto.profileHealth().equals("PARTIAL")/' "$API"
+          grep -F 'dto.profileHealth().equals("PARTIAL")' "$API"
+          ! grep -F 'dto.profileHealth().equals("QUARANTINED")' "$API"
+
+          for file in "$DOMAIN" "$YAML" "$TX" "$API"; do
+            test -s "$file"
+          done
+          ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec|ICS2' "$DOMAIN" "$YAML" "$TX"
+          git diff --check
+          git status --short
+          git diff --stat
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Java 21 clean build and all PlayerProfile regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew clean build --no-daemon --stacktrace | tee /tmp/player-profile-root-build.log
+
+      - name: Verify regression markers and repository gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "PlayerProfile domain regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "PlayerProfile YAML regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "PlayerProfile transaction regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "PlayerProfile API regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "ClassSpecSection lifecycle regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "ClassSpecSection v2 domain regression tests passed." /tmp/player-profile-root-build.log
+          python3 scripts/check_player_profile_authority.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_player_profile_openapi.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_markdown_links.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+          git diff --check "$EXPECTED_TARGET_HEAD...HEAD"
+
+      - name: Commit and fast-forward push only after every gate succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/regression/java/hu/taliann/icesmp/playerprofile/domain/PlayerProfileDomainRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
+          git diff --cached --check
+          git commit -m "test(player-profile): restore domain persistence and transaction regressions"
+          REMOTE_RECOVERY_HEAD=$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')
+          REMOTE_TARGET_HEAD=$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')
+          test "$REMOTE_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
+          test "$REMOTE_TARGET_HEAD" = "$EXPECTED_TARGET_HEAD"
+          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
