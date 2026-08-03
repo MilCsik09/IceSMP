@@ -1,0 +1,102 @@
+name: PlayerProfile root payload report (temporary)
+
+on:
+  push:
+    branches:
+      - agent/player-profile-root-publisher-20260803-v3
+    paths-ignore:
+      - .github/player-profile-root-v3/validation-result.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out payload branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify payload chunks and complete patch
+        shell: bash
+        run: |
+          set -uo pipefail
+          ROOT='.github/player-profile-root-v3'
+          WORK='/tmp/player-profile-root-v3'
+          rm -rf "$WORK"
+          mkdir -p "$WORK/chunks"
+          : > "$WORK/problems.txt"
+
+          while read -r index expected_size expected_sha; do
+            [[ "$index" =~ ^[0-9]{2}$ ]] || continue
+            mapfile -t parts < <(find "$ROOT" -maxdepth 1 -type f -name "${index}*.b64" -print | sort)
+            if (( ${#parts[@]} == 0 )); then
+              printf '%s\n' "${index}:missing" >> "$WORK/problems.txt"
+              continue
+            fi
+            cat "${parts[@]}" | tr -d '[:space:]' > "$WORK/chunks/${index}.b64"
+            if ! base64 --decode "$WORK/chunks/${index}.b64" > "$WORK/chunks/${index}.bin"; then
+              printf '%s\n' "${index}:invalid-base64" >> "$WORK/problems.txt"
+              continue
+            fi
+            actual_size=$(stat -c '%s' "$WORK/chunks/${index}.bin")
+            actual_sha=$(sha256sum "$WORK/chunks/${index}.bin" | awk '{print $1}')
+            if [[ "$actual_size" != "$expected_size" || "$actual_sha" != "$expected_sha" ]]; then
+              printf '%s\n' "${index}:size=${actual_size}/${expected_size},sha=${actual_sha}/${expected_sha}" >> "$WORK/problems.txt"
+            fi
+          done < "$ROOT/manifest.txt"
+
+          expected_compressed=$(awk '$1 == "compressed-sha256" {print $2}' "$ROOT/manifest.txt")
+          expected_patch=$(awk '$1 == "patch-sha256" {print $2}' "$ROOT/manifest.txt")
+          if [[ ! -s "$WORK/problems.txt" ]]; then
+            for index in $(seq -w 0 20); do cat "$WORK/chunks/${index}.bin"; done > "$WORK/root.patch.xz"
+            actual_compressed=$(sha256sum "$WORK/root.patch.xz" | awk '{print $1}')
+            if [[ "$actual_compressed" != "$expected_compressed" ]]; then
+              printf '%s\n' "whole-xz:sha=${actual_compressed}/${expected_compressed}" >> "$WORK/problems.txt"
+            elif ! xz --test "$WORK/root.patch.xz"; then
+              printf '%s\n' 'whole-xz:invalid-stream' >> "$WORK/problems.txt"
+            else
+              xz --decompress --stdout "$WORK/root.patch.xz" > "$WORK/root.patch"
+              actual_patch=$(sha256sum "$WORK/root.patch" | awk '{print $1}')
+              if [[ "$actual_patch" != "$expected_patch" ]]; then
+                printf '%s\n' "patch:sha=${actual_patch}/${expected_patch}" >> "$WORK/problems.txt"
+              fi
+            fi
+          fi
+
+          if [[ -s "$WORK/problems.txt" ]]; then status=FAIL; else status=PASS; fi
+          {
+            printf 'run-id=%s\n' "$GITHUB_RUN_ID"
+            printf 'workflow-sha=%s\n' "$GITHUB_SHA"
+            printf 'status=%s\n' "$status"
+            printf 'compressed-sha256=%s\n' "$expected_compressed"
+            printf 'patch-sha256=%s\n' "$expected_patch"
+            if [[ -s "$WORK/problems.txt" ]]; then
+              printf 'problems-begin\n'
+              cat "$WORK/problems.txt"
+              printf 'problems-end\n'
+            fi
+          } > "$WORK/result.txt"
+          cat "$WORK/result.txt"
+
+      - name: Publish result file and issue comment
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          path='.github/player-profile-root-v3/validation-result.txt'
+          encoded=$(base64 -w0 /tmp/player-profile-root-v3/result.txt)
+          sha=$(gh api "repos/${GITHUB_REPOSITORY}/contents/${path}?ref=agent/player-profile-root-publisher-20260803-v3" --jq .sha 2>/dev/null || true)
+          args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/${path}" -f message='chore(player-profile): publish payload validation result' -f content="$encoded" -f branch='agent/player-profile-root-publisher-20260803-v3')
+          if [[ -n "$sha" ]]; then args+=(-f sha="$sha"); fi
+          gh api "${args[@]}"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/79/comments" -f body="$(printf 'PPROOT3 validator run `%s`:\n```text\n%s\n```' "$GITHUB_RUN_ID" "$(cat /tmp/player-profile-root-v3/result.txt)")"
