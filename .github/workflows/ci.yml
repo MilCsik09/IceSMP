@@ -121,5 +121,8 @@ jobs:
       - name: Run faction regressions explicitly
         run: ./gradlew factionPassiveRegressionTest factionPassiveHardeningRegressionTest factionTreasuryRegressionTest --console=plain --no-daemon --stacktrace
 
+      - name: Run full repository consistency
+        run: python3 scripts/check_consistency.py
+
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
