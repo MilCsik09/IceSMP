@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 12 — replace the two obsolete resetClassSpecSectionV2 command call-sites with the canonical Profile-backed resetClassSpecSection API, fast-forward the recovered v4 branch, then run Java 21 build and PlayerProfile guards.
+Attempt: 13 — port the recovered class/spec application regression suite from the removed ClassProfile aggregate to ClassSpecSection and ClassSpecSectionMutationStore, then run the full Java 21 build and PlayerProfile guards.
