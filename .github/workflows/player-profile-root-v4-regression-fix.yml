@@ -1,0 +1,147 @@
+name: PlayerProfile recovered root v4 regression migration (temporary)
+
+on:
+  pull_request:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths:
+      - .github/player-profile-root-v6-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+  EXPECTED_RECOVERY_HEAD: d19d0c3ada1bbaf55a181f89b51dc0e6e4dee8dc
+  TARGET_BRANCH: rework/class-spec-profile-v2
+  EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
+  SUITE: src/regression/java/hu/taliann/icesmp/classspec/application/ClassSpecApplicationRegressionSuite.java
+
+jobs:
+  migrate-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Check out authenticated recovered branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RECOVERY_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify exact remote heads
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')" = "$EXPECTED_RECOVERY_HEAD"
+          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
+          git status --short
+
+      - name: Migrate the application regression suite to ClassSpecSection ports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$SUITE" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          path = Path(sys.argv[1])
+          text = path.read_text(encoding="utf-8")
+          original = text
+
+          domain_import = "import hu.taliann.icesmp.classspec.domain.*;\n"
+          section_import = "import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;\n"
+          if text.count(domain_import) != 1:
+              raise SystemExit("unexpected classspec domain import count")
+          if section_import not in text:
+              text = text.replace(domain_import, domain_import + section_import)
+
+          expected = {
+              "ClassProfile.empty(PLAYER,0)": 2,
+              "ClassProfile.builder(PLAYER)": 2,
+              "ClassProfileMutationStore": 1,
+          }
+          for needle, count in expected.items():
+              actual = text.count(needle)
+              if actual != count:
+                  raise SystemExit(f"expected {count} occurrences of {needle!r}, found {actual}")
+
+          text = text.replace("ClassProfile.empty(PLAYER,0)", "ClassSpecSection.empty(0)")
+          text = text.replace("ClassProfile.builder(PLAYER)", "ClassSpecSection.builder()")
+          text = text.replace("ClassProfileMutationStore", "ClassSpecSectionMutationStore")
+          text = re.sub(r"\bClassProfile\b", "ClassSpecSection", text)
+
+          if text == original:
+              raise SystemExit("suite migration produced no change")
+          if re.search(r"\bClassProfile(?:MutationStore)?\b", text):
+              raise SystemExit("legacy ClassProfile type remains in migrated suite")
+          if text.count(section_import) != 1:
+              raise SystemExit("ClassSpecSection import must occur exactly once")
+          if "implements ClassSpecSectionMutationStore" not in text:
+              raise SystemExit("fake store was not migrated to the section mutation port")
+          if text.count("ClassSpecSection.empty(0)") != 2:
+              raise SystemExit("greenfield empty-section constructors were not migrated exactly")
+          if text.count("ClassSpecSection.builder()") != 2:
+              raise SystemExit("section builders were not migrated exactly")
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+          git diff --check
+          ! grep -nE '\bClassProfile(MutationStore)?\b' "$SUITE"
+          grep -n 'ClassSpecSectionMutationStore' "$SUITE"
+          grep -n 'profileCommitted(UUID p,UUID t,ClassSpecSection a,ClassSpecSection b' "$SUITE"
+          git status --short
+          git diff --stat
+          git diff -- "$SUITE"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Java 21 clean build
+        shell: bash
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Full Gradle check
+        shell: bash
+        run: ./gradlew check --no-daemon --stacktrace
+
+      - name: PlayerProfile authority and OpenAPI gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_player_profile_authority.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_player_profile_openapi.py
+
+      - name: Audit and fast-forward push validated regression migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          test -z "$(git status --short --untracked-files=all | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$' || true)"
+          test "$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$EXPECTED_TARGET_HEAD"
+          git status --short
+          git diff --stat
+          git diff --name-status
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$SUITE"
+          git diff --cached --check
+          test "$(git diff --cached --name-only | wc -l)" = "1"
+          test "$(git diff --cached --name-only)" = "$SUITE"
+          git commit -m "test(player-profile): migrate class-spec application regressions"
+          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
