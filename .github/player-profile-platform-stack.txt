@@ -1,0 +1,4 @@
+stack-index=1
+base-pr=75
+base-branch=rework/class-spec-profile-v2
+head-branch=profile/player-profile-platform
