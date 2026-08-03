@@ -1,0 +1,109 @@
+name: PlayerProfile recovered root v4 fix (temporary)
+
+on:
+  pull_request:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths:
+      - .github/player-profile-root-v6-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+  EXPECTED_RECOVERY_HEAD: bf3e40ca5cc6b46f9b5af5cc36f374f63347e7ef
+
+jobs:
+  fix-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Check out authenticated recovered branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RECOVERY_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify exact recovery head
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')" = "$EXPECTED_RECOVERY_HEAD"
+          git status --short
+
+      - name: Route reset call-sites through the authoritative section API
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          paths = [
+              Path("src/main/java/hu/taliann/icesmp/commands/SpecCommand.java"),
+              Path("src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java"),
+          ]
+          old = "resetClassSpecSectionV2("
+          new = "resetClassSpecSection("
+          for path in paths:
+              text = path.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one {old!r}, found {count}")
+              path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+          ! grep -R --line-number --fixed-strings 'resetClassSpecSectionV2(' \
+            src/main/java/hu/taliann/icesmp
+          git diff --check
+          git diff -- \
+            src/main/java/hu/taliann/icesmp/commands/SpecCommand.java \
+            src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Java 21 clean build
+        shell: bash
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Full Gradle check
+        shell: bash
+        run: ./gradlew check --no-daemon --stacktrace
+
+      - name: PlayerProfile authority and OpenAPI gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_player_profile_authority.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_player_profile_openapi.py
+
+      - name: Audit and fast-forward push validated fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          test -z "$(git status --short --untracked-files=all | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$' || true)"
+          test "$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')" = "$EXPECTED_RECOVERY_HEAD"
+          git status --short
+          git diff --stat
+          git diff --name-status
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/main/java/hu/taliann/icesmp/commands/SpecCommand.java \
+            src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java
+          git diff --cached --check
+          git commit -m "fix(player-profile): route resets through section gateway"
+          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
