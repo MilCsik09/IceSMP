@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 16 — rerun the recovered PlayerProfile API suite and complete Java 21 build with ancestry-based multi-commit tree validation.
+Attempt: 17 — correct aggregate health to PARTIAL, run the targeted API suite, commit only after success, then continue the complete Java 21 build.
