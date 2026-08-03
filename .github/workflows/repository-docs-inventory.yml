@@ -291,6 +291,7 @@ jobs:
 
       - name: Upload inventory artifact
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: repository-docs-inventory-${{ github.run_id }}-${{ github.run_attempt }}
