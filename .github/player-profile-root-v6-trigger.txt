@@ -1,0 +1,1 @@
+Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
