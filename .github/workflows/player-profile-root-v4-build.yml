@@ -13,6 +13,7 @@ permissions:
 
 env:
   RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+  BASE_SHA: f25e7e600f418724dd2341e39387a0fa5c0625de
 
 jobs:
   build:
@@ -41,15 +42,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git merge-base --is-ancestor f25e7e600f418724dd2341e39387a0fa5c0625de HEAD
-          test "$(git rev-list --count f25e7e600f418724dd2341e39387a0fa5c0625de..HEAD)" = "1"
-          git diff --check f25e7e600f418724dd2341e39387a0fa5c0625de..HEAD
+          git merge-base --is-ancestor "$BASE_SHA" HEAD
+          test "$(git merge-base "$BASE_SHA" HEAD)" = "$BASE_SHA"
+          test "$(git rev-list --count "$BASE_SHA"..HEAD)" -ge 1
+          git diff --check "$BASE_SHA"..HEAD
           if git ls-tree -r --name-only HEAD | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$|player-profile-bootstrap'; then
             echo "Temporary payload, workflow bootstrap or build artifact remains in the recovered tree." >&2
             exit 1
           fi
-          git status --short
-          git diff --stat f25e7e600f418724dd2341e39387a0fa5c0625de..HEAD
+          test -z "$(git status --short --untracked-files=all)"
+          echo "Recovered head: $(git rev-parse HEAD)"
+          echo "Commits above base: $(git rev-list --count "$BASE_SHA"..HEAD)"
+          git diff --stat "$BASE_SHA"..HEAD
 
       - name: Java 21 clean build
         shell: bash
