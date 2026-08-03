@@ -6,6 +6,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.factions.FactionTaxDebtLedger;
 import hu.taliann.icesmp.factions.DurableRecoveryPolicy;
 import hu.taliann.icesmp.factions.DurableTransactionProtocol;
+import hu.taliann.icesmp.factions.FactionTaxEvasionPolicy;
 import hu.taliann.icesmp.factions.FactionTaxJournal;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -50,6 +51,8 @@ public final class FactionTreasuryManager implements PersistentStore {
     /** Unpaid tax and evasion strikes, retained per assessing faction/currency. */
     private FactionTaxDebtLedger taxDebts = new FactionTaxDebtLedger();
     private final SinManager sinManager;
+    /** Serializes owner-thread tax-evasion delivery across collection runs. */
+    private final Set<UUID> taxSinDeliveriesInFlight = ConcurrentHashMap.newKeySet();
     private final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
             new java.util.concurrent.atomic.AtomicBoolean(false);
 
@@ -659,19 +662,45 @@ public final class FactionTreasuryManager implements PersistentStore {
                         && !evasionReportedThisRun.contains(citizenId);
                 final TaxCommit commit = commitTaxTransaction(citizenId, origin, assessed,
                         maxArrears, evasionThreshold, mayReportSin);
+                if (commit.reportSin() && online != null
+                        && !evasionReportedThisRun.contains(citizenId)
+                        && taxSinDeliveriesInFlight.add(citizenId)) {
+                    evasionReportedThisRun.add(citizenId);
+                    try {
+                        online.getScheduler().run(plugin, task -> {
+                            try {
+                                if (!online.isOnline()) {
+                                    return;
+                                }
+                                sinManager.addSin(online, 1);
+                                online.sendMessage(messageManager.getMessage(
+                                        "faction-tax-evasion",
+                                        "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!"));
+                                if (!acknowledgeTaxEvasionSin(citizenId, origin)) {
+                                    plugin.getLogger().severe(
+                                            "Tax-evasion sin was applied, but its durable pending strike "
+                                                    + "could not be acknowledged for " + citizenId
+                                                    + " / " + origin + ".");
+                                }
+                            } finally {
+                                taxSinDeliveriesInFlight.remove(citizenId);
+                            }
+                        }, () -> {
+                            taxSinDeliveriesInFlight.remove(citizenId);
+                            plugin.getLogger().fine(
+                                    "Deferred tax-evasion sin because the player scheduler retired: "
+                                            + citizenId);
+                        });
+                    } catch (final RuntimeException scheduleFailure) {
+                        taxSinDeliveriesInFlight.remove(citizenId);
+                        plugin.getLogger().warning(
+                                "Could not schedule tax-evasion sin for " + citizenId
+                                        + "; the durable strike remains pending: "
+                                        + scheduleFailure.getMessage());
+                    }
+                }
                 if (!commit.changed()) {
                     continue;
-                }
-                if (commit.reportSin() && online != null
-                        && evasionReportedThisRun.add(citizenId)) {
-                    online.getScheduler().run(plugin, task -> {
-                        if (online.isOnline()) {
-                            sinManager.addSin(online, 1);
-                            online.sendMessage(messageManager.getMessage(
-                                    "faction-tax-evasion",
-                                    "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!"));
-                        }
-                    }, null);
                 }
                 if (online != null && (commit.paid() > 0.0D
                         || commit.owedAfter() > commit.owedBefore())) {
@@ -725,23 +754,17 @@ public final class FactionTreasuryManager implements PersistentStore {
             final double owedAfter = Math.min(maxArrears,
                     Math.max(0.0D, Math.round((due - paid) * 100.0D) / 100.0D));
 
-            int strikesAfter = before.evasionStrikes();
-            boolean reportSin = false;
-            if (evasionThreshold > 0 && maxArrears > 0.0D
-                    && paid <= 0.0D && owedAfter >= maxArrears) {
-                strikesAfter = Math.min(evasionThreshold, strikesAfter + 1);
-                if (strikesAfter >= evasionThreshold && mayReportSin) {
-                    reportSin = true;
-                    strikesAfter = 0;
-                }
-            } else if (owedAfter <= 0.0D || owedAfter < maxArrears) {
-                strikesAfter = 0;
-            }
+            final FactionTaxEvasionPolicy.Decision evasion =
+                    FactionTaxEvasionPolicy.afterCollection(
+                            before.evasionStrikes(), paid, owedAfter, maxArrears,
+                            evasionThreshold, mayReportSin);
+            final int strikesAfter = evasion.strikesAfter();
+            final boolean reportSin = evasion.reportSin();
 
             final FactionTaxJournal.DomainState after = new FactionTaxJournal.DomainState(
                     before.treasuryBalance() + paid, owedAfter, strikesAfter);
             if (before.equals(after) && wallet == null) {
-                return new TaxCommit(false, 0.0D, before.debtAmount(), owedAfter, false);
+                return new TaxCommit(false, 0.0D, before.debtAmount(), owedAfter, reportSin);
             }
 
             final FactionTaxJournal.Entry[] journalEntry = new FactionTaxJournal.Entry[1];
@@ -789,6 +812,22 @@ public final class FactionTreasuryManager implements PersistentStore {
                         transactionResult.cleanupFailure());
             }
             return new TaxCommit(true, paid, before.debtAmount(), owedAfter, reportSin);
+        }
+    }
+
+    private boolean acknowledgeTaxEvasionSin(final UUID playerId, final FactionType origin) {
+        synchronized (stateLock) {
+            final int previousStrikes = taxDebts.getEvasionStrikes(playerId, origin);
+            if (previousStrikes <= 0) {
+                return true;
+            }
+            final double previousAmount = taxDebts.getArrears(playerId, origin);
+            taxDebts.put(playerId, origin, previousAmount, 0);
+            if (writeStateLocked()) {
+                return true;
+            }
+            taxDebts.put(playerId, origin, previousAmount, previousStrikes);
+            return false;
         }
     }
 
