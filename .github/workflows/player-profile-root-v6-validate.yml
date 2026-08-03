@@ -1,11 +1,6 @@
-name: PlayerProfile root PPROOT2 validation (temporary)
+name: PlayerProfile root verified-prefix recovery (temporary)
 
 on:
-  push:
-    branches:
-      - agent/player-profile-root-reconstruct-20260803-v6
-    paths-ignore:
-      - .github/player-profile-root-v6/**
   pull_request:
     branches:
       - agent/player-profile-root-reconstruct-20260803-v6
@@ -20,11 +15,14 @@ permissions:
 env:
   PAYLOAD_ISSUE: "79"
   VALIDATION_BRANCH: agent/player-profile-root-reconstruct-20260803-v6
+  TARGET_BRANCH: rework/class-spec-profile-v2
+  EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v1
 
 jobs:
-  validate:
+  recover:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - name: Check out authenticated Git history
         uses: actions/checkout@v4
@@ -33,50 +31,238 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Reconstruct and validate exact PPROOT2 payload
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Recover complete files from verified payload prefix
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          ROOT=/tmp/pproot2-validation
+          ROOT=/tmp/player-profile-root-prefix
+          EXTRACTED="$ROOT/extracted"
           rm -rf "$ROOT"
-          mkdir -p "$ROOT"
+          mkdir -p "$EXTRACTED"
 
           gh api "repos/${GITHUB_REPOSITORY}/issues/${PAYLOAD_ISSUE}/comments?per_page=100" > "$ROOT/comments.json"
-          python3 .github/player-profile-root-v6/validate_payload.py "$ROOT/comments.json" "$ROOT"
+          python3 .github/player-profile-root-v6/recover_prefix.py "$ROOT/comments.json" "$ROOT"
 
-          xz --test "$ROOT/root.patch.xz"
-          xz --decompress --stdout "$ROOT/root.patch.xz" > "$ROOT/root.patch"
-          file "$ROOT/root.patch" | tee "$ROOT/payload-type.txt"
+          set +e
+          xz --decompress --stdout "$ROOT/root-prefix.xz" > "$ROOT/partial.tar" 2> "$ROOT/xz-error.txt"
+          XZ_RC=$?
+          set -e
+          test -s "$ROOT/partial.tar"
+          echo "Expected truncated XZ exit code: $XZ_RC"
+          cat "$ROOT/xz-error.txt" || true
 
-          python3 - "$ROOT" <<'PY'
-          import hashlib
+          python3 - "$ROOT/partial.tar" "$EXTRACTED" "$ROOT/extraction-result.json" <<'PY'
+          from __future__ import annotations
+
+          import json
+          import pathlib
+          import tarfile
+          import sys
+
+          archive = pathlib.Path(sys.argv[1])
+          output = pathlib.Path(sys.argv[2])
+          report_path = pathlib.Path(sys.argv[3])
+          output.mkdir(parents=True, exist_ok=True)
+          complete: list[dict[str, object]] = []
+          truncated: dict[str, object] | None = None
+
+          def safe_relative(name: str) -> pathlib.PurePosixPath:
+              path = pathlib.PurePosixPath(name)
+              if path.is_absolute() or ".." in path.parts or not path.parts:
+                  raise RuntimeError(f"unsafe tar path: {name!r}")
+              return path
+
+          try:
+              with tarfile.open(archive, mode="r:") as payload:
+                  for member in payload:
+                      if not member.isfile():
+                          continue
+                      relative = safe_relative(member.name)
+                      try:
+                          stream = payload.extractfile(member)
+                          data = stream.read() if stream is not None else b""
+                      except (tarfile.ReadError, EOFError, OSError) as exc:
+                          truncated = {
+                              "path": member.name,
+                              "declared_size": member.size,
+                              "error": f"{type(exc).__name__}: {exc}",
+                          }
+                          break
+                      if len(data) != member.size:
+                          truncated = {
+                              "path": member.name,
+                              "declared_size": member.size,
+                              "actual_size": len(data),
+                              "error": "short member body",
+                          }
+                          break
+                      target = output.joinpath(*relative.parts)
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(data)
+                      target.chmod(member.mode & 0o777)
+                      complete.append({"path": member.name, "size": member.size})
+          except tarfile.ReadError as exc:
+              if not complete:
+                  raise
+              truncated = truncated or {
+                  "path": None,
+                  "error": f"ReadError after complete members: {exc}",
+              }
+
+          result = {
+              "archive_bytes": archive.stat().st_size,
+              "complete_count": len(complete),
+              "complete": complete,
+              "truncated": truncated,
+          }
+          report_path.write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+
+          test -f "$EXTRACTED/.payload-manifest.json"
+
+          python3 - "$EXTRACTED" "$ROOT/manifest-report.json" <<'PY'
           import json
           import pathlib
           import sys
 
           root = pathlib.Path(sys.argv[1])
-          result = json.loads((root / "result-pre-xz.json").read_text(encoding="utf-8"))
-          patch = (root / "root.patch").read_bytes()
-          result.update({
-              "uncompressed_bytes": len(patch),
-              "uncompressed_sha256": hashlib.sha256(patch).hexdigest(),
-              "first_128_hex": patch[:128].hex(),
-              "first_80_lines": patch[:65536].decode("utf-8", errors="replace").splitlines()[:80],
-              "payload_type": (root / "payload-type.txt").read_text(encoding="utf-8").strip(),
-          })
-          (root / "validation-result.json").write_text(
-              json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          manifest = json.loads((root / ".payload-manifest.json").read_text(encoding="utf-8"))
+          files = [str(item) for item in manifest["files"]]
+          deletes = [str(item) for item in manifest["deletes"]]
+          complete = [path for path in files if (root / path).is_file()]
+          missing = [path for path in files if not (root / path).is_file()]
+          report = {
+              "declared_base": manifest["base"],
+              "declared_file_count": len(files),
+              "complete_file_count": len(complete),
+              "missing_file_count": len(missing),
+              "complete_files": complete,
+              "missing_files": missing,
+              "deletes": deletes,
+          }
+          pathlib.Path(sys.argv[2]).write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
           )
+          print(json.dumps(report, indent=2, sort_keys=True))
           PY
 
-          cat "$ROOT/validation-result.json"
+          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+          ACTUAL_TARGET_HEAD=$(git rev-parse "refs/remotes/origin/${TARGET_BRANCH}")
+          echo "Verified target head: $ACTUAL_TARGET_HEAD"
+          test "$ACTUAL_TARGET_HEAD" = "$EXPECTED_TARGET_HEAD"
 
-          mkdir -p .github/player-profile-root-v6
-          cp "$ROOT/validation-result.json" .github/player-profile-root-v6/validation-result.json
+          if git ls-remote --exit-code --heads origin "refs/heads/${RECOVERY_BRANCH}" >/dev/null 2>&1; then
+            echo "Recovery branch already exists; refusing non-fast-forward or overwrite." >&2
+            exit 1
+          fi
+
+          git switch --detach "$ACTUAL_TARGET_HEAD"
+          git switch -c "$RECOVERY_BRANCH"
+          git reset --hard "$ACTUAL_TARGET_HEAD"
+          git clean -fdx
+
+          python3 - "$EXTRACTED" <<'PY'
+          import json
+          import pathlib
+          import shutil
+          import sys
+
+          recovered = pathlib.Path(sys.argv[1])
+          repository = pathlib.Path.cwd()
+          manifest = json.loads((recovered / ".payload-manifest.json").read_text(encoding="utf-8"))
+          copied = []
+          for item in manifest["files"]:
+              relative = pathlib.PurePosixPath(str(item))
+              source = recovered.joinpath(*relative.parts)
+              if not source.is_file():
+                  continue
+              target = repository.joinpath(*relative.parts)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(source, target)
+              copied.append(str(relative))
+          print(f"Copied {len(copied)} complete manifest files")
+          for path in copied:
+              print(f"COPY {path}")
+          PY
+
+          python3 - "$EXTRACTED/.payload-manifest.json" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          root = pathlib.Path.cwd()
+          for item in manifest["deletes"]:
+              path = root.joinpath(*pathlib.PurePosixPath(str(item)).parts)
+              if path.is_file() or path.is_symlink():
+                  path.unlink()
+                  print(f"DELETE {item}")
+          PY
+
+          rm -rf \
+            .github/player-profile-root-payload \
+            .github/profile-v2-finalize \
+            .github/profile-v2-finalize-v2 \
+            .github/profile-v2-finalize-v3 \
+            .github/profile-v2-finalize-v4 \
+            .github/profile-v2-finalize-v5
+          rm -f \
+            .github/workflows/player-profile-bootstrap-checkout.yml \
+            .github/player-profile-bootstrap-trigger.txt \
+            .github/player-profile-bootstrap-run.txt \
+            .github/workflows/profile-v2-source-export.yml \
+            .github/workflows/profile-v2-payload-check.yml \
+            gradle-build.log \
+            gradle-check.log
+
+          git add -A
+          git diff --cached --check
+
+          echo "=== git status ==="
+          git status --short
+          echo "=== staged summary ==="
+          git diff --cached --stat
+          echo "=== staged name/status ==="
+          git diff --cached --name-status
+
+          if git diff --cached --name-only | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$'; then
+            echo "Temporary payload or build artifact reached the recovery index." >&2
+            exit 1
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/player-profile-root-v6/validation-result.json
-          git commit -m "chore(player-profile): record verified PPROOT2 reconstruction"
-          git push origin HEAD:refs/heads/${VALIDATION_BRANCH}
+          git commit -m "wip(player-profile): recover verified root platform prefix"
+          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
+
+          git status --short
+
+      - name: Build recovered prefix on Java 21
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean build --stacktrace > /tmp/player-profile-recovery-build.log 2>&1
+          BUILD_RC=$?
+          set -e
+          echo "=== Gradle clean build tail ==="
+          tail -n 400 /tmp/player-profile-recovery-build.log
+          if [ "$BUILD_RC" -ne 0 ]; then
+            exit "$BUILD_RC"
+          fi
+          ./gradlew check --stacktrace
