@@ -1,2 +1,2 @@
 Fresh isolated trigger for the exact-head PlayerProfile suite restoration workflow.
-Attempt: 19 — run the idempotent suite restoration against recovery head 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480; verify existing API PARTIAL projection, restore missing domain/YAML/transaction suites, and pass every Java 21 and repository gate before fast-forward push.
+Attempt: 20 — rerun with the domain contract corrected: record-based sections remain record-checked, while ClassSpecSection is verified as a final Bukkit-free immutable class. Pass all Java 21 regressions and repository gates before fast-forward push.
