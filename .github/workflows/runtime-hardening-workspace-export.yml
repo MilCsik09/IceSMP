@@ -41,9 +41,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/scripts/event-stage2.b64.* | tr -d '\n' | base64 -d > /tmp/apply_event_spawn_hardening.py
-          echo 'd4270242c10a02dc757f5451f15d32c5f098d0992cbe30fc7c2e62fb78d1e666  /tmp/apply_event_spawn_hardening.py' | sha256sum -c -
-          python3 /tmp/apply_event_spawn_hardening.py
+          patch_file=.github/scripts/apply_event_spawn_hardening.py
+          cat .github/scripts/event-stage2.b64.* | tr -d '\n' | base64 -d > "$patch_file"
+          echo "d4270242c10a02dc757f5451f15d32c5f098d0992cbe30fc7c2e62fb78d1e666  $patch_file" | sha256sum -c -
+          python3 "$patch_file"
+          rm -f "$patch_file"
           git diff --check
           git diff --stat
           git grep -n 'findSafeNear\|min-horizontal-distance-blocks\|EventSpawnGuardListener' -- src/main src/regression build.gradle.kts
