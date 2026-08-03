@@ -34,7 +34,6 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$EXPECTED_RECOVERY_HEAD"
-          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
 
           PATTERN='ClassProfile|ClassProfileCodec|ClassProfileRepository|ClassProfileLifecycleService|ClassProfileMutationStore|BukkitClassProfileSessionBridge|YamlClassProfileRepository|RepositoryMutationStoreAdapter'
