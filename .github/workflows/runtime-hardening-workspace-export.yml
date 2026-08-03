@@ -1,4 +1,4 @@
-name: Runtime hardening workspace export
+name: Runtime hardening authenticated audit
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  export:
+  audit:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'fix/runtime-hardening-audit-20260803'
     runs-on: ubuntu-latest
     steps:
@@ -21,36 +21,55 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Validate exact base ancestry
+      - name: Validate exact branch checkout
         shell: bash
         run: |
           set -euo pipefail
+          test -d .git
           git cat-file -e 52cc62ac3b463679f28656f82cf1f7d17db486e8^{commit}
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
-          test -d .git
+          git status --short --branch
+          find . -name AGENTS.md -print
 
-      - name: Build portable real-checkout payload
+      - name: Inventory affected runtime surfaces
         shell: bash
         run: |
           set -euo pipefail
-          git bundle create "$RUNNER_TEMP/icesmp.bundle" --all
-          tar \
-            --exclude='./.git' \
-            --exclude='./build' \
-            --exclude='./run' \
-            --exclude='./.gradle' \
-            -I 'zstd -19 -T0' \
-            -cf "$RUNNER_TEMP/icesmp-worktree.tar.zst" .
-          sha256sum "$RUNNER_TEMP/icesmp.bundle" "$RUNNER_TEMP/icesmp-worktree.tar.zst" \
-            > "$RUNNER_TEMP/SHA256SUMS"
+          echo '=== VANISH ==='
+          git grep -n -E 'VanishManager|isVanished|hidePlayer|showPlayer|allow-damage|setInvulnerable' -- src/main src/regression || true
+          echo '=== DARK MOB / DAYLIGHT ==='
+          git grep -n -E 'no-daylight-burn|setShouldBurnInDay|setImmuneToZombification|MobScalingManager|EventSpawnGuard|CreatureSpawnEvent|EntitiesLoadEvent|ChunkLoadEvent' -- src/main src/regression || true
+          echo '=== CLAIM / BORDER ==='
+          git grep -n -E 'pos1|pos2|claim.*particle|Particle\.|spawnParticle|draw.*claim|visuali|boundary|border' -- src/main/java src/regression/java | head -1200 || true
+          echo '=== GUI ICONS ==='
+          git grep -n -E 'ITEM_MODEL|item-model|CustomModelData|custom-model-data|applyItemModel|ConfigMenuGUI|InventoryGUI|MenuGUI' -- src/main/java src/main/resources src/regression/java | head -1800 || true
+          echo '=== EVENT SPAWN ==='
+          git grep -n -E 'EventSpawnGuard|spawn-rules|find.*spawn|random.*location|min.*distance|distanceSquared|world-events|MajorEventGate' -- src/main/java src/main/resources src/regression/java | head -1800 || true
+          echo '=== PROFESSION / RECIPES ==='
+          git grep -n -E 'Profession|profession|Recipe|recipe|ShapedRecipe|ShapelessRecipe|ExactChoice|addRecipe|removeRecipe' -- src/main/java src/main/resources src/regression/java | head -2500 || true
+          echo '=== CONFIG GUI / SCHEMA ==='
+          git grep -n -E 'ConfigMenuGUI|applyOverride|CONFIG_FILES|config path|restart-required|live reload|schema' -- src/main/java src/main/resources src/regression/java | head -1800 || true
 
-      - name: Upload authenticated workspace
-        uses: actions/upload-artifact@v4
-        with:
-          name: runtime-hardening-workspace-${{ github.sha }}
-          path: |
-            ${{ runner.temp }}/icesmp.bundle
-            ${{ runner.temp }}/icesmp-worktree.tar.zst
-            ${{ runner.temp }}/SHA256SUMS
-          retention-days: 1
-          compression-level: 0
+      - name: Print key source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/main/java/hu/taliann/icesmp/managers/VanishManager.java
+            src/main/java/hu/taliann/icesmp/listeners/VanishListener.java
+            src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java
+            src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java
+            src/main/java/hu/taliann/icesmp/managers/ClaimManager.java
+            src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUI.java
+            src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUIListener.java
+            src/main/java/hu/taliann/icesmp/managers/ConfigManager.java
+            src/main/resources/config/world-events.yml
+            src/main/resources/config/general.yml
+            src/main/resources/config/factions.yml
+          )
+          for file in "${files[@]}"; do
+            if [[ -f "$file" ]]; then
+              echo "=== FILE $file ==="
+              sed -n '1,1200p' "$file"
+            fi
+          done
