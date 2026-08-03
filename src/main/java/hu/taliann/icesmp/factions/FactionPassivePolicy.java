@@ -186,9 +186,13 @@ public final class FactionPassivePolicy {
                     && !settings.dark().ambientUndead().breakOnDamage()) {
                 return TargetDecision.CANCEL_DARK_AMBIENT;
             }
+            final FactionPassiveSettings.Whisper whisper = settings.whisper();
             if (membership.isEligibleForFactionBenefits() && !membership.isMember(FactionType.DARK)
-                    && context.whisperer() && context.undead() && settings.whisper().enabled()
-                    && !settings.whisper().breakOnDamage()) {
+                    && context.whisperer() && context.undead() && whisper.enabled()
+                    && !whisper.breakOnDamage()
+                    && (!whisper.nightOnly() || context.night())
+                    && (!context.bloodMoon() || !whisper.disabledDuringBloodMoon())
+                    && randomSample < whisper.targetCancelChance()) {
                 return TargetDecision.CANCEL_WHISPER_WILD;
             }
             return TargetDecision.ALLOW;
