@@ -2,7 +2,7 @@ package hu.taliann.icesmp.factions;
 
 import hu.taliann.icesmp.data.FactionType;
 
-/** Pure live-membership gate for every signature-food gameplay effect. */
+/** Pure live-membership gate for faction-food gameplay effects. */
 public final class FactionFoodPolicy {
 
     private FactionFoodPolicy() {
@@ -31,5 +31,12 @@ public final class FactionFoodPolicy {
                                        final boolean trustedFoodMarker) {
         final FactionType required = requiredFaction(signature, trustedFoodMarker);
         return required != null && currentFaction == required;
+    }
+
+    /** Revalidates a queued food-duty callback against the live config and membership. */
+    public static boolean mayRunDutyCallback(final boolean enabled,
+                                             final FactionType currentFaction) {
+        return enabled && (currentFaction == FactionType.BLUE
+                || currentFaction == FactionType.RED);
     }
 }
