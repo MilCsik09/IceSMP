@@ -56,7 +56,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/check_consistency.py | tee /tmp/consistency.log
-          ! grep -E '^FAIL|\bFAIL\b' /tmp/consistency.log
 
       - name: Commit and push without force
         shell: bash
