@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.factions;
 
 import hu.taliann.icesmp.data.FactionType;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 
 import java.util.Set;
 import java.util.UUID;
@@ -17,6 +18,7 @@ public final class FactionPassiveHardeningRegressionSuite {
         darkRetaliationIsPlayerMobScopedAndExpires();
         bloodMoonOverridesAmbientTruce();
         whisperRetaliationPreservesWildTruceConstraints();
+        vanillaRetaliationReasonsReachUnbreakableTruces();
         signatureFoodUsesLiveMembership();
         foodDutyCallbackUsesLiveConfigAndMembership();
         foodDurationsFailClosedOnOverflow();
@@ -110,6 +112,58 @@ public final class FactionPassiveHardeningRegressionSuite {
         check(policy.resolveTarget(FactionMembership.guest(), night, configured, 0.0D)
                         == FactionPassivePolicy.TargetDecision.ALLOW,
                 "guest received a Whisper faction benefit");
+    }
+
+    private static void vanillaRetaliationReasonsReachUnbreakableTruces() {
+        check(FactionMobContextResolver.isRetaliating(
+                        false, TargetReason.TARGET_ATTACKED_ENTITY)
+                        && FactionMobContextResolver.isRetaliating(
+                        false, TargetReason.TARGET_ATTACKED_NEARBY_ENTITY)
+                        && FactionMobContextResolver.isRetaliating(
+                        false, TargetReason.REINFORCEMENT_TARGET),
+                "vanilla retaliation reason was discarded before the truce policy");
+        check(!FactionMobContextResolver.isRetaliating(false, TargetReason.CLOSEST_PLAYER)
+                        && FactionMobContextResolver.isRetaliating(true, TargetReason.CLOSEST_PLAYER),
+                "spontaneous targeting and timed retaliation were conflated");
+
+        final FactionPassiveSettings base = settings();
+        final FactionPassiveSettings unbreakableNeutral = new FactionPassiveSettings(
+                base.enabled(), base.red(), base.blue(),
+                new FactionPassiveSettings.Neutral(true, 0.50D, true, true,
+                        Set.of("PIGLIN"), false, 60_000L, true, true),
+                base.dark(), base.whisper());
+        final FactionPassivePolicy.TargetContext neutralRetaliation =
+                new FactionPassivePolicy.TargetContext(
+                        false, Set.of(), FactionMobContextResolver.isRetaliating(
+                        false, TargetReason.TARGET_ATTACKED_ENTITY), false, true,
+                        false, false, true, false, false, false, false, false);
+        check(new FactionPassivePolicy().resolveTarget(
+                        FactionMembership.citizen(FactionType.NEUTRAL), neutralRetaliation,
+                        unbreakableNeutral, 0.0D)
+                        == FactionPassivePolicy.TargetDecision.CANCEL_NEUTRAL_TRUCE,
+                "NEUTRAL break-on-damage=false was bypassed by the Bukkit adapter");
+
+        final FactionPassiveSettings.Dark dark = base.dark();
+        final FactionPassiveSettings unbreakableDark = new FactionPassiveSettings(
+                base.enabled(), base.red(), base.blue(), base.neutral(),
+                new FactionPassiveSettings.Dark(
+                        dark.enabled(), dark.witherDamageEnabled(), dark.witherDamageMultiplier(),
+                        dark.witherDurationEnabled(), dark.witherDurationMultiplier(),
+                        new FactionPassiveSettings.AmbientUndead(
+                                true, false, 60_000L, 16.0D, true),
+                        dark.wildUndead(), dark.exclusions(),
+                        dark.combatMarkerKeys(), dark.questMarkerKeys()),
+                base.whisper());
+        final FactionPassivePolicy.TargetContext darkRetaliation =
+                new FactionPassivePolicy.TargetContext(
+                        false, Set.of(), FactionMobContextResolver.isRetaliating(
+                        false, TargetReason.TARGET_ATTACKED_ENTITY), false, true,
+                        true, true, false, false, false, false, false, false);
+        check(new FactionPassivePolicy().resolveTarget(
+                        FactionMembership.citizen(FactionType.DARK), darkRetaliation,
+                        unbreakableDark, 0.0D)
+                        == FactionPassivePolicy.TargetDecision.CANCEL_DARK_AMBIENT,
+                "DARK ambient break-on-damage=false was bypassed by the Bukkit adapter");
     }
 
     private static void combustProvenanceNeverShortensExistingFire() {
