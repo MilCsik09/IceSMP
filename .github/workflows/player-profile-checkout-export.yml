@@ -11,6 +11,9 @@ on:
 permissions:
   contents: write
 
+env:
+  EXPORT_REVISION: '3'
+
 jobs:
   export:
     runs-on: ubuntu-latest
