@@ -16,6 +16,7 @@ public final class FactionPassiveHardeningRegressionSuite {
         targetCancellationClearsTheRequestedTarget();
         darkRetaliationIsPlayerMobScopedAndExpires();
         bloodMoonOverridesAmbientTruce();
+        whisperRetaliationPreservesWildTruceConstraints();
         signatureFoodUsesLiveMembership();
         combustProvenanceNeverShortensExistingFire();
         System.out.println("Faction passive hardening regression suite passed.");
@@ -80,6 +81,35 @@ public final class FactionPassiveHardeningRegressionSuite {
                 "provoked ambient undead was pacified during Blood Moon");
     }
 
+    private static void whisperRetaliationPreservesWildTruceConstraints() {
+        final FactionPassivePolicy policy = new FactionPassivePolicy();
+        final FactionMembership red = FactionMembership.citizen(FactionType.RED);
+        final FactionPassiveSettings base = settings();
+        final FactionPassiveSettings configured = new FactionPassiveSettings(
+                base.enabled(), base.red(), base.blue(), base.neutral(), base.dark(),
+                new FactionPassiveSettings.Whisper(true, true, 0.35D,
+                        true, false, 60_000L, 0.02D, 16.0D, 1.0D));
+        final FactionPassivePolicy.TargetContext night = whisperContext(false, true);
+        final FactionPassivePolicy.TargetContext day = whisperContext(false, false);
+        final FactionPassivePolicy.TargetContext bloodMoon = whisperContext(true, true);
+
+        check(policy.resolveTarget(red, night, configured, 0.34D)
+                        == FactionPassivePolicy.TargetDecision.CANCEL_WHISPER_WILD,
+                "non-breaking Whisper retaliation lost its configured night truce");
+        check(policy.resolveTarget(red, night, configured, 0.35D)
+                        == FactionPassivePolicy.TargetDecision.ALLOW,
+                "provocation upgraded Whisper target cancellation to a guaranteed truce");
+        check(policy.resolveTarget(red, day, configured, 0.0D)
+                        == FactionPassivePolicy.TargetDecision.ALLOW,
+                "provocation bypassed Whisper night-only precedence");
+        check(policy.resolveTarget(red, bloodMoon, configured, 0.0D)
+                        == FactionPassivePolicy.TargetDecision.ALLOW,
+                "provocation bypassed the Whisper Blood Moon override");
+        check(policy.resolveTarget(FactionMembership.guest(), night, configured, 0.0D)
+                        == FactionPassivePolicy.TargetDecision.ALLOW,
+                "guest received a Whisper faction benefit");
+    }
+
     private static void combustProvenanceNeverShortensExistingFire() {
         check(FactionPassiveService.effectiveCombustDurationMillis(1.0F, 100) == 5_000L,
                 "short combust event truncated existing fire provenance");
@@ -111,6 +141,14 @@ public final class FactionPassiveHardeningRegressionSuite {
                 false, Set.of(), provoked, bloodMoon, true,
                 true, true, false, false, false,
                 false, true, false);
+    }
+
+    private static FactionPassivePolicy.TargetContext whisperContext(final boolean bloodMoon,
+                                                                     final boolean night) {
+        return new FactionPassivePolicy.TargetContext(
+                false, Set.of(), true, bloodMoon, night,
+                true, false, false, false, false,
+                false, false, true);
     }
 
     private static FactionPassiveSettings settings() {
