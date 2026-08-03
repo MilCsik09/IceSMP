@@ -18,6 +18,7 @@ public final class FactionPassiveHardeningRegressionSuite {
         bloodMoonOverridesAmbientTruce();
         whisperRetaliationPreservesWildTruceConstraints();
         signatureFoodUsesLiveMembership();
+        foodDutyCallbackUsesLiveConfigAndMembership();
         combustProvenanceNeverShortensExistingFire();
         System.out.println("Faction passive hardening regression suite passed.");
     }
@@ -133,6 +134,18 @@ public final class FactionPassiveHardeningRegressionSuite {
                         && FactionFoodPolicy.requiredFaction(
                         "fonixtojas_rantotta", false) == null,
                 "forged/partial metadata was accepted");
+    }
+
+    private static void foodDutyCallbackUsesLiveConfigAndMembership() {
+        check(FactionFoodPolicy.mayRunDutyCallback(true, FactionType.BLUE)
+                        && FactionFoodPolicy.mayRunDutyCallback(true, FactionType.RED),
+                "eligible citizen food-duty callback was rejected");
+        check(!FactionFoodPolicy.mayRunDutyCallback(false, FactionType.BLUE),
+                "queued food-duty callback ignored a live reload disable");
+        check(!FactionFoodPolicy.mayRunDutyCallback(true, null)
+                        && !FactionFoodPolicy.mayRunDutyCallback(true, FactionType.NEUTRAL)
+                        && !FactionFoodPolicy.mayRunDutyCallback(true, FactionType.DARK),
+                "guest or non-duty faction received a food-duty callback");
     }
 
     private static FactionPassivePolicy.TargetContext context(final boolean bloodMoon,
