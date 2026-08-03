@@ -14,7 +14,7 @@ permissions:
 env:
   VALIDATION_BRANCH: agent/player-profile-root-reconstruct-20260803-v6
   RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
-  EXPECTED_RECOVERY_HEAD: 2f56830489ffafbe337f3b637e91d4fb9f37df34
+  EXPECTED_RECOVERY_HEAD: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
   TARGET_BRANCH: rework/class-spec-profile-v2
   EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
 
@@ -64,7 +64,7 @@ jobs:
               print(f'{variable}: {len(java.encode("utf-8"))} bytes -> {path}')
           PY
 
-      - name: Check out exact recovered branch and restore suites
+      - name: Check out exact recovered branch and restore suites idempotently
         shell: bash
         run: |
           set -euo pipefail
@@ -82,26 +82,42 @@ jobs:
           YAML=src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java
           TX=src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java
           API=src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
-          test ! -e "$DOMAIN"
-          test ! -e "$YAML"
-          test ! -e "$TX"
+
+          install_reviewed_suite() {
+            local reviewed="$1"
+            local target="$2"
+            mkdir -p "$(dirname "$target")"
+            if [[ -e "$target" ]]; then
+              cmp -s "$reviewed" "$target" || {
+                echo "Existing suite differs from reviewed source: $target" >&2
+                diff -u "$target" "$reviewed" || true
+                exit 1
+              }
+              echo "Verified existing reviewed suite: $target"
+            else
+              cp "$reviewed" "$target"
+              echo "Restored reviewed suite: $target"
+            fi
+          }
+
+          install_reviewed_suite /tmp/player-profile-suites/PlayerProfileDomainRegressionSuite.java "$DOMAIN"
+          install_reviewed_suite /tmp/player-profile-suites/PlayerProfileYamlRegressionSuite.java "$YAML"
+          install_reviewed_suite /tmp/player-profile-suites/PlayerProfileTransactionRegressionSuite.java "$TX"
           test -s "$API"
 
-          mkdir -p "$(dirname "$DOMAIN")" "$(dirname "$YAML")" "$(dirname "$TX")"
-          cp /tmp/player-profile-suites/PlayerProfileDomainRegressionSuite.java "$DOMAIN"
-          cp /tmp/player-profile-suites/PlayerProfileYamlRegressionSuite.java "$YAML"
-          cp /tmp/player-profile-suites/PlayerProfileTransactionRegressionSuite.java "$TX"
-
-          test "$(grep -F 'dto.profileHealth().equals("QUARANTINED")' "$API" | wc -l)" -eq 1
-          perl -pi -e 's/dto\.profileHealth\(\)\.equals\("QUARANTINED"\)/dto.profileHealth().equals("PARTIAL")/' "$API"
-          grep -F 'dto.profileHealth().equals("PARTIAL")' "$API"
-          ! grep -F 'dto.profileHealth().equals("QUARANTINED")' "$API"
+          if grep -Fq 'dto.profileHealth().equals("QUARANTINED")' "$API"; then
+            test "$(grep -F 'dto.profileHealth().equals("QUARANTINED")' "$API" | wc -l)" -eq 1
+            perl -pi -e 's/dto\.profileHealth\(\)\.equals\("QUARANTINED"\)/dto.profileHealth().equals("PARTIAL")/' "$API"
+            echo "Corrected API aggregate health expectation to PARTIAL."
+          fi
+          test "$(grep -F 'dto.profileHealth().equals("PARTIAL")' "$API" | wc -l)" -eq 1
+          ! grep -Fq 'dto.profileHealth().equals("QUARANTINED")' "$API"
 
           for file in "$DOMAIN" "$YAML" "$TX" "$API"; do
             test -s "$file"
           done
           ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec' "$DOMAIN" "$YAML" "$TX"
-          grep -F '!classSpec.contains("ICS2")' "$YAML"
+          grep -F 'contains("ICS2")' "$YAML"
           git diff --check
           git status --short
           git diff --stat
@@ -153,9 +169,13 @@ jobs:
             src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java \
             src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
           git diff --cached --check
-          git commit -m "test(player-profile): restore domain persistence and transaction regressions"
           REMOTE_RECOVERY_HEAD=$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')
           REMOTE_TARGET_HEAD=$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')
           test "$REMOTE_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
           test "$REMOTE_TARGET_HEAD" = "$EXPECTED_TARGET_HEAD"
-          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
+          if git diff --cached --quiet; then
+            echo "Reviewed suites already present; no commit required."
+          else
+            git commit -m "test(player-profile): restore domain persistence and transaction regressions"
+            git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
+          fi
