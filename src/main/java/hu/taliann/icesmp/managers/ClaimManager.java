@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.BlockCuboid;
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.ClaimFootprint;
 import hu.taliann.icesmp.integration.ProtectionBridge;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
@@ -13,6 +14,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +30,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
- * Native, BLOCK-precise 3D player-claim system (replaces the external
+ * Native, BLOCK-precise 2D player-claim system (replaces the external
  * SimpleClaimSystem plugin, integrated with the IceSMP economy and war rules).
- * A claim is a box: an exact block-rectangle footprint plus a bounded Y-range
- * (by default 20 blocks up and 20 down from where it was created — the vertical
- * span can be EXTENDED for money from the menu). {@code /claim} quick-claims a
+ * A normal claim is exactly the normalized X-Z rectangle between its two corners.
+ * Legacy minY/maxY fields remain readable for storage compatibility, but never affect
+ * membership, protection or rendering. {@code /claim} quick-claims a
  * square around the player; {@code /claim pos1 + pos2 + area} claims an exact
  * rectangle between two standing points.
  *
@@ -52,7 +54,7 @@ import java.util.logging.Level;
  */
 public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.session.PlayerStateCleanup {
 
-    /** One claimed 3D box: exact block bounds, the owner and the trusted players. */
+    /** One claimed X-Z footprint, its owner and trusted players. */
     public static final class Claim {
         private final String id;
         private final String world;
@@ -62,6 +64,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         private final int maxX;
         private final int maxY;
         private final int maxZ;
+        private final ClaimFootprint footprint;
         private final UUID owner;
         private final String ownerName;
         private final Set<UUID> trusted = ConcurrentHashMap.newKeySet();
@@ -78,6 +81,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             this.maxX = maxX;
             this.maxY = maxY;
             this.maxZ = maxZ;
+            this.footprint = ClaimFootprint.between(minX, minZ, maxX, maxZ);
             this.owner = owner;
             this.ownerName = ownerName;
             this.claimedAt = claimedAt;
@@ -97,7 +101,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
         /** Footprint size in columns (1×1 block ground area). */
         public int columns() {
-            return (maxX - minX + 1) * (maxZ - minZ + 1);
+            return Math.toIntExact(footprint.columns());
         }
 
         public int minY() {
@@ -108,19 +112,15 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             return maxY;
         }
 
-        private boolean contains(final String worldName, final int x, final int y, final int z) {
-            return world.equals(worldName)
-                    && x >= minX && x <= maxX
-                    && y >= minY && y <= maxY
-                    && z >= minZ && z <= maxZ;
+        private boolean contains(final String worldName, final int x, final int z) {
+            return world.equals(worldName) && footprint.contains(x, z);
         }
 
         /** Footprint (XZ) overlap test — Y is ignored so boxes can't stack over each other. */
         private boolean overlapsFootprint(final String worldName, final int oMinX, final int oMinZ,
                                           final int oMaxX, final int oMaxZ) {
             return world.equals(worldName)
-                    && minX <= oMaxX && maxX >= oMinX
-                    && minZ <= oMaxZ && maxZ >= oMinZ;
+                    && footprint.overlaps(ClaimFootprint.between(oMinX, oMinZ, oMaxX, oMaxZ));
         }
     }
 
@@ -164,6 +164,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     private final Map<UUID, Selection> selections = new ConcurrentHashMap<>();
     /** Last claim-id per player (border-cross action-bar notices; cleared on quit). */
     private final Map<UUID, String> lastClaimId = new ConcurrentHashMap<>();
+    /** At most one owned border preview task per player. */
+    private final Map<UUID, ScheduledTask> borderTasks = new ConcurrentHashMap<>();
 
     public ClaimManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final CurrencyManager currencyManager, final FactionManager factionManager,
@@ -182,7 +184,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     // ==================== queries (lock-free, hot path) ====================
 
-    /** The claim covering the exact block location (Y included), or null. */
+    /** The claim covering the exact X-Z block column, or null. */
     public Claim getClaimAt(final Location location) {
         if (location == null || location.getWorld() == null) {
             return null;
@@ -194,7 +196,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             return null;
         }
         for (final Claim claim : candidates) {
-            if (claim.contains(worldName, location.getBlockX(), location.getBlockY(), location.getBlockZ())) {
+            if (claim.contains(worldName, location.getBlockX(), location.getBlockZ())) {
                 return claim;
             }
         }
@@ -203,8 +205,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     /**
      * Whether the player may build/interact at the location: true when unclaimed
-     * (or outside the claim's Y-range), or when they own / are trusted in the
-     * covering claim. (The admin bypass permission is the listener's concern.)
+     * or when they own / are trusted in the covering claim. Y is intentionally ignored. (The admin bypass permission is the listener's concern.)
      */
     public boolean canUse(final UUID playerId, final Location location) {
         if (!isEnabled()) {
@@ -266,13 +267,6 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return Math.max(4, configManager.getInt("claims.quick-size", 16));
     }
 
-    private int defaultHeight() {
-        return Math.max(1, configManager.getInt("claims.default-height", 20));
-    }
-
-    private int defaultDepth() {
-        return Math.max(1, configManager.getInt("claims.default-depth", 20));
-    }
 
     /** The player's claims as human-readable region descriptors (for /claim list). */
     public List<String> describeClaims(final UUID playerId) {
@@ -280,8 +274,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         for (final Claim claim : claims.values()) {
             if (claim.owner.equals(playerId)) {
                 entries.add(claim.world + " (" + claim.minX + ", " + claim.minZ + ")→(" + claim.maxX + ", "
-                        + claim.maxZ + ") Y " + claim.minY + ".." + claim.maxY
-                        + " — " + (claim.maxX - claim.minX + 1) + "×" + (claim.maxZ - claim.minZ + 1));
+                        + claim.maxZ + ") — " + (claim.maxX - claim.minX + 1) + "×" + (claim.maxZ - claim.minZ + 1));
             }
         }
         return entries;
@@ -289,7 +282,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     // ==================== command-facing API (null = success, else message key) ====================
 
-    /** Quick-claim: a quick-size² square centred on the player, default Y-range. */
+    /** Quick-claim: a quick-size² X-Z square centred on the player. */
     public synchronized String claimHere(final Player player) {
         if (!isEnabled()) {
             return "claim-disabled";
@@ -299,7 +292,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         final int minX = location.getBlockX() - half;
         final int minZ = location.getBlockZ() - half;
         return createClaim(player, location.getWorld(),
-                minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1, location.getBlockY());
+                minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1);
     }
 
     /**
@@ -307,7 +300,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
      * WorldGuard, column-cap and price checks, then insert + persist.
      */
     private String createClaim(final Player player, final World world, final int minX, final int minZ,
-                               final int maxX, final int maxZ, final int anchorY) {
+                               final int maxX, final int maxZ) {
         final String worldName = world.getName();
         final Claim overlapping = findFootprintOverlap(worldName, minX, minZ, maxX, maxZ);
         if (overlapping != null) {
@@ -337,8 +330,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             }
         }
 
-        final int minY = Math.max(world.getMinHeight(), anchorY - defaultDepth());
-        final int maxY = Math.min(world.getMaxHeight(), anchorY + defaultHeight());
+        final int minY = world.getMinHeight(); // legacy persistence field only
+        final int maxY = world.getMaxHeight() - 1; // legacy persistence field only
         final Claim claim = new Claim(UUID.randomUUID().toString(), worldName,
                 minX, minY, minZ, maxX, maxY, maxZ,
                 player.getUniqueId(), player.getName(), System.currentTimeMillis());
@@ -531,8 +524,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     }
 
     /**
-     * Claims the exact block-rectangle between the two corners (Y-range: the lower
-     * corner minus default depth up to the higher corner plus default height).
+     * Claims the exact normalized X-Z block rectangle between the two corners.
+     * Corner Y values are selection metadata only and never constrain a normal claim.
      * Null on success, else message key.
      */
     public synchronized String claimSelection(final Player player) {
@@ -559,8 +552,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             return "claim-area-too-big";
         }
 
-        final int anchorY = (Math.min(selection.y1, selection.y2) + Math.max(selection.y1, selection.y2)) / 2;
-        final String errorKey = createClaim(player, player.getWorld(), minX, minZ, maxX, maxZ, anchorY);
+        final String errorKey = createClaim(player, player.getWorld(), minX, minZ, maxX, maxZ);
         if (errorKey != null) {
             // Az area-specifikus üzenetek beszédesebbek az általános foglalási hibáknál.
             return switch (errorKey) {
@@ -573,58 +565,16 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return null;
     }
 
-    // ==================== függőleges bővítés (menüből, pénzért) ====================
+    // ==================== legacy vertical API ====================
 
-    /**
-     * Extends the vertical range of the claim the player stands in by
-     * {@code claims.y-extend-step} blocks up or down, for columns × per-column
-     * price (burned). Null on success, else message key.
-     */
-    public synchronized String extendClaim(final Player player, final boolean up) {
-        if (!isEnabled()) {
-            return "claim-disabled";
-        }
-        final Claim claim = getClaimAt(player.getLocation());
-        if (claim == null) {
-            return "claim-none-here";
-        }
-        if (!claim.owner.equals(player.getUniqueId())) {
-            return "claim-not-owner";
-        }
-        final World world = player.getWorld();
-        final int step = Math.max(1, configManager.getInt("claims.y-extend-step", 5));
-        final int newMinY = up ? claim.minY : Math.max(world.getMinHeight(), claim.minY - step);
-        final int newMaxY = up ? Math.min(world.getMaxHeight(), claim.maxY + step) : claim.maxY;
-        if (newMinY == claim.minY && newMaxY == claim.maxY) {
-            return "claim-extend-at-limit";
-        }
-
-        final double cost = Math.ceil(claim.columns()
-                * Math.max(0.0D, configManager.getDouble("claims.y-extend-cost-per-column", 0.1D)) * 100.0D) / 100.0D;
-        if (cost > 0.0D) {
-            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
-            if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
-                return "claim-insufficient";
-            }
-        }
-
-        final Claim extended = new Claim(claim.id, claim.world, claim.minX, newMinY, claim.minZ,
-                claim.maxX, newMaxY, claim.maxZ, claim.owner, claim.ownerName, claim.claimedAt);
-        extended.trusted.addAll(claim.trusted);
-        claims.put(claim.id, extended);
-        rebuildIndex();
-        requestSave();
-        return null;
+    /** Normal claims are intentionally column-based; vertical extension is unsupported. */
+    public String extendClaim(final Player player, final boolean up) {
+        return "claim-vertical-unsupported";
     }
 
-    /** The price of one vertical extension step for the claim at the player (or -1 if none/owned by other). */
+    /** There is no vertical extension price for a 2D claim. */
     public double extendCostAt(final Player player) {
-        final Claim claim = getClaimAt(player.getLocation());
-        if (claim == null || !claim.owner.equals(player.getUniqueId())) {
-            return -1.0D;
-        }
-        return Math.ceil(claim.columns()
-                * Math.max(0.0D, configManager.getDouble("claims.y-extend-cost-per-column", 0.1D)) * 100.0D) / 100.0D;
+        return -1.0D;
     }
 
     // ==================== admin / trust ====================
@@ -718,8 +668,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     /**
      * Draws the exact block-precise outlines of the claims around the player for a
      * few seconds (own/trusted=green, foreign=flame), plus a composter preview of
-     * the quick-claim square when standing on unclaimed ground. Corner posts hint
-     * the vertical extent. Folia-safe: repeating task on the player's own entity
+     * the quick-claim square when standing on unclaimed ground. The Y coordinate is
+     * display-only and never represents a lower or upper claim boundary. Folia-safe: repeating task on the player's own entity
      * scheduler, particles sent only to that player, index reads lock-free.
      */
     public void showBorder(final Player player) {
@@ -727,14 +677,21 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         if (configManager.getBoolean("display-fx.claim-wall.enabled", true)) {
             showDisplayWalls(player, seconds);
         }
+        final UUID playerId = player.getUniqueId();
+        final ScheduledTask previous = borderTasks.remove(playerId);
+        if (previous != null) {
+            previous.cancel();
+        }
         final int[] frames = {0};
-        player.getScheduler().runAtFixedRate(plugin, task -> {
+        final ScheduledTask scheduled = player.getScheduler().runAtFixedRate(plugin, task -> {
             if (frames[0]++ >= seconds || !player.isOnline()) {
                 task.cancel();
+                borderTasks.remove(playerId, task);
                 return;
             }
             drawBorderFrame(player);
         }, null, 1L, 20L);
+        borderTasks.put(playerId, scheduled);
     }
 
     /**
@@ -774,8 +731,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                     ? org.bukkit.Color.fromRGB(0x3BE24A) : org.bukkit.Color.fromRGB(0xE23B3B);
             final float width = claim.maxX + 1 - claim.minX;
             final float depth = claim.maxZ + 1 - claim.minZ;
-            final double baseY = hu.taliann.icesmp.utils.ParticleUtil.markerY(
-                    world, claim.minX + (int) (width / 2), claim.minZ + (int) (depth / 2), location.getY()) - 1.2D;
+            final double baseY = location.getY() - 1.2D;
             hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
                     new Location(world, claim.minX, baseY, claim.minZ), width, height, 0.1F, block, glow, ticks, player);
             hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
@@ -819,44 +775,24 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         for (final Claim claim : nearby) {
             final Particle particle = claim.isTrusted(player.getUniqueId())
                     ? Particle.HAPPY_VILLAGER : Particle.FLAME;
-            drawBoxOutline(player, world, claim.minX, claim.minZ, claim.maxX, claim.maxZ,
-                    claim.minY, claim.maxY, location.getBlockY(), particle);
+            drawFootprintOutline(player, world, claim.footprint, location.getBlockY(), particle);
         }
 
         if (getClaimAt(location) == null) {
             final int half = quickSize() / 2;
             final int minX = location.getBlockX() - half;
             final int minZ = location.getBlockZ() - half;
-            drawBoxOutline(player, world, minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1,
-                    location.getBlockY(), location.getBlockY(), location.getBlockY(), Particle.COMPOSTER);
+            drawFootprintOutline(player, world,
+                    ClaimFootprint.between(minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1),
+                    location.getBlockY(), Particle.COMPOSTER);
         }
     }
 
-    /**
-     * TEREP-KÖVETŐ perem („földszinten, a blokkok felett") + TELJES magasságú sarok-oszlopok:
-     * a peremvonal minden pontja a saját oszlopának legfelső blokkja fölé kerül
-     * — dombon/völgyön átfutó határnál is a talajt követi; ha a néző jóval a felszín alatt jár
-     * (barlang), a perem a néző szintjén IS kirajzolódik. A sarok-oszlopok a claim teljes
-     * minY→maxY tartományát mutatják, ritkított mintavétellel.
-     */
-    private void drawBoxOutline(final Player player, final World world, final int minX, final int minZ,
-                                final int maxX, final int maxZ, final int minY, final int maxY,
-                                final int viewerY, final Particle particle) {
-        for (int x = minX; x <= maxX + 1; x += 2) {
-            drawEdgePoint(player, world, x, minZ, viewerY, particle);
-            drawEdgePoint(player, world, x, maxZ + 1, viewerY, particle);
-        }
-        for (int z = minZ; z <= maxZ + 1; z += 2) {
-            drawEdgePoint(player, world, minX, z, viewerY, particle);
-            drawEdgePoint(player, world, maxX + 1, z, viewerY, particle);
-        }
-        // Sarok-oszlopok a claim TELJES függőleges kiterjedésén (max ~13 pont oszloponként).
-        final int step = Math.max(3, (maxY - minY) / 12);
-        for (int py = minY; py <= maxY; py += step) {
-            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
+    /** Terrain-following perimeter for the canonical X-Z footprint; no vertical posts. */
+    private void drawFootprintOutline(final Player player, final World world, final ClaimFootprint footprint,
+                                      final int viewerY, final Particle particle) {
+        for (final ClaimFootprint.BoundaryPoint point : footprint.perimeter(2)) {
+            drawEdgePoint(player, world, point.x(), point.z(), viewerY, particle);
         }
     }
 
@@ -895,6 +831,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     public void clearPlayerState(final UUID playerId) {
         selections.remove(playerId);
         lastClaimId.remove(playerId);
+        final ScheduledTask task = borderTasks.remove(playerId);
+        if (task != null) {
+            task.cancel();
+        }
     }
 
     // ==================== persistence ====================

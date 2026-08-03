@@ -21,6 +21,8 @@ import org.bukkit.entity.Mob;
  * so construction order can never NPE.
  */
 public final class EventSpawnGuard {
+    public static final String EVENT_NO_BURN_KEY = "event_no_daylight_burn";
+    public static final String EVENT_NO_ZOMBIFICATION_KEY = "event_no_zombification";
 
     private final ConfigManager configManager;
     private final TerritoryManager territoryManager;

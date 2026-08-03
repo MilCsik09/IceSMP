@@ -123,9 +123,10 @@ public final class VanishManager implements PlayerStateCleanup {
         final boolean shouldHide = subject != null && isVanished(subjectId)
                 && !viewer.hasPermission(Permissions.MODERATION_VANISH_SEE);
         if (shouldHide) {
-            if (hidden.add(subjectId)) {
-                viewer.hidePlayer(plugin, subject);
-            }
+            hidden.add(subjectId);
+            // hidePlayer is idempotent. Reassert it even when our ledger already owns the
+            // pair because teleport/world-change/respawn can recreate client tracking.
+            viewer.hidePlayer(plugin, subject);
         } else if (hidden.remove(subjectId) && subject != null) {
             viewer.showPlayer(plugin, subject);
         }

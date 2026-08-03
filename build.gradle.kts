@@ -152,6 +152,14 @@ val runtimeBugfixRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.runtime.RuntimeBugfixRegressionSuite")
 }
 
+val runtimeHardeningRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs 2D claim, vanish retracking and DARK mob lifecycle regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.runtime.RuntimeHardeningRegressionSuite")
+}
+
 val factionPassiveRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs faction membership, damage, exhaustion, truce and lifecycle regressions."
@@ -220,7 +228,7 @@ tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
+        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest, runtimeHardeningRegressionTest,
         factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
         relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
         questNpcValidationRegressionTest, resourcePackRegressionTest)
