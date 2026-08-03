@@ -36,12 +36,43 @@ def canonical_prefix(compact: str, size: int) -> tuple[bytes, int]:
     return raw, len(compact) - data_characters
 
 
+def decode_all(compact: str) -> bytes:
+    try:
+        return base64.b64decode(compact, validate=True)
+    except Exception:
+        padding = (-len(compact)) % 4
+        return base64.b64decode(compact + ("=" * padding), validate=True)
+
+
 def find_window(data: bytes, size: int, expected_sha: str) -> int | None:
     if len(data) < size:
         return None
     for offset in range(len(data) - size + 1):
         if sha256(data[offset : offset + size]) == expected_sha:
             return offset
+    return None
+
+
+def combine_with_known_part(
+    known: bytes,
+    sources: list[tuple[str, bytes]],
+    expected_size: int,
+    expected_sha: str,
+) -> tuple[bytes, str] | None:
+    remaining = expected_size - len(known)
+    if remaining <= 0:
+        return None
+    for source_name, source in sources:
+        if len(source) < remaining:
+            continue
+        for offset in range(len(source) - remaining + 1):
+            window = source[offset : offset + remaining]
+            left = known + window
+            if sha256(left) == expected_sha:
+                return left, f"known-prefix-plus-{source_name}-window-{offset}"
+            right = window + known
+            if sha256(right) == expected_sha:
+                return right, f"{source_name}-window-{offset}-plus-known-suffix"
     return None
 
 
@@ -57,82 +88,121 @@ def main() -> int:
     comments: list[dict[str, Any]] = json.loads(comments_path.read_text(encoding="utf-8"))
     selected: dict[int, dict[str, Any]] = {}
     observed: list[str] = []
-    variants: list[dict[str, Any]] = []
+    variant_report: list[dict[str, Any]] = []
+    verified_variants: dict[int, list[tuple[str, bytes]]] = {}
+    exact_records: list[dict[str, Any]] = []
     anomalies: list[dict[str, Any]] = []
 
+    # First pass: inventory and independently validate every exact/lettered variant.
     for comment in comments:
         body = str(comment.get("body", "")).replace("\r\n", "\n").strip()
         first = body.split("\n", 1)[0]
         if first.startswith("PPROOT2-"):
             observed.append(first)
-
-        variant_match = VARIANT.fullmatch(body)
-        if variant_match:
-            compact_variant = re.sub(r"\s+", "", variant_match.group(4))
-            try:
-                raw_variant = base64.b64decode(compact_variant, validate=True)
-                variant_actual = sha256(raw_variant)
-                variants.append(
-                    {
-                        "label": variant_match.group(1),
-                        "declared_size": int(variant_match.group(3)),
-                        "declared_sha256": variant_match.group(2),
-                        "decoded_size": len(raw_variant),
-                        "decoded_sha256": variant_actual,
-                        "comment_id": comment.get("id"),
-                    }
-                )
-            except Exception as exc:
-                variants.append(
-                    {
-                        "label": variant_match.group(1),
-                        "error": str(exc),
-                        "comment_id": comment.get("id"),
-                    }
-                )
-
-        match = EXACT.fullmatch(body)
+        match = VARIANT.fullmatch(body)
         if not match:
             continue
-        index = int(match.group(1))
-        if index not in range(13):
-            continue
-        if index in selected:
-            raise SystemExit(f"duplicate exact PPROOT2 chunk {index:02d}")
 
-        expected_sha = match.group(2)
-        expected_size = int(match.group(3))
+        label = match.group(1)
+        index = int(label[:2])
+        declared_sha = match.group(2)
+        declared_size = int(match.group(3))
         compact = re.sub(r"\s+", "", match.group(4))
+        raw_all = decode_all(compact)
+        verified_raw: bytes | None = None
+        verification = "none"
+        trailing_characters = 0
 
-        raw, trailing_characters = canonical_prefix(compact, expected_size)
-        actual_sha = sha256(raw)
-        repair = "canonical-prefix"
+        try:
+            candidate, trailing_characters = canonical_prefix(compact, declared_size)
+            if sha256(candidate) == declared_sha:
+                verified_raw = candidate
+                verification = "canonical-prefix"
+        except Exception:
+            pass
 
-        if actual_sha != expected_sha:
-            try:
-                raw_all = base64.b64decode(compact, validate=True)
-            except Exception:
-                raw_all = b""
-            offset = find_window(raw_all, expected_size, expected_sha)
-            if offset is None:
-                raise SystemExit(
-                    f"chunk {index:02d} sha mismatch after canonical padding repair: "
-                    f"{actual_sha} != {expected_sha}; decoded_size={len(raw_all)}"
-                )
-            raw = raw_all[offset : offset + expected_size]
-            actual_sha = sha256(raw)
-            repair = f"verified-window-offset-{offset}"
-            anomalies.append(
+        if verified_raw is None:
+            offset = find_window(raw_all, declared_size, declared_sha)
+            if offset is not None:
+                verified_raw = raw_all[offset : offset + declared_size]
+                verification = f"verified-window-offset-{offset}"
+
+        variant_report.append(
+            {
+                "label": label,
+                "declared_size": declared_size,
+                "declared_sha256": declared_sha,
+                "decoded_size": len(raw_all),
+                "decoded_sha256": sha256(raw_all),
+                "verified": verified_raw is not None,
+                "verification": verification,
+                "trailing_characters": trailing_characters,
+                "comment_id": comment.get("id"),
+            }
+        )
+        if verified_raw is not None and not label.isdigit():
+            verified_variants.setdefault(index, []).append((label, verified_raw))
+        if label.isdigit() and index in range(13):
+            exact_records.append(
                 {
-                    "index": f"{index:02d}",
-                    "type": "verified-window-selected-from-corrupt-comment",
-                    "offset": offset,
-                    "decoded_size": len(raw_all),
+                    "index": index,
+                    "expected_sha": declared_sha,
+                    "expected_size": declared_size,
+                    "compact": compact,
+                    "raw_all": raw_all,
+                    "comment_id": comment.get("id"),
+                    "verified_raw": verified_raw,
+                    "verification": verification,
+                    "trailing_characters": trailing_characters,
                 }
             )
 
-        if actual_sha != expected_sha:
-            raise SystemExit(f"chunk {index:02d} final sha mismatch")
+    for record in exact_records:
+        index = int(record["index"])
+        if index in selected:
+            raise SystemExit(f"duplicate exact PPROOT2 chunk {index:02d}")
+        expected_sha = str(record["expected_sha"])
+        expected_size = int(record["expected_size"])
+        raw_all = bytes(record["raw_all"])
+        raw = record["verified_raw"]
+        repair = str(record["verification"])
+
+        if raw is None:
+            sources: list[tuple[str, bytes]] = [(f"exact-{index:02d}", raw_all)]
+            sources.extend(verified_variants.get(index, []))
+            recovered: tuple[bytes, str] | None = None
+            for label, known in verified_variants.get(index, []):
+                recovered = combine_with_known_part(
+                    known,
+                    sources,
+                    expected_size,
+                    expected_sha,
+                )
+                if recovered is not None:
+                    anomalies.append(
+                        {
+                            "index": f"{index:02d}",
+                            "type": "chunk-reconstructed-from-independently-hashed-variant",
+                            "variant": label,
+                            "repair": recovered[1],
+                        }
+                    )
+                    break
+            if recovered is None:
+                details = [
+                    item for item in variant_report
+                    if str(item.get("label", "")).startswith(f"{index:02d}")
+                ]
+                raise SystemExit(
+                    f"chunk {index:02d} could not be reconstructed with exact SHA {expected_sha}; "
+                    f"variants={json.dumps(details, sort_keys=True)}"
+                )
+            raw, repair = recovered
+
+        if len(raw) != expected_size or sha256(raw) != expected_sha:
+            raise SystemExit(f"chunk {index:02d} final validation failed")
+
+        trailing_characters = int(record["trailing_characters"])
         if trailing_characters:
             anomalies.append(
                 {
@@ -141,12 +211,11 @@ def main() -> int:
                     "trailing_characters": trailing_characters,
                 }
             )
-
         (chunks_dir / f"{index:02d}.bin").write_bytes(raw)
         selected[index] = {
             "size": len(raw),
-            "sha256": actual_sha,
-            "comment_id": comment.get("id"),
+            "sha256": sha256(raw),
+            "comment_id": record["comment_id"],
             "repair": repair,
             "trailing_characters": trailing_characters,
         }
@@ -169,7 +238,7 @@ def main() -> int:
         "compressed_sha256": sha256(compressed),
         "chunks": selected,
         "observed_headers": observed,
-        "variants": variants,
+        "variants": variant_report,
         "anomalies": anomalies,
     }
     (output / "result-pre-xz.json").write_text(
