@@ -1,4 +1,4 @@
-name: PlayerProfile root verified-prefix patch recovery (temporary)
+name: PlayerProfile recovered root compile hardening (temporary)
 
 on:
   pull_request:
@@ -10,24 +10,22 @@ on:
 
 permissions:
   contents: write
-  issues: read
 
 env:
-  PAYLOAD_ISSUE: "79"
-  VALIDATION_BRANCH: agent/player-profile-root-reconstruct-20260803-v6
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+  EXPECTED_RECOVERY_HEAD: bf3e40ca5cc6b46f9b5af5cc36f374f63347e7ef
   TARGET_BRANCH: rework/class-spec-profile-v2
   EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
-  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
 
 jobs:
-  recover:
+  harden:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Check out authenticated Git history
+      - name: Check out authenticated recovery history
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.VALIDATION_BRANCH }}
+          ref: ${{ env.RECOVERY_BRANCH }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -42,169 +40,55 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Recover complete unified-diff blocks from verified payload prefix
+      - name: Replace obsolete reset call-site name and push fast-forward commit
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          ROOT=/tmp/player-profile-root-prefix
-          BLOCKS="$ROOT/blocks"
-          rm -rf "$ROOT"
-          mkdir -p "$BLOCKS"
-
-          gh api "repos/${GITHUB_REPOSITORY}/issues/${PAYLOAD_ISSUE}/comments?per_page=100" > "$ROOT/comments.json"
-          python3 .github/player-profile-root-v6/recover_prefix.py "$ROOT/comments.json" "$ROOT"
-
-          set +e
-          xz --decompress --stdout "$ROOT/root-prefix.xz" > "$ROOT/partial.patch" 2> "$ROOT/xz-error.txt"
-          XZ_RC=$?
-          set -e
-          test -s "$ROOT/partial.patch"
-          echo "Expected truncated XZ exit code: $XZ_RC"
-          cat "$ROOT/xz-error.txt" || true
-
-          python3 - "$ROOT/partial.patch" "$BLOCKS" "$ROOT/prefix-report.json" <<'PY'
-          from __future__ import annotations
-
-          import hashlib
-          import json
-          import pathlib
-          import re
-          import sys
-
-          patch_path = pathlib.Path(sys.argv[1])
-          blocks_dir = pathlib.Path(sys.argv[2])
-          report_path = pathlib.Path(sys.argv[3])
-          raw = patch_path.read_bytes()
-          if b"\x00" in raw:
-              raise SystemExit("partial patch contains NUL bytes")
-          text = raw.decode("utf-8", errors="strict")
-          matches = list(re.finditer(r"(?m)^diff --git a/.+ b/.+\n", text))
-          if not matches:
-              raise SystemExit("no diff --git headers recovered")
-          prelude = text[:matches[0].start()]
-          if prelude.strip():
-              raise SystemExit(f"unexpected patch prelude: {prelude[:200]!r}")
-
-          headers = []
-          for index, match in enumerate(matches):
-              start = match.start()
-              end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
-              block = text[start:end]
-              path = blocks_dir / f"{index:04d}.patch"
-              path.write_text(block, encoding="utf-8")
-              headers.append({
-                  "index": index,
-                  "header": match.group(0).strip(),
-                  "bytes": len(block.encode("utf-8")),
-                  "sha256": hashlib.sha256(block.encode("utf-8")).hexdigest(),
-              })
-
-          report = {
-              "partial_bytes": len(raw),
-              "partial_sha256": hashlib.sha256(raw).hexdigest(),
-              "block_count": len(headers),
-              "blocks": headers,
-          }
-          report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-          print(json.dumps(report, indent=2, sort_keys=True))
-          PY
-
+          ACTUAL_RECOVERY_HEAD=$(git rev-parse HEAD)
+          test "$ACTUAL_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
           git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
-          ACTUAL_TARGET_HEAD=$(git rev-parse "refs/remotes/origin/${TARGET_BRANCH}")
-          echo "Verified target head: $ACTUAL_TARGET_HEAD"
-          test "$ACTUAL_TARGET_HEAD" = "$EXPECTED_TARGET_HEAD"
+          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
 
-          if git ls-remote --exit-code --heads origin "refs/heads/${RECOVERY_BRANCH}" >/dev/null 2>&1; then
-            echo "Recovery branch already exists; refusing overwrite." >&2
-            exit 1
-          fi
-
-          git switch --detach "$ACTUAL_TARGET_HEAD"
-          git switch -c "$RECOVERY_BRANCH"
-          git reset --hard "$ACTUAL_TARGET_HEAD"
-          git clean -fdx
-
-          APPLIED=0
-          FAILED_BLOCK=""
-          : > "$ROOT/applied-blocks.txt"
-          for block in "$BLOCKS"/*.patch; do
-            header=$(head -n 1 "$block")
-            if git apply --check --index "$block"; then
-              git apply --index "$block"
-              printf '%s\t%s\n' "$(basename "$block")" "$header" | tee -a "$ROOT/applied-blocks.txt"
-              APPLIED=$((APPLIED + 1))
-            else
-              FAILED_BLOCK=$(basename "$block")
-              echo "Stopped before incomplete/non-applicable block: $FAILED_BLOCK — $header"
-              break
-            fi
-          done
-          test "$APPLIED" -gt 0
-
-          rm -rf \
-            .github/player-profile-root-payload \
-            .github/profile-v2-finalize \
-            .github/profile-v2-finalize-v2 \
-            .github/profile-v2-finalize-v3 \
-            .github/profile-v2-finalize-v4 \
-            .github/profile-v2-finalize-v5
-          rm -f \
-            .github/workflows/player-profile-bootstrap-checkout.yml \
-            .github/player-profile-bootstrap-trigger.txt \
-            .github/player-profile-bootstrap-run.txt \
-            .github/workflows/profile-v2-source-export.yml \
-            .github/workflows/profile-v2-payload-check.yml \
-            gradle-build.log \
-            gradle-check.log
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          paths = (
-              Path("CLAUDE.md"),
-              Path("README.md"),
-              Path("docs/ARCHITECTURE.md"),
-              Path("src/main/resources/config/general.yml"),
+          FILES=(
+            src/main/java/hu/taliann/icesmp/commands/SpecCommand.java
+            src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java
           )
-          for path in paths:
-              if not path.is_file():
-                  continue
-              text = path.read_text(encoding="utf-8")
-              normalized = text.rstrip("\r\n") + "\n"
-              if normalized != text:
-                  path.write_text(normalized, encoding="utf-8", newline="\n")
-                  print(f"NORMALIZE_EOF {path}")
-          PY
+          BEFORE=$(grep -h -o 'resetClassSpecSectionV2' "${FILES[@]}" | wc -l)
+          test "$BEFORE" -eq 2
+          perl -pi -e 's/resetClassSpecSectionV2/resetClassSpecSection/g' "${FILES[@]}"
+          ! grep -R --line-number --fixed-strings 'resetClassSpecSectionV2' "${FILES[@]}"
+          AFTER=$(grep -h -o 'resetClassSpecSection(' "${FILES[@]}" | wc -l)
+          test "$AFTER" -ge 2
 
-          git add -A
-          git diff --cached --check
-
-          if git diff --cached --name-only --diff-filter=ACMRTUXB | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$'; then
-            echo "Temporary payload or build artifact was added or modified in the recovery index." >&2
-            exit 1
-          fi
-
-          echo "=== recovered prefix summary ==="
-          echo "Applied blocks: $APPLIED"
-          echo "First rejected block: ${FAILED_BLOCK:-none}"
+          git diff --check
+          git diff --exit-code -- src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java
           git status --short
-          git diff --cached --stat
-          git diff --cached --name-status
+          git diff --stat
+          git diff -- "${FILES[@]}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "wip(player-profile): recover verified root platform patch prefix"
+          git add "${FILES[@]}"
+          git commit -m "fix(player-profile): use canonical class-spec reset gateway"
+
+          REMOTE_RECOVERY_HEAD=$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')
+          test "$REMOTE_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
           git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
 
-      - name: Build recovered prefix on Java 21
+      - name: Java 21 clean build and PlayerProfile regressions
         shell: bash
         run: |
-          set +e
-          ./gradlew clean build --no-daemon --stacktrace > /tmp/player-profile-recovery-build.log 2>&1
-          BUILD_RC=$?
-          set -e
-          echo "=== Gradle clean build tail ==="
-          tail -n 500 /tmp/player-profile-recovery-build.log
-          exit "$BUILD_RC"
+          set -o pipefail
+          ./gradlew clean build --no-daemon --stacktrace | tee /tmp/player-profile-root-build.log
+
+      - name: Run repository-level PlayerProfile guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_player_profile_authority.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_player_profile_openapi.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_markdown_links.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+          git diff --check "$EXPECTED_TARGET_HEAD...HEAD"
