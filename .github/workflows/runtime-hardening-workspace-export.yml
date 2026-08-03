@@ -67,6 +67,9 @@ jobs:
               if text.count(old) != 1:
                   raise SystemExit(f'architecture inventory assertion failed: {old}')
               text = text.replace(old, new, 1)
+          if text.count('553') != 1:
+              raise SystemExit('architecture total Java inventory assertion failed')
+          text = text.replace('553', '571', 1)
           architecture.write_text(text, encoding='utf-8')
 
           claude = Path('CLAUDE.md')
