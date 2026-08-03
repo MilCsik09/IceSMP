@@ -1,1 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
+Attempt: 2 — validate declared prefix SHA and ignore only verified trailing data.
