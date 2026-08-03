@@ -1,4 +1,4 @@
-name: Runtime hardening structured audit
+name: Runtime hardening implementation gate
 
 on:
   pull_request:
@@ -8,143 +8,76 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: runtime-hardening-implementation
+  cancel-in-progress: false
 
 jobs:
-  audit:
+  implement:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'fix/runtime-hardening-audit-20260803'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout full repository history
+      - name: Checkout authenticated feature branch with full history
         uses: actions/checkout@v4
         with:
+          ref: fix/runtime-hardening-audit-20260803
           fetch-depth: 0
           lfs: true
 
-      - name: Validate exact branch checkout
+      - name: Verify expected branch head and ancestry
         shell: bash
         run: |
           set -euo pipefail
           test -d .git
-          git cat-file -e 52cc62ac3b463679f28656f82cf1f7d17db486e8^{commit}
+          test "$(git rev-parse HEAD)" = "595d6daf523351e8a0283f88c7c8b64fa649396c"
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
-          git status --short --branch
           find . -name AGENTS.md -print
+          git status --short --branch
 
-      - name: Install audit parser
-        run: python3 -m pip install --disable-pip-version-check pyyaml
-
-      - name: Structured config recipe icon audit
+      - name: Apply asserted runtime patch
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from __future__ import annotations
-          import collections, json, pathlib, re, yaml
-          root = pathlib.Path('.')
-          cfg_dir = root/'src/main/resources/config'
-          configs = {}
-          for path in sorted(cfg_dir.glob('*.yml')):
-              configs[path.name] = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+          python3 .github/scripts/apply_runtime_hardening_stage1.py
+          git diff --check
 
-          # Config GUI coverage: scalar leaves are potentially editable; lists/maps are explicit exclusions.
-          leaves = {}
-          excluded = {}
-          def walk(value, prefix, source):
-              if isinstance(value, dict):
-                  if not value:
-                      excluded[prefix] = (source, 'empty-map')
-                  for key, child in value.items():
-                      walk(child, f'{prefix}.{key}' if prefix else str(key), source)
-              elif isinstance(value, list):
-                  excluded[prefix] = (source, 'list')
-              elif value is None:
-                  excluded[prefix] = (source, 'null')
-              elif isinstance(value, (bool, int, float, str)):
-                  leaves[prefix] = (source, type(value).__name__, value)
-              else:
-                  excluded[prefix] = (source, type(value).__name__)
-          for name, data in configs.items():
-              walk(data, '', name)
-          gui_src = (root/'src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUI.java').read_text(encoding='utf-8')
-          gui_keys = re.findall(r'Entry\.(?:toggle|number|integer|cycle)\("([^"]+)"', gui_src)
-          gui_count = collections.Counter(gui_keys)
-          unknown = sorted(set(gui_keys)-set(leaves))
-          missing = sorted(set(leaves)-set(gui_keys))
-          duplicates = sorted(k for k,v in gui_count.items() if v>1)
-          print('CONFIG_GUI', json.dumps({
-              'scalar_schema_entries': len(leaves),
-              'gui_entries': len(gui_keys),
-              'gui_unique': len(set(gui_keys)),
-              'structured_exclusions': len(excluded),
-              'missing_count': len(missing),
-              'unknown_count': len(unknown),
-              'duplicate_count': len(duplicates),
-              'missing_sample': missing[:120],
-              'unknown': unknown,
-              'duplicates': duplicates,
-          }, ensure_ascii=False, indent=2, default=str))
-
-          # Profession recipes: recursively identify recipe-shaped entries and canonical semantic signatures.
-          pdata = configs.get('profession-recipes.yml', {})
-          recipes=[]
-          def recipes_walk(value, path=()):
-              if isinstance(value, dict):
-                  if 'result' in value and 'ingredients' in value and 'profession' in value:
-                      recipes.append((path[-1] if path else '?', value))
-                  for key, child in value.items():
-                      recipes_walk(child, path+(str(key),))
-          recipes_walk(pdata)
-          sigs=collections.defaultdict(list)
-          outputs=collections.defaultdict(list)
-          for rid,r in recipes:
-              result=r.get('result') or {}
-              ingredients=tuple(sorted(str(x).strip().lower() for x in (r.get('ingredients') or [])))
-              output=(str(result.get('unique') or result.get('material') or '').lower(), int(result.get('amount',1)))
-              sig=(ingredients, output)
-              sigs[sig].append(rid)
-              outputs[output].append(rid)
-          semantic={str(k):v for k,v in sigs.items() if len(v)>1}
-          shared_outputs={str(k):v for k,v in outputs.items() if len(v)>1}
-          print('PROFESSION_RECIPES', json.dumps({
-              'count':len(recipes),
-              'semantic_duplicates':semantic,
-              'shared_outputs':shared_outputs,
-          }, ensure_ascii=False, indent=2))
-
-          # ITEM_MODEL mapping: config/Java references against manifest and checked-in pack source.
-          manifest=(root/'docs/RESOURCE_PACK_CMD.md').read_text(encoding='utf-8')
-          manifest_models=set(re.findall(r'^### `([a-z0-9_]+)`', manifest, re.M))|set(re.findall(r'\| `([a-z0-9_]+)` \|', manifest))
-          used=collections.defaultdict(set)
-          for p in cfg_dir.glob('*.yml'):
-              src=p.read_text(encoding='utf-8')
-              for m in re.finditer(r'(?:key-)?item-model:\s*["\']?([^"\'\s#}]+)', src):
-                  value=m.group(1); model=value.split(':',1)[1] if value.startswith('icesmp:') else value
-                  if re.fullmatch(r'[a-z0-9_]+',model): used[model].add(str(p))
-          for p in (root/'src/main/java').rglob('*.java'):
-              src=p.read_text(encoding='utf-8')
-              for m in re.finditer(r'applyItemModel\([^;]*?"icesmp:([a-z0-9_]+)"',src,re.S):
-                  if not m.group(1).endswith('_'): used[m.group(1)].add(str(p))
-          pack_models=set()
-          for base in [root/'resource-pack', root/'ResourcePack', root/'pack', root/'src/main/resources/resource-pack']:
-              if base.exists():
-                  for p in base.rglob('*.json'):
-                      if '/models/' in p.as_posix() or '/items/' in p.as_posix(): pack_models.add(p.stem)
-          print('GUI_ICONS', json.dumps({
-              'used_count':len(used), 'manifest_count':len(manifest_models), 'pack_model_count':len(pack_models),
-              'missing_manifest':sorted(set(used)-manifest_models),
-              'missing_pack':sorted(set(used)-pack_models) if pack_models else ['NO_CHECKED_IN_PACK_SOURCE'],
-              'used':{k:sorted(v) for k,v in sorted(used.items())},
-          }, ensure_ascii=False, indent=2))
-          PY
-
-      - name: Event and lifecycle call-site audit
+      - name: Compile and run targeted regression
         shell: bash
         run: |
           set -euo pipefail
-          echo '=== EVENT SPAWN GUARD CALLERS ==='
-          git grep -n 'isBlocked\|isUnsafeSurface\|resolveAnchorLocation\|EventSpawnGuard.prepare' -- src/main/java || true
-          echo '=== VANISH LIFECYCLE ==='
-          git grep -n 'refreshViewer\|refreshSubject\|hidePlayer\|showPlayer\|setInvulnerable\|PlayerTeleportEvent\|PlayerRespawnEvent' -- src/main/java/hu/taliann/icesmp/managers/VanishManager.java src/main/java/hu/taliann/icesmp/listeners/VanishListener.java || true
-          echo '=== DARK MOB LIFECYCLE ==='
-          git grep -n 'applyZoneHardening\|setShouldBurnInDay\|setImmuneToZombification\|EntitiesLoadEvent\|EntityMoveEvent\|EntityTeleportEvent' -- src/main/java || true
+          chmod +x gradlew
+          ./gradlew compileJava runtimeHardeningRegressionTest --console=plain --no-daemon --stacktrace
+
+      - name: Run repository consistency gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_consistency.py | tee /tmp/consistency.log
+          ! grep -E '^FAIL|\bFAIL\b' /tmp/consistency.log
+
+      - name: Commit and push without force
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/main/java/hu/taliann/icesmp/data/ClaimFootprint.java \
+            src/main/java/hu/taliann/icesmp/managers/ClaimManager.java \
+            src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java \
+            src/main/java/hu/taliann/icesmp/managers/VanishManager.java \
+            src/main/java/hu/taliann/icesmp/listeners/VanishListener.java \
+            src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java \
+            src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java \
+            src/main/java/hu/taliann/icesmp/listeners/MobScalingListener.java \
+            src/main/resources/config/moderation.yml \
+            src/regression/java/hu/taliann/icesmp/runtime/RuntimeHardeningRegressionSuite.java \
+            build.gradle.kts
+          git commit -m "Fix claim, vanish and DARK mob lifecycle regressions" \
+            -m "Normalize personal claims to one X-Z footprint, reassert vanish visibility after retracking, and make DARK daylight/zombification protection reversible across load, move and teleport." \
+            -m "Adds targeted runtime hardening regressions." \
+            -m "Co-Authored-By: ChatGPT <noreply@openai.com>" \
+            -m "Claude-Session: runtime-hardening-audit-20260803"
+          git push origin HEAD:fix/runtime-hardening-audit-20260803
