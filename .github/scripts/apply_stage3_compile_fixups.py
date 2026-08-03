@@ -34,5 +34,10 @@ replace_once(
     "event.isShiftClick(), event.isRightClick()",
     "event.isShiftClick(), event.getClick().isRightClick()",
 )
+replace_once(
+    "src/regression/java/hu/taliann/icesmp/professions/ProfessionRecipeAuditRegressionSuite.java",
+    '''FactionType.fromInput(section.getString("faction", null)),''',
+    '''FactionType.fromInput(section.getString("faction", null)).orElse(null),''',
+)
 
 print("stage3 compile fixups applied")
