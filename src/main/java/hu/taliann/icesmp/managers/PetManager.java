@@ -3,7 +3,7 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
 import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
-import hu.taliann.icesmp.classspec.domain.ClassProfile;
+import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.classspec.domain.ClassSpecCatalog;
 import hu.taliann.icesmp.classspec.domain.CompanionProfile;
 import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
@@ -803,11 +803,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final ClassSpecProfileGateway gateway=profileGateway;return gateway==null?Optional.empty():gateway.activeCompanion(player.getUniqueId());
     }
 
-    private Optional<ClassProfile> currentProfile(final Player player) {
+    private Optional<ClassSpecSection> currentProfile(final Player player) {
         final ClassSpecProfileGateway gateway=profileGateway;return gateway==null?Optional.empty():gateway.currentProfile(player.getUniqueId());
     }
 
-    private Optional<LoadoutSlot> activeSlot(final Player player) { return currentProfile(player).map(ClassProfile::activeSlot); }
+    private Optional<LoadoutSlot> activeSlot(final Player player) { return currentProfile(player).map(ClassSpecSection::activeSlot); }
     private Optional<ClassLoadout> currentLoadout(final Player player) { return currentProfile(player).filter(p->p.activeSlot()!=null).map(p->p.loadout(p.activeSlot())); }
     private String activeSpec(final Player player) { return currentLoadout(player).map(ClassLoadout::specializationId).orElse(""); }
 

@@ -122,7 +122,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
             // and all unlocked spells + spell state. The player can then pick a fresh class.
                 final long revision = specializationManager.profileGateway()
                         .diagnostic(target.getUniqueId()).revision();
-                specializationManager.resetClassProfileV2(target, true,
+                specializationManager.resetClassSpecSectionV2(target, true,
                                 "admin-class-reset:" + target.getUniqueId() + ":" + revision)
                         .whenComplete((result, failure) -> target.getScheduler().run(plugin, followup -> {
                             if (failure != null || result == null || !result.durableMutationApplied()) {

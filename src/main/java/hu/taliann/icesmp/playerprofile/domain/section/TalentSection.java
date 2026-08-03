@@ -1,0 +1,17 @@
+package hu.taliann.icesmp.playerprofile.domain.section;
+import hu.taliann.icesmp.playerprofile.domain.*;
+import java.util.*;
+
+public record TalentSection(int points, int bonusPoints, Set<String> purchased, Map<String,Set<String>> provenance, Map<String,String> loadout, Set<String> refundReceipts, Map<String,Object> extensions) implements PlayerProfileSection {
+    public TalentSection{points=ImmutableValues.nonNegative(points,"points");bonusPoints=ImmutableValues.nonNegative(bonusPoints,"bonusPoints");purchased=ImmutableValues.stringSet(purchased,512);provenance=setMap(provenance,512);loadout=ImmutableValues.strings(loadout,128);refundReceipts=ImmutableValues.stringSet(refundReceipts,256);extensions=ImmutableValues.map(extensions);}
+    @Override public ProfileSectionId sectionId(){return ProfileSectionId.TALENTS;}
+    public static TalentSection empty(long now){return new TalentSection(0,0,Set.of(),Map.of(),Map.of(),Set.of(),Map.of());}
+
+    private static Map<String,Long> longMap(Map<String,Long> source,int max){if(source==null||source.isEmpty())return Map.of();if(source.size()>max)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,Long> out=new LinkedHashMap<>();source.forEach((k,v)->out.put(ImmutableValues.id(k,"key"),ImmutableValues.nonNegative(v==null?0:v,"value")));return Collections.unmodifiableMap(out);}
+    private static Map<String,Integer> intMap(Map<String,Integer> source,int max){if(source==null||source.isEmpty())return Map.of();if(source.size()>max)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,Integer> out=new LinkedHashMap<>();source.forEach((k,v)->out.put(ImmutableValues.id(k,"key"),ImmutableValues.nonNegative(v==null?0:v,"value")));return Collections.unmodifiableMap(out);}
+    private static Map<String,Set<String>> setMap(Map<String,Set<String>> source,int max){if(source==null||source.isEmpty())return Map.of();if(source.size()>max)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,Set<String>> out=new LinkedHashMap<>();source.forEach((k,v)->out.put(ImmutableValues.id(k,"key"),ImmutableValues.stringSet(v,512)));return Collections.unmodifiableMap(out);}
+    private static Map<String,Map<String,Long>> nestedLongMap(Map<String,Map<String,Long>> source,int max){if(source==null||source.isEmpty())return Map.of();if(source.size()>max)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,Map<String,Long>> out=new LinkedHashMap<>();source.forEach((k,v)->out.put(ImmutableValues.id(k,"key"),longMap(v,512)));return Collections.unmodifiableMap(out);}
+    private static Map<String,Map<String,String>> nestedStringMap(Map<String,Map<String,String>> source,int max){if(source==null||source.isEmpty())return Map.of();if(source.size()>max)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,Map<String,String>> out=new LinkedHashMap<>();source.forEach((k,v)->out.put(ImmutableValues.id(k,"key"),ImmutableValues.strings(v,128)));return Collections.unmodifiableMap(out);}
+    private static Map<String,Map<String,Object>> nestedObjectMap(Map<String,Map<String,Object>> source,int max){if(source==null||source.isEmpty())return Map.of();if(source.size()>max)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,Map<String,Object>> out=new LinkedHashMap<>();source.forEach((k,v)->out.put(ImmutableValues.id(k,"key"),ImmutableValues.map(v)));return Collections.unmodifiableMap(out);}
+
+}

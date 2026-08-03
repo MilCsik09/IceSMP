@@ -1,7 +1,7 @@
 package hu.taliann.icesmp.classspec.persistence;
 
-import hu.taliann.icesmp.classspec.application.ClassProfileMutationStore;
-import hu.taliann.icesmp.classspec.domain.ClassProfile;
+import hu.taliann.icesmp.classspec.application.ClassSpecSectionMutationStore;
+import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -9,16 +9,16 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /** Maps repository exceptions to the application mutation contract without publishing candidates. */
-public final class RepositoryMutationStoreAdapter implements ClassProfileMutationStore {
+public final class RepositoryMutationStoreAdapter implements ClassSpecSectionMutationStore {
 
-    private final ClassProfileRepository repository;
+    private final ClassSpecSectionRepository repository;
 
-    public RepositoryMutationStoreAdapter(final ClassProfileRepository repository) {
+    public RepositoryMutationStoreAdapter(final ClassSpecSectionRepository repository) {
         this.repository = java.util.Objects.requireNonNull(repository, "repository");
     }
 
     @Override
-    public Optional<ClassProfile> cached(final UUID playerId) {
+    public Optional<ClassSpecSection> cached(final UUID playerId) {
         return repository.cached(playerId);
     }
 
@@ -34,14 +34,14 @@ public final class RepositoryMutationStoreAdapter implements ClassProfileMutatio
 
     @Override
     public CompletionStage<SaveResult> save(final UUID playerId, final long expectedRevision,
-                                            final ClassProfile candidate) {
+                                            final ClassSpecSection candidate) {
         return repository.save(playerId, expectedRevision, candidate)
                 .handle((durable, failure) -> {
                     if (failure == null) {
                         return SaveResult.committed(durable);
                     }
                     final Throwable root = unwrap(failure);
-                    final ClassProfile current = repository.cached(playerId).orElse(null);
+                    final ClassSpecSection current = repository.cached(playerId).orElse(null);
                     if (root instanceof ProfileRepositoryException.RevisionConflict conflict) {
                         return SaveResult.conflict(current, conflict.actual());
                     }
@@ -56,15 +56,15 @@ public final class RepositoryMutationStoreAdapter implements ClassProfileMutatio
 
 
     @Override
-    public CompletionStage<ClassProfile> recover(final UUID playerId, final String evidenceId,
+    public CompletionStage<ClassSpecSection> recover(final UUID playerId, final String evidenceId,
                                                   final String auditId) {
         return repository.recover(playerId, evidenceId, auditId);
     }
 
     @Override
     public Optional<String> quarantineEvidenceId(final UUID playerId) {
-        return repository instanceof YamlClassProfileRepository yaml
-                ? yaml.quarantineEvidenceId(playerId) : Optional.empty();
+        return repository instanceof PlayerProfileClassSpecSectionRepository playerProfile
+                ? playerProfile.quarantineEvidenceId(playerId) : Optional.empty();
     }
 
     @Override

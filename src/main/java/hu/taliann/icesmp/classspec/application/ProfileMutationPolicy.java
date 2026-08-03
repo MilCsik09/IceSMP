@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.classspec.application;
 
-import hu.taliann.icesmp.classspec.domain.ClassProfile;
+import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.classspec.domain.ProfileStatus;
 
 import java.util.Objects;
@@ -9,7 +9,7 @@ import java.util.Optional;
 /** The one access policy applied before any Profile v2 mutation. */
 public final class ProfileMutationPolicy {
 
-    public Decision assess(final ClassProfile profile,
+    public Decision assess(final ClassSpecSection profile,
                            final Optional<String> sessionBlockReason,
                            final Operation operation) {
         Objects.requireNonNull(profile, "profile");

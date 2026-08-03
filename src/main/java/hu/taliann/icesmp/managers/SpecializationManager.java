@@ -5,7 +5,7 @@ import hu.taliann.icesmp.classspec.application.GateSnapshot;
 import hu.taliann.icesmp.classspec.application.GateState;
 import hu.taliann.icesmp.classspec.application.ProfileDiagnostic;
 import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
-import hu.taliann.icesmp.classspec.domain.ClassProfile;
+import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.FactionType;
@@ -99,7 +99,7 @@ public final class SpecializationManager {
         else player.getPersistentDataContainer().remove(classSpecKey);
     }
 
-    public void mirrorActiveClassSpecializationV2(final Player player, final ClassProfile durable) {
+    public void mirrorActiveClassSpecializationV2(final Player player, final ClassSpecSection durable) {
         Objects.requireNonNull(durable, "durable");
         final String active = durable.activeSlot() == null ? ""
                 : durable.loadout(durable.activeSlot()).specializationId();
@@ -189,17 +189,17 @@ public final class SpecializationManager {
         return true;
     }
 
-    /** Class reset must go through resetClassProfileV2; only the profession side is synchronous. */
+    /** Class reset must go through resetClassSpecSection; only the profession side is synchronous. */
     public void resetSpecializations(final Player player) { resetProfessionSpecialization(player); }
     /** Direct class-spec PDC deletion is intentionally unsupported. */
     public void resetClassSpecialization(final Player player) { }
 
-    public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> resetClassProfileV2(
+    public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> resetClassSpecSection(
             final Player player, final boolean adminClassReset, final String operationId) {
-        return resetClassProfileV2(player.getUniqueId(), adminClassReset, operationId);
+        return resetClassSpecSection(player.getUniqueId(), adminClassReset, operationId);
     }
 
-    public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> resetClassProfileV2(
+    public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> resetClassSpecSection(
             final java.util.UUID playerId, final boolean adminClassReset, final String operationId) {
         final ClassSpecProfileGateway gateway = profileGateway();
         final ProfileDiagnostic diagnostic = gateway.diagnostic(playerId);
@@ -251,7 +251,7 @@ public final class SpecializationManager {
                 jobManager.getPrimaryLevel(player));
     }
 
-    public void applyClassSpecializationUnlocksV2(final Player player, final ClassProfile durable) {
+    public void applyClassSpecializationUnlocksV2(final Player player, final ClassSpecSection durable) {
         Objects.requireNonNull(durable, "durable");
         final SpecializationType specialization = durable.activeSlot() == null ? null
                 : SpecializationType.fromId(durable.loadout(durable.activeSlot()).specializationId());

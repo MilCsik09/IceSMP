@@ -413,3 +413,22 @@ combat:
   # Hadi-ablak pont / párbaj bűn-tisztulás csak ennyi másodpercnyi TÉNYLEGES
   # harc (a pár első kontaktusától) után jár — win-trade/bűn-mosás fék.
   min-fight-seconds: 20
+# Moduláris PlayerProfile platform. A YAML repository az egyetlen IceSMP-owned
+# tartós játékosállapot-authority; a PDC csak újraépíthető mirror lehet.
+player-profile:
+  storage:
+    directory: "player-profiles"
+    shutdown-timeout-ms: 10000
+  http:
+    # Biztonságos alapérték: a read-only API explicit engedélyezésig nem indul.
+    enabled: false
+    bind: "127.0.0.1"
+    port: 8765
+    requests-per-minute: 60
+    max-request-bytes: 1024
+    max-response-bytes: 1048576
+    timeout-ms: 3000
+    # Formátum: "<uuid>:<token>". A tokeneket secret-managed deployment configból add meg.
+    self-tokens: []
+    # Admin tokenek. Ne commitolj valódi tokent a repositoryba.
+    admin-tokens: []

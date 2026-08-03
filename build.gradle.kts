@@ -145,46 +145,69 @@ val classSpecCompatibilityRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.classspec.compat.ClassSpecCompatibilityRegressionSuite")
 }
 
-val classProfileV2RegressionTest by tasks.registering(JavaExec::class) {
+val classSpecSectionRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
-    description = "Runs Profile v2 domain invariants and deterministic ICS2 codec regressions."
+    description = "Runs ClassSpec section invariants without opaque binary persistence."
     dependsOn(tasks.named(regressionTest.classesTaskName))
     classpath = regressionTest.runtimeClasspath
-    mainClass.set("hu.taliann.icesmp.classspec.profile.ClassProfileV2RegressionSuite")
+    mainClass.set("hu.taliann.icesmp.classspec.profile.ClassSpecSectionV2RegressionSuite")
 }
 
 val classSpecApplicationRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
-    description = "Runs Profile v2 mutation, DARK gate and fail-closed application regressions."
+    description = "Runs class/spec mutation, DARK gate and fail-closed application regressions."
     dependsOn(tasks.named(regressionTest.classesTaskName))
     classpath = regressionTest.runtimeClasspath
     mainClass.set("hu.taliann.icesmp.classspec.application.ClassSpecApplicationRegressionSuite")
 }
 
-val classProfileRepositoryRegressionTest by tasks.registering(JavaExec::class) {
+val classSpecLifecycleRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
-    description = "Runs Profile v2 YAML persistence, CAS, quarantine and flush regressions."
+    description = "Runs PlayerProfile-backed class/spec join, logout and disable lifecycle regressions."
     dependsOn(tasks.named(regressionTest.classesTaskName))
     classpath = regressionTest.runtimeClasspath
-    mainClass.set("hu.taliann.icesmp.classspec.persistence.YamlClassProfileRepositoryRegressionSuite")
+    mainClass.set("hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleRegressionSuite")
 }
 
-val classProfileLifecycleRegressionTest by tasks.registering(JavaExec::class) {
+val playerProfileDomainRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
-    description = "Runs greenfield Profile v2 join, initialization, logout and disable lifecycle regressions."
+    description = "Runs modular PlayerProfile root/section domain regressions."
     dependsOn(tasks.named(regressionTest.classesTaskName))
     classpath = regressionTest.runtimeClasspath
-    mainClass.set("hu.taliann.icesmp.classspec.application.ClassProfileLifecycleRegressionSuite")
+    mainClass.set("hu.taliann.icesmp.playerprofile.domain.PlayerProfileDomainRegressionSuite")
+}
+
+val playerProfileYamlRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs structured section YAML, manifest, CAS, quarantine and shutdown regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.playerprofile.persistence.PlayerProfileYamlRegressionSuite")
+}
+
+val playerProfileTransactionRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs cross-section WAL, idempotency and restart-recovery regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionRegressionSuite")
+}
+
+val playerProfileApiRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs internal/API DTO, authentication, ETag, rate-limit and shutdown regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.playerprofile.api.PlayerProfileApiRegressionSuite")
 }
 
 val respecTransactionRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
-    description = "Runs Profile v2 respec WAL, restart recovery and crash-decision regressions."
+    description = "Runs class respec WAL, restart recovery and crash-decision regressions."
     dependsOn(tasks.named(regressionTest.classesTaskName))
     classpath = regressionTest.runtimeClasspath
     mainClass.set("hu.taliann.icesmp.classspec.transaction.RespecTransactionRegressionSuite")
 }
-
 
 val spellGrantLedgerRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
@@ -207,7 +230,8 @@ tasks.check {
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
         hudRegressionTest, pauseMenuDialogRegressionTest, classSpecCompatibilityRegressionTest,
-        classProfileV2RegressionTest, classSpecApplicationRegressionTest,
-        classProfileRepositoryRegressionTest, classProfileLifecycleRegressionTest,
+        classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
+        classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest,
+        playerProfileYamlRegressionTest, playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest)
 }

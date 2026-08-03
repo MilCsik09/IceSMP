@@ -74,3 +74,6 @@ git diff --check
 A zöld build kód- és regressziós bizonyíték. Production rollout előtt az
 [admin kézikönyv acceptance checklistjét](docs/ADMIN_GUIDE.md#release-acceptance-checklist)
 is végig kell futtatni staging/Folia környezetben.
+## PlayerProfile platform
+
+The modular PlayerProfile platform is the canonical authority for restart-durable, player-owned IceSMP state. See [`docs/PLAYER_PROFILE_ARCHITECTURE.md`](docs/PLAYER_PROFILE_ARCHITECTURE.md), the structured YAML format and the read-only API contract.

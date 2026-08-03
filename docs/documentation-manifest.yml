@@ -70,8 +70,8 @@
         "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
         "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
         "src/main/java/hu/taliann/icesmp/commands/SoulCommand.java": "1f47e272c7cbfbd1205a6bcbdd9dfc1157bd13a7af9326f4543bbe7b5e7fc83b",
-        "src/main/java/hu/taliann/icesmp/commands/SoulforgeCommand.java": "851333940003f3aa55665c34236af3337fb1639f39ce49d4e2759331b4a348c7",
-        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "11daaa2d351f80850b07d1a8bbf1ba854cf6c7a89349bd9940241f679a50b018",
+        "src/main/java/hu/taliann/icesmp/commands/SoulforgeCommand.java": "cfb5baa3c3807cb02c8deaf50359a242edd62202cb26a6855d4bb560cc8659ee",
+        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "abd285e8b154adf04a4bb7373d979268d2d90a178527c5ae6eb5c443769c8c1c",
         "src/main/java/hu/taliann/icesmp/commands/SpellCommand.java": "d276d570d9681c90165403257f76fbd0889826d82cb54ca467bbdfd270629302",
         "src/main/java/hu/taliann/icesmp/commands/SpellbookCommand.java": "ff19ef2f0d2d7f5853039739232db525788045cf12833b9a0b8b477f46cecba3",
         "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "8261555e3beb760d23d99787fff9605bf92038824345a9ff4ffea7ef917578ca",
@@ -98,16 +98,16 @@
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "475931ea21e7b254c0d96b7019e7a02aa9be11da726f27da7115f5eaf9615761",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "7fb2dee67a26c214cebb4e0934e522d8fce742bf3ddd943e0603e023e2253b4e",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "e0fcf47e8fd37377c210d608601d1b70a2519a269c0fcc46f6e4ce40c81e55b7",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "8b730d58515be36bb3e88a6e6896af28626554aad7569fd10b303e2c330ee258",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "a34b078bf1aa022603d3b175effec550e3fd9673db9531e67ce29e1acae00f2e",
         "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
         "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "062ff62f22bad17ba937495685e576d4fc18ce4e8b79f74e0484dfcf1f1f979a",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "2a43f1f9112c0008776fba4489659678c9d0f0c53ef99848a45003bb50f5c496"
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "5ed08609dda12968efaa0511ab9b37d8b2f08cfea7e766e06079924e5ec56f7f"
       },
-      "entries_sha256": "4361994493b56a2881db67da6e42ce22ff3d830234b5954a9a4592d5709db74d"
+      "entries_sha256": "25b6f1d32732975c4449e4ccd863f2956740becf31d7f1b47e4b1aaccab0d1cc"
     },
     "command.achievements": {
       "kind": "root",
@@ -119,7 +119,7 @@
       "description": "Elérések (mérföldkövek + jutalmak)",
       "implementation": "AchievementsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1568,
+      "registration_line": 1570,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -154,7 +154,7 @@
       "description": "Közösségi adomány-láda",
       "implementation": "DonationChestCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1585,
+      "registration_line": 1587,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -186,7 +186,7 @@
       "description": "Önkéntes AFK-jelölés",
       "implementation": "AfkCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1504,
+      "registration_line": 1506,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -198,7 +198,7 @@
       "description": "Kitiltás (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1523,
+      "registration_line": 1525,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -213,7 +213,7 @@
       "description": "Bank parancsok",
       "implementation": "BankCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1562,
+      "registration_line": 1564,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -248,7 +248,7 @@
       "description": "Bestiárium — a krónikás-lajstromod",
       "implementation": "BestiaryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1589,
+      "registration_line": 1591,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -283,7 +283,7 @@
       "description": "Körözési lista (fejpénzek)",
       "implementation": "BountyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1572,
+      "registration_line": 1574,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -318,7 +318,7 @@
       "description": "Céh (frakción belüli kisközösség) parancsok",
       "implementation": "GuildCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1587,
+      "registration_line": 1589,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -352,7 +352,7 @@
       "description": "Terület-claim parancsok",
       "implementation": "ClaimCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1600,
+      "registration_line": 1602,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -377,7 +377,7 @@
       "description": "Kaszt (class): szint, Lélekkapocs, admin",
       "implementation": "JobCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1566,
+      "registration_line": 1568,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -412,7 +412,7 @@
       "description": "Láda (crate) parancsok",
       "implementation": "CrateCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1505,
+      "registration_line": 1507,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -447,7 +447,7 @@
       "description": "Valuta parancsok",
       "implementation": "CurrencyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1561,
+      "registration_line": 1563,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -481,7 +481,7 @@
       "description": "Napi küldetés",
       "implementation": "DailyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1575,
+      "registration_line": 1577,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -506,7 +506,7 @@
       "description": "Emlékszilánk-beváltás (visszaemlékezés)",
       "implementation": "MemoryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1610,
+      "registration_line": 1612,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -541,7 +541,7 @@
       "description": "Világesemény parancsok",
       "implementation": "EventsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1607,
+      "registration_line": 1609,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -576,7 +576,7 @@
       "description": "Árfolyamtábla admin",
       "implementation": "ExchangeBoardCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1626,
+      "registration_line": 1628,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -610,7 +610,7 @@
       "description": "Frakció parancsok",
       "implementation": "FactionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1565,
+      "registration_line": 1567,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -632,7 +632,7 @@
       "description": "Teljes büntetési előzmény (admin)",
       "implementation": "PunishmentHistoryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1532,
+      "registration_line": 1534,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -644,7 +644,7 @@
       "description": "HUD beállítások",
       "implementation": "HudCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1501,
+      "registration_line": 1503,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -659,7 +659,7 @@
       "description": "Plugin-item kiadása (admin): unique/recept/relikvia/tervrajz/erszeny/dev",
       "implementation": "ItemGiveCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1618,
+      "registration_line": 1620,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -693,7 +693,7 @@
       "description": "IceSMP admin",
       "implementation": "IceSMPCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1498,
+      "registration_line": 1500,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -715,7 +715,7 @@
       "description": "Online inventory/ender live nézet (admin)",
       "implementation": "InvseeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1499,
+      "registration_line": 1501,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -729,7 +729,7 @@
       "description": "Kém-álca — rövid felderítő álöltözet",
       "implementation": "SpyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1596,
+      "registration_line": 1598,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -751,7 +751,7 @@
       "description": "Játékos kirúgása (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1514,
+      "registration_line": 1516,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -765,7 +765,7 @@
       "description": "Kompjárat: átkelés a túlpartra",
       "implementation": "KompCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1608,
+      "registration_line": 1610,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -789,7 +789,7 @@
       "description": "Az utolsó Heti Krónika visszaolvasása",
       "implementation": "KronikaCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1616,
+      "registration_line": 1618,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -815,7 +815,7 @@
       "description": "Ranglisták (szint, vagyon, raid-kill)",
       "implementation": "LeaderboardCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1569,
+      "registration_line": 1571,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -859,7 +859,7 @@
       "description": "A kódex lapjai — frakciók és helyek története",
       "implementation": "LoreCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1614,
+      "registration_line": 1616,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -884,7 +884,7 @@
       "description": "Piactér parancsok",
       "implementation": "MarketCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1584,
+      "registration_line": 1586,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -919,7 +919,7 @@
       "description": "Központi menü — minden parancs egy helyen",
       "implementation": "MenuCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1567,
+      "registration_line": 1569,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -953,7 +953,7 @@
       "description": "Natív moderációs admin GUI",
       "implementation": "ModerationGuiCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1538,
+      "registration_line": 1540,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -975,7 +975,7 @@
       "description": "Privát üzenet",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1549,
+      "registration_line": 1551,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -987,7 +987,7 @@
       "description": "Némítás (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1517,
+      "registration_line": 1519,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1001,7 +1001,7 @@
       "description": "NPC-kötések: küldetés/bolt/bankár/valutaváltó (admin)",
       "implementation": "NpcBindCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1627,
+      "registration_line": 1629,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1023,7 +1023,7 @@
       "description": "Teleport az utolsó kijelentkezési helyre",
       "implementation": "OfflineTeleportCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1546,
+      "registration_line": 1548,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1037,7 +1037,7 @@
       "description": "Becsület-párbaj — elégtétel a bűnökért",
       "implementation": "HonorDuelCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1594,
+      "registration_line": 1596,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1062,7 +1062,7 @@
       "description": "Parkour-pályák (futás, admin beállítás)",
       "implementation": "ParkourCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1574,
+      "registration_line": 1576,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1097,7 +1097,7 @@
       "description": "Party (csapat) parancsok",
       "implementation": "PartyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1586,
+      "registration_line": 1588,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1132,7 +1132,7 @@
       "description": "Társ (befogó item, idézés, név, szint)",
       "implementation": "PetCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1576,
+      "registration_line": 1578,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1167,7 +1167,7 @@
       "description": "Szakma (profession) parancsok",
       "implementation": "ProfessionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1577,
+      "registration_line": 1579,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1203,7 +1203,7 @@
       "description": "Karakterlap — kaszt, spec, szakma, talent menük",
       "implementation": "ProfileCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1570,
+      "registration_line": 1572,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1245,7 +1245,7 @@
       "description": "Aktív büntetések (admin)",
       "implementation": "ActivePunishmentsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1535,
+      "registration_line": 1537,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1260,7 +1260,7 @@
       "description": "Küldetés parancsok",
       "implementation": "QuestCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1583,
+      "registration_line": 1585,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1295,7 +1295,7 @@
       "description": "Relikvia parancsok (admin)",
       "implementation": "RelicCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1573,
+      "registration_line": 1575,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1329,7 +1329,7 @@
       "description": "Válasz privát üzenetre",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1558,
+      "registration_line": 1560,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1353,7 +1353,7 @@
       "description": "Játékos bejelentése (admin: /reports)",
       "implementation": "ReportCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1507,
+      "registration_line": 1509,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1375,7 +1375,7 @@
       "description": "Bejelentések kezelése (admin)",
       "implementation": "ReportsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1509,
+      "registration_line": 1511,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1387,7 +1387,7 @@
       "description": "Bűnös állapot kezelése (admin)",
       "implementation": "SinnerCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1571,
+      "registration_line": 1573,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1399,7 +1399,7 @@
       "description": "Ülés (leül/feláll)",
       "implementation": "SitCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1503,
+      "registration_line": 1505,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1411,7 +1411,7 @@
       "description": "Privát üzenetek megfigyelése (admin)",
       "implementation": "SocialSpyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1540,
+      "registration_line": 1542,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1425,7 +1425,7 @@
       "description": "Lélek-kovács — a Nekromanta minion-fejlesztései",
       "implementation": "SoulforgeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1591,
+      "registration_line": 1593,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1450,7 +1450,7 @@
       "description": "Lélekszilánk parancsok",
       "implementation": "SoulCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1623,
+      "registration_line": 1625,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1485,7 +1485,7 @@
       "description": "Specializáció parancsok",
       "implementation": "SpecCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1578,
+      "registration_line": 1580,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1521,7 +1521,7 @@
       "description": "Spell-mesterség (cooldown + erő valutáért)",
       "implementation": "SpellCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1624,
+      "registration_line": 1626,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1567,7 +1567,7 @@
       "description": "Varázskönyv: spellek böngészése és kiválasztása",
       "implementation": "SpellbookCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1625,
+      "registration_line": 1627,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1609,7 +1609,7 @@
       "description": "Statisztika-profil",
       "implementation": "StatsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1502,
+      "registration_line": 1504,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1623,7 +1623,7 @@
       "description": "A Suttogók titkos csatornája és tanú-vád",
       "implementation": "WhisperCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1612,
+      "registration_line": 1614,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1647,7 +1647,7 @@
       "description": "Szakma-céhek heti közös céljai",
       "implementation": "ProfessionWeeklyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1598,
+      "registration_line": 1600,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1672,7 +1672,7 @@
       "description": "Talent-fa parancsok",
       "implementation": "TalentCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1579,
+      "registration_line": 1581,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1706,7 +1706,7 @@
       "description": "A Menedék Vének Tanácsa: szavazás, Vásár-hét",
       "implementation": "TanacsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1609,
+      "registration_line": 1611,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1728,7 +1728,7 @@
       "description": "Privát üzenet",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1552,
+      "registration_line": 1554,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1740,7 +1740,7 @@
       "description": "Ideiglenes kitiltás (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1526,
+      "registration_line": 1528,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1754,7 +1754,7 @@
       "description": "Frakció terület parancsok",
       "implementation": "TerritoryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1582,
+      "registration_line": 1584,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1776,7 +1776,7 @@
       "description": "Kitiltás feloldása (admin)",
       "implementation": "ModerationRevokeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1529,
+      "registration_line": 1531,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1788,7 +1788,7 @@
       "description": "Némítás feloldása (admin)",
       "implementation": "ModerationRevokeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1520,
+      "registration_line": 1522,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1802,7 +1802,7 @@
       "description": "Admin láthatatlanság",
       "implementation": "VanishCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1543,
+      "registration_line": 1545,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1824,7 +1824,7 @@
       "description": "Privát üzenet",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1555,
+      "registration_line": 1557,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1836,7 +1836,7 @@
       "description": "Figyelmeztetés (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1511,
+      "registration_line": 1513,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -8647,12 +8647,12 @@
         "TESTER",
         "INTERNAL"
       ],
-      "description": "Kasztválasztás, XP/szint, specializáció és class health; az egyetlen autoritatív greenfield Profile v2 runtime owner-bound revision/CAS persistence-szel, quarantine recoveryvel, DARK seal lifecycle-lal és slothoz kötött companion/Soulforge állapottal.",
+      "description": "Kasztválasztás, XP/szint, specializáció, DARK seal és companion/Soulforge állapot a PlayerProfile class-spec sectionben; per-section CAS és lifecycle fencing.",
       "docs": [
         "docs/FEATURES.md",
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_MIGRATION.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md",
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_YAML_FORMAT.md",
+        "docs/PLAYER_PROFILE_STAGING.md",
         "docs/admin/CLASS_SPEC_REWORK_RUNBOOK.md"
       ]
     },
@@ -9035,6 +9035,23 @@
         "docs/FEATURES.md"
       ],
       "componentless": true
+    },
+    "feature.platform.player_profile": {
+      "audience": [
+        "PLAYER",
+        "ADMIN",
+        "DEVELOPER",
+        "TESTER",
+        "INTERNAL"
+      ],
+      "description": "Moduláris, strukturált YAML-backed PlayerProfile authority, per-section CAS/WAL/quarantine, belső Java read API és biztonságos read-only HTTP API.",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_YAML_FORMAT.md",
+        "docs/PLAYER_PROFILE_AUTHORITY_MATRIX.md",
+        "docs/PLAYER_PROFILE_API.md",
+        "docs/PLAYER_PROFILE_STAGING.md"
+      ]
     }
   },
   "permissions": {
@@ -9071,7 +9088,7 @@
         "src/main/java/hu/taliann/icesmp/commands/SinnerCommand.java": "c6d00e272ad69ea9f874c87cb1a1fbb54283de642b8adfd43f15c441b3d2e1ac",
         "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
         "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
-        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "11daaa2d351f80850b07d1a8bbf1ba854cf6c7a89349bd9940241f679a50b018",
+        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "abd285e8b154adf04a4bb7373d979268d2d90a178527c5ae6eb5c443769c8c1c",
         "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
         "src/main/java/hu/taliann/icesmp/commands/UnmuteCommand.java": "1171d989307c932d8ebbd9b70288830ad08e47b107e6311e2c84b41bfa9db03f",
         "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
@@ -9080,14 +9097,14 @@
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "475931ea21e7b254c0d96b7019e7a02aa9be11da726f27da7115f5eaf9615761",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "7fb2dee67a26c214cebb4e0934e522d8fce742bf3ddd943e0603e023e2253b4e",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "e0fcf47e8fd37377c210d608601d1b70a2519a269c0fcc46f6e4ce40c81e55b7",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "8b730d58515be36bb3e88a6e6896af28626554aad7569fd10b303e2c330ee258",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "a34b078bf1aa022603d3b175effec550e3fd9673db9531e67ce29e1acae00f2e",
         "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
         "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "062ff62f22bad17ba937495685e576d4fc18ce4e8b79f74e0484dfcf1f1f979a",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "2a43f1f9112c0008776fba4489659678c9d0f0c53ef99848a45003bb50f5c496",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "5ed08609dda12968efaa0511ab9b37d8b2f08cfea7e766e06079924e5ec56f7f",
         "src/main/java/hu/taliann/icesmp/core/Permissions.java": "46cc7d1872ae654bc7be649c3ae72ffa4c13bfc6e9e29009472085696c12cc34",
         "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "fdedfab174951926485e741d620e3632007baed65f7f34bc2362fcd61ea6a57e",
         "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "66d2b668bddb3dc241c3c2038b069a7ce07e06c42574c23b08cd931a7c0d4d71",
@@ -10562,6 +10579,321 @@
         "docs/FEATURES.md"
       ]
     },
+    "component.hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ClassSpecSectionMutationStore": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.DarkSpecializationPolicy": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.DefaultClassSpecProfileGateway": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.GateSnapshot": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.GateState": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ProfileDiagnostic": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ProfileMutationFailurePolicy": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ProfileMutationPolicy": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ProfileMutationResult": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ProfileSessionRegistry": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.compat.ClassSpecDependencyPreflight": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.compat.VersionRequirement": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.CapstoneStatus": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.ClassLoadout": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.ClassSpecCatalog": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.CompanionProfile": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.LoadoutSlot": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.LoadoutStatus": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.MasteryProgress": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.NumericGuards": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.ProfileDiagnostics": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.ProfileOperation": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.ProfileOperationStatus": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.ProfileOperationType": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.ProfileStatus": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.SealCause": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.SealReason": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.SoulbondState": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.domain.SpellGrantLedger": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecContentPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecDialogPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecEncounterPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecHudPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassSpecModelPort": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.persistence.ClassSpecSectionRepository": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.persistence.ProfileRepositoryException": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.persistence.RepositoryMutationStoreAdapter": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.transaction.RespecRecoveryProtocol": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.transaction.RespecTransactionJournal": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.commands.AbstractDispatchCommand": {
       "feature": "feature.core.shared_services",
       "docs": [
@@ -11192,6 +11524,12 @@
         "docs/FEATURES.md"
       ]
     },
+    "component.hu.taliann.icesmp.crates.CrateSoundResolver": {
+      "feature": "feature.core.shared_services",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.crates.CrateTaskLease": {
       "feature": "feature.economy.crates",
       "docs": [
@@ -11212,6 +11550,12 @@
     },
     "component.hu.taliann.icesmp.crates.WeightedSelector": {
       "feature": "feature.economy.crates",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.data.BlockCuboid": {
+      "feature": "feature.core.shared_services",
       "docs": [
         "docs/FEATURES.md"
       ]
@@ -12188,6 +12532,12 @@
         "docs/FEATURES.md"
       ]
     },
+    "component.hu.taliann.icesmp.listeners.ResourcePackListener": {
+      "feature": "feature.core.shared_services",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.listeners.RitualListener": {
       "feature": "feature.world.rituals",
       "docs": [
@@ -12710,6 +13060,12 @@
         "docs/FEATURES.md"
       ]
     },
+    "component.hu.taliann.icesmp.managers.HudSidebarLayout": {
+      "feature": "feature.core.shared_services",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.managers.IntroManager": {
       "feature": "feature.player.onboarding",
       "docs": [
@@ -12821,6 +13177,12 @@
     },
     "component.hu.taliann.icesmp.managers.PlayerCaravanManager": {
       "feature": "feature.world.events",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.managers.ProfessionIngredientParser": {
+      "feature": "feature.core.shared_services",
       "docs": [
         "docs/FEATURES.md"
       ]
@@ -13151,6 +13513,12 @@
         "docs/FEATURES.md"
       ]
     },
+    "component.hu.taliann.icesmp.moderation.ModerationPlayerPage": {
+      "feature": "feature.core.shared_services",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.moderation.ModerationSpamGuard": {
       "feature": "feature.admin.moderation",
       "docs": [
@@ -13233,6 +13601,314 @@
       "feature": "feature.player.motd",
       "docs": [
         "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.api.AdminPlayerProfileDto": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.api.IceSMPPlayerProfileApi": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.api.PlayerProfileQueryService": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.api.PublicPlayerProfileDto": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.api.SelfPlayerProfileDto": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileService": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.ImmutableValues": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.PlayerProfileSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.ProfileHealth": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.ProfileSectionData": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.ProfileSectionId": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.ProfileSectionSnapshot": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.SectionHealth": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.SectionRevision": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.AchievementSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.CompanionSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.EconomySection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.FactionSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.IdentitySection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.LifecycleSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.ModerationSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.OnboardingSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.OperationSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.PreferenceSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.ProfessionSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.QuestSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.RelicSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.SocialLinkSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.SpellbookSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.TalentSection": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.http.PlayerProfileHttpServer": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.http.PlayerProfileJson": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.persistence.PlayerProfileManifest": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepository": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryException": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.persistence.StructuredPlayerProfileYaml": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/PLAYER_PROFILE_API.md"
       ]
     },
     "component.hu.taliann.icesmp.relics.RelicDefinition": {
@@ -13691,6 +14367,12 @@
         "docs/FEATURES.md"
       ]
     },
+    "component.hu.taliann.icesmp.utils.ConfigMaterialResolver": {
+      "feature": "feature.core.shared_services",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.utils.DailyBudget": {
       "feature": "feature.economy.rewards_bounty",
       "docs": [
@@ -13787,6 +14469,12 @@
         "docs/FEATURES.md"
       ]
     },
+    "component.hu.taliann.icesmp.utils.TerritoryDestination": {
+      "feature": "feature.core.shared_services",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.utils.TextAnimator": {
       "feature": "feature.player.chat_feedback",
       "docs": [
@@ -13815,335 +14503,6 @@
       "feature": "feature.world.mobs_loot",
       "docs": [
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.compat.ClassSpecDependencyPreflight": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.compat.VersionRequirement": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.ClassSpecContentPort": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.ClassSpecDialogPort": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.ClassSpecEncounterPort": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.ClassSpecHudPort": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.ClassSpecModelPort": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ClassProfileLifecycleService": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ClassProfileMutationStore": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.DarkSpecializationPolicy": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.DefaultClassSpecProfileGateway": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.GateSnapshot": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.GateState": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ProfileDiagnostic": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ProfileMutationFailurePolicy": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ProfileMutationPolicy": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ProfileMutationResult": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.CapstoneStatus": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ClassLoadout": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ClassProfile": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ClassSpecCatalog": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.CompanionProfile": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.LoadoutSlot": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.LoadoutStatus": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.MasteryProgress": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ProfileDiagnostics": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ProfileStatus": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.SealCause": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.SealReason": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.SoulbondState": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.persistence.ClassProfileCodec": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.persistence.ClassProfileRepository": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.persistence.ProfileRepositoryException": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.persistence.RepositoryMutationStoreAdapter": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.persistence.YamlClassProfileRepository": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ProfileSessionRegistry": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.NumericGuards": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ProfileOperation": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ProfileOperationStatus": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ProfileOperationType": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.SpellGrantLedger": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.transaction.RespecRecoveryProtocol": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.transaction.RespecTransactionJournal": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
       ]
     }
   },
