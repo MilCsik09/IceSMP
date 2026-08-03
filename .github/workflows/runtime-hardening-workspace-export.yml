@@ -1,4 +1,4 @@
-name: Config, recipe and icon hardening gate
+name: Final runtime hardening cleanup gate
 
 on:
   pull_request:
@@ -11,11 +11,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: runtime-hardening-implementation
+  group: runtime-hardening-final-cleanup
   cancel-in-progress: false
 
 jobs:
-  implement-config-recipe-icons:
+  validate-and-clean:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'fix/runtime-hardening-audit-20260803'
     runs-on: ubuntu-latest
     steps:
@@ -26,114 +26,65 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Verify immutable input and base ancestry
+      - name: Verify branch ancestry and clean checkout
         shell: bash
         run: |
           set -euo pipefail
           test -d .git
-          git merge-base --is-ancestor 61e4ff642032d4378f773e02318d9b2e421c2800 HEAD
-          git merge-base --is-ancestor 24dc397feb2ad6df08c10cbeedb8eca6f218d78a HEAD
+          git merge-base --is-ancestor d407044c8de2d6f03d6faf931d5e96c3c3d3c63e HEAD
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
           find . -name AGENTS.md -print
           git status --short --branch
 
-      - name: Apply asserted stage-3 patches
+      - name: Remove temporary implementation scaffolding
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/apply_stage3_part1.py
-          python3 .github/scripts/apply_stage3_part2a.py
-          python3 .github/scripts/apply_stage3_part2b.py
-          python3 .github/scripts/apply_stage3_part3.py
-          python3 .github/scripts/apply_stage3_part4a.py
-          python3 .github/scripts/apply_stage3_part4b.py
-          python3 .github/scripts/apply_stage3_fixups.py
-          python3 .github/scripts/apply_stage3_compile_fixups.py
+          rm -f .github/scripts/apply_runtime_hardening_docs_drift.py
+          rm -f .github/scripts/apply_runtime_hardening_stage1.py
+          rm -f .github/scripts/apply_stage3_*.py
+          rm -f .github/scripts/event-stage2.b64.*
+          rm -f .github/workflows/runtime-hardening-workspace-export.yml
+          test -z "$(find .github/scripts -maxdepth 1 -type f \( -name 'apply_runtime_hardening*' -o -name 'apply_stage3_*' -o -name 'event-stage2.b64.*' \) -print -quit)"
+          test ! -e .github/workflows/runtime-hardening-workspace-export.yml
           git diff --check
-          git diff --stat
+          git status --short
 
-      - name: Update measured architecture inventory
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Run full clean build and regressions
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
+          chmod +x gradlew
+          ./gradlew clean check --console=plain --no-daemon --stacktrace
 
-          architecture = Path('docs/ARCHITECTURE.md')
-          text = architecture.read_text(encoding='utf-8')
-          if text.count('| `gui/` | 46 |') != 1:
-              raise SystemExit('GUI package inventory assertion failed')
-          text = text.replace('| `gui/` | 46 |', '| `gui/` | 47 |', 1)
-          if text.count('571') != 1:
-              raise SystemExit('total Java inventory assertion failed')
-          text = text.replace('571', '575', 1)
-          architecture.write_text(text, encoding='utf-8')
-
-          claude = Path('CLAUDE.md')
-          ctext = claude.read_text(encoding='utf-8')
-          old = 'A dokumentált release 571 Java-fájl / 90 manager.'
-          new = 'A dokumentált release 575 Java-fájl / 90 manager.'
-          if ctext.count(old) != 1:
-              raise SystemExit('CLAUDE Java inventory assertion failed')
-          claude.write_text(ctext.replace(old, new, 1), encoding='utf-8')
-          PY
-          git diff --check
-
-      - name: Validate item-model mapping
+      - name: Validate GUI and resource-pack item models
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/validate_gui_icons.py | tee /tmp/gui-icons.log
 
-      - name: Compile and run focused regressions
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x gradlew
-          ./gradlew \
-            compileJava \
-            runtimeHardeningRegressionTest \
-            eventSpawnSafetyRegressionTest \
-            configGuiTransactionRegressionTest \
-            configGuiCoverageRegressionTest \
-            professionRecipeAuditRegressionTest \
-            --console=plain --no-daemon --stacktrace
-
       - name: Run repository consistency gate
         shell: bash
         run: |
           set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --quiet pyyaml
           python3 scripts/check_consistency.py | tee /tmp/consistency.log
 
-      - name: Commit and push without force
+      - name: Commit and push cleanup without force
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            src/main/java/hu/taliann/icesmp/managers/ConfigManager.java \
-            src/main/java/hu/taliann/icesmp/gui/ConfigEditSession.java \
-            src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUI.java \
-            src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java \
-            src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java \
-            src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeManager.java \
-            src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
-            src/main/resources/config/profession-recipes.yml \
-            src/regression/java/hu/taliann/icesmp/config/ConfigGuiTransactionRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/config/ConfigGuiCoverageRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/professions/ProfessionRecipeAuditRegressionSuite.java \
-            scripts/validate_gui_icons.py \
-            build.gradle.kts \
-            docs/CONFIG_GUI_COVERAGE.md \
-            docs/PROFESSION_RECIPE_ITEM_AUDIT.md \
-            docs/RESOURCE_PACK_CMD.md \
-            docs/RUNTIME_HARDENING_AUDIT.md \
-            docs/ARCHITECTURE.md \
-            CLAUDE.md
-          git commit -m "Harden config GUI, recipes and icon mapping" \
-            -m "Stage config edits until explicit save, reject stale concurrent sessions, expose mandatory runtime safety keys, and document reload semantics. Make profession recipes deterministic and reload-safe, remove the one proven semantic duplicate, and validate every ITEM_MODEL against the manifest and checked-in pack." \
-            -m "Adds config transaction/coverage and profession recipe audit regressions." \
-            -m "Co-Authored-By: ChatGPT <noreply@openai.com>" \
-            -m "Claude-Session: runtime-hardening-audit-20260803"
+          git add -A
+          git diff --cached --check
+          git commit -m "Remove temporary runtime hardening scaffolding" \
+            -m "Delete the implementation-only workflow, asserted patch scripts and encoded payloads after a successful Java 21 clean check, item-model validation and repository consistency gate." \
+            -m "Co-Authored-By: ChatGPT <noreply@openai.com>"
           git push origin HEAD:fix/runtime-hardening-audit-20260803
