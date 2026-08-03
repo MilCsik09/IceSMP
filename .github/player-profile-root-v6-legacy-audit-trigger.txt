@@ -1,4 +1,4 @@
 Trigger exact-head read-only legacy class-profile authority audit.
-Attempt: 2 — use the already-fetched target ref without authenticated refetch.
+Attempt: 3 — emit only the concise machine-readable definition/reference report.
 Expected recovery head: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
 Expected #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
