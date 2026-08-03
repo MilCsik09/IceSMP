@@ -1,11 +1,11 @@
-name: PlayerProfile restore remaining platform suites (temporary)
+name: PlayerProfile recovered authority cleanup (temporary)
 
 on:
   pull_request:
     branches:
       - agent/player-profile-root-reconstruct-20260803-v6
     paths:
-      - .github/player-profile-root-v6-trigger.txt
+      - .github/player-profile-root-v6-authority-cleanup-trigger.txt
   workflow_dispatch:
 
 permissions:
@@ -19,7 +19,7 @@ env:
   EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
 
 jobs:
-  restore:
+  cleanup:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Extract and normalize reviewed regression sources
+      - name: Extract reviewed PlayerProfile regression sources
         shell: bash
         run: |
           set -euo pipefail
@@ -47,11 +47,11 @@ jobs:
               'TX': 'PlayerProfileTransactionRegressionSuite.java',
           }
           for variable, filename in destinations.items():
-              pattern = re.compile(
+              match = re.search(
                   rf'^\s*cat > "\${variable}" <<\'JAVA\'\n(.*?)^\s*JAVA\s*$',
+                  source,
                   re.MULTILINE | re.DOTALL,
               )
-              match = pattern.search(source)
               if match is None:
                   raise SystemExit(f'missing reviewed heredoc for {variable}')
               java = textwrap.dedent(match.group(1)).rstrip() + '\n'
@@ -59,7 +59,6 @@ jobs:
                   raise SystemExit(f'invalid package in {variable}')
               if 'ClassProfile' in java or 'ClassProfileCodec' in java:
                   raise SystemExit(f'legacy class-profile symbol leaked into {variable}')
-
               if variable == 'DOMAIN':
                   old_entry = 'FactionSection.class, EconomySection.class, ClassSpecSection.class,'
                   if java.count(old_entry) != 1:
@@ -68,23 +67,22 @@ jobs:
                   marker = '        for (Class<?> type : records) {'
                   if java.count(marker) != 1:
                       raise SystemExit('unexpected domain record-loop marker count')
-                  replacement = '''        check(java.lang.reflect.Modifier.isFinal(
-                  ClassSpecSection.class.getModifiers()), "final ClassSpecSection");
-          for (java.lang.reflect.Field field : ClassSpecSection.class.getDeclaredFields()) {
-              check(!field.getType().getName().startsWith("org.bukkit."),
-                      "no Bukkit field ClassSpecSection." + field.getName());
-          }
-          for (Class<?> type : records) {'''
-                  replacement = textwrap.dedent(replacement).rstrip()
-                  replacement = textwrap.indent(replacement, '        ')
+                  replacement = textwrap.indent(textwrap.dedent('''
+                      check(java.lang.reflect.Modifier.isFinal(
+                              ClassSpecSection.class.getModifiers()), "final ClassSpecSection");
+                      for (java.lang.reflect.Field field : ClassSpecSection.class.getDeclaredFields()) {
+                          check(!field.getType().getName().startsWith("org.bukkit."),
+                                  "no Bukkit field ClassSpecSection." + field.getName());
+                      }
+                      for (Class<?> type : records) {
+                  ''').strip(), '        ')
                   java = java.replace(marker, replacement, 1)
-
               path = Path('/tmp/player-profile-suites') / filename
               path.write_text(java, encoding='utf-8', newline='\n')
-              print(f'{variable}: {len(java.encode("utf-8"))} bytes -> {path}')
+              print(f'{variable}: {len(java.encode("utf-8"))} bytes')
           PY
 
-      - name: Check out exact recovered branch and restore suites idempotently
+      - name: Check out exact recovery head and prepare authority cleanup
         shell: bash
         run: |
           set -euo pipefail
@@ -94,7 +92,7 @@ jobs:
           test "$(git rev-parse refs/remotes/origin/${RECOVERY_BRANCH})" = "$EXPECTED_RECOVERY_HEAD"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
           git switch --detach "$EXPECTED_RECOVERY_HEAD"
-          git switch -c local-suite-restore
+          git switch -c local-authority-cleanup
           git reset --hard "$EXPECTED_RECOVERY_HEAD"
           git clean -fdx
 
@@ -102,102 +100,202 @@ jobs:
           YAML=src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java
           TX=src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java
           API=src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
-
-          install_reviewed_suite() {
-            local reviewed="$1"
-            local target="$2"
-            mkdir -p "$(dirname "$target")"
-            if [[ -e "$target" ]]; then
-              cmp -s "$reviewed" "$target" || {
-                echo "Existing suite differs from reviewed source: $target" >&2
-                diff -u "$target" "$reviewed" || true
-                exit 1
-              }
-              echo "Verified existing reviewed suite: $target"
-            else
-              cp "$reviewed" "$target"
-              echo "Restored reviewed suite: $target"
-            fi
-          }
-
-          install_reviewed_suite /tmp/player-profile-suites/PlayerProfileDomainRegressionSuite.java "$DOMAIN"
-          install_reviewed_suite /tmp/player-profile-suites/PlayerProfileYamlRegressionSuite.java "$YAML"
-          install_reviewed_suite /tmp/player-profile-suites/PlayerProfileTransactionRegressionSuite.java "$TX"
+          for file in "$DOMAIN" "$YAML" "$TX"; do test ! -e "$file"; done
           test -s "$API"
+          mkdir -p "$(dirname "$DOMAIN")" "$(dirname "$YAML")" "$(dirname "$TX")"
+          cp /tmp/player-profile-suites/PlayerProfileDomainRegressionSuite.java "$DOMAIN"
+          cp /tmp/player-profile-suites/PlayerProfileYamlRegressionSuite.java "$YAML"
+          cp /tmp/player-profile-suites/PlayerProfileTransactionRegressionSuite.java "$TX"
 
-          if grep -Fq 'dto.profileHealth().equals("QUARANTINED")' "$API"; then
-            test "$(grep -F 'dto.profileHealth().equals("QUARANTINED")' "$API" | wc -l)" -eq 1
-            perl -pi -e 's/dto\.profileHealth\(\)\.equals\("QUARANTINED"\)/dto.profileHealth().equals("PARTIAL")/' "$API"
-            echo "Corrected API aggregate health expectation to PARTIAL."
-          fi
-          test "$(grep -F 'dto.profileHealth().equals("PARTIAL")' "$API" | wc -l)" -eq 1
-          ! grep -Fq 'dto.profileHealth().equals("QUARANTINED")' "$API"
+          OLD_ADAPTER=src/main/java/hu/taliann/icesmp/classspec/persistence/RepositoryMutationStoreAdapter.java
+          NEW_ADAPTER=src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java
+          test -f "$OLD_ADAPTER"
+          test ! -e "$NEW_ADAPTER"
+          mv "$OLD_ADAPTER" "$NEW_ADAPTER"
+          perl -pi -e 's/RepositoryMutationStoreAdapter/ClassSpecSectionMutationStoreAdapter/g' "$NEW_ADAPTER"
+          grep -F 'public final class ClassSpecSectionMutationStoreAdapter implements ClassSpecSectionMutationStore' "$NEW_ADAPTER"
+          grep -F 'public ClassSpecSectionMutationStoreAdapter(final ClassSpecSectionRepository repository)' "$NEW_ADAPTER"
 
-          for file in "$DOMAIN" "$YAML" "$TX" "$API"; do
-            test -s "$file"
+          CORE=src/main/java/hu/taliann/icesmp/core/IceSMPCore.java
+          test "$(grep -o 'RepositoryMutationStoreAdapter' "$CORE" | wc -l)" -eq 1
+          perl -pi -e 's/RepositoryMutationStoreAdapter/ClassSpecSectionMutationStoreAdapter/g; s/classProfileRepository/classSpecSectionRepository/g; s/classProfileLifecycleService/classSpecSectionLifecycleService/g' "$CORE"
+          ! grep -nE 'RepositoryMutationStoreAdapter|classProfileRepository|classProfileLifecycleService' "$CORE"
+          grep -F 'ClassSpecSectionMutationStoreAdapter(classSpecSectionRepository)' "$CORE"
+          grep -F 'ClassSpecSectionLifecycleService(' "$CORE"
+
+          OBSOLETE=(
+            src/main/java/hu/taliann/icesmp/classspec/application/ClassProfileLifecycleService.java
+            src/main/java/hu/taliann/icesmp/classspec/application/ClassProfileMutationStore.java
+            src/main/java/hu/taliann/icesmp/classspec/domain/ClassProfile.java
+            src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassProfileSessionBridge.java
+            src/main/java/hu/taliann/icesmp/classspec/persistence/ClassProfileCodec.java
+            src/main/java/hu/taliann/icesmp/classspec/persistence/ClassProfileRepository.java
+            src/main/java/hu/taliann/icesmp/classspec/persistence/YamlClassProfileRepository.java
+            src/regression/java/hu/taliann/icesmp/classspec/persistence/YamlClassProfileRepositoryRegressionSuite.java
+          )
+          for file in "${OBSOLETE[@]}"; do
+            test -f "$file"
+            rm "$file"
           done
-          ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec' "$DOMAIN" "$YAML" "$TX"
-          grep -F 'contains("ICS2")' "$YAML"
-          grep -F 'final ClassSpecSection' "$DOMAIN"
-          grep -F 'no Bukkit field ClassSpecSection.' "$DOMAIN"
-          git diff --check
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          ci = Path('.github/workflows/ci.yml')
+          text = ci.read_text(encoding='utf-8')
+          old = '''          grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log
+          grep -F "Class/spec application regression suite passed." gradle-build.log
+          grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log
+          grep -F "Class profile lifecycle regression suite passed." gradle-build.log
+          grep -F "Respec transaction regression suite passed." gradle-build.log
+          grep -F "Spell grant ledger regression suite passed." gradle-build.log
+'''
+          new = '''          grep -F "ClassSpecSection v2 domain regression tests passed." gradle-build.log
+          grep -F "Class/spec application regression suite passed." gradle-build.log
+          grep -F "ClassSpecSection lifecycle regression suite passed." gradle-build.log
+          grep -F "PlayerProfile domain regression suite passed." gradle-build.log
+          grep -F "PlayerProfile YAML regression suite passed." gradle-build.log
+          grep -F "PlayerProfile transaction regression suite passed." gradle-build.log
+          grep -F "PlayerProfile API regression suite passed." gradle-build.log
+          grep -F "Respec transaction regression suite passed." gradle-build.log
+          grep -F "Spell grant ledger regression suite passed." gradle-build.log
+'''
+          if text.count(old) != 1:
+              raise SystemExit('unexpected old CI regression marker block')
+          text = text.replace(old, new)
+          temporary = '      - name: Package authenticated Git checkout (temporary)\n'
+          if text.count(temporary) != 1:
+              raise SystemExit('unexpected temporary checkout step count')
+          text = text.split(temporary, 1)[0].rstrip() + '\n'
+          ci.write_text(text, encoding='utf-8', newline='\n')
+
+          docs = Path('.github/workflows/repository-docs-inventory.yml')
+          text = docs.read_text(encoding='utf-8')
+          old = '''      - name: Upload inventory artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+'''
+          new = '''      - name: Upload inventory artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+'''
+          if text.count(old) != 1:
+              raise SystemExit('unexpected inventory artifact upload block')
+          docs.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
+          PY
+
+          rm -rf \
+            .github/player-profile-root-payload \
+            .github/profile-v2-finalize \
+            .github/profile-v2-finalize-v2 \
+            .github/profile-v2-finalize-v3 \
+            .github/profile-v2-finalize-v4 \
+            .github/profile-v2-finalize-v5
+          rm -f \
+            .github/workflows/player-profile-bootstrap-checkout.yml \
+            .github/player-profile-bootstrap-trigger.txt \
+            .github/player-profile-bootstrap-run.txt \
+            .github/workflows/profile-v2-source-export.yml \
+            .github/workflows/profile-v2-payload-check.yml \
+            gradle-build.log gradle-check.log
+
+          git add -A
+          git diff --cached --check
+          ! git grep -nE 'ClassProfile|ClassProfileCodec|ClassProfileRepository|ClassProfileLifecycleService|ClassProfileMutationStore|BukkitClassProfileSessionBridge|YamlClassProfileRepository|RepositoryMutationStoreAdapter' -- \
+            src/main/java src/regression/java build.gradle.kts .github/workflows/ci.yml
+          ! git diff --cached --name-only --diff-filter=ACMRTUXB | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$'
+          echo '=== Prepared authority cleanup ==='
           git status --short
-          git diff --stat
+          git diff --cached --stat
+          git diff --cached --name-status
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: true
 
-      - name: Java 21 clean build and all PlayerProfile regressions
+      - name: Java 21 clean build and all regressions
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew clean build --no-daemon --stacktrace | tee /tmp/player-profile-root-build.log
+          ./gradlew clean build --no-daemon --stacktrace | tee /tmp/player-profile-authority-cleanup-build.log
 
-      - name: Verify regression markers and repository gates
+      - name: Verify PlayerProfile regression markers
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "PlayerProfile domain regression suite passed." /tmp/player-profile-root-build.log
-          grep -F "PlayerProfile YAML regression suite passed." /tmp/player-profile-root-build.log
-          grep -F "PlayerProfile transaction regression suite passed." /tmp/player-profile-root-build.log
-          grep -F "PlayerProfile API regression suite passed." /tmp/player-profile-root-build.log
-          grep -F "ClassSpecSection lifecycle regression suite passed." /tmp/player-profile-root-build.log
-          grep -F "ClassSpecSection v2 domain regression tests passed." /tmp/player-profile-root-build.log
+          grep -F "ClassSpecSection v2 domain regression tests passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "Class/spec application regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "ClassSpecSection lifecycle regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "PlayerProfile domain regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "PlayerProfile YAML regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "PlayerProfile transaction regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "PlayerProfile API regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "Respec transaction regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+          grep -F "Spell grant ledger regression suite passed." /tmp/player-profile-authority-cleanup-build.log
+
+      - name: Run PlayerProfile and repository gates
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 scripts/check_player_profile_authority.py
           python3 scripts/test_player_profile_authority.py
           python3 scripts/check_player_profile_openapi.py
           python3 scripts/check_consistency.py
           python3 scripts/check_markdown_links.py --root .
           python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+          python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report
+          python3 scripts/check_documentation_coverage.py \
+            --root . \
+            --inventory build/repository-inventory/repository-inventory.json \
+            --output build/repository-inventory \
+            --mode report
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          files = sorted(Path('build').rglob('*.json'))
+          if not files:
+              raise SystemExit('No JSON artifact generated')
+          for path in files:
+              with path.open(encoding='utf-8') as handle:
+                  json.load(handle)
+          print(f'Validated {len(files)} generated JSON files')
+          PY
           git diff --check "$EXPECTED_TARGET_HEAD...HEAD"
 
-      - name: Commit and fast-forward push only after every gate succeeds
+      - name: Audit stale documentation claims
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -nE 'ICS2|YamlClassProfileRepository|ClassProfileCodec|ClassProfileRepository|ClassProfile v2' \
+              README.md CLAUDE.md docs scripts --exclude='*.json'; then
+            echo 'Stale class-profile-only documentation remains.' >&2
+            exit 1
+          fi
+
+      - name: Commit and fast-forward push after every gate succeeds
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            src/regression/java/hu/taliann/icesmp/playerprofile/domain/PlayerProfileDomainRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
+          git add -A
           git diff --cached --check
           REMOTE_RECOVERY_HEAD=$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')
           REMOTE_TARGET_HEAD=$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')
           test "$REMOTE_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
           test "$REMOTE_TARGET_HEAD" = "$EXPECTED_TARGET_HEAD"
-          if git diff --cached --quiet; then
-            echo "Reviewed suites already present; no commit required."
-          else
-            git commit -m "test(player-profile): restore domain persistence and transaction regressions"
-            git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
-          fi
+          git commit -m "refactor(player-profile): remove legacy class-profile authority"
+          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
