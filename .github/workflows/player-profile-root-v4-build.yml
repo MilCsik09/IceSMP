@@ -1,0 +1,68 @@
+name: PlayerProfile recovered root v4 build (temporary)
+
+on:
+  pull_request:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths:
+      - .github/player-profile-root-v6-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out recovered root branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RECOVERY_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Verify recovered branch relationship and tree hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor f25e7e600f418724dd2341e39387a0fa5c0625de HEAD
+          test "$(git rev-list --count f25e7e600f418724dd2341e39387a0fa5c0625de..HEAD)" = "1"
+          git diff --check f25e7e600f418724dd2341e39387a0fa5c0625de..HEAD
+          if git ls-tree -r --name-only HEAD | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$|player-profile-bootstrap'; then
+            echo "Temporary payload, workflow bootstrap or build artifact remains in the recovered tree." >&2
+            exit 1
+          fi
+          git status --short
+          git diff --stat f25e7e600f418724dd2341e39387a0fa5c0625de..HEAD
+
+      - name: Java 21 clean build
+        shell: bash
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Full Gradle check
+        shell: bash
+        run: ./gradlew check --no-daemon --stacktrace
+
+      - name: PlayerProfile authority and OpenAPI gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_player_profile_authority.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_player_profile_openapi.py
