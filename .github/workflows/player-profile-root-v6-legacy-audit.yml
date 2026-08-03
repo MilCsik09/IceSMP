@@ -1,0 +1,85 @@
+name: PlayerProfile recovered legacy-authority audit (temporary)
+
+on:
+  pull_request:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths:
+      - .github/player-profile-root-v6-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
+  EXPECTED_RECOVERY_HEAD: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
+  TARGET_BRANCH: rework/class-spec-profile-v2
+  EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact authenticated recovery history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RECOVERY_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify refs and enumerate legacy class-profile authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RECOVERY_HEAD"
+          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
+
+          PATTERN='ClassProfile|ClassProfileCodec|ClassProfileRepository|ClassProfileLifecycleService|ClassProfileMutationStore|BukkitClassProfileSessionBridge|YamlClassProfileRepository|RepositoryMutationStoreAdapter'
+          echo '=== Legacy references in production sources ==='
+          grep -R -nE "$PATTERN" src/main/java build.gradle.kts || true
+          echo '=== Legacy references in regression sources ==='
+          grep -R -nE "$PATTERN" src/regression/java || true
+          echo '=== Class/spec source files ==='
+          find src/main/java/hu/taliann/icesmp/classspec -type f -print | sort
+          echo '=== New PlayerProfile/ClassSpecSection references ==='
+          grep -R -nE 'ClassSpecSection(LifecycleService|MutationStore|Repository)?|BukkitClassSpecSectionSessionBridge' \
+            src/main/java src/regression/java build.gradle.kts || true
+          echo '=== Candidate legacy files ==='
+          find src/main/java src/regression/java -type f \
+            \( -name '*ClassProfile*' -o -name '*YamlClassProfile*' -o -name '*RepositoryMutationStoreAdapter*' \) \
+            -print | sort
+          echo '=== Production imports of exact old packages ==='
+          grep -R -nE '^import hu\.taliann\.icesmp\.classspec\.(domain\.ClassProfile|persistence\.ClassProfile|application\.ClassProfile|integration\.BukkitClassProfile)' \
+            src/main/java || true
+          echo '=== Build task references ==='
+          grep -nE 'ClassProfile|classProfile|ClassSpecSection|playerProfile' build.gradle.kts || true
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          roots = [Path('src/main/java'), Path('src/regression/java')]
+          pattern = re.compile(
+              r'ClassProfile|ClassProfileCodec|ClassProfileRepository|'
+              r'ClassProfileLifecycleService|ClassProfileMutationStore|'
+              r'BukkitClassProfileSessionBridge|YamlClassProfileRepository|'
+              r'RepositoryMutationStoreAdapter'
+          )
+          findings = []
+          for root in roots:
+              for path in sorted(root.rglob('*.java')):
+                  text = path.read_text(encoding='utf-8')
+                  hits = [
+                      {'line': number, 'text': line.strip()}
+                      for number, line in enumerate(text.splitlines(), 1)
+                      if pattern.search(line)
+                  ]
+                  if hits:
+                      findings.append({'path': str(path), 'hits': hits})
+          print('=== Machine summary ===')
+          print(json.dumps({'files': len(findings), 'findings': findings}, indent=2))
+          PY
