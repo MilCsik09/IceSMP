@@ -1,4 +1,4 @@
-name: PlayerProfile recovered lifecycle and domain regression port (temporary)
+name: PlayerProfile recovered platform regressions (temporary)
 
 on:
   pull_request:
@@ -13,14 +13,14 @@ permissions:
 
 env:
   RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
-  EXPECTED_RECOVERY_HEAD: b139a509598ce7791045c2f15bd3a59eab8b088b
+  EXPECTED_RECOVERY_HEAD: 4b98fc92c44e06784e38a59c6680d1e9660fafea
   TARGET_BRANCH: rework/class-spec-profile-v2
   EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
 
 jobs:
-  port-regressions:
+  restore-regressions:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - name: Check out authenticated recovery history
         uses: actions/checkout@v4
@@ -40,333 +40,1124 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Port lifecycle and section-domain regressions and push
+      - name: Restore PlayerProfile domain, YAML, transaction and API suites
         shell: bash
         run: |
           set -euo pipefail
-          ACTUAL_RECOVERY_HEAD=$(git rev-parse HEAD)
-          test "$ACTUAL_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RECOVERY_HEAD"
           git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
 
-          OLD_LIFECYCLE=src/regression/java/hu/taliann/icesmp/classspec/application/ClassProfileLifecycleRegressionSuite.java
-          NEW_LIFECYCLE=src/regression/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionLifecycleRegressionSuite.java
-          OLD_DOMAIN=src/regression/java/hu/taliann/icesmp/classspec/profile/ClassProfileV2RegressionSuite.java
-          NEW_DOMAIN=src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java
+          DOMAIN=src/regression/java/hu/taliann/icesmp/playerprofile/domain/PlayerProfileDomainRegressionSuite.java
+          YAML=src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java
+          TX=src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java
+          API=src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
+          for file in "$DOMAIN" "$YAML" "$TX" "$API"; do
+            test ! -e "$file"
+            mkdir -p "$(dirname "$file")"
+          done
 
-          test -f "$OLD_LIFECYCLE"
-          test ! -e "$NEW_LIFECYCLE"
-          test -f "$OLD_DOMAIN"
-          test ! -e "$NEW_DOMAIN"
+          cat > "$DOMAIN" <<'JAVA'
+          package hu.taliann.icesmp.playerprofile.domain;
 
-          mv "$OLD_LIFECYCLE" "$NEW_LIFECYCLE"
-          python3 - "$NEW_LIFECYCLE" <<'PY'
-          from pathlib import Path
-          import sys
+          import hu.taliann.icesmp.playerprofile.domain.section.*;
+          import java.lang.reflect.RecordComponent;
+          import java.time.Instant;
+          import java.util.*;
 
-          path = Path(sys.argv[1])
-          text = path.read_text(encoding="utf-8")
-          marker = "import hu.taliann.icesmp.classspec.domain.*;\n"
-          if text.count(marker) != 1:
-              raise SystemExit("unexpected lifecycle domain import marker")
-          text = text.replace(
-              marker,
-              marker + "import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;\n",
-          )
-          replacements = {
-              "ClassProfileLifecycleRegressionSuite": "ClassSpecSectionLifecycleRegressionSuite",
-              "ClassProfileLifecycleService": "ClassSpecSectionLifecycleService",
-              "ClassProfileRepository": "ClassSpecSectionRepository",
-              "ClassProfile": "ClassSpecSection",
-              "ClassSpecSection.empty(PLAYER,0)": "ClassSpecSection.empty(0)",
-              "ClassSpecSection.builder(PLAYER)": "ClassSpecSection.builder()",
-              "check(result.profile().ownerId().equals(PLAYER),\"owner\");":
-                  "check(PLAYER.equals(r.lastPlayerId),\"repository player key\");",
-              "System.out.println(\"Class profile lifecycle regression suite passed. assertions=\"+assertions);":
-                  "System.out.println(\"ClassSpecSection lifecycle regression suite passed. assertions=\"+assertions);",
-          }
-          for old, new in replacements.items():
-              text = text.replace(old, new)
-          text = text.replace(
-              "volatile ClassSpecSection profile;volatile LoadResult loadResult;",
-              "volatile ClassSpecSection profile;volatile UUID lastPlayerId;volatile LoadResult loadResult;",
-          )
-          text = text.replace(
-              "public CompletionStage<LoadResult> load(UUID id){if(loadFailure!=null)",
-              "public CompletionStage<LoadResult> load(UUID id){lastPlayerId=id;if(loadFailure!=null)",
-          )
-          path.write_text(text, encoding="utf-8", newline="\n")
-          PY
-
-          rm "$OLD_DOMAIN"
-          cat > "$NEW_DOMAIN" <<'JAVA'
-          package hu.taliann.icesmp.classspec.profile;
-
-          import hu.taliann.icesmp.classspec.domain.CapstoneStatus;
-          import hu.taliann.icesmp.classspec.domain.ClassLoadout;
-          import hu.taliann.icesmp.classspec.domain.CompanionProfile;
-          import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
-          import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
-          import hu.taliann.icesmp.classspec.domain.MasteryProgress;
-          import hu.taliann.icesmp.classspec.domain.NumericGuards;
-          import hu.taliann.icesmp.classspec.domain.ProfileDiagnostics;
-          import hu.taliann.icesmp.classspec.domain.ProfileOperation;
-          import hu.taliann.icesmp.classspec.domain.ProfileOperationStatus;
-          import hu.taliann.icesmp.classspec.domain.ProfileOperationType;
-          import hu.taliann.icesmp.classspec.domain.ProfileStatus;
-          import hu.taliann.icesmp.classspec.domain.SealCause;
-          import hu.taliann.icesmp.classspec.domain.SealReason;
-          import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
-          import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
-
-          import java.lang.reflect.Field;
-          import java.util.ArrayList;
-          import java.util.LinkedHashMap;
-          import java.util.List;
-          import java.util.Map;
-          import java.util.Set;
-          import java.util.UUID;
-
-          /** Executable ClassSpecSection domain regressions; persistence is structured YAML. */
-          public final class ClassSpecSectionV2RegressionSuite {
+          public final class PlayerProfileDomainRegressionSuite {
+              private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000001001");
+              private static final Instant NOW = Instant.parse("2026-08-03T12:00:00Z");
               private static int assertions;
 
-              private ClassSpecSectionV2RegressionSuite() {
+              private PlayerProfileDomainRegressionSuite() { }
+
+              public static void main(String[] args) {
+                  greenfieldContainsEverySection();
+                  replacementAndRevisionRules();
+                  healthIsolation();
+                  extensionsAndCollectionsAreImmutable();
+                  boundsAndStableIds();
+                  domainContainsNoBukkitObjects();
+                  System.out.println("PlayerProfile domain regression suite passed. assertions=" + assertions);
               }
 
-              public static void main(final String[] args) {
-                  emptySectionDefaults();
-                  domainInvariants();
-                  numericBounds();
-                  collectionBoundsAndImmutability();
-                  deterministicLogicalCollections();
-                  noBukkitOrOwnerBindingInSection();
-                  System.out.println("ClassSpecSection v2 domain regression tests passed. assertions=" + assertions);
-              }
-
-              private static void emptySectionDefaults() {
-                  final ClassSpecSection section = ClassSpecSection.empty(0);
-                  check(section.sectionId() == ProfileSectionId.CLASS_SPEC, "section id");
-                  check(section.schemaVersion() == ClassSpecSection.SCHEMA_VERSION, "schema");
-                  check(section.revision() == 0, "revision zero");
-                  check(section.status() == ProfileStatus.READY, "ready");
-                  check(section.activeSlot() == null, "inactive");
-                  check(section.loadouts().size() == 2, "two slots");
-                  check(section.primaryClassId().isEmpty(), "classless");
-                  expect(IllegalArgumentException.class, () -> ClassSpecSection.empty(-1));
-              }
-
-              private static void domainInvariants() {
-                  final ClassLoadout necromancer = loadout(
-                          "necromancer", LoadoutStatus.ACTIVE, null, Map.of(), Map.of());
-                  final ClassSpecSection active = ClassSpecSection.builder()
-                          .revision(4)
-                          .primaryClassId("wizard")
-                          .classLevel(20)
-                          .classExperience(900)
-                          .activeSlot(LoadoutSlot.FIRST)
-                          .loadout(LoadoutSlot.FIRST, necromancer)
-                          .build();
-                  check(active.isGameplayUsable(), "active section usable");
-                  check(active.loadout(LoadoutSlot.FIRST).specializationId().equals("necromancer"),
-                          "spec stored");
-
-                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
-                          .primaryClassId("wizard")
-                          .classLevel(10)
-                          .activeSlot(LoadoutSlot.FIRST)
-                          .loadout(LoadoutSlot.FIRST,
-                                  loadout("guardian", LoadoutStatus.ACTIVE, null, Map.of(), Map.of()))
-                          .build());
-                  expect(IllegalArgumentException.class, () -> ClassSpecSection.builder()
-                          .primaryClassId("wizard")
-                          .classLevel(10)
-                          .activeSlot(LoadoutSlot.FIRST)
-                          .loadout(LoadoutSlot.FIRST, loadout(
-                                  "necromancer",
-                                  LoadoutStatus.SEALED,
-                                  new SealReason(SealCause.FACTION_MISSING, "dark", ""),
-                                  Map.of(),
-                                  Map.of()))
-                          .build());
-                  expect(IllegalArgumentException.class, () -> new ClassLoadout(
-                          "", LoadoutStatus.EMPTY, null, Map.of(), MasteryProgress.empty(), null,
-                          Set.of(), "", CapstoneStatus.LOCKED, Map.of(), Map.of("hidden", "x"), ""));
-
-                  final CompanionProfile beast = new CompanionProfile(
-                          UUID.randomUUID(), "beast_master.stable", "WOLF", "Fang", 1, 0,
-                          "", "ACTIVE", List.of(), 0, Map.of());
-                  expect(IllegalArgumentException.class, () -> loadout(
-                          "necromancer", LoadoutStatus.INACTIVE, null,
-                          Map.of(beast.companionId(), beast), Map.of()));
-
-                  final ClassSpecSection review = ClassSpecSection.builder()
-                          .status(ProfileStatus.REVIEW)
-                          .diagnostics(new ProfileDiagnostics("", "", "", "manual review"))
-                          .build();
-                  expect(IllegalStateException.class, review::toBuilder);
-                  expect(IllegalStateException.class, review::withoutClass);
-
-                  final ClassSpecSection quarantined = ClassSpecSection.builder()
-                          .status(ProfileStatus.QUARANTINED)
-                          .diagnostics(new ProfileDiagnostics("ev-1", "bad digest", "", "quarantined"))
-                          .build();
-                  expect(IllegalStateException.class, quarantined::toBuilder);
-                  check(!quarantined.isGameplayUsable(), "quarantine blocked");
-
-                  final SealReason both = new SealReason(Map.of(
-                          SealCause.FACTION_MISSING, "dark",
-                          SealCause.SINNER_MARK_MISSING, "sinner"), "gates");
-                  check(both.causes().size() == 2, "complete seal set");
-                  check(both.gateRestorableOnly(), "restorable gates");
-              }
-
-              private static void numericBounds() {
-                  check(NumericGuards.addInt(2, 3, "x") == 5, "safe int");
-                  check(NumericGuards.addLong(2, 3, "x") == 5, "safe long");
-                  check(NumericGuards.nextRevision(9) == 10, "next revision");
-                  expect(IllegalArgumentException.class,
-                          () -> NumericGuards.addInt(Integer.MAX_VALUE, 1, "x"));
-                  expect(IllegalArgumentException.class,
-                          () -> NumericGuards.addLong(Long.MAX_VALUE, 1, "x"));
-                  expect(IllegalStateException.class, () -> NumericGuards.nextRevision(Long.MAX_VALUE));
-                  expect(IllegalArgumentException.class, () -> new MasteryProgress(-1, 0));
-                  expect(IllegalArgumentException.class, () -> new CompanionProfile(
-                          UUID.randomUUID(), "beast_master.stable", "WOLF", "", 0, 0,
-                          "", "", List.of(), 0, Map.of()));
-              }
-
-              private static void collectionBoundsAndImmutability() {
-                  final ClassSpecSection section = ClassSpecSection.builder()
-                          .operation(operation("op-1"))
-                          .build();
-                  expect(UnsupportedOperationException.class,
-                          () -> section.operations().put("other", operation("other")));
-                  expect(UnsupportedOperationException.class,
-                          () -> section.loadouts().add(ClassLoadout.empty()));
-
-                  final ClassSpecSection.Builder oversized = ClassSpecSection.builder();
-                  for (int index = 0; index <= ClassSpecSection.MAX_OPERATION_RECEIPTS; index++) {
-                      oversized.operation(operation("op-" + index));
+              private static void greenfieldContainsEverySection() {
+                  PlayerProfileSnapshot p = PlayerProfileSnapshot.greenfield(PLAYER, NOW);
+                  check(p.playerId().equals(PLAYER), "owner");
+                  check(p.profileRevision() == 0, "greenfield revision");
+                  check(p.createdAt().equals(NOW) && p.updatedAt().equals(NOW), "timestamps");
+                  check(p.sectionMap().size() == ProfileSectionId.values().length, "all sections");
+                  check(p.sectionRevisions().size() == ProfileSectionId.values().length, "all revisions");
+                  for (ProfileSectionId id : ProfileSectionId.values()) {
+                      ProfileSectionSnapshot<?> section = p.section(id).orElseThrow();
+                      check(section.sectionId() == id, "section id " + id.id());
+                      check(section.value().sectionId() == id, "value id " + id.id());
+                      check(section.schema() == id.currentSchema(), "schema " + id.id());
+                      check(section.revision() == 0, "revision " + id.id());
+                      check(section.health().usable(), "health " + id.id());
+                      check(p.sectionRevisions().get(id).revision() == 0, "revision map " + id.id());
                   }
-                  expect(IllegalArgumentException.class, oversized::build);
+                  check(p.health().status() == ProfileHealth.Status.HEALTHY, "greenfield healthy");
+                  expect(UnsupportedOperationException.class,
+                          () -> p.sectionMap().put(ProfileSectionId.IDENTITY, p.identity()));
+                  expect(UnsupportedOperationException.class,
+                          () -> p.sectionRevisions().put(ProfileSectionId.IDENTITY, new SectionRevision(1, 1)));
               }
 
-              private static void deterministicLogicalCollections() {
-                  final CompanionProfile firstCompanion = new CompanionProfile(
-                          UUID.fromString("00000000-0000-0000-0000-000000000211"),
-                          "beast_master.stable", "WOLF", "A", 1, 0,
-                          "", "ACTIVE", List.of(), 0, Map.of("z", "2", "a", "1"));
-                  final CompanionProfile secondCompanion = new CompanionProfile(
-                          UUID.fromString("00000000-0000-0000-0000-000000000212"),
-                          "beast_master.stable", "FOX", "B", 1, 0,
-                          "", "ACTIVE", List.of(), 0, Map.of());
-                  final Map<UUID, CompanionProfile> first = new LinkedHashMap<>();
-                  first.put(firstCompanion.companionId(), firstCompanion);
-                  first.put(secondCompanion.companionId(), secondCompanion);
-                  final Map<UUID, CompanionProfile> second = new LinkedHashMap<>();
-                  second.put(secondCompanion.companionId(), secondCompanion);
-                  second.put(firstCompanion.companionId(), firstCompanion);
-
-                  final ClassSpecSection left = ClassSpecSection.builder()
-                          .primaryClassId("archer")
-                          .classLevel(1)
-                          .loadout(LoadoutSlot.FIRST,
-                                  loadout("beast_master", LoadoutStatus.INACTIVE, null, first, Map.of()))
-                          .build();
-                  final ClassSpecSection right = ClassSpecSection.builder()
-                          .primaryClassId("archer")
-                          .classLevel(1)
-                          .loadout(LoadoutSlot.FIRST,
-                                  loadout("beast_master", LoadoutStatus.INACTIVE, null, second, Map.of()))
-                          .build();
-                  check(left.equals(right), "logical map insertion order independent");
-                  check(left.hashCode() == right.hashCode(), "stable logical hash");
-                  expect(IllegalArgumentException.class, () -> new CompanionProfile(
-                          UUID.randomUUID(), "beast_master.stable", "WOLF", "A", 1, 0,
-                          "", "ACTIVE", List.of(), 0, Map.of(" A ", "1", "a", "2")));
+              private static void replacementAndRevisionRules() {
+                  PlayerProfileSnapshot p = PlayerProfileSnapshot.greenfield(PLAYER, NOW);
+                  PreferenceSection current = p.preferences().value();
+                  PreferenceSection nextValue = new PreferenceSection(
+                          "en_US", current.hudEnabled(), current.scoreboardEnabled(),
+                          current.notificationsEnabled(), current.publicProfile(),
+                          current.publicCompanion(), current.publicAchievements(),
+                          current.publicClassFactionSpec(), true, Map.of("theme", "compact"),
+                          Map.of("future", Map.of("enabled", true)));
+                  ProfileSectionSnapshot<PreferenceSection> next = new ProfileSectionSnapshot<>(
+                          ProfileSectionId.PREFERENCES, p.preferences().schema(), 1,
+                          NOW.plusSeconds(1), nextValue, SectionHealth.healthy(),
+                          Map.of("future-root", List.of("a", "b")));
+                  PlayerProfileSnapshot changed = p.withSection(next, 1, NOW.plusSeconds(1));
+                  check(changed.profileRevision() == 1, "profile revision advanced");
+                  check(changed.preferences().revision() == 1, "section revision advanced");
+                  check(changed.preferences().value().language().equals("en_US"), "value replaced");
+                  check(changed.identity().equals(p.identity()), "unrelated section stable");
+                  expect(IllegalArgumentException.class,
+                          () -> p.withSection(next, 2, NOW.plusSeconds(1)));
+                  expect(IllegalArgumentException.class, () -> new ProfileSectionSnapshot<>(
+                          ProfileSectionId.PREFERENCES, 1, 0, NOW,
+                          IdentitySection.empty(NOW.toEpochMilli()), SectionHealth.healthy()));
+                  expect(IllegalArgumentException.class, () -> new PlayerProfileSnapshot(
+                          PLAYER, 0, NOW.plusSeconds(1), NOW, p.sectionRevisions(),
+                          p.identity(), p.lifecycle(), p.onboarding(), p.faction(), p.economy(),
+                          p.classSpec(), p.professions(), p.spellbook(), p.talents(), p.quests(),
+                          p.companions(), p.relics(), p.achievements(), p.statistics(), p.preferences(),
+                          p.socialLinks(), p.moderation(), p.operations(), p.health()));
               }
 
-              private static void noBukkitOrOwnerBindingInSection() {
-                  final List<String> forbidden = new ArrayList<>();
-                  for (final Field field : ClassSpecSection.class.getDeclaredFields()) {
-                      final String type = field.getType().getName();
-                      if (type.startsWith("org.bukkit.") || type.equals(UUID.class.getName())) {
-                          forbidden.add(field.getName() + ":" + type);
+              private static void healthIsolation() {
+                  PlayerProfileSnapshot p = PlayerProfileSnapshot.greenfield(PLAYER, NOW);
+                  EnumMap<ProfileSectionId, ProfileSectionSnapshot<?>> sections =
+                          new EnumMap<>(p.sectionMap());
+                  ProfileSectionSnapshot<?> stats = p.statistics();
+                  sections.put(ProfileSectionId.STATISTICS, new ProfileSectionSnapshot<>(
+                          ProfileSectionId.STATISTICS, stats.schema(), stats.revision(), stats.updatedAt(),
+                          stats.value(), SectionHealth.quarantined("bad stats", "evidence-stats"),
+                          stats.extensions()));
+                  PlayerProfileSnapshot partial = PlayerProfileSnapshot.fromMap(
+                          PLAYER, 0, NOW, NOW, sections);
+                  check(partial.health().status() == ProfileHealth.Status.PARTIAL, "partial health");
+                  check(partial.health().usable(), "partial profile usable");
+                  check(partial.classSpec().health().usable(), "class spec remains usable");
+                  check(!partial.statistics().health().usable(), "statistics blocked");
+
+                  ProfileSectionSnapshot<?> identity = p.identity();
+                  sections.put(ProfileSectionId.IDENTITY, new ProfileSectionSnapshot<>(
+                          ProfileSectionId.IDENTITY, identity.schema(), identity.revision(), identity.updatedAt(),
+                          identity.value(), SectionHealth.quarantined("bad identity", "evidence-identity"),
+                          identity.extensions()));
+                  PlayerProfileSnapshot blocked = PlayerProfileSnapshot.fromMap(
+                          PLAYER, 0, NOW, NOW, sections);
+                  check(blocked.health().status() == ProfileHealth.Status.BLOCKED, "identity blocks profile");
+                  check(!blocked.health().usable(), "blocked profile unusable");
+                  expect(IllegalArgumentException.class,
+                          () -> SectionHealth.quarantined("missing evidence", ""));
+              }
+
+              @SuppressWarnings("unchecked")
+              private static void extensionsAndCollectionsAreImmutable() {
+                  List<String> nested = new ArrayList<>(List.of("first"));
+                  Map<String, Object> extensions = new LinkedHashMap<>();
+                  extensions.put("future-list", nested);
+                  ProfileSectionSnapshot<PreferenceSection> section = new ProfileSectionSnapshot<>(
+                          ProfileSectionId.PREFERENCES, 1, 0, NOW, PreferenceSection.empty(0),
+                          SectionHealth.healthy(), extensions);
+                  nested.add("second");
+                  List<Object> stored = (List<Object>) section.extensions().get("future-list");
+                  check(stored.size() == 1, "nested extension copied");
+                  expect(UnsupportedOperationException.class, () -> stored.add("third"));
+                  expect(UnsupportedOperationException.class,
+                          () -> section.extensions().put("other", true));
+
+                  EconomySection economy = new EconomySection(
+                          new LinkedHashMap<>(Map.of("coins", 5L)), 10,
+                          Map.of("dark", 2L), Map.of(), Set.of(), Map.of());
+                  expect(UnsupportedOperationException.class,
+                          () -> economy.wallets().put("other", 1L));
+                  check(economy.wallets().get("coins") == 5L, "wallet copied");
+              }
+
+              private static void boundsAndStableIds() {
+                  check(ProfileSectionId.parse("CLASS_SPEC") == ProfileSectionId.CLASS_SPEC,
+                          "normalized section id");
+                  check(ProfileSectionId.SOCIAL_LINKS.fileName().equals("social-links.yml"),
+                          "stable filename");
+                  expect(IllegalArgumentException.class, () -> ProfileSectionId.parse("unknown"));
+                  expect(IllegalArgumentException.class,
+                          () -> new EconomySection(Map.of("coins", -1L), 0, Map.of(), Map.of(), Set.of(), Map.of()));
+                  expect(IllegalArgumentException.class,
+                          () -> new ModerationSection(Set.of(), -1, Set.of(), Map.of(), Map.of()));
+                  Map<String, String> tooMany = new LinkedHashMap<>();
+                  for (int i = 0; i < 129; i++) tooMany.put("key-" + i, "value");
+                  expect(IllegalArgumentException.class, () -> new PreferenceSection(
+                          "hu_HU", true, true, true, true, true, true, true, false,
+                          tooMany, Map.of()));
+                  expect(IllegalArgumentException.class, () -> new PlayerProfileOperation(
+                          "", "type", PlayerProfileOperation.Status.COMMITTED, "fingerprint",
+                          NOW, NOW, Map.of()));
+              }
+
+              private static void domainContainsNoBukkitObjects() {
+                  Class<?>[] records = {
+                          PlayerProfileSnapshot.class, ProfileSectionSnapshot.class,
+                          IdentitySection.class, LifecycleSection.class, OnboardingSection.class,
+                          FactionSection.class, EconomySection.class, ClassSpecSection.class,
+                          ProfessionSection.class, SpellbookSection.class, TalentSection.class,
+                          QuestSection.class, CompanionSection.class, RelicSection.class,
+                          AchievementSection.class, StatisticsSection.class, PreferenceSection.class,
+                          SocialLinkSection.class, ModerationSection.class, OperationSection.class
+                  };
+                  for (Class<?> type : records) {
+                      check(type.isRecord(), "record " + type.getSimpleName());
+                      for (RecordComponent component : type.getRecordComponents()) {
+                          check(!component.getType().getName().startsWith("org.bukkit."),
+                                  "no Bukkit component " + type.getSimpleName() + '.' + component.getName());
                       }
                   }
-                  check(forbidden.isEmpty(), "section contains forbidden runtime/owner fields: " + forbidden);
               }
 
-              private static ProfileOperation operation(final String id) {
-                  return new ProfileOperation(
-                          id, ProfileOperationType.COMPANION_MUTATION,
-                          ProfileOperationStatus.COMMITTED, "ADD", "0", "none", 0, "ok");
-              }
-
-              private static ClassLoadout loadout(
-                      final String spec,
-                      final LoadoutStatus status,
-                      final SealReason seal,
-                      final Map<UUID, CompanionProfile> roster,
-                      final Map<String, String> mechanics) {
-                  return new ClassLoadout(
-                          spec, status, seal, Map.of(), MasteryProgress.empty(), null,
-                          Set.of(), "", CapstoneStatus.LOCKED, roster, mechanics, "");
-              }
-
-              private static void check(final boolean value, final String message) {
+              private static void check(boolean value, String message) {
                   assertions++;
-                  if (!value) {
-                      throw new AssertionError(message);
-                  }
+                  if (!value) throw new AssertionError(message);
               }
 
-              private static void expect(
-                      final Class<? extends Throwable> type,
-                      final Throwing operation) {
+              private static void expect(Class<? extends Throwable> expected, Throwing action) {
                   assertions++;
                   try {
-                      operation.run();
-                      throw new AssertionError("Expected " + type.getSimpleName());
-                  } catch (final Throwable failure) {
-                      if (!type.isInstance(failure)) {
-                          throw new AssertionError(
-                                  "Expected " + type.getSimpleName() + " but got " + failure, failure);
+                      action.run();
+                      throw new AssertionError("Expected " + expected.getSimpleName());
+                  } catch (Throwable failure) {
+                      if (!expected.isInstance(failure)) {
+                          throw new AssertionError("Expected " + expected.getSimpleName()
+                                  + " but got " + failure, failure);
                       }
                   }
               }
 
-              @FunctionalInterface
-              private interface Throwing {
-                  void run() throws Exception;
-              }
+              @FunctionalInterface private interface Throwing { void run() throws Exception; }
           }
           JAVA
 
-          ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec|ICS2' "$NEW_LIFECYCLE" "$NEW_DOMAIN"
-          test ! -e "$OLD_LIFECYCLE"
-          test ! -e "$OLD_DOMAIN"
-          grep -q 'ClassSpecSectionLifecycleRegressionSuite' "$NEW_LIFECYCLE"
-          grep -q 'ClassSpecSectionV2RegressionSuite' "$NEW_DOMAIN"
+          cat > "$YAML" <<'JAVA'
+          package hu.taliann.icesmp.playerprofile.persistence;
+
+          import hu.taliann.icesmp.playerprofile.domain.*;
+          import hu.taliann.icesmp.playerprofile.domain.section.*;
+          import java.nio.charset.StandardCharsets;
+          import java.nio.file.*;
+          import java.time.*;
+          import java.util.*;
+          import java.util.concurrent.*;
+
+          public final class PlayerProfileYamlRegressionSuite {
+              private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000001101");
+              private static final Instant NOW = Instant.parse("2026-08-03T13:00:00Z");
+              private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
+              private static int assertions;
+
+              private PlayerProfileYamlRegressionSuite() { }
+
+              public static void main(String[] args) throws Exception {
+                  greenfieldStructuredRoundTrip();
+                  sectionCasAndExtensions();
+                  quarantineIsolationAndRecovery();
+                  invalidUtf8OversizeOwnerAndTempRecovery();
+                  strictStructuredCodecPolicies();
+                  System.out.println("PlayerProfile YAML regression suite passed. assertions=" + assertions);
+              }
+
+              private static void greenfieldStructuredRoundTrip() throws Exception {
+                  Path root = Files.createTempDirectory("pp-yaml-greenfield-");
+                  YamlPlayerProfileRepository repo = repository(root);
+                  try {
+                      UUID missing = UUID.randomUUID();
+                      check(join(repo.find(missing)).isEmpty(), "find missing remains empty");
+                      check(!Files.exists(root.resolve(missing.toString())), "read does not initialize");
+
+                      PlayerProfileSnapshot first = join(repo.load(PLAYER));
+                      Path dir = root.resolve(PLAYER.toString());
+                      check(first.profileRevision() == 0, "greenfield profile revision");
+                      check(Files.isRegularFile(dir.resolve("manifest.yml")), "manifest written");
+                      for (ProfileSectionId id : ProfileSectionId.values()) {
+                          check(Files.isRegularFile(dir.resolve(id.fileName())), "section file " + id.id());
+                      }
+                      String manifest = Files.readString(dir.resolve("manifest.yml"));
+                      String classSpec = Files.readString(dir.resolve("class-spec.yml"));
+                      check(manifest.contains("format: ICESMP-PLAYER-PROFILE"), "manifest format");
+                      check(manifest.contains("profile-revision: 0"), "manifest revision");
+                      check(classSpec.contains("format: ICESMP-PLAYER-PROFILE-SECTION"), "section format");
+                      check(classSpec.contains("section: class-spec"), "section id");
+                      check(!classSpec.contains("ICS2") && !classSpec.contains("payload:"),
+                              "no opaque class-spec blob");
+                      try (var paths = Files.walk(dir)) {
+                          check(paths.noneMatch(p -> p.getFileName().toString().endsWith(".b64")),
+                                  "no Base64 payload files");
+                      }
+                      repo.invalidate(PLAYER);
+                      PlayerProfileSnapshot second = join(repo.load(PLAYER));
+                      check(second.sectionMap().size() == ProfileSectionId.values().length,
+                              "roundtrip section count");
+                      check(second.sectionRevisions().equals(first.sectionRevisions()),
+                              "roundtrip revisions");
+                  } finally {
+                      shutdown(repo);
+                  }
+              }
+
+              private static void sectionCasAndExtensions() throws Exception {
+                  Path root = Files.createTempDirectory("pp-yaml-cas-");
+                  YamlPlayerProfileRepository repo = repository(root);
+                  try {
+                      PlayerProfileSnapshot p = join(repo.load(PLAYER));
+                      PreferenceSection current = p.preferences().value();
+                      PreferenceSection value = new PreferenceSection(
+                              "en_US", true, false, true, true, true, true, true, true,
+                              Map.of("theme", "compact"), Map.of("future-data", List.of("x")));
+                      ProfileSectionSnapshot<PreferenceSection> next = new ProfileSectionSnapshot<>(
+                              ProfileSectionId.PREFERENCES, p.preferences().schema(), 1,
+                              NOW.plusSeconds(1), value, SectionHealth.healthy(),
+                              Map.of("future-root", Map.of("enabled", true)));
+                      PlayerProfileRepository.SectionSaveResult committed = join(repo.saveSection(
+                              PLAYER, ProfileSectionId.PREFERENCES, 0, 0, next));
+                      check(committed.status() == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED,
+                              "CAS commit");
+                      check(committed.snapshot().profileRevision() == 1, "generation increment");
+                      check(committed.snapshot().preferences().revision() == 1, "section increment");
+
+                      PlayerProfileRepository.SectionSaveResult stale = join(repo.saveSection(
+                              PLAYER, ProfileSectionId.PREFERENCES, 0, next));
+                      check(stale.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_REVISION,
+                              "stale revision rejected");
+
+                      ProfileSectionSnapshot<PreferenceSection> skipped = new ProfileSectionSnapshot<>(
+                              ProfileSectionId.PREFERENCES, 1, 3, NOW, value,
+                              SectionHealth.healthy(), next.extensions());
+                      PlayerProfileRepository.SectionSaveResult rejected = join(repo.saveSection(
+                              PLAYER, ProfileSectionId.PREFERENCES, 1, skipped));
+                      check(rejected.status() == PlayerProfileRepository.SectionSaveResult.Status.REJECTED,
+                              "skipped revision rejected");
+
+                      ProfileSectionSnapshot<PreferenceSection> revisionTwo = new ProfileSectionSnapshot<>(
+                              ProfileSectionId.PREFERENCES, 1, 2, NOW, value,
+                              SectionHealth.healthy(), next.extensions());
+                      PlayerProfileRepository.SectionSaveResult staleGeneration = join(repo.saveSection(
+                              PLAYER, ProfileSectionId.PREFERENCES, 1, 0, revisionTwo));
+                      check(staleGeneration.status()
+                                      == PlayerProfileRepository.SectionSaveResult.Status.STALE_GENERATION,
+                              "stale generation rejected");
+
+                      repo.invalidate(PLAYER);
+                      PlayerProfileSnapshot loaded = join(repo.load(PLAYER));
+                      check(loaded.preferences().extensions().containsKey("future-root"),
+                              "unknown root extension preserved");
+                      check(loaded.preferences().value().extensions().containsKey("future-data"),
+                              "unknown data extension preserved");
+                      check(loaded.preferences().value().language().equals("en_US"), "structured data roundtrip");
+                  } finally {
+                      shutdown(repo);
+                  }
+              }
+
+              private static void quarantineIsolationAndRecovery() throws Exception {
+                  Path root = Files.createTempDirectory("pp-yaml-quarantine-");
+                  YamlPlayerProfileRepository repo = repository(root);
+                  try {
+                      join(repo.load(PLAYER));
+                      PlayerProfileRepository.QuarantineResult quarantined = join(repo.quarantineSection(
+                              PLAYER, ProfileSectionId.STATISTICS,
+                              "corrupt-statistics".getBytes(StandardCharsets.UTF_8), "bad stats"));
+                      check(quarantined.snapshot().health().status() == ProfileHealth.Status.PARTIAL,
+                              "section quarantine is partial");
+                      check(!quarantined.snapshot().statistics().health().usable(), "statistics blocked");
+                      check(quarantined.snapshot().classSpec().health().usable(), "class spec remains usable");
+                      Path evidence = root.resolve(PLAYER.toString()).resolve("quarantine")
+                              .resolve("statistics").resolve(quarantined.evidenceId() + ".evidence");
+                      check(Files.isRegularFile(evidence), "evidence preserved");
+
+                      PlayerProfileRepository.RecoveryResult recovered = join(repo.recoverSection(
+                              PLAYER, ProfileSectionId.STATISTICS,
+                              quarantined.evidenceId(), "audit-1"));
+                      check(!recovered.idempotent(), "first recovery mutates");
+                      check(recovered.snapshot().statistics().health().usable(), "recovered usable");
+                      check(recovered.snapshot().statistics().health().recoveryAuditId().equals("audit-1"),
+                              "audit retained");
+                      check(Files.isRegularFile(evidence), "recovery never deletes evidence");
+
+                      PlayerProfileRepository.RecoveryResult replay = join(repo.recoverSection(
+                              PLAYER, ProfileSectionId.STATISTICS,
+                              quarantined.evidenceId(), "audit-1"));
+                      check(replay.idempotent(), "recovery replay idempotent");
+                  } finally {
+                      shutdown(repo);
+                  }
+              }
+
+              private static void invalidUtf8OversizeOwnerAndTempRecovery() throws Exception {
+                  Path root = Files.createTempDirectory("pp-yaml-invalid-");
+                  YamlPlayerProfileRepository repo = repository(root);
+                  try {
+                      UUID invalid = UUID.randomUUID();
+                      join(repo.load(invalid));
+                      Path invalidDir = root.resolve(invalid.toString());
+                      Path orphan = invalidDir.resolve("preferences.yml.tmp-orphan");
+                      Files.writeString(orphan, "orphan");
+                      Files.write(invalidDir.resolve("preferences.yml"), new byte[]{(byte) 0xC3, 0x28});
+                      repo.invalidate(invalid);
+                      PlayerProfileSnapshot partial = join(repo.load(invalid));
+                      check(!Files.exists(orphan), "orphan temp cleaned");
+                      check(!partial.preferences().health().usable(), "invalid UTF-8 quarantined");
+                      check(partial.classSpec().health().usable(), "unrelated section survives UTF-8 error");
+
+                      UUID oversized = UUID.randomUUID();
+                      join(repo.load(oversized));
+                      Path stats = root.resolve(oversized.toString()).resolve("statistics.yml");
+                      Files.write(stats, new byte[(int) YamlPlayerProfileRepository.MAX_YAML_BYTES + 1]);
+                      repo.invalidate(oversized);
+                      PlayerProfileSnapshot oversizedProfile = join(repo.load(oversized));
+                      check(!oversizedProfile.statistics().health().usable(), "oversized section quarantined");
+
+                      UUID owner = UUID.randomUUID();
+                      join(repo.load(owner));
+                      Path manifest = root.resolve(owner.toString()).resolve("manifest.yml");
+                      String content = Files.readString(manifest).replace(owner.toString(), UUID.randomUUID().toString());
+                      Files.writeString(manifest, content);
+                      repo.invalidate(owner);
+                      expectStage(IllegalArgumentException.class, repo.load(owner));
+                  } finally {
+                      shutdown(repo);
+                  }
+              }
+
+              @SuppressWarnings("unchecked")
+              private static void strictStructuredCodecPolicies() {
+                  ProfileSectionSnapshot<PreferenceSection> section = new ProfileSectionSnapshot<>(
+                          ProfileSectionId.PREFERENCES, 1, 0, NOW,
+                          PreferenceSection.empty(0), SectionHealth.healthy(),
+                          Map.of("future", Map.of("number", 7L)));
+                  Map<String, Object> encoded = StructuredPlayerProfileYaml.encodeSection(section);
+                  ProfileSectionSnapshot<?> decoded = StructuredPlayerProfileYaml.decodeSection(
+                          ProfileSectionId.PREFERENCES, encoded);
+                  check(decoded.extensions().containsKey("future"), "structured extension roundtrip");
+
+                  Map<String, Object> missingOptional = new LinkedHashMap<>(encoded);
+                  Map<String, Object> data = new LinkedHashMap<>((Map<String, Object>) missingOptional.get("data"));
+                  data.remove("values");
+                  data.remove("extensions");
+                  missingOptional.put("data", data);
+                  PreferenceSection defaults = (PreferenceSection) StructuredPlayerProfileYaml.decodeSection(
+                          ProfileSectionId.PREFERENCES, missingOptional).value();
+                  check(defaults.values().isEmpty(), "missing optional map defaults empty");
+
+                  Map<String, Object> futureSchema = new LinkedHashMap<>(encoded);
+                  futureSchema.put("schema", 2);
+                  expect(IllegalArgumentException.class, () -> StructuredPlayerProfileYaml.decodeSection(
+                          ProfileSectionId.PREFERENCES, futureSchema));
+
+                  Map<String, Object> invalidType = new LinkedHashMap<>(encoded);
+                  Map<String, Object> badData = new LinkedHashMap<>((Map<String, Object>) invalidType.get("data"));
+                  badData.put("language", 42);
+                  invalidType.put("data", badData);
+                  expect(IllegalArgumentException.class, () -> StructuredPlayerProfileYaml.decodeSection(
+                          ProfileSectionId.PREFERENCES, invalidType));
+              }
+
+              private static YamlPlayerProfileRepository repository(Path root) {
+                  return new YamlPlayerProfileRepository(root, CLOCK,
+                          Executors.newVirtualThreadPerTaskExecutor());
+              }
+
+              private static <T> T join(CompletionStage<T> stage) {
+                  return stage.toCompletableFuture().join();
+              }
+
+              private static void shutdown(YamlPlayerProfileRepository repo) {
+                  join(repo.shutdown(Duration.ofSeconds(5)));
+              }
+
+              private static void expectStage(Class<? extends Throwable> expected, CompletionStage<?> stage) {
+                  assertions++;
+                  try {
+                      stage.toCompletableFuture().join();
+                      throw new AssertionError("Expected " + expected.getSimpleName());
+                  } catch (CompletionException failure) {
+                      Throwable cause = failure.getCause();
+                      if (!expected.isInstance(cause)) {
+                          throw new AssertionError("Expected " + expected.getSimpleName()
+                                  + " but got " + cause, cause);
+                      }
+                  }
+              }
+
+              private static void check(boolean value, String message) {
+                  assertions++;
+                  if (!value) throw new AssertionError(message);
+              }
+
+              private static void expect(Class<? extends Throwable> expected, Throwing action) {
+                  assertions++;
+                  try {
+                      action.run();
+                      throw new AssertionError("Expected " + expected.getSimpleName());
+                  } catch (Throwable failure) {
+                      if (!expected.isInstance(failure)) {
+                          throw new AssertionError("Expected " + expected.getSimpleName()
+                                  + " but got " + failure, failure);
+                      }
+                  }
+              }
+
+              @FunctionalInterface private interface Throwing { void run() throws Exception; }
+          }
+          JAVA
+
+          cat > "$TX" <<'JAVA'
+          package hu.taliann.icesmp.playerprofile.transaction;
+
+          import hu.taliann.icesmp.playerprofile.domain.*;
+          import hu.taliann.icesmp.playerprofile.domain.section.*;
+          import hu.taliann.icesmp.playerprofile.persistence.*;
+          import java.io.IOException;
+          import java.nio.file.*;
+          import java.time.*;
+          import java.util.*;
+          import java.util.concurrent.*;
+          import java.util.concurrent.atomic.AtomicBoolean;
+
+          public final class PlayerProfileTransactionRegressionSuite {
+              private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000001201");
+              private static final Instant NOW = Instant.parse("2026-08-03T14:00:00Z");
+              private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
+              private static int assertions;
+
+              private PlayerProfileTransactionRegressionSuite() { }
+
+              public static void main(String[] args) throws Exception {
+                  crossSectionCommitAndIdempotency();
+                  invalidPlansAndStaleRevision();
+                  parallelSectionCas();
+                  crashBeforeManifestRollsBack();
+                  crashAfterManifestFinalizes();
+                  System.out.println("PlayerProfile transaction regression suite passed. assertions=" + assertions);
+              }
+
+              private static void crossSectionCommitAndIdempotency() throws Exception {
+                  Path root = Files.createTempDirectory("pp-tx-success-");
+                  YamlPlayerProfileRepository repo = repository(root, YamlPlayerProfileRepository.FaultInjector.none());
+                  try {
+                      join(repo.load(PLAYER));
+                      YamlPlayerProfileTransactionManager tx = new YamlPlayerProfileTransactionManager(repo, CLOCK);
+                      String result = join(tx.execute(PLAYER,
+                              p -> rewardPlan(p, "quest-reward-1", "quest-1-100", 100)));
+                      check(result.equals("credited"), "transaction result");
+                      PlayerProfileSnapshot committed = join(repo.load(PLAYER));
+                      check(committed.profileRevision() == 1, "one global generation");
+                      check(committed.economy().revision() == 1, "economy revision");
+                      check(committed.quests().revision() == 1, "quest revision");
+                      check(committed.operations().revision() == 1, "operation revision");
+                      check(committed.economy().value().wallets().get("coins") == 100L, "wallet credited");
+                      check(committed.quests().value().completed().contains("quest-1"), "quest completed");
+                      PlayerProfileOperation receipt = committed.operations().value().operations()
+                              .get("quest-reward-1");
+                      check(receipt != null && receipt.status() == PlayerProfileOperation.Status.COMMITTED,
+                              "committed receipt");
+
+                      String replay = join(tx.execute(PLAYER,
+                              p -> rewardPlan(p, "quest-reward-1", "quest-1-100", 100)));
+                      check(replay.equals("credited"), "idempotent replay result");
+                      PlayerProfileSnapshot unchanged = join(repo.load(PLAYER));
+                      check(unchanged.profileRevision() == 1, "replay does not commit again");
+                      check(unchanged.economy().value().wallets().get("coins") == 100L,
+                              "replay does not double credit");
+
+                      expectStage(IllegalStateException.class, tx.execute(PLAYER,
+                              p -> rewardPlan(p, "quest-reward-1", "different-fingerprint", 100)));
+                  } finally {
+                      shutdown(repo);
+                  }
+              }
+
+              private static void invalidPlansAndStaleRevision() throws Exception {
+                  Path root = Files.createTempDirectory("pp-tx-invalid-");
+                  YamlPlayerProfileRepository repo = repository(root, YamlPlayerProfileRepository.FaultInjector.none());
+                  try {
+                      PlayerProfileSnapshot p = join(repo.load(PLAYER));
+                      EconomySection economy = withCoins(p.economy().value(), 1);
+                      PlayerProfileTransactionManager.SectionUpdate update =
+                              new PlayerProfileTransactionManager.SectionUpdate(
+                                      ProfileSectionId.ECONOMY, p.economy().revision(), economy);
+                      expect(IllegalArgumentException.class, () ->
+                              new PlayerProfileTransactionManager.TransactionPlan<>(
+                                      "duplicate", "test", "fingerprint", List.of(update, update), "x"));
+                      expect(IllegalArgumentException.class, () ->
+                              new PlayerProfileTransactionManager.TransactionPlan<>(
+                                      "empty", "test", "fingerprint", List.of(), "x"));
+
+                      YamlPlayerProfileTransactionManager tx = new YamlPlayerProfileTransactionManager(repo, CLOCK);
+                      expectStage(IllegalStateException.class, tx.execute(PLAYER, snapshot ->
+                              new PlayerProfileTransactionManager.TransactionPlan<>(
+                                      "stale", "test", "stale-fingerprint",
+                                      List.of(new PlayerProfileTransactionManager.SectionUpdate(
+                                              ProfileSectionId.ECONOMY,
+                                              snapshot.economy().revision() + 1,
+                                              withCoins(snapshot.economy().value(), 1))), "x")));
+                  } finally {
+                      shutdown(repo);
+                  }
+              }
+
+              private static void parallelSectionCas() throws Exception {
+                  Path root = Files.createTempDirectory("pp-tx-parallel-");
+                  YamlPlayerProfileRepository repo = repository(root, YamlPlayerProfileRepository.FaultInjector.none());
+                  try {
+                      PlayerProfileSnapshot p = join(repo.load(PLAYER));
+                      ProfileSectionSnapshot<EconomySection> economy = new ProfileSectionSnapshot<>(
+                              ProfileSectionId.ECONOMY, 1, 1, NOW,
+                              withCoins(p.economy().value(), 10), SectionHealth.healthy());
+                      ProfileSectionSnapshot<QuestSection> quests = new ProfileSectionSnapshot<>(
+                              ProfileSectionId.QUESTS, 1, 1, NOW,
+                              completedQuest(p.quests().value()), SectionHealth.healthy());
+                      CompletableFuture<PlayerProfileRepository.SectionSaveResult> first = repo.saveSection(
+                              PLAYER, ProfileSectionId.ECONOMY, 0, economy).toCompletableFuture();
+                      CompletableFuture<PlayerProfileRepository.SectionSaveResult> second = repo.saveSection(
+                              PLAYER, ProfileSectionId.QUESTS, 0, quests).toCompletableFuture();
+                      check(first.join().status() == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED,
+                              "economy parallel commit");
+                      check(second.join().status() == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED,
+                              "quest parallel commit");
+                      PlayerProfileSnapshot both = join(repo.load(PLAYER));
+                      check(both.profileRevision() == 2, "different sections independently commit");
+
+                      ProfileSectionSnapshot<EconomySection> a = new ProfileSectionSnapshot<>(
+                              ProfileSectionId.ECONOMY, 1, 2, NOW,
+                              withCoins(both.economy().value(), 11), SectionHealth.healthy());
+                      ProfileSectionSnapshot<EconomySection> b = new ProfileSectionSnapshot<>(
+                              ProfileSectionId.ECONOMY, 1, 2, NOW,
+                              withCoins(both.economy().value(), 12), SectionHealth.healthy());
+                      CompletableFuture<PlayerProfileRepository.SectionSaveResult> sameA = repo.saveSection(
+                              PLAYER, ProfileSectionId.ECONOMY, 1, a).toCompletableFuture();
+                      CompletableFuture<PlayerProfileRepository.SectionSaveResult> sameB = repo.saveSection(
+                              PLAYER, ProfileSectionId.ECONOMY, 1, b).toCompletableFuture();
+                      Set<PlayerProfileRepository.SectionSaveResult.Status> statuses = Set.of(
+                              sameA.join().status(), sameB.join().status());
+                      check(statuses.contains(PlayerProfileRepository.SectionSaveResult.Status.COMMITTED),
+                              "one same-section writer commits");
+                      check(statuses.contains(PlayerProfileRepository.SectionSaveResult.Status.STALE_REVISION),
+                              "one same-section writer is stale");
+                  } finally {
+                      shutdown(repo);
+                  }
+              }
+
+              private static void crashBeforeManifestRollsBack() throws Exception {
+                  Path root = Files.createTempDirectory("pp-tx-before-manifest-");
+                  AtomicBoolean once = new AtomicBoolean();
+                  YamlPlayerProfileRepository.FaultInjector fault = new YamlPlayerProfileRepository.FaultInjector() {
+                      @Override public void afterSectionsMovedBeforeManifest(UUID id, Set<ProfileSectionId> changed)
+                              throws IOException {
+                          if (once.compareAndSet(false, true)) throw new IOException("crash-before-manifest");
+                      }
+                      @Override public void afterManifestMovedBeforeCleanup(UUID id, Set<ProfileSectionId> changed) { }
+                  };
+                  YamlPlayerProfileRepository crashed = repository(root, fault);
+                  join(crashed.load(PLAYER));
+                  YamlPlayerProfileTransactionManager tx = new YamlPlayerProfileTransactionManager(crashed, CLOCK);
+                  expectStage(IOException.class, tx.execute(PLAYER,
+                          p -> rewardPlan(p, "crash-before", "before-fingerprint", 50)));
+                  shutdown(crashed);
+
+                  YamlPlayerProfileRepository recovered = repository(root,
+                          YamlPlayerProfileRepository.FaultInjector.none());
+                  try {
+                      PlayerProfileSnapshot p = join(recovered.load(PLAYER));
+                      check(p.profileRevision() == 0, "pre-manifest crash rolled back generation");
+                      check(p.economy().value().wallets().isEmpty(), "pre-manifest wallet rolled back");
+                      check(!p.operations().value().operations().containsKey("crash-before"),
+                              "pre-manifest receipt rolled back");
+                      check(walEmpty(root.resolve(PLAYER.toString()).resolve("wal")), "rollback WAL cleaned");
+                  } finally {
+                      shutdown(recovered);
+                  }
+              }
+
+              private static void crashAfterManifestFinalizes() throws Exception {
+                  Path root = Files.createTempDirectory("pp-tx-after-manifest-");
+                  AtomicBoolean once = new AtomicBoolean();
+                  YamlPlayerProfileRepository.FaultInjector fault = new YamlPlayerProfileRepository.FaultInjector() {
+                      @Override public void afterSectionsMovedBeforeManifest(UUID id, Set<ProfileSectionId> changed) { }
+                      @Override public void afterManifestMovedBeforeCleanup(UUID id, Set<ProfileSectionId> changed)
+                              throws IOException {
+                          if (once.compareAndSet(false, true)) throw new IOException("crash-after-manifest");
+                      }
+                  };
+                  YamlPlayerProfileRepository crashed = repository(root, fault);
+                  join(crashed.load(PLAYER));
+                  YamlPlayerProfileTransactionManager tx = new YamlPlayerProfileTransactionManager(crashed, CLOCK);
+                  expectStage(IOException.class, tx.execute(PLAYER,
+                          p -> rewardPlan(p, "crash-after", "after-fingerprint", 75)));
+                  shutdown(crashed);
+
+                  YamlPlayerProfileRepository recovered = repository(root,
+                          YamlPlayerProfileRepository.FaultInjector.none());
+                  try {
+                      PlayerProfileSnapshot p = join(recovered.load(PLAYER));
+                      check(p.profileRevision() == 1, "post-manifest commit retained");
+                      check(p.economy().value().wallets().get("coins") == 75L,
+                              "post-manifest wallet retained");
+                      check(p.operations().value().operations().containsKey("crash-after"),
+                              "post-manifest receipt retained");
+                      check(walEmpty(root.resolve(PLAYER.toString()).resolve("wal")), "finalized WAL cleaned");
+                      YamlPlayerProfileTransactionManager replayManager =
+                              new YamlPlayerProfileTransactionManager(recovered, CLOCK);
+                      check(join(replayManager.execute(PLAYER,
+                                      current -> rewardPlan(current, "crash-after", "after-fingerprint", 75)))
+                                      .equals("credited"),
+                              "post-manifest retry idempotent");
+                      check(join(recovered.load(PLAYER)).profileRevision() == 1,
+                              "post-manifest retry does not duplicate");
+                  } finally {
+                      shutdown(recovered);
+                  }
+              }
+
+              private static PlayerProfileTransactionManager.TransactionPlan<String> rewardPlan(
+                      PlayerProfileSnapshot p, String operationId, String fingerprint, long amount) {
+                  EconomySection economy = withCoins(p.economy().value(), amount);
+                  QuestSection quests = completedQuest(p.quests().value());
+                  return new PlayerProfileTransactionManager.TransactionPlan<>(
+                          operationId, "quest-reward", fingerprint,
+                          List.of(
+                                  new PlayerProfileTransactionManager.SectionUpdate(
+                                          ProfileSectionId.ECONOMY, p.economy().revision(), economy),
+                                  new PlayerProfileTransactionManager.SectionUpdate(
+                                          ProfileSectionId.QUESTS, p.quests().revision(), quests)),
+                          "credited");
+              }
+
+              private static EconomySection withCoins(EconomySection current, long amount) {
+                  Map<String, Long> wallets = new LinkedHashMap<>(current.wallets());
+                  wallets.put("coins", Math.addExact(wallets.getOrDefault("coins", 0L), amount));
+                  return new EconomySection(wallets, current.bankBalance(), current.debts(),
+                          current.pendingRewards(), current.operationReceipts(), current.extensions());
+              }
+
+              private static QuestSection completedQuest(QuestSection current) {
+                  Set<String> completed = new LinkedHashSet<>(current.completed());
+                  completed.add("quest-1");
+                  Set<String> receipts = new LinkedHashSet<>(current.rewardReceipts());
+                  receipts.add("quest-1-reward");
+                  return new QuestSection(current.active(), completed, receipts, current.cooldowns(),
+                          current.communityContributions(), current.claimableRewards(), current.extensions());
+              }
+
+              private static boolean walEmpty(Path wal) throws IOException {
+                  if (!Files.isDirectory(wal)) return true;
+                  try (var entries = Files.list(wal)) { return entries.findAny().isEmpty(); }
+              }
+
+              private static YamlPlayerProfileRepository repository(
+                      Path root, YamlPlayerProfileRepository.FaultInjector fault) {
+                  return new YamlPlayerProfileRepository(root, CLOCK,
+                          Executors.newVirtualThreadPerTaskExecutor(), fault);
+              }
+
+              private static <T> T join(CompletionStage<T> stage) {
+                  return stage.toCompletableFuture().join();
+              }
+
+              private static void shutdown(YamlPlayerProfileRepository repo) {
+                  join(repo.shutdown(Duration.ofSeconds(5)));
+              }
+
+              private static void expectStage(Class<? extends Throwable> expected, CompletionStage<?> stage) {
+                  assertions++;
+                  try {
+                      stage.toCompletableFuture().join();
+                      throw new AssertionError("Expected " + expected.getSimpleName());
+                  } catch (CompletionException failure) {
+                      Throwable cause = failure.getCause();
+                      if (!expected.isInstance(cause)) {
+                          throw new AssertionError("Expected " + expected.getSimpleName()
+                                  + " but got " + cause, cause);
+                      }
+                  }
+              }
+
+              private static void check(boolean value, String message) {
+                  assertions++;
+                  if (!value) throw new AssertionError(message);
+              }
+
+              private static void expect(Class<? extends Throwable> expected, Throwing action) {
+                  assertions++;
+                  try {
+                      action.run();
+                      throw new AssertionError("Expected " + expected.getSimpleName());
+                  } catch (Throwable failure) {
+                      if (!expected.isInstance(failure)) {
+                          throw new AssertionError("Expected " + expected.getSimpleName()
+                                  + " but got " + failure, failure);
+                      }
+                  }
+              }
+
+              @FunctionalInterface private interface Throwing { void run() throws Exception; }
+          }
+          JAVA
+
+          cat > "$API" <<'JAVA'
+          package hu.taliann.icesmp.playerprofile.api;
+
+          import hu.taliann.icesmp.playerprofile.application.PlayerProfileService;
+          import hu.taliann.icesmp.playerprofile.domain.*;
+          import hu.taliann.icesmp.playerprofile.domain.section.*;
+          import hu.taliann.icesmp.playerprofile.http.*;
+          import hu.taliann.icesmp.playerprofile.persistence.*;
+          import hu.taliann.icesmp.playerprofile.transaction.*;
+          import java.net.URI;
+          import java.net.http.*;
+          import java.nio.file.*;
+          import java.time.*;
+          import java.util.*;
+          import java.util.concurrent.*;
+          import java.util.concurrent.atomic.AtomicInteger;
+
+          public final class PlayerProfileApiRegressionSuite {
+              private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000001301");
+              private static final Instant NOW = Instant.parse("2026-08-03T15:00:00Z");
+              private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
+              private static final String SELF_TOKEN = "self-token-000000000000000000000000";
+              private static final String ADMIN_TOKEN = "admin-token-00000000000000000000000";
+              private static int assertions;
+
+              private PlayerProfileApiRegressionSuite() { }
+
+              public static void main(String[] args) throws Exception {
+                  queryDtosAndListenerFiltering();
+                  liveHttpContract();
+                  rateResponseAndTimeoutLimits();
+                  System.out.println("PlayerProfile API regression suite passed. assertions=" + assertions);
+              }
+
+              private static void queryDtosAndListenerFiltering() throws Exception {
+                  Fixture fixture = fixture();
+                  try {
+                      PublicPlayerProfileDto pub = join(fixture.service.publicProfile(PLAYER));
+                      check(pub.visible(), "public profile visible");
+                      check(pub.name().equals("Alice"), "public name");
+                      check(pub.faction().equals("dark"), "public faction");
+                      check(pub.achievements().contains("first-blood"), "public achievement");
+                      check(pub.publicStatistics().get("kills") == 7L, "public statistic");
+                      String publicJson = PlayerProfileJson.encode(pub);
+                      check(!publicJson.contains("ban-ref") && !publicJson.contains("coins")
+                                      && !publicJson.contains("discord-user-1"),
+                              "public DTO filters private/admin data");
+
+                      SelfPlayerProfileDto self = join(fixture.service.selfProfile(PLAYER));
+                      check(self.wallets().get("coins") == 42L, "self economy");
+                      check(self.preferences().get("language").equals("hu_HU"), "self preferences");
+                      String selfJson = PlayerProfileJson.encode(self);
+                      check(!selfJson.contains("ban-ref") && selfJson.contains("coins"),
+                              "self DTO excludes moderation");
+
+                      AdminPlayerProfileDto admin = join(fixture.service.adminProfile(PLAYER));
+                      check(admin.activePunishmentRefs().contains("ban-ref"), "admin moderation");
+                      check(admin.strikeCount() == 2, "admin strike count");
+                      check(admin.sectionHealth().size() == ProfileSectionId.values().length,
+                              "admin section health");
+                      expect(UnsupportedOperationException.class,
+                              () -> admin.sectionHealth().put("x", "y"));
+
+                      AtomicInteger notifications = new AtomicInteger();
+                      Set<ProfileSectionId> changed = ConcurrentHashMap.newKeySet();
+                      AutoCloseable subscription = fixture.service.subscribe((id, revision, sections) -> {
+                          if (id.equals(PLAYER)) {
+                              notifications.incrementAndGet();
+                              changed.addAll(sections);
+                          }
+                      });
+                      join(fixture.service.mutateSection(PLAYER, ProfileSectionId.STATISTICS,
+                              StatisticsSection.class, old -> new StatisticsSection(
+                                      old.lifetime(), Map.of("kills", 8L), old.claimedMilestones(),
+                                      old.extensions())));
+                      check(notifications.get() == 1, "listener called once");
+                      check(changed.equals(Set.of(ProfileSectionId.STATISTICS)), "listener section filter");
+                      subscription.close();
+                  } finally {
+                      fixture.close();
+                  }
+              }
+
+              private static void liveHttpContract() throws Exception {
+                  Fixture fixture = fixture();
+                  PlayerProfileHttpServer server = new PlayerProfileHttpServer(fixture.service,
+                          config(100, 4096, 1_048_576, Duration.ofSeconds(2)));
+                  try {
+                      check(server.start(), "HTTP started");
+                      int port = server.boundPort();
+                      check(port > 0, "ephemeral port bound");
+                      HttpClient client = HttpClient.newHttpClient();
+                      String base = "http://127.0.0.1:" + port + "/api/v1";
+
+                      Response health = request(client, "GET", base + "/health", null, null, null);
+                      check(health.status() == 200 && health.body().contains("\"status\":\"ok\""),
+                              "health endpoint");
+
+                      String publicUrl = base + "/players/" + PLAYER + "/public";
+                      Response pub = request(client, "GET", publicUrl, null, null, null);
+                      check(pub.status() == 200, "public endpoint");
+                      check(pub.body().contains("Alice") && !pub.body().contains("ban-ref"),
+                              "public HTTP filtering");
+                      check(pub.etag() != null && !pub.etag().isBlank(), "ETag emitted");
+                      Response notModified = request(client, "GET", publicUrl, null, pub.etag(), null);
+                      check(notModified.status() == 304 && notModified.body().isEmpty(), "If-None-Match");
+
+                      String selfUrl = base + "/players/" + PLAYER;
+                      check(request(client, "GET", selfUrl, null, null, null).status() == 403,
+                              "self requires token");
+                      check(request(client, "GET", selfUrl, "invalid-token", null, null).status() == 403,
+                              "invalid token rejected");
+                      Response self = request(client, "GET", selfUrl, SELF_TOKEN, null, null);
+                      check(self.status() == 200 && self.body().contains("coins"), "self scope response");
+                      check(!self.body().contains(SELF_TOKEN), "token never echoed");
+
+                      String moderation = base + "/players/" + PLAYER + "/sections/moderation";
+                      check(request(client, "GET", moderation, SELF_TOKEN, null, null).status() == 403,
+                              "moderation requires admin");
+                      Response adminSection = request(client, "GET", moderation, ADMIN_TOKEN, null, null);
+                      check(adminSection.status() == 200 && adminSection.body().contains("ban-ref"),
+                              "admin section access");
+
+                      Response byName = request(client, "GET", base + "/players/by-name/Alice",
+                              SELF_TOKEN, null, null);
+                      check(byName.status() == 200 && byName.body().contains("Alice"), "by-name self lookup");
+                      check(request(client, "GET", base + "/players/" + UUID.randomUUID() + "/public",
+                              null, null, null).status() == 404, "unknown player 404");
+                      check(request(client, "POST", base + "/health", null, null, "").status() == 405,
+                              "write method rejected");
+                      check(request(client, "GET", base + "/health", null, null, "oversized").status() == 413,
+                              "request size limit");
+
+                      PlayerProfileRepository.QuarantineResult q = join(fixture.repo.quarantineSection(
+                              PLAYER, ProfileSectionId.STATISTICS, new byte[]{1, 2, 3}, "bad stats"));
+                      Response quarantined = request(client, "GET",
+                              base + "/players/" + PLAYER + "/sections/statistics",
+                              SELF_TOKEN, null, null);
+                      check(quarantined.status() == 409, "quarantined section conflict");
+                      check(quarantined.body().contains(q.evidenceId()), "quarantine evidence exposed to self");
+                  } finally {
+                      join(server.stop(Duration.ofSeconds(2)));
+                      check(server.boundPort() == -1, "HTTP stopped cleanly");
+                      fixture.close();
+                  }
+              }
+
+              private static void rateResponseAndTimeoutLimits() throws Exception {
+                  Fixture fixture = fixture();
+                  PlayerProfileHttpServer rateServer = new PlayerProfileHttpServer(fixture.service,
+                          config(1, 1024, 1_048_576, Duration.ofSeconds(2)));
+                  try {
+                      check(rateServer.start(), "rate server start");
+                      HttpClient client = HttpClient.newHttpClient();
+                      String health = "http://127.0.0.1:" + rateServer.boundPort() + "/api/v1/health";
+                      check(request(client, "GET", health, null, null, null).status() == 200,
+                              "first request allowed");
+                      check(request(client, "GET", health, null, null, null).status() == 429,
+                              "rate limit enforced");
+                  } finally {
+                      join(rateServer.stop(Duration.ofSeconds(1)));
+                  }
+
+                  PlayerProfileHttpServer small = new PlayerProfileHttpServer(fixture.service,
+                          config(100, 1024, 256, Duration.ofSeconds(2)));
+                  try {
+                      check(small.start(), "small response server start");
+                      Response response = request(HttpClient.newHttpClient(), "GET",
+                              "http://127.0.0.1:" + small.boundPort() + "/api/v1/players/"
+                                      + PLAYER + "/public", null, null, null);
+                      check(response.status() == 500 && response.body().contains("response-too-large"),
+                              "response size limit");
+                  } finally {
+                      join(small.stop(Duration.ofSeconds(1)));
+                  }
+
+                  HangingApi hangingApi = new HangingApi(fixture.snapshot());
+                  PlayerProfileHttpServer timeout = new PlayerProfileHttpServer(hangingApi,
+                          config(100, 1024, 1_048_576, Duration.ofMillis(50)));
+                  try {
+                      check(timeout.start(), "timeout server start");
+                      Response response = request(HttpClient.newHttpClient(), "GET",
+                              "http://127.0.0.1:" + timeout.boundPort() + "/api/v1/players/"
+                                      + PLAYER + "/public", null, null, null);
+                      check(response.status() == 504 && response.body().contains("query-timeout"),
+                              "query timeout sanitized");
+                  } finally {
+                      join(timeout.stop(Duration.ofSeconds(1)));
+                      fixture.close();
+                  }
+              }
+
+              private static Fixture fixture() throws Exception {
+                  Path root = Files.createTempDirectory("pp-api-");
+                  YamlPlayerProfileRepository repo = new YamlPlayerProfileRepository(
+                          root, CLOCK, Executors.newVirtualThreadPerTaskExecutor());
+                  YamlPlayerProfileTransactionManager tx = new YamlPlayerProfileTransactionManager(repo, CLOCK);
+                  PlayerProfileService service = new PlayerProfileService(repo, tx, CLOCK);
+                  join(service.load(PLAYER));
+                  join(service.mutateSection(PLAYER, ProfileSectionId.IDENTITY, IdentitySection.class,
+                          old -> new IdentitySection("Alice", old.firstSeenAt(), NOW.toEpochMilli(),
+                                  NOW.toEpochMilli(), true, true,
+                                  Map.of("discord", "discord-user-1"), old.extensions())));
+                  join(service.mutateSection(PLAYER, ProfileSectionId.PREFERENCES, PreferenceSection.class,
+                          old -> new PreferenceSection("hu_HU", true, true, true,
+                                  true, true, true, true, true,
+                                  Map.of("theme", "compact"), old.extensions())));
+                  join(service.mutateSection(PLAYER, ProfileSectionId.FACTION, FactionSection.class,
+                          old -> new FactionSection("dark", "dark", true, NOW.toEpochMilli(), 0,
+                                  List.of("dark"), Map.of("dark", 10L), Map.of(), old.extensions())));
+                  join(service.mutateSection(PLAYER, ProfileSectionId.ACHIEVEMENTS, AchievementSection.class,
+                          old -> new AchievementSection(Set.of("first-blood"), Set.of("first-blood"),
+                                  Set.of(), Map.of("zombie", 3L), old.extensions())));
+                  join(service.mutateSection(PLAYER, ProfileSectionId.STATISTICS, StatisticsSection.class,
+                          old -> new StatisticsSection(Map.of("kills", 9L), Map.of("kills", 7L),
+                                  Set.of(), old.extensions())));
+                  join(service.mutateSection(PLAYER, ProfileSectionId.ECONOMY, EconomySection.class,
+                          old -> new EconomySection(Map.of("coins", 42L), 100,
+                                  Map.of(), Map.of(), Set.of(), old.extensions())));
+                  join(service.mutateSection(PLAYER, ProfileSectionId.MODERATION, ModerationSection.class,
+                          old -> new ModerationSection(Set.of("ban-ref"), 2,
+                                  Set.of("admin-note"), Map.of("state", "reviewed"), old.extensions())));
+                  return new Fixture(repo, service);
+              }
+
+              private static PlayerProfileHttpServer.Config config(
+                      int rate, int requestBytes, int responseBytes, Duration timeout) {
+                  return new PlayerProfileHttpServer.Config(true, "127.0.0.1", 0,
+                          Map.of(SELF_TOKEN, PlayerProfileHttpServer.TokenGrant.self(PLAYER),
+                                  ADMIN_TOKEN, PlayerProfileHttpServer.TokenGrant.admin()),
+                          rate, requestBytes, responseBytes, timeout);
+              }
+
+              private static Response request(HttpClient client, String method, String url,
+                                              String token, String etag, String body) throws Exception {
+                  HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url))
+                          .timeout(Duration.ofSeconds(5));
+                  if (token != null) builder.header("Authorization", "Bearer " + token);
+                  if (etag != null) builder.header("If-None-Match", etag);
+                  HttpRequest.BodyPublisher publisher = body == null
+                          ? HttpRequest.BodyPublishers.noBody()
+                          : HttpRequest.BodyPublishers.ofString(body);
+                  builder.method(method, publisher);
+                  HttpResponse<String> response = client.send(builder.build(),
+                          HttpResponse.BodyHandlers.ofString());
+                  return new Response(response.statusCode(), response.body(),
+                          response.headers().firstValue("ETag").orElse(null));
+              }
+
+              private record Response(int status, String body, String etag) { }
+
+              private record Fixture(YamlPlayerProfileRepository repo, PlayerProfileService service)
+                      implements AutoCloseable {
+                  PlayerProfileSnapshot snapshot() { return service.load(PLAYER).toCompletableFuture().join(); }
+                  @Override public void close() {
+                      service.shutdown(Duration.ofSeconds(5)).toCompletableFuture().join();
+                  }
+              }
+
+              private static final class HangingApi implements IceSMPPlayerProfileApi {
+                  private final PlayerProfileSnapshot profile;
+                  private HangingApi(PlayerProfileSnapshot profile) { this.profile = profile; }
+                  @Override public CompletionStage<Optional<PlayerProfileSnapshot>> find(UUID id) {
+                      return CompletableFuture.completedFuture(Optional.of(profile));
+                  }
+                  @Override public CompletionStage<Optional<PlayerProfileSnapshot>> findByName(String name) {
+                      return CompletableFuture.completedFuture(Optional.of(profile));
+                  }
+                  @Override public CompletionStage<Optional<ProfileSectionSnapshot<?>>> section(
+                          UUID id, ProfileSectionId section) {
+                      return CompletableFuture.completedFuture(profile.section(section));
+                  }
+                  @Override public CompletionStage<PublicPlayerProfileDto> publicProfile(UUID id) {
+                      return new CompletableFuture<>();
+                  }
+                  @Override public CompletionStage<SelfPlayerProfileDto> selfProfile(UUID id) {
+                      return new CompletableFuture<>();
+                  }
+                  @Override public CompletionStage<AdminPlayerProfileDto> adminProfile(UUID id) {
+                      return new CompletableFuture<>();
+                  }
+                  @Override public AutoCloseable subscribe(PlayerProfileListener listener) { return () -> { }; }
+              }
+
+              private static <T> T join(CompletionStage<T> stage) {
+                  return stage.toCompletableFuture().join();
+              }
+
+              private static void check(boolean value, String message) {
+                  assertions++;
+                  if (!value) throw new AssertionError(message);
+              }
+
+              private static void expect(Class<? extends Throwable> expected, Throwing action) {
+                  assertions++;
+                  try {
+                      action.run();
+                      throw new AssertionError("Expected " + expected.getSimpleName());
+                  } catch (Throwable failure) {
+                      if (!expected.isInstance(failure)) {
+                          throw new AssertionError("Expected " + expected.getSimpleName()
+                                  + " but got " + failure, failure);
+                      }
+                  }
+              }
+
+              @FunctionalInterface private interface Throwing { void run() throws Exception; }
+          }
+          JAVA
+
+          for file in "$DOMAIN" "$YAML" "$TX" "$API"; do
+            test -s "$file"
+          done
+          ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec|ICS2' "$DOMAIN" "$YAML" "$TX" "$API"
           git diff --check
           git status --short
           git diff --stat
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A "$OLD_LIFECYCLE" "$NEW_LIFECYCLE" "$OLD_DOMAIN" "$NEW_DOMAIN"
-          git commit -m "test(player-profile): port lifecycle and section-domain regressions"
+          git add "$DOMAIN" "$YAML" "$TX" "$API"
+          git commit -m "test(player-profile): restore platform regression suites"
 
           REMOTE_RECOVERY_HEAD=$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')
           test "$REMOTE_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
           git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
 
-      - name: Java 21 clean build and PlayerProfile regressions
+      - name: Java 21 clean build and all PlayerProfile regressions
         shell: bash
         run: |
           set -o pipefail
           ./gradlew clean build --no-daemon --stacktrace | tee /tmp/player-profile-root-build.log
+
+      - name: Verify PlayerProfile regression markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "PlayerProfile domain regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "PlayerProfile YAML regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "PlayerProfile transaction regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "PlayerProfile API regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "ClassSpecSection lifecycle regression suite passed." /tmp/player-profile-root-build.log
+          grep -F "ClassSpecSection v2 domain regression tests passed." /tmp/player-profile-root-build.log
 
       - name: Run repository-level PlayerProfile guards
         shell: bash
