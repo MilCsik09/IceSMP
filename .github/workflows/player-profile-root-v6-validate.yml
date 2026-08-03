@@ -6,6 +6,11 @@ on:
       - agent/player-profile-root-reconstruct-20260803-v6
     paths-ignore:
       - .github/player-profile-root-v6/**
+  pull_request:
+    branches:
+      - agent/player-profile-root-reconstruct-20260803-v6
+    paths:
+      - .github/player-profile-root-v6-trigger.txt
   workflow_dispatch:
 
 permissions:
@@ -14,6 +19,7 @@ permissions:
 
 env:
   PAYLOAD_ISSUE: "79"
+  VALIDATION_BRANCH: agent/player-profile-root-reconstruct-20260803-v6
 
 jobs:
   validate:
@@ -23,6 +29,7 @@ jobs:
       - name: Check out authenticated Git history
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.VALIDATION_BRANCH }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -69,10 +76,7 @@ jobs:
               expected_sha = match.group(2)
               expected_size = int(match.group(3))
               compact = re.sub(r"\s+", "", match.group(4))
-              try:
-                  raw = base64.b64decode(compact, validate=True)
-              except Exception as exc:
-                  raise SystemExit(f"chunk {index:02d} invalid base64: {exc}") from exc
+              raw = base64.b64decode(compact, validate=True)
               actual_sha = hashlib.sha256(raw).hexdigest()
               if len(raw) != expected_size:
                   raise SystemExit(f"chunk {index:02d} size mismatch: {len(raw)} != {expected_size}")
@@ -142,4 +146,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/player-profile-root-v6/validation-result.json
           git commit -m "chore(player-profile): record verified PPROOT2 reconstruction"
-          git push origin HEAD:refs/heads/agent/player-profile-root-reconstruct-20260803-v6
+          git push origin HEAD:refs/heads/${VALIDATION_BRANCH}
