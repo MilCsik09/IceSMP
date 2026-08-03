@@ -1,4 +1,4 @@
-name: PlayerProfile recovered legacy-authority audit (temporary)
+name: PlayerProfile recovered concise legacy-authority audit (temporary)
 
 on:
   pull_request:
@@ -29,56 +29,76 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify refs and enumerate legacy class-profile authority
+      - name: Emit concise machine-readable legacy authority report
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$EXPECTED_RECOVERY_HEAD"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
 
-          PATTERN='ClassProfile|ClassProfileCodec|ClassProfileRepository|ClassProfileLifecycleService|ClassProfileMutationStore|BukkitClassProfileSessionBridge|YamlClassProfileRepository|RepositoryMutationStoreAdapter'
-          echo '=== Legacy references in production sources ==='
-          grep -R -nE "$PATTERN" src/main/java build.gradle.kts || true
-          echo '=== Legacy references in regression sources ==='
-          grep -R -nE "$PATTERN" src/regression/java || true
-          echo '=== Class/spec source files ==='
-          find src/main/java/hu/taliann/icesmp/classspec -type f -print | sort
-          echo '=== New PlayerProfile/ClassSpecSection references ==='
-          grep -R -nE 'ClassSpecSection(LifecycleService|MutationStore|Repository)?|BukkitClassSpecSectionSessionBridge' \
-            src/main/java src/regression/java build.gradle.kts || true
-          echo '=== Candidate legacy files ==='
-          find src/main/java src/regression/java -type f \
-            \( -name '*ClassProfile*' -o -name '*YamlClassProfile*' -o -name '*RepositoryMutationStoreAdapter*' \) \
-            -print | sort
-          echo '=== Production imports of exact old packages ==='
-          grep -R -nE '^import hu\.taliann\.icesmp\.classspec\.(domain\.ClassProfile|persistence\.ClassProfile|application\.ClassProfile|integration\.BukkitClassProfile)' \
-            src/main/java || true
-          echo '=== Build task references ==='
-          grep -nE 'ClassProfile|classProfile|ClassSpecSection|playerProfile' build.gradle.kts || true
-
           python3 - <<'PY'
           from pathlib import Path
           import json
           import re
 
-          roots = [Path('src/main/java'), Path('src/regression/java')]
-          pattern = re.compile(
-              r'ClassProfile|ClassProfileCodec|ClassProfileRepository|'
-              r'ClassProfileLifecycleService|ClassProfileMutationStore|'
-              r'BukkitClassProfileSessionBridge|YamlClassProfileRepository|'
-              r'RepositoryMutationStoreAdapter'
+          symbols = (
+              "ClassProfile",
+              "ClassProfileCodec",
+              "ClassProfileRepository",
+              "ClassProfileLifecycleService",
+              "ClassProfileMutationStore",
+              "BukkitClassProfileSessionBridge",
+              "YamlClassProfileRepository",
+              "RepositoryMutationStoreAdapter",
           )
-          findings = []
-          for root in roots:
-              for path in sorted(root.rglob('*.java')):
-                  text = path.read_text(encoding='utf-8')
-                  hits = [
-                      {'line': number, 'text': line.strip()}
-                      for number, line in enumerate(text.splitlines(), 1)
-                      if pattern.search(line)
-                  ]
-                  if hits:
-                      findings.append({'path': str(path), 'hits': hits})
-          print('=== Machine summary ===')
-          print(json.dumps({'files': len(findings), 'findings': findings}, indent=2))
+          roots = (Path("src/main/java"), Path("src/regression/java"))
+          files = [p for root in roots for p in root.rglob("*.java")]
+          files.append(Path("build.gradle.kts"))
+          definitions = {}
+          references = []
+          for path in sorted(files):
+              text = path.read_text(encoding="utf-8")
+              lines = text.splitlines()
+              for symbol in symbols:
+                  definition_pattern = re.compile(
+                      rf"\b(?:class|interface|record|enum)\s+{re.escape(symbol)}\b"
+                  )
+                  for number, line in enumerate(lines, 1):
+                      if symbol not in line:
+                          continue
+                      item = {
+                          "path": str(path),
+                          "line": number,
+                          "symbol": symbol,
+                          "text": line.strip(),
+                      }
+                      if definition_pattern.search(line):
+                          definitions.setdefault(symbol, []).append(item)
+                      else:
+                          references.append(item)
+
+          candidates = sorted({
+              item["path"] for values in definitions.values() for item in values
+          })
+          new_counterparts = sorted(
+              str(path) for root in roots for path in root.rglob("*.java")
+              if re.search(
+                  r"ClassSpecSection|PlayerProfile|BukkitClassSpecSectionSessionBridge",
+                  path.name,
+              )
+          )
+          report = {
+              "recovery_head": "258ea27e0ba96cbbae0d9f7e39c6b20ee444d480",
+              "target_head": "f25e7e600f418724dd2341e39387a0fa5c0625de",
+              "definition_files": candidates,
+              "definitions": definitions,
+              "references_excluding_definitions": references,
+              "new_counterpart_files": new_counterparts,
+              "counts": {
+                  "definition_files": len(candidates),
+                  "references": len(references),
+                  "new_counterparts": len(new_counterparts),
+              },
+          }
+          print("LEGACY_AUTHORITY_REPORT=" + json.dumps(report, sort_keys=True))
           PY
