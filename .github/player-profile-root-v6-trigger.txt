@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 3 — fully decode each comment, validate the declared raw prefix SHA, and record trailing decoded bytes.
+Attempt: 4 — reconstruct canonical terminal padding from declared raw size and require exact chunk SHA.
