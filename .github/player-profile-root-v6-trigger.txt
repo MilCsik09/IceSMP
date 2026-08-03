@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 5 — independently verify split variants and accept only a recombination matching the full chunk SHA.
+Attempt: 6 — recover only complete tar members from SHA-verified chunks 00 through 10, push an isolated recovery branch, then run Java 21 Gradle validation.
