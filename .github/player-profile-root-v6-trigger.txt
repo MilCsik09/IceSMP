@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 7 — recover and apply only complete unified-diff blocks from SHA-verified chunks 00 through 10, push an isolated recovery branch, then run Java 21 Gradle validation.
+Attempt: 8 — recover 82 complete unified-diff blocks from SHA-verified chunks 00 through 10, normalize only proven EOF whitespace, push an isolated recovery branch, then run Java 21 Gradle validation.
