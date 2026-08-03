@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 15 — validate the recovered PlayerProfile API redaction/query suite on Java 21, then run the complete build to identify the next missing root regression.
+Attempt: 16 — rerun the recovered PlayerProfile API suite and complete Java 21 build with ancestry-based multi-commit tree validation.
