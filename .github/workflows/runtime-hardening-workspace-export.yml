@@ -1,4 +1,4 @@
-name: Event spawn hardening implementation gate
+name: Config, recipe and icon hardening gate
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  implement-event-safety:
+  implement-config-recipe-icons:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'fix/runtime-hardening-audit-20260803'
     runs-on: ubuntu-latest
     steps:
@@ -31,24 +31,25 @@ jobs:
         run: |
           set -euo pipefail
           test -d .git
-          git merge-base --is-ancestor b4c26e7ff252b01930e0cba90fb09bb906e9cf58 HEAD
-          git merge-base --is-ancestor 1db8ee728f86b3e210130637ea1eb4ddfb63e2fe HEAD
+          git merge-base --is-ancestor 28e2b4b33c2efe5a2cc3a19697b9294aa50e33f4 HEAD
+          git merge-base --is-ancestor 24dc397feb2ad6df08c10cbeedb8eca6f218d78a HEAD
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
           find . -name AGENTS.md -print
           git status --short --branch
 
-      - name: Reconstruct and verify asserted event patch
+      - name: Apply asserted stage-3 patches
         shell: bash
         run: |
           set -euo pipefail
-          patch_file=.github/scripts/apply_event_spawn_hardening.py
-          cat .github/scripts/event-stage2.b64.* | tr -d '\n' | base64 -d > "$patch_file"
-          echo "d4270242c10a02dc757f5451f15d32c5f098d0992cbe30fc7c2e62fb78d1e666  $patch_file" | sha256sum -c -
-          python3 "$patch_file"
-          rm -f "$patch_file"
+          python3 .github/scripts/apply_stage3_part1.py
+          python3 .github/scripts/apply_stage3_part2a.py
+          python3 .github/scripts/apply_stage3_part2b.py
+          python3 .github/scripts/apply_stage3_part3.py
+          python3 .github/scripts/apply_stage3_part4a.py
+          python3 .github/scripts/apply_stage3_part4b.py
+          python3 .github/scripts/apply_stage3_fixups.py
           git diff --check
           git diff --stat
-          git grep -n 'findSafeNear\|min-horizontal-distance-blocks\|EventSpawnGuardListener' -- src/main src/regression build.gradle.kts
 
       - name: Update measured architecture inventory
         shell: bash
@@ -59,35 +60,42 @@ jobs:
 
           architecture = Path('docs/ARCHITECTURE.md')
           text = architecture.read_text(encoding='utf-8')
-          replacements = {
-              '| `managers/` | 120 |': '| `managers/` | 121 |',
-              '| `listeners/` | 120 |': '| `listeners/` | 121 |',
-          }
-          for old, new in replacements.items():
-              if text.count(old) != 1:
-                  raise SystemExit(f'architecture inventory assertion failed: {old}')
-              text = text.replace(old, new, 1)
-          if text.count('553') != 1:
-              raise SystemExit('architecture total Java inventory assertion failed')
-          text = text.replace('553', '571', 1)
+          if text.count('| `gui/` | 46 |') != 1:
+              raise SystemExit('GUI package inventory assertion failed')
+          text = text.replace('| `gui/` | 46 |', '| `gui/` | 47 |', 1)
+          if text.count('571') != 1:
+              raise SystemExit('total Java inventory assertion failed')
+          text = text.replace('571', '575', 1)
           architecture.write_text(text, encoding='utf-8')
 
           claude = Path('CLAUDE.md')
           ctext = claude.read_text(encoding='utf-8')
-          old = 'A dokumentált release 569 Java-fájl / 90 manager.'
-          new = 'A dokumentált release 571 Java-fájl / 90 manager.'
+          old = 'A dokumentált release 571 Java-fájl / 90 manager.'
+          new = 'A dokumentált release 575 Java-fájl / 90 manager.'
           if ctext.count(old) != 1:
               raise SystemExit('CLAUDE Java inventory assertion failed')
           claude.write_text(ctext.replace(old, new, 1), encoding='utf-8')
           PY
           git diff --check
 
-      - name: Compile and run runtime regressions
+      - name: Validate item-model mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_gui_icons.py | tee /tmp/gui-icons.log
+
+      - name: Compile and run focused regressions
         shell: bash
         run: |
           set -euo pipefail
           chmod +x gradlew
-          ./gradlew compileJava runtimeHardeningRegressionTest eventSpawnSafetyRegressionTest \
+          ./gradlew \
+            compileJava \
+            runtimeHardeningRegressionTest \
+            eventSpawnSafetyRegressionTest \
+            configGuiTransactionRegressionTest \
+            configGuiCoverageRegressionTest \
+            professionRecipeAuditRegressionTest \
             --console=plain --no-daemon --stacktrace
 
       - name: Run repository consistency gate
@@ -103,21 +111,28 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
-            src/main/java/hu/taliann/icesmp/managers/EventSpawnSafetyPolicy.java \
-            src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java \
-            src/main/java/hu/taliann/icesmp/listeners/EventSpawnGuardListener.java \
-            src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
-            src/main/java/hu/taliann/icesmp/managers/InvasionManager.java \
-            src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java \
+            src/main/java/hu/taliann/icesmp/managers/ConfigManager.java \
+            src/main/java/hu/taliann/icesmp/gui/ConfigEditSession.java \
             src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUI.java \
-            src/main/resources/config/world.yml \
-            src/regression/java/hu/taliann/icesmp/runtime/EventSpawnSafetyRegressionSuite.java \
+            src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java \
+            src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java \
+            src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeManager.java \
+            src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
+            src/main/resources/config/profession-recipes.yml \
+            src/regression/java/hu/taliann/icesmp/config/ConfigGuiTransactionRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/config/ConfigGuiCoverageRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/professions/ProfessionRecipeAuditRegressionSuite.java \
+            scripts/validate_gui_icons.py \
             build.gradle.kts \
+            docs/CONFIG_GUI_COVERAGE.md \
+            docs/PROFESSION_RECIPE_ITEM_AUDIT.md \
+            docs/RESOURCE_PACK_CMD.md \
+            docs/RUNTIME_HARDENING_AUDIT.md \
             docs/ARCHITECTURE.md \
             CLAUDE.md
-          git commit -m "Fix unsafe world-event spawn placement" \
-            -m "Enforce configurable player, spawn, border, protected-area and surface safety through one bounded Folia-aware guard. Invasions and world bosses now abort instead of falling back near players, and concurrent events reserve distinct areas." \
-            -m "Adds deterministic distance and finite-search regressions plus live GUI controls." \
+          git commit -m "Harden config GUI, recipes and icon mapping" \
+            -m "Stage config edits until explicit save, reject stale concurrent sessions, expose mandatory runtime safety keys, and document reload semantics. Make profession recipes deterministic and reload-safe, remove the one proven semantic duplicate, and validate every ITEM_MODEL against the manifest and checked-in pack." \
+            -m "Adds config transaction/coverage and profession recipe audit regressions." \
             -m "Co-Authored-By: ChatGPT <noreply@openai.com>" \
             -m "Claude-Session: runtime-hardening-audit-20260803"
           git push origin HEAD:fix/runtime-hardening-audit-20260803
