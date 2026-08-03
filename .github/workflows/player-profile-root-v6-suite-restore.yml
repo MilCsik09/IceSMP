@@ -57,8 +57,8 @@ jobs:
               java = textwrap.dedent(match.group(1)).rstrip() + '\n'
               if not java.startswith('package hu.taliann.icesmp.playerprofile.'):
                   raise SystemExit(f'invalid package in {variable}')
-              if 'ClassProfile' in java or 'ClassProfileCodec' in java or 'ICS2' in java:
-                  raise SystemExit(f'legacy symbol leaked into {variable}')
+              if 'ClassProfile' in java or 'ClassProfileCodec' in java:
+                  raise SystemExit(f'legacy class-profile symbol leaked into {variable}')
               path = Path('/tmp/player-profile-suites') / filename
               path.write_text(java, encoding='utf-8', newline='\n')
               print(f'{variable}: {len(java.encode("utf-8"))} bytes -> {path}')
@@ -100,7 +100,8 @@ jobs:
           for file in "$DOMAIN" "$YAML" "$TX" "$API"; do
             test -s "$file"
           done
-          ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec|ICS2' "$DOMAIN" "$YAML" "$TX"
+          ! grep -R --line-number -E 'ClassProfile|ClassProfileCodec' "$DOMAIN" "$YAML" "$TX"
+          grep -F '!classSpec.contains("ICS2")' "$YAML"
           git diff --check
           git status --short
           git diff --stat
