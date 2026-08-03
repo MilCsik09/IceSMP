@@ -8,6 +8,7 @@ import hu.taliann.icesmp.factions.DurableRecoveryPolicy;
 import hu.taliann.icesmp.factions.DurableTransactionProtocol;
 import hu.taliann.icesmp.factions.FactionTaxEvasionPolicy;
 import hu.taliann.icesmp.factions.FactionTaxJournal;
+import hu.taliann.icesmp.factions.FactionTreasuryAmountPolicy;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -540,7 +541,14 @@ public final class FactionTreasuryManager implements PersistentStore {
             }
 
             final Double previous = balances.get(faction);
-            balances.merge(faction, amount, Double::sum);
+            final double next = FactionTreasuryAmountPolicy.checkedAdd(
+                    previous == null ? 0.0D : previous, amount);
+            if (!Double.isFinite(next)) {
+                plugin.getLogger().warning("Rejected overflowing faction treasury grant '"
+                        + grantId + "' for " + faction + ".");
+                return false;
+            }
+            balances.put(faction, next);
             appliedGrants.put(grantId, System.currentTimeMillis());
             if (!YamlStore.isLoadFailed(storageFile) && writeStateLocked()) {
                 return true;
@@ -561,7 +569,14 @@ public final class FactionTreasuryManager implements PersistentStore {
             return;
         }
         synchronized (stateLock) {
-            balances.merge(faction, amount, Double::sum);
+            final double next = FactionTreasuryAmountPolicy.checkedAdd(
+                    balances.getOrDefault(faction, 0.0D), amount);
+            if (!Double.isFinite(next)) {
+                plugin.getLogger().warning("Rejected overflowing faction treasury deposit for "
+                        + faction + ".");
+                return;
+            }
+            balances.put(faction, next);
         }
         requestSave();
     }
@@ -574,7 +589,7 @@ public final class FactionTreasuryManager implements PersistentStore {
 
         synchronized (stateLock) {
             final double balance = balances.getOrDefault(faction, 0.0D);
-            if (balance < amount) {
+            if (!Double.isFinite(balance) || balance < amount) {
                 return false;
             }
             balances.put(faction, balance - amount);
@@ -760,9 +775,17 @@ public final class FactionTreasuryManager implements PersistentStore {
                             evasionThreshold, mayReportSin);
             final int strikesAfter = evasion.strikesAfter();
             final boolean reportSin = evasion.reportSin();
+            final double treasuryAfter = paid <= 0.0D
+                    ? before.treasuryBalance()
+                    : FactionTreasuryAmountPolicy.checkedAdd(
+                    before.treasuryBalance(), paid);
+            if (!Double.isFinite(treasuryAfter)) {
+                throw new IllegalStateException(
+                        "Faction treasury credit would overflow for " + origin);
+            }
 
             final FactionTaxJournal.DomainState after = new FactionTaxJournal.DomainState(
-                    before.treasuryBalance() + paid, owedAfter, strikesAfter);
+                    treasuryAfter, owedAfter, strikesAfter);
             if (before.equals(after) && wallet == null) {
                 return new TaxCommit(false, 0.0D, before.debtAmount(), owedAfter, reportSin);
             }
