@@ -17,7 +17,7 @@ env:
   VALIDATION_BRANCH: agent/player-profile-root-reconstruct-20260803-v6
   TARGET_BRANCH: rework/class-spec-profile-v2
   EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
-  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v2
+  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v3
 
 jobs:
   recover:
@@ -158,6 +158,25 @@ jobs:
             .github/workflows/profile-v2-payload-check.yml \
             gradle-build.log \
             gradle-check.log
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          paths = (
+              Path("CLAUDE.md"),
+              Path("README.md"),
+              Path("docs/ARCHITECTURE.md"),
+              Path("src/main/resources/config/general.yml"),
+          )
+          for path in paths:
+              if not path.is_file():
+                  continue
+              text = path.read_text(encoding="utf-8")
+              normalized = text.rstrip("\r\n") + "\n"
+              if normalized != text:
+                  path.write_text(normalized, encoding="utf-8", newline="\n")
+                  print(f"NORMALIZE_EOF {path}")
+          PY
 
           git add -A
           git diff --cached --check
