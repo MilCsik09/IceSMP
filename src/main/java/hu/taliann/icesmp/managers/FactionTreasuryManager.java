@@ -6,9 +6,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.factions.FactionTaxDebtLedger;
 import hu.taliann.icesmp.factions.DurableRecoveryPolicy;
 import hu.taliann.icesmp.factions.DurableTransactionProtocol;
-import hu.taliann.icesmp.factions.FactionTaxEvasionPolicy;
 import hu.taliann.icesmp.factions.FactionTaxJournal;
-import hu.taliann.icesmp.factions.FactionTreasuryAmountPolicy;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -541,7 +539,7 @@ public final class FactionTreasuryManager implements PersistentStore {
             }
 
             final Double previous = balances.get(faction);
-            final double next = FactionTreasuryAmountPolicy.checkedAdd(
+            final double next = FactionTaxDebtLedger.checkedAmountAdd(
                     previous == null ? 0.0D : previous, amount);
             if (!Double.isFinite(next)) {
                 plugin.getLogger().warning("Rejected overflowing faction treasury grant '"
@@ -569,7 +567,7 @@ public final class FactionTreasuryManager implements PersistentStore {
             return;
         }
         synchronized (stateLock) {
-            final double next = FactionTreasuryAmountPolicy.checkedAdd(
+            final double next = FactionTaxDebtLedger.checkedAmountAdd(
                     balances.getOrDefault(faction, 0.0D), amount);
             if (!Double.isFinite(next)) {
                 plugin.getLogger().warning("Rejected overflowing faction treasury deposit for "
@@ -769,15 +767,15 @@ public final class FactionTreasuryManager implements PersistentStore {
             final double owedAfter = Math.min(maxArrears,
                     Math.max(0.0D, Math.round((due - paid) * 100.0D) / 100.0D));
 
-            final FactionTaxEvasionPolicy.Decision evasion =
-                    FactionTaxEvasionPolicy.afterCollection(
+            final FactionTaxDebtLedger.EvasionDecision evasion =
+                    FactionTaxDebtLedger.afterCollection(
                             before.evasionStrikes(), paid, owedAfter, maxArrears,
                             evasionThreshold, mayReportSin);
             final int strikesAfter = evasion.strikesAfter();
             final boolean reportSin = evasion.reportSin();
             final double treasuryAfter = paid <= 0.0D
                     ? before.treasuryBalance()
-                    : FactionTreasuryAmountPolicy.checkedAdd(
+                    : FactionTaxDebtLedger.checkedAmountAdd(
                     before.treasuryBalance(), paid);
             if (!Double.isFinite(treasuryAfter)) {
                 throw new IllegalStateException(
