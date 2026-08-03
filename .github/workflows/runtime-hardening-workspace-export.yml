@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           test -d .git
-          git merge-base --is-ancestor 655158d949a04af5b895d1995a4ba736d0cc0e63 HEAD
+          git merge-base --is-ancestor 1bb760d04573740818012ffd9accc46b55c39c18 HEAD
           git merge-base --is-ancestor 24dc397feb2ad6df08c10cbeedb8eca6f218d78a HEAD
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
           find . -name AGENTS.md -print
