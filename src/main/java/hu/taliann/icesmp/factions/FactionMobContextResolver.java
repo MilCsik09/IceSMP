@@ -88,16 +88,14 @@ public final class FactionMobContextResolver {
         final TargetReason reason = event.getReason();
         final UUID mobId = entity.getUniqueId();
         final boolean undead = isUndead(entity);
-        final boolean ambient = darkUndeadAmbienceManager.isMarked(entity);
         final EnumSet<FactionPassivePolicy.ContentContext> contexts =
                 contentContexts(entity, settings, playerId);
         final boolean timedRetaliation = state.isNeutralRetaliating(playerId, mobId)
                 || undead && state.isDarkRetaliating(playerId, mobId);
-        // Ambient/NEUTRAL truce breaks are time-bounded by our own state. Wild undead keep
-        // vanilla retaliation semantics; otherwise their natural target reason would be
-        // mistaken for fresh spontaneous aggro after the player hit them.
-        final boolean retaliating = timedRetaliation
-                || undead && !ambient && RETALIATION_REASONS.contains(reason);
+        // A timed lease carries provocation across later spontaneous reasons. A direct vanilla
+        // retaliation reason is itself authoritative for every truce type; otherwise
+        // break-on-damage=false would be bypassed for NEUTRAL, ambient DARK and Whisper targets.
+        final boolean retaliating = isRetaliating(timedRetaliation, reason);
         return targetContext(
                 entity,
                 settings,
@@ -109,6 +107,10 @@ public final class FactionMobContextResolver {
                 entity instanceof Enderman && reason == TargetReason.CLOSEST_PLAYER,
                 SPONTANEOUS_REASONS.contains(reason),
                 SPONTANEOUS_REASONS.contains(reason));
+    }
+
+    static boolean isRetaliating(final boolean timedRetaliation, final TargetReason reason) {
+        return timedRetaliation || reason != null && RETALIATION_REASONS.contains(reason);
     }
 
     /**
