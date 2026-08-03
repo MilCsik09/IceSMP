@@ -1,2 +1,2 @@
 Fresh isolated trigger for the exact-head PlayerProfile suite restoration workflow.
-Attempt: 18 — rerun after narrowing the extraction guard to actual legacy ClassProfile symbols while retaining the explicit structured-YAML assertion that ICS2 is absent; build and pass every gate before fast-forward recovery push.
+Attempt: 19 — run the idempotent suite restoration against recovery head 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480; verify existing API PARTIAL projection, restore missing domain/YAML/transaction suites, and pass every Java 21 and repository gate before fast-forward push.
