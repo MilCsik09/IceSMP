@@ -23,6 +23,7 @@ public final class FactionPassiveHardeningRegressionSuite {
         foodDutyCallbackUsesLiveConfigAndMembership();
         foodDurationsFailClosedOnOverflow();
         taxEvasionSinStaysPendingUntilOwnerAck();
+        treasuryAmountsStayFinite();
         combustProvenanceNeverShortensExistingFire();
         System.out.println("Faction passive hardening regression suite passed.");
     }
@@ -250,6 +251,18 @@ public final class FactionPassiveHardeningRegressionSuite {
         check(FactionTaxEvasionPolicy.afterCollection(
                         3, 0.0D, 50.0D, 50.0D, 0, true).strikesAfter() == 0,
                 "disabled evasion policy retained a stale pending threshold");
+    }
+
+    private static void treasuryAmountsStayFinite() {
+        check(FactionTreasuryAmountPolicy.checkedAdd(10.0D, 2.5D) == 12.5D,
+                "normal treasury addition changed");
+        check(Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(
+                        Double.MAX_VALUE, Double.MAX_VALUE))
+                        && Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(
+                        Double.POSITIVE_INFINITY, 1.0D))
+                        && Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(1.0D, 0.0D))
+                        && Double.isNaN(FactionTreasuryAmountPolicy.checkedAdd(-1.0D, 1.0D)),
+                "invalid or overflowing treasury balance was accepted");
     }
 
     private static FactionPassivePolicy.TargetContext context(final boolean bloodMoon,
