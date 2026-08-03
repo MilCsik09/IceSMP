@@ -124,35 +124,45 @@ jobs:
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
 
-      - name: Package authenticated source checkout (temporary)
+      - name: Package authenticated Git checkout (temporary)
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p build/player-profile-source
-          git status --short --branch > build/player-profile-source/git-status.txt
-          git show-ref > build/player-profile-source/git-refs.txt
-          git log --decorate --oneline --graph -n 100 > build/player-profile-source/git-history.txt
+          TESTED_HEAD=$(git rev-parse HEAD)
+          PROFILE_BASE='62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
+          EXPORT_BRANCH='player-profile-authenticated-export'
+          rm -rf build/player-profile-checkout
+          mkdir -p build/player-profile-checkout
+          git branch --force "$EXPORT_BRANCH" "$TESTED_HEAD"
+          git clone --quiet --depth=32 --single-branch --branch "$EXPORT_BRANCH" \
+            "file://$GITHUB_WORKSPACE" build/player-profile-checkout/repo
+          cd build/player-profile-checkout/repo
+          git branch -m rework/class-spec-profile-v2
+          git remote set-url origin https://github.com/MilCsik09/IceSMP.git
+          git config --unset-all http.https://github.com/.extraheader || true
+          test "$(git rev-parse HEAD)" = "$TESTED_HEAD"
+          test "$(git merge-base HEAD "$PROFILE_BASE")" = "$PROFILE_BASE"
+          test -f .git/shallow
+          git fsck --full
+          git status --short --branch > ../git-status.txt
+          git show-ref > ../git-refs.txt
+          git log --decorate --oneline --graph --all > ../git-history.txt
+          git count-objects -vH > ../object-size.txt
+          cd ..
+          tar -czf authenticated-checkout.tar.gz repo
+          sha256sum authenticated-checkout.tar.gz > SHA256SUMS
           printf 'head=%s\nbase=%s\nmerge-base=%s\n' \
-            "$(git rev-parse HEAD)" \
-            "${PR_BASE_SHA:-}" \
-            "$(git merge-base HEAD "${PR_BASE_SHA:-HEAD^}")" \
-            > build/player-profile-source/manifest.txt
-          tar -czf build/player-profile-source/source.tar.gz \
-            --exclude='.git' \
-            --exclude='build' \
-            --exclude='.gradle' \
-            --exclude='resource-pack' \
-            .github docs gradle scripts src \
-            AGENTS.md CLAUDE.md LICENSE README.md ROADMAP.md \
-            build.gradle.kts gradle.properties gradlew gradlew.bat settings.gradle.kts
-          sha256sum build/player-profile-source/source.tar.gz > build/player-profile-source/SHA256SUMS
+            "$TESTED_HEAD" "$PROFILE_BASE" \
+            "$(git -C "$GITHUB_WORKSPACE" merge-base "$TESTED_HEAD" "$PROFILE_BASE")" \
+            > manifest.txt
+          du -h authenticated-checkout.tar.gz
 
-      - name: Upload authenticated source checkout (temporary)
+      - name: Upload authenticated Git checkout (temporary)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: player-profile-source-${{ github.run_id }}
-          path: build/player-profile-source/
+          name: player-profile-checkout-${{ github.run_id }}
+          path: build/player-profile-checkout/
           retention-days: 1
           if-no-files-found: error
