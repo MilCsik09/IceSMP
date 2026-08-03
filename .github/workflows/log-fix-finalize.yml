@@ -6,13 +6,12 @@ on:
       - master
     paths:
       - '.github/workflows/log-fix-finalize.yml'
-      - '.github/log-fix-finalize-payload.b64.*'
 
 permissions:
   contents: write
 
 jobs:
-  apply-final-payload:
+  apply-final-fixes:
     if: github.head_ref == 'fix/log-errors-2026-08-02'
     runs-on: ubuntu-latest
     steps:
@@ -22,21 +21,70 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Restore verified files and remove transport payload
+      - name: Align CI and operator runbooks
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/log-fix-finalize-payload.b64.00 \
-              .github/log-fix-finalize-payload.b64.01 \
-            | base64 --decode > /tmp/log-fix-finalize-payload.tgz
-          echo 'aecddd67dd2cba703ed082a7b9cdca9e5a9595e4eb1906f4013c3d203022ee77  /tmp/log-fix-finalize-payload.tgz' \
-            | sha256sum --check --strict
-          tar -xzf /tmp/log-fix-finalize-payload.tgz -C .
+          python3 - <<'PY'
+          from pathlib import Path
+
+          ci = Path('.github/workflows/ci.yml')
+          text = ci.read_text()
+          old_build = """      - name: Clean build
+                shell: bash
+                run: |
+                  set -euo pipefail
+                  ./gradlew clean build --no-daemon --stacktrace | tee gradle-build.log
+
+          """
+          new_build = """      - name: Clean unit tests
+                shell: bash
+                run: |
+                  set -euo pipefail
+                  ./gradlew clean test --no-daemon --stacktrace | tee gradle-test.log
+
+              - name: Full build and regression gates
+                shell: bash
+                run: |
+                  set -euo pipefail
+                  ./gradlew build --no-daemon --stacktrace | tee gradle-build.log
+
+          """
+          if old_build not in text:
+              raise SystemExit('CI clean-build block not found')
+          ci.write_text(text.replace(old_build, new_build))
+
+          replacements = {
+              'ROADMAP.md': [('/quest admin npcs refresh', '/quest admin validatenpcs')],
+              'docs/LATEST_CHANGES.md': [('/quest admin npcs [refresh]', '/quest admin validatenpcs')],
+              'docs/BUILDER_GUIDE.md': [
+                  ('/quest admin npcs refresh\n/quest admin npcs', '/quest admin validatenpcs'),
+                  ('`REMOTE_NOT_CACHED`', '`CACHE_MISSING` vagy `CACHE_INVALID`'),
+              ],
+              'docs/ADMIN_GUIDE.md': [
+                  ('/quest admin npcs\n/quest admin npcs refresh', '/quest admin validatenpcs'),
+                  ('Az első parancs a legutóbbi mérést mutatja; a `refresh` újraolvassa', 'A parancs újraolvassa'),
+                  ('./gradlew relicRefreshRegressionTest', './gradlew relicItemRefreshRegressionTest\n./gradlew relicRefreshPipelineRegressionTest'),
+                  ('./gradlew escortShutdownRegressionTest', './gradlew lifecycleShutdownRegressionTest'),
+                  ('./gradlew questNpcOperationsRegressionTest', './gradlew questNpcValidationRegressionTest'),
+                  ('./gradlew logIncidentRegressionTest', './gradlew resourcePackRegressionTest\npython3 scripts/validate_fancynpcs_snapshot.py\npython3 -m unittest scripts.tests.test_validate_fancynpcs_snapshot'),
+              ],
+          }
+          for filename, pairs in replacements.items():
+              path = Path(filename)
+              body = path.read_text()
+              for old, new in pairs:
+                  if old not in body:
+                      raise SystemExit(f'missing runbook replacement in {filename}: {old!r}')
+                  body = body.replace(old, new)
+              path.write_text(body)
+          PY
+
           rm -- .github/log-fix-finalize-payload.b64.00 \
                  .github/log-fix-finalize-payload.b64.01 \
                  .github/workflows/log-fix-finalize.yml
 
-      - name: Verify final payload before publishing
+      - name: Verify final files before publishing
         shell: bash
         run: |
           set -euo pipefail
@@ -59,10 +107,8 @@ jobs:
             docs/ADMIN_GUIDE.md \
             docs/BUILDER_GUIDE.md \
             docs/LATEST_CHANGES.md \
-            scripts/validate_fancynpcs_snapshot.py \
-            scripts/tests/test_validate_fancynpcs_snapshot.py \
             .github/log-fix-finalize-payload.b64.00 \
             .github/log-fix-finalize-payload.b64.01 \
             .github/workflows/log-fix-finalize.yml
-          git commit -m 'fix(operations): validate skin cache and align runbook'
+          git commit -m 'fix(operations): align CI commands and operator runbook'
           git push origin "HEAD:${HEAD_BRANCH}"
