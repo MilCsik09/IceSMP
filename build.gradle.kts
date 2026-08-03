@@ -144,9 +144,17 @@ val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.dialog.PauseMenuDialogRegressionSuite")
 }
 
+val runtimeBugfixRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs pet nametag, lore output, corruption safety and spectator-menu regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.runtime.RuntimeBugfixRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest)
+        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest)
 }
