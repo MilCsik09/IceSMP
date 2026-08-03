@@ -1,0 +1,4 @@
+authority=PlayerProfile
+legacy-migration=false
+dual-read=false
+dual-write=false
