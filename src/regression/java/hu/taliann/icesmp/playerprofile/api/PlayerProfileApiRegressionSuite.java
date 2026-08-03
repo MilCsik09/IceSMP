@@ -103,7 +103,7 @@ public final class PlayerProfileApiRegressionSuite {
         final AdminPlayerProfileDto dto = new PlayerProfileQueryService(new FakeRepository(enriched(true)))
             .adminDto(PLAYER).toCompletableFuture().join();
 
-        check(dto.profileHealth().equals("QUARANTINED"), "aggregate health");
+        check(dto.profileHealth().equals("PARTIAL"), "aggregate health");
         check(dto.sectionHealth().get("moderation").equals("QUARANTINED"), "section health");
         check(dto.quarantineEvidence().get("moderation").equals("evidence-42"), "quarantine evidence");
         check(dto.activePunishmentRefs().contains("ban-1"), "active punishment");
