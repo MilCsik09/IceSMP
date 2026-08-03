@@ -1211,6 +1211,7 @@ public final class IceSMPCore {
         shutdownStep("totemManager", totemManager::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
         shutdownStep("sitManager", sitManager::shutdown);
+        shutdownStep("professionRecipeManager", professionRecipeManager::shutdown);
         shutdownStep("crateManager", crateManager::shutdown);
         shutdownStep("invseeManager", invseeManager::shutdown);
         shutdownStep("motdListener", motdListener::shutdown);
@@ -1439,6 +1440,7 @@ public final class IceSMPCore {
             mobScalingManager.load();
             craftingRestrictionManager.load();
             professionRecipeCatalog.load();
+            professionRecipeManager.registerRecipes();
             crateManager.reloadConfig();
             achievementManager.reload();
             devItemManager.refreshOnlineOwner();
@@ -1471,6 +1473,9 @@ public final class IceSMPCore {
             }
             if (key.startsWith("resource-pack.")) {
                 resourcePackReloadHook.run();
+            }
+            if (key.startsWith("professions.recipes.")) {
+                professionRecipeManager.registerRecipes();
             }
             if (key.startsWith("factions.passives.") || key.startsWith("factions.whisper.")) {
                 factionPassiveConfig.reload();

@@ -160,6 +160,30 @@ val eventSpawnSafetyRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.runtime.EventSpawnSafetyRegressionSuite")
 }
 
+val configGuiTransactionRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs staged save/cancel/reset and optimistic-concurrency config GUI regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.config.ConfigGuiTransactionRegressionSuite")
+}
+
+val configGuiCoverageRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Validates config schema ↔ GUI allowlist coverage, types, defaults and ranges."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.config.ConfigGuiCoverageRegressionSuite")
+}
+
+val professionRecipeAuditRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Validates deterministic profession recipes, semantic uniqueness and reload cleanup."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.professions.ProfessionRecipeAuditRegressionSuite")
+}
+
 val runtimeHardeningRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs 2D claim, vanish retracking and DARK mob lifecycle regressions."
@@ -236,7 +260,7 @@ tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest, runtimeHardeningRegressionTest, eventSpawnSafetyRegressionTest,
+        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest, runtimeHardeningRegressionTest, eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest, professionRecipeAuditRegressionTest,
         factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
         relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
         questNpcValidationRegressionTest, resourcePackRegressionTest)

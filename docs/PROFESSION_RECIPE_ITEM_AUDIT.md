@@ -1,0 +1,11 @@
+# Profession recipe and item audit
+
+| profession | recipe key | item | problem | previous behaviour | fixed behaviour | balance rationale | migration / compatibility |
+|---|---|---|---|---|---|---|---|
+| Fisher | `egyszeru_horgaszbot` / `kezdo_horgaszbot` | Fishing Rod | Exact semantic duplicate: `3×STICK + 2×STRING → FISHING_ROD` | Two progression records represented the same craft and could diverge by load order | `egyszeru_horgaszbot` is canonical; `kezdo_horgaszbot` and its recipe are removed | One unlock/cost path prevents fake progression depth and recipe ambiguity | Existing fishing rods remain vanilla-compatible; no item migration is required |
+| All | `icesmp:prof_*` legacy masterworks | PDC-stamped masterwork tools/books | Reload/disable did not remove previously registered Bukkit keys | Disabled or removed recipes could remain craftable until restart; repeated registration could be rejected | Manager owns a deterministic key set, removes it before rebuild and on disable, then registers once | No duplicate registry entries or stale craft path | Already crafted items remain valid; only future crafting availability changes |
+| All | Config catalog (438 before, 437 after) | All profession outputs | No early semantic collision validation | Similar/duplicate recipes were accepted silently | Sorted loading plus canonical input/output fingerprints fail fast on non-intentional duplicates | Intentional alternate outputs remain; exact same input+output is rejected | Config typo now blocks startup/reload rather than silently changing progression |
+| All | Unique profession outputs | Resource-pack model | Item/model references were distributed across config and pack | Missing mappings were only found visually | Build validator checks every referenced ITEM_MODEL against the manifest and checked-in pack | Visual identity remains stable without changing public model IDs | No public model ID changed; vanilla `PAPER` is the explicit no-pack fallback |
+
+The automated audit also verifies unique/custom ingredient parsing, profession gating source contracts, deterministic key order,
+output model presence and that removed recipes cannot survive a reload through stale Bukkit registrations.

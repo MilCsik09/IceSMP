@@ -41,7 +41,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 46 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `gui/` | 47 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 15 | Explicit tagsági értékobjektum és rollbackelhető membership-mutation, immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és frakcióeredetű adósság-ledger. |
 | `data/` | 14 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
@@ -595,7 +595,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 571 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
+- **Méret:** 575 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
   Csomag-megoszlás: listeners 120, managers 120, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a

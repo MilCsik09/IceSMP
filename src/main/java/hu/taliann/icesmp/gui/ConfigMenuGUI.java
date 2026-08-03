@@ -20,10 +20,10 @@ import java.util.Map;
 /**
  * Ingame admin config-menü (jog: {@code icesmp.admin.config}): kategóriákra osztott,
  * kattintható felület a legfontosabb, élőben olvasott config-kulcsokhoz. A menü a
- * meglévő override-mechanizmusra épül (a data-folder config.yml-be ír, amit a
- * ConfigManager UTOLSÓKÉNT fésül be — így minden kulcsot felülír), tehát minden
- * módosítás restart nélkül él. A teljes kulcskészlethez továbbra is a
- * {@code /icesmp config set|get|find} a felület; ez a menü a kurátort listát adja.
+ * meglévő override-mechanizmusra épül, de kattintáskor csak egy játékoshoz kötött
+ * tranzakciót módosít. A config.yml kizárólag a SAVE gombbal, egyetlen batch-ben íródik;
+ * CANCEL/bezárás nem ment. A teljes kulcskészlethez továbbra is a
+ * {@code /icesmp config set|get|find} a felület; ez a menü explicit allowlist.
  *
  * <p>Kezelés: BOOLEAN — katt = váltás; SZÁM — bal katt +lépés, jobb katt −lépés,
  * SHIFT = ötszörös lépés; CYCLE — katt = következő opció.
@@ -48,9 +48,23 @@ public final class ConfigMenuGUI {
         static Entry cycle(final String key, final String label, final List<String> options) {
             return new Entry(key, label, EntryType.CYCLE, 0, 0, 0, options);
         }
+
+        public ReloadMode reloadMode() {
+            if (key.equals("factions.tax.enabled") || key.equals("factions.tax.interval-minutes")) {
+                return ReloadMode.RESTART_REQUIRED;
+            }
+            if (key.startsWith("motd.") || key.startsWith("sit.") || key.startsWith("crates.")
+                    || key.startsWith("resource-pack.") || key.startsWith("factions.passives.")
+                    || key.startsWith("factions.whisper.") || key.startsWith("professions.recipes.")) {
+                return ReloadMode.RELOAD_HOOK;
+            }
+            return ReloadMode.LIVE;
+        }
     }
 
     public enum EntryType { TOGGLE, NUMBER, INTEGER, CYCLE }
+    public enum ReloadMode { LIVE, RELOAD_HOOK, RESTART_REQUIRED }
+
 
     /** Egy kategória: cím, ikon és a kurátort kulcs-lista. */
     public record Category(String id, String title, Material icon, List<Entry> entries) {
@@ -93,11 +107,19 @@ public final class ConfigMenuGUI {
         categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
                 Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
                 Entry.toggle("world-events.safety.enabled", "Játékos-/border spawn-biztonság"),
+                Entry.toggle("world-events.safety.ignore-spectators", "Spectatorok kihagyása"),
+                Entry.toggle("world-events.safety.ignore-vanished", "Vanish adminok kihagyása"),
+                Entry.toggle("world-events.safety.ignore-admins", "Adminok kihagyása"),
                 Entry.number("world-events.safety.min-horizontal-distance-blocks", "Minimum játékostávolság (blokk)", 8, 0, 2048),
                 Entry.number("world-events.safety.min-3d-distance-blocks", "Minimum 3D távolság (0=kikapcsolva)", 8, 0, 2048),
+                Entry.number("world-events.safety.min-world-spawn-distance-blocks", "Világspawn minimumtáv", 8, 0, 4096),
+                Entry.toggle("world-events.safety.require-loaded-chunk", "Csak betöltött chunk"),
                 Entry.integer("world-events.safety.search-attempts", "Biztonságos hely keresési próbák", 1, 1, 128),
+                Entry.number("world-events.safety.search-min-radius-blocks", "Keresési sugár minimum", 16, 0, 4096),
                 Entry.number("world-events.safety.search-max-radius-blocks", "Keresési sugár maximum", 16, 16, 4096),
                 Entry.number("world-events.safety.world-border-margin-blocks", "World border biztonsági margó", 8, 0, 1024),
+                Entry.number("world-events.safety.reservation-distance-blocks", "Párhuzamos események minimumtávja", 8, 0, 2048),
+                Entry.integer("world-events.safety.reservation-seconds", "Spawn-foglalás ideje (mp)", 10, 1, 3600),
                 Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció (1 nagy esemény egyszerre)"),
                 Entry.toggle("world-events.blood-moon.enabled", "Vérhold"),
                 Entry.number("world-events.blood-moon.chance-percent", "Vérhold esély (%)", 5, 0, 100),
@@ -261,6 +283,19 @@ public final class ConfigMenuGUI {
                 Entry.toggle("sit.stand-up.damage", "Sebzésre feláll"),
                 Entry.toggle("sit.stand-up.sneak", "Lopakodásra feláll"),
                 Entry.toggle("sit.stand-up.block-break", "Blokktörésre feláll"))));
+        categories.put("moderacio", new Category("moderacio", "Moderáció és vanish", Material.ENDER_EYE, List.of(
+                Entry.toggle("moderation.enabled", "Natív moderáció"),
+                Entry.toggle("moderation.chat-filter.enabled", "Chat-szűrő"),
+                Entry.cycle("moderation.chat-filter.mode", "Chat-szűrő mód", List.of("CENSOR", "BLOCK")),
+                Entry.toggle("moderation.spam.enabled", "Spam-védelem"),
+                Entry.integer("moderation.spam.min-interval-millis", "Üzenetköz minimum (ms)", 100, 0, 60000),
+                Entry.integer("moderation.spam.duplicate-window-seconds", "Duplikált üzenet ablak (mp)", 1, 0, 3600),
+                Entry.toggle("moderation.chat-log.enabled", "Moderációs chat-log"),
+                Entry.toggle("moderation.vanish.exclude-from-online-count", "Vanish kihagyása online számból"),
+                Entry.toggle("moderation.vanish.allow-item-pickup", "Vanish tárgyfelvétel"),
+                Entry.toggle("moderation.vanish.allow-damage", "Vanish sebzés/sebezhetőség"),
+                Entry.toggle("moderation.vanish.allow-interaction", "Vanish interakció"),
+                Entry.toggle("moderation.vanish.allow-chat", "Vanish chat"))));
         categories.put("borze", new Category("borze", "Börze és városi őrség", Material.EMERALD, List.of(
                 Entry.toggle("market.allow-relic-listing", "Relikvia listázható (börze)"),
                 Entry.number("market.relic-auction.recommended-min-bid", "Börze ajánlott minimuma", 25, 0, 1000000),
@@ -274,46 +309,63 @@ public final class ConfigMenuGUI {
     private ConfigMenuGUI() {
     }
 
-    /** A főmenü (kategória-választó) megnyitása. */
+    /** A főmenü megnyitása kompatibilitási útvonalon, tranzakció nélkül. */
     public static void openRoot(final Player player) {
+        openRoot(player, null);
+    }
+
+    /** A főmenü: négy kategóriasor + explicit mentés/elvetés. */
+    public static void openRoot(final Player player, final ConfigEditSession session) {
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), null);
-        // 36 slot: 3 sor kategória-rács (7/sor, szélek üresen) — 21 kategóriáig elég.
-        final Inventory inventory = Bukkit.createInventory(holder, 36,
+        final Inventory inventory = Bukkit.createInventory(holder, 54,
                 Component.text("⚙ IceSMP Config", NamedTextColor.DARK_AQUA));
         holder.setInventory(inventory);
-
-        int slot = 10;
+        final int[] slots = {10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};
+        int index = 0;
         for (final Category category : CATEGORIES.values()) {
+            if (index >= slots.length) {
+                throw new IllegalStateException("Config GUI category capacity exceeded: " + CATEGORIES.size());
+            }
+            final int slot = slots[index++];
             inventory.setItem(slot, tile(category.icon(), "&b" + category.title(),
                     List.of("&7" + category.entries().size() + " kulcs", "&eKattints a megnyitáshoz")));
             holder.bind(slot, "CAT:" + category.id());
-            slot++;
-            if (slot == 17) {
-                slot = 19;
-            } else if (slot == 26) {
-                slot = 28;
-            }
         }
-        inventory.setItem(35, tile(Material.BARRIER, "&cBezárás", List.of()));
-        holder.bind(35, "CLOSE");
+        if (session != null) {
+            inventory.setItem(45, tile(Material.BARRIER, "&cElvetés", List.of("&7Nem ír config.yml-t.")));
+            holder.bind(45, "CANCEL");
+            inventory.setItem(49, tile(session.dirty() ? Material.LIME_DYE : Material.GRAY_DYE,
+                    session.dirty() ? "&aMentés" : "&7Nincs módosítás",
+                    List.of("&7Egyetlen tranzakcióban ment.")));
+            holder.bind(49, "SAVE");
+        }
+        inventory.setItem(53, tile(Material.BARRIER, "&cBezárás", List.of("&7A nem mentett módosítások elvesznek.")));
+        holder.bind(53, "CLOSE");
         player.openInventory(inventory);
     }
 
-    /** Egy kategória-lap megnyitása (a kulcsok aktuális értékével). */
     public static void openCategory(final Player player, final String categoryId, final ConfigManager configManager) {
+        openCategory(player, categoryId, configManager, null);
+    }
+
+    /** Egy kategória-lap a staged értékekkel; középső kattintás reseteli az override-ot. */
+    public static void openCategory(final Player player, final String categoryId, final ConfigManager configManager,
+                                    final ConfigEditSession session) {
         final Category category = CATEGORIES.get(categoryId);
         if (category == null) {
-            openRoot(player);
+            openRoot(player, session);
             return;
         }
+        if (category.entries().size() > 45) {
+            throw new IllegalStateException("Config GUI category capacity exceeded: " + category.id());
+        }
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), categoryId);
-        final Inventory inventory = Bukkit.createInventory(holder, 36,
+        final Inventory inventory = Bukkit.createInventory(holder, 54,
                 Component.text("⚙ " + category.title(), NamedTextColor.DARK_AQUA));
         holder.setInventory(inventory);
-
         int slot = 0;
         for (final Entry entry : category.entries()) {
-            inventory.setItem(slot, entryTile(entry, configManager));
+            inventory.setItem(slot, entryTile(entry, configManager, session));
             holder.bind(slot, switch (entry.type()) {
                 case TOGGLE -> "TOGGLE:" + entry.key();
                 case CYCLE -> "CYCLE:" + entry.key();
@@ -321,33 +373,52 @@ public final class ConfigMenuGUI {
             });
             slot++;
         }
-        inventory.setItem(31, tile(Material.ARROW, "&7Vissza", List.of()));
-        holder.bind(31, "BACK");
-        inventory.setItem(35, tile(Material.BARRIER, "&cBezárás", List.of()));
-        holder.bind(35, "CLOSE");
+        inventory.setItem(45, tile(Material.BARRIER, "&cElvetés", List.of("&7Nem ír config.yml-t.")));
+        holder.bind(45, "CANCEL");
+        inventory.setItem(48, tile(Material.ARROW, "&7Vissza", List.of()));
+        holder.bind(48, "BACK");
+        inventory.setItem(49, tile(session != null && session.dirty() ? Material.LIME_DYE : Material.GRAY_DYE,
+                session != null && session.dirty() ? "&aMentés" : "&7Nincs módosítás",
+                List.of("&7Egyetlen tranzakcióban ment.")));
+        holder.bind(49, "SAVE");
+        inventory.setItem(53, tile(Material.BARRIER, "&cBezárás", List.of("&7A nem mentett módosítások elvesznek.")));
+        holder.bind(53, "CLOSE");
         player.openInventory(inventory);
     }
 
-    private static ItemStack entryTile(final Entry entry, final ConfigManager configManager) {
+    private static ItemStack entryTile(final Entry entry, final ConfigManager configManager,
+                                       final ConfigEditSession session) {
         final List<String> lore = new ArrayList<>();
         lore.add("&8" + entry.key());
+        final Object displayed = session == null ? configManager.getConfiguration().get(entry.key()) : session.value(entry.key());
+        final Object defaultValue = session == null ? configManager.getBaseValue(entry.key()) : session.defaultValue(entry.key());
+        if (session != null && session.hasPending(entry.key())) {
+            lore.add("&eNem mentett módosítás");
+        }
+        lore.add("&7Alapérték: &f" + String.valueOf(defaultValue));
+        lore.add(switch (entry.reloadMode()) {
+            case LIVE -> "&aHatás: élő olvasás";
+            case RELOAD_HOOK -> "&eHatás: mentés utáni reload-hook";
+            case RESTART_REQUIRED -> "&cHatás: szerver-újraindítás szükséges";
+        });
+        lore.add("&7Középső katt: alapérték/reset");
         switch (entry.type()) {
             case TOGGLE -> {
-                final boolean value = configManager.getBoolean(entry.key(), false);
+                final boolean value = displayed instanceof Boolean b ? b : Boolean.parseBoolean(String.valueOf(displayed));
                 lore.add(value ? "&aBekapcsolva" : "&cKikapcsolva");
-                lore.add("&eKattints a váltáshoz");
+                lore.add("&eKattints a staged váltáshoz");
                 return tile(value ? Material.LIME_DYE : Material.GRAY_DYE,
                         (value ? "&a" : "&c") + entry.label(), lore);
             }
             case CYCLE -> {
-                final String value = configManager.getString(entry.key(), entry.options().isEmpty() ? "?" : entry.options().get(0));
+                final String value = displayed == null ? "?" : String.valueOf(displayed);
                 lore.add("&fJelenleg: &b" + value);
                 lore.add("&7Opciók: &f" + String.join(" / ", entry.options()));
                 lore.add("&eKattints a következőhöz");
                 return tile(Material.COMPARATOR, "&b" + entry.label(), lore);
             }
             default -> {
-                final double value = configManager.getDouble(entry.key(), 0.0D);
+                final double value = displayed instanceof Number number ? number.doubleValue() : 0.0D;
                 lore.add("&fJelenleg: &b" + formatNumber(entry, value));
                 lore.add("&7Bal katt: &f+" + formatStep(entry) + " &7| Jobb katt: &f−" + formatStep(entry));
                 lore.add("&7SHIFT = ötszörös lépés");
@@ -383,6 +454,11 @@ public final class ConfigMenuGUI {
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    /** Flattened immutable allowlist used by transactions and build-time coverage validation. */
+    public static List<Entry> allEntries() {
+        return CATEGORIES.values().stream().flatMap(category -> category.entries().stream()).toList();
     }
 
     /** A kulcshoz tartozó katalógus-bejegyzés (a listener érték-léptetéséhez). */

@@ -12,6 +12,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.HashSet;
 
 /**
  * Config-driven WoW-style profession recipe catalog ({@code profession-recipes.yml}). Each recipe
@@ -56,7 +59,8 @@ public final class ProfessionRecipeCatalog {
         if (root == null) {
             return;
         }
-        for (final String id : root.getKeys(false)) {
+        final Set<String> semanticFingerprints = new HashSet<>();
+        for (final String id : new TreeSet<>(root.getKeys(false))) {
             final ConfigurationSection section = root.getConfigurationSection(id);
             if (section == null) {
                 continue;
@@ -65,7 +69,14 @@ public final class ProfessionRecipeCatalog {
             if (recipe == null) {
                 continue;
             }
-            byId.put(recipe.id(), recipe);
+            if (byId.putIfAbsent(recipe.id(), recipe) != null) {
+                throw new IllegalStateException("Duplicate profession recipe id: " + recipe.id());
+            }
+            final String fingerprint = semanticFingerprint(recipe);
+            if (!semanticFingerprints.add(fingerprint)) {
+                throw new IllegalStateException("Semantic duplicate profession recipe: " + recipe.id()
+                        + " (" + fingerprint + ")");
+            }
             byProfession.computeIfAbsent(recipe.profession(), key -> new ArrayList<>()).add(recipe);
         }
     }
@@ -125,6 +136,21 @@ public final class ProfessionRecipeCatalog {
                 signature == null || signature.isBlank() ? null : signature.toLowerCase(Locale.ROOT), faction,
                 lootOnly,
                 job == null || job.isBlank() ? null : job.toLowerCase(Locale.ROOT));
+    }
+
+    /** Canonical input/output signature independent of YAML order, profession and progression metadata. */
+    public static String semanticFingerprint(final Recipe recipe) {
+        final List<String> inputs = new ArrayList<>();
+        recipe.ingredients().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> inputs.add("material:" + entry.getKey().name() + ':' + entry.getValue()));
+        recipe.uniqueIngredients().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> inputs.add("unique:" + entry.getKey() + ':' + entry.getValue()));
+        final String output = recipe.uniqueResult() == null
+                ? "material:" + recipe.result().name()
+                : "unique:" + recipe.uniqueResult();
+        return String.join("+", inputs) + "->" + output + ':' + recipe.resultAmount();
     }
 
     /** Minden recept-id betöltési sorrendben (admin item-adó parancs tab-complete-je). */
