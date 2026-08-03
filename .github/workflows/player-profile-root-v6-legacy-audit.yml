@@ -5,7 +5,7 @@ on:
     branches:
       - agent/player-profile-root-reconstruct-20260803-v6
     paths:
-      - .github/player-profile-root-v6-trigger.txt
+      - .github/player-profile-root-v6-legacy-audit-trigger.txt
   workflow_dispatch:
 
 permissions:
