@@ -105,7 +105,7 @@ public final class SpecializationManager {
         }
 
         final FactionType requiredFaction = specialization.getRequiredFaction();
-        if (requiredFaction != null && factionManager.getFaction(player.getUniqueId()) != requiredFaction) {
+        if (requiredFaction != null && !factionManager.isMember(player.getUniqueId(), requiredFaction)) {
             return false;
         }
 

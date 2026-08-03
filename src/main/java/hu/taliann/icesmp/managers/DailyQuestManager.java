@@ -183,7 +183,7 @@ public final class DailyQuestManager {
         final long streakBonus = (long) Math.min(streak, bonusCapDays) * bonusPerDay;
         final long totalReward = daily.reward() + streakBonus;
 
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
         if (totalReward > 0) {
             currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), totalReward);
         }
@@ -223,7 +223,7 @@ public final class DailyQuestManager {
         }
 
         player.getPersistentDataContainer().set(weekDoneKey, PersistentDataType.BYTE, (byte) 1);
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
         if (weekly.reward() > 0) {
             currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), weekly.reward());
         }

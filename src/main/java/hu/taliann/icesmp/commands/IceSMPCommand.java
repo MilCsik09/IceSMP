@@ -201,8 +201,9 @@ public final class IceSMPCommand implements BasicCommand {
 
         lines.add(messageManager.get("admin.icesmp.inspect.header", "&6=== Inspektor: &f%s &6===", target.getName()));
 
-        final FactionType faction = factionManager.getFaction(id);
-        lines.add(messageManager.get("admin.icesmp.inspect.faction", "&7Frakció: &f%s", faction.getDisplayName()));
+        final FactionType faction = factionManager.getChosenFaction(id).orElse(null);
+        lines.add(messageManager.get("admin.icesmp.inspect.faction", "&7Frakció: &f%s",
+                faction == null ? "Menedék vendége (nincs választott frakció)" : faction.getDisplayName()));
 
         final JobType job = jobManager.getPrimaryJob(target);
         lines.add(messageManager.get("admin.icesmp.inspect.job", "&7Kaszt: &f%s &7(Lv. &f%s&7, XP: &f%s&7)",
@@ -253,8 +254,9 @@ public final class IceSMPCommand implements BasicCommand {
         lines.add(messageManager.get("admin.icesmp.inspect.offline-notice",
                 "&eOffline — korlátozott adatok (csak a mentett/UUID-alapú értékek)."));
 
-        final FactionType faction = factionManager.getFaction(id);
-        lines.add(messageManager.get("admin.icesmp.inspect.faction", "&7Frakció: &f%s", faction.getDisplayName()));
+        final FactionType faction = factionManager.getChosenFaction(id).orElse(null);
+        lines.add(messageManager.get("admin.icesmp.inspect.faction", "&7Frakció: &f%s",
+                faction == null ? "Menedék vendége (nincs választott frakció)" : faction.getDisplayName()));
 
         final StringJoiner balances = new StringJoiner(", ");
         for (final CurrencyType currencyType : CurrencyType.values()) {

@@ -1,6 +1,5 @@
 package hu.taliann.icesmp.listeners;
 
-import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
@@ -120,8 +119,8 @@ public final class TheftListener implements Listener {
             return;
         }
 
-        final FactionType playerFaction = factionManager.getFaction(player.getUniqueId());
-        if (playerFaction == territory.faction() || player.hasPermission(BYPASS_PERMISSION)) {
+        if (factionManager.isMember(player.getUniqueId(), territory.faction())
+                || player.hasPermission(BYPASS_PERMISSION)) {
             return;
         }
 

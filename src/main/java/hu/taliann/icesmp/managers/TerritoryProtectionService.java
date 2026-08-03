@@ -1,6 +1,5 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -157,7 +156,7 @@ public final class TerritoryProtectionService {
             return zone; // protected: everyone denied
         }
         // Normal faction land: only non-members are denied.
-        return factionManager.getFaction(player.getUniqueId()) == zone.faction() ? null : zone;
+        return factionManager.isMember(player.getUniqueId(), zone.faction()) ? null : zone;
     }
 
     /** True (and warns) when the player may not build/break at the location. */

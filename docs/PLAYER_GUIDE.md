@@ -68,10 +68,14 @@ történeted.*
 
 ### Fontos: hogyan kezdesz frakciót választani?
 
-Új játékosként technikailag a **Semleges/Menedék kezdőállapotban** vagy. Ez
-biztonságos kiindulópont, nem egy végleges eskü. Az **első kifejezett
-frakcióválasztásod ingyenes**, ezért előbb nyugodtan ismerd meg a világot és a
-játékstílusokat.
+Új játékosként a **Menedék vendége** vagy. Ez fizikai és történeti
+kezdőállapot, nem automatikus `neutral` állampolgárság: amíg nem választasz
+kifejezetten frakciót, nem kapsz frakciópasszívot, frakcióquestet, tanácsi
+szavazatot, közösségi cél- vagy frakciós szezonpont-jóváírást. Az onboarding
+Creutzér-útravalója caldesterai vendégsegély, nem NEUTRAL-tagság.
+
+Az **első kifejezett frakcióválasztásod ingyenes**. A Menedék teljes jogú
+polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
 
 ### Mit hol találsz?
 
@@ -112,25 +116,51 @@ véd — és milyen árat kér tőled a hűség.*
 
 Négy nagy hovatartozás alakítja a világot:
 
-| Frakció | Parancsazonosító | Játékstílus és passzív |
+| Frakció | Parancsazonosító | Alap passzív |
 |---|---|---|
-| 🔥 **Láng — Perinfernicitas** | `red` | tűz-, láva- és forróblokk-immunitás |
-| ❄️ **Fagy — Cryghaliris** | `blue` | fagyás- és fulladásimmunitás, lassabb éhségvesztés |
-| ⚖️ **Menedék — Ryanora és Caldestera** | `neutral` | zuhanásimmunitás, békésebb lények, adómentesség |
-| 💀 **Kitaszítottak** | `dark` | wither-immunitás, az élőhalottak nem támadnak; súlyos történeti és jogi ár |
+| 🔥 **Láng — Perinfernicitas** | `red` | a környezeti tűz, égés és magma sebzésének 25%-a, a láváénak 50%-a marad; entitás okozta tűznél 75% marad |
+| ❄️ **Fagy — Cryghaliris** | `blue` | nincs fagyássebzés, a fulladássebzés 50%-a marad; 25% esély a kijelölt természetes exhaustion elkerülésére |
+| ⚖️ **Menedék — Ryanora és Caldestera** | `neutral` | a zuhanássebzés 50%-a marad; spontán békés/semleges mob- és Enderman-szemkontaktus-aggró szűrése; adómentes polgárság |
+| 💀 **Kitaszítottak** | `dark` | a Wither-sebzés és -idő 50%-a marad; ambient városi undead-béke és enyhített éjszakai vad undead-előny, súlyos történeti és jogi árral |
 
 Belépés: `/faction join <red|blue|neutral|dark>`.
 
 ### Az első választás és a későbbi váltás
 
-- A kezdőállapotod **neutral/Menedék**, de az első tudatos választásod ingyenes.
+- A kezdőállapotod **Menedék-vendég**, nem `neutral`; az első tudatos
+  választásod ingyenes.
 - A későbbi váltásnak lehet pénzköltsége, várakozási ideje és szezonális
   korlátja. A jelenlegi értéket mindig a játék üzenete mutatja.
 - A szezon hajrájában a váltás lezárulhat, hogy a bajnoki verseny ne legyen
   kijátszható.
-- A `/faction leave` a Semleges állapotba helyez; nem biztosít kerülőutat a
-  váltási szabályok körül.
+- A `/faction leave` explicit `neutral` polgárságba helyez, nem törli vissza a
+  karaktert vendégállapotba. A korábbi választás tartós nyoma miatt sem a
+  kilépés, sem egy hiányzó assignment nem kerüli meg a cooldown-, szezonlimit-
+  vagy szezonvégi zár szabályait.
 - A frakcióválasztás és a kasztválasztás két külön döntés.
+
+### Mit jelent a passzív harc közben?
+
+- A Láng passzívja **nem** oltja ki az IceSMP `TUZ` varázslatiskolát, és a
+  markerelt boss-/eventsebzés alapból felülírhatja a környezeti védelmet.
+- A Fagy exhaustion-előnye csak a konfigurált természetes mozgásforrásokra
+  vonatkozik. Hunger-effektet, scripted éhséget, adminműveletet vagy az
+  elmaradt hazai étel miatti food-duty következményét nem törli. A signature
+  ételek buffja fogyasztáskor ellenőrzi az aktuális explicit tagságot: egy
+  vendég, másik frakció tagja vagy időközben resetelt játékos nem örökli a
+  tárgy korábbi tulajdonosának frakcióelőnyét.
+- A Menedék békéje nem támadhatatlanság: a megtámadott lény visszaüthet, az
+  Enderman az ütésre reagál, a scripted és eventes célzás pedig működik. A
+  fél zuhanássebzés parkourban is megmarad.
+- Thanaopolis markerelt, ambient élőhalott lakói a DARK játékost felismerik,
+  amíg nem provokálja őket. Támadás után 60 másodpercig az adott játékos–mob
+  pár, valamint a 16 blokkon belül ténylegesen riasztott undead példányok
+  megtorolhatják a támadást; ez nem old fel globális békét minden élőholtnál.
+  A vadonban csak éjjel és célzásonként 50% esélyű az előny. Vérhold alatt az
+  ambient és a vad DARK béke is alapból megszűnik.
+- Rontás-fajzat, dungeonmob vagy miniboss, inváziós mob/bajnok, világboss,
+  scripted event- és questmob, valamint a koronaátok célzása nem kap DARK
+  truce-ot.
 
 ### A Kitaszítottak
 
@@ -243,8 +273,11 @@ Nincs vételár; amit elviszel, azt egy másik játékos neked szánta.
 
 Piaci díj, adó, frakcióváltás, claim-bővítés, rituálé, komp, ládakulcs és
 szakmai kellék is kivonhat pénzt a gazdaságból. Ezek tartják értékesnek a
-veretet. A Menedék adómentes; más frakcióknál hátralék is keletkezhet, ezért
-ne hagyd figyelmen kívül a pénzügyi figyelmeztetéseket.
+veretet. Az explicit Menedék (`NEUTRAL`) polgár adómentes; az assignment nélküli
+vendég nem tagja a polgári adóbeszedési körnek. Más frakcióknál hátralék is
+keletkezhet, ezért ne hagyd figyelmen kívül a pénzügyi figyelmeztetéseket. A
+frakcióváltás a régi tartozást nem váltja át: azt továbbra is az eredeti
+frakció valutájában, az eredeti kassza felé kell rendezni.
 
 ---
 

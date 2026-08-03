@@ -85,7 +85,7 @@ public final class CorruptionManager implements PersistentStore {
         this.factionManager = factionManager;
         this.seasonManager = seasonManager;
         this.storageFile = new File(plugin.getDataFolder(), "corruption.yml");
-        this.corruptMobKey = new NamespacedKey(plugin, "corruption_mob");
+        this.corruptMobKey = hu.taliann.icesmp.factions.FactionCombatMarkers.CORRUPTION_MOB;
         plugin.getDataFolder().mkdirs();
     }
 
@@ -144,6 +144,11 @@ public final class CorruptionManager implements PersistentStore {
 
     public boolean isCorruptMob(final UUID entityId) {
         return entityId != null && corruptMobs.contains(entityId);
+    }
+
+    /** Death/unload lifecycle hook; returns whether the entity was a tracked corruption spawn. */
+    public boolean forgetCorruptMob(final UUID entityId) {
+        return entityId != null && corruptMobs.remove(entityId);
     }
 
     /**
@@ -268,6 +273,7 @@ public final class CorruptionManager implements PersistentStore {
         mob.setRemoveWhenFarAway(configManager.getBoolean("corruption.mob-remove-when-far-away", false));
 
         final UUID mobId = mob.getUniqueId();
+        hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
         if (!corruptMobs.add(mobId)) {
             return;
         }
@@ -571,14 +577,7 @@ public final class CorruptionManager implements PersistentStore {
             }
         }
 
-        corruptMobs.removeIf(id -> {
-            try {
-                final Entity existing = Bukkit.getEntity(id);
-                return existing == null || !existing.isValid();
-            } catch (final Exception exception) {
-                return false;
-            }
-        });
+        corruptMobs.removeIf(id -> !hu.taliann.icesmp.utils.TransientEntities.isAlive(id));
 
         final int cap = configuredMobCap();
         final int batch = configManager.getInt("corruption.spawn-batch", 0);
@@ -700,20 +699,14 @@ public final class CorruptionManager implements PersistentStore {
 
         purgeContributors.clear();
         for (final UUID id : corruptMobs) {
-            try {
-                final Entity entity = Bukkit.getEntity(id);
-                if (entity != null && entity.isValid()) {
-                    entity.getScheduler().run(plugin, task -> entity.remove(), null);
-                }
-            } catch (final Exception ignored) {
-                // A következő lifecycle-söprés eltávolítja, ha a régió most nem elérhető.
-            }
+            hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         }
         corruptMobs.clear();
         pendingSpawns.set(0);
 
-        seasonManager.addPoints(factionManager.getFaction(cleanser.getUniqueId()),
-                configManager.getInt("corruption.season-points", 0), "cleanse");
+        factionManager.getChosenFaction(cleanser.getUniqueId()).ifPresent(faction ->
+                seasonManager.addPoints(faction,
+                        configManager.getInt("corruption.season-points", 0), "cleanse"));
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "corruption-cleansed",
                 "<green>🌿 {player} megtörte a rontás magját — a góc szertefoszlik.</green>",

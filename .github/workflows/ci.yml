@@ -6,6 +6,7 @@ on:
       - master
       - claude/projekt-audit-u0hkcz
       - feature/native-moderation-suite
+      - fix/pet-lore-corruption-spectator-menu
   push:
     branches:
       - master
@@ -76,6 +77,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install repository consistency dependency
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
       - name: Validate deterministic resource pack build
         run: |
           python3 scripts/test_resource_pack.py
@@ -99,7 +103,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build --no-daemon --stacktrace | tee gradle-build.log
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
 
       - name: Verify stacked regressions ran inside Gradle check
         shell: bash
@@ -113,6 +117,15 @@ jobs:
           grep -F "AFK regression suite passed." gradle-build.log
           grep -F "HUD regression suite passed." gradle-build.log
           grep -F "Pause-menu dialog regression suite passed." gradle-build.log
+          grep -F "Faction passive regression suite passed." gradle-build.log
+          grep -F "Faction passive hardening regression suite passed." gradle-build.log
+          grep -F "Faction tax debt regression suite passed." gradle-build.log
+
+      - name: Run faction regressions explicitly
+        run: ./gradlew factionPassiveRegressionTest factionPassiveHardeningRegressionTest factionTreasuryRegressionTest --console=plain --no-daemon --stacktrace
+
+      - name: Run full repository consistency
+        run: python3 scripts/check_consistency.py
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py

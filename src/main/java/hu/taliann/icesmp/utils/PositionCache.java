@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * Thread-safe pozíció-tükör a kereszt-régiós közelség-döntésekhez (párt-XP-megosztás,
@@ -36,5 +37,26 @@ public final class PositionCache {
     public static Location get(final UUID playerId) {
         final Location location = playerId == null ? null : POSITIONS.get(playerId);
         return location == null ? null : location.clone();
+    }
+
+    /** Cross-region-safe nearby-player query using only owner-thread-maintained mirrors. */
+    public static boolean hasNearbyPlayer(final UUID sourceId, final double radius,
+                                          final Predicate<UUID> filter) {
+        final Location source = get(sourceId);
+        if (source == null || source.getWorld() == null || radius < 0.0D) {
+            return false;
+        }
+        final double radiusSquared = radius * radius;
+        for (final Map.Entry<UUID, Location> entry : POSITIONS.entrySet()) {
+            if (entry.getKey().equals(sourceId) || !filter.test(entry.getKey())) {
+                continue;
+            }
+            final Location candidate = entry.getValue();
+            if (candidate.getWorld() != null && candidate.getWorld().getUID().equals(source.getWorld().getUID())
+                    && candidate.distanceSquared(source) <= radiusSquared) {
+                return true;
+            }
+        }
+        return false;
     }
 }

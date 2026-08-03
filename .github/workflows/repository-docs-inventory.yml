@@ -259,7 +259,7 @@ jobs:
             echo "lore, lore reference, resource-pack reference and teaser campaign pack."
             echo "All retained Markdown documents are mirrored with the same relative paths."
             echo
-            echo "Detailed interface inventories remain in this workflow artifact."
+            echo "Detailed interface inventories are generated on every run and uploaded when repository artifact quota permits."
             echo
             echo "## Compared refs"
             echo
@@ -267,7 +267,7 @@ jobs:
             echo "- Patch base: \`${{ steps.refs.outputs.patch_base_sha }}\`"
             echo "- Tested documentation head: \`${{ steps.refs.outputs.head_sha }}\`"
             echo "- Documented release head: \`${{ steps.refs.outputs.release_head_sha }}\`"
-            echo "- Artifact: \`${ARTIFACT_NAME}\`"
+            echo "- Best-effort artifact: \`${ARTIFACT_NAME}\`"
             if [[ -f build/release-inventory/summary.md ]]; then
               echo
               cat build/release-inventory/summary.md
@@ -289,14 +289,15 @@ jobs:
             echo "| JSON integrity | ${{ steps.json_integrity.outcome }} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload inventory artifact
+      - name: Upload inventory artifact (best effort)
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: repository-docs-inventory-${{ github.run_id }}-${{ github.run_attempt }}
           path: build/
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 14
 
       - name: Enforce blocking policy
         if: always()

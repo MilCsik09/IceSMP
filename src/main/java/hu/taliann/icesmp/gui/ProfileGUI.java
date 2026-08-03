@@ -124,8 +124,8 @@ public final class ProfileGUI {
     private static List<Component> buildHeadLore(final Player target, final CharacterMenuContext ctx) {
         final List<Component> lore = new ArrayList<>();
 
-        final FactionType faction = ctx.factionManager().getFaction(target.getUniqueId());
-        lore.add(label("Frakció", Component.text(faction == null ? "nincs"
+        final FactionType faction = ctx.factionManager().getChosenFaction(target.getUniqueId()).orElse(null);
+        lore.add(label("Frakció", Component.text(faction == null ? "Menedék vendége"
                 : faction.getDisplayName() + " (" + faction.getFullName() + ")", NamedTextColor.WHITE)));
 
         final JobType primary = ctx.jobManager().getPrimaryJob(target);

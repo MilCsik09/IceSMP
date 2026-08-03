@@ -106,7 +106,8 @@ public final class JobGUIListener implements Listener {
         // nem-DARK DK-kat a kapu nem érinti, csak az ÚJ választást).
         if (selectedJob == hu.taliann.icesmp.data.JobType.DEATH_KNIGHT
                 && configManager.getBoolean("classes.death-knight.dark-only", false)
-                && factionManager != null && factionManager.getFaction(player.getUniqueId()) != hu.taliann.icesmp.data.FactionType.DARK) {
+                && factionManager != null
+                && !factionManager.isMember(player.getUniqueId(), hu.taliann.icesmp.data.FactionType.DARK)) {
             player.sendMessage(messageManager.getMessage("job-dk-dark-only",
                     "<dark_red>A halál lovagja nem tartozhat az élők királyságaihoz — ezt az utat csak a Kitaszítottak járhatják.</dark_red>"));
             return;
@@ -192,4 +193,3 @@ public final class JobGUIListener implements Listener {
         }
     }
 }
-

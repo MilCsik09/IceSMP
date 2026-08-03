@@ -330,7 +330,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
         final double cost = priceFor(owned, columns);
         if (cost > 0.0D) {
-            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId()));
+            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
             // Az ár elég (sosem íródik jóvá) — tiszta money sink.
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
                 return "claim-insufficient";
@@ -602,7 +602,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         final double cost = Math.ceil(claim.columns()
                 * Math.max(0.0D, configManager.getDouble("claims.y-extend-cost-per-column", 0.1D)) * 100.0D) / 100.0D;
         if (cost > 0.0D) {
-            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId()));
+            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
                 return "claim-insufficient";
             }

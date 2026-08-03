@@ -418,7 +418,7 @@ public final class AmbientEventManager {
         }
 
         if (rewardAmount > 0.0D) {
-            final FactionType faction = factionManager.getFaction(player.getUniqueId());
+            final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
             currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), Math.round(rewardAmount));
             player.sendMessage(messageManager.getMessage(
                     "ambient-reward", "&d✨ Az esemény megérintett: &f+{amount} érme",

@@ -28,26 +28,26 @@
         "src/main/java/hu/taliann/icesmp/commands/BankCommand.java": "a755dc56bbd4c42c7e5b06f6f2f9fe0c1f69cff77e4992e3bb4c30247c6fc0da",
         "src/main/java/hu/taliann/icesmp/commands/BestiaryCommand.java": "1514d7c68938fbbd1cbc2d9013095481a6c6e0a80ae908af8b145a104b3d08e5",
         "src/main/java/hu/taliann/icesmp/commands/BountyCommand.java": "ac869e51f2c0a066ff6ac96358a35e05ac5bb997faf9a636de05c5fb8020cac9",
-        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "89576f23d57812f6391c4b195623fc83bfb15fad9bf545aeab2365daa46edaeb",
+        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
         "src/main/java/hu/taliann/icesmp/commands/CrateCommand.java": "d67493fc8bb5776e3fcab22833fe2071eb46357cdf28d399027f1bd576224de4",
         "src/main/java/hu/taliann/icesmp/commands/CurrencyCommand.java": "dc04a7cbd7467f3a073ce553b34eb28e11c351c7914bacbd8bb28e7996e1d325",
         "src/main/java/hu/taliann/icesmp/commands/DailyCommand.java": "8079b8512aefa1a9ecc7a445a09202ad65fd0eb5d8a2bc806c487a518a8b7754",
         "src/main/java/hu/taliann/icesmp/commands/DonationChestCommand.java": "29db7627dd58e958fb345038cf420e042e23aee329339a4f340a7de464f64876",
         "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "19f35106601aafefb3e6610c8bf74db5f5ab3620ad5dfb8ac61e40f55b0f6261",
         "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
-        "src/main/java/hu/taliann/icesmp/commands/FactionCommand.java": "fa1e035dd950aefc609543c692f0886f79c9db48ba4c0ff8b516626915993fed",
+        "src/main/java/hu/taliann/icesmp/commands/FactionCommand.java": "266a6a113feec328054fe7afa2bef6f878568756fe5581dee11a26a54bd8c6d7",
         "src/main/java/hu/taliann/icesmp/commands/GuildCommand.java": "cec57902547b9c0b4c906e6918d418436bc570c5fe49249675b243dea7c79b01",
         "src/main/java/hu/taliann/icesmp/commands/HonorDuelCommand.java": "f3bb69b2ba1a2a13003e25c17baeac5ee996a5c5b81328331ca016e0f2da2bc2",
         "src/main/java/hu/taliann/icesmp/commands/HudCommand.java": "a09673a6404f0ee8abc06dcdd85fc6bd1811f54bea02c36fa5411743f677851b",
-        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "9b992ec1a70077153685e5db37d3998b0f118510a7c4cb809b7b5d87b451ff19",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "70f13452f4e8990cffdb6316d5609ccb2188a7bed5b257cb626e0c6ada38ca8f",
         "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
         "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
         "src/main/java/hu/taliann/icesmp/commands/JobCommand.java": "1b1ce45978e722f135d3268dff829c0d32de4993e131713a08f1bdf8d3b9438b",
         "src/main/java/hu/taliann/icesmp/commands/KompCommand.java": "bbf3a354ec2cd1356ee8c3f4b2846e2bce462b2a3c7fc175ab7b273a81177d79",
         "src/main/java/hu/taliann/icesmp/commands/KronikaCommand.java": "7c9931971e56cf309cad88afeae15c84e00c5df9bbe31228f3a30ba106efedb7",
         "src/main/java/hu/taliann/icesmp/commands/LeaderboardCommand.java": "bfa39da306d524473bbc273d1bb7c9aa3aebae2b5597e50031dfa83989037f6f",
-        "src/main/java/hu/taliann/icesmp/commands/LoreCommand.java": "67ff34dbaf26ca94bd17748394b92a34b37f086081f889a952e7b5c5ab937696",
-        "src/main/java/hu/taliann/icesmp/commands/MarketCommand.java": "1216961c7e65f0183f024fe12fd8151c48983a952d4d99d8eb7ada8f2abfa818",
+        "src/main/java/hu/taliann/icesmp/commands/LoreCommand.java": "4038330338dfe79caa87dbc5898d3778201b576c02997155fdbeb6725353dc0e",
+        "src/main/java/hu/taliann/icesmp/commands/MarketCommand.java": "a52a4e4fb465b92162e9f61fe941bb8ef2488dca45766ce008c7bfe846b7da4e",
         "src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java": "69b90a19e85dd85dc267ea03b87e224b44e3d9304844caaadf2ea8c0ddfddebb",
         "src/main/java/hu/taliann/icesmp/commands/MenuCommand.java": "231daef2af93d4d8442c29c51be5cedd8712ebad4ff9e6cd2505e06315fd3e39",
         "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
@@ -75,11 +75,11 @@
         "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "b2159f78f7cf8888e6d4e010ba6a7a2e78cf6b11d8cd4eaf5d96c0d340b2c905",
         "src/main/java/hu/taliann/icesmp/commands/SpellCommand.java": "d276d570d9681c90165403257f76fbd0889826d82cb54ca467bbdfd270629302",
         "src/main/java/hu/taliann/icesmp/commands/SpellbookCommand.java": "ff19ef2f0d2d7f5853039739232db525788045cf12833b9a0b8b477f46cecba3",
-        "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "8261555e3beb760d23d99787fff9605bf92038824345a9ff4ffea7ef917578ca",
+        "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "9240cfbcd0388de9bb57430280c073456ec1f76a8b9cbd324fe9bf68f7f7f287",
         "src/main/java/hu/taliann/icesmp/commands/StatsCommand.java": "643a8914fb27ee5f92c4525a1613b49f5b53f5d5c9174f59bc81132aae3b6c9b",
         "src/main/java/hu/taliann/icesmp/commands/TalentCommand.java": "de964bcbb9257772ad436175075891e6b1589314ac12793fd23b804f38268e62",
         "src/main/java/hu/taliann/icesmp/commands/TanacsCommand.java": "0f991aff492b266cfbfa5b2f2feafebd48a49a4556e2f70e9ebd41ab035f414f",
-        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "249792b5158781d0aa6c30a0f530900448e29416e727edd4f906db0b6a05ecc0",
+        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
         "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
         "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java": "7245ebc71d8c634307b242edfa3f96cfab3f80e6386792fc941e5721145ca55a",
         "src/main/java/hu/taliann/icesmp/commands/bank/BankBalanceSubcommand.java": "8cc31c261b8e12b9f37cf195a86121e236634b031bfff6b821c03529e7bfb30f",
@@ -90,14 +90,14 @@
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyPaySubcommand.java": "d5a3b268dc696153c6e44016b000ffe88d8f725571e2f7c8f0ac7df7e33f02ff",
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyRatesSubcommand.java": "d73463de3af41b8b9e76897cf34b0c5077d74e31a501a706564a8914569d2588",
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionCaravanSubcommand.java": "47465c538f8f76c36446ebae3c4f534ac40116512d8932a0cc9848b988f48588",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionDonateSubcommand.java": "470444dfc72e7e61f2055636b0890c847ba594a23e788000aff97882d3aff617",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java": "02fa92c51a16257ebdcbf9d1d6a3a28bdef8dfce240d1798c7f56bc4d119f62a",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "ac4808a452bffd0e7228935b5c858dd42bb14cb4b069ccc344b5d9a26ab9a995",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java": "6ea5e2c290d0785f1e2d65d3d53e5a1944d0359b19dcbfe3116d373148c2f21a",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionRaidSubcommand.java": "c467e1f7ebe372ce22aa8c5cad191edab29b395d7d2812e0754eaeeb204d75d9",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "4f21678366cff6f540f2e47ef800f389def68f5fb033b63c6ff73322df4fd320",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "7fb2dee67a26c214cebb4e0934e522d8fce742bf3ddd943e0603e023e2253b4e",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionCaravanSubcommand.java": "c2457a6abf674f7021f6faea7a3b10c5b6404b94cf77fe4332251edc08696c74",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionDonateSubcommand.java": "5c3ff809af6c5fe55a29eda556fc317d2f53077ee1ac5ee2c82197c2b3732d16",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java": "69874fe8d8f375b59bd1c39fc53b65d2293151a4632c90547fc6aeea88b38cbd",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cac1a548993b58d2ca6cb8d584814cf24304247978ed49f953dac39b8907a96d",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java": "70400c49cc67bea53dbdd8369557fa503d01cf22e79ed7dac407b34b12c885a7",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionRaidSubcommand.java": "0dc9d0c1dd046ea90f5ca2b84d17f4b35f8be0ba30813323dba1c1edbfe0f950",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "1b6715b4df9c4c284e1ab3e5744116b07ba95f7f90be0960e17ad6ee21759422",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "f74405d61bd044ad30129845c9be3287bc541a71b9d480ddd33c76066c0cc6b8",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
         "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "9290feb43a1e8bc6bf63742fe5bd6dd37b5763e26f14eb03cafb99bce8bb6131",
         "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "2e007399042d1237e4e372cba289cd99ae08f3a4f39ba1260296222520072f01",
@@ -106,9 +106,9 @@
         "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "02bfb9c5b7c498f14659c4926cfbbe8ce9de2d63d7c756504563e8b20fdaa524",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "2ef37f7d7527f95df8c823fb86e17c622fd4edf7a45023a25e8e2b452fdfed01"
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "766ace809d1c7ab922b0a3d33731c22fc20b7a54d01c5b3764fb716ac8298ce0"
       },
-      "entries_sha256": "86f3329419938600bacdfeb3577fdd2bb5d17386c1a36a761e84886bb6685ccf"
+      "entries_sha256": "796d6905e8343d3465e9be4ed9139e97eebe5c9919df543da56903bb8095d1bb"
     },
     "command.achievements": {
       "kind": "root",
@@ -120,7 +120,7 @@
       "description": "Elérések (mérföldkövek + jutalmak)",
       "implementation": "AchievementsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1500,
+      "registration_line": 1554,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -130,7 +130,7 @@
       "root": "achievements",
       "alias": "ach",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1500,
+      "line": 1554,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -140,7 +140,7 @@
       "root": "achievements",
       "alias": "eleresek",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1500,
+      "line": 1554,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -155,7 +155,7 @@
       "description": "Közösségi adomány-láda",
       "implementation": "DonationChestCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1517,
+      "registration_line": 1571,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -165,7 +165,7 @@
       "root": "adomany",
       "alias": "adomanylada",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1517,
+      "line": 1571,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -175,7 +175,7 @@
       "root": "adomany",
       "alias": "donate",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1517,
+      "line": 1571,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -187,7 +187,7 @@
       "description": "Önkéntes AFK-jelölés",
       "implementation": "AfkCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1436,
+      "registration_line": 1490,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -199,7 +199,7 @@
       "description": "Kitiltás (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1455,
+      "registration_line": 1509,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -214,7 +214,7 @@
       "description": "Bank parancsok",
       "implementation": "BankCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1494,
+      "registration_line": 1548,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -224,7 +224,7 @@
       "root": "bank",
       "alias": "vault",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1494,
+      "line": 1548,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -234,7 +234,7 @@
       "root": "bank",
       "alias": "wallet",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1494,
+      "line": 1548,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -249,7 +249,7 @@
       "description": "Bestiárium — a krónikás-lajstromod",
       "implementation": "BestiaryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1521,
+      "registration_line": 1575,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -259,7 +259,7 @@
       "root": "bestiarium",
       "alias": "bestiary",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1521,
+      "line": 1575,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -269,7 +269,7 @@
       "root": "bestiarium",
       "alias": "lajstrom",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1521,
+      "line": 1575,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -284,7 +284,7 @@
       "description": "Körözési lista (fejpénzek)",
       "implementation": "BountyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1504,
+      "registration_line": 1558,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -294,7 +294,7 @@
       "root": "bounty",
       "alias": "fejvadasz",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1504,
+      "line": 1558,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -304,7 +304,7 @@
       "root": "bounty",
       "alias": "korozes",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1504,
+      "line": 1558,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -319,7 +319,7 @@
       "description": "Céh (frakción belüli kisközösség) parancsok",
       "implementation": "GuildCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1519,
+      "registration_line": 1573,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -329,7 +329,7 @@
       "root": "ceh",
       "alias": "gild",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1519,
+      "line": 1573,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -339,7 +339,7 @@
       "root": "ceh",
       "alias": "guild",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1519,
+      "line": 1573,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -353,7 +353,7 @@
       "description": "Terület-claim parancsok",
       "implementation": "ClaimCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1531,
+      "registration_line": 1585,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -363,7 +363,7 @@
       "root": "claim",
       "alias": "birtok",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1531,
+      "line": 1585,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -378,7 +378,7 @@
       "description": "Kaszt (class): szint, Lélekkapocs, admin",
       "implementation": "JobCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1498,
+      "registration_line": 1552,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -388,7 +388,7 @@
       "root": "class",
       "alias": "job",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1498,
+      "line": 1552,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -398,7 +398,7 @@
       "root": "class",
       "alias": "kaszt",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1498,
+      "line": 1552,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -413,7 +413,7 @@
       "description": "Láda (crate) parancsok",
       "implementation": "CrateCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1437,
+      "registration_line": 1491,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -423,7 +423,7 @@
       "root": "crate",
       "alias": "crates",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1437,
+      "line": 1491,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -433,7 +433,7 @@
       "root": "crate",
       "alias": "ladak",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1437,
+      "line": 1491,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -448,7 +448,7 @@
       "description": "Valuta parancsok",
       "implementation": "CurrencyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1493,
+      "registration_line": 1547,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -458,7 +458,7 @@
       "root": "currency",
       "alias": "eco",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1493,
+      "line": 1547,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -468,7 +468,7 @@
       "root": "currency",
       "alias": "money",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1493,
+      "line": 1547,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -482,7 +482,7 @@
       "description": "Napi küldetés",
       "implementation": "DailyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1507,
+      "registration_line": 1561,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -492,7 +492,7 @@
       "root": "daily",
       "alias": "napi",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1507,
+      "line": 1561,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -507,7 +507,7 @@
       "description": "Emlékszilánk-beváltás (visszaemlékezés)",
       "implementation": "MemoryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1541,
+      "registration_line": 1595,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -517,7 +517,7 @@
       "root": "emlek",
       "alias": "emlekek",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1541,
+      "line": 1595,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -527,7 +527,7 @@
       "root": "emlek",
       "alias": "memory",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1541,
+      "line": 1595,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -542,7 +542,7 @@
       "description": "Világesemény parancsok",
       "implementation": "EventsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1538,
+      "registration_line": 1592,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -552,7 +552,7 @@
       "root": "events",
       "alias": "esemeny",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1538,
+      "line": 1592,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -562,7 +562,7 @@
       "root": "events",
       "alias": "event",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1538,
+      "line": 1592,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -577,7 +577,7 @@
       "description": "Árfolyamtábla admin",
       "implementation": "ExchangeBoardCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1557,
+      "registration_line": 1611,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -587,7 +587,7 @@
       "root": "exchangeboard",
       "alias": "arfolyamtabla",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1557,
+      "line": 1611,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -597,7 +597,7 @@
       "root": "exchangeboard",
       "alias": "ratesboard",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1557,
+      "line": 1611,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -611,7 +611,7 @@
       "description": "Frakció parancsok",
       "implementation": "FactionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1497,
+      "registration_line": 1551,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -621,7 +621,7 @@
       "root": "faction",
       "alias": "f",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1497,
+      "line": 1551,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -633,7 +633,7 @@
       "description": "Teljes büntetési előzmény (admin)",
       "implementation": "PunishmentHistoryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1464,
+      "registration_line": 1518,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -645,7 +645,7 @@
       "description": "HUD beállítások",
       "implementation": "HudCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1433,
+      "registration_line": 1487,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -660,7 +660,7 @@
       "description": "Plugin-item kiadása (admin): unique/recept/relikvia/tervrajz/erszeny/dev",
       "implementation": "ItemGiveCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1549,
+      "registration_line": 1603,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -670,7 +670,7 @@
       "root": "iceitem",
       "alias": "icegive",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1549,
+      "line": 1603,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -680,7 +680,7 @@
       "root": "iceitem",
       "alias": "iitem",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1549,
+      "line": 1603,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -694,7 +694,7 @@
       "description": "IceSMP admin",
       "implementation": "IceSMPCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1430,
+      "registration_line": 1484,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -704,7 +704,7 @@
       "root": "icesmp",
       "alias": "ismp",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1430,
+      "line": 1484,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -716,7 +716,7 @@
       "description": "Online inventory/ender live nézet (admin)",
       "implementation": "InvseeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1431,
+      "registration_line": 1485,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -730,7 +730,7 @@
       "description": "Kém-álca — rövid felderítő álöltözet",
       "implementation": "SpyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1527,
+      "registration_line": 1581,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -740,7 +740,7 @@
       "root": "kem",
       "alias": "spy",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1527,
+      "line": 1581,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -752,7 +752,7 @@
       "description": "Játékos kirúgása (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1446,
+      "registration_line": 1500,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -766,7 +766,7 @@
       "description": "Kompjárat: átkelés a túlpartra",
       "implementation": "KompCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1539,
+      "registration_line": 1593,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -776,7 +776,7 @@
       "root": "komp",
       "alias": "ferry",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1539,
+      "line": 1593,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -790,7 +790,7 @@
       "description": "Az utolsó Heti Krónika visszaolvasása",
       "implementation": "KronikaCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1547,
+      "registration_line": 1601,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -800,7 +800,7 @@
       "root": "kronika",
       "alias": "chronicle",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1547,
+      "line": 1601,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -816,7 +816,7 @@
       "description": "Ranglisták (szint, vagyon, raid-kill)",
       "implementation": "LeaderboardCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1501,
+      "registration_line": 1555,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -826,7 +826,7 @@
       "root": "leaderboard",
       "alias": "lb",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1501,
+      "line": 1555,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -836,7 +836,7 @@
       "root": "leaderboard",
       "alias": "rangsor",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1501,
+      "line": 1555,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -846,7 +846,7 @@
       "root": "leaderboard",
       "alias": "top",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1501,
+      "line": 1555,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -860,7 +860,7 @@
       "description": "A kódex lapjai — frakciók és helyek története",
       "implementation": "LoreCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1545,
+      "registration_line": 1599,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -870,7 +870,7 @@
       "root": "lore",
       "alias": "kodex",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1545,
+      "line": 1599,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -885,7 +885,7 @@
       "description": "Piactér parancsok",
       "implementation": "MarketCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1516,
+      "registration_line": 1570,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -895,7 +895,7 @@
       "root": "market",
       "alias": "ah",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1516,
+      "line": 1570,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -905,7 +905,7 @@
       "root": "market",
       "alias": "piac",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1516,
+      "line": 1570,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -920,7 +920,7 @@
       "description": "Központi menü — minden parancs egy helyen",
       "implementation": "MenuCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1499,
+      "registration_line": 1553,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -930,7 +930,7 @@
       "root": "menu",
       "alias": "hub",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1499,
+      "line": 1553,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -940,7 +940,7 @@
       "root": "menu",
       "alias": "m",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1499,
+      "line": 1553,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -954,7 +954,7 @@
       "description": "Natív moderációs admin GUI",
       "implementation": "ModerationGuiCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1470,
+      "registration_line": 1524,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -964,7 +964,7 @@
       "root": "moderation",
       "alias": "mod",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1470,
+      "line": 1524,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -976,7 +976,7 @@
       "description": "Privát üzenet",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1481,
+      "registration_line": 1535,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -988,7 +988,7 @@
       "description": "Némítás (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1449,
+      "registration_line": 1503,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1002,7 +1002,7 @@
       "description": "NPC-kötések: küldetés/bolt/bankár/valutaváltó (admin)",
       "implementation": "NpcBindCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1558,
+      "registration_line": 1612,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1012,7 +1012,7 @@
       "root": "npcbind",
       "alias": "npckotes",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1558,
+      "line": 1612,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1024,7 +1024,7 @@
       "description": "Teleport az utolsó kijelentkezési helyre",
       "implementation": "OfflineTeleportCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1478,
+      "registration_line": 1532,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1038,7 +1038,7 @@
       "description": "Becsület-párbaj — elégtétel a bűnökért",
       "implementation": "HonorDuelCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1525,
+      "registration_line": 1579,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1048,7 +1048,7 @@
       "root": "parbaj",
       "alias": "duel",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1525,
+      "line": 1579,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1063,7 +1063,7 @@
       "description": "Parkour-pályák (futás, admin beállítás)",
       "implementation": "ParkourCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1506,
+      "registration_line": 1560,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1073,7 +1073,7 @@
       "root": "parkour",
       "alias": "palya",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1506,
+      "line": 1560,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1083,7 +1083,7 @@
       "root": "parkour",
       "alias": "trial",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1506,
+      "line": 1560,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1098,7 +1098,7 @@
       "description": "Party (csapat) parancsok",
       "implementation": "PartyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1518,
+      "registration_line": 1572,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1108,7 +1108,7 @@
       "root": "party",
       "alias": "p",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1518,
+      "line": 1572,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1118,7 +1118,7 @@
       "root": "party",
       "alias": "parti",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1518,
+      "line": 1572,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1133,7 +1133,7 @@
       "description": "Társ (befogó item, idézés, név, szint)",
       "implementation": "PetCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1508,
+      "registration_line": 1562,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1143,7 +1143,7 @@
       "root": "pet",
       "alias": "companion",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1508,
+      "line": 1562,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1153,7 +1153,7 @@
       "root": "pet",
       "alias": "tars",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1508,
+      "line": 1562,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1168,7 +1168,7 @@
       "description": "Szakma (profession) parancsok",
       "implementation": "ProfessionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1509,
+      "registration_line": 1563,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1178,7 +1178,7 @@
       "root": "profession",
       "alias": "prof",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1509,
+      "line": 1563,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1188,7 +1188,7 @@
       "root": "profession",
       "alias": "szakma",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1509,
+      "line": 1563,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1204,7 +1204,7 @@
       "description": "Karakterlap — kaszt, spec, szakma, talent menük",
       "implementation": "ProfileCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1502,
+      "registration_line": 1556,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1214,7 +1214,7 @@
       "root": "profile",
       "alias": "char",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1502,
+      "line": 1556,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1224,7 +1224,7 @@
       "root": "profile",
       "alias": "karakter",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1502,
+      "line": 1556,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1234,7 +1234,7 @@
       "root": "profile",
       "alias": "status",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1502,
+      "line": 1556,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1246,7 +1246,7 @@
       "description": "Aktív büntetések (admin)",
       "implementation": "ActivePunishmentsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1467,
+      "registration_line": 1521,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1261,7 +1261,7 @@
       "description": "Küldetés parancsok",
       "implementation": "QuestCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1515,
+      "registration_line": 1569,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1271,7 +1271,7 @@
       "root": "quest",
       "alias": "kuldetes",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1515,
+      "line": 1569,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1281,7 +1281,7 @@
       "root": "quest",
       "alias": "quests",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1515,
+      "line": 1569,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1296,7 +1296,7 @@
       "description": "Relikvia parancsok (admin)",
       "implementation": "RelicCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1505,
+      "registration_line": 1559,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1306,7 +1306,7 @@
       "root": "relic",
       "alias": "relics",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1505,
+      "line": 1559,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1316,7 +1316,7 @@
       "root": "relic",
       "alias": "relikvia",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1505,
+      "line": 1559,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1330,7 +1330,7 @@
       "description": "Válasz privát üzenetre",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1490,
+      "registration_line": 1544,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1340,7 +1340,7 @@
       "root": "reply",
       "alias": "r",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1490,
+      "line": 1544,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1354,7 +1354,7 @@
       "description": "Játékos bejelentése (admin: /reports)",
       "implementation": "ReportCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1439,
+      "registration_line": 1493,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1364,7 +1364,7 @@
       "root": "report",
       "alias": "bejelent",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1439,
+      "line": 1493,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1376,7 +1376,7 @@
       "description": "Bejelentések kezelése (admin)",
       "implementation": "ReportsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1441,
+      "registration_line": 1495,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1388,7 +1388,7 @@
       "description": "Bűnös állapot kezelése (admin)",
       "implementation": "SinnerCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1503,
+      "registration_line": 1557,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1400,7 +1400,7 @@
       "description": "Ülés (leül/feláll)",
       "implementation": "SitCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1435,
+      "registration_line": 1489,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1412,7 +1412,7 @@
       "description": "Privát üzenetek megfigyelése (admin)",
       "implementation": "SocialSpyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1472,
+      "registration_line": 1526,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1426,7 +1426,7 @@
       "description": "Lélek-kovács — a Nekromanta minion-fejlesztései",
       "implementation": "SoulforgeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1523,
+      "registration_line": 1577,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1436,7 +1436,7 @@
       "root": "soulforge",
       "alias": "lelekkovacs",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1523,
+      "line": 1577,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1451,7 +1451,7 @@
       "description": "Lélekszilánk parancsok",
       "implementation": "SoulCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1554,
+      "registration_line": 1608,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1461,7 +1461,7 @@
       "root": "souls",
       "alias": "lelek",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1554,
+      "line": 1608,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1471,7 +1471,7 @@
       "root": "souls",
       "alias": "soul",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1554,
+      "line": 1608,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1486,7 +1486,7 @@
       "description": "Specializáció parancsok",
       "implementation": "SpecCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1510,
+      "registration_line": 1564,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1496,7 +1496,7 @@
       "root": "spec",
       "alias": "specializacio",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1510,
+      "line": 1564,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1506,7 +1506,7 @@
       "root": "spec",
       "alias": "specialization",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1510,
+      "line": 1564,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1522,7 +1522,7 @@
       "description": "Spell-mesterség (cooldown + erő valutáért)",
       "implementation": "SpellCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1555,
+      "registration_line": 1609,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1532,7 +1532,7 @@
       "root": "spell",
       "alias": "mastery",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1555,
+      "line": 1609,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1542,7 +1542,7 @@
       "root": "spell",
       "alias": "mesterseg",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1555,
+      "line": 1609,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1552,7 +1552,7 @@
       "root": "spell",
       "alias": "spells",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1555,
+      "line": 1609,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1568,7 +1568,7 @@
       "description": "Varázskönyv: spellek böngészése és kiválasztása",
       "implementation": "SpellbookCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1556,
+      "registration_line": 1610,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1578,7 +1578,7 @@
       "root": "spellbook",
       "alias": "konyv",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1556,
+      "line": 1610,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1588,7 +1588,7 @@
       "root": "spellbook",
       "alias": "sb",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1556,
+      "line": 1610,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1598,7 +1598,7 @@
       "root": "spellbook",
       "alias": "varazskonyv",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1556,
+      "line": 1610,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1610,7 +1610,7 @@
       "description": "Statisztika-profil",
       "implementation": "StatsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1434,
+      "registration_line": 1488,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1624,7 +1624,7 @@
       "description": "A Suttogók titkos csatornája és tanú-vád",
       "implementation": "WhisperCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1543,
+      "registration_line": 1597,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1634,7 +1634,7 @@
       "root": "suttogas",
       "alias": "sutt",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1543,
+      "line": 1597,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1648,7 +1648,7 @@
       "description": "Szakma-céhek heti közös céljai",
       "implementation": "ProfessionWeeklyCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1529,
+      "registration_line": 1583,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1658,7 +1658,7 @@
       "root": "szakmacel",
       "alias": "weeklygoal",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1529,
+      "line": 1583,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1673,7 +1673,7 @@
       "description": "Talent-fa parancsok",
       "implementation": "TalentCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1511,
+      "registration_line": 1565,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1683,7 +1683,7 @@
       "root": "talent",
       "alias": "talentfa",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1511,
+      "line": 1565,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1693,7 +1693,7 @@
       "root": "talent",
       "alias": "talents",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1511,
+      "line": 1565,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1707,7 +1707,7 @@
       "description": "A Menedék Vének Tanácsa: szavazás, Vásár-hét",
       "implementation": "TanacsCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1540,
+      "registration_line": 1594,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1717,7 +1717,7 @@
       "root": "tanacs",
       "alias": "council",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1540,
+      "line": 1594,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1729,7 +1729,7 @@
       "description": "Privát üzenet",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1484,
+      "registration_line": 1538,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1741,7 +1741,7 @@
       "description": "Ideiglenes kitiltás (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1458,
+      "registration_line": 1512,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1755,7 +1755,7 @@
       "description": "Frakció terület parancsok",
       "implementation": "TerritoryCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1514,
+      "registration_line": 1568,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1765,7 +1765,7 @@
       "root": "territory",
       "alias": "terulet",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1514,
+      "line": 1568,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1777,7 +1777,7 @@
       "description": "Kitiltás feloldása (admin)",
       "implementation": "ModerationRevokeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1461,
+      "registration_line": 1515,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1789,7 +1789,7 @@
       "description": "Némítás feloldása (admin)",
       "implementation": "ModerationRevokeCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1452,
+      "registration_line": 1506,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1803,7 +1803,7 @@
       "description": "Admin láthatatlanság",
       "implementation": "VanishCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1475,
+      "registration_line": 1529,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1813,7 +1813,7 @@
       "root": "vanish",
       "alias": "v",
       "source": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "line": 1475,
+      "line": 1529,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1825,7 +1825,7 @@
       "description": "Privát üzenet",
       "implementation": "PrivateMessageCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1487,
+      "registration_line": 1541,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -1837,7 +1837,7 @@
       "description": "Figyelmeztetés (admin)",
       "implementation": "ModerationActionCommand",
       "registration_file": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
-      "registration_line": 1443,
+      "registration_line": 1497,
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
@@ -9025,11 +9025,11 @@
       },
       "source_sha256": {
         "src/main/java/hu/taliann/icesmp/commands/ActivePunishmentsCommand.java": "12db7aea3b857fb27d4ff2fb684c90c0fdcf5e0b91e82311e3fad0f88af90709",
-        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "89576f23d57812f6391c4b195623fc83bfb15fad9bf545aeab2365daa46edaeb",
+        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
         "src/main/java/hu/taliann/icesmp/commands/CrateCommand.java": "d67493fc8bb5776e3fcab22833fe2071eb46357cdf28d399027f1bd576224de4",
         "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "19f35106601aafefb3e6610c8bf74db5f5ab3620ad5dfb8ac61e40f55b0f6261",
         "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
-        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "9b992ec1a70077153685e5db37d3998b0f118510a7c4cb809b7b5d87b451ff19",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "70f13452f4e8990cffdb6316d5609ccb2188a7bed5b257cb626e0c6ada38ca8f",
         "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
         "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
         "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
@@ -9049,13 +9049,13 @@
         "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
         "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
         "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "b2159f78f7cf8888e6d4e010ba6a7a2e78cf6b11d8cd4eaf5d96c0d340b2c905",
-        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "249792b5158781d0aa6c30a0f530900448e29416e727edd4f906db0b6a05ecc0",
+        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
         "src/main/java/hu/taliann/icesmp/commands/UnmuteCommand.java": "1171d989307c932d8ebbd9b70288830ad08e47b107e6311e2c84b41bfa9db03f",
         "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "ac4808a452bffd0e7228935b5c858dd42bb14cb4b069ccc344b5d9a26ab9a995",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "4f21678366cff6f540f2e47ef800f389def68f5fb033b63c6ff73322df4fd320",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "7fb2dee67a26c214cebb4e0934e522d8fce742bf3ddd943e0603e023e2253b4e",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cac1a548993b58d2ca6cb8d584814cf24304247978ed49f953dac39b8907a96d",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "1b6715b4df9c4c284e1ab3e5744116b07ba95f7f90be0960e17ad6ee21759422",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "f74405d61bd044ad30129845c9be3287bc541a71b9d480ddd33c76066c0cc6b8",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
         "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "9290feb43a1e8bc6bf63742fe5bd6dd37b5763e26f14eb03cafb99bce8bb6131",
         "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "2e007399042d1237e4e372cba289cd99ae08f3a4f39ba1260296222520072f01",
@@ -9064,26 +9064,26 @@
         "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "02bfb9c5b7c498f14659c4926cfbbe8ce9de2d63d7c756504563e8b20fdaa524",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "2ef37f7d7527f95df8c823fb86e17c622fd4edf7a45023a25e8e2b452fdfed01",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "766ace809d1c7ab922b0a3d33731c22fc20b7a54d01c5b3764fb716ac8298ce0",
         "src/main/java/hu/taliann/icesmp/core/Permissions.java": "9cc28bb9d32e4d60bb75bc723c6362f470cb8dbe3f6e85a6362534866f76c474",
-        "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "fdedfab174951926485e741d620e3632007baed65f7f34bc2362fcd61ea6a57e",
-        "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "efc1398161beec368a9d76906e7f751cdb4d8bc1eb4c977eb6a9047064d04e04",
-        "src/main/java/hu/taliann/icesmp/listeners/ClaimProtectionListener.java": "1431e67ed1a01de21abe6a01ac9f24cb2f571a19a7071d6d99b41bc92d689052",
+        "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "fc2559f4ee0c1be34dcfc114e2d53994bd11f3023da3e2a96a501429b2ec8643",
+        "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "66d2b668bddb3dc241c3c2038b069a7ce07e06c42574c23b08cd931a7c0d4d71",
+        "src/main/java/hu/taliann/icesmp/listeners/ClaimProtectionListener.java": "e802410856fdd9261c4c48b7cc71174911c930317dafe6c11d996be65b108914",
         "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java": "16ce6ea20cf1072e6b3b933c3bac5c907616b91731c55166590a194b5fa731cc",
         "src/main/java/hu/taliann/icesmp/listeners/DungeonGateListener.java": "1d97e3e0d5852fe84078e4c703d71da8d4428d2a60bd88db1af9d2140b80f807",
         "src/main/java/hu/taliann/icesmp/listeners/InvseeGUIListener.java": "659ae2e96dba1d2061123b08519b4d64d56332ccacbb32a41ce37bd1be136793",
-        "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java": "e7e81350e99c0296c89090363f5ba2b6ab53f68d637fec3d8c9886feea75c00b",
+        "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java": "f949151ccda9d4d2840e01ed5ea55328b5e0438d90c5a835bdb315ed5b84c0b1",
         "src/main/java/hu/taliann/icesmp/listeners/PortalGuardListener.java": "beee5ac270e5717047c081f800053788115c47384e779ef5a2b9ba072e04b66c",
-        "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java": "41d8502db4415d65fef51c7d7cd7c175d00d0596477de2f5438e4c085761455d",
+        "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java": "dd251a5ea4759678588efbe5b8fed27582318b8babbde9d08b4f06ee731d522a",
         "src/main/java/hu/taliann/icesmp/listeners/SitListener.java": "92f3b16a0ed43908af35eba95e0ffb6874b2733ad7b600d88606fb548005e084",
-        "src/main/java/hu/taliann/icesmp/listeners/TheftListener.java": "23a78943e950952ad02d900115d2d764f0d2a05cfb5c41092b6952bd503ad721",
-        "src/main/java/hu/taliann/icesmp/managers/CrateManager.java": "f9788e63b4fb022e125359a3912556c67445287382172dcd93b94e6128729fd8",
+        "src/main/java/hu/taliann/icesmp/listeners/TheftListener.java": "4aac7d522e98a07860d8a5a7a5cebc19cb6712e9230f0e4389c7320b780d9988",
+        "src/main/java/hu/taliann/icesmp/managers/CrateManager.java": "c3f19b7fc68907356356b056730763a7f36c5250e3cf812be2d010e47d7b38f1",
         "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java": "998010b19c9a275e9e70c3ccbea5c475a752e1b2eb0622645cf9430284a3ceaf",
         "src/main/java/hu/taliann/icesmp/managers/ReportManager.java": "bebe884c2576dad0b571f9edc5e76dfc396a6c48f872ef26303c1d7add2bae66",
-        "src/main/java/hu/taliann/icesmp/managers/TablistManager.java": "779c45d6095fd1eca9ff015548d3121abe630dc733d02f1a79368c8090fd04a6",
-        "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java": "9ea083a134b88ba8655e38c28cd397fb7b6651c6d427addc62c23512b4b1f6a6",
+        "src/main/java/hu/taliann/icesmp/managers/TablistManager.java": "aff3397530929721dd22896761f49352d9f44bd390f853fbca5f8d397e692a82",
+        "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java": "813a8aceccefb65d2535abda9252c537f0992a8c00a080b8f3c8115ed7058589",
         "src/main/java/hu/taliann/icesmp/managers/VanishManager.java": "ea2f806215f634e6620ddf22ea5e9c7648b5a80b217ea1539cd5c88e05e4a394",
-        "src/main/resources/config/crates.yml": "e5cdb218ee980a99aecdaf602521e0c1eb390ce3e9ff6f25b6782339b2eddf2e"
+        "src/main/resources/config/crates.yml": "d2bf5708cabb3b9bf447f1988d77f0c9a753bfc4574d37f4f01ee7ad6edff0ea"
       },
       "version": 1
     },
@@ -10156,41 +10156,6 @@
       "classification": "EXACT_RUNTIME_TEMPLATE",
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java:70 adatfolyamából feloldható; a dokumentált teljes path-sablon: players. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.hamukenyer-buff-seconds": {
-      "resolved_path": "factions.food-duty.hamukenyer-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:455 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.hamukenyer-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.hamulakoma-buff-seconds": {
-      "resolved_path": "factions.food-duty.hamulakoma-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:450 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.hamulakoma-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.lepeny-buff-seconds": {
-      "resolved_path": "factions.food-duty.lepeny-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:445 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.lepeny-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.pisztrang-buff-seconds": {
-      "resolved_path": "factions.food-duty.pisztrang-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:434 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.pisztrang-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.porkolt-buff-seconds": {
-      "resolved_path": "factions.food-duty.porkolt-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:438 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.porkolt-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.rantotta-buff-seconds": {
-      "resolved_path": "factions.food-duty.rantotta-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:436 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.rantotta-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
-    "config.dynamic.item-data-factory.config.factions.food-duty.vadlakoma-buff-seconds": {
-      "resolved_path": "factions.food-duty.vadlakoma-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:440 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.vadlakoma-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
-    },
     "config.dynamic.item-data-factory.section.always-edible": {
       "resolved_path": "profession-recipes.<recipe-id>.result.consumable.always-edible",
       "classification": "EXACT_RUNTIME_TEMPLATE",
@@ -10480,6 +10445,76 @@
       "resolved_path": "world-events.orchestration.max-active-minutes",
       "classification": "KNOWN_SOURCE_LIMITATION",
       "reason": "A forrás közvetlenül olvassa ezt az aktív kulcsot, de a bundled YAML-ból hiányzik; a bizonyított kódbeli fallback: 60L. Ez kiadáskor dokumentált konfigurációs hiány, nem runtime-tesztként igazolt garancia."
+    },
+    "config.dynamic.faction-switch-journal.section.currency": {
+      "resolved_path": "faction-switch-journal.yml:entry.currency",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.id": {
+      "resolved_path": "faction-switch-journal.yml:entry.id",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.assignment": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.assignment",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.assignment-present": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.assignment-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.history": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.history",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.membership-before.history-present": {
+      "resolved_path": "faction-switch-journal.yml:entry.membership-before.history-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.player": {
+      "resolved_path": "faction-switch-journal.yml:entry.player",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.target-faction": {
+      "resolved_path": "faction-switch-journal.yml:entry.target-faction",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-switch-journal.section.wallet.previous-present": {
+      "resolved_path": "faction-switch-journal.yml:entry.wallet.previous-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.id": {
+      "resolved_path": "faction-tax-journal.yml:entry.id",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.origin": {
+      "resolved_path": "faction-tax-journal.yml:entry.origin",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.player": {
+      "resolved_path": "faction-tax-journal.yml:entry.player",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.wallet.present": {
+      "resolved_path": "faction-tax-journal.yml:entry.wallet.present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
+    },
+    "config.dynamic.faction-tax-journal.section.wallet.previous-present": {
+      "resolved_path": "faction-tax-journal.yml:entry.wallet.previous-present",
+      "classification": "EXACT_RUNTIME_TEMPLATE",
+      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
     }
   },
   "components": {
@@ -11225,6 +11260,62 @@
       "feature": "feature.economy.currency_bank",
       "docs": [
         "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionCombatMarkers": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionMembership": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionMobContextResolver": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionPassiveConfig": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ADMIN_GUIDE.md",
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionPassivePolicy": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionPassiveService": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionPassiveSettings": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ADMIN_GUIDE.md",
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionTaxDebtLedger": {
+      "feature": "feature.factions.guilds_leadership",
+      "docs": [
+        "docs/ADMIN_GUIDE.md",
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.gui.BestiaryHolder": {
@@ -13751,6 +13842,55 @@
       "feature": "feature.world.mobs_loot",
       "docs": [
         "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.DurableTransactionProtocol": {
+      "feature": "feature.core.persistence",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionFoodPolicy": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionMembershipMutation": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionPassiveAdapterPolicy": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionSwitchJournal": {
+      "feature": "feature.factions.membership_relations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionTaxJournal": {
+      "feature": "feature.factions.guilds_leadership",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.DurableRecoveryPolicy": {
+      "feature": "feature.core.persistence",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
       ]
     }
   },

@@ -62,7 +62,7 @@ public final class SoulstoneListener implements Listener {
         // Folia-biztos a mob régió-szálán is.)
         if (!configManager.getBoolean("currency.soul-drop.dark-undead-drops", false)
                 && UndeadUtil.isUndead(entity)
-                && factionManager.getFaction(kill.killerId()) == FactionType.DARK) {
+                && factionManager.isMember(kill.killerId(), FactionType.DARK)) {
             return;
         }
 
