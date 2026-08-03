@@ -1,0 +1,3 @@
+base=rework/class-spec-profile-v2
+root-head=b6f4492766675f718f73fd947bf92a388a3090fb
+branch=profile/player-profile-platform
