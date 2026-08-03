@@ -1,0 +1,56 @@
+name: Runtime hardening workspace export
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/runtime-hardening-workspace-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'fix/runtime-hardening-audit-20260803'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Validate exact base ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e 52cc62ac3b463679f28656f82cf1f7d17db486e8^{commit}
+          git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
+          test -d .git
+
+      - name: Build portable real-checkout payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          git bundle create "$RUNNER_TEMP/icesmp.bundle" --all
+          tar \
+            --exclude='./.git' \
+            --exclude='./build' \
+            --exclude='./run' \
+            --exclude='./.gradle' \
+            -I 'zstd -19 -T0' \
+            -cf "$RUNNER_TEMP/icesmp-worktree.tar.zst" .
+          sha256sum "$RUNNER_TEMP/icesmp.bundle" "$RUNNER_TEMP/icesmp-worktree.tar.zst" \
+            > "$RUNNER_TEMP/SHA256SUMS"
+
+      - name: Upload authenticated workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-hardening-workspace-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/icesmp.bundle
+            ${{ runner.temp }}/icesmp-worktree.tar.zst
+            ${{ runner.temp }}/SHA256SUMS
+          retention-days: 1
+          compression-level: 0
