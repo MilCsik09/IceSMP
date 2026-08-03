@@ -1,4 +1,4 @@
-name: PlayerProfile recovered root compile hardening (temporary)
+name: PlayerProfile recovered regression port (temporary)
 
 on:
   pull_request:
@@ -13,12 +13,12 @@ permissions:
 
 env:
   RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
-  EXPECTED_RECOVERY_HEAD: bf3e40ca5cc6b46f9b5af5cc36f374f63347e7ef
+  EXPECTED_RECOVERY_HEAD: d19d0c3ada1bbaf55a181f89b51dc0e6e4dee8dc
   TARGET_BRANCH: rework/class-spec-profile-v2
   EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
 
 jobs:
-  harden:
+  port-regression:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -40,7 +40,7 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Replace obsolete reset call-site name and push fast-forward commit
+      - name: Port class/spec application regression to ClassSpecSection and push
         shell: bash
         run: |
           set -euo pipefail
@@ -49,27 +49,43 @@ jobs:
           git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
 
-          FILES=(
-            src/main/java/hu/taliann/icesmp/commands/SpecCommand.java
-            src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java
-          )
-          BEFORE=$(grep -h -o 'resetClassSpecSectionV2' "${FILES[@]}" | wc -l)
-          test "$BEFORE" -eq 2
-          perl -pi -e 's/resetClassSpecSectionV2/resetClassSpecSection/g' "${FILES[@]}"
-          ! grep -R --line-number --fixed-strings 'resetClassSpecSectionV2' "${FILES[@]}"
-          AFTER=$(grep -h -o 'resetClassSpecSection(' "${FILES[@]}" | wc -l)
-          test "$AFTER" -ge 2
+          FILE=src/regression/java/hu/taliann/icesmp/classspec/application/ClassSpecApplicationRegressionSuite.java
+          test "$(grep -o 'ClassProfile' "$FILE" | wc -l)" -gt 0
+          test "$(grep -o 'ClassProfileMutationStore' "$FILE" | wc -l)" -eq 1
+          ! grep -q 'ClassSpecSection' "$FILE"
 
+          python3 - "$FILE" <<'PY'
+          from pathlib import Path
+          import sys
+
+          path = Path(sys.argv[1])
+          text = path.read_text(encoding="utf-8")
+          marker = "import hu.taliann.icesmp.classspec.domain.*;\n"
+          if text.count(marker) != 1:
+              raise SystemExit("unexpected classspec domain import marker count")
+          text = text.replace(
+              marker,
+              marker + "import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;\n",
+          )
+          text = text.replace("ClassProfileMutationStore", "ClassSpecSectionMutationStore")
+          text = text.replace("ClassProfile", "ClassSpecSection")
+          text = text.replace("ClassSpecSection.empty(PLAYER,0)", "ClassSpecSection.empty(0)")
+          text = text.replace("ClassSpecSection.builder(PLAYER)", "ClassSpecSection.builder()")
+          path.write_text(text, encoding="utf-8", newline="\n")
+          PY
+
+          ! grep -nE 'ClassProfile|ClassProfileMutationStore|empty\(PLAYER|builder\(PLAYER' "$FILE"
+          test "$(grep -o 'ClassSpecSectionMutationStore' "$FILE" | wc -l)" -eq 1
+          test "$(grep -o 'ClassSpecSection' "$FILE" | wc -l)" -ge 10
           git diff --check
-          git diff --exit-code -- src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java
           git status --short
           git diff --stat
-          git diff -- "${FILES[@]}"
+          git diff -- "$FILE"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${FILES[@]}"
-          git commit -m "fix(player-profile): use canonical class-spec reset gateway"
+          git add "$FILE"
+          git commit -m "test(player-profile): port class-spec application regressions"
 
           REMOTE_RECOVERY_HEAD=$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')
           test "$REMOTE_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
