@@ -60,6 +60,7 @@ jobs:
           )
           selected = {}
           observed = []
+          anomalies = []
           for comment in comments:
               body = str(comment.get("body", "")).replace("\r\n", "\n").strip()
               first = body.split("\n", 1)[0]
@@ -76,17 +77,32 @@ jobs:
               expected_sha = match.group(2)
               expected_size = int(match.group(3))
               compact = re.sub(r"\s+", "", match.group(4))
-              raw = base64.b64decode(compact, validate=True)
+              encoded_length = 4 * ((expected_size + 2) // 3)
+              if len(compact) < encoded_length:
+                  raise SystemExit(
+                      f"chunk {index:02d} base64 shorter than declared size: "
+                      f"{len(compact)} < {encoded_length}"
+                  )
+              encoded = compact[:encoded_length]
+              trailing = compact[encoded_length:]
+              raw = base64.b64decode(encoded, validate=True)
               actual_sha = hashlib.sha256(raw).hexdigest()
               if len(raw) != expected_size:
                   raise SystemExit(f"chunk {index:02d} size mismatch: {len(raw)} != {expected_size}")
               if actual_sha != expected_sha:
                   raise SystemExit(f"chunk {index:02d} sha mismatch: {actual_sha} != {expected_sha}")
+              if trailing:
+                  anomalies.append({
+                      "index": f"{index:02d}",
+                      "type": "trailing-base64-ignored-after-verified-prefix",
+                      "trailing_characters": len(trailing),
+                  })
               (root / "chunks" / f"{index:02d}.bin").write_bytes(raw)
               selected[index] = {
                   "size": len(raw),
                   "sha256": actual_sha,
                   "comment_id": comment.get("id"),
+                  "trailing_characters": len(trailing),
               }
 
           missing = sorted(set(range(13)) - set(selected))
@@ -107,6 +123,7 @@ jobs:
               "compressed_sha256": hashlib.sha256(compressed).hexdigest(),
               "chunks": selected,
               "observed_headers": observed,
+              "anomalies": anomalies,
           }
           (root / "result-pre-xz.json").write_text(
               json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
