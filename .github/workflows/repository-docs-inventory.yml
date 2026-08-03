@@ -43,9 +43,6 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Install workflow parser
-        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
-
       - name: Execute reviewed authority-cleanup run steps in order
         shell: bash
         run: |
@@ -56,28 +53,57 @@ jobs:
           import os
           from pathlib import Path
           import subprocess
-          import yaml
 
           workflow_path = Path('.github/workflows/player-profile-root-v6-suite-restore.yml')
-          workflow = yaml.safe_load(workflow_path.read_text(encoding='utf-8'))
-          jobs = workflow.get('jobs', {})
-          cleanup = jobs.get('cleanup')
-          if not isinstance(cleanup, dict):
-              raise SystemExit('Registered PlayerProfile workflow has no cleanup job')
-          steps = cleanup.get('steps', [])
-          scripts = [step for step in steps if isinstance(step, dict) and 'run' in step]
+          lines = workflow_path.read_text(encoding='utf-8').splitlines()
+          scripts: list[tuple[str, str]] = []
+          current_name: str | None = None
+          index = 0
+          while index < len(lines):
+              line = lines[index]
+              if line.startswith('      - name: '):
+                  current_name = line.removeprefix('      - name: ').strip()
+                  index += 1
+                  continue
+              if line == '        run: |':
+                  if not current_name:
+                      raise SystemExit(f'Unnamed run block at line {index + 1}')
+                  index += 1
+                  block: list[str] = []
+                  while index < len(lines) and not lines[index].startswith('      - name: '):
+                      raw = lines[index]
+                      block.append(raw[10:] if raw.startswith('          ') else raw)
+                      index += 1
+                  script = '\n'.join(block).rstrip() + '\n'
+                  if not script.strip():
+                      raise SystemExit(f'Empty run block: {current_name}')
+                  scripts.append((current_name, script))
+                  continue
+              index += 1
+
           if len(scripts) < 8:
               raise SystemExit(f'Unexpected cleanup run-step count: {len(scripts)}')
-          if 'Commit and fast-forward push after every gate succeeds' != scripts[-1].get('name'):
-              raise SystemExit('Cleanup commit/push is not the final run step')
+          if scripts[-1][0] != 'Commit and fast-forward push after every gate succeeds':
+              raise SystemExit(
+                  'Cleanup commit/push is not the final run step: ' + scripts[-1][0]
+              )
+          expected_names = {
+              'Extract reviewed PlayerProfile regression sources',
+              'Check out exact recovery head and prepare authority cleanup',
+              'Java 21 clean build and all regressions',
+              'Verify PlayerProfile regression markers',
+              'Run PlayerProfile and repository gates',
+              'Audit stale documentation claims',
+              'Commit and fast-forward push after every gate succeeds',
+          }
+          observed_names = {name for name, _ in scripts}
+          missing = sorted(expected_names - observed_names)
+          if missing:
+              raise SystemExit('Missing cleanup run steps: ' + ', '.join(missing))
 
           env = os.environ.copy()
-          for index, step in enumerate(scripts, 1):
-              name = step.get('name', f'run-step-{index}')
-              script = step['run']
-              if not isinstance(script, str) or not script.strip():
-                  raise SystemExit(f'Invalid run script for {name}')
-              print(f'::group::{index}/{len(scripts)} {name}', flush=True)
+          for step_index, (name, script) in enumerate(scripts, 1):
+              print(f'::group::{step_index}/{len(scripts)} {name}', flush=True)
               subprocess.run(
                   ['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
                   check=True,
