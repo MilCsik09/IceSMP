@@ -82,29 +82,6 @@ A 18 ID-t pontosan kisbetűvel és aláhúzással használd. Átnevezés előtt
 ellenőrizd a questkonfigot, a FancyNpcs állapotot és az `npc-bindings.yml`
 leltárát.
 
-A repositoryban jelenleg csomagolt `Other/plugins/FancyNpcs/npcs.yml` export
-**egyik kötelező quest-NPC-t sem tartalmazza**; ez világ-/deploymentkapu, nem
-olyan hiba, amelyhez a kód biztonságosan koordinátát találhatna ki. Telepítés
-után vagy bármely átnevezéskor futtasd:
-
-```text
-/quest admin validatenpcs
-```
-
-A parancs és az indulási validáció exact belső nevet kér, külön jelzi a csak
-kis-/nagybetűben eltérő találatot, és minden hiányhoz kiírja az érintett
-quest-ID-t, configútvonalat és szerepet. A helyes provisioning sorrend:
-
-1. a lenti lore- és builderleltár alapján válaszd ki a világot és helyet;
-2. készíts backupot, majd hozd létre vagy importáld az NPC-t a pontos belső ID-val;
-3. állíts be skint és megjelenést anélkül, hogy a belső ID-t átírnád;
-4. szükség esetén add hozzá a `/npcbind` kötést;
-5. futtasd a validátort, majd kattintással teszteld a giver- és objective-ágat.
-
-A `quest-npc-fallback.always: true` nem provisioning: aktív FancyNpcs-híd
-mellett is megkerülhetővé teszi a fizikai NPC-t, ezért csak tudatos fejlesztői
-staginghez használd. Normál értéke `false`.
-
 Egy NPC-kattintás runtime sorrendje forrásból biztos:
 
 1. minden aktív `TALK_TO_NPC` cél teljesül, illetve a megfelelő
@@ -180,7 +157,7 @@ tartalmaz.
 #### 4.1. `hirnok` — A Hírnök — krónikás, onboarding- és frakcióválasztó kontakt
 
 - **Forrásból biztos kapcsolatok:** questadó: `hirnok_hirvitel`; cél: `rejtveny_elso_nyom`, `fejezet1_kronikas`, `fejezet2_pecset`, `fejezet3_harmadik_mondat`, `kaszt_orokseg`, `hirnok_hirvitel`, `onboarding_herald`, `onboarding_utmutatas`.
-- **Lore-kontekstus:** A kódex szerint a hírnökök viszik a nép kéréseit és a krónikák feladatait; a runtime onboarding a semleges fővárosban keresi.
+- **Lore-kontekstus:** A kódex szerint a hírnökök viszik a nép kéréseit és a krónikák feladatait; a runtime onboarding a Menedék vendégeként küldi a játékost Caldestera fővárosi Hírnökéhez. Ez még nem `NEUTRAL` polgárság.
 - **Builder-ajánlás — hely:** Új Caldestera nyilvános érkezési/főterén, a Radicorából és a komp felől érkező út csomópontján. Legyen messziről olvasható, de ne álljon közvetlenül crate, kapu vagy más kattintható blokk mellett.
 - **Builder-ajánlás — hozzáférés:** Minden új játékos és minden frakció elérje harc, díj és veszélyes zóna nélkül. A Radicora → Caldestera zarándokút végpontjaként legyen kitáblázva.
 - **Binding-döntés:** Ha `/npcbind hirnok faction` készül, a TALK/DELIVER célok előbb továbbra is haladnak, majd a frakciómenü nyílik; viszont az automatikus `giver-npc` keresés kimarad, ezért a `hirnok_hirvitel` csak `/quest accept` úton vehető fel. A napi quest automatikus átadásához hagyd kötetlenül, és a frakciómenühöz használj külön szolgáltató NPC-t vagy parancsot.
@@ -329,9 +306,12 @@ játékos következő lépése térben is érthető legyen.
 ### Onboarding és világba érkezés
 
 `onboarding_herald` → `onboarding_hunt` → `onboarding_gather` → `onboarding_utmutatas`.
-A játékos az Élet Fája/Radicora kezdőteréből a semleges főváros Hírnökéhez jut,
-majd csatát, gyűjtést, kaszt- és szakmaválasztást tanul. A Hírnök útvonala ne
-vezessen közvetlenül magas szintű vadonba vagy fizetős komp mögé.
+A játékos az Élet Fája/Radicora kezdőteréből benefit-free Menedék-vendégként a
+caldesterai Hírnökhöz jut, majd csatát, gyűjtést, kaszt- és szakmaválasztást
+tanul. Assignment csak kifejezett `/faction join` után keletkezik; a lánc fix
+`NEUTRAL` valutajutalmai caldesterai vendég-útravalók, nem saját-frakciós
+jutalmak. A Hírnök útvonala ne vezessen közvetlenül magas szintű vadonba vagy
+fizetős komp mögé.
 
 ### Szezonfejezetek
 
@@ -616,10 +596,10 @@ ki megoldótáblát.
 
 | # / ID | Játékosnak látható név és leírás | Objektíva | Feltétel / lánc | Jutalom |
 |---|---|---|---|---|
-| **133.** `onboarding_herald` | **Beszélj a hírnökkel**<br>Keresd fel a hírnököt a semleges fővárosban, és válaszd ki a királyságodat. | beszélgetés NPC-vel; NPC: `hirnok` | következő: `onboarding_hunt` | 15 `OWN` valuta |
-| **134.** `onboarding_hunt` | **Első csata**<br>Bizonyítsd, hogy készen állsz: ölj meg 5 szörnyet. | szörny legyőzése; ×5 | előfeltétel: `onboarding_herald`; következő: `onboarding_gather` | 20 `OWN` valuta |
-| **135.** `onboarding_gather` | **Első gyűjtögetés**<br>Vágj ki 10 rönköt — kezdő felszerelés vár érte. | tárgy összegyűjtése; ×10; anyag: `OAK_LOG`, `BIRCH_LOG`, `SPRUCE_LOG`, `JUNGLE_LOG`, `ACACIA_LOG`, `DARK_OAK_LOG`, `MANGROVE_LOG`, `CHERRY_LOG` | előfeltétel: `onboarding_hunt`; következő: `onboarding_utmutatas` | 25 `OWN` valuta; item: `WOODEN_PICKAXE:1`, `BREAD:8`; crate-kulcs: `koznapi:1` |
-| **136.** `onboarding_utmutatas` | **Az utad kezdete**<br>Térj vissza a hírnökhöz — elmondja, hogyan válassz kasztot (/class), szakmát (/profession join), és hol vár a kaszt-próbád (/quest list). | beszélgetés NPC-vel; NPC: `hirnok` | előfeltétel: `onboarding_gather` | 50 kaszt-XP; 25 `OWN` valuta |
+| **133.** `onboarding_herald` | **Beszélj a hírnökkel**<br>Keresd fel a hírnököt a semleges fővárosban, és válaszd ki a királyságodat. | beszélgetés NPC-vel; NPC: `hirnok` | következő: `onboarding_hunt` | 15 `NEUTRAL` valuta (vendég-útravaló) |
+| **134.** `onboarding_hunt` | **Első csata**<br>Bizonyítsd, hogy készen állsz: ölj meg 5 szörnyet. | szörny legyőzése; ×5 | előfeltétel: `onboarding_herald`; következő: `onboarding_gather` | 20 `NEUTRAL` valuta (vendég-útravaló) |
+| **135.** `onboarding_gather` | **Első gyűjtögetés**<br>Vágj ki 10 rönköt — kezdő felszerelés vár érte. | tárgy összegyűjtése; ×10; anyag: `OAK_LOG`, `BIRCH_LOG`, `SPRUCE_LOG`, `JUNGLE_LOG`, `ACACIA_LOG`, `DARK_OAK_LOG`, `MANGROVE_LOG`, `CHERRY_LOG` | előfeltétel: `onboarding_hunt`; következő: `onboarding_utmutatas` | 25 `NEUTRAL` valuta (vendég-útravaló); item: `WOODEN_PICKAXE:1`, `BREAD:8`; crate-kulcs: `koznapi:1` |
+| **136.** `onboarding_utmutatas` | **Az utad kezdete**<br>Térj vissza a hírnökhöz — elmondja, hogyan válassz kasztot (/class), szakmát (/profession join), és hol vár a kaszt-próbád (/quest list). | beszélgetés NPC-vel; NPC: `hirnok` | előfeltétel: `onboarding_gather` | 50 kaszt-XP; 25 `NEUTRAL` valuta (vendég-útravaló) |
 | **137.** `napi_ospatak` | **A vén halász kérése**<br>Az Őspatak öreg halásza már nem bírja a hálót. Fogj helyette nyolc halat — a fele a tiéd. | hal kifogása; ×8 | ismételhető: 24 óra; rotáció: `napi-npc` | 120 kaszt-XP; 35 `OWN` valuta |
 | **138.** `napi_erclelet` | **Ércjárat**<br>A kovácsműhely kifogyott a nyersanyagból. Fejts ki huszonnégy vas- vagy rézércet a környék tárnáiból. | blokk kitermelése; ×24; anyag: `IRON_ORE`, `DEEPSLATE_IRON_ORE`, `COPPER_ORE`, `DEEPSLATE_COPPER_ORE` | ismételhető: 24 óra; rotáció: `napi-npc` | 120 kaszt-XP; 35 `OWN` valuta |
 | **139.** `napi_csontszuret` | **Csontszüret**<br>Éjszakánként csontvázak gyülekeznek a földeken. Tizenkettőt küldj vissza a földbe, mielőtt learatják, amit nem ők vetettek. | szörny legyőzése; ×12; entitás: `SKELETON` | ismételhető: 24 óra; rotáció: `napi-npc` | 130 kaszt-XP; 35 `OWN` valuta |

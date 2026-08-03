@@ -39,20 +39,6 @@ A 420 konfigurált spell-balance azonosító nem 420 automatikusan elérhető
 képességet jelent: a registry, a kaszt, a specializáció és a feloldási
 feltételek együtt döntik el, mit használhat a játékos.
 
-## Naplóalapú stabilitási javítások (2026. július 30. – augusztus 2.)
-
-- A Mélytépő attribútumfrissítése stabil kulcsú, idempotens csere: ismételt join
-  és refresh nem dupláz sebzést, a nem IceSMP modifier megmarad.
-- Egy hibás relikvia-slot nem szakítja félbe a teljes inventory frissítését;
-  throttlingolt, UUID/slot/item/relic kontextusú hiba marad utána.
-- Plugin-disable alatt az Escort/mulandó entity cleanup nem regisztrál új Folia
-  taskot, a shutdown többször hívva is biztonságos.
-- Új `/quest admin validatenpcs` mutatja az exact FancyNpcs belsőnév-hiányokat,
-  case eltéréseket és az érintett quest/config útvonalakat. A jelenlegi exportban
-  a 18 kötelező NPC továbbra is manuális builder/deployment kapu.
-- A FancyNpcs-snapshot validátor ellenőrzi a lokális skinfájlokat és az NPC-hez
-  kötve listázza a remote URL-eket anélkül, hogy hálózati hibától blokkolná a buildet.
-
 ## Amit játékosként észreveszel
 
 ### Új utak a karakterednek
@@ -79,6 +65,57 @@ aminek a helyszíneit és jutalmait az aktuális világon is végigjárta.
 krónikarendszer, a lore-kódex, a komp, a becsületpárbaj, a lélekkovács,
 a heti szakmai cél, a tanács és a suttogás. A frakciók, a politika, a
 területek és a háború továbbra is játékosi döntésekből épülnek.
+
+### Egyértelmű frakciótagság és új passzív-policy
+
+Az új játékos most egyértelműen a Menedék **vendége**: a fizikai onboardingot
+megkapja, de explicit választásig nem számít `NEUTRAL` polgárnak, ezért nem kap
+frakciópasszívot, frakcióquestet, tanácsi szavazatot, community-hozzájárulást
+vagy frakciós szezonpontot. A kezdőlánc Creutzér-útravalója caldesterai
+vendégsegély, nem rejtett frakciójutalom. A korábbi választás tartós nyoma miatt
+az assignment törlése sem nyit új „első választás” kerülőutat a szezonvégi zár
+vagy a szezonális váltási limit körül, és nem törli a már fennálló adóhátralékot
+vagy adócsalási strike-ot sem.
+
+Az adóhátralék most eredet-frakciónként külön ledgerben él. Frakcióváltás nem
+konvertálja a régi tartozást vagy strike-ot: a következő beszedés az eredeti
+valutából az eredeti kasszába rendezi. A legacy scalar séma egyáltalán nem őriz eredet-frakciót, ezért aktív vagy korábbi
+tagságból sem találunk ki hozzá valutát. Minden ilyen adat explicit adminmigrációt
+igénylő karanténban marad: nem veszhet el, de a játékos következő frakciójához
+sem kötődik automatikusan.
+
+A fizetős frakcióváltás és az adóbeszedés külön write-ahead journalban rögzíti
+a wallet és a domain előtte/utána állapotát. A live tagság csak a tartós
+assignment+history snapshot sikeres mentése után változik; treasury/debt hiba
+esetén a wallet tartós kompenzációt kap, rollbackhiba pedig fail-closed recovery
+állapotot hagy.
+
+A passzívok teljes immunitások helyett kontextusos, konfigurálható policyt
+használnak:
+
+- RED erős környezeti hővédelmet tart meg, de a FIRE/FIRE_TICK/HOT_FLOOR sebzés
+  negyedét, a LAVA sebzés felét, az entitás okozta tűz háromnegyedét kapja; az
+  IceSMP `TUZ` varázslat alapból teljes sebzést okoz;
+- BLUE továbbra sem kap fagyássebzést, fele fulladássebzést kap, és csak a
+  felsorolt természetes exhaustion események negyedét kerüli el — Hunger,
+  scripted éhség és food-duty nem tűnik el;
+- az explicit NEUTRAL polgár fele zuhanássebzést kap, és csak a spontán
+  békés/semleges mob- vagy Enderman-szemkontaktus-aggrót szűri; provokáció és
+  scriptelt/event célzás működik;
+- DARK fele Wither-sebzést és felezett Wither-időt kap. Thanaopolis markerelt
+  ambient lakói békések, de támadás után 60 másodperces, játékos–mob páronkénti
+  megtorlás indul; a 16 blokkos riadó csak a ténylegesen riasztott példányokra
+  nyit külön lease-t. A vad undead előny csak éjjel, 50% eséllyel él. Vérhold
+  alatt az ambient és a vad DARK béke is alapból megszűnik.
+
+Boss-, dungeon-, rontás-, invázió-, event-, quest- és koronaátok-célzás
+megelőzi a truce-ot. A target adapter a szűrt célpontot ténylegesen `null`-ra
+állítja, nem hagyja bent egy cancel miatt. A signature-food buff fogyasztáskor
+az aktuális explicit tagságot ellenőrzi, a régi itemstackből pedig eltávolítja
+a korábban beégetett feltétel nélküli potion effectet. Az összetartozó merged
+config és override-lista egyetlen immutable generációként frissül.
+Az automatizált tesztek a policyt bizonyítják, nem a valódi szerveres AI- és
+szezonbalanszt; a stagingmátrix továbbra is nyitott.
 
 ### Egyszerűbb, globális AFK
 
@@ -211,6 +248,10 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
 5. **Mini-rendszerek:** Warden XP, játékos- és mob-crop-trample.
 6. **Világbejárás:** crate-ek, NPC-k, dungeonök, eventpontok, kompok,
    teleportok, questek, claim/territory és resource-pack item modellek.
+7. **Frakciótagság és passzívok:** vendég–NEUTRAL jogosultságok, a négy
+   sebzés/exhaustion policy, provokáció, Enderman, ambient/vad DARK undead,
+   Vérhold és harci kivételek, koronaátok, két eltérő frakció ugyanazon mobnál,
+   valamint reload–relog–restart–disable lifecycle.
 
 ## Élesítés rövid sorrendje
 
@@ -233,8 +274,9 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
 | SHA-256 | `da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05` |
 | Valószínű forrás | `775d9e247be675db1c7c9beaaecf4a90349bfcd3` — 2026-07-12 |
 | Mapping | `HIGH_CONFIDENCE`, nem `EXACT` |
-| Dokumentált release | `4643ab53586f0c1ee7352df16dcd477013e6fad4` |
-| Auditdátum | 2026-07-30 |
+| Dokumentált release | Az aktuális release-jelölt; a pontos commit- és JAR SHA az acceptance-bizonyíték része |
+| Baseline-mapping auditdátuma | 2026-07-30 |
+| Frakciótagság/passzív forrásaudit | 2026-08-01; automatizált policybizonyíték, staging még nyitott |
 
 A mappinget 33/33 egyező csomagolt statikus resource, az előállított
 `paper-plugin.yml`, három jellegzetes bytecode-marker és a július 14-i

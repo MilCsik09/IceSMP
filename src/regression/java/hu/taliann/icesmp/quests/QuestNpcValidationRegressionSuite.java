@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Regression coverage for quest-NPC provenance, exact-name validation and manual provisioning. */
+/** Regression coverage for exact quest-NPC validation and manual provisioning. */
 public final class QuestNpcValidationRegressionSuite {
 
     private static final Set<String> EXPECTED_REQUIRED_NPCS = Set.of(
@@ -24,8 +24,8 @@ public final class QuestNpcValidationRegressionSuite {
     public static void main(final String[] args) throws Exception {
         packagedQuestsReferenceTheExpectedNpcContract();
         deploymentSnapshotKeepsMissingPlacementExplicit();
-        validationReportsExactConfigProvenanceAndCaseMismatch();
-        adminCommandExposesTheValidationWithoutInventingCoordinates();
+        bridgeReportsExactNamesCaseMismatchAndConfigProvenance();
+        adminCommandDoesNotInventCoordinates();
         System.out.println("Quest NPC validation regression suite passed.");
     }
 
@@ -49,18 +49,12 @@ public final class QuestNpcValidationRegressionSuite {
         for (final String name : actualNames) {
             normalizedNames.add(name.toLowerCase(Locale.ROOT));
         }
-
         final Set<String> placedRequired = new LinkedHashSet<>(EXPECTED_REQUIRED_NPCS);
         placedRequired.retainAll(normalizedNames);
         check(placedRequired.isEmpty(),
                 "deployment snapshot changed; update the manual provisioning evidence: " + placedRequired);
     }
 
-    /**
-     * Reads only simple scalar keys from the deployment YAML source. This intentionally avoids
-     * Bukkit's object deserializer: quests.yml contains serialized ItemStacks whose test-only
-     * deserialization requires a live Bukkit server and otherwise emits misleading SEVERE logs.
-     */
     private static Set<String> collectYamlScalars(final Path path, final Set<String> keys,
                                                    final int requiredIndent) throws Exception {
         final List<String> lines = Files.readAllLines(path);
@@ -108,32 +102,27 @@ public final class QuestNpcValidationRegressionSuite {
         return value;
     }
 
-    private static void validationReportsExactConfigProvenanceAndCaseMismatch() throws Exception {
-        final String manager = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/managers/QuestManager.java"));
+    private static void bridgeReportsExactNamesCaseMismatchAndConfigProvenance() throws Exception {
         final String bridge = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"));
-        check(manager.contains("record QuestNpcReference")
-                        && manager.contains("getQuestNpcReferences()")
-                        && manager.contains("getCurrentPath()")
-                        && manager.contains(".giver-npc")
-                        && manager.contains(".npc"),
-                "quest NPC references no longer include exact quest/config provenance");
         check(bridge.contains("getAllNpcs")
                         && bridge.contains("caseInsensitiveMatch")
                         && bridge.contains("expectedName")
-                        && bridge.contains("formatReferences"),
-                "FancyNpcs validation lost exact-name or case-mismatch diagnostics");
+                        && bridge.contains("referencesFor")
+                        && bridge.contains("getValues(true)")
+                        && bridge.contains("giver-npc")
+                        && bridge.contains("path.endsWith(\".npc\")"),
+                "FancyNpcs validation lost exact-name, case-mismatch or config provenance diagnostics");
+        check(bridge.contains("validateNpcs(final Set<String> questNpcNames)"),
+                "startup validation is no longer compatible with the current QuestManager API");
     }
 
-    private static void adminCommandExposesTheValidationWithoutInventingCoordinates() throws Exception {
-        final String command = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java"));
+    private static void adminCommandDoesNotInventCoordinates() throws Exception {
         final String bridge = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"));
-        check(command.contains("case \"validatenpcs\"")
-                        && command.contains("/quest admin validatenpcs")
-                        && command.contains("getQuestNpcReferences()"),
+        check(bridge.contains("\"questnpcs\"")
+                        && bridge.contains("List.of(\"validatenpcs\")")
+                        && bridge.contains("/questnpcs"),
                 "admin NPC validation command is no longer wired");
         check(bridge.contains("A koordináta és világ nem következtethető biztonságosan")
                         && !bridge.contains("new Location("),

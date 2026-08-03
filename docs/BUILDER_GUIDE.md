@@ -459,12 +459,15 @@ Az érkezőpontnál:
 - legyen két blokk fejhely;
 - ne legyen folyadék, tűz, void, keskeny perem vagy zárt ajtó;
 - a nézési irány mutasson a kívánt tájékozódási pontra;
-- ellenőrizd első belépővel, frakcióváltással és ágy/anchor nélküli
+- ellenőrizd explicit frakcióválasztással, frakcióváltással és ágy/anchor nélküli
   halál utáni respawnnal.
 
-Új játékos a config szerint a semleges frakcióspawnra kerülhet. A külön
-`world-events.intro.first-join-spawn` teleport ezt követően másik introhelyre
-viheti; a két rendszert együtt kell tesztelni.
+Az assignment nélküli új játékos Menedék-vendég, nem `NEUTRAL` polgár. A
+`factions.spawn.first-join-at-neutral` ennek ellenére fizikailag a semleges
+frakcióspawnra teheti mint biztonságos fogadóhelyre; ez nem hoz létre
+assignmentet vagy frakcióelőnyt. A `world-events.intro.first-join-spawn`
+ezután külön introhelyre viheti. Együtt teszteld a két érkezési lépést, majd
+külön az explicit `/faction join neutral` utáni valódi NEUTRAL spawnteleportot.
 
 ### 6.4. Claimek és közös infrastruktúra
 
@@ -502,7 +505,7 @@ Teszteld:
 - betöltött és betöltetlen célchunkkal;
 - helyes yaw/pitch értékkel;
 - hibás világnévvel és hibás formátummal;
-- a semleges frakcióspawnnal együtt;
+- assignment nélküli vendégként, majd külön explicit `NEUTRAL` választással;
 - opcionális kameraút engedélyezése esetén megszakított reconnecttel.
 
 ### 7.2. Komp
@@ -550,7 +553,10 @@ vagy harci korlátozást.
 Szükséges permission: `icesmp.admin.parkour`.
 
 Egy pályánál teszteld a startot, célsugarat, cél megközelítését több
-irányból, kizuhanást, teleportot, újraindítást és a jutalomkiosztást.
+irányból, kizuhanást, teleportot, újraindítást és a jutalomkiosztást. A
+zuhanásos akadályt külön járd végig assignment nélküli vendéggel és explicit
+`NEUTRAL` polgárral: csak az utóbbi kapja az alap `0.50` zuhanásszorzót, de ő
+sem zuhanásimmunis.
 Ha quest `PARKOUR_TRIAL` objektíva hivatkozik rá, a pálya ID-jének pontosan
 egyeznie kell.
 
@@ -605,21 +611,6 @@ Aktív kötések:
 ```
 
 Szükséges permission: `icesmp.admin.npc`.
-
-
-A jelenlegi repository-exportban a 18 kötelező quest-NPC még nincs fizikailag
-provisionálva. Ne másold át találomra a teszt-NPC-k koordinátáit, és ne készíts
-azonos nevű NPC-t más világban csak azért, hogy a startup warning eltűnjön.
-A builderátadás előtt és után futtasd a pontos ellenőrzést:
-
-```text
-/quest admin validatenpcs
-```
-
-A kimenet az érintett `quests.<id>...` configútvonalat is megadja. Akkor kész
-egy NPC, ha a validátor zöld, a helyszín megközelíthető, a megfelelő questet
-adja/haladja, és az esetleges `/npcbind` nem nyomja el véletlenül a legacy
-`giver-npc` viselkedést.
 
 Az NPC-hely legyen:
 

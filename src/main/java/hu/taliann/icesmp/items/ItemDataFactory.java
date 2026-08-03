@@ -23,10 +23,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * P7 — data-component réteg (1.20.5+). Deklaratív item-viselkedés a listener-kód helyett:
@@ -163,27 +161,15 @@ public final class ItemDataFactory {
         seedDefaultAttributeModifiers(item.getType(), meta);
     }
 
-    /**
-     * Ugyanaz Material-ból, ha a hívónak nincs kéznél ItemStack-je (pl. csak metát épít).
-     * A defaultokat kulcsonként egyesíti: egy idegen custom modifier nem akadályozhatja meg a
-     * vanilla alapstat visszaállítását, de egy már jelen lévő defaultot sem duplikálhatunk.
-     */
+    /** Ugyanaz Material-ból, ha a hívónak nincs kéznél ItemStack-je (pl. csak metát épít). */
     public static void seedDefaultAttributeModifiers(final Material material, final ItemMeta meta) {
-        if (material == null || meta == null) {
+        if (material == null || meta == null || meta.hasAttributeModifiers()) {
             return;
         }
         final com.google.common.collect.Multimap<Attribute, AttributeModifier> defaults =
                 material.getDefaultAttributeModifiers();
-        if (defaults == null || defaults.isEmpty()) {
-            return;
-        }
-        for (final Map.Entry<Attribute, AttributeModifier> entry : defaults.entries()) {
-            final Collection<AttributeModifier> current = meta.getAttributeModifiers(entry.getKey());
-            final boolean alreadyPresent = current != null && current.stream()
-                    .anyMatch(modifier -> modifier.getKey().equals(entry.getValue().getKey()));
-            if (!alreadyPresent) {
-                meta.addAttributeModifier(entry.getKey(), entry.getValue());
-            }
+        if (defaults != null && !defaults.isEmpty()) {
+            meta.setAttributeModifiers(com.google.common.collect.HashMultimap.create(defaults));
         }
     }
 
@@ -413,67 +399,43 @@ public final class ItemDataFactory {
     }
 
     /**
-     * A K6 signature-ételek buff-migrációja: a fix-effektű ételek (Pisztráng, Rántotta,
-     * Pörkölt, Vadlakoma, Lepény, Hamulakoma, Hamukenyér) buffja a CONSUMABLE-be kerül
-     * (craft-időben olvasott config-időtartammal), és jelölőt kap ({@link #FOOD_V2_KEY}),
-     * hogy a FactionFoodListener a saját legacy-buffját kihagyja rájuk. A Süti NEM migrál
-     * (felfelé lökés + partikel — nem potion-effekt), az a listenerben marad.
-     *
-     * @return true, ha az étel migrálható signature (a hívó ekkor tudja, hogy komponens került rá)
+     * Removes the legacy, item-embedded potion payload from a previously generated FOOD_V2
+     * signature stack while retaining its consume animation, sound and duration. The caller must
+     * pass the returned clone to PlayerItemConsumeEvent#setItem; mutating getItem() alone has no
+     * effect in Paper.
      */
-    public static boolean applySignatureFoodConsumable(final ItemStack item, final String signature,
-                                                       final ConfigManager config) {
-        final List<PotionEffect> effects = signatureFoodEffects(signature, config);
-        if (effects.isEmpty()) {
+    public static ItemStack withoutEmbeddedSignatureFoodEffects(final ItemStack item) {
+        if (item == null || !item.hasItemMeta()
+                || !item.getItemMeta().getPersistentDataContainer().has(
+                FOOD_V2_KEY, PersistentDataType.BYTE)) {
+            return item;
+        }
+        final Consumable consumable = item.getData(DataComponentTypes.CONSUMABLE);
+        if (consumable == null || consumable.consumeEffects().isEmpty()) {
+            return item;
+        }
+        final ItemStack sanitized = item.clone();
+        sanitized.setData(DataComponentTypes.CONSUMABLE,
+                consumable.toBuilder().effects(List.of()).build());
+        return sanitized;
+    }
+
+    /**
+     * Marks a known signature food as a native consumable without embedding its faction buff.
+     * The live membership gate in FactionFoodListener owns every gameplay effect.
+     */
+    public static boolean applySignatureFoodConsumable(final ItemStack item,
+                                                       final String signature) {
+        if (hu.taliann.icesmp.factions.FactionFoodPolicy.requiredFaction(signature) == null) {
             return false;
         }
-        // Jelölő a metán ELŐSZÖR (setItemMeta), a komponens UTOLSÓnak (setData) — különben a
-        // setItemMeta törölné a CONSUMABLE-t.
         final ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.getPersistentDataContainer().set(FOOD_V2_KEY, PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);
         }
-        applyConsumable(item, ItemUseAnimation.EAT, EAT_SOUND, 1.6F, true, effects);
+        applyConsumable(item, ItemUseAnimation.EAT, EAT_SOUND, 1.6F, true, List.of());
         return true;
     }
 
-    private static List<PotionEffect> signatureFoodEffects(final String sig, final ConfigManager config) {
-        final List<PotionEffect> effects = new ArrayList<>();
-        if (sig == null) {
-            return effects;
-        }
-        switch (sig) {
-            case FactionFoodListener.PISZTRANG -> add(effects, PotionEffectType.ABSORPTION,
-                    config.getInt("factions.food-duty.pisztrang-buff-seconds", 60), 0);
-            case FactionFoodListener.RANTOTTA -> add(effects, PotionEffectType.FIRE_RESISTANCE,
-                    config.getInt("factions.food-duty.rantotta-buff-seconds", 60), 0);
-            case FactionFoodListener.PORKOLT -> add(effects, PotionEffectType.STRENGTH,
-                    config.getInt("factions.food-duty.porkolt-buff-seconds", 45), 0);
-            case FactionFoodListener.VADLAKOMA -> {
-                final int seconds = config.getInt("factions.food-duty.vadlakoma-buff-seconds", 45);
-                add(effects, PotionEffectType.SPEED, seconds, 0);
-                add(effects, PotionEffectType.FIRE_RESISTANCE, seconds, 0);
-            }
-            case FactionFoodListener.LEPENY -> {
-                final int seconds = config.getInt("factions.food-duty.lepeny-buff-seconds", 60);
-                add(effects, PotionEffectType.LUCK, seconds, 0);
-                add(effects, PotionEffectType.SPEED, seconds, 0);
-            }
-            case FactionFoodListener.HAMULAKOMA -> {
-                final int seconds = config.getInt("factions.food-duty.hamulakoma-buff-seconds", 60);
-                add(effects, PotionEffectType.ABSORPTION, seconds, 0);
-                add(effects, PotionEffectType.NIGHT_VISION, seconds, 0);
-            }
-            case FactionFoodListener.HAMUKENYER -> add(effects, PotionEffectType.NIGHT_VISION,
-                    config.getInt("factions.food-duty.hamukenyer-buff-seconds", 60), 0);
-            default -> { }
-        }
-        return effects;
-    }
-
-    private static void add(final List<PotionEffect> effects, final PotionEffectType type,
-                            final int seconds, final int amplifier) {
-        effects.add(new PotionEffect(type, Math.max(1, seconds) * 20, amplifier, true, true, true));
-    }
 }

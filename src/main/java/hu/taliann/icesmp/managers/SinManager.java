@@ -73,7 +73,7 @@ public final class SinManager {
 
         final int exileThreshold = Math.max(0, configManager.getInt("factions.sins.exile-threshold", 4));
         if (exileThreshold > 0 && newCount >= exileThreshold
-                && factionManager.getFaction(player.getUniqueId()) != FactionType.DARK) {
+                && !factionManager.isMember(player.getUniqueId(), FactionType.DARK)) {
             exileToDark(player);
         }
 
@@ -147,6 +147,13 @@ public final class SinManager {
     public boolean hasDarkPact(final Player player) {
         return player != null
                 && player.getPersistentDataContainer().getOrDefault(darkPactKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /** Admin membership override cleanup; unlike redemption, it grants no effects/advancement. */
+    public void clearDarkPactForFactionOverride(final Player player) {
+        if (player != null) {
+            player.getPersistentDataContainer().remove(darkPactKey);
+        }
     }
 
     /**

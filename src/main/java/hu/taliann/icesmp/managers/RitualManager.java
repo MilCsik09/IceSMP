@@ -144,8 +144,8 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         }
         final String requiredFaction = ritual.getString("requires-faction", "");
         if (!requiredFaction.isBlank()) {
-            final FactionType faction = factionManager.getFaction(player.getUniqueId());
-            if (faction == null || !faction.name().equalsIgnoreCase(requiredFaction.trim())) {
+            final FactionType faction = FactionType.fromInput(requiredFaction.trim());
+            if (faction == null || !factionManager.isMember(player.getUniqueId(), faction)) {
                 player.sendMessage(messageManager.getMessage(
                         "ritual-wrong-faction",
                         "<red>Ez az oltár nem a te frakciódhoz szól.</red>"
@@ -362,7 +362,7 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
      */
     private void performHomeRitual(final Player player, final String ritualId,
                                    final Map<Material, Integer> sacrifices, final long cooldownSeconds) {
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         final Territory capital = faction == null ? null : territoryManager.getCapital(faction);
         final World world = capital == null ? null : Bukkit.getWorld(capital.world());
         if (capital == null || world == null) {

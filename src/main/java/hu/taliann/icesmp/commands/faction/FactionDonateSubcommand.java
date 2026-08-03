@@ -70,7 +70,12 @@ public final class FactionDonateSubcommand implements FactionSubcommand {
             return true;
         }
 
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        if (faction == null) {
+            sender.sendMessage(messageManager.get("messages.faction-choose-first",
+                    "&cFrakciókasszához előbb válassz frakciót: &f/faction join <frakció>&c."));
+            return true;
+        }
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
         if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, amount)) {
             sender.sendMessage(messageManager.get("messages.currency-insufficient-balance", "&cNincs elég pénzed a művelethez."));

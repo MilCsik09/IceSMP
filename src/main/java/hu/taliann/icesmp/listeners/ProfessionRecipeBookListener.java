@@ -131,7 +131,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         }
         // Signature (frakció-kötött) receptek: csak a megfelelő frakció mesterei készíthetik.
         // ConcurrentHashMap-olvasás — szál-biztos a játékos régió-szálán.
-        if (recipe.faction() != null && factionManager.getFaction(player.getUniqueId()) != recipe.faction()) {
+        if (recipe.faction() != null && !factionManager.isMember(player.getUniqueId(), recipe.faction())) {
             player.sendMessage(messageManager.get("profession-recipe-faction",
                     "&cEzt a receptet csak a(z) &f%s&c frakció mesterei készíthetik.",
                     recipe.faction().getDisplayName() + " (" + recipe.faction().getFullName() + ")"));
@@ -402,11 +402,11 @@ public final class ProfessionRecipeBookListener implements Listener {
                         hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rolledRarity));
             }
         }
-        // P7 data-komponensek UTOLSÓnak (minden setItemMeta után) — a signature-ételek
-        // fix-effektű buffja a CONSUMABLE-be kerül (a FactionFoodListener a food_v2 jelölő
-        // alapján hagyja ki rájuk a legacy-buffot).
+        // P7 data-komponensek UTOLSÓnak (minden setItemMeta után). A signature-étel
+        // CONSUMABLE komponense csak a fogyasztási UX-et hordozza; a buffot a
+        // FactionFoodListener az élő tagság alapján adja.
         if (recipe.signature() != null) {
-            hu.taliann.icesmp.items.ItemDataFactory.applySignatureFoodConsumable(result, recipe.signature(), configManager);
+            hu.taliann.icesmp.items.ItemDataFactory.applySignatureFoodConsumable(result, recipe.signature());
         }
         // Recept-vezérelt fogyaszthatóság (új ételek/italok): a result.consumable blokk él-configból.
         final org.bukkit.configuration.ConfigurationSection consumableSection = configManager.getConfiguration()

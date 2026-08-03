@@ -181,6 +181,22 @@ public final class TransactionJournal {
         }, Boolean.FALSE);
     }
 
+    /**
+     * Compensation is allowed after an unrelated critical store failed. It still respects an
+     * active market owner, but deliberately does not consult the global critical circuit because
+     * the purpose of this call is to restore an already committed wallet mutation.
+     */
+    public static boolean runCompensatingCurrencyMutation(final Runnable action) {
+        synchronized (CURRENCY_GATE) {
+            if ((activeTransaction != null || !recoveryMoneyEntries.isEmpty())
+                    && activeOwner != Thread.currentThread()) {
+                return false;
+            }
+            action.run();
+            return true;
+        }
+    }
+
     /** True only on the thread currently repairing durable financial journal entries. */
     public static boolean isRecoveryOwnerThread() {
         synchronized (CURRENCY_GATE) {

@@ -653,6 +653,9 @@ public final class WorldBossManager {
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
                     final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
                     EventSpawnGuard.prepare(add); // daytime SUMMON adds must not burn away instantly
+                    add.getPersistentDataContainer().set(
+                            hu.taliann.icesmp.factions.FactionCombatMarkers.EVENT_MOB,
+                            PersistentDataType.BYTE, (byte) 1);
                     add.setGlowing(true);
                     add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, (int) addLifespanTicks, 0, false, false, false));
                     // Bounded lifespan so summoned adds never accumulate / outlive the fight (on the add's own scheduler).
@@ -744,13 +747,17 @@ public final class WorldBossManager {
             }
         }
 
-        final FactionType faction = factionManager.getFaction(killer.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(
+                killer.getUniqueId()).orElse(null);
         final double reward = Math.max(0.0D, configManager.getDouble("world-events.world-boss.treasury-reward", 300.0D)) * rewardMult;
-        if (reward > 0.0D) {
+        if (faction != null && reward > 0.0D) {
             treasuryManager.deposit(faction, reward);
         }
 
-        seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
+        if (faction != null) {
+            seasonManager.addPoints(faction, Math.max(0,
+                    configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
+        }
         AdvancementService.award(killer, "world_boss");
 
         // Szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
@@ -761,12 +768,19 @@ public final class WorldBossManager {
                     : LootTable.roll(configManager, "world-events.season-finale.boss.loot", rolls)) {
                 boss.getWorld().dropItemNaturally(boss.getLocation(), loot);
             }
-            seasonManager.addPoints(faction, Math.max(0,
-                    configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)), "world-boss");
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "season-finale-boss-slain",
-                    "<dark_purple>📖 {player} ledöntötte a Lapforduló Őrét — a Korszakok Könyve új fejezetet nyit! A(z) {faction} extra liga-pontot nyert a záráshoz.</dark_purple>",
-                    Map.of("player", killer.getName(), "faction", faction.getDisplayName())));
+            if (faction != null) {
+                seasonManager.addPoints(faction, Math.max(0,
+                        configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)), "world-boss");
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        "season-finale-boss-slain",
+                        "<dark_purple>📖 {player} ledöntötte a Lapforduló Őrét — a Korszakok Könyve új fejezetet nyit! A(z) {faction} extra liga-pontot nyert a záráshoz.</dark_purple>",
+                        Map.of("player", killer.getName(), "faction", faction.getDisplayName())));
+            } else {
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        "season-finale-boss-slain-guest",
+                        "<dark_purple>📖 {player}, a Menedék vendége ledöntötte a Lapforduló Őrét — személyes jutalma jár, de frakciópont nem.</dark_purple>",
+                        Map.of("player", killer.getName())));
+            }
         }
 
         final int buffMinutes = Math.max(1, configManager.getInt("world-events.world-boss.buff-minutes", 10));
@@ -787,15 +801,22 @@ public final class WorldBossManager {
             }
         }, null);
 
-        Bukkit.getServer().broadcast(messageManager.getMessage(
-                "world-boss-slain",
-                "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>",
-                Map.of(
-                        "player", killer.getName(),
-                        "faction", faction.getDisplayName(),
-                        "reward", String.valueOf(reward),
-                        "points", String.valueOf(configManager.getInt("world-events.world-boss.season-points", 10))
-                )
-        ));
+        if (faction == null) {
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "world-boss-slain-guest",
+                    "<gold>⚔ {player}, a Menedék vendége legyőzte a világbosst! Személyes jutalma jár, de frakciókassza- és liga-jóváírás nem.</gold>",
+                    Map.of("player", killer.getName())));
+        } else {
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "world-boss-slain",
+                    "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>",
+                    Map.of(
+                            "player", killer.getName(),
+                            "faction", faction.getDisplayName(),
+                            "reward", String.valueOf(reward),
+                            "points", String.valueOf(configManager.getInt("world-events.world-boss.season-points", 10))
+                    )
+            ));
+        }
     }
 }

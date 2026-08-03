@@ -21,7 +21,7 @@ public final class RelicRefreshRegressionSuite {
         repeatedReplacementLeavesExactlyOneManagedModifier();
         duplicateLegacyEntriesAreAllSelectedForRemoval();
         foreignModifierSurvivesReplacement();
-        defaultAttributeSeedingMergesByStableKey();
+        defaultAttributeSeedingIsRelicLocalAndMergesByStableKey();
         factoryRemovesManagedEntriesBeforeSeedingAndAdding();
         System.out.println("Relic refresh regression suite passed.");
     }
@@ -74,19 +74,22 @@ public final class RelicRefreshRegressionSuite {
                 "refresh did not preserve exactly one foreign and one managed modifier");
     }
 
-    private static void defaultAttributeSeedingMergesByStableKey() throws Exception {
-        final String source = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java"));
-        final int method = source.indexOf("public static void seedDefaultAttributeModifiers(final Material");
-        final int end = source.indexOf("public static boolean applyAttributeModifiers", method);
-        check(method >= 0 && end > method, "default attribute seeding method is missing");
-        final String body = source.substring(method, end);
+    private static void defaultAttributeSeedingIsRelicLocalAndMergesByStableKey() throws Exception {
+        final String relicSource = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java"));
+        final int method = relicSource.indexOf("static void seedDefaultAttributeModifiers(");
+        final int end = relicSource.indexOf("private static void removeManagedAttributeModifiers", method);
+        check(method >= 0 && end > method, "relic-local default attribute seeding method is missing");
+        final String body = relicSource.substring(method, end);
         check(body.contains("defaults.entries()")
                         && body.contains("modifier.getKey().equals(entry.getValue().getKey())")
                         && body.contains("meta.addAttributeModifier(entry.getKey(), entry.getValue())"),
-                "default attributes are no longer merged idempotently by stable key");
-        check(!body.contains("meta.hasAttributeModifiers()"),
-                "one foreign modifier must not suppress every vanilla default attribute");
+                "relic default attributes are no longer merged idempotently by stable key");
+
+        final String sharedSource = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java"));
+        check(sharedSource.contains("meta.hasAttributeModifiers()"),
+                "Mélytépő hardening must not silently change the global rarity/affix seed contract");
     }
 
     private static void factoryRemovesManagedEntriesBeforeSeedingAndAdding() throws Exception {
@@ -97,7 +100,7 @@ public final class RelicRefreshRegressionSuite {
                 "removeManagedAttributeModifiers(meta, Attribute.ATTACK_DAMAGE", method);
         final int removeSpeed = source.indexOf(
                 "removeManagedAttributeModifiers(meta, Attribute.ATTACK_SPEED", method);
-        final int seed = source.indexOf("seedDefaultAttributeModifiers", method);
+        final int seed = source.indexOf("seedDefaultAttributeModifiers(", removeSpeed);
         final int addDamage = source.indexOf("metelytepoDamageModifier(damageBonus)", method);
         check(method >= 0 && removeDamage > method && removeSpeed > method
                         && seed > removeDamage && seed > removeSpeed && addDamage > seed,

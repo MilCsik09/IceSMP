@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,7 +65,7 @@ public final class RelicItemFactory {
         pdc.set(relicCreatedAtKey, PersistentDataType.LONG, System.currentTimeMillis());
 
         itemStack.setItemMeta(meta);
-        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
+        ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
         return itemStack;
     }
 
@@ -72,7 +73,6 @@ public final class RelicItemFactory {
         if (itemStack == null || itemStack.getType().isAir() || !itemStack.hasItemMeta()) {
             return false;
         }
-
         final ItemMeta meta = itemStack.getItemMeta();
         return meta.getPersistentDataContainer().has(relicTypeKey, PersistentDataType.STRING);
     }
@@ -81,7 +81,6 @@ public final class RelicItemFactory {
         if (itemStack == null || itemStack.getType().isAir() || !itemStack.hasItemMeta()) {
             return null;
         }
-
         return itemStack.getItemMeta().getPersistentDataContainer().get(relicTypeKey, PersistentDataType.STRING);
     }
 
@@ -89,12 +88,11 @@ public final class RelicItemFactory {
         if (itemStack == null || itemStack.getType().isAir() || !itemStack.hasItemMeta()) {
             return null;
         }
-
-        final String rawOwner = itemStack.getItemMeta().getPersistentDataContainer().get(relicOwnerKey, PersistentDataType.STRING);
+        final String rawOwner = itemStack.getItemMeta().getPersistentDataContainer()
+                .get(relicOwnerKey, PersistentDataType.STRING);
         if (rawOwner == null || rawOwner.isBlank()) {
             return null;
         }
-
         try {
             return UUID.fromString(rawOwner);
         } catch (final IllegalArgumentException exception) {
@@ -102,25 +100,16 @@ public final class RelicItemFactory {
         }
     }
 
-    /**
-     * Rewrites the owner tag on a relic item (PvP ownership transfer).
-     *
-     * @param itemStack the relic item
-     * @param owner the new owner UUID
-     */
     public void setOwner(final ItemStack itemStack, final UUID owner) {
         if (itemStack == null || !itemStack.hasItemMeta() || owner == null) {
             return;
         }
-
         final ItemMeta meta = itemStack.getItemMeta();
         meta.getPersistentDataContainer().set(relicOwnerKey, PersistentDataType.STRING, owner.toString());
         itemStack.setItemMeta(meta);
-        // A setItemMeta a data-komponenseket eldobja — az ITEM_MODEL-t utolsóként vissza kell
-        // tenni, különben a PvP-n gazdát cserélt relikvia a vanília kinézetre esik vissza.
         final String relicType = getRelicType(itemStack);
         if (relicType != null) {
-            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + relicType);
+            ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + relicType);
         }
     }
 
@@ -128,21 +117,22 @@ public final class RelicItemFactory {
         if (itemStack == null || definition == null || !itemStack.hasItemMeta()) {
             return;
         }
-
         final ItemMeta meta = itemStack.getItemMeta();
         applyVisuals(meta, definition);
         itemStack.setItemMeta(meta);
-        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
+        ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
     }
 
     private void applyVisuals(final ItemMeta meta, final RelicDefinition definition) {
-        final Component displayName = serializer.deserialize(TextUtil.color(definition.displayColor() + definition.displayName()))
+        final Component displayName = serializer
+                .deserialize(TextUtil.color(definition.displayColor() + definition.displayName()))
                 .decoration(TextDecoration.ITALIC, false);
         meta.displayName(displayName);
 
         final List<String> loreLines = definition.lore() == null ? List.of() : definition.lore();
         final List<Component> lore = loreLines.stream()
-                .<Component>map(line -> serializer.deserialize(TextUtil.color(line)).decoration(TextDecoration.ITALIC, false))
+                .<Component>map(line -> serializer.deserialize(TextUtil.color(line))
+                        .decoration(TextDecoration.ITALIC, false))
                 .toList();
         meta.lore(lore.isEmpty() ? null : lore);
 
@@ -161,37 +151,25 @@ public final class RelicItemFactory {
             meta.setTool(tool);
         }
 
-        // A frissítés ugyanazon ItemMeta példányon is ismételhető: az IceSMP saját, stabil
-        // kulcsú módosítóit teljesen lecseréljük, a vanilla és más plugin módosítóit érintetlenül
-        // hagyjuk. A két kulcs eltávolítása a defaultok seedelése előtt történik, hogy egy régi,
-        // csak IceSMP-modifieres tárgy visszakaphassa a vanilla alap-attribútumait is.
         removeManagedAttributeModifiers(meta, Attribute.ATTACK_DAMAGE, METELYTEPO_DAMAGE_KEY);
         removeManagedAttributeModifiers(meta, Attribute.ATTACK_SPEED, METELYTEPO_SPEED_KEY);
-
-        // A lenti bónuszok a vanília alapra ÉPÜLNEK RÁ (arany balta 7 + 5 = 12 összsebzés), ezért az
-        // alap-módosítókat át kell menteni: az első explicit módosító különben felülírná a tárgy
-        // teljes attribute_modifiers komponensét, és csak a bónusz maradna.
-        hu.taliann.icesmp.items.ItemDataFactory.seedDefaultAttributeModifiers(definition.material(), meta);
+        seedDefaultAttributeModifiers(definition.material().getDefaultAttributeModifiers(), meta);
 
         final double defaultDamage = switch (definition.material()) {
             case NETHERITE_AXE -> 10.0D;
             case GOLDEN_AXE -> 7.0D;
             default -> 0.0D;
         };
-
-        final double targetDamage = 12.0D;
-        final double damageBonus = Math.max(0.0D, targetDamage - defaultDamage);
+        final double damageBonus = Math.max(0.0D, 12.0D - defaultDamage);
         meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, metelytepoDamageModifier(damageBonus));
 
         final double defaultSpeed = switch (definition.material()) {
             case NETHERITE_AXE, GOLDEN_AXE -> 1.0D;
             default -> 4.0D;
         };
-        final double targetSpeed = 1.0D;
-        final double speedDelta = targetSpeed - defaultSpeed;
-        meta.addAttributeModifier(Attribute.ATTACK_SPEED, metelytepoSpeedModifier(speedDelta));
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED,
+                metelytepoSpeedModifier(1.0D - defaultSpeed));
     }
-
 
     static AttributeModifier metelytepoDamageModifier(final double amount) {
         return new AttributeModifier(
@@ -221,6 +199,22 @@ public final class RelicItemFactory {
                 .toList();
     }
 
+    static void seedDefaultAttributeModifiers(
+            final com.google.common.collect.Multimap<Attribute, AttributeModifier> defaults,
+            final ItemMeta meta) {
+        if (defaults == null || defaults.isEmpty() || meta == null) {
+            return;
+        }
+        for (final Map.Entry<Attribute, AttributeModifier> entry : defaults.entries()) {
+            final Collection<AttributeModifier> current = meta.getAttributeModifiers(entry.getKey());
+            final boolean alreadyPresent = current != null && current.stream()
+                    .anyMatch(modifier -> modifier.getKey().equals(entry.getValue().getKey()));
+            if (!alreadyPresent) {
+                meta.addAttributeModifier(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
     private static void removeManagedAttributeModifiers(final ItemMeta meta,
                                                         final Attribute attribute,
                                                         final NamespacedKey managedKey) {
@@ -239,7 +233,6 @@ public final class RelicItemFactory {
                 if (!ToolRule.class.isAssignableFrom(method.getReturnType())) {
                     continue;
                 }
-
                 final Class<?>[] params = method.getParameterTypes();
                 if (params.length != 3) {
                     continue;
@@ -253,19 +246,16 @@ public final class RelicItemFactory {
                 if (!(params[2] == boolean.class || params[2] == Boolean.class)) {
                     continue;
                 }
-
                 return (ToolRule) method.invoke(null, Tag.MINEABLE_PICKAXE, 10.0F, true);
             }
         } catch (final ReflectiveOperationException exception) {
             return null;
         }
-
         return null;
     }
 
     private void applyPickaxeToolRule(final ToolComponent tool) {
         try {
-            // Prefer direct API shape: addRule(Tag, speed, correctForDrops)
             for (final Method method : tool.getClass().getMethods()) {
                 if (!method.getName().equals("addRule")) {
                     continue;
@@ -284,8 +274,6 @@ public final class RelicItemFactory {
             if (rule == null) {
                 return;
             }
-
-            // Fallback single-rule mutator with ToolRule parameter.
             for (final Method method : tool.getClass().getMethods()) {
                 if (!method.getName().equals("addRule")) {
                     continue;
@@ -296,8 +284,6 @@ public final class RelicItemFactory {
                     return;
                 }
             }
-
-            // Fallback: bulk setter style APIs.
             for (final Method method : tool.getClass().getMethods()) {
                 if (!method.getName().equals("setRules")) {
                     continue;
@@ -309,9 +295,9 @@ public final class RelicItemFactory {
                 }
             }
         } catch (final ReflectiveOperationException exception) {
-            LOGGER.log(Level.WARNING, "Failed to apply pickaxe tool rule via reflection; Metelytepo mining speed may not work.", exception);
+            LOGGER.log(Level.WARNING,
+                    "Failed to apply pickaxe tool rule via reflection; Metelytepo mining speed may not work.",
+                    exception);
         }
     }
 }
-
-

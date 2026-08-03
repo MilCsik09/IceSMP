@@ -111,7 +111,9 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
 
     /** Suttogó-e (a konkurens cache-ből — BÁRMELY régió-szálról biztonságos). */
     public boolean isWhispererCached(final UUID playerId) {
-        return whispererCache.contains(playerId);
+        return whispererCache.contains(playerId)
+                && factionManager.isEligibleForFactionBenefits(playerId)
+                && !factionManager.isMember(playerId, FactionType.DARK);
     }
 
     /**
@@ -124,14 +126,16 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
      * a sajátjait), de kikapcsolható, ha túl erős szivárgásnak bizonyul.
      */
     public boolean canHearWhispersCached(final UUID playerId) {
-        return whispererCache.contains(playerId)
-                || darkHears() && factionManager.getFaction(playerId) == FactionType.DARK;
+        return isWhispererCached(playerId)
+                || darkHears() && factionManager.isMember(playerId, FactionType.DARK);
     }
 
     /** Ugyanaz, de a PDC az igazság forrása — a játékos SAJÁT szálán hívandó. */
     public boolean canHearWhispers(final Player player) {
-        return isWhisperer(player)
-                || darkHears() && factionManager.getFaction(player.getUniqueId()) == FactionType.DARK;
+        return (isWhisperer(player)
+                && factionManager.isEligibleForFactionBenefits(player.getUniqueId())
+                && !factionManager.isMember(player.getUniqueId(), FactionType.DARK))
+                || darkHears() && factionManager.isMember(player.getUniqueId(), FactionType.DARK);
     }
 
     private boolean darkHears() {
@@ -152,8 +156,23 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
 
     /** Join-kor hívandó (a játékos SAJÁT szálán — a WhisperListener köti be): cache-frissítés. */
     public void handleJoin(final Player player) {
+        reconcileMembership(player);
+    }
+
+    /** Removes a hidden status that is invalid for guests or explicit DARK citizens. */
+    public void reconcileMembership(final Player player) {
+        final UUID playerId = player.getUniqueId();
+        if (!factionManager.isEligibleForFactionBenefits(playerId)
+                || factionManager.isMember(playerId, FactionType.DARK)) {
+            player.getPersistentDataContainer().remove(whispererKey);
+            player.getPersistentDataContainer().remove(suspicionKey);
+            whispererCache.remove(playerId);
+            return;
+        }
         if (isWhisperer(player)) {
-            whispererCache.add(player.getUniqueId());
+            whispererCache.add(playerId);
+        } else {
+            whispererCache.remove(playerId);
         }
     }
 
@@ -300,7 +319,9 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
 
     /** A Suttogó látható frakciója nem DARK — a leleplezés után a státusz értelmét veszti. */
     public boolean canBecomeWhisperer(final Player player) {
-        return factionManager.getFaction(player.getUniqueId()) != FactionType.DARK && !isWhisperer(player);
+        return factionManager.isEligibleForFactionBenefits(player.getUniqueId())
+                && !factionManager.isMember(player.getUniqueId(), FactionType.DARK)
+                && !isWhisperer(player);
     }
 
     @Override

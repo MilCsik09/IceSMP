@@ -73,6 +73,20 @@ public final class ConfigValidator {
                 problems += checkCurrency(logger, key, config.getString(key));
             } else if (leaf.endsWith("percent")) {
                 problems += checkPercent(logger, key, config.get(key));
+            } else if (leaf.endsWith("-multiplier")) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "szorzó");
+            } else if ((key.startsWith("factions.passives.") || key.startsWith("factions.whisper."))
+                    && leaf.endsWith("-chance")) {
+                problems += checkUnitInterval(logger, key, config.get(key));
+            } else if (key.startsWith("factions.passives.") && leaf.endsWith("-radius")) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "sugár");
+            } else if ((key.startsWith("factions.tax.") || key.startsWith("factions.switch."))
+                    && (leaf.equals("cost") || leaf.endsWith("-amount")
+                    || leaf.endsWith("-cost") || leaf.endsWith("-arrears"))) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "érték");
+            } else if ((key.startsWith("factions.passives.")
+                    || key.startsWith("factions.whisper.")) && isDurationKey(leaf)) {
+                problems += checkNonNegativeInteger(logger, key, config.get(key));
             } else if (isDurationKey(leaf)) {
                 problems += checkNonNegative(logger, key, config.get(key));
             }
@@ -128,10 +142,11 @@ public final class ConfigValidator {
 
     private static int checkPercent(final Logger logger, final String key, final Object value) {
         if (!(value instanceof Number number)) {
-            return 0;
+            logger.warning("Config: a(z) '" + key + "' százalék csak szám lehet: " + value + ".");
+            return 1;
         }
         final double percent = number.doubleValue();
-        if (percent < 0.0D || percent > 100.0D) {
+        if (!Double.isFinite(percent) || percent < 0.0D || percent > 100.0D) {
             logger.warning("Config: a(z) '" + key + "' százalék-érték a 0–100 tartományon kívül esik: "
                     + percent + ".");
             return 1;
@@ -139,12 +154,62 @@ public final class ConfigValidator {
         return 0;
     }
 
+    private static int checkNonNegativeInteger(final Logger logger, final String key,
+                                               final Object value) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key
+                    + "' időtartam csak egész szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D || parsed > Long.MAX_VALUE
+                || parsed != Math.rint(parsed)) {
+            logger.warning("Config: a(z) '" + key
+                    + "' időtartam csak véges, nem negatív egész szám lehet: "
+                    + value + ".");
+            return 1;
+        }
+        return 0;
+    }
+
     private static int checkNonNegative(final Logger logger, final String key, final Object value) {
         if (!(value instanceof Number number)) {
-            return 0;
+            logger.warning("Config: a(z) '" + key + "' időtartam csak szám lehet: " + value + ".");
+            return 1;
         }
-        if (number.doubleValue() < 0.0D) {
-            logger.warning("Config: a(z) '" + key + "' időtartam nem lehet negatív: " + number + ".");
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D) {
+            logger.warning("Config: a(z) '" + key
+                    + "' időtartam csak véges, nem negatív szám lehet: " + value + ".");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int checkFiniteNonNegative(final Logger logger, final String key,
+                                              final Object value, final String kind) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key + "' " + kind + " csak szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D) {
+            logger.warning("Config: a(z) '" + key + "' " + kind
+                    + " csak véges, nem negatív szám lehet: " + value + ".");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int checkUnitInterval(final Logger logger, final String key, final Object value) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key + "' esély csak szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D || parsed > 1.0D) {
+            logger.warning("Config: a(z) '" + key + "' esély csak 0 és 1 közötti szám lehet: "
+                    + value + ".");
             return 1;
         }
         return 0;

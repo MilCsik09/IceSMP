@@ -88,41 +88,60 @@ final class FactionSwitchRules {
         return true;
     }
 
-    static boolean chargeSwitch(final Player player, final FactionType currentFaction,
-                                final FactionManager factionManager, final CurrencyManager currencyManager,
-                                final MessageManager messageManager) {
+    static boolean commitPaidSwitch(final Player player,
+                                    final FactionType currentFaction,
+                                    final FactionType targetFaction,
+                                    final FactionManager factionManager,
+                                    final CurrencyManager currencyManager,
+                                    final MessageManager messageManager) {
         final long remainingCooldownMillis = factionManager.getRemainingSwitchCooldownMillis(player);
         if (remainingCooldownMillis > 0) {
             final double remainingHours = remainingCooldownMillis / 3_600_000.0D;
             player.sendMessage(messageManager.get(
                     "messages.faction-switch-cooldown",
                     "&cFrakciót nemrég váltottál — még &f%.1f óra&c van hátra, mire újra válthatsz.",
-                    remainingHours
-            ));
+                    remainingHours));
             return false;
         }
 
-        final double cost = factionManager.getSwitchCost();
-        final CurrencyType currency = CurrencyType.fromFactionType(currentFaction);
-        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
-        if (cost > 0.0D && !currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
+        final double configuredCost = factionManager.getSwitchCost();
+        if (!Double.isFinite(configuredCost) || configuredCost < 0.0D) {
             player.sendMessage(messageManager.get(
-                    "messages.faction-switch-insufficient",
-                    "&cA frakcióváltás ára &f%s %s&c, de csak &f%s&c van a bankodban.",
-                    currencyManager.formatBalance(cost),
-                    currency.getDisplayName(),
-                    currencyManager.formatBalance(currencyManager.getBalance(player, currency))
-            ));
+                    "messages.faction-switch-config-invalid",
+                    "&cA frakcióváltás díja hibásan van konfigurálva; a váltás fail-closed leállt."));
             return false;
         }
+        final double cost = configuredCost;
+        final CurrencyType currency = CurrencyType.fromFactionType(currentFaction);
+        final boolean committed;
+        try {
+            committed = factionManager.switchFactionDurably(player.getUniqueId(),
+                    factionManager.getChosenFaction(player.getUniqueId()).orElse(null),
+                    targetFaction, currency, cost);
+        } catch (final RuntimeException | Error failure) {
+            player.sendMessage(messageManager.get(
+                    "messages.faction-switch-persistence-failed",
+                    "&cA frakcióváltás tartós tranzakciója nem zárult le. Ne próbáld újra; a recovery journal alapján adminellenőrzés szükséges."));
+            throw failure;
+        }
+        if (!committed) {
+            player.sendMessage(messageManager.get(
+                    "messages.faction-switch-insufficient",
+                    "&cA frakcióváltás ára &f%s %s&c, de csak &f%s&c van a bankodban, vagy a tagságod közben megváltozott.",
+                    currencyManager.formatBalance(cost),
+                    currency.getDisplayName(),
+                    currencyManager.formatBalance(currencyManager.getBalance(player, currency))));
+            return false;
+        }
+
         factionManager.recordSwitch(player);
         player.sendMessage(messageManager.get(
                 "messages.faction-switch-paid",
-                "&aFrakcióváltás díja levonva: &f%s %s &7(új egyenleg: &f%s&7).",
+                "&aFrakcióváltás tartósan véglegesítve. Díj: &f%s %s &7(új egyenleg: &f%s&7).",
                 currencyManager.formatBalance(cost),
                 currency.getDisplayName(),
-                currencyManager.formatBalance(currencyManager.getBalance(player, currency))
-        ));
+                currencyManager.formatBalance(currencyManager.getBalance(player, currency))));
         return true;
     }
+
 }

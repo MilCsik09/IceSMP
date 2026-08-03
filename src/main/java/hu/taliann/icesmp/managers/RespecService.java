@@ -56,7 +56,7 @@ public final class RespecService {
      */
     public Outcome respec(final Player player, final boolean classPool) {
         final double cost = specializationManager.getRespecCost();
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
 
         final boolean hasSpec = classPool

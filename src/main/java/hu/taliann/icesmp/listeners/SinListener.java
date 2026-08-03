@@ -84,8 +84,8 @@ public final class SinListener implements Listener {
         // here on the victim's own region thread. Killer-side mutations (PDC sin/stats,
         // messages) hop onto the killer's own region thread, because PlayerDeathEvent runs
         // on the VICTIM's region and the killer may be elsewhere.
-        final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
-        final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
+        final FactionType killerFaction = factionManager.getChosenFaction(killer.getUniqueId()).orElse(null);
+        final FactionType victimFaction = factionManager.getChosenFaction(victim.getUniqueId()).orElse(null);
         if (raidManager.isSanctionedKill(killer.getUniqueId(), victim.getUniqueId())) {
             final boolean scored = raidManager.recordKill(killerFaction, victim.getLocation());
             killer.getScheduler().run(plugin, task -> {
@@ -121,8 +121,19 @@ public final class SinListener implements Listener {
         final hu.taliann.icesmp.managers.WarWindowManager warRef = warWindowManager;
         if (warRef != null && warRef.isSanctionedWarKill(killerFaction, victimFaction)) {
             final java.util.UUID victimId = victim.getUniqueId();
-            killer.getScheduler().run(plugin, task ->
-                    warRef.handleWarKill(killer, victimId, killerFaction), null);
+            final long rewardWindow = warRef.rewardWindowToken();
+            killer.getScheduler().run(plugin, task -> {
+                final FactionType liveFaction = factionManager.getChosenFaction(
+                        killer.getUniqueId()).orElse(null);
+                final FactionType liveVictimFaction = factionManager.getChosenFaction(
+                        victimId).orElse(null);
+                if (killer.isOnline() && liveFaction == killerFaction
+                        && liveVictimFaction == victimFaction
+                        && warRef.isCurrentRewardWindow(rewardWindow)
+                        && warRef.isSanctionedWarKill(liveFaction, liveVictimFaction)) {
+                    warRef.handleWarKill(killer, victimId, liveFaction);
+                }
+            }, null);
             return;
         }
 
@@ -208,7 +219,8 @@ public final class SinListener implements Listener {
             return;
         }
 
-        final boolean betrayal = killerFaction == victimFaction && killerFaction != FactionType.NEUTRAL;
+        final boolean betrayal = killerFaction != null && killerFaction == victimFaction
+                && killerFaction != FactionType.NEUTRAL;
         final int weight;
         final String messageKey;
         final String messageDefault;
