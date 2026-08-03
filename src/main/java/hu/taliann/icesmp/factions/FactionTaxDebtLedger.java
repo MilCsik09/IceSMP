@@ -40,6 +40,15 @@ public final class FactionTaxDebtLedger {
         }
     }
 
+    /** Pure state transition result for durable tax-evasion sin delivery. */
+    public record EvasionDecision(int strikesAfter, boolean reportSin) {
+        public EvasionDecision {
+            if (strikesAfter < 0) {
+                throw new IllegalArgumentException("Tax-evasion strikes cannot be negative");
+            }
+        }
+    }
+
     private static final class State {
         private double amount;
         private int evasionStrikes;
@@ -203,6 +212,49 @@ public final class FactionTaxDebtLedger {
         state.evasionStrikes = 0;
         removeIfEmpty(playerId, faction, state);
         return true;
+    }
+
+    /**
+     * A reached threshold is a durable pending outbox marker. It is never cleared by repayment,
+     * logout or scheduler rejection; only successful owner-thread delivery acknowledges it.
+     */
+    public static EvasionDecision afterCollection(final int strikesBefore,
+                                                  final double paid,
+                                                  final double owedAfter,
+                                                  final double maxArrears,
+                                                  final int threshold,
+                                                  final boolean mayReportSin) {
+        final int normalizedBefore = Math.max(0, strikesBefore);
+        if (threshold <= 0) {
+            return new EvasionDecision(0, false);
+        }
+        if (normalizedBefore >= threshold) {
+            return new EvasionDecision(normalizedBefore, mayReportSin);
+        }
+        if (!Double.isFinite(paid) || paid < 0.0D
+                || !Double.isFinite(owedAfter) || owedAfter < 0.0D
+                || !Double.isFinite(maxArrears) || maxArrears < 0.0D) {
+            return new EvasionDecision(normalizedBefore, false);
+        }
+        if (maxArrears > 0.0D && paid <= 0.0D && owedAfter >= maxArrears) {
+            final int next = normalizedBefore >= threshold - 1
+                    ? threshold : normalizedBefore + 1;
+            return new EvasionDecision(next, next >= threshold && mayReportSin);
+        }
+        if (owedAfter <= 0.0D || owedAfter < maxArrears) {
+            return new EvasionDecision(0, false);
+        }
+        return new EvasionDecision(normalizedBefore, false);
+    }
+
+    /** Returns NaN when either operand or the resulting persisted balance is invalid. */
+    public static double checkedAmountAdd(final double current, final double addition) {
+        if (!Double.isFinite(current) || current < 0.0D
+                || !Double.isFinite(addition) || addition <= 0.0D) {
+            return Double.NaN;
+        }
+        final double next = current + addition;
+        return Double.isFinite(next) && next >= 0.0D ? next : Double.NaN;
     }
 
     private State state(final UUID playerId, final FactionType faction) {
