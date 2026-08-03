@@ -98,11 +98,12 @@ jobs:
       - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Clean build
+      - name: Clean tests and full build
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build --no-daemon --stacktrace | tee gradle-build.log
+          ./gradlew clean test --no-daemon --stacktrace | tee gradle-test.log
+          ./gradlew build --no-daemon --stacktrace | tee gradle-build.log
 
       - name: Verify stacked regressions ran inside Gradle check
         shell: bash
