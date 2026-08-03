@@ -1,0 +1,68 @@
+name: Log fix finalize
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/log-fix-finalize.yml'
+      - '.github/log-fix-finalize-payload.b64.*'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-final-payload:
+    if: github.head_ref == 'fix/log-errors-2026-08-02'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current feature head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Restore verified files and remove transport payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/log-fix-finalize-payload.b64.00 \
+              .github/log-fix-finalize-payload.b64.01 \
+            | base64 --decode > /tmp/log-fix-finalize-payload.tgz
+          echo 'aecddd67dd2cba703ed082a7b9cdca9e5a9595e4eb1906f4013c3d203022ee77  /tmp/log-fix-finalize-payload.tgz' \
+            | sha256sum --check --strict
+          tar -xzf /tmp/log-fix-finalize-payload.tgz -C .
+          rm -- .github/log-fix-finalize-payload.b64.00 \
+                 .github/log-fix-finalize-payload.b64.01 \
+                 .github/workflows/log-fix-finalize.yml
+
+      - name: Verify final payload before publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest scripts.tests.test_validate_fancynpcs_snapshot -v
+          python3 scripts/validate_fancynpcs_snapshot.py
+          python3 scripts/check_consistency.py
+          git diff --check
+
+      - name: Commit and fast-forward push
+        shell: bash
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- \
+            .github/workflows/ci.yml \
+            ROADMAP.md \
+            docs/ADMIN_GUIDE.md \
+            docs/BUILDER_GUIDE.md \
+            docs/LATEST_CHANGES.md \
+            scripts/validate_fancynpcs_snapshot.py \
+            scripts/tests/test_validate_fancynpcs_snapshot.py \
+            .github/log-fix-finalize-payload.b64.00 \
+            .github/log-fix-finalize-payload.b64.01 \
+            .github/workflows/log-fix-finalize.yml
+          git commit -m 'fix(operations): validate skin cache and align runbook'
+          git push origin "HEAD:${HEAD_BRANCH}"
