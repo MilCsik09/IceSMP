@@ -26,12 +26,12 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Verify expected branch head and ancestry
+      - name: Verify patch input and base ancestry
         shell: bash
         run: |
           set -euo pipefail
           test -d .git
-          test "$(git rev-parse HEAD)" = "595d6daf523351e8a0283f88c7c8b64fa649396c"
+          git merge-base --is-ancestor 595d6daf523351e8a0283f88c7c8b64fa649396c HEAD
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
           find . -name AGENTS.md -print
           git status --short --branch
