@@ -25,7 +25,7 @@ public final class QuestNpcValidationRegressionSuite {
         packagedQuestsReferenceTheExpectedNpcContract();
         deploymentSnapshotKeepsMissingPlacementExplicit();
         bridgeReportsExactNamesCaseMismatchAndConfigProvenance();
-        adminCommandDoesNotInventCoordinates();
+        startupValidationDoesNotInventCoordinatesOrCommands();
         System.out.println("Quest NPC validation regression suite passed.");
     }
 
@@ -117,16 +117,16 @@ public final class QuestNpcValidationRegressionSuite {
                 "startup validation is no longer compatible with the current QuestManager API");
     }
 
-    private static void adminCommandDoesNotInventCoordinates() throws Exception {
+    private static void startupValidationDoesNotInventCoordinatesOrCommands() throws Exception {
         final String bridge = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"));
-        check(bridge.contains("\"questnpcs\"")
-                        && bridge.contains("List.of(\"validatenpcs\")")
-                        && bridge.contains("/questnpcs"),
-                "admin NPC validation command is no longer wired");
         check(bridge.contains("A koordináta és világ nem következtethető biztonságosan")
                         && !bridge.contains("new Location("),
                 "validation must not invent NPC world coordinates");
+        check(!bridge.contains("registerCommand(")
+                        && !bridge.contains("BasicCommand")
+                        && !bridge.contains("questnpcs"),
+                "quest diagnostics must not add an undocumented root command");
     }
 
     private static void check(final boolean condition, final String message) {

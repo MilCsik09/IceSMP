@@ -3,20 +3,16 @@ package hu.taliann.icesmp.integration;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.NpcBindingManager;
 import hu.taliann.icesmp.managers.QuestManager;
-import io.papermc.paper.command.brigadier.BasicCommand;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -49,8 +45,6 @@ import java.util.function.Consumer;
  * from runtime implementation classes.</p>
  */
 public final class FancyNpcsQuestBridge {
-
-    private static final String VALIDATE_PERMISSION = "icesmp.admin.quest";
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -105,46 +99,7 @@ public final class FancyNpcsQuestBridge {
         final FancyNpcsQuestBridge bridge = new FancyNpcsQuestBridge(
                 plugin, configManager, questManager, npcBindingManager);
         bridge.registerInteractListener();
-        bridge.registerValidationCommand();
         return bridge;
-    }
-
-    private void registerValidationCommand() {
-        plugin.registerCommand(
-                "questnpcs",
-                "Kötelező FancyNpcs quest-NPC nevek ellenőrzése",
-                List.of("validatenpcs"),
-                new BasicCommand() {
-                    @Override
-                    public void execute(final @NonNull CommandSourceStack commandSourceStack,
-                                        final @NonNull String[] args) {
-                        final CommandSender sender = commandSourceStack.getSender();
-                        if (!sender.hasPermission(VALIDATE_PERMISSION)) {
-                            sender.sendMessage("Nincs jogosultságod a quest-NPC ellenőrzéshez.");
-                            return;
-                        }
-                        final QuestNpcValidationReport report = validateNpcs(questManager.getQuestNpcNames());
-                        sender.sendMessage("Quest-NPC ellenőrzés: required=" + report.requiredCount()
-                                + ", available=" + report.availableCount()
-                                + ", missing/mismatch=" + report.missing().size()
-                                + ", lookup errors=" + report.lookupErrors().size() + ".");
-                        for (final MissingQuestNpc issue : report.missing()) {
-                            final String caseMatch = issue.caseInsensitiveMatch() == null
-                                    ? ""
-                                    : " (case-match: " + issue.caseInsensitiveMatch() + ")";
-                            sender.sendMessage("- " + issue.expectedName() + caseMatch
-                                    + " -> " + String.join(",", issue.references()));
-                        }
-                        for (final String error : report.lookupErrors()) {
-                            sender.sendMessage("- lookup: " + error);
-                        }
-                        if (!report.healthy()) {
-                            sender.sendMessage("A világot és koordinátát nem találjuk ki automatikusan; "
-                                    + "provisionáld az NPC-ket, majd futtasd újra: /questnpcs.");
-                        }
-                    }
-                }
-        );
     }
 
     @SuppressWarnings("unchecked")
@@ -238,6 +193,12 @@ public final class FancyNpcsQuestBridge {
         }
     }
 
+    /**
+     * Startup/deployment validation for exact FancyNpcs internal names. It reports case-only
+     * mismatches and every packaged quest config path that references the missing name, but never
+     * invents a world or coordinate. The existing delayed core callback invokes this after
+     * FancyNpcs has loaded its snapshot.
+     */
     public QuestNpcValidationReport validateNpcs(final Set<String> questNpcNames) {
         final Map<String, String> availableNames = new LinkedHashMap<>();
         final List<String> lookupErrors = new ArrayList<>();
@@ -339,7 +300,7 @@ public final class FancyNpcsQuestBridge {
             plugin.getLogger().warning("Quest-NPC lookup hiba: " + error);
         }
         plugin.getLogger().warning("A koordináta és világ nem következtethető biztonságosan. "
-                + "Hozd létre/importáld a szükséges NPC-ket, majd futtasd: /questnpcs. "
+                + "Hozd létre vagy importáld a szükséges NPC-ket pontos belső névvel. "
                 + "A quest-npc-fallback.always csak tudatos fejlesztői megkerüléshez használható.");
     }
 
