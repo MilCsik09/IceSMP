@@ -48,6 +48,7 @@ jobs:
           python3 .github/scripts/apply_stage3_part4a.py
           python3 .github/scripts/apply_stage3_part4b.py
           python3 .github/scripts/apply_stage3_fixups.py
+          python3 .github/scripts/apply_stage3_compile_fixups.py
           git diff --check
           git diff --stat
 
