@@ -1,2 +1,2 @@
 Trigger isolated PPROOT2 validation for the PlayerProfile root platform.
-Attempt: 9 — recover 82 complete unified-diff blocks, normalize proven EOF whitespace, require payload files to be deleted rather than retained, push an isolated recovery branch, then run Java 21 Gradle validation.
+Attempt: 10 — recover 82 complete unified-diff blocks, normalize proven EOF whitespace, allow staged deletion of payload artifacts while rejecting retained artifacts, push isolated recovery branch v4, then run Java 21 Gradle validation.
