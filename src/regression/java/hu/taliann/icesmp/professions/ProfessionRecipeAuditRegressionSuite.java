@@ -11,8 +11,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -59,9 +62,36 @@ public final class ProfessionRecipeAuditRegressionSuite {
             }
         }
         check(new ArrayList<>(ids).equals(ids.stream().sorted().toList()), "deterministic recipe order");
+
+        final Map<Material, Integer> mutableIngredients = new HashMap<>();
+        mutableIngredients.put(Material.STICK, 1);
+        final Map<String, Integer> mutableUniqueIngredients = new HashMap<>();
+        mutableUniqueIngredients.put("audit_token", 1);
+        final List<String> mutableLore = new ArrayList<>(List.of("audit"));
+        final ProfessionRecipeCatalog.Recipe immutableRecipe = new ProfessionRecipeCatalog.Recipe(
+                "immutable_audit", ProfessionType.COOK, 1, false, "Audit", "Audit",
+                Material.PAPER, 1, null, null, mutableIngredients, mutableUniqueIngredients,
+                mutableLore, null, null, false, null);
+        mutableIngredients.clear();
+        mutableUniqueIngredients.clear();
+        mutableLore.clear();
+        check(immutableRecipe.ingredients().equals(Map.of(Material.STICK, 1)),
+                "recipe material ingredients are defensively copied");
+        check(immutableRecipe.uniqueIngredients().equals(Map.of("audit_token", 1)),
+                "recipe unique ingredients are defensively copied");
+        check(immutableRecipe.lore().equals(List.of("audit")), "recipe lore is defensively copied");
+
         final String manager = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeManager.java"));
         check(manager.indexOf("clearRegisteredRecipes();") < manager.indexOf("if (!isEnabled())"),
                 "reload removes stale recipes before disabled gate");
+        final String catalog = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java"));
+        check(catalog.contains("private volatile CatalogState state"),
+                "catalog readers observe one volatile immutable generation");
+        check(!catalog.contains("byId.clear()") && !catalog.contains("byProfession.clear()"),
+                "failed reload cannot clear the published catalog before validation");
+        check(catalog.indexOf("final Set<String> semanticFingerprints")
+                        < catalog.lastIndexOf("state = new CatalogState"),
+                "candidate validation completes before atomic publication");
         final String core = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
         check(core.contains("professionRecipeCatalog.load();\n            professionRecipeManager.registerRecipes();"),
                 "full reload rebuilds recipe registry");
@@ -75,7 +105,8 @@ public final class ProfessionRecipeAuditRegressionSuite {
         check(bookListener.contains("recipe.uniqueIngredients().entrySet()")
                         && bookListener.contains("uniqueMaterials.idOf(item)"),
                 "catalog custom ingredients require canonical unique-item identity");
-        System.out.println("PROFESSION_RECIPE_AUDIT recipes=" + ids.size() + " semantic_duplicates=0 key_duplicates=0");
+        System.out.println("PROFESSION_RECIPE_AUDIT recipes=" + ids.size()
+                + " semantic_duplicates=0 key_duplicates=0 atomic_reload=true");
         System.out.println("Profession recipe audit regression suite passed.");
     }
 
