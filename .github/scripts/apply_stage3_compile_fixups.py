@@ -34,5 +34,20 @@ replace_once(
     "event.isShiftClick(), event.isRightClick()",
     "event.isShiftClick(), event.getClick().isRightClick()",
 )
+replace_once(
+    "src/regression/java/hu/taliann/icesmp/professions/ProfessionRecipeAuditRegressionSuite.java",
+'''        final String listener = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeListener.java"));
+        check(listener.contains("uniqueIngredients") && listener.contains("profession"),
+                "custom ingredients and profession gate remain enforced");''',
+'''        final String listener = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeListener.java"));
+        check(listener.contains("hasProfession(player, recipe.profession())")
+                        && listener.contains("getLevel(player, recipe.profession())"),
+                "legacy masterwork profession and level gates remain enforced");
+        final String bookListener = Files.readString(
+                Path.of("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java"));
+        check(bookListener.contains("recipe.uniqueIngredients().entrySet()")
+                        && bookListener.contains("uniqueMaterials.idOf(item)"),
+                "catalog custom ingredients require canonical unique-item identity");''',
+)
 
 print("stage3 compile fixups applied")
