@@ -695,10 +695,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     }
 
     /**
-     * DisplayFx-pilot: a közeli claimek köré EGYSZER (nem frame-enként) izzó fényfalat állít a
-     * BlockDisplay-rétegből — claim-élenként egy megnyújtott, per-nézős, {@code seconds} múlva
-     * eltűnő entitás (saját/trusted=zöld, idegen=piros). A particle-perem a terep-követő részlet,
-     * ez a folytonos, olvasható határ.
+     * Terrain-following BlockDisplay wall. Every boundary block gets its own
+     * region-owned vertical segment, so the complete perimeter follows terrain.
      */
     private void showDisplayWalls(final Player player, final int seconds) {
         final Location location = player.getLocation();
@@ -723,23 +721,28 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         if (nearby.isEmpty()) {
             return;
         }
-        final int height = Math.max(1, configManager.getInt("display-fx.claim-wall.height", 3));
+        final float height = Math.max(1, configManager.getInt("display-fx.claim-wall.height", 3));
         final int ticks = seconds * 20;
         final org.bukkit.block.data.BlockData block = wallBlockData();
         for (final Claim claim : nearby) {
             final org.bukkit.Color glow = claim.isTrusted(player.getUniqueId())
                     ? org.bukkit.Color.fromRGB(0x3BE24A) : org.bukkit.Color.fromRGB(0xE23B3B);
-            final float width = claim.maxX + 1 - claim.minX;
-            final float depth = claim.maxZ + 1 - claim.minZ;
-            final double baseY = location.getY() - 1.2D;
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.minX, baseY, claim.minZ), width, height, 0.1F, block, glow, ticks, player);
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.minX, baseY, claim.maxZ + 1), width, height, 0.1F, block, glow, ticks, player);
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.minX, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.maxX + 1, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
+            for (int x = claim.minX; x <= claim.maxX; x++) {
+                hu.taliann.icesmp.utils.DisplayFxUtil.terrainWallColumn(plugin, world,
+                        x, claim.minZ, x, claim.minZ, 1.0F, height, 0.08F,
+                        block, glow, ticks, player);
+                hu.taliann.icesmp.utils.DisplayFxUtil.terrainWallColumn(plugin, world,
+                        x, claim.maxZ, x, claim.maxZ + 1.0D, 1.0F, height, 0.08F,
+                        block, glow, ticks, player);
+            }
+            for (int z = claim.minZ; z <= claim.maxZ; z++) {
+                hu.taliann.icesmp.utils.DisplayFxUtil.terrainWallColumn(plugin, world,
+                        claim.minX, z, claim.minX, z, 0.08F, height, 1.0F,
+                        block, glow, ticks, player);
+                hu.taliann.icesmp.utils.DisplayFxUtil.terrainWallColumn(plugin, world,
+                        claim.maxX, z, claim.maxX + 1.0D, z, 0.08F, height, 1.0F,
+                        block, glow, ticks, player);
+            }
         }
     }
 

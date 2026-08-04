@@ -489,6 +489,8 @@ dark-undead:
   max-population: 24
   spawn-batch: 4
   spawn-interval-seconds: 30
+  # Minden mob ennyi külön oszlopot próbál; nincs levegőben/közeli fallback.
+  spawn-attempts-per-mob: 12
   min-level: 4
   max-level: 7
   lifespan-seconds: 600

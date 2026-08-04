@@ -2,7 +2,9 @@ package hu.taliann.icesmp.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
@@ -118,6 +120,28 @@ public final class DisplayFxUtil {
                 display.setGlowColorOverride(glow);
             }
             if (viewer != null) showOnlyTo(plugin, display, viewer);
+        });
+    }
+
+    /**
+     * Spawns one vertical wall column from the real terrain surface of the sampled
+     * X/Z column. Region ownership is acquired for every boundary column.
+     */
+    public static void terrainWallColumn(final Plugin plugin, final World world,
+                                         final int sampleX, final int sampleZ,
+                                         final double displayX, final double displayZ,
+                                         final float sizeX, final float sizeY, final float sizeZ,
+                                         final BlockData block, final Color glow,
+                                         final int despawnTicks, final Player viewer) {
+        if (plugin == null || world == null || block == null || sizeY <= 0.0F) return;
+        final Location owner = new Location(world, sampleX + 0.5D, world.getMinHeight(), sampleZ + 0.5D);
+        plugin.getServer().getRegionScheduler().run(plugin, owner, task -> {
+            if (!world.isChunkLoaded(sampleX >> 4, sampleZ >> 4)) return;
+            final int floorY = world.getHighestBlockYAt(
+                    sampleX, sampleZ, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+            final Location corner = new Location(world, displayX, floorY + 1.0D, displayZ);
+            wallSegment(plugin, corner, sizeX, sizeY, sizeZ,
+                    block, glow, despawnTicks, viewer);
         });
     }
 

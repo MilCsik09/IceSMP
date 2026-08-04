@@ -1,7 +1,9 @@
 package hu.taliann.icesmp.managers;
 
 import org.bukkit.GameMode;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
@@ -144,26 +146,57 @@ public final class EventSpawnGuard {
         return BlockReason.NONE;
     }
 
-    /** Must run on the region thread that owns x/z. */
-    public boolean isUnsafeSurface(final String eventKey, final World world, final int x, final int z) {
-        if (world == null) {
-            return true;
+    /**
+     * Resolves stable footing on the region thread owning x/z. Leaves, gravity
+     * blocks, liquids and damaging floors are rejected; tall mobs get three
+     * passable body blocks.
+     */
+    public Location resolveSafeStandingLocation(final String eventKey, final World world,
+                                                final int x, final int z) {
+        if (world == null || !world.isChunkLoaded(x >> 4, z >> 4)) {
+            return null;
         }
-        if (configManager.getBoolean("world-events.safety.require-loaded-chunk", true)
-                && !world.isChunkLoaded(x >> 4, z >> 4)) {
-            return true;
-        }
-        final int floorY = world.getHighestBlockYAt(x, z);
-        if (floorY <= world.getMinHeight() + 1 || floorY + 2 >= world.getMaxHeight()) {
-            return true;
+        final int floorY = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        if (floorY <= world.getMinHeight() || floorY + 3 >= world.getMaxHeight()) {
+            return null;
         }
         final Block floor = world.getBlockAt(x, floorY, z);
         final Block feet = world.getBlockAt(x, floorY + 1, z);
         final Block head = world.getBlockAt(x, floorY + 2, z);
-        if (!floor.getType().isSolid() || !feet.isPassable() || !head.isPassable()) {
-            return true;
+        final Block upperHead = world.getBlockAt(x, floorY + 3, z);
+        if (!stableFloor(floor)
+                || !clearBody(feet) || !clearBody(head) || !clearBody(upperHead)) {
+            return null;
         }
-        return rule(eventKey, "water") && (floor.isLiquid() || feet.isLiquid());
+        if (rule(eventKey, "water")
+                && (floor.isLiquid() || feet.isLiquid() || head.isLiquid())) {
+            return null;
+        }
+        return new Location(world, x + 0.5D, floorY + 1.0D, z + 0.5D);
+    }
+
+    public boolean isUnsafeSurface(final String eventKey, final World world, final int x, final int z) {
+        return resolveSafeStandingLocation(eventKey, world, x, z) == null;
+    }
+
+    private static boolean stableFloor(final Block floor) {
+        final Material material = floor.getType();
+        return material.isSolid()
+                && material.isOccluding()
+                && !material.hasGravity()
+                && material != Material.POWDER_SNOW
+                && material != Material.MAGMA_BLOCK
+                && material != Material.CAMPFIRE
+                && material != Material.SOUL_CAMPFIRE
+                && material != Material.CACTUS
+                && material != Material.SWEET_BERRY_BUSH
+                && material != Material.WITHER_ROSE;
+    }
+
+    private static boolean clearBody(final Block block) {
+        return block.isPassable() && !block.isLiquid()
+                && block.getType() != Material.FIRE
+                && block.getType() != Material.SOUL_FIRE;
     }
 
     /**
@@ -208,10 +241,9 @@ public final class EventSpawnGuard {
         plugin.getServer().getRegionScheduler().run(plugin, column, task -> {
             final int x = column.getBlockX();
             final int z = column.getBlockZ();
-            final int y = world.getHighestBlockYAt(x, z) + 1;
-            final Location candidate = new Location(world, x + 0.5D, y, z + 0.5D);
-            if (blockReason(eventKey, candidate) != BlockReason.NONE
-                    || isUnsafeSurface(eventKey, world, x, z)
+            final Location candidate = resolveSafeStandingLocation(eventKey, world, x, z);
+            if (candidate == null
+                    || blockReason(eventKey, candidate) != BlockReason.NONE
                     || !reserve(eventKey, candidate)) {
                 tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
                 return;

@@ -56,8 +56,17 @@ public final class RuntimeHardeningRegressionSuite {
         check(claim.contains("borderTasks.remove(playerId)"), "border preview owns cleanup task");
 
         final String vanish = source("src/main/java/hu/taliann/icesmp/managers/VanishManager.java");
-        check(vanish.contains("viewer.hidePlayer(plugin, subject);"), "vanish reasserts hidePlayer");
+        check(vanish.contains("viewer.hidePlayer(plugin, subject);"), "vanish removes the in-world entity");
+        check(vanish.contains("viewer.unlistPlayer(subject);")
+                        && vanish.contains("viewer.listPlayer(subject);"),
+                "vanish owns per-viewer tab-list removal and restoration");
+        check(vanish.contains("TRACKING_REASSERT_TICKS"), "vanish is reasserted after tracking rebuilds");
         check(!vanish.contains("setInvulnerable"), "vanish never leaks Bukkit invulnerability state");
+        final String permissions = source("src/main/java/hu/taliann/icesmp/core/Permissions.java");
+        check(permissions.contains("MODERATION_VANISH_SEE,\n                \"Vanish állapotú adminok megtekintése\", PermissionDefault.FALSE"),
+                "vanish-see is explicit and not default OP");
+        check(!permissions.contains("moderationNodes.put(MODERATION_VANISH_SEE"),
+                "moderation bundle cannot silently bypass vanish");
         final String vanishListener = source("src/main/java/hu/taliann/icesmp/listeners/VanishListener.java");
         check(vanishListener.contains("PlayerTeleportEvent") && vanishListener.contains("PlayerRespawnEvent"),
                 "vanish retracking lifecycle covered");
@@ -73,6 +82,23 @@ public final class RuntimeHardeningRegressionSuite {
                 "DARK protection covers load/move/teleport");
         check(mobListener.contains("event.getClass() == EntityCombustEvent.class"),
                 "only daylight combustion is cancelled");
+
+        final String display = source("src/main/java/hu/taliann/icesmp/utils/DisplayFxUtil.java");
+        check(display.contains("HeightMap.MOTION_BLOCKING_NO_LEAVES")
+                        && display.contains("terrainWallColumn"),
+                "BlockDisplay wall follows each owned terrain column");
+        check(!claim.contains("baseY = location.getY()"),
+                "claim display wall is never anchored to viewer Y");
+        final String guard = source("src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java");
+        check(guard.contains("resolveSafeStandingLocation")
+                        && guard.contains("material.isOccluding()")
+                        && guard.contains("!material.hasGravity()"),
+                "event and DARK spawns require stable solid footing");
+        final String dark = source("src/main/java/hu/taliann/icesmp/managers/DarkUndeadAmbienceManager.java");
+        check(dark.contains("dark-undead.spawn-attempts-per-mob")
+                        && dark.contains("spawnGuard.resolveSafeStandingLocation")
+                        && dark.contains("territory.contains(territory.world()"),
+                "DARK undead use finite exact-territory safe-surface retries");
     }
 
     private static String source(final String relative) throws Exception {

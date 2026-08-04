@@ -5,15 +5,19 @@
 - **DARK territory daylight:** protection was behind mob-scaling early returns and only ran at spawn. It is now an independent,
   reversible capability reconciled on spawn, entity load, movement and teleport. Baseline vanilla flags are restored on exit;
   event/boss PDC protection takes precedence. Only daylight combustion is cancelled, never block/entity fire globally.
-- **Vanish:** the visibility ledger prevented `hidePlayer` from being reissued after client retracking. Hide is now idempotently
-  reasserted after join, teleport, world change and respawn. Invulnerability is not stored on the Player; damage immunity is an
-  explicit event capability and is removed automatically when vanish is disabled.
-- **Claim geometry:** membership and rendering independently used stored Y bounds and drew a 3D box. Both now consume one
-  normalized, inclusive X–Z `ClaimFootprint`; legacy Y fields are persistence-only. Preview tasks are single-owner and cleaned on
-  replacement/logout.
-- **World events:** invasions spawned at the selected player and bosses used a hard-coded 24–40 block ring. A shared bounded
-  guard now enforces all relevant players, world spawn, world border, territory/claim/region, loaded chunk, safe surface and
-  concurrent-event reservations. No valid candidate means a logged, controlled abort — never a close fallback.
+- **Vanish:** `icesmp.moderation.vanish.see` was inherited by every OP/moderation super-node, so the usual admin tester was
+  explicitly exempt from hiding and the feature appeared to do nothing. The observer permission is now explicit-only. Vanish
+  removes both the tracked entity (`hidePlayer`) and the per-viewer player-list entry (`unlistPlayer`), reasserts both after
+  tracking rebuilds, and restores only IceSMP-owned visibility pairs.
+- **Claim wall:** the BlockDisplay renderer used four stretched slabs anchored to the viewer's Y, so terrain changes made the
+  glass float above the area or disappear below it. Every boundary column is now region-owned and resolved from the actual
+  `MOTION_BLOCKING_NO_LEAVES` surface, producing the configured wall height along the full perimeter. Polygon claim selection is
+  implemented in the following correction stage.
+- **DARK undead footing:** ambient DARK spawns used a single `getHighestBlockYAt()+1` candidate without a stable-floor contract.
+  They now retry finitely inside the exact territory shape and require an occluding, non-gravity, non-hazard floor plus three
+  passable body blocks through the shared spawn guard. No valid column means no spawn; there is no airborne fallback.
+- **World events:** the same stable standing-location resolver now backs bounded event searches in addition to player, spawn,
+  border, territory/claim/region, loaded-chunk and reservation rules.
 - **Profession recipes:** one exact fishing-rod duplicate was removed. Bukkit-owned recipe keys are cleaned on reload/disable,
   semantic validation is deterministic, and catalog reload now builds an immutable private candidate before one atomic snapshot
   publication. Rejected reloads preserve the previous working generation instead of exposing empty or partial maps.
