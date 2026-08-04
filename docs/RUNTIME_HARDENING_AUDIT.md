@@ -88,13 +88,18 @@
 The full repository `check` also includes event-spawn safety, config transaction/coverage, profession recipe audit and all
 previously registered regression suites.
 
-## Cleanup validation proof
+## Cleanup and exact-head validation proof
 
 - Corrected implementation cleanup commit: `6e958e8794b2fc422fa0ce24fcd7f2a6681ed604`.
 - Cleanup gate: **Corrected runtime final cleanup gate #18 — success**.
 - The gate removed the temporary workflow, both Python patch drivers and the encoded polygon payload before validation.
 - On that scaffolding-free tree, `./gradlew clean check`, `scripts/validate_gui_icons.py` and
   `scripts/check_consistency.py` all completed successfully.
+- Exact tested head before this evidence-only documentation commit: `445041a5da8d91a226f1c06ee725fb3756441996`.
+- **IceSMP CI #474 — success:** Java 21 clean build, all `check` regressions, explicit faction suites, full consistency,
+  targeted DEV driver and consistency delta passed.
+- **Repository Docs Inventory #407 — success:** clean build, consistency, Markdown links, tooling self-tests, inventory,
+  generated JSON and blocking policy passed. PR-only snapshot/strict steps were correctly skipped by workflow policy.
 - No force push or merge was performed.
 
 ## Manual staging checks still required
