@@ -85,7 +85,7 @@ previously registered regression suites.
 - All implementation-only workflows, Python patch drivers and encoded payloads were removed before final validation.
 - The scaffolding-free tree is required to pass `./gradlew clean check`, `scripts/validate_gui_icons.py` and
   `scripts/check_consistency.py`.
-- Exact-head workflow links belong in the pull-request description, not this repository document.
+- Exact-head workflow links belong only in the pull-request description.
 - No force push or merge is permitted.
 
 ## Manual staging checks still required
