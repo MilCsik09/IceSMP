@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   diagnose:
-    name: Diagnose strict documentation coverage
+    name: Diagnose exact strict inventory
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -28,7 +28,7 @@ jobs:
       - name: Install workflow parser
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Reproduce synchronization and expose coverage findings
+      - name: Reproduce synchronization and expose exact strict FAILs
         shell: bash
         env:
           SOURCE_WORKFLOW_COMMIT: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
@@ -45,6 +45,7 @@ jobs:
           import json
           import os
           import subprocess
+          import sys
           from collections import Counter
           from pathlib import Path
 
@@ -71,19 +72,15 @@ jobs:
               env=os.environ.copy(),
           )
 
-          output = Path("build/post-sync-coverage")
-          subprocess.run([
-              "python3", "scripts/generate_repository_inventory.py",
-              "--root", ".", "--output", str(output), "--mode", "report",
-          ], check=True)
-          inventory = json.loads((output / "repository-inventory.json").read_text(encoding="utf-8"))
-          coverage = inventory.get("documentation_coverage", {})
-          findings = coverage.get("findings", [])
-          blocking_in_strict = [item for item in findings if item.get("severity") in {"WARN", "FAIL"}]
-          codes = Counter(str(item.get("code", "<no-code>")) for item in blocking_in_strict)
-          print("STRICT_COVERAGE_FINDINGS=" + str(len(blocking_in_strict)))
-          print("STRICT_COVERAGE_CODES=" + json.dumps(dict(sorted(codes.items())), ensure_ascii=False, sort_keys=True))
-          for index, item in enumerate(blocking_in_strict, 1):
-              print(f"STRICT_COVERAGE_{index:03d}=" + json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
-          raise SystemExit(1 if blocking_in_strict else 0)
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          from repository_inventory.inventory import generate_inventory
+
+          inventory = generate_inventory(Path(".").resolve(), "strict")
+          findings = [item for item in inventory.get("findings", []) if item.get("severity") == "FAIL"]
+          codes = Counter(str(item.get("code", "<no-code>")) for item in findings)
+          print("EXACT_STRICT_FINDINGS=" + str(len(findings)))
+          print("EXACT_STRICT_CODES=" + json.dumps(dict(sorted(codes.items())), ensure_ascii=False, sort_keys=True))
+          for index, item in enumerate(findings, 1):
+              print(f"EXACT_STRICT_{index:03d}=" + json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+          raise SystemExit(1 if findings else 0)
           PY
