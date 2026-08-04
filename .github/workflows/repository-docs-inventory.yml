@@ -42,6 +42,7 @@ jobs:
           python3 - <<'PY'
           from __future__ import annotations
 
+          import hashlib
           import json
           import os
           import subprocess
@@ -61,96 +62,6 @@ jobs:
               if isinstance(step, dict)
               and step.get("name") == "Execute reviewed integration, manifest synchronization, gates and push"
           )
-          insertion_marker = "git add -- \\\n"
-          if source_step.count(insertion_marker) != 1:
-              raise SystemExit(f"Resolution staging marker drift: {source_step.count(insertion_marker)}")
-
-          completion_lines = [
-              "python3 - <<'MANIFEST_COVERAGE'",
-              "from __future__ import annotations",
-              "",
-              "import hashlib",
-              "import json",
-              "from pathlib import Path",
-              "",
-              "manifest_path = Path('docs/documentation-manifest.yml')",
-              "manifest = json.loads(manifest_path.read_text(encoding='utf-8'))",
-              "components = manifest.setdefault('components', {})",
-              "component_entries = {",
-              "    'component.hu.taliann.icesmp.crates.CrateSoundResolver': ('feature.crate', 'Configured crate sound resolution helper.'),",
-              "    'component.hu.taliann.icesmp.data.BlockCuboid': ('feature.territory', 'Immutable block-cuboid value object used by territory and claim geometry.'),",
-              "    'component.hu.taliann.icesmp.listeners.ResourcePackListener': ('feature.resource-pack', 'Player resource-pack lifecycle listener.'),",
-              "    'component.hu.taliann.icesmp.managers.HudSidebarLayout': ('feature.hud', 'Deterministic HUD sidebar layout model.'),",
-              "    'component.hu.taliann.icesmp.managers.ProfessionIngredientParser': ('feature.profession', 'Profession recipe ingredient parser.'),",
-              "    'component.hu.taliann.icesmp.moderation.ModerationPlayerPage': ('feature.moderation', 'Moderation player-page model.'),",
-              "    'component.hu.taliann.icesmp.utils.ConfigMaterialResolver': ('feature.config', 'Fail-closed material resolver for configuration values.'),",
-              "    'component.hu.taliann.icesmp.utils.TerritoryDestination': ('feature.territory', 'Validated territory destination value object.'),",
-              "}",
-              "for stable_id, (feature_id, description) in component_entries.items():",
-              "    if stable_id in components:",
-              "        raise SystemExit(f'Component manifest entry unexpectedly already exists: {stable_id}')",
-              "    components[stable_id] = {",
-              "        'feature': feature_id,",
-              "        'classification': 'INTERNAL_HELPER',",
-              "        'description': description,",
-              "        'docs': [],",
-              "    }",
-              "",
-              "config_sections = manifest.setdefault('config-sections', {})",
-              "config_entries = {",
-              "    'config.plugins': ['docs/ADMIN_GUIDE.md'],",
-              "    'config.resource-pack': ['docs/RESOURCE_PACK_CMD.md'],",
-              "    'config.schema-version': ['docs/ARCHITECTURE.md'],",
-              "    'config.target': ['docs/ARCHITECTURE.md'],",
-              "    'config.verified-on': ['docs/ARCHITECTURE.md'],",
-              "}",
-              "for stable_id, docs in config_entries.items():",
-              "    if stable_id in config_sections:",
-              "        raise SystemExit(f'Config-section manifest entry unexpectedly already exists: {stable_id}')",
-              "    config_sections[stable_id] = {'docs': docs}",
-              "",
-              "features = manifest.setdefault('features', {})",
-              "feature_id = 'feature.resource-pack'",
-              "if feature_id in features:",
-              "    raise SystemExit(f'Feature manifest entry unexpectedly already exists: {feature_id}')",
-              "features[feature_id] = {",
-              "    'description': 'Resource-pack publication, delivery, acceptance and player lifecycle integration.',",
-              "    'audience': ['PLAYER', 'ADMIN'],",
-              "    'docs': ['docs/RESOURCE_PACK_CMD.md'],",
-              "}",
-              "",
-              "for section_name in ('commands', 'permissions', 'config-sections', 'components'):",
-              "    section = manifest.get(section_name)",
-              "    if not isinstance(section, dict):",
-              "        continue",
-              "    policy = section.get('_contract')",
-              "    if isinstance(policy, dict) and 'entries_sha256' in policy:",
-              "        entries = {key: value for key, value in section.items()",
-              "                   if not str(key).startswith('_') and isinstance(value, dict)}",
-              "        policy['entries_sha256'] = hashlib.sha256(",
-              "            json.dumps(entries, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')",
-              "        ).hexdigest()",
-              "manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\\n',",
-              "                         encoding='utf-8', newline='\\n')",
-              "",
-              "doc_path = Path('docs/RESOURCE_PACK_CMD.md')",
-              "doc = doc_path.read_text(encoding='utf-8')",
-              "marker = '<!-- icesmp-doc-id: feature.resource-pack -->'",
-              "if marker in doc:",
-              "    raise SystemExit('Resource-pack feature marker unexpectedly already exists')",
-              "lines = doc.splitlines()",
-              "if not lines or not lines[0].startswith('#'):",
-              "    raise SystemExit('RESOURCE_PACK_CMD heading marker drift')",
-              "lines.insert(1, '')",
-              "lines.insert(2, marker)",
-              "doc_path.write_text('\\n'.join(lines).rstrip('\\n') + '\\n', encoding='utf-8', newline='\\n')",
-              "print('Added 8 component classifications, 5 config sections and the resource-pack feature contract.')",
-              "MANIFEST_COVERAGE",
-              "git add docs/documentation-manifest.yml docs/RESOURCE_PACK_CMD.md",
-              "",
-              "",
-          ]
-          source_step = source_step.replace(insertion_marker, "\n".join(completion_lines) + insertion_marker, 1)
           loop = "for index, step in enumerate(run_steps, 1):\n"
           if source_step.count(loop) != 1:
               raise SystemExit(f"Publishing loop drift: {source_step.count(loop)}")
@@ -160,6 +71,109 @@ jobs:
               check=True,
               env=os.environ.copy(),
           )
+
+          manifest_path = Path("docs/documentation-manifest.yml")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          components = manifest.setdefault("components", {})
+          component_entries = {
+              "component.hu.taliann.icesmp.crates.CrateSoundResolver": (
+                  "feature.crate", "Configured crate sound resolution helper."
+              ),
+              "component.hu.taliann.icesmp.data.BlockCuboid": (
+                  "feature.territory", "Immutable block-cuboid value object used by territory and claim geometry."
+              ),
+              "component.hu.taliann.icesmp.listeners.ResourcePackListener": (
+                  "feature.resource-pack", "Player resource-pack lifecycle listener."
+              ),
+              "component.hu.taliann.icesmp.managers.HudSidebarLayout": (
+                  "feature.hud", "Deterministic HUD sidebar layout model."
+              ),
+              "component.hu.taliann.icesmp.managers.ProfessionIngredientParser": (
+                  "feature.profession", "Profession recipe ingredient parser."
+              ),
+              "component.hu.taliann.icesmp.moderation.ModerationPlayerPage": (
+                  "feature.moderation", "Moderation player-page model."
+              ),
+              "component.hu.taliann.icesmp.utils.ConfigMaterialResolver": (
+                  "feature.config", "Fail-closed material resolver for configuration values."
+              ),
+              "component.hu.taliann.icesmp.utils.TerritoryDestination": (
+                  "feature.territory", "Validated territory destination value object."
+              ),
+          }
+          for stable_id, (feature_id, description) in component_entries.items():
+              if stable_id in components:
+                  raise SystemExit(f"Component manifest entry unexpectedly already exists: {stable_id}")
+              components[stable_id] = {
+                  "feature": feature_id,
+                  "classification": "INTERNAL_HELPER",
+                  "description": description,
+                  "docs": [],
+              }
+
+          config_sections = manifest.setdefault("config-sections", {})
+          config_entries = {
+              "config.plugins": ["docs/ADMIN_GUIDE.md"],
+              "config.resource-pack": ["docs/RESOURCE_PACK_CMD.md"],
+              "config.schema-version": ["docs/ARCHITECTURE.md"],
+              "config.target": ["docs/ARCHITECTURE.md"],
+              "config.verified-on": ["docs/ARCHITECTURE.md"],
+          }
+          for stable_id, docs in config_entries.items():
+              if stable_id in config_sections:
+                  raise SystemExit(f"Config-section manifest entry unexpectedly already exists: {stable_id}")
+              config_sections[stable_id] = {"docs": docs}
+
+          features = manifest.setdefault("features", {})
+          feature_id = "feature.resource-pack"
+          if feature_id in features:
+              raise SystemExit(f"Feature manifest entry unexpectedly already exists: {feature_id}")
+          features[feature_id] = {
+              "description": "Resource-pack publication, delivery, acceptance and player lifecycle integration.",
+              "audience": ["PLAYER", "ADMIN"],
+              "docs": ["docs/RESOURCE_PACK_CMD.md"],
+          }
+
+          for section_name in ("commands", "permissions", "config-sections", "components"):
+              section = manifest.get(section_name)
+              if not isinstance(section, dict):
+                  continue
+              policy = section.get("_contract")
+              if isinstance(policy, dict) and "entries_sha256" in policy:
+                  entries = {
+                      key: value for key, value in section.items()
+                      if not str(key).startswith("_") and isinstance(value, dict)
+                  }
+                  policy["entries_sha256"] = hashlib.sha256(
+                      json.dumps(entries, ensure_ascii=False, sort_keys=True,
+                                 separators=(",", ":")).encode("utf-8")
+                  ).hexdigest()
+          manifest_path.write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+              newline="\n",
+          )
+
+          doc_path = Path("docs/RESOURCE_PACK_CMD.md")
+          doc = doc_path.read_text(encoding="utf-8")
+          marker = "<!-- icesmp-doc-id: feature.resource-pack -->"
+          if marker in doc:
+              raise SystemExit("Resource-pack feature marker unexpectedly already exists")
+          lines = doc.splitlines()
+          if not lines or not lines[0].startswith("#"):
+              raise SystemExit("RESOURCE_PACK_CMD heading marker drift")
+          lines.insert(1, "")
+          lines.insert(2, marker)
+          doc_path.write_text(
+              "\n".join(lines).rstrip("\n") + "\n",
+              encoding="utf-8",
+              newline="\n",
+          )
+          subprocess.run(
+              ["git", "add", "docs/documentation-manifest.yml", "docs/RESOURCE_PACK_CMD.md"],
+              check=True,
+          )
+          print("Added 8 component classifications, 5 config sections and the resource-pack feature contract.")
 
           sys.path.insert(0, str(Path("scripts").resolve()))
           from repository_inventory.inventory import generate_inventory
