@@ -39,7 +39,7 @@ jobs:
       - name: Install workflow parser
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Reuse the validated publisher without its workflow push
+      - name: Reuse the validated publisher with an isolated commit index
         shell: bash
         env:
           VALIDATED_PUBLISHER_COMMIT: eb85a7616a3432fdd8cf1095fc8c84d3f9af8b63
@@ -89,13 +89,28 @@ jobs:
           test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$OLD_PROFILE_HEAD"
 
           sha256sum .github/workflows/ci.yml .github/workflows/repository-docs-inventory.yml
-          git checkout "$OLD_PROFILE_HEAD" -- \
+
+          temporary_index=$(mktemp)
+          trap 'rm -f "$temporary_index"' EXIT
+          cp .git/index "$temporary_index"
+          for path in \
+            .github/workflows/ci.yml \
+            .github/workflows/repository-docs-inventory.yml; do
+            entry=$(git ls-tree "$OLD_PROFILE_HEAD" -- "$path")
+            test -n "$entry"
+            mode=$(printf '%s\n' "$entry" | awk '{print $1}')
+            blob=$(printf '%s\n' "$entry" | awk '{print $3}')
+            test -n "$mode"
+            test -n "$blob"
+            GIT_INDEX_FILE="$temporary_index" git update-index --add --cacheinfo "$mode,$blob,$path"
+          done
+
+          GIT_INDEX_FILE="$temporary_index" git diff --cached --quiet "$OLD_PROFILE_HEAD" -- \
             .github/workflows/ci.yml \
             .github/workflows/repository-docs-inventory.yml
-          test -z "$(git diff --cached --name-only "$OLD_PROFILE_HEAD" -- .github/workflows)"
-          git diff --cached --check
+          GIT_INDEX_FILE="$temporary_index" git diff --cached --check
 
-          tree_sha=$(git write-tree)
+          tree_sha=$(GIT_INDEX_FILE="$temporary_index" git write-tree)
           code_commit=$(printf '%s\n\n%s\n' \
             "Merge current compatibility base into greenfield Profile v2" \
             "Publish the fully validated code and documentation tree; validated workflow updates follow as direct GitHub commits." \
