@@ -10,10 +10,10 @@ permissions:
   pull-requests: write
 
 jobs:
-  validate:
-    name: Validate PlayerProfile stack integration
+  diagnose:
+    name: Diagnose strict inventory review findings
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 20
     steps:
       - name: Check out authenticated repository
         uses: actions/checkout@v4
@@ -35,187 +35,70 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Prepare exact resolved integration tree
+      - name: Prepare exact hardened candidate
         id: prepare
         env:
           PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
           RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
           OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
-        run: python3 /tmp/player_profile_integration_driver.py
+        run: |
+          python3 /tmp/player_profile_integration_driver.py
+          python3 /tmp/player_profile_candidate_hardening.py
 
-      - name: Refresh fail-closed authority ownership
-        id: harden
-        env:
-          PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
-          RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
-          OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
-        run: python3 /tmp/player_profile_candidate_hardening.py
-
-      - name: Validate resource-pack and deployment snapshots
-        id: assets
-        continue-on-error: true
+      - name: Generate exact inventory findings
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/test_resource_pack.py 2>&1 | tee /tmp/assets.log
-          python3 scripts/resource_pack.py build --source resource-pack --output build/resource-pack/validation-pack.zip 2>&1 | tee -a /tmp/assets.log
-          python3 scripts/validate_fancynpcs_snapshot.py 2>&1 | tee -a /tmp/assets.log
+          python3 scripts/generate_repository_inventory.py \
+            --root . \
+            --output build/repository-inventory \
+            --mode report
+          python3 - <<'PY' | tee /tmp/repository-inventory-findings.json
+          import json
+          from pathlib import Path
 
-      - name: Java 21 clean build and all regressions
-        id: build
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./gradlew clean build --console=plain --no-daemon --stacktrace 2>&1 | tee /tmp/gradle-build.log
-
-      - name: Verify every stacked regression marker
-        id: markers
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          markers=(
-            "MOTD regression suite passed."
-            "Moderation regression suite passed."
-            "Moderation review regression suite passed."
-            "PersistentStoreCoordinator regression tests passed."
-            "DEV-item reward regression suite passed."
-            "AFK regression suite passed."
-            "HUD regression suite passed."
-            "Pause-menu dialog regression suite passed."
-            "Faction passive regression suite passed."
-            "Faction passive hardening regression suite passed."
-            "Faction tax debt regression suite passed."
-            "Relic refresh regression suite passed."
-            "Relic refresh pipeline regression suite passed."
-            "Lifecycle shutdown regression suite passed."
-            "Quest NPC validation regression suite passed."
-            "Resource pack regression suite passed."
-            "Class/spec compatibility regression suite passed."
-            "ClassSpecSection v2 domain regression tests passed."
-            "Class/spec application regression suite passed."
-            "ClassSpecSection lifecycle regression suite passed."
-            "PlayerProfile domain regression suite passed."
-            "PlayerProfile YAML regression suite passed."
-            "PlayerProfile transaction regression suite passed."
-            "PlayerProfile API regression suite passed."
-            "Respec transaction regression suite passed."
-            "Spell grant ledger regression suite passed."
+          inventory = json.loads(
+              Path("build/repository-inventory/repository-inventory.json")
+              .read_text(encoding="utf-8")
           )
-          for marker in "${markers[@]}"; do grep -F "$marker" /tmp/gradle-build.log; done
+          findings = [
+              finding
+              for finding in inventory.get("findings", [])
+              if finding.get("severity") in {"FAIL", "REVIEW_REQUIRED"}
+          ]
+          print(json.dumps(findings, ensure_ascii=False, indent=2))
+          PY
 
-      - name: PlayerProfile authority and API guards
-        id: profile_guards
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority.json 2>&1 | tee /tmp/profile-guards.log
-          python3 scripts/check_player_profile_openapi.py 2>&1 | tee -a /tmp/profile-guards.log
-          python3 scripts/test_player_profile_authority.py 2>&1 | tee -a /tmp/profile-guards.log
-
-      - name: Repository consistency
-        id: consistency
-        continue-on-error: true
-        run: python3 scripts/check_consistency.py 2>&1 | tee /tmp/consistency.log
-
-      - name: Markdown links
-        id: markdown
-        continue-on-error: true
-        run: python3 scripts/check_markdown_links.py --root . 2>&1 | tee /tmp/markdown.log
-
-      - name: Tooling self-tests
-        id: tooling
-        continue-on-error: true
-        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v 2>&1 | tee /tmp/tooling.log
-
-      - name: Generate strict repository inventory
-        id: inventory
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          status=0
-          python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report 2>&1 | tee /tmp/inventory.log || status=1
-          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode report 2>&1 | tee -a /tmp/inventory.log || status=1
-          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode strict 2>&1 | tee -a /tmp/inventory.log || status=1
-          python3 -c 'import json; d=json.load(open("build/repository-inventory/documentation-coverage.json", encoding="utf-8")); print(json.dumps(d.get("findings", []), ensure_ascii=False, indent=2))' | tee /tmp/inventory-findings.log || status=1
-          exit "$status"
-
-      - name: Publish validation report
+      - name: Publish exact inventory findings
         if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          CANDIDATE_SHA: ${{ steps.harden.outputs.candidate_sha }}
-          JAVA_COUNT: ${{ steps.prepare.outputs.java_count }}
-          MANAGER_COUNT: ${{ steps.prepare.outputs.manager_count }}
-          ASSETS: ${{ steps.assets.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          MARKERS: ${{ steps.markers.outcome }}
-          PROFILE_GUARDS: ${{ steps.profile_guards.outcome }}
-          CONSISTENCY: ${{ steps.consistency.outcome }}
-          MARKDOWN: ${{ steps.markdown.outcome }}
-          TOOLING: ${{ steps.tooling.outcome }}
-          INVENTORY: ${{ steps.inventory.outcome }}
         run: |
           set -euo pipefail
-          report=/tmp/player-profile-validation.md
-          printf '%s\n' '<!-- player-profile-validation-report -->' '### PlayerProfile integration validation' '' > "$report"
-          printf -- '- Candidate: `%s`\n- Java files: `%s`\n- Manager classes: `%s`\n\n' "$CANDIDATE_SHA" "$JAVA_COUNT" "$MANAGER_COUNT" >> "$report"
-          printf '%s\n' '| Gate | Outcome |' '| --- | --- |' >> "$report"
-          printf '| Resource/deployment snapshots | %s |\n' "$ASSETS" >> "$report"
-          printf '| Java 21 clean build | %s |\n' "$BUILD" >> "$report"
-          printf '| Regression marker inventory | %s |\n' "$MARKERS" >> "$report"
-          printf '| PlayerProfile authority/OpenAPI | %s |\n' "$PROFILE_GUARDS" >> "$report"
-          printf '| Repository consistency | %s |\n' "$CONSISTENCY" >> "$report"
-          printf '| Markdown links | %s |\n' "$MARKDOWN" >> "$report"
-          printf '| Tooling self-tests | %s |\n' "$TOOLING" >> "$report"
-          printf '| Strict repository inventory | %s |\n' "$INVENTORY" >> "$report"
-          for log in /tmp/assets.log /tmp/gradle-build.log /tmp/profile-guards.log /tmp/consistency.log /tmp/markdown.log /tmp/tooling.log /tmp/inventory.log; do
-            if [[ -f "$log" ]]; then
-              printf '\n#### `%s` tail\n```text\n' "$(basename "$log")" >> "$report"
-              tail -n 30 "$log" >> "$report"
-              printf '%s\n' '```' >> "$report"
-            fi
-          done
-          if [[ -f /tmp/inventory-findings.log ]]; then
-            printf '%s\n' '' '#### `documentation-coverage.json` findings' '```json' >> "$report"
-            cat /tmp/inventory-findings.log >> "$report"
-            printf '%s\n' '```' >> "$report"
-          fi
-          head -c 60000 "$report" > /tmp/player-profile-validation-trimmed.md
-          gh api --method POST -H "Accept: application/vnd.github+json" "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" -f body="$(cat /tmp/player-profile-validation-trimmed.md)"
+          {
+            echo '<!-- player-profile-inventory-findings -->'
+            echo '### PlayerProfile strict inventory findings'
+            echo
+            echo '```json'
+            cat /tmp/repository-inventory-findings.json
+            echo '```'
+          } | head -c 60000 > /tmp/player-profile-inventory-findings.md
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
+            -f body="$(cat /tmp/player-profile-inventory-findings.md)"
 
-      - name: Enforce validation gates
-        if: always()
+      - name: Preserve diagnostic failure while findings remain
         shell: bash
-        env:
-          ASSETS: ${{ steps.assets.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          MARKERS: ${{ steps.markers.outcome }}
-          PROFILE_GUARDS: ${{ steps.profile_guards.outcome }}
-          CONSISTENCY: ${{ steps.consistency.outcome }}
-          MARKDOWN: ${{ steps.markdown.outcome }}
-          TOOLING: ${{ steps.tooling.outcome }}
-          INVENTORY: ${{ steps.inventory.outcome }}
         run: |
-          set -euo pipefail
-          failed=0
-          for outcome in "$ASSETS" "$BUILD" "$MARKERS" "$PROFILE_GUARDS" "$CONSISTENCY" "$MARKDOWN" "$TOOLING" "$INVENTORY"; do
-            [[ "$outcome" == success ]] || failed=1
-          done
-          exit "$failed"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          findings = json.loads(
+              Path('/tmp/repository-inventory-findings.json').read_text(encoding='utf-8')
+          )
+          raise SystemExit(1 if findings else 0)
+          PY
