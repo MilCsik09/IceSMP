@@ -88,6 +88,15 @@
 The full repository `check` also includes event-spawn safety, config transaction/coverage, profession recipe audit and all
 previously registered regression suites.
 
+## Cleanup validation proof
+
+- Corrected implementation cleanup commit: `6e958e8794b2fc422fa0ce24fcd7f2a6681ed604`.
+- Cleanup gate: **Corrected runtime final cleanup gate #18 — success**.
+- The gate removed the temporary workflow, both Python patch drivers and the encoded polygon payload before validation.
+- On that scaffolding-free tree, `./gradlew clean check`, `scripts/validate_gui_icons.py` and
+  `scripts/check_consistency.py` all completed successfully.
+- No force push or merge was performed.
+
 ## Manual staging checks still required
 
 Automated tests cannot prove the following visual/client/integration behaviour:
