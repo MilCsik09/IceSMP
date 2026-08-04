@@ -10,10 +10,10 @@ permissions:
   pull-requests: write
 
 jobs:
-  publish:
-    name: Publish validated PlayerProfile code tree
+  stage:
+    name: Stage validated workflow blobs
     runs-on: ubuntu-latest
-    timeout-minutes: 65
+    timeout-minutes: 25
     steps:
       - name: Check out authenticated repository
         uses: actions/checkout@v4
@@ -22,64 +22,40 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Preserve temporary integration drivers
-        run: |
-          cp .github/scripts/player_profile_integration_driver.py /tmp/player_profile_integration_driver.py
-          cp .github/scripts/player_profile_candidate_hardening.py /tmp/player_profile_candidate_hardening.py
-          cp .github/scripts/player_profile_code_only_publisher.sh /tmp/player_profile_code_only_publisher.sh
-          chmod +x /tmp/player_profile_code_only_publisher.sh
+      - name: Preserve integration driver
+        run: cp .github/scripts/player_profile_integration_driver.py /tmp/player_profile_integration_driver.py
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install Python dependencies
-        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Rebuild, validate and publish code-only head
-        id: publish
+      - name: Reconstruct and stage exact validated workflow blobs
+        shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
           PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
           RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
           OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
+          CURRENT_TARGET_HEAD: 6b2cc869605c8e15aac5a73c45ebbfb18ac8e70f
           TARGET_BRANCH: profile/player-profile-platform
-          REPORT_PR: '85'
-        run: /tmp/player_profile_code_only_publisher.sh
-
-      - name: Report workflow-safe publication result
-        if: always()
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          OUTCOME: ${{ steps.publish.outcome }}
-          CODE_HEAD: ${{ steps.publish.outputs.code_head }}
-          VALIDATED_CANDIDATE: ${{ steps.publish.outputs.validated_candidate }}
         run: |
           set -euo pipefail
-          cat > /tmp/player-profile-publisher-result.md <<EOF
-          <!-- player-profile-code-publisher-result -->
-          ### PlayerProfile code publisher result
+          python3 /tmp/player_profile_integration_driver.py
+          cp .github/workflows/ci.yml /tmp/final-ci.yml
+          cp .github/workflows/repository-docs-inventory.yml /tmp/final-repository-docs-inventory.yml
+          printf '%s  %s\n' "$(sha256sum /tmp/final-ci.yml | awk '{print $1}')" ci.yml
+          printf '%s  %s\n' "$(sha256sum /tmp/final-repository-docs-inventory.yml | awk '{print $1}')" repository-docs-inventory.yml
 
-          - Outcome: **$OUTCOME**
-          - Validated candidate: \`${VALIDATED_CANDIDATE:-not-created}\`
-          - Published code head: \`${CODE_HEAD:-not-published}\`
-          - Merge performed: **no**
-          - Force push used: **no**
-          EOF
-          gh api --method POST -H "Accept: application/vnd.github+json" \
-            "repos/${GITHUB_REPOSITORY}/issues/85/comments" \
-            -f body="$(cat /tmp/player-profile-publisher-result.md)"
+          git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
+          test "$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)" = "$CURRENT_TARGET_HEAD"
+          git switch --detach "$CURRENT_TARGET_HEAD"
+          git switch -c local-workflow-staging
+          mkdir -p .github/workflow-staging
+          cp /tmp/final-ci.yml .github/workflow-staging/ci.yml
+          cp /tmp/final-repository-docs-inventory.yml .github/workflow-staging/repository-docs-inventory.yml
+          git add .github/workflow-staging
+          git diff --cached --check
+          git commit -m "chore(ci): stage validated workflow blobs"
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          remote="$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')"
+          test "$remote" = "$(git rev-parse HEAD)"
