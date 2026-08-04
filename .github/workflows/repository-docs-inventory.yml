@@ -15,12 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
-      - name: Check out full authenticated repository
+      - name: Check out authenticated repository
         uses: actions/checkout@v4
         with:
           ref: agent/player-profile-root-reconstruct-20260803-v6
           fetch-depth: 0
           persist-credentials: true
+
+      - name: Preserve temporary integration driver
+        run: cp .github/scripts/player_profile_integration_driver.py /tmp/player_profile_integration_driver.py
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -44,220 +47,11 @@ jobs:
 
       - name: Prepare exact resolved integration tree
         id: prepare
-        shell: bash
         env:
           PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
           RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
           OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
-        run: |
-          set -euo pipefail
-          git fetch --no-tags origin \
-            "+refs/heads/rework/class-spec-profile-v2:refs/remotes/origin/rework/class-spec-profile-v2" \
-            "+refs/heads/profile/player-profile-platform:refs/remotes/origin/profile/player-profile-platform" \
-            "+refs/heads/agent/player-profile-root-recovered-20260803-v4:refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4"
-          test "$(git rev-parse refs/remotes/origin/rework/class-spec-profile-v2)" = "$PROFILE_V2_HEAD"
-          test "$(git rev-parse refs/remotes/origin/profile/player-profile-platform)" = "$OLD_PLATFORM_HEAD"
-          test "$(git rev-parse refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4)" = "$RECOVERY_HEAD"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch --detach "$RECOVERY_HEAD"
-          git switch -c local-player-profile-integration
-
-          set +e
-          git merge --no-ff --no-commit "$PROFILE_V2_HEAD"
-          merge_status=$?
-          set -e
-          test "$merge_status" -eq 1
-
-          python3 - <<'PY'
-          import json
-          import os
-          import re
-          import subprocess
-          from pathlib import Path
-
-          root = Path('.')
-          profile = os.environ['PROFILE_V2_HEAD']
-          recovery = os.environ['RECOVERY_HEAD']
-
-          def show(sha: str, path: str) -> str:
-              return subprocess.check_output(['git', 'show', f'{sha}:{path}'], text=True)
-
-          def choose_ours(path: str) -> None:
-              target = root / path
-              text = target.read_text(encoding='utf-8')
-              pattern = re.compile(
-                  r'^<<<<<<<[^\n]*\n(.*?)^=======\n(.*?)^>>>>>>>[^\n]*\n?',
-                  re.MULTILINE | re.DOTALL,
-              )
-              previous = None
-              while text != previous and '<<<<<<<' in text:
-                  previous = text
-                  text = pattern.sub(lambda match: match.group(1), text)
-              if any(marker in text for marker in ('<<<<<<<', '=======', '>>>>>>>')):
-                  raise SystemExit(f'Unresolved conflict marker in {path}')
-              target.write_text(text, encoding='utf-8')
-
-          # CI: retain every current #75 gate, but replace superseded class-only suites
-          # with the PlayerProfile-backed suite set and make the stacked base trigger explicit.
-          ci = show(profile, '.github/workflows/ci.yml')
-          branch_anchor = '      - rework/class-spec-1.21.11-compatibility\n'
-          if '      - rework/class-spec-profile-v2\n' not in ci:
-              ci = ci.replace(branch_anchor, branch_anchor + '      - rework/class-spec-profile-v2\n', 1)
-          old_ci = '''          grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log
-          grep -F "Class/spec application regression suite passed." gradle-build.log
-          grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log
-          grep -F "Class profile lifecycle regression suite passed." gradle-build.log
-'''
-          new_ci = '''          grep -F "ClassSpecSection v2 domain regression tests passed." gradle-build.log
-          grep -F "Class/spec application regression suite passed." gradle-build.log
-          grep -F "ClassSpecSection lifecycle regression suite passed." gradle-build.log
-          grep -F "PlayerProfile domain regression suite passed." gradle-build.log
-          grep -F "PlayerProfile YAML regression suite passed." gradle-build.log
-          grep -F "PlayerProfile transaction regression suite passed." gradle-build.log
-          grep -F "PlayerProfile API regression suite passed." gradle-build.log
-'''
-          if old_ci not in ci:
-              raise SystemExit('Expected Profile v2 CI marker block was not found')
-          ci = ci.replace(old_ci, new_ci, 1)
-          (root / '.github/workflows/ci.yml').write_text(ci, encoding='utf-8')
-
-          # Build: retain the current #75 regression inventory and replace only the
-          # superseded class-profile tasks with the PlayerProfile-backed task set.
-          build = show(profile, 'build.gradle.kts')
-          recovery_build = show(recovery, 'build.gradle.kts')
-
-          def task_block(text: str, name: str) -> str:
-              match = re.search(
-                  rf'val {re.escape(name)} by tasks\.registering\(JavaExec::class\) \{{.*?^\}}\n',
-                  text,
-                  re.MULTILINE | re.DOTALL,
-              )
-              if not match:
-                  raise SystemExit(f'Missing Gradle task block: {name}')
-              return match.group(0).rstrip() + '\n\n'
-
-          for obsolete in (
-              'classProfileV2RegressionTest',
-              'classProfileRepositoryRegressionTest',
-              'classProfileLifecycleRegressionTest',
-          ):
-              block = task_block(build, obsolete)
-              build = build.replace(block, '', 1)
-
-          new_task_names = (
-              'classSpecSectionRegressionTest',
-              'classSpecLifecycleRegressionTest',
-              'playerProfileDomainRegressionTest',
-              'playerProfileYamlRegressionTest',
-              'playerProfileTransactionRegressionTest',
-              'playerProfileApiRegressionTest',
-          )
-          insertion = ''.join(task_block(recovery_build, name) for name in new_task_names)
-          anchor = 'val respecTransactionRegressionTest by tasks.registering(JavaExec::class) {'
-          if anchor not in build:
-              raise SystemExit('Gradle insertion anchor was not found')
-          build = build.replace(anchor, insertion + anchor, 1)
-
-          check_match = re.search(r'tasks\.check \{\n.*?^\}\n?$', build, re.MULTILINE | re.DOTALL)
-          if not check_match:
-              raise SystemExit('Gradle check dependency block was not found')
-          check_block = '''tasks.check {
-    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
-        motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
-        afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
-        factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
-        relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
-        questNpcValidationRegressionTest, resourcePackRegressionTest, classSpecCompatibilityRegressionTest,
-        classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
-        classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest,
-        playerProfileYamlRegressionTest, playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
-        respecTransactionRegressionTest, spellGrantLedgerRegressionTest)
-}
-'''
-          build = build[:check_match.start()] + check_block
-          for obsolete in (
-              'classProfileV2RegressionTest',
-              'classProfileRepositoryRegressionTest',
-              'classProfileLifecycleRegressionTest',
-          ):
-              if obsolete in build:
-                  raise SystemExit(f'Obsolete Gradle task survived: {obsolete}')
-          (root / 'build.gradle.kts').write_text(build, encoding='utf-8')
-
-          # Keep the auto-merged documentation body and select the post-platform counts.
-          choose_ours('CLAUDE.md')
-          choose_ours('docs/ARCHITECTURE.md')
-
-          # Manifest: current #75 entries are authoritative for the present repository;
-          # recovery entries override/add the PlayerProfile-specific contracts.
-          base_manifest = json.loads(show(profile, 'docs/documentation-manifest.yml'))
-          recovery_manifest = json.loads(show(recovery, 'docs/documentation-manifest.yml'))
-
-          def merge_maps(base, overlay):
-              if isinstance(base, dict) and isinstance(overlay, dict):
-                  result = dict(base)
-                  for key, value in overlay.items():
-                      result[key] = merge_maps(result[key], value) if key in result else value
-                  return result
-              return overlay
-
-          merged_manifest = merge_maps(base_manifest, recovery_manifest)
-          (root / 'docs/documentation-manifest.yml').write_text(
-              json.dumps(merged_manifest, ensure_ascii=False, indent=2) + '\n',
-              encoding='utf-8',
-          )
-
-          # Session lifecycle: PlayerProfile bridge plus every newer faction cleanup/reconcile hook.
-          listener_path = 'src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java'
-          listener = show(profile, listener_path).replace(
-              'BukkitClassProfileSessionBridge',
-              'BukkitClassSpecSectionSessionBridge',
-          )
-          if 'factionPassiveListener' not in listener or 'reconcileMembershipHistory' not in listener:
-              raise SystemExit('Faction lifecycle hardening was not preserved')
-          (root / listener_path).write_text(listener, encoding='utf-8')
-          PY
-
-          rm -f \
-            .github/player-profile-platform-authority.txt \
-            .github/player-profile-platform-current-head.txt \
-            .github/player-profile-platform-no-force.txt \
-            .github/player-profile-platform-note.txt \
-            .github/player-profile-platform-please-open-pr.txt \
-            .github/player-profile-platform-pr-intent.txt \
-            .github/player-profile-platform-pr-ready.txt \
-            .github/player-profile-platform-pr-trigger.txt \
-            .github/player-profile-platform-root.txt \
-            .github/player-profile-platform-stack.txt \
-            .github/workflows/player-profile-authenticated-checkout.yml \
-            docs/development/PLAYER_PROFILE_PLATFORM_SCOPE.md
-          rm -rf .github/player-profile-root-payload
-          rm -f .github/player-profile-bootstrap-trigger.txt .github/workflows/player-profile-bootstrap-checkout.yml
-
-          git add -A
-          test -z "$(git diff --name-only --diff-filter=U)"
-          ! git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . ':!docs/LORE.md'
-          git diff --cached --check
-          git commit -m "feat(profile): integrate PlayerProfile platform onto Profile v2"
-
-          tree_before_ancestry=$(git rev-parse HEAD^{tree})
-          git merge -s ours --no-ff "$OLD_PLATFORM_HEAD" -m "chore(profile): retain stacked PR ancestry"
-          test "$(git rev-parse HEAD^{tree})" = "$tree_before_ancestry"
-          git merge-base --is-ancestor "$PROFILE_V2_HEAD" HEAD
-          git merge-base --is-ancestor "$RECOVERY_HEAD" HEAD
-          git merge-base --is-ancestor "$OLD_PLATFORM_HEAD" HEAD
-          git diff --check "$PROFILE_V2_HEAD...HEAD"
-
-          java_count=$(find src/main/java -type f -name '*.java' | wc -l | tr -d ' ')
-          manager_count=$(find src/main/java -type f -name '*Manager.java' | wc -l | tr -d ' ')
-          echo "candidate_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "java_count=$java_count" >> "$GITHUB_OUTPUT"
-          echo "manager_count=$manager_count" >> "$GITHUB_OUTPUT"
-          printf 'Candidate: %s\nJava files: %s\nManager classes: %s\n' \
-            "$(git rev-parse HEAD)" "$java_count" "$manager_count" | tee /tmp/prepare-summary.txt
+        run: python3 /tmp/player_profile_integration_driver.py
 
       - name: Validate resource-pack and deployment snapshots
         id: assets
@@ -265,11 +59,9 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          {
-            python3 scripts/test_resource_pack.py
-            python3 scripts/resource_pack.py build --source resource-pack --output build/resource-pack/validation-pack.zip
-            python3 scripts/validate_fancynpcs_snapshot.py
-          } 2>&1 | tee /tmp/assets.log
+          python3 scripts/test_resource_pack.py 2>&1 | tee /tmp/assets.log
+          python3 scripts/resource_pack.py build --source resource-pack --output build/resource-pack/validation-pack.zip 2>&1 | tee -a /tmp/assets.log
+          python3 scripts/validate_fancynpcs_snapshot.py 2>&1 | tee -a /tmp/assets.log
 
       - name: Java 21 clean build and all regressions
         id: build
@@ -285,35 +77,35 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for marker in \
-            "MOTD regression suite passed." \
-            "Moderation regression suite passed." \
-            "Moderation review regression suite passed." \
-            "PersistentStoreCoordinator regression tests passed." \
-            "DEV-item reward regression suite passed." \
-            "AFK regression suite passed." \
-            "HUD regression suite passed." \
-            "Pause-menu dialog regression suite passed." \
-            "Faction passive regression suite passed." \
-            "Faction passive hardening regression suite passed." \
-            "Faction tax debt regression suite passed." \
-            "Relic refresh regression suite passed." \
-            "Relic refresh pipeline regression suite passed." \
-            "Lifecycle shutdown regression suite passed." \
-            "Quest NPC validation regression suite passed." \
-            "Resource pack regression suite passed." \
-            "Class/spec compatibility regression suite passed." \
-            "ClassSpecSection v2 domain regression tests passed." \
-            "Class/spec application regression suite passed." \
-            "ClassSpecSection lifecycle regression suite passed." \
-            "PlayerProfile domain regression suite passed." \
-            "PlayerProfile YAML regression suite passed." \
-            "PlayerProfile transaction regression suite passed." \
-            "PlayerProfile API regression suite passed." \
-            "Respec transaction regression suite passed." \
-            "Spell grant ledger regression suite passed."; do
-            grep -F "$marker" /tmp/gradle-build.log
-          done
+          markers=(
+            "MOTD regression suite passed."
+            "Moderation regression suite passed."
+            "Moderation review regression suite passed."
+            "PersistentStoreCoordinator regression tests passed."
+            "DEV-item reward regression suite passed."
+            "AFK regression suite passed."
+            "HUD regression suite passed."
+            "Pause-menu dialog regression suite passed."
+            "Faction passive regression suite passed."
+            "Faction passive hardening regression suite passed."
+            "Faction tax debt regression suite passed."
+            "Relic refresh regression suite passed."
+            "Relic refresh pipeline regression suite passed."
+            "Lifecycle shutdown regression suite passed."
+            "Quest NPC validation regression suite passed."
+            "Resource pack regression suite passed."
+            "Class/spec compatibility regression suite passed."
+            "ClassSpecSection v2 domain regression tests passed."
+            "Class/spec application regression suite passed."
+            "ClassSpecSection lifecycle regression suite passed."
+            "PlayerProfile domain regression suite passed."
+            "PlayerProfile YAML regression suite passed."
+            "PlayerProfile transaction regression suite passed."
+            "PlayerProfile API regression suite passed."
+            "Respec transaction regression suite passed."
+            "Spell grant ledger regression suite passed."
+          )
+          for marker in "${markers[@]}"; do grep -F "$marker" /tmp/gradle-build.log; done
 
       - name: PlayerProfile authority and API guards
         id: profile_guards
@@ -321,28 +113,23 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          {
-            python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority.json
-            python3 scripts/check_player_profile_openapi.py
-            python3 scripts/test_player_profile_authority.py
-          } 2>&1 | tee /tmp/profile-guards.log
+          python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority.json 2>&1 | tee /tmp/profile-guards.log
+          python3 scripts/check_player_profile_openapi.py 2>&1 | tee -a /tmp/profile-guards.log
+          python3 scripts/test_player_profile_authority.py 2>&1 | tee -a /tmp/profile-guards.log
 
       - name: Repository consistency
         id: consistency
         continue-on-error: true
-        shell: bash
         run: python3 scripts/check_consistency.py 2>&1 | tee /tmp/consistency.log
 
       - name: Markdown links
         id: markdown
         continue-on-error: true
-        shell: bash
         run: python3 scripts/check_markdown_links.py --root . 2>&1 | tee /tmp/markdown.log
 
       - name: Tooling self-tests
         id: tooling
         continue-on-error: true
-        shell: bash
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v 2>&1 | tee /tmp/tooling.log
 
       - name: Generate strict repository inventory
@@ -351,25 +138,18 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          {
-            python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report
-            python3 scripts/check_documentation_coverage.py \
-              --root . \
-              --inventory build/repository-inventory/repository-inventory.json \
-              --output build/repository-inventory \
-              --mode report
-            python3 scripts/check_documentation_coverage.py \
-              --root . \
-              --inventory build/repository-inventory/repository-inventory.json \
-              --output build/repository-inventory \
-              --mode strict
-          } 2>&1 | tee /tmp/inventory.log
+          python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report 2>&1 | tee /tmp/inventory.log
+          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode report 2>&1 | tee -a /tmp/inventory.log
+          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode strict 2>&1 | tee -a /tmp/inventory.log
 
       - name: Publish validation report
         if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ steps.prepare.outputs.candidate_sha }}
+          JAVA_COUNT: ${{ steps.prepare.outputs.java_count }}
+          MANAGER_COUNT: ${{ steps.prepare.outputs.manager_count }}
           ASSETS: ${{ steps.assets.outcome }}
           BUILD: ${{ steps.build.outcome }}
           MARKERS: ${{ steps.markers.outcome }}
@@ -378,44 +158,29 @@ jobs:
           MARKDOWN: ${{ steps.markdown.outcome }}
           TOOLING: ${{ steps.tooling.outcome }}
           INVENTORY: ${{ steps.inventory.outcome }}
-          CANDIDATE_SHA: ${{ steps.prepare.outputs.candidate_sha }}
-          JAVA_COUNT: ${{ steps.prepare.outputs.java_count }}
-          MANAGER_COUNT: ${{ steps.prepare.outputs.manager_count }}
         run: |
           set -euo pipefail
-          {
-            echo '<!-- player-profile-validation-report -->'
-            echo '### PlayerProfile integration validation'
-            echo
-            echo "- Candidate: \`$CANDIDATE_SHA\`"
-            echo "- Java files: \`$JAVA_COUNT\`"
-            echo "- Manager classes: \`$MANAGER_COUNT\`"
-            echo
-            echo '| Gate | Outcome |'
-            echo '| --- | --- |'
-            echo "| Resource/deployment snapshots | $ASSETS |"
-            echo "| Java 21 clean build | $BUILD |"
-            echo "| Regression marker inventory | $MARKERS |"
-            echo "| PlayerProfile authority/OpenAPI | $PROFILE_GUARDS |"
-            echo "| Repository consistency | $CONSISTENCY |"
-            echo "| Markdown links | $MARKDOWN |"
-            echo "| Tooling self-tests | $TOOLING |"
-            echo "| Strict repository inventory | $INVENTORY |"
-            for log in /tmp/assets.log /tmp/gradle-build.log /tmp/profile-guards.log /tmp/consistency.log /tmp/markdown.log /tmp/tooling.log /tmp/inventory.log; do
-              if [[ -f "$log" ]]; then
-                echo
-                echo "#### \`$(basename "$log")\` tail"
-                echo '```text'
-                tail -n 35 "$log"
-                echo '```'
-              fi
-            done
-          } | head -c 60000 > /tmp/player-profile-validation.md
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
-            -f body="$(cat /tmp/player-profile-validation.md)"
+          report=/tmp/player-profile-validation.md
+          printf '%s\n' '<!-- player-profile-validation-report -->' '### PlayerProfile integration validation' '' > "$report"
+          printf -- '- Candidate: `%s`\n- Java files: `%s`\n- Manager classes: `%s`\n\n' "$CANDIDATE_SHA" "$JAVA_COUNT" "$MANAGER_COUNT" >> "$report"
+          printf '%s\n' '| Gate | Outcome |' '| --- | --- |' >> "$report"
+          printf '| Resource/deployment snapshots | %s |\n' "$ASSETS" >> "$report"
+          printf '| Java 21 clean build | %s |\n' "$BUILD" >> "$report"
+          printf '| Regression marker inventory | %s |\n' "$MARKERS" >> "$report"
+          printf '| PlayerProfile authority/OpenAPI | %s |\n' "$PROFILE_GUARDS" >> "$report"
+          printf '| Repository consistency | %s |\n' "$CONSISTENCY" >> "$report"
+          printf '| Markdown links | %s |\n' "$MARKDOWN" >> "$report"
+          printf '| Tooling self-tests | %s |\n' "$TOOLING" >> "$report"
+          printf '| Strict repository inventory | %s |\n' "$INVENTORY" >> "$report"
+          for log in /tmp/assets.log /tmp/gradle-build.log /tmp/profile-guards.log /tmp/consistency.log /tmp/markdown.log /tmp/tooling.log /tmp/inventory.log; do
+            if [[ -f "$log" ]]; then
+              printf '\n#### `%s` tail\n```text\n' "$(basename "$log")" >> "$report"
+              tail -n 30 "$log" >> "$report"
+              printf '%s\n' '```' >> "$report"
+            fi
+          done
+          head -c 60000 "$report" > /tmp/player-profile-validation-trimmed.md
+          gh api --method POST -H "Accept: application/vnd.github+json" "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" -f body="$(cat /tmp/player-profile-validation-trimmed.md)"
 
       - name: Enforce validation gates
         if: always()
