@@ -13,6 +13,7 @@ env:
   EXPECTED_RECOVERY_HEAD: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
   TARGET_BRANCH: rework/class-spec-profile-v2
   EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
+  REVIEWED_DRIVER_COMMIT: 475d2f75f3643aedeaec4c4b2fcbf4d1387ead7d
 
 jobs:
   cleanup:
@@ -46,266 +47,78 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Prepare exact recovery cleanup
+      - name: Execute reviewed cleanup with semantic documentation audit
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/player-profile-suites
           python3 - <<'PY'
+          from __future__ import annotations
+
+          import os
           from pathlib import Path
           import re
-          import textwrap
+          import subprocess
+          import yaml
 
-          source = Path('.github/workflows/player-profile-root-v6-validate.yml').read_text(encoding='utf-8')
-          destinations = {
-              'DOMAIN': 'PlayerProfileDomainRegressionSuite.java',
-              'YAML': 'PlayerProfileYamlRegressionSuite.java',
-              'TX': 'PlayerProfileTransactionRegressionSuite.java',
-          }
-          for variable, filename in destinations.items():
-              match = re.search(
-                  rf'^\s*cat > "\${variable}" <<\'JAVA\'\n(.*?)^\s*JAVA\s*$',
-                  source,
-                  re.MULTILINE | re.DOTALL,
-              )
-              if match is None:
-                  raise SystemExit(f'missing reviewed heredoc for {variable}')
-              java = textwrap.dedent(match.group(1)).rstrip() + '\n'
-              if not java.startswith('package hu.taliann.icesmp.playerprofile.'):
-                  raise SystemExit(f'invalid package in {variable}')
-              if 'ClassProfile' in java or 'ClassProfileCodec' in java:
-                  raise SystemExit(f'legacy class-profile symbol leaked into {variable}')
-              if variable == 'DOMAIN':
-                  old_entry = 'FactionSection.class, EconomySection.class, ClassSpecSection.class,'
-                  if java.count(old_entry) != 1:
-                      raise SystemExit('unexpected ClassSpecSection record-list occurrence count')
-                  java = java.replace(old_entry, 'FactionSection.class, EconomySection.class,')
-                  marker = '        for (Class<?> type : records) {'
-                  if java.count(marker) != 1:
-                      raise SystemExit('unexpected domain record-loop marker count')
-                  replacement = textwrap.indent(textwrap.dedent('''
-                      check(java.lang.reflect.Modifier.isFinal(
-                              ClassSpecSection.class.getModifiers()), "final ClassSpecSection");
-                      for (java.lang.reflect.Field field : ClassSpecSection.class.getDeclaredFields()) {
-                          check(!field.getType().getName().startsWith("org.bukkit."),
-                                  "no Bukkit field ClassSpecSection." + field.getName());
-                      }
-                      for (Class<?> type : records) {
-                  ''').strip(), '        ')
-                  java = java.replace(marker, replacement, 1)
-              path = Path('/tmp/player-profile-suites') / filename
-              path.write_text(java, encoding='utf-8', newline='\n')
-              print(f'{variable}: {len(java.encode("utf-8"))} bytes')
-          PY
-
-          git fetch --no-tags origin \
-            "+refs/heads/${RECOVERY_BRANCH}:refs/remotes/origin/${RECOVERY_BRANCH}" \
-            "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
-          test "$(git rev-parse refs/remotes/origin/${RECOVERY_BRANCH})" = "$EXPECTED_RECOVERY_HEAD"
-          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
-          git switch --detach "$EXPECTED_RECOVERY_HEAD"
-          git switch -c local-authority-cleanup
-          git reset --hard "$EXPECTED_RECOVERY_HEAD"
-          git clean -fdx
-
-          DOMAIN=src/regression/java/hu/taliann/icesmp/playerprofile/domain/PlayerProfileDomainRegressionSuite.java
-          YAML=src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java
-          TX=src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java
-          API=src/regression/java/hu/taliann/icesmp/playerprofile/api/PlayerProfileApiRegressionSuite.java
-          for file in "$DOMAIN" "$YAML" "$TX"; do test ! -e "$file"; done
-          test -s "$API"
-          mkdir -p "$(dirname "$DOMAIN")" "$(dirname "$YAML")" "$(dirname "$TX")"
-          cp /tmp/player-profile-suites/PlayerProfileDomainRegressionSuite.java "$DOMAIN"
-          cp /tmp/player-profile-suites/PlayerProfileYamlRegressionSuite.java "$YAML"
-          cp /tmp/player-profile-suites/PlayerProfileTransactionRegressionSuite.java "$TX"
-
-          OLD_ADAPTER=src/main/java/hu/taliann/icesmp/classspec/persistence/RepositoryMutationStoreAdapter.java
-          NEW_ADAPTER=src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java
-          test -f "$OLD_ADAPTER"
-          test ! -e "$NEW_ADAPTER"
-          mv "$OLD_ADAPTER" "$NEW_ADAPTER"
-          perl -pi -e 's/RepositoryMutationStoreAdapter/ClassSpecSectionMutationStoreAdapter/g' "$NEW_ADAPTER"
-          grep -F 'public final class ClassSpecSectionMutationStoreAdapter implements ClassSpecSectionMutationStore' "$NEW_ADAPTER"
-          grep -F 'public ClassSpecSectionMutationStoreAdapter(final ClassSpecSectionRepository repository)' "$NEW_ADAPTER"
-
-          CORE=src/main/java/hu/taliann/icesmp/core/IceSMPCore.java
-          test "$(grep -o 'RepositoryMutationStoreAdapter' "$CORE" | wc -l)" -eq 1
-          perl -pi -e 's/RepositoryMutationStoreAdapter/ClassSpecSectionMutationStoreAdapter/g; s/classProfileRepository/classSpecSectionRepository/g; s/classProfileLifecycleService/classSpecSectionLifecycleService/g' "$CORE"
-          ! grep -nE 'RepositoryMutationStoreAdapter|classProfileRepository|classProfileLifecycleService' "$CORE"
-          grep -F 'ClassSpecSectionMutationStoreAdapter(classSpecSectionRepository)' "$CORE"
-          grep -F 'ClassSpecSectionLifecycleService(' "$CORE"
-
-          OBSOLETE=(
-            src/main/java/hu/taliann/icesmp/classspec/application/ClassProfileLifecycleService.java
-            src/main/java/hu/taliann/icesmp/classspec/application/ClassProfileMutationStore.java
-            src/main/java/hu/taliann/icesmp/classspec/domain/ClassProfile.java
-            src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassProfileSessionBridge.java
-            src/main/java/hu/taliann/icesmp/classspec/persistence/ClassProfileCodec.java
-            src/main/java/hu/taliann/icesmp/classspec/persistence/ClassProfileRepository.java
-            src/main/java/hu/taliann/icesmp/classspec/persistence/YamlClassProfileRepository.java
-            src/regression/java/hu/taliann/icesmp/classspec/persistence/YamlClassProfileRepositoryRegressionSuite.java
+          reviewed = os.environ['REVIEWED_DRIVER_COMMIT']
+          raw = subprocess.check_output(
+              ['git', 'show', f'{reviewed}:.github/workflows/repository-docs-inventory.yml'],
+              text=True,
           )
-          for file in "${OBSOLETE[@]}"; do
-            test -f "$file"
-            rm "$file"
-          done
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          ci = Path('.github/workflows/ci.yml')
-          lines = ci.read_text(encoding='utf-8').splitlines()
-          old_markers = [
-              'ClassProfile v2 domain/codec regression tests passed.',
-              'Class/spec application regression suite passed.',
-              'YamlClassProfileRepository regression tests passed.',
-              'Class profile lifecycle regression suite passed.',
-              'Respec transaction regression suite passed.',
-              'Spell grant ledger regression suite passed.',
+          workflow = yaml.safe_load(raw)
+          steps = workflow['jobs']['cleanup']['steps']
+          run_by_name = {
+              step.get('name'): step.get('run')
+              for step in steps
+              if step.get('name') and step.get('run')
+          }
+          expected = [
+              'Prepare exact recovery cleanup',
+              'Java 21 clean build and all regressions',
+              'Verify PlayerProfile regression markers',
+              'Run PlayerProfile and repository gates',
+              'Audit stale documentation claims',
+              'Commit and fast-forward push after every gate succeeds',
           ]
-          positions = []
-          for marker in old_markers:
-              matches = [i for i, line in enumerate(lines) if marker in line]
-              if len(matches) != 1:
-                  raise SystemExit(f'unexpected CI marker count for {marker}: {len(matches)}')
-              positions.append(matches[0])
-          if positions != list(range(positions[0], positions[0] + len(old_markers))):
-              raise SystemExit(f'legacy CI marker block is not contiguous: {positions}')
-          indent = lines[positions[0]].split('grep -F', 1)[0]
-          new_markers = [
-              'ClassSpecSection v2 domain regression tests passed.',
-              'Class/spec application regression suite passed.',
-              'ClassSpecSection lifecycle regression suite passed.',
-              'PlayerProfile domain regression suite passed.',
-              'PlayerProfile YAML regression suite passed.',
-              'PlayerProfile transaction regression suite passed.',
-              'PlayerProfile API regression suite passed.',
-              'Respec transaction regression suite passed.',
-              'Spell grant ledger regression suite passed.',
-          ]
-          replacement = [f'{indent}grep -F "{marker}" gradle-build.log' for marker in new_markers]
-          lines[positions[0]:positions[-1] + 1] = replacement
-          temporary = '      - name: Package authenticated Git checkout (temporary)'
-          if lines.count(temporary) != 1:
-              raise SystemExit(f'unexpected temporary checkout step count: {lines.count(temporary)}')
-          lines = lines[:lines.index(temporary)]
-          ci.write_text('\n'.join(lines).rstrip() + '\n', encoding='utf-8', newline='\n')
+          missing = [name for name in expected if not run_by_name.get(name)]
+          if missing:
+              raise SystemExit('Missing reviewed cleanup steps: ' + ', '.join(missing))
 
-          docs = Path('.github/workflows/repository-docs-inventory.yml')
-          lines = docs.read_text(encoding='utf-8').splitlines()
-          marker = '      - name: Upload inventory artifact'
-          if lines.count(marker) != 1:
-              raise SystemExit(f'unexpected inventory upload step count: {lines.count(marker)}')
-          index = lines.index(marker)
-          window = lines[index:index + 8]
-          if '        continue-on-error: true' not in window:
-              if index + 1 >= len(lines) or lines[index + 1] != '        if: always()':
-                  raise SystemExit('unexpected inventory upload guard')
-              lines.insert(index + 2, '        continue-on-error: true')
-          docs.write_text('\n'.join(lines).rstrip() + '\n', encoding='utf-8', newline='\n')
+          def audit_documentation() -> None:
+              pattern = re.compile(
+                  r'\b(?:YamlClassProfileRepository|ClassProfileCodec|ClassProfileRepository)\b'
+                  r'|\bClassProfile\s+v2\b|\bICS2\b',
+                  re.IGNORECASE,
+              )
+              negation = re.compile(
+                  r'\b(?:no|not|without|nincs|nem|nincs\s+külön|nem\s+létezik)\b',
+                  re.IGNORECASE,
+              )
+              candidates = [Path('README.md'), Path('CLAUDE.md')]
+              candidates.extend(sorted(Path('docs').rglob('*')))
+              stale: list[str] = []
+              for path in candidates:
+                  if not path.is_file() or path.suffix.lower() not in {'.md', '.yml', '.yaml'}:
+                      continue
+                  for number, line in enumerate(path.read_text(encoding='utf-8', errors='replace').splitlines(), 1):
+                      if pattern.search(line) and not negation.search(line):
+                          stale.append(f'{path.as_posix()}:{number}:{line}')
+              if stale:
+                  print('\n'.join(stale))
+                  raise SystemExit('Affirmative stale class-profile-only documentation remains.')
+              print('Semantic stale class-profile documentation audit: PASS')
+
+          env = os.environ.copy()
+          for index, name in enumerate(expected, 1):
+              print(f'::group::{index}/{len(expected)} {name}', flush=True)
+              if name == 'Audit stale documentation claims':
+                  audit_documentation()
+              else:
+                  subprocess.run(
+                      ['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', run_by_name[name]],
+                      check=True,
+                      cwd=Path.cwd(),
+                      env=env,
+                  )
+              print('::endgroup::', flush=True)
           PY
-
-          rm -rf \
-            .github/player-profile-root-payload \
-            .github/profile-v2-finalize \
-            .github/profile-v2-finalize-v2 \
-            .github/profile-v2-finalize-v3 \
-            .github/profile-v2-finalize-v4 \
-            .github/profile-v2-finalize-v5
-          rm -f \
-            .github/workflows/player-profile-bootstrap-checkout.yml \
-            .github/player-profile-bootstrap-trigger.txt \
-            .github/player-profile-bootstrap-run.txt \
-            .github/workflows/profile-v2-source-export.yml \
-            .github/workflows/profile-v2-payload-check.yml \
-            gradle-build.log gradle-check.log
-
-          git add -A
-          git diff --cached --check
-          ! git grep -nE 'ClassProfile|ClassProfileCodec|ClassProfileRepository|ClassProfileLifecycleService|ClassProfileMutationStore|BukkitClassProfileSessionBridge|YamlClassProfileRepository|RepositoryMutationStoreAdapter' -- \
-            src/main/java src/regression/java build.gradle.kts .github/workflows/ci.yml
-          ! git diff --cached --name-only --diff-filter=ACMRTUXB | grep -E '(^|/)(player-profile-root-v6|player-profile-root-payload|profile-v2-finalize)|\.b64$|gradle-(build|check)\.log$'
-          echo '=== Prepared authority cleanup ==='
-          git status --short
-          git diff --cached --stat
-          git diff --cached --name-status
-
-      - name: Java 21 clean build and all regressions
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew clean build --no-daemon --stacktrace | tee /tmp/player-profile-authority-cleanup-build.log
-
-      - name: Verify PlayerProfile regression markers
-        shell: bash
-        run: |
-          set -euo pipefail
-          grep -F "ClassSpecSection v2 domain regression tests passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "Class/spec application regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "ClassSpecSection lifecycle regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "PlayerProfile domain regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "PlayerProfile YAML regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "PlayerProfile transaction regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "PlayerProfile API regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "Respec transaction regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-          grep -F "Spell grant ledger regression suite passed." /tmp/player-profile-authority-cleanup-build.log
-
-      - name: Run PlayerProfile and repository gates
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/check_player_profile_authority.py --update-allowlist
-          git add scripts/player_profile_authority_allowlist.json
-          git diff --cached --check
-          python3 scripts/check_player_profile_authority.py
-          python3 scripts/test_player_profile_authority.py
-          python3 scripts/check_player_profile_openapi.py
-          python3 scripts/check_consistency.py
-          python3 scripts/check_markdown_links.py --root .
-          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
-          python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report
-          python3 scripts/check_documentation_coverage.py \
-            --root . \
-            --inventory build/repository-inventory/repository-inventory.json \
-            --output build/repository-inventory \
-            --mode report
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          files = sorted(Path('build').rglob('*.json'))
-          if not files:
-              raise SystemExit('No JSON artifact generated')
-          for path in files:
-              with path.open(encoding='utf-8') as handle:
-                  json.load(handle)
-          print(f'Validated {len(files)} generated JSON files')
-          PY
-
-      - name: Audit stale documentation claims
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -R -nE 'ICS2|YamlClassProfileRepository|ClassProfileCodec|ClassProfileRepository|ClassProfile v2' \
-              README.md CLAUDE.md docs scripts --exclude='*.json'; then
-            echo 'Stale class-profile-only documentation remains.' >&2
-            exit 1
-          fi
-
-      - name: Commit and fast-forward push after every gate succeeds
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --check
-          REMOTE_RECOVERY_HEAD=$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')
-          REMOTE_TARGET_HEAD=$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')
-          test "$REMOTE_RECOVERY_HEAD" = "$EXPECTED_RECOVERY_HEAD"
-          test "$REMOTE_TARGET_HEAD" = "$EXPECTED_TARGET_HEAD"
-          git commit -m "refactor(player-profile): remove legacy class-profile authority"
-          NEW_HEAD=$(git rev-parse HEAD)
-          git diff --check "$EXPECTED_TARGET_HEAD...$NEW_HEAD"
-          git push origin "HEAD:refs/heads/${RECOVERY_BRANCH}"
-          test "$(git ls-remote origin "refs/heads/${RECOVERY_BRANCH}" | awk '{print $1}')" = "$NEW_HEAD"
-          echo "Recovery branch updated to $NEW_HEAD"
