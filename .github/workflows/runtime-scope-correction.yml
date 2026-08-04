@@ -40,7 +40,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/apply_polygon_claim_hardening.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source = Path('.github/scripts/apply_polygon_claim_hardening.py')
+          text = source.read_text(encoding='utf-8')
+          marker = '\nreplace_once(\n    "docs/RUNTIME_HARDENING_AUDIT.md",'
+          if text.count(marker) != 1:
+              raise SystemExit('stale docs assertion marker not found exactly once')
+          executable = text[:text.index(marker)] + '\nprint("polygon claim adversarial hardening applied")\n'
+          scope = {'__file__': str(source.resolve()), '__name__': '__main__'}
+          exec(compile(executable, str(source), 'exec'), scope)
+          PY
           git diff --check
           git diff --stat
 
@@ -76,8 +87,7 @@ jobs:
             src/main/java/hu/taliann/icesmp/managers/ClaimManager.java \
             src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java \
             src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java \
-            src/regression/java/hu/taliann/icesmp/runtime/RuntimeHardeningRegressionSuite.java \
-            docs/RUNTIME_HARDENING_AUDIT.md
+            src/regression/java/hu/taliann/icesmp/runtime/RuntimeHardeningRegressionSuite.java
           git diff --cached --check
           git commit -m "Harden polygon claim rasterization and persistence" \
             -m "Bound polygon points, perimeter, continuous area and exact filled columns before publication. Replace bounding-box scanning with row scanlines, avoid materializing large rectangle conflicts, and reject malformed stored polygons instead of widening them to a rectangle." \
