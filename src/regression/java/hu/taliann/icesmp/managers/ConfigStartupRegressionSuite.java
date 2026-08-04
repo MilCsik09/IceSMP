@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
+import hu.taliann.icesmp.gui.ConfigMenuHelp;
 import hu.taliann.icesmp.gui.ConfigMenuRootGUI;
 import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import org.bukkit.Material;
@@ -11,7 +12,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -31,7 +34,9 @@ public final class ConfigStartupRegressionSuite {
         rejectsNonFiniteAndWrongTypeNumericConfig();
         verifiesPackagedDefaults();
         verifiesSupportedFirstSpawnEvent();
+        verifiesConfigMenuCatalog();
         verifiesBlockRegenerationConfigMenu();
+        verifiesConfigMenuResetAndLiveApply();
         System.out.println("Config startup regression suite passed.");
     }
 
@@ -157,6 +162,7 @@ public final class ConfigStartupRegressionSuite {
         final YamlConfiguration factions = load("factions.yml");
         final YamlConfiguration world = load("world.yml");
         final YamlConfiguration relics = load("relics.yml");
+        final YamlConfiguration blockRegen = load("block-regen.yml");
         check(general.getConfigurationSection("sit") == null,
                 "general.yml must not duplicate sit.yml ownership");
         check(factions.getBoolean("factions.kings.dethrone-on-expiry"),
@@ -167,6 +173,18 @@ public final class ConfigStartupRegressionSuite {
                 "major-event active-time cap default missing");
         check(relics.isConfigurationSection("relics.definitions.sarkany_tojas"),
                 "dragon egg relic definition missing");
+        check(blockRegen.getDouble(
+                        "territory.protection.regen.debris-horizontal-multiplier") == 1.0D,
+                "debris horizontal default missing");
+        check(blockRegen.getDouble(
+                        "territory.protection.regen.debris-vertical-multiplier") == 1.0D,
+                "debris vertical default missing");
+        check(blockRegen.getDouble(
+                        "territory.protection.regen.debris-horizontal-spread") == 0.0D,
+                "debris spread default changed");
+        check(blockRegen.getBoolean(
+                        "territory.protection.regen.debris-gravity-enabled"),
+                "debris gravity default missing");
     }
 
     private static void verifiesSupportedFirstSpawnEvent() throws Exception {
@@ -179,10 +197,30 @@ public final class ConfigStartupRegressionSuite {
                 "first join must use the supported configuration-phase spawn event");
     }
 
-    private static void verifiesBlockRegenerationConfigMenu() throws Exception {
+    private static void verifiesConfigMenuCatalog() {
         check(ConfigMenuRootGUI.categoryCapacity() >= ConfigMenuGUI.CATEGORIES.size() + 1,
-                "config root menu must have capacity for the block-regeneration category");
-        check(BlockRegenConfigMenuGUI.entryCount() == 33,
+                "config root menu capacity is smaller than the current category catalog");
+        check(ConfigMenuGUI.CATEGORIES.size() >= 25,
+                "expanded admin config catalog lost categories");
+        final Set<String> keys = new HashSet<>();
+        for (final ConfigMenuGUI.Category category : ConfigMenuGUI.CATEGORIES.values()) {
+            check(category.entries().size() <= 45,
+                    "config category exceeds one 54-slot page: " + category.id());
+            for (final ConfigMenuGUI.Entry entry : category.entries()) {
+                check(keys.add(entry.key()), "duplicate config-menu key: " + entry.key());
+                final String description = ConfigMenuHelp.describe(entry.key(), entry.label());
+                check(description != null && description.length() >= 35,
+                        "config-menu help is missing or too vague: " + entry.key());
+            }
+        }
+        check(ConfigMenuGUI.CATEGORIES.containsKey("party"), "party config category missing");
+        check(ConfigMenuGUI.CATEGORIES.containsKey("claimek"), "claim config category missing");
+        check(ConfigMenuGUI.CATEGORIES.containsKey("megjelenes"), "chat/VFX category missing");
+        check(ConfigMenuGUI.CATEGORIES.containsKey("adomany"), "donation category missing");
+    }
+
+    private static void verifiesBlockRegenerationConfigMenu() throws Exception {
+        check(BlockRegenConfigMenuGUI.entryCount() == 38,
                 "block-regeneration menu entry count changed unexpectedly");
 
         final List<String> requiredKeys = List.of(
@@ -218,25 +256,65 @@ public final class ConfigStartupRegressionSuite {
                 "territory.protection.regen.debris-enabled",
                 "territory.protection.regen.debris-percent",
                 "territory.protection.regen.debris-lifetime-seconds",
-                "territory.protection.regen.debris-launch-power"
+                "territory.protection.regen.debris-launch-power",
+                "territory.protection.regen.debris-horizontal-multiplier",
+                "territory.protection.regen.debris-vertical-multiplier",
+                "territory.protection.regen.debris-horizontal-spread",
+                "territory.protection.regen.debris-extra-upward-velocity",
+                "territory.protection.regen.debris-gravity-enabled"
         );
         for (final String key : requiredKeys) {
-            check(BlockRegenConfigMenuGUI.findEntry(key) != null,
-                    "block-regeneration menu key missing: " + key);
+            final ConfigMenuGUI.Entry entry = BlockRegenConfigMenuGUI.findEntry(key);
+            check(entry != null, "block-regeneration menu key missing: " + key);
+            check(ConfigMenuHelp.describe(key, entry.label()).length() >= 50,
+                    "block-regeneration help is not exact enough: " + key);
+            check(!BlockRegenConfigMenuGUI.requiresRestart(key),
+                    "block-regeneration menu key still requires restart: " + key);
         }
-        check(BlockRegenConfigMenuGUI.requiresRestart(
-                        "territory.protection.regen.restore-interval-ticks"),
-                "restore scheduler interval must be marked restart-required");
-        check(!BlockRegenConfigMenuGUI.requiresRestart(
-                        "territory.protection.regen.blocks-per-pass"),
-                "live block batch size must not be marked restart-required");
 
+        final String service = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/BlockRegenService.java"));
+        check(service.contains("dynamicTickerStarted")
+                        && service.contains("acquireTickWindow")
+                        && service.contains("debris-horizontal-multiplier")
+                        && service.contains("debris-vertical-multiplier")
+                        && service.contains("debris-horizontal-spread")
+                        && service.contains("debris-extra-upward-velocity")
+                        && service.contains("debris-gravity-enabled"),
+                "live restore timing or debris trajectory wiring is missing");
+    }
+
+    private static void verifiesConfigMenuResetAndLiveApply() throws Exception {
         final String listener = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java"));
-        check(listener.contains("ConfigMenuRootGUI.openRoot")
-                        && listener.contains("BlockRegenConfigMenuGUI.open")
-                        && listener.contains("set-success-restart"),
-                "block-regeneration menu wiring or restart feedback is missing");
+        check(listener.contains("event.isMiddleClick()")
+                        && listener.contains("resetOverride")
+                        && listener.contains("ConfigRuntimeReloadBridge.apply")
+                        && !listener.contains("set-success-restart"),
+                "middle-click reset or restart-free apply is missing");
+
+        final String renderer = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/gui/ConfigMenuEntryRenderer.java"));
+        check(renderer.contains("Alapérték:")
+                        && renderer.contains("Jelenleg:")
+                        && renderer.contains("config.yml felülbírálás")
+                        && renderer.contains("Görgőkatt"),
+                "config icon lore does not expose value, default, source and reset action");
+
+        final String configManager = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java"));
+        check(configManager.contains("baseConfiguration")
+                        && configManager.contains("mergePackagedDefaults")
+                        && configManager.contains("resetOverride")
+                        && configManager.contains("\"block-regen\""),
+                "base-value layering or reset support is incomplete");
+
+        final String bridge = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/core/ConfigRuntimeReloadBridge.java"));
+        check(bridge.contains("relicManager.load()")
+                        && bridge.contains("mobScalingManager")
+                        && bridge.contains("rescheduleTaxes"),
+                "cached config systems are not applied live");
     }
 
     private static YamlConfiguration load(final String name) {
@@ -244,7 +322,8 @@ public final class ConfigStartupRegressionSuite {
                 Path.of("src/main/resources/config", name).toFile());
     }
 
-    private static <T extends Throwable> void expectThrows(final Class<T> type, final Runnable action) {
+    private static <T extends Throwable> void expectThrows(final Class<T> type,
+                                                            final Runnable action) {
         try {
             action.run();
         } catch (final Throwable thrown) {
