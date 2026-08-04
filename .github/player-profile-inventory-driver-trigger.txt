@@ -1,11 +1,9 @@
 Trigger the Repository Docs Inventory publisher.
-Phase: reconstruct the exact Profile v2 tree, complete all documentation contracts, require zero strict findings, run the full Java/repository gate set, then perform the exact-head protected final #75 push.
-Validation head: eb85a7616a3432fdd8cf1095fc8c84d3f9af8b63
-Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
-Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
-Proven pre-build state: 615 production Java files and 0 strict inventory findings.
+Phase: reuse the fully green publisher, stop before its workflow-changing push, restore the old #75 workflow blobs in the commit tree, and push only the validated code/documentation tree.
+Validation head: d6f30766e6ab7bea2aeb655bdc412617f9d05878
+Validated publisher commit: eb85a7616a3432fdd8cf1095fc8c84d3f9af8b63
+Proven result: Java build, all regression markers, consistency, Markdown, 27 tooling tests and strict inventory with 0 blocking findings.
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
-Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
 Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
-Only the final step may push, and it must fail if either remote head changed.
+The validated ci.yml and repository-docs-inventory.yml will be applied separately through direct GitHub file commits after the code push.
 Must never be merged.
