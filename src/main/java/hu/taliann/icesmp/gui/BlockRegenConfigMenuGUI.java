@@ -65,7 +65,7 @@ public final class BlockRegenConfigMenuGUI {
             ConfigMenuGUI.Entry.integer("territory.protection.regen.restore-interval-ticks",
                     "Visszaépítő ütem (tick, restart)", 1, 1, 120),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.blocks-per-pass",
-                    "Blokkok menetenkként", 1, 1, 128),
+                    "Blokkok menetenként", 1, 1, 128),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.support-grace-seconds",
                     "Támasz-várakozás (mp)", 10, 5, 3600),
 
