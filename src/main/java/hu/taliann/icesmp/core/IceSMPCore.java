@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.core;
 
+import hu.taliann.icesmp.classspec.compat.ClassSpecDependencyPreflight;
 import hu.taliann.icesmp.commands.BankCommand;
 import hu.taliann.icesmp.commands.BountyCommand;
 import hu.taliann.icesmp.commands.CurrencyCommand;
@@ -191,6 +192,7 @@ public final class IceSMPCore {
     private final JavaPlugin plugin;
     private final Runnable resourcePackReloadHook;
     private final ConfigManager configManager;
+    private final ClassSpecDependencyPreflight classSpecDependencyPreflight;
     private final MessageManager messageManager;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
@@ -346,6 +348,7 @@ public final class IceSMPCore {
         // az első ablak restart után rövidebb/hosszabb volt a beállítottnál). Az enable()
         // load()-ja emiatt már csak frissítés (idempotens).
         configManager.load();
+        this.classSpecDependencyPreflight = new ClassSpecDependencyPreflight(plugin, configManager);
         this.messageManager = new MessageManager(plugin, configManager);
         this.currencyManager = new CurrencyManager(plugin, configManager);
         this.factionManager = new FactionManager(plugin, configManager, currencyManager);
@@ -880,6 +883,7 @@ public final class IceSMPCore {
         Permissions.register();
         configManager.load();
         factionPassiveConfig.reload();
+        classSpecDependencyPreflight.verify();
         // Surface admin typos (bad material/currency names, out-of-range percents, negative
         // durations) as clear log warnings — never blocks startup, only reports.
         ConfigValidator.validate(configManager, plugin.getLogger());

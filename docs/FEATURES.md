@@ -444,11 +444,18 @@ Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; resource-pack ikonok és balance-adatok tesztelendők.
 - **Fontos határ:** A konkrét élő balance és már létező játékosadat-migráció az élő config nélkül nem bizonyítható.
 
+A teljes, 13 kasztot és 35 specializációt érintő rework kompatibilitási alapja már bekerült, de
+alapból ki van kapcsolva. A jelenlegi kaszt- és specjátékmenet marad mérvadó mindaddig, amíg a
+`class-spec-rework.enabled` flag nem aktív. Bekapcsolás előtt az IceSMP a verziózárt dependency
+manifest alapján ellenőrzi a teljes kötelező megjelenítési és content stacket; eltérésnél nem enged
+félaktív profilt betölteni.
+
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin`; `icesmp.admin.job`; `icesmp.admin.spec`; `icesmp.job.admin`
 - Config: `classes.*`, `spells.*`, specialization- és ability-definíciók.
+- Rework staging config: `class-spec-rework.*`; dependency lock: `class-spec-dependencies.lock.yml`.
 - Tartós állapot: Kaszt, XP, specializáció és unlockok játékosonként tartósak.
 - Reload: Balance részben reloadolható; új enum/registry-szerkezet restartot igényel.
 
