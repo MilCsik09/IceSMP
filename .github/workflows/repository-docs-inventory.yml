@@ -14,25 +14,45 @@ env:
   TARGET_BRANCH: rework/class-spec-profile-v2
 
 jobs:
-  diagnose:
-    name: Diagnose clean Profile v2 integration
+  integrate:
+    name: Integrate clean Profile v2 onto current base
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
-      - name: Check out authenticated history
+      - name: Check out authenticated integration driver
         uses: actions/checkout@v4
         with:
           ref: agent/player-profile-root-reconstruct-20260803-v6
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Diagnose exact merge
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Install repository tooling dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
+      - name: Resolve the exact stacked integration
         shell: bash
         run: |
           set -euo pipefail
           git fetch --no-tags origin \
             "+refs/heads/rework/class-spec-1.21.11-compatibility:refs/remotes/origin/rework/class-spec-1.21.11-compatibility" \
             "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+
           test "$(git rev-parse refs/remotes/origin/rework/class-spec-1.21.11-compatibility)" = "$UPDATED_BASE_HEAD"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$OLD_PROFILE_HEAD"
           test "$(git merge-base "$CLEAN_PROFILE_HEAD" "$OLD_PROFILE_HEAD")" = "$CLEAN_PROFILE_HEAD"
@@ -41,18 +61,573 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch --detach "$CLEAN_PROFILE_HEAD"
           git switch -c local-profile-v2-integration
-          if git merge --no-ff --no-commit "$UPDATED_BASE_HEAD"; then
-            echo 'PROFILE_V2_INTEGRATION_CONFLICTS=none'
-            git diff --cached --check
-            exit 0
+
+          set +e
+          git merge --no-ff --no-commit "$UPDATED_BASE_HEAD"
+          merge_status=$?
+          set -e
+          if [[ "$merge_status" -eq 0 ]]; then
+            echo "Unexpected conflict-free merge; refusing an unreviewed path." >&2
+            exit 1
           fi
 
-          echo '=== Profile v2 integration conflicts ===' >&2
-          git status --short >&2
-          CONFLICTS=$(git diff --name-only --diff-filter=U)
-          printf '%s\n' "$CONFLICTS" >&2
-          for file in $CONFLICTS; do
-            echo "=== $file ===" >&2
-            git diff --cc -- "$file" >&2 || true
+          mapfile -t conflicts < <(git diff --name-only --diff-filter=U | sort)
+          expected=(
+            .github/workflows/ci.yml
+            CLAUDE.md
+            build.gradle.kts
+            docs/ADMIN_GUIDE.md
+            docs/ARCHITECTURE.md
+            docs/documentation-manifest.yml
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java
+            src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java
+            src/main/java/hu/taliann/icesmp/managers/JobManager.java
+            src/main/java/hu/taliann/icesmp/managers/RespecService.java
+            src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java
+          )
+          mapfile -t expected < <(printf '%s\n' "${expected[@]}" | sort)
+          if [[ "$(printf '%s\n' "${conflicts[@]}")" != "$(printf '%s\n' "${expected[@]}")" ]]; then
+            echo "Conflict set drifted." >&2
+            printf 'Actual:\n%s\nExpected:\n%s\n' \
+              "$(printf '%s\n' "${conflicts[@]}")" \
+              "$(printf '%s\n' "${expected[@]}")" >&2
+            exit 1
+          fi
+
+          git checkout --theirs -- \
+            .github/workflows/ci.yml \
+            build.gradle.kts \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java
+          git checkout --ours -- \
+            src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java \
+            src/main/java/hu/taliann/icesmp/managers/JobManager.java \
+            src/main/java/hu/taliann/icesmp/managers/RespecService.java \
+            src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java
+
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import re
+          import subprocess
+          from pathlib import Path
+
+          CLEAN = "b6f4492766675f718f73fd947bf92a388a3090fb"
+          BASE = "854248d530d417aca49906616f6e3ac458b231ca"
+
+          def git_text(ref: str, path: str) -> str:
+              return subprocess.check_output(
+                  ["git", "show", f"{ref}:{path}"], text=True, encoding="utf-8"
+              )
+
+          def write(path: str, text: str) -> None:
+              Path(path).write_text(text, encoding="utf-8", newline="\n")
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one marker, found {count}")
+              return text.replace(old, new, 1)
+
+          def resolve_blocks(path: str, side: str) -> None:
+              lines = Path(path).read_text(encoding="utf-8").splitlines(keepends=True)
+              output: list[str] = []
+              i = 0
+              blocks = 0
+              while i < len(lines):
+                  if not lines[i].startswith("<<<<<<< "):
+                      output.append(lines[i])
+                      i += 1
+                      continue
+                  blocks += 1
+                  i += 1
+                  ours: list[str] = []
+                  while i < len(lines) and not lines[i].startswith("======="):
+                      ours.append(lines[i])
+                      i += 1
+                  if i >= len(lines):
+                      raise SystemExit(f"{path}: unterminated conflict")
+                  i += 1
+                  theirs: list[str] = []
+                  while i < len(lines) and not lines[i].startswith(">>>>>>> "):
+                      theirs.append(lines[i])
+                      i += 1
+                  if i >= len(lines):
+                      raise SystemExit(f"{path}: unterminated conflict")
+                  i += 1
+                  output.extend(ours if side == "ours" else theirs)
+              if blocks == 0:
+                  raise SystemExit(f"{path}: expected at least one conflict block")
+              write(path, "".join(output))
+
+          resolve_blocks("CLAUDE.md", "ours")
+          resolve_blocks("docs/ARCHITECTURE.md", "ours")
+          resolve_blocks("docs/ADMIN_GUIDE.md", "theirs")
+
+          admin_path = "docs/ADMIN_GUIDE.md"
+          admin = Path(admin_path).read_text(encoding="utf-8")
+          profile_admin = git_text(CLEAN, admin_path)
+          section_start = "### Profile v2 kaszt/spec üzemeltetési kapu\n"
+          next_heading = "### Konfigurációs fájlok\n"
+          profile_section = section_start + profile_admin.split(section_start, 1)[1].split(next_heading, 1)[0]
+          base_heading = "### Kaszt/spec rework staging-kapu\n"
+          if base_heading not in admin or next_heading not in admin:
+              raise SystemExit("ADMIN_GUIDE class/spec section markers drifted")
+          before, tail = admin.split(base_heading, 1)
+          _, after = tail.split(next_heading, 1)
+          write(admin_path, before + profile_section + next_heading + after)
+
+          ci_path = ".github/workflows/ci.yml"
+          ci = Path(ci_path).read_text(encoding="utf-8")
+          anchor = '          grep -F "Class/spec compatibility regression suite passed." gradle-build.log\n'
+          profile_markers = (
+              '          grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log\n'
+              '          grep -F "Class/spec application regression suite passed." gradle-build.log\n'
+              '          grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log\n'
+              '          grep -F "Class profile lifecycle regression suite passed." gradle-build.log\n'
+              '          grep -F "Respec transaction regression suite passed." gradle-build.log\n'
+              '          grep -F "Spell grant ledger regression suite passed." gradle-build.log\n'
+          )
+          ci = replace_once(ci, anchor, anchor + profile_markers, "CI regression anchor")
+          write(ci_path, ci)
+
+          gradle_path = "build.gradle.kts"
+          gradle = Path(gradle_path).read_text(encoding="utf-8")
+          clean_gradle = git_text(CLEAN, gradle_path)
+          task_start = "val classProfileV2RegressionTest by tasks.registering(JavaExec::class) {\n"
+          task_end = "val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {\n"
+          profile_tasks = task_start + clean_gradle.split(task_start, 1)[1].split(task_end, 1)[0]
+          gradle = replace_once(gradle, task_end, profile_tasks + task_end, "Gradle profile task anchor")
+          old_deps = (
+              "        questNpcValidationRegressionTest, resourcePackRegressionTest, "
+              "classSpecCompatibilityRegressionTest)\n"
+          )
+          new_deps = (
+              "        questNpcValidationRegressionTest, resourcePackRegressionTest, "
+              "classSpecCompatibilityRegressionTest,\n"
+              "        classProfileV2RegressionTest, classSpecApplicationRegressionTest,\n"
+              "        classProfileRepositoryRegressionTest, classProfileLifecycleRegressionTest,\n"
+              "        respecTransactionRegressionTest, spellGrantLedgerRegressionTest)\n"
+          )
+          gradle = replace_once(gradle, old_deps, new_deps, "Gradle check dependency anchor")
+          write(gradle_path, gradle)
+
+          join_path = "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java"
+          join = Path(join_path).read_text(encoding="utf-8")
+          join = replace_once(
+              join,
+              "import org.bukkit.entity.Player;\n",
+              "import org.bukkit.entity.Player;\nimport org.bukkit.plugin.java.JavaPlugin;\n",
+              "FactionJoin JavaPlugin import",
+          )
+          join = replace_once(
+              join,
+              "    private final FactionManager factionManager;\n",
+              "    private final FactionManager factionManager;\n    private final JavaPlugin plugin;\n",
+              "FactionJoin plugin field",
+          )
+          join = replace_once(
+              join,
+              "    public FactionJoinSubcommand(final FactionManager factionManager, final SinManager sinManager,\n"
+              "                                 final CurrencyManager currencyManager, final TerritoryManager territoryManager,\n"
+              "                                 final ConfigManager configManager, final MessageManager messageManager) {\n"
+              "        this.factionManager = factionManager;\n",
+              "    public FactionJoinSubcommand(final JavaPlugin plugin, final FactionManager factionManager,\n"
+              "                                 final SinManager sinManager,\n"
+              "                                 final CurrencyManager currencyManager, final TerritoryManager territoryManager,\n"
+              "                                 final ConfigManager configManager, final MessageManager messageManager) {\n"
+              "        this.plugin = plugin;\n"
+              "        this.factionManager = factionManager;\n",
+              "FactionJoin constructor",
+          )
+          join = replace_once(
+              join,
+              "            sender.sendMessage(messageManager.get(\n"
+              "                    \"messages.faction-dark-pact-sealed\",\n"
+              "                    \"&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad.\"\n"
+              "            ));\n"
+              "            teleportToFactionSpawn(player, FactionType.DARK);\n",
+              "            sender.sendMessage(messageManager.get(\n"
+              "                    \"messages.faction-dark-pact-sealed\",\n"
+              "                    \"&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad.\"\n"
+              "            ));\n"
+              "            if (specializationManager != null) {\n"
+              "                specializationManager.reconcileDarkGates(player);\n"
+              "            }\n"
+              "            teleportToFactionSpawn(player, FactionType.DARK);\n",
+              "FactionJoin DARK reconcile",
+          )
+          old_reset = (
+              "        if (leavingDark && specializationManager != null\n"
+              "                && specializationManager.resetDarkGatedSpecialization(player)) {\n"
+              "            player.sendMessage(messageManager.get(\"messages.dark-spec-lost\",\n"
+              "                    \"&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett.\"));\n"
+              "        }\n"
+          )
+          new_reconcile = (
+              "        if (leavingDark && specializationManager != null) {\n"
+              "            specializationManager.reconcileDarkGates(player).whenComplete((result, failure) ->\n"
+              "                    player.getScheduler().run(plugin, task -> {\n"
+              "                        if (failure == null && result != null && result.committed()) {\n"
+              "                            player.sendMessage(messageManager.get(\"messages.dark-spec-sealed\",\n"
+              "                                    \"&5A sötét specializációd lezárult, de minden fejlődése megmaradt.\"));\n"
+              "                        }\n"
+              "                    }, null));\n"
+              "        }\n"
+          )
+          join = replace_once(join, old_reset, new_reconcile, "FactionJoin destructive reset")
+          write(join_path, join)
+
+          leave_path = "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java"
+          leave = Path(leave_path).read_text(encoding="utf-8")
+          leave = replace_once(
+              leave,
+              "import org.bukkit.entity.Player;\n",
+              "import org.bukkit.entity.Player;\nimport org.bukkit.plugin.java.JavaPlugin;\n",
+              "FactionLeave JavaPlugin import",
+          )
+          leave = replace_once(
+              leave,
+              "    private final FactionManager factionManager;\n",
+              "    private final FactionManager factionManager;\n    private final JavaPlugin plugin;\n",
+              "FactionLeave plugin field",
+          )
+          leave = replace_once(
+              leave,
+              "    public FactionLeaveSubcommand(final FactionManager factionManager, final hu.taliann.icesmp.managers.SinManager sinManager,\n"
+              "                                  final CurrencyManager currencyManager,\n",
+              "    public FactionLeaveSubcommand(final JavaPlugin plugin, final FactionManager factionManager,\n"
+              "                                  final hu.taliann.icesmp.managers.SinManager sinManager,\n"
+              "                                  final CurrencyManager currencyManager,\n",
+              "FactionLeave constructor signature",
+          )
+          leave = replace_once(
+              leave,
+              "                                  final MessageManager messageManager) {\n"
+              "        this.factionManager = factionManager;\n",
+              "                                  final MessageManager messageManager) {\n"
+              "        this.plugin = plugin;\n"
+              "        this.factionManager = factionManager;\n",
+              "FactionLeave constructor assignment",
+          )
+          old_leave_reset = (
+              "        if (leavingDark && specs != null && specs.resetDarkGatedSpecialization(player)) {\n"
+              "            player.sendMessage(messageManager.get(\"messages.dark-spec-lost\",\n"
+              "                    \"&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett.\"));\n"
+              "        }\n"
+          )
+          new_leave_reconcile = (
+              "        if (leavingDark && specs != null) {\n"
+              "            specs.reconcileDarkGates(player).whenComplete((result, failure) ->\n"
+              "                    player.getScheduler().run(plugin, task -> {\n"
+              "                        if (failure == null && result != null && result.committed()) {\n"
+              "                            player.sendMessage(messageManager.get(\"messages.dark-spec-sealed\",\n"
+              "                                    \"&5A sötét specializációd lezárult, de minden fejlődése megmaradt.\"));\n"
+              "                        }\n"
+              "                    }, null));\n"
+              "        }\n"
+          )
+          leave = replace_once(leave, old_leave_reset, new_leave_reconcile, "FactionLeave destructive reset")
+          write(leave_path, leave)
+
+          set_path = "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java"
+          faction_set = Path(set_path).read_text(encoding="utf-8")
+          old_transition = (
+              "                        if (livePrevious == FactionType.DARK && factionType != FactionType.DARK) {\n"
+              "                            sinManager.clearDarkPactForFactionOverride(onlineTarget);\n"
+              "                            final hu.taliann.icesmp.managers.SpecializationManager specs = specializationManager;\n"
+              "                            if (specs != null) {\n"
+              "                                specs.resetDarkGatedSpecialization(onlineTarget);\n"
+              "                            }\n"
+              "                        }\n"
+              "                        if (factionType == FactionType.DARK) {\n"
+              "                            sinManager.sealDarkPact(onlineTarget);\n"
+              "                        }\n"
+              "                        sendSuccess(sender, targetName, factionType);\n"
+          )
+          new_transition = (
+              "                        if (livePrevious == FactionType.DARK && factionType != FactionType.DARK) {\n"
+              "                            sinManager.clearDarkPactForFactionOverride(onlineTarget);\n"
+              "                        }\n"
+              "                        if (factionType == FactionType.DARK) {\n"
+              "                            sinManager.sealDarkPact(onlineTarget);\n"
+              "                        }\n"
+              "                        final hu.taliann.icesmp.managers.SpecializationManager specs = specializationManager;\n"
+              "                        if (specs != null) {\n"
+              "                            specs.reconcileDarkGates(onlineTarget);\n"
+              "                        }\n"
+              "                        sendSuccess(sender, targetName, factionType);\n"
+          )
+          faction_set = replace_once(faction_set, old_transition, new_transition, "FactionSet transition")
+          write(set_path, faction_set)
+
+          session_path = "src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java"
+          session = Path(session_path).read_text(encoding="utf-8")
+          session = replace_once(
+              session,
+              "    private final hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge profileSessionBridge;\n",
+              "    private final hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge profileSessionBridge;\n"
+              "    private final FactionManager factionManager;\n",
+              "Session faction field",
+          )
+          session = replace_once(
+              session,
+              "                                        final FactionManager factionManager,\n"
+              "                                        final MetelytepoManager metelytepoManager,\n",
+              "                                        final FactionManager factionManager,\n"
+              "                                        final FactionPassiveListener factionPassiveListener,\n"
+              "                                        final MetelytepoManager metelytepoManager,\n",
+              "Session passive constructor argument",
+          )
+          session = replace_once(
+              session,
+              "        this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,\n"
+              "                metelytepoManager,",
+              "        this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,\n"
+              "                factionPassiveListener,\n"
+              "                metelytepoManager,",
+              "Session passive state owner",
+          )
+          session = replace_once(
+              session,
+              "        this.profileSessionBridge = profileSessionBridge;\n",
+              "        this.profileSessionBridge = profileSessionBridge;\n"
+              "        this.factionManager = factionManager;\n",
+              "Session faction assignment",
+          )
+          session = replace_once(
+              session,
+              "        crateManager.restorePendingRecovery(event.getPlayer());\n"
+              "        profileSessionBridge.join(event.getPlayer());\n",
+              "        crateManager.restorePendingRecovery(event.getPlayer());\n"
+              "        factionManager.reconcileMembershipHistory(event.getPlayer());\n"
+              "        profileSessionBridge.join(event.getPlayer());\n",
+              "Session join order",
+          )
+          write(session_path, session)
+
+          job_path = "src/main/java/hu/taliann/icesmp/managers/JobManager.java"
+          job = Path(job_path).read_text(encoding="utf-8")
+          job = replace_once(
+              job,
+              "        final FactionType required = job == null ? null : job.getRequiredFaction();\n"
+              "        return required == null || factionManager.getFaction(player.getUniqueId()) == required;\n",
+              "        final FactionType required = job == null ? null : job.getRequiredFaction();\n"
+              "        return required == null || factionManager.isMember(player.getUniqueId(), required);\n",
+              "JobManager explicit faction membership",
+          )
+          job = replace_once(
+              job,
+              "            final FactionManager factions = factionManagerRef;\n"
+              "            if (factions != null && factions.getFaction(player.getUniqueId()) != FactionType.DARK) {\n"
+              "                return CompletableFuture.completedFuture(false);\n"
+              "            }\n",
+              "            final FactionManager factions = factionManagerRef;\n"
+              "            if (factions != null && !factions.isMember(player.getUniqueId(), FactionType.DARK)) {\n"
+              "                return CompletableFuture.completedFuture(false);\n"
+              "            }\n",
+              "JobManager death-knight gate",
+          )
+          write(job_path, job)
+
+          respec_path = "src/main/java/hu/taliann/icesmp/managers/RespecService.java"
+          respec = Path(respec_path).read_text(encoding="utf-8")
+          replacements = respec.count("factionManager.getFaction(")
+          if replacements < 2:
+              raise SystemExit(f"RespecService expected economy-faction uses, found {replacements}")
+          respec = respec.replace("factionManager.getFaction(", "factionManager.getEconomyFaction(")
+          write(respec_path, respec)
+
+          spec_path = "src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java"
+          spec = Path(spec_path).read_text(encoding="utf-8")
+          spec = replace_once(
+              spec,
+              "        final boolean factionSatisfied = !factionRequired\n"
+              "                || factionManager.getFaction(player.getUniqueId()) == specialization.getRequiredFaction();\n",
+              "        final boolean factionSatisfied = !factionRequired\n"
+              "                || factionManager.isMember(player.getUniqueId(), specialization.getRequiredFaction());\n",
+              "Specialization explicit faction gate",
+          )
+          write(spec_path, spec)
+
+          manifest_path = "docs/documentation-manifest.yml"
+          ours = json.loads(git_text(CLEAN, manifest_path))
+          theirs = json.loads(git_text(BASE, manifest_path))
+
+          def merge(left, right):
+              if isinstance(left, dict) and isinstance(right, dict):
+                  result = {}
+                  for key in left.keys() | right.keys():
+                      if key in left and key in right:
+                          result[key] = merge(left[key], right[key])
+                      elif key in left:
+                          result[key] = left[key]
+                      else:
+                          result[key] = right[key]
+                  return result
+              if isinstance(left, list) and isinstance(right, list):
+                  result = list(right)
+                  for item in left:
+                      if item not in result:
+                          result.append(item)
+                  return result
+              return left
+
+          manifest = merge(ours, theirs)
+
+          def refresh_hashes(node):
+              if isinstance(node, dict):
+                  for key, value in list(node.items()):
+                      if isinstance(key, str) and isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value):
+                          file_path = Path(key)
+                          if file_path.is_file():
+                              node[key] = hashlib.sha256(file_path.read_bytes()).hexdigest()
+                      refresh_hashes(value)
+              elif isinstance(node, list):
+                  for value in node:
+                      refresh_hashes(value)
+
+          refresh_hashes(manifest)
+          for section_name in ("commands", "permissions", "config-sections", "components"):
+              section = manifest.get(section_name)
+              if not isinstance(section, dict):
+                  continue
+              policy = section.get("_contract")
+              if isinstance(policy, dict) and "entries_sha256" in policy:
+                  entries = {
+                      key: value for key, value in section.items()
+                      if not str(key).startswith("_") and isinstance(value, dict)
+                  }
+                  policy["entries_sha256"] = hashlib.sha256(
+                      json.dumps(entries, ensure_ascii=False, sort_keys=True,
+                                 separators=(",", ":")).encode("utf-8")
+                  ).hexdigest()
+          write(manifest_path, json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+
+          java_count = sum(1 for _ in Path("src/main/java").rglob("*.java"))
+          claude = Path("CLAUDE.md").read_text(encoding="utf-8")
+          claude, changed = re.subn(
+              r"A dokumentált release \d+ Java-fájl / 90 manager\.",
+              f"A dokumentált release {java_count} Java-fájl / 90 manager.",
+              claude,
+              count=1,
+          )
+          if changed != 1:
+              raise SystemExit("CLAUDE Java-count marker drifted")
+          write("CLAUDE.md", claude)
+
+          architecture = Path("docs/ARCHITECTURE.md").read_text(encoding="utf-8")
+          architecture, changed = re.subn(
+              r"(\*\*Méret:\*\* )\d+( Java-fájl,)",
+              rf"\g<1>{java_count}\g<2>",
+              architecture,
+              count=1,
+          )
+          if changed != 1:
+              raise SystemExit("ARCHITECTURE Java-count marker drifted")
+          write("docs/ARCHITECTURE.md", architecture)
+          print(f"Resolved Profile v2 integration with {java_count} production Java files")
+          PY
+
+          git add -- \
+            .github/workflows/ci.yml \
+            CLAUDE.md \
+            build.gradle.kts \
+            docs/ADMIN_GUIDE.md \
+            docs/ARCHITECTURE.md \
+            docs/documentation-manifest.yml \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java \
+            src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java \
+            src/main/java/hu/taliann/icesmp/managers/JobManager.java \
+            src/main/java/hu/taliann/icesmp/managers/RespecService.java \
+            src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java
+          test -z "$(git diff --name-only --diff-filter=U)"
+          git diff --cached --check
+          ! git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- .
+          echo "=== resolved integration ==="
+          git status --short
+          git diff --cached --stat
+
+      - name: Java 21 clean build and all regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee /tmp/profile-v2-stack-build.log
+
+      - name: Verify base and Profile v2 regression markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          markers=(
+            "Faction passive regression suite passed."
+            "Faction passive hardening regression suite passed."
+            "Faction tax debt regression suite passed."
+            "Relic refresh regression suite passed."
+            "Relic refresh pipeline regression suite passed."
+            "Lifecycle shutdown regression suite passed."
+            "Quest NPC validation regression suite passed."
+            "Resource pack regression suite passed."
+            "Class/spec compatibility regression suite passed."
+            "ClassProfile v2 domain/codec regression tests passed."
+            "Class/spec application regression suite passed."
+            "YamlClassProfileRepository regression tests passed."
+            "Class profile lifecycle regression suite passed."
+            "Respec transaction regression suite passed."
+            "Spell grant ledger regression suite passed."
+          )
+          for marker in "${markers[@]}"; do
+            grep -F "$marker" /tmp/profile-v2-stack-build.log
           done
-          exit 1
+
+      - name: Run repository gates and inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_consistency.py
+          python3 scripts/check_markdown_links.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+          python3 scripts/generate_repository_inventory.py \
+            --root . --output build/repository-inventory --mode strict
+          python3 scripts/check_documentation_coverage.py \
+            --root . \
+            --inventory build/repository-inventory/repository-inventory.json \
+            --output build/repository-inventory \
+            --mode report
+          git diff --check "$UPDATED_BASE_HEAD...HEAD"
+
+      - name: Commit and fast-forward push after every gate succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- \
+            .github/workflows/ci.yml \
+            CLAUDE.md \
+            build.gradle.kts \
+            docs/ADMIN_GUIDE.md \
+            docs/ARCHITECTURE.md \
+            docs/documentation-manifest.yml \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java \
+            src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java \
+            src/main/java/hu/taliann/icesmp/managers/JobManager.java \
+            src/main/java/hu/taliann/icesmp/managers/RespecService.java \
+            src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java
+          git diff --cached --check
+          test "$(git ls-remote origin refs/heads/rework/class-spec-1.21.11-compatibility | awk '{print $1}')" = "$UPDATED_BASE_HEAD"
+          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$OLD_PROFILE_HEAD"
+
+          tree_sha=$(git write-tree)
+          final_commit=$(printf '%s\n\n%s\n' \
+            "Merge current compatibility base into greenfield Profile v2" \
+            "Preserve durable faction transactions, explicit membership semantics and non-destructive DARK sealing." \
+            | git commit-tree "$tree_sha" -p "$OLD_PROFILE_HEAD" -p "$UPDATED_BASE_HEAD")
+          git push origin "${final_commit}:refs/heads/${TARGET_BRANCH}"
+          echo "PROFILE_V2_FINAL_HEAD=${final_commit}"
