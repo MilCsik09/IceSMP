@@ -42,6 +42,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Restores protected blocks without drops.
@@ -70,6 +72,7 @@ public final class BlockRegenService implements PersistentStore, Listener {
     private static final long RETRY_MILLIS = 1_000L;
     private static final long PERSISTENCE_PROOF_RETRY_MILLIS = 30_000L;
     private static final long WORLD_WAIT_MILLIS = 30_000L;
+    private static final long NANOS_PER_TICK = 50_000_000L;
     private static final String NBT_PREFIX = "nbt:";
     private static final String NBT_V2_PREFIX = "nbt2:";
     private static final NamespacedKey REGEN_TOKEN =
@@ -94,6 +97,13 @@ public final class BlockRegenService implements PersistentStore, Listener {
     private final Map<String, Long> physicsShield = new ConcurrentHashMap<>();
     private final Set<String> pendingShield = ConcurrentHashMap.newKeySet();
     private final Map<String, long[]> captureHistory = new ConcurrentHashMap<>();
+    /**
+     * A one-tick control loop makes restore-interval-ticks genuinely live. The old fixed-rate core
+     * task may still call tick(); the CAS gate below coalesces both callers into one pass.
+     */
+    private final AtomicBoolean dynamicTickerStarted = new AtomicBoolean();
+    private final AtomicLong lastIntervalTicks = new AtomicLong(-1L);
+    private final AtomicLong nextPassNanos = new AtomicLong();
 
     public BlockRegenService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
@@ -293,8 +303,8 @@ public final class BlockRegenService implements PersistentStore, Listener {
         if (!configManager.getBoolean("territory.protection.regen.debris-enabled", true)) {
             return;
         }
-        final double percent = configManager.getDouble(
-                "territory.protection.regen.debris-percent", 100.0D);
+        final double percent = boundedConfig(
+                "territory.protection.regen.debris-percent", 100.0D, 0.0D, 100.0D);
         if (Math.random() * 100.0D >= percent) {
             return;
         }
@@ -304,16 +314,37 @@ public final class BlockRegenService implements PersistentStore, Listener {
         if (direction.lengthSquared() < 0.01D) {
             direction.setY(1.0D);
         }
-        final double power = configManager.getDouble(
-                "territory.protection.regen.debris-launch-power", 0.6D);
+
+        final double power = boundedConfig(
+                "territory.protection.regen.debris-launch-power", 0.6D, 0.0D, 5.0D);
+        final double horizontalMultiplier = boundedConfig(
+                "territory.protection.regen.debris-horizontal-multiplier", 1.0D, 0.0D, 5.0D);
+        final double verticalMultiplier = boundedConfig(
+                "territory.protection.regen.debris-vertical-multiplier", 1.0D, 0.0D, 5.0D);
+        final double horizontalSpread = boundedConfig(
+                "territory.protection.regen.debris-horizontal-spread", 0.0D, 0.0D, 3.0D);
+        final double extraUpward = boundedConfig(
+                "territory.protection.regen.debris-extra-upward-velocity", 0.0D, 0.0D, 3.0D);
+
+        final org.bukkit.util.Vector radial = direction.normalize().multiply(power);
+        final double angle = Math.random() * Math.PI * 2.0D;
+        final double spreadRadius = Math.sqrt(Math.random()) * horizontalSpread;
+        final double spreadX = Math.cos(angle) * spreadRadius;
+        final double spreadZ = Math.sin(angle) * spreadRadius;
+        final double baseLift = 0.35D + Math.random() * 0.2D;
+
         final org.bukkit.entity.FallingBlock debris =
                 block.getWorld().spawnFallingBlock(from, block.getBlockData());
         debris.setDropItem(false);
         debris.setCancelDrop(true);
         debris.addScoreboardTag(DEBRIS_TAG);
-        debris.setVelocity(direction.normalize().multiply(power)
-                .add(new org.bukkit.util.Vector(
-                        0.0D, 0.35D + Math.random() * 0.2D, 0.0D)));
+        debris.setGravity(configManager.getBoolean(
+                "territory.protection.regen.debris-gravity-enabled", true));
+        debris.setVelocity(new org.bukkit.util.Vector(
+                radial.getX() * horizontalMultiplier + spreadX,
+                (radial.getY() + baseLift) * verticalMultiplier + extraUpward,
+                radial.getZ() * horizontalMultiplier + spreadZ));
+
         final long lifetimeTicks = Math.max(20L, configManager.getLong(
                 "territory.protection.regen.debris-lifetime-seconds", 4L) * 20L);
         debris.getScheduler().runDelayed(plugin, task -> {
@@ -326,8 +357,21 @@ public final class BlockRegenService implements PersistentStore, Listener {
         }, null, lifetimeTicks);
     }
 
+    private double boundedConfig(final String key, final double fallback,
+                                 final double minimum, final double maximum) {
+        final double configured = configManager.getDouble(key, fallback);
+        if (!Double.isFinite(configured)) {
+            return fallback;
+        }
+        return Math.max(minimum, Math.min(maximum, configured));
+    }
+
+    /**
+     * One or more schedulers may call this method. The CAS window guarantees a single pass and
+     * detects interval changes live; changing restore-interval-ticks resets the wait immediately.
+     */
     public void tick() {
-        if (!journal.isHealthy()) {
+        if (!acquireTickWindow() || !journal.isHealthy()) {
             return;
         }
         final long now = System.currentTimeMillis();
@@ -352,6 +396,23 @@ public final class BlockRegenService implements PersistentStore, Listener {
         due.sort(Comparator.comparingInt(BlockRegenJournal.Record::y));
         for (final BlockRegenJournal.Record record : due) {
             dispatch(record, now);
+        }
+    }
+
+    private boolean acquireTickWindow() {
+        final long intervalTicks = restoreIntervalTicks();
+        if (lastIntervalTicks.getAndSet(intervalTicks) != intervalTicks) {
+            nextPassNanos.set(0L);
+        }
+        final long now = System.nanoTime();
+        while (true) {
+            final long next = nextPassNanos.get();
+            if (now < next) {
+                return false;
+            }
+            if (nextPassNanos.compareAndSet(next, now + intervalTicks * NANOS_PER_TICK)) {
+                return true;
+            }
         }
     }
 
@@ -754,6 +815,12 @@ public final class BlockRegenService implements PersistentStore, Listener {
         for (final BlockRegenJournal.Record record : journal.loadAll()) {
             queue.add(record);
             pendingShield.add(posKey(record));
+        }
+        nextPassNanos.set(0L);
+        lastIntervalTicks.set(-1L);
+        if (dynamicTickerStarted.compareAndSet(false, true)) {
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(
+                    plugin, task -> tick(), 1L, 1L);
         }
     }
 
