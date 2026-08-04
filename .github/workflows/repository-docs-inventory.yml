@@ -18,7 +18,7 @@ jobs:
         with:
           ref: agent/player-profile-root-reconstruct-20260803-v6
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Diagnose exact recovery merge
         shell: bash
