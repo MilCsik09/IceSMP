@@ -1,10 +1,11 @@
-Trigger the Repository Docs Inventory diagnostic.
-Phase: reproduce the synchronized Profile v2 tree and expose every exact strict inventory FAIL, including report-mode REVIEW_REQUIRED items.
-Validation head: 630e7c28206a09c26152b5da603868cc9b0f59ea
+Trigger the Repository Docs Inventory validation.
+Phase: add exact classifications for 8 components, 5 config sections and feature.resource-pack, then enforce strict inventory with no build or push.
+Validation head: 4af26cdba17b62efc81b1791bed8500e436c1742
 Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
 Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
+Expected exact pre-fix findings: 14 UNDOCUMENTED_INVENTORY_ITEM entries.
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
 Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
-No build, commit or push is permitted in this diagnostic.
+No build, commit or push is permitted in this validation.
 Must never be merged.
