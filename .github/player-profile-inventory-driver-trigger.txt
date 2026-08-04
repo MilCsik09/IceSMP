@@ -1,6 +1,6 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: class/spec compatibility base integration with recursive manifest validation.
-Validation head: e9509c495a94f8977e7abb571609fd8db82f2cf4
+Phase: class/spec compatibility base integration with source-derived documentation counts.
+Validation head: f60a73aa8f03c38c875190c46ea7f6becd83dd7a
 Expected target head: 62ad99b74b7bb63420cb8e5e821f0321c5d84d48
 Expected master head: 52cc62ac3b463679f28656f82cf1f7d17db486e8
 Must never be merged.
