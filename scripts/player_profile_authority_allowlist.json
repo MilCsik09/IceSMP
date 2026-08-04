@@ -126,6 +126,36 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java|final String crownTarget = entity.getPersistentDataContainer().get(",
+      "category": "ENTITY_METADATA",
+      "reason": "Entity/runtime marker; durable player state belongs to PlayerProfile."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java|return entity.getPersistentDataContainer().getKeys().stream()",
+      "category": "ENTITY_METADATA",
+      "reason": "Entity/runtime marker; durable player state belongs to PlayerProfile."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java||| entity.getPersistentDataContainer().has(",
+      "category": "ENTITY_METADATA",
+      "reason": "Entity/runtime marker; durable player state belongs to PlayerProfile."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java||| entity.getPersistentDataContainer().has(",
+      "category": "ENTITY_METADATA",
+      "reason": "Entity/runtime marker; durable player state belongs to PlayerProfile."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java||| entity.getPersistentDataContainer().has(",
+      "category": "ENTITY_METADATA",
+      "reason": "Entity/runtime marker; durable player state belongs to PlayerProfile."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java||| entity.getPersistentDataContainer().has(",
+      "category": "ENTITY_METADATA",
+      "reason": "Entity/runtime marker; durable player state belongs to PlayerProfile."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/gui/MarketGUI.java|final org.bukkit.persistence.PersistentDataContainer pdc =",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "Shared aggregate remains separate; only player-owned references may enter PlayerProfile."
@@ -271,6 +301,11 @@
       "reason": "Persistent item identity or item-owned metadata, not player progression."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java||| !item.getItemMeta().getPersistentDataContainer().has(",
+      "category": "ITEM_METADATA",
+      "reason": "Persistent item identity or item-owned metadata, not player progression."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java|&& stack.getItemMeta().getPersistentDataContainer().has(valueKey, PersistentDataType.LONG);",
       "category": "ITEM_METADATA",
       "reason": "Persistent item identity or item-owned metadata, not player progression."
@@ -311,7 +346,7 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java|final String rawOwner = itemStack.getItemMeta().getPersistentDataContainer().get(relicOwnerKey, PersistentDataType.STRING);",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java|final String rawOwner = itemStack.getItemMeta().getPersistentDataContainer()",
       "category": "ITEM_METADATA",
       "reason": "Persistent item identity or item-owned metadata, not player progression."
     },
@@ -326,12 +361,12 @@
       "reason": "Persistent item identity or item-owned metadata, not player progression."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java|new NamespacedKey(\"icesmp\", \"metelytepo_damage_bonus\"),",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java|new NamespacedKey(\"icesmp\", \"metelytepo_damage_bonus\");",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java|new NamespacedKey(\"icesmp\", \"metelytepo_speed_baseline\"),",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java|new NamespacedKey(\"icesmp\", \"metelytepo_speed_baseline\");",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -541,37 +576,37 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|? item.getItemMeta().getPersistentDataContainer().get(signatureKey, PersistentDataType.STRING)",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|&& item.getItemMeta().getPersistentDataContainer().has(",
       "category": "ITEM_METADATA",
       "reason": "Persistent item identity or item-owned metadata, not player progression."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|final Long last = player.getPersistentDataContainer().get(lastHomeFoodKey, PersistentDataType.LONG);",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|final String tsFaction = player.getPersistentDataContainer().get(foodFactionKey, PersistentDataType.STRING);",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|final boolean migratedFood = item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer()",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|? item.getItemMeta().getPersistentDataContainer().get(",
       "category": "ITEM_METADATA",
       "reason": "Persistent item identity or item-owned metadata, not player progression."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|player.getPersistentDataContainer().set(foodFactionKey, PersistentDataType.STRING, faction.name());",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|final Long last = player.getPersistentDataContainer().get(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|final String tsFaction = player.getPersistentDataContainer().get(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|player.getPersistentDataContainer().set(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|player.getPersistentDataContainer().set(",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|player.getPersistentDataContainer().set(foodFactionKey, PersistentDataType.STRING, faction.name());",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|player.getPersistentDataContainer().set(lastHomeFoodKey, PersistentDataType.LONG, System.currentTimeMillis());",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -592,6 +627,26 @@
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java|this.signatureKey = new NamespacedKey(plugin, \"signature_item\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().remove(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().set(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().set(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final String markedTarget = event.getEntity().getPersistentDataContainer().get(",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -881,6 +936,21 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|final boolean tagged = mob.getPersistentDataContainer().has(corruptMobKey, PersistentDataType.BYTE);",
+      "category": "ITEM_METADATA",
+      "reason": "Persistent item identity or item-owned metadata, not player progression."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|mob.getPersistentDataContainer().set(corruptMobKey, PersistentDataType.BYTE, (byte) 1);",
+      "category": "ITEM_METADATA",
+      "reason": "Persistent item identity or item-owned metadata, not player progression."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/CrownCurseManager.java|mob.getPersistentDataContainer().set(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java|mob.getPersistentDataContainer().set(",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -1086,6 +1156,11 @@
       "reason": "Persistent item identity or item-owned metadata, not player progression."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/DungeonLootService.java|return entity != null && entity.getPersistentDataContainer().has(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/DungeonLootService.java|this.bossKey = new NamespacedKey(plugin, \"dungeon_boss\");",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -1106,6 +1181,11 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final String raw = player.getPersistentDataContainer().get(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final long lastSwitchMillis = player.getPersistentDataContainer()",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -1121,7 +1201,27 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|player.getPersistentDataContainer().set(everChosenKey, PersistentDataType.BYTE, (byte) 1);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|player.getPersistentDataContainer().set(lastChosenFactionKey,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|player.getPersistentDataContainer().set(lastSwitchKey, PersistentDataType.LONG, System.currentTimeMillis());",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|this.everChosenKey = new NamespacedKey(plugin, \"faction_ever_chosen\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|this.lastChosenFactionKey = new NamespacedKey(plugin, \"faction_last_chosen\");",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -1137,6 +1237,11 @@
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|this.switchSeasonKey = new NamespacedKey(plugin, \"faction_switch_season\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/FactionManager.java||| player.getPersistentDataContainer().getOrDefault(",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -1741,6 +1846,11 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/SinManager.java|player.getPersistentDataContainer().remove(darkPactKey);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/SinManager.java|player.getPersistentDataContainer().remove(sinCountKey);",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -2056,6 +2166,16 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|player.getPersistentDataContainer().remove(suspicionKey);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|player.getPersistentDataContainer().remove(whispererKey);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|player.getPersistentDataContainer().remove(whispererKey);",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -2104,6 +2224,11 @@
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java|&& entity.getPersistentDataContainer().getOrDefault(worldBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;",
       "category": "ITEM_METADATA",
       "reason": "Persistent item identity or item-owned metadata, not player progression."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java|add.getPersistentDataContainer().set(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java|boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());",
@@ -2306,6 +2431,21 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_PDC|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|check(!resolver.contains(\"getPersistentDataContainer().set(\"),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/regression/java/hu/taliann/icesmp/items/RelicRefreshRegressionSuite.java|new AttributeModifier(new NamespacedKey(\"other\", \"damage\"), 3.0D,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_PDC|src/regression/java/hu/taliann/icesmp/items/RelicRefreshRegressionSuite.java|new NamespacedKey(\"other\", \"damage\"), 3.0D,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classspec/compat/ClassSpecDependencyPreflight.java|final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -2347,6 +2487,121 @@
     },
     {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|YamlStore.failCorrupt(file, logger,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|YamlStore.failCorrupt(file, logger, \"Malformed faction-switch journal entry\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|YamlStore.failCorrupt(file, logger, \"Unknown faction-switch journal version\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|YamlStore.failCorrupt(file, logger, reason);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|YamlStore.registerCriticalWrite(file);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|YamlStore.saveAtomic(file, yaml);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|final YamlConfiguration yaml = YamlStore.loadTracked(file, logger);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|final YamlConfiguration yaml = new YamlConfiguration();",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|import hu.taliann.icesmp.storage.YamlStore;",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|import org.bukkit.configuration.file.YamlConfiguration;",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionSwitchJournal.java|private static void writeWallet(final YamlConfiguration yaml, final String path,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|YamlStore.failCorrupt(file, logger,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|YamlStore.failCorrupt(file, logger, \"Malformed faction-tax journal entry\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|YamlStore.failCorrupt(file, logger, \"Unknown faction-tax journal version\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|YamlStore.failCorrupt(file, logger, reason);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|YamlStore.registerCriticalWrite(file);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|YamlStore.saveAtomic(file, yaml);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|final YamlConfiguration yaml = YamlStore.loadTracked(file, logger);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|final YamlConfiguration yaml = new YamlConfiguration();",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|import hu.taliann.icesmp.storage.YamlStore;",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|import org.bukkit.configuration.file.YamlConfiguration;",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|private static void writeDomain(final YamlConfiguration yaml, final String path,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java|private static void writeWallet(final YamlConfiguration yaml, final String path,",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -2576,7 +2831,7 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/ConfigManager.java|private void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {",
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/ConfigManager.java|private static void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -2586,7 +2841,7 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());",
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -2791,7 +3046,12 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java|return !YamlStore.isLoadFailed(storageFile) && !YamlStore.hasCriticalWriteFailure();",
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java|return !YamlStore.isLoadFailed(storageFile) && !YamlStore.hasWriteFailure(storageFile);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java|return isOwnStorageHealthy() && !YamlStore.hasCriticalWriteFailure();",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -3046,12 +3306,32 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|YamlStore.registerCriticalWrite(storageFile);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|YamlStore.saveAtomic(storageFile, yaml);",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());",
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -3081,6 +3361,81 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.failCorrupt(storageFile, plugin.getLogger(),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.registerCriticalWrite(storageFile);",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|YamlStore.saveAtomic(storageFile, yaml);",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -3101,6 +3456,11 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|if (YamlStore.isLoadFailed(storageFile) || !writeStateLocked()) {",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|import hu.taliann.icesmp.storage.PersistentStore;",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
@@ -3116,7 +3476,17 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|private boolean loadTaxDebtState(final YamlConfiguration yaml) {",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|public final class FactionTreasuryManager implements PersistentStore {",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java||| YamlStore.hasCriticalWriteFailure()) {",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -4426,12 +4796,57 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|final YamlConfiguration invalid = new YamlConfiguration();",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|final YamlConfiguration live = new YamlConfiguration();",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|final YamlConfiguration migrated = new YamlConfiguration();",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|final YamlConfiguration yaml = new YamlConfiguration();",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|import org.bukkit.configuration.file.YamlConfiguration;",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|private static ConfigHarness config(final YamlConfiguration configuration,",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionTaxDebtRegressionSuite.java|&& source.contains(\"YamlStore.failCorrupt(storageFile\"),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/factions/FactionTaxDebtRegressionSuite.java|&& source.contains(\"YamlStore.registerCriticalWrite(storageFile)\"),",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
       "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/managers/ConfigStartupRegressionSuite.java|final YamlConfiguration factions = load(\"factions.yml\");",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
       "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/managers/ConfigStartupRegressionSuite.java|final YamlConfiguration general = load(\"general.yml\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/managers/ConfigStartupRegressionSuite.java|final YamlConfiguration invalid = new YamlConfiguration();",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -4457,6 +4872,11 @@
     },
     {
       "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/managers/ConfigStartupRegressionSuite.java|final YamlConfiguration relics = load(\"relics.yml\");",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/managers/ConfigStartupRegressionSuite.java|final YamlConfiguration valid = new YamlConfiguration();",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
@@ -4539,6 +4959,16 @@
       "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java|check(walEmpty(root.resolve(PLAYER.toString()).resolve(\"wal\")), \"rollback WAL cleaned\");",
       "category": "PLAYER_PROFILE_AUTHORITY",
       "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/runtime/RuntimeBugfixRegressionSuite.java|final YamlConfiguration world = YamlConfiguration.loadConfiguration(",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/runtime/RuntimeBugfixRegressionSuite.java|import org.bukkit.configuration.file.YamlConfiguration;",
+      "category": "TRANSITION",
+      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
       "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/storage/PersistentStoreCoordinatorRegressionTest.java|() -> new PersistentStoreCoordinator(List.of(shared, shared)));",
@@ -4726,6 +5156,66 @@
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
     {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|final Map<UUID, FactionType> history,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|final Map<UUID, FactionType> history,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|final Map<UUID, FactionType> history,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|private static void restoreEntry(final Map<UUID, FactionType> map,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|public static Snapshot capture(final Map<UUID, FactionType> assignments,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|public static void assign(final Map<UUID, FactionType> assignments,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|public static void removeAssignment(final Map<UUID, FactionType> assignments,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionMembershipMutation.java|public static void restore(final Map<UUID, FactionType> assignments,",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionPassiveService.java|private final Map<UUID, Long> entityFireUntil = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionPassiveService.java|private final Map<UUID, Long> scriptedCombatFireUntil = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionTaxDebtLedger.java|private final Map<UUID, EnumMap<FactionType, State>> debts = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/factions/FactionTaxDebtLedger.java|private final Map<UUID, State> unresolvedLegacyDebts = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/gui/CrateSpinGUI.java|private static final ConcurrentHashMap<UUID, CrateSpinHolder> ACTIVE = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
@@ -4806,6 +5296,41 @@
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
     {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final Map<UUID, Map<UUID, TrackedTarget>> snapshot = Map.copyOf(retaliationTargets);",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final Map<UUID, TrackedTarget> currentTargets = retaliationTargets.get(playerId);",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final Map<UUID, TrackedTarget> playerTargets = retaliationTargets.get(playerId);",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final Map<UUID, TrackedTarget> targets = retaliationTargets.get(playerId);",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final Map<UUID, TrackedTarget> targets = retaliationTargets.get(playerId);",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final Map<UUID, TrackedTarget> targets = retaliationTargets.remove(playerId);",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|private final Map<UUID, Map<UUID, TrackedTarget>> retaliationTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeListener.java|private final Map<UUID, Long> hintThrottle = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
@@ -4856,7 +5381,7 @@
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|private final Map<UUID, Integer> purgeContributors = new java.util.concurrent.ConcurrentHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|private final Map<UUID, Integer> purgeContributors = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
@@ -4916,7 +5441,82 @@
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|private final Map<UUID, FactionType> playerFactions = new ConcurrentHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|Map<UUID, FactionType> history) {",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> assignments =",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> assignments =",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> assignments = liveState.assignments();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> assignments = liveState.assignments();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> assignments = new HashMap<>(previous.assignments());",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> assignments = new HashMap<>(previous.assignments());",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> history = liveState.history();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> history = new HashMap<>(previous.history());",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> history = new HashMap<>(previous.history());",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> history = new HashMap<>(previous.history());",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> loadedAssignments = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> loadedHistory = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> restoredAssignments =",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|final Map<UUID, FactionType> restoredHistory =",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|private record MembershipState(Map<UUID, FactionType> assignments,",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
@@ -4926,12 +5526,7 @@
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|private final Map<UUID, Double> taxArrears = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "In-memory runtime/session map; must not be a durable authority."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|private final Map<UUID, Integer> evasionStrikes = new ConcurrentHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java|final Map<UUID, FactionType> assignments = factionManager.getFactionAssignments();",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
@@ -5022,6 +5617,11 @@
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/KingManager.java|final Map<UUID, UUID> factionVotes = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/KingManager.java|for (final Map<UUID, UUID> factionVotes : votes.values()) {",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
@@ -5472,6 +6072,36 @@
     },
     {
       "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/crates/CrateRegressionSuite.java|final Map<UUID, CrateRecoveryLedger.Recovery> snapshot = recoveries.snapshot();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|final Map<UUID, FactionType> assignments = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/factions/FactionPassiveRegressionSuite.java|final Map<UUID, FactionType> history = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/factions/FactionTaxDebtRegressionSuite.java|&& !source.contains(\"Map<UUID, Integer> evasionStrikes\"),",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/factions/FactionTaxDebtRegressionSuite.java|check(!source.contains(\"Map<UUID, Double> taxArrears\")",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/factions/FactionTaxDebtRegressionSuite.java|final Map<UUID, FactionType> assignments = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-memory runtime/session map; must not be a durable authority."
+    },
+    {
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/factions/FactionTaxDebtRegressionSuite.java|final Map<UUID, FactionType> history = new HashMap<>();",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
