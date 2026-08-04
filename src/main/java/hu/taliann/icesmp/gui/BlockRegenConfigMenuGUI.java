@@ -33,26 +33,39 @@ public final class BlockRegenConfigMenuGUI {
                     "Claim-robbanások védelme"),
 
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.zones.capital",
-                    "Főváros regenerálódjon"),
+                    "Főváros visszagyógyuljon"),
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.zones.protected-city",
-                    "Védett város regenerálódjon"),
+                    "Védett város visszagyógyuljon"),
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.zones.protected-faction",
-                    "Védett frakciózóna regenerálódjon"),
+                    "Védett frakciózóna visszagyógyuljon"),
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.zones.dungeon",
-                    "Kazamata regenerálódjon"),
+                    "Kazamata visszagyógyuljon"),
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.zones.doom-gate",
-                    "Kárhozat Kapuja regenerálódjon"),
+                    "Kárhozat Kapuja visszagyógyuljon"),
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.zones.faction",
-                    "Normál frakcióterület regenerálódjon"),
+                    "Normál frakcióterület visszagyógyuljon"),
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.zones.wilderness",
-                    "Vadon regenerálódjon"),
+                    "Vadon visszagyógyuljon"),
+
+            ConfigMenuGUI.Entry.toggle("territory.protection.rules.capital.allow-explosions",
+                    "Fővárosi robbanás engedett regen nélkül"),
+            ConfigMenuGUI.Entry.toggle("territory.protection.rules.protected-city.allow-explosions",
+                    "Védett városi robbanás engedett regen nélkül"),
+            ConfigMenuGUI.Entry.toggle("territory.protection.rules.protected-faction.allow-explosions",
+                    "Védett frakciózónás robbanás engedett regen nélkül"),
+            ConfigMenuGUI.Entry.toggle("territory.protection.rules.dungeon.allow-explosions",
+                    "Kazamatai robbanás engedett regen nélkül"),
+            ConfigMenuGUI.Entry.toggle("territory.protection.rules.doom-gate.allow-explosions",
+                    "Kapu-robbanás engedett regen nélkül"),
+            ConfigMenuGUI.Entry.toggle("territory.protection.rules.faction.allow-explosions",
+                    "Frakcióföldi robbanás engedett regen nélkül"),
 
             ConfigMenuGUI.Entry.integer("territory.protection.regen.delay-seconds",
                     "Robbanás utáni várakozás (mp)", 15, 5, 3600),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.restore-interval-ticks",
                     "Visszaépítő ütem (tick, restart)", 1, 1, 120),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.blocks-per-pass",
-                    "Blokkok menetenként", 1, 1, 128),
+                    "Blokkok menetenkként", 1, 1, 128),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.support-grace-seconds",
                     "Támasz-várakozás (mp)", 10, 5, 3600),
 
@@ -110,7 +123,7 @@ public final class BlockRegenConfigMenuGUI {
 
     public static void open(final Player player, final ConfigManager configManager) {
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), CATEGORY_ID);
-        final Inventory inventory = Bukkit.createInventory(holder, 36,
+        final Inventory inventory = Bukkit.createInventory(holder, 54,
                 Component.text("⚙ Robbanás és regeneráció", NamedTextColor.DARK_AQUA));
         holder.setInventory(inventory);
 
@@ -125,10 +138,10 @@ public final class BlockRegenConfigMenuGUI {
             slot++;
         }
 
-        inventory.setItem(31, tile(Material.ARROW, "&7Vissza", List.of()));
-        holder.bind(31, "BACK");
-        inventory.setItem(35, tile(Material.BARRIER, "&cBezárás", List.of()));
-        holder.bind(35, "CLOSE");
+        inventory.setItem(49, tile(Material.ARROW, "&7Vissza", List.of()));
+        holder.bind(49, "BACK");
+        inventory.setItem(53, tile(Material.BARRIER, "&cBezárás", List.of()));
+        holder.bind(53, "CLOSE");
         player.openInventory(inventory);
     }
 
