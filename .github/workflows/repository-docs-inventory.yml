@@ -214,11 +214,31 @@ jobs:
               encoding='utf-8',
               newline='\n',
           )
+
+          documentation_updates = (
+              (
+                  Path('CLAUDE.md'),
+                  'A dokumentált release 551 Java-fájl / 90 manager.',
+                  'A dokumentált release 575 Java-fájl / 90 manager.',
+              ),
+              (
+                  Path('docs/ARCHITECTURE.md'),
+                  '**Méret:** 553 Java-fájl, ~85 000 sor; 90 `*Manager` osztály',
+                  '**Méret:** 575 Java-fájl, ~85 000 sor; 90 `*Manager` osztály',
+              ),
+          )
+          for path, old, new in documentation_updates:
+              text = path.read_text(encoding='utf-8')
+              if text.count(old) != 1:
+                  raise SystemExit(f'Unexpected documentation count marker in {path}: {text.count(old)}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
           PY
 
           git add \
             build.gradle.kts \
+            CLAUDE.md \
             docs/ADMIN_GUIDE.md \
+            docs/ARCHITECTURE.md \
             docs/documentation-manifest.yml \
             src/main/java/hu/taliann/icesmp/core/IceSMPCore.java
           test -z "$(git diff --name-only --diff-filter=U)"
