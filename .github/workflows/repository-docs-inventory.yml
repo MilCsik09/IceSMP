@@ -3,6 +3,7 @@ name: Repository Docs Inventory
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -60,12 +61,8 @@ jobs:
           import os
           import subprocess
           from pathlib import Path
-
           profile = os.environ['PROFILE_V2_HEAD']
-          ci = subprocess.check_output(
-              ['git', 'show', f'{profile}:.github/workflows/ci.yml'],
-              text=True,
-          )
+          ci = subprocess.check_output(['git', 'show', f'{profile}:.github/workflows/ci.yml'], text=True)
           anchor = '      - rework/class-spec-1.21.11-compatibility\n'
           if '      - rework/class-spec-profile-v2\n' not in ci:
               ci = ci.replace(anchor, anchor + '      - rework/class-spec-profile-v2\n', 1)
