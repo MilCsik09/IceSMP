@@ -234,10 +234,10 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
     private final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager;
     private final hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform playerProfilePlatform;
-    private final hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository classProfileRepository;
+    private final hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository classSpecSectionRepository;
     private final hu.taliann.icesmp.classspec.application.ProfileSessionRegistry profileSessionRegistry;
     private final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway classSpecProfileGateway;
-    private final hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService classProfileLifecycleService;
+    private final hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService classSpecSectionLifecycleService;
     private final hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter classSpecRuntimeAdapter;
     private final hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge profileSessionBridge;
     private final hu.taliann.icesmp.managers.ResourceBonusService resourceBonusService;
@@ -573,17 +573,17 @@ public final class IceSMPCore {
         // UTÁN köthető (korábbi hívásuk null-mezőn robbant volna a konstruktorban).
         this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
         this.playerProfilePlatform = new hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform(plugin, configManager);
-        this.classProfileRepository = new hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository(
+        this.classSpecSectionRepository = new hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository(
                 playerProfilePlatform.repository());
         this.profileSessionRegistry = new hu.taliann.icesmp.classspec.application.ProfileSessionRegistry();
         this.classSpecRuntimeAdapter = new hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter(
                 plugin, jobManager, specializationManager, abilityCatalystListener, petManager,
                 resourceManager, spellRegistry, profileSessionRegistry);
         this.classSpecProfileGateway = new hu.taliann.icesmp.classspec.application.DefaultClassSpecProfileGateway(
-                new hu.taliann.icesmp.classspec.persistence.RepositoryMutationStoreAdapter(classProfileRepository),
+                new hu.taliann.icesmp.classspec.persistence.ClassSpecSectionMutationStoreAdapter(classSpecSectionRepository),
                 classSpecRuntimeAdapter, profileSessionRegistry);
-        this.classProfileLifecycleService = new hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService(
-                classProfileRepository);
+        this.classSpecSectionLifecycleService = new hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService(
+                classSpecSectionRepository);
         specializationManager.setProfileGateway(classSpecProfileGateway);
         jobManager.setProfileGateway(classSpecProfileGateway);
         abilityCatalystListener.setProfileGateway(classSpecProfileGateway);
@@ -604,7 +604,7 @@ public final class IceSMPCore {
         this.respecService = new hu.taliann.icesmp.managers.RespecService(
                 plugin, specializationManager, talentManager, currencyManager, factionManager);
         this.profileSessionBridge = new hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge(
-                plugin, playerProfilePlatform.service(), classProfileLifecycleService, classSpecProfileGateway, profileSessionRegistry,
+                plugin, playerProfilePlatform.service(), classSpecSectionLifecycleService, classSpecProfileGateway, profileSessionRegistry,
                 specializationManager, classSpecRuntimeAdapter, respecService);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,

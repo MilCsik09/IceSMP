@@ -61,44 +61,14 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "DIRECT_FILE_IO|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|Files.write(root.resolve(PLAYER.toString()).resolve(\"statistics.yml\"), new byte[]{(byte) 0xC3, (byte) 0x28});",
+      "key": "DIRECT_FILE_IO|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|Files.write(stats, new byte[(int) YamlPlayerProfileRepository.MAX_YAML_BYTES + 1]);",
       "category": "PLAYER_PROFILE_AUTHORITY",
       "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
     },
     {
-      "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|classProfileRepository);",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|new hu.taliann.icesmp.classspec.persistence.RepositoryMutationStoreAdapter(classProfileRepository),",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|plugin, playerProfilePlatform.service(), classProfileLifecycleService, classSpecProfileGateway, profileSessionRegistry,",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|private final hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService classProfileLifecycleService;",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|private final hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository classProfileRepository;",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|this.classProfileLifecycleService = new hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService(",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
-    },
-    {
-      "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|this.classProfileRepository = new hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository(",
-      "category": "TRANSITION",
-      "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+      "key": "DIRECT_FILE_IO|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|String content = Files.readString(manifest).replace(owner.toString(), UUID.randomUUID().toString());",
+      "category": "PLAYER_PROFILE_AUTHORITY",
+      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
     },
     {
       "key": "LEGACY_NOOP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|tokens.put(\"class\", legacy(classValue));",
@@ -119,6 +89,11 @@
       "key": "LEGACY_NOOP|src/regression/java/hu/taliann/icesmp/classspec/domain/SpellGrantLedgerRegressionSuite.java|private static void invalidOrLegacySourcesFailClosed(){expect(IllegalArgumentException.class,()->SpellGrantLedger.empty().add(\"spell\",\"LEGACY\"));expect(IllegalArgumentException.class,()->SpellGrantLedger.empty().add(\"spell\",\"\"));expect(Ille",
       "category": "TRANSITION",
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
+    },
+    {
+      "key": "LEGACY_NOOP|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|check(!classSpec.contains(\"ICS2\") && !classSpec.contains(\"payload:\"),",
+      "category": "PLAYER_PROFILE_AUTHORITY",
+      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/commands/MarketCommand.java|auctionHand.getItemMeta().getPersistentDataContainer();",
@@ -4546,52 +4521,22 @@
       "reason": "Existing player-state authority scheduled for removal by the stacked PlayerProfile integration PRs."
     },
     {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|",
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|Path dir = root.resolve(PLAYER.toString());",
       "category": "PLAYER_PROFILE_AUTHORITY",
       "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
     },
     {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|Files.write(root.resolve(PLAYER.toString()).resolve(\"statistics.yml\"), new byte[]{(byte) 0xC3, (byte) 0x28});",
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|Path evidence = root.resolve(PLAYER.toString()).resolve(\"quarantine\")",
       "category": "PLAYER_PROFILE_AUTHORITY",
       "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
     },
     {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|check(!Files.exists(root.resolve(PLAYER.toString())), \"find does not create directory\");",
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java|check(walEmpty(root.resolve(PLAYER.toString()).resolve(\"wal\")), \"finalized WAL cleaned\");",
       "category": "PLAYER_PROFILE_AUTHORITY",
       "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
     },
     {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|check(Files.isRegularFile(root.resolve(PLAYER.toString()).resolve(\"quarantine\")",
-      "category": "PLAYER_PROFILE_AUTHORITY",
-      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
-    },
-    {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|check(Files.list(root.resolve(PLAYER.toString())).filter(p -> p.getFileName().toString().equals(\"manifest.yml\")).count() == 1,",
-      "category": "PLAYER_PROFILE_AUTHORITY",
-      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
-    },
-    {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|final Path dir = root.resolve(PLAYER.toString());",
-      "category": "PLAYER_PROFILE_AUTHORITY",
-      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
-    },
-    {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|final Path evidence = root.resolve(PLAYER.toString()).resolve(\"quarantine\").resolve(\"statistics\")",
-      "category": "PLAYER_PROFILE_AUTHORITY",
-      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
-    },
-    {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileYamlRegressionSuite.java|final Path orphan = root.resolve(PLAYER.toString()).resolve(\"economy.yml.tmp-orphan\");",
-      "category": "PLAYER_PROFILE_AUTHORITY",
-      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
-    },
-    {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java|final Path wal = root.resolve(PLAYER.toString()).resolve(\"wal\");",
-      "category": "PLAYER_PROFILE_AUTHORITY",
-      "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
-    },
-    {
-      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java|import hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository;",
+      "key": "PLAYER_YAML|src/regression/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionRegressionSuite.java|check(walEmpty(root.resolve(PLAYER.toString()).resolve(\"wal\")), \"rollback WAL cleaned\");",
       "category": "PLAYER_PROFILE_AUTHORITY",
       "reason": "Canonical PlayerProfile domain, repository, transaction or API implementation."
     },
@@ -5511,12 +5456,12 @@
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
     {
-      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java|final Map<UUID, CompanionProfile> second = new LinkedHashMap<>();",
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java|final Map<UUID, CompanionProfile> roster,",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
     {
-      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java|final SealReason seal, final Map<UUID, CompanionProfile> roster,",
+      "key": "UUID_MAP|src/regression/java/hu/taliann/icesmp/classspec/profile/ClassSpecSectionV2RegressionSuite.java|final Map<UUID, CompanionProfile> second = new LinkedHashMap<>();",
       "category": "RUNTIME",
       "reason": "In-memory runtime/session map; must not be a durable authority."
     },
