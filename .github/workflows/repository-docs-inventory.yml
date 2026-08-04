@@ -5,115 +5,57 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  publish:
-    name: Publish validated Profile v2 code tree
+  diagnose:
+    name: Diagnose PlayerProfile stack integration
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 20
     steps:
-      - name: Check out authenticated integration history
+      - name: Check out full authenticated repository
         uses: actions/checkout@v4
         with:
           ref: agent/player-profile-root-reconstruct-20260803-v6
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: true
-
-      - name: Install workflow parser
-        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
-
-      - name: Reuse the validated publisher with an isolated commit index
+      - name: Diagnose exact recovery merge
         shell: bash
         env:
-          VALIDATED_PUBLISHER_COMMIT: eb85a7616a3432fdd8cf1095fc8c84d3f9af8b63
-          SOURCE_WORKFLOW_COMMIT: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
-          DRIVER_COMMIT: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
-          UPDATED_BASE_HEAD: 854248d530d417aca49906616f6e3ac458b231ca
-          CLEAN_PROFILE_HEAD: b6f4492766675f718f73fd947bf92a388a3090fb
-          OLD_PROFILE_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
-          TARGET_BRANCH: rework/class-spec-profile-v2
+          PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
+          RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
+          OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from __future__ import annotations
+          git fetch --no-tags origin \
+            "+refs/heads/rework/class-spec-profile-v2:refs/remotes/origin/rework/class-spec-profile-v2" \
+            "+refs/heads/profile/player-profile-platform:refs/remotes/origin/profile/player-profile-platform" \
+            "+refs/heads/agent/player-profile-root-recovered-20260803-v4:refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4"
+          test "$(git rev-parse refs/remotes/origin/rework/class-spec-profile-v2)" = "$PROFILE_V2_HEAD"
+          test "$(git rev-parse refs/remotes/origin/profile/player-profile-platform)" = "$OLD_PLATFORM_HEAD"
+          test "$(git rev-parse refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4)" = "$RECOVERY_HEAD"
 
-          import os
-          import subprocess
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --detach "$RECOVERY_HEAD"
+          git switch -c local-player-profile-integration
 
-          import yaml
-
-          workflow_text = subprocess.check_output(
-              [
-                  "git", "show",
-                  f"{os.environ['VALIDATED_PUBLISHER_COMMIT']}:.github/workflows/repository-docs-inventory.yml",
-              ],
-              text=True,
-              encoding="utf-8",
-          )
-          workflow = yaml.safe_load(workflow_text)
-          source = next(
-              step["run"] for step in workflow["jobs"]["publish"]["steps"]
-              if isinstance(step, dict)
-              and step.get("name") == "Resolve, complete contracts, validate and publish"
-          )
-          original = '"for index, step in enumerate(run_steps[2:], 3):\\n"'
-          replacement = '"for index, step in enumerate(run_steps[2:5], 3):\\n"'
-          if source.count(original) != 1:
-              raise SystemExit(f"Validated publisher slice drift: {source.count(original)}")
-          source = source.replace(original, replacement, 1)
-          subprocess.run(
-              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", source],
-              check=True,
-              env=os.environ.copy(),
-          )
-          PY
-
-          test "$(git ls-remote origin refs/heads/rework/class-spec-1.21.11-compatibility | awk '{print $1}')" = "$UPDATED_BASE_HEAD"
-          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$OLD_PROFILE_HEAD"
-
-          sha256sum .github/workflows/ci.yml .github/workflows/repository-docs-inventory.yml
-
-          temporary_index=$(mktemp)
-          trap 'rm -f "$temporary_index"' EXIT
-          cp .git/index "$temporary_index"
-          for path in \
-            .github/workflows/ci.yml \
-            .github/workflows/repository-docs-inventory.yml; do
-            entry=$(git ls-tree "$OLD_PROFILE_HEAD" -- "$path")
-            test -n "$entry"
-            mode=$(printf '%s\n' "$entry" | awk '{print $1}')
-            blob=$(printf '%s\n' "$entry" | awk '{print $3}')
-            test -n "$mode"
-            test -n "$blob"
-            GIT_INDEX_FILE="$temporary_index" git update-index --add --cacheinfo "$mode,$blob,$path"
-          done
-
-          GIT_INDEX_FILE="$temporary_index" git diff --cached --quiet "$OLD_PROFILE_HEAD" -- \
-            .github/workflows/ci.yml \
-            .github/workflows/repository-docs-inventory.yml
-          GIT_INDEX_FILE="$temporary_index" git diff --cached --check
-
-          tree_sha=$(GIT_INDEX_FILE="$temporary_index" git write-tree)
-          code_commit=$(printf '%s\n\n%s\n' \
-            "Merge current compatibility base into greenfield Profile v2" \
-            "Publish the fully validated code and documentation tree; validated workflow updates follow as direct GitHub commits." \
-            | git commit-tree "$tree_sha" -p "$OLD_PROFILE_HEAD" -p "$UPDATED_BASE_HEAD")
-          git push origin "${code_commit}:refs/heads/${TARGET_BRANCH}"
-          echo "PROFILE_V2_CODE_HEAD=${code_commit}"
+          set +e
+          git merge --no-ff --no-commit "$PROFILE_V2_HEAD"
+          status=$?
+          set -e
+          echo "MERGE_STATUS=$status"
+          echo "=== STATUS ==="
+          git status --short
+          echo "=== CONFLICTS ==="
+          git diff --name-only --diff-filter=U | sort
+          echo "=== STAGED STAT ==="
+          git diff --cached --stat || true
+          echo "=== CONFLICT HUNKS ==="
+          while IFS= read -r file; do
+            [[ -n "$file" ]] || continue
+            echo "--- $file ---"
+            git diff --cc -- "$file" || true
+          done < <(git diff --name-only --diff-filter=U | sort)
+          exit "$status"
