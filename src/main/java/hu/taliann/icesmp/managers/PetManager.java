@@ -539,6 +539,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
         if (stance == MinionManager.Stance.STAY) {
             combatTargets.remove(ownerId);
+            pet.setTarget(null);
+            pet.getPathfinder().stopPathfinding();
             // Világváltásnál a STAY pet sem maradhat árván a régi világban.
             if (!pet.getWorld().equals(ownerWorld)) {
                 pet.teleportAsync(ownerLoc);
@@ -557,6 +559,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             }
         } else {
             combatTargets.remove(ownerId); // PASSIVE never fights
+            pet.setTarget(null);
         }
 
         if (target != null) {
@@ -564,6 +567,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             return;
         }
 
+        // Ne maradjon meg vanilla célpont (pl. egy untamed farkas birkája): csak az
+        // IceSMP által feloldott combatTargets célponttal harcolhat a társ.
+        pet.setTarget(null);
         // No target → follow the owner. Every pet trails its owner by default: it walks toward
         // them once it lags past the follow-start radius, and teleports to catch up only when it
         // falls too far behind or ends up in another world.
@@ -667,10 +673,14 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         mob.setPersistent(true);
         mob.setRemoveWhenFarAway(false);
         if (mob instanceof Tameable tameable) {
-            tameable.setTamed(true);
-            tameable.setOwner(player);
+            // A vanilla gazda scoreboard-teamjét (és így a LuckPerms rangprefixét)
+            // a tameable névtáblája is örökölné. A követést és a harcot az IceSMP
+            // saját vezérlője intézi, ezért a társ nem marad vanilla-szelídített.
+            tameable.setOwner(null);
+            tameable.setTamed(false);
         }
-        // A pet BÁRMILYEN mob lehet (Beast Master / Necromancer): a közös keményítés fedi a
+        mob.setTarget(null);
+        // A pet BÁRMILYEN mob lehet(Beast Master / Necromancer): a közös keményítés fedi a
         // zombi/csontváz/phantom nappali égést ÉS a piglin/hoglin overworld-zombisodását is.
         EventSpawnGuard.prepare(mob);
         // Idézett társ prémiuma: bónusz-szintekkel skálázott statok (a rituálé-beszerzés ára).

@@ -223,6 +223,7 @@ public final class CrownCurseManager {
         }
         final double radius = Math.max(4.0D,
                 configManager.getDouble("factions.kings.crown-curse.attraction-radius", 24.0D));
+        final String kingId = king.getUniqueId().toString();
         for (final org.bukkit.entity.Entity nearby : king.getNearbyEntities(radius, radius, radius)) {
             if (!(nearby instanceof Mob mob) || !hu.taliann.icesmp.utils.UndeadUtil.isUndead(mob)) {
                 continue;
@@ -231,6 +232,10 @@ public final class CrownCurseManager {
             // de a célzás mutáció: az adott mob saját schedulerén végezzük.
             mob.getScheduler().run(plugin, task -> {
                 if (mob.getTarget() == null) {
+                    mob.getPersistentDataContainer().set(
+                            hu.taliann.icesmp.factions.FactionCombatMarkers.CROWN_CURSE_TARGET,
+                            org.bukkit.persistence.PersistentDataType.STRING,
+                            kingId);
                     mob.setTarget(king);
                 }
             }, null);

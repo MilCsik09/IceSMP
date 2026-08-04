@@ -181,7 +181,7 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         if (memberGuild.containsKey(founder.getUniqueId())) {
             return "guild-already-member";
         }
-        final FactionType faction = factionManager.getFaction(founder.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(founder.getUniqueId()).orElse(null);
         if (faction == null) {
             return "guild-needs-faction";
         }
@@ -219,7 +219,7 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         if (memberGuild.containsKey(target.getUniqueId())) {
             return "guild-target-in-guild";
         }
-        if (factionManager.getFaction(target.getUniqueId()) != guild.faction) {
+        if (!factionManager.isMember(target.getUniqueId(), guild.faction)) {
             return "guild-wrong-faction";
         }
         if (guild.members.size() >= maxMembers(guild)) {
@@ -238,8 +238,10 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         if (memberGuild.containsKey(invitee.getUniqueId())) {
             return "guild-already-member";
         }
-        if (factionManager.getFaction(invitee.getUniqueId()) != guild.faction
-                || guild.members.size() >= maxMembers(guild)) {
+        if (!factionManager.isMember(invitee.getUniqueId(), guild.faction)) {
+            return "guild-wrong-faction";
+        }
+        if (guild.members.size() >= maxMembers(guild)) {
             return "guild-full";
         }
         guild.members.add(invitee.getUniqueId());

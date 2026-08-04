@@ -161,7 +161,7 @@ public final class ShopManager {
     public CurrencyType resolveCurrency(final ConfigurationSection item, final Player buyer) {
         final String raw = item.getString("currency", "OWN");
         if ("OWN".equalsIgnoreCase(raw) || "FACTION".equalsIgnoreCase(raw) || "SAJAT".equalsIgnoreCase(raw)) {
-            return CurrencyType.fromFactionType(factionManager.getFaction(buyer.getUniqueId()));
+            return CurrencyType.fromFactionType(factionManager.getEconomyFaction(buyer.getUniqueId()));
         }
         final CurrencyType byName = CurrencyType.fromInput(raw);
         return byName == null ? currencyManager.getDefaultCurrency() : byName;
@@ -205,7 +205,7 @@ public final class ShopManager {
         final String shopFactionName = shop.getString("faction", "ALL");
         if (!shopFactionName.isBlank() && !"ALL".equalsIgnoreCase(shopFactionName)) {
             final FactionType shopFaction = FactionType.fromInput(shopFactionName);
-            if (shopFaction != null && factionManager.getFaction(buyer.getUniqueId()) != shopFaction) {
+            if (shopFaction != null && !factionManager.isMember(buyer.getUniqueId(), shopFaction)) {
                 return "shop-wrong-faction";
             }
         }

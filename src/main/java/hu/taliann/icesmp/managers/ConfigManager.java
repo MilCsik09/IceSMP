@@ -7,18 +7,35 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Manager for loading and accessing configuration values.
- * Provides centralized access to configuration with fallback defaults.
+ * Provides centralized access to a single atomically published configuration generation.
  */
 public final class ConfigManager {
 
-    /** Bundled per-subsystem config files under config/ (extracted on first run).
-     * AUDIT-JAVÍTÁS: a lista korábban 6 fájlt kihagyott (item-rarity, loot, motd,
-     * profession-materials, profession-recipes, tablist) — friss telepítésen ezek sosem
-     * csomagolódtak ki, így a rájuk épülő rendszerek némán a kód-defaultokra estek
-     * (pl. NULLA szakma-recept). Új fájl hozzáadásakor ide is fel KELL venni. */
+    /**
+     * One immutable publication unit. The contained Bukkit configuration is built privately and is
+     * never mutated after publication; the override set belongs to the exact same generation.
+     */
+    public record ConfigSnapshot(FileConfiguration configuration,
+                                 Set<String> overridePaths,
+                                 long generation) {
+        public ConfigSnapshot {
+            overridePaths = overridePaths == null ? Set.of() : Set.copyOf(overridePaths);
+        }
+
+        public boolean isSet(final String path) {
+            return configuration != null && configuration.isSet(path);
+        }
+
+        public boolean isOverridden(final String path) {
+            return overridePaths.contains(path);
+        }
+    }
+
+    /** Bundled per-subsystem config files under config/. */
     private static final String[] CONFIG_FILES = {
             "general", "economy", "factions", "classes", "spells", "spells-balance",
             "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation",
@@ -26,25 +43,19 @@ public final class ConfigManager {
     };
 
     private final JavaPlugin plugin;
-    // volatile: load()/reload() runs from the (admin command) thread that fires /icesmp reload, while
-    // every manager reads this reference from arbitrary region threads — publish the reload safely.
-    private volatile FileConfiguration configuration;
+    /** All readers observe either the complete old generation or the complete new generation. */
+    private volatile ConfigSnapshot liveSnapshot = new ConfigSnapshot(null, Set.of(), 0L);
 
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
     }
 
     /**
-     * Loads configuration from the per-subsystem files in {@code config/} plus the optional
-     * {@code config.yml} override, merging them into one keyspace so the existing
-     * {@code getX("subsystem.key")} paths keep working unchanged. The per-subsystem files are the
-     * defaults; {@code config.yml} is loaded LAST so an admin can override any key there.
+     * Loads the packaged subsystem files and the optional config.yml override, then publishes the
+     * merged tree and its override-index with one volatile reference replacement.
      */
     public synchronized void load() {
         final YamlConfiguration merged = new YamlConfiguration();
-
-        // Per-subsystem defaults: config/<subsystem>.yml. Extract and merge only the supported
-        // CONFIG_FILES allowlist; unrelated backups and editor files must never enter runtime config.
         final File dir = new File(plugin.getDataFolder(), "config");
         dir.mkdirs();
         for (final String name : CONFIG_FILES) {
@@ -52,8 +63,6 @@ public final class ConfigManager {
                 plugin.saveResource("config/" + name + ".yml", false);
             }
         }
-        // Csak az allowlist töltődik be: egy bemásolt backup/szerkesztői mentés (.yml) különben
-        // észrevétlenül felülírna élő kulcsokat az alfabetikus merge-sorrend szerint.
         for (final String name : CONFIG_FILES) {
             final File file = new File(dir, name + ".yml");
             if (file.exists()) {
@@ -71,15 +80,19 @@ public final class ConfigManager {
             }
         }
 
-        // Optional main config.yml override (loaded last so its keys win).
         plugin.reloadConfig();
+        final Set<String> overridePaths = plugin.getConfig().getKeys(true).stream()
+                .filter(key -> !plugin.getConfig().isConfigurationSection(key))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
         mergeInto(merged, plugin.getConfig());
 
-        this.configuration = merged;
+        final long previousGeneration = liveSnapshot.generation();
+        final long nextGeneration = previousGeneration == Long.MAX_VALUE
+                ? Long.MAX_VALUE : previousGeneration + 1L;
+        liveSnapshot = new ConfigSnapshot(merged, overridePaths, nextGeneration);
     }
 
-    /** Copies every leaf (non-section) key from {@code source} into {@code target}. */
-    private void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {
+    private static void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {
         for (final String key : source.getKeys(true)) {
             if (!source.isConfigurationSection(key)) {
                 target.set(key, source.get(key));
@@ -91,17 +104,7 @@ public final class ConfigManager {
         load();
     }
 
-    /**
-     * Az ingame override-írás EGYETLEN, szerializált útja (GUI-kattintás + /icesmp config
-     * set|unset — Folián mindkettő a hívó játékos régió-szálán fut, akár egyszerre többen).
-     * A plugin megosztott {@code getConfig()} objektumán a set+save+reload hármas
-     * szinkronizáció nélkül elveszíthetné az egyik admin módosítását (a reloadConfig a
-     * lemezről cseréli le a memóriabeli, még mentetlen példányt), ezért:
-     * (1) friss lemez-állapot betöltése, (2) set, (3) mentés, (4) merge-újratöltés —
-     * egyetlen monitor alatt. {@code value == null} = a kulcs törlése (unset).
-     *
-     * @return unsetnél true, ha a kulcs létezett; setnél mindig true
-     */
+    /** Serialized config.yml override mutation followed by one new atomic generation. */
     public synchronized boolean applyOverride(final String key, final Object value) {
         plugin.reloadConfig();
         final boolean existed = plugin.getConfig().isSet(key);
@@ -114,59 +117,55 @@ public final class ConfigManager {
         return true;
     }
 
+    public ConfigSnapshot snapshot() {
+        return liveSnapshot;
+    }
+
     /** Returns null if not yet loaded. */
     public FileConfiguration getConfiguration() {
-        return configuration;
+        return liveSnapshot.configuration();
+    }
+
+    public boolean contains(final String path) {
+        return liveSnapshot.isSet(path);
+    }
+
+    public boolean hasOverride(final String path) {
+        return liveSnapshot.isOverridden(path);
     }
 
     public String getString(final String path, final String fallback) {
-        if (configuration == null) {
-            return fallback;
-        }
-        return configuration.getString(path, fallback);
+        final FileConfiguration configuration = liveSnapshot.configuration();
+        return configuration == null ? fallback : configuration.getString(path, fallback);
     }
 
     public int getInt(final String path, final int fallback) {
-        if (configuration == null) {
-            return fallback;
-        }
-        return configuration.getInt(path, fallback);
+        final FileConfiguration configuration = liveSnapshot.configuration();
+        return configuration == null ? fallback : configuration.getInt(path, fallback);
     }
 
     public long getLong(final String path, final long fallback) {
-        if (configuration == null) {
-            return fallback;
-        }
-        return configuration.getLong(path, fallback);
+        final FileConfiguration configuration = liveSnapshot.configuration();
+        return configuration == null ? fallback : configuration.getLong(path, fallback);
     }
 
     public double getDouble(final String path, final double fallback) {
-        if (configuration == null) {
-            return fallback;
-        }
-        return configuration.getDouble(path, fallback);
+        final FileConfiguration configuration = liveSnapshot.configuration();
+        return configuration == null ? fallback : configuration.getDouble(path, fallback);
     }
 
     public boolean getBoolean(final String path, final boolean fallback) {
-        if (configuration == null) {
-            return fallback;
-        }
-        return configuration.getBoolean(path, fallback);
+        final FileConfiguration configuration = liveSnapshot.configuration();
+        return configuration == null ? fallback : configuration.getBoolean(path, fallback);
     }
 
     public List<String> getStringList(final String path) {
-        if (configuration == null) {
-            return List.of();
-        }
-        return configuration.getStringList(path);
+        final FileConfiguration configuration = liveSnapshot.configuration();
+        return configuration == null ? List.of() : configuration.getStringList(path);
     }
 
     public List<Double> getDoubleList(final String path) {
-        if (configuration == null) {
-            return List.of();
-        }
-        return configuration.getDoubleList(path);
+        final FileConfiguration configuration = liveSnapshot.configuration();
+        return configuration == null ? List.of() : configuration.getDoubleList(path);
     }
 }
-
-

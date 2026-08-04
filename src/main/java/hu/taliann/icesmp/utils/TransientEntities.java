@@ -11,6 +11,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -116,15 +117,28 @@ public final class TransientEntities {
             return;
         }
         final Plugin owner = plugin == null ? handle.plugin : plugin;
-        handle.scheduler.run(owner, task -> {
-            try {
-                if (handle.entity.isValid()) {
-                    handle.entity.remove();
+        // Paper/Folia rejects every new scheduler registration once disable has started. At that
+        // point the tracked entities are non-persistent and the only safe operation is retiring
+        // our handle; attempting a last-minute entity task is exactly what produced the shutdown
+        // IllegalPluginAccessException in the server log.
+        if (!owner.isEnabled()) {
+            retire(handle.id, handle.generation);
+            return;
+        }
+        try {
+            handle.scheduler.run(owner, task -> {
+                try {
+                    if (handle.entity.isValid()) {
+                        handle.entity.remove();
+                    }
+                } finally {
+                    retire(handle.id, handle.generation);
                 }
-            } finally {
-                retire(handle.id, handle.generation);
-            }
-        }, () -> retire(handle.id, handle.generation));
+            }, () -> retire(handle.id, handle.generation));
+        } catch (final IllegalPluginAccessException exception) {
+            // Disable may win between isEnabled() and scheduler.run(); retire without retrying.
+            retire(handle.id, handle.generation);
+        }
     }
 
     public static void markGone(final UUID id) {

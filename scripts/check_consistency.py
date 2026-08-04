@@ -533,8 +533,12 @@ try:
     _topics_block = re.search(r"TOPICS\s*=\s*List\.of\((.*?)\);", _lore_src, re.S)
     _topics = set(re.findall(r'"([a-z0-9-]+)"', _topics_block.group(1))) if _topics_block else set()
     _entries = set(re.findall(r'Map\.entry\(\s*"([a-z0-9-]+)"', _lore_src))
-    _usage = re.search(r"/lore <([a-z0-9|-]+)>", _lore_src)
-    _usage_topics = set(_usage.group(1).split("|")) if _usage else set()
+    # Az olvasható, több soros súgó minden témát külön `/lore tema` alakban sorol.
+    # A korábbi egyetlen `<a|b|c>` lista továbbra is támogatott a régi branchekhez.
+    _usage_topics = set(re.findall(r"/lore ([a-z0-9-]+)", _lore_src))
+    _legacy_usage = re.search(r"/lore <([a-z0-9|-]+)>", _lore_src)
+    if _legacy_usage:
+        _usage_topics.update(_legacy_usage.group(1).split("|"))
     for _t in sorted(_topics - _entries):
         fail(f"/lore tema '{_t}' szerepel a TOPICS-ban, de nincs DEFAULTS-szocikke")
     for _t in sorted(_entries - _topics):

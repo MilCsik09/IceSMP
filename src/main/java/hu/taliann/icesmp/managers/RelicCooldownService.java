@@ -5,6 +5,8 @@ import hu.taliann.icesmp.relics.RelicTrigger;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public final class RelicCooldownService {
 
@@ -23,7 +25,8 @@ public final class RelicCooldownService {
         return Math.max(0L, expiresAt - System.currentTimeMillis());
     }
 
-    public void startCooldown(final UUID playerId, final String relicId, final RelicTrigger trigger, final long cooldownMillis) {
+    public void startCooldown(final UUID playerId, final String relicId, final RelicTrigger trigger,
+                              final long cooldownMillis) {
         if (cooldownMillis <= 0L) {
             return;
         }
@@ -45,3 +48,40 @@ public final class RelicCooldownService {
     }
 }
 
+/** Per-entry isolation for inventory refreshes; programming failures remain visible to the caller. */
+final class RelicRefreshPipeline {
+
+    private RelicRefreshPipeline() {
+    }
+
+    static <T, D> int refresh(final T[] entries,
+                              final Function<T, D> identifier,
+                              final BiConsumer<T, D> refresher,
+                              final FailureHandler<T, D> failureHandler) {
+        if (entries == null) {
+            return 0;
+        }
+
+        int changed = 0;
+        for (int index = 0; index < entries.length; index++) {
+            final T entry = entries[index];
+            D definition = null;
+            try {
+                definition = identifier.apply(entry);
+                if (definition == null) {
+                    continue;
+                }
+                refresher.accept(entry, definition);
+                changed++;
+            } catch (final RuntimeException exception) {
+                failureHandler.accept(index, entry, definition, exception);
+            }
+        }
+        return changed;
+    }
+
+    @FunctionalInterface
+    interface FailureHandler<T, D> {
+        void accept(int index, T entry, D definition, RuntimeException exception);
+    }
+}

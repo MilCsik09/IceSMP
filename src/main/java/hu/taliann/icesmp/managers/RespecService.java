@@ -65,7 +65,7 @@ public final class RespecService {
         if (classPool) return failureOutcome(player, Outcome.Status.PERSISTENCE_FAILED);
         final double cost = specializationManager.getRespecCost();
         final CurrencyType currency = CurrencyType.fromFactionType(
-                factionManager.getFaction(player.getUniqueId()));
+                factionManager.getEconomyFaction(player.getUniqueId()));
         if (specializationManager.getProfessionSpecialization(player) == null) {
             return new Outcome(Outcome.Status.NOTHING_TO_RESPEC, cost, currency, 0);
         }
@@ -104,7 +104,7 @@ public final class RespecService {
         final UUID playerId = player.getUniqueId();
         final ClassSpecProfileGateway gateway = specializationManager.profileGateway();
         final double cost = specializationManager.getRespecCost();
-        final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getFaction(playerId));
+        final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(playerId));
         final UUID sessionToken = gateway.currentSessionToken(playerId).orElse(null);
         if (sessionToken == null || !gateway.isSessionReady(playerId)
                 || gateway.activeSpecId(playerId).isEmpty()) {
@@ -267,7 +267,7 @@ public final class RespecService {
 
     private Outcome failureOutcome(final Player player, final Outcome.Status status) {
         return new Outcome(status, specializationManager.getRespecCost(), CurrencyType.fromFactionType(
-                factionManager.getFaction(player.getUniqueId())), 0);
+                factionManager.getEconomyFaction(player.getUniqueId())), 0);
     }
 
     public void clearSession(final UUID playerId) {

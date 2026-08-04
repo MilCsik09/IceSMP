@@ -191,7 +191,7 @@ public final class AchievementManager {
                         "achievement:" + player.getUniqueId() + ":" + achievement.id())
                         .exceptionally(failure -> { plugin.getLogger().warning("Achievement class XP failed: " + failure.getMessage()); return false; });
             } else {
-                final FactionType faction = factionManager.getFaction(player.getUniqueId());
+                final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
                 currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), achievement.reward());
             }
         }
