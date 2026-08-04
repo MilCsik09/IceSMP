@@ -1,5 +1,7 @@
 # IceSMP PlayerProfile platform
 
+<!-- icesmp-doc-id: feature.platform.player_profile -->
+
 ## Canonical model
 
 `PlayerProfileSnapshot` is the single logical aggregate for IceSMP-owned, restart-durable player state. It is immutable, Bukkit/YAML/SQL/HTTP independent and owner-bound by UUID. The root contains identity, lifecycle, onboarding, faction, economy, class-spec, professions, spellbook, talents, quests, companions, relics, achievements, statistics, preferences, social links, moderation and operations sections. Shared guild, party, market, claim, treasury, council, raid, season and audit-log aggregates remain separate and are referenced only by stable IDs.

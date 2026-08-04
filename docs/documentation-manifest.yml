@@ -510,6 +510,11 @@
       "docs": [
         "docs/ARCHITECTURE.md"
       ]
+    },
+    "config.player-profile": {
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md"
+      ]
     }
   },
   "permissions": {
@@ -823,66 +828,66 @@
     "_contract": {
       "entries_sha256": "6692f030ef317cfbe8019de663eb085920eb9a17db9111f7e92f1b09d114bd7f",
       "source_sha256": {
-        "src/main/java/hu/taliann/icesmp/commands/SinnerCommand.java": "c6d00e272ad69ea9f874c87cb1a1fbb54283de642b8adfd43f15c441b3d2e1ac",
-        "src/main/java/hu/taliann/icesmp/managers/VanishManager.java": "ea2f806215f634e6620ddf22ea5e9c7648b5a80b217ea1539cd5c88e05e4a394",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "475931ea21e7b254c0d96b7019e7a02aa9be11da726f27da7115f5eaf9615761",
-        "src/main/java/hu/taliann/icesmp/listeners/InvseeGUIListener.java": "659ae2e96dba1d2061123b08519b4d64d56332ccacbb32a41ce37bd1be136793",
-        "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java": "6d0564ad08ad34a20b90b79553669010891ab769b401b41698b3f8d89e91e318",
-        "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
-        "src/main/java/hu/taliann/icesmp/listeners/SitListener.java": "92f3b16a0ed43908af35eba95e0ffb6874b2733ad7b600d88606fb548005e084",
-        "src/main/java/hu/taliann/icesmp/commands/RelicCommand.java": "c5269dc3603518e1c779c3a22f9f7ce3ae15682a0a847b3fbdf1dd6fcb6c7a75",
-        "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java": "9ea083a134b88ba8655e38c28cd397fb7b6651c6d427addc62c23512b4b1f6a6",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "7fb2dee67a26c214cebb4e0934e522d8fce742bf3ddd943e0603e023e2253b4e",
-        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
-        "src/main/java/hu/taliann/icesmp/commands/PunishmentHistoryCommand.java": "07f392c08ab2f06060de020443bf00b351b25432fd1925677f94d110cc72c8ef",
-        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
-        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
-        "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "fdedfab174951926485e741d620e3632007baed65f7f34bc2362fcd61ea6a57e",
-        "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
-        "src/main/java/hu/taliann/icesmp/commands/NpcBindCommand.java": "95c8490cf77f7b08c4e4928a15997bb927e792e81e897380681f683f38017e7a",
-        "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "19f35106601aafefb3e6610c8bf74db5f5ab3620ad5dfb8ac61e40f55b0f6261",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/ActivePunishmentsCommand.java": "12db7aea3b857fb27d4ff2fb684c90c0fdcf5e0b91e82311e3fad0f88af90709",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
-        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "abd285e8b154adf04a4bb7373d979268d2d90a178527c5ae6eb5c443769c8c1c",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
-        "src/main/java/hu/taliann/icesmp/listeners/TheftListener.java": "23a78943e950952ad02d900115d2d764f0d2a05cfb5c41092b6952bd503ad721",
-        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
-        "src/main/java/hu/taliann/icesmp/managers/ReportManager.java": "bebe884c2576dad0b571f9edc5e76dfc396a6c48f872ef26303c1d7add2bae66",
-        "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
-        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "9b992ec1a70077153685e5db37d3998b0f118510a7c4cb809b7b5d87b451ff19",
-        "src/main/java/hu/taliann/icesmp/commands/ParkourCommand.java": "85cfb87243aefbf106acf5626b214ffddedd6209cddae7a6e3c92fea38bc8116",
-        "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "5ed08609dda12968efaa0511ab9b37d8b2f08cfea7e766e06079924e5ec56f7f",
-        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "4ae9f4aba9af5735ff5dcd0c31ad92314823e63f503fb56a420ab197c1ced185",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
-        "src/main/java/hu/taliann/icesmp/listeners/ClaimProtectionListener.java": "1431e67ed1a01de21abe6a01ac9f24cb2f571a19a7071d6d99b41bc92d689052",
-        "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java": "17da3d6d99b943ae87c9eca63471d9dca5c2699e0ece3f03ee63d85d375434b4",
-        "src/main/java/hu/taliann/icesmp/listeners/DungeonGateListener.java": "1d97e3e0d5852fe84078e4c703d71da8d4428d2a60bd88db1af9d2140b80f807",
-        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "f9db933e39f9bfd775da55a4c423c252e88ee6d17fc5c98d190d9b852e3a272d",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
-        "src/main/java/hu/taliann/icesmp/listeners/PortalGuardListener.java": "beee5ac270e5717047c081f800053788115c47384e779ef5a2b9ba072e04b66c",
-        "src/main/java/hu/taliann/icesmp/managers/CrateManager.java": "c3f19b7fc68907356356b056730763a7f36c5250e3cf812be2d010e47d7b38f1",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
-        "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java": "7e1fb6c3ee6b49c1d7c201e8d65acfa6a1fd4cd22b4492fcc1de231d87eb8654",
-        "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java": "dd251a5ea4759678588efbe5b8fed27582318b8babbde9d08b4f06ee731d522a",
-        "src/main/resources/config/crates.yml": "d2bf5708cabb3b9bf447f1988d77f0c9a753bfc4574d37f4f01ee7ad6edff0ea",
-        "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java": "998010b19c9a275e9e70c3ccbea5c475a752e1b2eb0622645cf9430284a3ceaf",
-        "src/main/java/hu/taliann/icesmp/core/Permissions.java": "46cc7d1872ae654bc7be649c3ae72ffa4c13bfc6e9e29009472085696c12cc34",
-        "src/main/java/hu/taliann/icesmp/commands/ModerationRevokeCommand.java": "c2802edcde024ad699f1d45c99744899db8d3e9224c21b5f22f04b3b75fc2274",
-        "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java": "f949151ccda9d4d2840e01ed5ea55328b5e0438d90c5a835bdb315ed5b84c0b1",
-        "src/main/java/hu/taliann/icesmp/commands/UnmuteCommand.java": "1171d989307c932d8ebbd9b70288830ad08e47b107e6311e2c84b41bfa9db03f",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
-        "src/main/java/hu/taliann/icesmp/commands/OfflineTeleportCommand.java": "ad43efd6a674da8dc6917193303de63d1e2fd1d1590e96c4da9f0e5c69a4b436",
-        "src/main/java/hu/taliann/icesmp/commands/MuteCommand.java": "533051f26fa79a4d2a615315547c4eb114bab397b781f12d5f2ac846985691af",
-        "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java": "16ce6ea20cf1072e6b3b933c3bac5c907616b91731c55166590a194b5fa731cc",
-        "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
-        "src/main/java/hu/taliann/icesmp/managers/TablistManager.java": "7d61b7c8045b528dde8ab7b91cab897dcb86f18be00432dd07e29a6adb4114b7",
+        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
         "src/main/java/hu/taliann/icesmp/commands/CrateCommand.java": "d67493fc8bb5776e3fcab22833fe2071eb46357cdf28d399027f1bd576224de4",
-        "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "66d2b668bddb3dc241c3c2038b069a7ce07e06c42574c23b08cd931a7c0d4d71",
+        "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "19f35106601aafefb3e6610c8bf74db5f5ab3620ad5dfb8ac61e40f55b0f6261",
+        "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "70f13452f4e8990cffdb6316d5609ccb2188a7bed5b257cb626e0c6ada38ca8f",
+        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
+        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
+        "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
+        "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java": "17da3d6d99b943ae87c9eca63471d9dca5c2699e0ece3f03ee63d85d375434b4",
+        "src/main/java/hu/taliann/icesmp/commands/ModerationRevokeCommand.java": "c2802edcde024ad699f1d45c99744899db8d3e9224c21b5f22f04b3b75fc2274",
+        "src/main/java/hu/taliann/icesmp/commands/MuteCommand.java": "533051f26fa79a4d2a615315547c4eb114bab397b781f12d5f2ac846985691af",
+        "src/main/java/hu/taliann/icesmp/commands/NpcBindCommand.java": "95c8490cf77f7b08c4e4928a15997bb927e792e81e897380681f683f38017e7a",
+        "src/main/java/hu/taliann/icesmp/commands/OfflineTeleportCommand.java": "ad43efd6a674da8dc6917193303de63d1e2fd1d1590e96c4da9f0e5c69a4b436",
+        "src/main/java/hu/taliann/icesmp/commands/ParkourCommand.java": "85cfb87243aefbf106acf5626b214ffddedd6209cddae7a6e3c92fea38bc8116",
+        "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java": "6d0564ad08ad34a20b90b79553669010891ab769b401b41698b3f8d89e91e318",
+        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "4ae9f4aba9af5735ff5dcd0c31ad92314823e63f503fb56a420ab197c1ced185",
+        "src/main/java/hu/taliann/icesmp/commands/PunishmentHistoryCommand.java": "07f392c08ab2f06060de020443bf00b351b25432fd1925677f94d110cc72c8ef",
+        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "f9db933e39f9bfd775da55a4c423c252e88ee6d17fc5c98d190d9b852e3a272d",
+        "src/main/java/hu/taliann/icesmp/commands/RelicCommand.java": "c5269dc3603518e1c779c3a22f9f7ce3ae15682a0a847b3fbdf1dd6fcb6c7a75",
+        "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java": "7e1fb6c3ee6b49c1d7c201e8d65acfa6a1fd4cd22b4492fcc1de231d87eb8654",
+        "src/main/java/hu/taliann/icesmp/commands/SinnerCommand.java": "c6d00e272ad69ea9f874c87cb1a1fbb54283de642b8adfd43f15c441b3d2e1ac",
+        "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
+        "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
+        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "23d67d0a55f591c0ab0ec26cb8db22b0c336ba351570550f9b84f8439b09c5b7",
+        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
+        "src/main/java/hu/taliann/icesmp/commands/UnmuteCommand.java": "1171d989307c932d8ebbd9b70288830ad08e47b107e6311e2c84b41bfa9db03f",
+        "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cac1a548993b58d2ca6cb8d584814cf24304247978ed49f953dac39b8907a96d",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "43449c86625f0b4621a80580b6e411cc13153ef1a9a854657953fe3b90b0f7c6",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "f74405d61bd044ad30129845c9be3287bc541a71b9d480ddd33c76066c0cc6b8",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "83ede70fd8fe8063c4303d2b59f7ac6d678c6a635f43ab4c1dfb83ddbb439bef",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "ac4808a452bffd0e7228935b5c858dd42bb14cb4b069ccc344b5d9a26ab9a995",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "a34b078bf1aa022603d3b175effec550e3fd9673db9531e67ce29e1acae00f2e"
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "b55df37d8f53c2c0173d5fe7ed56aad5272889153a294339adec7b1c523bf2c4",
+        "src/main/java/hu/taliann/icesmp/core/Permissions.java": "46cc7d1872ae654bc7be649c3ae72ffa4c13bfc6e9e29009472085696c12cc34",
+        "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "fc2559f4ee0c1be34dcfc114e2d53994bd11f3023da3e2a96a501429b2ec8643",
+        "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "66d2b668bddb3dc241c3c2038b069a7ce07e06c42574c23b08cd931a7c0d4d71",
+        "src/main/java/hu/taliann/icesmp/listeners/ClaimProtectionListener.java": "e802410856fdd9261c4c48b7cc71174911c930317dafe6c11d996be65b108914",
+        "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java": "16ce6ea20cf1072e6b3b933c3bac5c907616b91731c55166590a194b5fa731cc",
+        "src/main/java/hu/taliann/icesmp/listeners/DungeonGateListener.java": "1d97e3e0d5852fe84078e4c703d71da8d4428d2a60bd88db1af9d2140b80f807",
+        "src/main/java/hu/taliann/icesmp/listeners/InvseeGUIListener.java": "659ae2e96dba1d2061123b08519b4d64d56332ccacbb32a41ce37bd1be136793",
+        "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java": "f949151ccda9d4d2840e01ed5ea55328b5e0438d90c5a835bdb315ed5b84c0b1",
+        "src/main/java/hu/taliann/icesmp/listeners/PortalGuardListener.java": "beee5ac270e5717047c081f800053788115c47384e779ef5a2b9ba072e04b66c",
+        "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java": "dd251a5ea4759678588efbe5b8fed27582318b8babbde9d08b4f06ee731d522a",
+        "src/main/java/hu/taliann/icesmp/listeners/SitListener.java": "92f3b16a0ed43908af35eba95e0ffb6874b2733ad7b600d88606fb548005e084",
+        "src/main/java/hu/taliann/icesmp/listeners/TheftListener.java": "4aac7d522e98a07860d8a5a7a5cebc19cb6712e9230f0e4389c7320b780d9988",
+        "src/main/java/hu/taliann/icesmp/managers/CrateManager.java": "c3f19b7fc68907356356b056730763a7f36c5250e3cf812be2d010e47d7b38f1",
+        "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java": "998010b19c9a275e9e70c3ccbea5c475a752e1b2eb0622645cf9430284a3ceaf",
+        "src/main/java/hu/taliann/icesmp/managers/ReportManager.java": "bebe884c2576dad0b571f9edc5e76dfc396a6c48f872ef26303c1d7add2bae66",
+        "src/main/java/hu/taliann/icesmp/managers/TablistManager.java": "aff3397530929721dd22896761f49352d9f44bd390f853fbca5f8d397e692a82",
+        "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java": "813a8aceccefb65d2535abda9252c537f0992a8c00a080b8f3c8115ed7058589",
+        "src/main/java/hu/taliann/icesmp/managers/VanishManager.java": "ea2f806215f634e6620ddf22ea5e9c7648b5a80b217ea1539cd5c88e05e4a394",
+        "src/main/resources/config/crates.yml": "d2bf5708cabb3b9bf447f1988d77f0c9a753bfc4574d37f4f01ee7ad6edff0ea"
       },
       "version": 1,
       "description": "Exact, fail-closed permission contract; registration, use-site, constructor-flow and crate-config source drift requires reconciliation.",
@@ -1266,13 +1271,6 @@
         "docs/FEATURES.md"
       ]
     },
-    "component.hu.taliann.icesmp.classspec.persistence.RepositoryMutationStoreAdapter": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/FEATURES.md"
-      ]
-    },
     "component.hu.taliann.icesmp.moderation.ModerationDuration": {
       "feature": "feature.admin.moderation",
       "docs": [
@@ -1439,13 +1437,6 @@
       "feature": "feature.economy.rewards_bounty",
       "docs": [
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ClassProfileLifecycleService": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
       ]
     },
     "component.hu.taliann.icesmp.commands.SinnerCommand": {
@@ -1631,13 +1622,6 @@
       "feature": "feature.player.global_afk",
       "docs": [
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.persistence.ClassProfileRepository": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
       ]
     },
     "component.hu.taliann.icesmp.data.FactionType": {
@@ -2068,13 +2052,6 @@
       "feature": "feature.world.seasons_ambient",
       "docs": [
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.application.ClassProfileMutationStore": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
       ]
     },
     "component.hu.taliann.icesmp.gui.ProfessionRecipeHolder": {
@@ -2630,13 +2607,6 @@
       "feature": "feature.progression.spells",
       "docs": [
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.integration.BukkitClassProfileSessionBridge": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
       ]
     },
     "component.hu.taliann.icesmp.commands.BountyCommand": {
@@ -3223,13 +3193,6 @@
         "docs/FEATURES.md"
       ]
     },
-    "component.hu.taliann.icesmp.classspec.persistence.YamlClassProfileRepository": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
-      ]
-    },
     "component.hu.taliann.icesmp.listeners.SignatureItemListener": {
       "feature": "feature.progression.items_rarity",
       "docs": [
@@ -3265,13 +3228,6 @@
       "docs": [
         "docs/PLAYER_PROFILE_ARCHITECTURE.md",
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.persistence.ClassProfileCodec": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
       ]
     },
     "component.hu.taliann.icesmp.commands.WhisperCommand": {
@@ -3669,13 +3625,6 @@
       "feature": "feature.player.onboarding",
       "docs": [
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.classspec.domain.ClassProfile": {
-      "feature": "feature.progression.classes_specializations",
-      "docs": [
-        "docs/development/CLASS_SPEC_REWORK_ARCHITECTURE.md",
-        "docs/development/CLASS_SPEC_REWORK_TEST_PLAN.md"
       ]
     },
     "component.hu.taliann.icesmp.utils.UndeadUtil": {
@@ -5217,6 +5166,11 @@
         "docs/PLAYER_PROFILE_ARCHITECTURE.md",
         "docs/PLAYER_PROFILE_API.md"
       ]
+    },
+    "component.hu.taliann.icesmp.classspec.persistence.ClassSpecSectionMutationStoreAdapter": {
+      "docs": [
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md"
+      ]
     }
   },
   "version": 1,
@@ -5798,41 +5752,9 @@
       ],
       "description": "Korrupciós aura/állapot, sinner parancs, crown curse és cursed gear viselkedés."
     },
-    "feature.resource-pack": {
-      "description": "Resource-pack publication, delivery, acceptance and player lifecycle integration.",
-      "audience": [
-        "PLAYER",
-        "ADMIN"
-      ],
-      "docs": [
-        "docs/RESOURCE_PACK_CMD.md"
-      ]
-    },
-    "feature.moderation": {
-      "description": "Native moderation commands, operator workflows and player-page administration.",
-      "audience": [
-        "MODERATOR",
-        "ADMIN"
-      ],
-      "docs": [
-        "docs/ADMIN_GUIDE.md"
-      ]
-    },
     "feature.platform.player_profile": {
-      "audience": [
-        "PLAYER",
-        "ADMIN",
-        "DEVELOPER",
-        "TESTER",
-        "INTERNAL"
-      ],
-      "description": "Moduláris, strukturált YAML-backed PlayerProfile authority, per-section CAS/WAL/quarantine, belső Java read API és biztonságos read-only HTTP API.",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_YAML_FORMAT.md",
-        "docs/PLAYER_PROFILE_AUTHORITY_MATRIX.md",
-        "docs/PLAYER_PROFILE_API.md",
-        "docs/PLAYER_PROFILE_STAGING.md"
+        "docs/PLAYER_PROFILE_ARCHITECTURE.md"
       ]
     }
   },
@@ -6067,7 +5989,7 @@
         "arfolyamtabla",
         "ratesboard"
       ],
-      "registration_line": 1628,
+      "registration_line": 1672,
       "implementation": "ExchangeBoardCommand"
     },
     "command.punishments": {
@@ -6079,7 +6001,7 @@
       "name": "punishments",
       "description": "Aktív büntetések (admin)",
       "aliases": [],
-      "registration_line": 1537,
+      "registration_line": 1581,
       "implementation": "ActivePunishmentsCommand"
     },
     "route.market.sell-r-valuta-57dd501253": {
@@ -6110,7 +6032,7 @@
       "name": "sinner",
       "description": "Bűnös állapot kezelése (admin)",
       "aliases": [],
-      "registration_line": 1573,
+      "registration_line": 1617,
       "implementation": "SinnerCommand"
     },
     "route.bank.withdraw-red-blue-neutral-dark-sszeg-837b26fa49": {
@@ -6214,7 +6136,7 @@
         "eco",
         "money"
       ],
-      "registration_line": 1563,
+      "registration_line": 1607,
       "implementation": "CurrencyCommand"
     },
     "route.parkour.setstart-id-n-v-873b963232": {
@@ -6501,7 +6423,7 @@
         "lelek",
         "soul"
       ],
-      "registration_line": 1625,
+      "registration_line": 1669,
       "implementation": "SoulCommand"
     },
     "command.offlinetp": {
@@ -6513,7 +6435,7 @@
       "name": "offlinetp",
       "description": "Teleport az utolsó kijelentkezési helyre",
       "aliases": [],
-      "registration_line": 1548,
+      "registration_line": 1592,
       "implementation": "OfflineTeleportCommand"
     },
     "route.bank.root-5546d57526": {
@@ -6597,7 +6519,7 @@
         "esemeny",
         "event"
       ],
-      "registration_line": 1609,
+      "registration_line": 1653,
       "implementation": "EventsCommand"
     },
     "route.events.spawnpoint-list-79877fb1e0": {
@@ -6910,7 +6832,7 @@
         "emlekek",
         "memory"
       ],
-      "registration_line": 1612,
+      "registration_line": 1656,
       "implementation": "MemoryCommand"
     },
     "route.crate.set-l-da-id-9e3e673970": {
@@ -7110,7 +7032,7 @@
       "aliases": [
         "duel"
       ],
-      "registration_line": 1596,
+      "registration_line": 1640,
       "implementation": "HonorDuelCommand"
     },
     "route-alias.lore.t-ma-e42a542b71.mortengrad-f0de9006": {
@@ -7405,7 +7327,7 @@
         "job",
         "kaszt"
       ],
-      "registration_line": 1568,
+      "registration_line": 1612,
       "implementation": "JobCommand"
     },
     "route.sit.root-be684d6e26": {
@@ -7524,7 +7446,7 @@
       "name": "tell",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 1554,
+      "registration_line": 1598,
       "implementation": "PrivateMessageCommand"
     },
     "route.crate.list-aa44f4dfea": {
@@ -7568,7 +7490,7 @@
         "kuldetes",
         "quests"
       ],
-      "registration_line": 1585,
+      "registration_line": 1629,
       "implementation": "QuestCommand"
     },
     "command.crate": {
@@ -7583,7 +7505,7 @@
         "crates",
         "ladak"
       ],
-      "registration_line": 1507,
+      "registration_line": 1551,
       "implementation": "CrateCommand"
     },
     "route.profession.clear-online-j-t-kos-gathering-crafting-94f838cfa8": {
@@ -7724,7 +7646,7 @@
       "aliases": [
         "ismp"
       ],
-      "registration_line": 1500,
+      "registration_line": 1544,
       "implementation": "IceSMPCommand"
     },
     "route.party.zenet-aa13d37028": {
@@ -7757,7 +7679,7 @@
       "aliases": [
         "weeklygoal"
       ],
-      "registration_line": 1600,
+      "registration_line": 1644,
       "implementation": "ProfessionWeeklyCommand"
     },
     "route.spec.info-2f86e46064": {
@@ -8111,7 +8033,7 @@
       "aliases": [
         "sutt"
       ],
-      "registration_line": 1614,
+      "registration_line": 1658,
       "implementation": "WhisperCommand"
     },
     "route.icesmp.root-3d9c831e41": {
@@ -8155,7 +8077,7 @@
         "relics",
         "relikvia"
       ],
-      "registration_line": 1575,
+      "registration_line": 1619,
       "implementation": "RelicCommand"
     },
     "route.bank.deposit-d3026e7f77": {
@@ -8527,7 +8449,7 @@
         "vault",
         "wallet"
       ],
-      "registration_line": 1564,
+      "registration_line": 1608,
       "implementation": "BankCommand"
     },
     "route.msg.j-t-kos-zenet-59f5bb82b9": {
@@ -8598,7 +8520,7 @@
       "name": "tempban",
       "description": "Ideiglenes kitiltás (admin)",
       "aliases": [],
-      "registration_line": 1528,
+      "registration_line": 1572,
       "implementation": "ModerationActionCommand"
     },
     "route.territory.rename-id-j-n-v-0e55b1e6f3": {
@@ -8683,7 +8605,7 @@
         "fejvadasz",
         "korozes"
       ],
-      "registration_line": 1574,
+      "registration_line": 1618,
       "implementation": "BountyCommand"
     },
     "command.vanish": {
@@ -8697,7 +8619,7 @@
       "aliases": [
         "v"
       ],
-      "registration_line": 1545,
+      "registration_line": 1589,
       "implementation": "VanishCommand"
     },
     "alias.exchangeboard.arfolyamtabla": {
@@ -8740,7 +8662,7 @@
       "aliases": [
         "spy"
       ],
-      "registration_line": 1598,
+      "registration_line": 1642,
       "implementation": "SpyCommand"
     },
     "alias.spellbook.konyv": {
@@ -8926,7 +8848,7 @@
         "companion",
         "tars"
       ],
-      "registration_line": 1578,
+      "registration_line": 1622,
       "implementation": "PetCommand"
     },
     "command.lore": {
@@ -8940,7 +8862,7 @@
       "aliases": [
         "kodex"
       ],
-      "registration_line": 1616,
+      "registration_line": 1660,
       "implementation": "LoreCommand"
     },
     "route.parbaj.kihiv-online-j-t-kos-77340a6a59": {
@@ -9034,7 +8956,7 @@
       "name": "hud",
       "description": "HUD beállítások",
       "aliases": [],
-      "registration_line": 1503,
+      "registration_line": 1547,
       "implementation": "HudCommand"
     },
     "route.events.archeology-59c0c86dd5": {
@@ -9148,7 +9070,7 @@
       "name": "sit",
       "description": "Ülés (leül/feláll)",
       "aliases": [],
-      "registration_line": 1505,
+      "registration_line": 1549,
       "implementation": "SitCommand"
     },
     "route.tanacs.vasarhet-2b790f1d02": {
@@ -9181,7 +9103,7 @@
       "aliases": [
         "terulet"
       ],
-      "registration_line": 1584,
+      "registration_line": 1628,
       "implementation": "TerritoryCommand"
     },
     "alias.parbaj.duel": {
@@ -9213,7 +9135,7 @@
       "name": "unban",
       "description": "Kitiltás feloldása (admin)",
       "aliases": [],
-      "registration_line": 1531,
+      "registration_line": 1575,
       "implementation": "ModerationRevokeCommand"
     },
     "command.adomany": {
@@ -9228,7 +9150,7 @@
         "adomanylada",
         "donate"
       ],
-      "registration_line": 1587,
+      "registration_line": 1631,
       "implementation": "DonationChestCommand"
     },
     "alias.territory.terulet": {
@@ -9273,7 +9195,7 @@
       "name": "invsee",
       "description": "Online inventory/ender live nézet (admin)",
       "aliases": [],
-      "registration_line": 1501,
+      "registration_line": 1545,
       "implementation": "InvseeCommand"
     },
     "route.warn.j-t-kos-ok-73731e594b": {
@@ -9337,7 +9259,7 @@
         "bestiary",
         "lajstrom"
       ],
-      "registration_line": 1591,
+      "registration_line": 1635,
       "implementation": "BestiaryCommand"
     },
     "route-alias.events.spawnpoint-add-world-boss-escort-caravan-cultists-any-id-8274b4ad60.spawnpont-f9cb59a1": {
@@ -9364,7 +9286,7 @@
         "rangsor",
         "top"
       ],
-      "registration_line": 1571,
+      "registration_line": 1615,
       "implementation": "LeaderboardCommand"
     },
     "route.claim.claim-20ce366db5": {
@@ -9690,7 +9612,7 @@
       "aliases": [
         "ferry"
       ],
-      "registration_line": 1610,
+      "registration_line": 1654,
       "implementation": "KompCommand"
     },
     "route-alias.profession.recipes-d99cf16c6c.receptek-326be994": {
@@ -9803,7 +9725,7 @@
         "palya",
         "trial"
       ],
-      "registration_line": 1576,
+      "registration_line": 1620,
       "implementation": "ParkourCommand"
     },
     "route-alias.events.worldboss-b1d9efaf9c.boss-a5e7c002": {
@@ -9999,7 +9921,7 @@
         "prof",
         "szakma"
       ],
-      "registration_line": 1579,
+      "registration_line": 1623,
       "implementation": "ProfessionCommand"
     },
     "route.events.cultists-835d9785cd": {
@@ -10128,7 +10050,7 @@
       "name": "w",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 1557,
+      "registration_line": 1601,
       "implementation": "PrivateMessageCommand"
     },
     "alias.currency.money": {
@@ -10172,7 +10094,7 @@
       "name": "afk",
       "description": "Önkéntes AFK-jelölés",
       "aliases": [],
-      "registration_line": 1506,
+      "registration_line": 1550,
       "implementation": "AfkCommand"
     },
     "command.spec": {
@@ -10187,7 +10109,7 @@
         "specializacio",
         "specialization"
       ],
-      "registration_line": 1580,
+      "registration_line": 1624,
       "implementation": "SpecCommand"
     },
     "route.territory.list-8b41a6ee36": {
@@ -10220,7 +10142,7 @@
       "aliases": [
         "council"
       ],
-      "registration_line": 1611,
+      "registration_line": 1655,
       "implementation": "TanacsCommand"
     },
     "alias.quest.quests": {
@@ -10280,7 +10202,7 @@
       "name": "history",
       "description": "Teljes büntetési előzmény (admin)",
       "aliases": [],
-      "registration_line": 1534,
+      "registration_line": 1578,
       "implementation": "PunishmentHistoryCommand"
     },
     "route.faction.king-tax-sz-zal-k-af0668c552": {
@@ -10944,7 +10866,7 @@
       "name": "kick",
       "description": "Játékos kirúgása (admin)",
       "aliases": [],
-      "registration_line": 1516,
+      "registration_line": 1560,
       "implementation": "ModerationActionCommand"
     },
     "route-alias.events.archeology-59c0c86dd5.regeszet-e40487bd": {
@@ -10990,7 +10912,7 @@
         "karakter",
         "status"
       ],
-      "registration_line": 1572,
+      "registration_line": 1616,
       "implementation": "ProfileCommand"
     },
     "route.faction.caravan-send-sszeg-19f36c48e1": {
@@ -11045,7 +10967,7 @@
         "hub",
         "m"
       ],
-      "registration_line": 1569,
+      "registration_line": 1613,
       "implementation": "MenuCommand"
     },
     "command.claim": {
@@ -11059,7 +10981,7 @@
       "aliases": [
         "birtok"
       ],
-      "registration_line": 1602,
+      "registration_line": 1646,
       "implementation": "ClaimCommand"
     },
     "route-alias.profession.recipes-d99cf16c6c.book-92719fe0": {
@@ -11182,7 +11104,7 @@
         "ah",
         "piac"
       ],
-      "registration_line": 1586,
+      "registration_line": 1630,
       "implementation": "MarketCommand"
     },
     "alias.kem.spy": {
@@ -11500,7 +11422,7 @@
       "name": "stats",
       "description": "Statisztika-profil",
       "aliases": [],
-      "registration_line": 1504,
+      "registration_line": 1548,
       "implementation": "StatsCommand"
     },
     "route.szakmacel.root-5b9277c302": {
@@ -11555,7 +11477,7 @@
         "icegive",
         "iitem"
       ],
-      "registration_line": 1620,
+      "registration_line": 1664,
       "implementation": "ItemGiveCommand"
     },
     "route.w.j-t-kos-zenet-f5a5ab9bc2": {
@@ -11704,7 +11626,7 @@
       "name": "warn",
       "description": "Figyelmeztetés (admin)",
       "aliases": [],
-      "registration_line": 1513,
+      "registration_line": 1557,
       "implementation": "ModerationActionCommand"
     },
     "route.faction.join-frakci-3aa58cfbd1": {
@@ -11814,7 +11736,7 @@
       "name": "mute",
       "description": "Némítás (admin)",
       "aliases": [],
-      "registration_line": 1519,
+      "registration_line": 1563,
       "implementation": "ModerationActionCommand"
     },
     "alias.bestiarium.bestiary": {
@@ -11874,7 +11796,7 @@
       "name": "socialspy",
       "description": "Privát üzenetek megfigyelése (admin)",
       "aliases": [],
-      "registration_line": 1542,
+      "registration_line": 1586,
       "implementation": "SocialSpyCommand"
     },
     "route.territory.info-bc573dcb2e": {
@@ -11995,7 +11917,7 @@
         "gild",
         "guild"
       ],
-      "registration_line": 1589,
+      "registration_line": 1633,
       "implementation": "GuildCommand"
     },
     "route.icesmp.inspect-n-v-cf976d4f92": {
@@ -12045,7 +11967,7 @@
       "name": "ban",
       "description": "Kitiltás (admin)",
       "aliases": [],
-      "registration_line": 1525,
+      "registration_line": 1569,
       "implementation": "ModerationActionCommand"
     },
     "route.emlek.talent-c777d563f2": {
@@ -12136,7 +12058,7 @@
         "p",
         "parti"
       ],
-      "registration_line": 1588,
+      "registration_line": 1632,
       "implementation": "PartyCommand"
     },
     "route.faction.raid-c-lfrakci-ter-let-6fc1e21fb6": {
@@ -12207,7 +12129,7 @@
       "aliases": [
         "chronicle"
       ],
-      "registration_line": 1618,
+      "registration_line": 1662,
       "implementation": "KronikaCommand"
     },
     "alias.ceh.gild": {
@@ -12360,7 +12282,7 @@
       "aliases": [
         "r"
       ],
-      "registration_line": 1560,
+      "registration_line": 1604,
       "implementation": "PrivateMessageCommand"
     },
     "command.soulforge": {
@@ -12374,7 +12296,7 @@
       "aliases": [
         "lelekkovacs"
       ],
-      "registration_line": 1593,
+      "registration_line": 1637,
       "implementation": "SoulforgeCommand"
     },
     "alias.report.bejelent": {
@@ -12409,7 +12331,7 @@
       "aliases": [
         "npckotes"
       ],
-      "registration_line": 1629,
+      "registration_line": 1673,
       "implementation": "NpcBindCommand"
     },
     "command.spellbook": {
@@ -12425,7 +12347,7 @@
         "sb",
         "varazskonyv"
       ],
-      "registration_line": 1627,
+      "registration_line": 1671,
       "implementation": "SpellbookCommand"
     },
     "route.quest.admin-addobjective-id-objekt-va-darab-le-r-s-eb03e45589": {
@@ -12755,7 +12677,7 @@
       "name": "unmute",
       "description": "Némítás feloldása (admin)",
       "aliases": [],
-      "registration_line": 1522,
+      "registration_line": 1566,
       "implementation": "ModerationRevokeCommand"
     },
     "route.afk.root-5475cc764f": {
@@ -12858,100 +12780,100 @@
       "line": 1
     },
     "_contract": {
-      "entries_sha256": "25b6f1d32732975c4449e4ccd863f2956740becf31d7f1b47e4b1aaccab0d1cc",
+      "entries_sha256": "7bb37cd37cb8aaa9102fd25309251770576cd278829c7c1b892e4f0b678b2696",
       "version": 1,
       "source_sha256": {
-        "src/main/java/hu/taliann/icesmp/commands/SinnerCommand.java": "c6d00e272ad69ea9f874c87cb1a1fbb54283de642b8adfd43f15c441b3d2e1ac",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyExchangeSubcommand.java": "bb86a646c28c3c56c7cc14390c525990c966dbfd9dde97f226d6280a30b47dd9",
-        "src/main/java/hu/taliann/icesmp/commands/BountyCommand.java": "ac869e51f2c0a066ff6ac96358a35e05ac5bb997faf9a636de05c5fb8020cac9",
-        "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "7fb2dee67a26c214cebb4e0934e522d8fce742bf3ddd943e0603e023e2253b4e",
-        "src/main/java/hu/taliann/icesmp/commands/PunishmentHistoryCommand.java": "07f392c08ab2f06060de020443bf00b351b25432fd1925677f94d110cc72c8ef",
-        "src/main/java/hu/taliann/icesmp/commands/TanacsCommand.java": "0f991aff492b266cfbfa5b2f2feafebd48a49a4556e2f70e9ebd41ab035f414f",
-        "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java": "7245ebc71d8c634307b242edfa3f96cfab3f80e6386792fc941e5721145ca55a",
-        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
-        "src/main/java/hu/taliann/icesmp/commands/bank/BankBalanceSubcommand.java": "8cc31c261b8e12b9f37cf195a86121e236634b031bfff6b821c03529e7bfb30f",
-        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
-        "src/main/java/hu/taliann/icesmp/commands/LeaderboardCommand.java": "bfa39da306d524473bbc273d1bb7c9aa3aebae2b5597e50031dfa83989037f6f",
-        "src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java": "5d0998ea5dfb4b8c03691ab45cd7de718bfa2ad8bed6ed0a88635ea2cb758187",
-        "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
-        "src/main/java/hu/taliann/icesmp/commands/MenuCommand.java": "231daef2af93d4d8442c29c51be5cedd8712ebad4ff9e6cd2505e06315fd3e39",
-        "src/main/java/hu/taliann/icesmp/commands/NpcBindCommand.java": "95c8490cf77f7b08c4e4928a15997bb927e792e81e897380681f683f38017e7a",
-        "src/main/java/hu/taliann/icesmp/commands/bank/BankWithdrawSubcommand.java": "634f33ae0e74460e567d8b7d0b5e1101f17b695935f1682df8a839a39e44e218",
-        "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "8261555e3beb760d23d99787fff9605bf92038824345a9ff4ffea7ef917578ca",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionDonateSubcommand.java": "470444dfc72e7e61f2055636b0890c847ba594a23e788000aff97882d3aff617",
-        "src/main/java/hu/taliann/icesmp/commands/DonationChestCommand.java": "29db7627dd58e958fb345038cf420e042e23aee329339a4f340a7de464f64876",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
-        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "abd285e8b154adf04a4bb7373d979268d2d90a178527c5ae6eb5c443769c8c1c",
-        "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
-        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "9b992ec1a70077153685e5db37d3998b0f118510a7c4cb809b7b5d87b451ff19",
-        "src/main/java/hu/taliann/icesmp/commands/ParkourCommand.java": "85cfb87243aefbf106acf5626b214ffddedd6209cddae7a6e3c92fea38bc8116",
-        "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
-        "src/main/java/hu/taliann/icesmp/commands/StatsCommand.java": "643a8914fb27ee5f92c4525a1613b49f5b53f5d5c9174f59bc81132aae3b6c9b",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java": "ea0093c47e04844250ead285bb0ccb9f2d718ae6a2cde975369a62a4e1cf833d",
-        "src/main/java/hu/taliann/icesmp/commands/ReportCommand.java": "e3523a612bf9812281baeb7a5e82689d952eef2f205892aba05bb041b658da6a",
-        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "4ae9f4aba9af5735ff5dcd0c31ad92314823e63f503fb56a420ab197c1ced185",
-        "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java": "17da3d6d99b943ae87c9eca63471d9dca5c2699e0ece3f03ee63d85d375434b4",
-        "src/main/java/hu/taliann/icesmp/commands/ProfessionWeeklyCommand.java": "a9d53296da8b5856f2addb7caddc85b2985a318222882ce671711093524185db",
-        "src/main/java/hu/taliann/icesmp/commands/BestiaryCommand.java": "1514d7c68938fbbd1cbc2d9013095481a6c6e0a80ae908af8b145a104b3d08e5",
-        "src/main/java/hu/taliann/icesmp/commands/MarketCommand.java": "1216961c7e65f0183f024fe12fd8151c48983a952d4d99d8eb7ada8f2abfa818",
-        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "f9db933e39f9bfd775da55a4c423c252e88ee6d17fc5c98d190d9b852e3a272d",
-        "src/main/java/hu/taliann/icesmp/commands/SpellbookCommand.java": "ff19ef2f0d2d7f5853039739232db525788045cf12833b9a0b8b477f46cecba3",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyRatesSubcommand.java": "d73463de3af41b8b9e76897cf34b0c5077d74e31a501a706564a8914569d2588",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
-        "src/main/java/hu/taliann/icesmp/commands/AfkCommand.java": "f92413d86a58f4679d275e7593065d9beb6a377896802ed3ee2111d922041d20",
-        "src/main/java/hu/taliann/icesmp/commands/ModerationRevokeCommand.java": "c2802edcde024ad699f1d45c99744899db8d3e9224c21b5f22f04b3b75fc2274",
-        "src/main/java/hu/taliann/icesmp/commands/HudCommand.java": "a09673a6404f0ee8abc06dcdd85fc6bd1811f54bea02c36fa5411743f677851b",
-        "src/main/java/hu/taliann/icesmp/commands/LoreCommand.java": "67ff34dbaf26ca94bd17748394b92a34b37f086081f889a952e7b5c5ab937696",
-        "src/main/java/hu/taliann/icesmp/commands/KompCommand.java": "bbf3a354ec2cd1356ee8c3f4b2846e2bce462b2a3c7fc175ab7b273a81177d79",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java": "c7fd63b138e1c15f2fcfd3eb57929f94962db54828ab03538a8dafab5f1cdeda",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
-        "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionRaidSubcommand.java": "c467e1f7ebe372ce22aa8c5cad191edab29b395d7d2812e0754eaeeb204d75d9",
-        "src/main/java/hu/taliann/icesmp/commands/JobCommand.java": "1b1ce45978e722f135d3268dff829c0d32de4993e131713a08f1bdf8d3b9438b",
-        "src/main/java/hu/taliann/icesmp/commands/CrateCommand.java": "d67493fc8bb5776e3fcab22833fe2071eb46357cdf28d399027f1bd576224de4",
-        "src/main/java/hu/taliann/icesmp/commands/FactionCommand.java": "c4928927032042cd9b0e6b840c3db6a6056bf71c5a33f28bf29f5557c7fa031a",
-        "src/main/java/hu/taliann/icesmp/commands/KronikaCommand.java": "7c9931971e56cf309cad88afeae15c84e00c5df9bbe31228f3a30ba106efedb7",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "475931ea21e7b254c0d96b7019e7a02aa9be11da726f27da7115f5eaf9615761",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyBalanceSubcommand.java": "a51b66168e7ba755f481dd6b964463e3fbfe42244e1aaaaf76569670623068fe",
-        "src/main/java/hu/taliann/icesmp/commands/PartyCommand.java": "808f51d54051f5c37cd6f84ea4da2f2038b1186541e084a5c77980681f65ce95",
-        "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java": "6d0564ad08ad34a20b90b79553669010891ab769b401b41698b3f8d89e91e318",
-        "src/main/java/hu/taliann/icesmp/commands/CurrencyCommand.java": "dc04a7cbd7467f3a073ce553b34eb28e11c351c7914bacbd8bb28e7996e1d325",
-        "src/main/java/hu/taliann/icesmp/commands/RelicCommand.java": "c5269dc3603518e1c779c3a22f9f7ce3ae15682a0a847b3fbdf1dd6fcb6c7a75",
-        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
-        "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "19f35106601aafefb3e6610c8bf74db5f5ab3620ad5dfb8ac61e40f55b0f6261",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionCaravanSubcommand.java": "47465c538f8f76c36446ebae3c4f534ac40116512d8932a0cc9848b988f48588",
-        "src/main/java/hu/taliann/icesmp/commands/bank/BankDepositSubcommand.java": "f8ae1b4f46b903916dd52383ccffedb87bd181e4653e7a1407ac22c67c7139ae",
-        "src/main/java/hu/taliann/icesmp/commands/ActivePunishmentsCommand.java": "12db7aea3b857fb27d4ff2fb684c90c0fdcf5e0b91e82311e3fad0f88af90709",
-        "src/main/java/hu/taliann/icesmp/commands/ProfileCommand.java": "e8be6f202c3d3b47d96485295ea3d7c1594374505f4a9425e447dfb132dcc584",
-        "src/main/java/hu/taliann/icesmp/commands/SpellCommand.java": "d276d570d9681c90165403257f76fbd0889826d82cb54ca467bbdfd270629302",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
-        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "5ed08609dda12968efaa0511ab9b37d8b2f08cfea7e766e06079924e5ec56f7f",
-        "src/main/java/hu/taliann/icesmp/commands/PetCommand.java": "97808037ff468002752d756f3658d0af8db0663dc5a6ec6baa5ba286d25bbac2",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyPaySubcommand.java": "d5a3b268dc696153c6e44016b000ffe88d8f725571e2f7c8f0ac7df7e33f02ff",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
-        "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java": "7e1fb6c3ee6b49c1d7c201e8d65acfa6a1fd4cd22b4492fcc1de231d87eb8654",
-        "src/main/java/hu/taliann/icesmp/commands/SoulforgeCommand.java": "cfb5baa3c3807cb02c8deaf50359a242edd62202cb26a6855d4bb560cc8659ee",
         "src/main/java/hu/taliann/icesmp/commands/AchievementsCommand.java": "3e9d09bbe80c269eeb687794ffb7338833dc1b935b77af697abb3f488d772ac6",
+        "src/main/java/hu/taliann/icesmp/commands/ActivePunishmentsCommand.java": "12db7aea3b857fb27d4ff2fb684c90c0fdcf5e0b91e82311e3fad0f88af90709",
+        "src/main/java/hu/taliann/icesmp/commands/AfkCommand.java": "f92413d86a58f4679d275e7593065d9beb6a377896802ed3ee2111d922041d20",
+        "src/main/java/hu/taliann/icesmp/commands/BankCommand.java": "a755dc56bbd4c42c7e5b06f6f2f9fe0c1f69cff77e4992e3bb4c30247c6fc0da",
+        "src/main/java/hu/taliann/icesmp/commands/BestiaryCommand.java": "1514d7c68938fbbd1cbc2d9013095481a6c6e0a80ae908af8b145a104b3d08e5",
+        "src/main/java/hu/taliann/icesmp/commands/BountyCommand.java": "ac869e51f2c0a066ff6ac96358a35e05ac5bb997faf9a636de05c5fb8020cac9",
+        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
+        "src/main/java/hu/taliann/icesmp/commands/CrateCommand.java": "d67493fc8bb5776e3fcab22833fe2071eb46357cdf28d399027f1bd576224de4",
+        "src/main/java/hu/taliann/icesmp/commands/CurrencyCommand.java": "dc04a7cbd7467f3a073ce553b34eb28e11c351c7914bacbd8bb28e7996e1d325",
+        "src/main/java/hu/taliann/icesmp/commands/DailyCommand.java": "8079b8512aefa1a9ecc7a445a09202ad65fd0eb5d8a2bc806c487a518a8b7754",
+        "src/main/java/hu/taliann/icesmp/commands/DonationChestCommand.java": "29db7627dd58e958fb345038cf420e042e23aee329339a4f340a7de464f64876",
+        "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "19f35106601aafefb3e6610c8bf74db5f5ab3620ad5dfb8ac61e40f55b0f6261",
+        "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
+        "src/main/java/hu/taliann/icesmp/commands/FactionCommand.java": "c4928927032042cd9b0e6b840c3db6a6056bf71c5a33f28bf29f5557c7fa031a",
         "src/main/java/hu/taliann/icesmp/commands/GuildCommand.java": "cec57902547b9c0b4c906e6918d418436bc570c5fe49249675b243dea7c79b01",
         "src/main/java/hu/taliann/icesmp/commands/HonorDuelCommand.java": "f3bb69b2ba1a2a13003e25c17baeac5ee996a5c5b81328331ca016e0f2da2bc2",
+        "src/main/java/hu/taliann/icesmp/commands/HudCommand.java": "a09673a6404f0ee8abc06dcdd85fc6bd1811f54bea02c36fa5411743f677851b",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "70f13452f4e8990cffdb6316d5609ccb2188a7bed5b257cb626e0c6ada38ca8f",
+        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
+        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
+        "src/main/java/hu/taliann/icesmp/commands/JobCommand.java": "1b1ce45978e722f135d3268dff829c0d32de4993e131713a08f1bdf8d3b9438b",
+        "src/main/java/hu/taliann/icesmp/commands/KompCommand.java": "bbf3a354ec2cd1356ee8c3f4b2846e2bce462b2a3c7fc175ab7b273a81177d79",
+        "src/main/java/hu/taliann/icesmp/commands/KronikaCommand.java": "7c9931971e56cf309cad88afeae15c84e00c5df9bbe31228f3a30ba106efedb7",
+        "src/main/java/hu/taliann/icesmp/commands/LeaderboardCommand.java": "bfa39da306d524473bbc273d1bb7c9aa3aebae2b5597e50031dfa83989037f6f",
+        "src/main/java/hu/taliann/icesmp/commands/LoreCommand.java": "4038330338dfe79caa87dbc5898d3778201b576c02997155fdbeb6725353dc0e",
+        "src/main/java/hu/taliann/icesmp/commands/MarketCommand.java": "a52a4e4fb465b92162e9f61fe941bb8ef2488dca45766ce008c7bfe846b7da4e",
+        "src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java": "5d0998ea5dfb4b8c03691ab45cd7de718bfa2ad8bed6ed0a88635ea2cb758187",
+        "src/main/java/hu/taliann/icesmp/commands/MenuCommand.java": "231daef2af93d4d8442c29c51be5cedd8712ebad4ff9e6cd2505e06315fd3e39",
+        "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
+        "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java": "17da3d6d99b943ae87c9eca63471d9dca5c2699e0ece3f03ee63d85d375434b4",
+        "src/main/java/hu/taliann/icesmp/commands/ModerationRevokeCommand.java": "c2802edcde024ad699f1d45c99744899db8d3e9224c21b5f22f04b3b75fc2274",
+        "src/main/java/hu/taliann/icesmp/commands/NpcBindCommand.java": "95c8490cf77f7b08c4e4928a15997bb927e792e81e897380681f683f38017e7a",
         "src/main/java/hu/taliann/icesmp/commands/OfflineTeleportCommand.java": "ad43efd6a674da8dc6917193303de63d1e2fd1d1590e96c4da9f0e5c69a4b436",
-        "src/main/java/hu/taliann/icesmp/commands/DailyCommand.java": "8079b8512aefa1a9ecc7a445a09202ad65fd0eb5d8a2bc806c487a518a8b7754",
+        "src/main/java/hu/taliann/icesmp/commands/ParkourCommand.java": "85cfb87243aefbf106acf5626b214ffddedd6209cddae7a6e3c92fea38bc8116",
+        "src/main/java/hu/taliann/icesmp/commands/PartyCommand.java": "808f51d54051f5c37cd6f84ea4da2f2038b1186541e084a5c77980681f65ce95",
+        "src/main/java/hu/taliann/icesmp/commands/PetCommand.java": "97808037ff468002752d756f3658d0af8db0663dc5a6ec6baa5ba286d25bbac2",
+        "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java": "6d0564ad08ad34a20b90b79553669010891ab769b401b41698b3f8d89e91e318",
+        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "4ae9f4aba9af5735ff5dcd0c31ad92314823e63f503fb56a420ab197c1ced185",
+        "src/main/java/hu/taliann/icesmp/commands/ProfessionWeeklyCommand.java": "a9d53296da8b5856f2addb7caddc85b2985a318222882ce671711093524185db",
+        "src/main/java/hu/taliann/icesmp/commands/ProfileCommand.java": "e8be6f202c3d3b47d96485295ea3d7c1594374505f4a9425e447dfb132dcc584",
+        "src/main/java/hu/taliann/icesmp/commands/PunishmentHistoryCommand.java": "07f392c08ab2f06060de020443bf00b351b25432fd1925677f94d110cc72c8ef",
+        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "f9db933e39f9bfd775da55a4c423c252e88ee6d17fc5c98d190d9b852e3a272d",
+        "src/main/java/hu/taliann/icesmp/commands/RelicCommand.java": "c5269dc3603518e1c779c3a22f9f7ce3ae15682a0a847b3fbdf1dd6fcb6c7a75",
+        "src/main/java/hu/taliann/icesmp/commands/ReportCommand.java": "e3523a612bf9812281baeb7a5e82689d952eef2f205892aba05bb041b658da6a",
+        "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java": "7e1fb6c3ee6b49c1d7c201e8d65acfa6a1fd4cd22b4492fcc1de231d87eb8654",
+        "src/main/java/hu/taliann/icesmp/commands/SinnerCommand.java": "c6d00e272ad69ea9f874c87cb1a1fbb54283de642b8adfd43f15c441b3d2e1ac",
+        "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
+        "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
         "src/main/java/hu/taliann/icesmp/commands/SoulCommand.java": "1f47e272c7cbfbd1205a6bcbdd9dfc1157bd13a7af9326f4543bbe7b5e7fc83b",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/commands/BankCommand.java": "a755dc56bbd4c42c7e5b06f6f2f9fe0c1f69cff77e4992e3bb4c30247c6fc0da",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "ac4808a452bffd0e7228935b5c858dd42bb14cb4b069ccc344b5d9a26ab9a995",
+        "src/main/java/hu/taliann/icesmp/commands/SoulforgeCommand.java": "cfb5baa3c3807cb02c8deaf50359a242edd62202cb26a6855d4bb560cc8659ee",
+        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "23d67d0a55f591c0ab0ec26cb8db22b0c336ba351570550f9b84f8439b09c5b7",
+        "src/main/java/hu/taliann/icesmp/commands/SpellCommand.java": "d276d570d9681c90165403257f76fbd0889826d82cb54ca467bbdfd270629302",
+        "src/main/java/hu/taliann/icesmp/commands/SpellbookCommand.java": "ff19ef2f0d2d7f5853039739232db525788045cf12833b9a0b8b477f46cecba3",
+        "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "9240cfbcd0388de9bb57430280c073456ec1f76a8b9cbd324fe9bf68f7f7f287",
+        "src/main/java/hu/taliann/icesmp/commands/StatsCommand.java": "643a8914fb27ee5f92c4525a1613b49f5b53f5d5c9174f59bc81132aae3b6c9b",
         "src/main/java/hu/taliann/icesmp/commands/TalentCommand.java": "de964bcbb9257772ad436175075891e6b1589314ac12793fd23b804f38268e62",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "a34b078bf1aa022603d3b175effec550e3fd9673db9531e67ce29e1acae00f2e"
+        "src/main/java/hu/taliann/icesmp/commands/TanacsCommand.java": "0f991aff492b266cfbfa5b2f2feafebd48a49a4556e2f70e9ebd41ab035f414f",
+        "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
+        "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
+        "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java": "7245ebc71d8c634307b242edfa3f96cfab3f80e6386792fc941e5721145ca55a",
+        "src/main/java/hu/taliann/icesmp/commands/bank/BankBalanceSubcommand.java": "8cc31c261b8e12b9f37cf195a86121e236634b031bfff6b821c03529e7bfb30f",
+        "src/main/java/hu/taliann/icesmp/commands/bank/BankDepositSubcommand.java": "f8ae1b4f46b903916dd52383ccffedb87bd181e4653e7a1407ac22c67c7139ae",
+        "src/main/java/hu/taliann/icesmp/commands/bank/BankWithdrawSubcommand.java": "634f33ae0e74460e567d8b7d0b5e1101f17b695935f1682df8a839a39e44e218",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyBalanceSubcommand.java": "a51b66168e7ba755f481dd6b964463e3fbfe42244e1aaaaf76569670623068fe",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyExchangeSubcommand.java": "bb86a646c28c3c56c7cc14390c525990c966dbfd9dde97f226d6280a30b47dd9",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyPaySubcommand.java": "d5a3b268dc696153c6e44016b000ffe88d8f725571e2f7c8f0ac7df7e33f02ff",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyRatesSubcommand.java": "d73463de3af41b8b9e76897cf34b0c5077d74e31a501a706564a8914569d2588",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionCaravanSubcommand.java": "c2457a6abf674f7021f6faea7a3b10c5b6404b94cf77fe4332251edc08696c74",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionDonateSubcommand.java": "5c3ff809af6c5fe55a29eda556fc317d2f53077ee1ac5ee2c82197c2b3732d16",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java": "1ad9cbdd87d41cdcf2f018ce8211ffe7b44fe315f1bd933cabc3ada2a5432d1f",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cac1a548993b58d2ca6cb8d584814cf24304247978ed49f953dac39b8907a96d",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java": "b455626d4feb773ec35b7163fe7e8dc2f95bb18399edbeb5af5513a321fa74dc",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionRaidSubcommand.java": "0dc9d0c1dd046ea90f5ca2b84d17f4b35f8be0ba30813323dba1c1edbfe0f950",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "43449c86625f0b4621a80580b6e411cc13153ef1a9a854657953fe3b90b0f7c6",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "f74405d61bd044ad30129845c9be3287bc541a71b9d480ddd33c76066c0cc6b8",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "83ede70fd8fe8063c4303d2b59f7ac6d678c6a635f43ab4c1dfb83ddbb439bef",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "b55df37d8f53c2c0173d5fe7ed56aad5272889153a294339adec7b1c523bf2c4"
       },
       "source_snapshot_sha256": "4eddeb66e6ab3ecea084bf4c7a22ad162231510c455c001f2c859dc66f89f90c",
       "description": "Exact, fail-closed command interface contract; source hash drift requires route reconciliation.",
       "expected_counts": {
-        "functional_routes": 287,
         "root_commands": 68,
+        "functional_routes": 287,
         "root_aliases": 79,
         "routing_aliases": 93
       }
@@ -13098,7 +13020,7 @@
         "mesterseg",
         "spells"
       ],
-      "registration_line": 1626,
+      "registration_line": 1670,
       "implementation": "SpellCommand"
     },
     "route.iceitem.root-77ef588c2d": {
@@ -13302,7 +13224,7 @@
       "aliases": [
         "f"
       ],
-      "registration_line": 1567,
+      "registration_line": 1611,
       "implementation": "FactionCommand"
     },
     "route.claim.untrust-online-j-t-kos-b0b336ee22": {
@@ -13609,7 +13531,7 @@
         "talentfa",
         "talents"
       ],
-      "registration_line": 1581,
+      "registration_line": 1625,
       "implementation": "TalentCommand"
     },
     "route.market.auction-kiki-lt-si-r-ra-valuta-buyout-r-bo-r-9e5a92f7db": {
@@ -13711,7 +13633,7 @@
         "ach",
         "eleresek"
       ],
-      "registration_line": 1570,
+      "registration_line": 1614,
       "implementation": "AchievementsCommand"
     },
     "route.talent.list-1240393f51": {
@@ -13876,7 +13798,7 @@
       "name": "reports",
       "description": "Bejelentések kezelése (admin)",
       "aliases": [],
-      "registration_line": 1511,
+      "registration_line": 1555,
       "implementation": "ReportsCommand"
     },
     "route.emlek.spec-495f15ff26": {
@@ -13928,7 +13850,7 @@
       "aliases": [
         "napi"
       ],
-      "registration_line": 1577,
+      "registration_line": 1621,
       "implementation": "DailyCommand"
     },
     "route.iceitem.tervrajz-recept-id-darab-online-j-t-kos-4c749ad1a2": {
@@ -13961,7 +13883,7 @@
       "aliases": [
         "bejelent"
       ],
-      "registration_line": 1509,
+      "registration_line": 1553,
       "implementation": "ReportCommand"
     },
     "route.kem.c-lfrakci-91c0c8e276": {
@@ -14051,7 +13973,7 @@
       "name": "msg",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 1551,
+      "registration_line": 1595,
       "implementation": "PrivateMessageCommand"
     },
     "alias.profile.karakter": {
@@ -14113,7 +14035,7 @@
       "aliases": [
         "mod"
       ],
-      "registration_line": 1540,
+      "registration_line": 1584,
       "implementation": "ModerationGuiCommand"
     },
     "alias.crate.ladak": {
@@ -14766,40 +14688,53 @@
       "classification": "EXACT_RUNTIME_TEMPLATE",
       "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.hamukenyer-buff-seconds": {
-      "resolved_path": "factions.food-duty.hamukenyer-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:455 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.hamukenyer-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
+    "config.dynamic.currency-manager.configuration.operations": {
+      "resolved_path": "currency-balances.yml:operations",
+      "reason": "The receiver is the durable currency-balances.yml root; operations is the exact persisted transaction-witness section."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.hamulakoma-buff-seconds": {
-      "resolved_path": "factions.food-duty.hamulakoma-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:450 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.hamulakoma-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
+    "config.dynamic.currency-manager.section.previous": {
+      "resolved_path": "currency-balances.yml:operations.<operation-key>.previous",
+      "reason": "The receiver is one validated durable operation section; previous is its exact pre-mutation wallet snapshot."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.lepeny-buff-seconds": {
-      "resolved_path": "factions.food-duty.lepeny-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:445 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.lepeny-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
+    "config.dynamic.currency-manager.section.expected": {
+      "resolved_path": "currency-balances.yml:operations.<operation-key>.expected",
+      "reason": "The receiver is one validated durable operation section; expected is its exact post-mutation wallet snapshot."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.pisztrang-buff-seconds": {
-      "resolved_path": "factions.food-duty.pisztrang-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:434 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.pisztrang-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
+    "config.dynamic.player-profile-platform.config.player-profile.http.admin-tokens": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.admin-tokens",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.porkolt-buff-seconds": {
-      "resolved_path": "factions.food-duty.porkolt-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:438 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.porkolt-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
+    "config.dynamic.player-profile-platform.config.player-profile.http.bind": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.bind",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.rantotta-buff-seconds": {
-      "resolved_path": "factions.food-duty.rantotta-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:436 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.rantotta-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
+    "config.dynamic.player-profile-platform.config.player-profile.http.enabled": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.enabled",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
     },
-    "config.dynamic.item-data-factory.config.factions.food-duty.vadlakoma-buff-seconds": {
-      "resolved_path": "factions.food-duty.vadlakoma-buff-seconds",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:440 adatfolyamából feloldható; a dokumentált teljes path-sablon: factions.food-duty.vadlakoma-buff-seconds. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója."
+    "config.dynamic.player-profile-platform.config.player-profile.http.max-request-bytes": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.max-request-bytes",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
+    },
+    "config.dynamic.player-profile-platform.config.player-profile.http.max-response-bytes": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.max-response-bytes",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
+    },
+    "config.dynamic.player-profile-platform.config.player-profile.http.port": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.port",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
+    },
+    "config.dynamic.player-profile-platform.config.player-profile.http.requests-per-minute": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.requests-per-minute",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
+    },
+    "config.dynamic.player-profile-platform.config.player-profile.http.self-tokens": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.self-tokens",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
+    },
+    "config.dynamic.player-profile-platform.config.player-profile.http.timeout-ms": {
+      "resolved_path": "config/player-profile.yml:player-profile.http.timeout-ms",
+      "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
     }
   }
 }
