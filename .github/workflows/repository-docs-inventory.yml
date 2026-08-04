@@ -125,14 +125,22 @@ jobs:
               config_sections[stable_id] = {"docs": docs}
 
           features = manifest.setdefault("features", {})
-          feature_id = "feature.resource-pack"
-          if feature_id in features:
-              raise SystemExit(f"Feature manifest entry unexpectedly already exists: {feature_id}")
-          features[feature_id] = {
-              "description": "Resource-pack publication, delivery, acceptance and player lifecycle integration.",
-              "audience": ["PLAYER", "ADMIN"],
-              "docs": ["docs/RESOURCE_PACK_CMD.md"],
+          feature_entries = {
+              "feature.resource-pack": {
+                  "description": "Resource-pack publication, delivery, acceptance and player lifecycle integration.",
+                  "audience": ["PLAYER", "ADMIN"],
+                  "docs": ["docs/RESOURCE_PACK_CMD.md"],
+              },
+              "feature.moderation": {
+                  "description": "Native moderation commands, operator workflows and player-page administration.",
+                  "audience": ["MODERATOR", "ADMIN"],
+                  "docs": ["docs/ADMIN_GUIDE.md"],
+              },
           }
+          for feature_id, entry in feature_entries.items():
+              if feature_id in features:
+                  raise SystemExit(f"Feature manifest entry unexpectedly already exists: {feature_id}")
+              features[feature_id] = entry
 
           for section_name in ("commands", "permissions", "config-sections", "components"):
               section = manifest.get(section_name)
@@ -154,26 +162,34 @@ jobs:
               newline="\n",
           )
 
-          doc_path = Path("docs/RESOURCE_PACK_CMD.md")
-          doc = doc_path.read_text(encoding="utf-8")
-          marker = "<!-- icesmp-doc-id: feature.resource-pack -->"
-          if marker in doc:
-              raise SystemExit("Resource-pack feature marker unexpectedly already exists")
-          lines = doc.splitlines()
-          if not lines or not lines[0].startswith("#"):
-              raise SystemExit("RESOURCE_PACK_CMD heading marker drift")
-          lines.insert(1, "")
-          lines.insert(2, marker)
-          doc_path.write_text(
-              "\n".join(lines).rstrip("\n") + "\n",
-              encoding="utf-8",
-              newline="\n",
-          )
+          markers = {
+              Path("docs/RESOURCE_PACK_CMD.md"): "<!-- icesmp-doc-id: feature.resource-pack -->",
+              Path("docs/ADMIN_GUIDE.md"): "<!-- icesmp-doc-id: feature.moderation -->",
+          }
+          for doc_path, marker in markers.items():
+              doc = doc_path.read_text(encoding="utf-8")
+              if marker in doc:
+                  raise SystemExit(f"Feature marker unexpectedly already exists: {marker}")
+              lines = doc.splitlines()
+              if not lines or not lines[0].startswith("#"):
+                  raise SystemExit(f"Documentation heading marker drift: {doc_path}")
+              lines.insert(1, "")
+              lines.insert(2, marker)
+              doc_path.write_text(
+                  "\n".join(lines).rstrip("\n") + "\n",
+                  encoding="utf-8",
+                  newline="\n",
+              )
           subprocess.run(
-              ["git", "add", "docs/documentation-manifest.yml", "docs/RESOURCE_PACK_CMD.md"],
+              [
+                  "git", "add",
+                  "docs/documentation-manifest.yml",
+                  "docs/RESOURCE_PACK_CMD.md",
+                  "docs/ADMIN_GUIDE.md",
+              ],
               check=True,
           )
-          print("Added 8 component classifications, 5 config sections and the resource-pack feature contract.")
+          print("Added 8 component classifications, 5 config sections and 2 feature contracts.")
 
           sys.path.insert(0, str(Path("scripts").resolve()))
           from repository_inventory.inventory import generate_inventory
