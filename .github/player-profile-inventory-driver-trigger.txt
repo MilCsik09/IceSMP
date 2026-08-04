@@ -1,6 +1,6 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: retry exact Profile v2 integration after workflow syntax and EOF normalization fixes.
-Validation head: d38b4b360658f09420ff5c203e9815eb5f5a2e1f
+Phase: retry exact Profile v2 integration with normalized YAML run-script indentation.
+Validation head: 0cce7b6ffd7f7b1b972825b4576444581f12a0f6
 Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
