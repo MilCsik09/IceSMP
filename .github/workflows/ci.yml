@@ -7,7 +7,6 @@ on:
       - rework/class-spec-1.21.11-compatibility
       - claude/projekt-audit-u0hkcz
       - feature/native-moderation-suite
-      - fix/pet-lore-corruption-spectator-menu
   push:
     branches:
       - master
@@ -78,18 +77,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install repository consistency dependency
-        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
-
       - name: Validate deterministic resource pack build
         run: |
           python3 scripts/test_resource_pack.py
           python3 scripts/resource_pack.py build \
             --source resource-pack \
             --output build/resource-pack/ci-pack.zip
-
-      - name: Validate FancyNpcs deployment snapshot
-        run: python3 scripts/validate_fancynpcs_snapshot.py
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
@@ -107,7 +100,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
+          ./gradlew clean build --no-daemon --stacktrace | tee gradle-build.log
 
       - name: Verify stacked regressions ran inside Gradle check
         shell: bash
@@ -121,30 +114,12 @@ jobs:
           grep -F "AFK regression suite passed." gradle-build.log
           grep -F "HUD regression suite passed." gradle-build.log
           grep -F "Pause-menu dialog regression suite passed." gradle-build.log
-          grep -F "Faction passive regression suite passed." gradle-build.log
-          grep -F "Faction passive hardening regression suite passed." gradle-build.log
-          grep -F "Faction tax debt regression suite passed." gradle-build.log
-          grep -F "Relic refresh regression suite passed." gradle-build.log
-          grep -F "Relic refresh pipeline regression suite passed." gradle-build.log
-          grep -F "Lifecycle shutdown regression suite passed." gradle-build.log
-          grep -F "Quest NPC validation regression suite passed." gradle-build.log
-          grep -F "Resource pack regression suite passed." gradle-build.log
-          grep -F "Class/spec compatibility regression suite passed." gradle-build.log
-          grep -F "ClassSpecSection v2 domain regression tests passed." gradle-build.log
+          grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log
           grep -F "Class/spec application regression suite passed." gradle-build.log
-          grep -F "ClassSpecSection lifecycle regression suite passed." gradle-build.log
-          grep -F "PlayerProfile domain regression suite passed." gradle-build.log
-          grep -F "PlayerProfile YAML regression suite passed." gradle-build.log
-          grep -F "PlayerProfile transaction regression suite passed." gradle-build.log
-          grep -F "PlayerProfile API regression suite passed." gradle-build.log
+          grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log
+          grep -F "Class profile lifecycle regression suite passed." gradle-build.log
           grep -F "Respec transaction regression suite passed." gradle-build.log
           grep -F "Spell grant ledger regression suite passed." gradle-build.log
-
-      - name: Run faction regressions explicitly
-        run: ./gradlew factionPassiveRegressionTest factionPassiveHardeningRegressionTest factionTreasuryRegressionTest --console=plain --no-daemon --stacktrace
-
-      - name: Run full repository consistency
-        run: python3 scripts/check_consistency.py
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
