@@ -6,6 +6,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -62,14 +65,18 @@ public final class ConfigManager {
     }
 
     /**
-     * Loads the packaged subsystem files and the optional config.yml override, then publishes the
-     * merged tree, its pre-override base and its override-index with one volatile replacement.
+     * Loads packaged defaults, deployed subsystem files and the optional config.yml override, then
+     * publishes all three layers as one generation. Packaged defaults are merged first so newly
+     * introduced keys exist on older servers even when saveResource(..., false) keeps their old
+     * data-folder YAML; explicit data-folder values still win over the package.
      */
     public synchronized void load() {
         final YamlConfiguration base = new YamlConfiguration();
         final File dir = new File(plugin.getDataFolder(), "config");
         dir.mkdirs();
+
         for (final String name : CONFIG_FILES) {
+            mergePackagedDefaults(base, name);
             if (!new File(dir, name + ".yml").exists()) {
                 plugin.saveResource("config/" + name + ".yml", false);
             }
@@ -104,6 +111,19 @@ public final class ConfigManager {
         final long nextGeneration = previousGeneration == Long.MAX_VALUE
                 ? Long.MAX_VALUE : previousGeneration + 1L;
         liveSnapshot = new ConfigSnapshot(merged, base, overridePaths, nextGeneration);
+    }
+
+    private void mergePackagedDefaults(final YamlConfiguration target, final String name) {
+        try (InputStream input = plugin.getResource("config/" + name + ".yml")) {
+            if (input == null) {
+                plugin.getLogger().warning("Hiányzó csomagolt config: config/" + name + ".yml");
+                return;
+            }
+            final InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8);
+            mergeInto(target, YamlConfiguration.loadConfiguration(reader));
+        } catch (final Exception failure) {
+            plugin.getLogger().warning("Csomagolt config nem olvasható (" + name + "): " + failure);
+        }
     }
 
     private static void mergeInto(final YamlConfiguration target,
