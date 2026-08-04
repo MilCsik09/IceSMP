@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   publish:
-    name: Publish validated Profile v2 integration
+    name: Publish validated Profile v2 code tree
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -39,9 +39,10 @@ jobs:
       - name: Install workflow parser
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Resolve, complete contracts, validate and publish
+      - name: Reuse the validated publisher without its workflow push
         shell: bash
         env:
+          VALIDATED_PUBLISHER_COMMIT: eb85a7616a3432fdd8cf1095fc8c84d3f9af8b63
           SOURCE_WORKFLOW_COMMIT: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
           DRIVER_COMMIT: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
           UPDATED_BASE_HEAD: 854248d530d417aca49906616f6e3ac458b231ca
@@ -53,178 +54,51 @@ jobs:
           python3 - <<'PY'
           from __future__ import annotations
 
-          import hashlib
-          import json
           import os
           import subprocess
-          import sys
-          from pathlib import Path
 
           import yaml
 
           workflow_text = subprocess.check_output(
-              ["git", "show", f"{os.environ['SOURCE_WORKFLOW_COMMIT']}:.github/workflows/repository-docs-inventory.yml"],
+              [
+                  "git", "show",
+                  f"{os.environ['VALIDATED_PUBLISHER_COMMIT']}:.github/workflows/repository-docs-inventory.yml",
+              ],
               text=True,
               encoding="utf-8",
           )
           workflow = yaml.safe_load(workflow_text)
-          source_step = next(
-              step["run"] for step in workflow["jobs"]["integrate"]["steps"]
+          source = next(
+              step["run"] for step in workflow["jobs"]["publish"]["steps"]
               if isinstance(step, dict)
-              and step.get("name") == "Execute reviewed integration, manifest synchronization, gates and push"
+              and step.get("name") == "Resolve, complete contracts, validate and publish"
           )
-          loop = "for index, step in enumerate(run_steps, 1):\n"
-          if source_step.count(loop) != 1:
-              raise SystemExit(f"Publishing loop drift: {source_step.count(loop)}")
-
-          first_phase = source_step.replace(
-              loop,
-              "for index, step in enumerate(run_steps[:2], 1):\n",
-              1,
-          )
+          original = '"for index, step in enumerate(run_steps[2:], 3):\\n"'
+          replacement = '"for index, step in enumerate(run_steps[2:5], 3):\\n"'
+          if source.count(original) != 1:
+              raise SystemExit(f"Validated publisher slice drift: {source.count(original)}")
+          source = source.replace(original, replacement, 1)
           subprocess.run(
-              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", first_phase],
-              check=True,
-              env=os.environ.copy(),
-          )
-
-          manifest_path = Path("docs/documentation-manifest.yml")
-          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-          components = manifest.setdefault("components", {})
-          component_entries = {
-              "component.hu.taliann.icesmp.crates.CrateSoundResolver": (
-                  "feature.crate", "Configured crate sound resolution helper."
-              ),
-              "component.hu.taliann.icesmp.data.BlockCuboid": (
-                  "feature.territory", "Immutable block-cuboid value object used by territory and claim geometry."
-              ),
-              "component.hu.taliann.icesmp.listeners.ResourcePackListener": (
-                  "feature.resource-pack", "Player resource-pack lifecycle listener."
-              ),
-              "component.hu.taliann.icesmp.managers.HudSidebarLayout": (
-                  "feature.hud", "Deterministic HUD sidebar layout model."
-              ),
-              "component.hu.taliann.icesmp.managers.ProfessionIngredientParser": (
-                  "feature.profession", "Profession recipe ingredient parser."
-              ),
-              "component.hu.taliann.icesmp.moderation.ModerationPlayerPage": (
-                  "feature.moderation", "Moderation player-page model."
-              ),
-              "component.hu.taliann.icesmp.utils.ConfigMaterialResolver": (
-                  "feature.config", "Fail-closed material resolver for configuration values."
-              ),
-              "component.hu.taliann.icesmp.utils.TerritoryDestination": (
-                  "feature.territory", "Validated territory destination value object."
-              ),
-          }
-          for stable_id, (feature_id, description) in component_entries.items():
-              if stable_id in components:
-                  raise SystemExit(f"Component manifest entry unexpectedly already exists: {stable_id}")
-              components[stable_id] = {
-                  "feature": feature_id,
-                  "classification": "INTERNAL_HELPER",
-                  "description": description,
-                  "docs": [],
-              }
-
-          config_sections = manifest.setdefault("config-sections", {})
-          config_entries = {
-              "config.plugins": ["docs/ADMIN_GUIDE.md"],
-              "config.resource-pack": ["docs/RESOURCE_PACK_CMD.md"],
-              "config.schema-version": ["docs/ARCHITECTURE.md"],
-              "config.target": ["docs/ARCHITECTURE.md"],
-              "config.verified-on": ["docs/ARCHITECTURE.md"],
-          }
-          for stable_id, docs in config_entries.items():
-              if stable_id in config_sections:
-                  raise SystemExit(f"Config-section manifest entry unexpectedly already exists: {stable_id}")
-              config_sections[stable_id] = {"docs": docs}
-
-          features = manifest.setdefault("features", {})
-          feature_entries = {
-              "feature.resource-pack": {
-                  "description": "Resource-pack publication, delivery, acceptance and player lifecycle integration.",
-                  "audience": ["PLAYER", "ADMIN"],
-                  "docs": ["docs/RESOURCE_PACK_CMD.md"],
-              },
-              "feature.moderation": {
-                  "description": "Native moderation commands, operator workflows and player-page administration.",
-                  "audience": ["MODERATOR", "ADMIN"],
-                  "docs": ["docs/ADMIN_GUIDE.md"],
-              },
-          }
-          for feature_id, entry in feature_entries.items():
-              if feature_id in features:
-                  raise SystemExit(f"Feature manifest entry unexpectedly already exists: {feature_id}")
-              features[feature_id] = entry
-
-          for section_name in ("commands", "permissions", "config-sections", "components"):
-              section = manifest.get(section_name)
-              if not isinstance(section, dict):
-                  continue
-              policy = section.get("_contract")
-              if isinstance(policy, dict) and "entries_sha256" in policy:
-                  entries = {
-                      key: value for key, value in section.items()
-                      if not str(key).startswith("_") and isinstance(value, dict)
-                  }
-                  policy["entries_sha256"] = hashlib.sha256(
-                      json.dumps(entries, ensure_ascii=False, sort_keys=True,
-                                 separators=(",", ":")).encode("utf-8")
-                  ).hexdigest()
-          manifest_path.write_text(
-              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8",
-              newline="\n",
-          )
-
-          markers = {
-              Path("docs/RESOURCE_PACK_CMD.md"): "<!-- icesmp-doc-id: feature.resource-pack -->",
-              Path("docs/ADMIN_GUIDE.md"): "<!-- icesmp-doc-id: feature.moderation -->",
-          }
-          for doc_path, marker in markers.items():
-              doc = doc_path.read_text(encoding="utf-8")
-              if marker in doc:
-                  raise SystemExit(f"Feature marker unexpectedly already exists: {marker}")
-              lines = doc.splitlines()
-              if not lines or not lines[0].startswith("#"):
-                  raise SystemExit(f"Documentation heading marker drift: {doc_path}")
-              lines.insert(1, "")
-              lines.insert(2, marker)
-              doc_path.write_text(
-                  "\n".join(lines).rstrip("\n") + "\n",
-                  encoding="utf-8",
-                  newline="\n",
-              )
-          subprocess.run(
-              [
-                  "git", "add",
-                  "docs/documentation-manifest.yml",
-                  "docs/RESOURCE_PACK_CMD.md",
-                  "docs/ADMIN_GUIDE.md",
-              ],
-              check=True,
-          )
-
-          sys.path.insert(0, str(Path("scripts").resolve()))
-          from repository_inventory.inventory import generate_inventory
-
-          inventory = generate_inventory(Path(".").resolve(), "strict")
-          failures = [item for item in inventory.get("findings", []) if item.get("severity") == "FAIL"]
-          print(f"PRE_BUILD_STRICT_FINDINGS={len(failures)}")
-          if failures:
-              for item in failures:
-                  print(json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
-              raise SystemExit(1)
-
-          second_phase = source_step.replace(
-              loop,
-              "for index, step in enumerate(run_steps[2:], 3):\n",
-              1,
-          )
-          subprocess.run(
-              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", second_phase],
+              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", source],
               check=True,
               env=os.environ.copy(),
           )
           PY
+
+          test "$(git ls-remote origin refs/heads/rework/class-spec-1.21.11-compatibility | awk '{print $1}')" = "$UPDATED_BASE_HEAD"
+          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$OLD_PROFILE_HEAD"
+
+          sha256sum .github/workflows/ci.yml .github/workflows/repository-docs-inventory.yml
+          git checkout "$OLD_PROFILE_HEAD" -- \
+            .github/workflows/ci.yml \
+            .github/workflows/repository-docs-inventory.yml
+          test -z "$(git diff --cached --name-only "$OLD_PROFILE_HEAD" -- .github/workflows)"
+          git diff --cached --check
+
+          tree_sha=$(git write-tree)
+          code_commit=$(printf '%s\n\n%s\n' \
+            "Merge current compatibility base into greenfield Profile v2" \
+            "Publish the fully validated code and documentation tree; validated workflow updates follow as direct GitHub commits." \
+            | git commit-tree "$tree_sha" -p "$OLD_PROFILE_HEAD" -p "$UPDATED_BASE_HEAD")
+          git push origin "${code_commit}:refs/heads/${TARGET_BRANCH}"
+          echo "PROFILE_V2_CODE_HEAD=${code_commit}"
