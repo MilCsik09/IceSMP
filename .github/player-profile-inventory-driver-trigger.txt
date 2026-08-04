@@ -1,8 +1,9 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: retry exact Profile v2 integration with normalized YAML run-script indentation.
-Validation head: 0cce7b6ffd7f7b1b972825b4576444581f12a0f6
+Phase: diagnose all blocking Profile v2 repository inventory findings without publishing.
+Validation head: cc2edb5799262b3828029f9c5e0e16c80c76e992
 Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
 Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
+This diagnostic must fail before push when blocking findings exist.
 Must never be merged.
