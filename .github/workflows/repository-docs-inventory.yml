@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   integrate:
-    name: Publish validated Profile v2 integration
+    name: Diagnose remaining Profile v2 inventory drift
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -39,10 +39,10 @@ jobs:
       - name: Install workflow parser
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Execute reviewed integration, manifest synchronization, gates and push
+      - name: Reproduce synchronized tree and print every remaining FAIL
         shell: bash
         env:
-          DRIVER_COMMIT: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
+          SOURCE_WORKFLOW_COMMIT: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
           UPDATED_BASE_HEAD: 854248d530d417aca49906616f6e3ac458b231ca
           CLEAN_PROFILE_HEAD: b6f4492766675f718f73fd947bf92a388a3090fb
           OLD_PROFILE_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
@@ -54,148 +54,67 @@ jobs:
 
           import os
           import subprocess
-          from pathlib import Path
 
           import yaml
 
-          driver_commit = os.environ["DRIVER_COMMIT"]
+          source_commit = os.environ["SOURCE_WORKFLOW_COMMIT"]
           workflow_text = subprocess.check_output(
-              ["git", "show", f"{driver_commit}:.github/workflows/repository-docs-inventory.yml"],
+              ["git", "show", f"{source_commit}:.github/workflows/repository-docs-inventory.yml"],
               text=True,
               encoding="utf-8",
           )
           workflow = yaml.safe_load(workflow_text)
-          steps = workflow["jobs"]["integrate"]["steps"]
-          run_steps = [step for step in steps if isinstance(step, dict) and isinstance(step.get("run"), str)]
-          expected_names = [
-              "Install repository tooling dependencies",
-              "Resolve the exact stacked integration",
-              "Java 21 clean build and all regressions",
-              "Verify base and Profile v2 regression markers",
-              "Run repository gates and inventory",
-              "Commit and fast-forward push after every gate succeeds",
-          ]
-          actual_names = [step.get("name") for step in run_steps]
-          if actual_names != expected_names:
-              raise SystemExit(f"Reviewed integration step drift: {actual_names}")
+          source_steps = workflow["jobs"]["integrate"]["steps"]
+          source = next(
+              step["run"] for step in source_steps
+              if isinstance(step, dict)
+              and step.get("name") == "Execute reviewed integration, manifest synchronization, gates and push"
+          )
 
-          resolution = run_steps[1]["run"]
-          marker = "git add -- \\\n"
-          if resolution.count(marker) != 1:
-              raise SystemExit(f"Unexpected resolution staging marker count: {resolution.count(marker)}")
-          synchronization_lines = [
-              "python3 - <<'EOF_NORMALIZE'",
-              "from pathlib import Path",
-              "for raw in (",
-              "    'src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java',",
-              "    'src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java',",
-              "):",
-              "    path = Path(raw)",
-              "    path.write_text(path.read_text(encoding='utf-8').rstrip('\\n') + '\\n',",
-              "                    encoding='utf-8', newline='\\n')",
-              "EOF_NORMALIZE",
-              "",
-              "python3 scripts/generate_repository_inventory.py --root . --output build/profile-v2-manifest-sync --mode report",
-              "python3 - <<'MANIFEST_SYNC'",
-              "from __future__ import annotations",
-              "",
-              "import hashlib",
+          insertion_marker = "          env = os.environ.copy()\n"
+          if source.count(insertion_marker) != 1:
+              raise SystemExit(f"Source execution marker drift: {source.count(insertion_marker)}")
+          iteration_marker = "          for index, step in enumerate(run_steps, 1):\n"
+          if source.count(iteration_marker) != 1:
+              raise SystemExit(f"Source iteration marker drift: {source.count(iteration_marker)}")
+
+          diagnostic_lines = [
+              "          gate = run_steps[4]['run']",
+              "          strict_marker = '--root . --output build/repository-inventory --mode strict'",
+              "          if gate.count(strict_marker) != 1:",
+              "              raise SystemExit(f'Final strict marker drift: {gate.count(strict_marker)}')",
+              "          gate = gate.replace(",
+              "              strict_marker,",
+              "              '--root . --output build/repository-inventory --mode report',",
+              "              1,",
+              "          )",
+              "          gate += \"\"\"",
+              "python3 - <<'REMAINING_FINDINGS'",
               "import json",
-              "import re",
               "from collections import Counter",
               "from pathlib import Path",
-              "",
-              "manifest_path = Path('docs/documentation-manifest.yml')",
-              "inventory_path = Path('build/profile-v2-manifest-sync/repository-inventory.json')",
-              "manifest = json.loads(manifest_path.read_text(encoding='utf-8'))",
-              "inventory = json.loads(inventory_path.read_text(encoding='utf-8'))",
-              "blocking = [item for item in inventory.get('findings', []) if item.get('severity') == 'FAIL']",
-              "codes = Counter(str(item.get('code')) for item in blocking)",
-              "expected_codes = Counter({",
-              "    'COMMAND_CONTRACT_ROOT_DRIFT': 68,",
-              "    'COMMAND_CONTRACT_SOURCE_DRIFT': 2,",
-              "    'STALE_CONFIG_RESOLUTION': 7,",
-              "})",
-              "if codes != expected_codes:",
-              "    raise SystemExit(f'Inventory finding drift before manifest sync: {dict(codes)}')",
-              "",
-              "commands = {item['id']: item for item in inventory.get('commands', [])}",
-              "root_findings = [item for item in blocking if item.get('code') == 'COMMAND_CONTRACT_ROOT_DRIFT']",
-              "if len(root_findings) != len(commands) or len(commands) != 68:",
-              "    raise SystemExit(f'Unexpected command inventory size: findings={len(root_findings)} commands={len(commands)}')",
-              "command_manifest = manifest.get('commands')",
-              "if not isinstance(command_manifest, dict):",
-              "    raise SystemExit('Manifest commands section is missing')",
-              "for finding in root_findings:",
-              "    stable_id = finding['stable_id']",
-              "    detected = commands.get(stable_id)",
-              "    entry = command_manifest.get(stable_id)",
-              "    if not isinstance(detected, dict) or not isinstance(entry, dict):",
-              "        raise SystemExit(f'Missing command contract during sync: {stable_id}')",
-              "    entry['registration_file'] = detected['registration_file']",
-              "    entry['registration_line'] = detected['registration_line']",
-              "",
-              "stale_ids = sorted(item['stable_id'] for item in blocking if item.get('code') == 'STALE_CONFIG_RESOLUTION')",
-              "expected_stale_ids = sorted([",
-              "    'config.dynamic.item-data-factory.config.factions.food-duty.hamukenyer-buff-seconds',",
-              "    'config.dynamic.item-data-factory.config.factions.food-duty.hamulakoma-buff-seconds',",
-              "    'config.dynamic.item-data-factory.config.factions.food-duty.lepeny-buff-seconds',",
-              "    'config.dynamic.item-data-factory.config.factions.food-duty.pisztrang-buff-seconds',",
-              "    'config.dynamic.item-data-factory.config.factions.food-duty.porkolt-buff-seconds',",
-              "    'config.dynamic.item-data-factory.config.factions.food-duty.rantotta-buff-seconds',",
-              "    'config.dynamic.item-data-factory.config.factions.food-duty.vadlakoma-buff-seconds',",
-              "])",
-              "if stale_ids != expected_stale_ids:",
-              "    raise SystemExit(f'Stale config resolution set drifted: {stale_ids}')",
-              "resolutions = manifest.get('config-resolutions')",
-              "if not isinstance(resolutions, dict):",
-              "    raise SystemExit('Manifest config-resolutions section is missing')",
-              "for stable_id in stale_ids:",
-              "    if resolutions.pop(stable_id, None) is None:",
-              "        raise SystemExit(f'Stale config resolution was already absent: {stable_id}')",
-              "",
-              "def refresh_hashes(node):",
-              "    if isinstance(node, dict):",
-              "        for key, value in list(node.items()):",
-              "            if isinstance(key, str) and isinstance(value, str) and re.fullmatch(r'[0-9a-f]{64}', value):",
-              "                source = Path(key)",
-              "                if source.is_file():",
-              "                    node[key] = hashlib.sha256(source.read_bytes()).hexdigest()",
-              "            refresh_hashes(value)",
-              "    elif isinstance(node, list):",
-              "        for value in node:",
-              "            refresh_hashes(value)",
-              "",
-              "refresh_hashes(manifest)",
-              "for section_name in ('commands', 'permissions', 'config-sections', 'components'):",
-              "    section = manifest.get(section_name)",
-              "    if not isinstance(section, dict):",
-              "        continue",
-              "    policy = section.get('_contract')",
-              "    if isinstance(policy, dict) and 'entries_sha256' in policy:",
-              "        entries = {key: value for key, value in section.items()",
-              "                   if not str(key).startswith('_') and isinstance(value, dict)}",
-              "        policy['entries_sha256'] = hashlib.sha256(",
-              "            json.dumps(entries, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')",
-              "        ).hexdigest()",
-              "manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\\n',",
-              "                         encoding='utf-8', newline='\\n')",
-              "print('Synchronized 68 command locations, 2 command source hashes and removed 7 stale config resolutions.')",
-              "MANIFEST_SYNC",
-              "",
+              "inventory = json.loads(Path('build/repository-inventory/repository-inventory.json').read_text(encoding='utf-8'))",
+              "findings = [item for item in inventory.get('findings', []) if item.get('severity') == 'FAIL']",
+              "codes = Counter(str(item.get('code', '<no-code>')) for item in findings)",
+              "print('REMAINING_BLOCKING_FINDINGS=' + str(len(findings)))",
+              "print('REMAINING_BLOCKING_CODES=' + json.dumps(dict(sorted(codes.items())), ensure_ascii=False, sort_keys=True))",
+              "for index, item in enumerate(findings, 1):",
+              "    print(f'REMAINING_FAIL_{index:03d}=' + json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(',', ':')))",
+              "raise SystemExit(1 if findings else 0)",
+              "REMAINING_FINDINGS",
+              "\"\"\"",
+              "          run_steps[4]['run'] = gate",
               "",
           ]
-          run_steps[1]["run"] = resolution.replace(marker, "\n".join(synchronization_lines) + marker, 1)
-
-          env = os.environ.copy()
-          for index, step in enumerate(run_steps, 1):
-              name = step["name"]
-              print(f"::group::{index}/{len(run_steps)} {name}", flush=True)
-              subprocess.run(
-                  ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
-                  check=True,
-                  cwd=Path.cwd(),
-                  env=env,
-              )
-              print("::endgroup::", flush=True)
+          source = source.replace(insertion_marker, "\n".join(diagnostic_lines) + insertion_marker, 1)
+          source = source.replace(
+              iteration_marker,
+              "          for index, step in enumerate(run_steps[:5], 1):\n",
+              1,
+          )
+          subprocess.run(
+              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", source],
+              check=True,
+              env=os.environ.copy(),
+          )
           PY
