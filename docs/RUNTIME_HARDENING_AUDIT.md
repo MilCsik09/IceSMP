@@ -8,7 +8,7 @@
 - **Normal claims were rectangle-only:** the player flow had only `pos1`/`pos2`, so it could not create the territory-style
   multi-point outline requested for ordinary claims.
 - **The BlockDisplay glass wall floated above the claim and did not cover the full boundary/height:** four stretched slabs
-  were anchored to the viewer's Y instead of resolving every boundary column from its own terrain surface.
+  were anchored to the viewer's Y instead of the actual claimed volume.
 - **DARK territory mobs could spawn in the air and die from falling:** ambient undead used one
   `getHighestBlockYAt()+1` result without a stable-floor, hazard or full body-clearance contract and without bounded retries.
 
@@ -36,11 +36,12 @@
   area and every produced column are checked before publication; long/thin hostile inputs fail closed.
 - Malformed stored polygons are rejected and skipped instead of silently widening to their bounding rectangle.
 
-### Terrain-following BlockDisplay boundary
+### Exact bounded BlockDisplay boundary
 
-- Every exact boundary column owns a separate vertical BlockDisplay segment.
-- Its base uses `HeightMap.MOTION_BLOCKING_NO_LEAVES` for that X-Z column, not the viewing player's Y coordinate.
-- The full configured wall height is rendered around the complete exact perimeter, including concave polygon edges.
+- Every exact X-Z boundary column owns a separate vertical BlockDisplay segment.
+- Each segment starts at the claim's inclusive `minY` and ends at its inclusive `maxY`.
+- No display block is created below or above the actually claimed Y range.
+- Rectangle and concave polygon boundaries use the same stored Y band.
 - RegionScheduler ownership and per-player preview cleanup remain Folia-safe.
 
 ### Stable DARK territory spawning
@@ -75,13 +76,15 @@
 
 `RuntimeHardeningRegressionSuite` covers vanilla rectangle compatibility, concave polygon membership and wilderness notches,
 exact overlap/boundaries, self-intersection and oversized-input rejection, bounded scanline and fail-closed persistence contracts,
-entity plus tab-list vanish ownership, terrain-owned BlockDisplay columns, and stable DARK standing locations with finite retries.
+entity plus tab-list vanish ownership, exact minY/maxY BlockDisplay clipping, restored vertical extension and stable DARK standing
+locations with finite retries.
 
 The full repository `check` also includes event-spawn safety, config transaction/coverage, profession recipe audit and all
 previously registered regression suites.
 
 ## Validation policy
 
+- Claim Y restoration implementation commit: `33048fcc22a7ac5d845d74e01c2714b05e883815`.
 - All implementation-only workflows, Python patch drivers and encoded payloads were removed before final validation.
 - The scaffolding-free tree is required to pass `./gradlew clean check`, `scripts/validate_gui_icons.py` and
   `scripts/check_consistency.py`.
@@ -93,7 +96,7 @@ previously registered regression suites.
 Automated tests cannot prove the following visual/client/integration behaviour:
 
 1. two real clients verifying vanish in the world, tab list and production scoreboard/nametag plugin stack;
-2. BlockDisplay wall alignment and full height on cliffs, steps, caves and uneven terrain;
+2. BlockDisplay wall alignment and exact minY/maxY termination on cliffs, steps, caves and uneven terrain;
 3. polygon-wand UX and concave claim protection on a running Folia server;
 4. DARK undead spawn behaviour across real chunk unload/reload and server restart;
 5. WorldGuard integration with production regions and a full resource-pack client join.
