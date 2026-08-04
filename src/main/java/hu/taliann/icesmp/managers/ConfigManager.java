@@ -50,7 +50,7 @@ public final class ConfigManager {
 
     /** Bundled per-subsystem config files under config/. */
     private static final String[] CONFIG_FILES = {
-            "general", "economy", "factions", "classes", "spells", "spells-balance",
+            "general", "economy", "factions", "block-regen", "classes", "spells", "spells-balance",
             "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation",
             "item-rarity", "loot", "motd", "profession-materials", "profession-recipes", "sit", "tablist", "dev-items"
     };
