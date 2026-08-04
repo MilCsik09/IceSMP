@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.runtime;
 
 import hu.taliann.icesmp.data.ClaimFootprint;
+import hu.taliann.icesmp.data.ClaimShape;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ public final class RuntimeHardeningRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         claimGeometry();
+        polygonClaimGeometry();
         lifecycleSourceContracts();
         System.out.println("Runtime hardening regression suite passed.");
     }
@@ -48,12 +50,70 @@ public final class RuntimeHardeningRegressionSuite {
                 "adjacent claims do not overlap");
     }
 
+    private static void polygonClaimGeometry() {
+        final ClaimShape concave = ClaimShape.polygon(List.of(
+                new ClaimShape.Point(0, 0),
+                new ClaimShape.Point(4, 0),
+                new ClaimShape.Point(4, 1),
+                new ClaimShape.Point(1, 1),
+                new ClaimShape.Point(1, 4),
+                new ClaimShape.Point(0, 4)));
+        check(concave.contains(3, 0) && concave.contains(0, 3),
+                "concave polygon claims both arms");
+        check(!concave.contains(3, 3),
+                "concave polygon does not claim its bounding-box notch");
+        check(concave.columns() == 16, "concave polygon exact column count");
+        check(!concave.boundaryColumns().isEmpty()
+                        && concave.boundaryColumns().stream().allMatch(
+                        point -> concave.contains(point.x(), point.z())),
+                "polygon boundary columns belong to the exact shape");
+
+        final ClaimShape negative = ClaimShape.polygon(List.of(
+                new ClaimShape.Point(-4, -4),
+                new ClaimShape.Point(-1, -4),
+                new ClaimShape.Point(-1, -1),
+                new ClaimShape.Point(-4, -1)));
+        check(negative.contains(-3, -3), "negative-coordinate polygon membership");
+        check(!concave.overlaps(negative), "disjoint polygons do not overlap");
+        check(concave.overlaps(ClaimShape.rectangle(
+                        ClaimFootprint.between(0, 3, 0, 3))),
+                "polygon/rectangle overlap uses exact columns");
+        check(!concave.overlaps(ClaimShape.rectangle(
+                        ClaimFootprint.between(3, 3, 3, 3))),
+                "rectangle in concave notch does not falsely overlap");
+
+        boolean invalid = false;
+        try {
+            ClaimShape.polygon(List.of(
+                    new ClaimShape.Point(0, 0),
+                    new ClaimShape.Point(4, 4),
+                    new ClaimShape.Point(0, 4),
+                    new ClaimShape.Point(4, 0)));
+        } catch (final IllegalArgumentException expected) {
+            invalid = true;
+        }
+        check(invalid, "self-intersecting/bow-tie polygon rejected");
+    }
+
     private static void lifecycleSourceContracts() throws Exception {
         final String claim = source("src/main/java/hu/taliann/icesmp/managers/ClaimManager.java");
         check(claim.contains("claim.contains(worldName, location.getBlockX(), location.getBlockZ())"),
                 "claim lookup is Y-independent");
         check(!claim.contains("drawBoxOutline"), "claim renderer has no 3D box path");
         check(claim.contains("borderTasks.remove(playerId)"), "border preview owns cleanup task");
+        check(claim.contains("ClaimShape.polygon(points)")
+                        && claim.contains("readClaimPolygon")
+                        && claim.contains("shape.rowSpans()"),
+                "polygon claims share exact geometry across create, persistence and protection");
+        final String claimCommand = source("src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java");
+        check(claimCommand.contains("case \"polygon\", \"poligon\"")
+                        && claimCommand.contains("case \"polywand\""),
+                "normal claim command exposes territory-style polygon selection");
+        final String selectionWand = source(
+                "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java");
+        check(selectionWand.contains("case \"claim-polygon\"")
+                        && selectionWand.contains("claimManager.addPolygonPoint"),
+                "polygon claim wand records multiple clicked boundary points");
 
         final String vanish = source("src/main/java/hu/taliann/icesmp/managers/VanishManager.java");
         check(vanish.contains("viewer.hidePlayer(plugin, subject);"), "vanish removes the in-world entity");

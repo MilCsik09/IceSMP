@@ -11,8 +11,10 @@
   tracking rebuilds, and restores only IceSMP-owned visibility pairs.
 - **Claim wall:** the BlockDisplay renderer used four stretched slabs anchored to the viewer's Y, so terrain changes made the
   glass float above the area or disappear below it. Every boundary column is now region-owned and resolved from the actual
-  `MOTION_BLOCKING_NO_LEAVES` surface, producing the configured wall height along the full perimeter. Polygon claim selection is
-  implemented in the following correction stage.
+  `MOTION_BLOCKING_NO_LEAVES` surface, producing the configured wall height along the full perimeter.
+- **Claim selection:** the old player flow only accepted two corners and therefore only rectangles. Normal claims now also support
+  territory-style multi-point polygons, including concave shapes. One immutable `ClaimShape` drives exact column membership,
+  overlap, pricing, WorldGuard row-span checks, persistence and boundary rendering; rectangle/quick claims remain compatible.
 - **DARK undead footing:** ambient DARK spawns used a single `getHighestBlockYAt()+1` candidate without a stable-floor contract.
   They now retry finitely inside the exact territory shape and require an occluding, non-gravity, non-hazard floor plus three
   passable body blocks through the shared spawn guard. No valid column means no spawn; there is no airborne fallback.
