@@ -13,6 +13,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,8 +22,8 @@ import java.util.Locale;
 
 /**
  * Az admin config-menü kattintás-kezelője. Minden írás a config.yml override-rétegbe
- * kerül; a görgőkattintás ezt a konkrét override-ot törli, ezért a subsystem YAML
- * aktuális alapértéke lép vissza. A változás után a célzott live-reload hookok futnak.
+ * kerül; a görgőkattintás (és survival-kompatibilis tartalékban a Q) ezt a konkrét
+ * override-ot törli, ezért a subsystem YAML aktuális alapértéke lép vissza.
  */
 public final class ConfigMenuGUIListener implements Listener {
 
@@ -95,7 +96,7 @@ public final class ConfigMenuGUIListener implements Listener {
             return;
         }
 
-        if (event.isMiddleClick()) {
+        if (event.isMiddleClick() || event.getClick() == ClickType.DROP) {
             resetOverride(player, key, entry);
             reopen(player, holder);
             return;
@@ -128,6 +129,8 @@ public final class ConfigMenuGUIListener implements Listener {
     private void resetOverride(final Player player, final String key,
                                final ConfigMenuGUI.Entry entry) {
         final boolean changed = configManager.resetOverride(key);
+        messageManager.reload();
+        ConfigValidator.validate(configManager, plugin.getLogger());
         applyLiveHooks(key);
         final String resolved = ConfigMenuEntryRenderer.formatCurrent(entry, configManager);
         if (changed) {
