@@ -2,10 +2,12 @@ name: Repository Docs Inventory
 
 on:
   pull_request:
-  workflow_dispatch:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
   diagnose:
@@ -21,6 +23,7 @@ jobs:
           persist-credentials: true
 
       - name: Diagnose exact recovery merge
+        id: merge
         shell: bash
         env:
           PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
@@ -45,17 +48,47 @@ jobs:
           git merge --no-ff --no-commit "$PROFILE_V2_HEAD"
           status=$?
           set -e
-          echo "MERGE_STATUS=$status"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+          conflicts="$(git diff --name-only --diff-filter=U | sort)"
+          {
+            echo "<!-- player-profile-conflict-report -->"
+            echo "### PlayerProfile integration conflict report"
+            echo
+            echo "- Profile v2: \`$PROFILE_V2_HEAD\`"
+            echo "- Recovery: \`$RECOVERY_HEAD\`"
+            echo "- Current #78: \`$OLD_PLATFORM_HEAD\`"
+            echo "- Merge status: \`$status\`"
+            echo
+            echo '```text'
+            if [[ -n "$conflicts" ]]; then
+              printf '%s\n' "$conflicts"
+            else
+              echo '(no unmerged paths)'
+            fi
+            echo '```'
+          } > /tmp/player-profile-conflicts.md
+
           echo "=== STATUS ==="
           git status --short
           echo "=== CONFLICTS ==="
-          git diff --name-only --diff-filter=U | sort
+          printf '%s\n' "$conflicts"
           echo "=== STAGED STAT ==="
           git diff --cached --stat || true
-          echo "=== CONFLICT HUNKS ==="
-          while IFS= read -r file; do
-            [[ -n "$file" ]] || continue
-            echo "--- $file ---"
-            git diff --cc -- "$file" || true
-          done < <(git diff --name-only --diff-filter=U | sort)
-          exit "$status"
+
+      - name: Publish exact conflict report
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
+            -f body="$(cat /tmp/player-profile-conflicts.md)"
+
+      - name: Preserve diagnostic failure on conflicts
+        if: steps.merge.outputs.status != '0'
+        run: exit 1
