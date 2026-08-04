@@ -1,9 +1,8 @@
-Trigger the Repository Docs Inventory publisher.
-Phase: reuse the fully green publisher, stop before its workflow-changing push, preserve the old #75 workflow blobs through an isolated temporary Git index, and push only the validated code/documentation tree.
-Validation head: 1185d118f2bb89cbe8a3dce2dc8db2f2aaee98a5
-Validated publisher commit: eb85a7616a3432fdd8cf1095fc8c84d3f9af8b63
-Proven result: Java build, all regression markers, consistency, Markdown, 27 tooling tests and strict inventory with 0 blocking findings.
-Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
-Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
-The validated ci.yml and repository-docs-inventory.yml will be applied separately through direct GitHub file commits after the code push.
+Trigger the Repository Docs Inventory diagnostic.
+Phase: diagnose the exact merge of the fully recovered PlayerProfile platform onto the finalized Profile v2 head.
+Validation head: 1689f25a0c99f6c2d06270e1aac122bd2a3b861b
+Expected Profile v2 head: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
+Expected recovered PlayerProfile head: f2250d279b27bdd65f030ff5c715db01f0e1094d
+Expected old #78 head: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
+No commit or push is permitted in this diagnostic.
 Must never be merged.
