@@ -1,6 +1,6 @@
 Trigger the guaranteed Repository Docs Inventory PlayerProfile cleanup driver.
-Attempt: 3 — accept the exact seven reviewed cleanup run blocks and preserve final commit/push ordering.
-Validation base head: 4e8e38eabf722d9fab9aa4b66767569247c32b8f
+Attempt: 4 — execute the direct semantic cleanup driver without nested workflow whitespace coupling.
+Validation base head: 5b1ccdf3048c3e7c3f5e97bd9617a9ba884cfc1b
 Expected recovery head: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
 Expected #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
 Must never be merged.
