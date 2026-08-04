@@ -1,10 +1,11 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: reproduce the synchronized Profile v2 tree and print every remaining blocking finding with the reviewed driver SHA explicitly inherited.
-Validation head: ddc3de16b3eebd34d5ef1bdcb4ddf6992816d016
-Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
+Phase: publish the fully validated Profile v2 integration with strict inventory and exact-head protected final push.
+Validation head: 22b22953158099a1afd107eb66c64832638fb91e
 Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
+Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
+Proven diagnostic result: 0 blocking inventory findings, Java build and all regressions green.
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
 Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
-This diagnostic excludes the final commit and push step and must fail when findings remain.
+Push remains the final step and must fail if either remote branch head changed.
 Must never be merged.
