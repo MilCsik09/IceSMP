@@ -8,23 +8,20 @@ permissions:
   contents: write
 
 env:
-  VALIDATION_BRANCH: agent/player-profile-root-reconstruct-20260803-v6
-  RECOVERY_BRANCH: agent/player-profile-root-recovered-20260803-v4
-  EXPECTED_RECOVERY_HEAD: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
-  TARGET_BRANCH: rework/class-spec-profile-v2
-  EXPECTED_TARGET_HEAD: f25e7e600f418724dd2341e39387a0fa5c0625de
-  REVIEWED_DRIVER_COMMIT: 475d2f75f3643aedeaec4c4b2fcbf4d1387ead7d
+  TARGET_BRANCH: rework/class-spec-1.21.11-compatibility
+  EXPECTED_TARGET_HEAD: 62ad99b74b7bb63420cb8e5e821f0321c5d84d48
+  EXPECTED_MASTER_HEAD: 52cc62ac3b463679f28656f82cf1f7d17db486e8
 
 jobs:
-  cleanup:
-    name: PlayerProfile authority cleanup driver
+  integrate:
+    name: Rebase class/spec compatibility onto current master
     runs-on: ubuntu-latest
-    timeout-minutes: 65
+    timeout-minutes: 50
     steps:
       - name: Check out authenticated validation history
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.VALIDATION_BRANCH }}
+          ref: agent/player-profile-root-reconstruct-20260803-v6
           fetch-depth: 0
           persist-credentials: true
 
@@ -47,136 +44,63 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Execute reviewed cleanup and publish non-workflow changes
+      - name: Replay, validate and publish non-workflow merge
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from __future__ import annotations
+          git fetch --no-tags origin \
+            "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}" \
+            "+refs/heads/master:refs/remotes/origin/master"
+          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_TARGET_HEAD"
+          test "$(git rev-parse refs/remotes/origin/master)" = "$EXPECTED_MASTER_HEAD"
 
-          import os
-          from pathlib import Path
-          import re
-          import subprocess
-          import yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          reviewed = os.environ['REVIEWED_DRIVER_COMMIT']
-          raw = subprocess.check_output(
-              ['git', 'show', f'{reviewed}:.github/workflows/repository-docs-inventory.yml'],
-              text=True,
-          )
-          workflow = yaml.safe_load(raw)
-          steps = workflow['jobs']['cleanup']['steps']
-          run_by_name = {
-              step.get('name'): step.get('run')
-              for step in steps
-              if step.get('name') and step.get('run')
-          }
-          expected = [
-              'Prepare exact recovery cleanup',
-              'Java 21 clean build and all regressions',
-              'Verify PlayerProfile regression markers',
-              'Run PlayerProfile and repository gates',
-              'Audit stale documentation claims',
-              'Commit and fast-forward push after every gate succeeds',
-          ]
-          missing = [name for name in expected if not run_by_name.get(name)]
-          if missing:
-              raise SystemExit('Missing reviewed cleanup steps: ' + ', '.join(missing))
+          git switch --detach "$EXPECTED_MASTER_HEAD"
+          git switch -c local-class-spec-replay
+          if ! git cherry-pick --no-commit "$EXPECTED_TARGET_HEAD"; then
+            echo '=== Cherry-pick conflicts ===' >&2
+            git status --short >&2
+            git diff --name-only --diff-filter=U >&2
+            for file in $(git diff --name-only --diff-filter=U); do
+              echo "=== $file ===" >&2
+              git diff --cc -- "$file" >&2 || true
+            done
+            exit 1
+          fi
+          git add -A
+          git diff --cached --check
+          git commit -m "replay(class-spec): apply compatibility base to current master"
+          REPLAY_HEAD=$(git rev-parse HEAD)
+          git diff --check "$EXPECTED_MASTER_HEAD...$REPLAY_HEAD"
 
-          def run_script(script: str) -> None:
-              subprocess.run(
-                  ['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
-                  check=True,
-                  cwd=Path.cwd(),
-                  env=os.environ.copy(),
-              )
+          ./gradlew clean build --no-daemon --stacktrace | tee /tmp/class-spec-base-build.log
+          grep -F "Class/spec compatibility regression suite passed." /tmp/class-spec-base-build.log
+          python3 scripts/check_consistency.py
+          python3 scripts/check_markdown_links.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 
-          def audit_documentation() -> None:
-              pattern = re.compile(
-                  r'\b(?:YamlClassProfileRepository|ClassProfileCodec|ClassProfileRepository)\b'
-                  r'|\bClassProfile\s+v2\b|\bICS2\b',
-                  re.IGNORECASE,
-              )
-              negation = re.compile(
-                  r'\b(?:no|not|without|nincs|nem|nincs\s+külön|nem\s+létezik)\b',
-                  re.IGNORECASE,
-              )
-              candidates = [Path('README.md'), Path('CLAUDE.md')]
-              candidates.extend(sorted(Path('docs').rglob('*')))
-              stale: list[str] = []
-              for path in candidates:
-                  if not path.is_file() or path.suffix.lower() not in {'.md', '.yml', '.yaml'}:
-                      continue
-                  for number, line in enumerate(path.read_text(encoding='utf-8', errors='replace').splitlines(), 1):
-                      if pattern.search(line) and not negation.search(line):
-                          stale.append(f'{path.as_posix()}:{number}:{line}')
-              if stale:
-                  print('\n'.join(stale))
-                  raise SystemExit('Affirmative stale class-profile-only documentation remains.')
-              print('Semantic stale class-profile documentation audit: PASS')
-
-          def publish_non_workflow_cleanup() -> None:
-              parent = os.environ['EXPECTED_RECOVERY_HEAD']
-              recovery = os.environ['RECOVERY_BRANCH']
-              target = os.environ['TARGET_BRANCH']
-              expected_target = os.environ['EXPECTED_TARGET_HEAD']
-              workflow_paths = [
-                  '.github/workflows/ci.yml',
-                  '.github/workflows/repository-docs-inventory.yml',
-              ]
-              subprocess.run(
-                  ['git', 'restore', f'--source={parent}', '--staged', '--worktree', '--', *workflow_paths],
-                  check=True,
-              )
-              subprocess.run(['git', 'add', '-A'], check=True)
-              subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
-              changed = subprocess.check_output(
-                  ['git', 'diff', '--cached', '--name-only'], text=True
-              ).splitlines()
-              leaked = [path for path in changed if path.startswith('.github/workflows/')]
-              if leaked:
-                  raise SystemExit('Workflow files leaked into app-pushed commit: ' + ', '.join(leaked))
-              remote_recovery = subprocess.check_output(
-                  ['git', 'ls-remote', 'origin', f'refs/heads/{recovery}'], text=True
-              ).split()[0]
-              remote_target = subprocess.check_output(
-                  ['git', 'ls-remote', 'origin', f'refs/heads/{target}'], text=True
-              ).split()[0]
-              if remote_recovery != parent:
-                  raise SystemExit(f'Recovery head moved: {remote_recovery} != {parent}')
-              if remote_target != expected_target:
-                  raise SystemExit(f'Target head moved: {remote_target} != {expected_target}')
-              subprocess.run(
-                  ['git', 'config', 'user.name', 'github-actions[bot]'], check=True
-              )
-              subprocess.run(
-                  ['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'],
-                  check=True,
-              )
-              subprocess.run(
-                  ['git', 'commit', '-m', 'refactor(player-profile): remove legacy class-profile authority'],
-                  check=True,
-              )
-              new_head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-              subprocess.run(['git', 'diff', '--check', f'{expected_target}...{new_head}'], check=True)
-              subprocess.run(
-                  ['git', 'push', 'origin', f'HEAD:refs/heads/{recovery}'], check=True
-              )
-              observed = subprocess.check_output(
-                  ['git', 'ls-remote', 'origin', f'refs/heads/{recovery}'], text=True
-              ).split()[0]
-              if observed != new_head:
-                  raise SystemExit(f'Published head mismatch: {observed} != {new_head}')
-              print(f'NON_WORKFLOW_CLEANUP_HEAD={new_head}')
-
-          for index, name in enumerate(expected, 1):
-              print(f'::group::{index}/{len(expected)} {name}', flush=True)
-              if name == 'Audit stale documentation claims':
-                  audit_documentation()
-              elif name == 'Commit and fast-forward push after every gate succeeds':
-                  publish_non_workflow_cleanup()
-              else:
-                  run_script(run_by_name[name])
-              print('::endgroup::', flush=True)
-          PY
+          git switch --detach "$EXPECTED_TARGET_HEAD"
+          git switch -c local-class-spec-final
+          git merge --no-ff --no-commit -s ours "$REPLAY_HEAD"
+          git read-tree --reset -u "$REPLAY_HEAD"
+          git restore --source="$EXPECTED_TARGET_HEAD" --staged --worktree -- \
+            .github/workflows/ci.yml \
+            .github/workflows/repository-docs-inventory.yml
+          git add -A
+          git diff --cached --check
+          if git diff --cached --name-only | grep -E '^\.github/workflows/'; then
+            echo 'Workflow files leaked into app-pushed merge.' >&2
+            exit 1
+          fi
+          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$EXPECTED_TARGET_HEAD"
+          test "$(git ls-remote origin refs/heads/master | awk '{print $1}')" = "$EXPECTED_MASTER_HEAD"
+          git commit -m "merge(class-spec): integrate current master without history rewrite"
+          NEW_HEAD=$(git rev-parse HEAD)
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_TARGET_HEAD"
+          test "$(git rev-parse HEAD^2)" = "$REPLAY_HEAD"
+          git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
+          test "$(git ls-remote origin "refs/heads/${TARGET_BRANCH}" | awk '{print $1}')" = "$NEW_HEAD"
+          echo "CLASS_SPEC_BASE_NON_WORKFLOW_HEAD=$NEW_HEAD"
+          echo "CLASS_SPEC_REPLAY_HEAD=$REPLAY_HEAD"
