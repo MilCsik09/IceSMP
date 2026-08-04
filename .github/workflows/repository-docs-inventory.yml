@@ -22,8 +22,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Preserve temporary integration driver
-        run: cp .github/scripts/player_profile_integration_driver.py /tmp/player_profile_integration_driver.py
+      - name: Preserve temporary integration drivers
+        run: |
+          cp .github/scripts/player_profile_integration_driver.py /tmp/player_profile_integration_driver.py
+          cp .github/scripts/player_profile_candidate_hardening.py /tmp/player_profile_candidate_hardening.py
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -53,12 +55,20 @@ jobs:
           OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
         run: python3 /tmp/player_profile_integration_driver.py
 
+      - name: Refresh fail-closed authority ownership
+        id: harden
+        env:
+          PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
+          RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
+          OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
+        run: python3 /tmp/player_profile_candidate_hardening.py
+
       - name: Validate resource-pack and deployment snapshots
         id: assets
         continue-on-error: true
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
           python3 scripts/test_resource_pack.py 2>&1 | tee /tmp/assets.log
           python3 scripts/resource_pack.py build --source resource-pack --output build/resource-pack/validation-pack.zip 2>&1 | tee -a /tmp/assets.log
           python3 scripts/validate_fancynpcs_snapshot.py 2>&1 | tee -a /tmp/assets.log
@@ -68,7 +78,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
           ./gradlew clean build --console=plain --no-daemon --stacktrace 2>&1 | tee /tmp/gradle-build.log
 
       - name: Verify every stacked regression marker
@@ -112,7 +122,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
           python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority.json 2>&1 | tee /tmp/profile-guards.log
           python3 scripts/check_player_profile_openapi.py 2>&1 | tee -a /tmp/profile-guards.log
           python3 scripts/test_player_profile_authority.py 2>&1 | tee -a /tmp/profile-guards.log
@@ -138,16 +148,19 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report 2>&1 | tee /tmp/inventory.log
-          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode report 2>&1 | tee -a /tmp/inventory.log
-          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode strict 2>&1 | tee -a /tmp/inventory.log
+          status=0
+          python3 scripts/generate_repository_inventory.py --root . --output build/repository-inventory --mode report 2>&1 | tee /tmp/inventory.log || status=1
+          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode report 2>&1 | tee -a /tmp/inventory.log || status=1
+          python3 scripts/check_documentation_coverage.py --root . --inventory build/repository-inventory/repository-inventory.json --output build/repository-inventory --mode strict 2>&1 | tee -a /tmp/inventory.log || status=1
+          python3 -c 'import json; d=json.load(open("build/repository-inventory/documentation-coverage.json", encoding="utf-8")); print(json.dumps(d.get("findings", []), ensure_ascii=False, indent=2))' | tee /tmp/inventory-findings.log || status=1
+          exit "$status"
 
       - name: Publish validation report
         if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          CANDIDATE_SHA: ${{ steps.prepare.outputs.candidate_sha }}
+          CANDIDATE_SHA: ${{ steps.harden.outputs.candidate_sha }}
           JAVA_COUNT: ${{ steps.prepare.outputs.java_count }}
           MANAGER_COUNT: ${{ steps.prepare.outputs.manager_count }}
           ASSETS: ${{ steps.assets.outcome }}
@@ -179,6 +192,11 @@ jobs:
               printf '%s\n' '```' >> "$report"
             fi
           done
+          if [[ -f /tmp/inventory-findings.log ]]; then
+            printf '%s\n' '' '#### `documentation-coverage.json` findings' '```json' >> "$report"
+            cat /tmp/inventory-findings.log >> "$report"
+            printf '%s\n' '```' >> "$report"
+          fi
           head -c 60000 "$report" > /tmp/player-profile-validation-trimmed.md
           gh api --method POST -H "Accept: application/vnd.github+json" "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" -f body="$(cat /tmp/player-profile-validation-trimmed.md)"
 
