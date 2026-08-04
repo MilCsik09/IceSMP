@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           test -d .git
-          git merge-base --is-ancestor d9db45615a76cb56c668ea6cf4a9672140357037 HEAD
+          git merge-base --is-ancestor 3afacb925bc22bf1446e835db7c85096422541ca HEAD
           git merge-base --is-ancestor c3df598655ccf3032cf20795b9d47de8d66b4637 HEAD
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
           git status --short --branch
@@ -46,6 +46,37 @@ jobs:
           rm .github/scripts/apply_claim_polygon_stage.py
           git diff --check
           git diff --stat
+
+      - name: Update measured architecture inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          architecture = Path('docs/ARCHITECTURE.md')
+          text = architecture.read_text(encoding='utf-8')
+          replacements = {
+              '| `data/` | 14 |': '| `data/` | 15 |',
+              '**Méret:** 575 Java-fájl': '**Méret:** 576 Java-fájl',
+              'Csomag-megoszlás: listeners 120, managers 120, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,\n  items 12, relics 9, integration 7.':
+                  'Csomag-megoszlás: listeners 121, managers 121, commands 94, spells 56, gui 47, crates 14, utils 24, data 15,\n  items 12, relics 9, integration 6.',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'architecture inventory assertion failed: {old!r}')
+              text = text.replace(old, new, 1)
+          architecture.write_text(text, encoding='utf-8')
+
+          claude = Path('CLAUDE.md')
+          text = claude.read_text(encoding='utf-8')
+          old = 'A dokumentált release 575 Java-fájl / 90 manager.'
+          new = 'A dokumentált release 576 Java-fájl / 90 manager.'
+          if text.count(old) != 1:
+              raise SystemExit('CLAUDE Java inventory assertion failed')
+          claude.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          git diff --check
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -78,7 +109,9 @@ jobs:
             src/main/java/hu/taliann/icesmp/managers/ClaimManager.java \
             src/main/resources/config/general.yml \
             src/regression/java/hu/taliann/icesmp/runtime/RuntimeHardeningRegressionSuite.java \
-            docs/RUNTIME_HARDENING_AUDIT.md
+            docs/RUNTIME_HARDENING_AUDIT.md \
+            docs/ARCHITECTURE.md \
+            CLAUDE.md
           git diff --cached --check
           git commit -m "Integrate territory-style polygon claims" \
             -m "Use one immutable exact-column ClaimShape for rectangle and multi-point claims, including concave membership, overlap, pricing, row-span protected-region checks, persistence and boundary rendering." \
