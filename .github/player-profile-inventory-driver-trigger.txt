@@ -1,6 +1,6 @@
 Trigger the Repository Docs Inventory diagnostic.
-Phase: reproduce exact post-sync tree and expose every documentation coverage warning that strict mode promotes to FAIL.
-Validation head: fd4e793e18787af73d42c50c3a90995ed041e793
+Phase: reproduce the synchronized Profile v2 tree and expose every exact strict inventory FAIL, including report-mode REVIEW_REQUIRED items.
+Validation head: 630e7c28206a09c26152b5da603868cc9b0f59ea
 Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
 Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
