@@ -16,7 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 /** Rectangle claim, polygon claim and territory selection wands. */
-public final class SelectionWandListener {
+public final class SelectionWandListener implements Listener {
 
     public static final NamespacedKey WAND_KEY = NamespacedKey.fromString("icesmp:selection_wand");
 
