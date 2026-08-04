@@ -1,6 +1,6 @@
 Trigger the Repository Docs Inventory publisher.
-Phase: reuse the fully green publisher, stop before its workflow-changing push, restore the old #75 workflow blobs in the commit tree, and push only the validated code/documentation tree.
-Validation head: d6f30766e6ab7bea2aeb655bdc412617f9d05878
+Phase: reuse the fully green publisher, stop before its workflow-changing push, preserve the old #75 workflow blobs through an isolated temporary Git index, and push only the validated code/documentation tree.
+Validation head: 1185d118f2bb89cbe8a3dce2dc8db2f2aaee98a5
 Validated publisher commit: eb85a7616a3432fdd8cf1095fc8c84d3f9af8b63
 Proven result: Java build, all regression markers, consistency, Markdown, 27 tooling tests and strict inventory with 0 blocking findings.
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
