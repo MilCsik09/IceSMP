@@ -97,3 +97,12 @@ Automated tests cannot prove the following visual/client/integration behaviour:
 3. polygon-wand UX and concave claim protection on a running Folia server;
 4. DARK undead spawn behaviour across real chunk unload/reload and server restart;
 5. WorldGuard integration with production regions and a full resource-pack client join.
+
+## Restored original claim Y behaviour
+
+- Claims are again bounded 3D volumes: exact rectangle/polygon X-Z shape plus inclusive `minY..maxY`.
+- New quick claims use the player's Y; rectangle selections use the two Y values' midpoint; polygons use the first boundary point's Y.
+- Packaged defaults remain the proven original values: `default-height: 20`, `default-depth: 20`.
+- `/claim extend up|down` again expands by `y-extend-step: 5` for the original per-column burned cost.
+- X-Z overlap stays exclusive, so vertically separated claims cannot be stacked over the same footprint.
+- The BlockDisplay boundary is created only from `minY` through `maxY`; no wall exists at unclaimed Y levels.

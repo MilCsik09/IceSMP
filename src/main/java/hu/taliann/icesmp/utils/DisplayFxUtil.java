@@ -145,6 +145,33 @@ public final class DisplayFxUtil {
         });
     }
 
+    /**
+     * Spawns one wall column exactly inside an inclusive claimed Y range.
+     * Region ownership is acquired from the sampled X/Z column; nothing is rendered
+     * below minY or above maxY.
+     */
+    public static void claimedWallColumn(final Plugin plugin, final World world,
+                                         final int sampleX, final int sampleZ,
+                                         final double displayX, final double displayZ,
+                                         final float sizeX, final float sizeZ,
+                                         final int minY, final int maxY,
+                                         final BlockData block, final Color glow,
+                                         final int despawnTicks, final Player viewer) {
+        if (plugin == null || world == null || block == null) return;
+        final int clampedMinY = Math.max(world.getMinHeight(), minY);
+        final int clampedMaxY = Math.min(world.getMaxHeight() - 1, maxY);
+        if (clampedMinY > clampedMaxY) return;
+        final Location owner = new Location(
+                world, sampleX + 0.5D, clampedMinY, sampleZ + 0.5D);
+        plugin.getServer().getRegionScheduler().run(plugin, owner, task -> {
+            if (!world.isChunkLoaded(sampleX >> 4, sampleZ >> 4)) return;
+            final Location corner = new Location(world, displayX, clampedMinY, displayZ);
+            wallSegment(plugin, corner, sizeX,
+                    clampedMaxY - clampedMinY + 1.0F, sizeZ,
+                    block, glow, despawnTicks, viewer);
+        });
+    }
+
     private static void scheduleDespawn(final Plugin plugin, final Display display, final int ticks) {
         final UUID id = display.getUniqueId();
         display.getScheduler().runDelayed(plugin, task -> {

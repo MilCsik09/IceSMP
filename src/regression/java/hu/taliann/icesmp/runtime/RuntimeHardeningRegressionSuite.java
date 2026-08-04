@@ -111,9 +111,14 @@ public final class RuntimeHardeningRegressionSuite {
 
     private static void lifecycleSourceContracts() throws Exception {
         final String claim = source("src/main/java/hu/taliann/icesmp/managers/ClaimManager.java");
-        check(claim.contains("claim.contains(worldName, location.getBlockX(), location.getBlockZ())"),
-                "claim lookup is Y-independent");
-        check(!claim.contains("drawBoxOutline"), "claim renderer has no 3D box path");
+        check(claim.contains("claim.contains(worldName, location.getBlockX(), location.getBlockY(), location.getBlockZ())"),
+                "claim lookup includes the bounded Y range");
+        check(claim.contains("claims.default-height\", 20")
+                        && claim.contains("claims.default-depth\", 20")
+                        && claim.contains("claims.y-extend-step\", 5"),
+                "original ±20 default Y range and five-block extension step are restored");
+        check(claim.contains("claim.shape.isPolygon() ? claim.shape.vertices() : null"),
+                "vertical extension preserves the exact polygon shape");
         check(claim.contains("borderTasks.remove(playerId)"), "border preview owns cleanup task");
         check(claim.contains("ClaimShape.polygon(points, areaMaxColumns())")
                         && claim.contains("polygonStored && polygon == null")
@@ -130,8 +135,9 @@ public final class RuntimeHardeningRegressionSuite {
                 "polygon rasterization is budgeted scanline work, not bounding-box area work");
         final String claimCommand = source("src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java");
         check(claimCommand.contains("case \"polygon\", \"poligon\"")
-                        && claimCommand.contains("case \"polywand\""),
-                "normal claim command exposes territory-style polygon selection");
+                        && claimCommand.contains("case \"polywand\"")
+                        && claimCommand.contains("case \"extend\" -> handleExtend(player, args)"),
+                "normal claim command exposes polygons and restored vertical extension");
         final String selectionWand = source(
                 "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java");
         check(selectionWand.contains("case \"claim-polygon\"")
@@ -167,11 +173,17 @@ public final class RuntimeHardeningRegressionSuite {
                 "only daylight combustion is cancelled");
 
         final String display = source("src/main/java/hu/taliann/icesmp/utils/DisplayFxUtil.java");
-        check(display.contains("HeightMap.MOTION_BLOCKING_NO_LEAVES")
-                        && display.contains("terrainWallColumn"),
-                "BlockDisplay wall follows each owned terrain column");
+        check(display.contains("claimedWallColumn")
+                        && display.contains("clampedMaxY - clampedMinY + 1.0F")
+                        && claim.contains("claim.minY, claim.maxY"),
+                "BlockDisplay wall is clipped exactly to the actually claimed Y range");
         check(!claim.contains("baseY = location.getY()"),
                 "claim display wall is never anchored to viewer Y");
+        final String generalConfig = source("src/main/resources/config/general.yml");
+        check(generalConfig.contains("default-height: 20")
+                        && generalConfig.contains("default-depth: 20")
+                        && generalConfig.contains("y-extend-step: 5"),
+                "packaged config retains the proven original vertical defaults");
         final String guard = source("src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java");
         check(guard.contains("resolveSafeStandingLocation")
                         && guard.contains("material.isOccluding()")
