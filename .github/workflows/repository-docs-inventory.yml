@@ -22,9 +22,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Preserve integration driver
-        run: cp .github/scripts/player_profile_integration_driver.py /tmp/player_profile_integration_driver.py
-
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -35,19 +32,64 @@ jobs:
         env:
           PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
           RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
-          OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
           CURRENT_TARGET_HEAD: 6b2cc869605c8e15aac5a73c45ebbfb18ac8e70f
           TARGET_BRANCH: profile/player-profile-platform
         run: |
           set -euo pipefail
-          python3 /tmp/player_profile_integration_driver.py
-          cp .github/workflows/ci.yml /tmp/final-ci.yml
-          cp .github/workflows/repository-docs-inventory.yml /tmp/final-repository-docs-inventory.yml
-          printf '%s  %s\n' "$(sha256sum /tmp/final-ci.yml | awk '{print $1}')" ci.yml
-          printf '%s  %s\n' "$(sha256sum /tmp/final-repository-docs-inventory.yml | awk '{print $1}')" repository-docs-inventory.yml
-
-          git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
+          git fetch --no-tags origin \
+            "+refs/heads/rework/class-spec-profile-v2:refs/remotes/origin/rework/class-spec-profile-v2" \
+            "+refs/heads/agent/player-profile-root-recovered-20260803-v4:refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4" \
+            "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
+          test "$(git rev-parse refs/remotes/origin/rework/class-spec-profile-v2)" = "$PROFILE_V2_HEAD"
+          test "$(git rev-parse refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4)" = "$RECOVERY_HEAD"
           test "$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)" = "$CURRENT_TARGET_HEAD"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --detach "$RECOVERY_HEAD"
+          git switch -c local-workflow-reconstruction
+          set +e
+          git merge --no-ff --no-commit "$PROFILE_V2_HEAD"
+          merge_status=$?
+          set -e
+          test "$merge_status" -eq 1
+          test "$(git diff --name-only --diff-filter=U | sort | tr '\n' '|')" = ".github/workflows/ci.yml|CLAUDE.md|build.gradle.kts|docs/ARCHITECTURE.md|docs/documentation-manifest.yml|src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java|"
+
+          cp .github/workflows/repository-docs-inventory.yml /tmp/final-repository-docs-inventory.yml
+          python3 - <<'PY'
+          import os
+          import subprocess
+          from pathlib import Path
+
+          profile = os.environ['PROFILE_V2_HEAD']
+          ci = subprocess.check_output(
+              ['git', 'show', f'{profile}:.github/workflows/ci.yml'],
+              text=True,
+          )
+          anchor = '      - rework/class-spec-1.21.11-compatibility\n'
+          if '      - rework/class-spec-profile-v2\n' not in ci:
+              ci = ci.replace(anchor, anchor + '      - rework/class-spec-profile-v2\n', 1)
+          old = '''          grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log
+          grep -F "Class/spec application regression suite passed." gradle-build.log
+          grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log
+          grep -F "Class profile lifecycle regression suite passed." gradle-build.log
+'''
+          new = '''          grep -F "ClassSpecSection v2 domain regression tests passed." gradle-build.log
+          grep -F "Class/spec application regression suite passed." gradle-build.log
+          grep -F "ClassSpecSection lifecycle regression suite passed." gradle-build.log
+          grep -F "PlayerProfile domain regression suite passed." gradle-build.log
+          grep -F "PlayerProfile YAML regression suite passed." gradle-build.log
+          grep -F "PlayerProfile transaction regression suite passed." gradle-build.log
+          grep -F "PlayerProfile API regression suite passed." gradle-build.log
+'''
+          if old not in ci:
+              raise SystemExit('Profile v2 CI marker block missing')
+          Path('/tmp/final-ci.yml').write_text(ci.replace(old, new, 1), encoding='utf-8')
+          PY
+          test "$(sha256sum /tmp/final-ci.yml | awk '{print $1}')" = "4a4f1b69daab8d6f43c36626e7a70c64849a379fd4ac6c84a097c826f1b617c0"
+          test "$(sha256sum /tmp/final-repository-docs-inventory.yml | awk '{print $1}')" = "e95299ffd8135470228ba846fc07887bb2b6e35ea93b926869328368f9c44d57"
+
+          git merge --abort
           git switch --detach "$CURRENT_TARGET_HEAD"
           git switch -c local-workflow-staging
           mkdir -p .github/workflow-staging
@@ -57,5 +99,4 @@ jobs:
           git diff --cached --check
           git commit -m "chore(ci): stage validated workflow blobs"
           git push origin "HEAD:refs/heads/$TARGET_BRANCH"
-          remote="$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')"
-          test "$remote" = "$(git rev-parse HEAD)"
+          test "$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')" = "$(git rev-parse HEAD)"
