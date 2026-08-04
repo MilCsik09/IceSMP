@@ -5,15 +5,15 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
 jobs:
-  validate:
-    name: Validate merge-ready PlayerProfile candidate
+  publish:
+    name: Validate and publish merge-ready PlayerProfile branch
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 65
     steps:
       - name: Check out authenticated repository
         uses: actions/checkout@v4
@@ -47,42 +47,35 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Prepare exact hardened candidate
-        id: prepare
+      - name: Rebuild, validate and fast-forward publish #78
+        id: publish
+        shell: bash
         env:
           PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
           RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
           OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
+          TARGET_BRANCH: profile/player-profile-platform
         run: |
+          set -euo pipefail
+
           python3 /tmp/player_profile_integration_driver.py
           python3 /tmp/player_profile_candidate_hardening.py
-          git status --short
-          git diff --check 4390202fd1a3f5bbc5ec98b80322a5713ccda200...HEAD
 
-      - name: Validate resource-pack and deployment snapshots
-        id: assets
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/test_resource_pack.py 2>&1 | tee /tmp/assets.log
-          python3 scripts/resource_pack.py build --source resource-pack --output build/resource-pack/validation-pack.zip 2>&1 | tee -a /tmp/assets.log
-          python3 scripts/validate_fancynpcs_snapshot.py 2>&1 | tee -a /tmp/assets.log
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git diff --check "$PROFILE_V2_HEAD...HEAD"
+          git merge-base --is-ancestor "$PROFILE_V2_HEAD" HEAD
+          git merge-base --is-ancestor "$RECOVERY_HEAD" HEAD
+          git merge-base --is-ancestor "$OLD_PLATFORM_HEAD" HEAD
 
-      - name: Java 21 clean build and all regressions
-        id: build
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./gradlew clean build --console=plain --no-daemon --stacktrace 2>&1 | tee /tmp/gradle-build.log
+          python3 scripts/test_resource_pack.py
+          python3 scripts/resource_pack.py build \
+            --source resource-pack \
+            --output build/resource-pack/validation-pack.zip
+          python3 scripts/validate_fancynpcs_snapshot.py
 
-      - name: Verify every stacked regression marker
-        id: markers
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
+          ./gradlew clean build --console=plain --no-daemon --stacktrace \
+            2>&1 | tee /tmp/gradle-build.log
+
           markers=(
             "MOTD regression suite passed."
             "Moderation regression suite passed."
@@ -115,56 +108,25 @@ jobs:
             grep -F "$marker" /tmp/gradle-build.log
           done
 
-      - name: PlayerProfile authority and API guards
-        id: profile_guards
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority.json 2>&1 | tee /tmp/profile-guards.log
-          python3 scripts/check_player_profile_openapi.py 2>&1 | tee -a /tmp/profile-guards.log
-          python3 scripts/test_player_profile_authority.py 2>&1 | tee -a /tmp/profile-guards.log
+          python3 scripts/check_player_profile_authority.py \
+            --root . \
+            --write-report build/player-profile-authority.json
+          python3 scripts/check_player_profile_openapi.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_markdown_links.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 
-      - name: Repository consistency
-        id: consistency
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/check_consistency.py 2>&1 | tee /tmp/consistency.log
-
-      - name: Markdown links
-        id: markdown
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/check_markdown_links.py --root . 2>&1 | tee /tmp/markdown.log
-
-      - name: Tooling self-tests
-        id: tooling
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v 2>&1 | tee /tmp/tooling.log
-
-      - name: Strict repository and documentation inventory
-        id: inventory
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
           python3 scripts/generate_repository_inventory.py \
             --root . \
             --output build/repository-inventory \
-            --mode strict 2>&1 | tee /tmp/inventory.log
+            --mode strict
           python3 scripts/check_documentation_coverage.py \
             --root . \
             --inventory build/repository-inventory/repository-inventory.json \
             --output build/repository-inventory \
-            --mode strict 2>&1 | tee -a /tmp/inventory.log
-          python3 - <<'PY' | tee -a /tmp/inventory.log
+            --mode strict
+          python3 - <<'PY'
           import json
           from pathlib import Path
 
@@ -176,68 +138,53 @@ jobs:
               finding for finding in inventory.get('findings', [])
               if finding.get('severity') in {'FAIL', 'REVIEW_REQUIRED'}
           ]
-          print(json.dumps(unresolved, ensure_ascii=False, indent=2))
-          raise SystemExit(1 if unresolved else 0)
+          if unresolved:
+              raise SystemExit(json.dumps(unresolved, ensure_ascii=False, indent=2))
           PY
 
-      - name: Publish validation summary
+          git fetch --no-tags origin \
+            "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH" \
+            "+refs/heads/rework/class-spec-profile-v2:refs/remotes/origin/rework/class-spec-profile-v2" \
+            "+refs/heads/agent/player-profile-root-recovered-20260803-v4:refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4"
+          test "$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)" = "$OLD_PLATFORM_HEAD"
+          test "$(git rev-parse refs/remotes/origin/rework/class-spec-profile-v2)" = "$PROFILE_V2_HEAD"
+          test "$(git rev-parse refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4)" = "$RECOVERY_HEAD"
+          git merge-base --is-ancestor "$OLD_PLATFORM_HEAD" HEAD
+
+          candidate="$(git rev-parse HEAD)"
+          candidate_tree="$(git rev-parse HEAD^{tree})"
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          remote="$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')"
+          test "$remote" = "$candidate"
+
+          echo "candidate_sha=$candidate" >> "$GITHUB_OUTPUT"
+          echo "candidate_tree=$candidate_tree" >> "$GITHUB_OUTPUT"
+          printf 'Published %s (%s) to %s\n' "$candidate" "$candidate_tree" "$TARGET_BRANCH"
+
+      - name: Publish final driver result
         if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          CANDIDATE: ${{ steps.prepare.outputs.candidate_sha }}
-          ASSETS: ${{ steps.assets.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          MARKERS: ${{ steps.markers.outcome }}
-          PROFILE_GUARDS: ${{ steps.profile_guards.outcome }}
-          CONSISTENCY: ${{ steps.consistency.outcome }}
-          MARKDOWN: ${{ steps.markdown.outcome }}
-          TOOLING: ${{ steps.tooling.outcome }}
-          INVENTORY: ${{ steps.inventory.outcome }}
+          CANDIDATE: ${{ steps.publish.outputs.candidate_sha }}
+          TREE: ${{ steps.publish.outputs.candidate_tree }}
+          OUTCOME: ${{ steps.publish.outcome }}
         run: |
           set -euo pipefail
-          cat > /tmp/player-profile-full-validation.md <<EOF
-          <!-- player-profile-full-validation -->
-          ### PlayerProfile full merge-readiness validation
+          cat > /tmp/player-profile-publish-result.md <<EOF
+          <!-- player-profile-publish-result -->
+          ### PlayerProfile branch publication
 
-          - Candidate: \`$CANDIDATE\`
-          - Exact base: \`4390202fd1a3f5bbc5ec98b80322a5713ccda200\`
-          - Exact recovery: \`f2250d279b27bdd65f030ff5c715db01f0e1094d\`
-          - Exact old #78 head: \`553f0e1afa62b6e88d9ff613ce8a233e242b1146\`
-
-          | Gate | Outcome |
-          | --- | --- |
-          | Resource/deployment snapshots | $ASSETS |
-          | Java 21 clean build | $BUILD |
-          | 26 regression markers | $MARKERS |
-          | PlayerProfile authority/OpenAPI | $PROFILE_GUARDS |
-          | Repository consistency | $CONSISTENCY |
-          | Markdown links | $MARKDOWN |
-          | Tooling self-tests | $TOOLING |
-          | Strict repository/documentation inventory | $INVENTORY |
+          - Outcome: **$OUTCOME**
+          - Published candidate: \`${CANDIDATE:-not-published}\`
+          - Candidate tree: \`${TREE:-not-published}\`
+          - Target: \`profile/player-profile-platform\`
+          - Mode: exact-head guarded normal fast-forward push
+          - Merge performed: **no**
+          - Force push used: **no**
           EOF
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
             "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
-            -f body="$(cat /tmp/player-profile-full-validation.md)"
-
-      - name: Enforce every merge-readiness gate
-        if: always()
-        shell: bash
-        env:
-          ASSETS: ${{ steps.assets.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          MARKERS: ${{ steps.markers.outcome }}
-          PROFILE_GUARDS: ${{ steps.profile_guards.outcome }}
-          CONSISTENCY: ${{ steps.consistency.outcome }}
-          MARKDOWN: ${{ steps.markdown.outcome }}
-          TOOLING: ${{ steps.tooling.outcome }}
-          INVENTORY: ${{ steps.inventory.outcome }}
-        run: |
-          set -euo pipefail
-          for outcome in \
-            "$ASSETS" "$BUILD" "$MARKERS" "$PROFILE_GUARDS" \
-            "$CONSISTENCY" "$MARKDOWN" "$TOOLING" "$INVENTORY"; do
-            test "$outcome" = success
-          done
+            -f body="$(cat /tmp/player-profile-publish-result.md)"
