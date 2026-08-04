@@ -47,7 +47,7 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Execute reviewed cleanup with semantic documentation audit
+      - name: Execute reviewed cleanup and publish non-workflow changes
         shell: bash
         run: |
           set -euo pipefail
@@ -84,6 +84,14 @@ jobs:
           if missing:
               raise SystemExit('Missing reviewed cleanup steps: ' + ', '.join(missing))
 
+          def run_script(script: str) -> None:
+              subprocess.run(
+                  ['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
+                  check=True,
+                  cwd=Path.cwd(),
+                  env=os.environ.copy(),
+              )
+
           def audit_documentation() -> None:
               pattern = re.compile(
                   r'\b(?:YamlClassProfileRepository|ClassProfileCodec|ClassProfileRepository)\b'
@@ -108,17 +116,67 @@ jobs:
                   raise SystemExit('Affirmative stale class-profile-only documentation remains.')
               print('Semantic stale class-profile documentation audit: PASS')
 
-          env = os.environ.copy()
+          def publish_non_workflow_cleanup() -> None:
+              parent = os.environ['EXPECTED_RECOVERY_HEAD']
+              recovery = os.environ['RECOVERY_BRANCH']
+              target = os.environ['TARGET_BRANCH']
+              expected_target = os.environ['EXPECTED_TARGET_HEAD']
+              workflow_paths = [
+                  '.github/workflows/ci.yml',
+                  '.github/workflows/repository-docs-inventory.yml',
+              ]
+              subprocess.run(
+                  ['git', 'restore', f'--source={parent}', '--staged', '--worktree', '--', *workflow_paths],
+                  check=True,
+              )
+              subprocess.run(['git', 'add', '-A'], check=True)
+              subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+              changed = subprocess.check_output(
+                  ['git', 'diff', '--cached', '--name-only'], text=True
+              ).splitlines()
+              leaked = [path for path in changed if path.startswith('.github/workflows/')]
+              if leaked:
+                  raise SystemExit('Workflow files leaked into app-pushed commit: ' + ', '.join(leaked))
+              remote_recovery = subprocess.check_output(
+                  ['git', 'ls-remote', 'origin', f'refs/heads/{recovery}'], text=True
+              ).split()[0]
+              remote_target = subprocess.check_output(
+                  ['git', 'ls-remote', 'origin', f'refs/heads/{target}'], text=True
+              ).split()[0]
+              if remote_recovery != parent:
+                  raise SystemExit(f'Recovery head moved: {remote_recovery} != {parent}')
+              if remote_target != expected_target:
+                  raise SystemExit(f'Target head moved: {remote_target} != {expected_target}')
+              subprocess.run(
+                  ['git', 'config', 'user.name', 'github-actions[bot]'], check=True
+              )
+              subprocess.run(
+                  ['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'],
+                  check=True,
+              )
+              subprocess.run(
+                  ['git', 'commit', '-m', 'refactor(player-profile): remove legacy class-profile authority'],
+                  check=True,
+              )
+              new_head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+              subprocess.run(['git', 'diff', '--check', f'{expected_target}...{new_head}'], check=True)
+              subprocess.run(
+                  ['git', 'push', 'origin', f'HEAD:refs/heads/{recovery}'], check=True
+              )
+              observed = subprocess.check_output(
+                  ['git', 'ls-remote', 'origin', f'refs/heads/{recovery}'], text=True
+              ).split()[0]
+              if observed != new_head:
+                  raise SystemExit(f'Published head mismatch: {observed} != {new_head}')
+              print(f'NON_WORKFLOW_CLEANUP_HEAD={new_head}')
+
           for index, name in enumerate(expected, 1):
               print(f'::group::{index}/{len(expected)} {name}', flush=True)
               if name == 'Audit stale documentation claims':
                   audit_documentation()
+              elif name == 'Commit and fast-forward push after every gate succeeds':
+                  publish_non_workflow_cleanup()
               else:
-                  subprocess.run(
-                      ['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', run_by_name[name]],
-                      check=True,
-                      cwd=Path.cwd(),
-                      env=env,
-                  )
+                  run_script(run_by_name[name])
               print('::endgroup::', flush=True)
           PY
