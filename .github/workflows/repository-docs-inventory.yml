@@ -69,6 +69,24 @@ jobs:
             echo '```'
           } > /tmp/player-profile-conflicts.md
 
+          {
+            echo "<!-- player-profile-conflict-hunks -->"
+            echo "### PlayerProfile semantic conflict hunks"
+            echo
+            while IFS= read -r file; do
+              [[ -n "$file" ]] || continue
+              [[ "$file" = "docs/documentation-manifest.yml" ]] && continue
+              echo "#### \`$file\`"
+              echo '```diff'
+              git diff --cc -- "$file" || true
+              echo '```'
+              echo
+            done <<< "$conflicts"
+          } | head -c 60000 > /tmp/player-profile-conflict-hunks.md
+
+          tar -czf /tmp/player-profile-integration-checkout.tar.gz \
+            --exclude='./.gradle' --exclude='./build' .
+
           echo "=== STATUS ==="
           git status --short
           echo "=== CONFLICTS ==="
@@ -76,18 +94,29 @@ jobs:
           echo "=== STAGED STAT ==="
           git diff --cached --stat || true
 
-      - name: Publish exact conflict report
+      - name: Publish exact conflict reports
         if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
-            -f body="$(cat /tmp/player-profile-conflicts.md)"
+          for report in /tmp/player-profile-conflicts.md /tmp/player-profile-conflict-hunks.md; do
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
+              -f body="$(cat "$report")"
+          done
+
+      - name: Upload authenticated conflicted checkout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-profile-conflicted-checkout-${{ github.run_id }}
+          path: /tmp/player-profile-integration-checkout.tar.gz
+          retention-days: 1
+          if-no-files-found: error
 
       - name: Preserve diagnostic failure on conflicts
         if: steps.merge.outputs.status != '0'
