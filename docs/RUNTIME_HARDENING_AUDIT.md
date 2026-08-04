@@ -73,34 +73,21 @@
 
 ## Automated coverage
 
-`RuntimeHardeningRegressionSuite` now covers:
-
-- vanilla rectangle compatibility;
-- concave polygon membership and wilderness notches;
-- exact polygon overlap and boundary columns;
-- self-intersection rejection;
-- long/thin oversized input rejection before unbounded raster work;
-- bounded scanline and fail-closed persistence source contracts;
-- entity plus tab-list vanish ownership and permission defaults;
-- terrain-owned BlockDisplay columns;
-- stable DARK standing locations and finite retries.
+`RuntimeHardeningRegressionSuite` covers vanilla rectangle compatibility, concave polygon membership and wilderness notches,
+exact overlap/boundaries, self-intersection and oversized-input rejection, bounded scanline and fail-closed persistence contracts,
+entity plus tab-list vanish ownership, terrain-owned BlockDisplay columns, and stable DARK standing locations with finite retries.
 
 The full repository `check` also includes event-spawn safety, config transaction/coverage, profession recipe audit and all
 previously registered regression suites.
 
-## Cleanup and exact-head validation proof
+## Validation policy
 
-- Corrected implementation cleanup commit: `6e958e8794b2fc422fa0ce24fcd7f2a6681ed604`.
-- Cleanup gate: **Corrected runtime final cleanup gate #18 — success**.
-- The gate removed the temporary workflow, both Python patch drivers and the encoded polygon payload before validation.
-- On that scaffolding-free tree, `./gradlew clean check`, `scripts/validate_gui_icons.py` and
-  `scripts/check_consistency.py` all completed successfully.
-- Final tested implementation-and-audit head before this documentation-only evidence note: `a69f9ba024dadbd26b6ec9d8580e85b95e6a6ad5`.
-- **IceSMP CI #480 — success:** Java 21 clean build, all `check` regressions, explicit faction suites, full consistency,
-  targeted DEV driver and consistency delta passed.
-- **Repository Docs Inventory #414 — success:** clean build, consistency, Markdown links, tooling self-tests, inventory,
-  generated JSON and blocking policy passed. PR-only snapshot/strict steps were correctly skipped by workflow policy.
-- No force push or merge was performed.
+- All implementation-only workflows, Python patch drivers and encoded payloads were removed before final validation.
+- The scaffolding-free tree is required to pass `./gradlew clean check`, `scripts/validate_gui_icons.py` and
+  `scripts/check_consistency.py`.
+- Exact head workflow run numbers and links are maintained in the pull-request description, not in this repository document,
+  so recording validation evidence cannot recursively create another untested documentation head.
+- No force push or merge is permitted.
 
 ## Manual staging checks still required
 
