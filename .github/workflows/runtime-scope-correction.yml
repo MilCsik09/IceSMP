@@ -1,4 +1,4 @@
-name: Polygon claim integration gate
+name: Polygon claim hardening gate
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  integrate-polygon-claims:
+  harden-polygon-claims:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'fix/runtime-hardening-audit-20260803'
     runs-on: ubuntu-latest
     steps:
@@ -31,52 +31,18 @@ jobs:
         run: |
           set -euo pipefail
           test -d .git
-          git merge-base --is-ancestor 3afacb925bc22bf1446e835db7c85096422541ca HEAD
-          git merge-base --is-ancestor c3df598655ccf3032cf20795b9d47de8d66b4637 HEAD
+          git merge-base --is-ancestor 1c49194e9dc831f20b6a3c1e9bf0181ecf5b3244 HEAD
+          git merge-base --is-ancestor 9926576f2f649de06545688dca36ed4e2a202787 HEAD
           git merge-base --is-ancestor 52cc62ac3b463679f28656f82cf1f7d17db486e8 HEAD
           git status --short --branch
 
-      - name: Apply asserted polygon integration patch
+      - name: Apply asserted adversarial hardening
         shell: bash
         run: |
           set -euo pipefail
-          base64 -d .github/scripts/claim-polygon-stage.py.gz.b64 \
-            | gzip -d > .github/scripts/apply_claim_polygon_stage.py
-          python3 .github/scripts/apply_claim_polygon_stage.py
-          rm .github/scripts/apply_claim_polygon_stage.py
+          python3 .github/scripts/apply_polygon_claim_hardening.py
           git diff --check
           git diff --stat
-
-      - name: Update measured architecture inventory
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          architecture = Path('docs/ARCHITECTURE.md')
-          text = architecture.read_text(encoding='utf-8')
-          replacements = {
-              '| `data/` | 14 |': '| `data/` | 15 |',
-              '**Méret:** 575 Java-fájl': '**Méret:** 576 Java-fájl',
-              'Csomag-megoszlás: listeners 120, managers 120, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,\n  items 12, relics 9, integration 7.':
-                  'Csomag-megoszlás: listeners 121, managers 121, commands 94, spells 56, gui 47, crates 14, utils 24, data 15,\n  items 12, relics 9, integration 6.',
-          }
-          for old, new in replacements.items():
-              if text.count(old) != 1:
-                  raise SystemExit(f'architecture inventory assertion failed: {old!r}')
-              text = text.replace(old, new, 1)
-          architecture.write_text(text, encoding='utf-8')
-
-          claude = Path('CLAUDE.md')
-          text = claude.read_text(encoding='utf-8')
-          old = 'A dokumentált release 575 Java-fájl / 90 manager.'
-          new = 'A dokumentált release 576 Java-fájl / 90 manager.'
-          if text.count(old) != 1:
-              raise SystemExit('CLAUDE Java inventory assertion failed')
-          claude.write_text(text.replace(old, new, 1), encoding='utf-8')
-          PY
-          git diff --check
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -99,22 +65,22 @@ jobs:
           python3 -m pip install --disable-pip-version-check --quiet pyyaml
           python3 scripts/check_consistency.py
 
-      - name: Commit and push polygon claim integration
+      - name: Commit and push polygon hardening
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
+            src/main/java/hu/taliann/icesmp/data/ClaimShape.java \
             src/main/java/hu/taliann/icesmp/managers/ClaimManager.java \
-            src/main/resources/config/general.yml \
+            src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java \
+            src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java \
             src/regression/java/hu/taliann/icesmp/runtime/RuntimeHardeningRegressionSuite.java \
-            docs/RUNTIME_HARDENING_AUDIT.md \
-            docs/ARCHITECTURE.md \
-            CLAUDE.md
+            docs/RUNTIME_HARDENING_AUDIT.md
           git diff --cached --check
-          git commit -m "Integrate territory-style polygon claims" \
-            -m "Use one immutable exact-column ClaimShape for rectangle and multi-point claims, including concave membership, overlap, pricing, row-span protected-region checks, persistence and boundary rendering." \
-            -m "Keep quick and two-corner claim flows compatible while adding point, undo, polygon and polygon-wand workflows." \
+          git commit -m "Harden polygon claim rasterization and persistence" \
+            -m "Bound polygon points, perimeter, continuous area and exact filled columns before publication. Replace bounding-box scanning with row scanlines, avoid materializing large rectangle conflicts, and reject malformed stored polygons instead of widening them to a rectangle." \
+            -m "Adds adversarial long-thin polygon, concave footprint and source-contract regressions." \
             -m "Co-Authored-By: ChatGPT <noreply@openai.com>"
           git push origin HEAD:fix/runtime-hardening-audit-20260803
