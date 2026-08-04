@@ -18,10 +18,13 @@ import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Narrow live-apply bridge for config values whose consumers intentionally cache parsed data or
@@ -36,10 +39,7 @@ public final class ConfigRuntimeReloadBridge {
 
     public static void apply(final JavaPlugin plugin, final ConfigManager configManager,
                              final String key) {
-        if (key == null || key.isBlank()) {
-            return;
-        }
-        if (!requiresBridge(key)) {
+        if (key == null || key.isBlank() || !requiresBridge(key)) {
             return;
         }
         plugin.getServer().getGlobalRegionScheduler().run(plugin, task -> {
@@ -74,7 +74,18 @@ public final class ConfigRuntimeReloadBridge {
             throws ReflectiveOperationException {
         final RelicManager relicManager = field(core, "relicManager", RelicManager.class);
         relicManager.load();
-        if (!relicManager.isEnabled() || hasRelicListeners(plugin)) {
+
+        final List<Listener> registered = registeredRelicListeners(plugin);
+        if (!relicManager.isEnabled()) {
+            for (final Listener listener : registered) {
+                HandlerList.unregisterAll(listener);
+            }
+            if (!registered.isEmpty()) {
+                plugin.getLogger().info("Relikvia-listenerek élőben leállítva a config menüből.");
+            }
+            return;
+        }
+        if (!registered.isEmpty()) {
             return;
         }
 
@@ -106,9 +117,25 @@ public final class ConfigRuntimeReloadBridge {
         plugin.getLogger().info("Relikvia-listenerek élőben regisztrálva a config menüből.");
     }
 
-    private static boolean hasRelicListeners(final JavaPlugin plugin) {
-        return HandlerList.getRegisteredListeners(plugin).stream()
-                .anyMatch(listener -> listener.getListener() instanceof RelicTriggerListener);
+    private static List<Listener> registeredRelicListeners(final JavaPlugin plugin) {
+        final List<Listener> listeners = new ArrayList<>();
+        HandlerList.getRegisteredListeners(plugin).forEach(registered -> {
+            final Listener listener = registered.getListener();
+            if (isRelicListener(listener) && !listeners.contains(listener)) {
+                listeners.add(listener);
+            }
+        });
+        return listeners;
+    }
+
+    private static boolean isRelicListener(final Listener listener) {
+        return listener instanceof RelicCraftSafetyListener
+                || listener instanceof RelicInactivityListener
+                || listener instanceof RelicItemRefreshListener
+                || listener instanceof RelicTriggerListener
+                || listener instanceof MetelytepoRelicListener
+                || listener instanceof ElytraRelicListener
+                || listener instanceof RelicPvpTransferListener;
     }
 
     private static void rescheduleTaxes(final Object core)
