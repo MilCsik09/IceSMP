@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.core.ConfigRuntimeReloadBridge;
 import hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigMenuEntryRenderer;
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
@@ -161,6 +162,7 @@ public final class ConfigMenuGUIListener implements Listener {
                     configManager.getBoolean("spell-vfx.enabled", true),
                     configManager.getInt("spell-vfx.max-points", 48));
         }
+        ConfigRuntimeReloadBridge.apply(plugin, configManager, key);
     }
 
     private void reopen(final Player player, final ConfigMenuHolder holder) {
