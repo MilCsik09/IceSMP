@@ -59,16 +59,162 @@ jobs:
 
           git switch --detach "$EXPECTED_MASTER_HEAD"
           git switch -c local-class-spec-replay
-          if ! git cherry-pick --no-commit "$EXPECTED_TARGET_HEAD"; then
-            echo '=== Cherry-pick conflicts ===' >&2
-            git status --short >&2
-            git diff --name-only --diff-filter=U >&2
-            for file in $(git diff --name-only --diff-filter=U); do
-              echo "=== $file ===" >&2
-              git diff --cc -- "$file" >&2 || true
-            done
+          if git cherry-pick --no-commit "$EXPECTED_TARGET_HEAD"; then
+            echo 'Expected the reviewed four-file conflict set, but cherry-pick completed without conflicts.' >&2
             exit 1
           fi
+
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+          import re
+          import subprocess
+
+          expected = {
+              'build.gradle.kts',
+              'docs/ADMIN_GUIDE.md',
+              'docs/documentation-manifest.yml',
+              'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java',
+          }
+          observed = set(
+              subprocess.check_output(
+                  ['git', 'diff', '--name-only', '--diff-filter=U'],
+                  text=True,
+              ).splitlines()
+          )
+          if observed != expected:
+              raise SystemExit(
+                  'Unexpected conflict set. expected=' + repr(sorted(expected))
+                  + ' observed=' + repr(sorted(observed))
+              )
+
+          conflict = re.compile(
+              r'^<<<<<<< HEAD\n(.*?)^=======\n(.*?)^>>>>>>>[^\n]*\n',
+              re.MULTILINE | re.DOTALL,
+          )
+
+          def require_clean_markers(path: Path, text: str) -> None:
+              markers = ('<<<<<<<', '=======', '>>>>>>>')
+              if any(marker in text for marker in markers):
+                  raise SystemExit(f'Unresolved conflict marker remains in {path}')
+
+          def resolve_union(path_text: str, expected_blocks: int) -> None:
+              path = Path(path_text)
+              text = path.read_text(encoding='utf-8')
+              count = 0
+              while True:
+                  match = conflict.search(text)
+                  if match is None:
+                      break
+                  text = text[:match.start()] + match.group(1) + match.group(2) + text[match.end():]
+                  count += 1
+              if count != expected_blocks:
+                  raise SystemExit(
+                      f'Unexpected conflict-block count for {path}: {count} != {expected_blocks}'
+                  )
+              require_clean_markers(path, text)
+              path.write_text(text, encoding='utf-8', newline='\n')
+
+          build = Path('build.gradle.kts')
+          build_text = build.read_text(encoding='utf-8')
+          matches = list(conflict.finditer(build_text))
+          if len(matches) != 1:
+              raise SystemExit(f'Unexpected build.gradle conflict count: {len(matches)}')
+          match = matches[0]
+          ours = match.group(1)
+          if ours.count('resourcePackRegressionTest)') != 1:
+              raise SystemExit('Master regression dependency tail was not found exactly once')
+          ours = ours.replace(
+              'resourcePackRegressionTest)',
+              'resourcePackRegressionTest, classSpecCompatibilityRegressionTest)',
+              1,
+          )
+          build_text = build_text[:match.start()] + ours + build_text[match.end():]
+          require_clean_markers(build, build_text)
+          if build_text.count('classSpecCompatibilityRegressionTest') < 2:
+              raise SystemExit('Class-spec compatibility task was not retained and wired into check')
+          build.write_text(build_text, encoding='utf-8', newline='\n')
+
+          resolve_union('docs/ADMIN_GUIDE.md', expected_blocks=1)
+          resolve_union('src/main/java/hu/taliann/icesmp/core/IceSMPCore.java', expected_blocks=1)
+
+          core = Path('src/main/java/hu/taliann/icesmp/core/IceSMPCore.java').read_text(encoding='utf-8')
+          required_core = (
+              'this.classSpecDependencyPreflight = new ClassSpecDependencyPreflight(plugin, configManager);',
+              'this.factionPassiveConfig = new FactionPassiveConfig(configManager, plugin.getLogger());',
+              'factionPassiveConfig.reload();',
+              'classSpecDependencyPreflight.verify();',
+          )
+          missing_core = [value for value in required_core if value not in core]
+          if missing_core:
+              raise SystemExit('Resolved IceSMPCore is missing: ' + ', '.join(missing_core))
+
+          def read_stage(stage: int) -> dict:
+              raw = subprocess.check_output(
+                  ['git', 'show', f':{stage}:docs/documentation-manifest.yml'],
+                  text=True,
+              )
+              value = json.loads(raw)
+              if not isinstance(value, dict):
+                  raise SystemExit(f'Manifest stage {stage} is not an object')
+              return value
+
+          def deep_merge(ours_value, theirs_value):
+              if isinstance(ours_value, dict) and isinstance(theirs_value, dict):
+                  merged = dict(ours_value)
+                  for key, value in theirs_value.items():
+                      if key in merged:
+                          merged[key] = deep_merge(merged[key], value)
+                      else:
+                          merged[key] = value
+                  return merged
+              if isinstance(ours_value, list) and isinstance(theirs_value, list):
+                  merged = list(ours_value)
+                  for value in theirs_value:
+                      if value not in merged:
+                          merged.append(value)
+                  return merged
+              return ours_value
+
+          manifest = deep_merge(read_stage(2), read_stage(3))
+          dynamic = manifest.get('config-sections', {}).get('resolutions', {})
+          components = manifest.get('components', {})
+          required_manifest = (
+              'config.dynamic.class-spec-dependency-preflight.section.accepted-versions',
+              'config.dynamic.class-spec-dependency-preflight.section.required',
+              'config.dynamic.class-spec-dependency-preflight.section.server-name',
+              'config.dynamic.class-spec-dependency-preflight.section.verification',
+          )
+          missing_dynamic = [key for key in required_manifest if key not in dynamic]
+          if missing_dynamic:
+              raise SystemExit('Merged manifest is missing config entries: ' + ', '.join(missing_dynamic))
+          required_components = (
+              'component.hu.taliann.icesmp.classspec.compat.ClassSpecDependencyPreflight',
+              'component.hu.taliann.icesmp.classspec.compat.VersionRequirement',
+              'component.hu.taliann.icesmp.classspec.integration.ClassSpecContentPort',
+              'component.hu.taliann.icesmp.classspec.integration.ClassSpecDialogPort',
+              'component.hu.taliann.icesmp.classspec.integration.ClassSpecEncounterPort',
+              'component.hu.taliann.icesmp.classspec.integration.ClassSpecHudPort',
+              'component.hu.taliann.icesmp.classspec.integration.ClassSpecModelPort',
+          )
+          missing_components = [key for key in required_components if key not in components]
+          if missing_components:
+              raise SystemExit('Merged manifest is missing components: ' + ', '.join(missing_components))
+          Path('docs/documentation-manifest.yml').write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+              newline='\n',
+          )
+          PY
+
+          git add \
+            build.gradle.kts \
+            docs/ADMIN_GUIDE.md \
+            docs/documentation-manifest.yml \
+            src/main/java/hu/taliann/icesmp/core/IceSMPCore.java
+          test -z "$(git diff --name-only --diff-filter=U)"
           git add -A
           git diff --cached --check
           git commit -m "replay(class-spec): apply compatibility base to current master"
