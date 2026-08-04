@@ -114,55 +114,15 @@ jobs:
           grep -F "AFK regression suite passed." gradle-build.log
           grep -F "HUD regression suite passed." gradle-build.log
           grep -F "Pause-menu dialog regression suite passed." gradle-build.log
-          grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log
+          grep -F "ClassSpecSection v2 domain regression tests passed." gradle-build.log
           grep -F "Class/spec application regression suite passed." gradle-build.log
-          grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log
-          grep -F "Class profile lifecycle regression suite passed." gradle-build.log
+          grep -F "ClassSpecSection lifecycle regression suite passed." gradle-build.log
+          grep -F "PlayerProfile domain regression suite passed." gradle-build.log
+          grep -F "PlayerProfile YAML regression suite passed." gradle-build.log
+          grep -F "PlayerProfile transaction regression suite passed." gradle-build.log
+          grep -F "PlayerProfile API regression suite passed." gradle-build.log
           grep -F "Respec transaction regression suite passed." gradle-build.log
           grep -F "Spell grant ledger regression suite passed." gradle-build.log
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
-
-      - name: Package authenticated Git checkout (temporary)
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          TESTED_HEAD=$(git rev-parse HEAD)
-          PROFILE_BASE='62ad99b74b7bb63420cb8e5e821f0321c5d84d48'
-          EXPORT_BRANCH='player-profile-authenticated-export'
-          rm -rf build/player-profile-checkout
-          mkdir -p build/player-profile-checkout
-          git branch --force "$EXPORT_BRANCH" "$TESTED_HEAD"
-          git clone --quiet --depth=32 --single-branch --branch "$EXPORT_BRANCH" \
-            "file://$GITHUB_WORKSPACE" build/player-profile-checkout/repo
-          cd build/player-profile-checkout/repo
-          git branch -m rework/class-spec-profile-v2
-          git remote set-url origin https://github.com/MilCsik09/IceSMP.git
-          git config --unset-all http.https://github.com/.extraheader || true
-          test "$(git rev-parse HEAD)" = "$TESTED_HEAD"
-          test "$(git merge-base HEAD "$PROFILE_BASE")" = "$PROFILE_BASE"
-          test -f .git/shallow
-          git fsck --full
-          git status --short --branch > ../git-status.txt
-          git show-ref > ../git-refs.txt
-          git log --decorate --oneline --graph --all > ../git-history.txt
-          git count-objects -vH > ../object-size.txt
-          cd ..
-          tar -czf authenticated-checkout.tar.gz repo
-          sha256sum authenticated-checkout.tar.gz > SHA256SUMS
-          printf 'head=%s\nbase=%s\nmerge-base=%s\n' \
-            "$TESTED_HEAD" "$PROFILE_BASE" \
-            "$(git -C "$GITHUB_WORKSPACE" merge-base "$TESTED_HEAD" "$PROFILE_BASE")" \
-            > manifest.txt
-          du -h authenticated-checkout.tar.gz
-
-      - name: Upload authenticated Git checkout (temporary)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: player-profile-checkout-${{ github.run_id }}
-          path: build/player-profile-checkout/
-          retention-days: 1
-          if-no-files-found: error
