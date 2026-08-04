@@ -16,14 +16,24 @@ import java.util.Set;
 public final class ConfigManager {
 
     /**
-     * One immutable publication unit. The contained Bukkit configuration is built privately and is
-     * never mutated after publication; the override set belongs to the exact same generation.
+     * One immutable publication unit. The contained Bukkit configurations are built privately and
+     * are never mutated after publication; the override set belongs to the exact same generation.
+     * {@code baseConfiguration} is the merged config/ directory before config.yml overrides, so the
+     * admin GUI can remove an override and show the value it will genuinely fall back to.
      */
     public record ConfigSnapshot(FileConfiguration configuration,
+                                 FileConfiguration baseConfiguration,
                                  Set<String> overridePaths,
                                  long generation) {
         public ConfigSnapshot {
             overridePaths = overridePaths == null ? Set.of() : Set.copyOf(overridePaths);
+        }
+
+        /** Backward-compatible constructor used by focused tests and pure policy adapters. */
+        public ConfigSnapshot(final FileConfiguration configuration,
+                              final Set<String> overridePaths,
+                              final long generation) {
+            this(configuration, configuration, overridePaths, generation);
         }
 
         public boolean isSet(final String path) {
@@ -44,7 +54,8 @@ public final class ConfigManager {
 
     private final JavaPlugin plugin;
     /** All readers observe either the complete old generation or the complete new generation. */
-    private volatile ConfigSnapshot liveSnapshot = new ConfigSnapshot(null, Set.of(), 0L);
+    private volatile ConfigSnapshot liveSnapshot =
+            new ConfigSnapshot(null, null, Set.of(), 0L);
 
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
@@ -52,10 +63,10 @@ public final class ConfigManager {
 
     /**
      * Loads the packaged subsystem files and the optional config.yml override, then publishes the
-     * merged tree and its override-index with one volatile reference replacement.
+     * merged tree, its pre-override base and its override-index with one volatile replacement.
      */
     public synchronized void load() {
-        final YamlConfiguration merged = new YamlConfiguration();
+        final YamlConfiguration base = new YamlConfiguration();
         final File dir = new File(plugin.getDataFolder(), "config");
         dir.mkdirs();
         for (final String name : CONFIG_FILES) {
@@ -66,19 +77,22 @@ public final class ConfigManager {
         for (final String name : CONFIG_FILES) {
             final File file = new File(dir, name + ".yml");
             if (file.exists()) {
-                mergeInto(merged, YamlConfiguration.loadConfiguration(file));
+                mergeInto(base, YamlConfiguration.loadConfiguration(file));
             }
         }
         final File[] files = dir.listFiles((directory, fileName) -> fileName.endsWith(".yml"));
         if (files != null) {
             for (final File file : files) {
-                final String base = file.getName().substring(0, file.getName().length() - 4);
-                if (java.util.Arrays.stream(CONFIG_FILES).noneMatch(base::equals)) {
+                final String baseName = file.getName().substring(0, file.getName().length() - 4);
+                if (java.util.Arrays.stream(CONFIG_FILES).noneMatch(baseName::equals)) {
                     plugin.getLogger().warning("Ismeretlen config-fájl kihagyva a merge-ből: config/"
                             + file.getName() + " (csak a CONFIG_FILES lista töltődik be)");
                 }
             }
         }
+
+        final YamlConfiguration merged = new YamlConfiguration();
+        mergeInto(merged, base);
 
         plugin.reloadConfig();
         final Set<String> overridePaths = plugin.getConfig().getKeys(true).stream()
@@ -89,10 +103,11 @@ public final class ConfigManager {
         final long previousGeneration = liveSnapshot.generation();
         final long nextGeneration = previousGeneration == Long.MAX_VALUE
                 ? Long.MAX_VALUE : previousGeneration + 1L;
-        liveSnapshot = new ConfigSnapshot(merged, overridePaths, nextGeneration);
+        liveSnapshot = new ConfigSnapshot(merged, base, overridePaths, nextGeneration);
     }
 
-    private static void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {
+    private static void mergeInto(final YamlConfiguration target,
+                                  final ConfigurationSection source) {
         for (final String key : source.getKeys(true)) {
             if (!source.isConfigurationSection(key)) {
                 target.set(key, source.get(key));
@@ -117,6 +132,11 @@ public final class ConfigManager {
         return true;
     }
 
+    /** Removes only the config.yml override; the subsystem config value becomes authoritative. */
+    public boolean resetOverride(final String key) {
+        return applyOverride(key, null);
+    }
+
     public ConfigSnapshot snapshot() {
         return liveSnapshot;
     }
@@ -124,6 +144,27 @@ public final class ConfigManager {
     /** Returns null if not yet loaded. */
     public FileConfiguration getConfiguration() {
         return liveSnapshot.configuration();
+    }
+
+    /** Returns the merged config/ value before config.yml overrides, or null when absent. */
+    public Object getBaseValue(final String path) {
+        final FileConfiguration base = liveSnapshot.baseConfiguration();
+        return base == null ? null : base.get(path);
+    }
+
+    public String getBaseString(final String path, final String fallback) {
+        final FileConfiguration base = liveSnapshot.baseConfiguration();
+        return base == null ? fallback : base.getString(path, fallback);
+    }
+
+    public double getBaseDouble(final String path, final double fallback) {
+        final FileConfiguration base = liveSnapshot.baseConfiguration();
+        return base == null ? fallback : base.getDouble(path, fallback);
+    }
+
+    public boolean getBaseBoolean(final String path, final boolean fallback) {
+        final FileConfiguration base = liveSnapshot.baseConfiguration();
+        return base == null ? fallback : base.getBoolean(path, fallback);
     }
 
     public boolean contains(final String path) {
