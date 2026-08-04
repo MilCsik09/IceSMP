@@ -55,7 +55,12 @@ public final class FactionKingSubcommand implements FactionSubcommand {
             return true;
         }
 
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        if (faction == null) {
+            sender.sendMessage(messageManager.get("messages.faction-choose-first",
+                    "&cKirályi jogokhoz előbb válassz frakciót: &f/faction join <frakció>&c."));
+            return true;
+        }
         final double applied = treasuryManager.setTaxRate(faction, requested);
         sender.sendMessage(messageManager.get("messages.faction-king-tax-set", "&aA(z) %s frakció adókulcsa beállítva: &f%s%%", faction.getDisplayName(), applied));
         return true;
@@ -103,7 +108,12 @@ public final class FactionKingSubcommand implements FactionSubcommand {
             return true;
         }
 
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        if (faction == null) {
+            sender.sendMessage(messageManager.get("messages.faction-choose-first",
+                    "&cKirályi információhoz előbb válassz frakciót: &f/faction join <frakció>&c."));
+            return true;
+        }
         if (kingManager.isFactionExcluded(faction)) {
             sender.sendMessage(messageManager.get("messages.faction-king-excluded", "&7A(z) %s frakciónak nincs uralkodója.", faction.getDisplayName()));
             return true;

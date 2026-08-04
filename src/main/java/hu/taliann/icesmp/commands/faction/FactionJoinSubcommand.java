@@ -84,7 +84,10 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
 
         final UUID uuid = player.getUniqueId();
         final boolean hasFaction = factionManager.hasChosenFaction(uuid);
-        final FactionType currentFaction = factionManager.getFaction(uuid);
+        final boolean hasPriorChoice = hasFaction || factionManager.hasEverChosenFaction(player);
+        final FactionType currentFaction = hasFaction
+                ? factionManager.getChosenFaction(uuid).orElseThrow()
+                : factionManager.getLastChosenFaction(player);
 
         if (hasFaction && currentFaction == factionType) {
             sender.sendMessage(messageManager.get("messages.faction-already-member", "&cMár tagja vagy ennek a frakciónak!"));
@@ -93,7 +96,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
 
         // Az örök paktum nem pénz-kérdés: paktumos Kitaszított nem válthat ki más
         // frakcióba — az egyetlen kiút a vezeklés-lánc (breakDarkPact).
-        if (hasFaction && currentFaction == FactionType.DARK && factionType != FactionType.DARK
+        if (hasPriorChoice && currentFaction == FactionType.DARK && factionType != FactionType.DARK
                 && sinManager.hasDarkPact(player)) {
             sender.sendMessage(messageManager.get("messages.faction-dark-pact-locked",
                     "&5A sötét paktum örök — a Kitaszítottak közül nem vezet ki pénz. "
@@ -104,20 +107,24 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         // Frakciót VÁLTANI (ha már választottál) csak a semleges fővárosban lehet —
         // gyakorlatban a semleges királyság spawn-területén, a leendő frakció-NPC-nél.
         // Fail-open: ha még nincs kijelölt semleges főváros, a kapu nem zár.
-        if (hasFaction && !FactionSwitchRules.passesNeutralCapitalGate(player, territoryManager, configManager, messageManager)) {
+        if (hasPriorChoice && !FactionSwitchRules.passesNeutralCapitalGate(
+                player, territoryManager, configManager, messageManager)) {
             return true;
         }
 
-        // Szezon-szabályok MINDEN váltásra (az ingyenes utakra is): hajrá-zár + szezon-plafon.
-        if (hasFaction && !FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
+        // Az első kifejezett választás nem szezonváltás. A hajrá-zár és a szezonplafon
+        // csak a tartós historyval rendelkező játékos további oldalváltásaira vonatkozik.
+        if (hasPriorChoice
+                && !FactionSwitchRules.passesSeasonRules(
+                player, factionManager, messageManager)) {
             return true;
         }
 
         // Első csatlakozás mindig ingyenes és időzítetlen. Frakcióváltás fizetős és
-        // cooldownhoz kötött, KIVÉVE: a Semlegesből (alapértelmezett kezdő frakció)
+        // cooldownhoz kötött, KIVÉVE: az explicit Semleges polgárságból
         // bárhová ingyen léphetsz, és a Sötétbe lépés is ingyenes (annak a sinner-
         // feltétel + az örök paktum az ára).
-        final boolean isSwitch = hasFaction
+        final boolean isSwitch = hasPriorChoice
                 && currentFaction != FactionType.NEUTRAL
                 && factionType != FactionType.DARK;
 
@@ -150,12 +157,8 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                 darkConfirmPending.remove(uuid);
             }
 
-            if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
-                return true;
-            }
-
             factionManager.setFaction(uuid, FactionType.DARK);
-            if (hasFaction) {
+            if (hasPriorChoice) {
                 factionManager.recordSeasonSwitch(player); // ingyenes út is a szezon-plafonba számít
             }
             sinManager.sealDarkPact(player);
@@ -170,18 +173,21 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
-        if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
-            return true;
+        final boolean leavingDark = hasPriorChoice && currentFaction == FactionType.DARK;
+        if (isSwitch) {
+            if (!FactionSwitchRules.commitPaidSwitch(player, currentFaction, factionType,
+                    factionManager, currencyManager, messageManager)) {
+                return true;
+            }
+        } else {
+            factionManager.setFaction(uuid, factionType);
         }
-
-        final boolean leavingDark = hasFaction && currentFaction == FactionType.DARK;
-        factionManager.setFaction(uuid, factionType);
         if (leavingDark && specializationManager != null
                 && specializationManager.resetDarkGatedSpecialization(player)) {
             player.sendMessage(messageManager.get("messages.dark-spec-lost",
                     "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
         }
-        if (hasFaction && !isSwitch) {
+        if (hasPriorChoice && !isSwitch) {
             factionManager.recordSeasonSwitch(player); // Semlegesből ingyen váltás is számít
         }
         sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s",
@@ -225,6 +231,4 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         return List.of();
     }
 }
-
-
 

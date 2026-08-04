@@ -153,9 +153,84 @@ val pauseMenuDialogRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.dialog.PauseMenuDialogRegressionSuite")
 }
 
+val runtimeBugfixRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs pet nametag, lore output, corruption safety and spectator-menu regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.runtime.RuntimeBugfixRegressionSuite")
+}
+
+val factionPassiveRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs faction membership, damage, exhaustion, truce and lifecycle regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.factions.FactionPassiveRegressionSuite")
+}
+
+val factionPassiveHardeningRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs pure adapter, retaliation, Blood Moon and signature-food hardening regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.factions.FactionPassiveHardeningRegressionSuite")
+}
+
+val factionTreasuryRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs faction tax origin, legacy migration and collection regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.factions.FactionTaxDebtRegressionSuite")
+}
+
+val relicItemRefreshRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs Mélytépő modifier idempotency regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.items.RelicRefreshRegressionSuite")
+}
+
+val relicRefreshPipelineRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs per-slot relic refresh isolation and diagnostic regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.RelicRefreshPipelineRegressionSuite")
+}
+
+val lifecycleShutdownRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs Folia disable/shutdown scheduler regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.lifecycle.LifecycleShutdownRegressionSuite")
+}
+
+val questNpcValidationRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs quest-NPC exact-name and manual provisioning regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.quests.QuestNpcValidationRegressionSuite")
+}
+
+val resourcePackRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs additive resource-pack id, hash and immutable URL regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.resourcepack.ResourcePackRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
         afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest, classSpecCompatibilityRegressionTest)
+        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
+        factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
+        relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
+        questNpcValidationRegressionTest, resourcePackRegressionTest, classSpecCompatibilityRegressionTest)
 }

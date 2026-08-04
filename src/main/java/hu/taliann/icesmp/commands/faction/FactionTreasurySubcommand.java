@@ -87,7 +87,12 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
             return true;
         }
 
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        if (faction == null) {
+            sender.sendMessage(messageManager.get("messages.faction-choose-first",
+                    "&cFrakciókasszához előbb válassz frakciót: &f/faction join <frakció>&c."));
+            return true;
+        }
         sender.sendMessage(messageManager.get(
                 "messages.faction-treasury-own",
                 "&6A(z) &f%s &6frakció kasszája: &f%s",
@@ -106,10 +111,17 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
 
     private boolean isNeutralCouncillor(final Player player) {
         final hu.taliann.icesmp.managers.CouncilManager councilRef = councilManager;
-        return councilRef != null && councilRef.isCouncillor(player.getUniqueId());
+        return factionManager.isMember(player.getUniqueId(), FactionType.NEUTRAL)
+                && councilRef != null && councilRef.isCouncillor(player.getUniqueId());
     }
 
     private boolean handleWithdraw(final Player player, final String rawAmount) {
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        if (faction == null) {
+            player.sendMessage(messageManager.get("messages.faction-choose-first",
+                    "&cFrakciókasszához előbb válassz frakciót: &f/faction join <frakció>&c."));
+            return true;
+        }
         // The crowned king commands their own faction's treasury; admins can always withdraw.
         // A Menedéknek nincs királya — ott a Vének Tanácsának tagjai vehetnek ki (saját kerettel).
         if (!player.hasPermission(ADMIN_PERMISSION) && !kingManager.isKing(player)
@@ -130,8 +142,6 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
             player.sendMessage(messageManager.get("messages.amount-must-be-positive", "&cAz összegnek pozitívnak kell lennie."));
             return true;
         }
-
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
 
         // Bank-only szabály: a kassza-kivét FIZIKAI veretben érkezik a király kezébe
         // (számlára pénz csak bankbefizetéssel kerülhet) — és napi limit fékezi, hogy

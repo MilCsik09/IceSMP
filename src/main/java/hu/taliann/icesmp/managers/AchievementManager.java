@@ -189,7 +189,7 @@ public final class AchievementManager {
             if (xpReward) {
                 jobManager.addXpToJob(player, (int) Math.min(Integer.MAX_VALUE, achievement.reward()));
             } else {
-                final FactionType faction = factionManager.getFaction(player.getUniqueId());
+                final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
                 currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), achievement.reward());
             }
         }

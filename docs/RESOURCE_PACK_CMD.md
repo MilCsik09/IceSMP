@@ -4,6 +4,30 @@ Ez a fájl a textúra-készítő (és a képgenerátor) bemenete. A plugin minde
 
 Minden tétel négy fogódzót ad a művésznek: **Alap-item** (a vanilla sziluett-referencia), **Ábrázolás** (mit ábrázoljon), **Színvilág** (paletta + akcent) és **Hangulat / lore** (a világon belüli érzet).
 
+## Kiadási és kliens-cache szerződés
+
+Az IceSMP a Paper/Folia additív `Player#addResourcePack(...)` API-ját használja.
+A packréteg stabil UUID-ja `7c847f1e-d942-3c8f-bd46-5c43bb1a3e67`; ugyanahhoz
+az IceSMP-réteghez ezt ne változtasd meg hashcserekor. A tartalomváltozás új
+SHA-1-et és új immutable R2 objektumot kap, a stabil UUID miatt pedig az új pack
+a korábbi IceSMP-réteget cseréli le anélkül, hogy más plugin vagy a natív szerver
+packját eltávolítaná.
+
+Release-folyamat:
+
+1. módosítsd és validáld a `resource-pack/` forrást;
+2. a `Publish resource pack to R2` workflow építse a determinisztikus ZIP-et;
+3. csak sikeres R2 upload és publikus visszatöltés/SHA-1 ellenőrzés után frissüljön
+   a `src/main/resources/resource-pack.properties` URL+SHA-1 párja;
+4. a `resource-pack.id` maradjon stabil; staging/rollback esetén csak az
+   `override-url` és `override-sha1` mezőt használd együtt;
+5. ne konfiguráld ugyanazt a packot egyszerre natív Paper/server beállításban és
+   az IceSMP pluginban, mert két külön kliensrétegként jelenhet meg.
+
+A hiányzó natív `resource-pack-id` warning önmagában nem jelenti az IceSMP-réteg
+ID-hiányát: az IceSMP saját UUID-ja a pluginconfigban van, és az additív API-n
+keresztül kerül a klienshez.
+
 ## Technikai tudnivalók
 
 - **Méret:** 16×16 vagy 32×32 px, átlátszó háttérrel (PNG) — a teljes pack egységesen ugyanazt használja, vegyes felbontás tilos.

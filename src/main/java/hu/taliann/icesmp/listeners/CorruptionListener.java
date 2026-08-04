@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.world.EntitiesLoadEvent;
 
 /**
  * H2 — a rontás-góc eseményei: a korrupt mob halála a tisztítás-számlálót növeli;
@@ -23,10 +24,15 @@ public final class CorruptionListener implements Listener {
 
     @EventHandler
     public void onCorruptMobDeath(final EntityDeathEvent event) {
-        if (corruptionManager.isCorruptMob(event.getEntity().getUniqueId())
+        if (corruptionManager.forgetCorruptMob(event.getEntity().getUniqueId())
                 && hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity()) != null) {
             corruptionManager.recordPurgeKill(event.getEntity().getKiller().getUniqueId());
         }
+    }
+
+    @EventHandler
+    public void onEntitiesLoad(final EntitiesLoadEvent event) {
+        corruptionManager.handleLoadedEntities(event.getEntities());
     }
 
     @EventHandler(ignoreCancelled = true)

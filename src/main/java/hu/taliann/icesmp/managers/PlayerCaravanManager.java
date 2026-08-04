@@ -69,7 +69,7 @@ public final class PlayerCaravanManager {
         if (isActive()) {
             return "pcaravan-busy";
         }
-        final FactionType faction = factionManager.getFaction(king.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(king.getUniqueId()).orElse(null);
         if (faction == null) {
             return "pcaravan-no-faction";
         }
@@ -162,7 +162,8 @@ public final class PlayerCaravanManager {
         convoyId = null;
         senderFaction = null;
         site = null;
-        final FactionType robber = killer == null ? null : factionManager.getFaction(killer.getUniqueId());
+        final FactionType robber = killer == null ? null : factionManager.getChosenFaction(
+                killer.getUniqueId()).orElse(null);
         if (robber != null && robber != sender) {
             treasuryManager.deposit(robber, amount);
             Bukkit.getServer().broadcast(messageManager.getMessage("pcaravan-robbed",

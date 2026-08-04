@@ -177,9 +177,12 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         // Aszimmetrikus liga: a párbaj-győzelem liga-pontot ér ("duel" forrás), de CSAK
         // KÜLÖNBÖZŐ frakciójú felek közt — az azonos-frakciós "baráti bemutató"
         // (megrendezett pont-farm) nem ér pontot, a bűn-törlés viszont ott is jár.
-        final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
-        final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
-        if (killerFaction != null && killerFaction != victimFaction) {
+        final FactionType killerFaction = factionManager.getChosenFaction(
+                killer.getUniqueId()).orElse(null);
+        final FactionType victimFaction = factionManager.getChosenFaction(
+                victim.getUniqueId()).orElse(null);
+        if (killerFaction != null && victimFaction != null
+                && killerFaction != victimFaction) {
             seasonManager.addPoints(killerFaction,
                     Math.max(0, configManager.getInt("honor-duel.season-points", 2)), "duel");
         }

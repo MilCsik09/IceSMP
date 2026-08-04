@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
@@ -14,7 +15,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -29,21 +35,14 @@ import java.util.function.Consumer;
  *       the PDC write is Folia-safe without a hop).</li>
  *   <li><b>Quest-giver NPCs:</b> after the talk objectives ran, the NPC hands
  *       out its first acceptable {@code giver-npc} quest — unless an explicit
- *       {@code /npcbind} binding exists for it, in which case the binding wins:
- *       a bound QUEST hands out that exact quest id, a bound SHOP opens that
- *       shop, and BANK/EXCHANGE both open the bank menu (see
- *       {@link NpcBindingManager}).</li>
+ *       {@code /npcbind} binding exists for it, in which case the binding wins.</li>
  *   <li><b>Per-player markers:</b> {@link #tickMarkers()} shows a particle
- *       aura above quest NPCs — gold for "has a quest for YOU", green for
- *       "your active quest wants you to talk to them". Particles are sent
- *       with {@code player.spawnParticle}, so ONLY the eligible player sees
- *       them.</li>
+ *       aura above quest NPCs — gold for an available quest, green for an
+ *       active talk objective.</li>
  * </ul>
  *
- * <p>Every FancyNpcs method is resolved from the public API classes
- * ({@code FancyNpcsPlugin}, {@code NpcManager}, {@code Npc}, {@code NpcData}),
- * never from runtime impl classes — reflection on non-public impl classes
- * would fail with IllegalAccessException.</p>
+ * <p>Every FancyNpcs method is resolved from the public API classes, never
+ * from runtime implementation classes.</p>
  */
 public final class FancyNpcsQuestBridge {
 
@@ -53,6 +52,7 @@ public final class FancyNpcsQuestBridge {
     private final NpcBindingManager npcBindingManager;
     private final Object npcManager;
     private final Method getNpcByName;
+    private final Method getAllNpcs;
     private final Method npcGetData;
     private final Method dataGetName;
     private final Method dataGetLocation;
@@ -60,21 +60,14 @@ public final class FancyNpcsQuestBridge {
     private Consumer<Player> bankOpenHook;
     private Consumer<Player> factionMenuHook;
 
-    /**
-     * Registers an extra (player, shopName) consumer fired on every NPC interaction that is
-     * NOT explicitly bound (legacy name-based shops), or, for an explicit {@code SHOP} binding,
-     * fired with the bound shop's name instead of the NPC's own name.
-     */
     public void setInteractHook(final java.util.function.BiConsumer<Player, String> hook) {
         this.interactHook = hook;
     }
 
-    /** Registers the consumer that opens the bank menu — fired for {@code BANK}/{@code EXCHANGE} bindings. */
     public void setBankOpenHook(final Consumer<Player> hook) {
         this.bankOpenHook = hook;
     }
 
-    /** Registers the consumer that opens the faction menu — fired for {@code FACTION} bindings (kingdom-choice NPC). */
     public void setFactionMenuHook(final Consumer<Player> hook) {
         this.factionMenuHook = hook;
     }
@@ -87,13 +80,12 @@ public final class FancyNpcsQuestBridge {
         this.questManager = questManager;
         this.npcBindingManager = npcBindingManager;
 
-        // Every method is resolved from public API types (declared return types where
-        // possible), never from runtime impl classes or hardcoded impl-package names.
         final Class<?> apiClass = Class.forName("de.oliver.fancynpcs.api.FancyNpcsPlugin");
         final Object api = apiClass.getMethod("get").invoke(null);
         final Method getNpcManager = apiClass.getMethod("getNpcManager");
         this.npcManager = getNpcManager.invoke(api);
         this.getNpcByName = getNpcManager.getReturnType().getMethod("getNpc", String.class);
+        this.getAllNpcs = getNpcManager.getReturnType().getMethod("getAllNpcs");
         final Class<?> npcClass = Class.forName("de.oliver.fancynpcs.api.Npc");
         this.npcGetData = npcClass.getMethod("getData");
         final Class<?> dataClass = npcGetData.getReturnType();
@@ -101,22 +93,11 @@ public final class FancyNpcsQuestBridge {
         this.dataGetLocation = dataClass.getMethod("getLocation");
     }
 
-    /**
-     * Creates the bridge and registers the interact listener. Callers guard
-     * with {@code isPluginEnabled("FancyNpcs")} and catch every throwable, so
-     * a missing or incompatible FancyNpcs version degrades to a log line.
-     *
-     * @param plugin the IceSMP plugin
-     * @param configManager the config manager (marker settings)
-     * @param questManager the quest manager to progress
-     * @param npcBindingManager the explicit NPC-binding store (quest/shop/bank/exchange overrides)
-     * @return the registered bridge
-     * @throws ReflectiveOperationException if the FancyNpcs API is not on the classpath
-     */
     public static FancyNpcsQuestBridge register(final JavaPlugin plugin, final ConfigManager configManager,
                                                 final QuestManager questManager,
                                                 final NpcBindingManager npcBindingManager) throws ReflectiveOperationException {
-        final FancyNpcsQuestBridge bridge = new FancyNpcsQuestBridge(plugin, configManager, questManager, npcBindingManager);
+        final FancyNpcsQuestBridge bridge = new FancyNpcsQuestBridge(
+                plugin, configManager, questManager, npcBindingManager);
         bridge.registerInteractListener();
         return bridge;
     }
@@ -148,17 +129,10 @@ public final class FancyNpcsQuestBridge {
                             return;
                         }
                         if (dataGetName.invoke(data) instanceof String npcName) {
-                            // TALK_TO_NPC / DELIVER_ITEMS objectives always resolve by the NPC's own
-                            // name — legacy behavior, independent of any explicit binding below.
                             questManager.handleNpcInteract(player, npcName);
-
-                            // Explicit /npcbind binding (if any) takes over what happens next;
-                            // no binding = exactly the legacy name-based behavior.
                             final NpcBindingManager.Binding binding =
                                     npcBindingManager == null ? null : npcBindingManager.get(npcName);
                             if (binding == null) {
-                                // Legacy: the NPC hands out its own giver-npc quest by name, then
-                                // extra interaction consumers (e.g. faction shops) run last.
                                 questManager.acceptFromNpc(player, npcName);
                                 if (interactHook != null) {
                                     interactHook.accept(player, npcName);
@@ -181,16 +155,11 @@ public final class FancyNpcsQuestBridge {
                                             factionMenuHook.accept(player);
                                         }
                                     }
-                                    // A JÁTÉKOS nevében és jogosultságaival fut (performCommand),
-                                    // tehát nem privilégium-eszkaláció; az interact event a játékos
-                                    // saját régió-szálán jár, így a hívás Folia-biztos.
                                     case COMMAND -> player.performCommand(binding.value());
                                 }
                             }
                         }
                     } catch (final Throwable exception) {
-                        // Fail-soft like the other reflective bridges: a broken quest definition or
-                        // NPC-API change must never propagate out of the third-party event pipeline.
                         plugin.getLogger().warning("FancyNpcs quest-bridge hiba: " + exception.getMessage());
                     }
                 },
@@ -198,35 +167,149 @@ public final class FancyNpcsQuestBridge {
         );
     }
 
+    public record MissingQuestNpc(
+            String expectedName,
+            String caseInsensitiveMatch,
+            List<String> references
+    ) {
+        public MissingQuestNpc {
+            references = List.copyOf(references);
+        }
+    }
+
+    public record QuestNpcValidationReport(
+            int requiredCount,
+            int availableCount,
+            List<MissingQuestNpc> missing,
+            List<String> lookupErrors
+    ) {
+        public QuestNpcValidationReport {
+            missing = List.copyOf(missing);
+            lookupErrors = List.copyOf(lookupErrors);
+        }
+
+        public boolean healthy() {
+            return missing.isEmpty() && lookupErrors.isEmpty();
+        }
+    }
+
     /**
-     * Resolves a FancyNpcs NPC's stored location by internal name.
-     *
-     * @param name the NPC's internal name
-     * @return a defensive copy of the location, or null if unknown
+     * Startup/deployment validation for exact FancyNpcs internal names. It reports case-only
+     * mismatches and every packaged quest config path that references the missing name, but never
+     * invents a world or coordinate. The existing delayed core callback invokes this after
+     * FancyNpcs has loaded its snapshot.
      */
-    /**
-     * Quest-NPC létezés-ellenőrzés (indulás után késleltetve hívva): a hiányzó NPC ma
-     * némán teljesíthetetlenné teszi a questjeit — itt hangos figyelmeztetés lesz belőle.
-     */
-    public void validateNpcs(final java.util.Set<String> questNpcNames) {
-        final java.util.List<String> missing = new java.util.ArrayList<>();
-        for (final String name : questNpcNames) {
-            try {
-                if (getNpcByName.invoke(npcManager, name) == null) {
-                    missing.add(name);
+    public QuestNpcValidationReport validateNpcs(final Set<String> questNpcNames) {
+        final Map<String, String> availableNames = new LinkedHashMap<>();
+        final List<String> lookupErrors = new ArrayList<>();
+        try {
+            final Object allNpcs = getAllNpcs.invoke(npcManager);
+            if (allNpcs instanceof Collection<?> collection) {
+                for (final Object npc : collection) {
+                    if (npc == null) {
+                        continue;
+                    }
+                    final Object data = npcGetData.invoke(npc);
+                    if (data != null && dataGetName.invoke(data) instanceof String name && !name.isBlank()) {
+                        availableNames.putIfAbsent(name.toLowerCase(Locale.ROOT), name);
+                    }
                 }
+            } else {
+                lookupErrors.add("FancyNpcs getAllNpcs() nem Collection eredményt adott.");
+            }
+        } catch (final ReflectiveOperationException exception) {
+            lookupErrors.add("FancyNpcs NPC-lista nem olvasható: " + safeMessage(exception));
+        }
+
+        final List<MissingQuestNpc> missing = new ArrayList<>();
+        for (final String expected : questNpcNames) {
+            try {
+                final Object resolved = getNpcByName.invoke(npcManager, expected);
+                final Object data = resolved == null ? null : npcGetData.invoke(resolved);
+                final String resolvedName = data != null && dataGetName.invoke(data) instanceof String name
+                        ? name
+                        : null;
+                if (expected.equals(resolvedName)) {
+                    continue;
+                }
+                final String enumeratedMatch = availableNames.get(expected.toLowerCase(Locale.ROOT));
+                final String caseMatch = resolvedName != null && expected.equalsIgnoreCase(resolvedName)
+                        ? resolvedName
+                        : enumeratedMatch;
+                missing.add(new MissingQuestNpc(
+                        expected,
+                        expected.equals(caseMatch) ? null : caseMatch,
+                        referencesFor(expected)
+                ));
             } catch (final ReflectiveOperationException exception) {
-                plugin.getLogger().warning("Quest-NPC ellenőrzés hiba (" + name + "): " + exception.getMessage());
-                return;
+                lookupErrors.add(expected + ": " + safeMessage(exception));
             }
         }
-        if (!missing.isEmpty()) {
-            plugin.getLogger().warning("HIÁNYZÓ quest-NPC-k (" + missing.size() + "): " + String.join(", ", missing)
-                    + " — az érintett questek NPC nélkül nem haladnak! Hozd létre őket (FancyNpcs), "
-                    + "vagy a /quest talk tartalék-út a quest-npc-fallback.always kulccsal bekapcsolható.");
-        } else {
-            plugin.getLogger().info("Quest-NPC ellenőrzés: mind a(z) " + questNpcNames.size() + " NPC a helyén van.");
+
+        final QuestNpcValidationReport report = new QuestNpcValidationReport(
+                questNpcNames.size(), availableNames.size(), missing, lookupErrors);
+        logValidationReport(report);
+        return report;
+    }
+
+    private List<String> referencesFor(final String expectedName) {
+        final ConfigurationSection root = configManager.getConfiguration() == null
+                ? null
+                : configManager.getConfiguration().getConfigurationSection("quests");
+        if (root == null) {
+            return List.of("runtime-name-only");
         }
+        final List<String> references = new ArrayList<>();
+        for (final String questId : root.getKeys(false)) {
+            final ConfigurationSection quest = root.getConfigurationSection(questId);
+            if (quest == null) {
+                continue;
+            }
+            for (final Map.Entry<String, Object> entry : quest.getValues(true).entrySet()) {
+                if (!(entry.getValue() instanceof String value) || !expectedName.equals(value)) {
+                    continue;
+                }
+                final String path = entry.getKey();
+                if (path.equals("giver-npc") || path.endsWith(".npc")) {
+                    references.add(questId + "@quests." + questId + "." + path);
+                }
+            }
+        }
+        return references.isEmpty() ? List.of("runtime-name-only") : List.copyOf(references);
+    }
+
+    private void logValidationReport(final QuestNpcValidationReport report) {
+        if (report.healthy()) {
+            plugin.getLogger().info("Quest-NPC ellenőrzés: mind a(z) "
+                    + report.requiredCount() + " kötelező NPC pontos belső névvel elérhető.");
+            return;
+        }
+        plugin.getLogger().warning("Quest-NPC ellenőrzés: required=" + report.requiredCount()
+                + ", available=" + report.availableCount()
+                + ", missingOrMismatched=" + report.missing().size()
+                + ", lookupErrors=" + report.lookupErrors().size() + ".");
+        for (final MissingQuestNpc issue : report.missing()) {
+            final String match = issue.caseInsensitiveMatch() == null
+                    ? ""
+                    : "; caseInsensitiveMatch=" + issue.caseInsensitiveMatch();
+            plugin.getLogger().warning("Quest-NPC hiányzik vagy rossz a belső neve: expected="
+                    + issue.expectedName() + match + "; references="
+                    + String.join(",", issue.references()));
+        }
+        for (final String error : report.lookupErrors()) {
+            plugin.getLogger().warning("Quest-NPC lookup hiba: " + error);
+        }
+        plugin.getLogger().warning("A koordináta és világ nem következtethető biztonságosan. "
+                + "Hozd létre vagy importáld a szükséges NPC-ket pontos belső névvel. "
+                + "A quest-npc-fallback.always csak tudatos fejlesztői megkerüléshez használható.");
+    }
+
+    private static String safeMessage(final ReflectiveOperationException exception) {
+        final Throwable cause = exception.getCause();
+        final String message = cause == null ? exception.getMessage() : cause.getMessage();
+        return message == null || message.isBlank()
+                ? exception.getClass().getSimpleName()
+                : message.replaceAll("[\r\n]+", " ");
     }
 
     public Location locateNpc(final String name) {
@@ -245,12 +328,6 @@ public final class FancyNpcsQuestBridge {
         }
     }
 
-    /**
-     * Per-player quest markers above NPCs. Runs on the global scheduler: NPC
-     * locations are FancyNpcs config data (not entity state), then each
-     * player's eligibility (PDC reads) and the particle packet run on that
-     * player's own region thread (Folia rule).
-     */
     public void tickMarkers() {
         if (!configManager.getBoolean("quest-npc-markers.enabled", true)) {
             return;
@@ -283,9 +360,6 @@ public final class FancyNpcsQuestBridge {
                             || player.getLocation().distanceSquared(npcLocation) > rangeSquared) {
                         continue;
                     }
-
-                    // Gold aura: this NPC has a quest THIS player can take right now.
-                    // Green aura: an active quest of THIS player wants a word with the NPC.
                     if (questManager.hasAcceptableQuestFrom(player, entry.getKey())) {
                         spawnMarker(player, npcLocation, Color.fromRGB(255, 170, 0));
                     } else if (questManager.hasTalkObjectiveAt(player, entry.getKey())) {
@@ -296,7 +370,6 @@ public final class FancyNpcsQuestBridge {
         }
     }
 
-    /** Sends the marker particles to a single player only (client-side packet). */
     private void spawnMarker(final Player player, final Location npcLocation, final Color color) {
         player.spawnParticle(
                 Particle.DUST,

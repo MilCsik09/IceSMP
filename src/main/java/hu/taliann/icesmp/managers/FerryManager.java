@@ -103,7 +103,7 @@ public final class FerryManager {
         final double fee = Math.max(0.0D, configManager.getDouble("ferry.routes." + routeId + ".fee",
                 configManager.getDouble("ferry.default-fee", 15.0D)));
         if (fee > 0.0D) {
-            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId()));
+            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, fee)) {
                 player.sendMessage(messageManager.getMessage("ferry-no-funds",
                         "<red>⛴ A révész nem visz ingyen: <white>{fee}</white> a viteldíj (banki egyenleg).</red>",

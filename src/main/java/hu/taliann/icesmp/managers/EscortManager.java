@@ -17,6 +17,7 @@ import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -208,8 +209,13 @@ public final class EscortManager {
 
     /** Despawns the convoy and any live wave mobs on plugin disable. */
     public void shutdown() {
-        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, convoyId);
+        final UUID id = convoyId;
         convoyId = null;
+        destination = null;
+        expiresAt = 0L;
+        totalDistance = 0.0D;
+        schedule.release();
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         clearWaves();
         hideBarFromAll();
     }
@@ -492,8 +498,16 @@ public final class EscortManager {
     }
 
     private void hideBarFromAll() {
+        if (!plugin.isEnabled()) {
+            return;
+        }
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            player.getScheduler().run(plugin, task -> player.hideBossBar(bar), null);
+            try {
+                player.getScheduler().run(plugin, task -> player.hideBossBar(bar), null);
+            } catch (final IllegalPluginAccessException exception) {
+                // Disable won the race; no scheduler retry is legal once the plugin is disabled.
+                return;
+            }
         }
     }
 
