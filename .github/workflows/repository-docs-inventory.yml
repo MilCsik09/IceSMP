@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   integrate:
-    name: Retry exact Profile v2 integration
+    name: Diagnose Profile v2 inventory findings
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -39,7 +39,7 @@ jobs:
       - name: Install workflow parser
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Execute reviewed integration steps with EOF normalization
+      - name: Execute reviewed integration and print blocking inventory findings
         shell: bash
         env:
           DRIVER_COMMIT: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
@@ -97,13 +97,41 @@ jobs:
               "",
               "",
           ]
-          normalizer = "\n".join(normalizer_lines)
-          run_steps[1]["run"] = resolution.replace(marker, normalizer + marker, 1)
+          run_steps[1]["run"] = resolution.replace(marker, "\n".join(normalizer_lines) + marker, 1)
+
+          gate = run_steps[4]["run"]
+          strict_marker = "--root . --output build/repository-inventory --mode strict"
+          if gate.count(strict_marker) != 1:
+              raise SystemExit(f"Unexpected strict-inventory marker count: {gate.count(strict_marker)}")
+          gate = gate.replace(
+              strict_marker,
+              "--root . --output build/repository-inventory --mode report",
+              1,
+          )
+          diagnostic_lines = [
+              "",
+              "python3 - <<'INVENTORY_FINDINGS'",
+              "import json",
+              "from collections import Counter",
+              "from pathlib import Path",
+              "path = Path('build/repository-inventory/repository-inventory.json')",
+              "inventory = json.loads(path.read_text(encoding='utf-8'))",
+              "findings = [item for item in inventory.get('findings', []) if item.get('severity') == 'FAIL']",
+              "print(f'BLOCKING_INVENTORY_FINDINGS={len(findings)}')",
+              "codes = Counter(str(item.get('code', '<no-code>')) for item in findings)",
+              "print('BLOCKING_INVENTORY_CODES=' + json.dumps(dict(sorted(codes.items())), ensure_ascii=False, sort_keys=True))",
+              "for index, item in enumerate(findings, 1):",
+              "    print(f'INVENTORY_FAIL_{index:03d}=' + json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(',', ':')))",
+              "raise SystemExit(1 if findings else 0)",
+              "INVENTORY_FINDINGS",
+              "",
+          ]
+          run_steps[4]["run"] = gate + "\n".join(diagnostic_lines)
 
           env = os.environ.copy()
-          for index, step in enumerate(run_steps, 1):
+          for index, step in enumerate(run_steps[:5], 1):
               name = step["name"]
-              print(f"::group::{index}/{len(run_steps)} {name}", flush=True)
+              print(f"::group::{index}/5 {name}", flush=True)
               subprocess.run(
                   ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
                   check=True,
