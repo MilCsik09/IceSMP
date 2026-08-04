@@ -38,6 +38,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install repository consistency dependency
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
