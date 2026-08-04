@@ -9,11 +9,11 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /** Maps repository exceptions to the application mutation contract without publishing candidates. */
-public final class RepositoryMutationStoreAdapter implements ClassSpecSectionMutationStore {
+public final class ClassSpecSectionMutationStoreAdapter implements ClassSpecSectionMutationStore {
 
     private final ClassSpecSectionRepository repository;
 
-    public RepositoryMutationStoreAdapter(final ClassSpecSectionRepository repository) {
+    public ClassSpecSectionMutationStoreAdapter(final ClassSpecSectionRepository repository) {
         this.repository = java.util.Objects.requireNonNull(repository, "repository");
     }
 
