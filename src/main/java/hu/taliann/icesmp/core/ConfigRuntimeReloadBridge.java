@@ -8,6 +8,7 @@ import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
 import hu.taliann.icesmp.listeners.RelicPvpTransferListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
@@ -27,10 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Narrow live-apply bridge for config values whose consumers intentionally cache parsed data or
- * own a fixed-period scheduler. Most gameplay systems read ConfigManager at use time and never
- * enter this class. The bridge runs on the global region scheduler and fails loudly rather than
- * silently claiming that a menu change is live.
+ * Narrow live-apply bridge for config values whose consumers intentionally cache parsed data,
+ * own a fixed-period scheduler, or keep a next-run timestamp. Most gameplay systems read
+ * ConfigManager at use time and never enter this class.
  */
 public final class ConfigRuntimeReloadBridge {
 
@@ -55,6 +55,24 @@ public final class ConfigRuntimeReloadBridge {
                         || key.equals("factions.tax.interval-minutes")) {
                     rescheduleTaxes(core);
                 }
+                if (key.startsWith("dev-items.csodalatos_bingulus.")) {
+                    field(core, "devItemManager", DevItemManager.class).refreshOnlineOwner();
+                }
+                if (key.equals("corruption.interval-minutes")) {
+                    resetLongField(field(core, "corruptionManager", Object.class), "nextAttemptAt");
+                }
+                if (key.equals("dark-undead.spawn-interval-seconds")) {
+                    resetLongField(field(core, "darkUndeadAmbienceManager", Object.class), "nextSpawnAt");
+                }
+                if (key.equals("city-guards.step-seconds")) {
+                    resetLongField(field(core, "cityGuardManager", Object.class), "nextTickAt");
+                }
+                if (key.equals("factions.food-duty.check-minutes")) {
+                    resetLongField(field(core, "factionFoodListener", Object.class), "nextCheckAt");
+                }
+                if (key.equals("factions.whisper.decay-minutes")) {
+                    resetLongField(field(core, "whisperManager", Object.class), "nextDecayAt");
+                }
             } catch (final ReflectiveOperationException | RuntimeException failure) {
                 plugin.getLogger().severe("A config élő alkalmazása sikertelen (" + key
                         + "): " + failure);
@@ -65,8 +83,14 @@ public final class ConfigRuntimeReloadBridge {
     private static boolean requiresBridge(final String key) {
         return key.startsWith("relics.")
                 || key.startsWith("mob-scaling.")
+                || key.startsWith("dev-items.csodalatos_bingulus.")
                 || key.equals("factions.tax.enabled")
-                || key.equals("factions.tax.interval-minutes");
+                || key.equals("factions.tax.interval-minutes")
+                || key.equals("corruption.interval-minutes")
+                || key.equals("dark-undead.spawn-interval-seconds")
+                || key.equals("city-guards.step-seconds")
+                || key.equals("factions.food-duty.check-minutes")
+                || key.equals("factions.whisper.decay-minutes");
     }
 
     private static void reloadRelics(final JavaPlugin plugin, final Object core,
@@ -151,6 +175,13 @@ public final class ConfigRuntimeReloadBridge {
         final Method schedule = core.getClass().getDeclaredMethod("scheduleTaxCollection");
         schedule.setAccessible(true);
         schedule.invoke(core);
+    }
+
+    private static void resetLongField(final Object owner, final String name)
+            throws ReflectiveOperationException {
+        final Field field = owner.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        field.setLong(owner, 0L);
     }
 
     private static Object core(final JavaPlugin plugin) throws ReflectiveOperationException {
