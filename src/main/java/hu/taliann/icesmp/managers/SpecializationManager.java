@@ -145,7 +145,7 @@ public final class SpecializationManager {
                                             final SpecializationType specialization) {
         final boolean factionRequired = specialization.getRequiredFaction() != null;
         final boolean factionSatisfied = !factionRequired
-                || factionManager.getFaction(player.getUniqueId()) == specialization.getRequiredFaction();
+                || factionManager.isMember(player.getUniqueId(), specialization.getRequiredFaction());
         final boolean sinnerRequired = specialization.requiresSinner();
         final boolean sinnerSatisfied = !sinnerRequired || sinManager.isSinner(player);
         final String requiredQuest = configManager.getString(

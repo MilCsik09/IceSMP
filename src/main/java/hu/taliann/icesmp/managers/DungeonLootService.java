@@ -81,6 +81,12 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
         return chests.containsKey(posKey(location));
     }
 
+    /** Whether this entity is one of the service's scripted dungeon minibosses. */
+    public boolean isDungeonBoss(final Entity entity) {
+        return entity != null && entity.getPersistentDataContainer().has(
+                bossKey, PersistentDataType.STRING);
+    }
+
     /** @return true = regisztrálva; false = már regisztrált volt és most törölve lett (toggle). */
     public boolean toggleChest(final Location location, final String table) {
         final String key = posKey(location);
@@ -172,11 +178,8 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
             return;
         }
         final UUID aliveId = bossAlive.get(id);
-        if (aliveId != null) {
-            final Entity alive = Bukkit.getEntity(aliveId);
-            if (alive != null && alive.isValid() && !alive.isDead()) {
-                return;
-            }
+        if (aliveId != null && hu.taliann.icesmp.utils.TransientEntities.isAlive(aliveId)) {
+            return;
         }
         final World world = Bukkit.getWorld(spawn.world());
         if (world == null) {
@@ -187,11 +190,8 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
         // bejegyzés a task elején foglal.
         Bukkit.getRegionScheduler().run(plugin, loc, task -> {
             final UUID recheck = bossAlive.get(id);
-            if (recheck != null) {
-                final Entity alive = Bukkit.getEntity(recheck);
-                if (alive != null && alive.isValid() && !alive.isDead()) {
-                    return;
-                }
+            if (recheck != null && hu.taliann.icesmp.utils.TransientEntities.isAlive(recheck)) {
+                return;
             }
             final EntityType type;
             try {
@@ -222,6 +222,7 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
                     net.kyori.adventure.text.format.NamedTextColor.DARK_RED));
             boss.setCustomNameVisible(true);
             boss.getPersistentDataContainer().set(bossKey, PersistentDataType.STRING, id);
+            hu.taliann.icesmp.utils.TransientEntities.register(plugin, boss);
             bossAlive.put(id, boss.getUniqueId());
         });
     }

@@ -438,7 +438,7 @@ public final class ClaimProtectionListener implements Listener {
         if (claim == null) {
             return false;
         }
-        final FactionType ownerFaction = factionManager.getFaction(claim.getOwner());
+        final FactionType ownerFaction = factionManager.getChosenFaction(claim.getOwner()).orElse(null);
         return ownerFaction != null && raidManager.isSanctionedLooting(player.getUniqueId(), ownerFaction);
     }
 

@@ -120,6 +120,10 @@ public final class DarkUndeadAmbienceManager {
             plugin.getServer().getRegionScheduler().run(plugin, target, task -> {
                 final int y = world.getHighestBlockYAt(x, z) + 1;
                 target.setY(y);
+                final Territory actual = territoryManager.getTerritoryAt(target);
+                if (actual == null || !actual.id().equals(territory.id())) {
+                    return;
+                }
                 // Spawn-rules mátrix: a DARK territórium maga NEM tiltott (ez a lényeg),
                 // de a claimek/WG-régiók belseje és a víz védve — mint minden spawnernél.
                 if (spawnGuard.isBlocked("dark-undead", target)

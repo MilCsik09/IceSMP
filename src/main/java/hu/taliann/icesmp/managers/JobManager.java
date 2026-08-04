@@ -106,7 +106,7 @@ public final class JobManager implements PlayerStateCleanup {
 
     public boolean meetsFactionRequirement(final Player player, final JobType job) {
         final FactionType required = job == null ? null : job.getRequiredFaction();
-        return required == null || factionManager.getFaction(player.getUniqueId()) == required;
+        return required == null || factionManager.isMember(player.getUniqueId(), required);
     }
 
     /** Legacy synchronous class mutation is intentionally unsupported in greenfield Profile v2. */
@@ -118,7 +118,7 @@ public final class JobManager implements PlayerStateCleanup {
         if (job == JobType.DEATH_KNIGHT
                 && configManager.getBoolean("classes.death-knight.dark-only", false)) {
             final FactionManager factions = factionManagerRef;
-            if (factions != null && factions.getFaction(player.getUniqueId()) != FactionType.DARK) {
+            if (factions != null && !factions.isMember(player.getUniqueId(), FactionType.DARK)) {
                 return CompletableFuture.completedFuture(false);
             }
         }

@@ -62,10 +62,17 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
             return true;
         }
 
+        if (!factionManager.hasChosenFaction(player.getUniqueId())) {
+            sender.sendMessage(messageManager.get("messages.faction-guest-cannot-leave",
+                    "&eMég csak a Menedék vendége vagy — nincs frakció, amelyből kiléphetnél."));
+            return true;
+        }
+
         // A kilépés szabályos frakcióváltásnak számít Semlegesbe: ugyanaz a főváros-kapu,
         // ár és cooldown vonatkozik rá, mint a /faction join váltásra — különben a
         // leave+join páros ingyenes, kapu nélküli kerülőút lenne.
-        final FactionType currentFaction = factionManager.getFaction(player.getUniqueId());
+        final FactionType currentFaction = factionManager.getChosenFaction(
+                player.getUniqueId()).orElseThrow();
         // Az örök paktum nem pénz-kérdés: paktumos Kitaszított nem léphet ki — az
         // egyetlen kiút a vezeklés-lánc (breakDarkPact); anélkül a leave fizetős
         // forgóajtóvá tenné a száműzetést.
@@ -84,7 +91,8 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
             if (!FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
                 return true;
             }
-            if (!FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
+            if (!FactionSwitchRules.commitPaidSwitch(player, currentFaction, FactionType.NEUTRAL,
+                    factionManager, currencyManager, messageManager)) {
                 return true;
             }
         }
@@ -94,7 +102,9 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         // /faction join „első választásnak" látta, ezért a leave+join páros megkerülte a
         // semleges-főváros kaput, a szezon-hajrá zárát és a váltás-cooldownt. „Nincs
         // bejegyzés" mostantól csak a valóban új játékos állapota.
-        factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
+        if (!leavingKingdom) {
+            factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
+        }
         final hu.taliann.icesmp.managers.SpecializationManager specs = this.specializationManager;
         if (leavingDark && specs != null) {
             specs.reconcileDarkGates(player).whenComplete((result, failure) ->
@@ -109,4 +119,3 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         return true;
     }
 }
-

@@ -1,2 +1,0 @@
-PlayerProfile bootstrap checkout trigger for PR #75.
-Expected parent: 32bf1d2c3689a63858d409de32b2543e56442974

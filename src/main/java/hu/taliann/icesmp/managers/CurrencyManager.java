@@ -302,7 +302,11 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
     }
 
     public boolean isStorageHealthy() {
-        return !YamlStore.isLoadFailed(storageFile) && !YamlStore.hasCriticalWriteFailure();
+        return isOwnStorageHealthy() && !YamlStore.hasCriticalWriteFailure();
+    }
+
+    private boolean isOwnStorageHealthy() {
+        return !YamlStore.isLoadFailed(storageFile) && !YamlStore.hasWriteFailure(storageFile);
     }
 
     public FactionType getDefaultCurrencyType() {
@@ -487,7 +491,7 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                 balances.put(playerId, expected);
                 try {
                     writeBalancesLocked();
-                } catch (final RuntimeException failure) {
+                } catch (final RuntimeException | Error failure) {
                     restoreWalletUnsafe(playerId, previousPresent, previous);
                     throw failure;
                 }
@@ -500,43 +504,95 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         return mutation;
     }
 
-    /** Durable purchase deduction. Null means insufficient balance; storage failures throw. */
-    public DurableMutation deductDurably(final UUID playerId, final CurrencyType currencyType,
-                                         final double amount) {
+    /** Plans an exact durable deduction without publishing or writing it. */
+    public DurableMutation planDurableDeduction(final UUID playerId,
+                                                final CurrencyType currencyType,
+                                                final double amount) {
         if (playerId == null || currencyType == null || !Double.isFinite(amount) || amount <= 0.0D) {
             throw new IllegalArgumentException("Érvénytelen tartós wallet levonás.");
         }
-        final Object result = TransactionJournal.withCurrencyMutationPermit(() -> {
+        synchronized (saveLock) {
+            if (!isStorageHealthy()) {
+                throw unavailable("A wallet store jelenleg nem írható.");
+            }
+            final boolean previousPresent = balances.containsKey(playerId);
+            final EnumMap<CurrencyType, Double> previous = previousPresent
+                    ? new EnumMap<>(balances.get(playerId)) : createEmptyBalanceMap();
+            final double current = previous.getOrDefault(currencyType, 0.0D);
+            if (!Double.isFinite(current) || current < amount) {
+                return null;
+            }
+            final EnumMap<CurrencyType, Double> expected = new EnumMap<>(previous);
+            expected.put(currencyType, current - amount);
+            return new DurableMutation(playerId, previousPresent, previous, expected);
+        }
+    }
+
+    /** Applies a previously journaled deduction only if its exact before-snapshot is still current. */
+    public void applyDurably(final DurableMutation mutation) {
+        if (mutation == null) {
+            throw new IllegalArgumentException("Hiányzó wallet mutation token.");
+        }
+        final boolean success = TransactionJournal.runCurrencyMutation(() -> {
             if (!isStorageHealthy()) {
                 throw unavailable("A wallet store jelenleg nem írható.");
             }
             synchronized (saveLock) {
-                if (!isStorageHealthy()) {
-                    throw unavailable("A wallet store jelenleg nem írható.");
+                final EnumMap<CurrencyType, Double> current = balances.get(mutation.playerId());
+                final Map<CurrencyType, Double> actual = current == null
+                        ? createEmptyBalanceMap() : current;
+                if (balances.containsKey(mutation.playerId()) != mutation.previousPresent()
+                        || !actual.equals(mutation.previous())) {
+                    throw new IllegalStateException(
+                            "A wallet mutation terv elavult; a tranzakciót újra kell kezdeni.");
                 }
-                final boolean previousPresent = balances.containsKey(playerId);
-                final EnumMap<CurrencyType, Double> previous = previousPresent
-                        ? new EnumMap<>(balances.get(playerId)) : createEmptyBalanceMap();
-                final double current = previous.getOrDefault(currencyType, 0.0D);
-                if (!Double.isFinite(current) || current < amount) {
-                    return Boolean.FALSE;
-                }
-                final EnumMap<CurrencyType, Double> expected = new EnumMap<>(previous);
-                expected.put(currencyType, current - amount);
-                balances.put(playerId, expected);
+                balances.put(mutation.playerId(), new EnumMap<>(mutation.expected()));
                 try {
                     writeBalancesLocked();
-                } catch (final RuntimeException failure) {
-                    restoreWalletUnsafe(playerId, previousPresent, previous);
+                } catch (final RuntimeException | Error failure) {
+                    restoreWalletUnsafe(mutation.playerId(), mutation.previousPresent(),
+                            new EnumMap<>(mutation.previous()));
                     throw failure;
                 }
-                return new DurableMutation(playerId, previousPresent, previous, expected);
             }
-        }, null);
-        if (result == null) {
+        });
+        if (!success) {
             throw unavailable("Piaci tranzakció alatt a tartós wallet-módosítás nem indítható.");
         }
-        return result instanceof DurableMutation mutation ? mutation : null;
+    }
+
+    public Map<CurrencyType, Double> walletSnapshot(final UUID playerId) {
+        synchronized (saveLock) {
+            final EnumMap<CurrencyType, Double> current = balances.get(playerId);
+            return current == null ? Map.copyOf(createEmptyBalanceMap()) : Map.copyOf(current);
+        }
+    }
+
+    public boolean walletMatches(final DurableMutation mutation, final boolean expectedAfter) {
+        if (mutation == null) {
+            return false;
+        }
+        synchronized (saveLock) {
+            final EnumMap<CurrencyType, Double> current = balances.get(mutation.playerId());
+            final Map<CurrencyType, Double> actual = current == null
+                    ? createEmptyBalanceMap() : current;
+            final boolean present = balances.containsKey(mutation.playerId());
+            if (expectedAfter ? !present : present != mutation.previousPresent()) {
+                return false;
+            }
+            return actual.equals(expectedAfter ? mutation.expected() : mutation.previous());
+        }
+    }
+
+    /** Durable purchase deduction. Null means insufficient balance; storage failures throw. */
+    public DurableMutation deductDurably(final UUID playerId, final CurrencyType currencyType,
+                                         final double amount) {
+        final DurableMutation mutation = planDurableDeduction(playerId, currencyType, amount);
+        if (mutation == null) {
+            return null;
+        }
+        applyDurably(mutation);
+        return mutation;
     }
 
     /** Restores a durable mutation only while its exact expected snapshot is still current. */
@@ -544,9 +600,9 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         if (mutation == null) {
             return;
         }
-        final boolean success = TransactionJournal.runCurrencyMutation(() -> {
-            if (!isStorageHealthy()) {
-                throw unavailable("A wallet store jelenleg nem írható.");
+        final boolean success = TransactionJournal.runCompensatingCurrencyMutation(() -> {
+            if (!isOwnStorageHealthy()) {
+                throw unavailable("A wallet store saját állapota nem írható vissza.");
             }
             synchronized (saveLock) {
                 final EnumMap<CurrencyType, Double> current = balances.get(mutation.playerId());
@@ -558,7 +614,7 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                         new EnumMap<>(mutation.previous()));
                 try {
                     writeBalancesLocked();
-                } catch (final RuntimeException failure) {
+                } catch (final RuntimeException | Error failure) {
                     balances.put(mutation.playerId(), expected);
                     throw failure;
                 }

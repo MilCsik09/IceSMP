@@ -41,6 +41,9 @@ public final class WarWindowManager {
     private volatile long forcedUntil;
     /** Az előző tick állapota — a nyit/zár broadcast átmenet-figyeléséhez. */
     private volatile boolean lastActive;
+    /** One identity per uninterrupted active war window; stale reward callbacks must match it. */
+    private long windowSequence;
+    private long activeWindowId;
     /** Farm-fék: "killer:victim" pár → az utolsó jóváírt ölés időbélyege. */
     private final Map<String, Long> pairCooldowns = new ConcurrentHashMap<>();
 
@@ -109,6 +112,7 @@ public final class WarWindowManager {
     /** Nyit/zár átmenet broadcastja — a world-events global tick hívja. */
     public void tick() {
         final boolean active = isActive();
+        refreshRewardWindow(active);
         if (active == lastActive) {
             return;
         }
@@ -131,6 +135,7 @@ public final class WarWindowManager {
             return false;
         }
         forcedUntil = System.currentTimeMillis() + Math.max(1L, minutes) * 60_000L;
+        refreshRewardWindow(true);
         return true;
     }
 
@@ -140,6 +145,7 @@ public final class WarWindowManager {
             return false;
         }
         forcedUntil = 0L;
+        refreshRewardWindow(isActive());
         return true;
     }
 
@@ -152,6 +158,27 @@ public final class WarWindowManager {
             }
         }
         return -1L;
+    }
+
+    /** Captures the current uninterrupted war-window identity for a queued reward. */
+    public synchronized long rewardWindowToken() {
+        refreshRewardWindow(isActive());
+        return activeWindowId;
+    }
+
+    /** Revalidates that a callback still belongs to the same uninterrupted war window. */
+    public synchronized boolean isCurrentRewardWindow(final long token) {
+        refreshRewardWindow(isActive());
+        return token > 0L && token == activeWindowId;
+    }
+
+    private synchronized void refreshRewardWindow(final boolean active) {
+        if (!active) {
+            activeWindowId = 0L;
+        } else if (activeWindowId == 0L) {
+            windowSequence = windowSequence == Long.MAX_VALUE ? 1L : windowSequence + 1L;
+            activeWindowId = windowSequence;
+        }
     }
 
     /**

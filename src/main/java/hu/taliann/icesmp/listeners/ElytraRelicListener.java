@@ -205,7 +205,7 @@ public final class ElytraRelicListener implements Listener {
             return;
         }
         final FactionType wingFaction = WING_FACTIONS.get(definition.id().toLowerCase(java.util.Locale.ROOT));
-        if (wingFaction == null || factionManager.getFaction(player.getUniqueId()) == wingFaction) {
+        if (wingFaction == null || factionManager.isMember(player.getUniqueId(), wingFaction)) {
             return;
         }
         if (!configManager.getBoolean("relics.wings.faction-locked-pickup", true)) {
@@ -239,7 +239,7 @@ public final class ElytraRelicListener implements Listener {
         }
 
         if (!relicManager.canUse(player, chestplate)
-                || factionManager.getFaction(player.getUniqueId()) != wingFaction) {
+                || !factionManager.isMember(player.getUniqueId(), wingFaction)) {
             if (notifyOnMismatch) {
                 player.sendMessage(messageManager.getMessage(
                         "relic.wing-rejected",
@@ -275,7 +275,7 @@ public final class ElytraRelicListener implements Listener {
             return;
         }
         final FactionType wingFaction = WING_FACTIONS.get(definition.id().toLowerCase(java.util.Locale.ROOT));
-        if (wingFaction == null || factionManager.getFaction(player.getUniqueId()) == wingFaction
+        if (wingFaction == null || factionManager.isMember(player.getUniqueId(), wingFaction)
                 || !configManager.getBoolean("relics.wings.faction-locked-pickup", true)) {
             return;
         }

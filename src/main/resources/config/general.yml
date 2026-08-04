@@ -3,7 +3,8 @@
 # Beállítások, HUD, Valuta és Lokalizáció
 
 settings:
-  default-faction: "NEUTRAL"
+  # Az első belépő a Menedék vendége, nem automatikus NEUTRAL-polgár. A választott
+  # frakciót a factions.yml állapota rögzíti; nincs implicit default-faction kulcs.
   # Időszakos async mentés percenként (0 = kikapcsolva; csak indításkor olvasott kulcs).
   # Crash esetén legfeljebb ennyi percnyi mutáció veszhet el a YAML-store-okból.
   autosave-minutes: 10

@@ -27,13 +27,18 @@ public final class FactionRelationManager {
     /**
      * Gets the relation between two factions: ENEMY if they are raiding each
      * other right now, otherwise the configured static relation (default NEUTRAL).
+     * A missing faction represents a Menedék guest rather than an implicit NEUTRAL
+     * citizen, so any relation involving {@code null} is always NEUTRAL.
      *
      * @param a one faction
      * @param b the other faction
      * @return the relation
      */
     public Relation getRelation(final FactionType a, final FactionType b) {
-        if (a == null || b == null || a == b) {
+        if (a == null || b == null) {
+            return Relation.NEUTRAL;
+        }
+        if (a == b) {
             return Relation.ALLY;
         }
 

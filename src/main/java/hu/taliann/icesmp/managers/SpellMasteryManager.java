@@ -97,7 +97,7 @@ public final class SpellMasteryManager {
             return UpgradeResult.MAX_RANK;
         }
 
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
         final long cost = getUpgradeCost(player, normalized);
         // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
