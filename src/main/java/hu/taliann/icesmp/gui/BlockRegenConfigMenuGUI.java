@@ -3,28 +3,18 @@ package hu.taliann.icesmp.gui;
 import hu.taliann.icesmp.managers.ConfigManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 /** Az admin menüből állítható robbanás- és blokkregenerációs kulcsok. */
 public final class BlockRegenConfigMenuGUI {
 
     public static final String CATEGORY_ID = "blockregen";
     public static final String ROOT_ACTION = "BLOCK_REGEN";
-
-    private static final Set<String> RESTART_REQUIRED_KEYS = Set.of(
-            "territory.protection.regen.restore-interval-ticks"
-    );
 
     private static final List<ConfigMenuGUI.Entry> ENTRIES = List.of(
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.enabled",
@@ -63,7 +53,7 @@ public final class BlockRegenConfigMenuGUI {
             ConfigMenuGUI.Entry.integer("territory.protection.regen.delay-seconds",
                     "Robbanás utáni várakozás (mp)", 15, 5, 3600),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.restore-interval-ticks",
-                    "Visszaépítő ütem (tick, restart)", 1, 1, 120),
+                    "Visszaépítő ütem (tick)", 1, 1, 120),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.blocks-per-pass",
                     "Blokkok menetenként", 1, 1, 128),
             ConfigMenuGUI.Entry.integer("territory.protection.regen.support-grace-seconds",
@@ -98,7 +88,17 @@ public final class BlockRegenConfigMenuGUI {
             ConfigMenuGUI.Entry.integer("territory.protection.regen.debris-lifetime-seconds",
                     "Törmelék élettartama (mp)", 1, 1, 60),
             ConfigMenuGUI.Entry.number("territory.protection.regen.debris-launch-power",
-                    "Törmelék kilövési ereje", 0.1, 0, 5)
+                    "Alap radiális kilövési erő", 0.1, 0, 5),
+            ConfigMenuGUI.Entry.number("territory.protection.regen.debris-horizontal-multiplier",
+                    "Vízszintes röppálya-szorzó", 0.1, 0, 5),
+            ConfigMenuGUI.Entry.number("territory.protection.regen.debris-vertical-multiplier",
+                    "Függőleges röppálya-szorzó", 0.1, 0, 5),
+            ConfigMenuGUI.Entry.number("territory.protection.regen.debris-horizontal-spread",
+                    "Véletlen oldalirányú szórás", 0.05, 0, 3),
+            ConfigMenuGUI.Entry.number("territory.protection.regen.debris-extra-upward-velocity",
+                    "Extra felfelé sebesség", 0.05, 0, 3),
+            ConfigMenuGUI.Entry.toggle("territory.protection.regen.debris-gravity-enabled",
+                    "Törmelék gravitációja")
     );
 
     private BlockRegenConfigMenuGUI() {
@@ -108,8 +108,9 @@ public final class BlockRegenConfigMenuGUI {
         return ENTRIES.size();
     }
 
+    /** A BlockRegeneration menü minden kulcsa élőben alkalmazódik. */
     public static boolean requiresRestart(final String key) {
-        return RESTART_REQUIRED_KEYS.contains(key);
+        return false;
     }
 
     public static ConfigMenuGUI.Entry findEntry(final String key) {
@@ -121,6 +122,10 @@ public final class BlockRegenConfigMenuGUI {
         return null;
     }
 
+    public static List<ConfigMenuGUI.Entry> entries() {
+        return ENTRIES;
+    }
+
     public static void open(final Player player, final ConfigManager configManager) {
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), CATEGORY_ID);
         final Inventory inventory = Bukkit.createInventory(holder, 54,
@@ -129,7 +134,7 @@ public final class BlockRegenConfigMenuGUI {
 
         int slot = 0;
         for (final ConfigMenuGUI.Entry entry : ENTRIES) {
-            inventory.setItem(slot, entryTile(entry, configManager));
+            inventory.setItem(slot, ConfigMenuEntryRenderer.render(entry, configManager));
             holder.bind(slot, switch (entry.type()) {
                 case TOGGLE -> "TOGGLE:" + entry.key();
                 case CYCLE -> "CYCLE:" + entry.key();
@@ -138,77 +143,10 @@ public final class BlockRegenConfigMenuGUI {
             slot++;
         }
 
-        inventory.setItem(49, tile(Material.ARROW, "&7Vissza", List.of()));
+        inventory.setItem(49, GuiUtil.item(Material.ARROW, "&7Vissza", List.of()));
         holder.bind(49, "BACK");
-        inventory.setItem(53, tile(Material.BARRIER, "&cBezárás", List.of()));
+        inventory.setItem(53, GuiUtil.item(Material.BARRIER, "&cBezárás", List.of()));
         holder.bind(53, "CLOSE");
         player.openInventory(inventory);
-    }
-
-    private static ItemStack entryTile(final ConfigMenuGUI.Entry entry,
-                                       final ConfigManager configManager) {
-        final List<String> lore = new ArrayList<>();
-        lore.add("&8" + entry.key());
-        if (requiresRestart(entry.key())) {
-            lore.add("&cA szerver újraindítása után lép életbe");
-        }
-        switch (entry.type()) {
-            case TOGGLE -> {
-                final boolean value = configManager.getBoolean(entry.key(), false);
-                lore.add(value ? "&aBekapcsolva" : "&cKikapcsolva");
-                lore.add("&eKattints a váltáshoz");
-                return tile(value ? Material.LIME_DYE : Material.GRAY_DYE,
-                        (value ? "&a" : "&c") + entry.label(), lore);
-            }
-            case CYCLE -> {
-                final String value = configManager.getString(entry.key(),
-                        entry.options().isEmpty() ? "?" : entry.options().get(0));
-                lore.add("&fJelenleg: &b" + value);
-                lore.add("&7Opciók: &f" + String.join(" / ", entry.options()));
-                lore.add("&eKattints a következőhöz");
-                return tile(Material.COMPARATOR, "&b" + entry.label(), lore);
-            }
-            default -> {
-                final double value = configManager.getDouble(entry.key(), 0.0D);
-                lore.add("&fJelenleg: &b" + formatNumber(entry, value));
-                lore.add("&7Bal katt: &f+" + formatStep(entry)
-                        + " &7| Jobb katt: &f−" + formatStep(entry));
-                lore.add("&7SHIFT = ötszörös lépés");
-                return tile(Material.PAPER, "&b" + entry.label(), lore);
-            }
-        }
-    }
-
-    private static String formatNumber(final ConfigMenuGUI.Entry entry, final double value) {
-        return entry.type() == ConfigMenuGUI.EntryType.INTEGER
-                ? String.valueOf((long) value)
-                : String.format(Locale.ROOT, "%.2f", value);
-    }
-
-    private static String formatStep(final ConfigMenuGUI.Entry entry) {
-        return entry.type() == ConfigMenuGUI.EntryType.INTEGER
-                ? String.valueOf((long) entry.step())
-                : String.format(Locale.ROOT, "%.2f", entry.step());
-    }
-
-    private static ItemStack tile(final Material material, final String name,
-                                  final List<String> loreLines) {
-        final ItemStack item = new ItemStack(material);
-        final ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.displayName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-                    .legacyAmpersand().deserialize(name)
-                    .decoration(TextDecoration.ITALIC, false));
-            final List<Component> lore = new ArrayList<>();
-            for (final String line : loreLines) {
-                lore.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-                        .legacyAmpersand().deserialize(line)
-                        .colorIfAbsent(NamedTextColor.GRAY)
-                        .decoration(TextDecoration.ITALIC, false));
-            }
-            meta.lore(lore);
-            item.setItemMeta(meta);
-        }
-        return item;
     }
 }
