@@ -3,5 +3,6 @@ Phase: stage the two already validated workflow blobs from the exact Profile v2 
 Expected Profile v2 head: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
 Expected recovered PlayerProfile head: f2250d279b27bdd65f030ff5c715db01f0e1094d
 Expected current #78 code head: 6b2cc869605c8e15aac5a73c45ebbfb18ac8e70f
+Expected workflow SHA-256: ci=4a4f1b69daab8d6f43c36626e7a70c64849a379fd4ac6c84a097c826f1b617c0; inventory=e95299ffd8135470228ba846fc07887bb2b6e35ea93b926869328368f9c44d57
 The staging push must not modify .github/workflows.
 Must never be merged.
