@@ -1,6 +1,6 @@
-Trigger the guaranteed Repository Docs Inventory PlayerProfile cleanup driver.
-Attempt: 8 — publish the fully validated code/test/authority cleanup without workflow files; workflow changes are applied separately through the GitHub connector.
-Validation base head: bad477308a095ee4c260447e7806fad7f80babd8
-Expected recovery head: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
-Expected #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
+Trigger the Repository Docs Inventory integration driver.
+Phase: class/spec compatibility base integration.
+Validation head: 798fe23c916a1db27d1c76628b6fdfad141cae83
+Expected target head: 62ad99b74b7bb63420cb8e5e821f0321c5d84d48
+Expected master head: 52cc62ac3b463679f28656f82cf1f7d17db486e8
 Must never be merged.
