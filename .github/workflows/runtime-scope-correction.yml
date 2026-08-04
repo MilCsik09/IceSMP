@@ -40,7 +40,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 -d .github/scripts/claim-polygon-stage.py.gz.b64 | gzip -d | python3
+          base64 -d .github/scripts/claim-polygon-stage.py.gz.b64 \
+            | gzip -d > .github/scripts/apply_claim_polygon_stage.py
+          python3 .github/scripts/apply_claim_polygon_stage.py
+          rm .github/scripts/apply_claim_polygon_stage.py
           git diff --check
           git diff --stat
 
