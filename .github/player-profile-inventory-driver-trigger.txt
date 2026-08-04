@@ -1,8 +1,7 @@
-Trigger the Repository Docs Inventory diagnostic.
-Phase: diagnose the exact merge of the fully recovered PlayerProfile platform onto the finalized Profile v2 head with authenticated branch refresh.
-Validation head: c8ee4b7b5671ed802079d51809d0b15134d4c9e9
+Trigger the Repository Docs Inventory workflow.
+Phase: stage the two already validated workflow blobs from the exact Profile v2 and recovered PlayerProfile merge tree.
 Expected Profile v2 head: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
 Expected recovered PlayerProfile head: f2250d279b27bdd65f030ff5c715db01f0e1094d
-Expected old #78 head: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
-No commit or push is permitted in this diagnostic.
+Expected current #78 code head: 6b2cc869605c8e15aac5a73c45ebbfb18ac8e70f
+The staging push must not modify .github/workflows.
 Must never be merged.
