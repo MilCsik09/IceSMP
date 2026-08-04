@@ -251,6 +251,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 scripts/check_player_profile_authority.py --update-allowlist
+          git add scripts/player_profile_authority_allowlist.json
+          git diff --cached --check
           python3 scripts/check_player_profile_authority.py
           python3 scripts/test_player_profile_authority.py
           python3 scripts/check_player_profile_openapi.py
