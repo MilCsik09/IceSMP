@@ -57,15 +57,10 @@ jobs:
 
           test = Path('src/regression/java/hu/taliann/icesmp/runtime/RuntimeHardeningRegressionSuite.java')
           text = test.read_text(encoding='utf-8')
-          old = '''        check(claim.contains("return -selection.points.size()")
-                        && claim.contains("shape.overlaps(ClaimFootprint.between"),
-                "polygon point input is capped and footprint conflict checks avoid rectangle materialization");'''
-          new = '''        check(claim.contains("return -selection.points.size()")
-                        && claim.contains("shape.overlaps(")
-                        && claim.contains("ClaimFootprint.between(oMinX"),
-                "polygon point input is capped and footprint conflict checks avoid rectangle materialization");'''
+          old = '&& claim.contains("shape.overlaps(ClaimFootprint.between"),'
+          new = '&& claim.contains("shape.overlaps(")\n                        && claim.contains("ClaimFootprint.between(oMinX"),'
           if text.count(old) != 1:
-              raise SystemExit('polygon source-contract assertion not found exactly once')
+              raise SystemExit(f'polygon source assertion substring count={text.count(old)}')
           test.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
           git diff --check
