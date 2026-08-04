@@ -1,6 +1,6 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: class/spec compatibility base integration.
-Validation head: 798fe23c916a1db27d1c76628b6fdfad141cae83
+Phase: class/spec compatibility base integration with reviewed four-file conflict resolution.
+Validation head: 8bfc52ebd34de5e79cea41cf28949ef5ce171280
 Expected target head: 62ad99b74b7bb63420cb8e5e821f0321c5d84d48
 Expected master head: 52cc62ac3b463679f28656f82cf1f7d17db486e8
 Must never be merged.
