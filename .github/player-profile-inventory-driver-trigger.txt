@@ -1,6 +1,6 @@
 Trigger the guaranteed Repository Docs Inventory PlayerProfile cleanup driver.
-Attempt: 2 — parse the reviewed cleanup workflow as raw step text so embedded heredocs and triple-quoted Python remain intact.
-Validation base head: 8c810bd91a35d24203944322d672f0aed5f03a68
+Attempt: 3 — accept the exact seven reviewed cleanup run blocks and preserve final commit/push ordering.
+Validation base head: 4e8e38eabf722d9fab9aa4b66767569247c32b8f
 Expected recovery head: 258ea27e0ba96cbbae0d9f7e39c6b20ee444d480
 Expected #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
 Must never be merged.
