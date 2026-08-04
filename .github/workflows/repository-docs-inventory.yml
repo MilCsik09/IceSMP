@@ -81,7 +81,7 @@ jobs:
                   continue
               index += 1
 
-          if len(scripts) < 8:
+          if len(scripts) != 7:
               raise SystemExit(f'Unexpected cleanup run-step count: {len(scripts)}')
           if scripts[-1][0] != 'Commit and fast-forward push after every gate succeeds':
               raise SystemExit(
