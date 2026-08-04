@@ -95,10 +95,10 @@ previously registered regression suites.
 - The gate removed the temporary workflow, both Python patch drivers and the encoded polygon payload before validation.
 - On that scaffolding-free tree, `./gradlew clean check`, `scripts/validate_gui_icons.py` and
   `scripts/check_consistency.py` all completed successfully.
-- Final exact tested head: `bf7d79d119470f4b6ef0b8f25fbb5731c046d970`.
-- **IceSMP CI #475 — success:** Java 21 clean build, all `check` regressions, explicit faction suites, full consistency,
+- Final exact tested implementation-and-audit head before this reference-only correction: `0c95a403688bbe6b0dc9d5e99a976990cbb90d10`.
+- **IceSMP CI #476 — success:** Java 21 clean build, all `check` regressions, explicit faction suites, full consistency,
   targeted DEV driver and consistency delta passed.
-- **Repository Docs Inventory #408 — success:** clean build, consistency, Markdown links, tooling self-tests, inventory,
+- **Repository Docs Inventory #409 — success:** clean build, consistency, Markdown links, tooling self-tests, inventory,
   generated JSON and blocking policy passed. PR-only snapshot/strict steps were correctly skipped by workflow policy.
 - No force push or merge was performed.
 
