@@ -1,9 +1,9 @@
 Trigger the Repository Docs Inventory validation.
-Phase: run the reviewed integration and existing manifest synchronization first, then add exact classifications for 8 components, 5 config sections and feature.resource-pack before strict inventory.
-Validation head: c5594d9bd44dac1278894fc09322fb9b15b6737f
+Phase: run exact integration and manifest synchronization, then add 8 component classifications, 5 config sections, feature.resource-pack and feature.moderation before strict inventory.
+Validation head: e121c9c2bd1b4d69dee00637c0256faedead6c7b
 Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
 Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
-Expected exact pre-fix findings: 14 UNDOCUMENTED_INVENTORY_ITEM entries.
+Expected exact pre-fix findings: 14 UNDOCUMENTED_INVENTORY_ITEM entries followed by one second-order feature.moderation finding.
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
 Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
