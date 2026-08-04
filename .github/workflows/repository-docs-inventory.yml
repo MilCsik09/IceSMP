@@ -83,18 +83,21 @@ jobs:
           marker = "          git add -- \\\n"
           if resolution.count(marker) != 1:
               raise SystemExit("Unexpected resolution staging marker count")
-          normalizer = """          python3 - <<'EOF_NORMALIZE'
-          from pathlib import Path
-          for raw in (
-              'src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java',
-              'src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java',
-          ):
-              path = Path(raw)
-              path.write_text(path.read_text(encoding='utf-8').rstrip('\\n') + '\\n',
-                              encoding='utf-8', newline='\\n')
-          EOF_NORMALIZE
-
-"""
+          normalizer_lines = [
+              "          python3 - <<'EOF_NORMALIZE'",
+              "          from pathlib import Path",
+              "          for raw in (",
+              "              'src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java',",
+              "              'src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java',",
+              "          ):",
+              "              path = Path(raw)",
+              "              path.write_text(path.read_text(encoding='utf-8').rstrip('\\n') + '\\n',",
+              "                              encoding='utf-8', newline='\\n')",
+              "          EOF_NORMALIZE",
+              "",
+              "",
+          ]
+          normalizer = "\n".join(normalizer_lines)
           run_steps[1]["run"] = resolution.replace(marker, normalizer + marker, 1)
 
           env = os.environ.copy()
