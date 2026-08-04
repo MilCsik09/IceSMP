@@ -1,5 +1,8 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI;
+import hu.taliann.icesmp.gui.ConfigMenuGUI;
+import hu.taliann.icesmp.gui.ConfigMenuRootGUI;
 import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -28,6 +31,7 @@ public final class ConfigStartupRegressionSuite {
         rejectsNonFiniteAndWrongTypeNumericConfig();
         verifiesPackagedDefaults();
         verifiesSupportedFirstSpawnEvent();
+        verifiesBlockRegenerationConfigMenu();
         System.out.println("Config startup regression suite passed.");
     }
 
@@ -125,7 +129,6 @@ public final class ConfigStartupRegressionSuite {
                 "ordinary invalid Bukkit Material must still be reported");
     }
 
-
     private static void rejectsNonFiniteAndWrongTypeNumericConfig() {
         final YamlConfiguration invalid = new YamlConfiguration();
         invalid.set("factions.passives.red.fire-damage-multiplier", Double.NaN);
@@ -174,6 +177,60 @@ public final class ConfigStartupRegressionSuite {
                         && !listener.contains("org.spigotmc.event.player.PlayerSpawnLocationEvent")
                         && !listener.contains("hasPlayedBefore()"),
                 "first join must use the supported configuration-phase spawn event");
+    }
+
+    private static void verifiesBlockRegenerationConfigMenu() throws Exception {
+        check(ConfigMenuRootGUI.categoryCapacity() >= ConfigMenuGUI.CATEGORIES.size() + 1,
+                "config root menu must have capacity for the block-regeneration category");
+        check(BlockRegenConfigMenuGUI.entryCount() == 27,
+                "block-regeneration menu entry count changed unexpectedly");
+
+        final List<String> requiredKeys = List.of(
+                "territory.protection.regen.enabled",
+                "claims.protect-explosions",
+                "territory.protection.regen.zones.capital",
+                "territory.protection.regen.zones.protected-city",
+                "territory.protection.regen.zones.protected-faction",
+                "territory.protection.regen.zones.dungeon",
+                "territory.protection.regen.zones.doom-gate",
+                "territory.protection.regen.zones.faction",
+                "territory.protection.regen.zones.wilderness",
+                "territory.protection.regen.delay-seconds",
+                "territory.protection.regen.restore-interval-ticks",
+                "territory.protection.regen.blocks-per-pass",
+                "territory.protection.regen.support-grace-seconds",
+                "territory.protection.regen.max-recaptures",
+                "territory.protection.regen.recapture-window-seconds",
+                "territory.protection.regen.physics-shield-enabled",
+                "territory.protection.regen.physics-shield-seconds",
+                "territory.protection.regen.player-break.siege-enabled",
+                "territory.protection.regen.player-break.siege-delay-seconds",
+                "territory.protection.regen.player-break.always-enabled",
+                "territory.protection.regen.player-break.always-delay-seconds",
+                "territory.protection.regen.restore-effects-enabled",
+                "territory.protection.regen.tile-entity-explode",
+                "territory.protection.regen.debris-enabled",
+                "territory.protection.regen.debris-percent",
+                "territory.protection.regen.debris-lifetime-seconds",
+                "territory.protection.regen.debris-launch-power"
+        );
+        for (final String key : requiredKeys) {
+            check(BlockRegenConfigMenuGUI.findEntry(key) != null,
+                    "block-regeneration menu key missing: " + key);
+        }
+        check(BlockRegenConfigMenuGUI.requiresRestart(
+                        "territory.protection.regen.restore-interval-ticks"),
+                "restore scheduler interval must be marked restart-required");
+        check(!BlockRegenConfigMenuGUI.requiresRestart(
+                        "territory.protection.regen.blocks-per-pass"),
+                "live block batch size must not be marked restart-required");
+
+        final String listener = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java"));
+        check(listener.contains("ConfigMenuRootGUI.openRoot")
+                        && listener.contains("BlockRegenConfigMenuGUI.open")
+                        && listener.contains("set-success-restart"),
+                "block-regeneration menu wiring or restart feedback is missing");
     }
 
     private static YamlConfiguration load(final String name) {
