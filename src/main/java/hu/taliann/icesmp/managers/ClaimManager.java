@@ -121,8 +121,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
         private boolean overlapsFootprint(final String worldName, final int oMinX, final int oMinZ,
                                           final int oMaxX, final int oMaxZ) {
-            return overlapsShape(worldName,
-                    ClaimShape.rectangle(ClaimFootprint.between(oMinX, oMinZ, oMaxX, oMaxZ)));
+            return world.equals(worldName) && shape.overlaps(
+                    ClaimFootprint.between(oMinX, oMinZ, oMaxX, oMaxZ));
         }
     }
 
@@ -279,6 +279,14 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return Math.max(4, configManager.getInt("claims.quick-size", 16));
     }
 
+    private int areaMaxColumns() {
+        return Math.max(16, configManager.getInt("claims.area-max-columns", 6400));
+    }
+
+    private int polygonMaxPoints() {
+        return Math.max(3, configManager.getInt("claims.polygon-max-points", 64));
+    }
+
 
     /** The player's claims as human-readable region descriptors (for /claim list). */
     public List<String> describeClaims(final UUID playerId) {
@@ -286,7 +294,9 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         for (final Claim claim : claims.values()) {
             if (claim.owner.equals(playerId)) {
                 entries.add(claim.world + " (" + claim.minX + ", " + claim.minZ + ")→(" + claim.maxX + ", "
-                        + claim.maxZ + ") — " + (claim.maxX - claim.minX + 1) + "×" + (claim.maxZ - claim.minZ + 1));
+                        + claim.maxZ + ") — " + (claim.shape.isPolygon()
+                        ? "poligon, " + claim.columns() + " oszlop"
+                        : (claim.maxX - claim.minX + 1) + "×" + (claim.maxZ - claim.minZ + 1)));
             }
         }
         return entries;
@@ -314,8 +324,12 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     private String createClaim(final Player player, final World world,
                                final int minX, final int minZ,
                                final int maxX, final int maxZ) {
-        return createClaimShape(player, world,
-                ClaimShape.rectangle(ClaimFootprint.between(minX, minZ, maxX, maxZ)));
+        try {
+            return createClaimShape(player, world, ClaimShape.rectangle(
+                    ClaimFootprint.between(minX, minZ, maxX, maxZ), areaMaxColumns()));
+        } catch (final IllegalArgumentException tooLarge) {
+            return "claim-area-too-big";
+        }
     }
 
     private String createClaimShape(final Player player, final World world, final ClaimShape shape) {
@@ -363,8 +377,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     private Claim findFootprintOverlap(final String worldName, final int minX, final int minZ,
                                        final int maxX, final int maxZ) {
-        return findShapeOverlap(worldName,
-                ClaimShape.rectangle(ClaimFootprint.between(minX, minZ, maxX, maxZ)));
+        for (final Claim claim : claims.values()) {
+            if (claim.overlapsFootprint(worldName, minX, minZ, maxX, maxZ)) return claim;
+        }
+        return null;
     }
 
     /**
@@ -577,6 +593,9 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                     location.getBlockX(), location.getBlockZ());
             if (selection.points.isEmpty()
                     || !selection.points.get(selection.points.size() - 1).equals(point)) {
+                if (selection.points.size() >= polygonMaxPoints()) {
+                    return -selection.points.size();
+                }
                 selection.points.add(point);
             }
             return selection.points.size();
@@ -611,12 +630,12 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         final List<ClaimShape.Point> points;
         final String worldName;
         synchronized (selection) {
-            if (selection.points.size() < 3) return null;
+            if (selection.points.size() < 3 || selection.points.size() > polygonMaxPoints()) return null;
             points = List.copyOf(selection.points);
             worldName = selection.world;
         }
         try {
-            final ClaimShape shape = ClaimShape.polygon(points);
+            final ClaimShape shape = ClaimShape.polygon(points, areaMaxColumns());
             return new PolygonSelectionInfo(points.size(), shape.columns(),
                     findShapeOverlap(worldName, shape) != null,
                     priceFor(countColumns(playerId), shape.columns()));
@@ -637,25 +656,18 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             worldName = selection.world;
         }
         if (points.size() < 3) return "claim-polygon-too-few";
-        if (points.size() > Math.max(3,
-                configManager.getInt("claims.polygon-max-points", 64))) {
-            return "claim-polygon-too-many";
-        }
+        if (points.size() > polygonMaxPoints()) return "claim-polygon-too-many";
         if (!player.getWorld().getName().equals(worldName)) {
             return "claim-polygon-cross-world";
         }
 
         final ClaimShape shape;
         try {
-            shape = ClaimShape.polygon(points);
+            shape = ClaimShape.polygon(points, areaMaxColumns());
         } catch (final IllegalArgumentException invalid) {
             return invalid.getMessage() != null
                     && invalid.getMessage().contains("self-intersects")
                     ? "claim-polygon-self-intersect" : "claim-polygon-invalid";
-        }
-        if (shape.columns() > Math.max(16,
-                configManager.getInt("claims.area-max-columns", 6400))) {
-            return "claim-polygon-too-big";
         }
         final String error = createClaimShape(player, player.getWorld(), shape);
         if (error != null) {
@@ -962,7 +974,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         final List<ClaimShape.Point> points = new ArrayList<>();
         for (final String entry : raw) {
             final String[] parts = entry.split(",");
-            if (parts.length != 2) continue;
+            if (parts.length != 2) return null;
             try {
                 points.add(new ClaimShape.Point(
                         Integer.parseInt(parts[0].trim()),
@@ -1005,13 +1017,19 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                     claim = new Claim(UUID.randomUUID().toString(), parts[0],
                             baseX, minY, baseZ, baseX + 15, maxY, baseZ + 15, owner, ownerName, claimedAt);
                 } else {
+                    final String polygonPath = key + ".polygon";
+                    final boolean polygonStored = section.contains(polygonPath);
+                    final List<ClaimShape.Point> polygon = readClaimPolygon(
+                            section.getStringList(polygonPath));
+                    if (polygonStored && polygon == null) {
+                        throw new IllegalArgumentException("Malformed stored claim polygon");
+                    }
                     claim = new Claim(key,
                             section.getString(key + ".world", "world"),
                             section.getInt(key + ".min-x"), section.getInt(key + ".min-y"),
                             section.getInt(key + ".min-z"), section.getInt(key + ".max-x"),
                             section.getInt(key + ".max-y"), section.getInt(key + ".max-z"),
-                            readClaimPolygon(section.getStringList(key + ".polygon")),
-                            owner, ownerName, claimedAt);
+                            polygon, owner, ownerName, claimedAt);
                 }
                 for (final String trustedId : section.getStringList(key + ".trusted")) {
                     claim.trusted.add(UUID.fromString(trustedId));

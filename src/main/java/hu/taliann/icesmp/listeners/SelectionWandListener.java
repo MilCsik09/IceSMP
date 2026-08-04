@@ -86,6 +86,11 @@ public final class SelectionWandListener implements Listener {
             return;
         }
         final int count = claimManager.addPolygonPoint(player, clicked);
+        if (count < 0) {
+            player.sendMessage(messageManager.get("claim-polygon-point-limit",
+                    "&cElérted a poligonpont-limitet: &f%s&c.", -count));
+            return;
+        }
         player.sendMessage(messageManager.get("claim-polygon-wand-point",
                 "&aClaim-határpont: &f%s, %s &7(összesen: &f%s&7). Jobb: vissza • SNEAK+jobb: foglalás",
                 clicked.getBlockX(), clicked.getBlockZ(), count));

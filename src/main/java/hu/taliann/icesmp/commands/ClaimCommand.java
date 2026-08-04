@@ -212,6 +212,11 @@ public final class ClaimCommand implements BasicCommand {
 
     private void handlePolygonPoint(final Player player) {
         final int count = claimManager.addPolygonPoint(player);
+        if (count < 0) {
+            player.sendMessage(messageManager.get("claim-polygon-point-limit",
+                    "&cElérted a poligonpont-limitet: &f%s&c.", -count));
+            return;
+        }
         player.sendMessage(messageManager.get("claim-polygon-point-added",
                 "&aHatárpont hozzáadva (&f%s&a): &f%s, %s",
                 count, player.getLocation().getBlockX(), player.getLocation().getBlockZ()));

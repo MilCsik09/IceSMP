@@ -93,6 +93,20 @@ public final class RuntimeHardeningRegressionSuite {
             invalid = true;
         }
         check(invalid, "self-intersecting/bow-tie polygon rejected");
+
+        boolean oversized = false;
+        try {
+            ClaimShape.polygon(List.of(
+                    new ClaimShape.Point(0, 0),
+                    new ClaimShape.Point(5000, 5000),
+                    new ClaimShape.Point(5001, 5000),
+                    new ClaimShape.Point(1, 0)), 6400);
+        } catch (final IllegalArgumentException expected) {
+            oversized = true;
+        }
+        check(oversized, "long thin polygon is rejected before unbounded raster work");
+        check(!concave.overlaps(ClaimFootprint.between(3, 3, 4, 4)),
+                "footprint overlap does not materialize or claim the concave notch");
     }
 
     private static void lifecycleSourceContracts() throws Exception {
@@ -101,10 +115,19 @@ public final class RuntimeHardeningRegressionSuite {
                 "claim lookup is Y-independent");
         check(!claim.contains("drawBoxOutline"), "claim renderer has no 3D box path");
         check(claim.contains("borderTasks.remove(playerId)"), "border preview owns cleanup task");
-        check(claim.contains("ClaimShape.polygon(points)")
-                        && claim.contains("readClaimPolygon")
+        check(claim.contains("ClaimShape.polygon(points, areaMaxColumns())")
+                        && claim.contains("polygonStored && polygon == null")
                         && claim.contains("shape.rowSpans()"),
-                "polygon claims share exact geometry across create, persistence and protection");
+                "polygon claims are bounded and fail closed across create, persistence and protection");
+        check(claim.contains("return -selection.points.size()")
+                        && claim.contains("shape.overlaps(")
+                        && claim.contains("ClaimFootprint.between(oMinX"),
+                "polygon point input is capped and footprint conflict checks avoid rectangle materialization");
+        final String shapeSource = source("src/main/java/hu/taliann/icesmp/data/ClaimShape.java");
+        check(shapeSource.contains("scanlineIntersections")
+                        && shapeSource.contains("perimeterColumns > budget")
+                        && !shapeSource.contains("for (int x = minX; x <= maxX; x++)"),
+                "polygon rasterization is budgeted scanline work, not bounding-box area work");
         final String claimCommand = source("src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java");
         check(claimCommand.contains("case \"polygon\", \"poligon\"")
                         && claimCommand.contains("case \"polywand\""),
