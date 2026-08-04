@@ -1,10 +1,9 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: publish the exact Profile v2 integration after deterministic manifest synchronization.
-Validation head: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
-Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
-Expected inventory drift before sync: 68 root lines, 2 source hashes, 7 stale config resolutions.
+Phase: reproduce the synchronized Profile v2 tree and print every one of the 14 remaining blocking inventory findings.
+Validation head: d507b743ea89126707d637aa8e60771a58bbe2c9
+Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
 Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
-Push remains the final step after strict inventory and every repository gate succeeds.
+This diagnostic excludes the final commit and push step and must fail when findings remain.
 Must never be merged.
