@@ -8,10 +8,10 @@ permissions:
   contents: write
 
 jobs:
-  validate:
-    name: Validate completed Profile v2 manifest
+  publish:
+    name: Publish validated Profile v2 integration
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - name: Check out authenticated integration history
         uses: actions/checkout@v4
@@ -20,15 +20,26 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
       - name: Install workflow parser
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Complete manifest classifications and enforce strict inventory
+      - name: Resolve, complete contracts, validate and publish
         shell: bash
         env:
           SOURCE_WORKFLOW_COMMIT: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
@@ -65,9 +76,14 @@ jobs:
           loop = "for index, step in enumerate(run_steps, 1):\n"
           if source_step.count(loop) != 1:
               raise SystemExit(f"Publishing loop drift: {source_step.count(loop)}")
-          source_step = source_step.replace(loop, "for index, step in enumerate(run_steps[:2], 1):\n", 1)
+
+          first_phase = source_step.replace(
+              loop,
+              "for index, step in enumerate(run_steps[:2], 1):\n",
+              1,
+          )
           subprocess.run(
-              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", source_step],
+              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", first_phase],
               check=True,
               env=os.environ.copy(),
           )
@@ -189,15 +205,26 @@ jobs:
               ],
               check=True,
           )
-          print("Added 8 component classifications, 5 config sections and 2 feature contracts.")
 
           sys.path.insert(0, str(Path("scripts").resolve()))
           from repository_inventory.inventory import generate_inventory
 
           inventory = generate_inventory(Path(".").resolve(), "strict")
           failures = [item for item in inventory.get("findings", []) if item.get("severity") == "FAIL"]
-          print(f"FINAL_STRICT_FINDINGS={len(failures)}")
-          for item in failures:
-              print(json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
-          raise SystemExit(1 if failures else 0)
+          print(f"PRE_BUILD_STRICT_FINDINGS={len(failures)}")
+          if failures:
+              for item in failures:
+                  print(json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+              raise SystemExit(1)
+
+          second_phase = source_step.replace(
+              loop,
+              "for index, step in enumerate(run_steps[2:], 3):\n",
+              1,
+          )
+          subprocess.run(
+              ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", second_phase],
+              check=True,
+              env=os.environ.copy(),
+          )
           PY
