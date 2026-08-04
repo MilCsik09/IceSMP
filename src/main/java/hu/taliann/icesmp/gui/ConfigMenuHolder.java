@@ -11,8 +11,8 @@ import java.util.UUID;
  * Holder az admin config-menühöz (K: "ingame config menü"). A szokásos GUI-minta:
  * a holder hordozza az owner-UUID-t, az aktuális lapot (null = főmenü, egyébként
  * kategória-id) és a slot→akció kötéseket. Akciók: {@code CAT:<id>},
- * {@code TOGGLE:<kulcs>}, {@code NUM:<kulcs>}, {@code CYCLE:<kulcs>},
- * {@code BACK}, {@code CLOSE}.
+ * {@code BLOCK_REGEN}, {@code TOGGLE:<kulcs>}, {@code NUM:<kulcs>},
+ * {@code CYCLE:<kulcs>}, {@code BACK}, {@code CLOSE}.
  */
 public final class ConfigMenuHolder implements InventoryHolder {
 
