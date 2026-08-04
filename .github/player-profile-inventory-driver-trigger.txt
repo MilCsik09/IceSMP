@@ -1,6 +1,6 @@
 Trigger the Repository Docs Inventory diagnostic.
-Phase: reproduce only the exact resolution and manifest synchronization, then expose every second-order post-sync contract finding.
-Validation head: adc4f103b3083705577d48fe789881295ebd88e5
+Phase: reproduce exact post-sync tree and expose every documentation coverage warning that strict mode promotes to FAIL.
+Validation head: fd4e793e18787af73d42c50c3a90995ed041e793
 Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
 Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
