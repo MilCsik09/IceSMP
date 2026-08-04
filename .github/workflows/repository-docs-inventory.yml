@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   integrate:
-    name: Diagnose remaining Profile v2 inventory drift
+    name: Publish validated Profile v2 integration
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -39,7 +39,7 @@ jobs:
       - name: Install workflow parser
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
-      - name: Reproduce synchronized tree and print every remaining FAIL
+      - name: Execute unchanged synchronized publishing workflow
         shell: bash
         env:
           SOURCE_WORKFLOW_COMMIT: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
@@ -70,48 +70,6 @@ jobs:
               step["run"] for step in source_steps
               if isinstance(step, dict)
               and step.get("name") == "Execute reviewed integration, manifest synchronization, gates and push"
-          )
-
-          insertion_marker = "env = os.environ.copy()\n"
-          if source.count(insertion_marker) != 1:
-              raise SystemExit(f"Source execution marker drift: {source.count(insertion_marker)}")
-          iteration_marker = "for index, step in enumerate(run_steps, 1):\n"
-          if source.count(iteration_marker) != 1:
-              raise SystemExit(f"Source iteration marker drift: {source.count(iteration_marker)}")
-
-          diagnostic_lines = [
-              "gate = run_steps[4]['run']",
-              "strict_marker = '--root . --output build/repository-inventory --mode strict'",
-              "if gate.count(strict_marker) != 1:",
-              "    raise SystemExit(f'Final strict marker drift: {gate.count(strict_marker)}')",
-              "gate = gate.replace(",
-              "    strict_marker,",
-              "    '--root . --output build/repository-inventory --mode report',",
-              "    1,",
-              ")",
-              "gate += \"\"\"",
-              "python3 - <<'REMAINING_FINDINGS'",
-              "import json",
-              "from collections import Counter",
-              "from pathlib import Path",
-              "inventory = json.loads(Path('build/repository-inventory/repository-inventory.json').read_text(encoding='utf-8'))",
-              "findings = [item for item in inventory.get('findings', []) if item.get('severity') == 'FAIL']",
-              "codes = Counter(str(item.get('code', '<no-code>')) for item in findings)",
-              "print('REMAINING_BLOCKING_FINDINGS=' + str(len(findings)))",
-              "print('REMAINING_BLOCKING_CODES=' + json.dumps(dict(sorted(codes.items())), ensure_ascii=False, sort_keys=True))",
-              "for index, item in enumerate(findings, 1):",
-              "    print(f'REMAINING_FAIL_{index:03d}=' + json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(',', ':')))",
-              "raise SystemExit(1 if findings else 0)",
-              "REMAINING_FINDINGS",
-              "\"\"\"",
-              "run_steps[4]['run'] = gate",
-              "",
-          ]
-          source = source.replace(insertion_marker, "\n".join(diagnostic_lines) + insertion_marker, 1)
-          source = source.replace(
-              iteration_marker,
-              "for index, step in enumerate(run_steps[:5], 1):\n",
-              1,
           )
           subprocess.run(
               ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", source],
