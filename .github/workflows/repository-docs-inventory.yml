@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   publish:
-    name: Validate and publish merge-ready PlayerProfile branch
+    name: Publish validated PlayerProfile code tree
     runs-on: ubuntu-latest
     timeout-minutes: 65
     steps:
@@ -26,6 +26,8 @@ jobs:
         run: |
           cp .github/scripts/player_profile_integration_driver.py /tmp/player_profile_integration_driver.py
           cp .github/scripts/player_profile_candidate_hardening.py /tmp/player_profile_candidate_hardening.py
+          cp .github/scripts/player_profile_code_only_publisher.sh /tmp/player_profile_code_only_publisher.sh
+          chmod +x /tmp/player_profile_code_only_publisher.sh
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -47,144 +49,37 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Rebuild, validate and fast-forward publish #78
+      - name: Rebuild, validate and publish code-only head
         id: publish
-        shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           PROFILE_V2_HEAD: 4390202fd1a3f5bbc5ec98b80322a5713ccda200
           RECOVERY_HEAD: f2250d279b27bdd65f030ff5c715db01f0e1094d
           OLD_PLATFORM_HEAD: 553f0e1afa62b6e88d9ff613ce8a233e242b1146
           TARGET_BRANCH: profile/player-profile-platform
-        run: |
-          set -euo pipefail
+          REPORT_PR: '85'
+        run: /tmp/player_profile_code_only_publisher.sh
 
-          python3 /tmp/player_profile_integration_driver.py
-          python3 /tmp/player_profile_candidate_hardening.py
-
-          test -z "$(git status --porcelain --untracked-files=no)"
-          git diff --check "$PROFILE_V2_HEAD...HEAD"
-          git merge-base --is-ancestor "$PROFILE_V2_HEAD" HEAD
-          git merge-base --is-ancestor "$RECOVERY_HEAD" HEAD
-          git merge-base --is-ancestor "$OLD_PLATFORM_HEAD" HEAD
-
-          python3 scripts/test_resource_pack.py
-          python3 scripts/resource_pack.py build \
-            --source resource-pack \
-            --output build/resource-pack/validation-pack.zip
-          python3 scripts/validate_fancynpcs_snapshot.py
-
-          ./gradlew clean build --console=plain --no-daemon --stacktrace \
-            2>&1 | tee /tmp/gradle-build.log
-
-          markers=(
-            "MOTD regression suite passed."
-            "Moderation regression suite passed."
-            "Moderation review regression suite passed."
-            "PersistentStoreCoordinator regression tests passed."
-            "DEV-item reward regression suite passed."
-            "AFK regression suite passed."
-            "HUD regression suite passed."
-            "Pause-menu dialog regression suite passed."
-            "Faction passive regression suite passed."
-            "Faction passive hardening regression suite passed."
-            "Faction tax debt regression suite passed."
-            "Relic refresh regression suite passed."
-            "Relic refresh pipeline regression suite passed."
-            "Lifecycle shutdown regression suite passed."
-            "Quest NPC validation regression suite passed."
-            "Resource pack regression suite passed."
-            "Class/spec compatibility regression suite passed."
-            "ClassSpecSection v2 domain regression tests passed."
-            "Class/spec application regression suite passed."
-            "ClassSpecSection lifecycle regression suite passed."
-            "PlayerProfile domain regression suite passed."
-            "PlayerProfile YAML regression suite passed."
-            "PlayerProfile transaction regression suite passed."
-            "PlayerProfile API regression suite passed."
-            "Respec transaction regression suite passed."
-            "Spell grant ledger regression suite passed."
-          )
-          for marker in "${markers[@]}"; do
-            grep -F "$marker" /tmp/gradle-build.log
-          done
-
-          python3 scripts/check_player_profile_authority.py \
-            --root . \
-            --write-report build/player-profile-authority.json
-          python3 scripts/check_player_profile_openapi.py
-          python3 scripts/test_player_profile_authority.py
-          python3 scripts/check_consistency.py
-          python3 scripts/check_markdown_links.py --root .
-          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
-
-          python3 scripts/generate_repository_inventory.py \
-            --root . \
-            --output build/repository-inventory \
-            --mode strict
-          python3 scripts/check_documentation_coverage.py \
-            --root . \
-            --inventory build/repository-inventory/repository-inventory.json \
-            --output build/repository-inventory \
-            --mode strict
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          inventory = json.loads(
-              Path('build/repository-inventory/repository-inventory.json')
-              .read_text(encoding='utf-8')
-          )
-          unresolved = [
-              finding for finding in inventory.get('findings', [])
-              if finding.get('severity') in {'FAIL', 'REVIEW_REQUIRED'}
-          ]
-          if unresolved:
-              raise SystemExit(json.dumps(unresolved, ensure_ascii=False, indent=2))
-          PY
-
-          git fetch --no-tags origin \
-            "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH" \
-            "+refs/heads/rework/class-spec-profile-v2:refs/remotes/origin/rework/class-spec-profile-v2" \
-            "+refs/heads/agent/player-profile-root-recovered-20260803-v4:refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4"
-          test "$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)" = "$OLD_PLATFORM_HEAD"
-          test "$(git rev-parse refs/remotes/origin/rework/class-spec-profile-v2)" = "$PROFILE_V2_HEAD"
-          test "$(git rev-parse refs/remotes/origin/agent/player-profile-root-recovered-20260803-v4)" = "$RECOVERY_HEAD"
-          git merge-base --is-ancestor "$OLD_PLATFORM_HEAD" HEAD
-
-          candidate="$(git rev-parse HEAD)"
-          candidate_tree="$(git rev-parse HEAD^{tree})"
-          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
-          remote="$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')"
-          test "$remote" = "$candidate"
-
-          echo "candidate_sha=$candidate" >> "$GITHUB_OUTPUT"
-          echo "candidate_tree=$candidate_tree" >> "$GITHUB_OUTPUT"
-          printf 'Published %s (%s) to %s\n' "$candidate" "$candidate_tree" "$TARGET_BRANCH"
-
-      - name: Publish final driver result
+      - name: Report workflow-safe publication result
         if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          CANDIDATE: ${{ steps.publish.outputs.candidate_sha }}
-          TREE: ${{ steps.publish.outputs.candidate_tree }}
           OUTCOME: ${{ steps.publish.outcome }}
+          CODE_HEAD: ${{ steps.publish.outputs.code_head }}
+          VALIDATED_CANDIDATE: ${{ steps.publish.outputs.validated_candidate }}
         run: |
           set -euo pipefail
-          cat > /tmp/player-profile-publish-result.md <<EOF
-          <!-- player-profile-publish-result -->
-          ### PlayerProfile branch publication
+          cat > /tmp/player-profile-publisher-result.md <<EOF
+          <!-- player-profile-code-publisher-result -->
+          ### PlayerProfile code publisher result
 
           - Outcome: **$OUTCOME**
-          - Published candidate: \`${CANDIDATE:-not-published}\`
-          - Candidate tree: \`${TREE:-not-published}\`
-          - Target: \`profile/player-profile-platform\`
-          - Mode: exact-head guarded normal fast-forward push
+          - Validated candidate: \`${VALIDATED_CANDIDATE:-not-created}\`
+          - Published code head: \`${CODE_HEAD:-not-published}\`
           - Merge performed: **no**
           - Force push used: **no**
           EOF
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" \
-            -f body="$(cat /tmp/player-profile-publish-result.md)"
+          gh api --method POST -H "Accept: application/vnd.github+json" \
+            "repos/${GITHUB_REPOSITORY}/issues/85/comments" \
+            -f body="$(cat /tmp/player-profile-publisher-result.md)"
