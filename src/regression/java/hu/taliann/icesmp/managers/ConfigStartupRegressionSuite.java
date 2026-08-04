@@ -182,7 +182,7 @@ public final class ConfigStartupRegressionSuite {
     private static void verifiesBlockRegenerationConfigMenu() throws Exception {
         check(ConfigMenuRootGUI.categoryCapacity() >= ConfigMenuGUI.CATEGORIES.size() + 1,
                 "config root menu must have capacity for the block-regeneration category");
-        check(BlockRegenConfigMenuGUI.entryCount() == 27,
+        check(BlockRegenConfigMenuGUI.entryCount() == 33,
                 "block-regeneration menu entry count changed unexpectedly");
 
         final List<String> requiredKeys = List.of(
@@ -195,6 +195,12 @@ public final class ConfigStartupRegressionSuite {
                 "territory.protection.regen.zones.doom-gate",
                 "territory.protection.regen.zones.faction",
                 "territory.protection.regen.zones.wilderness",
+                "territory.protection.rules.capital.allow-explosions",
+                "territory.protection.rules.protected-city.allow-explosions",
+                "territory.protection.rules.protected-faction.allow-explosions",
+                "territory.protection.rules.dungeon.allow-explosions",
+                "territory.protection.rules.doom-gate.allow-explosions",
+                "territory.protection.rules.faction.allow-explosions",
                 "territory.protection.regen.delay-seconds",
                 "territory.protection.regen.restore-interval-ticks",
                 "territory.protection.regen.blocks-per-pass",
