@@ -178,16 +178,23 @@ jobs:
                   return merged
               return ours_value
 
+          def contains_key(value, target: str) -> bool:
+              if isinstance(value, dict):
+                  if target in value:
+                      return True
+                  return any(contains_key(child, target) for child in value.values())
+              if isinstance(value, list):
+                  return any(contains_key(child, target) for child in value)
+              return False
+
           manifest = deep_merge(read_stage(2), read_stage(3))
-          dynamic = manifest.get('config-sections', {}).get('resolutions', {})
-          components = manifest.get('components', {})
           required_manifest = (
               'config.dynamic.class-spec-dependency-preflight.section.accepted-versions',
               'config.dynamic.class-spec-dependency-preflight.section.required',
               'config.dynamic.class-spec-dependency-preflight.section.server-name',
               'config.dynamic.class-spec-dependency-preflight.section.verification',
           )
-          missing_dynamic = [key for key in required_manifest if key not in dynamic]
+          missing_dynamic = [key for key in required_manifest if not contains_key(manifest, key)]
           if missing_dynamic:
               raise SystemExit('Merged manifest is missing config entries: ' + ', '.join(missing_dynamic))
           required_components = (
@@ -199,7 +206,7 @@ jobs:
               'component.hu.taliann.icesmp.classspec.integration.ClassSpecHudPort',
               'component.hu.taliann.icesmp.classspec.integration.ClassSpecModelPort',
           )
-          missing_components = [key for key in required_components if key not in components]
+          missing_components = [key for key in required_components if not contains_key(manifest, key)]
           if missing_components:
               raise SystemExit('Merged manifest is missing components: ' + ', '.join(missing_components))
           Path('docs/documentation-manifest.yml').write_text(
