@@ -71,24 +71,24 @@ jobs:
               and step.get("name") == "Execute reviewed integration, manifest synchronization, gates and push"
           )
 
-          insertion_marker = "          env = os.environ.copy()\n"
+          insertion_marker = "env = os.environ.copy()\n"
           if source.count(insertion_marker) != 1:
               raise SystemExit(f"Source execution marker drift: {source.count(insertion_marker)}")
-          iteration_marker = "          for index, step in enumerate(run_steps, 1):\n"
+          iteration_marker = "for index, step in enumerate(run_steps, 1):\n"
           if source.count(iteration_marker) != 1:
               raise SystemExit(f"Source iteration marker drift: {source.count(iteration_marker)}")
 
           diagnostic_lines = [
-              "          gate = run_steps[4]['run']",
-              "          strict_marker = '--root . --output build/repository-inventory --mode strict'",
-              "          if gate.count(strict_marker) != 1:",
-              "              raise SystemExit(f'Final strict marker drift: {gate.count(strict_marker)}')",
-              "          gate = gate.replace(",
-              "              strict_marker,",
-              "              '--root . --output build/repository-inventory --mode report',",
-              "              1,",
-              "          )",
-              "          gate += \"\"\"",
+              "gate = run_steps[4]['run']",
+              "strict_marker = '--root . --output build/repository-inventory --mode strict'",
+              "if gate.count(strict_marker) != 1:",
+              "    raise SystemExit(f'Final strict marker drift: {gate.count(strict_marker)}')",
+              "gate = gate.replace(",
+              "    strict_marker,",
+              "    '--root . --output build/repository-inventory --mode report',",
+              "    1,",
+              ")",
+              "gate += \"\"\"",
               "python3 - <<'REMAINING_FINDINGS'",
               "import json",
               "from collections import Counter",
@@ -103,13 +103,13 @@ jobs:
               "raise SystemExit(1 if findings else 0)",
               "REMAINING_FINDINGS",
               "\"\"\"",
-              "          run_steps[4]['run'] = gate",
+              "run_steps[4]['run'] = gate",
               "",
           ]
           source = source.replace(insertion_marker, "\n".join(diagnostic_lines) + insertion_marker, 1)
           source = source.replace(
               iteration_marker,
-              "          for index, step in enumerate(run_steps[:5], 1):\n",
+              "for index, step in enumerate(run_steps[:5], 1):\n",
               1,
           )
           subprocess.run(
