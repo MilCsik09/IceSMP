@@ -1,6 +1,7 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: reproduce the synchronized Profile v2 tree and print every remaining blocking finding with normalized source indentation.
-Validation head: a92b5a2990b5aa8aea49255b17d278d925858bf5
+Phase: reproduce the synchronized Profile v2 tree and print every remaining blocking finding with the reviewed driver SHA explicitly inherited.
+Validation head: ddc3de16b3eebd34d5ef1bdcb4ddf6992816d016
+Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
 Source synchronized workflow: 3d1c5d7b17e43f6221d0b23ba8375623125a0ffa
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
