@@ -1,6 +1,7 @@
 Trigger the Repository Docs Inventory integration driver.
-Phase: execute exact Profile v2 integration onto the refreshed #72 base.
-Validation head: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
+Phase: retry exact Profile v2 integration with deterministic EOF normalization.
+Validation head: c3cc5ffe49f94b497624e498ad3cc7d7e48f553e
+Reviewed driver commit: a4bc10d010d7ccdb07971fec6d78c4d800b61d8f
 Expected updated base: 854248d530d417aca49906616f6e3ac458b231ca
 Expected clean Profile v2 head: b6f4492766675f718f73fd947bf92a388a3090fb
 Expected old #75 head: f25e7e600f418724dd2341e39387a0fa5c0625de
