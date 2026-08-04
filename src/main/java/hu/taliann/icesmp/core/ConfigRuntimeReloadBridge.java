@@ -1,13 +1,17 @@
 package hu.taliann.icesmp.core;
 
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
+import hu.taliann.icesmp.listeners.FactionFoodListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
 import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
 import hu.taliann.icesmp.listeners.RelicPvpTransferListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
+import hu.taliann.icesmp.managers.CityGuardManager;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.CorruptionManager;
+import hu.taliann.icesmp.managers.DarkUndeadAmbienceManager;
 import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.InvasionManager;
@@ -58,17 +62,37 @@ public final class ConfigRuntimeReloadBridge {
                 if (key.startsWith("dev-items.csodalatos_bingulus.")) {
                     field(core, "devItemManager", DevItemManager.class).refreshOnlineOwner();
                 }
-                if (key.equals("corruption.interval-minutes")) {
-                    resetLongField(field(core, "corruptionManager", Object.class), "nextAttemptAt");
+                if (key.equals("corruption.enabled")
+                        || key.equals("corruption.interval-minutes")) {
+                    final CorruptionManager corruption =
+                            field(core, "corruptionManager", CorruptionManager.class);
+                    resetLongField(corruption, "nextAttemptAt");
+                    corruption.tick();
                 }
-                if (key.equals("dark-undead.spawn-interval-seconds")) {
-                    resetLongField(field(core, "darkUndeadAmbienceManager", Object.class), "nextSpawnAt");
+                if (key.equals("dark-undead.enabled")
+                        || key.equals("dark-undead.spawn-interval-seconds")) {
+                    final DarkUndeadAmbienceManager darkUndead = field(core,
+                            "darkUndeadAmbienceManager", DarkUndeadAmbienceManager.class);
+                    resetLongField(darkUndead, "nextSpawnAt");
+                    darkUndead.tick();
                 }
-                if (key.equals("city-guards.step-seconds")) {
-                    resetLongField(field(core, "cityGuardManager", Object.class), "nextTickAt");
+                if (key.equals("city-guards.enabled")
+                        || key.equals("city-guards.step-seconds")) {
+                    final CityGuardManager guards =
+                            field(core, "cityGuardManager", CityGuardManager.class);
+                    if (!configManager.getBoolean("city-guards.enabled", true)) {
+                        guards.shutdown();
+                    } else {
+                        resetLongField(guards, "nextTickAt");
+                        guards.tick();
+                    }
                 }
-                if (key.equals("factions.food-duty.check-minutes")) {
-                    resetLongField(field(core, "factionFoodListener", Object.class), "nextCheckAt");
+                if (key.equals("factions.food-duty.enabled")
+                        || key.equals("factions.food-duty.check-minutes")) {
+                    final FactionFoodListener food =
+                            field(core, "factionFoodListener", FactionFoodListener.class);
+                    resetLongField(food, "nextCheckAt");
+                    food.tick();
                 }
                 if (key.equals("factions.whisper.decay-minutes")) {
                     resetLongField(field(core, "whisperManager", Object.class), "nextDecayAt");
@@ -86,9 +110,13 @@ public final class ConfigRuntimeReloadBridge {
                 || key.startsWith("dev-items.csodalatos_bingulus.")
                 || key.equals("factions.tax.enabled")
                 || key.equals("factions.tax.interval-minutes")
+                || key.equals("corruption.enabled")
                 || key.equals("corruption.interval-minutes")
+                || key.equals("dark-undead.enabled")
                 || key.equals("dark-undead.spawn-interval-seconds")
+                || key.equals("city-guards.enabled")
                 || key.equals("city-guards.step-seconds")
+                || key.equals("factions.food-duty.enabled")
                 || key.equals("factions.food-duty.check-minutes")
                 || key.equals("factions.whisper.decay-minutes");
     }
