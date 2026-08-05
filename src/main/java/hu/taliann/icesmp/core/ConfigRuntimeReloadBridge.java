@@ -14,12 +14,14 @@ import hu.taliann.icesmp.managers.CorruptionManager;
 import hu.taliann.icesmp.managers.DarkUndeadAmbienceManager;
 import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.ModerationManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SinManager;
+import hu.taliann.icesmp.managers.TablistManager;
 import hu.taliann.icesmp.managers.VanishManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -39,6 +41,8 @@ import java.util.List;
  * ConfigManager at use time and never enter this class.
  */
 public final class ConfigRuntimeReloadBridge {
+
+    private static final String HUD_OBJECTIVE = "icesmp_hud";
 
     private ConfigRuntimeReloadBridge() {
     }
@@ -107,6 +111,12 @@ public final class ConfigRuntimeReloadBridge {
                         || key.equals("tablist.refresh-ticks")) {
                     reschedule(core, "scheduleHud", "hudTask", "tablistTask");
                 }
+                if (key.startsWith("hud.") && !key.equals("hud.refresh-ticks")) {
+                    refreshHudOutput(plugin, core, configManager);
+                }
+                if (key.startsWith("tablist.") && !key.equals("tablist.refresh-ticks")) {
+                    refreshTablistOutput(plugin, core);
+                }
                 if (key.equals("pets.companion.tick-ticks")) {
                     reschedule(core, "schedulePetCombat", "petTask");
                 }
@@ -142,11 +152,69 @@ public final class ConfigRuntimeReloadBridge {
                 || key.equals("factions.food-duty.enabled")
                 || key.equals("factions.food-duty.check-minutes")
                 || key.equals("factions.whisper.decay-minutes")
-                || key.equals("hud.refresh-ticks")
-                || key.equals("tablist.refresh-ticks")
+                || key.startsWith("hud.")
+                || key.startsWith("tablist.")
                 || key.equals("pets.companion.tick-ticks")
                 || key.equals("currency.economy-event.check-interval-minutes")
                 || key.startsWith("moderation.");
+    }
+
+    private static void refreshHudOutput(final JavaPlugin plugin, final Object core,
+                                         final ConfigManager configManager)
+            throws ReflectiveOperationException {
+        final HudManager hud = field(core, "hudManager", HudManager.class);
+        final boolean enabled = configManager.getBoolean("hud.enabled", true);
+        final boolean nativeTablist = configManager.getBoolean("tablist.enabled", true);
+        final boolean fallbackTabName = configManager.getBoolean("hud.tablist-enabled", true);
+
+        for (final org.bukkit.entity.Player player
+                : List.copyOf(org.bukkit.Bukkit.getOnlinePlayers())) {
+            player.getScheduler().run(plugin, task -> {
+                if (!enabled) {
+                    hud.cleanup(player);
+                    removeHudSidebar(player);
+                    if (!nativeTablist) {
+                        player.playerListName(null);
+                    }
+                    return;
+                }
+                if (!fallbackTabName && !nativeTablist) {
+                    player.playerListName(null);
+                }
+                hud.init(player);
+                hud.update(player);
+            }, null);
+        }
+        if (enabled) {
+            hud.tick();
+        }
+    }
+
+    private static void removeHudSidebar(final org.bukkit.entity.Player player) {
+        final org.bukkit.scoreboard.Scoreboard board = player.getScoreboard();
+        final org.bukkit.scoreboard.Objective objective = board.getObjective(HUD_OBJECTIVE);
+        if (objective != null) {
+            objective.unregister();
+        }
+        for (int index = 0; index < 15; index++) {
+            final org.bukkit.scoreboard.Team team = board.getTeam("hud_" + index);
+            if (team != null) {
+                team.unregister();
+            }
+        }
+    }
+
+    private static void refreshTablistOutput(final JavaPlugin plugin, final Object core)
+            throws ReflectiveOperationException {
+        final TablistManager tablist = field(core, "tablistManager", TablistManager.class);
+        for (final org.bukkit.entity.Player player
+                : List.copyOf(org.bukkit.Bukkit.getOnlinePlayers())) {
+            player.getScheduler().run(plugin, task -> tablist.cleanup(player), null);
+        }
+        // Cleanup and rebuild must not race on the same entity scheduler. One global tick leaves
+        // enough time for each player's queued cleanup to retire before the normal publish phase.
+        plugin.getServer().getGlobalRegionScheduler().runDelayed(
+                plugin, task -> tablist.tick(), 1L);
     }
 
     private static void reloadRelics(final JavaPlugin plugin, final Object core,
