@@ -54,6 +54,20 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
             return Optional.empty();
         });
     }
+    @Override public CompletionStage<Set<UUID>> listPlayerIds(){
+        return submit(new UUID(0L,1L),()->{
+            if(!Files.isDirectory(root))return Set.of();
+            TreeSet<UUID> ids=new TreeSet<>();
+            try(DirectoryStream<Path> dirs=Files.newDirectoryStream(root)){
+                for(Path dir:dirs){
+                    if(!Files.isDirectory(dir)||!Files.isRegularFile(dir.resolve("manifest.yml")))continue;
+                    try{ids.add(UUID.fromString(dir.getFileName().toString()));}
+                    catch(IllegalArgumentException ignored){}
+                }
+            }
+            return Collections.unmodifiableSet(new LinkedHashSet<>(ids));
+        });
+    }
     @Override public CompletionStage<Optional<ProfileSectionSnapshot<?>>> loadSection(UUID id,ProfileSectionId section){Objects.requireNonNull(section);return find(id).thenApply(p->p.flatMap(profile->profile.section(section)));}
     @Override public CompletionStage<SectionSaveResult> saveSection(UUID id,ProfileSectionId section,long expectedRevision,ProfileSectionSnapshot<?> next){return saveSection(id,section,expectedRevision,-1,next);}
     @Override public CompletionStage<SectionSaveResult> saveSection(UUID id,ProfileSectionId section,long expectedRevision,long expectedGeneration,ProfileSectionSnapshot<?> next){
