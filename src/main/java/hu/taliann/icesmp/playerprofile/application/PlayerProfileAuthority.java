@@ -184,6 +184,10 @@ public final class PlayerProfileAuthority {
         return service.transact(playerId, work);
     }
 
+    public PlayerProfileService service() {
+        return service;
+    }
+
     public PlayerProfileRepository repository() {
         return repository;
     }
