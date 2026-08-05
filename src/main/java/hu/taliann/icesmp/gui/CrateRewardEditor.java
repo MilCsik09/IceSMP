@@ -17,6 +17,8 @@ import java.util.Map;
  */
 public final class CrateRewardEditor {
 
+    private static final double EDITOR_DECIMAL_MINIMUM = 0.01D;
+
     public record Mutation(List<Map<String, Object>> rewards, String error) {
         public boolean successful() {
             return error == null;
@@ -101,13 +103,15 @@ public final class CrateRewardEditor {
         final String type = type(reward);
         try {
             if ("weight".equals(field)) {
-                reward.put("weight", CrateRules.positiveWeight(value));
+                reward.put("weight", CrateRules.positiveWeight(
+                        Math.max(EDITOR_DECIMAL_MINIMUM, value)));
             } else if ("amount".equals(field)) {
                 if ("command".equals(type)) {
                     return Mutation.fail("A command rewardnak nincs szerkeszthető amount mezője.");
                 }
                 if ("currency".equals(type)) {
-                    reward.put("amount", CrateRules.currencyAmount(value));
+                    reward.put("amount", CrateRules.currencyAmount(
+                            Math.max(EDITOR_DECIMAL_MINIMUM, value)));
                 } else if ("recipe-item".equals(type)) {
                     reward.put("amount", CrateRules.boundedPositiveInt((int) Math.round(value), 1,
                             CrateRules.MAX_RECIPE_REWARD_AMOUNT, "amount"));
