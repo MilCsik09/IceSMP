@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/** Shared renderer and value resolver for every editable admin-config icon. */
+/** Shared renderer and staged value resolver for every scalar admin-config icon. */
 public final class ConfigMenuEntryRenderer {
 
     private static final Map<String, Object> CODE_DEFAULTS = Map.ofEntries(
@@ -29,9 +29,14 @@ public final class ConfigMenuEntryRenderer {
 
     public static ItemStack render(final ConfigMenuGUI.Entry entry,
                                    final ConfigManager configManager) {
-        final Object defaultValue = defaultValue(entry, configManager);
-        final Object currentValue = currentValue(entry, configManager, defaultValue);
-        final boolean overridden = configManager.hasOverride(entry.key());
+        return render(entry, configManager, null);
+    }
+
+    public static ItemStack render(final ConfigMenuGUI.Entry entry,
+                                   final ConfigManager configManager,
+                                   final ConfigEditSession session) {
+        final Object defaultValue = defaultValue(entry, configManager, session);
+        final Object currentValue = currentValue(entry, configManager, session, defaultValue);
 
         final List<String> lore = new ArrayList<>();
         lore.add("&8" + entry.key());
@@ -42,10 +47,12 @@ public final class ConfigMenuEntryRenderer {
         lore.add("");
         lore.add("&fJelenleg: &b" + formatValue(entry, currentValue));
         lore.add("&fAlapérték: &a" + formatValue(entry, defaultValue));
-        lore.add(overridden
-                ? "&eForrás: config.yml felülbírálás"
-                : "&aForrás: subsystem alapkonfiguráció");
-        lore.add("&aAzonnal, restart nélkül alkalmazódik");
+        appendSource(lore, entry.key(), configManager, session);
+        lore.add(switch (entry.reloadMode()) {
+            case LIVE -> "&aHatás: mentés után azonnal él";
+            case RELOAD_HOOK -> "&eHatás: mentés utáni élő reload-hook";
+            case RESTART_REQUIRED -> "&cHatás: szerver-újraindítás szükséges";
+        });
 
         final Material material;
         final String name;
@@ -55,14 +62,14 @@ public final class ConfigMenuEntryRenderer {
                 material = enabled ? Material.LIME_DYE : Material.GRAY_DYE;
                 name = (enabled ? "&a" : "&c") + entry.label();
                 lore.add("");
-                lore.add("&eBal/jobb katt: be- vagy kikapcsolás");
+                lore.add("&eBal/jobb katt: staged be-/kikapcsolás");
             }
             case CYCLE -> {
                 material = Material.COMPARATOR;
                 name = "&b" + entry.label();
                 lore.add("&7Választható: &f" + String.join(" / ", entry.options()));
                 lore.add("");
-                lore.add("&eBal/jobb katt: következő lehetőség");
+                lore.add("&eKattintás: következő staged lehetőség");
             }
             default -> {
                 material = Material.PAPER;
@@ -75,13 +82,20 @@ public final class ConfigMenuEntryRenderer {
                 lore.add("&7SHIFT = ötszörös lépés");
             }
         }
-        lore.add("&dGörgőkatt: visszaállítás az alapértékre");
+        lore.add("&dGörgőkatt/Q: staged reset az alapértékre");
         return tile(material, name, lore);
     }
 
     public static Object defaultValue(final ConfigMenuGUI.Entry entry,
                                       final ConfigManager configManager) {
-        final Object configured = configManager.getBaseValue(entry.key());
+        return defaultValue(entry, configManager, null);
+    }
+
+    public static Object defaultValue(final ConfigMenuGUI.Entry entry,
+                                      final ConfigManager configManager,
+                                      final ConfigEditSession session) {
+        final Object configured = session == null
+                ? configManager.getBaseValue(entry.key()) : session.defaultValue(entry.key());
         if (configured != null) {
             return normalize(entry, configured);
         }
@@ -99,12 +113,24 @@ public final class ConfigMenuEntryRenderer {
 
     public static Object currentValue(final ConfigMenuGUI.Entry entry,
                                       final ConfigManager configManager) {
-        return currentValue(entry, configManager, defaultValue(entry, configManager));
+        return currentValue(entry, configManager, null);
+    }
+
+    public static Object currentValue(final ConfigMenuGUI.Entry entry,
+                                      final ConfigManager configManager,
+                                      final ConfigEditSession session) {
+        return currentValue(entry, configManager, session,
+                defaultValue(entry, configManager, session));
     }
 
     private static Object currentValue(final ConfigMenuGUI.Entry entry,
                                        final ConfigManager configManager,
+                                       final ConfigEditSession session,
                                        final Object fallback) {
+        if (session != null) {
+            final Object staged = session.value(entry.key());
+            return staged == null ? fallback : normalize(entry, staged);
+        }
         return switch (entry.type()) {
             case TOGGLE -> configManager.getBoolean(entry.key(), Boolean.TRUE.equals(fallback));
             case CYCLE -> configManager.getString(entry.key(), String.valueOf(fallback));
@@ -115,13 +141,33 @@ public final class ConfigMenuEntryRenderer {
 
     public static double currentDouble(final ConfigMenuGUI.Entry entry,
                                        final ConfigManager configManager) {
-        final Object current = currentValue(entry, configManager);
+        return currentDouble(entry, configManager, null);
+    }
+
+    public static double currentDouble(final ConfigMenuGUI.Entry entry,
+                                       final ConfigManager configManager,
+                                       final ConfigEditSession session) {
+        final Object current = currentValue(entry, configManager, session);
         return current instanceof Number number ? number.doubleValue() : entry.min();
     }
 
     public static String formatCurrent(final ConfigMenuGUI.Entry entry,
                                        final ConfigManager configManager) {
         return formatValue(entry, currentValue(entry, configManager));
+    }
+
+    private static void appendSource(final List<String> lore, final String key,
+                                     final ConfigManager configManager,
+                                     final ConfigEditSession session) {
+        if (session != null && session.hasPending(key)) {
+            lore.add(session.pendingChanges().get(key) == null
+                    ? "&dNem mentett reset: subsystem alapérték"
+                    : "&eNem mentett staged módosítás");
+            return;
+        }
+        lore.add(configManager.hasOverride(key)
+                ? "&eForrás: config.yml felülbírálás"
+                : "&aForrás: subsystem alapkonfiguráció");
     }
 
     private static Object normalize(final ConfigMenuGUI.Entry entry, final Object value) {
