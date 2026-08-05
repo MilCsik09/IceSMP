@@ -1956,3 +1956,11 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** különös, gömbölyű, jóindulatú kis tengeri-mágikus lény vagy mag; két apró szemmel, körülötte csillagpor-szilánkokkal
 - **Színvilág:** világos lila és rózsaszín; akcent: prizmarin-türkiz és fehér csillanás
 - **Hangulat / lore:** Bence örökös DEV iteme; játékos, csodálatos és kissé értelmezhetetlen — 10 aktív percenként ajándékot „talál”.
+
+## Automated GUI/item-model validation
+
+`scripts/validate_gui_icons.py` scans Java and every supported config for namespaced ITEM_MODEL references, then requires each
+reference to exist both in this manifest and in `resource-pack/assets/icesmp/items/`. Public model ids are not renumbered.
+When the resource pack is absent, GUI code keeps its declared vanilla Material (the explicit fallback); the server never emits
+an invented CustomModelData magic number. The profession recipe audit additionally requires every unique profession output to
+resolve through `profession-materials.*.item-model`.

@@ -43,6 +43,12 @@ public final class MobScalingManager {
     private final BloodMoonManager bloodMoonManager;
     private final TerritoryManager territoryManager;
     private final NamespacedKey mobLevelKey;
+    private final NamespacedKey territoryBurnManagedKey;
+    private final NamespacedKey territoryBurnBaselineKey;
+    private final NamespacedKey territoryZombificationManagedKey;
+    private final NamespacedKey territoryZombificationBaselineKey;
+    private final NamespacedKey eventBurnKey;
+    private final NamespacedKey eventZombificationKey;
     private final Set<SpawnReason> ignoredSpawnReasons = EnumSet.noneOf(SpawnReason.class);
 
     private boolean enabled;
@@ -63,6 +69,12 @@ public final class MobScalingManager {
         this.bloodMoonManager = bloodMoonManager;
         this.territoryManager = territoryManager;
         this.mobLevelKey = new NamespacedKey(plugin, "mob_level");
+        this.territoryBurnManagedKey = new NamespacedKey(plugin, "territory_no_daylight_burn");
+        this.territoryBurnBaselineKey = new NamespacedKey(plugin, "territory_no_daylight_burn_baseline");
+        this.territoryZombificationManagedKey = new NamespacedKey(plugin, "territory_no_zombification");
+        this.territoryZombificationBaselineKey = new NamespacedKey(plugin, "territory_no_zombification_baseline");
+        this.eventBurnKey = new NamespacedKey(plugin, EventSpawnGuard.EVENT_NO_BURN_KEY);
+        this.eventZombificationKey = new NamespacedKey(plugin, EventSpawnGuard.EVENT_NO_ZOMBIFICATION_KEY);
     }
 
     public void load() {
@@ -111,6 +123,7 @@ public final class MobScalingManager {
      * @param spawnReason the spawn reason reported by the event
      */
     public void applyScaling(final LivingEntity entity, final SpawnReason spawnReason) {
+        reconcileTerritoryProtection(entity);
         if (!enabled || entity == null || ignoredSpawnReasons.contains(spawnReason)) {
             return;
         }
@@ -134,7 +147,6 @@ public final class MobScalingManager {
                 Math.max(1, configManager.getInt("mob-scaling.hard-cap-level", 15)),
                 resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
                         + zoneBonusLevels(zoneSelectors));
-        applyZoneHardening(entity, zoneSelectors);
         if (level < 1) {
             return;
         }
@@ -219,35 +231,115 @@ public final class MobScalingManager {
         return bonus;
     }
 
-    /**
-     * Zóna-alapú mob-keményítés a spawn pillanatában: no-daylight-burn = a zombi/csontváz/
-     * phantom típus nappal sem gyullad meg (pl. DARK-földek örök élőhalottjai), no-zombification
-     * = piglin/hoglin nem alakul át az overworldben. Doom-gate default: mindkettő igaz.
-     */
-    private void applyZoneHardening(final LivingEntity entity, final java.util.List<String> selectors) {
+    /** Reconciles reversible DARK/doom daylight and zombification protection. */
+    public void reconcileTerritoryProtection(final LivingEntity entity) {
+        if (entity != null) {
+            reconcileTerritoryProtection(entity, entity.getLocation());
+        }
+    }
+
+    /** Location-explicit overload used by teleport/move events before the entity location mutates. */
+    public void reconcileTerritoryProtection(final LivingEntity entity, final Location location) {
+        if (entity == null || location == null || location.getWorld() == null) {
+            return;
+        }
         boolean noBurn = false;
         boolean noZombification = false;
-        for (final String selector : selectors) {
+        for (final String selector : zoneRuleSelectors(location)) {
             final boolean fallback = "doom-gate".equals(selector);
             noBurn |= configManager.getBoolean("territory.mob-rules." + selector + ".no-daylight-burn", fallback);
             noZombification |= configManager.getBoolean("territory.mob-rules." + selector + ".no-zombification", fallback);
         }
-        if (noBurn) {
-            if (entity instanceof org.bukkit.entity.AbstractSkeleton skeleton) {
-                skeleton.setShouldBurnInDay(false);
-            } else if (entity instanceof org.bukkit.entity.Zombie zombie) {
-                zombie.setShouldBurnInDay(false);
-            } else if (entity instanceof org.bukkit.entity.Phantom phantom) {
-                phantom.setShouldBurnInDay(false);
-            }
+        reconcileBurn(entity, noBurn);
+        reconcileZombification(entity, noZombification);
+    }
+
+    public boolean hasTerritoryDaylightProtection(final LivingEntity entity) {
+        return entity != null && entity.getPersistentDataContainer()
+                .has(territoryBurnManagedKey, PersistentDataType.BYTE);
+    }
+
+    private void reconcileBurn(final LivingEntity entity, final boolean requested) {
+        final Boolean current = shouldBurnInDay(entity);
+        if (current == null) {
+            return;
         }
-        if (noZombification) {
-            if (entity instanceof org.bukkit.entity.PiglinAbstract piglin) {
-                piglin.setImmuneToZombification(true);
-            } else if (entity instanceof org.bukkit.entity.Hoglin hoglin) {
-                hoglin.setImmuneToZombification(true);
+        final var pdc = entity.getPersistentDataContainer();
+        final boolean managed = pdc.has(territoryBurnManagedKey, PersistentDataType.BYTE);
+        if (requested) {
+            if (!managed) {
+                pdc.set(territoryBurnBaselineKey, PersistentDataType.BYTE, (byte) (current ? 1 : 0));
+                pdc.set(territoryBurnManagedKey, PersistentDataType.BYTE, (byte) 1);
             }
+            setShouldBurnInDay(entity, false);
+            if (entity.getFireTicks() > 0 && locationHasOpenDaylight(entity.getLocation())) {
+                entity.setFireTicks(0);
+            }
+            return;
         }
+        if (!managed) {
+            return;
+        }
+        final boolean eventProtected = pdc.has(eventBurnKey, PersistentDataType.BYTE);
+        final byte baseline = pdc.getOrDefault(territoryBurnBaselineKey, PersistentDataType.BYTE, (byte) 1);
+        setShouldBurnInDay(entity, eventProtected ? false : baseline != 0);
+        pdc.remove(territoryBurnManagedKey);
+        pdc.remove(territoryBurnBaselineKey);
+    }
+
+    private void reconcileZombification(final LivingEntity entity, final boolean requested) {
+        final Boolean current = immuneToZombification(entity);
+        if (current == null) {
+            return;
+        }
+        final var pdc = entity.getPersistentDataContainer();
+        final boolean managed = pdc.has(territoryZombificationManagedKey, PersistentDataType.BYTE);
+        if (requested) {
+            if (!managed) {
+                pdc.set(territoryZombificationBaselineKey, PersistentDataType.BYTE, (byte) (current ? 1 : 0));
+                pdc.set(territoryZombificationManagedKey, PersistentDataType.BYTE, (byte) 1);
+            }
+            setImmuneToZombification(entity, true);
+            return;
+        }
+        if (!managed) {
+            return;
+        }
+        final boolean eventProtected = pdc.has(eventZombificationKey, PersistentDataType.BYTE);
+        final byte baseline = pdc.getOrDefault(territoryZombificationBaselineKey,
+                PersistentDataType.BYTE, (byte) 0);
+        setImmuneToZombification(entity, eventProtected || baseline != 0);
+        pdc.remove(territoryZombificationManagedKey);
+        pdc.remove(territoryZombificationBaselineKey);
+    }
+
+    private static Boolean shouldBurnInDay(final LivingEntity entity) {
+        if (entity instanceof org.bukkit.entity.AbstractSkeleton value) return value.shouldBurnInDay();
+        if (entity instanceof org.bukkit.entity.Zombie value) return value.shouldBurnInDay();
+        if (entity instanceof org.bukkit.entity.Phantom value) return value.shouldBurnInDay();
+        return null;
+    }
+
+    private static void setShouldBurnInDay(final LivingEntity entity, final boolean value) {
+        if (entity instanceof org.bukkit.entity.AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(value);
+        else if (entity instanceof org.bukkit.entity.Zombie zombie) zombie.setShouldBurnInDay(value);
+        else if (entity instanceof org.bukkit.entity.Phantom phantom) phantom.setShouldBurnInDay(value);
+    }
+
+    private static Boolean immuneToZombification(final LivingEntity entity) {
+        if (entity instanceof org.bukkit.entity.PiglinAbstract value) return value.isImmuneToZombification();
+        if (entity instanceof org.bukkit.entity.Hoglin value) return value.isImmuneToZombification();
+        return null;
+    }
+
+    private static void setImmuneToZombification(final LivingEntity entity, final boolean value) {
+        if (entity instanceof org.bukkit.entity.PiglinAbstract piglin) piglin.setImmuneToZombification(value);
+        else if (entity instanceof org.bukkit.entity.Hoglin hoglin) hoglin.setImmuneToZombification(value);
+    }
+
+    private static boolean locationHasOpenDaylight(final Location location) {
+        return location.getWorld() != null && location.getWorld().isDayTime()
+                && location.getBlock().getLightFromSky() >= 14;
     }
 
     /**

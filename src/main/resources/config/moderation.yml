@@ -38,3 +38,5 @@ moderation:
     allow-item-pickup: false
     allow-damage: false
     allow-interaction: false
+    # Vanished chat would reveal the moderator; opt in explicitly when needed.
+    allow-chat: false

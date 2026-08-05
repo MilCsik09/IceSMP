@@ -156,9 +156,15 @@ public final class InvasionManager {
         launchGraceUntil = now + 15_000L;
         final Player anchor = target;
         anchor.getScheduler().run(plugin, task -> {
-            final Location center = anchor.getLocation().clone();
-            plugin.getServer().getRegionScheduler().run(
-                    plugin, center, spawnTask -> spawnWave(center));
+            final Location origin = anchor.getLocation().clone();
+            final EventSpawnGuard guard = spawnGuard;
+            if (guard == null) {
+                launchGraceUntil = 0L;
+                plugin.getLogger().warning("Invasion spawn aborted: EventSpawnGuard is unavailable.");
+                return;
+            }
+            guard.findSafeNear("invasion", origin, now ^ anchor.getUniqueId().getMostSignificantBits(),
+                    this::spawnWave, () -> launchGraceUntil = 0L);
         }, () -> launchGraceUntil = 0L);
         return true;
     }

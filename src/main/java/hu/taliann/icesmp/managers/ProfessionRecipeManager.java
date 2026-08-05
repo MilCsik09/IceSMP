@@ -17,6 +17,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Profession recipes: themed, PDC-tagged "masterwork" items
@@ -38,6 +40,7 @@ public final class ProfessionRecipeManager {
     private final ConfigManager configManager;
     private final NamespacedKey recipeKey;
     private final List<Recipe> recipes = new ArrayList<>();
+    private final Set<NamespacedKey> registeredRecipeKeys = new LinkedHashSet<>();
 
     public ProfessionRecipeManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
@@ -49,12 +52,13 @@ public final class ProfessionRecipeManager {
         return configManager.getBoolean("professions.recipes.enabled", true);
     }
 
-    /** Builds the recipe set and registers it with the server (call once on enable). */
-    public void registerRecipes() {
+    /** Idempotently rebuilds the Bukkit registry; disabled/reload states remove stale keys first. */
+    public synchronized void registerRecipes() {
+        clearRegisteredRecipes();
+        recipes.clear();
         if (!isEnabled()) {
             return;
         }
-        recipes.clear();
         // A kódba égetett régi mestermű-készlet alapból KI: numerikusan mindig
         // felülmúlta a katalógus-párját (két párhuzamos rendszer) — a recept-katalógus
         // az egyetlen craft-forrás. A már legyártott példányok érvényben maradnak.
@@ -103,14 +107,32 @@ public final class ProfessionRecipeManager {
 
         for (final Recipe recipe : recipes) {
             try {
-                final ShapedRecipe shaped = new ShapedRecipe(new NamespacedKey(plugin, "prof_" + recipe.id()), recipe.result());
+                final NamespacedKey key = new NamespacedKey(plugin, "prof_" + recipe.id());
+                final ShapedRecipe shaped = new ShapedRecipe(key, recipe.result());
                 shaped.shape(recipe.shape());
                 recipe.ingredients().forEach(shaped::setIngredient);
-                plugin.getServer().addRecipe(shaped);
+                if (plugin.getServer().addRecipe(shaped)) {
+                    registeredRecipeKeys.add(key);
+                } else {
+                    plugin.getLogger().warning("Server rejected duplicate profession recipe key: " + key);
+                }
             } catch (final IllegalStateException | IllegalArgumentException exception) {
                 plugin.getLogger().warning("Could not register profession recipe '" + recipe.id() + "': " + exception.getMessage());
             }
         }
+    }
+
+    /** Removes only keys owned by this manager; safe on reload and plugin disable. */
+    public synchronized void clearRegisteredRecipes() {
+        for (final NamespacedKey key : registeredRecipeKeys) {
+            plugin.getServer().removeRecipe(key);
+        }
+        registeredRecipeKeys.clear();
+    }
+
+    public void shutdown() {
+        clearRegisteredRecipes();
+        recipes.clear();
     }
 
     /**

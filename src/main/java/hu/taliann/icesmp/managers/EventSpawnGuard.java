@@ -1,80 +1,299 @@
 package hu.taliann.icesmp.managers;
 
+import org.bukkit.GameMode;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.WorldBorder;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
- * Shared spawn-placement rules for the world events: the "events never land in
- * someone's town" rule set, configurable per event AND per protection type via
- * the {@code world-events.spawn-rules.<event>.<protection>} matrix (all default
- * true), under the {@code world-events.avoid-territory} master switch. The
- * protection types: {@code territory} = claimed faction territory, {@code claim}
- * = player claim, {@code region} = WorldGuard region (towns/spawn; the bridge
- * fails open), {@code water} = liquid surface (would drown/strand a ground mob).
- * Also carries the shared event-mob hardening (no overworld zombification, no
- * daylight burn), so an event mob never silently turns into an untracked vanilla
- * mob or burns away before players reach it.
- *
- * <p>Constructed after ClaimManager in the DI order; the event managers built
- * earlier receive it via setter and treat a missing guard as "no restriction"
- * so construction order can never NPE.
+ * Shared fail-closed placement gate for world events. Protection checks, online-player
+ * distance, world spawn/border safety, finite search and cross-event reservations live
+ * here so every event consumes one precedence model instead of reimplementing it.
  */
 public final class EventSpawnGuard {
+    public static final String EVENT_NO_BURN_KEY = "event_no_daylight_burn";
+    public static final String EVENT_NO_ZOMBIFICATION_KEY = "event_no_zombification";
 
+    public enum BlockReason {
+        NONE,
+        INVALID_WORLD,
+        TERRITORY,
+        CLAIM,
+        REGION,
+        PLAYER_DISTANCE,
+        WORLD_SPAWN,
+        WORLD_BORDER,
+        RESERVED,
+        UNLOADED_CHUNK,
+        UNSAFE_SURFACE
+    }
+
+    private record Reservation(EventSpawnSafetyPolicy.Point point, long expiresAtMillis) { }
+
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final TerritoryManager territoryManager;
     private final ClaimManager claimManager;
+    private final Map<UUID, EventSpawnSafetyPolicy.PlayerPoint> players = new ConcurrentHashMap<>();
+    private final Map<String, Reservation> reservations = new ConcurrentHashMap<>();
+    private final Map<String, Long> diagnosticLogAt = new ConcurrentHashMap<>();
+    private volatile Predicate<UUID> vanishedPredicate = ignored -> false;
 
-    public EventSpawnGuard(final ConfigManager configManager, final TerritoryManager territoryManager,
-                           final ClaimManager claimManager) {
+    public EventSpawnGuard(final JavaPlugin plugin, final ConfigManager configManager,
+                           final TerritoryManager territoryManager, final ClaimManager claimManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.territoryManager = territoryManager;
         this.claimManager = claimManager;
     }
 
-    /**
-     * Whether the event may NOT spawn at the location per its protection rules
-     * (territory / claim / region). Reads are lock-free/concurrent structures,
-     * safe from any region thread.
-     *
-     * @param eventKey the event's spawn-rules key (e.g. "world-boss", "invasion")
-     * @param location the candidate spawn location
-     * @return true when a protection rule blocks the location
-     */
+    public void setVanishedPredicate(final Predicate<UUID> vanishedPredicate) {
+        this.vanishedPredicate = vanishedPredicate == null ? ignored -> false : vanishedPredicate;
+    }
+
+    /** Capture only entity-owned values; later guard reads are immutable and region-safe. */
+    public void trackPlayer(final Player player) {
+        trackPlayer(player, player.getLocation(), player.getGameMode());
+    }
+
+    public void trackPlayer(final Player player, final Location location, final GameMode gameMode) {
+        if (player == null || location == null || location.getWorld() == null) {
+            return;
+        }
+        players.put(player.getUniqueId(), new EventSpawnSafetyPolicy.PlayerPoint(
+                player.getUniqueId(), point(location), gameMode == GameMode.SPECTATOR,
+                false, player.hasPermission("icesmp.admin.all")));
+    }
+
+    public void forgetPlayer(final UUID playerId) {
+        if (playerId != null) {
+            players.remove(playerId);
+        }
+    }
+
     public boolean isBlocked(final String eventKey, final Location location) {
-        if (!masterSwitch()) {
+        return blockReason(eventKey, location) != BlockReason.NONE;
+    }
+
+    public BlockReason blockReason(final String eventKey, final Location location) {
+        if (location == null || location.getWorld() == null) {
+            return BlockReason.INVALID_WORLD;
+        }
+        if (masterSwitch()) {
+            if (rule(eventKey, "territory") && territoryManager.getTerritoryAt(location) != null) {
+                return BlockReason.TERRITORY;
+            }
+            if (rule(eventKey, "claim") && claimManager.getClaimAt(location) != null) {
+                return BlockReason.CLAIM;
+            }
+            if (rule(eventKey, "region")
+                    && hu.taliann.icesmp.integration.ProtectionBridge.isProtected(location)) {
+                return BlockReason.REGION;
+            }
+        }
+        if (!safetyEnabled()) {
+            return BlockReason.NONE;
+        }
+        final World world = location.getWorld();
+        final EventSpawnSafetyPolicy.Point candidate = point(location);
+        final double spawnDistance = Math.max(0.0D, configManager.getDouble(
+                "world-events.safety.min-world-spawn-distance-blocks", 128.0D));
+        if (spawnDistance > 0.0D && EventSpawnSafetyPolicy.withinHorizontal(
+                candidate, point(world.getSpawnLocation()), spawnDistance)) {
+            return BlockReason.WORLD_SPAWN;
+        }
+        if (!insideBorder(world, location)) {
+            return BlockReason.WORLD_BORDER;
+        }
+        final List<EventSpawnSafetyPolicy.PlayerPoint> snapshot = players.values().stream()
+                .map(player -> new EventSpawnSafetyPolicy.PlayerPoint(player.playerId(), player.point(),
+                        player.spectator(), vanishedPredicate.test(player.playerId()), player.admin()))
+                .toList();
+        if (EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(candidate, snapshot,
+                configManager.getDouble("world-events.safety.min-horizontal-distance-blocks", 96.0D),
+                configManager.getDouble("world-events.safety.min-3d-distance-blocks", 0.0D),
+                configManager.getBoolean("world-events.safety.ignore-spectators", true),
+                configManager.getBoolean("world-events.safety.ignore-vanished", true),
+                configManager.getBoolean("world-events.safety.ignore-admins", true))) {
+            return BlockReason.PLAYER_DISTANCE;
+        }
+        final long now = System.currentTimeMillis();
+        final double reservationDistance = Math.max(0.0D, configManager.getDouble(
+                "world-events.safety.reservation-distance-blocks", 64.0D));
+        reservations.entrySet().removeIf(entry -> entry.getValue().expiresAtMillis() <= now);
+        for (final Map.Entry<String, Reservation> entry : reservations.entrySet()) {
+            if (!entry.getKey().equals(eventKey)
+                    && EventSpawnSafetyPolicy.withinHorizontal(candidate, entry.getValue().point(),
+                    reservationDistance)) {
+                return BlockReason.RESERVED;
+            }
+        }
+        return BlockReason.NONE;
+    }
+
+    /**
+     * Resolves stable footing on the region thread owning x/z. Leaves, gravity
+     * blocks, liquids and damaging floors are rejected; tall mobs get three
+     * passable body blocks.
+     */
+    public Location resolveSafeStandingLocation(final String eventKey, final World world,
+                                                final int x, final int z) {
+        if (world == null || !world.isChunkLoaded(x >> 4, z >> 4)) {
+            return null;
+        }
+        final int floorY = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        if (floorY <= world.getMinHeight() || floorY + 3 >= world.getMaxHeight()) {
+            return null;
+        }
+        final Block floor = world.getBlockAt(x, floorY, z);
+        final Block feet = world.getBlockAt(x, floorY + 1, z);
+        final Block head = world.getBlockAt(x, floorY + 2, z);
+        final Block upperHead = world.getBlockAt(x, floorY + 3, z);
+        if (!stableFloor(floor)
+                || !clearBody(feet) || !clearBody(head) || !clearBody(upperHead)) {
+            return null;
+        }
+        if (rule(eventKey, "water")
+                && (floor.isLiquid() || feet.isLiquid() || head.isLiquid())) {
+            return null;
+        }
+        return new Location(world, x + 0.5D, floorY + 1.0D, z + 0.5D);
+    }
+
+    public boolean isUnsafeSurface(final String eventKey, final World world, final int x, final int z) {
+        return resolveSafeStandingLocation(eventKey, world, x, z) == null;
+    }
+
+    private static boolean stableFloor(final Block floor) {
+        final Material material = floor.getType();
+        return material.isSolid()
+                && material.isOccluding()
+                && !material.hasGravity()
+                && material != Material.POWDER_SNOW
+                && material != Material.MAGMA_BLOCK
+                && material != Material.CAMPFIRE
+                && material != Material.SOUL_CAMPFIRE
+                && material != Material.CACTUS
+                && material != Material.SWEET_BERRY_BUSH
+                && material != Material.WITHER_ROSE;
+    }
+
+    private static boolean clearBody(final Block block) {
+        return block.isPassable() && !block.isLiquid()
+                && block.getType() != Material.FIRE
+                && block.getType() != Material.SOUL_FIRE;
+    }
+
+    /**
+     * Finite Folia-safe search around an entity-owned origin. Candidate columns are visited
+     * at most search-attempts times; no valid location means a controlled abort, never a
+     * close/forbidden fallback.
+     */
+    public void findSafeNear(final String eventKey, final Location origin, final long seed,
+                             final Consumer<Location> onFound, final Runnable onFailure) {
+        if (origin == null || origin.getWorld() == null) {
+            onFailure.run();
+            return;
+        }
+        final List<EventSpawnSafetyPolicy.Offset> candidates = EventSpawnSafetyPolicy.candidates(
+                configManager.getInt("world-events.safety.search-attempts", 24),
+                configManager.getDouble("world-events.safety.search-min-radius-blocks", 96.0D),
+                configManager.getDouble("world-events.safety.search-max-radius-blocks", 256.0D),
+                seed);
+        tryCandidate(eventKey, origin.clone(), candidates, 0, onFound, onFailure);
+    }
+
+    private void tryCandidate(final String eventKey, final Location origin,
+                              final List<EventSpawnSafetyPolicy.Offset> candidates, final int index,
+                              final Consumer<Location> onFound, final Runnable onFailure) {
+        if (index >= candidates.size()) {
+            logSearchFailure(eventKey, origin, candidates.size());
+            onFailure.run();
+            return;
+        }
+        final EventSpawnSafetyPolicy.Offset offset = candidates.get(index);
+        final Location column = origin.clone().add(offset.x(), 0.0D, offset.z());
+        final World world = column.getWorld();
+        if (world == null) {
+            tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
+            return;
+        }
+        if (configManager.getBoolean("world-events.safety.require-loaded-chunk", true)
+                && !world.isChunkLoaded(column.getBlockX() >> 4, column.getBlockZ() >> 4)) {
+            tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
+            return;
+        }
+        plugin.getServer().getRegionScheduler().run(plugin, column, task -> {
+            final int x = column.getBlockX();
+            final int z = column.getBlockZ();
+            final Location candidate = resolveSafeStandingLocation(eventKey, world, x, z);
+            if (candidate == null
+                    || blockReason(eventKey, candidate) != BlockReason.NONE
+                    || !reserve(eventKey, candidate)) {
+                tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
+                return;
+            }
+            onFound.accept(candidate);
+        });
+    }
+
+    private synchronized boolean reserve(final String eventKey, final Location location) {
+        if (blockReason(eventKey, location) != BlockReason.NONE) {
             return false;
         }
-        if (rule(eventKey, "territory") && territoryManager.getTerritoryAt(location) != null) {
-            return true;
-        }
-        if (rule(eventKey, "claim") && claimManager.getClaimAt(location) != null) {
-            return true;
-        }
-        return rule(eventKey, "region") && hu.taliann.icesmp.integration.ProtectionBridge.isProtected(location);
+        final long ttlMillis = Math.max(1L, configManager.getLong(
+                "world-events.safety.reservation-seconds", 120L)) * 1_000L;
+        reservations.put(eventKey, new Reservation(point(location), System.currentTimeMillis() + ttlMillis));
+        return true;
     }
 
-    /**
-     * Whether the surface at the column is unfit for the event's ground spawn
-     * (liquid top; per-event {@code water} rule). Must be called on the region
-     * thread that owns the column.
-     */
-    public boolean isUnsafeSurface(final String eventKey, final World world, final int x, final int z) {
-        return rule(eventKey, "water")
-                && world.getBlockAt(x, world.getHighestBlockYAt(x, z), z).isLiquid();
+    public void clearReservations() {
+        reservations.clear();
+        players.clear();
     }
 
-    /** One cell of the per-event spawn-rules matrix (default: every protection on). */
+    private boolean insideBorder(final World world, final Location location) {
+        final WorldBorder border = world.getWorldBorder();
+        final Location center = border.getCenter();
+        final double margin = Math.max(0.0D, configManager.getDouble(
+                "world-events.safety.world-border-margin-blocks", 16.0D));
+        final double half = Math.max(0.0D, border.getSize() / 2.0D - margin);
+        return Math.abs(location.getX() - center.getX()) <= half
+                && Math.abs(location.getZ() - center.getZ()) <= half;
+    }
+
+    private void logSearchFailure(final String eventKey, final Location origin, final int attempts) {
+        final long now = System.currentTimeMillis();
+        final long previous = diagnosticLogAt.getOrDefault(eventKey, 0L);
+        if (now - previous < 60_000L || !diagnosticLogAt.replace(eventKey, previous, now)
+                && diagnosticLogAt.putIfAbsent(eventKey, now) != null) {
+            return;
+        }
+        plugin.getLogger().warning("Event spawn search aborted: event=" + eventKey
+                + ", attempts=" + attempts + ", world=" + origin.getWorld().getName()
+                + ", origin=" + origin.getBlockX() + "," + origin.getBlockZ()
+                + ". No close or forbidden fallback was used.");
+    }
+
     private boolean rule(final String eventKey, final String protection) {
         return configManager.getBoolean("world-events.spawn-rules." + eventKey + "." + protection, true);
     }
 
-    /**
-     * A mátrix mester-kapcsolója — az EGYÉRTELMŰ nevű {@code spawn-rules-enabled} kulcs nyer,
-     * a régi {@code avoid-territory} (ami valójában az egész mátrixot kapcsolta, nem csak a
-     * territóriumot) legacy-fallbackként él tovább.
-     */
     private boolean masterSwitch() {
         if (configManager.getConfiguration() != null
                 && configManager.getConfiguration().isSet("world-events.spawn-rules-enabled")) {
@@ -83,14 +302,20 @@ public final class EventSpawnGuard {
         return configManager.getBoolean("world-events.avoid-territory", true);
     }
 
-    /**
-     * Hardens a freshly spawned event mob: piglin/hoglin types never zombify in
-     * the overworld (a conversion would spawn a NEW entity and orphan the event's
-     * PDC-tag/tracking), and skeleton/zombie/phantom types don't burn in daylight
-     * (a daytime event would otherwise kill its own mobs). Call on the spawning
-     * region thread right after the spawn.
-     */
+    private boolean safetyEnabled() {
+        return configManager.getBoolean("world-events.safety.enabled", true);
+    }
+
+    private static EventSpawnSafetyPolicy.Point point(final Location location) {
+        return new EventSpawnSafetyPolicy.Point(location.getWorld().getUID(),
+                location.getX(), location.getY(), location.getZ());
+    }
+
     public static void prepare(final Mob mob) {
+        mob.getPersistentDataContainer().set(new NamespacedKey("icesmp", EVENT_NO_BURN_KEY),
+                PersistentDataType.BYTE, (byte) 1);
+        mob.getPersistentDataContainer().set(new NamespacedKey("icesmp", EVENT_NO_ZOMBIFICATION_KEY),
+                PersistentDataType.BYTE, (byte) 1);
         if (mob instanceof org.bukkit.entity.PiglinAbstract piglin) {
             piglin.setImmuneToZombification(true);
         } else if (mob instanceof org.bukkit.entity.Hoglin hoglin) {
