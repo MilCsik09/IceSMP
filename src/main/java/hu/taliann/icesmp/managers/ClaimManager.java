@@ -1131,7 +1131,12 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                     final World world = Bukkit.getWorld(worldName);
                     final String minYPath = key + ".min-y";
                     final String maxYPath = key + ".max-y";
-                    final boolean hasStoredYBounds = section.contains(minYPath) && section.contains(maxYPath);
+                    final boolean hasMinY = section.contains(minYPath);
+                    final boolean hasMaxY = section.contains(maxYPath);
+                    if (hasMinY != hasMaxY) {
+                        throw new IllegalArgumentException("Claim Y bounds are incomplete");
+                    }
+                    final boolean hasStoredYBounds = hasMinY;
                     final int minY;
                     final int maxY;
                     if (!hasStoredYBounds) {
