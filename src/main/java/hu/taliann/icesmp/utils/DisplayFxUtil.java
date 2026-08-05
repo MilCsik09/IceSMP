@@ -27,15 +27,30 @@ public final class DisplayFxUtil {
 
     public static void spawnBlockDisplay(final Plugin plugin, final Location loc, final BlockData block,
                                          final int despawnTicks, final Consumer<BlockDisplay> setup) {
+        spawnBlockDisplay(plugin, loc, block, despawnTicks, null, setup);
+    }
+
+    /**
+     * Viewer-scoped variant used by private visual effects. Visibility is disabled
+     * inside the spawn consumer, before the entity enters tracking, so no other
+     * client can observe a one-tick flash and players joining later cannot inherit it.
+     */
+    private static void spawnBlockDisplay(final Plugin plugin, final Location loc, final BlockData block,
+                                          final int despawnTicks, final Player viewer,
+                                          final Consumer<BlockDisplay> setup) {
         if (plugin == null || loc == null || loc.getWorld() == null || block == null) return;
         plugin.getServer().getRegionScheduler().run(plugin, loc, task -> {
             final BlockDisplay display = loc.getWorld().spawn(loc, BlockDisplay.class, entity -> {
                 entity.setBlock(block);
                 entity.setPersistent(false);
                 entity.addScoreboardTag(FX_TAG);
+                if (viewer != null) {
+                    entity.setVisibleByDefault(false);
+                }
             });
             TransientEntities.register(plugin, display);
             if (setup != null) setup.accept(display);
+            if (viewer != null) revealTo(plugin, display, viewer);
             if (despawnTicks > 0) scheduleDespawn(plugin, display, despawnTicks);
         });
     }
@@ -55,12 +70,32 @@ public final class DisplayFxUtil {
         });
     }
 
+    /**
+     * Converts an already-spawned effect to private visibility. New private effects
+     * should prefer the viewer-scoped spawn path above; this compatibility helper
+     * also disables default tracking so later joiners never receive the entity.
+     */
     public static void showOnlyTo(final Plugin plugin, final Entity fx, final Player viewer) {
         if (plugin == null || fx == null || viewer == null) return;
+        fx.setVisibleByDefault(false);
         final UUID viewerId = viewer.getUniqueId();
         for (final Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(viewerId)) continue;
             online.getScheduler().run(plugin, task -> online.hideEntity(plugin, fx), null);
+        }
+        revealTo(plugin, fx, viewer);
+    }
+
+    private static void revealTo(final Plugin plugin, final Entity fx, final Player viewer) {
+        final Runnable reveal = () -> {
+            if (viewer.isOnline() && fx.isValid()) {
+                viewer.showEntity(plugin, fx);
+            }
+        };
+        if (Bukkit.isOwnedByCurrentRegion(viewer)) {
+            reveal.run();
+        } else {
+            viewer.getScheduler().run(plugin, task -> reveal.run(), null);
         }
     }
 
@@ -111,7 +146,7 @@ public final class DisplayFxUtil {
     public static void wallSegment(final Plugin plugin, final Location corner, final float sizeX,
                                    final float sizeY, final float sizeZ, final BlockData block,
                                    final Color glow, final int despawnTicks, final Player viewer) {
-        spawnBlockDisplay(plugin, corner, block, despawnTicks, display -> {
+        spawnBlockDisplay(plugin, corner, block, despawnTicks, viewer, display -> {
             display.setTransformation(scale(sizeX, sizeY, sizeZ));
             display.setBrightness(new Display.Brightness(15, 15));
             display.setViewRange(2.0F);
@@ -119,7 +154,6 @@ public final class DisplayFxUtil {
                 display.setGlowing(true);
                 display.setGlowColorOverride(glow);
             }
-            if (viewer != null) showOnlyTo(plugin, display, viewer);
         });
     }
 
