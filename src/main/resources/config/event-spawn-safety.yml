@@ -1,29 +1,119 @@
-# IceSMP world-event víz-, part- és játékosközelség-biztonság.
-# Külön subsystem fájl, hogy régi world.yml mellett is megjelenjenek az új alapértékek.
+# IceSMP world-event placement: víz, játékos-látótáv, terep és keresési budget.
+# A fájl world.yml után töltődik be, ezért a régi telepítések is megkapják az új alapokat.
 world-events:
   safety:
-    # A world-event helyszíne legalább 12 chunknyira legyen minden releváns játékostól.
-    # A vízszintes ellenőrzés magasságtól független, ezért barlangból sem spawnolhat a felszínen melléd.
     min-horizontal-distance-blocks: 192.0
-    # Spectator és ténylegesen vanish játékos nem torzítja a world-event elhelyezést.
+    min-3d-distance-blocks: 0.0
     ignore-spectators: true
     ignore-vanished: true
-    # A látható admin ugyanúgy játékos: teszteléskor se spawnolhat event közvetlenül mellé.
     ignore-admins: false
-    # A játékos-horgonyos események már eleve a láthatósági távolságon túl keressenek.
     search-attempts: 32
     search-min-radius-blocks: 256.0
     search-max-radius-blocks: 512.0
-    # false: a kereső aszinkron visszatöltheti a már legenerált, de éppen inaktív chunkokat.
-    # Új területet nem generál; nincs szinkron chunk-load a régiószálon.
+    # false = már generált, de inaktív chunk aszinkron visszatölthető; új chunk nem generálódik.
     require-loaded-chunk: false
 
+  placement:
+    dynamic-view-distance-enabled: true
+    view-distance-margin-blocks: 32.0
+    search-clearance-margin-blocks: 32.0
+    visibility-cone:
+      enabled: true
+      max-distance-blocks: 384.0
+      angle-degrees: 110.0
+    recent-location-cooldown-minutes: 45
+    recent-location-distance-blocks: 256.0
+    recent-location-share-across-events: true
+    max-concurrent-searches: 2
+    search-timeout-millis: 5000
+    max-chunks-per-search: 96
+    search-backoff-seconds: 30
+    route-attempts: 8
+    arrival:
+      enabled: true
+      delay-seconds: 3
+      particles: true
+      sound: true
+      player-hint: true
+
   water-safety:
-    # Bekapcsolva minden world-event spawnhely száraz, stabil talajt igényel.
     enabled: true
-    # Az összes eseményre érvényes, még akkor is, ha egy régi spawn-rules bejegyzésben water=false maradt.
-    # Ezért a régi eseményspecifikus water kulcsokat nem kell másik fájlban felülírni.
     enforce-all-events: true
-    # A spawnoszlop körül ekkora körben sem lehet víz vagy waterlogged felszín.
-    # 0 = csak a pontos spawnoszlop; 8 = a mob/NPC nem kerül közvetlen tó- vagy folyópartra sem.
+    # 0 = csak a spawnoszlop; 8 = közvetlen tó-/folyópart és waterlogged felszín is tiltott.
     buffer-blocks: 8
+
+  # Eventenkénti footprint, lejtés, biom és láthatósági profilok.
+  profiles:
+    stranger:
+      min-horizontal-distance-blocks: 48.0
+      search-min-radius-blocks: 64.0
+      search-max-radius-blocks: 96.0
+      arrival:
+        enabled: false
+      whisper-radius: 112.0
+      despawn-seconds: 150
+      use-dynamic-view-distance: false
+      footprint-radius-blocks: 2
+      max-height-delta-blocks: 3
+      visibility-cone:
+        enabled: true
+        max-distance-blocks: 128.0
+        angle-degrees: 120.0
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
+    caravan:
+      footprint-radius-blocks: 5
+      max-height-delta-blocks: 2
+      require-sky: true
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean, jagged_peaks]
+    player-caravan:
+      arrival:
+        enabled: false
+      footprint-radius-blocks: 5
+      max-height-delta-blocks: 2
+      require-sky: true
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean, jagged_peaks]
+    escort:
+      footprint-radius-blocks: 5
+      max-height-delta-blocks: 2
+      require-sky: true
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean, jagged_peaks]
+    escort-route:
+      min-horizontal-distance-blocks: 0.0
+      use-dynamic-view-distance: false
+      ignore-recent-locations: true
+      footprint-radius-blocks: 1
+      max-height-delta-blocks: 3
+      visibility-cone:
+        enabled: false
+    escort-wave:
+      min-horizontal-distance-blocks: 0.0
+      use-dynamic-view-distance: false
+      ignore-recent-locations: true
+      footprint-radius-blocks: 1
+      max-height-delta-blocks: 3
+      visibility-cone:
+        enabled: false
+    meteor:
+      footprint-radius-blocks: 8
+      max-height-delta-blocks: 4
+      require-sky: true
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
+    world-boss:
+      footprint-radius-blocks: 10
+      max-height-delta-blocks: 4
+      require-sky: true
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
+    invasion:
+      footprint-radius-blocks: 8
+      max-height-delta-blocks: 4
+      require-sky: true
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
+    cultists:
+      footprint-radius-blocks: 6
+      max-height-delta-blocks: 3
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean, mushroom_fields]
+    wild-hunt:
+      footprint-radius-blocks: 4
+      max-height-delta-blocks: 4
+      denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
+
