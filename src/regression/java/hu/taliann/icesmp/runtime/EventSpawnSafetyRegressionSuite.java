@@ -77,8 +77,8 @@ public final class EventSpawnSafetyRegressionSuite {
                 "cardinal shoreline boundary must be covered");
         check(!radius.contains(new EventSpawnSafetyPolicy.GridOffset(4, 4)),
                 "square corner outside the circular buffer must not be scanned");
-        check(radius.equals(EventSpawnSafetyPolicy.waterProbeOffsets(4)),
-                "water probe order must be deterministic");
+        check(radius == EventSpawnSafetyPolicy.waterProbeOffsets(4),
+                "water probe mask must be cached and immutable per bounded radius");
         check(EventSpawnSafetyPolicy.waterProbeOffsets(100).stream()
                         .allMatch(offset -> offset.x() * offset.x() + offset.z() * offset.z() <= 32 * 32),
                 "water buffer radius must be bounded against accidental quadratic explosions");
@@ -93,9 +93,9 @@ public final class EventSpawnSafetyRegressionSuite {
                 "legacy per-event water=false must not bypass the global rule");
         check(config.getInt("world-events.water-safety.buffer-blocks") >= 1,
                 "shoreline buffer default must reject immediate water edges");
-        check(config.getBoolean("world-events.spawn-rules.caravan.water")
-                        && config.getBoolean("world-events.spawn-rules.player-caravan.water"),
-                "both caravan systems must explicitly opt into dry spawning");
+        check(!config.isSet("world-events.spawn-rules.player-caravan.water")
+                        && !config.isSet("world-events.spawn-rules.caravan.water"),
+                "water-safety subsystem must not duplicate world.yml spawn-rule ownership");
 
         final String guard = read("src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java");
         check(guard.contains("waterOrShoreUnsafe")
@@ -103,6 +103,7 @@ public final class EventSpawnSafetyRegressionSuite {
                         && guard.contains("Waterlogged")
                         && guard.contains("findSafeAtOrNear")
                         && guard.contains("EventSpawnSafetyPolicy.waterProbeOffsets")
+                        && guard.contains("reserveAfterSurfaceValidation")
                         && guard.contains("WATER_OR_SHORE"),
                 "central surface resolver lost waterlogged/shoreline enforcement");
 
@@ -110,6 +111,7 @@ public final class EventSpawnSafetyRegressionSuite {
         check(caravan.contains("findSafeAtOrNear(\"caravan\"")
                         && caravan.contains("arrivalPending = true")
                         && caravan.contains("anchorGeneration")
+                        && caravan.contains("synchronized boolean forceArrive")
                         && !caravan.contains("getHighestBlockYAt")
                         && !caravan.contains("topOf("),
                 "merchant caravan may bypass the central dry-location resolver or double-launch");
