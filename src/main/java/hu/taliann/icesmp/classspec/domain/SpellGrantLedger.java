@@ -34,6 +34,12 @@ public final class SpellGrantLedger {
 
     public static SpellGrantLedger empty() { return new SpellGrantLedger(Map.of()); }
 
+    public static SpellGrantLedger fromProvenance(final Map<String, Set<String>> grants) {
+        return new SpellGrantLedger(grants == null ? Map.of() : grants);
+    }
+
+    public Map<String, Set<String>> provenance() { return grants; }
+
     public static SpellGrantLedger parse(final String serialized) {
         if (serialized == null || serialized.isBlank()) return empty();
         if (serialized.length() > MAX_SERIALIZED_LENGTH) {

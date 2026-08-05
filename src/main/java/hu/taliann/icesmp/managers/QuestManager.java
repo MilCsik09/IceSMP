@@ -1663,8 +1663,13 @@ public final class QuestManager implements PersistentStore {
 
         final String unlockSpell = quest.getString("rewards.unlock-spell");
         if (unlockSpell != null && !unlockSpell.isBlank()) {
-            jobManager.unlockSpell(player, unlockSpell,
-                    JobManager.SOURCE_QUEST_PREFIX + quest.getName().toLowerCase(Locale.ROOT));
+            jobManager.unlockSpellV2(player, unlockSpell,
+                            JobManager.SOURCE_QUEST_PREFIX + quest.getName().toLowerCase(Locale.ROOT))
+                    .exceptionally(failure -> {
+                        plugin.getLogger().severe("Quest spell reward PlayerProfile commit failed for "
+                                + player.getUniqueId() + ": " + failure.getMessage());
+                        return false;
+                    });
         }
 
         // Crate-key reward: "<crateId>:<darab>", pl. "koznapi:1".

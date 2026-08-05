@@ -270,12 +270,19 @@ public final class SpecializationManager {
         if (unlocks == null) return;
         for (final String spellId : unlocks.getKeys(false)) {
             final int required = unlocks.getInt(spellId, Integer.MAX_VALUE);
-            if (classLevel >= required && jobManager.unlockSpell(player, spellId,
-                    JobManager.SOURCE_SPEC_PREFIX + specialization.getId())) {
-                player.sendMessage(messageManager.getMessage("spec-spell-unlocked",
-                        "&5Specializációs képesség feloldva: &e{spell} &7(szint {level})",
-                        Map.of("spell", spellId.toLowerCase(Locale.ROOT),
-                                "level", String.valueOf(required))));
+            if (classLevel >= required) {
+                jobManager.unlockSpellV2(player, spellId,
+                                JobManager.SOURCE_SPEC_PREFIX + specialization.getId())
+                        .whenComplete((unlocked, failure) -> player.getScheduler().run(
+                                org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(SpecializationManager.class),
+                                task -> {
+                                    if (failure == null && Boolean.TRUE.equals(unlocked)) {
+                                        player.sendMessage(messageManager.getMessage("spec-spell-unlocked",
+                                                "&5Specializációs képesség feloldva: &e{spell} &7(szint {level})",
+                                                Map.of("spell", spellId.toLowerCase(Locale.ROOT),
+                                                        "level", String.valueOf(required))));
+                                    }
+                                }, null));
             }
         }
     }

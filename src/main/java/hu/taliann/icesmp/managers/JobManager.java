@@ -42,9 +42,10 @@ public final class JobManager implements PlayerStateCleanup {
     private final NamespacedKey jobPrimaryKey;
     private final NamespacedKey jobPrimaryXpKey;
     private final NamespacedKey unlockedSpellsKey;
-    private final NamespacedKey spellGrantsKey;
     private final NamespacedKey legacySecondaryKey;
     private final NamespacedKey legacySecondaryXpKey;
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellGrantStore spellGrantStore =
+            new hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellGrantStore();
     private volatile FactionManager factionManagerRef;
     private volatile ClassSpecProfileGateway profileGateway;
     private java.util.function.Consumer<Player> xpChangeHook;
@@ -58,7 +59,6 @@ public final class JobManager implements PlayerStateCleanup {
         this.jobPrimaryKey = new NamespacedKey(plugin, "job_primary");
         this.jobPrimaryXpKey = new NamespacedKey(plugin, "job_primary_xp");
         this.unlockedSpellsKey = new NamespacedKey(plugin, "unlocked_spells");
-        this.spellGrantsKey = new NamespacedKey(plugin, "spell_grants");
         this.legacySecondaryKey = new NamespacedKey(plugin, "job_secondary");
         this.legacySecondaryXpKey = new NamespacedKey(plugin, "job_secondary_xp");
     }
@@ -131,10 +131,10 @@ public final class JobManager implements PlayerStateCleanup {
                     }
                     return schedulePlayer(player, () -> {
                         mirrorClassState(player);
-                        applyAutoUnlocks(player);
                         AdvancementService.award(player, "root");
                         AdvancementService.award(player, "first_class");
-                    }).thenApply(ignored -> true);
+                    }).thenCompose(ignored -> applyAutoUnlocksV2(player))
+                            .thenApply(ignored -> true);
                 });
     }
 
@@ -176,32 +176,42 @@ public final class JobManager implements PlayerStateCleanup {
                     }
                     return schedulePlayer(player, () -> {
                         mirrorClassState(player);
-                        applyAutoUnlocks(player);
                         if (getPrimaryLevel(player) >= MAX_JOB_LEVEL) AdvancementService.award(player, "class_max");
                         final java.util.function.Consumer<Player> hook = xpChangeHook;
                         if (hook != null) hook.accept(player);
-                    }).thenApply(ignored -> true);
+                    }).thenCompose(ignored -> applyAutoUnlocksV2(player))
+                            .thenApply(ignored -> true);
                 });
     }
 
     public void setXpChangeHook(final java.util.function.Consumer<Player> hook) { xpChangeHook = hook; }
 
-    public void applyAutoUnlocks(final Player player) {
+    public CompletionStage<Void> applyAutoUnlocksV2(final Player player) {
         final JobType job = getPrimaryJob(player);
-        if (job == null || configManager.getConfiguration() == null) return;
+        if (job == null || configManager.getConfiguration() == null) {
+            return CompletableFuture.completedFuture(null);
+        }
         final ConfigurationSection unlocks = configManager.getConfiguration()
                 .getConfigurationSection("classes." + job.getId() + ".spell-unlocks");
-        if (unlocks == null) return;
+        if (unlocks == null) return CompletableFuture.completedFuture(null);
         final int level = getPrimaryLevel(player);
+        CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
         for (final String spellId : unlocks.getKeys(false)) {
             final int required = unlocks.getInt(spellId, Integer.MAX_VALUE);
-            if (level >= required && unlockSpell(player, spellId, SOURCE_BASE_PREFIX + job.getId())) {
-                player.sendMessage(messageManager.getMessage("job-spell-auto-unlocked",
-                        "&aÚj képesség feloldva: &e{spell} &7(szint {level})",
-                        Map.of("spell", messageManager.get("spell." + spellId.toLowerCase(Locale.ROOT) + ".name",
-                                spellId.toLowerCase(Locale.ROOT)), "level", String.valueOf(required))));
-            }
+            if (level < required) continue;
+            chain = chain.thenCompose(ignored -> unlockSpellV2(player, spellId,
+                            SOURCE_BASE_PREFIX + job.getId())
+                    .thenCompose(unlocked -> Boolean.TRUE.equals(unlocked)
+                            ? schedulePlayer(player, () -> player.sendMessage(messageManager.getMessage(
+                                    "job-spell-auto-unlocked",
+                                    "&aÚj képesség feloldva: &e{spell} &7(szint {level})",
+                                    Map.of("spell", messageManager.get(
+                                                    "spell." + spellId.toLowerCase(Locale.ROOT) + ".name",
+                                                    spellId.toLowerCase(Locale.ROOT)),
+                                            "level", String.valueOf(required)))))
+                            : CompletableFuture.completedFuture(null)));
         }
+        return chain;
     }
 
     public List<String> getUnlockedSpellIds(final Player player) {
@@ -209,60 +219,145 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     public boolean hasUnlockedSpell(final Player player, final String spellId) {
-        if (spellId == null || spellId.isBlank()) return false;
-        return readLedger(player).contains(spellId);
+        return spellId != null && !spellId.isBlank() && readLedger(player).contains(spellId);
     }
 
-    /** Replaces only the derived mirror; every spell receives explicit ADMIN provenance. */
-    public void setUnlockedSpellIds(final Player player, final List<String> spellIds) {
+    public CompletionStage<Void> setUnlockedSpellIdsV2(final Player player,
+                                                        final List<String> spellIds) {
         SpellGrantLedger ledger = SpellGrantLedger.empty();
         if (spellIds != null) {
             for (final String spellId : spellIds) {
-                if (spellId != null && !spellId.isBlank()) ledger = ledger.add(spellId, SOURCE_ADMIN).ledger();
+                if (spellId != null && !spellId.isBlank()) {
+                    ledger = ledger.add(spellId, SOURCE_ADMIN).ledger();
+                }
             }
         }
-        writeLedger(player, ledger);
+        final SpellGrantLedger requested = ledger;
+        return spellGrantStore.replace(player.getUniqueId(), requested)
+                .thenCompose(committed -> schedulePlayer(player,
+                        () -> mirrorSpellLedger(player, committed)));
     }
 
-    /** Unqualified grants are admin grants, never inferred legacy grants. */
+    public CompletionStage<Boolean> unlockSpellV2(final Player player,
+                                                   final String spellId) {
+        return unlockSpellV2(player, spellId, SOURCE_ADMIN);
+    }
+
+    public CompletionStage<Boolean> unlockSpellV2(final Player player,
+                                                   final String spellId,
+                                                   final String source) {
+        return spellGrantStore.add(player.getUniqueId(), spellId, source)
+                .thenCompose(mutation -> {
+                    if (!mutation.changed()) {
+                        return CompletableFuture.completedFuture(false);
+                    }
+                    return schedulePlayer(player, () -> mirrorSpellLedger(player, mutation.ledger()))
+                            .thenApply(ignored -> mutation.spellLockChanged());
+                });
+    }
+
+    public CompletionStage<Boolean> revokeGrantV2(final Player player,
+                                                   final String spellId,
+                                                   final String source) {
+        return spellGrantStore.remove(player.getUniqueId(), spellId, source)
+                .thenCompose(mutation -> {
+                    if (!mutation.changed()) {
+                        return CompletableFuture.completedFuture(false);
+                    }
+                    return schedulePlayer(player, () -> mirrorSpellLedger(player, mutation.ledger()))
+                            .thenApply(ignored -> mutation.spellLockChanged());
+                });
+    }
+
+    public CompletionStage<List<String>> revokeGrantsFromV2(
+            final Player player, final Predicate<String> sourceMatches) {
+        return spellGrantStore.revokeSources(player.getUniqueId(), sourceMatches)
+                .thenCompose(result -> {
+                    if (!result.changed()) {
+                        return CompletableFuture.completedFuture(result.lockedSpellIds());
+                    }
+                    return schedulePlayer(player, () -> mirrorSpellLedger(player, result.ledger()))
+                            .thenApply(ignored -> result.lockedSpellIds());
+                });
+    }
+
+    public CompletionStage<Void> clearSpellGrantsV2(final Player player) {
+        return spellGrantStore.replace(player.getUniqueId(), SpellGrantLedger.empty())
+                .thenCompose(committed -> schedulePlayer(player,
+                        () -> mirrorSpellLedger(player, committed)));
+    }
+
+    /**
+     * Temporary source-compatibility bridge. The preview is read from PlayerProfile and the
+     * durable mutation is still written only through PlayerProfile; no PDC authority remains.
+     * Callers are migrated to the CompletionStage variants in the following authority waves.
+     */
+    @Deprecated(forRemoval = true)
     public boolean unlockSpell(final Player player, final String spellId) {
         return unlockSpell(player, spellId, SOURCE_ADMIN);
     }
 
+    @Deprecated(forRemoval = true)
     public boolean unlockSpell(final Player player, final String spellId, final String source) {
-        final SpellGrantLedger.Mutation mutation = readLedger(player).add(spellId, source);
-        if (mutation.changed()) writeLedger(player, mutation.ledger());
-        return mutation.spellLockChanged();
+        final SpellGrantLedger.Mutation preview = readLedger(player).add(spellId, source);
+        if (preview.changed()) {
+            unlockSpellV2(player, spellId, source).exceptionally(failure -> {
+                plugin.getLogger().severe("PlayerProfile spell grant commit failed for "
+                        + player.getUniqueId() + ": " + failure.getMessage());
+                return false;
+            });
+        }
+        return preview.spellLockChanged();
     }
 
+    @Deprecated(forRemoval = true)
     public boolean revokeGrant(final Player player, final String spellId, final String source) {
-        final SpellGrantLedger.Mutation mutation = readLedger(player).remove(spellId, source);
-        if (mutation.changed()) writeLedger(player, mutation.ledger());
-        return mutation.spellLockChanged();
+        final SpellGrantLedger.Mutation preview = readLedger(player).remove(spellId, source);
+        if (preview.changed()) {
+            revokeGrantV2(player, spellId, source).exceptionally(failure -> {
+                plugin.getLogger().severe("PlayerProfile spell revoke commit failed for "
+                        + player.getUniqueId() + ": " + failure.getMessage());
+                return false;
+            });
+        }
+        return preview.spellLockChanged();
     }
 
-    public List<String> revokeGrantsFrom(final Player player, final Predicate<String> sourceMatches) {
-        final SpellGrantLedger.RevokeResult result = readLedger(player).revokeSources(sourceMatches);
-        if (result.changed()) writeLedger(player, result.ledger());
-        return result.lockedSpellIds();
+    @Deprecated(forRemoval = true)
+    public List<String> revokeGrantsFrom(final Player player,
+                                         final Predicate<String> sourceMatches) {
+        final SpellGrantLedger.RevokeResult preview = readLedger(player).revokeSources(sourceMatches);
+        if (preview.changed()) {
+            revokeGrantsFromV2(player, sourceMatches).exceptionally(failure -> {
+                plugin.getLogger().severe("PlayerProfile spell-source revoke commit failed for "
+                        + player.getUniqueId() + ": " + failure.getMessage());
+                return List.of();
+            });
+        }
+        return preview.lockedSpellIds();
     }
 
-    public void clearSpellGrants(final Player player) { writeLedger(player, SpellGrantLedger.empty()); }
+    @Deprecated(forRemoval = true)
+    public void clearSpellGrants(final Player player) {
+        clearSpellGrantsV2(player).exceptionally(failure -> {
+            plugin.getLogger().severe("PlayerProfile spellbook clear failed for "
+                    + player.getUniqueId() + ": " + failure.getMessage());
+            return null;
+        });
+    }
 
     public Set<String> getGrantSources(final Player player, final String spellId) {
         if (spellId == null || spellId.isBlank()) return Set.of();
         return readLedger(player).sources(spellId);
     }
 
-    /** No backfill exists in greenfield mode; malformed or source-less grants fail closed. */
+    /** Greenfield mode reads only the PlayerProfile spellbook section. */
     public void backfillSpellGrants(final Player player) {
         readLedger(player);
     }
 
     /** Runtime cleanup after an already durable admin class reset. */
     public void resetClass(final Player player) {
-        revokeGrantsFrom(player, source -> source.startsWith(SOURCE_BASE_PREFIX)
-                || source.startsWith(SOURCE_SPEC_PREFIX));
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.remove(jobPrimaryKey);
         pdc.remove(jobPrimaryXpKey);
@@ -271,26 +366,16 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     private SpellGrantLedger readLedger(final Player player) {
-        final String raw = player.getPersistentDataContainer().get(spellGrantsKey, PersistentDataType.STRING);
-        try {
-            return SpellGrantLedger.parse(raw);
-        } catch (final IllegalArgumentException corrupt) {
-            final ClassSpecProfileGateway gateway = profileGateway;
-            if (gateway != null) gateway.blockSession(player.getUniqueId(),
-                    "Corrupt explicit spell provenance ledger: " + corrupt.getMessage());
-            throw corrupt;
-        }
+        return spellGrantStore.read(player.getUniqueId());
     }
 
-    private void writeLedger(final Player player, final SpellGrantLedger ledger) {
+    private void mirrorSpellLedger(final Player player, final SpellGrantLedger ledger) {
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        final String serialized = ledger.serialize();
-        if (serialized.isEmpty()) {
-            pdc.remove(spellGrantsKey);
+        if (ledger.spellIds().isEmpty()) {
             pdc.remove(unlockedSpellsKey);
         } else {
-            pdc.set(spellGrantsKey, PersistentDataType.STRING, serialized);
-            pdc.set(unlockedSpellsKey, PersistentDataType.STRING, String.join(",", ledger.spellIds()));
+            pdc.set(unlockedSpellsKey, PersistentDataType.STRING,
+                    String.join(",", ledger.spellIds()));
         }
     }
 

@@ -119,9 +119,20 @@ public final class MemoryCommand implements BasicCommand {
         if (!consumeShards(player, cost)) {
             return;
         }
-        talentManager.grantBonusPoints(player, true, 1);
-        remembered(player, messageManager.get("memory-redeemed-talent",
-                "&d✦ Egy régi lecke tér vissza — &f+1 kaszt-talentpont&d (&7/talent&d)."));
+        talentManager.grantBonusPoints(player, true, 1).whenComplete((bonus, failure) ->
+                talentManager.runOnOwnerThread(player, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (failure != null) {
+                        refundShards(player, cost);
+                        player.sendMessage(messageManager.get("memory-talent-failed",
+                                "&cA talentpont jóváírása meghiúsult; az Emlékszilánkokat visszakaptad."));
+                        return;
+                    }
+                    remembered(player, messageManager.get("memory-redeemed-talent",
+                            "&d✦ Egy régi lecke tér vissza — &f+1 kaszt-talentpont&d (&7/talent&d)."));
+                }));
     }
 
     private void redeemSpec(final Player player) {

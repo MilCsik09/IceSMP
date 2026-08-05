@@ -921,11 +921,6 @@
       "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/JobManager.java|final String raw = player.getPersistentDataContainer().get(spellGrantsKey, PersistentDataType.STRING);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/MarketManager.java|&& held.getItemMeta().getPersistentDataContainer().has(",
       "category": "ITEM_METADATA",
       "reason": "Persistent item identity or item-owned metadata, not player progression."
@@ -1009,41 +1004,6 @@
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java|return entity.getPersistentDataContainer().getOrDefault(mobLevelKey, PersistentDataType.INTEGER, 0);",
       "category": "ENTITY_METADATA",
       "reason": "Entity-owned or short-lived runtime marker; durable player state belongs to PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java|final String raw = player.getPersistentDataContainer().getOrDefault(learnedRecipesKey, PersistentDataType.STRING, \"\");",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java|player.getPersistentDataContainer().remove(slotKey);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java|player.getPersistentDataContainer().set(learnedRecipesKey, PersistentDataType.STRING, updated);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java|player.getPersistentDataContainer().set(slotKey(professionType.getCategory()),",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java|player.getPersistentDataContainer().set(xpKeys.get(professionType), PersistentDataType.INTEGER, Math.max(0, xp));",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java|return ProfessionType.fromId(player.getPersistentDataContainer().get(slotKey, PersistentDataType.STRING));",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java|return player.getPersistentDataContainer().getOrDefault(xpKeys.get(professionType), PersistentDataType.INTEGER, 0);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeManager.java|final String id = result.getItemMeta().getPersistentDataContainer().get(recipeKey, PersistentDataType.STRING);",
@@ -1269,36 +1229,6 @@
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/StrangerNpcManager.java|stranger.getPersistentDataContainer().set(strangerKey, PersistentDataType.BYTE, (byte) 1);",
       "category": "TRANSITION",
       "reason": "PDC receiver could not be proven item/entity metadata; fail closed as player-state transition."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/TalentManager.java|final String raw = player.getPersistentDataContainer().get(key, PersistentDataType.STRING);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/TalentManager.java|final int current = player.getPersistentDataContainer().getOrDefault(key, org.bukkit.persistence.PersistentDataType.INTEGER, 0);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/TalentManager.java|player.getPersistentDataContainer().remove(key);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/TalentManager.java|player.getPersistentDataContainer().set(key, PersistentDataType.STRING, serialized.toString());",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/TalentManager.java|player.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.INTEGER, current + amount);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/TalentManager.java|return player.getPersistentDataContainer().getOrDefault(",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/TotemManager.java|&& entity.getPersistentDataContainer().getOrDefault(totemKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;",

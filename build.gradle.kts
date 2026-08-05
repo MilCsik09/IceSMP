@@ -193,6 +193,14 @@ val spellMasteryTransactionRegressionTest by tasks.registering(JavaExec::class) 
     mainClass.set("hu.taliann.icesmp.managers.SpellMasteryTransactionRegressionSuite")
 }
 
+val professionProfileStateRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs PlayerProfile profession slot, XP, level and recipe authority regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.playerprofile.domain.ProfessionProfileStateRegressionSuite")
+}
+
 val playerProfileYamlRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs structured section YAML, manifest, CAS, quarantine and shutdown regressions."
@@ -325,6 +333,7 @@ tasks.check {
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest,
         playerProfileSectionExtensionsRegressionTest, spellMasteryTransactionRegressionTest,
-        playerProfileYamlRegressionTest, playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
+        professionProfileStateRegressionTest, playerProfileYamlRegressionTest,
+        playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest)
 }

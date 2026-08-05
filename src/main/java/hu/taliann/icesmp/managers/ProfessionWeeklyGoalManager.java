@@ -112,13 +112,18 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
                 }
                 final Player online = Bukkit.getPlayer(contributor.getKey());
                 if (online != null) {
-                    // Folia: a jutalom a JÁTÉKOS saját régió-szálán íródik (PDC).
-                    online.getScheduler().run(plugin, task -> {
-                        professionManager.addXpFor(online, profession, rewardXp);
-                        online.sendMessage(messageManager.getMessage("profession-weekly-reward",
-                                "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
-                                Map.of("xp", String.valueOf(rewardXp), "profession", profession.getId())));
-                    }, null);
+                    professionManager.addXp(online, profession, rewardXp)
+                            .whenComplete((change, failure) -> professionManager.runOnOwnerThread(
+                                    online, () -> {
+                                        if (failure == null && change != null && change.changed()
+                                                && online.isOnline()) {
+                                            online.sendMessage(messageManager.getMessage(
+                                                    "profession-weekly-reward",
+                                                    "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
+                                                    Map.of("xp", String.valueOf(rewardXp),
+                                                            "profession", profession.getId())));
+                                        }
+                                    }));
                 } else {
                     pendingRewards.computeIfAbsent(contributor.getKey(), key -> new ConcurrentHashMap<>())
                             .merge(profession.getId(), rewardXp, Integer::sum);
@@ -129,18 +134,44 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
-        final Map<String, Integer> pending = pendingRewards.remove(event.getPlayer().getUniqueId());
-        if (pending == null) {
+        final UUID playerId = event.getPlayer().getUniqueId();
+        final Map<String, Integer> pending = pendingRewards.get(playerId);
+        if (pending == null || pending.isEmpty()) {
             return;
         }
-        for (final Map.Entry<String, Integer> entry : pending.entrySet()) {
+        for (final Map.Entry<String, Integer> entry : Map.copyOf(pending).entrySet()) {
             final ProfessionType profession = ProfessionType.fromId(entry.getKey());
-            if (profession != null) {
-                professionManager.addXpFor(event.getPlayer(), profession, entry.getValue());
-                event.getPlayer().sendMessage(messageManager.getMessage("profession-weekly-reward",
-                        "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
-                        Map.of("xp", String.valueOf(entry.getValue()), "profession", entry.getKey())));
+            if (profession == null) {
+                continue;
             }
+            professionManager.addXp(event.getPlayer(), profession, entry.getValue())
+                    .whenComplete((change, failure) -> professionManager.runOnOwnerThread(
+                            event.getPlayer(), () -> {
+                                if (failure != null || change == null || !change.changed()
+                                        || !event.getPlayer().isOnline()) {
+                                    return;
+                                }
+                                consumePendingReward(playerId, entry.getKey(), entry.getValue());
+                                event.getPlayer().sendMessage(messageManager.getMessage(
+                                        "profession-weekly-reward",
+                                        "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
+                                        Map.of("xp", String.valueOf(entry.getValue()),
+                                                "profession", entry.getKey())));
+                            }));
+        }
+    }
+
+    private synchronized void consumePendingReward(final UUID playerId,
+                                                   final String professionId,
+                                                   final int expectedAmount) {
+        final Map<String, Integer> pending = pendingRewards.get(playerId);
+        if (pending == null || !java.util.Objects.equals(
+                pending.get(professionId), expectedAmount)) {
+            return;
+        }
+        pending.remove(professionId);
+        if (pending.isEmpty()) {
+            pendingRewards.remove(playerId);
         }
         save();
     }

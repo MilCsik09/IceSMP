@@ -173,14 +173,21 @@ public final class CharacterGUIListener implements Listener {
             return;
         }
 
-        if (ctx.professionManager().selectProfession(player, profession)) {
-            success(player, ctx.messageManager().getMessage("profession-gui-learned", "&aSzakma megtanulva:")
-                    .append(Component.space()).append(profession.getDisplayName()));
-        } else {
-            fail(player, ctx.messageManager().getComponent("profession-gui-cannot",
-                    "&cEzt a szakmát most nem tanulhatod — ebben a kategóriában már betöltötted a helyed."));
-        }
-        ProfessionGUI.open(player, ctx);
+        ctx.professionManager().selectProfession(player, profession)
+                .whenComplete((selected, failure) -> ctx.professionManager().runOnOwnerThread(player, () -> {
+                    if (failure != null) {
+                        fail(player, ctx.messageManager().getComponent("profession-storage-failed",
+                                "&cA PlayerProfile szakma mentése meghiúsult."));
+                    } else if (Boolean.TRUE.equals(selected)) {
+                        success(player, ctx.messageManager().getMessage("profession-gui-learned",
+                                        "&aSzakma megtanulva:")
+                                .append(Component.space()).append(profession.getDisplayName()));
+                    } else {
+                        fail(player, ctx.messageManager().getComponent("profession-gui-cannot",
+                                "&cEzt a szakmát most nem tanulhatod — ebben a kategóriában már betöltötted a helyed."));
+                    }
+                    if (player.isOnline()) ProfessionGUI.open(player, ctx);
+                }));
     }
 
     private void handleTalent(final Player player, final int slot) {
@@ -195,21 +202,32 @@ public final class CharacterGUIListener implements Listener {
             return;
         }
 
-        if (ctx.talentManager().spendPoint(player, node.classPool(), node.id())) {
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.4F);
-            player.sendMessage(ctx.messageManager().getMessage(
-                    "talent-spend-success",
-                    "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
-                    Map.of(
-                            "talent", talentDisplayName(ctx, node),
-                            "rank", String.valueOf(ctx.talentManager().getRank(player, node.classPool(), node.id())),
-                            "points", String.valueOf(ctx.talentManager().getAvailablePoints(player, node.classPool()))
-                    )));
-        } else {
-            fail(player, ctx.messageManager().getComponent("talent-spend-failed",
-                    "&cNem sikerült a pont elköltése (zárolt talent, nincs pont, vagy max rang)."));
-        }
-        TalentGUI.open(player, ctx);
+        ctx.talentManager().spendPoint(player, node.classPool(), node.id())
+                .whenComplete((spent, failure) -> ctx.talentManager().runOnOwnerThread(player, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (failure != null) {
+                        fail(player, ctx.messageManager().getComponent("talent-storage-failed",
+                                "&cA talent tartós mentése sikertelen; az állapot nem változott."));
+                    } else if (Boolean.TRUE.equals(spent)) {
+                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.4F);
+                        player.sendMessage(ctx.messageManager().getMessage(
+                                "talent-spend-success",
+                                "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
+                                Map.of(
+                                        "talent", talentDisplayName(ctx, node),
+                                        "rank", String.valueOf(ctx.talentManager().getRank(
+                                                player, node.classPool(), node.id())),
+                                        "points", String.valueOf(ctx.talentManager().getAvailablePoints(
+                                                player, node.classPool()))
+                                )));
+                    } else {
+                        fail(player, ctx.messageManager().getComponent("talent-spend-failed",
+                                "&cNem sikerült a pont elköltése (zárolt talent, nincs pont, vagy max rang)."));
+                    }
+                    TalentGUI.open(player, ctx);
+                }));
     }
 
     /** Respecs the class or profession specialization for the faction-currency cost. */

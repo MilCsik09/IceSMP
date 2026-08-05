@@ -238,17 +238,17 @@ public final class RespecService {
     }
 
     private CompletionStage<Integer> completePlayerEffects(final Player player, final UUID sessionToken) {
-        final CompletableFuture<Integer> result = new CompletableFuture<>();
+        final CompletableFuture<Void> gate = new CompletableFuture<>();
         player.getScheduler().run(plugin, task -> {
             final ClassSpecProfileGateway gateway = specializationManager.profileGateway();
             if (!gateway.isCurrentSession(player.getUniqueId(), sessionToken)) {
-                result.completeExceptionally(new IllegalStateException("stale respec session completion"));
+                gate.completeExceptionally(new IllegalStateException("stale respec session completion"));
                 return;
             }
-            try { result.complete(talentManager.refundUnavailableTalents(player, true)); }
-            catch (final Throwable failure) { result.completeExceptionally(failure); }
-        }, () -> result.completeExceptionally(new IllegalStateException("Player scheduler rejected respec completion")));
-        return result;
+            gate.complete(null);
+        }, () -> gate.completeExceptionally(
+                new IllegalStateException("Player scheduler rejected respec completion")));
+        return gate.thenCompose(ignored -> talentManager.refundUnavailableTalents(player, true));
     }
 
     private static Map<String, Double> stringify(final Map<CurrencyType, Double> values) {
