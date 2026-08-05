@@ -92,9 +92,12 @@ public final class OperationalConfigMenuRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/gui/ConfigMenuRootGUI.java"));
         check(root.contains("OperationalConfigMenuGUI.ROOT_ACTION")
                         && root.contains("OperationalConfigSchemaGuard.validate")
+                        && root.contains("AdvancedConfigSchemaGuard.validate")
+                        && root.contains("ServerWorldConfigMenuGUI.ROOT_ACTION")
+                        && root.contains("CrateConfigMenuGUI.ROOT_ACTION")
                         && root.contains("Üzemeltetés és finomhangolás")
-                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 2"),
-                "operational submenu or packaged-schema guard is not linked from the config root");
+                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 4"),
+                "operational submenu or expanded config root wiring is missing");
 
         final String listener = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java"));
