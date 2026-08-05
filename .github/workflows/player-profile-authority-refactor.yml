@@ -50,6 +50,7 @@ jobs:
           python3 scripts/apply_player_profile_intro_regression.py
           python3 scripts/apply_player_profile_repository_enumeration_wave.py
           python3 scripts/apply_player_profile_statistics_wave.py
+          python3 scripts/apply_player_profile_faction_food_wave.py
           git diff --check
 
       - name: Enforce removed legacy stores and new contracts
@@ -66,10 +67,17 @@ jobs:
             echo 'Legacy leaderboard authority remains.' >&2
             exit 1
           fi
+          if grep -n -E 'faction_food_(ts|faction)|lastHomeFoodKey|foodFactionKey' \
+            src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java; then
+            echo 'Legacy faction-food PDC authority remains.' >&2
+            exit 1
+          fi
           grep -F 'CompletionStage<Set<UUID>> listPlayerIds()' \
             src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java
           grep -F 'PlayerProfileStatisticsStore' \
             src/main/java/hu/taliann/icesmp/managers/StatsManager.java
+          grep -F 'PlayerProfileFactionFoodStore' \
+            src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java
 
       - name: Rebuild exact authority contract
         shell: bash
@@ -97,6 +105,8 @@ jobs:
             /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile statistics regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
+          grep -F 'PlayerProfile faction food regression suite passed.' \
+            /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile section extension regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
 
@@ -114,13 +124,16 @@ jobs:
           git add -- \
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileIntroStore.java \
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileStatisticsStore.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionFoodStore.java \
             src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java \
             src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java \
             src/main/java/hu/taliann/icesmp/managers/IntroManager.java \
             src/main/java/hu/taliann/icesmp/managers/StatsManager.java \
             src/main/java/hu/taliann/icesmp/listeners/IntroListener.java \
+            src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java \
             src/regression/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileIntroStoreRegressionSuite.java \
             src/regression/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileStatisticsStoreRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionFoodStoreRegressionSuite.java \
             src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepositoryEnumerationRegressionSuite.java \
             build.gradle.kts \
             scripts/player_profile_authority_allowlist.json
@@ -129,5 +142,5 @@ jobs:
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): move onboarding enumeration and statistics to PlayerProfile'
+          git commit -m 'feat(profile): move onboarding statistics and faction food to PlayerProfile'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
