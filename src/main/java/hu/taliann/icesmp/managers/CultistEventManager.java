@@ -77,7 +77,6 @@ public final class CultistEventManager {
         this.spawnPointManager = spawnPointManager;
     }
 
-    /** Pure atomic lifecycle query used by MajorEventGate. */
     public boolean isActive() {
         if (!active) {
             return false;
@@ -246,10 +245,8 @@ public final class CultistEventManager {
         }
         final int x = base.getBlockX();
         final int z = base.getBlockZ();
-        final Location site = new Location(world, x + 0.5D,
-                world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
-        if (spawnGuard.isBlocked("cultists", site)
-                || spawnGuard.isUnsafeSurface("cultists", world, x, z)) {
+        final Location site = spawnGuard.resolveSafeStandingLocation("cultists", world, x, z);
+        if (site == null || spawnGuard.isBlocked("cultists", site)) {
             spawnGraceUntil = 0L;
             return;
         }
@@ -311,10 +308,14 @@ public final class CultistEventManager {
         }
     }
 
-    private void spawnCultist(final World world, final Location where,
+    /** Every offset member receives its own dry, stable, shoreline-buffered column. */
+    private void spawnCultist(final World world, final Location requested,
                               final EntityType type, final String name) {
-        where.setY(world.getHighestBlockYAt(
-                where.getBlockX(), where.getBlockZ()) + 1);
+        final Location where = spawnGuard.resolveSafeStandingLocation(
+                "cultists", world, requested.getBlockX(), requested.getBlockZ());
+        if (where == null || spawnGuard.isBlocked("cultists", where)) {
+            return;
+        }
         final Entity spawned = world.spawnEntity(where, type);
         if (!(spawned instanceof Mob mob)) {
             spawned.remove();
