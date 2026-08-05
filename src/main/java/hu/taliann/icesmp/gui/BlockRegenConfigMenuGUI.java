@@ -9,12 +9,10 @@ import org.bukkit.inventory.Inventory;
 
 import java.util.List;
 
-/** Az admin menüből állítható robbanás- és blokkregenerációs kulcsok. */
+/** Az admin menüből staged módon állítható robbanás- és blokkregenerációs kulcsok. */
 public final class BlockRegenConfigMenuGUI {
-
     public static final String CATEGORY_ID = "blockregen";
     public static final String ROOT_ACTION = "BLOCK_REGEN";
-
     private static final List<ConfigMenuGUI.Entry> ENTRIES = List.of(
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.enabled", "Világregeneráció bekapcsolva"),
             ConfigMenuGUI.Entry.toggle("claims.protect-explosions", "Claim-robbanások védelme"),
@@ -55,26 +53,16 @@ public final class BlockRegenConfigMenuGUI {
             ConfigMenuGUI.Entry.number("territory.protection.regen.debris-extra-upward-velocity", "Extra felfelé sebesség", 0.05, 0, 3),
             ConfigMenuGUI.Entry.toggle("territory.protection.regen.debris-gravity-enabled", "Törmelék gravitációja")
     );
-
     private BlockRegenConfigMenuGUI() { }
-
     public static int entryCount() { return ENTRIES.size(); }
     public static List<ConfigMenuGUI.Entry> entries() { return ENTRIES; }
-
-    public static boolean requiresRestart(final String key) {
-        return "territory.protection.regen.restore-interval-ticks".equals(key);
-    }
-
+    /** Retained compatibility adapter: the dynamic ticker makes every exposed key live. */
+    public static boolean requiresRestart(final String key) { return false; }
     public static ConfigMenuGUI.Entry findEntry(final String key) {
         return ENTRIES.stream().filter(entry -> entry.key().equals(key)).findFirst().orElse(null);
     }
-
-    public static void open(final Player player, final ConfigManager configManager) {
-        open(player, configManager, null);
-    }
-
-    public static void open(final Player player, final ConfigManager configManager,
-                            final ConfigEditSession session) {
+    public static void open(final Player player, final ConfigManager configManager) { open(player, configManager, null); }
+    public static void open(final Player player, final ConfigManager configManager, final ConfigEditSession session) {
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), CATEGORY_ID);
         final Inventory inventory = Bukkit.createInventory(holder, 54,
                 Component.text("⚙ Robbanás és regeneráció", NamedTextColor.DARK_AQUA));
