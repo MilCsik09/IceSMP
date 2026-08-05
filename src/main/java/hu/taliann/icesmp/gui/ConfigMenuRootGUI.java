@@ -32,10 +32,12 @@ public final class ConfigMenuRootGUI {
     }
 
     public static int categoryCapacity() {
+        OperationalConfigSchemaGuard.validate();
         return CATEGORY_SLOTS.length;
     }
 
     public static void openRoot(final Player player) {
+        OperationalConfigSchemaGuard.validate();
         final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 2;
         if (categoryCount > CATEGORY_SLOTS.length) {
             throw new IllegalStateException("Az admin config-főmenü kategóriakapacitása elfogyott: "
