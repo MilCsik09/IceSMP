@@ -13,19 +13,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Bővíthető admin config-főmenü. A korábbi 36 slotos nézet pontosan 21 kategóriánál
- * megtelt; ez a 54 slotos gyökér további kategóriákat enged anélkül, hogy a zárógombot
- * vagy más csempét felülírná.
- */
+/** Staged, extensible admin config root with a dedicated bottom control row. */
 public final class ConfigMenuRootGUI {
 
     private static final int[] CATEGORY_SLOTS = {
-            10, 11, 12, 13, 14, 15, 16,
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34,
-            37, 38, 39, 40, 41, 42, 43,
-            46, 47, 48, 49, 50, 51, 52
+            9, 10, 11, 12, 13, 14, 15, 16, 17,
+            18, 19, 20, 21, 22, 23, 24, 25, 26,
+            27, 28, 29, 30, 31, 32, 33, 34, 35,
+            36, 37, 38, 39, 40, 41, 42, 43, 44
     };
 
     private ConfigMenuRootGUI() {
@@ -38,6 +33,10 @@ public final class ConfigMenuRootGUI {
     }
 
     public static void openRoot(final Player player) {
+        openRoot(player, null);
+    }
+
+    public static void openRoot(final Player player, final ConfigEditSession session) {
         OperationalConfigSchemaGuard.validate();
         AdvancedConfigSchemaGuard.validate();
         final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 4;
@@ -56,7 +55,7 @@ public final class ConfigMenuRootGUI {
             final int slot = CATEGORY_SLOTS[index++];
             inventory.setItem(slot, tile(category.icon(), "&b" + category.title(),
                     List.of("&7" + category.entries().size() + " kulcs",
-                            "&eKattints a megnyitáshoz")));
+                            "&eKattints a staged szerkesztéshez")));
             holder.bind(slot, "CAT:" + category.id());
         }
 
@@ -65,7 +64,7 @@ public final class ConfigMenuRootGUI {
                 "&bRobbanás és világregeneráció",
                 List.of("&7" + BlockRegenConfigMenuGUI.entryCount() + " kulcs",
                         "&7Zónák, claimek, időzítés, effektek",
-                        "&eKattints a megnyitáshoz")));
+                        "&eKattints a staged szerkesztéshez")));
         holder.bind(regenSlot, BlockRegenConfigMenuGUI.ROOT_ACTION);
 
         final int operationalSlot = CATEGORY_SLOTS[index++];
@@ -74,7 +73,7 @@ public final class ConfigMenuRootGUI {
                 List.of("&7" + OperationalConfigMenuGUI.categoryCount() + " alkategória",
                         "&7" + OperationalConfigMenuGUI.entryCount() + " élő kulcs",
                         "&7HUD, AFK, petek, piac és moderáció",
-                        "&eKattints a megnyitáshoz")));
+                        "&eKattints a staged szerkesztéshez")));
         holder.bind(operationalSlot, OperationalConfigMenuGUI.ROOT_ACTION);
 
         final int serverWorldSlot = CATEGORY_SLOTS[index++];
@@ -82,8 +81,8 @@ public final class ConfigMenuRootGUI {
                 "&bSzerver, világ és szöveges értékek",
                 List.of("&7" + ServerWorldConfigMenuGUI.entryCount() + " élő kulcs",
                         "&7Gamerule, világ-driver, HUD-szöveg, listák",
-                        "&7Biztonságos chat-alapú String/lista editor",
-                        "&eKattints a megnyitáshoz")));
+                        "&7Privát chat-alapú String/lista editor",
+                        "&eKattints a staged szerkesztéshez")));
         holder.bind(serverWorldSlot, ServerWorldConfigMenuGUI.ROOT_ACTION);
 
         final int crateSlot = CATEGORY_SLOTS[index];
@@ -91,12 +90,11 @@ public final class ConfigMenuRootGUI {
                 "&bNatív crate-editor",
                 List.of("&7Crate-alapbeállítások és rewardok",
                         "&7Strukturált, copy-on-write jutalomszerkesztés",
-                        "&7Lapozható dinamikus crate-lista",
-                        "&eKattints a megnyitáshoz")));
+                        "&7A teljes lista csak Mentéskor publikálódik",
+                        "&eKattints a staged szerkesztéshez")));
         holder.bind(crateSlot, CrateConfigMenuGUI.ROOT_ACTION);
 
-        inventory.setItem(53, tile(Material.BARRIER, "&cBezárás", List.of()));
-        holder.bind(53, "CLOSE");
+        ConfigMenuControls.add(inventory, holder, session, false);
         player.openInventory(inventory);
     }
 
