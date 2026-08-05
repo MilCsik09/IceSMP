@@ -5,10 +5,14 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /** Pure, deterministic distance/search policy shared by all event spawn gates. */
 public final class EventSpawnSafetyPolicy {
     private static final double GOLDEN_ANGLE = Math.PI * (3.0D - Math.sqrt(5.0D));
+    private static final ConcurrentMap<Integer, List<GridOffset>> WATER_PROBE_CACHE =
+            new ConcurrentHashMap<>();
 
     private EventSpawnSafetyPolicy() { }
 
@@ -76,15 +80,20 @@ public final class EventSpawnSafetyPolicy {
 
     /**
      * Returns every integer column inside a circular buffer, nearest columns first.
-     * The bounded ordering lets runtime water checks short-circuit quickly while tests
-     * can prove that the center and cardinal boundary are always included.
+     * Only 33 bounded masks can exist, so repeated runtime checks reuse immutable lists
+     * instead of rebuilding and sorting hundreds of offsets for every candidate.
      */
     public static List<GridOffset> waterProbeOffsets(final int radius) {
         final int bounded = Math.max(0, Math.min(32, radius));
-        final int squared = bounded * bounded;
-        final List<GridOffset> result = new ArrayList<>((bounded * 2 + 1) * (bounded * 2 + 1));
-        for (int x = -bounded; x <= bounded; x++) {
-            for (int z = -bounded; z <= bounded; z++) {
+        return WATER_PROBE_CACHE.computeIfAbsent(bounded,
+                EventSpawnSafetyPolicy::buildWaterProbeOffsets);
+    }
+
+    private static List<GridOffset> buildWaterProbeOffsets(final int radius) {
+        final int squared = radius * radius;
+        final List<GridOffset> result = new ArrayList<>((radius * 2 + 1) * (radius * 2 + 1));
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
                 if (x * x + z * z <= squared) {
                     result.add(new GridOffset(x, z));
                 }
