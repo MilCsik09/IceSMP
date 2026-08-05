@@ -8,11 +8,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -22,7 +19,6 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -95,9 +91,10 @@ public final class HudManager {
     private volatile FileConfiguration cachedLayoutSource;
     private volatile List<HudSidebarLayout.Entry> cachedLayout = HudSidebarLayout.defaults();
 
-    private final NamespacedKey hiddenSectionsKey;
-    /** Per-player /hud toggle state, cached in memory (PDC is only touched on load/save, never per tick). */
+    /** Per-player /hud toggle state; rebuildable mirror of PlayerProfile preferences. */
     private final ConcurrentHashMap<UUID, Set<String>> hiddenSectionsCache = new ConcurrentHashMap<>();
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileHudPreferenceStore
+            preferenceStore = new hu.taliann.icesmp.playerprofile.application.PlayerProfileHudPreferenceStore();
 
     /**
      * A thread-safe snapshot of a player's HUD data, refreshed on the player's region thread each
@@ -140,7 +137,6 @@ public final class HudManager {
         this.animator = animator;
         this.seasonManager = seasonManager;
         this.dailyQuestManager = dailyQuestManager;
-        this.hiddenSectionsKey = new NamespacedKey(plugin, "hud_hidden_sections");
     }
 
     public boolean isEnabled() {
@@ -166,16 +162,7 @@ public final class HudManager {
      * never re-read from PDC on the per-second HUD tick.
      */
     public Set<String> hiddenSections(final Player player) {
-        return hiddenSectionsCache.computeIfAbsent(player.getUniqueId(), id -> loadHiddenSections(player));
-    }
-
-    private Set<String> loadHiddenSections(final Player player) {
-        final String raw = player.getPersistentDataContainer().get(hiddenSectionsKey, PersistentDataType.STRING);
-        final Set<String> hidden = new LinkedHashSet<>();
-        if (raw != null && !raw.isBlank()) {
-            hidden.addAll(Arrays.asList(raw.split(",")));
-        }
-        return hidden;
+        return hiddenSectionsCache.computeIfAbsent(player.getUniqueId(), preferenceStore::hidden);
     }
 
     /** Whether the given section (or {@link #SECTION_ALL}) is currently hidden for the player. */
@@ -183,27 +170,13 @@ public final class HudManager {
         return hiddenSections(player).contains(section);
     }
 
-    /**
-     * Toggles a HUD section (or "mind" for the whole sidebar) on/off for the player, persists the
-     * result to their PDC (restart-proof) and refreshes the in-memory cache. Called from /hud, i.e.
-     * on the player's own region thread, so touching their own PDC directly is Folia-safe.
-     *
-     * @return true if the section is hidden after the toggle, false if it is now shown
-     */
-    public boolean toggleSection(final Player player, final String section) {
-        final Set<String> hidden = new LinkedHashSet<>(hiddenSections(player));
-        final boolean nowHidden = hidden.add(section);
-        if (!nowHidden) {
-            hidden.remove(section);
-        }
-        hiddenSectionsCache.put(player.getUniqueId(), hidden);
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        if (hidden.isEmpty()) {
-            pdc.remove(hiddenSectionsKey);
-        } else {
-            pdc.set(hiddenSectionsKey, PersistentDataType.STRING, String.join(",", hidden));
-        }
-        return nowHidden;
+    /** Persists the toggle through PlayerProfile CAS before updating the runtime mirror. */
+    public java.util.concurrent.CompletionStage<Boolean> toggleSection(
+            final Player player, final String section) {
+        return preferenceStore.toggle(player.getUniqueId(), section).thenApply(result -> {
+            hiddenSectionsCache.put(player.getUniqueId(), result.hidden());
+            return result.nowHidden();
+        });
     }
 
     /** Whether the sidebar should render at all for this player (config gate + their own "mind" toggle). */

@@ -816,16 +816,6 @@
       "reason": "PDC receiver could not be proven item/entity metadata; fail closed as player-state transition."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/HudManager.java|final PersistentDataContainer pdc = player.getPersistentDataContainer();",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/HudManager.java|final String raw = player.getPersistentDataContainer().get(hiddenSectionsKey, PersistentDataType.STRING);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/IntroManager.java|final String previous = player.getPersistentDataContainer().get(prevGamemodeKey, PersistentDataType.STRING);",
       "category": "TRANSITION",
       "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
