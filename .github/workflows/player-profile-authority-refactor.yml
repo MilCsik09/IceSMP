@@ -14,7 +14,7 @@ jobs:
   authority-contract:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'profile/player-profile-full-authority'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - name: Checkout exact authority branch
         uses: actions/checkout@v4
@@ -47,6 +47,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/apply_player_profile_full_authority_wave1.py
+          python3 scripts/apply_player_profile_conditional_mutation.py
+          python3 scripts/apply_player_profile_mastery_wave.py
           python3 scripts/apply_player_profile_extension_regression_task.py
           git diff --check
 
@@ -72,8 +74,10 @@ jobs:
           ./gradlew clean build --console=plain --no-daemon --stacktrace | tee build/player-profile-authority-gradle.log
           grep -F 'PlayerProfile section extension regression suite passed.' \
             build/player-profile-authority-gradle.log
+          grep -F 'Spell mastery transaction regression suite passed.' \
+            build/player-profile-authority-gradle.log
 
-      - name: Commit validated authority contract
+      - name: Commit validated authority wave
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -86,12 +90,16 @@ jobs:
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
           git add -- \
             src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileService.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAuthority.java \
+            src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java \
+            src/main/java/hu/taliann/icesmp/commands/SpellCommand.java \
             build.gradle.kts \
             scripts/player_profile_authority_allowlist.json
           if git diff --cached --quiet; then
-            echo 'Authority contract is already current.'
+            echo 'Authority wave is already current.'
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'test(profile): enforce exact full-authority contract'
+          git commit -m 'feat(profile): complete spell mastery authority migration'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
