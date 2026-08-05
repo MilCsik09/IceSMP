@@ -145,9 +145,7 @@ public final class ConfigMenuGUIListener implements Listener {
         final String validationProblem =
                 OperationalConfigPolicy.validate(key, newValue, configManager);
         if (validationProblem != null) {
-            player.sendMessage(messageManager.get("admin.icesmp.config.invalid-combination",
-                    "&c⚠ %s", validationProblem));
-            GuiUtil.sound(player, GuiUtil.GuiSound.ERROR);
+            rejectInvalidCombination(player, validationProblem);
             reopen(player, holder);
             return;
         }
@@ -158,6 +156,14 @@ public final class ConfigMenuGUIListener implements Listener {
 
     private void resetOverride(final Player player, final String key,
                                final ConfigMenuGUI.Entry entry) {
+        final Object fallback = ConfigMenuEntryRenderer.defaultValue(entry, configManager);
+        final String validationProblem =
+                OperationalConfigPolicy.validate(key, fallback, configManager);
+        if (validationProblem != null) {
+            rejectInvalidCombination(player, validationProblem);
+            return;
+        }
+
         final boolean changed = configManager.resetOverride(key);
         messageManager.reload();
         ConfigValidator.validate(configManager, plugin.getLogger());
@@ -173,6 +179,12 @@ public final class ConfigMenuGUIListener implements Listener {
                     "&7↺ &6%s &7már az alapkonfigurációt használja: &f%s", key, resolved));
             GuiUtil.sound(player, GuiUtil.GuiSound.CLICK);
         }
+    }
+
+    private void rejectInvalidCombination(final Player player, final String problem) {
+        player.sendMessage(messageManager.get("admin.icesmp.config.invalid-combination",
+                "&c⚠ %s", problem));
+        GuiUtil.sound(player, GuiUtil.GuiSound.ERROR);
     }
 
     private void applyOverride(final Player player, final String key, final Object value) {
