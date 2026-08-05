@@ -12,7 +12,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -22,9 +21,6 @@ import java.util.logging.Level;
 
 /** PlayerProfile-backed spell mastery with restart-durable wallet compensation. */
 public final class SpellMasteryManager {
-
-    private static final String OPERATION_PREFIX = "spell-mastery:";
-    private static final String OPERATION_TYPE = "spell-mastery-upgrade";
 
     public enum UpgradeResult { SUCCESS, MAX_RANK, INSUFFICIENT_FUNDS }
 
@@ -53,7 +49,8 @@ public final class SpellMasteryManager {
         if (player == null || spellId == null) {
             return 0;
         }
-        return getRanks(player.getUniqueId()).getOrDefault(normalizeSpell(spellId), 0);
+        return getRanks(player.getUniqueId()).getOrDefault(
+                SpellMasteryTransactionProtocol.normalizeSpell(spellId), 0);
     }
 
     public double getCooldownMultiplier(final Player player, final String spellId) {
@@ -86,7 +83,7 @@ public final class SpellMasteryManager {
 
     public CompletionStage<UpgradeResult> upgrade(final Player player, final String spellId) {
         Objects.requireNonNull(player, "player");
-        final String normalized = normalizeSpell(spellId);
+        final String normalized = SpellMasteryTransactionProtocol.normalizeSpell(spellId);
         if (normalized.isEmpty()) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("spellId cannot be blank"));
         }
@@ -101,11 +98,12 @@ public final class SpellMasteryManager {
         final long base = Math.max(1L,
                 configManager.getLong("spells.mastery.upgrade-base-cost", 50L));
         final long cost = Math.multiplyExact(base, targetRank);
-        final String fingerprint = fingerprint(playerId, normalized, previousRank, targetRank,
-                currency, cost);
-        final String operationId = fingerprint + ':' + UUID.randomUUID();
+        final SpellMasteryTransactionProtocol.Identity identity =
+                SpellMasteryTransactionProtocol.create(playerId, normalized, previousRank,
+                        targetRank, currency, cost, UUID.randomUUID());
 
-        return async(() -> currencyManager.debitOperation(playerId, currency, cost, operationId))
+        return async(() -> currencyManager.debitOperation(playerId, currency, cost,
+                        identity.operationId()))
                 .thenCompose(debit -> {
                     if (debit == null) {
                         return CompletableFuture.completedFuture(
@@ -129,43 +127,21 @@ public final class SpellMasteryManager {
                                 mastery, spellbook.persistentCooldowns(), spellbook.uiState(),
                                 spellbook.extensions());
                         return new PlayerProfileTransactionManager.TransactionPlan<>(
-                                operationId, OPERATION_TYPE, fingerprint,
+                                identity.operationId(), SpellMasteryTransactionProtocol.OPERATION_TYPE,
+                                identity.fingerprint(),
                                 List.of(new PlayerProfileTransactionManager.SectionUpdate(
                                         ProfileSectionId.SPELLBOOK,
                                         current.spellbook().revision(), next)),
                                 UpgradeResult.SUCCESS);
                     }).handle((result, failure) -> new ProfileCommit(result, failure, true));
                 })
-                .thenCompose(profileCommit -> {
-                    if (!profileCommit.debited()) {
-                        return CompletableFuture.completedFuture(profileCommit.result());
-                    }
-                    if (profileCommit.failure() != null) {
-                        return async(() -> currencyManager.rollbackOperation(operationId))
-                                .handle((rolledBack, rollbackFailure) -> {
-                                    final Throwable original = unwrap(profileCommit.failure());
-                                    if (rollbackFailure != null) {
-                                        original.addSuppressed(unwrap(rollbackFailure));
-                                    }
-                                    throw new java.util.concurrent.CompletionException(original);
-                                });
-                    }
-                    return async(() -> currencyManager.commitOperation(operationId))
-                            .handle((ignored, finalizeFailure) -> {
-                                if (finalizeFailure != null) {
-                                    plugin.getLogger().log(Level.SEVERE,
-                                            "Spell mastery wallet finalize deferred to restart recovery: "
-                                                    + operationId,
-                                            unwrap(finalizeFailure));
-                                }
-                                return profileCommit.result();
-                            });
-                });
+                .thenCompose(profileCommit -> finalizeWallet(identity, profileCommit));
     }
 
     /** Reconciles wallet debits whose matching PlayerProfile transaction was interrupted. */
     public CompletionStage<Void> recoverPendingOperations() {
-        return async(() -> currencyManager.durableOperationsByPrefix(OPERATION_PREFIX))
+        return async(() -> currencyManager.durableOperationsByPrefix(
+                        SpellMasteryTransactionProtocol.OPERATION_PREFIX))
                 .thenCompose(operations -> {
                     CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
                     for (final CurrencyManager.DurableWalletOperation operation : operations) {
@@ -182,19 +158,54 @@ public final class SpellMasteryManager {
         player.getScheduler().run(plugin, ignored -> action.run(), null);
     }
 
+    private CompletionStage<UpgradeResult> finalizeWallet(
+            final SpellMasteryTransactionProtocol.Identity identity,
+            final ProfileCommit profileCommit) {
+        if (!profileCommit.debited()) {
+            return CompletableFuture.completedFuture(profileCommit.result());
+        }
+        if (profileCommit.failure() != null) {
+            return async(() -> currencyManager.rollbackOperation(identity.operationId()))
+                    .handle((rolledBack, rollbackFailure) -> {
+                        final Throwable original = unwrap(profileCommit.failure());
+                        if (rollbackFailure != null) {
+                            original.addSuppressed(unwrap(rollbackFailure));
+                        }
+                        throw new java.util.concurrent.CompletionException(original);
+                    });
+        }
+        return async(() -> currencyManager.commitOperation(identity.operationId()))
+                .handle((ignored, finalizeFailure) -> {
+                    if (finalizeFailure != null) {
+                        plugin.getLogger().log(Level.SEVERE,
+                                "Spell mastery wallet finalize deferred to restart recovery: "
+                                        + identity.operationId(),
+                                unwrap(finalizeFailure));
+                    }
+                    return profileCommit.result();
+                });
+    }
+
     private CompletionStage<Void> reconcile(final CurrencyManager.DurableWalletOperation wallet) {
         final UUID playerId = wallet.playerId();
         return PlayerProfileAuthority.current().repository().loadSnapshot(playerId)
                 .thenCompose(profile -> {
                     final PlayerProfileOperation receipt = profile.operations().value().operations()
                             .get(wallet.operationId());
-                    final String expectedFingerprint = fingerprintFromOperation(wallet);
-                    final boolean committed = receipt != null
-                            && receipt.status() == PlayerProfileOperation.Status.COMMITTED
-                            && OPERATION_TYPE.equals(receipt.type())
-                            && expectedFingerprint.equals(receipt.fingerprint());
+                    boolean committed = false;
+                    if (receipt != null) {
+                        try {
+                            SpellMasteryTransactionProtocol.verifyCommittedReceipt(wallet, receipt);
+                            committed = true;
+                        } catch (final IllegalStateException invalidReceipt) {
+                            plugin.getLogger().log(Level.WARNING,
+                                    "Rejecting invalid spell mastery receipt during recovery: "
+                                            + wallet.operationId(), invalidReceipt);
+                        }
+                    }
+                    final boolean shouldCommit = committed;
                     return async(() -> {
-                        if (committed) {
+                        if (shouldCommit) {
                             currencyManager.commitOperation(wallet.operationId());
                         } else {
                             currencyManager.rollbackOperation(wallet.operationId());
@@ -222,43 +233,6 @@ public final class SpellMasteryManager {
             }
         });
         return result;
-    }
-
-    private static String normalizeSpell(final String spellId) {
-        if (spellId == null || spellId.isBlank()) {
-            return "";
-        }
-        final String normalized = spellId.trim().toLowerCase(Locale.ROOT);
-        if (!normalized.matches("[a-z0-9][a-z0-9_.-]{0,95}")) {
-            throw new IllegalArgumentException("invalid spell id: " + spellId);
-        }
-        return normalized;
-    }
-
-    private static String fingerprint(final UUID playerId, final String spell,
-                                      final int previousRank, final int targetRank,
-                                      final CurrencyType currency, final long cost) {
-        return OPERATION_PREFIX + playerId + ':' + spell + ':' + previousRank + ':'
-                + targetRank + ':' + currency.name() + ':' + cost;
-    }
-
-    private static String fingerprintFromOperation(
-            final CurrencyManager.DurableWalletOperation wallet) {
-        final String operationId = wallet.operationId();
-        final int randomSeparator = operationId.lastIndexOf(':');
-        if (randomSeparator <= OPERATION_PREFIX.length()) {
-            throw new IllegalStateException("Malformed spell mastery operation id");
-        }
-        final String candidate = operationId.substring(0, randomSeparator);
-        final String[] parts = candidate.split(":");
-        if (parts.length != 8
-                || !parts[0].equals("spell-mastery")
-                || !parts[1].equals(wallet.playerId().toString())
-                || !parts[6].equals(wallet.currency().name())
-                || !parts[7].equals(Long.toString((long) wallet.amount()))) {
-            throw new IllegalStateException("Spell mastery wallet witness identity mismatch");
-        }
-        return candidate;
     }
 
     private static Throwable unwrap(final Throwable failure) {
