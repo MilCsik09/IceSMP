@@ -42,7 +42,7 @@ public final class ServerWorldConfigMenuGUI {
             AdvancedConfigEntry.stringList("world-events.orchestration.major-events",
                     "Egymást kizáró nagy események", 16, 32, false,
                     "[a-z0-9_-]+",
-                    "Az itt felsorolt nagy események nem futhatnak egymással párhuzamosan. A chatben | jellel elválasztott eseményazonosítókat adj meg."),
+                    "Az itt felsorolt nagy események nem futhatnak egymással párhuzamosan. A chatben ;; jellel elválasztott eseményazonosítókat adj meg."),
             AdvancedConfigEntry.stringList("mob-scaling.ignored-spawn-reasons",
                     "Skálázásból kihagyott spawn-ok", 32, 40, true,
                     "[A-Za-z_]+",
@@ -58,8 +58,8 @@ public final class ServerWorldConfigMenuGUI {
                     "[a-z]+",
                     "Harc-fókusz alatt csak ezek a HUD-szekciók maradnak láthatók. Példák: eroforras, csapat, kaszt, valuta."),
             AdvancedConfigEntry.stringList("moderation.chat-filter.words",
-                    "Chatszűrő tiltott szavai", 128, 48, true, "[^|\\r\\n]+",
-                    "A natív chatszűrő által keresett szavak és kifejezések. Kis- és nagybetűtől függetlenül működik; az elemeket | jellel válaszd el."),
+                    "Chatszűrő tiltott szavai", 128, 48, true, "[^\\r\\n]+",
+                    "A natív chatszűrő által keresett szavak és kifejezések. Kis- és nagybetűtől függetlenül működik; az elemeket ;; jellel válaszd el."),
             AdvancedConfigEntry.stringList("moderation.muted-blocked-commands",
                     "Némítás alatt tiltott parancsok", 32, 32, true,
                     "[A-Za-z0-9:_-]+",
@@ -72,7 +72,7 @@ public final class ServerWorldConfigMenuGUI {
                     "Az üdvözlő title alatt megjelenő MiniMessage alcím. Üres értékkel az alcím elhagyható."),
             AdvancedConfigEntry.stringList("world-events.intro.lines",
                     "Első belépési történetsorok", 16, 192, false, "[^\\r\\n]+",
-                    "Az intro egymás után megjelenő címsorai. Minden elem formátuma pontosan cím||alcím; az elemeket a chatben | jellel válaszd el.")
+                    "Az intro egymás után megjelenő címsorai. Minden elem formátuma pontosan cím||alcím; az egyes elemeket a chatben ;; jellel válaszd el.")
     );
 
     private ServerWorldConfigMenuGUI() {
