@@ -101,15 +101,15 @@ public final class SpellMasteryManager {
         final long base = Math.max(1L,
                 configManager.getLong("spells.mastery.upgrade-base-cost", 50L));
         final long cost = Math.multiplyExact(base, targetRank);
-        final String operationId = OPERATION_PREFIX + playerId + ':' + normalized + ':'
-                + targetRank + ':' + UUID.randomUUID();
         final String fingerprint = fingerprint(playerId, normalized, previousRank, targetRank,
                 currency, cost);
+        final String operationId = fingerprint + ':' + UUID.randomUUID();
 
         return async(() -> currencyManager.debitOperation(playerId, currency, cost, operationId))
                 .thenCompose(debit -> {
                     if (debit == null) {
-                        return CompletableFuture.completedFuture(UpgradeResult.INSUFFICIENT_FUNDS);
+                        return CompletableFuture.completedFuture(
+                                new ProfileCommit(UpgradeResult.INSUFFICIENT_FUNDS, null, false));
                     }
                     return PlayerProfileAuthority.current().transact(playerId, current -> {
                         final SpellbookSection spellbook = current.spellbook().value();
@@ -134,21 +134,20 @@ public final class SpellMasteryManager {
                                         ProfileSectionId.SPELLBOOK,
                                         current.spellbook().revision(), next)),
                                 UpgradeResult.SUCCESS);
-                    }).handle((result, failure) -> new ProfileCommit(result, failure));
+                    }).handle((result, failure) -> new ProfileCommit(result, failure, true));
                 })
-                .thenCompose(commit -> {
-                    if (commit instanceof UpgradeResult result) {
-                        return CompletableFuture.completedFuture(result);
+                .thenCompose(profileCommit -> {
+                    if (!profileCommit.debited()) {
+                        return CompletableFuture.completedFuture(profileCommit.result());
                     }
-                    final ProfileCommit profileCommit = (ProfileCommit) commit;
                     if (profileCommit.failure() != null) {
                         return async(() -> currencyManager.rollbackOperation(operationId))
                                 .handle((rolledBack, rollbackFailure) -> {
+                                    final Throwable original = unwrap(profileCommit.failure());
                                     if (rollbackFailure != null) {
-                                        profileCommit.failure().addSuppressed(unwrap(rollbackFailure));
+                                        original.addSuppressed(unwrap(rollbackFailure));
                                     }
-                                    throw new java.util.concurrent.CompletionException(
-                                            unwrap(profileCommit.failure()));
+                                    throw new java.util.concurrent.CompletionException(original);
                                 });
                     }
                     return async(() -> currencyManager.commitOperation(operationId))
@@ -189,9 +188,11 @@ public final class SpellMasteryManager {
                 .thenCompose(profile -> {
                     final PlayerProfileOperation receipt = profile.operations().value().operations()
                             .get(wallet.operationId());
+                    final String expectedFingerprint = fingerprintFromOperation(wallet);
                     final boolean committed = receipt != null
                             && receipt.status() == PlayerProfileOperation.Status.COMMITTED
-                            && OPERATION_TYPE.equals(receipt.type());
+                            && OPERATION_TYPE.equals(receipt.type())
+                            && expectedFingerprint.equals(receipt.fingerprint());
                     return async(() -> {
                         if (committed) {
                             currencyManager.commitOperation(wallet.operationId());
@@ -224,14 +225,40 @@ public final class SpellMasteryManager {
     }
 
     private static String normalizeSpell(final String spellId) {
-        return spellId == null ? "" : spellId.trim().toLowerCase(Locale.ROOT);
+        if (spellId == null || spellId.isBlank()) {
+            return "";
+        }
+        final String normalized = spellId.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.matches("[a-z0-9][a-z0-9_.-]{0,95}")) {
+            throw new IllegalArgumentException("invalid spell id: " + spellId);
+        }
+        return normalized;
     }
 
     private static String fingerprint(final UUID playerId, final String spell,
                                       final int previousRank, final int targetRank,
                                       final CurrencyType currency, final long cost) {
-        return "spell-mastery:" + playerId + ':' + spell + ':' + previousRank + ':'
+        return OPERATION_PREFIX + playerId + ':' + spell + ':' + previousRank + ':'
                 + targetRank + ':' + currency.name() + ':' + cost;
+    }
+
+    private static String fingerprintFromOperation(
+            final CurrencyManager.DurableWalletOperation wallet) {
+        final String operationId = wallet.operationId();
+        final int randomSeparator = operationId.lastIndexOf(':');
+        if (randomSeparator <= OPERATION_PREFIX.length()) {
+            throw new IllegalStateException("Malformed spell mastery operation id");
+        }
+        final String candidate = operationId.substring(0, randomSeparator);
+        final String[] parts = candidate.split(":");
+        if (parts.length != 8
+                || !parts[0].equals("spell-mastery")
+                || !parts[1].equals(wallet.playerId().toString())
+                || !parts[6].equals(wallet.currency().name())
+                || !parts[7].equals(Long.toString((long) wallet.amount()))) {
+            throw new IllegalStateException("Spell mastery wallet witness identity mismatch");
+        }
+        return candidate;
     }
 
     private static Throwable unwrap(final Throwable failure) {
@@ -244,7 +271,7 @@ public final class SpellMasteryManager {
         return current;
     }
 
-    private record ProfileCommit(UpgradeResult result, Throwable failure) {
+    private record ProfileCommit(UpgradeResult result, Throwable failure, boolean debited) {
     }
 
     private static final class StaleMasteryUpgradeException extends RuntimeException {
