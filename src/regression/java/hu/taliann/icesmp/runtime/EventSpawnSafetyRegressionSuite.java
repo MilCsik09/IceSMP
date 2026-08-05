@@ -121,6 +121,10 @@ public final class EventSpawnSafetyRegressionSuite {
                 "player-anchored search must begin beyond 16 chunks");
         check(config.getDouble("world-events.safety.search-max-radius-blocks") >= 512.0D,
                 "search must have room to escape protected or wet terrain");
+        check(!config.getBoolean("world-events.safety.require-loaded-chunk", true),
+                "distant search must be allowed to prepare inactive generated chunks");
+        check(!config.getBoolean("world-events.safety.generate-unloaded-chunks", true),
+                "event search must not expand the world by default");
 
         check(config.getBoolean("world-events.water-safety.enabled"),
                 "world-event water safety must default to enabled");
@@ -139,13 +143,17 @@ public final class EventSpawnSafetyRegressionSuite {
                         && guard.contains("findSafeAtOrNear")
                         && guard.contains("EventSpawnSafetyPolicy.waterProbeOffsets")
                         && guard.contains("reserveAfterSurfaceValidation")
+                        && guard.contains("prepareCandidateChunks")
+                        && guard.contains("getChunkAtAsync")
+                        && guard.contains("CompletableFuture.allOf")
+                        && guard.contains("generate-unloaded-chunks\", false")
                         && guard.contains("WATER_OR_SHORE")
                         && guard.contains("min-horizontal-distance-blocks\", 192.0D")
                         && guard.contains("ignore-admins\", false")
                         && guard.contains("search-attempts\", 32")
                         && guard.contains("search-min-radius-blocks\", 256.0D")
                         && guard.contains("search-max-radius-blocks\", 512.0D"),
-                "central guard lost safe player-distance or shoreline fallbacks");
+                "central guard lost distant async search or shoreline fallbacks");
 
         final String caravan = read("src/main/java/hu/taliann/icesmp/managers/CaravanManager.java");
         check(caravan.contains("findSafeAtOrNear(\"caravan\"")
@@ -210,13 +218,14 @@ public final class EventSpawnSafetyRegressionSuite {
         check(meteorSpawn.contains("findSafeNear(\"meteor\"")
                         && meteorSpawn.contains("isBlocked(\"meteor\"")
                         && !meteorSpawn.contains("meteor.spawn-radius"),
-                "meteor may still use the old visible 90-block landing square");
+                "meteor may still use the old visible landing square");
 
         assertContains("InvasionManager.java", "findSafeNear(\"invasion\"");
         assertContains("WorldBossManager.java", "findSafeNear(\"world-boss\"");
         assertContains("CorruptionManager.java", "isUnsafeSurface(\"corruption\"");
         assertContains("StrangerNpcManager.java", "isUnsafeSurface(\"stranger\"");
         assertContains("EscortManager.java", "isUnsafeSurface(\"escort\"");
+        assertContains("DarkUndeadAmbienceManager.java", "isBlocked(\"dark-undead\"");
     }
 
     private static void assertContains(final String file, final String marker) throws Exception {
