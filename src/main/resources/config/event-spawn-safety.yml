@@ -1,0 +1,19 @@
+# IceSMP world-event víz- és partbiztonság.
+# Külön subsystem fájl, hogy régi world.yml mellett is megjelenjenek az új alapértékek.
+world-events:
+  water-safety:
+    # Bekapcsolva minden world-event spawnhely száraz, stabil talajt igényel.
+    enabled: true
+    # Az összes eseményre érvényes, még akkor is, ha egy régi spawn-rules bejegyzésben water=false maradt.
+    enforce-all-events: true
+    # A spawnoszlop körül ekkora körben sem lehet víz vagy waterlogged felszín.
+    # 0 = csak a pontos spawnoszlop; 8 = a mob/NPC nem kerül közvetlen tó- vagy folyópartra sem.
+    buffer-blocks: 8
+
+  # A korábbi world.yml-ben a játékos-karaván vízszabálya false volt. Ez a később
+  # merge-ölt subsystem explicit felülírja, és a kereskedő-karavánt is dokumentálja.
+  spawn-rules:
+    caravan:
+      water: true
+    player-caravan:
+      water: true
