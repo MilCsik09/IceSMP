@@ -24,6 +24,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -677,6 +678,21 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
     public Optional<DurableWalletOperation> durableOperation(final String operationId) {
         if (operationId == null || operationId.isBlank()) return Optional.empty();
         synchronized (saveLock) { return Optional.ofNullable(durableWalletOperations.get(operationId.trim())); }
+    }
+
+    /** Immutable deterministic snapshot for restart recovery of one operation namespace. */
+    public List<DurableWalletOperation> durableOperationsByPrefix(final String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            throw new IllegalArgumentException("operation prefix cannot be blank");
+        }
+        synchronized (saveLock) {
+            return durableWalletOperations.values().stream()
+                    .filter(operation -> operation.operationId().startsWith(prefix))
+                    .sorted(java.util.Comparator
+                            .comparingLong(DurableWalletOperation::createdAtEpochMillis)
+                            .thenComparing(DurableWalletOperation::operationId))
+                    .toList();
+        }
     }
 
     public DurableWalletOperation commitOperation(final String operationId) {

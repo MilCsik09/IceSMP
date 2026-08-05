@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -135,6 +136,14 @@ public final class PlayerProfileAuthority {
             final Class<T> type,
             final UnaryOperator<T> mutation) {
         return service.mutateSection(playerId, sectionId, type, mutation);
+    }
+
+    public <T extends PlayerProfileSection, R> CompletionStage<R> mutateSectionConditional(
+            final UUID playerId,
+            final ProfileSectionId sectionId,
+            final Class<T> type,
+            final Function<T, PlayerProfileService.ConditionalMutation<T, R>> mutation) {
+        return service.mutateSectionConditional(playerId, sectionId, type, mutation);
     }
 
     public <T extends PlayerProfileSection> CompletionStage<PlayerProfileSnapshot> mutateExtensions(

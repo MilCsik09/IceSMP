@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -196,6 +197,67 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
                                 new PlayerProfileRepositoryException(result.detail()));
                     });
         });
+    }
+
+    public <T extends ProfileSectionData, R> CompletionStage<R> mutateSectionConditional(
+            final UUID id, final ProfileSectionId sectionId, final Class<T> type,
+            final Function<T, ConditionalMutation<T, R>> mutation) {
+        return mutateSectionConditional(id, sectionId, type, mutation, 4);
+    }
+
+    private <T extends ProfileSectionData, R> CompletionStage<R> mutateSectionConditional(
+            final UUID id, final ProfileSectionId sectionId, final Class<T> type,
+            final Function<T, ConditionalMutation<T, R>> mutation, final int attempts) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(sectionId, "sectionId");
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(mutation, "mutation");
+        return repository.loadSnapshot(id).thenCompose(snapshot -> {
+            final ProfileSectionSnapshot<?> raw = snapshot.section(sectionId).orElseThrow();
+            if (!raw.health().usable()) return CompletableFuture.failedFuture(
+                    new PlayerProfileRepositoryException.Quarantined(raw.health().diagnostic()));
+            final T current = type.cast(raw.value());
+            final ConditionalMutation<T, R> decision = Objects.requireNonNull(
+                    mutation.apply(current), "conditional mutation result");
+            if (!decision.changed()) {
+                return CompletableFuture.completedFuture(decision.result());
+            }
+            final T next = Objects.requireNonNull(decision.next(), "conditional mutation next");
+            final ProfileSectionSnapshot<T> candidate = new ProfileSectionSnapshot<>(sectionId,
+                    raw.schema(), Math.addExact(raw.revision(), 1L), clock.instant(), next,
+                    SectionHealth.healthy(), raw.extensions());
+            return repository.saveSection(id, sectionId, raw.revision(), snapshot.profileRevision(), candidate)
+                    .thenCompose(result -> {
+                        if (result.status() == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED) {
+                            notifyChanged(id, result.snapshot().profileRevision(), Set.of(sectionId));
+                            return CompletableFuture.completedFuture(decision.result());
+                        }
+                        if ((result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_REVISION
+                                || result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_GENERATION)
+                                && attempts > 1) {
+                            repository.invalidate(id);
+                            return mutateSectionConditional(id, sectionId, type, mutation, attempts - 1);
+                        }
+                        return CompletableFuture.failedFuture(
+                                new PlayerProfileRepositoryException(result.detail()));
+                    });
+        });
+    }
+
+    public record ConditionalMutation<T, R>(boolean changed, T next, R result) {
+        public ConditionalMutation {
+            if (changed && next == null) {
+                throw new IllegalArgumentException("changed conditional mutation requires next value");
+            }
+        }
+
+        public static <T, R> ConditionalMutation<T, R> unchanged(final R result) {
+            return new ConditionalMutation<>(false, null, result);
+        }
+
+        public static <T, R> ConditionalMutation<T, R> changed(final T next, final R result) {
+            return new ConditionalMutation<>(true, Objects.requireNonNull(next, "next"), result);
+        }
     }
 
     public <T> CompletionStage<T> transact(final UUID id,

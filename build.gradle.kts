@@ -177,6 +177,22 @@ val playerProfileDomainRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.playerprofile.domain.PlayerProfileDomainRegressionSuite")
 }
 
+val playerProfileSectionExtensionsRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs immutable extension-copy regressions across every PlayerProfile section."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.playerprofile.domain.PlayerProfileSectionExtensionsRegressionSuite")
+}
+
+val spellMasteryTransactionRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs exact-once spell mastery wallet/receipt recovery regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.SpellMasteryTransactionRegressionSuite")
+}
+
 val playerProfileYamlRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs structured section YAML, manifest, CAS, quarantine and shutdown regressions."
@@ -308,6 +324,7 @@ tasks.check {
         questNpcValidationRegressionTest, resourcePackRegressionTest, classSpecCompatibilityRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest,
+        playerProfileSectionExtensionsRegressionTest, spellMasteryTransactionRegressionTest,
         playerProfileYamlRegressionTest, playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest)
 }

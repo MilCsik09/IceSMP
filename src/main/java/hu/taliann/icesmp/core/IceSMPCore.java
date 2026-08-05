@@ -952,6 +952,9 @@ public final class IceSMPCore {
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
         storeCoordinator.loadAll();
+        // Exact-once mastery wallet witnesses are reconciled against PlayerProfile receipts
+        // before listeners or commands can admit new gameplay mutations.
+        spellMasteryManager.recoverPendingOperations().toCompletableFuture().join();
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
