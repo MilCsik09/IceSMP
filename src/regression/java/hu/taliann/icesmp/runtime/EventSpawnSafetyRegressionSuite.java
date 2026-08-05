@@ -1,14 +1,25 @@
 package hu.taliann.icesmp.runtime;
 
 import hu.taliann.icesmp.managers.EventSpawnSafetyPolicy;
+import org.bukkit.configuration.file.YamlConfiguration;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
 public final class EventSpawnSafetyRegressionSuite {
     private EventSpawnSafetyRegressionSuite() { }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws Exception {
+        verifiesPlayerDistancePolicy();
+        verifiesBoundedCandidateSearch();
+        verifiesCircularWaterBuffer();
+        verifiesWaterSafetyRuntimeWiring();
+        System.out.println("Event spawn safety regression suite passed.");
+    }
+
+    private static void verifiesPlayerDistancePolicy() {
         final UUID world = UUID.randomUUID();
         final EventSpawnSafetyPolicy.PlayerPoint player = new EventSpawnSafetyPolicy.PlayerPoint(
                 UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0), false, false, false);
@@ -33,7 +44,11 @@ public final class EventSpawnSafetyRegressionSuite {
         check(!EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
                 new EventSpawnSafetyPolicy.Point(world, 1, 64, 0), List.of(vanished),
                 96, 0, true, true, true), "vanished player ignored by policy");
-        final List<EventSpawnSafetyPolicy.Offset> candidates = EventSpawnSafetyPolicy.candidates(24, 96, 256, 42);
+    }
+
+    private static void verifiesBoundedCandidateSearch() {
+        final List<EventSpawnSafetyPolicy.Offset> candidates =
+                EventSpawnSafetyPolicy.candidates(24, 96, 256, 42);
         check(candidates.size() == 24, "bounded attempt count");
         for (final EventSpawnSafetyPolicy.Offset offset : candidates) {
             final double distance = Math.hypot(offset.x(), offset.z());
@@ -42,7 +57,76 @@ public final class EventSpawnSafetyRegressionSuite {
         }
         check(candidates.equals(EventSpawnSafetyPolicy.candidates(24, 96, 256, 42)),
                 "candidate order deterministic");
-        System.out.println("Event spawn safety regression suite passed.");
+    }
+
+    private static void verifiesCircularWaterBuffer() {
+        final List<EventSpawnSafetyPolicy.GridOffset> zero =
+                EventSpawnSafetyPolicy.waterProbeOffsets(0);
+        check(zero.equals(List.of(new EventSpawnSafetyPolicy.GridOffset(0, 0))),
+                "zero-radius water scan must inspect the spawn column exactly once");
+
+        final List<EventSpawnSafetyPolicy.GridOffset> radius =
+                EventSpawnSafetyPolicy.waterProbeOffsets(4);
+        check(radius.get(0).equals(new EventSpawnSafetyPolicy.GridOffset(0, 0)),
+                "water scan must start at the spawn column for fast fail");
+        check(radius.contains(new EventSpawnSafetyPolicy.GridOffset(4, 0))
+                        && radius.contains(new EventSpawnSafetyPolicy.GridOffset(-4, 0))
+                        && radius.contains(new EventSpawnSafetyPolicy.GridOffset(0, 4))
+                        && radius.contains(new EventSpawnSafetyPolicy.GridOffset(0, -4)),
+                "cardinal shoreline boundary must be covered");
+        check(!radius.contains(new EventSpawnSafetyPolicy.GridOffset(4, 4)),
+                "square corner outside the circular buffer must not be scanned");
+        check(radius.equals(EventSpawnSafetyPolicy.waterProbeOffsets(4)),
+                "water probe order must be deterministic");
+        check(EventSpawnSafetyPolicy.waterProbeOffsets(100).stream()
+                        .allMatch(offset -> offset.x() * offset.x() + offset.z() * offset.z() <= 32 * 32),
+                "water buffer radius must be bounded against accidental quadratic explosions");
+    }
+
+    private static void verifiesWaterSafetyRuntimeWiring() throws Exception {
+        final YamlConfiguration config = YamlConfiguration.loadConfiguration(Path.of(
+                "src/main/resources/config/event-spawn-safety.yml").toFile());
+        check(config.getBoolean("world-events.water-safety.enabled"),
+                "world-event water safety must default to enabled");
+        check(config.getBoolean("world-events.water-safety.enforce-all-events"),
+                "legacy per-event water=false must not bypass the global rule");
+        check(config.getInt("world-events.water-safety.buffer-blocks") >= 1,
+                "shoreline buffer default must reject immediate water edges");
+        check(config.getBoolean("world-events.spawn-rules.caravan.water")
+                        && config.getBoolean("world-events.spawn-rules.player-caravan.water"),
+                "both caravan systems must explicitly opt into dry spawning");
+
+        final String guard = read("src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java");
+        check(guard.contains("waterOrShoreUnsafe")
+                        && guard.contains("HeightMap.WORLD_SURFACE")
+                        && guard.contains("Waterlogged")
+                        && guard.contains("findSafeAtOrNear")
+                        && guard.contains("EventSpawnSafetyPolicy.waterProbeOffsets"),
+                "central surface resolver lost waterlogged/shoreline enforcement");
+
+        final String caravan = read("src/main/java/hu/taliann/icesmp/managers/CaravanManager.java");
+        check(caravan.contains("findSafeAtOrNear(\"caravan\"")
+                        && !caravan.contains("getHighestBlockYAt")
+                        && !caravan.contains("topOf("),
+                "merchant caravan may bypass the central dry-location resolver");
+
+        final String playerCaravan = read(
+                "src/main/java/hu/taliann/icesmp/managers/PlayerCaravanManager.java");
+        check(playerCaravan.contains("findSafeNear(\"player-caravan\"")
+                        && playerCaravan.contains("failPendingSpawn")
+                        && playerCaravan.contains("treasuryManager.deposit(faction, amount)")
+                        && !playerCaravan.contains("getHighestBlockYAt")
+                        && !playerCaravan.contains("ThreadLocalRandom"),
+                "player caravan may bypass safe search or lose cargo on search failure");
+
+        final String configManager = read(
+                "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java");
+        check(configManager.contains("\"event-spawn-safety\""),
+                "water-safety subsystem is not loaded on existing deployments");
+    }
+
+    private static String read(final String path) throws Exception {
+        return Files.readString(Path.of(path));
     }
 
     private static void check(final boolean condition, final String message) {
