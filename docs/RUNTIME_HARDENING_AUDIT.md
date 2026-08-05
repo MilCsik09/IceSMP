@@ -82,7 +82,7 @@ locations with finite retries.
 The full repository `check` also includes event-spawn safety, config transaction/coverage, profession recipe audit and all
 previously registered regression suites.
 
-## Post-merge claim persistence and display privacy follow-up — 2026-08-05
+## Post-merge claim persistence and display privacy follow-up — 2026-08-05/06
 
 The merged runtime hardening was reviewed again from the actual `master` tree. The follow-up keeps the original 3D claim
 behaviour and closes additional persistence and tracking gaps without changing claim pricing or shape semantics.
@@ -93,6 +93,8 @@ behaviour and closes additional persistence and tracking gaps without changing c
 - Legacy `world;chunkX;chunkZ` keys are structurally validated before conversion.
 - Claims from the temporary X-Z-only format, where both Y fields are absent, retain protection by receiving the full known
   world-height band and emit an operator warning instead of silently becoming a `0..0` claim.
+- A record containing exactly one of `min-y` or `max-y` is corrupted, not an X-Z-only record; it is rejected fail-closed
+  instead of being silently widened to the full world height.
 - Stored Y bounds are clamped to a loaded world's current legal range; reversed or fully out-of-world ranges fail closed.
 - One malformed trusted-player UUID is isolated to that trust entry and cannot discard the enclosing claim.
 - One malformed claim entry is isolated from the rest of `claims.yml` and cannot abort the complete claim load.
@@ -104,7 +106,8 @@ behaviour and closes additional persistence and tracking gaps without changing c
 - The selected viewer is revealed only through `Player#showEntity` on the viewer's own entity scheduler.
 - The compatibility `showOnlyTo` path acquires the effect entity's own Folia scheduler before changing default visibility.
 - A public viewer-scoped spawn API is available for new private effects so callers do not need post-spawn hiding.
-- `RuntimeHardeningRegressionSuite` asserts both pre-tracking privacy and effect/viewer entity-scheduler ownership.
+- The aurora veil also uses this pre-tracking viewer-scoped spawn API and no longer becomes public before being hidden.
+- `RuntimeHardeningRegressionSuite` asserts pre-tracking privacy, aurora usage and effect/viewer entity-scheduler ownership.
 
 ### Independent validation while hosted runners are unavailable
 
