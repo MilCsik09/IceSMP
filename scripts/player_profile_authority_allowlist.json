@@ -86,26 +86,6 @@
       "reason": "Persistent item identity or item-owned metadata, not player progression."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java|final long storedDay = player.getPersistentDataContainer()",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java|player.getPersistentDataContainer().set(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, today);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java|player.getPersistentDataContainer().set(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, takenToday + amount);",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java|takenToday = storedDay == today ? player.getPersistentDataContainer()",
-      "category": "TRANSITION",
-      "reason": "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
-    },
-    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java|final String crownTarget = entity.getPersistentDataContainer().get(",
       "category": "ENTITY_METADATA",
       "reason": "Entity-owned or short-lived runtime marker; durable player state belongs to PlayerProfile."
