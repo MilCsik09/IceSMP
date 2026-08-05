@@ -28,6 +28,19 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Map first-wave authority call sites
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== SpellFavoritesManager references ==='
+          grep -R -n --include='*.java' 'SpellFavoritesManager\|spellFavoritesManager' src/main src/regression || true
+          echo '=== SpellMasteryManager references ==='
+          grep -R -n --include='*.java' 'SpellMasteryManager\|spellMasteryManager' src/main src/regression || true
+          echo '=== TalentManager durable mutation references ==='
+          grep -R -n --include='*.java' 'grantBonusPoints\|spendPoint\|refundUnavailableTalents\|saveRanks' src/main src/regression || true
+          echo '=== PlayerProfile platform lifecycle references ==='
+          grep -R -n --include='*.java' 'playerProfilePlatform\|PlayerProfileAuthority' src/main/java/hu/taliann/icesmp/core src/main/java/hu/taliann/icesmp/playerprofile || true
+
       - name: Reclassify existing transition findings
         shell: bash
         run: |
