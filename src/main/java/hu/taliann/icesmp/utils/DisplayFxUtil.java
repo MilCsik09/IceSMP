@@ -31,9 +31,23 @@ public final class DisplayFxUtil {
     }
 
     /**
-     * Viewer-scoped variant used by private visual effects. Visibility is disabled
-     * inside the spawn consumer, before the entity enters tracking, so no other
-     * client can observe a one-tick flash and players joining later cannot inherit it.
+     * Spawns a BlockDisplay that is private from its first tracking packet. The
+     * default visibility bit is disabled inside the world spawn consumer, before
+     * the entity becomes visible, then only the requested viewer is revealed on
+     * that player's own Folia entity scheduler.
+     */
+    public static void spawnBlockDisplayForViewer(final Plugin plugin, final Location loc,
+                                                  final BlockData block, final int despawnTicks,
+                                                  final Player viewer,
+                                                  final Consumer<BlockDisplay> setup) {
+        if (viewer == null) return;
+        spawnBlockDisplay(plugin, loc, block, despawnTicks, viewer, setup);
+    }
+
+    /**
+     * Viewer-scoped implementation used by private visual effects. Visibility is
+     * disabled inside the spawn consumer, so no other client can observe a one-tick
+     * flash and players joining later cannot inherit the effect.
      */
     private static void spawnBlockDisplay(final Plugin plugin, final Location loc, final BlockData block,
                                           final int despawnTicks, final Player viewer,
@@ -71,19 +85,28 @@ public final class DisplayFxUtil {
     }
 
     /**
-     * Converts an already-spawned effect to private visibility. New private effects
-     * should prefer the viewer-scoped spawn path above; this compatibility helper
-     * also disables default tracking so later joiners never receive the entity.
+     * Converts an already-spawned effect to private visibility. New effects should
+     * use {@link #spawnBlockDisplayForViewer(Plugin, Location, BlockData, int, Player, Consumer)}
+     * so privacy is established before tracking. The compatibility path acquires
+     * the effect entity's owning region before mutating its visibility state.
      */
     public static void showOnlyTo(final Plugin plugin, final Entity fx, final Player viewer) {
         if (plugin == null || fx == null || viewer == null) return;
-        fx.setVisibleByDefault(false);
-        final UUID viewerId = viewer.getUniqueId();
-        for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (online.getUniqueId().equals(viewerId)) continue;
-            online.getScheduler().run(plugin, task -> online.hideEntity(plugin, fx), null);
+        final Runnable restrictVisibility = () -> {
+            if (!fx.isValid()) return;
+            fx.setVisibleByDefault(false);
+            final UUID viewerId = viewer.getUniqueId();
+            for (final Player online : Bukkit.getOnlinePlayers()) {
+                if (online.getUniqueId().equals(viewerId)) continue;
+                online.getScheduler().run(plugin, task -> online.hideEntity(plugin, fx), null);
+            }
+            revealTo(plugin, fx, viewer);
+        };
+        if (Bukkit.isOwnedByCurrentRegion(fx)) {
+            restrictVisibility.run();
+        } else {
+            fx.getScheduler().run(plugin, task -> restrictVisibility.run(), null);
         }
-        revealTo(plugin, fx, viewer);
     }
 
     private static void revealTo(final Plugin plugin, final Entity fx, final Player viewer) {
