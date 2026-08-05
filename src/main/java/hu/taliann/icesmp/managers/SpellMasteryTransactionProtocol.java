@@ -47,7 +47,7 @@ public final class SpellMasteryTransactionProtocol {
             final PlayerProfileOperation receipt) {
         Objects.requireNonNull(wallet, "wallet");
         Objects.requireNonNull(receipt, "receipt");
-        if (!wallet.operationId().equals(receipt.id())
+        if (!wallet.operationId().equals(receipt.operationId())
                 || receipt.status() != PlayerProfileOperation.Status.COMMITTED
                 || !OPERATION_TYPE.equals(receipt.type())) {
             throw new IllegalStateException("spell mastery receipt is not committed");
