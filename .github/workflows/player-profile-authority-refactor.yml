@@ -50,13 +50,29 @@ jobs:
           python3 scripts/apply_player_profile_conditional_mutation.py
           python3 scripts/apply_player_profile_mastery_wave.py
           python3 scripts/apply_player_profile_spellbook_ledger_wave.py
-          python3 scripts/apply_player_profile_spellbook_compat_fix.py
           python3 scripts/apply_player_profile_talent_storage_wave.py
           python3 scripts/apply_player_profile_talent_call_sites.py
           python3 scripts/apply_player_profile_profession_callsite_wave.py
           python3 scripts/apply_player_profile_profession_weekly_reward.py
           python3 scripts/apply_player_profile_extension_regression_task.py
+          python3 scripts/apply_player_profile_async_bridge_cleanup.py
           git diff --check
+
+      - name: Enforce asynchronous PlayerProfile mutation boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n --include='*.java' -E \
+            'jobManager\.(unlockSpell|revokeGrant|revokeGrantsFrom|clearSpellGrants)\(' \
+            src/main/java; then
+            echo 'Synchronous JobManager spell mutation call remains.' >&2
+            exit 1
+          fi
+          if grep -n -E 'public (boolean|void|List<String>) (unlockSpell|revokeGrant|revokeGrantsFrom|clearSpellGrants)\(' \
+            src/main/java/hu/taliann/icesmp/managers/JobManager.java; then
+            echo 'Temporary synchronous spell compatibility API remains.' >&2
+            exit 1
+          fi
 
       - name: Rebuild exact authority contract
         shell: bash
@@ -103,6 +119,7 @@ jobs:
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSpellGrantStore.java \
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileTalentStore.java \
             src/main/java/hu/taliann/icesmp/classspec/domain/SpellGrantLedger.java \
+            src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java \
             src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java \
             src/main/java/hu/taliann/icesmp/managers/JobManager.java \
             src/main/java/hu/taliann/icesmp/managers/TalentManager.java \
@@ -114,8 +131,10 @@ jobs:
             src/main/java/hu/taliann/icesmp/commands/TalentCommand.java \
             src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java \
             src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java \
+            src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java \
             src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java \
             src/main/java/hu/taliann/icesmp/listeners/ProfessionXpListener.java \
+            src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java \
             src/main/java/hu/taliann/icesmp/listeners/CharacterGUIListener.java \
             src/main/java/hu/taliann/icesmp/listeners/BlueprintUseListener.java \
             build.gradle.kts \
@@ -125,5 +144,5 @@ jobs:
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): make talent and profession authority transactional'
+          git commit -m 'feat(profile): remove synchronous PlayerProfile authority bridges'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
