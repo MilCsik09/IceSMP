@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-/** Immutable extension-map copier shared by every PlayerProfile section record. */
+/** Immutable extension-map copier for extensible PlayerProfile section records. */
 public final class PlayerProfileSectionExtensions {
 
     private PlayerProfileSectionExtensions() {
@@ -42,9 +42,15 @@ public final class PlayerProfileSectionExtensions {
     public static <T extends ProfileSectionData> T copyWithExtensions(final T current,
                                                                       final Map<String, Object> extensions) {
         Objects.requireNonNull(current, "current");
+        final Map<String, Object> requested = Map.copyOf(new LinkedHashMap<>(
+                Objects.requireNonNull(extensions, "extensions")));
         final Class<?> type = current.getClass();
         if (!type.isRecord()) {
-            throw new IllegalArgumentException("PlayerProfile section is not a record: " + type.getName());
+            if (requested.equals(current.extensions())) {
+                return current;
+            }
+            throw new IllegalArgumentException(
+                    "PlayerProfile section does not expose extension storage: " + type.getName());
         }
         final RecordComponent[] components = type.getRecordComponents();
         final Class<?>[] parameterTypes = new Class<?>[components.length];
@@ -55,14 +61,16 @@ public final class PlayerProfileSectionExtensions {
                 final RecordComponent component = components[index];
                 parameterTypes[index] = component.getType();
                 if ("extensions".equals(component.getName())) {
-                    arguments[index] = Map.copyOf(new LinkedHashMap<>(
-                            Objects.requireNonNull(extensions, "extensions")));
+                    arguments[index] = requested;
                     extensionComponentFound = true;
                 } else {
                     arguments[index] = component.getAccessor().invoke(current);
                 }
             }
             if (!extensionComponentFound) {
+                if (requested.equals(current.extensions())) {
+                    return current;
+                }
                 throw new IllegalArgumentException(
                         "PlayerProfile section has no extensions component: " + type.getName());
             }
