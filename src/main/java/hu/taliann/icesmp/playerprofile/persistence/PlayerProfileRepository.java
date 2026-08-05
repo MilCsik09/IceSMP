@@ -12,6 +12,11 @@ public interface PlayerProfileRepository {
     CompletionStage<Optional<PlayerProfileSnapshot>> find(UUID playerId);
     /** Storage-independent case-insensitive identity lookup. */
     CompletionStage<Optional<PlayerProfileSnapshot>> findByName(String playerName);
+    /** Enumerates durable profile owners without initializing missing profiles. */
+    default CompletionStage<Set<UUID>> listPlayerIds(){
+        return java.util.concurrent.CompletableFuture.failedFuture(
+                new UnsupportedOperationException("profile enumeration unsupported"));
+    }
     default CompletionStage<PlayerProfileSnapshot> loadSnapshot(UUID playerId){return load(playerId);}
     CompletionStage<Optional<ProfileSectionSnapshot<?>>> loadSection(UUID playerId, ProfileSectionId section);
     CompletionStage<SectionSaveResult> saveSection(UUID playerId, ProfileSectionId section, long expectedRevision, ProfileSectionSnapshot<?> next);
