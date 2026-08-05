@@ -154,11 +154,11 @@ public final class EventSpawnGuard {
                         player.spectator(), vanishedPredicate.test(player.playerId()), player.admin()))
                 .toList();
         if (EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(candidate, snapshot,
-                configManager.getDouble("world-events.safety.min-horizontal-distance-blocks", 96.0D),
+                configManager.getDouble("world-events.safety.min-horizontal-distance-blocks", 192.0D),
                 configManager.getDouble("world-events.safety.min-3d-distance-blocks", 0.0D),
                 configManager.getBoolean("world-events.safety.ignore-spectators", true),
                 configManager.getBoolean("world-events.safety.ignore-vanished", true),
-                configManager.getBoolean("world-events.safety.ignore-admins", true))) {
+                configManager.getBoolean("world-events.safety.ignore-admins", false))) {
             return BlockReason.PLAYER_DISTANCE;
         }
         final long now = System.currentTimeMillis();
@@ -305,9 +305,9 @@ public final class EventSpawnGuard {
             return;
         }
         final List<EventSpawnSafetyPolicy.Offset> candidates = EventSpawnSafetyPolicy.candidates(
-                configManager.getInt("world-events.safety.search-attempts", 24),
-                configManager.getDouble("world-events.safety.search-min-radius-blocks", 96.0D),
-                configManager.getDouble("world-events.safety.search-max-radius-blocks", 256.0D),
+                configManager.getInt("world-events.safety.search-attempts", 32),
+                configManager.getDouble("world-events.safety.search-min-radius-blocks", 256.0D),
+                configManager.getDouble("world-events.safety.search-max-radius-blocks", 512.0D),
                 seed);
         tryCandidate(eventKey, origin.clone(), candidates, 0, onFound, onFailure);
     }
