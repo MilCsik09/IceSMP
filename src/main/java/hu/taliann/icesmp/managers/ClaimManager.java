@@ -53,6 +53,9 @@ import java.util.logging.Level;
  */
 public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.session.PlayerStateCleanup {
 
+    private static final int FALLBACK_WORLD_MIN_Y = -64;
+    private static final int FALLBACK_WORLD_MAX_Y = 319;
+
     /** One exact X-Z shape with an inclusive Y range, its owner and trusted players. */
     public static final class Claim {
         private final String id;
@@ -1057,6 +1060,14 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     // ==================== persistence ====================
 
+    private static int worldMinY(final World world) {
+        return world == null ? FALLBACK_WORLD_MIN_Y : world.getMinHeight();
+    }
+
+    private static int inclusiveWorldMaxY(final World world) {
+        return world == null ? FALLBACK_WORLD_MAX_Y : world.getMaxHeight() - 1;
+    }
+
     private static List<ClaimShape.Point> readClaimPolygon(final List<String> raw) {
         if (raw == null || raw.isEmpty()) return null;
         final List<ClaimShape.Point> points = new ArrayList<>();
@@ -1096,14 +1107,17 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 if (key.contains(";")) {
                     // Régi, chunk-alapú bejegyzés (world;cx;cz) migrálása: a teljes chunk,
                     // teljes magasságban — a korábbi "bedrock-to-sky" védelem megmarad.
-                    final String[] parts = key.split(";");
+                    final String[] parts = key.split(";", -1);
+                    if (parts.length != 3 || parts[0].isBlank()) {
+                        throw new IllegalArgumentException("Malformed legacy claim key");
+                    }
                     final int baseX = Integer.parseInt(parts[1]) << 4;
                     final int baseZ = Integer.parseInt(parts[2]) << 4;
                     final World world = Bukkit.getWorld(parts[0]);
-                    final int minY = world == null ? -64 : world.getMinHeight();
-                    final int maxY = world == null ? 320 : world.getMaxHeight();
                     claim = new Claim(UUID.randomUUID().toString(), parts[0],
-                            baseX, minY, baseZ, baseX + 15, maxY, baseZ + 15, owner, ownerName, claimedAt);
+                            baseX, worldMinY(world), baseZ,
+                            baseX + 15, inclusiveWorldMaxY(world), baseZ + 15,
+                            owner, ownerName, claimedAt);
                 } else {
                     final String polygonPath = key + ".polygon";
                     final boolean polygonStored = section.contains(polygonPath);
@@ -1112,19 +1126,57 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                     if (polygonStored && polygon == null) {
                         throw new IllegalArgumentException("Malformed stored claim polygon");
                     }
-                    claim = new Claim(key,
-                            section.getString(key + ".world", "world"),
-                            section.getInt(key + ".min-x"), section.getInt(key + ".min-y"),
+
+                    final String worldName = section.getString(key + ".world", "world");
+                    final World world = Bukkit.getWorld(worldName);
+                    final String minYPath = key + ".min-y";
+                    final String maxYPath = key + ".max-y";
+                    final boolean hasStoredYBounds = section.contains(minYPath) && section.contains(maxYPath);
+                    final int minY;
+                    final int maxY;
+                    if (!hasStoredYBounds) {
+                        // A rövid ideig létező X-Z-only formátum nem tartalmazott visszaállítható
+                        // anchor-Y adatot. A teljes világmagasság megőrzi a korábbi védelmet,
+                        // ahelyett hogy a YAML API 0..0 defaultjára csendben összeomlana.
+                        minY = worldMinY(world);
+                        maxY = inclusiveWorldMaxY(world);
+                        plugin.getLogger().warning(
+                                "Y-határ nélküli claim teljes világmagasságra migrálva: " + key);
+                    } else {
+                        final int storedMinY = section.getInt(minYPath);
+                        final int storedMaxY = section.getInt(maxYPath);
+                        if (storedMinY > storedMaxY) {
+                            throw new IllegalArgumentException("Claim Y bounds are reversed");
+                        }
+                        if (world == null) {
+                            minY = storedMinY;
+                            maxY = storedMaxY;
+                        } else {
+                            minY = Math.max(world.getMinHeight(), storedMinY);
+                            maxY = Math.min(world.getMaxHeight() - 1, storedMaxY);
+                            if (minY > maxY) {
+                                throw new IllegalArgumentException("Claim Y bounds are outside world height");
+                            }
+                        }
+                    }
+                    claim = new Claim(key, worldName,
+                            section.getInt(key + ".min-x"), minY,
                             section.getInt(key + ".min-z"), section.getInt(key + ".max-x"),
-                            section.getInt(key + ".max-y"), section.getInt(key + ".max-z"),
+                            maxY, section.getInt(key + ".max-z"),
                             polygon, owner, ownerName, claimedAt);
                 }
                 for (final String trustedId : section.getStringList(key + ".trusted")) {
-                    claim.trusted.add(UUID.fromString(trustedId));
+                    try {
+                        claim.trusted.add(UUID.fromString(trustedId));
+                    } catch (final IllegalArgumentException malformedTrusted) {
+                        plugin.getLogger().warning(
+                                "Hibás trusted UUID kihagyva a claimnél " + key + ": " + trustedId);
+                    }
                 }
                 claims.put(claim.id, claim);
-            } catch (final IllegalArgumentException exception) {
-                plugin.getLogger().warning("Hibás claim-bejegyzés kihagyva: " + key);
+            } catch (final RuntimeException exception) {
+                plugin.getLogger().warning("Hibás claim-bejegyzés kihagyva: " + key
+                        + " (" + exception.getMessage() + ")");
             }
         }
         rebuildIndex();
