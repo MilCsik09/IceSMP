@@ -126,9 +126,8 @@ public final class PlayerCaravanManager {
                         mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
                 if (maxHealth != null) {
                     maxHealth.setBaseValue(hp);
+                    mob.setHealth(Math.min(hp, maxHealth.getValue()));
                 }
-                mob.setHealth(Math.min(hp, mob.getAttribute(
-                        org.bukkit.attribute.Attribute.MAX_HEALTH).getValue()));
             });
 
             final long now = System.currentTimeMillis();
