@@ -155,8 +155,18 @@ public final class CaravanManager {
         }
 
         final Player target = anchor;
-        target.getScheduler().run(plugin,
-                task -> beginSafeArrival(target.getLocation().clone()), null);
+        final long anchorGeneration = arrivalGeneration.incrementAndGet();
+        arrivalPending = true;
+        target.getScheduler().run(plugin, task -> {
+            if (anchorGeneration != arrivalGeneration.get() || !arrivalPending) {
+                return;
+            }
+            beginSafeArrival(target.getLocation().clone());
+        }, () -> {
+            if (anchorGeneration == arrivalGeneration.get()) {
+                arrivalPending = false;
+            }
+        });
     }
 
     private void beginSafeArrival(final Location preferred) {
