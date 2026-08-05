@@ -5,10 +5,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /** Fail-fast guard: every operational menu entry must exist in the packaged config schema. */
@@ -19,7 +17,6 @@ public final class OperationalConfigSchemaGuard {
     private OperationalConfigSchemaGuard() {
     }
 
-    @SuppressWarnings("unchecked")
     public static void validate() {
         if (validated) {
             return;
@@ -43,13 +40,9 @@ public final class OperationalConfigSchemaGuard {
                     }
                 }
 
-                final Field field = OperationalConfigMenuGUI.class
-                        .getDeclaredField("CATEGORIES");
-                field.setAccessible(true);
-                final Map<String, OperationalConfigMenuGUI.Category> categories =
-                        (Map<String, OperationalConfigMenuGUI.Category>) field.get(null);
                 final Set<String> keys = new HashSet<>();
-                for (final OperationalConfigMenuGUI.Category category : categories.values()) {
+                for (final OperationalConfigMenuGUI.Category category
+                        : OperationalConfigMenuGUI.categories().values()) {
                     for (final ConfigMenuGUI.Entry entry : category.entries()) {
                         if (!keys.add(entry.key())) {
                             throw new IllegalStateException(
@@ -67,9 +60,6 @@ public final class OperationalConfigSchemaGuard {
                             "Az üzemeltetési menü bejegyzésszáma eltér a katalógustól.");
                 }
                 validated = true;
-            } catch (final ReflectiveOperationException failure) {
-                throw new IllegalStateException(
-                        "Az üzemeltetési config-katalógus nem vizsgálható.", failure);
             } catch (final java.io.IOException failure) {
                 throw new IllegalStateException(
                         "Az üzemeltetési config-erőforrás nem olvasható.", failure);
