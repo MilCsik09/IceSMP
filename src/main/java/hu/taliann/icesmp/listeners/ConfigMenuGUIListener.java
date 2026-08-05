@@ -7,6 +7,7 @@ import hu.taliann.icesmp.gui.ConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigMenuHolder;
 import hu.taliann.icesmp.gui.ConfigMenuRootGUI;
 import hu.taliann.icesmp.gui.GuiUtil;
+import hu.taliann.icesmp.gui.OperationalConfigMenuGUI;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ConfigValidator;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -75,11 +76,25 @@ public final class ConfigMenuGUIListener implements Listener {
             return;
         }
         if ("BACK".equals(action)) {
-            ConfigMenuRootGUI.openRoot(player);
+            if (OperationalConfigMenuGUI.isOperationalCategory(holder.getCategory())) {
+                OperationalConfigMenuGUI.openRoot(player);
+            } else {
+                ConfigMenuRootGUI.openRoot(player);
+            }
             return;
         }
         if (BlockRegenConfigMenuGUI.ROOT_ACTION.equals(action)) {
             BlockRegenConfigMenuGUI.open(player, configManager);
+            return;
+        }
+        if (OperationalConfigMenuGUI.ROOT_ACTION.equals(action)) {
+            OperationalConfigMenuGUI.openRoot(player);
+            return;
+        }
+        if (action.startsWith(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX)) {
+            OperationalConfigMenuGUI.openCategory(player,
+                    action.substring(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX.length()),
+                    configManager);
             return;
         }
         if (action.startsWith("CAT:")) {
@@ -91,6 +106,9 @@ public final class ConfigMenuGUIListener implements Listener {
         ConfigMenuGUI.Entry entry = ConfigMenuGUI.findEntry(key);
         if (entry == null) {
             entry = BlockRegenConfigMenuGUI.findEntry(key);
+        }
+        if (entry == null) {
+            entry = OperationalConfigMenuGUI.findEntry(key);
         }
         if (entry == null) {
             return;
@@ -171,9 +189,15 @@ public final class ConfigMenuGUIListener implements Listener {
     private void reopen(final Player player, final ConfigMenuHolder holder) {
         if (BlockRegenConfigMenuGUI.CATEGORY_ID.equals(holder.getCategory())) {
             BlockRegenConfigMenuGUI.open(player, configManager);
-        } else {
-            ConfigMenuGUI.openCategory(player, holder.getCategory(), configManager);
+            return;
         }
+        if (OperationalConfigMenuGUI.isOperationalCategory(holder.getCategory())) {
+            OperationalConfigMenuGUI.openCategory(player,
+                    OperationalConfigMenuGUI.categoryIdFromHolder(holder.getCategory()),
+                    configManager);
+            return;
+        }
+        ConfigMenuGUI.openCategory(player, holder.getCategory(), configManager);
     }
 
     @EventHandler
