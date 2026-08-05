@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Location;
@@ -8,6 +9,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -22,12 +24,15 @@ import java.util.function.Predicate;
 
 /**
  * Shared fail-closed placement gate for world events. Protection checks, online-player
- * distance, world spawn/border safety, finite search and cross-event reservations live
- * here so every event consumes one precedence model instead of reimplementing it.
+ * distance, world spawn/border safety, finite search, shoreline clearance and cross-event
+ * reservations live here so every event consumes one precedence model instead of
+ * reimplementing it.
  */
 public final class EventSpawnGuard {
     public static final String EVENT_NO_BURN_KEY = "event_no_daylight_burn";
     public static final String EVENT_NO_ZOMBIFICATION_KEY = "event_no_zombification";
+
+    private static volatile EventSpawnGuard activeGuard;
 
     public enum BlockReason {
         NONE,
@@ -40,7 +45,8 @@ public final class EventSpawnGuard {
         WORLD_BORDER,
         RESERVED,
         UNLOADED_CHUNK,
-        UNSAFE_SURFACE
+        UNSAFE_SURFACE,
+        WATER_OR_SHORE
     }
 
     private record Reservation(EventSpawnSafetyPolicy.Point point, long expiresAtMillis) { }
@@ -60,6 +66,12 @@ public final class EventSpawnGuard {
         this.configManager = configManager;
         this.territoryManager = territoryManager;
         this.claimManager = claimManager;
+        activeGuard = this;
+    }
+
+    /** Runtime singleton bridge for managers built before the guard in the manual DI order. */
+    public static EventSpawnGuard current() {
+        return activeGuard;
     }
 
     public void setVanishedPredicate(final Predicate<UUID> vanishedPredicate) {
@@ -120,6 +132,13 @@ public final class EventSpawnGuard {
         if (!insideBorder(world, location)) {
             return BlockReason.WORLD_BORDER;
         }
+        final int chunkX = location.getBlockX() >> 4;
+        final int chunkZ = location.getBlockZ() >> 4;
+        if (waterSafetyRequired(eventKey)
+                && Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)
+                && waterOrShoreUnsafe(world, location.getBlockX(), location.getBlockZ())) {
+            return BlockReason.WATER_OR_SHORE;
+        }
         final List<EventSpawnSafetyPolicy.PlayerPoint> snapshot = players.values().stream()
                 .map(player -> new EventSpawnSafetyPolicy.PlayerPoint(player.playerId(), player.point(),
                         player.spectator(), vanishedPredicate.test(player.playerId()), player.admin()))
@@ -148,12 +167,13 @@ public final class EventSpawnGuard {
 
     /**
      * Resolves stable footing on the region thread owning x/z. Leaves, gravity
-     * blocks, liquids and damaging floors are rejected; tall mobs get three
-     * passable body blocks.
+     * blocks, liquids, damaging floors and columns inside the configured shoreline
+     * buffer are rejected; tall mobs get three passable body blocks.
      */
     public Location resolveSafeStandingLocation(final String eventKey, final World world,
                                                 final int x, final int z) {
-        if (world == null || !world.isChunkLoaded(x >> 4, z >> 4)) {
+        if (world == null || !world.isChunkLoaded(x >> 4, z >> 4)
+                || !Bukkit.isOwnedByCurrentRegion(world, x >> 4, z >> 4)) {
             return null;
         }
         final int floorY = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
@@ -168,8 +188,7 @@ public final class EventSpawnGuard {
                 || !clearBody(feet) || !clearBody(head) || !clearBody(upperHead)) {
             return null;
         }
-        if (rule(eventKey, "water")
-                && (floor.isLiquid() || feet.isLiquid() || head.isLiquid())) {
+        if (waterSafetyRequired(eventKey) && waterOrShoreUnsafe(world, x, z)) {
             return null;
         }
         return new Location(world, x + 0.5D, floorY + 1.0D, z + 0.5D);
@@ -177,6 +196,46 @@ public final class EventSpawnGuard {
 
     public boolean isUnsafeSurface(final String eventKey, final World world, final int x, final int z) {
         return resolveSafeStandingLocation(eventKey, world, x, z) == null;
+    }
+
+    private boolean waterOrShoreUnsafe(final World world, final int centerX, final int centerZ) {
+        final int radius = Math.max(0, Math.min(32, configManager.getInt(
+                "world-events.water-safety.buffer-blocks", 8)));
+        for (final EventSpawnSafetyPolicy.GridOffset offset
+                : EventSpawnSafetyPolicy.waterProbeOffsets(radius)) {
+            final int x = centerX + offset.x();
+            final int z = centerZ + offset.z();
+            final int chunkX = x >> 4;
+            final int chunkZ = z >> 4;
+            // Unknown neighbouring terrain is rejected rather than synchronously loaded.
+            if (!world.isChunkLoaded(chunkX, chunkZ)
+                    || !Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) {
+                return true;
+            }
+            if (waterAtSurface(world, x, z)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean waterAtSurface(final World world, final int x, final int z) {
+        final int surfaceY = world.getHighestBlockYAt(x, z, HeightMap.WORLD_SURFACE);
+        final int from = Math.min(world.getMaxHeight() - 1, surfaceY + 1);
+        final int to = Math.max(world.getMinHeight(), surfaceY - 3);
+        for (int y = from; y >= to; y--) {
+            if (isWater(world.getBlockAt(x, y, z))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isWater(final Block block) {
+        if (block.getType() == Material.WATER) {
+            return true;
+        }
+        return block.getBlockData() instanceof Waterlogged waterlogged && waterlogged.isWaterlogged();
     }
 
     private static boolean stableFloor(final Block floor) {
@@ -197,6 +256,33 @@ public final class EventSpawnGuard {
         return block.isPassable() && !block.isLiquid()
                 && block.getType() != Material.FIRE
                 && block.getType() != Material.SOUL_FIRE;
+    }
+
+    /** Tries the supplied column first, then falls back to the bounded annulus search. */
+    public void findSafeAtOrNear(final String eventKey, final Location origin, final long seed,
+                                 final Consumer<Location> onFound, final Runnable onFailure) {
+        if (origin == null || origin.getWorld() == null) {
+            onFailure.run();
+            return;
+        }
+        final Location column = origin.clone();
+        final World world = column.getWorld();
+        if (configManager.getBoolean("world-events.safety.require-loaded-chunk", true)
+                && !world.isChunkLoaded(column.getBlockX() >> 4, column.getBlockZ() >> 4)) {
+            findSafeNear(eventKey, origin, seed, onFound, onFailure);
+            return;
+        }
+        plugin.getServer().getRegionScheduler().run(plugin, column, task -> {
+            final Location candidate = resolveSafeStandingLocation(
+                    eventKey, world, column.getBlockX(), column.getBlockZ());
+            if (candidate != null
+                    && blockReason(eventKey, candidate) == BlockReason.NONE
+                    && reserve(eventKey, candidate)) {
+                onFound.accept(candidate);
+                return;
+            }
+            findSafeNear(eventKey, origin, seed, onFound, onFailure);
+        });
     }
 
     /**
@@ -287,11 +373,19 @@ public final class EventSpawnGuard {
         plugin.getLogger().warning("Event spawn search aborted: event=" + eventKey
                 + ", attempts=" + attempts + ", world=" + origin.getWorld().getName()
                 + ", origin=" + origin.getBlockX() + "," + origin.getBlockZ()
-                + ". No close or forbidden fallback was used.");
+                + ". No close, wet or forbidden fallback was used.");
     }
 
     private boolean rule(final String eventKey, final String protection) {
         return configManager.getBoolean("world-events.spawn-rules." + eventKey + "." + protection, true);
+    }
+
+    private boolean waterSafetyRequired(final String eventKey) {
+        if (!configManager.getBoolean("world-events.water-safety.enabled", true)) {
+            return false;
+        }
+        return configManager.getBoolean("world-events.water-safety.enforce-all-events", true)
+                || rule(eventKey, "water");
     }
 
     private boolean masterSwitch() {
