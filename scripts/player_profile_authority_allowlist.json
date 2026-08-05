@@ -1961,26 +1961,6 @@
       "reason": "Unclassified persistent player-state finding requires migration or an explicit non-authoritative classification."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/SpellFavoritesManager.java|final PersistentDataContainer pdc = player.getPersistentDataContainer();",
-      "category": "TRANSITION",
-      "reason": "Existing player-owned PDC/YAML/file authority scheduled for removal by the full-authority stack."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/SpellFavoritesManager.java|final String raw = player.getPersistentDataContainer().get(favoritesKey, PersistentDataType.STRING);",
-      "category": "TRANSITION",
-      "reason": "Existing player-owned PDC/YAML/file authority scheduled for removal by the full-authority stack."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/SpellFavoritesManager.java|import org.bukkit.persistence.PersistentDataContainer;",
-      "category": "TRANSITION",
-      "reason": "Unclassified persistent player-state finding requires migration or an explicit non-authoritative classification."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/SpellFavoritesManager.java|this.favoritesKey = new NamespacedKey(plugin, \"favorite_spells\");",
-      "category": "TRANSITION",
-      "reason": "Unclassified persistent player-state finding requires migration or an explicit non-authoritative classification."
-    },
-    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/managers/SpellMasteryManager.java|final String raw = player.getPersistentDataContainer().get(masteryKey, PersistentDataType.STRING);",
       "category": "TRANSITION",
       "reason": "Existing player-owned PDC/YAML/file authority scheduled for removal by the full-authority stack."
