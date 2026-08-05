@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Wild Hunt world event with Folia-safe reward aggregation. */
+/** Wild Hunt world event with Folia-safe reward aggregation and distant placement. */
 public final class WildHuntManager {
 
     private enum Beast {
@@ -277,6 +277,7 @@ public final class WildHuntManager {
     public void shutdown() {
         hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, beastId);
         beastId = null;
+        spawnGraceUntil = 0L;
         damagers.clear();
     }
 
@@ -284,7 +285,11 @@ public final class WildHuntManager {
         if (System.currentTimeMillis() < spawnGraceUntil || beastId != null) {
             return false;
         }
-        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
+        final EventSpawnGuard guard = spawnGuard;
+        if (guard == null) {
+            return false;
+        }
+        spawnGraceUntil = System.currentTimeMillis() + 60_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             final List<? extends Player> online =
@@ -299,26 +304,19 @@ public final class WildHuntManager {
         final Beast beast = Beast.values()[ThreadLocalRandom.current()
                 .nextInt(Beast.values().length)];
         target.getScheduler().run(plugin, task -> {
-            final Location center = target.getLocation().clone();
-            plugin.getServer().getRegionScheduler().run(
-                    plugin, center, spawnTask -> spawnBeast(center, beast));
-        }, null);
+            final Location origin = target.getLocation().clone();
+            final long seed = System.nanoTime() ^ target.getUniqueId().getMostSignificantBits()
+                    ^ target.getUniqueId().getLeastSignificantBits();
+            guard.findSafeNear("wild-hunt", origin, seed,
+                    spot -> spawnBeast(spot, beast), () -> spawnGraceUntil = 0L);
+        }, () -> spawnGraceUntil = 0L);
         return true;
     }
 
-    private void spawnBeast(final Location center, final Beast beast) {
-        final World world = center.getWorld();
-        if (world == null) {
-            spawnGraceUntil = 0L;
-            return;
-        }
-        final int x = center.getBlockX();
-        final int z = center.getBlockZ();
-        final Location spot = new Location(world, x + 0.5D,
-                world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
-        final EventSpawnGuard guard = spawnGuard;
-        if (guard != null && (guard.isBlocked("wild-hunt", spot)
-                || guard.isUnsafeSurface("wild-hunt", world, x, z))) {
+    /** Called on the region thread owning an already dry and player-distant location. */
+    private void spawnBeast(final Location spot, final Beast beast) {
+        final World world = spot.getWorld();
+        if (world == null || spawnGuard == null || spawnGuard.isBlocked("wild-hunt", spot)) {
             spawnGraceUntil = 0L;
             return;
         }
@@ -327,8 +325,7 @@ public final class WildHuntManager {
             spawnGraceUntil = 0L;
             return;
         }
-        final Mob mob = (Mob) world.spawn(
-                spot, entityClass.asSubclass(Mob.class));
+        final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
         EventSpawnGuard.prepare(mob);
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
@@ -346,11 +343,10 @@ public final class WildHuntManager {
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-started",
                 "&4🐺 VAD HAJSZA — egy {beast} kóborol a vidéken ({world}: {x}, {z}); ritka zsákmányt őriz — a tiéd, ha {minutes} percen belül le tudod teríteni!",
-                Map.of(
-                        "beast", beast.displayName,
+                Map.of("beast", beast.displayName,
                         "world", world.getName(),
-                        "x", String.valueOf(x),
-                        "z", String.valueOf(z),
+                        "x", String.valueOf(spot.getBlockX()),
+                        "z", String.valueOf(spot.getBlockZ()),
                         "minutes", String.valueOf(Math.max(1L,
                                 expireMillis() / 60_000L)))));
     }
