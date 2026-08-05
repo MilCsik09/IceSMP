@@ -22,7 +22,9 @@ public final class StatsManager implements PersistentStore {
     public record Entry(UUID uuid, String name, int level, double wealth, int raidKills) { }
     public enum Category { LEVEL, WEALTH, RAID_KILLS }
 
-    private record Derived(String name, int level, double wealth, int raidKills) { }
+    private record Derived(String name, int level, double wealth, int raidKills,
+                           int kills, int deaths, int mobKills,
+                           int spellCasts, int questsCompleted) { }
 
     private final JavaPlugin plugin;
     private final JobManager jobManager;
@@ -71,7 +73,8 @@ public final class StatsManager implements PersistentStore {
     }
 
     public int getRaidKills(final UUID playerId) {
-        return Math.toIntExact(store.read(playerId, PlayerProfileStatisticsStore.RAID_KILLS));
+        final Derived state = leaderboard.get(playerId);
+        return state == null ? 0 : state.raidKills();
     }
 
     public void recordRaidKill(final Player player) {
@@ -84,11 +87,11 @@ public final class StatsManager implements PersistentStore {
     public void recordSpellCast(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.SPELL_CASTS); }
     public void recordQuestComplete(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.QUESTS_COMPLETED); }
 
-    public int getKills(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.KILLS); }
-    public int getDeaths(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.DEATHS); }
-    public int getMobKills(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.MOB_KILLS); }
-    public int getSpellCasts(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.SPELL_CASTS); }
-    public int getQuestsCompleted(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.QUESTS_COMPLETED); }
+    public int getKills(final UUID playerId) { return projected(playerId, Derived::kills); }
+    public int getDeaths(final UUID playerId) { return projected(playerId, Derived::deaths); }
+    public int getMobKills(final UUID playerId) { return projected(playerId, Derived::mobKills); }
+    public int getSpellCasts(final UUID playerId) { return projected(playerId, Derived::spellCasts); }
+    public int getQuestsCompleted(final UUID playerId) { return projected(playerId, Derived::questsCompleted); }
 
     public UUID findPlayerIdByName(final String name) {
         if (name == null || name.isBlank()) return null;
@@ -131,8 +134,11 @@ public final class StatsManager implements PersistentStore {
         });
     }
 
-    private int count(final UUID playerId, final String key) {
-        return playerId == null ? 0 : Math.toIntExact(store.read(playerId, key));
+    private int projected(final UUID playerId,
+                          final java.util.function.ToIntFunction<Derived> value) {
+        if (playerId == null) return 0;
+        final Derived state = leaderboard.get(playerId);
+        return state == null ? 0 : value.applyAsInt(state);
     }
 
     private void refresh(final UUID playerId) {
@@ -141,8 +147,9 @@ public final class StatsManager implements PersistentStore {
                     final var board = store.leaderboard(profile);
                     final var counters = store.counters(profile);
                     final String name = profile.identity().value().lastKnownName();
-                    leaderboard.put(playerId, new Derived(name, board.level(),
-                            board.wealth(), counters.raidKills()));
+                    leaderboard.put(playerId, new Derived(name, board.level(), board.wealth(),
+                            counters.raidKills(), counters.kills(), counters.deaths(),
+                            counters.mobKills(), counters.spellCasts(), counters.questsCompleted()));
                 })).exceptionally(failure -> {
                     logFailure("leaderboard refresh", playerId, failure);
                     return null;
