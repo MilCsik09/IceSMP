@@ -185,7 +185,9 @@ def patch_manager() -> None:
     text = text[:grant_start] + grant + text[grant_end:]
 
     save_start = text.index('    private void saveRanks(final Player player, final boolean classPool,')
-    save_end = text.index('\n    private void applyAttribute', save_start)
+    if not text.endswith('}\n'):
+        raise RuntimeError("TalentManager must end with a single class-closing brace")
+    save_end = len(text) - len('}\n')
     save = '''    private void saveRanks(final Player player, final boolean classPool,
                            final Map<String, Integer> ranks) {
         talentStore.replaceRanks(player.getUniqueId(), classPool
