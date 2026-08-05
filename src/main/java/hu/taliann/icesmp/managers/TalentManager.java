@@ -413,17 +413,6 @@ public final class TalentManager {
         return total;
     }
 
-    /**
-     * Only THIS talent's claim on the spell is dropped: a spell the class level or a
-     * specialization also granted stays unlocked (a source-blind removal used to strip it).
-     * A grant that predates the provenance record and is attributable to no other system
-     * (backfill left it {@code LEGACY}) belongs to the lapsing talent, so it goes.
-     */
-    private void revokeGrantedSpell(final Player player, final String spellId, final String talentId) {
-        jobManager.revokeGrant(player, spellId,
-                JobManager.SOURCE_TALENT_PREFIX + talentId.trim().toLowerCase(java.util.Locale.ROOT));
-    }
-
     public void runOnOwnerThread(final Player player, final Runnable action) {
         player.getScheduler().run(plugin, ignored -> action.run(), null);
     }

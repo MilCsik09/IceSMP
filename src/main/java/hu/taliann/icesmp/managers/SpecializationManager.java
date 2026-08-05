@@ -247,43 +247,64 @@ public final class SpecializationManager {
     }
 
     public void applyClassSpecializationUnlocks(final Player player) {
-        applyClassSpecializationUnlocks(player, getClassSpecialization(player), jobManager.getPrimaryJob(player),
-                jobManager.getPrimaryLevel(player));
+        applyClassSpecializationUnlocks(player, getClassSpecialization(player),
+                jobManager.getPrimaryJob(player), jobManager.getPrimaryLevel(player))
+                .exceptionally(failure -> {
+                    org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(SpecializationManager.class)
+                            .getLogger().severe("PlayerProfile spec spell reconcile failed for "
+                                    + player.getUniqueId() + ": " + failure.getMessage());
+                    return null;
+                });
     }
 
-    public void applyClassSpecializationUnlocksV2(final Player player, final ClassSpecSection durable) {
+    public CompletionStage<Void> applyClassSpecializationUnlocksV2(
+            final Player player, final ClassSpecSection durable) {
         Objects.requireNonNull(durable, "durable");
         final SpecializationType specialization = durable.activeSlot() == null ? null
                 : SpecializationType.fromId(durable.loadout(durable.activeSlot()).specializationId());
-        applyClassSpecializationUnlocks(player, specialization, JobType.fromId(durable.primaryClassId()),
-                durable.classLevel());
+        return applyClassSpecializationUnlocks(player, specialization,
+                JobType.fromId(durable.primaryClassId()), durable.classLevel());
     }
 
-    private void applyClassSpecializationUnlocks(final Player player,
-                                                  final SpecializationType specialization,
-                                                  final JobType primaryJob,
-                                                  final int classLevel) {
+    private CompletionStage<Void> applyClassSpecializationUnlocks(
+            final Player player, final SpecializationType specialization,
+            final JobType primaryJob, final int classLevel) {
         if (specialization == null || primaryJob != specialization.getParentJob()
-                || configManager.getConfiguration() == null) return;
+                || configManager.getConfiguration() == null) {
+            return CompletableFuture.completedFuture(null);
+        }
         final ConfigurationSection unlocks = configManager.getConfiguration()
                 .getConfigurationSection("specializations." + specialization.getId() + ".spell-unlocks");
-        if (unlocks == null) return;
+        if (unlocks == null) return CompletableFuture.completedFuture(null);
+
+        CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
         for (final String spellId : unlocks.getKeys(false)) {
             final int required = unlocks.getInt(spellId, Integer.MAX_VALUE);
-            if (classLevel >= required) {
-                jobManager.unlockSpellV2(player, spellId,
-                                JobManager.SOURCE_SPEC_PREFIX + specialization.getId())
-                        .whenComplete((unlocked, failure) -> player.getScheduler().run(
-                                org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(SpecializationManager.class),
-                                task -> {
-                                    if (failure == null && Boolean.TRUE.equals(unlocked)) {
-                                        player.sendMessage(messageManager.getMessage("spec-spell-unlocked",
-                                                "&5Specializációs képesség feloldva: &e{spell} &7(szint {level})",
-                                                Map.of("spell", spellId.toLowerCase(Locale.ROOT),
-                                                        "level", String.valueOf(required))));
-                                    }
-                                }, null));
-            }
+            if (classLevel < required) continue;
+            chain = chain.thenCompose(ignored -> jobManager.unlockSpellV2(player, spellId,
+                            JobManager.SOURCE_SPEC_PREFIX + specialization.getId())
+                    .thenCompose(unlocked -> Boolean.TRUE.equals(unlocked)
+                            ? notifySpecSpellUnlocked(player, spellId, required)
+                            : CompletableFuture.completedFuture(null)));
         }
+        return chain;
     }
+
+    private CompletionStage<Void> notifySpecSpellUnlocked(final Player player,
+                                                           final String spellId,
+                                                           final int required) {
+        final CompletableFuture<Void> result = new CompletableFuture<>();
+        player.getScheduler().run(
+                org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(SpecializationManager.class),
+                task -> {
+                    player.sendMessage(messageManager.getMessage("spec-spell-unlocked",
+                            "&5Specializációs képesség feloldva: &e{spell} &7(szint {level})",
+                            Map.of("spell", spellId.toLowerCase(Locale.ROOT),
+                                    "level", String.valueOf(required))));
+                    result.complete(null);
+                }, () -> result.completeExceptionally(
+                        new IllegalStateException("Player scheduler rejected spec spell notification")));
+        return result;
+    }
+
 }

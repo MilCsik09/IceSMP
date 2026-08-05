@@ -287,65 +287,6 @@ public final class JobManager implements PlayerStateCleanup {
                         () -> mirrorSpellLedger(player, committed)));
     }
 
-    /**
-     * Temporary source-compatibility bridge. The preview is read from PlayerProfile and the
-     * durable mutation is still written only through PlayerProfile; no PDC authority remains.
-     * Callers are migrated to the CompletionStage variants in the following authority waves.
-     */
-    @Deprecated(forRemoval = true)
-    public boolean unlockSpell(final Player player, final String spellId) {
-        return unlockSpell(player, spellId, SOURCE_ADMIN);
-    }
-
-    @Deprecated(forRemoval = true)
-    public boolean unlockSpell(final Player player, final String spellId, final String source) {
-        final SpellGrantLedger.Mutation preview = readLedger(player).add(spellId, source);
-        if (preview.changed()) {
-            unlockSpellV2(player, spellId, source).exceptionally(failure -> {
-                plugin.getLogger().severe("PlayerProfile spell grant commit failed for "
-                        + player.getUniqueId() + ": " + failure.getMessage());
-                return false;
-            });
-        }
-        return preview.spellLockChanged();
-    }
-
-    @Deprecated(forRemoval = true)
-    public boolean revokeGrant(final Player player, final String spellId, final String source) {
-        final SpellGrantLedger.Mutation preview = readLedger(player).remove(spellId, source);
-        if (preview.changed()) {
-            revokeGrantV2(player, spellId, source).exceptionally(failure -> {
-                plugin.getLogger().severe("PlayerProfile spell revoke commit failed for "
-                        + player.getUniqueId() + ": " + failure.getMessage());
-                return false;
-            });
-        }
-        return preview.spellLockChanged();
-    }
-
-    @Deprecated(forRemoval = true)
-    public List<String> revokeGrantsFrom(final Player player,
-                                         final Predicate<String> sourceMatches) {
-        final SpellGrantLedger.RevokeResult preview = readLedger(player).revokeSources(sourceMatches);
-        if (preview.changed()) {
-            revokeGrantsFromV2(player, sourceMatches).exceptionally(failure -> {
-                plugin.getLogger().severe("PlayerProfile spell-source revoke commit failed for "
-                        + player.getUniqueId() + ": " + failure.getMessage());
-                return List.of();
-            });
-        }
-        return preview.lockedSpellIds();
-    }
-
-    @Deprecated(forRemoval = true)
-    public void clearSpellGrants(final Player player) {
-        clearSpellGrantsV2(player).exceptionally(failure -> {
-            plugin.getLogger().severe("PlayerProfile spellbook clear failed for "
-                    + player.getUniqueId() + ": " + failure.getMessage());
-            return null;
-        });
-    }
-
     public Set<String> getGrantSources(final Player player, final String spellId) {
         if (spellId == null || spellId.isBlank()) return Set.of();
         return readLedger(player).sources(spellId);

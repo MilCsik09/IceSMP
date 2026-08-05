@@ -186,7 +186,20 @@ public final class ProfessionRecipeBookListener implements Listener {
             craftXp /= 2;
         }
         if (craftXp > 0) {
-            professionManager.addXpFor(player, recipe.profession(), craftXp);
+            final int durableCraftXp = craftXp;
+            professionManager.addXpFor(player, recipe.profession(), durableCraftXp)
+                    .whenComplete((change, failure) -> {
+                        if (failure == null) return;
+                        plugin.getLogger().severe("Craft XP PlayerProfile commit failed for "
+                                + player.getUniqueId() + " / " + recipe.id() + ": "
+                                + failure.getMessage());
+                        professionManager.runOnOwnerThread(player, () -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(messageManager.get("profession-craft-xp-storage-failed",
+                                        "&eA tárgy elkészült, de a szakma-XP mentése meghiúsult; az adminok értesítést kaptak."));
+                            }
+                        });
+                    });
         }
         // A recept első elkészítése lajstrom-bejegyzés.
         final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
