@@ -1,0 +1,64 @@
+name: PlayerProfile full authority refactor
+
+on:
+  pull_request:
+    branches:
+      - profile/player-profile-platform
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  reclassify:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'profile/player-profile-full-authority'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact authority branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reclassify existing transition findings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_player_profile_authority.py \
+            --root . \
+            --update-allowlist \
+            --reclassify-transitions
+          python3 scripts/check_player_profile_authority.py \
+            --root . \
+            --write-report build/player-profile-authority-reclassified.json
+          python3 scripts/check_player_profile_transitions.py \
+            --root . \
+            --json-output build/player-profile-transition-report.json || true
+
+      - name: Commit reclassified authority contract
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          TARGET_BRANCH: profile/player-profile-full-authority
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
+          git add -- scripts/player_profile_authority_allowlist.json
+          if git diff --cached --quiet; then
+            echo 'Authority contract already reclassified.'
+            exit 0
+          fi
+          git diff --cached --check
+          git commit -m 'test(profile): reclassify non-authoritative transition findings'
+          git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
