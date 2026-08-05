@@ -11,7 +11,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  wave-one:
+  authority-contract:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'profile/player-profile-full-authority'
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -42,24 +42,25 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Apply wave-one lifecycle integration
+      - name: Apply deterministic authority patches
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/apply_player_profile_full_authority_wave1.py
+          python3 scripts/apply_player_profile_extension_regression_task.py
           git diff --check
 
-      - name: Refresh exact authority contract
+      - name: Rebuild exact authority contract
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/check_player_profile_authority.py \
             --root . \
             --update-allowlist \
-            --reclassify-transitions
+            --reclassify-all
           python3 scripts/check_player_profile_authority.py \
             --root . \
-            --write-report build/player-profile-authority-wave-one.json
+            --write-report build/player-profile-authority-current.json
           python3 scripts/check_player_profile_transitions.py \
             --root . \
             --json-output build/player-profile-transition-report.json || true
@@ -68,9 +69,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee build/player-profile-wave-one-gradle.log
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee build/player-profile-authority-gradle.log
+          grep -F 'PlayerProfile section extension regression suite passed.' \
+            build/player-profile-authority-gradle.log
 
-      - name: Commit validated wave one
+      - name: Commit validated authority contract
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -83,11 +86,12 @@ jobs:
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
           git add -- \
             src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
+            build.gradle.kts \
             scripts/player_profile_authority_allowlist.json
           if git diff --cached --quiet; then
-            echo 'Wave one is already applied.'
+            echo 'Authority contract is already current.'
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): install canonical gameplay authority lifecycle'
+          git commit -m 'test(profile): enforce exact full-authority contract'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
