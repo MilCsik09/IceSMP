@@ -42,22 +42,24 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Apply treasury withdrawal authority wave
+      - name: Apply HUD preference authority wave
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/apply_player_profile_treasury_limit_wave.py
+          python3 scripts/apply_player_profile_hud_preferences_wave.py
           git diff --check
 
-      - name: Enforce treasury PDC removal
+      - name: Enforce HUD PDC removal
         shell: bash
         run: |
           set -euo pipefail
-          if grep -n -E 'getPersistentDataContainer|treasury_withdraw_(day|sum)' \
-            src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java; then
-            echo 'Legacy treasury withdrawal PDC authority remains.' >&2
+          if grep -n -E 'getPersistentDataContainer|hud_hidden_sections|PersistentData(Container|Type)' \
+            src/main/java/hu/taliann/icesmp/managers/HudManager.java; then
+            echo 'Legacy HUD PDC authority remains.' >&2
             exit 1
           fi
+          grep -F 'PlayerProfileHudPreferenceStore' \
+            src/main/java/hu/taliann/icesmp/managers/HudManager.java
 
       - name: Rebuild exact authority contract
         shell: bash
@@ -79,12 +81,11 @@ jobs:
         run: |
           set -euo pipefail
           ./gradlew clean build --console=plain --no-daemon --stacktrace | tee /tmp/player-profile-authority-gradle.log
+          grep -F 'HUD regression suite passed.' /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile section extension regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
-          grep -F 'Faction tax debt regression suite passed.' \
-            /tmp/player-profile-authority-gradle.log
 
-      - name: Commit validated treasury authority wave
+      - name: Commit validated HUD preference authority wave
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -96,13 +97,14 @@ jobs:
           git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
           git add -- \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileTreasuryWithdrawalStore.java \
-            src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileHudPreferenceStore.java \
+            src/main/java/hu/taliann/icesmp/managers/HudManager.java \
+            src/main/java/hu/taliann/icesmp/commands/HudCommand.java \
             scripts/player_profile_authority_allowlist.json
           if git diff --cached --quiet; then
-            echo 'Treasury authority wave is already current.'
+            echo 'HUD preference authority wave is already current.'
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): move treasury withdrawal limits to PlayerProfile'
+          git commit -m 'feat(profile): move HUD preferences to PlayerProfile'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
