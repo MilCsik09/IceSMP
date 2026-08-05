@@ -7,6 +7,7 @@ import hu.taliann.icesmp.gui.AdvancedConfigEntry;
 import hu.taliann.icesmp.gui.AdvancedConfigEntryRenderer;
 import hu.taliann.icesmp.gui.AdvancedConfigPolicy;
 import hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI;
+import hu.taliann.icesmp.gui.ConfigChatInputGate;
 import hu.taliann.icesmp.gui.ConfigMenuEntryRenderer;
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigMenuHolder;
@@ -24,6 +25,7 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -31,7 +33,6 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -396,6 +397,7 @@ public final class ConfigMenuGUIListener implements Listener {
                             final Consumer<Player> defaultAction) {
         inputSessions.put(player.getUniqueId(), new InputSession(entry, returnCategory,
                 commit, defaultAction, System.currentTimeMillis() + INPUT_TIMEOUT_MILLIS));
+        ConfigChatInputGate.open(player.getUniqueId());
         player.closeInventory();
         final String mode = entry.type() == AdvancedConfigEntry.Type.STRING_LIST
                 ? "A listaelemeket ';;' jellel válaszd el. " : "";
@@ -407,7 +409,7 @@ public final class ConfigMenuGUIListener implements Listener {
                         + "&f!empty &7= üres érték/lista. Időkorlát: 120 mp."));
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onChatInput(final AsyncChatEvent event) {
         final Player player = event.getPlayer();
         final InputSession session = inputSessions.get(player.getUniqueId());
@@ -418,6 +420,7 @@ public final class ConfigMenuGUIListener implements Listener {
         final String raw = PLAIN.serialize(event.message()).strip();
         if (System.currentTimeMillis() > session.expiresAt()) {
             inputSessions.remove(player.getUniqueId(), session);
+            ConfigChatInputGate.close(player.getUniqueId());
             schedulePlayer(player, () -> {
                 player.sendMessage(messageManager.get("admin.icesmp.config.input-expired",
                         "&cA config-beviteli munkamenet lejárt."));
@@ -427,15 +430,18 @@ public final class ConfigMenuGUIListener implements Listener {
         }
         if (raw.equalsIgnoreCase("!cancel")) {
             inputSessions.remove(player.getUniqueId(), session);
+            ConfigChatInputGate.close(player.getUniqueId());
             schedulePlayer(player, () -> reopenView(player, session.returnCategory()));
             return;
         }
         if (raw.equalsIgnoreCase("!default")) {
             if (session.defaultAction() == null) {
-                notifyInputError(player, session, "Ehhez a strukturált mezőhöz nincs külön alaphelyzet parancs.");
+                notifyInputError(player, session,
+                        "Ehhez a strukturált mezőhöz nincs külön alaphelyzet parancs.");
                 return;
             }
             inputSessions.remove(player.getUniqueId(), session);
+            ConfigChatInputGate.close(player.getUniqueId());
             schedulePlayer(player, () -> {
                 session.defaultAction().accept(player);
                 reopenView(player, session.returnCategory());
@@ -468,10 +474,12 @@ public final class ConfigMenuGUIListener implements Listener {
         }
 
         inputSessions.remove(player.getUniqueId(), session);
+        ConfigChatInputGate.close(player.getUniqueId());
         schedulePlayer(player, () -> {
             final String error = session.commit().commit(player, parsed);
             if (error != null) {
                 inputSessions.put(player.getUniqueId(), session);
+                ConfigChatInputGate.open(player.getUniqueId());
                 player.sendMessage(messageManager.get("admin.icesmp.config.input-invalid",
                         "&c⚠ %s", error));
                 player.sendMessage(messageManager.get("admin.icesmp.config.input-retry",
@@ -497,6 +505,7 @@ public final class ConfigMenuGUIListener implements Listener {
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
         inputSessions.remove(event.getPlayer().getUniqueId());
+        ConfigChatInputGate.close(event.getPlayer().getUniqueId());
     }
 
     private boolean applyRewardMutation(final Player player, final String crateId,
