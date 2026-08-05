@@ -30,7 +30,7 @@ import java.util.Set;
  * emellett kis, tematikus buffot is ad; a Tiltott Kakaóbabos Sütemény a "robbanó
  * csemege" (felfelé lökés + gyorsaság + effekt-robbanás, blokk-kár nélkül).
  *
- * <p>Folia: a consume-event a játékos saját régió-szálán fut (PDC-írás/buff ott
+ * <p>Folia: a consume-event a játékos saját régió-szálán fut (buff és runtime művelet ott
  * biztonságos); a periodikus kötelezettség-ellenőrzés a globális tickről hopol
  * minden online játékos saját schedulerére.
  */
@@ -60,11 +60,9 @@ public final class FactionFoodListener implements Listener {
     private final FactionManager factionManager;
     private final MessageManager messageManager;
     private final NamespacedKey signatureKey;
-    /** Az utolsó "hazai étel" fogyasztás időbélyege (player-PDC — nem szivárgó map). */
-    private final NamespacedKey lastHomeFoodKey;
-    /** Melyik frakció konyhájához tartozik az időbélyeg — frakcióváltásnál a régi bélyeg
-     * érvénytelen (különben a váltó azonnali debuffot VAGY jogtalan kedvezményt kapna). */
-    private final NamespacedKey foodFactionKey;
+    /** Durable food-duty state; runtime reads are PlayerProfile cache reads. */
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStore
+            foodStore = new hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStore();
 
     private volatile long nextCheckAt;
 
@@ -75,8 +73,6 @@ public final class FactionFoodListener implements Listener {
         this.factionManager = factionManager;
         this.messageManager = messageManager;
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
-        this.lastHomeFoodKey = new NamespacedKey(plugin, "faction_food_ts");
-        this.foodFactionKey = new NamespacedKey(plugin, "faction_food_faction");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -113,8 +109,12 @@ public final class FactionFoodListener implements Listener {
             default -> false;
         };
         if (homeFood) {
-            player.getPersistentDataContainer().set(lastHomeFoodKey, PersistentDataType.LONG, System.currentTimeMillis());
-            player.getPersistentDataContainer().set(foodFactionKey, PersistentDataType.STRING, faction.name());
+            foodStore.record(player.getUniqueId(), faction.name(), System.currentTimeMillis())
+                    .exceptionally(failure -> {
+                        plugin.getLogger().severe("PlayerProfile faction-food timestamp commit failed for "
+                                + player.getUniqueId() + ": " + failure.getMessage());
+                        return null;
+                    });
         }
 
         // A tárgy csak stabil signature azonosítót hordoz. Minden buffot az elfogyasztás
@@ -131,19 +131,16 @@ public final class FactionFoodListener implements Listener {
                 addTimedEffect(player, PotionEffectType.STRENGTH,
                         getInt(liveConfig, "factions.food-duty.porkolt-buff-seconds", 45), 0, true);
             } else if (VADLAKOMA.equals(sig)) {
-                // RED ünnepi étel: a vadászok lakomája — gyorsaság + rövid tűz-oltalom.
                 final int seconds = getInt(liveConfig,
                         "factions.food-duty.vadlakoma-buff-seconds", 45);
                 addTimedEffect(player, PotionEffectType.SPEED, seconds, 0, true);
                 addTimedEffect(player, PotionEffectType.FIRE_RESISTANCE, seconds, 0, true);
             } else if (LEPENY.equals(sig)) {
-                // NEUTRAL ünnepi étel: aratóünnep — szerencse a piachoz/zsákmányhoz + fürgeség.
                 final int seconds = getInt(liveConfig,
                         "factions.food-duty.lepeny-buff-seconds", 60);
                 addTimedEffect(player, PotionEffectType.LUCK, seconds, 0, true);
                 addTimedEffect(player, PotionEffectType.SPEED, seconds, 0, true);
             } else if (HAMULAKOMA.equals(sig)) {
-                // DARK ünnepi étel: a megosztott keserű tál — felszívódás + éjjellátás.
                 final int seconds = getInt(liveConfig,
                         "factions.food-duty.hamulakoma-buff-seconds", 60);
                 addTimedEffect(player, PotionEffectType.ABSORPTION, seconds, 0, true);
@@ -152,7 +149,6 @@ public final class FactionFoodListener implements Listener {
                 addTimedEffect(player, PotionEffectType.NIGHT_VISION,
                         getInt(liveConfig, "factions.food-duty.hamukenyer-buff-seconds", 60), 0, true);
             } else if (SUTI.equals(sig)) {
-                // "Robbanó csemege": effekt-robbanás blokk-kár nélkül + felfelé lökés + gyorsaság.
                 addTimedEffect(player, PotionEffectType.SPEED,
                         getInt(liveConfig, "factions.food-duty.suti-speed-seconds", 30), 1, true);
                 player.setVelocity(player.getVelocity().setY(Math.max(0.4D,
@@ -209,24 +205,24 @@ public final class FactionFoodListener implements Listener {
                     return;
                 }
                 final long callbackNow = System.currentTimeMillis();
-                final Long last = player.getPersistentDataContainer().get(
-                        lastHomeFoodKey, PersistentDataType.LONG);
-                final String tsFaction = player.getPersistentDataContainer().get(
-                        foodFactionKey, PersistentDataType.STRING);
-                if (last == null || last < 0L || last > callbackNow
-                        || !faction.name().equals(tsFaction)) {
+                final hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStore.FoodState
+                        foodState = foodStore.read(player.getUniqueId());
+                final long last = foodState.lastHomeFoodAt();
+                if (last < 0L || last > callbackNow
+                        || !faction.name().equals(foodState.faction())) {
                     // Új játékos, sérült/jövőbeli bélyeg VAGY frissen váltó: a türelmi idő
-                    // újraindul — először csak jegyezzük az időt, debuff nélkül.
-                    player.getPersistentDataContainer().set(
-                            lastHomeFoodKey, PersistentDataType.LONG, callbackNow);
-                    player.getPersistentDataContainer().set(
-                            foodFactionKey, PersistentDataType.STRING, faction.name());
+                    // újraindul — először csak tartósan jegyezzük az időt, debuff nélkül.
+                    foodStore.record(player.getUniqueId(), faction.name(), callbackNow)
+                            .exceptionally(failure -> {
+                                plugin.getLogger().severe("PlayerProfile faction-food grace commit failed for "
+                                        + player.getUniqueId() + ": " + failure.getMessage());
+                                return null;
+                            });
                     return;
                 }
                 if (!FactionFoodPolicy.hasGraceElapsed(callbackNow, last, graceMillis)) {
                     return;
                 }
-                // Puha honvágy-debuff: rövid Éhség + emlékeztető (a súlyát a config szabja).
                 player.addPotionEffect(new PotionEffect(
                         PotionEffectType.HUNGER, debuffTicks, 0, true, false, true));
                 player.sendActionBar(messageManager.getMessage(
