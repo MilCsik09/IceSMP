@@ -212,9 +212,8 @@ public final class EventSpawnGuard {
     }
 
     private boolean waterOrShoreUnsafe(final World world, final int centerX, final int centerZ) {
-        final int radius = shorelineRadius(eventKeyForWaterScanPlaceholder());
         for (final EventSpawnSafetyPolicy.GridOffset offset
-                : EventSpawnSafetyPolicy.waterProbeOffsets(radius)) {
+                : EventSpawnSafetyPolicy.waterProbeOffsets(shorelineRadius())) {
             final int x = centerX + offset.x();
             final int z = centerZ + offset.z();
             final int chunkX = x >> 4;
@@ -230,14 +229,9 @@ public final class EventSpawnGuard {
         return false;
     }
 
-    /** Keeps the config read in one place while the scan itself remains event-agnostic. */
-    private int shorelineRadius(final String ignoredEventKey) {
+    private int shorelineRadius() {
         return Math.max(0, Math.min(32, configManager.getInt(
                 "world-events.water-safety.buffer-blocks", 8)));
-    }
-
-    private static String eventKeyForWaterScanPlaceholder() {
-        return "";
     }
 
     private static boolean waterAtSurface(final World world, final int x, final int z) {
@@ -368,8 +362,8 @@ public final class EventSpawnGuard {
 
     /**
      * Prepares every chunk touched by the exact spawn column and shoreline buffer without
-     * synchronously loading terrain on a Folia region thread. By default only already-generated
-     * chunks may be loaded; operators must explicitly opt in before the search can grow the world.
+     * synchronously loading terrain on a Folia region thread. Only already-generated chunks
+     * may be loaded; this search can never grow the world.
      */
     private void prepareCandidateChunks(final String eventKey, final Location column,
                                         final Runnable onReady, final Runnable onUnavailable) {
@@ -378,7 +372,7 @@ public final class EventSpawnGuard {
             runContinuation(onUnavailable);
             return;
         }
-        final int radius = waterSafetyRequired(eventKey) ? shorelineRadius(eventKey) : 0;
+        final int radius = waterSafetyRequired(eventKey) ? shorelineRadius() : 0;
         final int minChunkX = (column.getBlockX() - radius) >> 4;
         final int maxChunkX = (column.getBlockX() + radius) >> 4;
         final int minChunkZ = (column.getBlockZ() - radius) >> 4;
@@ -399,15 +393,13 @@ public final class EventSpawnGuard {
             return;
         }
 
-        final boolean generate = configManager.getBoolean(
-                "world-events.safety.generate-unloaded-chunks", false);
         final List<CompletableFuture<Chunk>> loads = new ArrayList<>();
         for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
                 if (world.isChunkLoaded(chunkX, chunkZ)) {
                     continue;
                 }
-                loads.add(world.getChunkAtAsync(chunkX, chunkZ, generate));
+                loads.add(world.getChunkAtAsync(chunkX, chunkZ, false));
             }
         }
         if (loads.isEmpty()) {
@@ -415,7 +407,7 @@ public final class EventSpawnGuard {
             return;
         }
 
-        CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new))
+        CompletableFuture.allOf(loads.toArray(CompletableFuture<?>[]::new))
                 .whenComplete((ignored, failure) -> {
                     if (failure != null || !plugin.isEnabled()) {
                         runContinuation(onUnavailable);
@@ -429,7 +421,7 @@ public final class EventSpawnGuard {
                             runContinuation(onUnavailable);
                             return;
                         }
-                        if (chunk == null || !chunk.isLoaded()) {
+                        if (chunk == null || !world.isChunkLoaded(chunk)) {
                             runContinuation(onUnavailable);
                             return;
                         }
