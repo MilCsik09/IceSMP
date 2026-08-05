@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Fail-closed audit for IceSMP-owned persistent player state.
 
-Every finding must be owned by PlayerProfile or explicitly documented as
-runtime/item/entity metadata, a rebuildable mirror, a shared aggregate, or a
-short-lived transition. Stable file+kind+symbol keys avoid line-number drift.
+Every actual player-state access must be owned by PlayerProfile or explicitly documented
+as runtime/item/entity metadata, a rebuildable mirror, or a separate shared aggregate.
+Stable file+kind+symbol keys avoid line-number drift.
 """
 from __future__ import annotations
 
@@ -11,12 +11,13 @@ import argparse
 import hashlib
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 RULES = {
-    "PLAYER_PDC": re.compile(
-        r"(?:getPersistentDataContainer\s*\(|PersistentDataContainer|NamespacedKey\s*\()"
-    ),
+    # Declarations of NamespacedKey/PersistentDataContainer are not authorities. The actual
+    # container access is the relevant evidence and keeps receiver classification possible.
+    "PLAYER_PDC": re.compile(r"getPersistentDataContainer\s*\("),
     "UUID_MAP": re.compile(r"(?:Map|ConcurrentMap|LoadingCache)\s*<\s*UUID\b"),
     "PLAYER_YAML": re.compile(
         r"(?:YamlConfiguration|YamlStore)[^\n]*(?:player|uuid|profile)"
@@ -25,7 +26,7 @@ RULES = {
         re.I,
     ),
     "DIRECT_FILE_IO": re.compile(
-        r"(?:Files\.(?:read|write|move|delete|create)|FileChannel\.open|new\s+File\s*\()"
+        r"(?:Files\.(?:read|write|move|delete|create|copy)|FileChannel\.open|new\s+File\s*\()"
         r"[^\n]*(?:player|uuid|profile)",
         re.I,
     ),
@@ -48,6 +49,65 @@ ALLOWED_CATEGORIES = [
     "TRANSITION",
 ]
 
+PLAYER_OWNED_PATH_TOKENS = (
+    "currencymanager",
+    "bankmanager",
+    "factionmanager",
+    "sinmanager",
+    "professionmanager",
+    "jobmanager",
+    "questmanager",
+    "dailyquestmanager",
+    "talentmanager",
+    "spellmasterymanager",
+    "spellfavoritesmanager",
+    "achievementmanager",
+    "bestiarymanager",
+    "statsmanager",
+    "intromanager",
+    "hudmanager",
+    "whispermanager",
+    "specializationmanager",
+    "soulforgemanager",
+    "minionmanager",
+    "petmanager",
+)
+
+SHARED_AGGREGATE_PATH_TOKENS = (
+    "guildmanager",
+    "partymanager",
+    "marketmanager",
+    "auctionmanager",
+    "claimmanager",
+    "factiontreasurymanager",
+    "councilmanager",
+    "raidmanager",
+    "seasonmanager",
+    "communitygoalmanager",
+    "exchangeboardmanager",
+    "territorymanager",
+    "/storage/",
+    "transactionjournal",
+    "persistentstorecoordinator",
+    "factiontaxjournal",
+    "factionswitchjournal",
+)
+
+RUNTIME_PATH_OR_SYMBOL_TOKENS = (
+    "/listeners/",
+    "/spells/",
+    "runtime",
+    "session",
+    "cache",
+    "online",
+    "live",
+    "activecast",
+    "pendingtask",
+    "transient",
+    "cooldownuntil",
+    "regiontask",
+)
+
 
 def stable_symbol(line: str) -> str:
     line = re.sub(r"//.*$", "", line).strip()
@@ -56,7 +116,7 @@ def stable_symbol(line: str) -> str:
 
 
 def scan(root: Path) -> list[dict[str, object]]:
-    findings: list[dict[str, object]] = []
+    findings: dict[str, dict[str, object]] = {}
     for path in sorted((root / "src").rglob("*")):
         if (
             not path.is_file()
@@ -70,16 +130,19 @@ def scan(root: Path) -> list[dict[str, object]]:
             for kind, pattern in RULES.items():
                 if pattern.search(line):
                     symbol = stable_symbol(line)
-                    findings.append(
-                        {
-                            "key": f"{kind}|{rel}|{symbol}",
-                            "kind": kind,
-                            "path": rel,
-                            "line": number,
-                            "symbol": symbol,
-                        }
-                    )
-    return findings
+                    key = f"{kind}|{rel}|{symbol}"
+                    findings.setdefault(key, {
+                        "key": key,
+                        "kind": kind,
+                        "path": rel,
+                        "line": number,
+                        "symbol": symbol,
+                    })
+    return [findings[key] for key in sorted(findings)]
+
+
+def _has_any(text: str, needles: tuple[str, ...]) -> bool:
+    return any(needle in text for needle in needles)
 
 
 def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
@@ -89,6 +152,12 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
     lower_path = path.lower()
     lower_symbol = symbol.lower()
     combined = lower_path + " " + lower_symbol
+
+    if "/regression/" in lower_path or "/test/" in lower_path:
+        return (
+            "RUNTIME",
+            "Regression fixture or test-only state; production authority is audited separately.",
+        )
 
     if "/playerprofile/" in lower_path:
         return (
@@ -102,104 +171,98 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
             "Legacy profile implementation or fallback must be removed by the full-authority stack.",
         )
 
-    item_context = (
-        "/items/" in lower_path
-        or "itemmeta" in lower_symbol
-        or "itemstack" in lower_symbol
-        or "getitemmeta" in lower_symbol
-    )
-    player_container = re.search(
-        r"\b(?:player|target|owner|sender|recipient)\s*\.\s*getpersistentdatacontainer",
+    receiver_match = re.search(
+        r"\b([a-z_$][a-z0-9_$]*)\s*\.\s*getpersistentdatacontainer\s*\(",
         lower_symbol,
     )
-    if item_context and not player_container:
+    receiver = receiver_match.group(1) if receiver_match else ""
+    player_receivers = {"player", "target", "owner", "sender", "recipient", "victim", "killer", "viewer"}
+    item_receivers = {"item", "itemstack", "stack", "meta", "itemmeta", "hand", "auctionhand", "result"}
+    entity_receivers = {
+        "entity", "mob", "projectile", "arrow", "horse", "animal", "creature", "living", "stand", "display"
+    }
+
+    if kind == "PLAYER_PDC" and receiver in player_receivers:
+        return (
+            "TRANSITION",
+            "Direct player PDC access is durable player-state authority until replaced by PlayerProfile.",
+        )
+
+    if kind == "PLAYER_PDC" and (
+        receiver in item_receivers
+        or "/items/" in lower_path
+        or "getitemmeta" in lower_symbol
+        or "itemmeta" in lower_symbol
+    ):
         return (
             "ITEM_METADATA",
             "Persistent item identity or item-owned metadata, not player progression.",
         )
 
-    entity_context = any(
-        token in combined
-        for token in (
+    if kind == "PLAYER_PDC" and (
+        receiver in entity_receivers
+        or _has_any(combined, (
             "entity.getpersistentdatacontainer",
             "mob.getpersistentdatacontainer",
             "projectile.getpersistentdatacontainer",
-            "livingentity",
-            "transiententities",
-        )
-    )
-    if entity_context and not player_container:
+            "arrow.getpersistentdatacontainer",
+            "horse.getpersistentdatacontainer",
+        ))
+    ):
         return (
             "ENTITY_METADATA",
             "Entity-owned or short-lived runtime marker; durable player state belongs to PlayerProfile.",
         )
 
-    shared_tokens = (
-        "guild",
-        "party",
-        "auction",
-        "market",
-        "claim",
-        "season",
-        "raid",
-        "territory",
-        "treasury",
-        "council",
-        "communitygoal",
-        "community_goal",
-        "exchangeboard",
-        "blockregen",
-        "transactionjournal",
-        "persistentstorecoordinator",
-        "yamlstore",
-        "factiontaxjournal",
-        "factionswitchjournal",
-    )
-    if any(token in combined for token in shared_tokens):
-        return (
-            "GLOBAL_AGGREGATE_REFERENCE",
-            "Shared aggregate or persistence infrastructure remains separate; PlayerProfile stores only stable player references.",
-        )
+    player_owned_path = _has_any(lower_path, PLAYER_OWNED_PATH_TOKENS)
+    shared_path = _has_any(lower_path, SHARED_AGGREGATE_PATH_TOKENS)
 
     if kind == "UUID_MAP":
-        runtime_tokens = (
-            "/listeners/",
-            "/spells/",
-            "runtime",
-            "session",
-            "cache",
-            "online",
-            "live",
-            "active",
-            "pendingtask",
-            "cooldownuntil",
-            "transient",
-        )
-        if any(token in combined for token in runtime_tokens):
+        if _has_any(combined, RUNTIME_PATH_OR_SYMBOL_TOKENS):
             return (
                 "RUNTIME",
-                "In-memory runtime/session cache; it must be rebuilt or discarded and is not durable authority.",
+                "In-memory runtime/session cache; it is rebuilt or discarded and is not durable authority.",
+            )
+        if player_owned_path:
+            return (
+                "TRANSITION",
+                "Manager-owned UUID map represents player state and must move behind PlayerProfile authority.",
+            )
+        if shared_path:
+            return (
+                "GLOBAL_AGGREGATE_REFERENCE",
+                "Separate shared aggregate keyed by player UUID; PlayerProfile stores only stable references.",
             )
         return (
             "TRANSITION",
-            "Manager-owned UUID state may still be durable player authority and requires explicit migration or proof of runtime-only use.",
+            "Unproven UUID-keyed state requires migration or explicit runtime/shared-aggregate evidence.",
         )
 
-    if player_container or kind in {"PLAYER_YAML", "DIRECT_FILE_IO"}:
+    if kind in {"PLAYER_YAML", "DIRECT_FILE_IO"}:
+        if player_owned_path:
+            return (
+                "TRANSITION",
+                "Standalone player-owned durable storage must move behind PlayerProfile authority.",
+            )
+        if shared_path:
+            return (
+                "GLOBAL_AGGREGATE_REFERENCE",
+                "Shared aggregate or persistence infrastructure remains separate from PlayerProfile.",
+            )
         return (
             "TRANSITION",
-            "Existing player-owned PDC/YAML/file authority scheduled for removal by the full-authority stack.",
+            "Player-shaped direct persistence requires migration or explicit shared-aggregate evidence.",
         )
 
-    if "/regression/" in lower_path:
+    if kind == "PLAYER_PDC":
         return (
-            "RUNTIME",
-            "Regression fixture or temporary test state; production authority is audited separately.",
+            "TRANSITION",
+            "PDC receiver could not be proven item/entity metadata; fail closed as player-state transition.",
         )
 
     return (
         "TRANSITION",
-        "Unclassified persistent player-state finding requires migration or an explicit non-authoritative classification.",
+        "Unclassified persistent player-state finding requires migration or explicit non-authoritative evidence.",
     )
 
 
@@ -214,6 +277,11 @@ def main() -> int:
         action="store_true",
         help="Re-evaluate existing TRANSITION entries with the current classifier.",
     )
+    parser.add_argument(
+        "--reclassify-all",
+        action="store_true",
+        help="Re-evaluate every current finding; use after classifier changes.",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -226,22 +294,23 @@ def main() -> int:
                 item["key"]: item
                 for item in json.loads(allow_path.read_text(encoding="utf-8")).get("entries", [])
             }
-        entries: list[dict[str, str]] = []
+        entries_by_key: dict[str, dict[str, str]] = {}
         for finding in findings:
-            old = existing.get(str(finding["key"]))
-            if old and not (
-                args.reclassify_transitions and old.get("category") == "TRANSITION"
-            ):
-                entries.append(old)
+            key = str(finding["key"])
+            old = existing.get(key)
+            reclassify = args.reclassify_all or (
+                args.reclassify_transitions and old is not None
+                and old.get("category") == "TRANSITION"
+            )
+            if old and not reclassify:
+                entries_by_key[key] = old
                 continue
             category, reason = classify_finding(finding)
-            entries.append(
-                {"key": str(finding["key"]), "category": category, "reason": reason}
-            )
+            entries_by_key[key] = {"key": key, "category": category, "reason": reason}
         payload = {
             "version": 1,
             "allowed_categories": ALLOWED_CATEGORIES,
-            "entries": sorted(entries, key=lambda item: item["key"]),
+            "entries": [entries_by_key[key] for key in sorted(entries_by_key)],
         }
         allow_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
@@ -266,8 +335,10 @@ def main() -> int:
     transitions = [
         entry for entry in allowed.values() if entry.get("category") == "TRANSITION"
     ]
+    categories = Counter(str(entry.get("category", "")) for entry in allowed.values())
     report = {
         "finding_count": len(findings),
+        "category_counts": dict(sorted(categories.items())),
         "unknown": unknown,
         "stale": stale,
         "invalid": invalid,
@@ -288,6 +359,9 @@ def main() -> int:
         f"{len(findings)} findings, {len(unknown)} unknown, {len(stale)} stale, "
         f"{len(invalid)} invalid, {len(transitions)} transition"
     )
+    print("Authority categories: " + ", ".join(
+        f"{category}={count}" for category, count in sorted(categories.items())
+    ))
     for label, items in (("UNKNOWN", unknown), ("STALE", stale), ("INVALID", invalid)):
         for item in items[:50]:
             print(f"{label}: {item.get('key')}")
