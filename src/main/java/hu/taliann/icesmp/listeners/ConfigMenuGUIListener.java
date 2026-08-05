@@ -8,6 +8,7 @@ import hu.taliann.icesmp.gui.ConfigMenuHolder;
 import hu.taliann.icesmp.gui.ConfigMenuRootGUI;
 import hu.taliann.icesmp.gui.GuiUtil;
 import hu.taliann.icesmp.gui.OperationalConfigMenuGUI;
+import hu.taliann.icesmp.gui.OperationalConfigPolicy;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ConfigValidator;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -140,6 +141,17 @@ public final class ConfigMenuGUIListener implements Listener {
                         ? (Object) (int) Math.round(next) : (Object) next;
             }
         }
+
+        final String validationProblem =
+                OperationalConfigPolicy.validate(key, newValue, configManager);
+        if (validationProblem != null) {
+            player.sendMessage(messageManager.get("admin.icesmp.config.invalid-combination",
+                    "&c⚠ %s", validationProblem));
+            GuiUtil.sound(player, GuiUtil.GuiSound.ERROR);
+            reopen(player, holder);
+            return;
+        }
+
         applyOverride(player, key, newValue);
         reopen(player, holder);
     }
