@@ -23,8 +23,7 @@ public final class ConfigMenuRootGUI {
             36, 37, 38, 39, 40, 41, 42, 43, 44
     };
 
-    private ConfigMenuRootGUI() {
-    }
+    private ConfigMenuRootGUI() { }
 
     public static int categoryCapacity() {
         OperationalConfigSchemaGuard.validate();
@@ -32,9 +31,7 @@ public final class ConfigMenuRootGUI {
         return CATEGORY_SLOTS.length;
     }
 
-    public static void openRoot(final Player player) {
-        openRoot(player, null);
-    }
+    public static void openRoot(final Player player) { openRoot(player, null); }
 
     public static void openRoot(final Player player, final ConfigEditSession session) {
         OperationalConfigSchemaGuard.validate();
@@ -44,55 +41,43 @@ public final class ConfigMenuRootGUI {
             throw new IllegalStateException("Az admin config-főmenü kategóriakapacitása elfogyott: "
                     + categoryCount + "/" + CATEGORY_SLOTS.length);
         }
-
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), null);
         final Inventory inventory = Bukkit.createInventory(holder, 54,
                 Component.text("⚙ IceSMP Config", NamedTextColor.DARK_AQUA));
         holder.setInventory(inventory);
-
         int index = 0;
         for (final ConfigMenuGUI.Category category : ConfigMenuGUI.CATEGORIES.values()) {
             final int slot = CATEGORY_SLOTS[index++];
             inventory.setItem(slot, tile(category.icon(), "&b" + category.title(),
-                    List.of("&7" + category.entries().size() + " kulcs",
-                            "&eKattints a staged szerkesztéshez")));
+                    List.of("&7" + category.entries().size() + " kulcs", "&eKattints a staged szerkesztéshez")));
             holder.bind(slot, "CAT:" + category.id());
         }
-
-        final int regenSlot = CATEGORY_SLOTS[index++];
-        inventory.setItem(regenSlot, tile(Material.TNT,
-                "&bRobbanás és világregeneráció",
+        int slot = CATEGORY_SLOTS[index++];
+        inventory.setItem(slot, tile(Material.TNT, "&bRobbanás és világregeneráció",
                 List.of("&7" + BlockRegenConfigMenuGUI.entryCount() + " kulcs",
-                        "&7Zónák, claimek, időzítés, effektek",
-                        "&eKattints a staged szerkesztéshez")));
-        holder.bind(regenSlot, BlockRegenConfigMenuGUI.ROOT_ACTION);
+                        "&7Zónák, claimek, időzítés, effektek", "&eKattints a staged szerkesztéshez")));
+        holder.bind(slot, BlockRegenConfigMenuGUI.ROOT_ACTION);
 
-        final int operationalSlot = CATEGORY_SLOTS[index++];
-        inventory.setItem(operationalSlot, tile(Material.REDSTONE_TORCH,
-                "&bÜzemeltetés és finomhangolás",
-                List.of("&7" + OperationalConfigMenuGUI.categoryCount() + " alkategória",
-                        "&7" + OperationalConfigMenuGUI.entryCount() + " élő kulcs",
-                        "&7HUD, AFK, petek, piac és moderáció",
-                        "&eKattints a staged szerkesztéshez")));
-        holder.bind(operationalSlot, OperationalConfigMenuGUI.ROOT_ACTION);
+        slot = CATEGORY_SLOTS[index++];
+        inventory.setItem(slot, tile(Material.REDSTONE_TORCH, "&bÜzemeltetés és finomhangolás",
+                List.of("&7" + TransactionalOperationalConfigMenuGUI.categoryCount() + " alkategória",
+                        "&7" + TransactionalOperationalConfigMenuGUI.entryCount() + " élő kulcs",
+                        "&7HUD, AFK, petek és piac", "&eKattints a staged szerkesztéshez")));
+        holder.bind(slot, OperationalConfigMenuGUI.ROOT_ACTION);
 
-        final int serverWorldSlot = CATEGORY_SLOTS[index++];
-        inventory.setItem(serverWorldSlot, tile(Material.COMMAND_BLOCK,
-                "&bSzerver, világ és szöveges értékek",
+        slot = CATEGORY_SLOTS[index++];
+        inventory.setItem(slot, tile(Material.COMMAND_BLOCK, "&bSzerver, világ és szöveges értékek",
                 List.of("&7" + ServerWorldConfigMenuGUI.entryCount() + " élő kulcs",
                         "&7Gamerule, világ-driver, HUD-szöveg, listák",
-                        "&7Privát chat-alapú String/lista editor",
-                        "&eKattints a staged szerkesztéshez")));
-        holder.bind(serverWorldSlot, ServerWorldConfigMenuGUI.ROOT_ACTION);
+                        "&7Privát chat-alapú String/lista editor", "&eKattints a staged szerkesztéshez")));
+        holder.bind(slot, ServerWorldConfigMenuGUI.ROOT_ACTION);
 
-        final int crateSlot = CATEGORY_SLOTS[index];
-        inventory.setItem(crateSlot, tile(Material.CHEST,
-                "&bNatív crate-editor",
+        slot = CATEGORY_SLOTS[index];
+        inventory.setItem(slot, tile(Material.CHEST, "&bNatív crate-editor",
                 List.of("&7Crate-alapbeállítások és rewardok",
                         "&7Strukturált, copy-on-write jutalomszerkesztés",
-                        "&7A teljes lista csak Mentéskor publikálódik",
-                        "&eKattints a staged szerkesztéshez")));
-        holder.bind(crateSlot, CrateConfigMenuGUI.ROOT_ACTION);
+                        "&7A teljes lista csak Mentéskor publikálódik", "&eKattints a staged szerkesztéshez")));
+        holder.bind(slot, CrateConfigMenuGUI.ROOT_ACTION);
 
         ConfigMenuControls.add(inventory, holder, session, false);
         player.openInventory(inventory);
@@ -104,13 +89,11 @@ public final class ConfigMenuRootGUI {
         final ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-                    .legacyAmpersand().deserialize(name)
-                    .decoration(TextDecoration.ITALIC, false));
+                    .legacyAmpersand().deserialize(name).decoration(TextDecoration.ITALIC, false));
             final List<Component> lore = new ArrayList<>();
             for (final String line : loreLines) {
                 lore.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-                        .legacyAmpersand().deserialize(line)
-                        .colorIfAbsent(NamedTextColor.GRAY)
+                        .legacyAmpersand().deserialize(line).colorIfAbsent(NamedTextColor.GRAY)
                         .decoration(TextDecoration.ITALIC, false));
             }
             meta.lore(lore);
