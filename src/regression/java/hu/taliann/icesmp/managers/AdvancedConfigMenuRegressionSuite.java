@@ -91,10 +91,20 @@ public final class AdvancedConfigMenuRegressionSuite {
                         && listener.contains("!cancel")
                         && listener.contains("!default")
                         && listener.contains("!empty")
+                        && listener.contains("EventPriority.LOWEST")
+                        && listener.contains("ConfigChatInputGate.open")
+                        && listener.contains("ConfigChatInputGate.close")
                         && listener.contains("player.getScheduler().run")
                         && listener.contains("CrateRewardEditor.path")
                         && listener.contains("AdvancedConfigRuntimeBridge.apply"),
-                "safe chat session, Folia write hop or full reward override is missing");
+                "safe private input, Folia write hop or full reward override is missing");
+
+        final String moderation = read(
+                "src/main/java/hu/taliann/icesmp/listeners/ChatModerationListener.java");
+        check(moderation.contains("ConfigChatInputGate.isOpen")
+                        && moderation.contains("privát admin-input")
+                        && moderation.contains("return;"),
+                "moderation may still censor or log private config input");
 
         final String renderer = read(
                 "src/main/java/hu/taliann/icesmp/gui/AdvancedConfigEntryRenderer.java");
@@ -119,6 +129,12 @@ public final class AdvancedConfigMenuRegressionSuite {
                         && bridge.contains("applyLocatorBar")
                         && bridge.contains("setGameRule"),
                 "crate reload, world-event reschedule or locator-bar live apply is missing");
+
+        final String build = read("build.gradle.kts");
+        check(build.contains("advancedConfigMenuRegressionTest")
+                        && build.contains("AdvancedConfigMenuRegressionSuite")
+                        && build.contains("operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest"),
+                "advanced config regression is not part of Gradle check");
     }
 
     private static void verifiesCrateRuleBoundaries() {
