@@ -26,13 +26,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class CaravanManager {
 
-    /** The reserved ShopManager name the caravan's stock is served under. */
     public static final String SHOP_NAME = "caravan";
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
-    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
     private volatile EventSpawnPointManager spawnPointManager;
 
     public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
@@ -46,7 +44,6 @@ public final class CaravanManager {
     private volatile UUID merchantId;
     private volatile int stopIndex;
     private volatile long stockSeed = System.currentTimeMillis();
-    /** Invalidates callbacks from an older search/depart/shutdown generation. */
     private final AtomicLong arrivalGeneration = new AtomicLong();
 
     public CaravanManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -57,7 +54,6 @@ public final class CaravanManager {
         this.nextArrivalAt = System.currentTimeMillis() + intervalMillis();
     }
 
-    /** Whether the caravan merchant is actually spawned and buyable. */
     public boolean isActive() {
         return active;
     }
@@ -93,16 +89,15 @@ public final class CaravanManager {
         }
     }
 
-    /** Admin override: begins one bounded safe-location search. */
-    public boolean forceArrive(final Player anchor) {
+    public synchronized boolean forceArrive(final Player anchor) {
         if (active || arrivalPending) {
             return false;
         }
         arrive(anchor);
-        return true;
+        return arrivalPending || active;
     }
 
-    public boolean forceDepart() {
+    public synchronized boolean forceDepart() {
         if (!active && !arrivalPending) {
             return false;
         }
@@ -114,7 +109,7 @@ public final class CaravanManager {
         return stockSeed;
     }
 
-    public void shutdown() {
+    public synchronized void shutdown() {
         arrivalGeneration.incrementAndGet();
         arrivalPending = false;
         removeMerchant();
@@ -126,7 +121,10 @@ public final class CaravanManager {
         arrive(null);
     }
 
-    private void arrive(final Player preferredAnchor) {
+    private synchronized void arrive(final Player preferredAnchor) {
+        if (active || arrivalPending) {
+            return;
+        }
         final long now = System.currentTimeMillis();
         nextArrivalAt = now + intervalMillis();
         stockSeed = ThreadLocalRandom.current().nextLong();
@@ -162,14 +160,19 @@ public final class CaravanManager {
                 return;
             }
             beginSafeArrival(target.getLocation().clone());
-        }, () -> {
-            if (anchorGeneration == arrivalGeneration.get()) {
-                arrivalPending = false;
-            }
-        });
+        }, () -> releasePendingAnchor(anchorGeneration));
     }
 
-    private void beginSafeArrival(final Location preferred) {
+    private synchronized void releasePendingAnchor(final long generation) {
+        if (generation == arrivalGeneration.get()) {
+            arrivalPending = false;
+        }
+    }
+
+    private synchronized void beginSafeArrival(final Location preferred) {
+        if (!arrivalPending && (active || preferred == null)) {
+            return;
+        }
         final EventSpawnGuard guard = EventSpawnGuard.current();
         if (guard == null || preferred == null || preferred.getWorld() == null) {
             plugin.getLogger().warning("Caravan arrival aborted: EventSpawnGuard or anchor unavailable.");
@@ -183,7 +186,6 @@ public final class CaravanManager {
                 () -> failArrival(generation, preferred));
     }
 
-    /** Called on the region thread owning the already validated dry location. */
     private void spawnMerchant(final Location spot, final long generation) {
         if (generation != arrivalGeneration.get() || !arrivalPending) {
             return;
@@ -209,14 +211,16 @@ public final class CaravanManager {
                 spawned.setCustomNameVisible(true);
             });
 
-            if (generation != arrivalGeneration.get()) {
-                merchant.remove();
-                return;
+            synchronized (this) {
+                if (generation != arrivalGeneration.get() || !arrivalPending) {
+                    merchant.remove();
+                    return;
+                }
+                merchantId = merchant.getUniqueId();
+                active = true;
+                arrivalPending = false;
+                activeUntil = System.currentTimeMillis() + durationMillis();
             }
-            merchantId = merchant.getUniqueId();
-            active = true;
-            arrivalPending = false;
-            activeUntil = System.currentTimeMillis() + durationMillis();
             startAmbientTick(merchant);
 
             Bukkit.getServer().broadcast(messageManager.getMessage(
@@ -236,7 +240,7 @@ public final class CaravanManager {
         }
     }
 
-    private void failArrival(final long generation, final Location anchor) {
+    private synchronized void failArrival(final long generation, final Location anchor) {
         if (generation != arrivalGeneration.get()) {
             return;
         }
@@ -249,7 +253,7 @@ public final class CaravanManager {
                 + anchor.getBlockX() + "," + anchor.getBlockZ()) + '.');
     }
 
-    private void depart() {
+    private synchronized void depart() {
         arrivalGeneration.incrementAndGet();
         arrivalPending = false;
         removeMerchant();
@@ -304,7 +308,6 @@ public final class CaravanManager {
         }, null, 60L, 60L);
     }
 
-    /** Returns the next configured preferred column, or null when no stop is usable. */
     private Location nextStop() {
         final List<Map<?, ?>> stops = configManager.getConfiguration() == null
                 ? List.of() : configManager.getConfiguration().getMapList("caravan.stops");
