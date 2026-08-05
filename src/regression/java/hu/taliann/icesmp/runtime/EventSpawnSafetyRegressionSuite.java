@@ -16,6 +16,7 @@ public final class EventSpawnSafetyRegressionSuite {
         verifiesBoundedCandidateSearch();
         verifiesCircularWaterBuffer();
         verifiesWaterSafetyRuntimeWiring();
+        verifiesEveryKnownEntityEventUsesDryPlacement();
         System.out.println("Event spawn safety regression suite passed.");
     }
 
@@ -101,20 +102,24 @@ public final class EventSpawnSafetyRegressionSuite {
                         && guard.contains("HeightMap.WORLD_SURFACE")
                         && guard.contains("Waterlogged")
                         && guard.contains("findSafeAtOrNear")
-                        && guard.contains("EventSpawnSafetyPolicy.waterProbeOffsets"),
+                        && guard.contains("EventSpawnSafetyPolicy.waterProbeOffsets")
+                        && guard.contains("WATER_OR_SHORE"),
                 "central surface resolver lost waterlogged/shoreline enforcement");
 
         final String caravan = read("src/main/java/hu/taliann/icesmp/managers/CaravanManager.java");
         check(caravan.contains("findSafeAtOrNear(\"caravan\"")
+                        && caravan.contains("arrivalPending = true")
+                        && caravan.contains("anchorGeneration")
                         && !caravan.contains("getHighestBlockYAt")
                         && !caravan.contains("topOf("),
-                "merchant caravan may bypass the central dry-location resolver");
+                "merchant caravan may bypass the central dry-location resolver or double-launch");
 
         final String playerCaravan = read(
                 "src/main/java/hu/taliann/icesmp/managers/PlayerCaravanManager.java");
         check(playerCaravan.contains("findSafeNear(\"player-caravan\"")
                         && playerCaravan.contains("failPendingSpawn")
                         && playerCaravan.contains("treasuryManager.deposit(faction, amount)")
+                        && playerCaravan.contains("PENDING_CONVOY_ID")
                         && !playerCaravan.contains("getHighestBlockYAt")
                         && !playerCaravan.contains("ThreadLocalRandom"),
                 "player caravan may bypass safe search or lose cargo on search failure");
@@ -123,6 +128,43 @@ public final class EventSpawnSafetyRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java");
         check(configManager.contains("\"event-spawn-safety\""),
                 "water-safety subsystem is not loaded on existing deployments");
+    }
+
+    private static void verifiesEveryKnownEntityEventUsesDryPlacement() throws Exception {
+        final String ambient = read(
+                "src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java");
+        check(ambient.contains("resolveSafeStandingLocation(\"animal-migration\"")
+                        && section(ambient, "private void spawnHerd", "private void rewardParticipants")
+                        .indexOf("getHighestBlockYAt") < 0,
+                "ambient animal migration may still spawn a herd on water");
+
+        final String cultists = read(
+                "src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java");
+        final String cultistSpawner = section(cultists,
+                "private void spawnCultist", "private void prepareCultist");
+        check(cultists.contains("resolveSafeStandingLocation(\"cultists\"")
+                        && cultistSpawner.contains("resolveSafeStandingLocation")
+                        && !cultistSpawner.contains("getHighestBlockYAt"),
+                "cultist offset spawns may bypass dry placement");
+
+        assertContains("WildHuntManager.java", "isUnsafeSurface(\"wild-hunt\"");
+        assertContains("InvasionManager.java", "isUnsafeSurface(\"invasion\"");
+        assertContains("CorruptionManager.java", "isUnsafeSurface(\"corruption\"");
+        assertContains("StrangerNpcManager.java", "isUnsafeSurface(\"stranger\"");
+        assertContains("EscortManager.java", "isUnsafeSurface(\"escort\"");
+        assertContains("WorldBossManager.java", "findSafeNear(\"world-boss\"");
+    }
+
+    private static void assertContains(final String file, final String marker) throws Exception {
+        final String source = read("src/main/java/hu/taliann/icesmp/managers/" + file);
+        check(source.contains(marker), "known event spawn path lost central dry guard: " + file);
+    }
+
+    private static String section(final String source, final String start, final String end) {
+        final int from = source.indexOf(start);
+        final int to = source.indexOf(end, Math.max(0, from + start.length()));
+        check(from >= 0 && to > from, "source section missing: " + start + " -> " + end);
+        return source.substring(from, to);
     }
 
     private static String read(final String path) throws Exception {
