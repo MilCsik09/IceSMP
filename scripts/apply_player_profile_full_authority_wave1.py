@@ -7,36 +7,64 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"
 
+PLATFORM_FIELD = (
+    "    private final hu.taliann.icesmp.playerprofile.integration."
+    "PlayerProfilePlatform playerProfilePlatform;\n"
+)
+AUTHORITY_FIELD = (
+    "    private final hu.taliann.icesmp.playerprofile.application."
+    "PlayerProfileAuthority playerProfileAuthority;\n"
+)
+PLATFORM_CONSTRUCTION = (
+    "        this.playerProfilePlatform = new hu.taliann.icesmp.playerprofile.integration."
+    "PlayerProfilePlatform(plugin, configManager);\n"
+)
+AUTHORITY_INSTALL = (
+    "        this.playerProfileAuthority = hu.taliann.icesmp.playerprofile.application."
+    "PlayerProfileAuthority.install(\n"
+    "                playerProfilePlatform.service(), playerProfilePlatform.repository(),\n"
+    "                playerProfilePlatform.transactions());\n"
+)
+
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
-    count = text.count(old)
-    if count == 0 and new in text:
+    if new in text:
         return text
+    count = text.count(old)
     if count != 1:
         raise RuntimeError(f"{label}: expected one match, found {count}")
     return text.replace(old, new, 1)
 
 
+def normalize_after(text: str, anchor: str, block: str, label: str) -> str:
+    """Remove duplicate exact blocks and insert one canonical copy after anchor."""
+    text = text.replace(block, "")
+    count = text.count(anchor)
+    if count != 1:
+        raise RuntimeError(f"{label}: expected one anchor, found {count}")
+    return text.replace(anchor, anchor + block, 1)
+
+
 def patch_core() -> None:
     text = CORE.read_text(encoding="utf-8")
-    text = replace_once(
+
+    # The anchor is a prefix of the desired two-line field block, therefore a naive
+    # substring test is not idempotent. Canonicalize by removing all authority-field
+    # copies first and then inserting exactly one after the platform field.
+    text = text.replace(AUTHORITY_FIELD, "")
+    if text.count(PLATFORM_FIELD) != 1:
+        raise RuntimeError(
+            f"authority field: expected one platform field, found {text.count(PLATFORM_FIELD)}"
+        )
+    text = text.replace(PLATFORM_FIELD, PLATFORM_FIELD + AUTHORITY_FIELD, 1)
+
+    text = normalize_after(
         text,
-        "    private final hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform playerProfilePlatform;\n",
-        "    private final hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform playerProfilePlatform;\n"
-        "    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority playerProfileAuthority;\n",
-        "authority field",
-    )
-    text = replace_once(
-        text,
-        "        this.playerProfilePlatform = new hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform(plugin, configManager);\n"
-        "        this.classSpecSectionRepository = new hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository(\n",
-        "        this.playerProfilePlatform = new hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform(plugin, configManager);\n"
-        "        this.playerProfileAuthority = hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.install(\n"
-        "                playerProfilePlatform.service(), playerProfilePlatform.repository(),\n"
-        "                playerProfilePlatform.transactions());\n"
-        "        this.classSpecSectionRepository = new hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository(\n",
+        PLATFORM_CONSTRUCTION,
+        AUTHORITY_INSTALL,
         "authority install",
     )
+
     text = replace_once(
         text,
         "        if (!enableCompleted) {\n"
