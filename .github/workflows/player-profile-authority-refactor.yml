@@ -49,7 +49,6 @@ jobs:
           python3 scripts/apply_player_profile_full_authority_wave1.py
           python3 scripts/apply_player_profile_conditional_mutation.py
           python3 scripts/apply_player_profile_mastery_wave.py
-          python3 scripts/apply_player_profile_spellbook_ledger_wave.py
           python3 scripts/apply_player_profile_talent_storage_wave.py
           python3 scripts/apply_player_profile_talent_call_sites.py
           python3 scripts/apply_player_profile_profession_callsite_wave.py
