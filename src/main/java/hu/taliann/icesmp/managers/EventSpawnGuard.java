@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Location;
@@ -15,9 +16,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -109,7 +112,7 @@ public final class EventSpawnGuard {
     /**
      * The safe-search path already performed the expensive shoreline scan while resolving
      * footing. It calls this overload with includeWater=false so protections, players and
-     * reservations are rechecked without reading the same ~200 columns two more times.
+     * reservations are rechecked without reading the same columns two more times.
      */
     private BlockReason blockReason(final String eventKey, final Location location,
                                     final boolean includeWater) {
@@ -209,15 +212,13 @@ public final class EventSpawnGuard {
     }
 
     private boolean waterOrShoreUnsafe(final World world, final int centerX, final int centerZ) {
-        final int radius = Math.max(0, Math.min(32, configManager.getInt(
-                "world-events.water-safety.buffer-blocks", 8)));
+        final int radius = shorelineRadius(eventKeyForWaterScanPlaceholder());
         for (final EventSpawnSafetyPolicy.GridOffset offset
                 : EventSpawnSafetyPolicy.waterProbeOffsets(radius)) {
             final int x = centerX + offset.x();
             final int z = centerZ + offset.z();
             final int chunkX = x >> 4;
             final int chunkZ = z >> 4;
-            // Unknown neighbouring terrain is rejected rather than synchronously loaded.
             if (!world.isChunkLoaded(chunkX, chunkZ)
                     || !Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) {
                 return true;
@@ -227,6 +228,16 @@ public final class EventSpawnGuard {
             }
         }
         return false;
+    }
+
+    /** Keeps the config read in one place while the scan itself remains event-agnostic. */
+    private int shorelineRadius(final String ignoredEventKey) {
+        return Math.max(0, Math.min(32, configManager.getInt(
+                "world-events.water-safety.buffer-blocks", 8)));
+    }
+
+    private static String eventKeyForWaterScanPlaceholder() {
+        return "";
     }
 
     private static boolean waterAtSurface(final World world, final int x, final int z) {
@@ -275,22 +286,25 @@ public final class EventSpawnGuard {
             onFailure.run();
             return;
         }
-        final Location column = origin.clone();
+        prepareCandidateChunks(eventKey, origin.clone(),
+                () -> validatePreferred(eventKey, origin.clone(), seed, onFound, onFailure),
+                () -> findSafeNear(eventKey, origin, seed, onFound, onFailure));
+    }
+
+    private void validatePreferred(final String eventKey, final Location column, final long seed,
+                                   final Consumer<Location> onFound, final Runnable onFailure) {
         final World world = column.getWorld();
-        if (configManager.getBoolean("world-events.safety.require-loaded-chunk", true)
-                && !world.isChunkLoaded(column.getBlockX() >> 4, column.getBlockZ() >> 4)) {
-            findSafeNear(eventKey, origin, seed, onFound, onFailure);
+        if (world == null) {
+            findSafeNear(eventKey, column, seed, onFound, onFailure);
             return;
         }
-        plugin.getServer().getRegionScheduler().run(plugin, column, task -> {
-            final Location candidate = resolveSafeStandingLocation(
-                    eventKey, world, column.getBlockX(), column.getBlockZ());
-            if (candidate != null && reserveAfterSurfaceValidation(eventKey, candidate)) {
-                onFound.accept(candidate);
-                return;
-            }
-            findSafeNear(eventKey, origin, seed, onFound, onFailure);
-        });
+        final Location candidate = resolveSafeStandingLocation(
+                eventKey, world, column.getBlockX(), column.getBlockZ());
+        if (candidate != null && reserveAfterSurfaceValidation(eventKey, candidate)) {
+            onFound.accept(candidate);
+            return;
+        }
+        findSafeNear(eventKey, column, seed, onFound, onFailure);
     }
 
     /**
@@ -322,26 +336,130 @@ public final class EventSpawnGuard {
         }
         final EventSpawnSafetyPolicy.Offset offset = candidates.get(index);
         final Location column = origin.clone().add(offset.x(), 0.0D, offset.z());
+        if (column.getWorld() == null) {
+            tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
+            return;
+        }
+        prepareCandidateChunks(eventKey, column,
+                () -> validateCandidate(eventKey, origin, candidates, index,
+                        column, onFound, onFailure),
+                () -> tryCandidate(eventKey, origin, candidates, index + 1,
+                        onFound, onFailure));
+    }
+
+    private void validateCandidate(final String eventKey, final Location origin,
+                                   final List<EventSpawnSafetyPolicy.Offset> candidates,
+                                   final int index, final Location column,
+                                   final Consumer<Location> onFound, final Runnable onFailure) {
         final World world = column.getWorld();
         if (world == null) {
             tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
             return;
         }
-        if (configManager.getBoolean("world-events.safety.require-loaded-chunk", true)
-                && !world.isChunkLoaded(column.getBlockX() >> 4, column.getBlockZ() >> 4)) {
+        final int x = column.getBlockX();
+        final int z = column.getBlockZ();
+        final Location candidate = resolveSafeStandingLocation(eventKey, world, x, z);
+        if (candidate == null || !reserveAfterSurfaceValidation(eventKey, candidate)) {
             tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
             return;
         }
-        plugin.getServer().getRegionScheduler().run(plugin, column, task -> {
-            final int x = column.getBlockX();
-            final int z = column.getBlockZ();
-            final Location candidate = resolveSafeStandingLocation(eventKey, world, x, z);
-            if (candidate == null || !reserveAfterSurfaceValidation(eventKey, candidate)) {
-                tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
-                return;
+        onFound.accept(candidate);
+    }
+
+    /**
+     * Prepares every chunk touched by the exact spawn column and shoreline buffer without
+     * synchronously loading terrain on a Folia region thread. By default only already-generated
+     * chunks may be loaded; operators must explicitly opt in before the search can grow the world.
+     */
+    private void prepareCandidateChunks(final String eventKey, final Location column,
+                                        final Runnable onReady, final Runnable onUnavailable) {
+        final World world = column.getWorld();
+        if (world == null) {
+            runContinuation(onUnavailable);
+            return;
+        }
+        final int radius = waterSafetyRequired(eventKey) ? shorelineRadius(eventKey) : 0;
+        final int minChunkX = (column.getBlockX() - radius) >> 4;
+        final int maxChunkX = (column.getBlockX() + radius) >> 4;
+        final int minChunkZ = (column.getBlockZ() - radius) >> 4;
+        final int maxChunkZ = (column.getBlockZ() + radius) >> 4;
+        final boolean requireLoaded = configManager.getBoolean(
+                "world-events.safety.require-loaded-chunk", false);
+
+        if (requireLoaded) {
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                    if (!world.isChunkLoaded(chunkX, chunkZ)) {
+                        runContinuation(onUnavailable);
+                        return;
+                    }
+                }
             }
-            onFound.accept(candidate);
-        });
+            scheduleCandidateRegion(column, onReady, onUnavailable);
+            return;
+        }
+
+        final boolean generate = configManager.getBoolean(
+                "world-events.safety.generate-unloaded-chunks", false);
+        final List<CompletableFuture<Chunk>> loads = new ArrayList<>();
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                if (world.isChunkLoaded(chunkX, chunkZ)) {
+                    continue;
+                }
+                loads.add(world.getChunkAtAsync(chunkX, chunkZ, generate));
+            }
+        }
+        if (loads.isEmpty()) {
+            scheduleCandidateRegion(column, onReady, onUnavailable);
+            return;
+        }
+
+        CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new))
+                .whenComplete((ignored, failure) -> {
+                    if (failure != null || !plugin.isEnabled()) {
+                        runContinuation(onUnavailable);
+                        return;
+                    }
+                    for (final CompletableFuture<Chunk> load : loads) {
+                        final Chunk chunk;
+                        try {
+                            chunk = load.join();
+                        } catch (final RuntimeException unavailable) {
+                            runContinuation(onUnavailable);
+                            return;
+                        }
+                        if (chunk == null || !chunk.isLoaded()) {
+                            runContinuation(onUnavailable);
+                            return;
+                        }
+                    }
+                    scheduleCandidateRegion(column, onReady, onUnavailable);
+                });
+    }
+
+    private void scheduleCandidateRegion(final Location column, final Runnable onReady,
+                                         final Runnable onUnavailable) {
+        if (!plugin.isEnabled()) {
+            return;
+        }
+        try {
+            plugin.getServer().getRegionScheduler().run(plugin, column, task -> onReady.run());
+        } catch (final RuntimeException unavailable) {
+            runContinuation(onUnavailable);
+        }
+    }
+
+    private void runContinuation(final Runnable continuation) {
+        if (!plugin.isEnabled()) {
+            return;
+        }
+        try {
+            plugin.getServer().getGlobalRegionScheduler().run(
+                    plugin, task -> continuation.run());
+        } catch (final RuntimeException ignored) {
+            // Disable won the race; no callback may safely continue after plugin shutdown.
+        }
     }
 
     /**
