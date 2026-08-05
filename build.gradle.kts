@@ -112,6 +112,14 @@ val operationalConfigMenuRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.OperationalConfigMenuRegressionSuite")
 }
 
+val advancedConfigMenuRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs advanced text/list input, crate editor schema and live-apply regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.AdvancedConfigMenuRegressionSuite")
+}
+
 val afkRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs global AFK state, display ordering and product-boundary regressions."
@@ -227,11 +235,11 @@ val resourcePackRegressionTest by tasks.registering(JavaExec::class) {
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
-        operationalConfigMenuRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
-        territoryCapitalRegressionTest, hudRegressionTest, pauseMenuDialogRegressionTest,
-        runtimeBugfixRegressionTest, factionPassiveRegressionTest,
-        factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
-        relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
-        lifecycleShutdownRegressionTest, questNpcValidationRegressionTest,
-        resourcePackRegressionTest)
+        operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest,
+        afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
+        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
+        factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
+        factionTreasuryRegressionTest, relicItemRefreshRegressionTest,
+        relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
+        questNpcValidationRegressionTest, resourcePackRegressionTest)
 }
