@@ -14,7 +14,7 @@ jobs:
   authority-contract:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'profile/player-profile-full-authority'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     steps:
       - name: Checkout exact authority branch
         uses: actions/checkout@v4
@@ -42,17 +42,6 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Map profession and talent mutation call sites
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '=== Profession mutation call sites ==='
-          grep -R -n --include='*.java' -E '\.(selectProfession|setProfession|clearProfession|setXp|addXp|addXpFor|learnRecipe)\(' \
-            src/main src/regression || true
-          echo '=== Talent mutation call sites ==='
-          grep -R -n --include='*.java' -E '\.(grantBonusPoints|spendPoint|refundUnavailableTalents)\(' \
-            src/main src/regression || true
-
       - name: Apply deterministic authority patches
         shell: bash
         run: |
@@ -60,11 +49,13 @@ jobs:
           python3 scripts/apply_player_profile_full_authority_wave1.py
           python3 scripts/apply_player_profile_conditional_mutation.py
           python3 scripts/apply_player_profile_mastery_wave.py
-          python3 scripts/apply_player_profile_extension_regression_task.py
           python3 scripts/apply_player_profile_spellbook_ledger_wave.py
           python3 scripts/apply_player_profile_spellbook_compat_fix.py
           python3 scripts/apply_player_profile_talent_storage_wave.py
+          python3 scripts/apply_player_profile_talent_call_sites.py
           python3 scripts/apply_player_profile_profession_callsite_wave.py
+          python3 scripts/apply_player_profile_profession_weekly_reward.py
+          python3 scripts/apply_player_profile_extension_regression_task.py
           git diff --check
 
       - name: Rebuild exact authority contract
@@ -91,6 +82,8 @@ jobs:
             /tmp/player-profile-authority-gradle.log
           grep -F 'Spell mastery transaction regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
+          grep -F 'Profession profile state regression suite passed.' \
+            /tmp/player-profile-authority-gradle.log
 
       - name: Commit validated authority wave
         shell: bash
@@ -115,7 +108,11 @@ jobs:
             src/main/java/hu/taliann/icesmp/managers/TalentManager.java \
             src/main/java/hu/taliann/icesmp/managers/QuestManager.java \
             src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java \
+            src/main/java/hu/taliann/icesmp/managers/ProfessionWeeklyGoalManager.java \
+            src/main/java/hu/taliann/icesmp/managers/RespecService.java \
             src/main/java/hu/taliann/icesmp/commands/SpellCommand.java \
+            src/main/java/hu/taliann/icesmp/commands/TalentCommand.java \
+            src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java \
             src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java \
             src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java \
             src/main/java/hu/taliann/icesmp/listeners/ProfessionXpListener.java \
@@ -128,5 +125,5 @@ jobs:
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): move spellbook talent and profession writes to PlayerProfile'
+          git commit -m 'feat(profile): make talent and profession authority transactional'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
