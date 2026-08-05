@@ -15,48 +15,71 @@ public final class EventSpawnSafetyRegressionSuite {
         verifiesPlayerDistancePolicy();
         verifiesBoundedCandidateSearch();
         verifiesCircularWaterBuffer();
-        verifiesWaterSafetyRuntimeWiring();
-        verifiesEveryKnownEntityEventUsesDryPlacement();
+        verifiesSafetyDefaultsAndRuntimeWiring();
+        verifiesEveryKnownEntityEventUsesGuardedPlacement();
         System.out.println("Event spawn safety regression suite passed.");
     }
 
     private static void verifiesPlayerDistancePolicy() {
         final UUID world = UUID.randomUUID();
         final EventSpawnSafetyPolicy.PlayerPoint player = new EventSpawnSafetyPolicy.PlayerPoint(
-                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0), false, false, false);
+                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0),
+                false, false, false);
         check(EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
-                new EventSpawnSafetyPolicy.Point(world, 95.999, 64, 0), List.of(player),
-                96, 0, true, true, true), "inside horizontal minimum rejected");
+                new EventSpawnSafetyPolicy.Point(world, 191.999, 64, 0), List.of(player),
+                192, 0, true, true, false),
+                "inside 12-chunk horizontal minimum rejected");
         check(!EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
-                new EventSpawnSafetyPolicy.Point(world, 96, 64, 0), List.of(player),
-                96, 0, true, true, true), "exact minimum accepted");
+                new EventSpawnSafetyPolicy.Point(world, 192, 64, 0), List.of(player),
+                192, 0, true, true, false),
+                "exact minimum accepted");
+
         final EventSpawnSafetyPolicy.PlayerPoint second = new EventSpawnSafetyPolicy.PlayerPoint(
-                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 250, 64, 0), false, false, false);
+                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 400, 64, 0),
+                false, false, false);
         check(EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
-                new EventSpawnSafetyPolicy.Point(world, 170, 64, 0), List.of(player, second),
-                96, 0, true, true, true), "nearest of multiple players enforced");
+                new EventSpawnSafetyPolicy.Point(world, 250, 64, 0), List.of(player, second),
+                192, 0, true, true, false),
+                "nearest of multiple players enforced");
+
+        final EventSpawnSafetyPolicy.PlayerPoint admin = new EventSpawnSafetyPolicy.PlayerPoint(
+                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0),
+                false, false, true);
+        check(EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
+                new EventSpawnSafetyPolicy.Point(world, 20, 64, 0), List.of(admin),
+                192, 0, true, true, false),
+                "visible admin must block nearby event placement");
+        check(!EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
+                new EventSpawnSafetyPolicy.Point(world, 20, 64, 0), List.of(admin),
+                192, 0, true, true, true),
+                "explicit admin-ignore switch remains deterministic");
+
         final EventSpawnSafetyPolicy.PlayerPoint spectator = new EventSpawnSafetyPolicy.PlayerPoint(
-                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0), true, false, false);
+                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0),
+                true, false, false);
         check(!EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
                 new EventSpawnSafetyPolicy.Point(world, 1, 64, 0), List.of(spectator),
-                96, 0, true, true, true), "spectator ignored by policy");
+                192, 0, true, true, false),
+                "spectator ignored by policy");
         final EventSpawnSafetyPolicy.PlayerPoint vanished = new EventSpawnSafetyPolicy.PlayerPoint(
-                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0), false, true, false);
+                UUID.randomUUID(), new EventSpawnSafetyPolicy.Point(world, 0, 64, 0),
+                false, true, false);
         check(!EventSpawnSafetyPolicy.tooCloseToRelevantPlayer(
                 new EventSpawnSafetyPolicy.Point(world, 1, 64, 0), List.of(vanished),
-                96, 0, true, true, true), "vanished player ignored by policy");
+                192, 0, true, true, false),
+                "vanished player ignored by policy");
     }
 
     private static void verifiesBoundedCandidateSearch() {
         final List<EventSpawnSafetyPolicy.Offset> candidates =
-                EventSpawnSafetyPolicy.candidates(24, 96, 256, 42);
-        check(candidates.size() == 24, "bounded attempt count");
+                EventSpawnSafetyPolicy.candidates(32, 256, 512, 42);
+        check(candidates.size() == 32, "expanded bounded attempt count");
         for (final EventSpawnSafetyPolicy.Offset offset : candidates) {
             final double distance = Math.hypot(offset.x(), offset.z());
-            check(distance >= 96 - 1.0E-9 && distance <= 256 + 1.0E-9,
-                    "candidate remains inside configured annulus");
+            check(distance >= 256 - 1.0E-9 && distance <= 512 + 1.0E-9,
+                    "candidate remains outside visibility annulus");
         }
-        check(candidates.equals(EventSpawnSafetyPolicy.candidates(24, 96, 256, 42)),
+        check(candidates.equals(EventSpawnSafetyPolicy.candidates(32, 256, 512, 42)),
                 "candidate order deterministic");
     }
 
@@ -80,13 +103,25 @@ public final class EventSpawnSafetyRegressionSuite {
         check(radius == EventSpawnSafetyPolicy.waterProbeOffsets(4),
                 "water probe mask must be cached and immutable per bounded radius");
         check(EventSpawnSafetyPolicy.waterProbeOffsets(100).stream()
-                        .allMatch(offset -> offset.x() * offset.x() + offset.z() * offset.z() <= 32 * 32),
+                        .allMatch(offset -> offset.x() * offset.x()
+                                + offset.z() * offset.z() <= 32 * 32),
                 "water buffer radius must be bounded against accidental quadratic explosions");
     }
 
-    private static void verifiesWaterSafetyRuntimeWiring() throws Exception {
+    private static void verifiesSafetyDefaultsAndRuntimeWiring() throws Exception {
         final YamlConfiguration config = YamlConfiguration.loadConfiguration(Path.of(
                 "src/main/resources/config/event-spawn-safety.yml").toFile());
+        check(config.getDouble("world-events.safety.min-horizontal-distance-blocks") >= 192.0D,
+                "events must default beyond normal entity visibility");
+        check(!config.getBoolean("world-events.safety.ignore-admins", true),
+                "visible admins must count as players by default");
+        check(config.getInt("world-events.safety.search-attempts") >= 32,
+                "distant search needs enough bounded candidates");
+        check(config.getDouble("world-events.safety.search-min-radius-blocks") >= 256.0D,
+                "player-anchored search must begin beyond 16 chunks");
+        check(config.getDouble("world-events.safety.search-max-radius-blocks") >= 512.0D,
+                "search must have room to escape protected or wet terrain");
+
         check(config.getBoolean("world-events.water-safety.enabled"),
                 "world-event water safety must default to enabled");
         check(config.getBoolean("world-events.water-safety.enforce-all-events"),
@@ -104,8 +139,13 @@ public final class EventSpawnSafetyRegressionSuite {
                         && guard.contains("findSafeAtOrNear")
                         && guard.contains("EventSpawnSafetyPolicy.waterProbeOffsets")
                         && guard.contains("reserveAfterSurfaceValidation")
-                        && guard.contains("WATER_OR_SHORE"),
-                "central surface resolver lost waterlogged/shoreline enforcement");
+                        && guard.contains("WATER_OR_SHORE")
+                        && guard.contains("min-horizontal-distance-blocks\", 192.0D")
+                        && guard.contains("ignore-admins\", false")
+                        && guard.contains("search-attempts\", 32")
+                        && guard.contains("search-min-radius-blocks\", 256.0D")
+                        && guard.contains("search-max-radius-blocks\", 512.0D"),
+                "central guard lost safe player-distance or shoreline fallbacks");
 
         final String caravan = read("src/main/java/hu/taliann/icesmp/managers/CaravanManager.java");
         check(caravan.contains("findSafeAtOrNear(\"caravan\"")
@@ -114,7 +154,7 @@ public final class EventSpawnSafetyRegressionSuite {
                         && caravan.contains("synchronized boolean forceArrive")
                         && !caravan.contains("getHighestBlockYAt")
                         && !caravan.contains("topOf("),
-                "merchant caravan may bypass the central dry-location resolver or double-launch");
+                "merchant caravan may bypass the central location resolver or double-launch");
 
         final String playerCaravan = read(
                 "src/main/java/hu/taliann/icesmp/managers/PlayerCaravanManager.java");
@@ -129,43 +169,67 @@ public final class EventSpawnSafetyRegressionSuite {
         final String configManager = read(
                 "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java");
         check(configManager.contains("\"event-spawn-safety\""),
-                "water-safety subsystem is not loaded on existing deployments");
+                "event-spawn safety subsystem is not loaded on existing deployments");
     }
 
-    private static void verifiesEveryKnownEntityEventUsesDryPlacement() throws Exception {
+    private static void verifiesEveryKnownEntityEventUsesGuardedPlacement() throws Exception {
         final String ambient = read(
                 "src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java");
-        check(ambient.contains("resolveSafeStandingLocation(\"animal-migration\"")
-                        && section(ambient, "private void spawnHerd", "private void rewardParticipants")
-                        .indexOf("getHighestBlockYAt") < 0,
-                "ambient animal migration may still spawn a herd on water");
+        final String herd = section(ambient,
+                "private void animalMigration", "private void rewardParticipants");
+        check(herd.contains("findSafeNear(\"animal-migration\"")
+                        && herd.contains("resolveSafeStandingLocation(\"animal-migration\"")
+                        && herd.contains("isBlocked(\"animal-migration\"")
+                        && !herd.contains("getHighestBlockYAt"),
+                "ambient animal migration may still appear beside a player or on water");
 
         final String cultists = read(
                 "src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java");
         final String cultistSpawner = section(cultists,
                 "private void spawnCultist", "private void prepareCultist");
-        check(cultists.contains("resolveSafeStandingLocation(\"cultists\"")
+        check(cultists.contains("findSafeNear(\"cultists\"")
+                        && cultists.contains("findSafeAtOrNear(\"cultists\"")
                         && cultistSpawner.contains("resolveSafeStandingLocation")
+                        && cultistSpawner.contains("isBlocked(\"cultists\"")
                         && !cultistSpawner.contains("getHighestBlockYAt"),
-                "cultist offset spawns may bypass dry placement");
+                "cultist center or offset spawns may bypass distant dry placement");
 
-        assertContains("WildHuntManager.java", "isUnsafeSurface(\"wild-hunt\"");
-        assertContains("InvasionManager.java", "isUnsafeSurface(\"invasion\"");
+        final String wildHunt = read(
+                "src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java");
+        final String wildSpawn = section(wildHunt,
+                "private synchronized boolean spawn", "private void escape");
+        check(wildSpawn.contains("findSafeNear(\"wild-hunt\"")
+                        && wildSpawn.contains("isBlocked(\"wild-hunt\"")
+                        && !wildSpawn.contains("getHighestBlockYAt"),
+                "Wild Hunt may visibly pop in beside its anchor");
+
+        final String meteor = read(
+                "src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java");
+        final String meteorSpawn = section(meteor,
+                "private synchronized boolean spawn", "private void carve");
+        check(meteorSpawn.contains("findSafeNear(\"meteor\"")
+                        && meteorSpawn.contains("isBlocked(\"meteor\"")
+                        && !meteorSpawn.contains("meteor.spawn-radius"),
+                "meteor may still use the old visible 90-block landing square");
+
+        assertContains("InvasionManager.java", "findSafeNear(\"invasion\"");
+        assertContains("WorldBossManager.java", "findSafeNear(\"world-boss\"");
         assertContains("CorruptionManager.java", "isUnsafeSurface(\"corruption\"");
         assertContains("StrangerNpcManager.java", "isUnsafeSurface(\"stranger\"");
         assertContains("EscortManager.java", "isUnsafeSurface(\"escort\"");
-        assertContains("WorldBossManager.java", "findSafeNear(\"world-boss\"");
     }
 
     private static void assertContains(final String file, final String marker) throws Exception {
         final String source = read("src/main/java/hu/taliann/icesmp/managers/" + file);
-        check(source.contains(marker), "known event spawn path lost central dry guard: " + file);
+        check(source.contains(marker),
+                "known event spawn path lost central guard: " + file);
     }
 
     private static String section(final String source, final String start, final String end) {
         final int from = source.indexOf(start);
         final int to = source.indexOf(end, Math.max(0, from + start.length()));
-        check(from >= 0 && to > from, "source section missing: " + start + " -> " + end);
+        check(from >= 0 && to > from,
+                "source section missing: " + start + " -> " + end);
         return source.substring(from, to);
     }
 
