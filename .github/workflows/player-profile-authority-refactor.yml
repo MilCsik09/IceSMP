@@ -1,20 +1,19 @@
-name: PlayerProfile full authority refactor
+name: PlayerProfile full authority validation
 
 on:
   pull_request:
     branches:
       - profile/player-profile-platform
     types: [opened, synchronize, reopened]
-  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: read
 
 jobs:
   authority-contract:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'profile/player-profile-full-authority'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
       - name: Checkout exact authority branch
@@ -22,7 +21,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -42,17 +41,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: true
-
-      - name: Apply pending authority waves
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/apply_player_profile_intro_onboarding_wave.py
-          python3 scripts/apply_player_profile_intro_regression.py
-          python3 scripts/apply_player_profile_repository_enumeration_wave.py
-          python3 scripts/apply_player_profile_statistics_wave.py
-          python3 scripts/apply_player_profile_faction_food_wave.py
-          git diff --check
 
       - name: Enforce removed legacy stores and new contracts
         shell: bash
@@ -80,14 +68,10 @@ jobs:
           grep -F 'PlayerProfileFactionFoodStore' \
             src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java
 
-      - name: Rebuild exact authority contract
+      - name: Validate exact authority contract
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/check_player_profile_authority.py \
-            --root . \
-            --update-allowlist \
-            --reclassify-all
           python3 scripts/check_player_profile_authority.py \
             --root . \
             --write-report build/player-profile-authority-current.json
@@ -110,38 +94,3 @@ jobs:
             /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile section extension regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
-
-      - name: Commit validated pending authority waves
-        shell: bash
-        env:
-          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
-          TARGET_BRANCH: profile/player-profile-full-authority
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
-          test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
-          git add -- \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileIntroStore.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileStatisticsStore.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionFoodStore.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java \
-            src/main/java/hu/taliann/icesmp/managers/IntroManager.java \
-            src/main/java/hu/taliann/icesmp/managers/StatsManager.java \
-            src/main/java/hu/taliann/icesmp/listeners/IntroListener.java \
-            src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java \
-            src/regression/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileIntroStoreRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileStatisticsStoreRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionFoodStoreRegressionSuite.java \
-            src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepositoryEnumerationRegressionSuite.java \
-            build.gradle.kts \
-            scripts/player_profile_authority_allowlist.json
-          if git diff --cached --quiet; then
-            echo 'Pending authority waves are already current.'
-            exit 0
-          fi
-          git diff --cached --check
-          git commit -m 'feat(profile): move onboarding statistics and faction food to PlayerProfile'
-          git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
