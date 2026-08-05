@@ -14,7 +14,7 @@ permissions:
 jobs:
   authority-contract:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'profile/player-profile-full-authority'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
       - name: Checkout exact authority branch
