@@ -234,6 +234,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
     private final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager;
     private final hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform playerProfilePlatform;
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority playerProfileAuthority;
     private final hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository classSpecSectionRepository;
     private final hu.taliann.icesmp.classspec.application.ProfileSessionRegistry profileSessionRegistry;
     private final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway classSpecProfileGateway;
@@ -573,6 +574,9 @@ public final class IceSMPCore {
         // UTÁN köthető (korábbi hívásuk null-mezőn robbant volna a konstruktorban).
         this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
         this.playerProfilePlatform = new hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform(plugin, configManager);
+        this.playerProfileAuthority = hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.install(
+                playerProfilePlatform.service(), playerProfilePlatform.repository(),
+                playerProfilePlatform.transactions());
         this.classSpecSectionRepository = new hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository(
                 playerProfilePlatform.repository());
         this.profileSessionRegistry = new hu.taliann.icesmp.classspec.application.ProfileSessionRegistry();
@@ -1168,6 +1172,10 @@ public final class IceSMPCore {
         if (!enableCompleted) {
             plugin.getLogger().severe("IceSMP enable did not complete — skipping stateful manager shutdown "
                     + "and persistent-store writes to protect the last durable state.");
+            if (hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed()
+                    .filter(installed -> installed == playerProfileAuthority).isPresent()) {
+                playerProfileAuthority.uninstall();
+            }
             return;
         }
         if (moderationExpiryTask != null) {
@@ -1197,6 +1205,7 @@ public final class IceSMPCore {
                 plugin.getLogger().severe("PlayerProfile disable drain incomplete: " + shutdown.detail());
                 return;
             }
+            playerProfileAuthority.uninstall();
         } catch (final InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             plugin.getLogger().severe("PlayerProfile disable interrupted: " + interrupted);
