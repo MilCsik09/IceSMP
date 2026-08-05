@@ -36,7 +36,7 @@ public final class ConfigMenuRootGUI {
     }
 
     public static void openRoot(final Player player) {
-        final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 1;
+        final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 2;
         if (categoryCount > CATEGORY_SLOTS.length) {
             throw new IllegalStateException("Az admin config-főmenü kategóriakapacitása elfogyott: "
                     + categoryCount + "/" + CATEGORY_SLOTS.length);
@@ -56,13 +56,22 @@ public final class ConfigMenuRootGUI {
             holder.bind(slot, "CAT:" + category.id());
         }
 
-        final int regenSlot = CATEGORY_SLOTS[index];
+        final int regenSlot = CATEGORY_SLOTS[index++];
         inventory.setItem(regenSlot, tile(Material.TNT,
                 "&bRobbanás és világregeneráció",
                 List.of("&7" + BlockRegenConfigMenuGUI.entryCount() + " kulcs",
                         "&7Zónák, claimek, időzítés, effektek",
                         "&eKattints a megnyitáshoz")));
         holder.bind(regenSlot, BlockRegenConfigMenuGUI.ROOT_ACTION);
+
+        final int operationalSlot = CATEGORY_SLOTS[index];
+        inventory.setItem(operationalSlot, tile(Material.REDSTONE_TORCH,
+                "&bÜzemeltetés és finomhangolás",
+                List.of("&7" + OperationalConfigMenuGUI.categoryCount() + " alkategória",
+                        "&7" + OperationalConfigMenuGUI.entryCount() + " élő kulcs",
+                        "&7HUD, AFK, petek, piac és moderáció",
+                        "&eKattints a megnyitáshoz")));
+        holder.bind(operationalSlot, OperationalConfigMenuGUI.ROOT_ACTION);
 
         inventory.setItem(53, tile(Material.BARRIER, "&cBezárás", List.of()));
         holder.bind(53, "CLOSE");
