@@ -42,6 +42,17 @@ jobs:
         with:
           cache-read-only: true
 
+      - name: Map profession and talent mutation call sites
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== Profession mutation call sites ==='
+          grep -R -n --include='*.java' -E '\.(selectProfession|setProfession|clearProfession|setXp|addXp|addXpFor|learnRecipe)\(' \
+            src/main src/regression || true
+          echo '=== Talent mutation call sites ==='
+          grep -R -n --include='*.java' -E '\.(grantBonusPoints|spendPoint|refundUnavailableTalents)\(' \
+            src/main src/regression || true
+
       - name: Apply deterministic authority patches
         shell: bash
         run: |
