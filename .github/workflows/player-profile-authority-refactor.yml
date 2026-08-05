@@ -42,18 +42,10 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Apply deterministic authority patches
+      - name: Apply pending asynchronous authority cleanup
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/apply_player_profile_full_authority_wave1.py
-          python3 scripts/apply_player_profile_conditional_mutation.py
-          python3 scripts/apply_player_profile_mastery_wave.py
-          python3 scripts/apply_player_profile_talent_storage_wave.py
-          python3 scripts/apply_player_profile_talent_call_sites.py
-          python3 scripts/apply_player_profile_profession_callsite_wave.py
-          python3 scripts/apply_player_profile_profession_weekly_reward.py
-          python3 scripts/apply_player_profile_extension_regression_task.py
           python3 scripts/apply_player_profile_async_bridge_cleanup.py
           git diff --check
 
@@ -100,7 +92,7 @@ jobs:
           grep -F 'Profession profile state regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
 
-      - name: Commit validated authority wave
+      - name: Commit validated authority cleanup
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -112,34 +104,15 @@ jobs:
           git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
           git add -- \
-            src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileService.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAuthority.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSpellGrantStore.java \
-            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileTalentStore.java \
-            src/main/java/hu/taliann/icesmp/classspec/domain/SpellGrantLedger.java \
             src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java \
-            src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java \
             src/main/java/hu/taliann/icesmp/managers/JobManager.java \
             src/main/java/hu/taliann/icesmp/managers/TalentManager.java \
-            src/main/java/hu/taliann/icesmp/managers/QuestManager.java \
             src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java \
-            src/main/java/hu/taliann/icesmp/managers/ProfessionWeeklyGoalManager.java \
-            src/main/java/hu/taliann/icesmp/managers/RespecService.java \
-            src/main/java/hu/taliann/icesmp/commands/SpellCommand.java \
-            src/main/java/hu/taliann/icesmp/commands/TalentCommand.java \
-            src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java \
-            src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java \
             src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java \
-            src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java \
-            src/main/java/hu/taliann/icesmp/listeners/ProfessionXpListener.java \
             src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java \
-            src/main/java/hu/taliann/icesmp/listeners/CharacterGUIListener.java \
-            src/main/java/hu/taliann/icesmp/listeners/BlueprintUseListener.java \
-            build.gradle.kts \
             scripts/player_profile_authority_allowlist.json
           if git diff --cached --quiet; then
-            echo 'Authority wave is already current.'
+            echo 'Async authority cleanup is already current.'
             exit 0
           fi
           git diff --cached --check
