@@ -14,6 +14,11 @@ world-events:
     search-attempts: 32
     search-min-radius-blocks: 256.0
     search-max-radius-blocks: 512.0
+    # false: a kereső aszinkron betöltheti a már legenerált, de éppen inaktív chunkokat.
+    # Nincs szinkron chunk-load a régiószálon.
+    require-loaded-chunk: false
+    # false: a keresés nem növeli a világot; csak korábban legenerált chunkot tölthet vissza.
+    generate-unloaded-chunks: false
 
   water-safety:
     # Bekapcsolva minden world-event spawnhely száraz, stabil talajt igényel.
