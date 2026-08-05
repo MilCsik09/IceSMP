@@ -71,7 +71,7 @@ public final class AdvancedConfigEntryRenderer {
                 name = "&b" + entry.label();
                 lore.add("&7Legfeljebb &f" + entry.maxItems() + " elem"
                         + "&7, elemenként &f" + entry.maxLength() + " karakter");
-                lore.add("&7Az elemeket a chatben &f| &7jellel válaszd el.");
+                lore.add("&7Az elemeket a chatben &f;; &7jellel válaszd el.");
                 lore.add("");
                 lore.add("&eKattintás: biztonságos lista-bevitel");
             }
