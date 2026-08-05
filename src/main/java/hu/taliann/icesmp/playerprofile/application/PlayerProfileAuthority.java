@@ -1,11 +1,14 @@
 package hu.taliann.icesmp.playerprofile.application;
 
-import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot;
 import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSection;
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSectionExtensions;
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepository;
 import hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -87,12 +90,83 @@ public final class PlayerProfileAuthority {
         return type.cast(section.value());
     }
 
+    public Object extension(final UUID playerId,
+                            final ProfileSectionId sectionId,
+                            final String key) {
+        final String normalized = requireExtensionKey(key);
+        final var section = requireCached(playerId).section(sectionId).orElseThrow(() ->
+                new ProfileNotReadyException(playerId, "PlayerProfile section is absent: " + sectionId.id()));
+        if (!section.health().usable()) {
+            throw new ProfileNotReadyException(playerId,
+                    "PlayerProfile section is unavailable: " + sectionId.id() + ": "
+                            + section.health().diagnostic());
+        }
+        return section.value().extensions().get(normalized);
+    }
+
+    public Optional<String> stringExtension(final UUID playerId,
+                                            final ProfileSectionId sectionId,
+                                            final String key) {
+        return Optional.ofNullable(extension(playerId, sectionId, key))
+                .filter(String.class::isInstance)
+                .map(String.class::cast);
+    }
+
+    public Optional<Long> longExtension(final UUID playerId,
+                                        final ProfileSectionId sectionId,
+                                        final String key) {
+        return Optional.ofNullable(extension(playerId, sectionId, key))
+                .filter(Number.class::isInstance)
+                .map(Number.class::cast)
+                .map(Number::longValue);
+    }
+
+    public Optional<Boolean> booleanExtension(final UUID playerId,
+                                              final ProfileSectionId sectionId,
+                                              final String key) {
+        return Optional.ofNullable(extension(playerId, sectionId, key))
+                .filter(Boolean.class::isInstance)
+                .map(Boolean.class::cast);
+    }
+
     public <T extends PlayerProfileSection> CompletionStage<PlayerProfileSnapshot> mutateSection(
             final UUID playerId,
             final ProfileSectionId sectionId,
             final Class<T> type,
             final UnaryOperator<T> mutation) {
         return service.mutateSection(playerId, sectionId, type, mutation);
+    }
+
+    public <T extends PlayerProfileSection> CompletionStage<PlayerProfileSnapshot> mutateExtensions(
+            final UUID playerId,
+            final ProfileSectionId sectionId,
+            final Class<T> type,
+            final UnaryOperator<Map<String, Object>> mutation) {
+        Objects.requireNonNull(mutation, "mutation");
+        return mutateSection(playerId, sectionId, type,
+                current -> PlayerProfileSectionExtensions.mutate(current, extensions -> {
+                    final Map<String, Object> next = mutation.apply(
+                            new LinkedHashMap<>(extensions));
+                    return Map.copyOf(Objects.requireNonNull(next, "extension mutation result"));
+                }));
+    }
+
+    public <T extends PlayerProfileSection> CompletionStage<PlayerProfileSnapshot> putExtension(
+            final UUID playerId,
+            final ProfileSectionId sectionId,
+            final Class<T> type,
+            final String key,
+            final Object value) {
+        final String normalized = requireExtensionKey(key);
+        return mutateExtensions(playerId, sectionId, type, extensions -> {
+            final LinkedHashMap<String, Object> next = new LinkedHashMap<>(extensions);
+            if (value == null) {
+                next.remove(normalized);
+            } else {
+                next.put(normalized, value);
+            }
+            return next;
+        });
     }
 
     public <T> CompletionStage<T> transact(
@@ -107,6 +181,18 @@ public final class PlayerProfileAuthority {
 
     public PlayerProfileTransactionManager transactions() {
         return transactions;
+    }
+
+    private static String requireExtensionKey(final String key) {
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("extension key cannot be blank");
+        }
+        final String normalized = key.trim().toLowerCase(java.util.Locale.ROOT);
+        if (normalized.length() > 128
+                || !normalized.matches("[a-z0-9][a-z0-9._:-]*")) {
+            throw new IllegalArgumentException("invalid extension key: " + key);
+        }
+        return normalized;
     }
 
     public static final class ProfileNotReadyException extends IllegalStateException {
