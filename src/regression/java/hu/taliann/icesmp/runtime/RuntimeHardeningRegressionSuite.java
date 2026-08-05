@@ -130,9 +130,11 @@ public final class RuntimeHardeningRegressionSuite {
                 "polygon point input is capped and footprint conflict checks avoid rectangle materialization");
         check(claim.contains("private static int inclusiveWorldMaxY")
                         && claim.contains("hasStoredYBounds")
+                        && claim.contains("hasMinY != hasMaxY")
+                        && claim.contains("Claim Y bounds are incomplete")
                         && claim.contains("Y-határ nélküli claim teljes világmagasságra migrálva")
                         && claim.contains("parts.length != 3"),
-                "claim persistence keeps inclusive world bounds and safely upgrades legacy/X-Z-only data");
+                "claim persistence keeps inclusive world bounds, rejects partial Y data and upgrades X-Z-only data");
         check(claim.contains("catch (final IllegalArgumentException malformedTrusted)")
                         && claim.contains("catch (final RuntimeException exception)"),
                 "one malformed trust or claim entry cannot abort the full claim load");
@@ -193,6 +195,10 @@ public final class RuntimeHardeningRegressionSuite {
                         && display.contains("spawnBlockDisplay(plugin, corner, block, despawnTicks, viewer")
                         && !display.contains("if (viewer != null) showOnlyTo(plugin, display, viewer);"),
                 "private displays establish pre-tracking privacy and mutate only on owned Folia entity regions");
+        final String ambient = source("src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java");
+        check(ambient.contains("DisplayFxUtil.spawnBlockDisplayForViewer")
+                        && !ambient.contains("DisplayFxUtil.showOnlyTo(plugin, display, player)"),
+                "aurora veil uses pre-tracking viewer-private display spawning");
         check(!claim.contains("baseY = location.getY()"),
                 "claim display wall is never anchored to viewer Y");
         final String generalConfig = source("src/main/resources/config/general.yml");
