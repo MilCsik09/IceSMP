@@ -17,8 +17,10 @@ import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.managers.ModerationManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SinManager;
+import hu.taliann.icesmp.managers.VanishManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
@@ -57,7 +59,7 @@ public final class ConfigRuntimeReloadBridge {
                 }
                 if (key.equals("factions.tax.enabled")
                         || key.equals("factions.tax.interval-minutes")) {
-                    rescheduleTaxes(core);
+                    reschedule(core, "scheduleTaxCollection", "taxTask");
                 }
                 if (key.startsWith("dev-items.csodalatos_bingulus.")) {
                     field(core, "devItemManager", DevItemManager.class).refreshOnlineOwner();
@@ -97,6 +99,27 @@ public final class ConfigRuntimeReloadBridge {
                 if (key.equals("factions.whisper.decay-minutes")) {
                     resetLongField(field(core, "whisperManager", Object.class), "nextDecayAt");
                 }
+
+                // Operational menu: fixed-period drivers are cancelled and recreated from the
+                // freshly published config generation. All other values are read by their consumer
+                // on the next already-scheduled tick/event.
+                if (key.equals("hud.refresh-ticks")
+                        || key.equals("tablist.refresh-ticks")) {
+                    reschedule(core, "scheduleHud", "hudTask", "tablistTask");
+                }
+                if (key.equals("pets.companion.tick-ticks")) {
+                    reschedule(core, "schedulePetCombat", "petTask");
+                }
+                if (key.equals("currency.economy-event.check-interval-minutes")) {
+                    reschedule(core, "scheduleEconomyEvents", "economyEventTask");
+                }
+                if (key.startsWith("moderation.")) {
+                    field(core, "moderationManager", ModerationManager.class)
+                            .reloadConfiguration();
+                    if (key.startsWith("moderation.vanish.")) {
+                        field(core, "vanishManager", VanishManager.class).refreshAll();
+                    }
+                }
             } catch (final ReflectiveOperationException | RuntimeException failure) {
                 plugin.getLogger().severe("A config élő alkalmazása sikertelen (" + key
                         + "): " + failure);
@@ -118,7 +141,12 @@ public final class ConfigRuntimeReloadBridge {
                 || key.equals("city-guards.step-seconds")
                 || key.equals("factions.food-duty.enabled")
                 || key.equals("factions.food-duty.check-minutes")
-                || key.equals("factions.whisper.decay-minutes");
+                || key.equals("factions.whisper.decay-minutes")
+                || key.equals("hud.refresh-ticks")
+                || key.equals("tablist.refresh-ticks")
+                || key.equals("pets.companion.tick-ticks")
+                || key.equals("currency.economy-event.check-interval-minutes")
+                || key.startsWith("moderation.");
     }
 
     private static void reloadRelics(final JavaPlugin plugin, final Object core,
@@ -190,17 +218,20 @@ public final class ConfigRuntimeReloadBridge {
                 || listener instanceof RelicPvpTransferListener;
     }
 
-    private static void rescheduleTaxes(final Object core)
+    /** Cancels the old task fields first, then invokes the private core scheduler exactly once. */
+    private static void reschedule(final Object core, final String scheduleMethod,
+                                   final String... taskFields)
             throws ReflectiveOperationException {
-        final Field taskField = core.getClass().getDeclaredField("taxTask");
-        taskField.setAccessible(true);
-        final Object current = taskField.get(core);
-        if (current instanceof ScheduledTask scheduledTask) {
-            scheduledTask.cancel();
+        for (final String taskFieldName : taskFields) {
+            final Field taskField = core.getClass().getDeclaredField(taskFieldName);
+            taskField.setAccessible(true);
+            final Object current = taskField.get(core);
+            if (current instanceof ScheduledTask scheduledTask) {
+                scheduledTask.cancel();
+            }
+            taskField.set(core, null);
         }
-        taskField.set(core, null);
-
-        final Method schedule = core.getClass().getDeclaredMethod("scheduleTaxCollection");
+        final Method schedule = core.getClass().getDeclaredMethod(scheduleMethod);
         schedule.setAccessible(true);
         schedule.invoke(core);
     }
