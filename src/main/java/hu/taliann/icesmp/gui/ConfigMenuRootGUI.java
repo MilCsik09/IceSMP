@@ -33,12 +33,14 @@ public final class ConfigMenuRootGUI {
 
     public static int categoryCapacity() {
         OperationalConfigSchemaGuard.validate();
+        AdvancedConfigSchemaGuard.validate();
         return CATEGORY_SLOTS.length;
     }
 
     public static void openRoot(final Player player) {
         OperationalConfigSchemaGuard.validate();
-        final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 2;
+        AdvancedConfigSchemaGuard.validate();
+        final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 4;
         if (categoryCount > CATEGORY_SLOTS.length) {
             throw new IllegalStateException("Az admin config-főmenü kategóriakapacitása elfogyott: "
                     + categoryCount + "/" + CATEGORY_SLOTS.length);
@@ -66,7 +68,7 @@ public final class ConfigMenuRootGUI {
                         "&eKattints a megnyitáshoz")));
         holder.bind(regenSlot, BlockRegenConfigMenuGUI.ROOT_ACTION);
 
-        final int operationalSlot = CATEGORY_SLOTS[index];
+        final int operationalSlot = CATEGORY_SLOTS[index++];
         inventory.setItem(operationalSlot, tile(Material.REDSTONE_TORCH,
                 "&bÜzemeltetés és finomhangolás",
                 List.of("&7" + OperationalConfigMenuGUI.categoryCount() + " alkategória",
@@ -74,6 +76,24 @@ public final class ConfigMenuRootGUI {
                         "&7HUD, AFK, petek, piac és moderáció",
                         "&eKattints a megnyitáshoz")));
         holder.bind(operationalSlot, OperationalConfigMenuGUI.ROOT_ACTION);
+
+        final int serverWorldSlot = CATEGORY_SLOTS[index++];
+        inventory.setItem(serverWorldSlot, tile(Material.COMMAND_BLOCK,
+                "&bSzerver, világ és szöveges értékek",
+                List.of("&7" + ServerWorldConfigMenuGUI.entryCount() + " élő kulcs",
+                        "&7Gamerule, világ-driver, HUD-szöveg, listák",
+                        "&7Biztonságos chat-alapú String/lista editor",
+                        "&eKattints a megnyitáshoz")));
+        holder.bind(serverWorldSlot, ServerWorldConfigMenuGUI.ROOT_ACTION);
+
+        final int crateSlot = CATEGORY_SLOTS[index];
+        inventory.setItem(crateSlot, tile(Material.CHEST,
+                "&bNatív crate-editor",
+                List.of("&7Crate-alapbeállítások és rewardok",
+                        "&7Strukturált, copy-on-write jutalomszerkesztés",
+                        "&7Lapozható dinamikus crate-lista",
+                        "&eKattints a megnyitáshoz")));
+        holder.bind(crateSlot, CrateConfigMenuGUI.ROOT_ACTION);
 
         inventory.setItem(53, tile(Material.BARRIER, "&cBezárás", List.of()));
         holder.bind(53, "CLOSE");
