@@ -8,6 +8,7 @@ import hu.taliann.icesmp.gui.AdvancedConfigEntryRenderer;
 import hu.taliann.icesmp.gui.AdvancedConfigPolicy;
 import hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigChatInputGate;
+import hu.taliann.icesmp.gui.ConfigEditSession;
 import hu.taliann.icesmp.gui.ConfigMenuEntryRenderer;
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigMenuHolder;
@@ -18,6 +19,9 @@ import hu.taliann.icesmp.gui.GuiUtil;
 import hu.taliann.icesmp.gui.OperationalConfigMenuGUI;
 import hu.taliann.icesmp.gui.OperationalConfigPolicy;
 import hu.taliann.icesmp.gui.ServerWorldConfigMenuGUI;
+import hu.taliann.icesmp.gui.TransactionalConfigMenuGUI;
+import hu.taliann.icesmp.gui.TransactionalCrateConfigMenuGUI;
+import hu.taliann.icesmp.gui.TransactionalOperationalConfigMenuGUI;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ConfigValidator;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -29,23 +33,22 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-/**
- * Az admin config-menü kattintás-kezelője. Minden írás a config.yml override-rétegbe
- * kerül; a görgőkattintás (és survival-kompatibilis tartalékban a Q) ezt a konkrét
- * override-ot törli, ezért a subsystem YAML aktuális alapértéke lép vissza.
- */
+/** Transactional, Folia-safe admin config GUI including text/list and structured crate editors. */
 public final class ConfigMenuGUIListener implements Listener {
 
     public static final String PERMISSION = "icesmp.admin.config";
@@ -55,17 +58,16 @@ public final class ConfigMenuGUIListener implements Listener {
     @FunctionalInterface
     private interface InputCommit {
         /** @return null on success, otherwise a player-facing error. */
-        String commit(Player player, Object value);
+        String commit(Object value);
     }
 
     private record InputSession(AdvancedConfigEntry entry, String returnCategory,
-                                InputCommit commit, Consumer<Player> defaultAction,
-                                long expiresAt) {
-    }
+                                InputCommit commit, Runnable defaultAction, long expiresAt) { }
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final Map<UUID, ConfigEditSession> sessions = new ConcurrentHashMap<>();
     private final Map<UUID, InputSession> inputSessions = new ConcurrentHashMap<>();
     private volatile Consumer<String> configChangeHook;
 
@@ -85,594 +87,454 @@ public final class ConfigMenuGUIListener implements Listener {
             player.sendMessage(messageManager.get("no-permission", "&cNincs jogosultságod ehhez."));
             return;
         }
-        ConfigMenuRootGUI.openRoot(player);
+        final ConfigEditSession session = captureSession();
+        sessions.put(player.getUniqueId(), session);
+        ConfigMenuRootGUI.openRoot(player, session);
+    }
+
+    private ConfigEditSession captureSession() {
+        final ConfigManager.ConfigSnapshot snapshot = configManager.snapshot();
+        final Set<String> keys = new LinkedHashSet<>();
+        ConfigMenuGUI.CATEGORIES.values().forEach(category ->
+                category.entries().forEach(entry -> keys.add(entry.key())));
+        BlockRegenConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
+        TransactionalOperationalConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
+        ServerWorldConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
+        TransactionalCrateConfigMenuGUI.globalEntries().forEach(entry -> keys.add(entry.key()));
+        for (final String crateId : CrateConfigMenuGUI.crateIds(configManager)) {
+            CrateConfigMenuGUI.entriesFor(crateId).forEach(entry -> keys.add(entry.key()));
+            keys.add(CrateRewardEditor.path(crateId));
+        }
+        final Map<String, Object> values = new LinkedHashMap<>();
+        final Map<String, Object> defaults = new LinkedHashMap<>();
+        for (final String key : keys) {
+            values.put(key, snapshot.configuration() == null ? null : snapshot.configuration().get(key));
+            defaults.put(key, snapshot.baseValue(key));
+        }
+        return new ConfigEditSession(snapshot.generation(), snapshot.sourceFingerprint(), values, defaults);
     }
 
     @EventHandler
     public void onClick(final InventoryClickEvent event) {
-        if (!(event.getView().getTopInventory().getHolder() instanceof ConfigMenuHolder holder)) {
-            return;
-        }
+        if (!(event.getView().getTopInventory().getHolder() instanceof ConfigMenuHolder holder)) return;
         event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player player)
                 || !player.getUniqueId().equals(holder.getOwnerId())
                 || event.getClickedInventory() != event.getView().getTopInventory()
-                || !player.hasPermission(PERMISSION)) {
-            return;
-        }
-
-        final String action = holder.actionAt(event.getSlot());
-        if (action == null) {
-            return;
-        }
-        if ("CLOSE".equals(action)) {
+                || !player.hasPermission(PERMISSION)) return;
+        final ConfigEditSession session = sessions.get(player.getUniqueId());
+        if (session == null) {
             player.closeInventory();
             return;
         }
-        if ("BACK".equals(action)) {
-            openBack(player, holder.getCategory());
-            return;
+        final String action = holder.actionAt(event.getSlot());
+        if (action == null) return;
+
+        switch (action) {
+            case "CLOSE", "CANCEL" -> {
+                discard(player, session);
+                return;
+            }
+            case "SAVE" -> {
+                save(player, session);
+                return;
+            }
+            case "BACK" -> {
+                openBack(player, holder.getCategory(), session);
+                return;
+            }
+            default -> { }
         }
         if (BlockRegenConfigMenuGUI.ROOT_ACTION.equals(action)) {
-            BlockRegenConfigMenuGUI.open(player, configManager);
-            return;
+            BlockRegenConfigMenuGUI.open(player, configManager, session); return;
         }
         if (OperationalConfigMenuGUI.ROOT_ACTION.equals(action)) {
-            OperationalConfigMenuGUI.openRoot(player);
-            return;
+            TransactionalOperationalConfigMenuGUI.openRoot(player, session); return;
         }
         if (ServerWorldConfigMenuGUI.ROOT_ACTION.equals(action)) {
-            ServerWorldConfigMenuGUI.open(player, configManager);
-            return;
+            ServerWorldConfigMenuGUI.open(player, configManager, session); return;
         }
         if (CrateConfigMenuGUI.ROOT_ACTION.equals(action)) {
-            CrateConfigMenuGUI.openRoot(player, configManager, 0);
-            return;
+            TransactionalCrateConfigMenuGUI.openRoot(player, configManager, session, 0); return;
         }
         if (action.startsWith(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX)) {
-            OperationalConfigMenuGUI.openCategory(player,
+            TransactionalOperationalConfigMenuGUI.openCategory(player,
                     action.substring(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX.length()),
-                    configManager);
-            return;
+                    configManager, session); return;
         }
         if (action.startsWith("CAT:")) {
-            ConfigMenuGUI.openCategory(player, action.substring(4), configManager);
-            return;
+            TransactionalConfigMenuGUI.openCategory(player, action.substring(4), configManager, session); return;
         }
-
-        if (handleCrateAction(player, holder, action, event)) {
-            return;
-        }
+        if (handleCrateAction(player, holder, session, action, event)) return;
         if (action.startsWith(ServerWorldConfigMenuGUI.ENTRY_ACTION_PREFIX)
                 || action.startsWith(CrateConfigMenuGUI.ENTRY_ACTION_PREFIX)) {
-            final String key = action.substring(action.indexOf(':') + 1);
-            handleAdvancedEntry(player, holder, key, event);
-            return;
+            handleAdvancedEntry(player, holder, session,
+                    action.substring(action.indexOf(':') + 1), event); return;
         }
 
         final String key = action.substring(action.indexOf(':') + 1);
         ConfigMenuGUI.Entry entry = ConfigMenuGUI.findEntry(key);
-        if (entry == null) {
-            entry = BlockRegenConfigMenuGUI.findEntry(key);
-        }
-        if (entry == null) {
-            entry = OperationalConfigMenuGUI.findEntry(key);
-        }
-        if (entry == null) {
-            return;
-        }
-
+        if (entry == null) entry = BlockRegenConfigMenuGUI.findEntry(key);
+        if (entry == null) entry = TransactionalOperationalConfigMenuGUI.findEntry(key);
+        if (entry == null) return;
         if (event.isMiddleClick() || event.getClick() == ClickType.DROP) {
-            resetOverride(player, key, entry);
-            reopenView(player, holder.getCategory());
-            return;
+            session.reset(key);
+        } else {
+            final Object next = nextScalar(entry, session.value(key), event.isShiftClick(), event.isRightClick());
+            final String problem = OperationalConfigPolicy.validate(key, next, configManager);
+            if (problem != null) { reject(player, problem); return; }
+            session.stage(key, next);
         }
+        reopenView(player, holder.getCategory(), session);
+        GuiUtil.sound(player, GuiUtil.GuiSound.CLICK);
+    }
 
-        final Object current = ConfigMenuEntryRenderer.currentValue(entry, configManager);
-        final Object newValue;
-        switch (entry.type()) {
-            case TOGGLE -> newValue = !Boolean.TRUE.equals(current);
+    private static Object nextScalar(final ConfigMenuGUI.Entry entry, final Object currentValue,
+                                     final boolean shift, final boolean rightClick) {
+        return switch (entry.type()) {
+            case TOGGLE -> !(currentValue instanceof Boolean value && value);
             case CYCLE -> {
-                final String currentOption = String.valueOf(current).toLowerCase(Locale.ROOT);
-                final int index = entry.options().indexOf(currentOption);
-                newValue = entry.options().get(
-                        (index + 1) % Math.max(1, entry.options().size()));
+                if (entry.options().isEmpty()) yield "";
+                final String current = String.valueOf(currentValue).toLowerCase(Locale.ROOT);
+                int index = -1;
+                for (int i = 0; i < entry.options().size(); i++) {
+                    if (entry.options().get(i).toLowerCase(Locale.ROOT).equals(current)) { index = i; break; }
+                }
+                yield entry.options().get((index + 1) % entry.options().size());
             }
             default -> {
-                final double step = entry.step()
-                        * (event.isShiftClick() ? 5.0D : 1.0D)
-                        * (event.isRightClick() ? -1.0D : 1.0D);
-                final double next = Math.min(entry.max(), Math.max(entry.min(),
-                        ConfigMenuEntryRenderer.currentDouble(entry, configManager) + step));
-                newValue = entry.type() == ConfigMenuGUI.EntryType.INTEGER
-                        ? (Object) (int) Math.round(next) : (Object) next;
+                final double current = currentValue instanceof Number number ? number.doubleValue() : entry.min();
+                final double step = entry.step() * (shift ? 5.0D : 1.0D) * (rightClick ? -1.0D : 1.0D);
+                final double next = Math.min(entry.max(), Math.max(entry.min(), current + step));
+                yield entry.type() == ConfigMenuGUI.EntryType.INTEGER ? (int) Math.round(next) : next;
             }
-        }
-
-        final String validationProblem =
-                OperationalConfigPolicy.validate(key, newValue, configManager);
-        if (validationProblem != null) {
-            rejectInvalidCombination(player, validationProblem);
-            reopenView(player, holder.getCategory());
-            return;
-        }
-
-        applyOverride(player, key, newValue);
-        reopenView(player, holder.getCategory());
+        };
     }
 
     private void handleAdvancedEntry(final Player player, final ConfigMenuHolder holder,
-                                     final String key, final InventoryClickEvent event) {
+                                     final ConfigEditSession session, final String key,
+                                     final InventoryClickEvent event) {
         AdvancedConfigEntry entry = ServerWorldConfigMenuGUI.findEntry(key);
-        if (entry == null) {
-            entry = CrateConfigMenuGUI.findEntry(key, configManager);
-        }
-        if (entry == null) {
-            return;
-        }
-
+        if (entry == null) entry = TransactionalCrateConfigMenuGUI.findEntry(key, configManager);
+        if (entry == null) return;
         if (event.isMiddleClick() || event.getClick() == ClickType.DROP) {
-            resetAdvancedOverride(player, entry);
-            reopenView(player, holder.getCategory());
+            session.reset(key);
+            reopenView(player, holder.getCategory(), session);
             return;
         }
         if (entry.type() == AdvancedConfigEntry.Type.TEXT
                 || entry.type() == AdvancedConfigEntry.Type.STRING_LIST) {
-            beginAdvancedInput(player, entry, holder.getCategory());
+            beginAdvancedInput(player, session, entry, holder.getCategory());
             return;
         }
-
-        final Object current = AdvancedConfigEntryRenderer.currentValue(entry, configManager);
-        final Object next;
-        switch (entry.type()) {
-            case TOGGLE -> next = !Boolean.TRUE.equals(current);
+        final Object current = session.value(key);
+        final Object next = switch (entry.type()) {
+            case TOGGLE -> !(current instanceof Boolean value && value);
             case CYCLE -> {
-                final int index = entry.options().indexOf(String.valueOf(current));
-                next = entry.options().get((index + 1) % entry.options().size());
+                int index = entry.options().indexOf(String.valueOf(current));
+                yield entry.options().get((index + 1) % entry.options().size());
             }
             case NUMBER, INTEGER -> {
-                final double delta = entry.step()
-                        * (event.isShiftClick() ? 5.0D : 1.0D)
+                final double number = current instanceof Number value ? value.doubleValue() : entry.min();
+                final double delta = entry.step() * (event.isShiftClick() ? 5.0D : 1.0D)
                         * (event.isRightClick() ? -1.0D : 1.0D);
-                final double bounded = Math.max(entry.min(), Math.min(entry.max(),
-                        AdvancedConfigEntryRenderer.currentDouble(entry, configManager) + delta));
-                next = entry.type() == AdvancedConfigEntry.Type.INTEGER
-                        ? (Object) (int) Math.round(bounded) : bounded;
+                final double bounded = Math.max(entry.min(), Math.min(entry.max(), number + delta));
+                yield entry.type() == AdvancedConfigEntry.Type.INTEGER ? (int) Math.round(bounded) : bounded;
             }
-            default -> throw new IllegalStateException("Szöveges entry nem kerülhet scalar ágba.");
-        }
+            default -> throw new IllegalStateException("Text input reached scalar branch");
+        };
         final String problem = AdvancedConfigPolicy.validate(entry, next, configManager);
-        if (problem != null) {
-            rejectInvalidCombination(player, problem);
-            reopenView(player, holder.getCategory());
-            return;
-        }
-        applyAdvancedOverride(player, entry.key(), next, entry.label());
-        reopenView(player, holder.getCategory());
+        if (problem != null) { reject(player, problem); return; }
+        session.stage(key, next);
+        reopenView(player, holder.getCategory(), session);
     }
 
-    private void beginAdvancedInput(final Player player, final AdvancedConfigEntry entry,
-                                    final String returnCategory) {
-        final Object current = AdvancedConfigEntryRenderer.currentValue(entry, configManager);
+    private void beginAdvancedInput(final Player player, final ConfigEditSession session,
+                                    final AdvancedConfigEntry entry, final String returnCategory) {
         beginInput(player, entry, returnCategory,
-                (target, value) -> {
+                value -> {
                     final String problem = AdvancedConfigPolicy.validate(entry, value, configManager);
-                    if (problem != null) {
-                        return problem;
-                    }
-                    applyAdvancedOverride(target, entry.key(), value, entry.label());
+                    if (problem != null) return problem;
+                    session.stage(entry.key(), value);
                     return null;
-                }, target -> resetAdvancedOverride(target, entry));
+                }, () -> session.reset(entry.key()));
         player.sendMessage(messageManager.get("admin.icesmp.config.input-current",
-                "&7Jelenlegi érték: &f%s", String.valueOf(current)));
+                "&7Jelenlegi staged érték: &f%s", String.valueOf(session.value(entry.key()))));
     }
 
     private boolean handleCrateAction(final Player player, final ConfigMenuHolder holder,
-                                      final String action, final InventoryClickEvent event) {
+                                      final ConfigEditSession session, final String action,
+                                      final InventoryClickEvent event) {
         if (CrateConfigMenuGUI.GLOBAL_ACTION.equals(action)) {
-            CrateConfigMenuGUI.openGlobal(player, configManager);
-            return true;
+            TransactionalCrateConfigMenuGUI.openGlobal(player, configManager, session); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.ROOT_PAGE_ACTION_PREFIX)) {
-            CrateConfigMenuGUI.openRoot(player, configManager,
-                    parseInt(action.substring(CrateConfigMenuGUI.ROOT_PAGE_ACTION_PREFIX.length()), 0));
-            return true;
+            TransactionalCrateConfigMenuGUI.openRoot(player, configManager, session,
+                    parseInt(action.substring(CrateConfigMenuGUI.ROOT_PAGE_ACTION_PREFIX.length()), 0)); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.OPEN_ACTION_PREFIX)) {
-            CrateConfigMenuGUI.openCrate(player, configManager,
-                    action.substring(CrateConfigMenuGUI.OPEN_ACTION_PREFIX.length()));
-            return true;
+            TransactionalCrateConfigMenuGUI.openCrate(player, configManager, session,
+                    action.substring(CrateConfigMenuGUI.OPEN_ACTION_PREFIX.length())); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.REWARDS_ACTION_PREFIX)) {
             final String[] parts = action.substring(CrateConfigMenuGUI.REWARDS_ACTION_PREFIX.length()).split(":");
-            CrateConfigMenuGUI.openRewards(player, configManager, parts[0],
-                    parts.length > 1 ? parseInt(parts[1], 0) : 0);
-            return true;
+            TransactionalCrateConfigMenuGUI.openRewards(player, configManager, session, parts[0],
+                    parts.length > 1 ? parseInt(parts[1], 0) : 0); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.REWARD_OPEN_ACTION_PREFIX)) {
             final String[] parts = action.substring(CrateConfigMenuGUI.REWARD_OPEN_ACTION_PREFIX.length()).split(":");
-            CrateConfigMenuGUI.openReward(player, configManager, parts[0], parseInt(parts[1], 0));
-            return true;
+            TransactionalCrateConfigMenuGUI.openReward(player, configManager, session, parts[0], parseInt(parts[1], 0)); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.REWARD_ADD_ACTION_PREFIX)) {
             final String crateId = action.substring(CrateConfigMenuGUI.REWARD_ADD_ACTION_PREFIX.length());
-            final CrateRewardEditor.Mutation mutation = CrateRewardEditor.addItem(configManager, crateId);
-            if (!applyRewardMutation(player, crateId, mutation, "Új tárgyjutalom hozzáadva")) {
-                reopenView(player, holder.getCategory());
-                return true;
-            }
-            final int index = CrateRewardEditor.rewards(configManager, crateId).size() - 1;
-            CrateConfigMenuGUI.openReward(player, configManager, crateId, Math.max(0, index));
-            return true;
+            final CrateRewardEditor.Mutation mutation = CrateRewardEditor.addItem(session.value(CrateRewardEditor.path(crateId)));
+            if (!stageRewardMutation(player, session, crateId, mutation)) return true;
+            TransactionalCrateConfigMenuGUI.openReward(player, configManager, session, crateId, mutation.rewards().size() - 1); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.REWARD_DELETE_ACTION_PREFIX)) {
             final String[] parts = action.substring(CrateConfigMenuGUI.REWARD_DELETE_ACTION_PREFIX.length()).split(":");
-            final String crateId = parts[0];
-            final int index = parseInt(parts[1], -1);
-            final CrateRewardEditor.Mutation mutation = CrateRewardEditor.delete(configManager, crateId, index);
-            if (applyRewardMutation(player, crateId, mutation, "Reward törölve")) {
-                CrateConfigMenuGUI.openRewards(player, configManager, crateId, Math.max(0, index / 45));
-            } else {
-                reopenView(player, holder.getCategory());
+            final String crateId = parts[0]; final int index = parseInt(parts[1], -1);
+            if (stageRewardMutation(player, session, crateId,
+                    CrateRewardEditor.delete(session.value(CrateRewardEditor.path(crateId)), index))) {
+                TransactionalCrateConfigMenuGUI.openRewards(player, configManager, session, crateId, Math.max(0, index / 45));
             }
             return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.REWARD_NUMBER_ACTION_PREFIX)) {
             final String[] parts = action.substring(CrateConfigMenuGUI.REWARD_NUMBER_ACTION_PREFIX.length()).split(":");
-            final String crateId = parts[0];
-            final int index = parseInt(parts[1], -1);
-            final String field = parts[2];
-            final Map<String, Object> reward = CrateRewardEditor.reward(configManager, crateId, index);
+            final String crateId = parts[0]; final int index = parseInt(parts[1], -1); final String field = parts[2];
+            final Object raw = session.value(CrateRewardEditor.path(crateId));
+            final Map<String, Object> reward = CrateRewardEditor.reward(raw, index);
             final String type = CrateRewardEditor.type(reward);
             final double current = CrateRewardEditor.numericValue(reward, field, 1.0D);
-            final double unit = "weight".equals(field) ? 1.0D
-                    : "currency".equals(type) ? 25.0D : 1.0D;
-            final double delta = unit * (event.isShiftClick() ? 5.0D : 1.0D)
-                    * (event.isRightClick() ? -1.0D : 1.0D);
-            final double minimum = "weight".equals(field) || "currency".equals(type)
-                    ? Math.nextUp(0.0D) : 1.0D;
+            final double unit = "weight".equals(field) ? 1.0D : "currency".equals(type) ? 25.0D : 1.0D;
+            final double delta = unit * (event.isShiftClick() ? 5.0D : 1.0D) * (event.isRightClick() ? -1.0D : 1.0D);
+            final double minimum = "weight".equals(field) || "currency".equals(type) ? 0.01D : 1.0D;
             final double maximum = "weight".equals(field) ? CrateRules.MAX_WEIGHT
-                    : "currency".equals(type) ? CrateRules.MAX_CURRENCY_REWARD
-                    : CrateRules.MAX_REWARD_ITEM_AMOUNT;
-            final CrateRewardEditor.Mutation mutation = CrateRewardEditor.setNumber(
-                    configManager, crateId, index, field,
-                    Math.max(minimum, Math.min(maximum, current + delta)));
-            applyRewardMutation(player, crateId, mutation, "Reward számérték frissítve");
-            CrateConfigMenuGUI.openReward(player, configManager, crateId, index);
-            return true;
+                    : "currency".equals(type) ? CrateRules.MAX_CURRENCY_REWARD : CrateRules.MAX_REWARD_ITEM_AMOUNT;
+            stageRewardMutation(player, session, crateId,
+                    CrateRewardEditor.setNumber(raw, index, field, Math.max(minimum, Math.min(maximum, current + delta))));
+            TransactionalCrateConfigMenuGUI.openReward(player, configManager, session, crateId, index); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.REWARD_CURRENCY_ACTION_PREFIX)) {
             final String[] parts = action.substring(CrateConfigMenuGUI.REWARD_CURRENCY_ACTION_PREFIX.length()).split(":");
-            final String crateId = parts[0];
-            final int index = parseInt(parts[1], -1);
-            applyRewardMutation(player, crateId,
-                    CrateRewardEditor.cycleCurrency(configManager, crateId, index),
-                    "Reward valuta frissítve");
-            CrateConfigMenuGUI.openReward(player, configManager, crateId, index);
-            return true;
+            final String crateId = parts[0]; final int index = parseInt(parts[1], -1);
+            stageRewardMutation(player, session, crateId,
+                    CrateRewardEditor.cycleCurrency(session.value(CrateRewardEditor.path(crateId)), index));
+            TransactionalCrateConfigMenuGUI.openReward(player, configManager, session, crateId, index); return true;
         }
         if (action.startsWith(CrateConfigMenuGUI.REWARD_TEXT_ACTION_PREFIX)) {
             final String[] parts = action.substring(CrateConfigMenuGUI.REWARD_TEXT_ACTION_PREFIX.length()).split(":");
-            final String crateId = parts[0];
-            final int index = parseInt(parts[1], -1);
-            final String field = parts[2];
-            beginRewardTextInput(player, holder.getCategory(), crateId, index, field);
-            return true;
+            beginRewardTextInput(player, session, holder.getCategory(), parts[0], parseInt(parts[1], -1), parts[2]); return true;
         }
         return false;
     }
 
-    private void beginRewardTextInput(final Player player, final String returnCategory,
-                                      final String crateId, final int index, final String field) {
-        final Map<String, Object> reward = CrateRewardEditor.reward(configManager, crateId, index);
-        final int maxLength = "command".equals(field) ? CrateRules.MAX_COMMAND_LENGTH
-                : "material".equals(field) ? 64 : 512;
-        final boolean allowBlank = "description".equals(field);
-        final String pattern = "material".equals(field) ? "[A-Za-z0-9_:.-]+" : "";
-        final AdvancedConfigEntry entry = AdvancedConfigEntry.text(
-                "crate-reward." + crateId + "." + index + "." + field,
-                "Reward " + field, maxLength, allowBlank, pattern,
-                "A reward strukturált " + field + " mezőjének szerkesztése.");
+    private boolean stageRewardMutation(final Player player, final ConfigEditSession session,
+                                        final String crateId, final CrateRewardEditor.Mutation mutation) {
+        if (!mutation.successful()) { reject(player, mutation.error()); return false; }
+        session.stage(CrateRewardEditor.path(crateId), mutation.rewards());
+        GuiUtil.sound(player, GuiUtil.GuiSound.CLICK);
+        return true;
+    }
+
+    private void beginRewardTextInput(final Player player, final ConfigEditSession session,
+                                      final String returnCategory, final String crateId,
+                                      final int index, final String field) {
+        final Map<String, Object> reward = CrateRewardEditor.reward(session.value(CrateRewardEditor.path(crateId)), index);
+        final int maxLength = "command".equals(field) ? CrateRules.MAX_COMMAND_LENGTH : "material".equals(field) ? 64 : 512;
+        final AdvancedConfigEntry entry = AdvancedConfigEntry.text("crate-reward." + crateId + "." + index + "." + field,
+                "Reward " + field, maxLength, "description".equals(field),
+                "material".equals(field) ? "[A-Za-z0-9_:.-]+" : "",
+                "A reward strukturált " + field + " mezőjének staged szerkesztése.");
         beginInput(player, entry, returnCategory,
-                (target, value) -> {
+                value -> {
                     final String generic = AdvancedConfigPolicy.validate(entry, value, configManager);
-                    if (generic != null) {
-                        return generic;
-                    }
+                    if (generic != null) return generic;
                     final CrateRewardEditor.Mutation mutation = CrateRewardEditor.setText(
-                            configManager, crateId, index, field, String.valueOf(value));
-                    if (!mutation.successful()) {
-                        return mutation.error();
-                    }
-                    applyRawOverride(target, CrateRewardEditor.path(crateId), mutation.rewards(),
-                            "Reward " + field + " frissítve");
+                            session.value(CrateRewardEditor.path(crateId)), index, field, String.valueOf(value));
+                    if (!mutation.successful()) return mutation.error();
+                    session.stage(CrateRewardEditor.path(crateId), mutation.rewards());
                     return null;
                 }, null);
         player.sendMessage(messageManager.get("admin.icesmp.config.input-current",
-                "&7Jelenlegi érték: &f%s", String.valueOf(reward.getOrDefault(field, ""))));
+                "&7Jelenlegi staged érték: &f%s", String.valueOf(reward.getOrDefault(field, ""))));
     }
 
     private void beginInput(final Player player, final AdvancedConfigEntry entry,
                             final String returnCategory, final InputCommit commit,
-                            final Consumer<Player> defaultAction) {
-        inputSessions.put(player.getUniqueId(), new InputSession(entry, returnCategory,
-                commit, defaultAction, System.currentTimeMillis() + INPUT_TIMEOUT_MILLIS));
+                            final Runnable defaultAction) {
+        inputSessions.put(player.getUniqueId(), new InputSession(entry, returnCategory, commit,
+                defaultAction, System.currentTimeMillis() + INPUT_TIMEOUT_MILLIS));
         ConfigChatInputGate.open(player.getUniqueId());
         player.closeInventory();
-        final String mode = entry.type() == AdvancedConfigEntry.Type.STRING_LIST
-                ? "A listaelemeket ';;' jellel válaszd el. " : "";
         player.sendMessage(messageManager.get("admin.icesmp.config.input-start",
-                "&b✎ %s&7 szerkesztése. %sÍrd be az új értéket a chatbe.",
-                entry.label(), mode));
+                "&b✎ %s&7 staged szerkesztése. %sÍrd be az új értéket a chatbe.", entry.label(),
+                entry.type() == AdvancedConfigEntry.Type.STRING_LIST ? "A listaelemeket ';;' jellel válaszd el. " : ""));
         player.sendMessage(messageManager.get("admin.icesmp.config.input-controls",
-                "&7Vezérlés: &f!cancel &7= mégse, &f!default &7= alapérték, "
-                        + "&f!empty &7= üres érték/lista. Időkorlát: 120 mp."));
+                "&7Vezérlés: &f!cancel &7= mégse, &f!default &7= staged reset, &f!empty &7= üres érték/lista. Időkorlát: 120 mp."));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onChatInput(final AsyncChatEvent event) {
         final Player player = event.getPlayer();
-        final InputSession session = inputSessions.get(player.getUniqueId());
-        if (session == null) {
-            return;
-        }
+        final InputSession input = inputSessions.get(player.getUniqueId());
+        if (input == null) return;
         event.setCancelled(true);
         final String raw = PLAIN.serialize(event.message()).strip();
-        if (System.currentTimeMillis() > session.expiresAt()) {
-            inputSessions.remove(player.getUniqueId(), session);
-            ConfigChatInputGate.close(player.getUniqueId());
-            schedulePlayer(player, () -> {
-                player.sendMessage(messageManager.get("admin.icesmp.config.input-expired",
-                        "&cA config-beviteli munkamenet lejárt."));
-                reopenView(player, session.returnCategory());
-            });
+        if (System.currentTimeMillis() > input.expiresAt()) {
+            closeInput(player.getUniqueId(), input);
+            schedulePlayer(player, () -> { player.sendMessage("§cA config-beviteli munkamenet lejárt."); reopenView(player, input.returnCategory(), sessions.get(player.getUniqueId())); });
             return;
         }
         if (raw.equalsIgnoreCase("!cancel")) {
-            inputSessions.remove(player.getUniqueId(), session);
-            ConfigChatInputGate.close(player.getUniqueId());
-            schedulePlayer(player, () -> reopenView(player, session.returnCategory()));
+            closeInput(player.getUniqueId(), input);
+            schedulePlayer(player, () -> reopenView(player, input.returnCategory(), sessions.get(player.getUniqueId())));
             return;
         }
         if (raw.equalsIgnoreCase("!default")) {
-            if (session.defaultAction() == null) {
-                notifyInputError(player, session,
-                        "Ehhez a strukturált mezőhöz nincs külön alaphelyzet parancs.");
-                return;
-            }
-            inputSessions.remove(player.getUniqueId(), session);
-            ConfigChatInputGate.close(player.getUniqueId());
-            schedulePlayer(player, () -> {
-                session.defaultAction().accept(player);
-                reopenView(player, session.returnCategory());
-            });
+            if (input.defaultAction() == null) { inputError(player, "Ehhez a strukturált mezőhöz nincs külön reset."); return; }
+            input.defaultAction().run(); closeInput(player.getUniqueId(), input);
+            schedulePlayer(player, () -> reopenView(player, input.returnCategory(), sessions.get(player.getUniqueId())));
             return;
         }
-
         final Object parsed;
-        if (session.entry().type() == AdvancedConfigEntry.Type.STRING_LIST) {
-            if (raw.equalsIgnoreCase("!empty")) {
-                parsed = List.of();
-            } else {
+        if (input.entry().type() == AdvancedConfigEntry.Type.STRING_LIST) {
+            if (raw.equalsIgnoreCase("!empty")) parsed = List.of();
+            else {
                 final LinkedHashSet<String> unique = new LinkedHashSet<>();
-                for (final String item : raw.split("\\s*;;\\s*")) {
-                    final String value = item.strip();
-                    if (!value.isEmpty()) {
-                        unique.add(value);
-                    }
-                }
+                for (final String part : raw.split("\\s*;;\\s*")) if (!part.strip().isEmpty()) unique.add(part.strip());
                 parsed = List.copyOf(unique);
             }
-        } else {
-            parsed = raw.equalsIgnoreCase("!empty") ? "" : raw;
-        }
-
-        final String generic = AdvancedConfigPolicy.validate(session.entry(), parsed, configManager);
-        if (generic != null) {
-            notifyInputError(player, session, generic);
-            return;
-        }
-
-        inputSessions.remove(player.getUniqueId(), session);
-        ConfigChatInputGate.close(player.getUniqueId());
-        schedulePlayer(player, () -> {
-            final String error = session.commit().commit(player, parsed);
-            if (error != null) {
-                inputSessions.put(player.getUniqueId(), session);
-                ConfigChatInputGate.open(player.getUniqueId());
-                player.sendMessage(messageManager.get("admin.icesmp.config.input-invalid",
-                        "&c⚠ %s", error));
-                player.sendMessage(messageManager.get("admin.icesmp.config.input-retry",
-                        "&7A munkamenet aktív maradt; írd be újra, vagy használd a !cancel parancsot."));
-                GuiUtil.sound(player, GuiUtil.GuiSound.ERROR);
-                return;
-            }
-            reopenView(player, session.returnCategory());
-        });
+        } else parsed = raw.equalsIgnoreCase("!empty") ? "" : raw;
+        final String generic = AdvancedConfigPolicy.validate(input.entry(), parsed, configManager);
+        if (generic != null) { inputError(player, generic); return; }
+        final String error = input.commit().commit(parsed);
+        if (error != null) { inputError(player, error); return; }
+        closeInput(player.getUniqueId(), input);
+        schedulePlayer(player, () -> reopenView(player, input.returnCategory(), sessions.get(player.getUniqueId())));
     }
 
-    private void notifyInputError(final Player player, final InputSession session,
-                                  final String error) {
+    private void inputError(final Player player, final String error) {
         schedulePlayer(player, () -> {
-            player.sendMessage(messageManager.get("admin.icesmp.config.input-invalid",
-                    "&c⚠ %s", error));
-            player.sendMessage(messageManager.get("admin.icesmp.config.input-retry",
-                    "&7A munkamenet aktív maradt; írd be újra, vagy használd a !cancel parancsot."));
+            player.sendMessage(messageManager.get("admin.icesmp.config.input-invalid", "&c⚠ %s", error));
+            player.sendMessage("§7A staged munkamenet aktív maradt; írd be újra, vagy !cancel.");
             GuiUtil.sound(player, GuiUtil.GuiSound.ERROR);
         });
     }
 
-    @EventHandler
-    public void onQuit(final PlayerQuitEvent event) {
-        inputSessions.remove(event.getPlayer().getUniqueId());
-        ConfigChatInputGate.close(event.getPlayer().getUniqueId());
+    private void closeInput(final UUID id, final InputSession session) {
+        inputSessions.remove(id, session);
+        ConfigChatInputGate.close(id);
     }
 
-    private boolean applyRewardMutation(final Player player, final String crateId,
-                                        final CrateRewardEditor.Mutation mutation,
-                                        final String label) {
-        if (!mutation.successful()) {
-            rejectInvalidCombination(player, mutation.error());
-            return false;
-        }
-        applyRawOverride(player, CrateRewardEditor.path(crateId), mutation.rewards(), label);
-        return true;
-    }
-
-    private void resetOverride(final Player player, final String key,
-                               final ConfigMenuGUI.Entry entry) {
-        final Object fallback = ConfigMenuEntryRenderer.defaultValue(entry, configManager);
-        final String validationProblem =
-                OperationalConfigPolicy.validate(key, fallback, configManager);
-        if (validationProblem != null) {
-            rejectInvalidCombination(player, validationProblem);
+    private void save(final Player player, final ConfigEditSession session) {
+        if (!session.dirty()) {
+            sessions.remove(player.getUniqueId(), session); player.closeInventory();
+            player.sendMessage(messageManager.get("admin.icesmp.config.no-changes", "&7Nincs mentendő config módosítás."));
             return;
         }
-
-        final boolean changed = configManager.resetOverride(key);
-        afterConfigMutation(key);
-        final String resolved = ConfigMenuEntryRenderer.formatCurrent(entry, configManager);
-        sendResetResult(player, key, resolved, changed);
+        final Map<String, Object> changes = session.pendingChanges();
+        sessions.remove(player.getUniqueId(), session);
+        ConfigChatInputGate.close(player.getUniqueId());
+        player.closeInventory();
+        plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
+            final ConfigManager.BatchApplyResult result = configManager.applyOverridesIfUnchanged(
+                    session.expectedGeneration(), session.expectedFingerprint(), changes);
+            plugin.getServer().getGlobalRegionScheduler().run(plugin, global -> {
+                if (result == ConfigManager.BatchApplyResult.APPLIED) applyHooks(changes.keySet());
+                player.getScheduler().run(plugin, playerTask -> finishSave(player, result, changes.size()), null);
+            });
+        });
     }
 
-    private void resetAdvancedOverride(final Player player, final AdvancedConfigEntry entry) {
-        final Object fallback = AdvancedConfigEntryRenderer.defaultValue(entry, configManager);
-        final String problem = AdvancedConfigPolicy.validate(entry, fallback, configManager);
-        if (problem != null) {
-            rejectInvalidCombination(player, problem);
-            return;
-        }
-        final boolean changed = configManager.resetOverride(entry.key());
-        afterConfigMutation(entry.key());
-        sendResetResult(player, entry.key(),
-                AdvancedConfigEntryRenderer.formatCurrent(entry, configManager), changed);
-    }
-
-    private void sendResetResult(final Player player, final String key,
-                                 final String resolved, final boolean changed) {
-        if (changed) {
-            player.sendMessage(messageManager.get("admin.icesmp.config.reset-success",
-                    "&a↺ &6%s &7visszaállítva az alapértékre: &f%s &7(azonnal él)",
-                    key, resolved));
-            GuiUtil.sound(player, GuiUtil.GuiSound.SUCCESS);
-        } else {
-            player.sendMessage(messageManager.get("admin.icesmp.config.reset-not-overridden",
-                    "&7↺ &6%s &7már az alapkonfigurációt használja: &f%s", key, resolved));
-            GuiUtil.sound(player, GuiUtil.GuiSound.CLICK);
+    private void applyHooks(final Set<String> changedKeys) {
+        messageManager.reload();
+        ConfigValidator.validate(configManager, plugin.getLogger());
+        for (final String key : changedKeys) {
+            final Consumer<String> hook = configChangeHook;
+            if (hook != null) hook.accept(key);
+            if (key.startsWith("spell-vfx.")) {
+                hu.taliann.icesmp.utils.SpellVfx.configure(configManager.getBoolean("spell-vfx.enabled", true),
+                        configManager.getInt("spell-vfx.max-points", 48));
+            }
+            ConfigRuntimeReloadBridge.apply(plugin, configManager, key);
+            AdvancedConfigRuntimeBridge.apply(plugin, configManager, key);
         }
     }
 
-    private void rejectInvalidCombination(final Player player, final String problem) {
-        player.sendMessage(messageManager.get("admin.icesmp.config.invalid-combination",
-                "&c⚠ %s", problem));
+    private void finishSave(final Player player, final ConfigManager.BatchApplyResult result, final int count) {
+        switch (result) {
+            case APPLIED -> player.sendMessage(messageManager.get("admin.icesmp.config.batch-success",
+                    "&a⚙ &f%s &akulcs mentve egy tranzakcióban.", count));
+            case NO_CHANGES -> player.sendMessage("§7Nincs ténylegesen megváltozott config érték.");
+            case STALE -> player.sendMessage("§cA config közben megváltozott. Nyisd meg újra; semmi nem lett felülírva.");
+        }
+    }
+
+    private void discard(final Player player, final ConfigEditSession session) {
+        sessions.remove(player.getUniqueId(), session);
+        final InputSession input = inputSessions.remove(player.getUniqueId());
+        if (input != null) ConfigChatInputGate.close(player.getUniqueId());
+        player.closeInventory();
+        player.sendMessage(messageManager.get("admin.icesmp.config.cancelled", "&7Config módosítások elvetve."));
+    }
+
+    private void reject(final Player player, final String problem) {
+        player.sendMessage(messageManager.get("admin.icesmp.config.invalid-combination", "&c⚠ %s", problem));
         GuiUtil.sound(player, GuiUtil.GuiSound.ERROR);
     }
 
-    private void applyOverride(final Player player, final String key, final Object value) {
-        applyRawOverride(player, key, value, key);
-    }
-
-    private void applyAdvancedOverride(final Player player, final String key,
-                                       final Object value, final String label) {
-        applyRawOverride(player, key, value, label);
-    }
-
-    private void applyRawOverride(final Player player, final String key,
-                                  final Object value, final String label) {
-        configManager.applyOverride(key, value);
-        afterConfigMutation(key);
-        player.sendMessage(messageManager.get("admin.icesmp.config.set-success-short",
-                "&a⚙ &6%s &7= &f%s &7(azonnal él)", label, compactValue(value)));
-        GuiUtil.sound(player, GuiUtil.GuiSound.CLICK);
-    }
-
-    private void afterConfigMutation(final String key) {
-        messageManager.reload();
-        ConfigValidator.validate(configManager, plugin.getLogger());
-        applyLiveHooks(key);
-    }
-
-    private void applyLiveHooks(final String key) {
-        final Consumer<String> hook = configChangeHook;
-        if (hook != null) {
-            hook.accept(key);
-        }
-        if (key.startsWith("spell-vfx.")) {
-            hu.taliann.icesmp.utils.SpellVfx.configure(
-                    configManager.getBoolean("spell-vfx.enabled", true),
-                    configManager.getInt("spell-vfx.max-points", 48));
-        }
-        ConfigRuntimeReloadBridge.apply(plugin, configManager, key);
-        AdvancedConfigRuntimeBridge.apply(plugin, configManager, key);
-    }
-
-    private void openBack(final Player player, final String category) {
+    private void openBack(final Player player, final String category, final ConfigEditSession session) {
         if (CrateConfigMenuGUI.isCrateCategory(category)) {
-            CrateConfigMenuGUI.openBack(player, configManager, category);
+            TransactionalCrateConfigMenuGUI.openBack(player, configManager, session, category);
         } else if (ServerWorldConfigMenuGUI.CATEGORY_ID.equals(category)) {
-            ConfigMenuRootGUI.openRoot(player);
+            ConfigMenuRootGUI.openRoot(player, session);
         } else if (OperationalConfigMenuGUI.isOperationalCategory(category)) {
-            OperationalConfigMenuGUI.openRoot(player);
-        } else {
-            ConfigMenuRootGUI.openRoot(player);
-        }
+            TransactionalOperationalConfigMenuGUI.openRoot(player, session);
+        } else ConfigMenuRootGUI.openRoot(player, session);
     }
 
-    private void reopenView(final Player player, final String category) {
-        if (category == null) {
-            ConfigMenuRootGUI.openRoot(player);
-            return;
-        }
-        if (BlockRegenConfigMenuGUI.CATEGORY_ID.equals(category)) {
-            BlockRegenConfigMenuGUI.open(player, configManager);
-            return;
-        }
-        if (ServerWorldConfigMenuGUI.CATEGORY_ID.equals(category)) {
-            ServerWorldConfigMenuGUI.open(player, configManager);
-            return;
-        }
-        if (CrateConfigMenuGUI.isCrateCategory(category)) {
-            CrateConfigMenuGUI.reopen(player, configManager, category);
-            return;
-        }
-        if (OperationalConfigMenuGUI.isOperationalCategory(category)) {
-            OperationalConfigMenuGUI.openCategory(player,
-                    OperationalConfigMenuGUI.categoryIdFromHolder(category), configManager);
-            return;
-        }
-        ConfigMenuGUI.openCategory(player, category, configManager);
+    private void reopenView(final Player player, final String category, final ConfigEditSession session) {
+        if (session == null) return;
+        if (category == null) ConfigMenuRootGUI.openRoot(player, session);
+        else if (BlockRegenConfigMenuGUI.CATEGORY_ID.equals(category)) BlockRegenConfigMenuGUI.open(player, configManager, session);
+        else if (ServerWorldConfigMenuGUI.CATEGORY_ID.equals(category)) ServerWorldConfigMenuGUI.open(player, configManager, session);
+        else if (CrateConfigMenuGUI.isCrateCategory(category)) TransactionalCrateConfigMenuGUI.reopen(player, configManager, session, category);
+        else if (OperationalConfigMenuGUI.isOperationalCategory(category)) TransactionalOperationalConfigMenuGUI.openCategory(player,
+                OperationalConfigMenuGUI.categoryIdFromHolder(category), configManager, session);
+        else TransactionalConfigMenuGUI.openCategory(player, category, configManager, session);
     }
 
     private void schedulePlayer(final Player player, final Runnable action) {
-        player.getScheduler().run(plugin, task -> {
-            if (player.isOnline()) {
-                action.run();
-            }
-        }, null);
-    }
-
-    private static String compactValue(final Object value) {
-        final String raw;
-        if (value instanceof List<?> list) {
-            raw = list.isEmpty() ? "[]" : String.join(" | ", list.stream().map(String::valueOf).toList());
-        } else {
-            raw = String.valueOf(value);
-        }
-        return raw.length() <= 96 ? raw : raw.substring(0, 95) + "…";
+        player.getScheduler().run(plugin, task -> { if (player.isOnline()) action.run(); }, null);
     }
 
     private static int parseInt(final String raw, final int fallback) {
-        try {
-            return Integer.parseInt(raw);
-        } catch (final RuntimeException ignored) {
-            return fallback;
-        }
+        try { return Integer.parseInt(raw); } catch (final RuntimeException ignored) { return fallback; }
     }
 
     @EventHandler
     public void onDrag(final InventoryDragEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof ConfigMenuHolder) {
-            event.setCancelled(true);
-        }
+        if (event.getView().getTopInventory().getHolder() instanceof ConfigMenuHolder) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onClose(final InventoryCloseEvent event) {
+        if (!(event.getInventory().getHolder() instanceof ConfigMenuHolder)
+                || !(event.getPlayer() instanceof Player player)) return;
+        final UUID id = player.getUniqueId();
+        player.getScheduler().runDelayed(plugin, task -> {
+            if (!ConfigChatInputGate.isOpen(id)
+                    && !(player.getOpenInventory().getTopInventory().getHolder() instanceof ConfigMenuHolder)) {
+                sessions.remove(id);
+            }
+        }, null, 1L);
+    }
+
+    @EventHandler
+    public void onQuit(final PlayerQuitEvent event) {
+        final UUID id = event.getPlayer().getUniqueId();
+        sessions.remove(id); inputSessions.remove(id); ConfigChatInputGate.close(id);
     }
 }
