@@ -104,6 +104,14 @@ val configStartupRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.ConfigStartupRegressionSuite")
 }
 
+val operationalConfigMenuRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs operational config menu schema, help, reset and live-apply regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.OperationalConfigMenuRegressionSuite")
+}
+
 val afkRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs global AFK state, display ordering and product-boundary regressions."
@@ -219,9 +227,11 @@ val resourcePackRegressionTest by tasks.registering(JavaExec::class) {
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
-        afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
-        factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
-        relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
-        questNpcValidationRegressionTest, resourcePackRegressionTest)
+        operationalConfigMenuRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
+        territoryCapitalRegressionTest, hudRegressionTest, pauseMenuDialogRegressionTest,
+        runtimeBugfixRegressionTest, factionPassiveRegressionTest,
+        factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
+        relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
+        lifecycleShutdownRegressionTest, questNpcValidationRegressionTest,
+        resourcePackRegressionTest)
 }
