@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +17,9 @@ public final class EventSpawnSafetyPolicy {
     public record PlayerPoint(UUID playerId, Point point, boolean spectator, boolean vanished, boolean admin) { }
 
     public record Offset(double x, double z) { }
+
+    /** Integer column offset used by the shoreline/water buffer scan. */
+    public record GridOffset(int x, int z) { }
 
     public static boolean tooCloseToRelevantPlayer(final Point candidate,
                                                     final Collection<PlayerPoint> players,
@@ -67,6 +71,29 @@ public final class EventSpawnSafetyPolicy {
             final double angle = phase + index * GOLDEN_ANGLE;
             result.add(new Offset(Math.cos(angle) * radius, Math.sin(angle) * radius));
         }
+        return List.copyOf(result);
+    }
+
+    /**
+     * Returns every integer column inside a circular buffer, nearest columns first.
+     * The bounded ordering lets runtime water checks short-circuit quickly while tests
+     * can prove that the center and cardinal boundary are always included.
+     */
+    public static List<GridOffset> waterProbeOffsets(final int radius) {
+        final int bounded = Math.max(0, Math.min(32, radius));
+        final int squared = bounded * bounded;
+        final List<GridOffset> result = new ArrayList<>((bounded * 2 + 1) * (bounded * 2 + 1));
+        for (int x = -bounded; x <= bounded; x++) {
+            for (int z = -bounded; z <= bounded; z++) {
+                if (x * x + z * z <= squared) {
+                    result.add(new GridOffset(x, z));
+                }
+            }
+        }
+        result.sort(Comparator
+                .comparingInt((GridOffset offset) -> offset.x() * offset.x() + offset.z() * offset.z())
+                .thenComparingInt(GridOffset::x)
+                .thenComparingInt(GridOffset::z));
         return List.copyOf(result);
     }
 
