@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Renderer and value resolver for {@link AdvancedConfigEntry}. */
+/** Renderer and staged value resolver for {@link AdvancedConfigEntry}. */
 public final class AdvancedConfigEntryRenderer {
 
     private AdvancedConfigEntryRenderer() {
@@ -16,8 +16,14 @@ public final class AdvancedConfigEntryRenderer {
 
     public static ItemStack render(final AdvancedConfigEntry entry,
                                    final ConfigManager configManager) {
-        final Object current = currentValue(entry, configManager);
-        final Object fallback = defaultValue(entry, configManager);
+        return render(entry, configManager, null);
+    }
+
+    public static ItemStack render(final AdvancedConfigEntry entry,
+                                   final ConfigManager configManager,
+                                   final ConfigEditSession session) {
+        final Object current = currentValue(entry, configManager, session);
+        final Object fallback = defaultValue(entry, configManager, session);
         final List<String> lore = new ArrayList<>();
         lore.add("&8" + entry.key());
         lore.add("");
@@ -27,10 +33,18 @@ public final class AdvancedConfigEntryRenderer {
         lore.add("");
         lore.add("&fJelenleg: &b" + format(entry, current));
         lore.add("&fAlapérték: &a" + format(entry, fallback));
-        lore.add(configManager.hasOverride(entry.key())
-                ? "&eForrás: config.yml felülbírálás"
-                : "&aForrás: subsystem alapkonfiguráció");
-        lore.add("&aAzonnal, restart nélkül alkalmazódik");
+        if (session != null && session.hasPending(entry.key())) {
+            lore.add(session.pendingChanges().get(entry.key()) == null
+                    ? "&dNem mentett reset: subsystem alapérték"
+                    : "&eNem mentett staged módosítás");
+        } else {
+            lore.add(configManager.hasOverride(entry.key())
+                    ? "&eForrás: config.yml felülbírálás"
+                    : "&aForrás: subsystem alapkonfiguráció");
+        }
+        lore.add(requiresHook(entry.key())
+                ? "&eHatás: mentés utáni élő reload-hook"
+                : "&aHatás: mentés után azonnal él");
 
         final Material icon;
         final String name;
@@ -40,14 +54,14 @@ public final class AdvancedConfigEntryRenderer {
                 icon = enabled ? Material.LIME_DYE : Material.GRAY_DYE;
                 name = (enabled ? "&a" : "&c") + entry.label();
                 lore.add("");
-                lore.add("&eBal/jobb katt: be- vagy kikapcsolás");
+                lore.add("&eBal/jobb katt: staged be-/kikapcsolás");
             }
             case CYCLE -> {
                 icon = Material.COMPARATOR;
                 name = "&b" + entry.label();
                 lore.add("&7Választható: &f" + String.join(" / ", entry.options()));
                 lore.add("");
-                lore.add("&eKattintás: következő lehetőség");
+                lore.add("&eKattintás: következő staged lehetőség");
             }
             case NUMBER, INTEGER -> {
                 icon = Material.PAPER;
@@ -64,7 +78,7 @@ public final class AdvancedConfigEntryRenderer {
                 name = "&b" + entry.label();
                 lore.add("&7Maximális hossz: &f" + entry.maxLength() + " karakter");
                 lore.add("");
-                lore.add("&eKattintás: biztonságos chat-bevitel");
+                lore.add("&eKattintás: privát staged chat-bevitel");
             }
             case STRING_LIST -> {
                 icon = Material.WRITABLE_BOOK;
@@ -73,17 +87,24 @@ public final class AdvancedConfigEntryRenderer {
                         + "&7, elemenként &f" + entry.maxLength() + " karakter");
                 lore.add("&7Az elemeket a chatben &f;; &7jellel válaszd el.");
                 lore.add("");
-                lore.add("&eKattintás: biztonságos lista-bevitel");
+                lore.add("&eKattintás: privát staged lista-bevitel");
             }
             default -> throw new IllegalStateException("Ismeretlen advanced config típus");
         }
-        lore.add("&dGörgőkatt/Q: visszaállítás az alapértékre");
+        lore.add("&dGörgőkatt/Q: staged reset az alapértékre");
         return GuiUtil.item(icon, name, lore);
     }
 
     public static Object defaultValue(final AdvancedConfigEntry entry,
                                       final ConfigManager configManager) {
-        final Object value = configManager.getBaseValue(entry.key());
+        return defaultValue(entry, configManager, null);
+    }
+
+    public static Object defaultValue(final AdvancedConfigEntry entry,
+                                      final ConfigManager configManager,
+                                      final ConfigEditSession session) {
+        final Object value = session == null
+                ? configManager.getBaseValue(entry.key()) : session.defaultValue(entry.key());
         if (value != null) {
             return normalize(entry, value);
         }
@@ -99,7 +120,17 @@ public final class AdvancedConfigEntryRenderer {
 
     public static Object currentValue(final AdvancedConfigEntry entry,
                                       final ConfigManager configManager) {
-        final Object fallback = defaultValue(entry, configManager);
+        return currentValue(entry, configManager, null);
+    }
+
+    public static Object currentValue(final AdvancedConfigEntry entry,
+                                      final ConfigManager configManager,
+                                      final ConfigEditSession session) {
+        final Object fallback = defaultValue(entry, configManager, session);
+        if (session != null) {
+            final Object staged = session.value(entry.key());
+            return staged == null ? fallback : normalize(entry, staged);
+        }
         return switch (entry.type()) {
             case TOGGLE -> configManager.getBoolean(entry.key(), Boolean.TRUE.equals(fallback));
             case NUMBER -> configManager.getDouble(entry.key(), ((Number) fallback).doubleValue());
@@ -111,7 +142,13 @@ public final class AdvancedConfigEntryRenderer {
 
     public static double currentDouble(final AdvancedConfigEntry entry,
                                        final ConfigManager configManager) {
-        final Object value = currentValue(entry, configManager);
+        return currentDouble(entry, configManager, null);
+    }
+
+    public static double currentDouble(final AdvancedConfigEntry entry,
+                                       final ConfigManager configManager,
+                                       final ConfigEditSession session) {
+        final Object value = currentValue(entry, configManager, session);
         return value instanceof Number number ? number.doubleValue() : entry.min();
     }
 
@@ -131,6 +168,14 @@ public final class AdvancedConfigEntryRenderer {
             case STRING_LIST -> value instanceof List<?> list
                     ? list.stream().map(String::valueOf).toList() : List.of();
         };
+    }
+
+    private static boolean requiresHook(final String key) {
+        return key.startsWith("crates-settings.") || key.startsWith("crates.")
+                || key.equals("world-events.check-interval-seconds")
+                || key.equals("settings.disable-locator-bar")
+                || key.startsWith("moderation.") || key.startsWith("hud.")
+                || key.startsWith("mob-scaling.");
     }
 
     private static String format(final AdvancedConfigEntry entry, final Object value) {
