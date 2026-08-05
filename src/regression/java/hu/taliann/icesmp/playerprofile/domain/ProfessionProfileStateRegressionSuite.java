@@ -28,7 +28,7 @@ public final class ProfessionProfileStateRegressionSuite {
         final ProfessionType gathering = first(ProfessionCategory.GATHERING);
         final ProfessionType otherGathering = second(ProfessionCategory.GATHERING);
         final ProfessionType crafting = first(ProfessionCategory.CRAFTING);
-        final ProfessionSection empty = ProfessionSection.empty();
+        final ProfessionSection empty = ProfessionSection.empty(0L);
 
         final var selectedGathering = ProfessionProfileState.select(empty, gathering);
         check(selectedGathering.changed(), "first gathering selection changes");
@@ -66,7 +66,7 @@ public final class ProfessionProfileStateRegressionSuite {
 
     private static void experienceAndLevelMirrorAreAtomic() {
         final ProfessionType profession = first(ProfessionCategory.GATHERING);
-        final ProfessionSection empty = ProfessionSection.empty();
+        final ProfessionSection empty = ProfessionSection.empty(0L);
         final var first = ProfessionProfileState.setExperience(empty, profession,
                 100L, 100, 15, 50);
         check(first.changed(), "setting xp changes section");
@@ -97,7 +97,7 @@ public final class ProfessionProfileStateRegressionSuite {
     }
 
     private static void recipesAreCanonicalAndIdempotent() {
-        final ProfessionSection empty = ProfessionSection.empty();
+        final ProfessionSection empty = ProfessionSection.empty(0L);
         final var learned = ProfessionProfileState.learnRecipe(empty, "Iron_Sword");
         check(learned.changed(), "new recipe changes section");
         check(learned.recipeId().equals("iron_sword"), "recipe normalized");
@@ -108,7 +108,7 @@ public final class ProfessionProfileStateRegressionSuite {
     }
 
     private static void invalidInputsFailClosed() {
-        final ProfessionSection empty = ProfessionSection.empty();
+        final ProfessionSection empty = ProfessionSection.empty(0L);
         final ProfessionType secondary = first(ProfessionCategory.SECONDARY);
         final ProfessionType profession = first(ProfessionCategory.GATHERING);
         expect(IllegalArgumentException.class, () -> ProfessionProfileState.select(empty, secondary));
