@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -120,7 +121,7 @@ public final class OperationalConfigMenuGUI {
 
         categories.put("economy", new Category("economy", "Piac és árfolyam",
                 Material.EMERALD, List.of(
-                ConfigMenuGUI.Entry.number("currency.exchange-rate", "Fix árfolyam", 0.05D, 0.0D, 100.0D),
+                ConfigMenuGUI.Entry.number("currency.exchange-rate", "Fix árfolyam", 0.05D, 0.01D, 100.0D),
                 ConfigMenuGUI.Entry.number("currency.exchange-fee-percent", "Valutaváltási díj (%)", 0.5D, 0.0D, 100.0D),
                 ConfigMenuGUI.Entry.toggle("currency.soul-drop.enabled", "Lélekkő-drop"),
                 ConfigMenuGUI.Entry.integer("currency.soul-drop.min-mob-level", "Lélekkő minimum mobszint", 1, 1, 100),
@@ -132,20 +133,20 @@ public final class OperationalConfigMenuGUI {
                 ConfigMenuGUI.Entry.integer("currency.economy-event.check-interval-minutes", "Gazdasági ellenőrzés (perc)", 5, 1, 10_080),
                 ConfigMenuGUI.Entry.number("currency.economy-event.chance-percent", "Gazdasági esemény esélye (%)", 2.5D, 0.0D, 100.0D),
                 ConfigMenuGUI.Entry.integer("currency.economy-event.duration-hours", "Sokk időtartama (óra)", 1, 1, 720),
-                ConfigMenuGUI.Entry.number("currency.economy-event.min-multiplier", "Sokk minimum szorzó", 0.05D, 0.0D, 10.0D),
-                ConfigMenuGUI.Entry.number("currency.economy-event.max-multiplier", "Sokk maximum szorzó", 0.05D, 0.0D, 10.0D),
+                ConfigMenuGUI.Entry.number("currency.economy-event.min-multiplier", "Sokk minimum szorzó", 0.05D, 1.0D, 10.0D),
+                ConfigMenuGUI.Entry.number("currency.economy-event.max-multiplier", "Sokk maximum szorzó", 0.05D, 1.0D, 10.0D),
                 ConfigMenuGUI.Entry.number("currency.economy-event.panic-chance", "Piaci pánik esélye", 0.05D, 0.0D, 1.0D),
-                ConfigMenuGUI.Entry.number("currency.economy-event.panic-min-multiplier", "Pánik minimum szorzó", 0.05D, 0.0D, 2.0D),
-                ConfigMenuGUI.Entry.number("currency.economy-event.panic-max-multiplier", "Pánik maximum szorzó", 0.05D, 0.0D, 2.0D),
+                ConfigMenuGUI.Entry.number("currency.economy-event.panic-min-multiplier", "Pánik minimum szorzó", 0.05D, 0.1D, 2.0D),
+                ConfigMenuGUI.Entry.number("currency.economy-event.panic-max-multiplier", "Pánik maximum szorzó", 0.05D, 0.1D, 2.0D),
                 ConfigMenuGUI.Entry.toggle("currency.market-boom.enabled", "Konjunktúra"),
                 ConfigMenuGUI.Entry.number("currency.market-boom.chance-percent", "Konjunktúra esélye (%)", 1.0D, 0.0D, 100.0D),
-                ConfigMenuGUI.Entry.integer("currency.market-boom.duration-minutes", "Konjunktúra hossza (perc)", 5, 1, 10_080),
+                ConfigMenuGUI.Entry.integer("currency.market-boom.duration-minutes", "Konjunktúra hossza (perc)", 5, 5, 10_080),
                 ConfigMenuGUI.Entry.number("currency.market-boom.fee-percent", "Konjunktúra piaci díja (%)", 0.5D, 0.0D, 100.0D),
                 ConfigMenuGUI.Entry.toggle("currency.dynamic-exchange.enabled", "Dinamikus árfolyam"),
                 ConfigMenuGUI.Entry.number("currency.dynamic-exchange.reference-supply", "Referencia-kínálat", 100.0D, 1.0D, 1_000_000_000.0D),
                 ConfigMenuGUI.Entry.number("currency.dynamic-exchange.elasticity", "Árfolyam rugalmassága", 0.05D, 0.0D, 10.0D),
-                ConfigMenuGUI.Entry.number("currency.dynamic-exchange.min-multiplier", "Árfolyam alsó korlát", 0.05D, 0.0D, 100.0D),
-                ConfigMenuGUI.Entry.number("currency.dynamic-exchange.max-multiplier", "Árfolyam felső korlát", 0.05D, 0.0D, 100.0D),
+                ConfigMenuGUI.Entry.number("currency.dynamic-exchange.min-multiplier", "Árfolyam alsó korlát", 0.05D, 0.01D, 100.0D),
+                ConfigMenuGUI.Entry.number("currency.dynamic-exchange.max-multiplier", "Árfolyam felső korlát", 0.05D, 0.01D, 100.0D),
                 ConfigMenuGUI.Entry.number("currency.dynamic-exchange.daily-limit", "Napi váltási limit", 25.0D, 0.0D, 1_000_000_000.0D),
                 ConfigMenuGUI.Entry.integer("market.max-listings-per-player", "Hirdetések játékosonként", 1, 1, 1000),
                 ConfigMenuGUI.Entry.number("market.fee-percent", "Piactéri díj (%)", 0.5D, 0.0D, 100.0D),
@@ -171,7 +172,11 @@ public final class OperationalConfigMenuGUI {
         )));
 
         validateCatalog(categories);
-        return Map.copyOf(categories);
+        return Collections.unmodifiableMap(new LinkedHashMap<>(categories));
+    }
+
+    static Map<String, Category> categories() {
+        return CATEGORIES;
     }
 
     private static void validateCatalog(final Map<String, Category> categories) {
@@ -223,6 +228,7 @@ public final class OperationalConfigMenuGUI {
     }
 
     public static void openRoot(final Player player) {
+        OperationalConfigSchemaGuard.validate();
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), ROOT_CATEGORY_ID);
         final Inventory inventory = Bukkit.createInventory(holder, 27,
                 Component.text("⚙ Üzemeltetés és finomhangolás", NamedTextColor.DARK_AQUA));
@@ -246,6 +252,7 @@ public final class OperationalConfigMenuGUI {
 
     public static void openCategory(final Player player, final String categoryId,
                                     final ConfigManager configManager) {
+        OperationalConfigSchemaGuard.validate();
         final Category category = CATEGORIES.get(categoryId);
         if (category == null) {
             openRoot(player);
