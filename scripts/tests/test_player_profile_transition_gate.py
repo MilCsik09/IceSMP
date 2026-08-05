@@ -12,10 +12,12 @@ class PlayerProfileTransitionGateTest(unittest.TestCase):
         payload = json.loads(
             (root / "scripts/player_profile_authority_allowlist.json").read_text(encoding="utf-8")
         )
-        transitions = [
-            entry for entry in payload.get("entries", [])
-            if entry.get("category") == "TRANSITION"
-        ]
+        transition_by_key = {
+            str(entry.get("key", "")): entry
+            for entry in payload.get("entries", [])
+            if entry.get("category") == "TRANSITION" and str(entry.get("key", ""))
+        }
+        transitions = [transition_by_key[key] for key in sorted(transition_by_key)]
         by_path: Counter[str] = Counter()
         for entry in transitions:
             parts = str(entry.get("key", "")).split("|", 2)
