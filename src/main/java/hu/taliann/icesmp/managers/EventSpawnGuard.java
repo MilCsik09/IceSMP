@@ -103,6 +103,16 @@ public final class EventSpawnGuard {
     }
 
     public BlockReason blockReason(final String eventKey, final Location location) {
+        return blockReason(eventKey, location, true);
+    }
+
+    /**
+     * The safe-search path already performed the expensive shoreline scan while resolving
+     * footing. It calls this overload with includeWater=false so protections, players and
+     * reservations are rechecked without reading the same ~200 columns two more times.
+     */
+    private BlockReason blockReason(final String eventKey, final Location location,
+                                    final boolean includeWater) {
         if (location == null || location.getWorld() == null) {
             return BlockReason.INVALID_WORLD;
         }
@@ -134,7 +144,7 @@ public final class EventSpawnGuard {
         }
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
-        if (waterSafetyRequired(eventKey)
+        if (includeWater && waterSafetyRequired(eventKey)
                 && Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)
                 && waterOrShoreUnsafe(world, location.getBlockX(), location.getBlockZ())) {
             return BlockReason.WATER_OR_SHORE;
@@ -275,9 +285,7 @@ public final class EventSpawnGuard {
         plugin.getServer().getRegionScheduler().run(plugin, column, task -> {
             final Location candidate = resolveSafeStandingLocation(
                     eventKey, world, column.getBlockX(), column.getBlockZ());
-            if (candidate != null
-                    && blockReason(eventKey, candidate) == BlockReason.NONE
-                    && reserve(eventKey, candidate)) {
+            if (candidate != null && reserveAfterSurfaceValidation(eventKey, candidate)) {
                 onFound.accept(candidate);
                 return;
             }
@@ -328,9 +336,7 @@ public final class EventSpawnGuard {
             final int x = column.getBlockX();
             final int z = column.getBlockZ();
             final Location candidate = resolveSafeStandingLocation(eventKey, world, x, z);
-            if (candidate == null
-                    || blockReason(eventKey, candidate) != BlockReason.NONE
-                    || !reserve(eventKey, candidate)) {
+            if (candidate == null || !reserveAfterSurfaceValidation(eventKey, candidate)) {
                 tryCandidate(eventKey, origin, candidates, index + 1, onFound, onFailure);
                 return;
             }
@@ -338,8 +344,14 @@ public final class EventSpawnGuard {
         });
     }
 
-    private synchronized boolean reserve(final String eventKey, final Location location) {
-        if (blockReason(eventKey, location) != BlockReason.NONE) {
+    /**
+     * Serializes reservation conflict checks. All non-surface rules are re-evaluated at
+     * publication time, but water is not rescanned because resolveSafeStandingLocation
+     * has already validated the exact column and shoreline buffer on this region thread.
+     */
+    private synchronized boolean reserveAfterSurfaceValidation(final String eventKey,
+                                                               final Location location) {
+        if (blockReason(eventKey, location, false) != BlockReason.NONE) {
             return false;
         }
         final long ttlMillis = Math.max(1L, configManager.getLong(
