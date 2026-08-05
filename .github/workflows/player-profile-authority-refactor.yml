@@ -42,26 +42,20 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Apply pending asynchronous authority cleanup
+      - name: Apply treasury withdrawal authority wave
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/apply_player_profile_async_bridge_cleanup.py
+          python3 scripts/apply_player_profile_treasury_limit_wave.py
           git diff --check
 
-      - name: Enforce asynchronous PlayerProfile mutation boundaries
+      - name: Enforce treasury PDC removal
         shell: bash
         run: |
           set -euo pipefail
-          if grep -R -n --include='*.java' -E \
-            'jobManager\.(unlockSpell|revokeGrant|revokeGrantsFrom|clearSpellGrants)\(' \
-            src/main/java; then
-            echo 'Synchronous JobManager spell mutation call remains.' >&2
-            exit 1
-          fi
-          if grep -n -E 'public (boolean|void|List<String>) (unlockSpell|revokeGrant|revokeGrantsFrom|clearSpellGrants)\(' \
-            src/main/java/hu/taliann/icesmp/managers/JobManager.java; then
-            echo 'Temporary synchronous spell compatibility API remains.' >&2
+          if grep -n -E 'getPersistentDataContainer|treasury_withdraw_(day|sum)' \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java; then
+            echo 'Legacy treasury withdrawal PDC authority remains.' >&2
             exit 1
           fi
 
@@ -87,12 +81,10 @@ jobs:
           ./gradlew clean build --console=plain --no-daemon --stacktrace | tee /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile section extension regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
-          grep -F 'Spell mastery transaction regression suite passed.' \
-            /tmp/player-profile-authority-gradle.log
-          grep -F 'Profession profile state regression suite passed.' \
+          grep -F 'Faction tax debt regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
 
-      - name: Commit validated authority cleanup
+      - name: Commit validated treasury authority wave
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -104,17 +96,13 @@ jobs:
           git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
           git add -- \
-            src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java \
-            src/main/java/hu/taliann/icesmp/managers/JobManager.java \
-            src/main/java/hu/taliann/icesmp/managers/TalentManager.java \
-            src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java \
-            src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java \
-            src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileTreasuryWithdrawalStore.java \
+            src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java \
             scripts/player_profile_authority_allowlist.json
           if git diff --cached --quiet; then
-            echo 'Async authority cleanup is already current.'
+            echo 'Treasury authority wave is already current.'
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): remove synchronous PlayerProfile authority bridges'
+          git commit -m 'feat(profile): move treasury withdrawal limits to PlayerProfile'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
