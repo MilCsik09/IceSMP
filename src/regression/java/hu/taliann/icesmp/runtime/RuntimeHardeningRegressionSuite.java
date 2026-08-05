@@ -186,10 +186,13 @@ public final class RuntimeHardeningRegressionSuite {
                         && claim.contains("claim.minY, claim.maxY"),
                 "BlockDisplay wall is clipped exactly to the actually claimed Y range");
         check(display.contains("entity.setVisibleByDefault(false);")
+                        && display.contains("spawnBlockDisplayForViewer")
                         && display.contains("viewer.showEntity(plugin, fx);")
+                        && display.contains("Bukkit.isOwnedByCurrentRegion(fx)")
+                        && display.contains("fx.getScheduler().run(plugin")
                         && display.contains("spawnBlockDisplay(plugin, corner, block, despawnTicks, viewer")
                         && !display.contains("if (viewer != null) showOnlyTo(plugin, display, viewer);"),
-                "private claim walls are hidden before tracking and revealed only to their viewer");
+                "private displays establish pre-tracking privacy and mutate only on owned Folia entity regions");
         check(!claim.contains("baseY = location.getY()"),
                 "claim display wall is never anchored to viewer Y");
         final String generalConfig = source("src/main/resources/config/general.yml");
