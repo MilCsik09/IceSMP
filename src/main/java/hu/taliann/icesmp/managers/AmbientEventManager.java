@@ -248,13 +248,13 @@ public final class AmbientEventManager {
         for (int i = 0; i < 2; i++) {
             final int band = i;
             final Location at = base.clone().add(-size / 2.0D + band * 4.0D, 22.0D + band * 3.0D, -size / 2.0D);
-            hu.taliann.icesmp.utils.DisplayFxUtil.spawnBlockDisplay(plugin, at, block, durationTicks + 20, display -> {
+            hu.taliann.icesmp.utils.DisplayFxUtil.spawnBlockDisplayForViewer(
+                    plugin, at, block, durationTicks + 20, player, display -> {
                 display.setTransformation(hu.taliann.icesmp.utils.DisplayFxUtil.scale(size, 0.2F, size));
                 display.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15));
                 display.setViewRange(4.0F);
                 display.setGlowing(true);
                 display.setGlowColorOverride(org.bukkit.Color.fromRGB(glow[band]));
-                hu.taliann.icesmp.utils.DisplayFxUtil.showOnlyTo(plugin, display, player);
                 hu.taliann.icesmp.utils.DisplayFxUtil.driftHorizontal(plugin, display, size, 0.2F,
                         band == 0 ? 6.0F : -5.0F, 3.0F, durationTicks);
             });
