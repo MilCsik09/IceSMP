@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** Regression coverage for generic immutable extension mutations across every section record. */
+/** Regression coverage for immutable extension mutations across extension-bearing section records. */
 public final class PlayerProfileSectionExtensionsRegressionSuite {
 
     private static int assertions;
@@ -19,13 +19,18 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
                 UUID.fromString("00000000-0000-0000-0000-000000001086"),
                 Instant.parse("2026-08-05T12:00:00Z"));
         for (final ProfileSectionSnapshot<?> snapshot : profile.sectionMap().values()) {
-            verifySection(snapshot.value());
+            final ProfileSectionData section = snapshot.value();
+            if (section.getClass().isRecord()) {
+                verifyRecordSection(section);
+            } else {
+                verifyNonRecordSectionFailsClosed(section);
+            }
         }
         invalidInputsFailClosed(profile.preferences().value());
         System.out.println("PlayerProfile section extension regression suite passed. assertions=" + assertions);
     }
 
-    private static void verifySection(final ProfileSectionData original) throws Exception {
+    private static void verifyRecordSection(final ProfileSectionData original) throws Exception {
         final Map<String, Object> callerOwned = new LinkedHashMap<>();
         callerOwned.put("authority.test", Map.of("nested", 7L));
         final ProfileSectionData changed = PlayerProfileSectionExtensions.copyWithExtensions(
@@ -57,6 +62,16 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
                 "authority.test", null);
         check(!removed.extensions().containsKey("authority.test"),
                 "extension removed " + original.sectionId());
+    }
+
+    private static void verifyNonRecordSectionFailsClosed(final ProfileSectionData section) {
+        check(!section.getClass().isRecord(), "expected non-record section " + section.sectionId());
+        check(section.extensions().isEmpty(), "non-record section must not expose extension authority");
+        expect(IllegalArgumentException.class,
+                () -> PlayerProfileSectionExtensions.copyWithExtensions(
+                        section, Map.of("authority.test", true)));
+        expect(IllegalArgumentException.class,
+                () -> PlayerProfileSectionExtensions.put(section, "authority.test", true));
     }
 
     private static void invalidInputsFailClosed(final ProfileSectionData section) {
