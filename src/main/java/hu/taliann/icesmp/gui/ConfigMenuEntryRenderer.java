@@ -16,6 +16,8 @@ import java.util.Map;
 /** Shared renderer and staged value resolver for every scalar admin-config icon. */
 public final class ConfigMenuEntryRenderer {
 
+    private enum EffectMode { LIVE, RELOAD_HOOK, RESTART_REQUIRED }
+
     private static final Map<String, Object> CODE_DEFAULTS = Map.ofEntries(
             Map.entry("territory.protection.regen.debris-horizontal-multiplier", 1.0D),
             Map.entry("territory.protection.regen.debris-vertical-multiplier", 1.0D),
@@ -48,7 +50,7 @@ public final class ConfigMenuEntryRenderer {
         lore.add("&fJelenleg: &b" + formatValue(entry, currentValue));
         lore.add("&fAlapérték: &a" + formatValue(entry, defaultValue));
         appendSource(lore, entry.key(), configManager, session);
-        lore.add(switch (entry.reloadMode()) {
+        lore.add(switch (effectMode(entry.key())) {
             case LIVE -> "&aHatás: mentés után azonnal él";
             case RELOAD_HOOK -> "&eHatás: mentés utáni élő reload-hook";
             case RESTART_REQUIRED -> "&cHatás: szerver-újraindítás szükséges";
@@ -168,6 +170,27 @@ public final class ConfigMenuEntryRenderer {
         lore.add(configManager.hasOverride(key)
                 ? "&eForrás: config.yml felülbírálás"
                 : "&aForrás: subsystem alapkonfiguráció");
+    }
+
+    private static EffectMode effectMode(final String key) {
+        if (key.equals("territory.protection.regen.restore-interval-ticks")) {
+            return EffectMode.RESTART_REQUIRED;
+        }
+        if (key.startsWith("motd.") || key.startsWith("sit.")
+                || key.startsWith("crates-settings.") || key.startsWith("crates.")
+                || key.startsWith("resource-pack.") || key.startsWith("factions.passives.")
+                || key.startsWith("factions.whisper.") || key.startsWith("professions.recipes.")
+                || key.startsWith("moderation.") || key.startsWith("hud.")
+                || key.startsWith("tablist.") || key.startsWith("mob-scaling.")
+                || key.equals("world-events.check-interval-seconds")
+                || key.equals("settings.disable-locator-bar")
+                || key.equals("pets.companion.tick-ticks")
+                || key.equals("currency.economy-event.check-interval-minutes")
+                || key.equals("factions.tax.enabled")
+                || key.equals("factions.tax.interval-minutes")) {
+            return EffectMode.RELOAD_HOOK;
+        }
+        return EffectMode.LIVE;
     }
 
     private static Object normalize(final ConfigMenuGUI.Entry entry, final Object value) {
