@@ -63,6 +63,7 @@ jobs:
           python3 scripts/apply_player_profile_extension_regression_task.py
           python3 scripts/apply_player_profile_spellbook_ledger_wave.py
           python3 scripts/apply_player_profile_spellbook_compat_fix.py
+          python3 scripts/apply_player_profile_talent_storage_wave.py
           git diff --check
 
       - name: Rebuild exact authority contract
@@ -106,9 +107,11 @@ jobs:
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileService.java \
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAuthority.java \
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSpellGrantStore.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileTalentStore.java \
             src/main/java/hu/taliann/icesmp/classspec/domain/SpellGrantLedger.java \
             src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java \
             src/main/java/hu/taliann/icesmp/managers/JobManager.java \
+            src/main/java/hu/taliann/icesmp/managers/TalentManager.java \
             src/main/java/hu/taliann/icesmp/managers/QuestManager.java \
             src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java \
             src/main/java/hu/taliann/icesmp/commands/SpellCommand.java \
@@ -120,5 +123,5 @@ jobs:
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): move spell provenance to PlayerProfile'
+          git commit -m 'feat(profile): move spellbook and talent storage to PlayerProfile'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
