@@ -42,15 +42,16 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Apply intro onboarding authority wave
+      - name: Apply pending authority waves
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/apply_player_profile_intro_onboarding_wave.py
           python3 scripts/apply_player_profile_intro_regression.py
+          python3 scripts/apply_player_profile_repository_enumeration_wave.py
           git diff --check
 
-      - name: Enforce intro PDC removal
+      - name: Enforce intro PDC removal and enumeration contract
         shell: bash
         run: |
           set -euo pipefail
@@ -61,6 +62,10 @@ jobs:
           fi
           grep -F 'PlayerProfileIntroStore' \
             src/main/java/hu/taliann/icesmp/managers/IntroManager.java
+          grep -F 'CompletionStage<Set<UUID>> listPlayerIds()' \
+            src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java
+          grep -F 'PlayerProfile repository enumeration regression suite passed.' \
+            src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepositoryEnumerationRegressionSuite.java
 
       - name: Rebuild exact authority contract
         shell: bash
@@ -84,10 +89,12 @@ jobs:
           ./gradlew clean build --console=plain --no-daemon --stacktrace | tee /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile intro onboarding regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
+          grep -F 'PlayerProfile repository enumeration regression suite passed.' \
+            /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile section extension regression suite passed.' \
             /tmp/player-profile-authority-gradle.log
 
-      - name: Commit validated intro onboarding authority wave
+      - name: Commit validated pending authority waves
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -100,15 +107,18 @@ jobs:
           test "$(git rev-parse refs/remotes/origin/${TARGET_BRANCH})" = "$EXPECTED_HEAD"
           git add -- \
             src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileIntroStore.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java \
+            src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java \
             src/main/java/hu/taliann/icesmp/managers/IntroManager.java \
             src/main/java/hu/taliann/icesmp/listeners/IntroListener.java \
             src/regression/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileIntroStoreRegressionSuite.java \
+            src/regression/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepositoryEnumerationRegressionSuite.java \
             build.gradle.kts \
             scripts/player_profile_authority_allowlist.json
           if git diff --cached --quiet; then
-            echo 'Intro onboarding authority wave is already current.'
+            echo 'Pending authority waves are already current.'
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'feat(profile): move intro onboarding state to PlayerProfile'
+          git commit -m 'feat(profile): move onboarding and owner enumeration to PlayerProfile'
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
