@@ -28,6 +28,12 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
         }
         invalidInputsFailClosed(profile.preferences().value());
         System.out.println("PlayerProfile section extension regression suite passed. assertions=" + assertions);
+
+        // Keep newly migrated authority suites inside the already mandatory PlayerProfile check gate.
+        hu.taliann.icesmp.playerprofile.application.PlayerProfileIntroStoreRegressionSuite.main(args);
+        hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryEnumerationRegressionSuite.main(args);
+        hu.taliann.icesmp.playerprofile.application.PlayerProfileStatisticsStoreRegressionSuite.main(args);
+        hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStoreRegressionSuite.main(args);
     }
 
     private static void verifyRecordSection(final ProfileSectionData original) throws Exception {
