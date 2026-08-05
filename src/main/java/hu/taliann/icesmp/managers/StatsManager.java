@@ -1,280 +1,157 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileStatisticsStore;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.storage.PersistentStore;
-
-import hu.taliann.icesmp.storage.YamlStore;
-
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Persistent player stats for the leaderboards: best class
- * level, total wealth and raid kills per player. Level/wealth are snapshotted on
- * a periodic tick (Folia-safe, on each player's region thread); raid kills are
- * incremented from the kill event. Stored in leaderboard.yml.
- *
- * <p>This also tracks the {@code /stats} profile counters (kills,
- * deaths, mob kills, spell casts, quests completed). Those counters are
- * incremented from arbitrary region threads (e.g. a kill recorded from the
- * victim's death-event thread), so they use {@link AtomicInteger} fields
- * rather than plain {@code int}s.
- */
+/** PlayerProfile-backed counters with a rebuildable leaderboard projection. */
 public final class StatsManager implements PersistentStore {
 
-    /** A read-only leaderboard row. */
     public record Entry(UUID uuid, String name, int level, double wealth, int raidKills) { }
-
     public enum Category { LEVEL, WEALTH, RAID_KILLS }
 
-    private static final class Stat {
-        // Minden mezőt több régió-szál ír/olvas (ranglista-frissítés, raid-ölés, /stats):
-        // a ranglista-mezők volatile-ok (csak felülírás), a SZÁMLÁLÓK atomiak — a raidKills
-        // korábban sima int++ volt, ami konkurens raid-ölésnél elveszíthetett ölést.
-        private volatile String name = "?";
-        private volatile int level;
-        private volatile double wealth;
-        private final AtomicInteger raidKills = new AtomicInteger();
-        // /stats profile counters — written from arbitrary region threads.
-        private final AtomicInteger kills = new AtomicInteger();
-        private final AtomicInteger deaths = new AtomicInteger();
-        private final AtomicInteger mobKills = new AtomicInteger();
-        private final AtomicInteger spellCasts = new AtomicInteger();
-        private final AtomicInteger questsCompleted = new AtomicInteger();
-    }
+    private record Derived(String name, int level, double wealth, int raidKills) { }
 
     private final JavaPlugin plugin;
     private final JobManager jobManager;
     private final CurrencyManager currencyManager;
-    private final File storageFile;
-    private final ConcurrentHashMap<UUID, Stat> stats = new ConcurrentHashMap<>();
+    private final PlayerProfileStatisticsStore store = new PlayerProfileStatisticsStore();
+    private final ConcurrentHashMap<UUID, Derived> leaderboard = new ConcurrentHashMap<>();
+    private volatile AutoCloseable subscription;
 
-    public StatsManager(final JavaPlugin plugin, final JobManager jobManager, final CurrencyManager currencyManager) {
-        this.plugin = plugin;
-        this.jobManager = jobManager;
-        this.currencyManager = currencyManager;
-        this.storageFile = new File(plugin.getDataFolder(), "leaderboard.yml");
-        plugin.getDataFolder().mkdirs();
+    public StatsManager(final JavaPlugin plugin, final JobManager jobManager,
+                        final CurrencyManager currencyManager) {
+        this.plugin = Objects.requireNonNull(plugin);
+        this.jobManager = Objects.requireNonNull(jobManager);
+        this.currencyManager = Objects.requireNonNull(currencyManager);
     }
 
-    public void load() {
-        stats.clear();
-        if (!storageFile.exists()) {
-            return;
+    /** Builds only a derived projection; no second persistent store is loaded. */
+    @Override public void load() {
+        if (subscription == null) {
+            subscription = PlayerProfileAuthority.current().service().subscribe(
+                    (playerId, revision, changed) -> {
+                        if (changed.contains(ProfileSectionId.IDENTITY)
+                                || changed.contains(ProfileSectionId.STATISTICS)) {
+                            refresh(playerId);
+                        }
+                    });
         }
-
-        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
-        final ConfigurationSection section = yaml.getConfigurationSection("players");
-        if (section == null) {
-            return;
-        }
-
-        for (final String key : section.getKeys(false)) {
-            try {
-                final UUID id = UUID.fromString(key);
-                final Stat stat = new Stat();
-                stat.name = section.getString(key + ".name", "?");
-                stat.level = section.getInt(key + ".level", 0);
-                stat.wealth = section.getDouble(key + ".wealth", 0.0D);
-                stat.raidKills.set(section.getInt(key + ".raid-kills", 0));
-                stat.kills.set(section.getInt(key + ".kills", 0));
-                stat.deaths.set(section.getInt(key + ".deaths", 0));
-                stat.mobKills.set(section.getInt(key + ".mob-kills", 0));
-                stat.spellCasts.set(section.getInt(key + ".spell-casts", 0));
-                stat.questsCompleted.set(section.getInt(key + ".quests-completed", 0));
-                stats.put(id, stat);
-            } catch (final IllegalArgumentException ignored) {
-            }
-        }
+        PlayerProfileAuthority.current().repository().listPlayerIds()
+                .thenAccept(ids -> ids.forEach(this::refresh))
+                .exceptionally(failure -> {
+                    plugin.getLogger().severe("PlayerProfile leaderboard rebuild failed: "
+                            + failure.getMessage());
+                    return null;
+                });
     }
 
-    public synchronized void save() {
-        try {
-            final YamlConfiguration yaml = new YamlConfiguration();
-            for (final var entry : stats.entrySet()) {
-                final String base = "players." + entry.getKey();
-                final Stat stat = entry.getValue();
-                yaml.set(base + ".name", stat.name);
-                yaml.set(base + ".level", stat.level);
-                yaml.set(base + ".wealth", stat.wealth);
-                yaml.set(base + ".raid-kills", stat.raidKills.get());
-                yaml.set(base + ".kills", stat.kills.get());
-                yaml.set(base + ".deaths", stat.deaths.get());
-                yaml.set(base + ".mob-kills", stat.mobKills.get());
-                yaml.set(base + ".spell-casts", stat.spellCasts.get());
-                yaml.set(base + ".quests-completed", stat.questsCompleted.get());
-            }
-            YamlStore.saveAtomic(storageFile, yaml);
-        } catch (final IOException exception) {
-            plugin.getLogger().severe("Failed to save leaderboard.yml: " + exception.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save leaderboard.yml", exception);
-        }
-    }
+    /** Every mutation is already durable in PlayerProfile. */
+    @Override public void save() { }
 
-    /** Records the player's current name, level and wealth (call on their region thread). */
     public void recordSnapshot(final Player player) {
-        if (player == null) {
-            return;
-        }
-        final Stat stat = stats.computeIfAbsent(player.getUniqueId(), key -> new Stat());
-        stat.name = player.getName();
-        stat.level = jobManager.getPrimaryLevel(player);
-        stat.wealth = currencyManager.getTotalBalance(player);
+        if (player == null) return;
+        store.snapshot(player.getUniqueId(), jobManager.getPrimaryLevel(player),
+                        currencyManager.getTotalBalance(player))
+                .whenComplete((snapshot, failure) -> {
+                    if (failure != null) logFailure("leaderboard snapshot", player.getUniqueId(), failure);
+                });
     }
 
-    /** The player's recorded raid-kill count (0 if none). */
     public int getRaidKills(final UUID playerId) {
-        final Stat stat = stats.get(playerId);
-        return stat == null ? 0 : stat.raidKills.get();
+        return Math.toIntExact(store.read(playerId, PlayerProfileStatisticsStore.RAID_KILLS));
     }
 
     public void recordRaidKill(final Player player) {
-        if (player == null) {
-            return;
-        }
-        final Stat stat = stats.computeIfAbsent(player.getUniqueId(), key -> new Stat());
-        stat.name = player.getName();
-        stat.raidKills.incrementAndGet();
+        if (player != null) increment(player.getUniqueId(), PlayerProfileStatisticsStore.RAID_KILLS);
     }
 
-    // ===== /stats profil-számlálók =====
-    //
-    // Ezek a metódusok KIZÁRÓLAG konkurens (atomikus) map-műveletek — nem
-    // olvasnak/írnak semmilyen entitást, ezért bármely régió-szálról hívhatók
-    // scheduler-hop nélkül (pl. az áldozat szálán a gyilkos UUID-jére).
+    public void recordKill(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.KILLS); }
+    public void recordDeath(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.DEATHS); }
+    public void recordMobKill(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.MOB_KILLS); }
+    public void recordSpellCast(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.SPELL_CASTS); }
+    public void recordQuestComplete(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.QUESTS_COMPLETED); }
 
-    /** Increments the player's (player-kill) counter. Hot-path-safe, no entity access. */
-    public void recordKill(final UUID playerId) {
-        if (playerId == null) {
-            return;
-        }
-        stats.computeIfAbsent(playerId, key -> new Stat()).kills.incrementAndGet();
-    }
+    public int getKills(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.KILLS); }
+    public int getDeaths(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.DEATHS); }
+    public int getMobKills(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.MOB_KILLS); }
+    public int getSpellCasts(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.SPELL_CASTS); }
+    public int getQuestsCompleted(final UUID playerId) { return count(playerId, PlayerProfileStatisticsStore.QUESTS_COMPLETED); }
 
-    /** Increments the player's death counter. Hot-path-safe, no entity access. */
-    public void recordDeath(final UUID playerId) {
-        if (playerId == null) {
-            return;
-        }
-        stats.computeIfAbsent(playerId, key -> new Stat()).deaths.incrementAndGet();
-    }
-
-    /** Increments the player's mob-kill counter. Hot-path-safe, no entity access. */
-    public void recordMobKill(final UUID playerId) {
-        if (playerId == null) {
-            return;
-        }
-        stats.computeIfAbsent(playerId, key -> new Stat()).mobKills.incrementAndGet();
-    }
-
-    /** Increments the player's spell-cast counter. Hot-path-safe, no entity access. */
-    public void recordSpellCast(final UUID playerId) {
-        if (playerId == null) {
-            return;
-        }
-        stats.computeIfAbsent(playerId, key -> new Stat()).spellCasts.incrementAndGet();
-    }
-
-    /** Increments the player's completed-quest counter. Hot-path-safe, no entity access. */
-    public void recordQuestComplete(final UUID playerId) {
-        if (playerId == null) {
-            return;
-        }
-        stats.computeIfAbsent(playerId, key -> new Stat()).questsCompleted.incrementAndGet();
-    }
-
-    /** The player's recorded player-kill count (0 if none). */
-    public int getKills(final UUID playerId) {
-        final Stat stat = stats.get(playerId);
-        return stat == null ? 0 : stat.kills.get();
-    }
-
-    /** The player's recorded death count (0 if none). */
-    public int getDeaths(final UUID playerId) {
-        final Stat stat = stats.get(playerId);
-        return stat == null ? 0 : stat.deaths.get();
-    }
-
-    /** The player's recorded mob-kill count (0 if none). */
-    public int getMobKills(final UUID playerId) {
-        final Stat stat = stats.get(playerId);
-        return stat == null ? 0 : stat.mobKills.get();
-    }
-
-    /** The player's recorded spell-cast count (0 if none). */
-    public int getSpellCasts(final UUID playerId) {
-        final Stat stat = stats.get(playerId);
-        return stat == null ? 0 : stat.spellCasts.get();
-    }
-
-    /** The player's recorded completed-quest count (0 if none). */
-    public int getQuestsCompleted(final UUID playerId) {
-        final Stat stat = stats.get(playerId);
-        return stat == null ? 0 : stat.questsCompleted.get();
-    }
-
-    /**
-     * Resolves a stored player id by name for offline lookups (e.g. {@code /stats <név>}
-     * for a player who is not currently online). Case-insensitive; returns null if the
-     * name was never recorded in the leaderboard store.
-     */
     public UUID findPlayerIdByName(final String name) {
-        if (name == null || name.isBlank()) {
-            return null;
-        }
-        for (final var entry : stats.entrySet()) {
-            if (entry.getValue().name.equalsIgnoreCase(name)) {
-                return entry.getKey();
-            }
-        }
-        return null;
+        if (name == null || name.isBlank()) return null;
+        return leaderboard.entrySet().stream()
+                .filter(entry -> entry.getValue().name().equalsIgnoreCase(name))
+                .map(Map.Entry::getKey).findFirst().orElse(null);
     }
 
-    /** The stored display name for a player, or {@code fallback} if none is recorded. */
     public String getStoredName(final UUID playerId, final String fallback) {
-        final Stat stat = stats.get(playerId);
-        return stat == null || stat.name == null || "?".equals(stat.name) ? fallback : stat.name;
+        final Derived state = leaderboard.get(playerId);
+        return state == null || state.name().isBlank() ? fallback : state.name();
     }
 
-    /** Periodic snapshot of every online player (each on its own region thread). */
     public void tick() {
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> recordSnapshot(player), null);
         }
     }
 
-    /**
-     * Top players for a category, highest first.
-     *
-     * @param category the ranking category
-     * @param limit max rows
-     * @return ordered leaderboard rows
-     */
     public List<Entry> top(final Category category, final int limit) {
-        final Comparator<Stat> comparator = switch (category) {
-            case LEVEL -> Comparator.comparingInt((Stat s) -> s.level);
-            case WEALTH -> Comparator.comparingDouble((Stat s) -> s.wealth);
-            case RAID_KILLS -> Comparator.comparingInt((Stat s) -> s.raidKills.get());
+        final Comparator<Derived> comparator = switch (category) {
+            case LEVEL -> Comparator.comparingInt(Derived::level);
+            case WEALTH -> Comparator.comparingDouble(Derived::wealth);
+            case RAID_KILLS -> Comparator.comparingInt(Derived::raidKills);
         };
-
         final List<Entry> rows = new ArrayList<>();
-        stats.entrySet().stream()
+        leaderboard.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(comparator.reversed()))
                 .limit(Math.max(1, limit))
-                .forEach(e -> rows.add(new Entry(e.getKey(), e.getValue().name, e.getValue().level,
-                        e.getValue().wealth, e.getValue().raidKills.get())));
+                .forEach(entry -> rows.add(new Entry(entry.getKey(), entry.getValue().name(),
+                        entry.getValue().level(), entry.getValue().wealth(),
+                        entry.getValue().raidKills())));
         return rows;
+    }
+
+    private void increment(final UUID playerId, final String key) {
+        if (playerId == null) return;
+        store.increment(playerId, key).whenComplete((value, failure) -> {
+            if (failure != null) logFailure(key, playerId, failure);
+        });
+    }
+
+    private int count(final UUID playerId, final String key) {
+        return playerId == null ? 0 : Math.toIntExact(store.read(playerId, key));
+    }
+
+    private void refresh(final UUID playerId) {
+        PlayerProfileAuthority.current().repository().find(playerId)
+                .thenAccept(optional -> optional.ifPresent(profile -> {
+                    final var board = store.leaderboard(profile);
+                    final var counters = store.counters(profile);
+                    final String name = profile.identity().value().lastKnownName();
+                    leaderboard.put(playerId, new Derived(name, board.level(),
+                            board.wealth(), counters.raidKills()));
+                })).exceptionally(failure -> {
+                    logFailure("leaderboard refresh", playerId, failure);
+                    return null;
+                });
+    }
+
+    private void logFailure(final String operation, final UUID playerId,
+                            final Throwable failure) {
+        plugin.getLogger().severe("PlayerProfile statistics " + operation + " failed for "
+                + playerId + ": " + failure.getMessage());
     }
 }
