@@ -1,6 +1,20 @@
-# IceSMP world-event víz- és partbiztonság.
+# IceSMP world-event víz-, part- és játékosközelség-biztonság.
 # Külön subsystem fájl, hogy régi world.yml mellett is megjelenjenek az új alapértékek.
 world-events:
+  safety:
+    # A world-event helyszíne legalább 12 chunknyira legyen minden releváns játékostól.
+    # A vízszintes ellenőrzés magasságtól független, ezért barlangból sem spawnolhat a felszínen melléd.
+    min-horizontal-distance-blocks: 192.0
+    # Spectator és ténylegesen vanish játékos nem torzítja a world-event elhelyezést.
+    ignore-spectators: true
+    ignore-vanished: true
+    # A látható admin ugyanúgy játékos: teszteléskor se spawnolhat event közvetlenül mellé.
+    ignore-admins: false
+    # A játékos-horgonyos események már eleve a láthatósági távolságon túl keressenek.
+    search-attempts: 32
+    search-min-radius-blocks: 256.0
+    search-max-radius-blocks: 512.0
+
   water-safety:
     # Bekapcsolva minden world-event spawnhely száraz, stabil talajt igényel.
     enabled: true
