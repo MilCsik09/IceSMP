@@ -5,16 +5,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def replace_once(path: Path, old: str, new: str, label: str) -> None:
-    text = path.read_text(encoding="utf-8")
-    if new in text:
-        return
-    count = text.count(old)
-    if count != 1:
-        raise RuntimeError(f"{label}: expected one match, found {count}")
-    path.write_text(text.replace(old, new, 1), encoding="utf-8")
-
-
 def write_store() -> None:
     path = ROOT / "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileTreasuryWithdrawalStore.java"
     path.write_text('''package hu.taliann.icesmp.playerprofile.application;
@@ -116,18 +106,30 @@ public final class PlayerProfileTreasuryWithdrawalStore {
 def patch_subcommand() -> None:
     path = ROOT / "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java"
     text = path.read_text(encoding="utf-8")
-    text = text.replace('''    private final org.bukkit.NamespacedKey withdrawDayKey =
+    if ("withdrawalStore.reserve(" in text
+            and "private void finishWithdrawal" in text
+            and "treasury_withdraw_day" not in text
+            and "getPersistentDataContainer" not in text):
+        return
+
+    old_keys = '''    private final org.bukkit.NamespacedKey withdrawDayKey =
             org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_day");
     private final org.bukkit.NamespacedKey withdrawSumKey =
             org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_sum");
-''', '''    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileTreasuryWithdrawalStore
+'''
+    new_store = '''    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileTreasuryWithdrawalStore
             withdrawalStore = new hu.taliann.icesmp.playerprofile.application.PlayerProfileTreasuryWithdrawalStore();
     private final org.bukkit.plugin.java.JavaPlugin plugin =
             org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(FactionTreasurySubcommand.class);
-''')
+'''
+    if text.count(old_keys) != 1:
+        raise RuntimeError(f"treasury key declaration count={text.count(old_keys)}")
+    text = text.replace(old_keys, new_store, 1)
 
-    start = text.index('        final long today = System.currentTimeMillis() / 86_400_000L;')
-    end = text.index('\n        return true;\n    }', start)
+    start_marker = '        final long today = System.currentTimeMillis() / 86_400_000L;'
+    end_marker = '\n        return true;\n    }'
+    start = text.index(start_marker)
+    end = text.index(end_marker, start) + len(end_marker)
     replacement = '''        final long today = System.currentTimeMillis() / 86_400_000L;
         if (councilPath) {
             final double[] shared = councilWithdrawnToday.get(faction);
@@ -201,7 +203,7 @@ def patch_subcommand() -> None:
 
     private void runOnOwner(final Player player, final Runnable action) {
         player.getScheduler().run(plugin, ignored -> action.run(), null);
-'''
+    }'''
     text = text[:start] + replacement + text[end:]
     path.write_text(text, encoding="utf-8")
 
