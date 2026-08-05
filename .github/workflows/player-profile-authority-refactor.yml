@@ -71,11 +71,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee build/player-profile-authority-gradle.log
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee /tmp/player-profile-authority-gradle.log
           grep -F 'PlayerProfile section extension regression suite passed.' \
-            build/player-profile-authority-gradle.log
+            /tmp/player-profile-authority-gradle.log
           grep -F 'Spell mastery transaction regression suite passed.' \
-            build/player-profile-authority-gradle.log
+            /tmp/player-profile-authority-gradle.log
 
       - name: Commit validated authority wave
         shell: bash
