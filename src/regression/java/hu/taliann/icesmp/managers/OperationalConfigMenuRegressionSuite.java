@@ -9,7 +9,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,6 +23,7 @@ public final class OperationalConfigMenuRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         verifiesCatalogAndPackagedKeys();
+        verifiesRuntimeAlignedRanges();
         verifiesMenuWiringAndLiveApply();
         System.out.println("Operational config menu regression suite passed.");
     }
@@ -45,8 +48,9 @@ public final class OperationalConfigMenuRegressionSuite {
         catalogField.setAccessible(true);
         final Map<String, OperationalConfigMenuGUI.Category> categories =
                 (Map<String, OperationalConfigMenuGUI.Category>) catalogField.get(null);
-        check(categories.keySet().equals(Set.of("afk", "hud", "pets", "economy", "moderation")),
-                "operational categories changed or disappeared");
+        check(new ArrayList<>(categories.keySet()).equals(
+                        List.of("afk", "hud", "pets", "economy", "moderation")),
+                "operational category order changed or categories disappeared");
 
         final Set<String> keys = new HashSet<>();
         for (final OperationalConfigMenuGUI.Category category : categories.values()) {
@@ -64,30 +68,60 @@ public final class OperationalConfigMenuRegressionSuite {
                 "operational key count differs from catalog count");
     }
 
+    private static void verifiesRuntimeAlignedRanges() {
+        check(minimum("currency.exchange-rate") == 0.01D,
+                "fixed exchange-rate menu must reject the runtime-invalid zero value");
+        check(minimum("currency.dynamic-exchange.min-multiplier") == 0.01D,
+                "dynamic exchange floor does not match ExchangeRateService");
+        check(minimum("currency.economy-event.min-multiplier") == 1.0D,
+                "positive demand-shock floor does not match EconomyEventManager");
+        check(minimum("currency.economy-event.panic-min-multiplier") == 0.1D,
+                "panic multiplier floor does not match EconomyEventManager");
+        check(minimum("currency.market-boom.duration-minutes") == 5.0D,
+                "market-boom duration floor does not match EconomyEventManager");
+    }
+
+    private static double minimum(final String key) {
+        final ConfigMenuGUI.Entry entry = OperationalConfigMenuGUI.findEntry(key);
+        check(entry != null, "missing operational entry: " + key);
+        return entry.min();
+    }
+
     private static void verifiesMenuWiringAndLiveApply() throws Exception {
         final String root = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/gui/ConfigMenuRootGUI.java"));
         check(root.contains("OperationalConfigMenuGUI.ROOT_ACTION")
+                        && root.contains("OperationalConfigSchemaGuard.validate")
                         && root.contains("Üzemeltetés és finomhangolás")
                         && root.contains("ConfigMenuGUI.CATEGORIES.size() + 2"),
-                "operational submenu is not linked from the config root");
+                "operational submenu or packaged-schema guard is not linked from the config root");
 
         final String listener = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java"));
         check(listener.contains("OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX")
                         && listener.contains("OperationalConfigMenuGUI.findEntry")
                         && listener.contains("OperationalConfigMenuGUI.isOperationalCategory")
+                        && listener.contains("OperationalConfigPolicy.validate")
+                        && listener.contains("ConfigMenuEntryRenderer.defaultValue")
                         && listener.contains("resetOverride"),
-                "operational click, reopen or default-reset wiring is missing");
+                "operational click, constraint or default-reset wiring is missing");
 
         final String bridge = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/core/ConfigRuntimeReloadBridge.java"));
         check(bridge.contains("scheduleHud")
                         && bridge.contains("schedulePetCombat")
                         && bridge.contains("scheduleEconomyEvents")
+                        && bridge.contains("refreshHudOutput")
+                        && bridge.contains("removeHudSidebar")
+                        && bridge.contains("refreshTablistOutput")
                         && bridge.contains("moderationManager")
                         && bridge.contains("vanishManager"),
-                "fixed schedulers or moderation cache are not applied live");
+                "fixed schedulers, visual cleanup or moderation cache are not applied live");
+
+        final String build = Files.readString(Path.of("build.gradle.kts"));
+        check(build.contains("operationalConfigMenuRegressionTest")
+                        && build.contains("OperationalConfigMenuRegressionSuite"),
+                "operational regression suite is not part of the Gradle verification graph");
     }
 
     private static void mergeInto(final YamlConfiguration target,
