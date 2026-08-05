@@ -123,8 +123,8 @@ public final class EventSpawnSafetyRegressionSuite {
                 "search must have room to escape protected or wet terrain");
         check(!config.getBoolean("world-events.safety.require-loaded-chunk", true),
                 "distant search must be allowed to prepare inactive generated chunks");
-        check(!config.getBoolean("world-events.safety.generate-unloaded-chunks", true),
-                "event search must not expand the world by default");
+        check(!config.isSet("world-events.safety.generate-unloaded-chunks"),
+                "world generation must not become a normal config surface");
 
         check(config.getBoolean("world-events.water-safety.enabled"),
                 "world-event water safety must default to enabled");
