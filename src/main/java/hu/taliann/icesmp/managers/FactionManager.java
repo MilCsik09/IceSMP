@@ -133,6 +133,23 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         }
     }
 
+    /**
+     * Publishes a membership change that another PlayerProfile store already committed in the same
+     * faction section (for example sinner exile). No second persistence mutation is performed.
+     */
+    public void publishExternalMembershipCommit(final UUID playerId,
+                                                final FactionType previous,
+                                                final FactionType target) {
+        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(target, "target");
+        final PlayerProfileFactionStore.State committed = factionStore.readCached(playerId);
+        if (committed.membership().orElse(null) != target) {
+            throw new IllegalStateException("external faction commit does not match PlayerProfile");
+        }
+        projection.put(playerId, committed);
+        publishMembershipChange(playerId, target, previous != target);
+    }
+
     private void publishMembershipChange(final UUID playerId, final FactionType target,
                                          final boolean changed) {
         if (changed) membershipChangeHook.accept(playerId);
