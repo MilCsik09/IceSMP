@@ -1,0 +1,80 @@
+package hu.taliann.icesmp.playerprofile.application;
+
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSectionExtensions;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.EconomySection;
+
+import java.util.Locale;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
+
+/** CAS-backed per-player daily anti-farm/reward budgets. */
+public final class PlayerProfileDailyBudgetStore {
+
+    public record BudgetState(long day, long spent) {
+        public BudgetState {
+            if (day < -1L || spent < 0L) throw new IllegalArgumentException("invalid budget state");
+        }
+    }
+
+    public record Reservation(boolean allowed, BudgetState state) {
+        public Reservation { Objects.requireNonNull(state, "state"); }
+    }
+
+    public BudgetState read(final UUID playerId, final String budgetId) {
+        final EconomySection section = PlayerProfileAuthority.current().requireSection(
+                Objects.requireNonNull(playerId, "playerId"),
+                ProfileSectionId.ECONOMY, EconomySection.class);
+        return read(section, normalize(budgetId));
+    }
+
+    public CompletionStage<Reservation> reserve(final UUID playerId,
+                                                final String budgetId,
+                                                final long day,
+                                                final long amount,
+                                                final long cap) {
+        if (day < 0L || amount < 0L || cap < 0L) {
+            throw new IllegalArgumentException("negative daily budget value");
+        }
+        final String id = normalize(budgetId);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.ECONOMY, EconomySection.class, current -> {
+                    final BudgetState before = read(current, id);
+                    final long spent = before.day() == day ? before.spent() : 0L;
+                    if (amount > cap || spent > cap - amount) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(
+                                new Reservation(false, new BudgetState(day, spent)));
+                    }
+                    final BudgetState after = new BudgetState(day, Math.addExact(spent, amount));
+                    EconomySection next = PlayerProfileSectionExtensions.put(current,
+                            dayKey(id), day);
+                    next = PlayerProfileSectionExtensions.put(next, sumKey(id), after.spent());
+                    return PlayerProfileService.ConditionalMutation.changed(next,
+                            new Reservation(true, after));
+                });
+    }
+
+    private static BudgetState read(final EconomySection section, final String id) {
+        final long day = number(section.extensions().get(dayKey(id)), -1L, "budget day");
+        final long spent = number(section.extensions().get(sumKey(id)), 0L, "budget sum");
+        return new BudgetState(day, spent);
+    }
+
+    private static long number(final Object raw, final long fallback, final String field) {
+        if (raw == null) return fallback;
+        if (raw instanceof Number value) return value.longValue();
+        throw new IllegalStateException("invalid " + field + " type");
+    }
+
+    private static String dayKey(final String id) { return "budget." + id + ".day"; }
+    private static String sumKey(final String id) { return "budget." + id + ".sum"; }
+
+    private static String normalize(final String raw) {
+        if (raw == null || raw.isBlank()) throw new IllegalArgumentException("budget id required");
+        final String id = raw.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9._-]", "_");
+        if (id.isBlank() || id.length() > 96) throw new IllegalArgumentException("invalid budget id");
+        return id;
+    }
+}
