@@ -165,6 +165,14 @@ val playerProfileModerationRegressionTest = registerRegression(
     "playerProfileModerationRegressionTest",
     "Runs moderation reference/summary CAS and restart durability regressions.",
     "hu.taliann.icesmp.playerprofile.application.PlayerProfileModerationStoreRegressionSuite")
+val playerProfileCrateRegressionTest = registerRegression(
+    "playerProfileCrateRegressionTest",
+    "Runs crate settlement receipt idempotency and reset regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileCrateStoreRegressionSuite")
+val playerProfileDeathEscrowRegressionTest = registerRegression(
+    "playerProfileDeathEscrowRegressionTest",
+    "Runs death escrow deposit, exact-once claim and durability regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileDeathEscrowStoreRegressionSuite")
 val playerProfileWeeklyGoalRegressionTest = registerRegression(
     "playerProfileWeeklyGoalRegressionTest",
     "Runs weekly guild-goal contribution, award idempotency and atomic claim regressions.",
@@ -264,6 +272,7 @@ tasks.check {
         playerProfileEconomyRegressionTest, playerProfileFactionAuthorityRegressionTest,
         playerProfileFactionFoodRegressionTest, playerProfileFullAuthorityRegressionTest,
         playerProfileIntroRegressionTest, playerProfileModerationRegressionTest,
+        playerProfileCrateRegressionTest, playerProfileDeathEscrowRegressionTest,
         playerProfileQuestRegressionTest, playerProfileWeeklyGoalRegressionTest,
         playerProfileStatisticsRegressionTest, playerProfileTaxRegressionTest,
         playerProfileRepositoryEnumerationRegressionTest, playerProfileYamlRegressionTest,

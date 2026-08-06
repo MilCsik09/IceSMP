@@ -92,11 +92,6 @@
       "reason": "Rebuildable session projection of SpellbookSection cooldowns; cleared on quit."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/CatalystProtectionListener.java|private final Map<UUID, List<ItemStack>> keptOnDeath = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Death-to-respawn item handoff buffer scoped to one respawn cycle."
-    },
-    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Combat UI throttle/last-target display state; session only."
@@ -210,6 +205,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/spells/InnerFocusSpell.java|private static final Map<UUID, Float> FROZEN_PLAYERS = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Stateful spell walk-speed freeze with mandatory clearPlayerState cleanup."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CrateManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Crate placements and opening-recovery fences; per-player counts, cooldowns and settlement receipts live in the PlayerProfile STATISTICS section."
     }
   ]
 }

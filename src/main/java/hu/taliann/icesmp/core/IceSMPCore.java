@@ -1711,7 +1711,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(abilityCatalystListener, plugin);
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener, spellFavoritesManager), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CatalystProtectionListener(catalystItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CatalystProtectionListener(plugin, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SignatureItemListener(plugin, configManager, messageManager, gatheringBuffManager, currencyManager, territoryManager), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);

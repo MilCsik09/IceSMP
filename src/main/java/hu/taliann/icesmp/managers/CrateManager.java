@@ -17,6 +17,10 @@ import hu.taliann.icesmp.gui.CrateBrowserGUI;
 import hu.taliann.icesmp.gui.CrateSpinGUI;
 import hu.taliann.icesmp.items.BlueprintItemFactory;
 import hu.taliann.icesmp.items.CrateKeyFactory;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileCrateStore;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -241,6 +245,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
     private final Object stateLock = new Object();
     private final Map<StoredLocation, String> crateBlocks = new ConcurrentHashMap<>();
     private final CrateLedger ledger = new CrateLedger();
+    private final PlayerProfileCrateStore profileCrateStore = new PlayerProfileCrateStore();
     private final CrateRecoveryLedger recoveryLedger = new CrateRecoveryLedger();
     private final CrateAuditWriter auditWriter;
     private final Map<UUID, PendingOpen> pendingOpens = new HashMap<>();
@@ -1263,36 +1268,60 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         commitSuccessfulOpening(pending, player);
     }
 
-    /** Removes the manual-recovery fence durably before emitting the success presentation. */
+    /**
+     * Settles the durable player-side statistics/cooldown in PlayerProfile first, then removes the
+     * manual-recovery fence. The opening-id receipt keeps a crash between the two writes
+     * exact-once: an orphaned fence finalizes against the receipt at the next load.
+     */
     private void commitSuccessfulOpening(final PendingOpen pending, final Player player) {
+        profileCrateStore.applyMutation(pending.playerId, pending.ledgerMutation, pending.openingId)
+                .whenComplete((status, profileFailure) -> {
+                    if (profileFailure != null
+                            || status == PlayerProfileCrateStore.ApplyStatus.STALE) {
+                        if (profileFailure != null) {
+                            plugin.getLogger().log(Level.SEVERE,
+                                    "Crate settlement PlayerProfile commit failed", profileFailure);
+                        }
+                        submitAsync(() -> {
+                            synchronized (stateLock) {
+                                if (isCurrent(pending, CrateOpeningLifecycle.State.GRANTING)) {
+                                    recoveryLedger.transition(pending.openingId,
+                                            CrateRecoveryLedger.Disposition.MANUAL_REVIEW,
+                                            profileFailure != null
+                                                    ? "settlement-profile-commit-failed"
+                                                    : "settlement-profile-token-stale");
+                                    writeStateLocked();
+                                }
+                            }
+                            failPartial(pending, player,
+                                    "completion persistence failed after reward delivery");
+                        }, () -> failPartial(pending, player,
+                                "completion async scheduler rejected after reward delivery"));
+                        return;
+                    }
+                    finalizeSettledOpening(pending, player);
+                });
+    }
+
+    /** The profile commit is durable at this point; the projection must not roll back anymore. */
+    private void finalizeSettledOpening(final PendingOpen pending, final Player player) {
         submitAsync(() -> {
             boolean committed = false;
             synchronized (stateLock) {
                 if (isCurrent(pending, CrateOpeningLifecycle.State.GRANTING)) {
                     final CrateRecoveryLedger.Recovery recovery = recoveryLedger.remove(pending.openingId);
-                    boolean ledgerApplied = false;
-                    try {
-                        if (recovery != null) {
+                    if (recovery != null) {
+                        if (ledger.canApply(pending.ledgerMutation)) {
                             ledger.apply(pending.ledgerMutation);
-                            ledgerApplied = true;
-                            if (writeStateLocked()) {
-                                committed = pending.lifecycle.complete();
-                                finishPendingLocked(pending);
-                            }
                         }
-                    } catch (final RuntimeException failure) {
-                        plugin.getLogger().log(Level.SEVERE,
-                                "Crate settlement ledger/persistence failed", failure);
-                    }
-                    if (!committed) {
-                        if (ledgerApplied && ledger.canRollback(pending.ledgerMutation)) {
-                            ledger.rollback(pending.ledgerMutation);
+                        if (!writeStateLocked()) {
+                            recoveryLedger.add(recovery);
+                            plugin.getLogger().severe("Crate fence persistence failed after durable "
+                                    + "profile settlement; the receipt finalizes it at next load: "
+                                    + pending.openingId);
                         }
-                        if (recovery != null && recoveryLedger.get(recovery.openingId()) == null) {
-                            recoveryLedger.add(recovery.withDisposition(
-                                    CrateRecoveryLedger.Disposition.MANUAL_REVIEW,
-                                    "completion-persistence-failed"));
-                        }
+                        committed = pending.lifecycle.complete();
+                        finishPendingLocked(pending);
                     }
                 }
             }
@@ -1895,14 +1924,22 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     callback.accept(MutationResult.fail("crate-opening-busy"));
                     return;
                 }
-                final CrateLedger.ResetToken token = ledger.reset(playerId, crateId);
-                if (!writeStateLocked()) {
-                    ledger.rollbackReset(token);
+            }
+            profileCrateStore.reset(playerId, crateId).whenComplete((changed, failure) -> {
+                if (failure != null) {
+                    plugin.getLogger().log(Level.SEVERE,
+                            "Crate stat reset PlayerProfile commit failed", failure);
                     callback.accept(MutationResult.fail("crate-storage-unavailable"));
                     return;
                 }
-            }
-            callback.accept(MutationResult.ok());
+                submitAsync(() -> {
+                    // The profile commit is durable; the projection follows it unconditionally.
+                    synchronized (stateLock) {
+                        ledger.reset(playerId, crateId);
+                    }
+                    callback.accept(MutationResult.ok());
+                }, () -> callback.accept(MutationResult.fail("crate-storage-unavailable")));
+            });
         }, () -> callback.accept(MutationResult.fail("crate-storage-unavailable")));
     }
 
@@ -2010,7 +2047,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 return;
             }
             final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
-            final Set<String> allowedRoot = Set.of("schema", "blocks", "players", "recoveries");
+            final Set<String> allowedRoot = Set.of("schema", "blocks", "recoveries");
             for (final String key : yaml.getKeys(false)) {
                 if (!allowedRoot.contains(key)) {
                     corrupt("ismeretlen root kulcs: " + key);
@@ -2057,37 +2094,38 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 }
             }
 
-            final Map<UUID, CrateLedger.PlayerSnapshot> loadedStats = new LinkedHashMap<>();
-            if (yaml.get("players") != null && yaml.getConfigurationSection("players") == null) {
-                corrupt("players csak objektum lehet");
+            crateBlocks.putAll(loadedBlocks);
+            // The projection must be seeded before recovery validation, because the recovery
+            // tokens' previous values are compared against the durable per-player crate state.
+            if (PlayerProfileAuthority.installed().isEmpty()) {
+                throw new IllegalStateException(
+                        "PlayerProfile authority is required before CrateManager.load");
             }
-            final ConfigurationSection stats = yaml.getConfigurationSection("players");
-            if (stats != null) {
-                for (final String uuidRaw : stats.getKeys(false)) {
-                    try {
-                        final UUID uuid = UUID.fromString(uuidRaw);
-                        final ConfigurationSection player = stats.getConfigurationSection(uuidRaw);
-                        if (player == null) {
-                            throw new IllegalArgumentException("nem objektum");
-                        }
-                        final String name = optionalStoredText(player.get("last-known-name"),
-                                "last-known-name", 64);
-                        final Map<String, Long> counts = readNonNegativeLongMap(
-                                player.getConfigurationSection("counts"), true);
-                        long total = 0L;
-                        for (final long count : counts.values()) {
-                            total = Math.addExact(total, count);
-                        }
-                        final Map<String, Long> cooldowns = readNonNegativeLongMap(
-                                player.getConfigurationSection("cooldowns"), false);
-                        loadedStats.put(uuid, new CrateLedger.PlayerSnapshot(name, counts, cooldowns));
-                    } catch (final ArithmeticException | IllegalArgumentException invalid) {
-                        corrupt("players." + uuidRaw + ": " + invalid.getMessage());
-                    }
+            final Map<UUID, CrateLedger.PlayerSnapshot> seededStats = new LinkedHashMap<>();
+            final Map<UUID, List<String>> settlementReceipts = new LinkedHashMap<>();
+            final Set<UUID> ownerIds = PlayerProfileAuthority.current().repository()
+                    .listPlayerIds().toCompletableFuture().join();
+            for (final UUID ownerId : ownerIds) {
+                final var profile = PlayerProfileAuthority.current().repository()
+                        .find(ownerId).toCompletableFuture().join();
+                if (profile.isEmpty()) {
+                    continue;
+                }
+                final var section = profile.orElseThrow().section(ProfileSectionId.STATISTICS);
+                if (section.isEmpty() || !section.orElseThrow().health().usable()
+                        || !(section.orElseThrow().value() instanceof StatisticsSection stats)) {
+                    continue;
+                }
+                final PlayerProfileCrateStore.PlayerCrateState state =
+                        PlayerProfileCrateStore.read(stats);
+                if (!state.isEmpty()) {
+                    seededStats.put(ownerId, state.toLedgerSnapshot());
+                }
+                if (!state.recentOps().isEmpty()) {
+                    settlementReceipts.put(ownerId, state.recentOps());
                 }
             }
-            crateBlocks.putAll(loadedBlocks);
-            ledger.replace(loadedStats);
+            ledger.replace(seededStats);
 
             if (schema >= SCHEMA) {
                 final Object recoveriesNode = yaml.get("recoveries");
@@ -2103,6 +2141,12 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     try {
                         final CrateRecoveryLedger.Recovery recovery = decodeRecovery(rawRecoveries.get(index));
                         if (!ledger.canApply(recovery.ledgerMutation())) {
+                            if (settlementReceipts.getOrDefault(recovery.playerId(), List.of())
+                                    .contains(recovery.openingId().toString())) {
+                                // A settlement profil-commitja tartós, csak a fence maradt árván —
+                                // a receipt igazolja, ezért a fence csendben véglegesíthető.
+                                continue;
+                            }
                             throw new IllegalArgumentException("a ledger mutation token elavult vagy ellentmondó");
                         }
                         if (loadedRecoveries.putIfAbsent(recovery.openingId(), recovery) != null) {
@@ -2128,25 +2172,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 }
             }
         }
-    }
-
-    private Map<String, Long> readNonNegativeLongMap(final ConfigurationSection section,
-                                                      final boolean strictlyPositive) {
-        if (section == null) {
-            return Map.of();
-        }
-        final Map<String, Long> result = new LinkedHashMap<>();
-        for (final String rawId : section.getKeys(false)) {
-            final String id = CrateRules.normalizeId(rawId);
-            if (id == null || !id.equals(rawId)) {
-                throw new IllegalArgumentException("hibás crate state id: " + rawId);
-            }
-            final long value = CrateRules.exactLong(section.get(rawId), 0L,
-                    strictlyPositive ? 1L : 0L, Long.MAX_VALUE,
-                    "state." + rawId);
-            result.put(id, value);
-        }
-        return Map.copyOf(result);
     }
 
     private static int stateCoordinate(final Object raw, final String field, final int minimum,
@@ -2257,14 +2282,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
             blocks.add(block);
         }
         yaml.set("blocks", blocks);
-        for (final Map.Entry<UUID, CrateLedger.PlayerSnapshot> entry : ledger.snapshot().entrySet()) {
-            final String path = "players." + entry.getKey();
-            yaml.set(path + ".last-known-name", entry.getValue().lastKnownName());
-            entry.getValue().counts().forEach((crate, count) ->
-                    yaml.set(path + ".counts." + crate, count));
-            entry.getValue().cooldowns().forEach((crate, until) ->
-                    yaml.set(path + ".cooldowns." + crate, until));
-        }
         final List<Map<String, Object>> recoveries = new ArrayList<>();
         for (final CrateRecoveryLedger.Recovery recovery : recoveryLedger.snapshot().values().stream()
                 .sorted(Comparator.comparing(value -> value.openingId().toString())).toList()) {

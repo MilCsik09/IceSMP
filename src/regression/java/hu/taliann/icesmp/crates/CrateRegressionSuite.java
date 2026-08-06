@@ -519,7 +519,10 @@ public final class CrateRegressionSuite {
                 "malformed worlds config can still fail open");
         check(manager.contains("CrateSoundResolver.resolve(soundName)"),
                 "crate opening sounds must use the compatibility-aware resolver");
-        check(manager.contains("CrateRules.exactLong(section.get(rawId)"),
+        final String crateStore = source(
+                "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileCrateStore.java");
+        check(crateStore.contains("Invalid crate numeric extension")
+                        && manager.contains("PlayerProfileCrateStore.read(stats)"),
                 "persistent counts/cooldowns still pass through double");
         check(command.contains("crateManager.accessibleCrateIds(player)"),
                 "player completion does not use central access policy");
