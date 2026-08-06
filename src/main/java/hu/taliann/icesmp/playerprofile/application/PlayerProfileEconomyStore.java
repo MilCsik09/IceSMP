@@ -14,6 +14,7 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,16 +31,17 @@ import java.util.function.Function;
  *
  * <p>Balances are persisted as milli-units in {@link EconomySection#wallets()} so the
  * public double API can remain source compatible without storing floating point YAML
- * scalars. A durable debit witness and its wallet before/after snapshots live in the
- * same economy section; debit, commit and rollback are therefore single-section CAS
- * operations and cannot be torn across a restart.</p>
+ * scalars. Durable debit witnesses and idempotent credit receipts live in the same
+ * economy section as the wallet mutation.</p>
  */
 public final class PlayerProfileEconomyStore {
 
     public static final long SCALE = 1_000L;
     private static final String OPERATION_PREFIX = "wallet.op.";
+    private static final String CREDIT_RECEIPT_PREFIX = "credit.";
     private static final String CODEC_VERSION = "v1";
     private static final int MAX_OPERATIONS = 128;
+    private static final int MAX_CREDIT_RECEIPTS = 256;
 
     public enum OperationStatus { DEBITED, COMMITTED, ROLLED_BACK }
 
@@ -81,6 +83,10 @@ public final class PlayerProfileEconomyStore {
             if (delta <= 0L) throw new IllegalArgumentException("wallet addition must be positive");
             return with(type, Math.addExact(milli(type), delta));
         }
+    }
+
+    public record CreditResult(boolean applied, WalletState wallet) {
+        public CreditResult { Objects.requireNonNull(wallet, "wallet"); }
     }
 
     public record DurableOperation(String operationId,
@@ -171,6 +177,49 @@ public final class PlayerProfileEconomyStore {
         public static <R> Decision<R> changed(final WalletState wallet, final R result) {
             return new Decision<>(true, Objects.requireNonNull(wallet, "wallet"), result);
         }
+    }
+
+    /**
+     * Credits one wallet exactly once. The balance and operation receipt are committed in
+     * the same EconomySection CAS. Reusing an operation ID with different parameters fails.
+     */
+    public CompletionStage<CreditResult> creditOnce(final UUID playerId,
+                                                    final CurrencyType currency,
+                                                    final long amountMilli,
+                                                    final String operationId) {
+        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(currency, "currency");
+        if (amountMilli <= 0L) throw new IllegalArgumentException("credit must be positive");
+        final String id = requireOperationId(operationId);
+        final String prefix = creditReceiptPrefix(id);
+        final String receipt = prefix + currency.name().toLowerCase(Locale.ROOT)
+                + '.' + amountMilli;
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.ECONOMY, EconomySection.class, current -> {
+                    final Optional<String> existing = current.operationReceipts().stream()
+                            .filter(candidate -> candidate.startsWith(prefix)).findFirst();
+                    if (existing.isPresent()) {
+                        if (!existing.orElseThrow().equals(receipt)) {
+                            throw new IllegalStateException(
+                                    "wallet credit operation id reused with different parameters");
+                        }
+                        return PlayerProfileService.ConditionalMutation.unchanged(
+                                new CreditResult(false, decodeWallet(current)));
+                    }
+                    if (current.operationReceipts().size() >= MAX_CREDIT_RECEIPTS) {
+                        throw new IllegalStateException(
+                                "PlayerProfile wallet credit receipt ledger is full");
+                    }
+                    final WalletState after = decodeWallet(current).add(currency, amountMilli);
+                    final LinkedHashSet<String> receipts =
+                            new LinkedHashSet<>(current.operationReceipts());
+                    receipts.add(receipt);
+                    final EconomySection next = new EconomySection(
+                            encodeWallet(after), current.bankBalance(), current.debts(),
+                            current.pendingRewards(), receipts, current.extensions());
+                    return PlayerProfileService.ConditionalMutation.changed(next,
+                            new CreditResult(true, after));
+                });
     }
 
     /** Creates or replays one restart-durable wallet debit. */
@@ -331,11 +380,26 @@ public final class PlayerProfileEconomyStore {
         return map;
     }
 
+    private static String creditReceiptPrefix(final String operationId) {
+        return CREDIT_RECEIPT_PREFIX + digestId(operationId) + '.';
+    }
+
     private static String operationKey(final String operationId) {
+        return OPERATION_PREFIX + digestHex(operationId);
+    }
+
+    private static String digestId(final String value) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest(value));
+    }
+
+    private static String digestHex(final String value) {
+        return java.util.HexFormat.of().formatHex(digest(value));
+    }
+
+    private static byte[] digest(final String value) {
         try {
-            final byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(requireOperationId(operationId).getBytes(StandardCharsets.UTF_8));
-            return OPERATION_PREFIX + java.util.HexFormat.of().formatHex(digest);
+            return MessageDigest.getInstance("SHA-256")
+                    .digest(requireOperationId(value).getBytes(StandardCharsets.UTF_8));
         } catch (final NoSuchAlgorithmException impossible) {
             throw new IllegalStateException("SHA-256 unavailable", impossible);
         }
