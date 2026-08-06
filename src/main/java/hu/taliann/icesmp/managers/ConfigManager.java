@@ -236,32 +236,26 @@ public final class ConfigManager {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getString(path, fallback);
     }
-
     public int getInt(final String path, final int fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getInt(path, fallback);
     }
-
     public long getLong(final String path, final long fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getLong(path, fallback);
     }
-
     public double getDouble(final String path, final double fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getDouble(path, fallback);
     }
-
     public boolean getBoolean(final String path, final boolean fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getBoolean(path, fallback);
     }
-
     public List<String> getStringList(final String path) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? List.of() : configuration.getStringList(path);
     }
-
     public List<Double> getDoubleList(final String path) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? List.of() : configuration.getDoubleList(path);

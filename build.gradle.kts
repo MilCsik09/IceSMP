@@ -135,14 +135,14 @@ val resourcePackRegressionTest by registerRegression(
 tasks.check {
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
-        motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
-        operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest,
+        motdRegressionTest, sitRegressionTest, crateRegressionTest,
+        configStartupRegressionTest, operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
-        professionRecipeAuditRegressionTest, runtimeHardeningRegressionTest,
-        afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest,
-        hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest,
-        factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
-        relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
-        questNpcValidationRegressionTest, resourcePackRegressionTest
+        professionRecipeAuditRegressionTest, runtimeHardeningRegressionTest, afkRegressionTest,
+        worldGuardBridgeRegressionTest, territoryCapitalRegressionTest, hudRegressionTest,
+        pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest, factionPassiveRegressionTest,
+        factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest, relicItemRefreshRegressionTest,
+        relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest, questNpcValidationRegressionTest,
+        resourcePackRegressionTest
     )
 }

@@ -44,9 +44,23 @@ public final class ConfigMenuGUI {
                            final List<String> options) {
             return new Entry(key, label, EntryType.CYCLE, 0, 0, 0, options);
         }
+
+        public ReloadMode reloadMode() {
+            if (key.equals("factions.tax.enabled") || key.equals("factions.tax.interval-minutes")) {
+                return ReloadMode.RESTART_REQUIRED;
+            }
+            if (key.startsWith("motd.") || key.startsWith("sit.") || key.startsWith("crates.")
+                    || key.startsWith("resource-pack.") || key.startsWith("factions.passives.")
+                    || key.startsWith("factions.whisper.") || key.startsWith("professions.recipes.")) {
+                return ReloadMode.RELOAD_HOOK;
+            }
+            return ReloadMode.LIVE;
+        }
     }
 
     public enum EntryType { TOGGLE, NUMBER, INTEGER, CYCLE }
+    public enum ReloadMode { LIVE, RELOAD_HOOK, RESTART_REQUIRED }
+
 
     /** Egy kategória: cím, ikon és a kurátort kulcs-lista. */
     public record Category(String id, String title, Material icon, List<Entry> entries) {
@@ -87,7 +101,21 @@ public final class ConfigMenuGUI {
         )));
         categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
                 Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
-                Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció"),
+                Entry.toggle("world-events.safety.enabled", "Játékos-/border spawn-biztonság"),
+                Entry.toggle("world-events.safety.ignore-spectators", "Spectatorok kihagyása"),
+                Entry.toggle("world-events.safety.ignore-vanished", "Vanish adminok kihagyása"),
+                Entry.toggle("world-events.safety.ignore-admins", "Adminok kihagyása"),
+                Entry.number("world-events.safety.min-horizontal-distance-blocks", "Minimum játékostávolság (blokk)", 8, 0, 2048),
+                Entry.number("world-events.safety.min-3d-distance-blocks", "Minimum 3D távolság (0=kikapcsolva)", 8, 0, 2048),
+                Entry.number("world-events.safety.min-world-spawn-distance-blocks", "Világspawn minimumtáv", 8, 0, 4096),
+                Entry.toggle("world-events.safety.require-loaded-chunk", "Csak betöltött chunk"),
+                Entry.integer("world-events.safety.search-attempts", "Biztonságos hely keresési próbák", 1, 1, 128),
+                Entry.number("world-events.safety.search-min-radius-blocks", "Keresési sugár minimum", 16, 0, 4096),
+                Entry.number("world-events.safety.search-max-radius-blocks", "Keresési sugár maximum", 16, 16, 4096),
+                Entry.number("world-events.safety.world-border-margin-blocks", "World border biztonsági margó", 8, 0, 1024),
+                Entry.number("world-events.safety.reservation-distance-blocks", "Párhuzamos események minimumtávja", 8, 0, 2048),
+                Entry.integer("world-events.safety.reservation-seconds", "Spawn-foglalás ideje (mp)", 10, 1, 3600),
+                Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció (1 nagy esemény egyszerre)"),
                 Entry.toggle("world-events.blood-moon.enabled", "Vérhold"),
                 Entry.number("world-events.blood-moon.chance-percent", "Vérhold esély (%)", 5, 0, 100),
                 Entry.toggle("world-events.world-boss.enabled", "Világboss"),
@@ -249,6 +277,19 @@ public final class ConfigMenuGUI {
                 Entry.toggle("sit.stand-up.damage", "Sebzésre feláll"),
                 Entry.toggle("sit.stand-up.sneak", "Lopakodásra feláll"),
                 Entry.toggle("sit.stand-up.block-break", "Blokktörésre feláll"))));
+        categories.put("moderacio", new Category("moderacio", "Moderáció és vanish", Material.ENDER_EYE, List.of(
+                Entry.toggle("moderation.enabled", "Natív moderáció"),
+                Entry.toggle("moderation.chat-filter.enabled", "Chat-szűrő"),
+                Entry.cycle("moderation.chat-filter.mode", "Chat-szűrő mód", List.of("CENSOR", "BLOCK")),
+                Entry.toggle("moderation.spam.enabled", "Spam-védelem"),
+                Entry.integer("moderation.spam.min-interval-millis", "Üzenetköz minimum (ms)", 100, 0, 60000),
+                Entry.integer("moderation.spam.duplicate-window-seconds", "Duplikált üzenet ablak (mp)", 1, 0, 3600),
+                Entry.toggle("moderation.chat-log.enabled", "Moderációs chat-log"),
+                Entry.toggle("moderation.vanish.exclude-from-online-count", "Vanish kihagyása online számból"),
+                Entry.toggle("moderation.vanish.allow-item-pickup", "Vanish tárgyfelvétel"),
+                Entry.toggle("moderation.vanish.allow-damage", "Vanish sebzés/sebezhetőség"),
+                Entry.toggle("moderation.vanish.allow-interaction", "Vanish interakció"),
+                Entry.toggle("moderation.vanish.allow-chat", "Vanish chat"))));
         categories.put("borze", new Category("borze", "Börze és városi őrség", Material.EMERALD, List.of(
                 Entry.toggle("market.allow-relic-listing", "Relikvia listázható"),
                 Entry.number("market.relic-auction.recommended-min-bid", "Relikvia minimum licit", 25, 0, 1000000),
@@ -312,7 +353,7 @@ public final class ConfigMenuGUI {
                                     final ConfigManager configManager) {
         final Category category = CATEGORIES.get(categoryId);
         if (category == null) {
-            openRoot(player);
+            openRoot(player, session);
             return;
         }
         if (category.entries().size() > 45) {
@@ -323,7 +364,6 @@ public final class ConfigMenuGUI {
         final Inventory inventory = Bukkit.createInventory(holder, 54,
                 Component.text("⚙ " + category.title(), NamedTextColor.DARK_AQUA));
         holder.setInventory(inventory);
-
         int slot = 0;
         for (final Entry entry : category.entries()) {
             inventory.setItem(slot, ConfigMenuEntryRenderer.render(entry, configManager));

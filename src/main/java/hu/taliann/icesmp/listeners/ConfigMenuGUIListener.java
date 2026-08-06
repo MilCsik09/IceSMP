@@ -50,7 +50,6 @@ import java.util.function.Consumer;
 
 /** Transactional, Folia-safe admin config GUI including text/list and structured crate editors. */
 public final class ConfigMenuGUIListener implements Listener {
-
     public static final String PERMISSION = "icesmp.admin.config";
     private static final long INPUT_TIMEOUT_MILLIS = 120_000L;
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();

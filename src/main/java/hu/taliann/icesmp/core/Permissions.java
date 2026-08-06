@@ -116,7 +116,6 @@ public final class Permissions {
         moderationNodes.put(MODERATION_HISTORY, "Büntetési előzmények megtekintése");
         moderationNodes.put(MODERATION_SOCIALSPY, "Natív privát üzenetek megfigyelése");
         moderationNodes.put(MODERATION_VANISH, "Vanish állapot kezelése");
-        moderationNodes.put(MODERATION_VANISH_SEE, "Vanish állapotú adminok megtekintése");
         moderationNodes.put(MODERATION_OFFLINE_TP, "Teleport az utolsó kijelentkezési helyre");
         moderationNodes.put(MODERATION_INVENTORY_READ, "Online inventory és ender-láda olvasása");
         moderationNodes.put(MODERATION_INVENTORY_EDIT, "Online inventory és ender-láda szerkesztése");
@@ -126,6 +125,11 @@ public final class Permissions {
             registerNode(pm, new Permission(entry.getKey(), entry.getValue(), PermissionDefault.OP));
             moderationChildren.put(entry.getKey(), Boolean.TRUE);
         }
+        // Deliberately NOT inherited by OP, the moderation bundle or icesmp.admin.all.
+        // Otherwise every operator testing /vanish can still see the subject and the
+        // feature appears completely broken. Grant this node only to explicit observers.
+        registerNode(pm, new Permission(MODERATION_VANISH_SEE,
+                "Vanish állapotú adminok megtekintése", PermissionDefault.FALSE));
         registerNode(pm, new Permission(MODERATION,
                 "IceSMP natív moderációs jogosultságcsomag", PermissionDefault.OP, moderationChildren));
         allChildren.put(MODERATION, Boolean.TRUE);

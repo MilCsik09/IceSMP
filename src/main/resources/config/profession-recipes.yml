@@ -3331,14 +3331,6 @@ profession-recipes:
     category: "Alapanyag"
     result: { material: STRING, amount: 4 }
     ingredients: [ "SHORT_GRASS:4", "DIRT:2" ]
-  kezdo_horgaszbot:
-    profession: fisherman
-    level: 2
-    learn: level
-    display-name: "Kezdő Horgászbot"
-    category: "Eszköz"
-    result: { material: FISHING_ROD }
-    ingredients: [ "STICK:3", "STRING:2" ]
   halaszhalo_fonas:
     profession: fisherman
     level: 3

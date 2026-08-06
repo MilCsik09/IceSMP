@@ -2,6 +2,8 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.BlockCuboid;
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.ClaimFootprint;
+import hu.taliann.icesmp.data.ClaimShape;
 import hu.taliann.icesmp.integration.ProtectionBridge;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
@@ -13,6 +15,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,11 +33,9 @@ import java.util.logging.Level;
 /**
  * Native, BLOCK-precise 3D player-claim system (replaces the external
  * SimpleClaimSystem plugin, integrated with the IceSMP economy and war rules).
- * A claim is a box: an exact block-rectangle footprint plus a bounded Y-range
- * (by default 20 blocks up and 20 down from where it was created — the vertical
- * span can be EXTENDED for money from the menu). {@code /claim} quick-claims a
- * square around the player; {@code /claim pos1 + pos2 + area} claims an exact
- * rectangle between two standing points.
+ * A claim combines an exact X-Z shape (quick/two-corner rectangle or territory-style
+ * polygon) with a bounded inclusive Y range. New claims reserve the configured
+ * height/depth around their anchor Y and can be extended up or down for money.
  *
  * <p>Pricing is per COLUMN (1×1 block footprint): the first
  * {@code claims.free-columns} are free, every further column costs
@@ -52,7 +53,7 @@ import java.util.logging.Level;
  */
 public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.session.PlayerStateCleanup {
 
-    /** One claimed 3D box: exact block bounds, the owner and the trusted players. */
+    /** One exact X-Z shape with an inclusive Y range, its owner and trusted players. */
     public static final class Claim {
         private final String id;
         private final String world;
@@ -62,65 +63,67 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         private final int maxX;
         private final int maxY;
         private final int maxZ;
+        private final ClaimFootprint footprint;
+        private final ClaimShape shape;
         private final UUID owner;
         private final String ownerName;
         private final Set<UUID> trusted = ConcurrentHashMap.newKeySet();
         private final long claimedAt;
 
-        private Claim(final String id, final String world, final int minX, final int minY, final int minZ,
+        private Claim(final String id, final String world,
+                      final int minX, final int minY, final int minZ,
                       final int maxX, final int maxY, final int maxZ,
+                      final UUID owner, final String ownerName, final long claimedAt) {
+            this(id, world, minX, minY, minZ, maxX, maxY, maxZ,
+                    null, owner, ownerName, claimedAt);
+        }
+
+        private Claim(final String id, final String world,
+                      final int minX, final int minY, final int minZ,
+                      final int maxX, final int maxY, final int maxZ,
+                      final List<ClaimShape.Point> polygon,
                       final UUID owner, final String ownerName, final long claimedAt) {
             this.id = id;
             this.world = world;
-            this.minX = minX;
             this.minY = minY;
-            this.minZ = minZ;
-            this.maxX = maxX;
             this.maxY = maxY;
-            this.maxZ = maxZ;
+            this.shape = polygon == null || polygon.isEmpty()
+                    ? ClaimShape.rectangle(ClaimFootprint.between(minX, minZ, maxX, maxZ))
+                    : ClaimShape.polygon(polygon);
+            this.footprint = shape.bounds();
+            this.minX = footprint.minX();
+            this.minZ = footprint.minZ();
+            this.maxX = footprint.maxX();
+            this.maxZ = footprint.maxZ();
             this.owner = owner;
             this.ownerName = ownerName;
             this.claimedAt = claimedAt;
         }
 
-        public UUID getOwner() {
-            return owner;
-        }
-
-        public String getOwnerName() {
-            return ownerName;
-        }
-
+        public UUID getOwner() { return owner; }
+        public String getOwnerName() { return ownerName; }
         public boolean isTrusted(final UUID playerId) {
             return owner.equals(playerId) || trusted.contains(playerId);
         }
-
-        /** Footprint size in columns (1×1 block ground area). */
-        public int columns() {
-            return (maxX - minX + 1) * (maxZ - minZ + 1);
-        }
-
-        public int minY() {
-            return minY;
-        }
-
-        public int maxY() {
-            return maxY;
-        }
+        public int columns() { return shape.columns(); }
+        public boolean isPolygon() { return shape.isPolygon(); }
+        public int minY() { return minY; }
+        public int maxY() { return maxY; }
 
         private boolean contains(final String worldName, final int x, final int y, final int z) {
             return world.equals(worldName)
-                    && x >= minX && x <= maxX
                     && y >= minY && y <= maxY
-                    && z >= minZ && z <= maxZ;
+                    && shape.contains(x, z);
         }
 
-        /** Footprint (XZ) overlap test — Y is ignored so boxes can't stack over each other. */
+        private boolean overlapsShape(final String worldName, final ClaimShape other) {
+            return world.equals(worldName) && shape.overlaps(other);
+        }
+
         private boolean overlapsFootprint(final String worldName, final int oMinX, final int oMinZ,
                                           final int oMaxX, final int oMaxZ) {
-            return world.equals(worldName)
-                    && minX <= oMaxX && maxX >= oMinX
-                    && minZ <= oMaxZ && maxZ >= oMinZ;
+            return world.equals(worldName) && shape.overlaps(
+                    ClaimFootprint.between(oMinX, oMinZ, oMaxX, oMaxZ));
         }
     }
 
@@ -137,8 +140,19 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         private boolean hasSecond;
     }
 
+    /** Territory-style multi-point personal-claim selection. */
+    private static final class PolygonSelection {
+        private String world;
+        private int anchorY;
+        private boolean hasAnchor;
+        private final List<ClaimShape.Point> points = new ArrayList<>();
+    }
+
     /** A completed selection's summary for previews and the area-claim flow. */
     public record SelectionInfo(long width, long depth, long columns, boolean overlaps, double cost) { }
+
+    /** A valid multi-point selection's exact filled-column summary. */
+    public record PolygonSelectionInfo(int points, int columns, boolean overlaps, double cost) { }
 
     /** Existing personal claim that conflicts with an admin selection footprint. */
     public record ClaimConflict(UUID owner, String ownerName) { }
@@ -162,8 +176,11 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     private volatile Map<String, List<Claim>> chunkIndex = Map.of();
 
     private final Map<UUID, Selection> selections = new ConcurrentHashMap<>();
+    private final Map<UUID, PolygonSelection> polygonSelections = new ConcurrentHashMap<>();
     /** Last claim-id per player (border-cross action-bar notices; cleared on quit). */
     private final Map<UUID, String> lastClaimId = new ConcurrentHashMap<>();
+    /** At most one owned border preview task per player. */
+    private final Map<UUID, ScheduledTask> borderTasks = new ConcurrentHashMap<>();
 
     public ClaimManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final CurrencyManager currencyManager, final FactionManager factionManager,
@@ -182,7 +199,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     // ==================== queries (lock-free, hot path) ====================
 
-    /** The claim covering the exact block location (Y included), or null. */
+    /** The claim covering the exact X/Y/Z block location, or null. */
     public Claim getClaimAt(final Location location) {
         if (location == null || location.getWorld() == null) {
             return null;
@@ -203,8 +220,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     /**
      * Whether the player may build/interact at the location: true when unclaimed
-     * (or outside the claim's Y-range), or when they own / are trusted in the
-     * covering claim. (The admin bypass permission is the listener's concern.)
+     * (including above/below a claim's Y range), or when they own / are trusted in
+     * the covering claim. The admin bypass permission is the listener's concern.
      */
     public boolean canUse(final UUID playerId, final Location location) {
         if (!isEnabled()) {
@@ -266,6 +283,14 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return Math.max(4, configManager.getInt("claims.quick-size", 16));
     }
 
+    private int areaMaxColumns() {
+        return Math.max(16, configManager.getInt("claims.area-max-columns", 6400));
+    }
+
+    private int polygonMaxPoints() {
+        return Math.max(3, configManager.getInt("claims.polygon-max-points", 64));
+    }
+
     private int defaultHeight() {
         return Math.max(1, configManager.getInt("claims.default-height", 20));
     }
@@ -274,14 +299,17 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return Math.max(1, configManager.getInt("claims.default-depth", 20));
     }
 
+
     /** The player's claims as human-readable region descriptors (for /claim list). */
     public List<String> describeClaims(final UUID playerId) {
         final List<String> entries = new ArrayList<>();
         for (final Claim claim : claims.values()) {
             if (claim.owner.equals(playerId)) {
                 entries.add(claim.world + " (" + claim.minX + ", " + claim.minZ + ")→(" + claim.maxX + ", "
-                        + claim.maxZ + ") Y " + claim.minY + ".." + claim.maxY
-                        + " — " + (claim.maxX - claim.minX + 1) + "×" + (claim.maxZ - claim.minZ + 1));
+                        + claim.maxZ + ") Y " + claim.minY + ".." + claim.maxY + " — "
+                        + (claim.shape.isPolygon()
+                        ? "poligon, " + claim.columns() + " oszlop"
+                        : (claim.maxX - claim.minX + 1) + "×" + (claim.maxZ - claim.minZ + 1)));
             }
         }
         return entries;
@@ -289,7 +317,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     // ==================== command-facing API (null = success, else message key) ====================
 
-    /** Quick-claim: a quick-size² square centred on the player, default Y-range. */
+    /** Quick-claim: a quick-size² X-Z square centred on the player, with the default Y range. */
     public synchronized String claimHere(final Player player) {
         if (!isEnabled()) {
             return "claim-disabled";
@@ -299,48 +327,58 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         final int minX = location.getBlockX() - half;
         final int minZ = location.getBlockZ() - half;
         return createClaim(player, location.getWorld(),
-                minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1, location.getBlockY());
+                minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1,
+                location.getBlockY());
     }
 
     /**
      * Shared creation path for quick-claim and area-claim: overlap, territory,
      * WorldGuard, column-cap and price checks, then insert + persist.
      */
-    private String createClaim(final Player player, final World world, final int minX, final int minZ,
-                               final int maxX, final int maxZ, final int anchorY) {
+    private String createClaim(final Player player, final World world,
+                               final int minX, final int minZ,
+                               final int maxX, final int maxZ,
+                               final int anchorY) {
+        try {
+            return createClaimShape(player, world, ClaimShape.rectangle(
+                    ClaimFootprint.between(minX, minZ, maxX, maxZ), areaMaxColumns()), anchorY);
+        } catch (final IllegalArgumentException tooLarge) {
+            return "claim-area-too-big";
+        }
+    }
+
+    private String createClaimShape(final Player player, final World world,
+                                    final ClaimShape shape, final int anchorY) {
         final String worldName = world.getName();
-        final Claim overlapping = findFootprintOverlap(worldName, minX, minZ, maxX, maxZ);
+        final Claim overlapping = findShapeOverlap(worldName, shape);
         if (overlapping != null) {
-            return overlapping.owner.equals(player.getUniqueId()) ? "claim-overlap-own" : "claim-already-taken";
+            return overlapping.owner.equals(player.getUniqueId())
+                    ? "claim-overlap-own" : "claim-already-taken";
         }
+        final String vetoKey = territoryOrRegionVeto(world, shape);
+        if (vetoKey != null) return vetoKey;
 
-        // Kingdom land and admin regions veto per overlapped chunk (both are chunk/region
-        // scoped systems — probing each chunk centre is exact enough and cheap).
-        final String vetoKey = territoryOrRegionVeto(world, minX, minZ, maxX, maxZ);
-        if (vetoKey != null) {
-            return vetoKey;
-        }
-
-        final int columns = (maxX - minX + 1) * (maxZ - minZ + 1);
+        final int columns = shape.columns();
         final int owned = countColumns(player.getUniqueId());
         final int cap = Math.max(1, configManager.getInt("claims.max-columns-per-player", 8192));
-        if (owned + columns > cap) {
-            return "claim-limit-reached";
-        }
+        if ((long) owned + columns > cap) return "claim-limit-reached";
 
         final double cost = priceFor(owned, columns);
         if (cost > 0.0D) {
-            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
-            // Az ár elég (sosem íródik jóvá) — tiszta money sink.
+            final CurrencyType currency = CurrencyType.fromFactionType(
+                    factionManager.getEconomyFaction(player.getUniqueId()));
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
                 return "claim-insufficient";
             }
         }
 
+        final ClaimFootprint bounds = shape.bounds();
         final int minY = Math.max(world.getMinHeight(), anchorY - defaultDepth());
-        final int maxY = Math.min(world.getMaxHeight(), anchorY + defaultHeight());
+        final int maxY = Math.min(world.getMaxHeight() - 1, anchorY + defaultHeight());
         final Claim claim = new Claim(UUID.randomUUID().toString(), worldName,
-                minX, minY, minZ, maxX, maxY, maxZ,
+                bounds.minX(), minY, bounds.minZ(),
+                bounds.maxX(), maxY, bounds.maxZ(),
+                shape.isPolygon() ? shape.vertices() : null,
                 player.getUniqueId(), player.getName(), System.currentTimeMillis());
         claims.put(claim.id, claim);
         rebuildIndex();
@@ -348,54 +386,40 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return null;
     }
 
+    private Claim findShapeOverlap(final String worldName, final ClaimShape shape) {
+        for (final Claim claim : claims.values()) {
+            if (claim.overlapsShape(worldName, shape)) return claim;
+        }
+        return null;
+    }
+
     private Claim findFootprintOverlap(final String worldName, final int minX, final int minZ,
                                        final int maxX, final int maxZ) {
         for (final Claim claim : claims.values()) {
-            if (claim.overlapsFootprint(worldName, minX, minZ, maxX, maxZ)) {
-                return claim;
-            }
+            if (claim.overlapsFootprint(worldName, minX, minZ, maxX, maxZ)) return claim;
         }
         return null;
     }
 
     /**
-     * Territory/WorldGuard veto over the footprint (null = OK). Claiming inside a
-     * PROTECTED zone (capital, protected city/faction) is always forbidden — the
-     * whole point of the map's shield; NORMAL faction land stays claimable unless
-     * the legacy {@code claims.block-in-territory} switch is turned back on.
-     *
-     * <p>Probes both every touched chunk centre AND the footprint's four corners +
-     * centre, so a small protected polygon can't slip between chunk-centre samples.
+     * Exact shape-aware territory and WorldGuard veto. Concave gaps are not treated
+     * as claimed: territory checks use every occupied column and WorldGuard checks
+     * use contiguous row spans instead of the bounding rectangle.
      */
-    private String territoryOrRegionVeto(final World world, final int minX, final int minZ,
-                                         final int maxX, final int maxZ) {
-        final boolean blockProtectedZone = configManager.getBoolean("claims.block-in-protected-zone", true);
-        final boolean blockFactionTerritory = configManager.getBoolean("claims.block-in-territory", false);
-        final boolean blockRegion = configManager.getBoolean("claims.block-in-protected-region", true);
-        if (!blockProtectedZone && !blockFactionTerritory && !blockRegion) {
-            return null;
-        }
-        final int y = world.getSeaLevel();
-        final List<Location> probes = new ArrayList<>();
-        for (int cx = minX >> 4; cx <= maxX >> 4; cx++) {
-            for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
-                probes.add(new Location(world, (cx << 4) + 8, y, (cz << 4) + 8));
-            }
-        }
-        final int midX = (minX + maxX) / 2;
-        final int midZ = (minZ + maxZ) / 2;
-        probes.add(new Location(world, minX, y, minZ));
-        probes.add(new Location(world, maxX, y, minZ));
-        probes.add(new Location(world, minX, y, maxZ));
-        probes.add(new Location(world, maxX, y, maxZ));
-        probes.add(new Location(world, midX, y, midZ));
+    private String territoryOrRegionVeto(final World world, final ClaimShape shape) {
+        final boolean blockProtectedZone =
+                configManager.getBoolean("claims.block-in-protected-zone", true);
+        final boolean blockFactionTerritory =
+                configManager.getBoolean("claims.block-in-territory", false);
+        final boolean blockRegion =
+                configManager.getBoolean("claims.block-in-protected-region", true);
 
-        for (final Location probe : probes) {
-            // Column (2D) lookup: a claim box is tall, so a protected zone must veto
-            // it regardless of the zone's optional Y band or the probe's sample height.
-            final hu.taliann.icesmp.data.Territory territory =
-                    territoryManager.getTerritoryColumnAt(world.getName(), probe.getBlockX(), probe.getBlockZ());
-            if (territory != null) {
+        if (blockProtectedZone || blockFactionTerritory) {
+            for (final ClaimShape.Point column : shape.claimedColumns()) {
+                final hu.taliann.icesmp.data.Territory territory =
+                        territoryManager.getTerritoryColumnAt(
+                                world.getName(), column.x(), column.z());
+                if (territory == null) continue;
                 if (blockProtectedZone && !territory.type().isClaimable()) {
                     return "claim-in-protected-zone";
                 }
@@ -404,15 +428,11 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 }
             }
         }
-
-        // A WG-átfedés VALÓDI box-metszés a világ teljes magasságán: a pont-mintavétel
-        // (chunk-közép + sarkok, tengerszinten) átengedte a minták közé eső kicsi/keskeny
-        // és a más magasságban lévő régiót. FAIL-CLOSED: ha a híd épp hibás („nem tudom"),
-        // inkább elutasítjuk a claimet, mint hogy spawn/kazamata/admin-épület fölé kerüljön.
         if (blockRegion) {
-            final Boolean overlap = ProtectionBridge.queryRegionOverlap(world, minX, minZ, maxX, maxZ);
-            if (overlap == null || overlap) {
-                return "claim-in-protected-region";
+            for (final ClaimShape.RowSpan span : shape.rowSpans()) {
+                final Boolean overlap = ProtectionBridge.queryRegionOverlap(
+                        world, span.minX(), span.z(), span.maxX(), span.z());
+                if (overlap == null || overlap) return "claim-in-protected-region";
             }
         }
         return null;
@@ -531,9 +551,9 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     }
 
     /**
-     * Claims the exact block-rectangle between the two corners (Y-range: the lower
-     * corner minus default depth up to the higher corner plus default height).
-     * Null on success, else message key.
+     * Claims the exact normalized X-Z block rectangle between the two corners.
+     * The initial vertical range is centred on the two selected Y values' midpoint,
+     * then expanded by the configured default depth/height. Null on success, else message key.
      */
     public synchronized String claimSelection(final Player player) {
         if (!isEnabled()) {
@@ -559,8 +579,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             return "claim-area-too-big";
         }
 
-        final int anchorY = (Math.min(selection.y1, selection.y2) + Math.max(selection.y1, selection.y2)) / 2;
-        final String errorKey = createClaim(player, player.getWorld(), minX, minZ, maxX, maxZ, anchorY);
+        final int anchorY = (Math.min(selection.y1, selection.y2)
+                + Math.max(selection.y1, selection.y2)) / 2;
+        final String errorKey = createClaim(
+                player, player.getWorld(), minX, minZ, maxX, maxZ, anchorY);
         if (errorKey != null) {
             // Az area-specifikus üzenetek beszédesebbek az általános foglalási hibáknál.
             return switch (errorKey) {
@@ -573,12 +595,129 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return null;
     }
 
-    // ==================== függőleges bővítés (menüből, pénzért) ====================
+    // ==================== territory-style polygon selection ====================
+
+    public int addPolygonPoint(final Player player) {
+        return addPolygonPoint(player, player.getLocation());
+    }
+
+    public int addPolygonPoint(final Player player, final Location location) {
+        final PolygonSelection selection = polygonSelections.computeIfAbsent(
+                player.getUniqueId(), ignored -> new PolygonSelection());
+        synchronized (selection) {
+            final String worldName = location.getWorld().getName();
+            if (!worldName.equals(selection.world)) {
+                selection.points.clear();
+                selection.hasAnchor = false;
+                selection.world = worldName;
+            }
+            final ClaimShape.Point point = new ClaimShape.Point(
+                    location.getBlockX(), location.getBlockZ());
+            if (selection.points.isEmpty()
+                    || !selection.points.get(selection.points.size() - 1).equals(point)) {
+                if (selection.points.size() >= polygonMaxPoints()) {
+                    return -selection.points.size();
+                }
+                if (!selection.hasAnchor) {
+                    selection.anchorY = location.getBlockY();
+                    selection.hasAnchor = true;
+                }
+                selection.points.add(point);
+            }
+            return selection.points.size();
+        }
+    }
+
+    public int undoPolygonPoint(final UUID playerId) {
+        final PolygonSelection selection = polygonSelections.get(playerId);
+        if (selection == null) return -1;
+        synchronized (selection) {
+            if (selection.points.isEmpty()) return -1;
+            selection.points.remove(selection.points.size() - 1);
+            if (selection.points.isEmpty()) {
+                selection.hasAnchor = false;
+            }
+            return selection.points.size();
+        }
+    }
+
+    public void clearPolygonPoints(final UUID playerId) {
+        polygonSelections.remove(playerId);
+    }
+
+    public List<ClaimShape.Point> getPolygonPoints(final UUID playerId) {
+        final PolygonSelection selection = polygonSelections.get(playerId);
+        if (selection == null) return List.of();
+        synchronized (selection) {
+            return List.copyOf(selection.points);
+        }
+    }
+
+    public PolygonSelectionInfo getPolygonSelectionInfo(final UUID playerId) {
+        final PolygonSelection selection = polygonSelections.get(playerId);
+        if (selection == null) return null;
+        final List<ClaimShape.Point> points;
+        final String worldName;
+        synchronized (selection) {
+            if (selection.points.size() < 3 || selection.points.size() > polygonMaxPoints()) return null;
+            points = List.copyOf(selection.points);
+            worldName = selection.world;
+        }
+        try {
+            final ClaimShape shape = ClaimShape.polygon(points, areaMaxColumns());
+            return new PolygonSelectionInfo(points.size(), shape.columns(),
+                    findShapeOverlap(worldName, shape) != null,
+                    priceFor(countColumns(playerId), shape.columns()));
+        } catch (final IllegalArgumentException invalid) {
+            return null;
+        }
+    }
+
+    public synchronized String claimPolygon(final Player player) {
+        if (!isEnabled()) return "claim-disabled";
+        final PolygonSelection selection = polygonSelections.get(player.getUniqueId());
+        if (selection == null) return "claim-polygon-too-few";
+
+        final List<ClaimShape.Point> points;
+        final String worldName;
+        final int anchorY;
+        synchronized (selection) {
+            points = List.copyOf(selection.points);
+            worldName = selection.world;
+            anchorY = selection.anchorY;
+        }
+        if (points.size() < 3) return "claim-polygon-too-few";
+        if (points.size() > polygonMaxPoints()) return "claim-polygon-too-many";
+        if (!player.getWorld().getName().equals(worldName)) {
+            return "claim-polygon-cross-world";
+        }
+
+        final ClaimShape shape;
+        try {
+            shape = ClaimShape.polygon(points, areaMaxColumns());
+        } catch (final IllegalArgumentException invalid) {
+            return invalid.getMessage() != null
+                    && invalid.getMessage().contains("self-intersects")
+                    ? "claim-polygon-self-intersect" : "claim-polygon-invalid";
+        }
+        final String error = createClaimShape(player, player.getWorld(), shape, anchorY);
+        if (error != null) {
+            return switch (error) {
+                case "claim-already-taken" -> "claim-polygon-foreign";
+                case "claim-overlap-own" -> "claim-polygon-overlap-own";
+                default -> error;
+            };
+        }
+        polygonSelections.remove(player.getUniqueId());
+        return null;
+    }
+
+    // ==================== függőleges bővítés (pénzért) ====================
 
     /**
      * Extends the vertical range of the claim the player stands in by
-     * {@code claims.y-extend-step} blocks up or down, for columns × per-column
-     * price (burned). Null on success, else message key.
+     * {@code claims.y-extend-step} blocks up or down. The X-Z shape stays exact,
+     * including polygon vertices, and the extension price is burned.
      */
     public synchronized String extendClaim(final Player player, final boolean up) {
         if (!isEnabled()) {
@@ -591,25 +730,33 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         if (!claim.owner.equals(player.getUniqueId())) {
             return "claim-not-owner";
         }
+
         final World world = player.getWorld();
         final int step = Math.max(1, configManager.getInt("claims.y-extend-step", 5));
-        final int newMinY = up ? claim.minY : Math.max(world.getMinHeight(), claim.minY - step);
-        final int newMaxY = up ? Math.min(world.getMaxHeight(), claim.maxY + step) : claim.maxY;
+        final int newMinY = up
+                ? claim.minY
+                : Math.max(world.getMinHeight(), claim.minY - step);
+        final int newMaxY = up
+                ? Math.min(world.getMaxHeight() - 1, claim.maxY + step)
+                : claim.maxY;
         if (newMinY == claim.minY && newMaxY == claim.maxY) {
             return "claim-extend-at-limit";
         }
 
-        final double cost = Math.ceil(claim.columns()
-                * Math.max(0.0D, configManager.getDouble("claims.y-extend-cost-per-column", 0.1D)) * 100.0D) / 100.0D;
+        final double cost = extendCost(claim);
         if (cost > 0.0D) {
-            final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
+            final CurrencyType currency = CurrencyType.fromFactionType(
+                    factionManager.getEconomyFaction(player.getUniqueId()));
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
                 return "claim-insufficient";
             }
         }
 
-        final Claim extended = new Claim(claim.id, claim.world, claim.minX, newMinY, claim.minZ,
-                claim.maxX, newMaxY, claim.maxZ, claim.owner, claim.ownerName, claim.claimedAt);
+        final Claim extended = new Claim(claim.id, claim.world,
+                claim.minX, newMinY, claim.minZ,
+                claim.maxX, newMaxY, claim.maxZ,
+                claim.shape.isPolygon() ? claim.shape.vertices() : null,
+                claim.owner, claim.ownerName, claim.claimedAt);
         extended.trusted.addAll(claim.trusted);
         claims.put(claim.id, extended);
         rebuildIndex();
@@ -617,14 +764,19 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return null;
     }
 
-    /** The price of one vertical extension step for the claim at the player (or -1 if none/owned by other). */
+    /** Price of one vertical extension step for the claim at the player. */
     public double extendCostAt(final Player player) {
         final Claim claim = getClaimAt(player.getLocation());
         if (claim == null || !claim.owner.equals(player.getUniqueId())) {
             return -1.0D;
         }
+        return extendCost(claim);
+    }
+
+    private double extendCost(final Claim claim) {
         return Math.ceil(claim.columns()
-                * Math.max(0.0D, configManager.getDouble("claims.y-extend-cost-per-column", 0.1D)) * 100.0D) / 100.0D;
+                * Math.max(0.0D, configManager.getDouble(
+                "claims.y-extend-cost-per-column", 0.1D)) * 100.0D) / 100.0D;
     }
 
     // ==================== admin / trust ====================
@@ -716,39 +868,43 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     // ==================== határ-megjelenítés + belépés-értesítés ====================
 
     /**
-     * Draws the exact block-precise outlines of the claims around the player for a
-     * few seconds (own/trusted=green, foreign=flame), plus a composter preview of
-     * the quick-claim square when standing on unclaimed ground. Corner posts hint
-     * the vertical extent. Folia-safe: repeating task on the player's own entity
-     * scheduler, particles sent only to that player, index reads lock-free.
+     * Draws the exact 3D boundaries of nearby claims for a few seconds
+     * (own/trusted=green, foreign=flame), plus a composter preview of the quick-claim
+     * square on unclaimed ground. Existing claim walls are clipped exactly to each
+     * claim's inclusive minY..maxY range. Folia-safe: entity/region-owned schedulers,
+     * per-viewer displays and lock-free index reads.
      */
     public void showBorder(final Player player) {
         final int seconds = Math.max(2, configManager.getInt("claims.border.show-seconds", 8));
         if (configManager.getBoolean("display-fx.claim-wall.enabled", true)) {
             showDisplayWalls(player, seconds);
         }
+        final UUID playerId = player.getUniqueId();
+        final ScheduledTask previous = borderTasks.remove(playerId);
+        if (previous != null) {
+            previous.cancel();
+        }
         final int[] frames = {0};
-        player.getScheduler().runAtFixedRate(plugin, task -> {
+        final ScheduledTask scheduled = player.getScheduler().runAtFixedRate(plugin, task -> {
             if (frames[0]++ >= seconds || !player.isOnline()) {
                 task.cancel();
+                borderTasks.remove(playerId, task);
                 return;
             }
             drawBorderFrame(player);
         }, null, 1L, 20L);
+        borderTasks.put(playerId, scheduled);
     }
 
     /**
-     * DisplayFx-pilot: a közeli claimek köré EGYSZER (nem frame-enként) izzó fényfalat állít a
-     * BlockDisplay-rétegből — claim-élenként egy megnyújtott, per-nézős, {@code seconds} múlva
-     * eltűnő entitás (saját/trusted=zöld, idegen=piros). A particle-perem a terep-követő részlet,
-     * ez a folytonos, olvasható határ.
+     * Exact claimed-volume BlockDisplay wall. Every X-Z boundary block owns one
+     * region-scheduled vertical segment from minY through maxY, and no display is
+     * created above or below the actually claimed range.
      */
     private void showDisplayWalls(final Player player, final int seconds) {
         final Location location = player.getLocation();
         final World world = location.getWorld();
-        if (world == null) {
-            return;
-        }
+        if (world == null) return;
         final String worldName = world.getName();
         final int radius = Math.max(1, configManager.getInt("claims.border.radius", 2));
         final int pcx = location.getBlockX() >> 4;
@@ -758,32 +914,40 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
             for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
                 final List<Claim> hits = index.get(chunkKey(worldName, cx, cz));
-                if (hits != null) {
-                    nearby.addAll(hits);
-                }
+                if (hits != null) nearby.addAll(hits);
             }
         }
-        if (nearby.isEmpty()) {
-            return;
-        }
-        final int height = Math.max(1, configManager.getInt("display-fx.claim-wall.height", 3));
         final int ticks = seconds * 20;
         final org.bukkit.block.data.BlockData block = wallBlockData();
         for (final Claim claim : nearby) {
             final org.bukkit.Color glow = claim.isTrusted(player.getUniqueId())
-                    ? org.bukkit.Color.fromRGB(0x3BE24A) : org.bukkit.Color.fromRGB(0xE23B3B);
-            final float width = claim.maxX + 1 - claim.minX;
-            final float depth = claim.maxZ + 1 - claim.minZ;
-            final double baseY = hu.taliann.icesmp.utils.ParticleUtil.markerY(
-                    world, claim.minX + (int) (width / 2), claim.minZ + (int) (depth / 2), location.getY()) - 1.2D;
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.minX, baseY, claim.minZ), width, height, 0.1F, block, glow, ticks, player);
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.minX, baseY, claim.maxZ + 1), width, height, 0.1F, block, glow, ticks, player);
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.minX, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
-            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
-                    new Location(world, claim.maxX + 1, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
+                    ? org.bukkit.Color.fromRGB(0x3BE24A)
+                    : org.bukkit.Color.fromRGB(0xE23B3B);
+            if (!claim.shape.isPolygon()) {
+                for (int x = claim.minX; x <= claim.maxX; x++) {
+                    hu.taliann.icesmp.utils.DisplayFxUtil.claimedWallColumn(plugin, world,
+                            x, claim.minZ, x, claim.minZ, 1.0F, 0.08F,
+                            claim.minY, claim.maxY, block, glow, ticks, player);
+                    hu.taliann.icesmp.utils.DisplayFxUtil.claimedWallColumn(plugin, world,
+                            x, claim.maxZ, x, claim.maxZ + 1.0D, 1.0F, 0.08F,
+                            claim.minY, claim.maxY, block, glow, ticks, player);
+                }
+                for (int z = claim.minZ; z <= claim.maxZ; z++) {
+                    hu.taliann.icesmp.utils.DisplayFxUtil.claimedWallColumn(plugin, world,
+                            claim.minX, z, claim.minX, z, 0.08F, 1.0F,
+                            claim.minY, claim.maxY, block, glow, ticks, player);
+                    hu.taliann.icesmp.utils.DisplayFxUtil.claimedWallColumn(plugin, world,
+                            claim.maxX, z, claim.maxX + 1.0D, z, 0.08F, 1.0F,
+                            claim.minY, claim.maxY, block, glow, ticks, player);
+                }
+            } else {
+                for (final ClaimShape.Point point : claim.shape.boundaryColumns()) {
+                    hu.taliann.icesmp.utils.DisplayFxUtil.claimedWallColumn(plugin, world,
+                            point.x(), point.z(), point.x(), point.z(),
+                            1.0F, 1.0F, claim.minY, claim.maxY,
+                            block, glow, ticks, player);
+                }
+            }
         }
     }
 
@@ -819,7 +983,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         for (final Claim claim : nearby) {
             final Particle particle = claim.isTrusted(player.getUniqueId())
                     ? Particle.HAPPY_VILLAGER : Particle.FLAME;
-            drawBoxOutline(player, world, claim.minX, claim.minZ, claim.maxX, claim.maxZ,
+            drawShapeOutline(player, world, claim.shape,
                     claim.minY, claim.maxY, location.getBlockY(), particle);
         }
 
@@ -827,47 +991,36 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             final int half = quickSize() / 2;
             final int minX = location.getBlockX() - half;
             final int minZ = location.getBlockZ() - half;
-            drawBoxOutline(player, world, minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1,
-                    location.getBlockY(), location.getBlockY(), location.getBlockY(), Particle.COMPOSTER);
+            drawFootprintOutline(player, world,
+                    ClaimFootprint.between(minX, minZ, minX + quickSize() - 1, minZ + quickSize() - 1),
+                    location.getBlockY(), Particle.COMPOSTER);
         }
     }
 
-    /**
-     * TEREP-KÖVETŐ perem („földszinten, a blokkok felett") + TELJES magasságú sarok-oszlopok:
-     * a peremvonal minden pontja a saját oszlopának legfelső blokkja fölé kerül
-     * — dombon/völgyön átfutó határnál is a talajt követi; ha a néző jóval a felszín alatt jár
-     * (barlang), a perem a néző szintjén IS kirajzolódik. A sarok-oszlopok a claim teljes
-     * minY→maxY tartományát mutatják, ritkított mintavétellel.
-     */
-    private void drawBoxOutline(final Player player, final World world, final int minX, final int minZ,
-                                final int maxX, final int maxZ, final int minY, final int maxY,
-                                final int viewerY, final Particle particle) {
-        for (int x = minX; x <= maxX + 1; x += 2) {
-            drawEdgePoint(player, world, x, minZ, viewerY, particle);
-            drawEdgePoint(player, world, x, maxZ + 1, viewerY, particle);
-        }
-        for (int z = minZ; z <= maxZ + 1; z += 2) {
-            drawEdgePoint(player, world, minX, z, viewerY, particle);
-            drawEdgePoint(player, world, maxX + 1, z, viewerY, particle);
-        }
-        // Sarok-oszlopok a claim TELJES függőleges kiterjedésén (max ~13 pont oszloponként).
-        final int step = Math.max(3, (maxY - minY) / 12);
-        for (int py = minY; py <= maxY; py += step) {
-            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
+    private void drawShapeOutline(final Player player, final World world, final ClaimShape shape,
+                                  final int minY, final int maxY,
+                                  final int viewerY, final Particle particle) {
+        final List<ClaimShape.Point> boundary = shape.boundaryColumns();
+        for (int index = 0; index < boundary.size(); index += 2) {
+            final ClaimShape.Point point = boundary.get(index);
+            drawEdgePoint(player, world, point.x(), point.z(), minY, maxY, viewerY, particle);
         }
     }
 
-    /** Egy perem-pont: terepre igazítva; barlangban (néző jóval a felszín alatt) plusz pont a néző szintjén. */
+    /** Terrain-following perimeter for quick rectangle preview. */
+    private void drawFootprintOutline(final Player player, final World world, final ClaimFootprint footprint,
+                                      final int viewerY, final Particle particle) {
+        drawShapeOutline(player, world, ClaimShape.rectangle(footprint),
+                viewerY, viewerY, viewerY, particle);
+    }
+
+    /** One boundary marker, always inside the actually claimed vertical range. */
     private void drawEdgePoint(final Player player, final World world, final int x, final int z,
+                               final int minY, final int maxY,
                                final int viewerY, final Particle particle) {
-        final double groundY = hu.taliann.icesmp.utils.ParticleUtil.markerY(world, x, z, viewerY + 1.2D);
-        player.spawnParticle(particle, new Location(world, x, groundY, z), 1, 0, 0, 0, 0);
-        if (viewerY + 4.0D < groundY - 1.2D) {
-            player.spawnParticle(particle, new Location(world, x, viewerY + 1.2D, z), 1, 0, 0, 0, 0);
-        }
+        final int markerY = Math.max(minY, Math.min(maxY, viewerY));
+        player.spawnParticle(particle,
+                new Location(world, x, markerY + 0.5D, z), 1, 0, 0, 0, 0);
     }
 
     /**
@@ -894,10 +1047,32 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     @Override
     public void clearPlayerState(final UUID playerId) {
         selections.remove(playerId);
+        polygonSelections.remove(playerId);
         lastClaimId.remove(playerId);
+        final ScheduledTask task = borderTasks.remove(playerId);
+        if (task != null) {
+            task.cancel();
+        }
     }
 
     // ==================== persistence ====================
+
+    private static List<ClaimShape.Point> readClaimPolygon(final List<String> raw) {
+        if (raw == null || raw.isEmpty()) return null;
+        final List<ClaimShape.Point> points = new ArrayList<>();
+        for (final String entry : raw) {
+            final String[] parts = entry.split(",");
+            if (parts.length != 2) return null;
+            try {
+                points.add(new ClaimShape.Point(
+                        Integer.parseInt(parts[0].trim()),
+                        Integer.parseInt(parts[1].trim())));
+            } catch (final NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return points.size() >= 3 ? List.copyOf(points) : null;
+    }
 
     @Override
     public synchronized void load() {
@@ -930,12 +1105,19 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                     claim = new Claim(UUID.randomUUID().toString(), parts[0],
                             baseX, minY, baseZ, baseX + 15, maxY, baseZ + 15, owner, ownerName, claimedAt);
                 } else {
+                    final String polygonPath = key + ".polygon";
+                    final boolean polygonStored = section.contains(polygonPath);
+                    final List<ClaimShape.Point> polygon = readClaimPolygon(
+                            section.getStringList(polygonPath));
+                    if (polygonStored && polygon == null) {
+                        throw new IllegalArgumentException("Malformed stored claim polygon");
+                    }
                     claim = new Claim(key,
                             section.getString(key + ".world", "world"),
                             section.getInt(key + ".min-x"), section.getInt(key + ".min-y"),
                             section.getInt(key + ".min-z"), section.getInt(key + ".max-x"),
                             section.getInt(key + ".max-y"), section.getInt(key + ".max-z"),
-                            owner, ownerName, claimedAt);
+                            polygon, owner, ownerName, claimedAt);
                 }
                 for (final String trustedId : section.getStringList(key + ".trusted")) {
                     claim.trusted.add(UUID.fromString(trustedId));
@@ -990,6 +1172,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             yaml.set(basePath + ".max-x", claim.maxX);
             yaml.set(basePath + ".max-y", claim.maxY);
             yaml.set(basePath + ".max-z", claim.maxZ);
+            if (claim.shape.isPolygon()) {
+                yaml.set(basePath + ".polygon", claim.shape.vertices().stream()
+                        .map(point -> point.x() + "," + point.z()).toList());
+            }
             yaml.set(basePath + ".owner", claim.owner.toString());
             yaml.set(basePath + ".owner-name", claim.ownerName);
             yaml.set(basePath + ".claimed-at", claim.claimedAt);
@@ -1006,8 +1192,9 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     private void rebuildIndex() {
         final Map<String, List<Claim>> fresh = new HashMap<>();
         for (final Claim claim : claims.values()) {
-            for (int cx = claim.minX >> 4; cx <= claim.maxX >> 4; cx++) {
-                for (int cz = claim.minZ >> 4; cz <= claim.maxZ >> 4; cz++) {
+            final ClaimFootprint bounds = claim.shape.bounds();
+            for (int cx = bounds.minX() >> 4; cx <= bounds.maxX() >> 4; cx++) {
+                for (int cz = bounds.minZ() >> 4; cz <= bounds.maxZ() >> 4; cz++) {
                     fresh.computeIfAbsent(chunkKey(claim.world, cx, cz), k -> new ArrayList<>()).add(claim);
                 }
             }

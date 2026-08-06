@@ -359,16 +359,20 @@ public final class WorldBossManager {
         // Folia: read the anchor's location on its OWN region thread first (it may be in a
         // different region than the caller), then hop to the spawn location's region.
         anchor.getScheduler().run(plugin, task -> {
-            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
-            final double distance = 24.0D + ThreadLocalRandom.current().nextDouble(16.0D);
-            final Location approx = anchor.getLocation().clone().add(
-                    Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
-
-            final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
-            // activeBossUntil is set inside spawnBoss only AFTER the spawn is confirmed, so a bad
-            // entity-type config never leaves the manager reporting a phantom active boss.
-            plugin.getServer().getRegionScheduler().run(plugin, approx, spawnTask -> spawnBoss(approx, lifetimeMinutes));
-        }, null);
+            final Location origin = anchor.getLocation().clone();
+            final long lifetimeMinutes = Math.max(1L,
+                    configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
+            final EventSpawnGuard guard = spawnGuard;
+            if (guard == null) {
+                spawnGraceUntil = 0L;
+                plugin.getLogger().warning("World boss spawn aborted: EventSpawnGuard is unavailable.");
+                return;
+            }
+            guard.findSafeNear("world-boss", origin,
+                    System.nanoTime() ^ anchor.getUniqueId().getLeastSignificantBits(),
+                    location -> spawnBoss(location, lifetimeMinutes),
+                    () -> spawnGraceUntil = 0L);
+        }, () -> spawnGraceUntil = 0L);
     }
 
     private void spawnBoss(final Location approx, final long lifetimeMinutes) {
