@@ -2,6 +2,7 @@ package hu.taliann.icesmp.factions;
 
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileTaxStore;
 
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -18,33 +19,59 @@ public final class FactionTaxDebtRegressionSuite {
         System.out.println("Faction tax debt regression suite passed.");
     }
 
-    private static void evasionPolicyStaysPendingUntilDurableSettlement() {
-        final PlayerProfileTaxStore.EvasionDecision rejected =
-                PlayerProfileTaxStore.afterCollection(
-                        2, 0.0D, 50.0D, 50.0D, 3, false);
+    private static void evasionPolicyStaysPendingUntilDurableSettlement() throws Exception {
+        final Decision rejected = invokeAfterCollection(
+                2, 0.0D, 50.0D, 50.0D, 3, false);
         check(rejected.strikesAfter() == 3 && !rejected.reportSin(),
                 "scheduler rejection cleared the durable tax-evasion threshold");
 
-        final PlayerProfileTaxStore.EvasionDecision offlineRetry =
-                PlayerProfileTaxStore.afterCollection(
-                        3, 50.0D, 0.0D, 50.0D, 3, false);
+        final Decision offlineRetry = invokeAfterCollection(
+                3, 50.0D, 0.0D, 50.0D, 3, false);
         check(offlineRetry.strikesAfter() == 3 && !offlineRetry.reportSin(),
                 "offline repayment erased a pending tax-evasion delivery");
 
-        final PlayerProfileTaxStore.EvasionDecision ownerRetry =
-                PlayerProfileTaxStore.afterCollection(
-                        3, 50.0D, 0.0D, 50.0D, 3, true);
+        final Decision ownerRetry = invokeAfterCollection(
+                3, 50.0D, 0.0D, 50.0D, 3, true);
         check(ownerRetry.strikesAfter() == 3 && ownerRetry.reportSin(),
                 "pending tax-evasion sin was not retried when a consumer became available");
 
-        final PlayerProfileTaxStore.EvasionDecision ordinaryPayment =
-                PlayerProfileTaxStore.afterCollection(
-                        2, 5.0D, 20.0D, 50.0D, 3, true);
+        final Decision ordinaryPayment = invokeAfterCollection(
+                2, 5.0D, 20.0D, 50.0D, 3, true);
         check(ordinaryPayment.strikesAfter() == 0 && !ordinaryPayment.reportSin(),
                 "sub-threshold strikes survived a normal arrears recovery");
-        check(PlayerProfileTaxStore.afterCollection(
-                        3, 0.0D, 50.0D, 50.0D, 0, true).strikesAfter() == 0,
+
+        final Decision disabled = invokeAfterCollection(
+                3, 0.0D, 50.0D, 50.0D, 0, true);
+        check(disabled.strikesAfter() == 0,
                 "disabled evasion policy retained a stale pending threshold");
+    }
+
+    private static Decision invokeAfterCollection(
+            final int strikesBefore,
+            final double paid,
+            final double owedAfter,
+            final double maxArrears,
+            final int threshold,
+            final boolean consumerAvailable) throws Exception {
+        final Method policy = PlayerProfileTaxStore.class.getDeclaredMethod(
+                "afterCollection",
+                int.class,
+                double.class,
+                double.class,
+                double.class,
+                int.class,
+                boolean.class);
+        policy.setAccessible(true);
+        final Object result = policy.invoke(
+                null, strikesBefore, paid, owedAfter, maxArrears, threshold, consumerAvailable);
+
+        final Method strikesAccessor = result.getClass().getDeclaredMethod("strikesAfter");
+        final Method reportAccessor = result.getClass().getDeclaredMethod("reportSin");
+        strikesAccessor.setAccessible(true);
+        reportAccessor.setAccessible(true);
+        return new Decision(
+                (int) strikesAccessor.invoke(result),
+                (boolean) reportAccessor.invoke(result));
     }
 
     private static void treasuryAmountMathFailsClosed() {
@@ -86,4 +113,6 @@ public final class FactionTaxDebtRegressionSuite {
     private static void check(final boolean condition, final String message) {
         if (!condition) throw new AssertionError(message);
     }
+
+    private record Decision(int strikesAfter, boolean reportSin) { }
 }
