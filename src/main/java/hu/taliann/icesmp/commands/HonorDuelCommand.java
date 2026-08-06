@@ -63,29 +63,45 @@ public final class HonorDuelCommand implements BasicCommand {
                             "<gold>⚔ <white>{challenger}</white> becsület-párbajt ajánl az elégtételért! Elfogadás: <white>/parbaj elfogad</white> — ha ő nyer, egy bűne törlődik; a párbaj nem termel bűnt.</gold>",
                             Map.of("challenger", player.getName()))), null);
                 } else {
-                    player.sendMessage(messageManager.get("duel-error." + error, switch (error) {
-                        case "duel-not-sinner" -> "&cCsak bűnös ajánlhat elégtételt — a te lelked tiszta.";
-                        case "duel-self" -> "&cÖnmagaddal nem párbajozhatsz.";
-                        case "duel-busy" -> "&cValamelyikőtök már párbajban áll.";
-                        case "duel-limit" -> "&cE heti párbaj-kereted elfogyott.";
-                        default -> "&cA párbaj most nem ajánlható fel.";
-                    }));
+                    sendError(player, error);
                 }
             }
-            case "elfogad", "accept" -> {
-                final String error = duelManager.accept(player);
-                if (error == null) {
-                    player.sendMessage(messageManager.get("duel-accepted",
-                            "&6⚔ A párbaj megkezdődött — 3 perc! A halál dönt, bűn nélkül."));
-                } else {
-                    player.sendMessage(messageManager.get("duel-no-challenge-msg", "&cNincs függő párbaj-felkérésed."));
-                }
-            }
+            case "elfogad", "accept" -> duelManager.accept(player)
+                    .whenComplete((error, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (!player.isOnline()) {
+                            return;
+                        }
+                        if (failure != null) {
+                            player.sendMessage(messageManager.get("duel-error.duel-profile",
+                                    "&cA PlayerProfile mentése meghiúsult; a párbaj nem indult el."));
+                            return;
+                        }
+                        if (error == null) {
+                            player.sendMessage(messageManager.get("duel-accepted",
+                                    "&6⚔ A párbaj megkezdődött — 3 perc! A halál dönt, bűn nélkül."));
+                        } else {
+                            sendError(player, error);
+                        }
+                    }, null));
             case "elutasit", "decline" -> player.sendMessage(duelManager.declined(player)
                     ? messageManager.get("duel-declined", "&7⚔ Elutasítottad az elégtételt.")
                     : messageManager.get("duel-no-challenge-msg", "&cNincs függő párbaj-felkérésed."));
             default -> player.sendMessage(messageManager.get("duel-usage", "&cHasználat: /parbaj kihiv <név> | elfogad | elutasit"));
         }
+    }
+
+    private void sendError(final Player player, final String error) {
+        player.sendMessage(messageManager.get("duel-error." + error, switch (error) {
+            case "duel-not-sinner" -> "&cCsak bűnös ajánlhat elégtételt — a te lelked tiszta.";
+            case "duel-self" -> "&cÖnmagaddal nem párbajozhatsz.";
+            case "duel-busy" -> "&cValamelyikőtök már párbajban áll, vagy az elfogadás folyamatban van.";
+            case "duel-limit" -> "&cE heti párbaj-kereted elfogyott.";
+            case "duel-pending" -> "&cMár van folyamatban lévő párbaj-felkérés.";
+            case "duel-profile" -> "&cA PlayerProfile állapot nem elérhető; a párbaj nem indítható.";
+            case "duel-disabled" -> "&cA becsületpárbaj jelenleg ki van kapcsolva.";
+            case "duel-no-challenge" -> "&cNincs függő párbaj-felkérésed.";
+            default -> "&cA párbaj most nem ajánlható fel.";
+        }));
     }
 
     @Override
