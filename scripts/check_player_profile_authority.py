@@ -93,9 +93,9 @@ SHARED_AGGREGATE_PATH_TOKENS = (
     "factionswitchjournal",
 )
 
-RUNTIME_PATH_OR_SYMBOL_TOKENS = (
-    "/listeners/",
-    "/spells/",
+# Runtime classification requires evidence in the declaration/symbol. Merely living in a
+# listener or spell package is not evidence: a listener can still own durable player state.
+RUNTIME_SYMBOL_TOKENS = (
     "runtime",
     "session",
     "cache",
@@ -106,7 +106,18 @@ RUNTIME_PATH_OR_SYMBOL_TOKENS = (
     "active",
     "pending",
     "transient",
-    "cooldownuntil",
+    "cooldown",
+    "debounce",
+    "lastcast",
+    "secondlast",
+    "combo",
+    "hint",
+    "retaliation",
+    "tracked",
+    "temporary",
+    "weak",
+    "expiry",
+    "endsat",
     "regiontask",
     "scheduler",
     "tail",
@@ -114,6 +125,10 @@ RUNTIME_PATH_OR_SYMBOL_TOKENS = (
     "queue",
     "inflight",
     "reservation",
+    "task",
+    "handle",
+    "window",
+    "witness",
 )
 
 
@@ -185,11 +200,11 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
     }
     item_receivers = {
         "item", "itemstack", "stack", "meta", "itemmeta", "hand", "auctionhand", "result",
-        "held", "tool", "weapon", "bow", "sigmeta",
+        "held", "tool", "weapon", "bow", "sigmeta", "craftedmeta",
     }
     entity_receivers = {
         "entity", "mob", "projectile", "arrow", "horse", "animal", "creature", "living",
-        "stand", "display", "minion", "spawned", "stranger", "totem", "boss", "add",
+        "dead", "stand", "display", "minion", "spawned", "stranger", "totem", "boss", "add",
         "tile", "firework", "mount", "npc",
     }
 
@@ -218,6 +233,7 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
             "boss.getpersistentdatacontainer",
             "minion.getpersistentdatacontainer",
             "tile.getpersistentdatacontainer",
+            "dead.getpersistentdatacontainer",
         ))
     ):
         return "ENTITY_METADATA", (
@@ -228,9 +244,9 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
     shared_path = _has_any(lower_path, SHARED_AGGREGATE_PATH_TOKENS)
 
     if kind == "UUID_MAP":
-        if _has_any(combined, RUNTIME_PATH_OR_SYMBOL_TOKENS):
+        if _has_any(lower_symbol, RUNTIME_SYMBOL_TOKENS):
             return "RUNTIME", (
-                "In-memory runtime/session/projection state; rebuilt or discarded."
+                "Declaration name proves in-memory runtime/session/projection ownership."
             )
         if shared_path:
             return "GLOBAL_AGGREGATE_REFERENCE", (
@@ -343,7 +359,6 @@ def main() -> int:
     parser.add_argument("--root", default=".")
     parser.add_argument("--allowlist", default="scripts/player_profile_authority_allowlist.json")
     parser.add_argument("--write-report")
-    # Kept for compatibility with old local commands. The override file is never auto-expanded.
     parser.add_argument("--update-allowlist", action="store_true")
     parser.add_argument("--reclassify-transitions", action="store_true")
     parser.add_argument("--reclassify-all", action="store_true")
