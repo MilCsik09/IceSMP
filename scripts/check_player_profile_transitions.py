@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed while any legacy player-owned authority remains transitional."""
+"""Fail closed while any current source finding is classified as TRANSITION."""
 from __future__ import annotations
 
 import argparse
@@ -8,15 +8,17 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
+import check_player_profile_authority as authority
+
 PATH_PATTERN = re.compile(r"^[^|]+\|([^|]+)\|")
 
 
-def classify(path: str, key: str) -> str:
+def classify_domain(path: str, key: str) -> str:
     text = f"{path} {key}".lower()
     groups = (
         ("spellbook", ("spell", "mastery", "favorite")),
         ("talents", ("talent",)),
-        ("faction", ("faction", "sinner", "sinmanager", "treasury")),
+        ("faction", ("faction", "sinner", "sinmanager", "treasury", "bounty")),
         ("economy", ("currency", "wallet", "bank", "economy", "refund", "debt")),
         ("professions", ("profession", "jobmanager", "recipe")),
         ("quests", ("quest", "objective")),
@@ -36,18 +38,13 @@ def classify(path: str, key: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=".")
+    parser.add_argument("--allowlist", default="scripts/player_profile_authority_allowlist.json")
     parser.add_argument("--json-output", default="build/player-profile-transition-report.json")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
-    allowlist = root / "scripts/player_profile_authority_allowlist.json"
-    payload = json.loads(allowlist.read_text(encoding="utf-8"))
-    transition_by_key = {
-        str(entry.get("key", "")): entry
-        for entry in payload.get("entries", [])
-        if entry.get("category") == "TRANSITION" and str(entry.get("key", ""))
-    }
-    transitions = [transition_by_key[key] for key in sorted(transition_by_key)]
+    report = authority.audit(root, root / args.allowlist)
+    transitions = list(report["transitions"])
 
     by_path: dict[str, list[dict[str, str]]] = defaultdict(list)
     by_domain: Counter[str] = Counter()
@@ -55,15 +52,21 @@ def main() -> int:
     for entry in transitions:
         key = str(entry.get("key", ""))
         match = PATH_PATTERN.match(key)
-        path = match.group(1) if match else "<unresolved>"
-        kind = key.split("|", 1)[0] if "|" in key else "UNKNOWN"
-        domain = classify(path, key)
+        path = match.group(1) if match else str(entry.get("path", "<unresolved>"))
+        kind = str(entry.get("kind", key.split("|", 1)[0] if "|" in key else "UNKNOWN"))
+        domain = classify_domain(path, key)
         by_kind[kind] += 1
         by_domain[domain] += 1
-        by_path[path].append({"kind": kind, "domain": domain, "key": key})
+        by_path[path].append({
+            "kind": kind,
+            "domain": domain,
+            "key": key,
+            "reason": str(entry.get("reason", "")),
+        })
 
-    report = {
+    payload = {
         "transition_count": len(transitions),
+        "authority_fingerprint": report["fingerprint"],
         "domains": dict(sorted(by_domain.items())),
         "kinds": dict(sorted(by_kind.items())),
         "files": [
@@ -79,14 +82,13 @@ def main() -> int:
     }
     output = root / args.json_output
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print(f"PlayerProfile transition authorities: {len(transitions)}")
     for domain, count in by_domain.most_common():
         print(f"  domain {domain}: {count}")
     for path, entries in sorted(by_path.items(), key=lambda item: (-len(item[1]), item[0])):
         print(f"  {len(entries):4d}  {path}")
-
     if transitions:
         print(f"Detailed report: {output.relative_to(root)}")
         return 1
