@@ -44,16 +44,28 @@ public final class BukkitClassSpecSectionSessionBridge {
         this.runtime=Objects.requireNonNull(runtime);this.respecService=Objects.requireNonNull(respecService);
     }
 
-    public void join(final Player player){
-        if(!accepting.get())return;
+    /** Completes after the root PlayerProfile session is durably admitted. */
+    public CompletionStage<Void> join(final Player player){
+        if(!accepting.get())return CompletableFuture.completedFuture(null);
         final UUID id=player.getUniqueId();final UUID token;final CompletableFuture<Void> prior;
-        synchronized(lock){if(!accepting.get())return;token=sessions.begin(id);gateway.beginSessionActivation(id,token);prior=pendingLogouts.get(id);}
+        synchronized(lock){
+            if(!accepting.get())return CompletableFuture.completedFuture(null);
+            token=sessions.begin(id);gateway.beginSessionActivation(id,token);prior=pendingLogouts.get(id);
+        }
         final CompletionStage<Void> admission=prior==null?CompletableFuture.completedFuture(null):prior.handle((v,x)->null);
-        admission.thenCompose(ignored->playerProfiles.join(id,player.getName())).whenComplete((profileSession,failure)->{
-            if(!sessions.isCurrent(id,token))return;
-            if(failure!=null||profileSession==null){gateway.blockSession(id,"PlayerProfile load failed: "+message(failure));return;}
-            playerProfileSessions.put(id,profileSession.sessionGeneration());startJoin(id,token);
-        });
+        return admission.thenCompose(ignored->playerProfiles.join(id,player.getName()))
+                .thenAccept(profileSession->{
+                    if(!sessions.isCurrent(id,token))return;
+                    if(profileSession==null){
+                        gateway.blockSession(id,"PlayerProfile load returned no session");
+                        throw new IllegalStateException("missing PlayerProfile session");
+                    }
+                    playerProfileSessions.put(id,profileSession.sessionGeneration());
+                    startJoin(id,token);
+                }).whenComplete((ignored,failure)->{
+                    if(failure!=null&&sessions.isCurrent(id,token))
+                        gateway.blockSession(id,"PlayerProfile load failed: "+message(failure));
+                });
     }
 
     public CompletionStage<Void> quit(final UUID id){
