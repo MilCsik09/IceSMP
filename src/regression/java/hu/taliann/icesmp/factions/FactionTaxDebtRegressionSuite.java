@@ -95,11 +95,12 @@ public final class FactionTaxDebtRegressionSuite {
                         && source.contains("taxStore.settle("),
                 "treasury manager bypasses PlayerProfile tax authority/outbox recovery");
         check(!source.contains("FactionTaxDebtLedger")
+                        && !source.contains("FactionTaxJournal")
                         && !source.contains("tax-debts.")
                         && !source.contains("legacy-tax-debts")
                         && !source.contains("putUnresolvedLegacy")
                         && !source.contains("resolveLegacyOrigin"),
-                "legacy tax debt authority or migration remains in production manager");
+                "legacy tax debt authority, journal or migration remains in production manager");
         check(source.contains("CurrencyType.fromFactionType(origin)"),
                 "tax debt is not collected in its origin currency");
     }
@@ -108,6 +109,9 @@ public final class FactionTaxDebtRegressionSuite {
         check(Files.notExists(Path.of(
                         "src/main/java/hu/taliann/icesmp/factions/FactionTaxDebtLedger.java")),
                 "legacy tax compatibility alias remains in the production tree");
+        check(Files.notExists(Path.of(
+                        "src/main/java/hu/taliann/icesmp/factions/FactionTaxJournal.java")),
+                "legacy tax WAL remains in the production tree");
     }
 
     private static void check(final boolean condition, final String message) {
