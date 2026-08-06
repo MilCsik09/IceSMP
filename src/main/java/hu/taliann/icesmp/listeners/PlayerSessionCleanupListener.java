@@ -7,7 +7,6 @@ import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
-import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -33,7 +32,6 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final hu.taliann.icesmp.managers.CrateManager crateManager;
     private final hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge profileSessionBridge;
     private final FactionManager factionManager;
-    private final QuestManager questManager;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -64,7 +62,6 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.ClassHealthService classHealthService,
                                         final hu.taliann.icesmp.listeners.LowHealthBorderListener lowHealthBorderListener,
                                         final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager,
-                                        final QuestManager questManager,
                                         final SpellRegistry spellRegistry,
                                         final hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge profileSessionBridge) {
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
@@ -73,14 +70,13 @@ public final class PlayerSessionCleanupListener implements Listener {
                 territoryManager, petManager, ritualManager, professionManager, afkManager,
                 sitManager, crateManager, moderationManager, vanishManager, invseeManager,
                 whisperManager, guildManager, honorDuelManager, spyManager, combatTagManager,
-                classHealthService, lowHealthBorderListener, soulforgeManager, questManager);
+                classHealthService, lowHealthBorderListener, soulforgeManager);
         this.spellRegistry = spellRegistry;
         this.invseeManager = invseeManager;
         this.moderationManager = moderationManager;
         this.crateManager = crateManager;
         this.profileSessionBridge = profileSessionBridge;
         this.factionManager = factionManager;
-        this.questManager = questManager;
     }
 
     @EventHandler
@@ -92,20 +88,13 @@ public final class PlayerSessionCleanupListener implements Listener {
         invseeManager.restorePending(event.getPlayer());
         crateManager.restorePendingRecovery(event.getPlayer());
         factionManager.reconcileMembershipHistory(event.getPlayer());
-        profileSessionBridge.join(event.getPlayer()).whenComplete((session, failure) ->
-                event.getPlayer().getScheduler().run(
-                        org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(
-                                PlayerSessionCleanupListener.class),
-                        task -> {
-                            if (failure == null) questManager.recoverPendingRewards(event.getPlayer());
-                        }, null));
+        profileSessionBridge.join(event.getPlayer());
     }
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onMove(final org.bukkit.event.player.PlayerMoveEvent event) {
-        if (event.hasChangedBlock())
-            hu.taliann.icesmp.utils.PositionCache.update(
-                    event.getPlayer().getUniqueId(), event.getTo());
+        if (event.hasChangedBlock()) hu.taliann.icesmp.utils.PositionCache.update(
+                event.getPlayer().getUniqueId(), event.getTo());
     }
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
