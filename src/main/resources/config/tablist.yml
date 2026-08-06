@@ -45,6 +45,10 @@ tablist:
     # IDEAS A43: aktív raid alatt a szemben álló hadviselő fél tagjai PIROSAK a néző
     # tablistájában és a fejük fölött (nézőnként relációs szín — a rendezést nem érinti).
     war-colors: true
+    # A háborús jelölés szín-értéke (NamedTextColor név). Megjegyzés: a RED frakció ellen
+    # harcolóknak a piros nem ad plusz jelet (a RED amúgy is piros) — ilyenkor pl.
+    # dark_red vagy gold lehet beszédesebb.
+    war-color: red
   playerlist-ping:
     enabled: true
   # IDEAS A61: a {ping} token szín-küszöbei (ms): alatta zöld / sárga / fölötte piros.

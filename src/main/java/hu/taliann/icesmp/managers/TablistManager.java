@@ -441,7 +441,10 @@ public final class TablistManager {
             final boolean viewerInWar = viewerFaction == raid.attacker() || viewerFaction == raid.defender();
             final boolean targetInWar = info.faction() == raid.attacker() || info.faction() == raid.defender();
             if (viewerInWar && targetInWar && viewerFaction != info.faction()) {
-                return NamedTextColor.RED;
+                final NamedTextColor war = NamedTextColor.NAMES.value(configManager
+                        .getString("tablist.nametags.war-color", "red")
+                        .trim().toLowerCase(java.util.Locale.ROOT));
+                return war == null ? NamedTextColor.RED : war;
             }
         }
         return info.nameColor();
@@ -481,7 +484,7 @@ public final class TablistManager {
      * ({@code tablist.faction-colors.*}, élő-config). A NEUTRAL default szándékosan NEM
      * szürke: a Menedék-polgár és a Kitaszított (dark_gray) különben összetéveszthető.
      */
-    static NamedTextColor factionColor(final ConfigManager configManager, final FactionType faction) {
+    public static NamedTextColor factionColor(final ConfigManager configManager, final FactionType faction) {
         final String key;
         final NamedTextColor fallback;
         if (faction == null) {
