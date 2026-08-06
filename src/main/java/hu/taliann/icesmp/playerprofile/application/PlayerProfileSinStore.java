@@ -6,10 +6,12 @@ import hu.taliann.icesmp.playerprofile.domain.section.FactionSection;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -19,6 +21,8 @@ public final class PlayerProfileSinStore {
     private static final String SIN_COUNT = "sin.count";
     private static final String SINNER = "sin.sinner";
     private static final String DARK_PACT = "sin.dark-pact";
+    private static final String RECEIPTS = "sin.operation-receipts";
+    private static final int MAX_RECEIPTS = 128;
 
     public record SinState(int count, boolean sinner, boolean darkPact,
                            Optional<FactionType> membership) {
@@ -36,6 +40,10 @@ public final class PlayerProfileSinStore {
         }
     }
 
+    public record AddOnceResult(AddResult result, boolean applied) {
+        public AddOnceResult { Objects.requireNonNull(result, "result"); }
+    }
+
     public SinState read(final UUID playerId) {
         return decode(PlayerProfileAuthority.current().requireSection(
                 Objects.requireNonNull(playerId, "playerId"),
@@ -48,19 +56,60 @@ public final class PlayerProfileSinStore {
         if (exileThreshold < 0) throw new IllegalArgumentException("negative exile threshold");
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.FACTION, FactionSection.class, current -> {
-                    final SinState before = decode(current);
-                    final int count = Math.addExact(before.count(), amount);
-                    final Optional<FactionType> previous = before.membership();
-                    final boolean exiled = exileThreshold > 0 && count >= exileThreshold
-                            && before.membership().orElse(null) != FactionType.DARK;
-                    FactionSection next = withSin(current, count, true,
-                            before.darkPact() || exiled);
-                    if (exiled) next = withMembership(next, FactionType.DARK,
-                            System.currentTimeMillis());
-                    final SinState after = decode(next);
-                    return PlayerProfileService.ConditionalMutation.changed(next,
-                            new AddResult(after, exiled, previous));
+                    final AddResult result = addToSection(current, amount, exileThreshold);
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            sectionFor(current, result), result);
                 });
+    }
+
+    /** Operation-ID protected sin mutation for restart-safe outbox replay. */
+    public CompletionStage<AddOnceResult> addOnce(final UUID playerId, final int amount,
+                                                  final int exileThreshold,
+                                                  final String operationId) {
+        if (amount <= 0) throw new IllegalArgumentException("sin amount must be positive");
+        if (exileThreshold < 0) throw new IllegalArgumentException("negative exile threshold");
+        final String receipt = receipt(operationId);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.FACTION, FactionSection.class, current -> {
+                    final LinkedHashSet<String> receipts = receipts(current);
+                    if (receipts.contains(receipt)) {
+                        final SinState state = decode(current);
+                        return PlayerProfileService.ConditionalMutation.unchanged(
+                                new AddOnceResult(new AddResult(state, false,
+                                        state.membership()), false));
+                    }
+                    final AddResult result = addToSection(current, amount, exileThreshold);
+                    final FactionSection mutated = sectionFor(current, result);
+                    while (receipts.size() >= MAX_RECEIPTS) receipts.remove(receipts.iterator().next());
+                    receipts.add(receipt);
+                    final FactionSection next = withReceipts(mutated, receipts);
+                    return PlayerProfileService.ConditionalMutation.changed(next,
+                            new AddOnceResult(result, true));
+                });
+    }
+
+    private static AddResult addToSection(final FactionSection current,
+                                          final int amount,
+                                          final int exileThreshold) {
+        final SinState before = decode(current);
+        final int count = Math.addExact(before.count(), amount);
+        final Optional<FactionType> previous = before.membership();
+        final boolean exiled = exileThreshold > 0 && count >= exileThreshold
+                && before.membership().orElse(null) != FactionType.DARK;
+        FactionSection next = withSin(current, count, true,
+                before.darkPact() || exiled);
+        if (exiled) next = withMembership(next, FactionType.DARK,
+                System.currentTimeMillis());
+        return new AddResult(decode(next), exiled, previous);
+    }
+
+    private static FactionSection sectionFor(final FactionSection current,
+                                             final AddResult result) {
+        FactionSection next = withSin(current, result.state().count(),
+                result.state().sinner(), result.state().darkPact());
+        if (result.exiled()) next = withMembership(next, FactionType.DARK,
+                System.currentTimeMillis());
+        return next;
     }
 
     public CompletionStage<SinState> markSinner(final UUID playerId) {
@@ -81,17 +130,14 @@ public final class PlayerProfileSinStore {
         return mutate(playerId, state -> new Values(state.count(), true, true));
     }
 
-    /** Membership override removes only the pact; the sinner mark and count remain auditable. */
     public CompletionStage<SinState> clearDarkPactForFactionOverride(final UUID playerId) {
         return mutate(playerId, state -> new Values(state.count(), state.sinner(), false));
     }
 
-    /** Penance is the only operation that clears pact, sinner mark and count together. */
     public CompletionStage<SinState> breakDarkPact(final UUID playerId) {
         return mutate(playerId, state -> new Values(0, false, false));
     }
 
-    /** Returns false without mutation while a DARK pact is active. */
     public CompletionStage<Boolean> clearSinner(final UUID playerId) {
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.FACTION, FactionSection.class, current -> {
@@ -168,8 +214,7 @@ public final class PlayerProfileSinStore {
 
     private static void putBoolean(final Map<String, Object> target,
                                    final String key, final boolean value) {
-        if (value) target.put(key, true);
-        else target.remove(key);
+        if (value) target.put(key, true); else target.remove(key);
     }
 
     private static FactionSection withMembership(final FactionSection current,
@@ -183,5 +228,38 @@ public final class PlayerProfileSinStore {
         return new FactionSection(target.name(), target.name(), true, now,
                 current.membershipId().isBlank() ? current.leftAt() : now,
                 history, current.reputation(), current.cooldowns(), current.extensions());
+    }
+
+    private static LinkedHashSet<String> receipts(final FactionSection section) {
+        final Object raw = section.extensions().get(RECEIPTS);
+        final LinkedHashSet<String> result = new LinkedHashSet<>();
+        if (raw == null) return result;
+        if (!(raw instanceof Iterable<?> iterable)) {
+            throw new IllegalStateException("invalid sin receipt list");
+        }
+        for (final Object value : iterable) {
+            if (!(value instanceof String text) || text.isBlank()) {
+                throw new IllegalStateException("invalid sin receipt value");
+            }
+            result.add(text);
+        }
+        return result;
+    }
+
+    private static FactionSection withReceipts(final FactionSection current,
+                                               final Set<String> receipts) {
+        final LinkedHashMap<String, Object> extensions = new LinkedHashMap<>(current.extensions());
+        if (receipts.isEmpty()) extensions.remove(RECEIPTS);
+        else extensions.put(RECEIPTS, List.copyOf(receipts));
+        return new FactionSection(current.membershipId(), current.lastChosenFaction(),
+                current.everChosen(), current.joinedAt(), current.leftAt(), current.history(),
+                current.reputation(), current.cooldowns(), extensions);
+    }
+
+    private static String receipt(final String operationId) {
+        if (operationId == null || operationId.isBlank() || operationId.trim().length() > 128) {
+            throw new IllegalArgumentException("invalid sin operation id");
+        }
+        return operationId.trim();
     }
 }
