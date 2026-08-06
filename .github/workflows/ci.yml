@@ -5,6 +5,8 @@ on:
     branches:
       - master
       - rework/class-spec-1.21.11-compatibility
+      - rework/class-spec-profile-v2
+      - profile/player-profile-platform
       - claude/projekt-audit-u0hkcz
       - feature/native-moderation-suite
   push:
@@ -64,7 +66,7 @@ jobs:
   build:
     name: Java 21 build and regressions
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Checkout tested commit
         uses: actions/checkout@v4
@@ -76,6 +78,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Validate PlayerProfile authority contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/tests/test_player_profile_transition_gate.py
+          python3 scripts/check_player_profile_authority.py \
+            --root . \
+            --write-report build/player-profile-authority-current.json
+          python3 scripts/check_player_profile_transitions.py \
+            --root . \
+            --json-output build/player-profile-transition-report.json
 
       - name: Validate deterministic resource pack build
         run: |
@@ -120,6 +135,7 @@ jobs:
           grep -F "Class profile lifecycle regression suite passed." gradle-build.log
           grep -F "Respec transaction regression suite passed." gradle-build.log
           grep -F "Spell grant ledger regression suite passed." gradle-build.log
+          grep -F "PlayerProfile full authority regression suite passed." gradle-build.log
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
