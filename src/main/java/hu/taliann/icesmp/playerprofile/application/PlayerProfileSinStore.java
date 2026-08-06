@@ -15,19 +15,22 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-/** Typed sinner, sin-count and DARK-pact authority inside the faction section. */
+/** Typed sinner, sin-count, bounty generation and DARK-pact authority. */
 public final class PlayerProfileSinStore {
 
     private static final String SIN_COUNT = "sin.count";
+    private static final String SIN_GENERATION = "sin.generation";
     private static final String SINNER = "sin.sinner";
     private static final String DARK_PACT = "sin.dark-pact";
     private static final String RECEIPTS = "sin.operation-receipts";
     private static final int MAX_RECEIPTS = 128;
 
     public record SinState(int count, boolean sinner, boolean darkPact,
-                           Optional<FactionType> membership) {
+                           long generation, Optional<FactionType> membership) {
         public SinState {
-            if (count < 0) throw new IllegalArgumentException("negative sin count");
+            if (count < 0 || generation < 0L) {
+                throw new IllegalArgumentException("invalid sin state");
+            }
             membership = membership == null ? Optional.empty() : membership;
         }
     }
@@ -93,11 +96,13 @@ public final class PlayerProfileSinStore {
                                           final int exileThreshold) {
         final SinState before = decode(current);
         final int count = Math.addExact(before.count(), amount);
+        final long generation = before.count() == 0
+                ? Math.addExact(before.generation(), 1L) : before.generation();
         final Optional<FactionType> previous = before.membership();
         final boolean exiled = exileThreshold > 0 && count >= exileThreshold
                 && before.membership().orElse(null) != FactionType.DARK;
         FactionSection next = withSin(current, count, true,
-                before.darkPact() || exiled);
+                before.darkPact() || exiled, generation);
         if (exiled) next = withMembership(next, FactionType.DARK,
                 System.currentTimeMillis());
         return new AddResult(decode(next), exiled, previous);
@@ -106,36 +111,42 @@ public final class PlayerProfileSinStore {
     private static FactionSection sectionFor(final FactionSection current,
                                              final AddResult result) {
         FactionSection next = withSin(current, result.state().count(),
-                result.state().sinner(), result.state().darkPact());
+                result.state().sinner(), result.state().darkPact(),
+                result.state().generation());
         if (result.exiled()) next = withMembership(next, FactionType.DARK,
                 System.currentTimeMillis());
         return next;
     }
 
     public CompletionStage<SinState> markSinner(final UUID playerId) {
-        return mutate(playerId, state -> new Values(state.count(), true, state.darkPact()));
+        return mutate(playerId, state -> new Values(state.count(), true,
+                state.darkPact(), state.generation()));
     }
 
     public CompletionStage<SinState> reduce(final UUID playerId, final int amount) {
         if (amount < 0) throw new IllegalArgumentException("negative sin reduction");
         return mutate(playerId, state -> new Values(
-                Math.max(0, state.count() - amount), state.sinner(), state.darkPact()));
+                Math.max(0, state.count() - amount), state.sinner(),
+                state.darkPact(), state.generation()));
     }
 
     public CompletionStage<SinState> resetCount(final UUID playerId) {
-        return mutate(playerId, state -> new Values(0, state.sinner(), state.darkPact()));
+        return mutate(playerId, state -> new Values(0, state.sinner(),
+                state.darkPact(), state.generation()));
     }
 
     public CompletionStage<SinState> sealDarkPact(final UUID playerId) {
-        return mutate(playerId, state -> new Values(state.count(), true, true));
+        return mutate(playerId, state -> new Values(state.count(), true,
+                true, state.generation()));
     }
 
     public CompletionStage<SinState> clearDarkPactForFactionOverride(final UUID playerId) {
-        return mutate(playerId, state -> new Values(state.count(), state.sinner(), false));
+        return mutate(playerId, state -> new Values(state.count(), state.sinner(),
+                false, state.generation()));
     }
 
     public CompletionStage<SinState> breakDarkPact(final UUID playerId) {
-        return mutate(playerId, state -> new Values(0, false, false));
+        return mutate(playerId, state -> new Values(0, false, false, state.generation()));
     }
 
     public CompletionStage<Boolean> clearSinner(final UUID playerId) {
@@ -148,7 +159,8 @@ public final class PlayerProfileSinStore {
                     if (!before.sinner() && before.count() == 0) {
                         return PlayerProfileService.ConditionalMutation.unchanged(true);
                     }
-                    final FactionSection next = withSin(current, 0, false, false);
+                    final FactionSection next = withSin(current, 0, false,
+                            false, before.generation());
                     return PlayerProfileService.ConditionalMutation.changed(next, true);
                 });
     }
@@ -161,7 +173,7 @@ public final class PlayerProfileSinStore {
                     final SinState before = decode(current);
                     final Values values = Objects.requireNonNull(mutation.apply(before), "sin mutation");
                     final FactionSection next = withSin(current, values.count(),
-                            values.sinner(), values.darkPact());
+                            values.sinner(), values.darkPact(), values.generation());
                     final SinState after = decode(next);
                     if (after.equals(before)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(before);
@@ -170,15 +182,18 @@ public final class PlayerProfileSinStore {
                 });
     }
 
-    private record Values(int count, boolean sinner, boolean darkPact) {
+    private record Values(int count, boolean sinner, boolean darkPact, long generation) {
         private Values {
-            if (count < 0) throw new IllegalArgumentException("negative sin count");
+            if (count < 0 || generation < 0L) {
+                throw new IllegalArgumentException("invalid sin values");
+            }
         }
     }
 
-    private static SinState decode(final FactionSection section) {
+    static SinState decode(final FactionSection section) {
         final long rawCount = section.reputation().getOrDefault(SIN_COUNT, 0L);
         final int count = Math.toIntExact(rawCount);
+        final long generation = section.reputation().getOrDefault(SIN_GENERATION, 0L);
         final boolean sinner = booleanExtension(section, SINNER);
         final boolean darkPact = booleanExtension(section, DARK_PACT);
         final Optional<FactionType> membership;
@@ -189,7 +204,7 @@ public final class PlayerProfileSinStore {
                     "unknown faction in sinner profile: " + section.membershipId());
             membership = Optional.of(parsed);
         }
-        return new SinState(count, sinner, darkPact, membership);
+        return new SinState(count, sinner, darkPact, generation, membership);
     }
 
     private static boolean booleanExtension(final FactionSection section, final String key) {
@@ -199,11 +214,14 @@ public final class PlayerProfileSinStore {
         throw new IllegalStateException("invalid boolean faction extension: " + key);
     }
 
-    private static FactionSection withSin(final FactionSection current, final int count,
-                                          final boolean sinner, final boolean darkPact) {
+    static FactionSection withSin(final FactionSection current, final int count,
+                                  final boolean sinner, final boolean darkPact,
+                                  final long generation) {
         final LinkedHashMap<String, Long> reputation = new LinkedHashMap<>(current.reputation());
         if (count == 0) reputation.remove(SIN_COUNT);
         else reputation.put(SIN_COUNT, (long) count);
+        if (generation == 0L) reputation.remove(SIN_GENERATION);
+        else reputation.put(SIN_GENERATION, generation);
         final LinkedHashMap<String, Object> extensions = new LinkedHashMap<>(current.extensions());
         putBoolean(extensions, SINNER, sinner);
         putBoolean(extensions, DARK_PACT, darkPact);
