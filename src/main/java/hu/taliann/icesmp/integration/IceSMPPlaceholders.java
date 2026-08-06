@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.integration;
 
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.managers.HudManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
@@ -83,15 +84,8 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "resource_bar" -> snapshot.hasClass() ? snapshot.resourceBar() : "";
             // Aktív világesemények egy sorban (max 2 név + "+N"), §-színekkel.
             case "event" -> snapshot.event();
-            // A frakció puszta színkódja (§c/§9/§7/§8) — a TAB nametag/tab-prefix végére
-            // fűzve a NÉV kapja a frakció színét külön [Frakció] tag nélkül.
-            case "faction_color" -> switch (snapshot.factionId()) {
-                case "RED" -> "§c";
-                case "BLUE" -> "§9";
-                case "DARK" -> "§8";
-                case "NEUTRAL" -> "§7";
-                default -> "§f";
-            };
+            // A név frakciószíne a közös palettából; külső TAB/scoreboard is ugyanazt kapja.
+            case "faction_color" -> FactionDisplayPalette.legacyPlayerName(snapshot.factionId());
             // Party frames for scoreboard plugins (TAB): the member count and one
             // plain line per member ("👑 Name ▮▮▮░░ 6❤"); blank outside a party.
             case "party_size" -> String.valueOf(snapshot.partyLines().size());
