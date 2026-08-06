@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-/** CAS-backed per-player daily anti-farm/reward budgets. */
+/** CAS-backed per-player period anti-farm/reward budgets. */
 public final class PlayerProfileDailyBudgetStore {
 
     public record BudgetState(long day, long spent) {
@@ -52,6 +52,34 @@ public final class PlayerProfileDailyBudgetStore {
                     next = PlayerProfileSectionExtensions.put(next, sumKey(id), after.spent());
                     return PlayerProfileService.ConditionalMutation.changed(next,
                             new Reservation(true, after));
+                });
+    }
+
+    /**
+     * Compensates a successful reservation only while no later mutation changed the budget.
+     * This prevents a delayed runtime failure from rolling back another accepted operation.
+     */
+    public CompletionStage<Boolean> rollback(final UUID playerId,
+                                             final String budgetId,
+                                             final Reservation reservation,
+                                             final long amount) {
+        Objects.requireNonNull(reservation, "reservation");
+        if (!reservation.allowed() || amount < 0L || reservation.state().spent() < amount) {
+            return java.util.concurrent.CompletableFuture.completedFuture(false);
+        }
+        final String id = normalize(budgetId);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.ECONOMY, EconomySection.class, current -> {
+                    final BudgetState durable = read(current, id);
+                    if (!durable.equals(reservation.state())) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    final BudgetState previous = new BudgetState(
+                            durable.day(), durable.spent() - amount);
+                    EconomySection next = PlayerProfileSectionExtensions.put(current,
+                            dayKey(id), previous.day());
+                    next = PlayerProfileSectionExtensions.put(next, sumKey(id), previous.spent());
+                    return PlayerProfileService.ConditionalMutation.changed(next, true);
                 });
     }
 
