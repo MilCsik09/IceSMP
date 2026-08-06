@@ -290,8 +290,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return Math.max(16, configManager.getInt("claims.area-max-columns", 6400));
     }
 
+    /** 0 vagy negatív érték = nincs csúcspont-korlát; pozitív limitnél a padló 3 marad. */
     private int polygonMaxPoints() {
-        return Math.max(3, configManager.getInt("claims.polygon-max-points", 64));
+        final int configured = configManager.getInt("claims.polygon-max-points", 0);
+        return configured <= 0 ? Integer.MAX_VALUE : Math.max(3, configured);
     }
 
     private int defaultHeight() {

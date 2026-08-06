@@ -31,7 +31,7 @@
 - The immutable `ClaimShape` is an exact set of claimed X-Z columns and supports concave simple polygons.
 - Membership, overlap, column pricing, territory checks, exact WorldGuard row spans, YAML persistence, chunk lookup,
   particle preview and BlockDisplay rendering all consume the same shape.
-- Polygon input is bounded by `claims.polygon-max-points` and `claims.area-max-columns`.
+- Polygon area is bounded by `claims.area-max-columns`; the vertex count is unlimited by default (`claims.polygon-max-points: 0`), because the rasterized column set makes runtime checks independent of it.
 - Rasterization uses budgeted row scanlines rather than scanning the full bounding rectangle. Perimeter length, continuous
   area and every produced column are checked before publication; long/thin hostile inputs fail closed.
 - Malformed stored polygons are rejected and skipped instead of silently widening to their bounding rectangle.

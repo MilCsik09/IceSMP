@@ -175,7 +175,10 @@ claims:
   column-cost: 0.5            # minden további oszlop ára (saját frakció-valuta, ELÉG)
   max-columns-per-player: 8192   # claim-plafon játékosonként, oszlopban (≈ 32 chunknyi)
   area-max-columns: 6400      # téglalap vagy poligon maximális kitöltött oszlopszáma
-  polygon-max-points: 64        # territory-szerű claimhatár maximális csúcspontszáma
+  # A claimhatár csúcspontszáma alapból korlátlan (0) — a claim létrehozáskor oszlop-
+  # halmazzá raszterizálódik, így a futásidejű védelem-ellenőrzés költsége a pontszámtól
+  # független; a tényleges méretkorlát az area-max-columns. Pozitív érték felső korlátot ad.
+  polygon-max-points: 0
   y-extend-step: 5            # a magasítás/mélyítés lépésköze (blokk)
   y-extend-cost-per-column: 0.1  # bővítés ára lépésenként: a claim oszlopai × ez az összeg
   protect-containers: true    # konténerek (láda, hordó, kemence…) védelme idegenektől
