@@ -55,7 +55,7 @@ tablist:
     # LP primary-group sorrend a tablistában (elöl a lista eleje); ismeretlen csoport a lista mögé
     # kerül, azonos csoporton belül név szerinti ABC. Az AFK játékosok a TELJES lista végére
     # kerülnek, és az AFK-blokkon belül ugyanez a rang+név sorrend érvényesül.
-    group-order: [owner, admin, mod, helper, builder, vip, default]
+    group-order: [mod, dev, helper, streamer, vip, default]
   animations:
     topinfo:
       interval-millis: 3000
