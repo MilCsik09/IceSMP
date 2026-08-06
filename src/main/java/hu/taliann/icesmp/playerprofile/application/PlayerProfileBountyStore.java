@@ -94,6 +94,7 @@ public final class PlayerProfileBountyStore {
                 });
     }
 
+    /** Returns true only when this call removed the pending outbox. */
     public CompletionStage<Boolean> complete(final UUID victimId,
                                              final PendingBounty expected) {
         Objects.requireNonNull(expected, "expected");
@@ -105,8 +106,10 @@ public final class PlayerProfileBountyStore {
                     final Optional<PendingBounty> live = decodePending(
                             victimId, current.extensions().get(PENDING));
                     if (live.isEmpty()) {
-                        return PlayerProfileService.ConditionalMutation.unchanged(
-                                completedSequence(current) >= expected.payoutSequence());
+                        if (completedSequence(current) < expected.payoutSequence()) {
+                            throw new IllegalStateException("bounty outbox disappeared before completion");
+                        }
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
                     if (!live.orElseThrow().equals(expected)) {
                         throw new IllegalStateException("bounty outbox identity changed");
