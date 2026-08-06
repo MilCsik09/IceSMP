@@ -6,6 +6,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.HashSet;
@@ -14,10 +17,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Centralized, atomically-published configuration with conflict-safe admin writes. */
+/**
+ * Centralized, atomically-published configuration with packaged-default fallback and
+ * optimistic-concurrency admin writes.
+ */
 public final class ConfigManager {
 
-    /** One immutable publication unit: packaged defaults, effective values and override provenance. */
+    /** One immutable publication unit: packaged/deployed defaults, effective values and provenance. */
     public record ConfigSnapshot(FileConfiguration configuration,
                                  FileConfiguration baseConfiguration,
                                  Set<String> overridePaths,
@@ -51,7 +57,7 @@ public final class ConfigManager {
 
     /** Bundled per-subsystem config files under config/. */
     private static final String[] CONFIG_FILES = {
-            "general", "economy", "factions", "classes", "spells", "spells-balance",
+            "general", "economy", "factions", "block-regen", "classes", "spells", "spells-balance",
             "professions", "quests", "world", "event-spawn-safety", "relics", "pets", "crafting", "crates",
             "afk", "moderation", "item-rarity", "loot", "motd", "profession-materials",
             "profession-recipes", "sit", "tablist", "dev-items"
@@ -64,6 +70,11 @@ public final class ConfigManager {
         this.plugin = plugin;
     }
 
+    /**
+     * Loads packaged defaults first, then deployed subsystem files, then config.yml overrides.
+     * This keeps newly introduced keys available on older installations while preserving every
+     * explicit deployed value and the optimistic-concurrency fingerprint of the override file.
+     */
     public synchronized void load() {
         final YamlConfiguration base = loadBaseConfiguration();
         final YamlConfiguration effective = new YamlConfiguration();
@@ -81,7 +92,8 @@ public final class ConfigManager {
         final long previousGeneration = liveSnapshot.generation();
         final long nextGeneration = previousGeneration == Long.MAX_VALUE
                 ? Long.MAX_VALUE : previousGeneration + 1L;
-        liveSnapshot = new ConfigSnapshot(effective, base, overridePaths, nextGeneration, overrideFingerprint());
+        liveSnapshot = new ConfigSnapshot(effective, base, overridePaths,
+                nextGeneration, overrideFingerprint());
     }
 
     private YamlConfiguration loadBaseConfiguration() {
@@ -89,6 +101,7 @@ public final class ConfigManager {
         final File dir = new File(plugin.getDataFolder(), "config");
         dir.mkdirs();
         for (final String name : CONFIG_FILES) {
+            mergePackagedDefaults(base, name);
             if (!new File(dir, name + ".yml").exists()) {
                 plugin.saveResource("config/" + name + ".yml", false);
             }
@@ -112,6 +125,19 @@ public final class ConfigManager {
         return base;
     }
 
+    private void mergePackagedDefaults(final YamlConfiguration target, final String name) {
+        try (InputStream input = plugin.getResource("config/" + name + ".yml")) {
+            if (input == null) {
+                plugin.getLogger().warning("Hiányzó csomagolt config: config/" + name + ".yml");
+                return;
+            }
+            mergeInto(target, YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8)));
+        } catch (final Exception failure) {
+            plugin.getLogger().warning("Csomagolt config nem olvasható (" + name + "): " + failure);
+        }
+    }
+
     private static void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {
         for (final String key : source.getKeys(true)) {
             if (!source.isConfigurationSection(key)) {
@@ -124,11 +150,16 @@ public final class ConfigManager {
         load();
     }
 
-    /** Serialized single-key compatibility path used by the admin command. */
+    /** Serialized single-key compatibility path used by admin commands and focused adapters. */
     public synchronized boolean applyOverride(final String key, final Object value) {
         final ConfigSnapshot snapshot = liveSnapshot;
         return applyOverridesIfUnchanged(snapshot.generation(), snapshot.sourceFingerprint(),
                 java.util.Collections.singletonMap(key, value)) == BatchApplyResult.APPLIED;
+    }
+
+    /** Removes only the config.yml override; subsystem/package defaults become authoritative. */
+    public boolean resetOverride(final String key) {
+        return applyOverride(key, null);
     }
 
     /**
@@ -152,7 +183,8 @@ public final class ConfigManager {
             final String path = entry.getKey();
             final Object value = entry.getValue();
             final Object previous = plugin.getConfig().get(path);
-            if (!java.util.Objects.equals(previous, value) || plugin.getConfig().isSet(path) != (value != null)) {
+            if (!java.util.Objects.equals(previous, value)
+                    || plugin.getConfig().isSet(path) != (value != null)) {
                 plugin.getConfig().set(path, value);
                 changed = true;
             }
@@ -171,7 +203,8 @@ public final class ConfigManager {
             return "MISSING";
         }
         try {
-            final byte[] digest = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file.toPath()));
+            final byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(Files.readAllBytes(file.toPath()));
             return java.util.HexFormat.of().formatHex(digest);
         } catch (final Exception failure) {
             plugin.getLogger().warning("config.yml fingerprint failed; conservative stale marker used: " + failure);
@@ -184,6 +217,21 @@ public final class ConfigManager {
     public boolean contains(final String path) { return liveSnapshot.isSet(path); }
     public boolean hasOverride(final String path) { return liveSnapshot.isOverridden(path); }
     public Object getBaseValue(final String path) { return liveSnapshot.baseValue(path); }
+
+    public String getBaseString(final String path, final String fallback) {
+        final FileConfiguration base = liveSnapshot.baseConfiguration();
+        return base == null ? fallback : base.getString(path, fallback);
+    }
+
+    public double getBaseDouble(final String path, final double fallback) {
+        final FileConfiguration base = liveSnapshot.baseConfiguration();
+        return base == null ? fallback : base.getDouble(path, fallback);
+    }
+
+    public boolean getBaseBoolean(final String path, final boolean fallback) {
+        final FileConfiguration base = liveSnapshot.baseConfiguration();
+        return base == null ? fallback : base.getBoolean(path, fallback);
+    }
 
     public String getString(final String path, final String fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();

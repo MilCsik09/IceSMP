@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -93,6 +94,32 @@ public final class GuiUtil {
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
         itemStack.setItemMeta(meta);
         return itemStack;
+    }
+
+    /**
+     * Convenience builder for ampersand-coloured menu text. Kept here so config and utility
+     * menus do not each duplicate legacy-component conversion and non-italic lore handling.
+     */
+    public static ItemStack item(final Material material, final String name,
+                                 final List<String> loreLines) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            final var serializer = net.kyori.adventure.text.serializer.legacy
+                    .LegacyComponentSerializer.legacyAmpersand();
+            meta.displayName(serializer.deserialize(name)
+                    .decoration(TextDecoration.ITALIC, false));
+            final List<Component> lore = new ArrayList<>();
+            for (final String line : loreLines) {
+                lore.add(serializer.deserialize(line)
+                        .colorIfAbsent(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     /**
