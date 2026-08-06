@@ -6,7 +6,7 @@ A játékosnév-színek egyetlen központi palettát használnak minden támogat
 |---|---|---|---|
 | RED / Láng | RED | `§c` | támadó, tüzes identitás |
 | BLUE / Fagy | BLUE | `§9` | hideg, kék identitás |
-| NEUTRAL / Menedék | GOLD | `§6` | meleg, világos, a DARK-tól jól elkülönülő identitás |
+| NEUTRAL / Menedék | GREEN | `§a` | a Smaragdkő/Ryanora lore-szín, a DARK-tól jól elkülönülő identitás |
 | DARK / Kitaszított | DARK_GRAY | `§8` | sötét, komor identitás |
 | nincs vagy ismeretlen tagság | WHITE | `§f` | fail-safe alapállapot |
 
@@ -27,5 +27,7 @@ A NEUTRAL korábbi szürke (`GRAY` / `§7`) színe megszűnt. A DARK nem kap lic
 2. Ellenőrizd a tablistát és a fej fölötti nametaget világos és sötét háttér előtt.
 3. Ellenőrizd a natív chatet mind a négy frakcióval.
 4. Kapcsold ki a natív tablistát, és ellenőrizd a HUD fallbacket.
-5. Külső TAB mellett ellenőrizd a `%icesmp_faction_color%` kimenetet: NEUTRAL `§6`, DARK `§8`.
+5. Külső TAB mellett ellenőrizd a `%icesmp_faction_color%` kimenetet: NEUTRAL `§a`, DARK `§8`.
 6. Aktív raidben az ellenség piros felülírása továbbra is előzze meg a frakció alapszínét.
+
+A paletta élő-configgal felülbírálható: `tablist.faction-colors.<frakció|guest>` (NamedTextColor nevek); a defaultot a `FactionDisplayColorPolicy` adja, minden név-felület (tab, nametag, HUD, chat, `%icesmp_faction_color%`) ugyanazon a feloldón megy át.

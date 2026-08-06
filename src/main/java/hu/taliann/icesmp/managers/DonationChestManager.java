@@ -90,12 +90,33 @@ public final class DonationChestManager implements PersistentStore {
             return;
         }
 
-        final YamlConfiguration yaml =
-                YamlStore.loadTracked(storageFile, plugin.getLogger());
-        final ConfigurationSection section =
-                yaml.getConfigurationSection("entries");
-        if (section == null) {
-            return;
+        try {
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
+            final ConfigurationSection section = yaml.getConfigurationSection("entries");
+            if (section != null) {
+                for (final String idKey : section.getKeys(false)) {
+                    try {
+                        final UUID id = UUID.fromString(idKey);
+                        final UUID donorId = UUID.fromString(section.getString(idKey + ".donor-id", ""));
+                        final ItemStack item = section.getItemStack(idKey + ".item");
+                        if (item == null || item.getType() == Material.AIR) {
+                            continue;
+                        }
+                        entries.put(id, new DonationEntry(
+                                id,
+                                donorId,
+                                section.getString(idKey + ".donor-name", "?"),
+                                item,
+                                section.getLong(idKey + ".donated-at", System.currentTimeMillis())
+                        ));
+                    } catch (final IllegalArgumentException ignored) {
+                        // Skip malformed entries rather than discarding the whole chest.
+                    }
+                }
+            }
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + entries.size() + " donation chest entr(y/ies).");
+        } catch (final Exception exception) {
+            plugin.getLogger().severe("Failed to load donations.yml: " + exception.getMessage());
         }
         for (final String idKey : section.getKeys(false)) {
             try {

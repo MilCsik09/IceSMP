@@ -336,7 +336,7 @@ Központi játékosmenük, karakteradatok, tematikus navigáció és jogosultsá
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk.
+Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk. A tablista LuckPerms-rang szerint rendez (`tablist.sorting.group-order`), az AFK játékosok a teljes lista végére kerülnek, és az AFK-blokkon belül is a rang+név sorrend érvényesül. A név-színek frakciónként a `tablist.faction-colors.*` kulcsokból jönnek — a Menedék-polgár zöld (Smaragdkő/Ryanora lore-szín), így nem téveszthető össze a sötétszürke Kitaszítottal; a chat-névszín és a `/menu` frakcióválasztó ugyanezt a palettát követi, a raid alatti háborús jelölés színe pedig a `tablist.nametags.war-color` kulccsal hangolható.
 
 - **Így találkozol vele:** `/hud`; a tablista automatikus.
 - **Kinek szól:** Játékos, Admin, Tesztelő.
@@ -442,14 +442,22 @@ Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Választás, XP-források, szintlépés, képességfeloldás és kapcsolódó combat/craft esemény.
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; resource-pack ikonok és balance-adatok tesztelendők.
-- **Fontos határ:** A konkrét élő balance és már létező játékosadat-migráció az élő config nélkül nem bizonyítható.
+- **Fontos határ:** A konkrét élő balance és több-régiós Folia viselkedés stagingben ellenőrizendő; production legacy játékosadat-migráció nincs.
+
+A teljes, 13 kasztot és 35 specializációt kiszolgáló Profile v2 alap a kaszt/spec egyetlen
+autoritatív adatmodellje és persistence-rétege. Nincs legacy player-profile migráció, PDC fallback,
+dual authority vagy runtime kill switch. Hiányzó profil determinisztikus revision-0 greenfield
+aggregátumként jön létre; hibás vagy owner-eltérő profil quarantine-ba kerül és fail-closed marad.
+Az IceSMP a verziózárt dependency manifest alapján ellenőrzi a kötelező megjelenítési és content
+stacket; eltérésnél nem aktivál félkész profilt.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin`; `icesmp.admin.job`; `icesmp.admin.spec`; `icesmp.job.admin`
+- Permission: `icesmp.admin.job`; `icesmp.admin.spec`; quarantine recovery: `icesmp.admin.spec.recover`
 - Config: `classes.*`, `spells.*`, specialization- és ability-definíciók.
-- Tartós állapot: Kaszt, XP, specializáció és unlockok játékosonként tartósak.
+- Startup dependency policy: `class-spec-rework.dependencies.enforce`; dependency lock: `class-spec-dependencies.lock.yml`. Nincs runtime rollout flag.
+- Tartós állapot: ownerhez kötött Profile v2 kaszt, XP/szint, loadout, companion, Soulforge és operation receipt; explicit spell-provenance ledger.
 - Reload: Balance részben reloadolható; új enum/registry-szerkezet restartot igényel.
 
 </details>

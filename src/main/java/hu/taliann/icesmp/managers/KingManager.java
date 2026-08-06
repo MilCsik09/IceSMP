@@ -118,7 +118,7 @@ public final class KingManager implements PersistentStore {
                 }
             }
 
-            plugin.getLogger().info("Loaded faction kings and election votes.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded faction kings and election votes.");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load kings.yml: " + exception.getMessage());
         }

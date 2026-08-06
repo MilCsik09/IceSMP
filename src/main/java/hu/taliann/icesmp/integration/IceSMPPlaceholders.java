@@ -26,9 +26,12 @@ import java.util.Locale;
 public final class IceSMPPlaceholders extends PlaceholderExpansion {
 
     private final HudManager hudManager;
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
 
-    private IceSMPPlaceholders(final HudManager hudManager) {
+    private IceSMPPlaceholders(final HudManager hudManager,
+                               final hu.taliann.icesmp.managers.ConfigManager configManager) {
         this.hudManager = hudManager;
+        this.configManager = configManager;
     }
 
     /**
@@ -38,8 +41,21 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
      * @param plugin the owning plugin (unused, kept for a stable reflective signature)
      * @param hudManager the HUD manager providing the per-player snapshot
      */
-    public static void register(final JavaPlugin plugin, final HudManager hudManager) {
-        new IceSMPPlaceholders(hudManager).register();
+    public static void register(final JavaPlugin plugin, final HudManager hudManager,
+                                final hu.taliann.icesmp.managers.ConfigManager configManager) {
+        new IceSMPPlaceholders(hudManager, configManager).register();
+    }
+
+    private static hu.taliann.icesmp.data.FactionType parseFaction(final String factionId) {
+        if (factionId == null || factionId.isBlank()) {
+            return null;
+        }
+        try {
+            return hu.taliann.icesmp.data.FactionType.valueOf(
+                    factionId.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (final IllegalArgumentException unknown) {
+            return null;
+        }
     }
 
     @Override
@@ -85,7 +101,9 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             // Aktív világesemények egy sorban (max 2 név + "+N"), §-színekkel.
             case "event" -> snapshot.event();
             // A név frakciószíne a közös palettából; külső TAB/scoreboard is ugyanazt kapja.
-            case "faction_color" -> FactionDisplayPalette.legacyPlayerName(snapshot.factionId());
+            case "faction_color" -> FactionDisplayPalette.legacyCode(
+                    hu.taliann.icesmp.managers.TablistManager.factionColor(
+                            configManager, parseFaction(snapshot.factionId())));
             // Party frames for scoreboard plugins (TAB): the member count and one
             // plain line per member ("👑 Name ▮▮▮░░ 6❤"); blank outside a party.
             case "party_size" -> String.valueOf(snapshot.partyLines().size());

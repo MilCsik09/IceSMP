@@ -12,7 +12,7 @@ public final class FactionDisplayColorPolicy {
     public enum NameColor {
         RED("§c"),
         BLUE("§9"),
-        GOLD("§6"),
+        GREEN("§a"),
         DARK_GRAY("§8"),
         WHITE("§f");
 
@@ -37,7 +37,7 @@ public final class FactionDisplayColorPolicy {
         return switch (faction) {
             case RED -> NameColor.RED;
             case BLUE -> NameColor.BLUE;
-            case NEUTRAL -> NameColor.GOLD;
+            case NEUTRAL -> NameColor.GREEN;
             case DARK -> NameColor.DARK_GRAY;
         };
     }

@@ -26,15 +26,15 @@ public final class FactionDisplayColorRegressionSuite {
                         == FactionDisplayColorPolicy.NameColor.BLUE,
                 "BLUE player names must remain blue");
         check(FactionDisplayColorPolicy.playerName(FactionType.NEUTRAL)
-                        == FactionDisplayColorPolicy.NameColor.GOLD,
-                "NEUTRAL player names must use the warm gold identity");
+                        == FactionDisplayColorPolicy.NameColor.GREEN,
+                "NEUTRAL player names must use the Smaragdkő green identity");
         check(FactionDisplayColorPolicy.playerName(FactionType.DARK)
                         == FactionDisplayColorPolicy.NameColor.DARK_GRAY,
                 "DARK player names must remain dark gray");
         check(FactionDisplayColorPolicy.playerName(FactionType.NEUTRAL)
                         != FactionDisplayColorPolicy.playerName(FactionType.DARK),
                 "NEUTRAL and DARK must never share a visually adjacent gray identity");
-        check("§6".equals(FactionDisplayColorPolicy.legacyPlayerName(FactionType.NEUTRAL))
+        check("§a".equals(FactionDisplayColorPolicy.legacyPlayerName(FactionType.NEUTRAL))
                         && "§8".equals(FactionDisplayColorPolicy.legacyPlayerName(FactionType.DARK)),
                 "external TAB legacy colours must match the native palette");
     }
@@ -42,7 +42,7 @@ public final class FactionDisplayColorRegressionSuite {
     private static void unknownMembershipStaysWhite() {
         check(FactionDisplayColorPolicy.playerName((FactionType) null)
                         == FactionDisplayColorPolicy.NameColor.WHITE,
-                "missing faction membership must stay white, not inherit NEUTRAL gold");
+                "missing faction membership must stay white, not inherit NEUTRAL green");
         check(FactionDisplayColorPolicy.playerName("unknown")
                         == FactionDisplayColorPolicy.NameColor.WHITE,
                 "unknown faction id must fail safe to white");
@@ -57,10 +57,12 @@ public final class FactionDisplayColorRegressionSuite {
         final String placeholders = read("src/main/java/hu/taliann/icesmp/integration/IceSMPPlaceholders.java");
 
         check(tablist.contains("FactionDisplayPalette.playerName(faction)")
-                        && hud.contains("FactionDisplayPalette.playerName(faction)")
-                        && chat.contains("FactionDisplayPalette.playerName(snapshot.factionId())")
-                        && placeholders.contains("FactionDisplayPalette.legacyPlayerName(snapshot.factionId())"),
+                        && hud.contains("TablistManager.factionColor(configManager, faction)")
+                        && chat.contains("TablistManager.factionColor(configManager, faction)")
+                        && placeholders.contains("TablistManager.factionColor("),
                 "tab, nametag, HUD, chat and PlaceholderAPI must share one palette authority");
+        check(tablist.contains("tablist.faction-colors."),
+                "the shared resolver must stay live-config overridable");
         check(!tablist.contains("case NEUTRAL -> NamedTextColor.GRAY")
                         && !hud.contains("case NEUTRAL -> NamedTextColor.GRAY")
                         && !chat.contains("case \"NEUTRAL\" -> NamedTextColor.GRAY")

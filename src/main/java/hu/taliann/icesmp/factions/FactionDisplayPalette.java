@@ -25,11 +25,17 @@ public final class FactionDisplayPalette {
         return FactionDisplayColorPolicy.legacyPlayerName(factionId);
     }
 
+    /** A konfigurált Adventure-szín §-kódja külső TAB/scoreboard fogyasztóknak. */
+    public static String legacyCode(final NamedTextColor color) {
+        return org.bukkit.ChatColor.valueOf(
+                color.toString().toUpperCase(java.util.Locale.ROOT)).toString();
+    }
+
     private static NamedTextColor toAdventure(final FactionDisplayColorPolicy.NameColor color) {
         return switch (color) {
             case RED -> NamedTextColor.RED;
             case BLUE -> NamedTextColor.BLUE;
-            case GOLD -> NamedTextColor.GOLD;
+            case GREEN -> NamedTextColor.GREEN;
             case DARK_GRAY -> NamedTextColor.DARK_GRAY;
             case WHITE -> NamedTextColor.WHITE;
         };

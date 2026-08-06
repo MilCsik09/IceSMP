@@ -99,18 +99,22 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
 
-        if (!professionManager.selectProfession(player, profession)) {
-            sender.sendMessage(messageManager.get(
-                    "profession-slot-taken",
-                    "&cMár van %s szakmád. Szakmaváltást csak admin végezhet.",
-                    profession.getCategory().getDisplayName().toLowerCase(Locale.ROOT)
-            ));
-            return;
-        }
-
-        player.sendMessage(messageManager.getMessage("profession-join-success", "&aSzakma kiválasztva:")
-                .append(Component.space())
-                .append(profession.getDisplayName()));
+        professionManager.selectProfession(player, profession)
+                .whenComplete((selected, failure) -> professionManager.runOnOwnerThread(player, () -> {
+                    if (failure != null) {
+                        player.sendMessage(messageManager.get("profession-storage-failed",
+                                "&cA PlayerProfile szakma mentése meghiúsult."));
+                    } else if (!Boolean.TRUE.equals(selected)) {
+                        player.sendMessage(messageManager.get(
+                                "profession-slot-taken",
+                                "&cMár van %s szakmád. Szakmaváltást csak admin végezhet.",
+                                profession.getCategory().getDisplayName().toLowerCase(Locale.ROOT)));
+                    } else {
+                        player.sendMessage(messageManager.getMessage("profession-join-success",
+                                        "&aSzakma kiválasztva:")
+                                .append(Component.space()).append(profession.getDisplayName()));
+                    }
+                }));
     }
 
     private void handleRecipes(final CommandSender sender) {
@@ -240,10 +244,17 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
 
-        target.getScheduler().run(plugin, task -> {
-            professionManager.setProfession(target, profession);
-            sender.sendMessage(messageManager.get("profession-set-success", "&aSzakma beállítva: &f%s &7-> &e%s", target.getName(), profession.getId()));
-        }, null);
+        professionManager.setProfession(target, profession)
+                .whenComplete((changed, failure) -> professionManager.runOnOwnerThread(target, () -> {
+                    if (failure != null) {
+                        sender.sendMessage(messageManager.get("profession-storage-failed",
+                                "&cA PlayerProfile szakma mentése meghiúsult."));
+                    } else {
+                        sender.sendMessage(messageManager.get("profession-set-success",
+                                "&aSzakma beállítva: &f%s &7-> &e%s",
+                                target.getName(), profession.getId()));
+                    }
+                }));
     }
 
     private void handleClear(final CommandSender sender, final String[] args) {
@@ -276,10 +287,17 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
 
-        target.getScheduler().run(plugin, task -> {
-            professionManager.clearProfession(target, category);
-            sender.sendMessage(messageManager.get("profession-clear-success", "&aSzakma slot törölve: &f%s &7(%s)", target.getName(), category.getDisplayName()));
-        }, null);
+        professionManager.clearProfession(target, category)
+                .whenComplete((changed, failure) -> professionManager.runOnOwnerThread(target, () -> {
+                    if (failure != null) {
+                        sender.sendMessage(messageManager.get("profession-storage-failed",
+                                "&cA PlayerProfile szakma mentése meghiúsult."));
+                    } else {
+                        sender.sendMessage(messageManager.get("profession-clear-success",
+                                "&aSzakma slot törölve: &f%s &7(%s)",
+                                target.getName(), category.getDisplayName()));
+                    }
+                }));
     }
 
     private void handleAddXp(final CommandSender sender, final String[] args) {
@@ -318,21 +336,18 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
 
-        target.getScheduler().run(plugin, task -> {
-            if (!professionManager.addXp(target, profession, amount)) {
-                sender.sendMessage(messageManager.get("profession-addxp-failed", "&cNem sikerült XP-t adni (hibás összeg)."));
-                return;
-            }
-
-            sender.sendMessage(messageManager.get(
-                    "profession-addxp-success",
-                    "&aXP hozzáadva: &f%s &7| %s +&f%s XP &7| Szint: &f%s",
-                    target.getName(),
-                    profession.getId(),
-                    amount,
-                    professionManager.getLevel(target, profession)
-            ));
-        }, null);
+        professionManager.addXp(target, profession, amount)
+                .whenComplete((change, failure) -> professionManager.runOnOwnerThread(target, () -> {
+                    if (failure != null || change == null || !change.changed()) {
+                        sender.sendMessage(messageManager.get("profession-addxp-failed",
+                                "&cNem sikerült XP-t adni (érvénytelen kérés vagy tárolási hiba)."));
+                        return;
+                    }
+                    sender.sendMessage(messageManager.get(
+                            "profession-addxp-success",
+                            "&aXP hozzáadva: &f%s &7| %s +&f%s XP &7| Szint: &f%s",
+                            target.getName(), profession.getId(), amount, change.level()));
+                }));
     }
 
     private void sendHelp(final CommandSender sender) {

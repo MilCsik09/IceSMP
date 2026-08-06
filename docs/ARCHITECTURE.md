@@ -16,7 +16,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~90 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~92 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -43,13 +43,13 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `gui/` | 67 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
-| `factions/` | 17 | Explicit tagsági értékobjektum és rollbackelhető membership-mutation, immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state, frakcióeredetű adósság-ledger és a központi frakció-névszín paletta (policy + Adventure-adapter). |
-| `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
+| `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
+| `data/` | 13 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 24 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
+| `utils/` | 25 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
@@ -258,6 +258,21 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
+
+### 3.8.1 Kaszt/spec rework — verziózárt kapu és adapterhatárok
+
+A 13 kaszt / 35 specializáció reworkje külön, alapból tiltott rollout-kapu mögött épül. Az
+`IceSMPCore.enable()` a gameplay store-ok betöltése előtt futtatja a
+`ClassSpecDependencyPreflight` ellenőrzést. A kapu csak akkor blokkol, ha a rework és az enforcement
+is aktív; legacy módban a jelenlegi production változatlanul elindul.
+
+A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
+megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil
+UUID-t, string ID-t, immutable snapshotot és saját handle-t engednek át. CraftEngine-, BetterHud-,
+ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jelenhet meg.
+
+A helyi 1.21.11-es runServer feladat `-Dpaper.disablePluginRemapping=true` kapcsolóval indul, hogy a
+26.2-portot blokkoló legacy remapping-függés már fejlesztés közben látható legyen.
 
 ### 3.9 Territórium-zónák és zóna-védelem
 
@@ -595,9 +610,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 595 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
-  Csomag-megoszlás: listeners 121, managers 121, commands 94, spells 56, gui 47, crates 14, utils 24, data 15,
-  items 12, relics 9, integration 6.
+- **Méret:** 683 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 121 fájl).
+  Csomag-megoszlás: listeners 120, managers 120, commands 94, spells 56, gui 46, crates 14, utils 24, data 13,
+  items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -646,3 +661,6 @@ single-winner gate-et és race-biztos task lease-t használ. Az üzemeltetési
 és recovery-szerződést az
 [admin kézikönyv crate acceptance szakasza](ADMIN_GUIDE.md#natív-crate)
 foglalja össze.
+## PlayerProfile authority
+
+The canonical player-state architecture is documented in [PLAYER_PROFILE_ARCHITECTURE.md](PLAYER_PROFILE_ARCHITECTURE.md). All IceSMP-owned durable player state must enter a registered PlayerProfile section; PDC may only be runtime, item/entity metadata or a deterministic derived mirror.

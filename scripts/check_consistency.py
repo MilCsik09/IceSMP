@@ -168,14 +168,24 @@ if os.path.exists(menus_path):
             fail(f"CommandMenus: RUN/OPEN cél '{m.group(1)}' nem regisztrált parancs")
 
 # ---------- 5b. duplikált metódus-szignatúrák (a sandbox-javac elnyeli!) ----------
+# A kulcs a legközelebbi megelőző típusdeklarációt is hordozza, különben beágyazott
+# recordok azonos nevű accessorai hamis duplikátumként buknának el.
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
+    src = read(path)
+    type_decls = [(m.start(), m.group(1))
+                  for m in re.finditer(r"\b(?:class|record|interface|enum)\s+(\w+)", src)]
     seen = {}
-    for m in re.finditer(r"(?:public|private|protected)[\w\s<>,\[\]]*?\s(\w+)\(([^)]*)\)\s*\{", read(path)):
+    for m in re.finditer(r"(?:public|private|protected)[\w\s<>,\[\]]*?\s(\w+)\(([^)]*)\)\s*\{", src):
         name, params = m.group(1), m.group(2)
         types = tuple(t.split(".")[-1] for t in re.findall(r"(?:final\s+)?([\w.<>\[\]]+)\s+\w+\s*(?:,|$)", params))
-        key = (name, types)
+        owner = ""
+        for pos, type_name in type_decls:
+            if pos >= m.start():
+                break
+            owner = type_name
+        key = (owner, name, types)
         if key in seen:
-            fail(f"duplikált metódus: {os.path.basename(path)}: {name}({', '.join(types)}) kétszer definiálva")
+            fail(f"duplikált metódus: {os.path.basename(path)}: {owner}.{name}({', '.join(types)}) kétszer definiálva")
         seen[key] = True
 
 # ---------- 6. tükör-drift ----------
@@ -406,7 +416,7 @@ except Exception as e:
 # ===== Spell-feloldas provenancia: minden grant nevezze meg a forrasat =====
 # Forras nelkul a spec-reset nem tudta visszavenni a sajat spelljeit (a specek hatarlan
 # halmozhatoak lettek), a talent-visszavonas pedig elvitte a kaszt-szintbol IS jaro spellt.
-# A ket-argumentumu unlockSpell csak legacy fallback (SOURCE_LEGACY) — uj hivo ne hasznalja.
+# Source nélküli unlockSpell nincs támogatva — minden hívó explicit provenance-t adjon.
 try:
     def _top_level_args(text, open_index):
         """Argumentumok a nyito zarojeltol a hozza tartozo CSUKOTIG (beagyazott hivasokkal)."""
@@ -431,7 +441,7 @@ try:
 
     for _jp in pathlib.Path(JAVA).rglob("*.java"):
         if _jp.name == "JobManager.java":
-            continue  # a delegalo ket-argumentumu overload itt EL
+            continue  # az implementáció belső hívásait nem vizsgáljuk call-site guardként
         _src = _jp.read_text(encoding="utf-8", errors="ignore")
         for _match in re.finditer(r"unlockSpell\(", _src):
             _args = _top_level_args(_src, _match.end() - 1)

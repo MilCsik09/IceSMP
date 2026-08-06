@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.gui.BestiaryHolder;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.QuestManager;
@@ -22,7 +23,10 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.FurnaceExtractEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.charset.StandardCharsets;
@@ -31,6 +35,7 @@ import java.util.UUID;
 /** Routes final gameplay events into quest and community-goal progress. */
 public final class QuestProgressListener implements Listener {
 
+    private static final int PROFILE_READY_RETRIES = 40;
     private final JavaPlugin plugin;
     private final QuestManager questManager;
     private final MobScalingManager mobScalingManager;
@@ -49,15 +54,45 @@ public final class QuestProgressListener implements Listener {
     }
 
     @EventHandler
+    public void onJoin(final PlayerJoinEvent event) {
+        scheduleRewardRecovery(event.getPlayer(), 0);
+    }
+
+    private void scheduleRewardRecovery(final Player player, final int attempt) {
+        player.getScheduler().runDelayed(plugin, task -> {
+            if (!player.isOnline()) return;
+            final boolean ready = hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority
+                    .installed().flatMap(authority -> authority.repository()
+                            .cached(player.getUniqueId())).isPresent();
+            if (ready) {
+                questManager.recoverPendingRewards(player);
+                return;
+            }
+            if (attempt + 1 < PROFILE_READY_RETRIES) {
+                scheduleRewardRecovery(player, attempt + 1);
+            } else {
+                plugin.getLogger().severe("PlayerProfile quest reward recovery timed out for "
+                        + player.getUniqueId());
+            }
+        }, null, 5L);
+    }
+
+    @EventHandler
+    public void onQuit(final PlayerQuitEvent event) {
+        questManager.clearPlayerState(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onKick(final PlayerKickEvent event) {
+        questManager.clearPlayerState(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
-        if (event.getEntity() instanceof Player) {
-            return;
-        }
+        if (event.getEntity() instanceof Player) return;
         final var kill = hu.taliann.icesmp.utils.MobKillUtil
                 .eligibleTrackingKill(event.getEntity());
-        if (kill == null) {
-            return;
-        }
+        if (kill == null) return;
         final var entityType = event.getEntityType();
         final int level = mobScalingManager.getLevel(event.getEntity());
         final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
@@ -74,9 +109,7 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final org.bukkit.GameMode mode = event.getPlayer().getGameMode();
-        if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) {
-            return;
-        }
+        if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) return;
         questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
         communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS",
                 event.getBlock().getType().name(), 1);
@@ -92,17 +125,11 @@ public final class QuestProgressListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
-        if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) {
-            return;
-        }
+        if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
         questManager.handleFish(event.getPlayer());
-        if (!(event.getCaught() instanceof Item caught)) {
-            return;
-        }
+        if (!(event.getCaught() instanceof Item caught)) return;
         final var stack = caught.getItemStack();
-        if (stack.getType().isAir() || stack.getAmount() <= 0) {
-            return;
-        }
+        if (stack.getType().isAir() || stack.getAmount() <= 0) return;
         if (communityGoalManager.contributeOnce(event.getPlayer(), "COLLECT_ITEMS",
                 stack.getType().name(), stack.getAmount(), caught.getUniqueId())) {
             questManager.handleCollect(event.getPlayer(), stack.getType(), stack.getAmount());
@@ -117,14 +144,9 @@ public final class QuestProgressListener implements Listener {
     @EventHandler
     public void onPlayerKill(final PlayerDeathEvent event) {
         final Player killer = event.getEntity().getKiller();
-        if (killer == null || killer.getUniqueId().equals(event.getEntity().getUniqueId())) {
-            return;
-        }
-        final UUID killerId = killer.getUniqueId();
-        final Player online = org.bukkit.Bukkit.getPlayer(killerId);
-        if (online == null) {
-            return;
-        }
+        if (killer == null || killer.getUniqueId().equals(event.getEntity().getUniqueId())) return;
+        final Player online = org.bukkit.Bukkit.getPlayer(killer.getUniqueId());
+        if (online == null) return;
         online.getScheduler().run(plugin, task -> {
             questManager.handlePlayerKill(online);
             communityGoalManager.contribute(online, "KILL_PLAYERS", null, 1);
@@ -133,9 +155,7 @@ public final class QuestProgressListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBreed(final EntityBreedEvent event) {
-        if (!(event.getBreeder() instanceof Player breeder)) {
-            return;
-        }
+        if (!(event.getBreeder() instanceof Player breeder)) return;
         final var entityType = event.getEntityType();
         breeder.getScheduler().run(plugin,
                 task -> questManager.handleBreed(breeder, entityType), null);
@@ -154,9 +174,7 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSmelt(final FurnaceExtractEvent event) {
         questManager.handleSmelt(event.getPlayer(), event.getItemType(), event.getItemAmount());
-        if (event.getItemAmount() <= 0) {
-            return;
-        }
+        if (event.getItemAmount() <= 0) return;
         final String identity = event.getPlayer().getUniqueId() + "|smelt|"
                 + event.getBlock().getWorld().getUID() + '|'
                 + event.getBlock().getX() + '|' + event.getBlock().getY() + '|'
@@ -172,9 +190,7 @@ public final class QuestProgressListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onTame(final EntityTameEvent event) {
-        if (!(event.getOwner() instanceof Player tamer)) {
-            return;
-        }
+        if (!(event.getOwner() instanceof Player tamer)) return;
         final var entityType = event.getEntityType();
         tamer.getScheduler().run(plugin,
                 task -> questManager.handleTame(tamer, entityType), null);
@@ -191,9 +207,7 @@ public final class QuestProgressListener implements Listener {
         final Location to = event.getTo();
         if (to == null || (from.getBlockX() == to.getBlockX()
                 && from.getBlockZ() == to.getBlockZ()
-                && from.getBlockY() == to.getBlockY())) {
-            return;
-        }
+                && from.getBlockY() == to.getBlockY())) return;
         questManager.handleBiomeVisit(event.getPlayer(),
                 to.getBlock().getBiome().getKey().toString());
     }

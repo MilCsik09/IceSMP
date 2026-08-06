@@ -64,10 +64,21 @@ public final class SpellbookListener implements Listener {
         }
 
         if (event.isShiftClick()) {
-            final boolean nowFavorite = favoritesManager.toggle(player, spellId);
-            player.playSound(player.getLocation(),
-                    nowFavorite ? Sound.ENTITY_EXPERIENCE_ORB_PICKUP : Sound.UI_BUTTON_CLICK, 0.8F, 1.2F);
-            catalyst.openSpellbook(player, holder.getPage(), holder.isOnlyUnlocked()); // refresh the star
+            favoritesManager.toggle(player, spellId).whenComplete((nowFavorite, failure) ->
+                    favoritesManager.runOnOwnerThread(player, () -> {
+                        if (!player.isOnline()) {
+                            return;
+                        }
+                        if (failure != null) {
+                            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.8F, 0.8F);
+                            player.sendMessage("§cA kedvenc tartós mentése sikertelen; az állapot nem változott.");
+                            return;
+                        }
+                        player.playSound(player.getLocation(),
+                                nowFavorite ? Sound.ENTITY_EXPERIENCE_ORB_PICKUP : Sound.UI_BUTTON_CLICK,
+                                0.8F, 1.2F);
+                        catalyst.openSpellbook(player, holder.getPage(), holder.isOnlyUnlocked());
+                    }));
             return;
         }
 

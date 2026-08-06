@@ -924,7 +924,7 @@ public final class DevItemManager implements PersistentStore {
         }
 
         if (warningCount == 0) {
-            plugin.getLogger().info("Csodálatos Bingulus: a rarity- és jutalomtáblák érvényesek.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Csodálatos Bingulus: a rarity- és jutalomtáblák érvényesek.");
         }
     }
 

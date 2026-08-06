@@ -1,5 +1,7 @@
 # IceSMP admin-, moderátori és tesztelői kézikönyv
 
+<!-- icesmp-doc-id: feature.moderation -->
+
 <!-- icesmp-doc-id: guide.admin-and-moderator -->
 
 <details>
@@ -38,6 +40,12 @@ pluginoktól. Az első teszt előtt:
 > privát üzenetek tartalmát is megjelenítheti vagy rögzítheti. A
 > jogosultságot szűken oszd, a naplóhoz való fájlhozzáférést korlátozd, és
 > a játékosok felé alkalmazd a szerver adatkezelési szabályzatát.
+
+> **Konzol-naplózás:** a boot-kori leltár-sorok ("Loaded N ...",
+> spell-balansz felülbírálások, érvényes-táblák) alapból FINE szintre
+> kerülnek, így a konzol a tényleges eseményeké marad. Hibakereséshez a
+> `logging.verbose-startup: true` élő-config kulccsal (akár
+> `/icesmp config set` útján, restart nélkül) INFO-ra emelhetők.
 
 ## 2. Jogosultsági modell
 
@@ -1042,6 +1050,17 @@ utolsó választásból nem konvertálódik automatikusan. Minden ilyen rekord a
 `legacy-tax-debts-unresolved` karanténba kerül, és a következő explicit tagság
 sem köti hozzá automatikusan. Több eredet egyszerre is rendezhető,
 de egy beszedési kör játékosonként legfeljebb egy adócsalási bűnt jelent.
+### Profile v2 kaszt/spec üzemeltetési kapu
+
+A Profile v2 mindig aktív és a kaszt/spec egyetlen autoritatív rendszere; nincs legacy migráció,
+fallback vagy kill switch. Az üzemeltetőnek telepítenie kell a
+`class-spec-dependencies.lock.yml` fájlban rögzített kötelező plugineket, majd stagingen
+`-Dpaper.disablePluginRemapping=true` kapcsolóval kell indítania a szervert. Aktív dependency
+enforcement mellett hiányzó vagy eltérő kötelező plugin fail-closed startup hibát okoz.
+Quarantine esetén az evidence megőrzendő, és csak az explicit
+`/spec recover <player|uuid> confirm` parancs használható (`icesmp.admin.spec.recover`).
+A részletes persistence-, recovery- és shutdown-folyamat:
+`docs/admin/CLASS_SPEC_REWORK_RUNBOOK.md`.
 
 ### Konfigurációs fájlok
 

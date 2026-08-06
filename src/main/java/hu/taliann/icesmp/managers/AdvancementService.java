@@ -173,7 +173,7 @@ public final class AdvancementService {
                     + fromFallback + " a DEPRECATED tartalék úton (" + NODES.size() + " összesen). "
                     + "A datapack-felderítés nem hozta be mindet — érdemes a szerver-logot megnézni.");
         } else {
-            plugin.getLogger().info("IceSMP advancement-fa: " + fromDatapack + "/" + NODES.size()
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "IceSMP advancement-fa: " + fromDatapack + "/" + NODES.size()
                     + " bejegyzés a jar datapackjéből él.");
         }
     }
