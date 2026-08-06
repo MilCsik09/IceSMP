@@ -11,18 +11,18 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-/**
- * Restart-safe cross-player bounty outbox owned by the criminal's faction section.
- * The hunter wallet uses the same operation id through EconomySection.creditOnce().
- */
+/** Restart-safe cross-player bounty outbox owned by the criminal's faction section. */
 public final class PlayerProfileBountyStore {
 
     private static final String PENDING = "bounty.pending";
-    private static final String COMPLETED_GENERATION = "bounty.completed-generation";
+    private static final String COMPLETED_SEQUENCE = "bounty.completed-sequence";
+    private static final String NEXT_ELIGIBLE_AT = "bounty.next-eligible-at";
 
     public record PendingBounty(String operationId, UUID victimId, UUID hunterId,
-                                long sinGeneration, CurrencyType currency,
-                                long amountMilli, long createdAtEpochMillis) {
+                                long sinGeneration, long payoutSequence,
+                                CurrencyType currency, long amountMilli,
+                                long createdAtEpochMillis,
+                                long cooldownUntilEpochMillis) {
         public PendingBounty {
             if (operationId == null || operationId.isBlank() || operationId.length() > 128) {
                 throw new IllegalArgumentException("invalid bounty operation id");
@@ -30,7 +30,9 @@ public final class PlayerProfileBountyStore {
             Objects.requireNonNull(victimId, "victimId");
             Objects.requireNonNull(hunterId, "hunterId");
             Objects.requireNonNull(currency, "currency");
-            if (sinGeneration <= 0L || amountMilli <= 0L || createdAtEpochMillis <= 0L) {
+            if (sinGeneration <= 0L || payoutSequence <= 0L || amountMilli <= 0L
+                    || createdAtEpochMillis <= 0L
+                    || cooldownUntilEpochMillis < createdAtEpochMillis) {
                 throw new IllegalArgumentException("invalid bounty outbox");
             }
         }
@@ -48,8 +50,8 @@ public final class PlayerProfileBountyStore {
     }
 
     /**
-     * Atomically reserves one sin generation and optionally clears its count. An existing
-     * pending payout is returned unchanged so a later kill cannot steal a recovery claim.
+     * Atomically reserves one payout and optionally clears the sin count. An existing pending
+     * payout is returned unchanged so a later kill cannot steal a recovery claim.
      */
     public CompletionStage<Optional<Reservation>> reserve(
             final UUID victimId,
@@ -57,11 +59,12 @@ public final class PlayerProfileBountyStore {
             final CurrencyType currency,
             final long amountMilli,
             final int minimumSins,
-            final boolean clearSins) {
+            final boolean clearSins,
+            final long cooldownMillis) {
         Objects.requireNonNull(victimId, "victimId");
         Objects.requireNonNull(hunterId, "hunterId");
         Objects.requireNonNull(currency, "currency");
-        if (amountMilli <= 0L || minimumSins < 1) {
+        if (amountMilli <= 0L || minimumSins < 1 || cooldownMillis < 0L) {
             throw new IllegalArgumentException("invalid bounty reservation");
         }
         return PlayerProfileAuthority.current().mutateSectionConditional(
@@ -74,14 +77,16 @@ public final class PlayerProfileBountyStore {
                     }
                     final PlayerProfileSinStore.SinState sin =
                             PlayerProfileSinStore.decode(current);
-                    final long completed = completedGeneration(current);
-                    if (sin.count() < minimumSins || sin.generation() <= completed) {
+                    final long now = System.currentTimeMillis();
+                    if (sin.count() < minimumSins || now < nextEligibleAt(current)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(Optional.empty());
                     }
-                    final String operationId = "bounty-" + victimId + '-' + sin.generation();
+                    final long sequence = Math.addExact(completedSequence(current), 1L);
+                    final long cooldownUntil = saturatingAdd(now, cooldownMillis);
+                    final String operationId = "bounty-" + victimId + '-' + sequence;
                     final PendingBounty pending = new PendingBounty(operationId,
-                            victimId, hunterId, sin.generation(), currency,
-                            amountMilli, System.currentTimeMillis());
+                            victimId, hunterId, sin.generation(), sequence, currency,
+                            amountMilli, now, cooldownUntil);
                     FactionSection next = current;
                     if (clearSins) {
                         next = PlayerProfileSinStore.withSin(current, 0,
@@ -106,7 +111,7 @@ public final class PlayerProfileBountyStore {
                             victimId, current.extensions().get(PENDING));
                     if (live.isEmpty()) {
                         return PlayerProfileService.ConditionalMutation.unchanged(
-                                completedGeneration(current) >= expected.sinGeneration());
+                                completedSequence(current) >= expected.payoutSequence());
                     }
                     if (!live.orElseThrow().equals(expected)) {
                         throw new IllegalStateException("bounty outbox identity changed");
@@ -114,8 +119,10 @@ public final class PlayerProfileBountyStore {
                     final LinkedHashMap<String, Object> extensions =
                             new LinkedHashMap<>(current.extensions());
                     extensions.remove(PENDING);
-                    extensions.put(COMPLETED_GENERATION, Math.max(
-                            completedGeneration(current), expected.sinGeneration()));
+                    extensions.put(COMPLETED_SEQUENCE, Math.max(
+                            completedSequence(current), expected.payoutSequence()));
+                    extensions.put(NEXT_ELIGIBLE_AT, Math.max(
+                            nextEligibleAt(current), expected.cooldownUntilEpochMillis()));
                     final FactionSection next = new FactionSection(
                             current.membershipId(), current.lastChosenFaction(),
                             current.everChosen(), current.joinedAt(), current.leftAt(),
@@ -133,9 +140,11 @@ public final class PlayerProfileBountyStore {
                 "operation-id", pending.operationId(),
                 "hunter", pending.hunterId().toString(),
                 "generation", pending.sinGeneration(),
+                "sequence", pending.payoutSequence(),
                 "currency", pending.currency().name(),
                 "amount-milli", pending.amountMilli(),
-                "created-at", pending.createdAtEpochMillis()));
+                "created-at", pending.createdAtEpochMillis(),
+                "cooldown-until", pending.cooldownUntilEpochMillis()));
         return new FactionSection(current.membershipId(), current.lastChosenFaction(),
                 current.everChosen(), current.joinedAt(), current.leftAt(),
                 current.history(), current.reputation(), current.cooldowns(), extensions);
@@ -151,24 +160,35 @@ public final class PlayerProfileBountyStore {
             final String operationId = requiredString(map, "operation-id");
             final UUID hunter = UUID.fromString(requiredString(map, "hunter"));
             final long generation = requiredLong(map, "generation");
+            final long sequence = requiredLong(map, "sequence");
             final CurrencyType currency = CurrencyType.valueOf(
                     requiredString(map, "currency"));
             final long amount = requiredLong(map, "amount-milli");
             final long created = requiredLong(map, "created-at");
+            final long cooldownUntil = requiredLong(map, "cooldown-until");
             return Optional.of(new PendingBounty(operationId, victimId, hunter,
-                    generation, currency, amount, created));
+                    generation, sequence, currency, amount, created, cooldownUntil));
         } catch (final RuntimeException invalid) {
             throw new IllegalStateException("invalid bounty pending payload", invalid);
         }
     }
 
-    private static long completedGeneration(final FactionSection section) {
-        final Object raw = section.extensions().get(COMPLETED_GENERATION);
+    private static long completedSequence(final FactionSection section) {
+        return nonNegativeLong(section.extensions().get(COMPLETED_SEQUENCE),
+                "bounty completed sequence");
+    }
+
+    private static long nextEligibleAt(final FactionSection section) {
+        return nonNegativeLong(section.extensions().get(NEXT_ELIGIBLE_AT),
+                "bounty next eligible timestamp");
+    }
+
+    private static long nonNegativeLong(final Object raw, final String field) {
         if (raw == null) return 0L;
         if (raw instanceof Number number && number.longValue() >= 0L) {
             return number.longValue();
         }
-        throw new IllegalStateException("invalid bounty completed generation");
+        throw new IllegalStateException("invalid " + field);
     }
 
     private static String requiredString(final Map<?, ?> map, final String key) {
@@ -185,5 +205,10 @@ public final class PlayerProfileBountyStore {
             throw new IllegalArgumentException("invalid bounty field: " + key);
         }
         return value.longValue();
+    }
+
+    private static long saturatingAdd(final long first, final long second) {
+        if (second <= 0L) return first;
+        return first > Long.MAX_VALUE - second ? Long.MAX_VALUE : first + second;
     }
 }
