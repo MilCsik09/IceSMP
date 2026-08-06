@@ -283,7 +283,6 @@ val runtimeHardeningRegressionTest = registerRegression(
 tasks.check {
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
-    dependsOn(
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
         configStartupRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, pauseMenuDialogRegressionTest,
@@ -303,6 +302,5 @@ tasks.check {
         configGuiTransactionRegressionTest, configGuiCoverageRegressionTest, professionRecipeAuditRegressionTest,
         inventoryReadWriteRegressionTest, operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest,
         factionDisplayColorRegressionTest
-    )
     )
 }

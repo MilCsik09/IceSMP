@@ -99,7 +99,7 @@ public final class DonationChestManager implements PersistentStore {
                         final UUID id = UUID.fromString(idKey);
                         final UUID donorId = UUID.fromString(section.getString(idKey + ".donor-id", ""));
                         final ItemStack item = section.getItemStack(idKey + ".item");
-                        if (item == null || item.getType() == Material.AIR) {
+                        if (isEmpty(item)) {
                             continue;
                         }
                         entries.put(id, new DonationEntry(
@@ -109,8 +109,9 @@ public final class DonationChestManager implements PersistentStore {
                                 item,
                                 section.getLong(idKey + ".donated-at", System.currentTimeMillis())
                         ));
-                    } catch (final IllegalArgumentException ignored) {
-                        // Skip malformed entries rather than discarding the whole chest.
+                    } catch (final IllegalArgumentException malformed) {
+                        plugin.getLogger().warning("Skipping malformed donation entry "
+                                + idKey + ": " + malformed.getMessage());
                     }
                 }
             }
@@ -118,32 +119,6 @@ public final class DonationChestManager implements PersistentStore {
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load donations.yml: " + exception.getMessage());
         }
-        for (final String idKey : section.getKeys(false)) {
-            try {
-                final UUID id = UUID.fromString(idKey);
-                final UUID donorId = UUID.fromString(
-                        section.getString(idKey + ".donor-id", ""));
-                final ItemStack item =
-                        section.getItemStack(idKey + ".item");
-                if (isEmpty(item)) {
-                    continue;
-                }
-                entries.put(id, new DonationEntry(
-                        id,
-                        donorId,
-                        section.getString(idKey + ".donor-name", "?"),
-                        item,
-                        section.getLong(idKey + ".donated-at",
-                                System.currentTimeMillis())
-                ));
-            } catch (final IllegalArgumentException malformed) {
-                plugin.getLogger().warning(
-                        "Skipping malformed donation entry "
-                                + idKey + ": " + malformed.getMessage());
-            }
-        }
-        plugin.getLogger().info("Loaded " + entries.size()
-                + " donation chest entr(y/ies).");
     }
 
     private void requestSave() {

@@ -210,6 +210,21 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CrateManager.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "Crate placements and opening-recovery fences; per-player counts, cooldowns and settlement receipts live in the PlayerProfile STATISTICS section."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Meteor crater terrain-restore journal: world/chunk block data keyed by world UUID, no player-owned state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java|private final Map<UUID, EventSpawnSafetyPolicy.PlayerPoint> players = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live player-position tracking for spawn-distance checks; rebuilt from movement events."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/VanishManager.java|private final ConcurrentHashMap<UUID, Set<UUID>> unlistedByViewer = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Per-viewer vanish visibility projection; session-scoped and re-derived on join."
     }
   ]
 }
