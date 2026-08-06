@@ -30,7 +30,7 @@ public final class PlayerProfileBountyStore {
             Objects.requireNonNull(victimId, "victimId");
             Objects.requireNonNull(hunterId, "hunterId");
             Objects.requireNonNull(currency, "currency");
-            if (sinGeneration <= 0L || payoutSequence <= 0L || amountMilli <= 0L
+            if (sinGeneration <= 0L || payoutSequence <= 0L || amountMilli < 0L
                     || createdAtEpochMillis <= 0L
                     || cooldownUntilEpochMillis < createdAtEpochMillis) {
                 throw new IllegalArgumentException("invalid bounty outbox");
@@ -49,10 +49,6 @@ public final class PlayerProfileBountyStore {
         return decodePending(victimId, section.extensions().get(PENDING));
     }
 
-    /**
-     * Atomically reserves one payout and optionally clears the sin count. An existing pending
-     * payout is returned unchanged so a later kill cannot steal a recovery claim.
-     */
     public CompletionStage<Optional<Reservation>> reserve(
             final UUID victimId,
             final UUID hunterId,
@@ -64,7 +60,7 @@ public final class PlayerProfileBountyStore {
         Objects.requireNonNull(victimId, "victimId");
         Objects.requireNonNull(hunterId, "hunterId");
         Objects.requireNonNull(currency, "currency");
-        if (amountMilli <= 0L || minimumSins < 1 || cooldownMillis < 0L) {
+        if (amountMilli < 0L || minimumSins < 1 || cooldownMillis < 0L) {
             throw new IllegalArgumentException("invalid bounty reservation");
         }
         return PlayerProfileAuthority.current().mutateSectionConditional(
@@ -98,7 +94,6 @@ public final class PlayerProfileBountyStore {
                 });
     }
 
-    /** Removes the outbox only after the hunter wallet receipt committed. */
     public CompletionStage<Boolean> complete(final UUID victimId,
                                              final PendingBounty expected) {
         Objects.requireNonNull(expected, "expected");
@@ -159,13 +154,14 @@ public final class PlayerProfileBountyStore {
         try {
             final String operationId = requiredString(map, "operation-id");
             final UUID hunter = UUID.fromString(requiredString(map, "hunter"));
-            final long generation = requiredLong(map, "generation");
-            final long sequence = requiredLong(map, "sequence");
+            final long generation = positiveLong(map, "generation");
+            final long sequence = positiveLong(map, "sequence");
             final CurrencyType currency = CurrencyType.valueOf(
                     requiredString(map, "currency"));
-            final long amount = requiredLong(map, "amount-milli");
-            final long created = requiredLong(map, "created-at");
-            final long cooldownUntil = requiredLong(map, "cooldown-until");
+            final long amount = nonNegativeLong(map.get("amount-milli"),
+                    "bounty amount");
+            final long created = positiveLong(map, "created-at");
+            final long cooldownUntil = positiveLong(map, "cooldown-until");
             return Optional.of(new PendingBounty(operationId, victimId, hunter,
                     generation, sequence, currency, amount, created, cooldownUntil));
         } catch (final RuntimeException invalid) {
@@ -199,7 +195,7 @@ public final class PlayerProfileBountyStore {
         return value;
     }
 
-    private static long requiredLong(final Map<?, ?> map, final String key) {
+    private static long positiveLong(final Map<?, ?> map, final String key) {
         final Object raw = map.get(key);
         if (!(raw instanceof Number value) || value.longValue() <= 0L) {
             throw new IllegalArgumentException("invalid bounty field: " + key);
