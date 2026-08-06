@@ -136,7 +136,6 @@ val hudRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.HudRegressionSuite")
 }
 
-
 val classSpecCompatibilityRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs class/spec dependency-lock and portability regressions."
@@ -201,6 +200,14 @@ val professionProfileStateRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.playerprofile.domain.ProfessionProfileStateRegressionSuite")
 }
 
+val playerProfileFullAuthorityRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs final PlayerProfile operation, budget, wallet and bounty recovery regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.playerprofile.application.PlayerProfileFullAuthorityRegressionSuite")
+}
+
 val playerProfileYamlRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs structured section YAML, manifest, CAS, quarantine and shutdown regressions."
@@ -232,7 +239,6 @@ val respecTransactionRegressionTest by tasks.registering(JavaExec::class) {
     classpath = regressionTest.runtimeClasspath
     mainClass.set("hu.taliann.icesmp.classspec.transaction.RespecTransactionRegressionSuite")
 }
-
 
 val spellGrantLedgerRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
@@ -333,7 +339,7 @@ tasks.check {
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest,
         playerProfileSectionExtensionsRegressionTest, spellMasteryTransactionRegressionTest,
-        professionProfileStateRegressionTest, playerProfileYamlRegressionTest,
-        playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
+        professionProfileStateRegressionTest, playerProfileFullAuthorityRegressionTest,
+        playerProfileYamlRegressionTest, playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest)
 }
