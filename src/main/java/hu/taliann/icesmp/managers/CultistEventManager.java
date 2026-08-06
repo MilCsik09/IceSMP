@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Cultist world event with bounded, UUID-only lifecycle tracking. */
+/** Cultist world event with bounded lifecycle and distant, guarded placement. */
 public final class CultistEventManager {
 
     private final JavaPlugin plugin;
@@ -72,12 +72,10 @@ public final class CultistEventManager {
         this.eventGate = eventGate;
     }
 
-    public void setSpawnPointManager(
-            final EventSpawnPointManager spawnPointManager) {
+    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
         this.spawnPointManager = spawnPointManager;
     }
 
-    /** Pure atomic lifecycle query used by MajorEventGate. */
     public boolean isActive() {
         if (!active) {
             return false;
@@ -141,8 +139,7 @@ public final class CultistEventManager {
         plugin.getServer().getRegionScheduler().run(plugin, site, task -> {
             for (final org.bukkit.inventory.ItemStack loot : LootTable.roll(
                     configManager, "cultists.rite-loot",
-                    Math.max(1, configManager.getInt(
-                            "cultists.rite-loot-rolls", 3)))) {
+                    Math.max(1, configManager.getInt("cultists.rite-loot-rolls", 3)))) {
                 site.getWorld().dropItemNaturally(site, loot);
             }
             site.getWorld().playSound(site,
@@ -166,8 +163,7 @@ public final class CultistEventManager {
                 }
                 return;
             }
-            if ("rite".equals(variant) && riteEndsAt > 0L
-                    && now >= riteEndsAt) {
+            if ("rite".equals(variant) && riteEndsAt > 0L && now >= riteEndsAt) {
                 completeRite();
             }
             return;
@@ -175,8 +171,8 @@ public final class CultistEventManager {
         if (now < nextAttemptAt || now < spawnGraceUntil) {
             return;
         }
-        nextAttemptAt = now + Math.max(1L, configManager.getLong(
-                "cultists.interval-minutes", 100L)) * 60_000L;
+        nextAttemptAt = now + Math.max(1L,
+                configManager.getLong("cultists.interval-minutes", 100L)) * 60_000L;
         final MajorEventGate gate = eventGate;
         if (gate != null && !gate.mayStartNaturally("cultists")) {
             return;
@@ -192,20 +188,21 @@ public final class CultistEventManager {
         if (active || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
-        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
+        spawnGraceUntil = System.currentTimeMillis() + 60_000L;
         final String picked = pickVariant();
+        final long seed = System.nanoTime() ^ picked.hashCode();
         final EventSpawnPointManager points = spawnPointManager;
         final Location fixed = preferredAnchor != null || points == null
                 ? null : points.resolveAnchorLocation("cultists");
         if (fixed != null) {
-            plugin.getServer().getRegionScheduler().run(plugin, fixed,
-                    task -> spawnVariant(picked, fixed));
+            spawnGuard.findSafeAtOrNear("cultists", fixed, seed,
+                    site -> spawnVariant(picked, site), () -> spawnGraceUntil = 0L);
             return true;
         }
+
         Player anchor = preferredAnchor;
         if (anchor == null) {
-            final List<? extends Player> online =
-                    List.copyOf(Bukkit.getOnlinePlayers());
+            final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
                 spawnGraceUntil = 0L;
                 return false;
@@ -213,14 +210,12 @@ public final class CultistEventManager {
             anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         }
         final Player target = anchor;
-        final int offset = Math.max(16,
-                configManager.getInt("cultists.spawn-offset", 48));
         target.getScheduler().run(plugin, task -> {
-            final Location base = target.getLocation().clone().add(
-                    ThreadLocalRandom.current().nextDouble(-offset, offset), 0.0D,
-                    ThreadLocalRandom.current().nextDouble(-offset, offset));
-            plugin.getServer().getRegionScheduler().run(plugin, base,
-                    spawn -> spawnVariant(picked, base));
+            final Location origin = target.getLocation().clone();
+            final long playerSeed = seed ^ target.getUniqueId().getMostSignificantBits()
+                    ^ target.getUniqueId().getLeastSignificantBits();
+            spawnGuard.findSafeNear("cultists", origin, playerSeed,
+                    site -> spawnVariant(picked, site), () -> spawnGraceUntil = 0L);
         }, () -> spawnGraceUntil = 0L);
         return true;
     }
@@ -238,21 +233,15 @@ public final class CultistEventManager {
                 : roll < attack + rite ? "rite" : "courier";
     }
 
-    private void spawnVariant(final String picked, final Location base) {
-        final World world = base.getWorld();
-        if (world == null) {
+    /** Called on the region thread owning an already guarded event center. */
+    private synchronized void spawnVariant(final String picked, final Location site) {
+        final World world = site.getWorld();
+        if (world == null || active || spawnGuard.isBlocked("cultists", site)) {
             spawnGraceUntil = 0L;
             return;
         }
-        final int x = base.getBlockX();
-        final int z = base.getBlockZ();
-        final Location site = new Location(world, x + 0.5D,
-                world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
-        if (spawnGuard.isBlocked("cultists", site)
-                || spawnGuard.isUnsafeSurface("cultists", world, x, z)) {
-            spawnGraceUntil = 0L;
-            return;
-        }
+        final int x = site.getBlockX();
+        final int z = site.getBlockZ();
         cultists.clear();
         variant = picked;
         riteSite = "rite".equals(picked) ? site.clone() : null;
@@ -311,10 +300,13 @@ public final class CultistEventManager {
         }
     }
 
-    private void spawnCultist(final World world, final Location where,
+    private void spawnCultist(final World world, final Location requested,
                               final EntityType type, final String name) {
-        where.setY(world.getHighestBlockYAt(
-                where.getBlockX(), where.getBlockZ()) + 1);
+        final Location where = spawnGuard.resolveSafeStandingLocation(
+                "cultists", world, requested.getBlockX(), requested.getBlockZ());
+        if (where == null || spawnGuard.isBlocked("cultists", where)) {
+            return;
+        }
         final Entity spawned = world.spawnEntity(where, type);
         if (!(spawned instanceof Mob mob)) {
             spawned.remove();
@@ -354,22 +346,19 @@ public final class CultistEventManager {
                         + Math.pow(territory.z() - site.getZ(), 2);
                 if (distance < best) {
                     best = distance;
-                    goal = new Location(world, territory.x(),
-                            site.getY(), territory.z());
+                    goal = new Location(world, territory.x(), site.getY(), territory.z());
                 }
             }
         }
         if (goal == null) {
-            final double angle = ThreadLocalRandom.current()
-                    .nextDouble(Math.PI * 2.0D);
+            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
             goal = site.clone().add(
                     Math.cos(angle) * 300.0D, 0.0D,
                     Math.sin(angle) * 300.0D);
         }
         final Location target = goal;
         final long lifetimeMillis = Math.max(1,
-                configManager.getInt("cultists.courier-lifetime-minutes", 8))
-                * 60_000L;
+                configManager.getInt("cultists.courier-lifetime-minutes", 8)) * 60_000L;
         final long spawnedAt = System.currentTimeMillis();
         courier.getScheduler().runAtFixedRate(plugin, task -> {
             if (!courier.isValid()) {
@@ -416,10 +405,8 @@ public final class CultistEventManager {
                 "<dark_purple>🕯 A rítus BETELJESÜLT — a kántálás elhal, és a föld megremeg a hívek lába alatt…</dark_purple>");
         final Location site = riteSite == null ? null : riteSite.clone();
         final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble(
-                        "cultists.rite-corruption-chance", 60.0D)));
-        if (site != null && ThreadLocalRandom.current()
-                .nextDouble(100.0D) < chance) {
+                configManager.getDouble("cultists.rite-corruption-chance", 60.0D)));
+        if (site != null && ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
             corruptionManager.forceSpawnAt(site);
         }
         rewardCultSuccess();
@@ -428,11 +415,9 @@ public final class CultistEventManager {
 
     private void rewardCultSuccess() {
         whisperManager.rewardFaithful(Math.max(0.0D,
-                configManager.getDouble(
-                        "cultists.whisper-suspicion-relief", 15.0D)));
+                configManager.getDouble("cultists.whisper-suspicion-relief", 15.0D)));
         seasonManager.addPoints(hu.taliann.icesmp.data.FactionType.DARK,
-                Math.max(0, configManager.getInt(
-                        "cultists.success-season-points", 3)), "cult");
+                Math.max(0, configManager.getInt("cultists.success-season-points", 3)), "cult");
     }
 
     public void shutdown() {
