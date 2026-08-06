@@ -99,8 +99,6 @@ SHARED_AGGREGATE_PATH_TOKENS = (
     "/storage/",
     "transactionjournal",
     "persistentstorecoordinator",
-    "factiontaxjournal",
-    "factionswitchjournal",
 )
 
 RUNTIME_SYMBOL_TOKENS = (
