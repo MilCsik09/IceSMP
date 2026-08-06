@@ -7,14 +7,10 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.utils.MessageManager;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,11 +35,6 @@ public final class JobManager implements PlayerStateCleanup {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final FactionManager factionManager;
-    private final NamespacedKey jobPrimaryKey;
-    private final NamespacedKey jobPrimaryXpKey;
-    private final NamespacedKey unlockedSpellsKey;
-    private final NamespacedKey legacySecondaryKey;
-    private final NamespacedKey legacySecondaryXpKey;
     private final hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellGrantStore spellGrantStore =
             new hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellGrantStore();
     private volatile FactionManager factionManagerRef;
@@ -56,11 +47,6 @@ public final class JobManager implements PlayerStateCleanup {
         this.configManager = Objects.requireNonNull(configManager, "configManager");
         this.messageManager = Objects.requireNonNull(messageManager, "messageManager");
         this.factionManager = Objects.requireNonNull(factionManager, "factionManager");
-        this.jobPrimaryKey = new NamespacedKey(plugin, "job_primary");
-        this.jobPrimaryXpKey = new NamespacedKey(plugin, "job_primary_xp");
-        this.unlockedSpellsKey = new NamespacedKey(plugin, "unlocked_spells");
-        this.legacySecondaryKey = new NamespacedKey(plugin, "job_secondary");
-        this.legacySecondaryXpKey = new NamespacedKey(plugin, "job_secondary_xp");
     }
 
     public void setProfileGateway(final ClassSpecProfileGateway gateway) {
@@ -87,13 +73,15 @@ public final class JobManager implements PlayerStateCleanup {
     public int getXp(final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway;
         if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) return 0;
-        return gateway.currentProfile(player.getUniqueId()).map(profile -> profile.classExperience()).orElse(0);
+        return gateway.currentProfile(player.getUniqueId())
+                .map(profile -> profile.classExperience()).orElse(0);
     }
 
     public int getPrimaryLevel(final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway;
         if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) return 0;
-        return gateway.currentProfile(player.getUniqueId()).map(profile -> profile.classLevel()).orElse(0);
+        return gateway.currentProfile(player.getUniqueId())
+                .map(profile -> profile.classLevel()).orElse(0);
     }
 
     public boolean canSelectPrimary(final Player player, final JobType job) {
@@ -109,7 +97,6 @@ public final class JobManager implements PlayerStateCleanup {
         return required == null || factionManager.isMember(player.getUniqueId(), required);
     }
 
-    /** Legacy synchronous class mutation is intentionally unsupported in greenfield Profile v2. */
     public boolean setPrimaryJob(final Player player, final JobType job) { return false; }
 
     public CompletionStage<Boolean> setPrimaryJobV2(final Player player, final JobType job) {
@@ -130,7 +117,6 @@ public final class JobManager implements PlayerStateCleanup {
                         return CompletableFuture.completedFuture(false);
                     }
                     return schedulePlayer(player, () -> {
-                        mirrorClassState(player);
                         AdvancementService.award(player, "root");
                         AdvancementService.award(player, "first_class");
                     }).thenCompose(ignored -> applyAutoUnlocksV2(player))
@@ -138,15 +124,12 @@ public final class JobManager implements PlayerStateCleanup {
                 });
     }
 
-    /** Compatibility entry point retained for callers; level already lives in Profile v2. */
     public CompletionStage<Boolean> mirrorPrimaryLevelV2(final Player player) {
         return CompletableFuture.completedFuture(profileGateway != null
                 && profileGateway.isSessionReady(player.getUniqueId()));
     }
 
-    /** Legacy synchronous XP mutation is intentionally unsupported. */
     public boolean addXpToJob(final Player player, final int amount) { return false; }
-    /** Legacy synchronous XP mutation is intentionally unsupported. */
     public boolean setXp(final Player player, final int xp) { return false; }
 
     public CompletionStage<Boolean> addXpToJobV2(final Player player, final int amount,
@@ -167,16 +150,18 @@ public final class JobManager implements PlayerStateCleanup {
                                                final ClassSpecProfileGateway.ClassExperienceRequest.Mode mode,
                                                final int value, final String operationId) {
         final int baseXp = Math.max(1, configManager.getInt("classes.leveling.base-xp", 100));
-        final int increment = Math.max(0, configManager.getInt("classes.leveling.increment-per-level", 20));
+        final int increment = Math.max(0, configManager.getInt(
+                "classes.leveling.increment-per-level", 20));
         return gateway().mutateClassExperience(player.getUniqueId(),
-                new ClassSpecProfileGateway.ClassExperienceRequest(mode, value, baseXp, increment, operationId))
+                new ClassSpecProfileGateway.ClassExperienceRequest(mode, value, baseXp,
+                        increment, operationId))
                 .thenCompose(result -> {
                     if (!result.committed() && result.status() != ProfileMutationResult.Status.NO_CHANGE) {
                         return CompletableFuture.completedFuture(false);
                     }
                     return schedulePlayer(player, () -> {
-                        mirrorClassState(player);
-                        if (getPrimaryLevel(player) >= MAX_JOB_LEVEL) AdvancementService.award(player, "class_max");
+                        if (getPrimaryLevel(player) >= MAX_JOB_LEVEL)
+                            AdvancementService.award(player, "class_max");
                         final java.util.function.Consumer<Player> hook = xpChangeHook;
                         if (hook != null) hook.accept(player);
                     }).thenCompose(ignored -> applyAutoUnlocksV2(player))
@@ -184,13 +169,14 @@ public final class JobManager implements PlayerStateCleanup {
                 });
     }
 
-    public void setXpChangeHook(final java.util.function.Consumer<Player> hook) { xpChangeHook = hook; }
+    public void setXpChangeHook(final java.util.function.Consumer<Player> hook) {
+        xpChangeHook = hook;
+    }
 
     public CompletionStage<Void> applyAutoUnlocksV2(final Player player) {
         final JobType job = getPrimaryJob(player);
-        if (job == null || configManager.getConfiguration() == null) {
+        if (job == null || configManager.getConfiguration() == null)
             return CompletableFuture.completedFuture(null);
-        }
         final ConfigurationSection unlocks = configManager.getConfiguration()
                 .getConfigurationSection("classes." + job.getId() + ".spell-unlocks");
         if (unlocks == null) return CompletableFuture.completedFuture(null);
@@ -202,11 +188,12 @@ public final class JobManager implements PlayerStateCleanup {
             chain = chain.thenCompose(ignored -> unlockSpellV2(player, spellId,
                             SOURCE_BASE_PREFIX + job.getId())
                     .thenCompose(unlocked -> Boolean.TRUE.equals(unlocked)
-                            ? schedulePlayer(player, () -> player.sendMessage(messageManager.getMessage(
-                                    "job-spell-auto-unlocked",
+                            ? schedulePlayer(player, () -> player.sendMessage(
+                            messageManager.getMessage("job-spell-auto-unlocked",
                                     "&aÚj képesség feloldva: &e{spell} &7(szint {level})",
                                     Map.of("spell", messageManager.get(
-                                                    "spell." + spellId.toLowerCase(Locale.ROOT) + ".name",
+                                                    "spell." + spellId.toLowerCase(Locale.ROOT)
+                                                            + ".name",
                                                     spellId.toLowerCase(Locale.ROOT)),
                                             "level", String.valueOf(required)))))
                             : CompletableFuture.completedFuture(null)));
@@ -227,15 +214,12 @@ public final class JobManager implements PlayerStateCleanup {
         SpellGrantLedger ledger = SpellGrantLedger.empty();
         if (spellIds != null) {
             for (final String spellId : spellIds) {
-                if (spellId != null && !spellId.isBlank()) {
+                if (spellId != null && !spellId.isBlank())
                     ledger = ledger.add(spellId, SOURCE_ADMIN).ledger();
-                }
             }
         }
         final SpellGrantLedger requested = ledger;
-        return spellGrantStore.replace(player.getUniqueId(), requested)
-                .thenCompose(committed -> schedulePlayer(player,
-                        () -> mirrorSpellLedger(player, committed)));
+        return spellGrantStore.replace(player.getUniqueId(), requested).thenApply(ignored -> null);
     }
 
     public CompletionStage<Boolean> unlockSpellV2(final Player player,
@@ -247,44 +231,25 @@ public final class JobManager implements PlayerStateCleanup {
                                                    final String spellId,
                                                    final String source) {
         return spellGrantStore.add(player.getUniqueId(), spellId, source)
-                .thenCompose(mutation -> {
-                    if (!mutation.changed()) {
-                        return CompletableFuture.completedFuture(false);
-                    }
-                    return schedulePlayer(player, () -> mirrorSpellLedger(player, mutation.ledger()))
-                            .thenApply(ignored -> mutation.spellLockChanged());
-                });
+                .thenApply(mutation -> mutation.changed() && mutation.spellLockChanged());
     }
 
     public CompletionStage<Boolean> revokeGrantV2(final Player player,
                                                    final String spellId,
                                                    final String source) {
         return spellGrantStore.remove(player.getUniqueId(), spellId, source)
-                .thenCompose(mutation -> {
-                    if (!mutation.changed()) {
-                        return CompletableFuture.completedFuture(false);
-                    }
-                    return schedulePlayer(player, () -> mirrorSpellLedger(player, mutation.ledger()))
-                            .thenApply(ignored -> mutation.spellLockChanged());
-                });
+                .thenApply(mutation -> mutation.changed() && mutation.spellLockChanged());
     }
 
     public CompletionStage<List<String>> revokeGrantsFromV2(
             final Player player, final Predicate<String> sourceMatches) {
         return spellGrantStore.revokeSources(player.getUniqueId(), sourceMatches)
-                .thenCompose(result -> {
-                    if (!result.changed()) {
-                        return CompletableFuture.completedFuture(result.lockedSpellIds());
-                    }
-                    return schedulePlayer(player, () -> mirrorSpellLedger(player, result.ledger()))
-                            .thenApply(ignored -> result.lockedSpellIds());
-                });
+                .thenApply(result -> result.lockedSpellIds());
     }
 
     public CompletionStage<Void> clearSpellGrantsV2(final Player player) {
         return spellGrantStore.replace(player.getUniqueId(), SpellGrantLedger.empty())
-                .thenCompose(committed -> schedulePlayer(player,
-                        () -> mirrorSpellLedger(player, committed)));
+                .thenApply(ignored -> null);
     }
 
     public Set<String> getGrantSources(final Player player, final String spellId) {
@@ -292,44 +257,13 @@ public final class JobManager implements PlayerStateCleanup {
         return readLedger(player).sources(spellId);
     }
 
-    /** Greenfield mode reads only the PlayerProfile spellbook section. */
-    public void backfillSpellGrants(final Player player) {
-        readLedger(player);
-    }
+    public void backfillSpellGrants(final Player player) { readLedger(player); }
 
-    /** Runtime cleanup after an already durable admin class reset. */
-    public void resetClass(final Player player) {
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        pdc.remove(jobPrimaryKey);
-        pdc.remove(jobPrimaryXpKey);
-        pdc.remove(legacySecondaryKey);
-        pdc.remove(legacySecondaryXpKey);
-    }
+    /** Durable admin reset already removed class state; no PDC cleanup remains. */
+    public void resetClass(final Player player) { }
 
     private SpellGrantLedger readLedger(final Player player) {
         return spellGrantStore.read(player.getUniqueId());
-    }
-
-    private void mirrorSpellLedger(final Player player, final SpellGrantLedger ledger) {
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        if (ledger.spellIds().isEmpty()) {
-            pdc.remove(unlockedSpellsKey);
-        } else {
-            pdc.set(unlockedSpellsKey, PersistentDataType.STRING,
-                    String.join(",", ledger.spellIds()));
-        }
-    }
-
-    private void mirrorClassState(final Player player) {
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        final var profile = gateway().currentProfile(player.getUniqueId()).orElse(null);
-        if (profile == null || profile.primaryClassId().isEmpty()) {
-            pdc.remove(jobPrimaryKey);
-            pdc.remove(jobPrimaryXpKey);
-            return;
-        }
-        pdc.set(jobPrimaryKey, PersistentDataType.STRING, profile.primaryClassId());
-        pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, profile.classExperience());
     }
 
     private CompletionStage<Void> schedulePlayer(final Player player, final Runnable work) {
@@ -337,7 +271,8 @@ public final class JobManager implements PlayerStateCleanup {
         player.getScheduler().run(plugin, task -> {
             try { work.run(); result.complete(null); }
             catch (final Throwable failure) { result.completeExceptionally(failure); }
-        }, () -> result.completeExceptionally(new IllegalStateException("Player scheduler rejected Profile v2 effect")));
+        }, () -> result.completeExceptionally(
+                new IllegalStateException("Player scheduler rejected Profile v2 effect")));
         return result;
     }
 
