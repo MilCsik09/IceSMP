@@ -6,13 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** Regression coverage for immutable extension mutations across extension-bearing section records. */
+/** Regression coverage for immutable extension mutations and migrated authority suites. */
 public final class PlayerProfileSectionExtensionsRegressionSuite {
 
     private static int assertions;
 
-    private PlayerProfileSectionExtensionsRegressionSuite() {
-    }
+    private PlayerProfileSectionExtensionsRegressionSuite() { }
 
     public static void main(final String[] args) throws Exception {
         final PlayerProfileSnapshot profile = PlayerProfileSnapshot.greenfield(
@@ -20,22 +19,22 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
                 Instant.parse("2026-08-05T12:00:00Z"));
         for (final ProfileSectionSnapshot<?> snapshot : profile.sectionMap().values()) {
             final ProfileSectionData section = snapshot.value();
-            if (section.getClass().isRecord()) {
-                verifyRecordSection(section);
-            } else {
-                verifyNonRecordSectionFailsClosed(section);
-            }
+            if (section.getClass().isRecord()) verifyRecordSection(section);
+            else verifyNonRecordSectionFailsClosed(section);
         }
         invalidInputsFailClosed(profile.preferences().value());
-        System.out.println("PlayerProfile section extension regression suite passed. assertions=" + assertions);
+        System.out.println("PlayerProfile section extension regression suite passed. assertions="
+                + assertions);
 
-        // Keep migrated authority suites inside the already mandatory PlayerProfile check gate.
         hu.taliann.icesmp.playerprofile.application.PlayerProfileIntroStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryEnumerationRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileStatisticsStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileDailyQuestStoreRegressionSuite.main(args);
+        hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStoreRegressionSuite.main(args);
+        hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionAuthorityRegressionSuite.main(args);
+        hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStoreRegressionSuite.main(args);
     }
 
     private static void verifyRecordSection(final ProfileSectionData original) throws Exception {
@@ -55,13 +54,12 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
                 "original unchanged " + original.sectionId());
 
         for (final RecordComponent component : original.getClass().getRecordComponents()) {
-            if (component.getName().equals("extensions")) {
-                continue;
-            }
+            if (component.getName().equals("extensions")) continue;
             final Object before = component.getAccessor().invoke(original);
             final Object after = component.getAccessor().invoke(changed);
             check(java.util.Objects.equals(before, after),
-                    "non-extension component changed: " + original.sectionId() + '.' + component.getName());
+                    "non-extension component changed: " + original.sectionId() + '.'
+                            + component.getName());
         }
 
         expect(UnsupportedOperationException.class,
@@ -93,9 +91,7 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
 
     private static void check(final boolean condition, final String message) {
         assertions++;
-        if (!condition) {
-            throw new AssertionError(message);
-        }
+        if (!condition) throw new AssertionError(message);
     }
 
     private static void expect(final Class<? extends Throwable> expected,
@@ -112,8 +108,5 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
         }
     }
 
-    @FunctionalInterface
-    private interface Throwing {
-        void run() throws Exception;
-    }
+    @FunctionalInterface private interface Throwing { void run() throws Exception; }
 }
