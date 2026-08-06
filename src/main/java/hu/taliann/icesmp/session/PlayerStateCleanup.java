@@ -3,20 +3,20 @@ package hu.taliann.icesmp.session;
 import java.util.UUID;
 
 /**
- * Contract for any component that holds per-player in-memory session state (caches, cooldowns,
- * temporary attribute/inventory stashes) and must release it when the player leaves.
+ * Contract for components that hold rebuildable per-player session state.
  *
- * <p>Implementers register themselves once; {@code PlayerSessionCleanupListener} iterates them on
- * quit/kick (and on shutdown for online players), so cleanup is one uniform pass instead of a
- * hand-maintained call list — adding a new stateful manager only means implementing this interface
- * and adding it to that single list.
+ * <p>{@link #clearPlayerState(UUID)} is the lifecycle entry point used by the centralized
+ * quit/kick/disable listener. {@link #cleanup(UUID)} is a compatibility hook for managers that
+ * expose their internal projection cleanup separately; by default it delegates to the lifecycle
+ * entry point.</p>
  */
 public interface PlayerStateCleanup {
 
-    /**
-     * Releases all in-memory state held for the given player.
-     *
-     * @param playerId the player whose session state should be cleared
-     */
+    /** Releases all in-memory state held for the given player. */
     void clearPlayerState(UUID playerId);
+
+    /** Optional internal alias used by projection-backed managers. */
+    default void cleanup(final UUID playerId) {
+        clearPlayerState(playerId);
+    }
 }
