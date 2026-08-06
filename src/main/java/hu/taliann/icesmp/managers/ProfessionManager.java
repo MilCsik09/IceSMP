@@ -263,11 +263,11 @@ public final class ProfessionManager implements PlayerStateCleanup {
                 playerId, ProfileSectionId.PROFESSIONS, ProfessionSection.class);
     }
 
-    private int baseXp() {
+    int baseXp() {
         return Math.max(1, configManager.getInt("professions.leveling.base-xp", 100));
     }
 
-    private int incrementPerLevel() {
+    int incrementPerLevel() {
         return Math.max(0, configManager.getInt(
                 "professions.leveling.increment-per-level", 15));
     }

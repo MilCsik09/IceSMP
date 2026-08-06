@@ -664,7 +664,7 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                 final CompletableFuture<Void> previous = mutationTails.getOrDefault(playerId,
                         CompletableFuture.completedFuture(null));
                 final CompletableFuture<Void> next = previous.thenCompose(ignored ->
-                        economyStore.replace(playerId, before, after).thenApply(committed -> null))
+                        economyStore.replace(playerId, before, after).thenApply(committed -> (Void) null))
                         .toCompletableFuture();
                 mutationTails.put(playerId, next);
                 next.whenComplete((ignored, failure) -> {

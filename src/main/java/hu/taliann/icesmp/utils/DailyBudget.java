@@ -53,8 +53,8 @@ public final class DailyBudget {
             final CompletableFuture<Void> next = previous.thenCompose(ignored ->
                     DURABLE.reserve(key.playerId(), key.budgetId(), today, amount, limit)
                             .thenCompose(result -> result.allowed()
-                                    ? CompletableFuture.completedFuture(null)
-                                    : CompletableFuture.failedFuture(new IllegalStateException(
+                                    ? CompletableFuture.<Void>completedFuture(null)
+                                    : CompletableFuture.<Void>failedFuture(new IllegalStateException(
                                             "durable daily budget rejected optimistic reservation"))))
                     .toCompletableFuture();
             TAILS.put(key, next);

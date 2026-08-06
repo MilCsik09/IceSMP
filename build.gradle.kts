@@ -161,6 +161,14 @@ val playerProfileIntroRegressionTest = registerRegression(
     "playerProfileIntroRegressionTest",
     "Runs intro/onboarding and interrupted cinematic recovery regressions.",
     "hu.taliann.icesmp.playerprofile.application.PlayerProfileIntroStoreRegressionSuite")
+val playerProfileModerationRegressionTest = registerRegression(
+    "playerProfileModerationRegressionTest",
+    "Runs moderation reference/summary CAS and restart durability regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileModerationStoreRegressionSuite")
+val playerProfileWeeklyGoalRegressionTest = registerRegression(
+    "playerProfileWeeklyGoalRegressionTest",
+    "Runs weekly guild-goal contribution, award idempotency and atomic claim regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileWeeklyGoalStoreRegressionSuite")
 val playerProfileQuestRegressionTest = registerRegression(
     "playerProfileQuestRegressionTest",
     "Runs main quest progress, cooldown, completion and reward settlement regressions.",
@@ -255,7 +263,8 @@ tasks.check {
         playerProfileAchievementRegressionTest, playerProfileDailyQuestRegressionTest,
         playerProfileEconomyRegressionTest, playerProfileFactionAuthorityRegressionTest,
         playerProfileFactionFoodRegressionTest, playerProfileFullAuthorityRegressionTest,
-        playerProfileIntroRegressionTest, playerProfileQuestRegressionTest,
+        playerProfileIntroRegressionTest, playerProfileModerationRegressionTest,
+        playerProfileQuestRegressionTest, playerProfileWeeklyGoalRegressionTest,
         playerProfileStatisticsRegressionTest, playerProfileTaxRegressionTest,
         playerProfileRepositoryEnumerationRegressionTest, playerProfileYamlRegressionTest,
         playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,

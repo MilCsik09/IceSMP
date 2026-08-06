@@ -509,7 +509,8 @@ public final class CrateRegressionSuite {
                 "durable key compensation fence missing");
         check(manager.contains("currencyManager.addBalancesDurably"),
                 "currency reward is not durably settled before completion");
-        check(currency.contains("rollbackDurably") && currency.contains("writeBalancesLocked()"),
+        check(currency.contains("applyDurably") && currency.contains("economyStore.replace")
+                        && manager.contains("performDeferredCurrencyRollback"),
                 "durable wallet rollback/persistence integration missing");
         check(manager.contains("dispatched = Bukkit.dispatchCommand")
                         && manager.contains("handleCommandBatchFailure"),

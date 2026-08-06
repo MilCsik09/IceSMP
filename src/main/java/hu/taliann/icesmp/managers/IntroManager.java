@@ -143,11 +143,11 @@ public final class IntroManager {
     }
 
     public CompletionStage<Void> restoreCinematicIfNeeded(final Player player) {
-        return introStore.cinematicState(player.getUniqueId()).thenCompose(state -> {
-            if (!state.active()) return CompletableFuture.completedFuture(null);
+        return introStore.cinematicState(player.getUniqueId()).<Void>thenCompose(state -> {
+            if (!state.active()) return CompletableFuture.<Void>completedFuture(null);
             return runOnOwner(player, () -> restoreGamemode(player, state.previousGamemode()))
                     .thenCompose(ignored -> introStore.completeCinematic(player.getUniqueId()))
-                    .thenApply(ignored -> null);
+                    .thenApply(ignored -> (Void) null);
         }).exceptionally(failure -> {
             plugin.getLogger().severe("PlayerProfile cinematic recovery failed for "
                     + player.getUniqueId() + ": " + failure.getMessage());

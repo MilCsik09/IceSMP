@@ -8,7 +8,11 @@
 
 ## Storage boundary
 
-Gameplay, commands, GUIs and APIs depend on `PlayerProfileRepository` and `PlayerProfileTransactionManager`, not YAML. `YamlPlayerProfileRepository` is the current adapter; a future SQL adapter must implement the same contracts. The class/spec model is `ClassSpecSection`; no independent ClassProfile aggregate or opaque ICS2 profile blob exists.
+Gameplay, commands, GUIs and APIs depend on `PlayerProfileRepository` and `PlayerProfileTransactionManager`, not YAML. `YamlPlayerProfileRepository` is the current adapter; a future SQL adapter must implement the same contracts. The class/spec model is `ClassSpecSection`; no independent ClassProfile aggregate or opaque ICS2 profile blob exists. Profile YAML files round-trip with literal keys on both read and write (SnakeYAML safe load/dump, duplicate keys rejected); Bukkit `YamlConfiguration` must not parse them, because it splits dotted extension keys into nested sections and silently breaks restart durability.
+
+## Ledger-derived summaries and shared-goal splits
+
+The shared punishment ledger (`moderation-data.yml`) stays the moderation audit authority; every ledger mutation re-derives the player's `ModerationSection` reference/summary (active punishment record IDs plus strike count) through `PlayerProfileModerationStore`, and the pre-login gate re-syncs it, so a failed publish self-heals. The weekly profession guild goal splits the same way: the week index and global counters stay a shared aggregate, while per-player contributions (`ProfessionSection.weeklyProgress` with a week marker), the per-week award marker and the pending reward XP live in the PROFESSIONS section — the award is idempotent per (player, week) over the durable owner enumeration, and the claim credits XP and clears the pending entry in one section commit. Daily budgets carry a per-budget reservation serial, so a delayed compensation can only revert the exact reservation it belongs to.
 
 ## Revisions and snapshots
 

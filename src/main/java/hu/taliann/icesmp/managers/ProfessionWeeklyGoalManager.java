@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileWeeklyGoalStore;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -15,7 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,9 +27,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * I16 — szakma-céh heti közös cél: az azonos szakmát űzők FRAKCIÓ-FÜGGETLEN,
  * globális heti számlálót töltenek (a szakma-XP-termelés a hozzájárulás-egység —
  * a ProfessionXpListener hívja). A hét fordulásakor az elért célok hozzájárulói
- * (küszöb felett) szakma-XP jutalmat kapnak — online azonnal, offline belépéskor
- * (perzisztált függő jutalom). Konkurrencia: AtomicLong számlálók + concurrent
- * mapek (a spec buktatója szerint), a mentés a heti tick-en és disable-kor fut.
+ * (küszöb felett) szakma-XP jutalmat kapnak.
+ *
+ * <p>Autoritás-vágás: a hét-index és a globális számlálók megosztott aggregátumként
+ * YAML-ban élnek; a játékosonkénti hozzájárulás, a jutalom-odaítélés és a függő
+ * jutalom a PlayerProfile PROFESSIONS szekcióban, CAS-mutációval. A kiértékelés a
+ * tartós profil-tulajdonos felsoroláson megy, ezért restart nem veszíthet
+ * hozzájárulót; az odaítélés (player, hét) szinten idempotens.</p>
  */
 public final class ProfessionWeeklyGoalManager implements PersistentStore, Listener {
 
@@ -36,12 +42,10 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
     private final ProfessionManager professionManager;
     private final MessageManager messageManager;
     private final File storageFile;
+    private final PlayerProfileWeeklyGoalStore weeklyStore = new PlayerProfileWeeklyGoalStore();
 
     private volatile long week;
     private final Map<ProfessionType, AtomicLong> counters = new ConcurrentHashMap<>();
-    private final Map<ProfessionType, Map<UUID, AtomicLong>> contributors = new ConcurrentHashMap<>();
-    /** uuid -> (profession-id -> járó XP) — offline hozzájárulók belépéskor kapják. */
-    private final Map<UUID, Map<String, Integer>> pendingRewards = new ConcurrentHashMap<>();
 
     public ProfessionWeeklyGoalManager(final JavaPlugin plugin, final ConfigManager configManager,
                                        final ProfessionManager professionManager,
@@ -64,8 +68,17 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
             return;
         }
         counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
-        contributors.computeIfAbsent(profession, key -> new ConcurrentHashMap<>())
-                .computeIfAbsent(player.getUniqueId(), key -> new AtomicLong()).addAndGet(units);
+        if (PlayerProfileAuthority.installed().isEmpty()) {
+            return;
+        }
+        final UUID playerId = player.getUniqueId();
+        weeklyStore.recordContribution(playerId, profession, units, week)
+                .whenComplete((total, failure) -> {
+                    if (failure != null) {
+                        plugin.getLogger().severe("Heti céh-hozzájárulás mentése sikertelen: "
+                                + playerId + ": " + failure.getMessage());
+                    }
+                });
     }
 
     public long counterOf(final ProfessionType profession) {
@@ -84,16 +97,16 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
         if (now == week) {
             return;
         }
-        evaluateWeek();
+        evaluateWeek(week);
         week = now;
         counters.clear();
-        contributors.clear();
         save();
     }
 
-    private void evaluateWeek() {
+    private void evaluateWeek(final long evaluatedWeek) {
         final int rewardXp = Math.max(0, configManager.getInt("profession-weekly.reward-xp", 300));
         final long minContribution = Math.max(1, configManager.getInt("profession-weekly.min-contribution", 100));
+        final Map<String, Integer> goalMetRewards = new LinkedHashMap<>();
         for (final Map.Entry<ProfessionType, AtomicLong> entry : counters.entrySet()) {
             final ProfessionType profession = entry.getKey();
             final long goal = goalOf(profession);
@@ -105,86 +118,86 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
                     Map.of("profession", net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
                             .plainText().serialize(profession.getDisplayName()),
                             "total", String.valueOf(entry.getValue().get()))));
-            final Map<UUID, AtomicLong> profContribs = contributors.getOrDefault(profession, Map.of());
-            for (final Map.Entry<UUID, AtomicLong> contributor : profContribs.entrySet()) {
-                if (contributor.getValue().get() < minContribution || rewardXp <= 0) {
-                    continue;
-                }
-                final Player online = Bukkit.getPlayer(contributor.getKey());
-                if (online != null) {
-                    professionManager.addXp(online, profession, rewardXp)
-                            .whenComplete((change, failure) -> professionManager.runOnOwnerThread(
-                                    online, () -> {
-                                        if (failure == null && change != null && change.changed()
-                                                && online.isOnline()) {
-                                            online.sendMessage(messageManager.getMessage(
-                                                    "profession-weekly-reward",
-                                                    "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
-                                                    Map.of("xp", String.valueOf(rewardXp),
-                                                            "profession", profession.getId())));
-                                        }
-                                    }));
-                } else {
-                    pendingRewards.computeIfAbsent(contributor.getKey(), key -> new ConcurrentHashMap<>())
-                            .merge(profession.getId(), rewardXp, Integer::sum);
-                }
+            if (rewardXp > 0) {
+                goalMetRewards.put(profession.getId(), rewardXp);
             }
         }
+        if (goalMetRewards.isEmpty()) {
+            return;
+        }
+        if (PlayerProfileAuthority.installed().isEmpty()) {
+            plugin.getLogger().warning("Heti céh-kiértékelés kihagyva: nincs PlayerProfile authority.");
+            return;
+        }
+        PlayerProfileAuthority.current().repository().listPlayerIds().whenComplete((owners, failure) -> {
+            if (failure != null) {
+                plugin.getLogger().severe("Heti céh-kiértékelés: profil-felsorolás sikertelen: "
+                        + failure.getMessage());
+                return;
+            }
+            for (final UUID owner : owners) {
+                weeklyStore.award(owner, evaluatedWeek, goalMetRewards, minContribution)
+                        .whenComplete((awarded, awardFailure) -> {
+                            if (awardFailure != null) {
+                                plugin.getLogger().severe("Heti céh-jutalom odaítélése sikertelen: "
+                                        + owner + ": " + awardFailure.getMessage());
+                                return;
+                            }
+                            if (awarded.isEmpty()) {
+                                return;
+                            }
+                            final Player online = Bukkit.getPlayer(owner);
+                            if (online != null) {
+                                deliverPending(online);
+                            }
+                        });
+            }
+        });
     }
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
-        final UUID playerId = event.getPlayer().getUniqueId();
-        final Map<String, Integer> pending = pendingRewards.get(playerId);
-        if (pending == null || pending.isEmpty()) {
+        if (PlayerProfileAuthority.installed().isEmpty()) {
             return;
         }
-        for (final Map.Entry<String, Integer> entry : Map.copyOf(pending).entrySet()) {
-            final ProfessionType profession = ProfessionType.fromId(entry.getKey());
-            if (profession == null) {
-                continue;
-            }
-            professionManager.addXp(event.getPlayer(), profession, entry.getValue())
-                    .whenComplete((change, failure) -> professionManager.runOnOwnerThread(
-                            event.getPlayer(), () -> {
-                                if (failure != null || change == null || !change.changed()
-                                        || !event.getPlayer().isOnline()) {
-                                    return;
-                                }
-                                consumePendingReward(playerId, entry.getKey(), entry.getValue());
-                                event.getPlayer().sendMessage(messageManager.getMessage(
-                                        "profession-weekly-reward",
-                                        "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
-                                        Map.of("xp", String.valueOf(entry.getValue()),
-                                                "profession", entry.getKey())));
-                            }));
-        }
+        deliverPending(event.getPlayer());
     }
 
-    private synchronized void consumePendingReward(final UUID playerId,
-                                                   final String professionId,
-                                                   final int expectedAmount) {
-        final Map<String, Integer> pending = pendingRewards.get(playerId);
-        if (pending == null || !java.util.Objects.equals(
-                pending.get(professionId), expectedAmount)) {
-            return;
-        }
-        pending.remove(professionId);
-        if (pending.isEmpty()) {
-            pendingRewards.remove(playerId);
-        }
-        save();
+    private void deliverPending(final Player player) {
+        final UUID playerId = player.getUniqueId();
+        weeklyStore.claim(playerId, professionManager.baseXp(),
+                professionManager.incrementPerLevel(), ProfessionManager.MAX_PROFESSION_LEVEL)
+                .whenComplete((claimed, failure) -> {
+                    if (failure != null) {
+                        plugin.getLogger().severe("Heti céh-jutalom jóváírása sikertelen: "
+                                + playerId + ": " + failure.getMessage());
+                        return;
+                    }
+                    if (claimed == null || claimed.isEmpty()) {
+                        return;
+                    }
+                    professionManager.runOnOwnerThread(player, () -> {
+                        if (!player.isOnline()) {
+                            return;
+                        }
+                        for (final PlayerProfileWeeklyGoalStore.ClaimedReward reward : claimed) {
+                            player.sendMessage(messageManager.getMessage(
+                                    "profession-weekly-reward",
+                                    "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
+                                    Map.of("xp", String.valueOf(reward.xp()),
+                                            "profession", reward.professionId())));
+                        }
+                    });
+                });
     }
 
     @Override
     public synchronized void load() {
         counters.clear();
-        contributors.clear();
-        pendingRewards.clear();
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
+        final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
         week = yaml.getLong("week", currentWeek());
         final ConfigurationSection counterSection = yaml.getConfigurationSection("counters");
         if (counterSection != null) {
@@ -192,43 +205,6 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
                 final ProfessionType profession = ProfessionType.fromId(key);
                 if (profession != null) {
                     counters.put(profession, new AtomicLong(counterSection.getLong(key)));
-                }
-            }
-        }
-        final ConfigurationSection contribSection = yaml.getConfigurationSection("contributors");
-        if (contribSection != null) {
-            for (final String profId : contribSection.getKeys(false)) {
-                final ProfessionType profession = ProfessionType.fromId(profId);
-                final ConfigurationSection perPlayer = contribSection.getConfigurationSection(profId);
-                if (profession == null || perPlayer == null) {
-                    continue;
-                }
-                final Map<UUID, AtomicLong> map = new ConcurrentHashMap<>();
-                for (final String uuid : perPlayer.getKeys(false)) {
-                    try {
-                        map.put(UUID.fromString(uuid), new AtomicLong(perPlayer.getLong(uuid)));
-                    } catch (final IllegalArgumentException ignored) {
-                        // sérült kulcs — kihagyjuk
-                    }
-                }
-                contributors.put(profession, map);
-            }
-        }
-        final ConfigurationSection pendingSection = yaml.getConfigurationSection("pending-rewards");
-        if (pendingSection != null) {
-            for (final String uuid : pendingSection.getKeys(false)) {
-                final ConfigurationSection perProf = pendingSection.getConfigurationSection(uuid);
-                if (perProf == null) {
-                    continue;
-                }
-                try {
-                    final Map<String, Integer> map = new ConcurrentHashMap<>();
-                    for (final String profId : perProf.getKeys(false)) {
-                        map.put(profId, perProf.getInt(profId));
-                    }
-                    pendingRewards.put(UUID.fromString(uuid), map);
-                } catch (final IllegalArgumentException ignored) {
-                    // sérült kulcs — kihagyjuk
                 }
             }
         }
@@ -241,17 +217,6 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
             yaml.set("week", week);
             for (final Map.Entry<ProfessionType, AtomicLong> entry : counters.entrySet()) {
                 yaml.set("counters." + entry.getKey().getId(), entry.getValue().get());
-            }
-            for (final Map.Entry<ProfessionType, Map<UUID, AtomicLong>> entry : contributors.entrySet()) {
-                for (final Map.Entry<UUID, AtomicLong> contributor : entry.getValue().entrySet()) {
-                    yaml.set("contributors." + entry.getKey().getId() + "." + contributor.getKey(),
-                            contributor.getValue().get());
-                }
-            }
-            for (final Map.Entry<UUID, Map<String, Integer>> entry : pendingRewards.entrySet()) {
-                for (final Map.Entry<String, Integer> reward : entry.getValue().entrySet()) {
-                    yaml.set("pending-rewards." + entry.getKey() + "." + reward.getKey(), reward.getValue());
-                }
             }
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {

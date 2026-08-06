@@ -18,7 +18,8 @@ public final class PlayerProfileDailyBudgetStore {
         }
     }
 
-    public record Reservation(boolean allowed, BudgetState state) {
+    /** The serial identifies the exact reservation commit, so compensation cannot ABA-match. */
+    public record Reservation(boolean allowed, BudgetState state, long serial) {
         public Reservation { Objects.requireNonNull(state, "state"); }
     }
 
@@ -41,17 +42,21 @@ public final class PlayerProfileDailyBudgetStore {
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.ECONOMY, EconomySection.class, current -> {
                     final BudgetState before = read(current, id);
+                    final long serial = number(current.extensions().get(serialKey(id)), 0L,
+                            "budget serial");
                     final long spent = before.day() == day ? before.spent() : 0L;
                     if (amount > cap || spent > cap - amount) {
                         return PlayerProfileService.ConditionalMutation.unchanged(
-                                new Reservation(false, new BudgetState(day, spent)));
+                                new Reservation(false, new BudgetState(day, spent), serial));
                     }
                     final BudgetState after = new BudgetState(day, Math.addExact(spent, amount));
+                    final long nextSerial = Math.addExact(serial, 1L);
                     EconomySection next = PlayerProfileSectionExtensions.put(current,
                             dayKey(id), day);
                     next = PlayerProfileSectionExtensions.put(next, sumKey(id), after.spent());
+                    next = PlayerProfileSectionExtensions.put(next, serialKey(id), nextSerial);
                     return PlayerProfileService.ConditionalMutation.changed(next,
-                            new Reservation(true, after));
+                            new Reservation(true, after, nextSerial));
                 });
     }
 
@@ -71,7 +76,9 @@ public final class PlayerProfileDailyBudgetStore {
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.ECONOMY, EconomySection.class, current -> {
                     final BudgetState durable = read(current, id);
-                    if (!durable.equals(reservation.state())) {
+                    final long serial = number(current.extensions().get(serialKey(id)), 0L,
+                            "budget serial");
+                    if (serial != reservation.serial() || !durable.equals(reservation.state())) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
                     final BudgetState previous = new BudgetState(
@@ -79,6 +86,8 @@ public final class PlayerProfileDailyBudgetStore {
                     EconomySection next = PlayerProfileSectionExtensions.put(current,
                             dayKey(id), previous.day());
                     next = PlayerProfileSectionExtensions.put(next, sumKey(id), previous.spent());
+                    next = PlayerProfileSectionExtensions.put(next, serialKey(id),
+                            Math.addExact(serial, 1L));
                     return PlayerProfileService.ConditionalMutation.changed(next, true);
                 });
     }
@@ -97,6 +106,7 @@ public final class PlayerProfileDailyBudgetStore {
 
     private static String dayKey(final String id) { return "budget." + id + ".day"; }
     private static String sumKey(final String id) { return "budget." + id + ".sum"; }
+    private static String serialKey(final String id) { return "budget." + id + ".serial"; }
 
     private static String normalize(final String raw) {
         if (raw == null || raw.isBlank()) throw new IllegalArgumentException("budget id required");

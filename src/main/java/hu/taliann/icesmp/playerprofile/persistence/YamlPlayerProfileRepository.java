@@ -150,8 +150,30 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
     private Path profileDir(UUID id){return root.resolve(id.toString());}private Path sectionPath(UUID id,ProfileSectionId sid){return profileDir(id).resolve(sid.fileName());}private Path quarantineMarker(UUID id,ProfileSectionId sid){return profileDir(id).resolve("quarantine").resolve(sid.id()+".marker.yml");}
     private void writeSectionFile(Path path,ProfileSectionSnapshot<?> s)throws Exception{writeYaml(path,StructuredPlayerProfileYaml.encodeSection(s));}
     private ProfileSectionSnapshot<?> readSectionFile(Path path,ProfileSectionId sid)throws Exception{return StructuredPlayerProfileYaml.decodeSection(sid,readYaml(path));}
-    private Map<String,Object> readYaml(Path path)throws IOException,InvalidConfigurationException{long size=Files.size(path);if(size>MAX_YAML_BYTES)throw new IOException("YAML file exceeds size limit");CharsetDecoder decoder=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);String text=decoder.decode(ByteBuffer.wrap(Files.readAllBytes(path))).toString();if(text.contains("!!")||text.contains("!<"))throw new InvalidConfigurationException("YAML object tags are forbidden");YamlConfiguration yaml=new YamlConfiguration();yaml.loadFromString(text);return StructuredPlayerProfileYaml.normalizeRoot(yaml.getValues(false));}
-    private void writeYaml(Path path,Map<String,Object> values)throws IOException{YamlConfiguration yaml=new YamlConfiguration();values.forEach(yaml::set);atomicBytes(path,yaml.saveToString().getBytes(StandardCharsets.UTF_8));}
+    // Literal-key YAML on both sides: Bukkit's YamlConfiguration splits dotted keys into nested
+    // sections on read while dumping map values flat on write, so dotted extension keys would
+    // silently lose restart durability. SnakeYAML keeps keys verbatim in both directions.
+    @SuppressWarnings("unchecked")
+    private Map<String,Object> readYaml(Path path)throws IOException,InvalidConfigurationException{
+        long size=Files.size(path);
+        if(size>MAX_YAML_BYTES)throw new IOException("YAML file exceeds size limit");
+        CharsetDecoder decoder=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+        String text=decoder.decode(ByteBuffer.wrap(Files.readAllBytes(path))).toString();
+        if(text.contains("!!")||text.contains("!<"))throw new InvalidConfigurationException("YAML object tags are forbidden");
+        org.yaml.snakeyaml.LoaderOptions loaderOptions=new org.yaml.snakeyaml.LoaderOptions();
+        loaderOptions.setAllowDuplicateKeys(false);
+        Object parsed=new org.yaml.snakeyaml.Yaml(
+                new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions)).load(text);
+        if(parsed==null)return Map.of();
+        if(!(parsed instanceof Map<?,?> map))throw new InvalidConfigurationException("YAML root must be a mapping");
+        return StructuredPlayerProfileYaml.normalizeRoot((Map<String,?>)map);
+    }
+    private void writeYaml(Path path,Map<String,Object> values)throws IOException{
+        org.yaml.snakeyaml.DumperOptions options=new org.yaml.snakeyaml.DumperOptions();
+        options.setDefaultFlowStyle(org.yaml.snakeyaml.DumperOptions.FlowStyle.BLOCK);
+        String dumped=new org.yaml.snakeyaml.Yaml(options).dump(StructuredPlayerProfileYaml.normalizeRoot(values));
+        atomicBytes(path,dumped.getBytes(StandardCharsets.UTF_8));
+    }
     private void atomicBytes(Path path,byte[] bytes)throws IOException{Files.createDirectories(path.getParent());Path tmp=path.resolveSibling(path.getFileName()+".tmp-"+UUID.randomUUID());try(FileChannel c=FileChannel.open(tmp,StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE)){c.write(ByteBuffer.wrap(bytes));c.force(true);}atomicMove(tmp,path);fsyncDirectory(path.getParent());}
     private static void atomicMove(Path from,Path to)throws IOException{Files.createDirectories(to.getParent());try{Files.move(from,to,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);}catch(AtomicMoveNotSupportedException e){Files.move(from,to,StandardCopyOption.REPLACE_EXISTING);}}
     private static void fsyncDirectory(Path dir){try(FileChannel c=FileChannel.open(dir,StandardOpenOption.READ)){c.force(true);}catch(Exception ignored){}}

@@ -157,11 +157,13 @@ public final class PlayerProfileTaxStore {
                             maxArrears, evasionThreshold, true);
                     if (owedAfter == 0L) debts.remove(amountKey(origin));
                     else debts.put(amountKey(origin), owedAfter);
-                    if (decision.strikesAfter() == 0) debts.remove(strikeKey(origin));
-                    else debts.put(strikeKey(origin), (long) decision.strikesAfter());
+                    // A durable sin outbox entry IS the report, so the strike cycle restarts with it.
+                    final int storedStrikes = decision.reportSin() ? 0 : decision.strikesAfter();
+                    if (storedStrikes == 0) debts.remove(strikeKey(origin));
+                    else debts.put(strikeKey(origin), (long) storedStrikes);
 
                     final boolean changed = assessedMilli > 0L || paid > 0L
-                            || owedBefore != owedAfter || strikesBefore != decision.strikesAfter();
+                            || owedBefore != owedAfter || strikesBefore != storedStrikes;
                     if (!changed) {
                         return PlayerProfileService.ConditionalMutation.unchanged(
                                 new Collection(false, 0L, owedBefore, owedAfter, null));

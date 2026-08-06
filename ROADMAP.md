@@ -48,6 +48,14 @@ implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
 - 🚧 A `claims.yml` hibás szemantikai rekordját a loader jelenleg
   kihagyhatja, egy későbbi mentés pedig véglegesítheti az adatvesztést.
   Fail-closed betöltés, karantén és látható mentési hiba szükséges.
+- ⬜ Az utolsó PlayerProfile-TRANSITION: a `CrateManager` játékosonkénti
+  nyitás-számlálói és crate-cooldownjai még a `crates.yml`-ben élnek. A
+  migráció önálló, atomi hullámot igényel, mert a settlement saját
+  prepare/apply/rollback ledgerrel és recovery-protokollal dolgozik —
+  reward-hordozó scope nem darabolható.
+- ⬜ A `CatalystProtectionListener.keptOnDeath` halál→respawn item-átadási
+  puffere csak memóriában él; respawn előtti crash esetén a megőrzött
+  itemek elvesznek. Durable escrow vagy tudatos elfogadás kell.
 - ⬜ A HUD és a parkour quit-takarítása mellé kick-út kell; a hosszú életű
   report-, cooldown- és debounce mapekhez explicit purge-szabály kell.
 - ⬜ A legacy `claims.block-in-*` beállításokat egyértelmű, validált sémára

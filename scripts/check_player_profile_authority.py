@@ -94,6 +94,8 @@ SHARED_AGGREGATE_PATH_TOKENS = (
     "hiddenspotmanager",
     "donationchestmanager",
     "kingmanager",
+    "moderationmanager",
+    "seasonmonumentmanager",
     "/crates/",
     "/moderation/",
     "/storage/",
@@ -113,7 +115,6 @@ RUNTIME_SYMBOL_TOKENS = (
     "active",
     "pending",
     "transient",
-    "cooldown",
     "debounce",
     "lastcast",
     "secondlast",
@@ -166,6 +167,11 @@ def stable_symbol(line: str) -> str:
     return line[:240]
 
 
+FILE_YAML_PATTERN = re.compile(r"\bYamlStore\b|\bYamlConfiguration\b")
+FILE_PLAYER_ID_PATTERN = re.compile(r"UUID\.fromString\(|\.getUniqueId\(\)|Map<UUID")
+FILE_YAML_SYMBOL = "<file combines YAML persistence with player-UUID-shaped data>"
+
+
 def scan(root: Path) -> list[dict[str, object]]:
     findings: dict[str, dict[str, object]] = {}
     for path in sorted((root / "src").rglob("*")):
@@ -189,6 +195,17 @@ def scan(root: Path) -> list[dict[str, object]]:
                         "line": number,
                         "symbol": symbol,
                     })
+        # Line-local rules miss files whose YAML calls and player-UUID handling sit on
+        # different lines, so player-keyed durable YAML could hide from the gate entirely.
+        if FILE_YAML_PATTERN.search(text) and FILE_PLAYER_ID_PATTERN.search(text):
+            key = f"PLAYER_YAML|{rel}|{FILE_YAML_SYMBOL}"
+            findings.setdefault(key, {
+                "key": key,
+                "kind": "PLAYER_YAML",
+                "path": rel,
+                "line": 1,
+                "symbol": FILE_YAML_SYMBOL,
+            })
     return [findings[key] for key in sorted(findings)]
 
 
