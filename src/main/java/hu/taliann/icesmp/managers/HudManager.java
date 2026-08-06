@@ -571,7 +571,8 @@ public final class HudManager {
         final Map<String, String> tokens = new HashMap<>();
         final Component factionValue = faction == null
                 ? Component.text("Menedék vendége", NamedTextColor.GRAY)
-                : Component.text(faction.getDisplayName(), factionColor(faction));
+                : Component.text(faction.getDisplayName(),
+                        TablistManager.factionColor(configManager, faction));
         final Component classValue = job == null
                 ? Component.text("nincs", NamedTextColor.GRAY)
                 : job.getDisplayName();
@@ -782,16 +783,7 @@ public final class HudManager {
     private Component tabName(final Player player) {
         // A név MAGA kapja a frakció színét — külön [Frakció] tag nélkül (rövidebb tab-lista).
         final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-        return Component.text(player.getName(), faction == null ? NamedTextColor.WHITE : factionColor(faction));
-    }
-
-    private NamedTextColor factionColor(final FactionType faction) {
-        return switch (faction) {
-            case RED -> NamedTextColor.RED;
-            case BLUE -> NamedTextColor.BLUE;
-            case NEUTRAL -> NamedTextColor.GRAY;
-            case DARK -> NamedTextColor.DARK_GRAY;
-        };
+        return Component.text(player.getName(), TablistManager.factionColor(configManager, faction));
     }
 
 

@@ -472,15 +472,34 @@ public final class TablistManager {
         return TextAnimator.legacy(text);
     }
 
-    private static NamedTextColor factionColor(final FactionType faction) {
+    private NamedTextColor factionColor(final FactionType faction) {
+        return factionColor(configManager, faction);
+    }
+
+    /**
+     * Frakciónkénti név-szín a tablistához és a fej fölötti nametaghez
+     * ({@code tablist.faction-colors.*}, élő-config). A NEUTRAL default szándékosan NEM
+     * szürke: a Menedék-polgár és a Kitaszított (dark_gray) különben összetéveszthető.
+     */
+    static NamedTextColor factionColor(final ConfigManager configManager, final FactionType faction) {
+        final String key;
+        final NamedTextColor fallback;
         if (faction == null) {
-            return NamedTextColor.WHITE;
+            key = "guest";
+            fallback = NamedTextColor.WHITE;
+        } else {
+            key = faction.name().toLowerCase(java.util.Locale.ROOT);
+            fallback = switch (faction) {
+                case RED -> NamedTextColor.RED;
+                case BLUE -> NamedTextColor.BLUE;
+                case NEUTRAL -> NamedTextColor.GREEN;
+                case DARK -> NamedTextColor.DARK_GRAY;
+            };
         }
-        return switch (faction) {
-            case RED -> NamedTextColor.RED;
-            case BLUE -> NamedTextColor.BLUE;
-            case NEUTRAL -> NamedTextColor.GRAY;
-            case DARK -> NamedTextColor.DARK_GRAY;
-        };
+        final String configured = configManager.getString(
+                "tablist.faction-colors." + key, fallback.toString());
+        final NamedTextColor resolved = NamedTextColor.NAMES.value(
+                configured.trim().toLowerCase(java.util.Locale.ROOT));
+        return resolved == null ? fallback : resolved;
     }
 }

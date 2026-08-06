@@ -336,7 +336,7 @@ Központi játékosmenük, karakteradatok, tematikus navigáció és jogosultsá
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk. A tablista LuckPerms-rang szerint rendez (`tablist.sorting.group-order`), az AFK játékosok a teljes lista végére kerülnek, és az AFK-blokkon belül is a rang+név sorrend érvényesül.
+Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk. A tablista LuckPerms-rang szerint rendez (`tablist.sorting.group-order`), az AFK játékosok a teljes lista végére kerülnek, és az AFK-blokkon belül is a rang+név sorrend érvényesül. A név-színek frakciónként a `tablist.faction-colors.*` kulcsokból jönnek — a Menedék-polgár zöld (Smaragdkő/Ryanora lore-szín), így nem téveszthető össze a sötétszürke Kitaszítottal.
 
 - **Így találkozol vele:** `/hud`; a tablista automatikus.
 - **Kinek szól:** Játékos, Admin, Tesztelő.

@@ -56,6 +56,16 @@ tablist:
     # kerül, azonos csoporton belül név szerinti ABC. Az AFK játékosok a TELJES lista végére
     # kerülnek, és az AFK-blokkon belül ugyanez a rang+név sorrend érvényesül.
     group-order: [mod, dev, helper, streamer, vip, default]
+  # Frakciónkénti név-szín a tablistában és a fej fölötti nametagen (NamedTextColor nevek:
+  # red, blue, green, aqua, gold, yellow, gray, dark_gray, dark_purple, ...). A NEUTRAL zöldje a
+  # Smaragdkő/Ryanora lore-színe — szándékosan nem szürke, mert a Menedék-polgár és a
+  # Kitaszított (dark_gray) a tablistán összetéveszthető volt. A guest a frakció nélküli vendég.
+  faction-colors:
+    red: red
+    blue: blue
+    neutral: green
+    dark: dark_gray
+    guest: white
   animations:
     topinfo:
       interval-millis: 3000
