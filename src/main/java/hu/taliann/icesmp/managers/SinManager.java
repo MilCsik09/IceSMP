@@ -10,7 +10,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 
 /** PlayerProfile-backed sin, sinner mark, DARK exile and pact domain. */
 public final class SinManager {
@@ -41,7 +43,6 @@ public final class SinManager {
         catch (final RuntimeException notReady) { return 0; }
     }
 
-    /** Adds sin and atomically performs threshold exile in the faction section. */
     public int addSin(final Player player, final int amount) {
         if (player == null || amount <= 0) return getSinCount(player);
         final int exileThreshold = Math.max(0,
@@ -49,16 +50,37 @@ public final class SinManager {
         try {
             final PlayerProfileSinStore.AddResult result = sinStore.add(
                     player.getUniqueId(), amount, exileThreshold).toCompletableFuture().join();
-            if (result.exiled()) {
-                factionManager.publishExternalMembershipCommit(player.getUniqueId(),
-                        result.previousFaction().orElse(null), FactionType.DARK);
-                applyExileEffects(player);
-            }
-            reconcileProfileGates(player);
+            publishResult(player.getUniqueId(), result);
             return result.state().count();
         } catch (final CompletionException failure) {
             throw new IllegalStateException("PlayerProfile sin mutation failed", unwrap(failure));
         }
+    }
+
+    /** Restart-safe exact-once sin mutation for durable outbox consumers. */
+    public CompletionStage<Boolean> addSinOnce(final UUID playerId, final int amount,
+                                               final String operationId) {
+        final int exileThreshold = Math.max(0,
+                configManager.getInt("factions.sins.exile-threshold", 4));
+        return sinStore.addOnce(playerId, amount, exileThreshold, operationId)
+                .thenApply(result -> {
+                    if (result.applied()) publishResult(playerId, result.result());
+                    return result.applied();
+                });
+    }
+
+    private void publishResult(final UUID playerId,
+                               final PlayerProfileSinStore.AddResult result) {
+        if (result.exiled()) {
+            factionManager.publishExternalMembershipCommit(playerId,
+                    result.previousFaction().orElse(null), FactionType.DARK);
+        }
+        final Player online = Bukkit.getPlayer(playerId);
+        if (online == null) return;
+        online.getScheduler().run(plugin, task -> {
+            if (result.exiled()) applyExileEffects(online);
+            reconcileProfileGates(online);
+        }, null);
     }
 
     private void applyExileEffects(final Player player) {
@@ -92,7 +114,6 @@ public final class SinManager {
         }
     }
 
-    /** G6 — becsület-párbaj: bűnpont-csökkentés, nulla alá nem mehet. */
     public int reduceSin(final Player player, final int amount) {
         if (player == null) return 0;
         try {
@@ -127,7 +148,6 @@ public final class SinManager {
         catch (final RuntimeException notReady) { return false; }
     }
 
-    /** Admin membership override cleanup; it grants no redemption effects. */
     public void clearDarkPactForFactionOverride(final Player player) {
         if (player == null) return;
         try {
@@ -139,7 +159,6 @@ public final class SinManager {
         }
     }
 
-    /** Penance clears pact, mark and count in one section-CAS before effects. */
     public void breakDarkPact(final Player player) {
         if (player == null) return;
         try {
@@ -158,7 +177,6 @@ public final class SinManager {
                 "<gold>A vezeklésed teljes: a sötét paktum megtört, bűneid feloldozást nyertek.</gold>"));
     }
 
-    /** Clears the sinner mark unless an active DARK pact blocks cleansing. */
     public boolean clearSinner(final Player player) {
         if (player == null) return true;
         final boolean cleared;
