@@ -126,7 +126,7 @@ megkülönbözteti az autoritatív állapotot a best-effort szöveges naplótól
 | `/reply <üzenet>` | `/r` | Példa: `/r Rendben, indulok.` | Játékos | `icesmp.message` | Nem | Nincs | Csak sikeresen kézbesített előző PM hoz létre reply-partnert; quit vagy kick törli a kapcsolatot. | Ugyanaz, mint a PM-eknél. |
 | `/socialspy` | — | Argumentum nélküli tartós ki/be kapcsoló | Senior moderátor | `icesmp.moderation.socialspy` | Nem | Moderációs GUI, 30. slot; mindig a GUI használóját kapcsolja | Csak a natív IceSMP PM-útvonalat figyeli; nem packet interceptor és nem lát más plugin üzeneteibe. | A kapcsoló állapota tartós; nincs külön kapcsolási auditlog. |
 | `/vanish [online játékos]` | `/v` | `/vanish`; `/v Anna` | Admin | `icesmp.moderation.vanish` | Cél megadásával igen | Moderációs GUI, 31. slot | Toggle, nem explicit `on/off`; cél csak online lehet. Argumentum nélkül csak játékos saját magán használhatja. | A vanish állapot tartós; nincs külön kapcsolási auditlog. |
-| `/invsee <online játékos> [read\|edit] [main\|ender]` | — | `/invsee Anna read main`; `/invsee Anna edit ender` | Senior moderátor/Admin | read: `icesmp.moderation.inventory.read`; edit: `icesmp.moderation.inventory.edit` | Nem | Moderációs GUI, 22–25. slot | Csak online, látható cél; saját inventory tiltott; nincs offline playerdata-szerkesztés. Hibás/hiányzó mód `read`, hibás/hiányzó nézet `main`. | Editenként best-effort `logs/moderation-audit.log`; escrow külön tartós állapot. Read megnyitása nincs naplózva. |
+| `/invsee <online játékos>` | — | `/invsee Anna` | Senior moderátor/Admin | read: `icesmp.moderation.inventory.read`; write: `icesmp.moderation.inventory.edit` | Nem | Moderációs GUI, 22. slot | Csak online, látható cél; saját inventory tiltott; nincs offline playerdata-szerkesztés. Edit joggal az első megnyitó write sessiont kap, a többi egyidejű megnyitó read-only; a MAIN ↔ ENDER váltás a GUI gombjával történik. | Writeonként best-effort `logs/moderation-audit.log`; escrow külön tartós állapot. Read megnyitása nincs naplózva. |
 | `/offlinetp <játékos>` | — | Példa: `/offlinetp Anna` | Admin/Senior moderátor | `icesmp.moderation.offlinetp` | Nem | Moderációs GUI, 29. slot; a 28. slot külön online teleport | A világ UUID-jának és nevének egyeznie és a világnak betöltve lennie kell; nincs biztonságos hely keresése. | Nincs külön teleport-audit. |
 | `/moderation [online játékos]` | `/mod` | `/moderation`; `/mod Anna` | Moderátor/Admin | `icesmp.moderation.gui` | Nem | Maga a GUI | Legfeljebb 45 látható online játékos, nincs lapozás; az akciógombokhoz külön leaf permission kell. | A megnyitás nincs naplózva; a gombok a mögöttes parancs auditját öröklik. |
 | `/icesmp reload` | `/ismp reload` | Konfiguráció és üzenetek újratöltése | Admin/Üzemeltető | `icesmp.admin.reload` | Igen | Az admin/config felületek egyes útvonalai | Nem tölti újra a tartós moderációs state fájlokat; bezárja az élő invsee sessionöket. | Nincs külön moderációs audit; konzol-visszajelzés van. |
@@ -379,19 +379,37 @@ a saját rejtéseit, miközben a tartós állapot a következő indulásra megma
 
 ## 8. Online inventory és ender chest
 
-### 8.1. Read és edit különbség
+### 8.1. Session-modell: automatikus write lease
+
+Az egyetlen parancs:
+
+```text
+/invsee <online játékos>
+```
+
+Nincs több `read|edit` vagy `main|ender` argumentum.
+
+- `icesmp.moderation.inventory.edit` jogosultsággal az első megnyitó automatikusan write sessiont kap.
+- Egy céljátékoshoz egyszerre pontosan egy write session tartozhat; minden további egyidejű megnyitó automatikusan read-only módba kerül.
+- Csak read jogosultsággal a session mindig read-only.
+- A fő inventory és az ender chest között a GUI saját gombjával lehet váltani; a writer lease megmarad.
+- Bezárás, viewer-quit, target-quit, permissionvesztés vagy plugin-disable elengedi a writer lease-t.
+- Egy admin egyszerre legfeljebb egy cél write lease-ét birtokolhatja.
+- A tényleges itemcsere a meglévő invsee escrow-, target-scheduler- és auditútvonalon fut.
+
+A `/mod` céljátékos-oldalán egyetlen **Inventory / Ender chest** gomb található (22. slot), amely ugyanezt az automatikus parancsot használja.
 
 Az invsee csak online, a viewer számára látható másik játékost támogat.
 Nincs offline playerdata-parser, saját inventory adminnézet vagy crafting
 slot kezelése.
 
-| Nézet | Célterület | Mód |
-|---|---|---|
-| `main` | storage 0–35, armor 36–39, offhand 40 | `read` vagy `edit` |
-| `ender` | ender chest 0–26 | `read` vagy `edit` |
+| Nézet | Célterület |
+|---|---|
+| fő inventory | storage 0–35, armor 36–39, offhand 40 |
+| ender chest | ender chest 0–26 |
 
 A nézet körülbelül 10 tickenként frissül. Read módban minden
-inventory-interakció tiltott. Edit módban:
+inventory-interakció tiltott. Write módban:
 
 - a felső cél-slot és az admin kurzorán lévő stack cserélődik;
 - drag a felső inventoryba tiltott;
@@ -399,10 +417,6 @@ inventory-interakció tiltott. Edit módban:
 - a rendszer a kattintáskor ismét ellenőrzi az edit permissiont;
 - a kiszorított tárgy először az admin kurzorára, majd inventoryjába,
   végül — ha minden megtelt — az admin helyén természetes dropként kerül.
-
-Hiányzó vagy ismeretlen mód read-onlyra, hiányzó vagy ismeretlen nézet
-main inventoryra esik vissza. Érzékeny munkánál mindig írd ki mindkét
-argumentumot.
 
 ### 8.2. Invsee-audit
 
@@ -448,6 +462,25 @@ write-ahead-log tranzakcióba fogó, formális exactly-once protokoll.
 Ezért az invsee edit átvételéhez kötelező a crash-fault-injection teszt, és
 abrupt crash után tilos vakon visszaadni egy itemet. Előbb egyeztesd a
 játékosadatot, az escrow-t, az auditlogot, a konzollogot és a mentést.
+
+### 8.5. Adományláda üzemeltetési szerződés
+
+A GUI felső, 0–8. slotja egyirányú deposit-zóna. A közös adományok a 9–44. sloton jelennek meg és kattintással továbbra is elvihetők.
+
+Támogatott beadási módok:
+
+- bal kattintás a deposit-zónára: teljes kurzorstack;
+- jobb kattintás: egy darab;
+- shift-kattintás a saját inventoryból;
+- számbillentyűs hotbar-behelyezés;
+- offhand-csere gomb;
+- több deposit-slotot érintő inventory drag.
+
+A felső inventory minden vanilla mutációja törölve van. A plugin a műveletet a játékos következő entity-tickjén hajtja végre, és csak akkor vesz el itemet, ha a forrás slot/cursor/offhand teljes stackje még pontosan megegyezik a kattintáskor rögzített snapshotpal.
+
+Egy közös adományt egyszerre csak egy játékos vehet el. Ha a fogadó inventory megtelik, a maradék a játékos helyén esik le.
+
+A runtime védi a párhuzamos kattintást, stale inventory-snapshotot, cursor/slot versenyt és a normál GUI-duplikációs útvonalakat. A `donations.yml` a meglévő debounced, atomikus YAML-mentést használja; graceful shutdown flusholja a store-t. Az operációs rendszer vagy JVM azonnali összeomlása a legutolsó, még ki nem írt debounce-ablakban nem tekinthető cross-store tranzakciónak.
 
 ## 9. Offline teleport
 
@@ -497,10 +530,7 @@ sincs külön auditlogja.
 | 19 | Teljes history | `icesmp.moderation.history` | `/history <cél>` |
 | 20 | Aktív punishment | `icesmp.moderation.history` | `/punishments <cél>` |
 | 21 | Reportlista | `icesmp.admin.moderation` | Globális `/reports`, nem célszűrt |
-| 22 | Main inventory read | `icesmp.moderation.inventory.read` | `/invsee <cél> read main` |
-| 23 | Main inventory edit | `icesmp.moderation.inventory.edit` | `/invsee <cél> edit main` |
-| 24 | Ender chest read | `icesmp.moderation.inventory.read` | `/invsee <cél> read ender` |
-| 25 | Ender chest edit | `icesmp.moderation.inventory.edit` | `/invsee <cél> edit ender` |
+| 22 | Inventory / Ender chest | read: `icesmp.moderation.inventory.read`; write: `icesmp.moderation.inventory.edit` | `/invsee <cél>`; a MAIN ↔ ENDER váltás a GUI saját gombjával történik |
 | 28 | Teleport online célhoz | `icesmp.moderation.offlinetp` | Közvetlen GUI-művelet; nincs parancsalternatívája és külön auditja |
 | 29 | Utolsó kijelentkezési hely | `icesmp.moderation.offlinetp` | `/offlinetp <cél>` |
 | 30 | SocialSpy kapcsoló | `icesmp.moderation.socialspy` | A viewert, nem a kiválasztott célt kapcsolja |
@@ -1469,6 +1499,76 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | DEP-10 Rollback próba | Üzemeltető | staging backup | korábbi build+state visszaállítható | production rollout tiltott | `deployment/DEP-10/` |
 | [ ] | DEP-11 Csapatkommunikáció | Szervervezető | team summary és guide linkek | admin/mod/builder/tester tudja a változást | rollout elhalasztása | `deployment/DEP-11/` |
 | [ ] | DEP-12 Production go/no-go | Szervervezető | minden kötelező pipa | dokumentált GO vagy indokolt NO-GO | nincs részleges, néma rollout | `deployment/DEP-12/` |
+
+### Kiegészítő staging-mátrixok
+
+Az alábbi kézi mátrixok az automatizált suite-okkal nem bizonyítható
+runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
+
+#### PlayerProfile
+
+- [ ] first join and profile directory/manifest/all section initialization
+- [ ] class selection, XP, spec and restart
+- [ ] delete all IceSMP player PDC mirrors, rejoin and verify identical class/spec/spell/profession/faction/companion state
+- [ ] spell selection, favorites and mastery
+- [ ] faction membership and switch state
+- [ ] profession XP, level and specialization
+- [ ] quest progress, reward claim and economy credit
+- [ ] wallet, bank, tax debt and refund recovery
+- [ ] pet/minion spawn, logout, restart and region transfer
+- [ ] Soulforge upgrade, duplicate operation and crash recovery
+- [ ] respec crash points and restart recovery
+- [ ] public, self and admin API auth/visibility/ETag/rate limits
+- [ ] API read during gameplay mutation
+- [ ] two-region Folia session and companion access
+- [ ] corrupt noncritical section, quarantine and explicit recovery
+- [ ] corrupt identity/manifest full-profile block
+- [ ] disable while transaction and HTTP request are active
+
+#### Invsee és adományláda
+
+1. Két admin nyissa meg ugyanazt a célt: az első WRITE, a második READ.
+2. A writer zárja be; a következő új megnyitás kapjon WRITE módot.
+3. MAIN ↔ ENDER váltás alatt maradjon meg ugyanaz a writer lease.
+4. Viewer-quit, target-quit, permissionvesztés és plugin-disable után ne maradjon lock.
+5. Teszteld az invsee escrowt viewer- és target-kilépéssel szerkesztés közben.
+6. Donation cursor bal/jobb katt, shift-click, drag, number key és offhand.
+7. Az adományozó zárja be vagy váltsa le azonnal a GUI-t; ne nyíljon vissza automatikusan.
+8. Töltsd meg a ládát és érd el a per-player limitet; a forrásitem maradjon érintetlen.
+9. Két játékos egyszerre kattintson ugyanarra az adományra; csak egyik kapja meg.
+10. Teszteld a megtelt fogadó inventoryt és a leftover dropot.
+
+#### World-event spawn-védelem
+
+1. Tó, folyó, waterlogged lépcső és 7/8/9 blokkos partszegély.
+2. 10, 16 és 32 chunkos send distance, eltérő játékosbeállításokkal.
+3. Síkságon előre néző, majd 180 fokkal elforduló játékos.
+4. Több játékos különböző irányokból ugyanabban a térségben.
+5. Escort teljes útvonala, beragadás-nudge és hullámspawn claim/folyó mellett.
+6. Idegen 64–96 blokkra: legyen hallható, de ne jelenjen meg a játékos előtt.
+7. Két egyidejű eventkeresés, harmadik keresés budget-elutasítása és timeout.
+8. Már generált, de inaktív chunk visszatöltése; nem generált chunk fail-closed viselkedése.
+9. Plugin disable érkezési késleltetés és async chunk-future közben.
+10. Meteor lejárat, disable és mesterségesen bent hagyott `meteor-restore.yml` startup-recovery.
+11. Fix világboss-anchor chunkhatár közelében, majd ±8 blokkos probe-szórással.
+12. `/events debug spawn` eredményének összevetése a tényleges eventindítással.
+
+#### Frakció-névszínek
+
+1. Legyen egyszerre RED, BLUE, NEUTRAL és DARK játékos online.
+2. Ellenőrizd a tablistát és a fej fölötti nametaget világos és sötét háttér előtt.
+3. Ellenőrizd a natív chatet mind a négy frakcióval.
+4. Kapcsold ki a natív tablistát, és ellenőrizd a HUD fallbacket.
+5. Külső TAB mellett ellenőrizd a `%icesmp_faction_color%` kimenetet: NEUTRAL `§a`, DARK `§8`.
+6. Aktív raidben az ellenség piros felülírása továbbra is előzze meg a frakció alapszínét.
+
+#### Runtime hardening vizuális és integrációs próbák
+
+1. Két valódi kliens ellenőrizze a vanisht a világban, a tablistában és a production scoreboard/nametag plugin-stackben.
+2. BlockDisplay-fal igazodás és pontos minY/maxY lezárás sziklákon, lépcsőkön, barlangokban és egyenetlen terepen.
+3. Polygon-wand UX és konkáv claim-védelem futó Folia szerveren.
+4. DARK undead spawn-viselkedés valódi chunk unload/reload és szerver-restart során.
+5. WorldGuard-integráció production régiókkal és teljes resource-pack kliens-join.
 
 ### Záró döntés
 

@@ -267,6 +267,12 @@ Az adományláda nem piac:
 - `/adomany add` — a kézben tartott stack felajánlása;
 - `/adomany` — a közös kínálat böngészése.
 
+A GUI felső, 0–8. sora egyirányú beadási zóna: bal kattintás a teljes
+kurzorstackot, jobb kattintás egy darabot ad be; a shift-kattintás, a
+hotbar-szám, az offhand-gomb és a drag is működik. Egy közös adományt
+egyszerre csak egy játékos vehet el; ha a fogadó inventoryd megtelik, a
+maradék a lábadnál esik le.
+
 Nincs vételár; amit elviszel, azt egy másik játékos neked szánta.
 
 ### Miért kerül pénzbe ennyi minden?

@@ -513,7 +513,12 @@
     },
     "config.player-profile": {
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md"
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "config.logging": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
       ]
     }
   },
@@ -1490,14 +1495,14 @@
     "component.hu.taliann.icesmp.classspec.domain.ProfileDiagnostics": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.domain.SealCause": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -1584,7 +1589,7 @@
     "component.hu.taliann.icesmp.classspec.integration.ClassSpecHudPort": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -1801,7 +1806,7 @@
     "component.hu.taliann.icesmp.classspec.integration.ClassSpecContentPort": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -1880,7 +1885,7 @@
     "component.hu.taliann.icesmp.classspec.domain.MasteryProgress": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -1920,13 +1925,6 @@
         "docs/FEATURES.md"
       ]
     },
-    "component.hu.taliann.icesmp.factions.FactionMembershipMutation": {
-      "feature": "feature.factions.membership_relations",
-      "docs": [
-        "docs/ARCHITECTURE.md",
-        "docs/FEATURES.md"
-      ]
-    },
     "component.hu.taliann.icesmp.listeners.ServerChallengeListener": {
       "feature": "feature.world.events",
       "docs": [
@@ -1936,7 +1934,7 @@
     "component.hu.taliann.icesmp.classspec.domain.ProfileOperationType": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2117,7 +2115,7 @@
     "component.hu.taliann.icesmp.classspec.application.ProfileDiagnostic": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2216,7 +2214,7 @@
     "component.hu.taliann.icesmp.classspec.application.DarkSpecializationPolicy": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2504,17 +2502,10 @@
         "docs/FEATURES.md"
       ]
     },
-    "component.hu.taliann.icesmp.factions.FactionTaxJournal": {
-      "feature": "feature.factions.guilds_leadership",
-      "docs": [
-        "docs/ARCHITECTURE.md",
-        "docs/ADMIN_GUIDE.md"
-      ]
-    },
     "component.hu.taliann.icesmp.classspec.domain.SealReason": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2563,7 +2554,7 @@
     "component.hu.taliann.icesmp.classspec.domain.ProfileOperation": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2768,7 +2759,7 @@
     "component.hu.taliann.icesmp.classspec.integration.ClassSpecDialogPort": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2788,7 +2779,7 @@
     "component.hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2837,7 +2828,7 @@
     "component.hu.taliann.icesmp.classspec.integration.ClassSpecModelPort": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2874,7 +2865,7 @@
     "component.hu.taliann.icesmp.classspec.application.ProfileMutationPolicy": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2929,7 +2920,7 @@
     "component.hu.taliann.icesmp.classspec.compat.ClassSpecDependencyPreflight": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -2960,7 +2951,7 @@
     "component.hu.taliann.icesmp.classspec.domain.CompanionProfile": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3101,7 +3092,7 @@
     "component.hu.taliann.icesmp.classspec.domain.ProfileStatus": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3139,7 +3130,7 @@
     "component.hu.taliann.icesmp.classspec.domain.NumericGuards": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3164,7 +3155,7 @@
     "component.hu.taliann.icesmp.classspec.domain.CapstoneStatus": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3183,7 +3174,7 @@
     "component.hu.taliann.icesmp.classspec.application.DefaultClassSpecProfileGateway": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3226,7 +3217,7 @@
     "component.hu.taliann.icesmp.classspec.application.GateState": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3317,7 +3308,7 @@
     "component.hu.taliann.icesmp.classspec.domain.ClassLoadout": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3348,7 +3339,7 @@
     "component.hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3379,7 +3370,7 @@
     "component.hu.taliann.icesmp.classspec.domain.LoadoutStatus": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3464,7 +3455,7 @@
     "component.hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3477,7 +3468,7 @@
     "component.hu.taliann.icesmp.classspec.compat.VersionRequirement": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3539,13 +3530,6 @@
       "feature": "feature.progression.spells",
       "docs": [
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.factions.FactionSwitchJournal": {
-      "feature": "feature.factions.membership_relations",
-      "docs": [
-        "docs/ARCHITECTURE.md",
-        "docs/ADMIN_GUIDE.md"
       ]
     },
     "component.hu.taliann.icesmp.managers.SinManager": {
@@ -3617,7 +3601,7 @@
     "component.hu.taliann.icesmp.classspec.application.ProfileMutationResult": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3720,7 +3704,7 @@
     "component.hu.taliann.icesmp.classspec.domain.SpellGrantLedger": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3841,15 +3825,8 @@
     "component.hu.taliann.icesmp.classspec.transaction.RespecTransactionJournal": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.factions.FactionTaxDebtLedger": {
-      "feature": "feature.factions.guilds_leadership",
-      "docs": [
-        "docs/ADMIN_GUIDE.md",
-        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.integration.ProtectionBridge": {
@@ -3945,14 +3922,14 @@
     "component.hu.taliann.icesmp.classspec.application.ProfileSessionRegistry": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.domain.SoulbondState": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -3995,7 +3972,7 @@
     "component.hu.taliann.icesmp.classspec.integration.ClassSpecEncounterPort": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -4020,7 +3997,7 @@
     "component.hu.taliann.icesmp.classspec.domain.ProfileOperationStatus": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -4226,14 +4203,14 @@
     "component.hu.taliann.icesmp.classspec.domain.LoadoutSlot": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.application.GateSnapshot": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -4391,7 +4368,7 @@
     "component.hu.taliann.icesmp.classspec.application.ProfileMutationFailurePolicy": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -4452,7 +4429,7 @@
     "component.hu.taliann.icesmp.classspec.domain.ClassSpecCatalog": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -4617,7 +4594,7 @@
     "component.hu.taliann.icesmp.classspec.persistence.ProfileRepositoryException": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -4702,7 +4679,7 @@
     "component.hu.taliann.icesmp.classspec.transaction.RespecRecoveryProtocol": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
@@ -4827,349 +4804,701 @@
     "component.hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.application.ClassSpecSectionMutationStore": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.persistence.ClassSpecSectionRepository": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.persistence.PlayerProfileClassSpecSectionRepository": {
       "feature": "feature.progression.classes_specializations",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "docs/FEATURES.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.api.AdminPlayerProfileDto": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.api.IceSMPPlayerProfileApi": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.api.PlayerProfileQueryService": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.api.PublicPlayerProfileDto": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.api.SelfPlayerProfileDto": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileService": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.ImmutableValues": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.PlayerProfileSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.ProfileHealth": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.ProfileSectionData": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.ProfileSectionId": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.ProfileSectionSnapshot": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.SectionHealth": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.SectionRevision": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.AchievementSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.CompanionSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.EconomySection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.FactionSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.IdentitySection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.LifecycleSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.ModerationSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.OnboardingSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.OperationSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.PreferenceSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.ProfessionSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.QuestSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.RelicSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.SocialLinkSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.SpellbookSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.domain.section.TalentSection": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.http.PlayerProfileHttpServer": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.http.PlayerProfileJson": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.integration.PlayerProfilePlatform": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.persistence.PlayerProfileManifest": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepository": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryException": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.persistence.StructuredPlayerProfileYaml": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager": {
       "feature": "feature.platform.player_profile",
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_API.md"
+        "docs/ARCHITECTURE.md"
       ]
     },
     "component.hu.taliann.icesmp.classspec.persistence.ClassSpecSectionMutationStoreAdapter": {
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md"
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.core.AdvancedConfigRuntimeBridge": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.core.ConfigRuntimeReloadBridge": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.AdvancedConfigEntry": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.AdvancedConfigEntryRenderer": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.AdvancedConfigPolicy": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.AdvancedConfigSchemaGuard": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ConfigChatInputGate": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ConfigEditSession": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ConfigMenuControls": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ConfigMenuEntryRenderer": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ConfigMenuHelp": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ConfigMenuRootGUI": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.OperationalConfigHelp": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.OperationalConfigMenuGUI": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.OperationalConfigPolicy": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.OperationalConfigSchemaGuard": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ServerWorldConfigMenuGUI": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.TransactionalConfigMenuGUI": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.TransactionalOperationalConfigMenuGUI": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI": {
+      "feature": "feature.core.configuration",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.CrateConfigMenuGUI": {
+      "feature": "feature.economy.crates",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.TransactionalCrateConfigMenuGUI": {
+      "feature": "feature.economy.crates",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.CrateRewardEditor": {
+      "feature": "feature.economy.crates",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.EventSpawnConfigMenuExtension": {
+      "feature": "feature.world.events",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.listeners.EventSpawnDebugListener": {
+      "feature": "feature.world.events",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.listeners.EventSpawnGuardListener": {
+      "feature": "feature.world.events",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.managers.EventSpawnSafetyPolicy": {
+      "feature": "feature.world.events",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.data.ClaimFootprint": {
+      "feature": "feature.factions.land_claims",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.data.ClaimShape": {
+      "feature": "feature.factions.land_claims",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionDisplayColorPolicy": {
+      "feature": "feature.player.hud_tablist",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.FactionDisplayPalette": {
+      "feature": "feature.player.hud_tablist",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.managers.SpellMasteryTransactionProtocol": {
+      "feature": "feature.progression.spells",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.moderation.InventoryWriteLock": {
+      "feature": "feature.admin.inventory_teleport",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.moderation.InvseeWriteCoordinator": {
+      "feature": "feature.admin.inventory_teleport",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.utils.StartupLog": {
+      "feature": "feature.core.lifecycle",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileBountyStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileClassMechanicStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileCooldownStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileCrateStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileDailyBudgetStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileDailyQuestStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileDeathEscrowStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileDungeonAccessStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileGameplayState": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileHudPreferenceStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileIntroStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileModerationStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileOperationStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileSinStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileSpecializationProgressStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellGrantStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellbookStateStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileStatisticsStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileTaxStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileTreasuryWithdrawalStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileWeeklyGoalStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.PlayerProfileSectionExtensions": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.domain.section.ProfessionProfileState": {
+      "feature": "feature.platform.player_profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
       ]
     }
   },
@@ -5606,9 +5935,8 @@
       ],
       "docs": [
         "docs/FEATURES.md",
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md",
-        "docs/PLAYER_PROFILE_YAML_FORMAT.md",
-        "docs/PLAYER_PROFILE_STAGING.md",
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md",
         "docs/admin/CLASS_SPEC_REWORK_RUNBOOK.md"
       ],
       "description": "Kasztválasztás, XP/szint, specializáció, DARK seal és companion/Soulforge állapot a PlayerProfile class-spec sectionben; per-section CAS és lifecycle fencing."
@@ -5754,7 +6082,7 @@
     },
     "feature.platform.player_profile": {
       "docs": [
-        "docs/PLAYER_PROFILE_ARCHITECTURE.md"
+        "docs/ARCHITECTURE.md"
       ]
     }
   },
@@ -14735,6 +15063,41 @@
     "config.dynamic.player-profile-platform.config.player-profile.http.timeout-ms": {
       "resolved_path": "config/player-profile.yml:player-profile.http.timeout-ms",
       "reason": "The local config receiver is loaded exclusively from config/player-profile.yml."
+    },
+    "config.dynamic.crate-config-menu-gui.configuration.crates": {
+      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/gui/CrateConfigMenuGUI.java:56 adatfolyamából feloldható; a dokumentált teljes path-sablon: crates.<crate-id>. Az angle-bracket ID az aktív crate-definíció azonosítója.",
+      "resolved_path": "crates.<crate-id>",
+      "classification": "EXACT_RUNTIME_TEMPLATE"
+    },
+    "config.dynamic.meteor-event-manager.section.block-data": {
+      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java:330-333 adatfolyamából feloldható; a dokumentált teljes path-sablon: meteor-restore.yml -> <record-id>.block-data. Az angle-bracket ID a mentett meteorblokk rekordazonosítója a recovery journalban.",
+      "resolved_path": "<record-id>.block-data",
+      "classification": "EXACT_RUNTIME_TEMPLATE"
+    },
+    "config.dynamic.meteor-event-manager.section.world": {
+      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java:330-333 adatfolyamából feloldható; a dokumentált teljes path-sablon: meteor-restore.yml -> <record-id>.world. Az angle-bracket ID a mentett meteorblokk rekordazonosítója a recovery journalban.",
+      "resolved_path": "<record-id>.world",
+      "classification": "EXACT_RUNTIME_TEMPLATE"
+    },
+    "config.dynamic.meteor-event-manager.section.world-id": {
+      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java:330-333 adatfolyamából feloldható; a dokumentált teljes path-sablon: meteor-restore.yml -> <record-id>.world-id. Az angle-bracket ID a mentett meteorblokk rekordazonosítója a recovery journalban.",
+      "resolved_path": "<record-id>.world-id",
+      "classification": "EXACT_RUNTIME_TEMPLATE"
+    },
+    "config.dynamic.meteor-event-manager.section.x": {
+      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java:330-333 adatfolyamából feloldható; a dokumentált teljes path-sablon: meteor-restore.yml -> <record-id>.x. Az angle-bracket ID a mentett meteorblokk rekordazonosítója a recovery journalban.",
+      "resolved_path": "<record-id>.x",
+      "classification": "EXACT_RUNTIME_TEMPLATE"
+    },
+    "config.dynamic.meteor-event-manager.section.y": {
+      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java:330-333 adatfolyamából feloldható; a dokumentált teljes path-sablon: meteor-restore.yml -> <record-id>.y. Az angle-bracket ID a mentett meteorblokk rekordazonosítója a recovery journalban.",
+      "resolved_path": "<record-id>.y",
+      "classification": "EXACT_RUNTIME_TEMPLATE"
+    },
+    "config.dynamic.meteor-event-manager.section.z": {
+      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java:330-333 adatfolyamából feloldható; a dokumentált teljes path-sablon: meteor-restore.yml -> <record-id>.z. Az angle-bracket ID a mentett meteorblokk rekordazonosítója a recovery journalban.",
+      "resolved_path": "<record-id>.z",
+      "classification": "EXACT_RUNTIME_TEMPLATE"
     }
   }
 }
