@@ -2,7 +2,6 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
-import hu.taliann.icesmp.factions.FactionTaxDebtLedger;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStore;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileTaxStore;
@@ -174,7 +173,7 @@ public final class FactionTreasuryManager implements PersistentStore {
         synchronized (stateLock) {
             if (appliedGrants.containsKey(grantId)) return true;
             final double before = balances.getOrDefault(faction, 0.0D);
-            final double after = FactionTaxDebtLedger.checkedAmountAdd(before, amount);
+            final double after = PlayerProfileTaxStore.checkedAmountAdd(before, amount);
             if (!Double.isFinite(after)) return false;
             balances.put(faction, after);
             appliedGrants.put(grantId, System.currentTimeMillis());
@@ -193,7 +192,7 @@ public final class FactionTreasuryManager implements PersistentStore {
     public void deposit(final FactionType faction, final double amount) {
         if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) return;
         synchronized (stateLock) {
-            final double next = FactionTaxDebtLedger.checkedAmountAdd(
+            final double next = PlayerProfileTaxStore.checkedAmountAdd(
                     balances.getOrDefault(faction, 0.0D), amount);
             if (!Double.isFinite(next)) return;
             balances.put(faction, next);
