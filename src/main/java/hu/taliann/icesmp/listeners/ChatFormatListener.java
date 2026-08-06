@@ -1,6 +1,5 @@
 package hu.taliann.icesmp.listeners;
 
-import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.integration.LuckPermsBridge;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;

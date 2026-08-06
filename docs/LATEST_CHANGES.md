@@ -23,6 +23,28 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 > köztes mainline commit. A JAR nem tartalmaz Git SHA-t, ezért ez
 > `HIGH_CONFIDENCE`, nem `EXACT` azonosítás.
 
+## Augusztus eleji integrációs hullám (staging előtt)
+
+A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
+
+- **PlayerProfile-alap:** minden tartós játékos-állapot (kaszt, szakma, quest,
+  pénztárca, statisztika, moderációs összegzés, crate-számlálók, heti céh-cél,
+  halál-escrow) egyetlen, tranzakcióvédett profilrendszerben él — restart és
+  crash ellen journalozott, gépi kapuval őrzött szerkezetben.
+- **Tablist és színek:** LuckPerms-rang szerinti rendezés, AFK játékosok a
+  lista végén; a Menedék-polgár neve zöld (Smaragdkő-szín), így nem
+  téveszthető össze a Kitaszítottal — tab, nametag, chat és külső TAB
+  (`%icesmp_faction_color%`) egységesen.
+- **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
+  adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
+- **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,
+  víz- és partpuffer, nézési kúp), meteor-kráter terrain-visszaállítási
+  journallal.
+- **Claimek:** fail-closed betöltés + a poligon-kijelölés csúcspont-limitje
+  alapból megszűnt (a területkorlát maradt a valódi kapu).
+- **Konzol:** a boot-kori leltár-sorok elnémultak; hibakereséshez a
+  `logging.verbose-startup` kulccsal visszakapcsolhatók.
+
 ## Harminc másodpercben
 
 | Terület | Július 12-i build | Következő release |
