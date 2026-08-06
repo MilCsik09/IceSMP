@@ -72,6 +72,11 @@ public final class ModerationGUIListener implements Listener {
             viewer.closeInventory();
             return;
         }
+        if (slot == 22 && !hasInvseePermission(viewer)) {
+            viewer.sendMessage(messages.get("moderation.permission-denied",
+                    "&cNincs jogod ehhez a moderációs művelethez."));
+            return;
+        }
         final String requiredPermission = permissionForSlot(slot);
         if (requiredPermission != null && !viewer.hasPermission(requiredPermission)) {
             viewer.sendMessage(messages.get("moderation.permission-denied",
@@ -89,10 +94,7 @@ public final class ModerationGUIListener implements Listener {
             case 19 -> viewer.performCommand("history " + name);
             case 20 -> viewer.performCommand("punishments " + name);
             case 21 -> viewer.performCommand("reports");
-            case 22 -> viewer.performCommand("invsee " + name + " read main");
-            case 23 -> viewer.performCommand("invsee " + name + " edit main");
-            case 24 -> viewer.performCommand("invsee " + name + " read ender");
-            case 25 -> viewer.performCommand("invsee " + name + " edit ender");
+            case 22 -> viewer.performCommand("invsee " + name);
             case 28 -> teleportToOnline(viewer, target);
             case 29 -> viewer.performCommand("offlinetp " + name);
             case 30 -> viewer.performCommand("socialspy");
@@ -115,6 +117,11 @@ public final class ModerationGUIListener implements Listener {
         return target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target);
     }
 
+    private static boolean hasInvseePermission(final Player viewer) {
+        return viewer.hasPermission(Permissions.MODERATION_INVENTORY_READ)
+                || viewer.hasPermission(Permissions.MODERATION_INVENTORY_EDIT);
+    }
+
     private static String permissionForSlot(final int slot) {
         return switch (slot) {
             case 10 -> Permissions.MODERATION_WARN;
@@ -123,8 +130,6 @@ public final class ModerationGUIListener implements Listener {
             case 13 -> Permissions.MODERATION_KICK;
             case 19, 20 -> Permissions.MODERATION_HISTORY;
             case 21 -> Permissions.MODERATION;
-            case 22, 24 -> Permissions.MODERATION_INVENTORY_READ;
-            case 23, 25 -> Permissions.MODERATION_INVENTORY_EDIT;
             case 28, 29 -> Permissions.MODERATION_OFFLINE_TP;
             case 30 -> Permissions.MODERATION_SOCIALSPY;
             case 31 -> Permissions.MODERATION_VANISH;

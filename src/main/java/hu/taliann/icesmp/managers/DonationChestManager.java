@@ -11,36 +11,58 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Community donation chest (Adomány-láda): a server-wide, shared item pool. Anyone can donate
- * the item held in their main hand, and anyone can take any entry — pure gifting, no prices, no
- * currency. Entries persist to donations.yml.
- *
- * <p>Thread-safety: {@link #entries} is a {@link ConcurrentHashMap} so plain reads (GUI paging,
- * lore) are safe from any region thread without locking; every compound mutation (donate / take)
- * is {@code synchronized} so a check-then-act (capacity caps, "already taken?") never races —
- * mirrors {@link MarketManager}'s listings map.</p>
+ * Shared donation chest. Every mutation is serialized, while inventory ownership
+ * is changed only on the donating/taking player's own entity thread.
  */
 public final class DonationChestManager implements PersistentStore {
 
-    /** A single donated item: who gave it, what it is, and when. */
-    public record DonationEntry(UUID id, UUID donorId, String donorName, ItemStack item, long donatedAt) {
+    /** Immutable entry wrapper; ItemStack access always returns a clone. */
+    public record DonationEntry(UUID id, UUID donorId, String donorName,
+                                ItemStack item, long donatedAt) {
+        public DonationEntry {
+            Objects.requireNonNull(id, "id");
+            Objects.requireNonNull(donorId, "donorId");
+            donorName = donorName == null ? "?" : donorName;
+            if (isEmpty(item)) {
+                throw new IllegalArgumentException("donation item is empty");
+            }
+            item = item.clone();
+        }
+
+        @Override
+        public ItemStack item() {
+            return item.clone();
+        }
+    }
+
+    @FunctionalInterface
+    private interface ItemWriter {
+        void write(ItemStack item);
+    }
+
+    private record ItemSource(java.util.function.Supplier<ItemStack> reader,
+                              ItemWriter writer) {
     }
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final File storageFile;
     private final Map<UUID, DonationEntry> entries = new ConcurrentHashMap<>();
-    private final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
-            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
-    public DonationChestManager(final JavaPlugin plugin, final ConfigManager configManager) {
+    public DonationChestManager(final JavaPlugin plugin,
+                                final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.storageFile = new File(plugin.getDataFolder(), "donations.yml");
@@ -52,10 +74,11 @@ public final class DonationChestManager implements PersistentStore {
     }
 
     public int getMaxItems() {
-        return Math.max(1, configManager.getInt("donation-chest.max-items", 270));
+        return Math.max(1,
+                configManager.getInt("donation-chest.max-items", 270));
     }
 
-    /** The per-donor cap on LIVE (not-yet-taken) entries; {@code <= 0} means unlimited. */
+    /** Per-donor cap on live entries; <= 0 means unlimited. */
     public int getMaxPerPlayer() {
         return configManager.getInt("donation-chest.max-per-player", 27);
     }
@@ -63,73 +86,86 @@ public final class DonationChestManager implements PersistentStore {
     @Override
     public void load() {
         entries.clear();
-
         if (!storageFile.exists()) {
             return;
         }
 
-        try {
-            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
-            final ConfigurationSection section = yaml.getConfigurationSection("entries");
-            if (section != null) {
-                for (final String idKey : section.getKeys(false)) {
-                    try {
-                        final UUID id = UUID.fromString(idKey);
-                        final UUID donorId = UUID.fromString(section.getString(idKey + ".donor-id", ""));
-                        final ItemStack item = section.getItemStack(idKey + ".item");
-                        if (item == null || item.getType() == Material.AIR) {
-                            continue;
-                        }
-                        entries.put(id, new DonationEntry(
-                                id,
-                                donorId,
-                                section.getString(idKey + ".donor-name", "?"),
-                                item,
-                                section.getLong(idKey + ".donated-at", System.currentTimeMillis())
-                        ));
-                    } catch (final IllegalArgumentException ignored) {
-                        // Skip malformed entries rather than discarding the whole chest.
-                    }
-                }
-            }
-            plugin.getLogger().info("Loaded " + entries.size() + " donation chest entr(y/ies).");
-        } catch (final Exception exception) {
-            plugin.getLogger().severe("Failed to load donations.yml: " + exception.getMessage());
+        final YamlConfiguration yaml =
+                YamlStore.loadTracked(storageFile, plugin.getLogger());
+        final ConfigurationSection section =
+                yaml.getConfigurationSection("entries");
+        if (section == null) {
+            return;
         }
+        for (final String idKey : section.getKeys(false)) {
+            try {
+                final UUID id = UUID.fromString(idKey);
+                final UUID donorId = UUID.fromString(
+                        section.getString(idKey + ".donor-id", ""));
+                final ItemStack item =
+                        section.getItemStack(idKey + ".item");
+                if (isEmpty(item)) {
+                    continue;
+                }
+                entries.put(id, new DonationEntry(
+                        id,
+                        donorId,
+                        section.getString(idKey + ".donor-name", "?"),
+                        item,
+                        section.getLong(idKey + ".donated-at",
+                                System.currentTimeMillis())
+                ));
+            } catch (final IllegalArgumentException malformed) {
+                plugin.getLogger().warning(
+                        "Skipping malformed donation entry "
+                                + idKey + ": " + malformed.getMessage());
+            }
+        }
+        plugin.getLogger().info("Loaded " + entries.size()
+                + " donation chest entr(y/ies).");
     }
 
-    /** Debounce-olt mentés: a donate/take a hívó régió-szálán nem blokkolhat lemez-I/O-n. */
     private void requestSave() {
-        if (saveScheduled.compareAndSet(false, true)) {
+        if (!saveScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        try {
             plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
                 saveScheduled.set(false);
                 save();
-            }, 2L, java.util.concurrent.TimeUnit.SECONDS);
+            }, 2L, TimeUnit.SECONDS);
+        } catch (final RuntimeException unavailable) {
+            saveScheduled.set(false);
+            throw unavailable;
         }
     }
 
+    @Override
     public synchronized void save() {
         final YamlConfiguration yaml = new YamlConfiguration();
         for (final DonationEntry entry : entries.values()) {
             final String basePath = "entries." + entry.id();
-            yaml.set(basePath + ".donor-id", entry.donorId().toString());
+            yaml.set(basePath + ".donor-id",
+                    entry.donorId().toString());
             yaml.set(basePath + ".donor-name", entry.donorName());
             yaml.set(basePath + ".item", entry.item());
             yaml.set(basePath + ".donated-at", entry.donatedAt());
         }
-
         try {
             YamlStore.saveAtomic(storageFile, yaml);
-        } catch (final IOException exception) {
-            plugin.getLogger().severe("Failed to save donations.yml: " + exception.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save donations.yml", exception);
+        } catch (final IOException failure) {
+            plugin.getLogger().severe(
+                    "Failed to save donations.yml: "
+                            + failure.getMessage());
+            throw new UncheckedIOException(
+                    "Failed to save donations.yml", failure);
         }
     }
 
-    /** Every entry, newest donation first — snapshot read, safe from any region thread. */
     public List<DonationEntry> getEntriesSorted() {
         return entries.values().stream()
-                .sorted(Comparator.comparingLong(DonationEntry::donatedAt).reversed())
+                .sorted(Comparator.comparingLong(
+                        DonationEntry::donatedAt).reversed())
                 .toList();
     }
 
@@ -138,74 +174,150 @@ public final class DonationChestManager implements PersistentStore {
     }
 
     private long countLiveOf(final UUID donorId) {
-        return entries.values().stream().filter(entry -> entry.donorId().equals(donorId)).count();
+        return entries.values().stream()
+                .filter(entry -> entry.donorId().equals(donorId))
+                .count();
+    }
+
+    /** Deposits part or all of the live cursor stack. */
+    public String donateCursor(final Player donor, final ItemStack expected,
+                               final int amount) {
+        return donateFromSource(donor, expected, amount, new ItemSource(
+                donor::getItemOnCursor,
+                donor::setItemOnCursor));
+    }
+
+    /** Deposits part or all of a normal player-inventory/hotbar slot. */
+    public String donateInventorySlot(final Player donor, final int slot,
+                                      final ItemStack expected, final int amount) {
+        if (slot < 0 || slot >= 36) {
+            return "donation-invalid-source";
+        }
+        return donateFromSource(donor, expected, amount, new ItemSource(
+                () -> donor.getInventory().getItem(slot),
+                item -> donor.getInventory().setItem(slot, item)));
+    }
+
+    /** Deposits part or all of the off-hand stack. */
+    public String donateOffHand(final Player donor, final ItemStack expected,
+                                final int amount) {
+        return donateFromSource(donor, expected, amount, new ItemSource(
+                () -> donor.getInventory().getItemInOffHand(),
+                item -> donor.getInventory().setItemInOffHand(
+                        isEmpty(item) ? new ItemStack(Material.AIR) : item)));
+    }
+
+    /** Compatibility entry point for the old hopper button. */
+    public String donateHeldItem(final Player donor) {
+        final int slot = donor.getInventory().getHeldItemSlot();
+        final ItemStack held = donor.getInventory().getItem(slot);
+        return donateInventorySlot(donor, slot, cloneItem(held),
+                isEmpty(held) ? 0 : held.getAmount());
     }
 
     /**
-     * Donates the item currently held in {@code donor}'s main hand (the whole stack): validates
-     * the chest is enabled and the hand isn't empty, enforces the total-capacity and
-     * per-donor-live-entries caps, then records the entry and clears the hand — the hand is
-     * ONLY cleared once the entry is committed, so a rejected donation never loses the item.
-     *
-     * @param donor the donating player
-     * @return null on success, otherwise a message key describing why it failed
+     * Commits one donation and removes exactly the committed amount from its
+     * source. If source mutation or task admission fails, the entry is rolled back.
      */
-    public synchronized String donateHeldItem(final Player donor) {
+    private synchronized String donateFromSource(final Player donor,
+                                                 final ItemStack expected,
+                                                 final int requestedAmount,
+                                                 final ItemSource source) {
         if (!isEnabled()) {
             return "donation-chest-disabled";
         }
-
-        final ItemStack held = donor.getInventory().getItemInMainHand();
-        if (held.getType().isAir()) {
+        final ItemStack current = cloneItem(source.reader().get());
+        if (!sameItem(current, expected)) {
+            return "donation-invalid-source";
+        }
+        if (isEmpty(current) || requestedAmount <= 0) {
             return "donation-no-item";
         }
-
+        if (requestedAmount > current.getAmount()) {
+            return "donation-invalid-source";
+        }
         if (entries.size() >= getMaxItems()) {
             return "donation-chest-full";
         }
-
         final int maxPerPlayer = getMaxPerPlayer();
-        if (maxPerPlayer > 0 && countLiveOf(donor.getUniqueId()) >= maxPerPlayer) {
+        if (maxPerPlayer > 0
+                && countLiveOf(donor.getUniqueId()) >= maxPerPlayer) {
             return "donation-per-player-limit";
         }
 
+        final ItemStack donated = current.clone();
+        donated.setAmount(requestedAmount);
+        final ItemStack remaining = current.clone();
+        remaining.setAmount(current.getAmount() - requestedAmount);
+
         final UUID id = UUID.randomUUID();
-        entries.put(id, new DonationEntry(id, donor.getUniqueId(), donor.getName(), held.clone(),
-                System.currentTimeMillis()));
-        donor.getInventory().setItemInMainHand(null);
-        requestSave();
-        return null;
+        final DonationEntry entry = new DonationEntry(id,
+                donor.getUniqueId(), donor.getName(), donated,
+                System.currentTimeMillis());
+        entries.put(id, entry);
+        try {
+            source.writer().write(
+                    remaining.getAmount() <= 0 ? null : remaining);
+            requestSave();
+            return null;
+        } catch (final RuntimeException failure) {
+            entries.remove(id, entry);
+            try {
+                source.writer().write(current);
+            } catch (final RuntimeException rollbackFailure) {
+                failure.addSuppressed(rollbackFailure);
+            }
+            throw failure;
+        }
     }
 
     /**
-     * Atomically removes and returns an entry's item — the single point where "take" is
-     * committed, so two players clicking the same slot at once cannot both receive the item
-     * (the second call simply finds it already gone and returns null).
-     *
-     * @param id the entry id to take
-     * @return the donated item, or null if it was already taken (or never existed)
+     * Atomically claims an entry. A failed save-task admission restores the entry.
      */
     public synchronized ItemStack takeEntry(final UUID id) {
         final DonationEntry entry = id == null ? null : entries.remove(id);
         if (entry == null) {
             return null;
         }
-        requestSave();
-        return entry.item();
+        try {
+            requestSave();
+            return entry.item();
+        } catch (final RuntimeException failure) {
+            entries.putIfAbsent(entry.id(), entry);
+            throw failure;
+        }
     }
 
-    /**
-     * A {@code donate}/{@code takeEntry} hibakulcsainak magyar alapszövege. A tábla itt él, a
-     * kulcsok keletkezési helyén — a parancs és a GUI-listener ugyanezt hívja, így nem
-     * csúszhatnak szét (korábban mindkettő saját, kézzel szinkronban tartott másolatot vitt).
-     */
     public static String defaultErrorFor(final String errorKey) {
         return switch (errorKey == null ? "" : errorKey) {
-            case "donation-chest-disabled" -> "&cAz adomány-láda jelenleg ki van kapcsolva.";
-            case "donation-no-item" -> "&cNincs tárgy a kezedben — ezt adományoznád?";
-            case "donation-chest-full" -> "&cAz adomány-láda megtelt — próbáld később, ha valaki elvitt valamit.";
-            case "donation-per-player-limit" -> "&cElérted a saját adomány-limitedet ebben a ládában (&f{limit} tétel&c).";
+            case "donation-chest-disabled" ->
+                    "&cAz adomány-láda jelenleg ki van kapcsolva.";
+            case "donation-no-item" ->
+                    "&cNincs adományozható tárgy a kiválasztott helyen.";
+            case "donation-chest-full" ->
+                    "&cAz adomány-láda megtelt — próbáld később.";
+            case "donation-per-player-limit" ->
+                    "&cElérted a saját adomány-limitedet "
+                            + "(&f{limit} tétel&c).";
+            case "donation-invalid-source" ->
+                    "&cA tárgy közben megváltozott; próbáld újra.";
             default -> "&cAz adományozás nem sikerült.";
         };
+    }
+
+    private static ItemStack cloneItem(final ItemStack item) {
+        return isEmpty(item) ? null : item.clone();
+    }
+
+    private static boolean sameItem(final ItemStack first, final ItemStack second) {
+        if (isEmpty(first) || isEmpty(second)) {
+            return isEmpty(first) && isEmpty(second);
+        }
+        return first.equals(second);
+    }
+
+    private static boolean isEmpty(final ItemStack item) {
+        return item == null || item.getType().isAir()
+                || item.getAmount() <= 0;
     }
 }
