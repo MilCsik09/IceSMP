@@ -213,11 +213,18 @@ public final class EventSpawnSafetyRegressionSuite {
                         && meteor.contains("scheduleRestore")
                         && meteor.contains("Bukkit.isOwnedByCurrentRegion")
                         && meteor.contains("getRegionScheduler().run")
-                        && meteor.contains("Files.deleteIfExists"),
+                        && meteor.contains("Files.deleteIfExists")
+                        && meteor.contains("YamlStore.loadTracked")
+                        && meteor.contains("CorruptStateFileError")
+                        && meteor.contains("Long.MAX_VALUE"),
                 "meteor crater lost durable, per-region restoration");
         check(!meteor.contains("List<BlockState>")
                         && !meteor.contains("for (final BlockState state : states)"),
                 "meteor must not replay cross-region BlockState snapshots from one task");
+        final int activeLifecycle = meteor.indexOf("if (isActive())");
+        final int startupRecovery = meteor.indexOf("recoverInterruptedCrater()");
+        check(activeLifecycle >= 0 && startupRecovery > activeLifecycle,
+                "active meteor expiry must run before startup recovery-file gating");
     }
 
     private static void verifiesConfigMenuExtension() throws Exception {

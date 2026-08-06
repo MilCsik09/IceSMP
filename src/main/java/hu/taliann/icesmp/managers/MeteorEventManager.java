@@ -293,8 +293,7 @@ public final class MeteorEventManager {
             return;
         }
         final List<SavedBlock> pending = loadRecovery();
-        if (pending.isEmpty()) {
-            deleteRecoveryFile();
+        if (pending == null || pending.isEmpty()) {
             return;
         }
         plugin.getLogger().warning("Recovering " + pending.size()
@@ -303,16 +302,28 @@ public final class MeteorEventManager {
     }
 
     private List<SavedBlock> loadRecovery() {
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(recoveryFile);
+        final YamlConfiguration yaml;
+        try {
+            yaml = YamlStore.loadTracked(recoveryFile, plugin.getLogger());
+        } catch (final hu.taliann.icesmp.storage.CorruptStateFileError corrupt) {
+            nextRecoveryAttemptAt = Long.MAX_VALUE;
+            plugin.getLogger().severe("Meteor recovery is blocked until "
+                    + recoveryFile.getName() + " is repaired or restored from quarantine.");
+            return null;
+        }
         final ConfigurationSection root = yaml.getConfigurationSection("blocks");
-        if (root == null) {
-            return List.of();
+        if (root == null || root.getKeys(false).isEmpty()) {
+            nextRecoveryAttemptAt = Long.MAX_VALUE;
+            plugin.getLogger().severe("Meteor recovery file has no block journal; preserving it for manual recovery.");
+            return null;
         }
         final List<SavedBlock> result = new ArrayList<>();
         for (final String key : root.getKeys(false)) {
             final ConfigurationSection section = root.getConfigurationSection(key);
             if (section == null) {
-                continue;
+                nextRecoveryAttemptAt = Long.MAX_VALUE;
+                plugin.getLogger().severe("Malformed meteor recovery section: " + key);
+                return null;
             }
             try {
                 result.add(new SavedBlock(
@@ -321,8 +332,11 @@ public final class MeteorEventManager {
                         section.getInt("x"), section.getInt("y"), section.getInt("z"),
                         section.getString("block-data", "minecraft:air")));
             } catch (final IllegalArgumentException malformed) {
-                plugin.getLogger().warning("Skipping malformed meteor recovery entry " + key
-                        + ": " + malformed.getMessage());
+                nextRecoveryAttemptAt = Long.MAX_VALUE;
+                plugin.getLogger().severe("Malformed meteor recovery entry " + key
+                        + ": " + malformed.getMessage()
+                        + ". The journal is preserved for manual recovery.");
+                return null;
             }
         }
         return List.copyOf(result);
