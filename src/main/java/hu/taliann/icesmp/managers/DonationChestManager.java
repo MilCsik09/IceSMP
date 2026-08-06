@@ -92,7 +92,7 @@ public final class DonationChestManager implements PersistentStore {
                     }
                 }
             }
-            plugin.getLogger().info("Loaded " + entries.size() + " donation chest entr(y/ies).");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + entries.size() + " donation chest entr(y/ies).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load donations.yml: " + exception.getMessage());
         }

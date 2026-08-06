@@ -280,7 +280,7 @@ public final class FancyNpcsQuestBridge {
 
     private void logValidationReport(final QuestNpcValidationReport report) {
         if (report.healthy()) {
-            plugin.getLogger().info("Quest-NPC ellenőrzés: mind a(z) "
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Quest-NPC ellenőrzés: mind a(z) "
                     + report.requiredCount() + " kötelező NPC pontos belső névvel elérhető.");
             return;
         }

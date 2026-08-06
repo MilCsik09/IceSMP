@@ -433,3 +433,9 @@ player-profile:
     self-tokens: []
     # Admin tokenek. Ne commitolj valódi tokent a repositoryba.
     admin-tokens: []
+
+# Naplózás — a boot-kori leltár-sorok ("Loaded N ...", spell-balansz felülbírálások,
+# érvényes-táblák, config-echo) alapból FINE szintre kerülnek, hogy a konzol a tényleges
+# eseményeké maradjon. true esetén ezek a sorok INFO-ként látszanak (hibakereséshez).
+logging:
+  verbose-startup: false

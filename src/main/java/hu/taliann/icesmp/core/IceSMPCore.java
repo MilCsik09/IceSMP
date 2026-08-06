@@ -989,7 +989,7 @@ public final class IceSMPCore {
         // Only a fully assembled runtime may execute stateful shutdown or common persistence.
         enableCompleted = true;
         plugin.getLogger().info("IceSMP core enabled.");
-        plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
+        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Available factions: " + factionManager.describeAvailableFactions());
     }
 
     /**
@@ -1472,7 +1472,7 @@ public final class IceSMPCore {
                 intervalTicks,
                 intervalTicks
         );
-        plugin.getLogger().info("Faction tax scheduled every "
+        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Faction tax scheduled every "
                 + configManager.getLong("factions.tax.interval-minutes", 60L) + " minute(s).");
     }
 

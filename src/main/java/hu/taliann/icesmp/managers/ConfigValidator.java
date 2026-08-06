@@ -41,7 +41,7 @@ public final class ConfigValidator {
 
         final int problems = validateConfiguration(config, logger);
         if (problems == 0) {
-            logger.info("Konfiguráció ellenőrizve: nem található elgépelés.");
+            logger.fine("Konfiguráció ellenőrizve: nem található elgépelés.");
         } else {
             logger.warning("Konfiguráció-ellenőrzés: " + problems
                     + " lehetséges hiba (a plugin nem módosítja automatikusan a hibás értékeket — "

@@ -41,6 +41,12 @@ pluginoktól. Az első teszt előtt:
 > jogosultságot szűken oszd, a naplóhoz való fájlhozzáférést korlátozd, és
 > a játékosok felé alkalmazd a szerver adatkezelési szabályzatát.
 
+> **Konzol-naplózás:** a boot-kori leltár-sorok ("Loaded N ...",
+> spell-balansz felülbírálások, érvényes-táblák) alapból FINE szintre
+> kerülnek, így a konzol a tényleges eseményeké marad. Hibakereséshez a
+> `logging.verbose-startup: true` élő-config kulccsal (akár
+> `/icesmp config set` útján, restart nélkül) INFO-ra emelhetők.
+
 ## 2. Jogosultsági modell
 
 ### 2.1. Moderációs node-ok

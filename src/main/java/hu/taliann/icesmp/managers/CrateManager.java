@@ -349,7 +349,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         hu.taliann.icesmp.core.Permissions.registerCratePermissions(definitions.values().stream()
                 .map(CrateDefinition::permission).filter(permission -> permission != null && !permission.isBlank()).toList());
         if (errors.isEmpty()) {
-            plugin.getLogger().info("Natív crate config betöltve: " + definitions.size() + " láda.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Natív crate config betöltve: " + definitions.size() + " láda.");
         } else {
             errors.forEach(error -> plugin.getLogger().warning("Crate config: " + error));
             plugin.getLogger().warning("Érvényes crate-ek: " + definitions.size()

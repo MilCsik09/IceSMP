@@ -152,7 +152,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 ));
             }
 
-            plugin.getLogger().info("Loaded " + territories.size() + " faction territory zone(s).");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "Loaded " + territories.size() + " faction territory zone(s).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load territories: " + exception.getMessage());
         }

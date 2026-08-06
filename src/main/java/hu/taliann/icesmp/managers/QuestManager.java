@@ -140,7 +140,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         }
         try {
             customQuests = YamlStore.loadTracked(customQuestsFile, plugin.getLogger());
-            plugin.getLogger().info("Loaded " + getCustomQuestIds().size()
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + getCustomQuestIds().size()
                     + " admin-created quest(s).");
         } catch (final Exception failure) {
             plugin.getLogger().severe("Failed to load custom-quests.yml: " + failure.getMessage());

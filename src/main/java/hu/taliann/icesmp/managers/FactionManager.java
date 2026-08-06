@@ -62,7 +62,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         installed.orElseThrow().repository().listPlayerIds()
                 .thenAccept(ids -> ids.forEach(this::refreshProjection))
                 .toCompletableFuture().join();
-        plugin.getLogger().info("Rebuilt " + getFactionAssignments().size()
+        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "Rebuilt " + getFactionAssignments().size()
                 + " PlayerProfile faction assignments.");
     }
 

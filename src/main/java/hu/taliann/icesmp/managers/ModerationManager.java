@@ -151,7 +151,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
                 restoreLocked(loaded);
                 ledger.expireDue(System.currentTimeMillis());
             }
-            plugin.getLogger().info("Moderation ledger loaded: " + punishmentCount()
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Moderation ledger loaded: " + punishmentCount()
                     + " records, " + activePunishments().size() + " active restrictions.");
         } catch (final RuntimeException invalid) {
             YamlStore.failCorrupt(storageFile, plugin.getLogger(),

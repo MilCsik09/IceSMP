@@ -145,7 +145,7 @@ public final class MarketManager implements PersistentStore {
                 loadListings(yaml);
                 loadPendingDeliveries(yaml);
                 committedTxns.addAll(yaml.getStringList("committed-txn"));
-                plugin.getLogger().info("Loaded " + listings.size() + " market listing(s) and "
+                hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + listings.size() + " market listing(s) and "
                         + pendingDeliveries.size() + " pending deliver(y/ies).");
             } catch (final Exception exception) {
                 plugin.getLogger().severe("Failed to load market.yml: " + exception.getMessage());
