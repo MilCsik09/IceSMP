@@ -85,22 +85,19 @@ public final class MeteorEventManager {
     }
 
     public void tick() {
-        recoverInterruptedCrater();
-        if (recoveryFile.exists() || recoveryInProgress) {
-            return;
-        }
-        if (!configManager.getBoolean("meteor.enabled", true)) {
-            if (isActive()) {
+        final boolean enabled = configManager.getBoolean("meteor.enabled", true);
+        final long now = System.currentTimeMillis();
+        if (isActive()) {
+            if (!enabled) {
                 restoreCrater(false);
+            } else if (now >= expiresAt) {
+                restoreCrater(true);
             }
             return;
         }
 
-        final long now = System.currentTimeMillis();
-        if (isActive()) {
-            if (now >= expiresAt) {
-                restoreCrater(true);
-            }
+        recoverInterruptedCrater();
+        if (recoveryFile.exists() || recoveryInProgress || !enabled) {
             return;
         }
 
