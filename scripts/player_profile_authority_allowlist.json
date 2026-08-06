@@ -10,5 +10,31 @@
     "GLOBAL_AGGREGATE_REFERENCE",
     "TRANSITION"
   ],
-  "entries": []
+  "entries": [
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().set(",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: ProjectileLaunchEvent and CreatureSpawnEvent entities receive scripted/dungeon combat identity markers; no player progression is stored."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final String markedTarget = event.getEntity().getPersistentDataContainer().get(",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: EntityTargetLivingEntityEvent source entity carries the temporary crown-curse target UUID marker."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().remove(",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: the source entity crown-curse target marker is removed when its targeting lifecycle ends."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/SignatureItemListener.java|event.getProjectile().getPersistentDataContainer().set(eclipseArrowKey, PersistentDataType.BYTE, (byte) 1);",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: the freshly spawned projectile carries only the Nightfall impact marker."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/MobMoneyDropListener.java|event.getEntity().getPersistentDataContainer().set(spawnerMobKey,",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: CreatureSpawnEvent entity receives the spawner-origin anti-farm marker."
+    }
+  ]
 }
