@@ -18,7 +18,13 @@ from typing import Any
 
 RULES = {
     "PLAYER_PDC": re.compile(r"getPersistentDataContainer\s*\("),
-    "UUID_MAP": re.compile(r"(?:Map|ConcurrentMap|LoadingCache)\s*<\s*UUID\b"),
+    # Only class fields are authority candidates. Local snapshots, method parameters and
+    # immutable record components are values flowing through an authority, not authorities.
+    "UUID_MAP": re.compile(
+        r"\b(?:private|protected|public)\s+(?:static\s+)?(?:final\s+)?"
+        r"(?:[A-Za-z0-9_$.]*Map|LoadingCache)\s*<\s*UUID\b"
+        r"[^;()]*\b[A-Za-z_$][A-Za-z0-9_$]*\s*(?:=|;)"
+    ),
     "PLAYER_YAML": re.compile(
         r"(?:YamlConfiguration|YamlStore)[^\n]*(?:player|uuid|profile)"
         r"|resolve\([^\n]*(?:player|uuid|profile)"
@@ -86,6 +92,10 @@ SHARED_AGGREGATE_PATH_TOKENS = (
     "exchangeboardmanager",
     "territorymanager",
     "hiddenspotmanager",
+    "donationchestmanager",
+    "kingmanager",
+    "/crates/",
+    "/moderation/",
     "/storage/",
     "transactionjournal",
     "persistentstorecoordinator",
@@ -93,14 +103,13 @@ SHARED_AGGREGATE_PATH_TOKENS = (
     "factionswitchjournal",
 )
 
-# Runtime classification requires evidence in the declaration/symbol. Merely living in a
-# listener or spell package is not evidence: a listener can still own durable player state.
 RUNTIME_SYMBOL_TOKENS = (
     "runtime",
     "session",
     "cache",
     "mirror",
     "projection",
+    "leaderboard",
     "online",
     "live",
     "active",
@@ -110,6 +119,11 @@ RUNTIME_SYMBOL_TOKENS = (
     "debounce",
     "lastcast",
     "secondlast",
+    "lastcombat",
+    "lastregen",
+    "lastride",
+    "lastheader",
+    "lasttab",
     "combo",
     "hint",
     "retaliation",
@@ -118,6 +132,15 @@ RUNTIME_SYMBOL_TOKENS = (
     "weak",
     "expiry",
     "endsat",
+    "until",
+    "announced",
+    "population",
+    "snapshot",
+    "buffer",
+    "hiddenbyviewer",
+    "hiddenarmor",
+    "frozenplayers",
+    "seat",
     "regiontask",
     "scheduler",
     "tail",
@@ -129,6 +152,13 @@ RUNTIME_SYMBOL_TOKENS = (
     "handle",
     "window",
     "witness",
+)
+
+CANONICAL_CLASS_SPEC_PATH_TOKENS = (
+    "/classspec/domain/",
+    "/classspec/profile/",
+    "/classspec/persistence/playerprofile",
+    "/classspec/application/defaultclassspecprofilegateway.java",
 )
 
 
@@ -179,9 +209,10 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
     if "/regression/" in lower_path or "/test/" in lower_path:
         return "RUNTIME", "Regression fixture or test-only state."
 
-    if "/playerprofile/" in lower_path:
+    if "/playerprofile/" in lower_path or _has_any(
+            lower_path, CANONICAL_CLASS_SPEC_PATH_TOKENS):
         return "PLAYER_PROFILE_AUTHORITY", (
-            "Canonical PlayerProfile domain, repository, transaction or API implementation."
+            "Canonical PlayerProfile or Profile v2 class/spec domain implementation."
         )
 
     if kind == "LEGACY_NOOP":
@@ -244,20 +275,20 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
     shared_path = _has_any(lower_path, SHARED_AGGREGATE_PATH_TOKENS)
 
     if kind == "UUID_MAP":
-        if _has_any(lower_symbol, RUNTIME_SYMBOL_TOKENS):
+        if _has_any(combined, RUNTIME_SYMBOL_TOKENS):
             return "RUNTIME", (
-                "Declaration name proves in-memory runtime/session/projection ownership."
+                "Field name or owning component proves rebuildable runtime/session/projection state."
             )
         if shared_path:
             return "GLOBAL_AGGREGATE_REFERENCE", (
-                "Separate shared aggregate keyed by player UUID."
+                "Separate shared aggregate keyed by player or entity UUID."
             )
         if player_owned_path:
             return "TRANSITION", (
-                "Manager-owned UUID map in a player domain lacks runtime/projection evidence."
+                "Manager-owned UUID field in a player domain lacks runtime/projection evidence."
             )
         return "TRANSITION", (
-            "Unproven UUID-keyed state requires explicit runtime or shared-aggregate evidence."
+            "Unproven UUID-keyed field requires explicit runtime or shared-aggregate evidence."
         )
 
     if kind in {"PLAYER_YAML", "DIRECT_FILE_IO"}:
