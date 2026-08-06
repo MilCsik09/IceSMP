@@ -34,6 +34,7 @@ public final class PlayerProfileFullAuthorityRegressionSuite {
 
             verifyOperationReceipts(repository, victim);
             verifyPeriodBudgets(victim);
+            verifySpellbookState(repository, hunter);
             verifyBountyAndWalletRecovery(repository, victim, hunter);
 
             check(service.shutdown(Duration.ofSeconds(5)).toCompletableFuture().join().drained(),
@@ -97,6 +98,45 @@ public final class PlayerProfileFullAuthorityRegressionSuite {
                 "budget compensation durable");
         check(!store.rollback(player, "honor-duel.weekly", first, 1L)
                 .toCompletableFuture().join(), "stale compensation rejected");
+    }
+
+    private static void verifySpellbookState(final YamlPlayerProfileRepository repository,
+                                             final UUID player) {
+        final PlayerProfileSpellbookStateStore store =
+                new PlayerProfileSpellbookStateStore();
+        check(store.selectedSpell(player).isEmpty(), "greenfield selected spell empty");
+        check(store.select(player, "ice_bolt").toCompletableFuture().join()
+                        .equals("ice_bolt"),
+                "selected spell committed");
+        final long selectedRevision = repository.cached(player).orElseThrow()
+                .spellbook().revision();
+        check(store.select(player, "ice_bolt").toCompletableFuture().join()
+                        .equals("ice_bolt"),
+                "selected spell replay stable");
+        check(repository.cached(player).orElseThrow().spellbook().revision()
+                        == selectedRevision,
+                "selected spell replay is no-op");
+
+        check(store.recordLastCast(player, "ice_bolt", 10_000L)
+                        .toCompletableFuture().join() == 10_000L,
+                "persistent cooldown committed");
+        check(store.lastCast(player, "ice_bolt") == 10_000L,
+                "persistent cooldown readable");
+        expect(IllegalStateException.class, () -> store.recordLastCast(
+                player, "ice_bolt", 9_999L).toCompletableFuture().join());
+
+        repository.invalidate(player);
+        repository.loadSnapshot(player).toCompletableFuture().join();
+        check(store.selectedSpell(player).equals("ice_bolt"),
+                "selected spell restart durable");
+        check(store.lastCast(player, "ice_bolt") == 10_000L,
+                "persistent cooldown restart durable");
+
+        store.clearCooldowns(player).toCompletableFuture().join();
+        check(store.lastCast(player, "ice_bolt") == 0L,
+                "persistent cooldown reset");
+        store.reset(player).toCompletableFuture().join();
+        check(store.selectedSpell(player).isEmpty(), "selected spell reset");
     }
 
     private static void verifyBountyAndWalletRecovery(
