@@ -2,7 +2,6 @@ package hu.taliann.icesmp.playerprofile.application;
 
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
-import hu.taliann.icesmp.factions.FactionTaxDebtLedger;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.EconomySection;
 
@@ -59,6 +58,15 @@ public final class PlayerProfileTaxStore {
         public double paid() { return PlayerProfileEconomyStore.fromMilli(paidMilli); }
         public double owedBefore() { return PlayerProfileEconomyStore.fromMilli(owedBeforeMilli); }
         public double owedAfter() { return PlayerProfileEconomyStore.fromMilli(owedAfterMilli); }
+    }
+
+    /** Pure policy result kept next to the canonical tax authority. */
+    public record EvasionDecision(int strikesAfter, boolean reportSin) {
+        public EvasionDecision {
+            if (strikesAfter < 0) {
+                throw new IllegalArgumentException("Tax-evasion strikes cannot be negative");
+            }
+        }
     }
 
     public List<Debt> debts(final UUID playerId) {
@@ -143,11 +151,10 @@ public final class PlayerProfileTaxStore {
                     if (paid > 0L) wallets.put(walletKey, balance - paid);
                     final int strikesBefore = Math.toIntExact(
                             debts.getOrDefault(strikeKey(origin), 0L));
-                    final FactionTaxDebtLedger.EvasionDecision decision =
-                            FactionTaxDebtLedger.afterCollection(strikesBefore,
-                                    PlayerProfileEconomyStore.fromMilli(paid),
-                                    PlayerProfileEconomyStore.fromMilli(owedAfter),
-                                    maxArrears, evasionThreshold, true);
+                    final EvasionDecision decision = afterCollection(strikesBefore,
+                            PlayerProfileEconomyStore.fromMilli(paid),
+                            PlayerProfileEconomyStore.fromMilli(owedAfter),
+                            maxArrears, evasionThreshold, true);
                     if (owedAfter == 0L) debts.remove(amountKey(origin));
                     else debts.put(amountKey(origin), owedAfter);
                     if (decision.strikesAfter() == 0) debts.remove(strikeKey(origin));
@@ -212,9 +219,52 @@ public final class PlayerProfileTaxStore {
                 });
     }
 
+    /**
+     * Threshold policy for a durable tax-evasion sin outbox. A reached threshold remains pending
+     * until an owner-thread consumer acknowledges it; ordinary repayment clears only sub-threshold
+     * strikes.
+     */
+    public static EvasionDecision afterCollection(final int strikesBefore,
+                                                  final double paid,
+                                                  final double owedAfter,
+                                                  final double maxArrears,
+                                                  final int threshold,
+                                                  final boolean mayReportSin) {
+        final int normalizedBefore = Math.max(0, strikesBefore);
+        if (threshold <= 0) return new EvasionDecision(0, false);
+        if (normalizedBefore >= threshold) {
+            return new EvasionDecision(normalizedBefore, mayReportSin);
+        }
+        if (!Double.isFinite(paid) || paid < 0.0D
+                || !Double.isFinite(owedAfter) || owedAfter < 0.0D
+                || !Double.isFinite(maxArrears) || maxArrears < 0.0D) {
+            return new EvasionDecision(normalizedBefore, false);
+        }
+        if (maxArrears > 0.0D && paid <= 0.0D && owedAfter >= maxArrears) {
+            final int next = normalizedBefore >= threshold - 1
+                    ? threshold : normalizedBefore + 1;
+            return new EvasionDecision(next, next >= threshold && mayReportSin);
+        }
+        if (owedAfter <= 0.0D || owedAfter < maxArrears) {
+            return new EvasionDecision(0, false);
+        }
+        return new EvasionDecision(normalizedBefore, false);
+    }
+
+    /** Returns NaN when either operand or the resulting persisted balance is invalid. */
+    public static double checkedAmountAdd(final double current, final double addition) {
+        if (!Double.isFinite(current) || current < 0.0D
+                || !Double.isFinite(addition) || addition <= 0.0D) {
+            return Double.NaN;
+        }
+        final double next = current + addition;
+        return Double.isFinite(next) && next >= 0.0D ? next : Double.NaN;
+    }
+
     private static String amountKey(final FactionType origin) {
         return "tax." + origin.name().toLowerCase(Locale.ROOT) + ".amount";
     }
+
     private static String strikeKey(final FactionType origin) {
         return "tax." + origin.name().toLowerCase(Locale.ROOT) + ".strikes";
     }
