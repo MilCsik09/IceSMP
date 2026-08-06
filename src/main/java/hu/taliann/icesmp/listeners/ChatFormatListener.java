@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.integration.LuckPermsBridge;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
@@ -65,12 +66,6 @@ public final class ChatFormatListener implements Listener {
         if (snapshot == null) {
             return NamedTextColor.WHITE;
         }
-        return switch (snapshot.factionId()) {
-            case "RED" -> NamedTextColor.RED;
-            case "BLUE" -> NamedTextColor.BLUE;
-            case "NEUTRAL" -> NamedTextColor.GRAY;
-            case "DARK" -> NamedTextColor.DARK_GRAY;
-            default -> NamedTextColor.WHITE;
-        };
+        return FactionDisplayPalette.playerName(snapshot.factionId());
     }
 }

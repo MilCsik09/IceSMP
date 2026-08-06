@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.integration.LuckPermsBridge;
 import hu.taliann.icesmp.utils.TextAnimator;
 import net.kyori.adventure.text.Component;
@@ -197,7 +198,7 @@ public final class TablistManager {
                 sortKey(group, player.getName(), afk),
                 LuckPermsBridge.prefix(id),
                 LuckPermsBridge.suffix(id) + afkSuffix,
-                factionColor(faction),
+                FactionDisplayPalette.playerName(faction),
                 faction,
                 Math.max(0, player.getPing())));
     }
@@ -470,17 +471,5 @@ public final class TablistManager {
     /** Legacy '&' + '&#RRGGBB' kódok Component-té — a közös TextAnimator-segédre delegál. */
     private static Component legacyComponent(final String text) {
         return TextAnimator.legacy(text);
-    }
-
-    private static NamedTextColor factionColor(final FactionType faction) {
-        if (faction == null) {
-            return NamedTextColor.WHITE;
-        }
-        return switch (faction) {
-            case RED -> NamedTextColor.RED;
-            case BLUE -> NamedTextColor.BLUE;
-            case NEUTRAL -> NamedTextColor.GRAY;
-            case DARK -> NamedTextColor.DARK_GRAY;
-        };
     }
 }

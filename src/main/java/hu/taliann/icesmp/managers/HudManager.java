@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.data.JobType;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -598,7 +599,7 @@ public final class HudManager {
         final Map<String, String> tokens = new HashMap<>();
         final Component factionValue = faction == null
                 ? Component.text("Menedék vendége", NamedTextColor.GRAY)
-                : Component.text(faction.getDisplayName(), factionColor(faction));
+                : Component.text(faction.getDisplayName(), FactionDisplayPalette.playerName(faction));
         final Component classValue = job == null
                 ? Component.text("nincs", NamedTextColor.GRAY)
                 : job.getDisplayName();
@@ -809,18 +810,8 @@ public final class HudManager {
     private Component tabName(final Player player) {
         // A név MAGA kapja a frakció színét — külön [Frakció] tag nélkül (rövidebb tab-lista).
         final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-        return Component.text(player.getName(), faction == null ? NamedTextColor.WHITE : factionColor(faction));
+        return Component.text(player.getName(), faction == null ? NamedTextColor.WHITE : FactionDisplayPalette.playerName(faction));
     }
-
-    private NamedTextColor factionColor(final FactionType faction) {
-        return switch (faction) {
-            case RED -> NamedTextColor.RED;
-            case BLUE -> NamedTextColor.BLUE;
-            case NEUTRAL -> NamedTextColor.GRAY;
-            case DARK -> NamedTextColor.DARK_GRAY;
-        };
-    }
-
 
     private static float clamp(final float value) {
         return Math.max(0.0F, Math.min(1.0F, value));

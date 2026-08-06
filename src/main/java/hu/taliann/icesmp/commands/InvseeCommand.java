@@ -3,6 +3,7 @@ package hu.taliann.icesmp.commands;
 import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.gui.InvseeHolder;
 import hu.taliann.icesmp.managers.InvseeManager;
+import hu.taliann.icesmp.moderation.InvseeWriteCoordinator;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -15,7 +16,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
-/** Opens a live, owner-scheduler-safe online inventory or ender-chest inspection session. */
+/**
+ * Opens one automatic live inventory session.
+ *
+ * <p>The first editor of a target gets write mode. Further simultaneous viewers
+ * are transparently downgraded to read-only until the writer closes.</p>
+ */
 public final class InvseeCommand implements BasicCommand {
     private final InvseeManager manager;
     private final MessageManager messages;
@@ -29,30 +35,44 @@ public final class InvseeCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack source, final @NonNull String[] args) {
         final CommandSender sender = source.getSender();
         if (!(sender instanceof Player viewer)) {
-            sender.sendMessage(messages.get("moderation.player-only", "&cEzt csak játékos használhatja."));
+            sender.sendMessage(messages.get("moderation.player-only",
+                    "&cEzt csak játékos használhatja."));
             return;
         }
-        if (args.length < 1) {
+        final boolean canEdit = viewer.hasPermission(Permissions.MODERATION_INVENTORY_EDIT);
+        final boolean canRead = canEdit
+                || viewer.hasPermission(Permissions.MODERATION_INVENTORY_READ);
+        if (!canRead) {
+            viewer.sendMessage(messages.get("moderation.permission-denied",
+                    "&cNincs jogod ehhez a nézethez."));
+            return;
+        }
+        if (args.length != 1) {
             viewer.sendMessage(messages.get("moderation.invsee-usage",
-                    "&cHasználat: /invsee <online játékos> [read|edit] [main|ender]"));
+                    "&cHasználat: /invsee <online játékos>"));
             return;
         }
-        final InvseeHolder.Mode mode = args.length >= 2 && "edit".equalsIgnoreCase(args[1])
-                ? InvseeHolder.Mode.EDIT : InvseeHolder.Mode.READ_ONLY;
-        final String required = mode == InvseeHolder.Mode.EDIT
-                ? Permissions.MODERATION_INVENTORY_EDIT : Permissions.MODERATION_INVENTORY_READ;
-        if (!viewer.hasPermission(required)) {
-            viewer.sendMessage(messages.get("moderation.permission-denied", "&cNincs jogod ehhez a nézethez."));
-            return;
-        }
+
         final Player target = Bukkit.getPlayerExact(args[0]);
-        if (target == null || (!target.getUniqueId().equals(viewer.getUniqueId()) && !viewer.canSee(target))) {
-            viewer.sendMessage(messages.get("moderation.player-offline", "&cA játékos nincs online: &f%s", args[0]));
+        if (target == null || (!target.getUniqueId().equals(viewer.getUniqueId())
+                && !viewer.canSee(target))) {
+            viewer.sendMessage(messages.get("moderation.player-offline",
+                    "&cA játékos nincs online: &f%s", args[0]));
             return;
         }
-        final InvseeHolder.View view = args.length >= 3 && "ender".equalsIgnoreCase(args[2])
-                ? InvseeHolder.View.ENDER : InvseeHolder.View.MAIN;
-        manager.open(viewer, target, mode, view);
+        if (target.getUniqueId().equals(viewer.getUniqueId())) {
+            viewer.sendMessage(messages.get("moderation.invsee-self",
+                    "&cA saját inventorydat nem nyithatod meg adminnézetben."));
+            return;
+        }
+
+        final InvseeHolder.Mode mode = InvseeWriteCoordinator.chooseMode(viewer, target);
+        if (canEdit && mode == InvseeHolder.Mode.READ_ONLY) {
+            viewer.sendMessage(messages.get("moderation.invsee-writer-busy",
+                    "&eEzt az inventoryt már szerkeszti egy másik admin; csak olvasási módban nyílt meg."));
+        }
+        manager.open(viewer, target, mode, InvseeHolder.View.MAIN);
+        InvseeWriteCoordinator.verifyOpened(viewer, target.getUniqueId(), mode);
     }
 
     @Override
@@ -66,19 +86,11 @@ public final class InvseeCommand implements BasicCommand {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             return Bukkit.getOnlinePlayers().stream()
-                    .filter(target -> target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target))
+                    .filter(target -> !target.getUniqueId().equals(viewer.getUniqueId()))
+                    .filter(viewer::canSee)
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
-        }
-        if (args.length == 2) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
-            final List<String> options = viewer.hasPermission(Permissions.MODERATION_INVENTORY_EDIT)
-                    ? List.of("read", "edit") : List.of("read");
-            return options.stream().filter(value -> value.startsWith(prefix)).toList();
-        }
-        if (args.length == 3) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
-            return List.of("main", "ender").stream().filter(value -> value.startsWith(prefix)).toList();
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
+                    .toList();
         }
         return List.of();
     }

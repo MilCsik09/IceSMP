@@ -6,21 +6,16 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
-    // Soft-dependenciák repói:
-    maven("https://repo.extendedclip.com/releases/")        // PlaceholderAPI
+    maven("https://repo.extendedclip.com/releases/")
     maven("https://repo.md-5.net/content/repositories/releases/") {
         content { includeGroup("LibsDisguises") }
-        metadataSources { artifact() } // LibsDisguises 10.0.44 has a broken parent POM.
+        metadataSources { artifact() }
     }
 }
 
 dependencies {
     compileOnly(libs.folia.api)
-    // Opcionális integrációk — futásidőben soft-depend (a kód ellenőrzi a jelenlétüket):
-    compileOnly(libs.placeholderapi)   // %icesmp_...% placeholderek (pl. a TAB megjeleníti az Erő-csíkot)
-    // A DruidDisguise reflexiós híd ehhez tartozik (Druida-formák vizuálja). isTransitive=false:
-    // csak maga az API kell fordításhoz — a transitívjai (ProtocolLib/Spigot) nélkül is fordul,
-    // így a build nem törik el, ha azok repói nem érhetők el.
+    compileOnly(libs.placeholderapi)
     compileOnly("LibsDisguises:LibsDisguises:${libs.versions.libsdisguises.get()}@jar") { isTransitive = false }
 }
 
@@ -256,6 +251,14 @@ val resourcePackRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.resourcepack.ResourcePackRegressionSuite")
 }
 
+val inventoryReadWriteRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs invsee single-writer and donation deposit regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.inventory.InventoryReadWriteRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
@@ -263,5 +266,5 @@ tasks.check {
         hudRegressionTest, pauseMenuDialogRegressionTest, runtimeBugfixRegressionTest, runtimeHardeningRegressionTest, eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest, professionRecipeAuditRegressionTest,
         factionPassiveRegressionTest, factionPassiveHardeningRegressionTest, factionTreasuryRegressionTest,
         relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest, lifecycleShutdownRegressionTest,
-        questNpcValidationRegressionTest, resourcePackRegressionTest)
+        questNpcValidationRegressionTest, resourcePackRegressionTest, inventoryReadWriteRegressionTest)
 }
