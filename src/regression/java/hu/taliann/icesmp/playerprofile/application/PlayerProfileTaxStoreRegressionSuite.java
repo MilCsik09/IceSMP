@@ -61,33 +61,45 @@ public final class PlayerProfileTaxStoreRegressionSuite {
                     "settlement replay rejected");
             check(taxes.pending(player).isEmpty(), "settled outbox removed");
 
-            final var debtOne = taxes.collect(player, FactionType.RED,
+            final var partial = taxes.collect(player, FactionType.RED,
                             40.0D, 50.0D, 2, "tax:test:2")
                     .toCompletableFuture().join();
-            check(debtOne.paidMilli() == 10_000L, "remaining wallet collected");
-            check(debtOne.owedAfterMilli() == 30_000L, "origin debt retained");
-            check(!debtOne.outbox().reportSin(), "first strike not reported");
-            check(taxes.arrearsMilli(player, FactionType.RED) == 30_000L,
-                    "origin arrears readable");
+            check(partial.paidMilli() == 10_000L, "remaining wallet collected");
+            check(partial.owedAfterMilli() == 30_000L, "origin debt retained");
+            check(!partial.outbox().reportSin(), "sub-max debt does not strike");
 
-            final var debtTwo = taxes.collect(player, FactionType.RED,
-                            0.0D, 50.0D, 2, "tax:test:3")
+            final var maxDebt = taxes.collect(player, FactionType.RED,
+                            20.0D, 50.0D, 2, "tax:test:3")
                     .toCompletableFuture().join();
-            check(debtTwo.owedBeforeMilli() == 30_000L
-                    && debtTwo.owedAfterMilli() == 30_000L,
-                    "existing debt preserved without wallet");
-            check(debtTwo.outbox().reportSin(), "threshold creates sin outbox");
+            check(maxDebt.owedBeforeMilli() == 30_000L
+                    && maxDebt.owedAfterMilli() == 50_000L,
+                    "debt reaches configured maximum");
+            check(!maxDebt.outbox().reportSin(), "first max-debt strike not reported");
+            check(taxes.debts(player).getFirst().evasionStrikes() == 1,
+                    "first max-debt strike retained");
+
+            final var reported = taxes.collect(player, FactionType.RED,
+                            0.0D, 50.0D, 2, "tax:test:4")
+                    .toCompletableFuture().join();
+            check(reported.owedBeforeMilli() == 50_000L
+                    && reported.owedAfterMilli() == 50_000L,
+                    "max debt persists without wallet");
+            check(reported.outbox().reportSin(), "threshold creates sin outbox");
             check(taxes.debts(player).getFirst().evasionStrikes() == 0,
                     "reported strike cycle resets atomically");
+            check(taxes.arrearsMilli(player, FactionType.RED) == 50_000L,
+                    "origin arrears readable");
 
             repository.invalidate(player);
             repository.loadSnapshot(player).toCompletableFuture().join();
-            check(taxes.arrearsMilli(player, FactionType.RED) == 30_000L,
+            check(taxes.arrearsMilli(player, FactionType.RED) == 50_000L,
                     "arrears restart durable");
             check(taxes.pending(player).stream().anyMatch(outbox ->
                             outbox.operationId().equals("tax:test:2"))
                     && taxes.pending(player).stream().anyMatch(outbox ->
-                            outbox.operationId().equals("tax:test:3")),
+                            outbox.operationId().equals("tax:test:3"))
+                    && taxes.pending(player).stream().anyMatch(outbox ->
+                            outbox.operationId().equals("tax:test:4")),
                     "unsettled outboxes restart durable");
             check(economy.readCached(player).milli(CurrencyType.RED) == 0L,
                     "wallet deduction restart durable");
