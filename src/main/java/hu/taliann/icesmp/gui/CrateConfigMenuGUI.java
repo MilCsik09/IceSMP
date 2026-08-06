@@ -257,7 +257,9 @@ public final class CrateConfigMenuGUI {
 
     public static void openReward(final Player player, final ConfigManager configManager,
                                   final String crateId, final int index) {
-        final Map<String, Object> reward = CrateRewardEditor.reward(configManager, crateId, index);
+        final List<Map<String, Object>> rewards = CrateRewardEditor.rewards(configManager, crateId);
+        final Map<String, Object> reward = index >= 0 && index < rewards.size()
+                ? rewards.get(index) : Map.of();
         if (reward.isEmpty()) {
             openRewards(player, configManager, crateId, 0);
             return;

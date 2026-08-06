@@ -287,8 +287,8 @@ public final class ConfigStartupRegressionSuite {
     private static void verifiesConfigMenuResetAndLiveApply() throws Exception {
         final String listener = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java"));
-        check(listener.contains("event.isMiddleClick()")
-                        && listener.contains("resetOverride")
+        check(listener.contains("event.getClick() == ClickType.MIDDLE")
+                        && listener.contains("session.reset(key)")
                         && listener.contains("ConfigRuntimeReloadBridge.apply")
                         && !listener.contains("set-success-restart"),
                 "middle-click reset or restart-free apply is missing");
@@ -313,7 +313,7 @@ public final class ConfigStartupRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/core/ConfigRuntimeReloadBridge.java"));
         check(bridge.contains("relicManager.load()")
                         && bridge.contains("mobScalingManager")
-                        && bridge.contains("rescheduleTaxes"),
+                        && bridge.contains("scheduleTaxCollection"),
                 "cached config systems are not applied live");
     }
 

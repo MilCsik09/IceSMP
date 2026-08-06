@@ -176,7 +176,7 @@ public final class ConfigMenuGUIListener implements Listener {
         if (entry == null) entry = BlockRegenConfigMenuGUI.findEntry(key);
         if (entry == null) entry = TransactionalOperationalConfigMenuGUI.findEntry(key);
         if (entry == null) return;
-        if (event.isMiddleClick() || event.getClick() == ClickType.DROP) {
+        if (event.getClick() == ClickType.MIDDLE || event.getClick() == ClickType.DROP) {
             session.reset(key);
         } else {
             final Object next = nextScalar(entry, session.value(key), event.isShiftClick(), event.isRightClick());
@@ -216,7 +216,7 @@ public final class ConfigMenuGUIListener implements Listener {
         AdvancedConfigEntry entry = ServerWorldConfigMenuGUI.findEntry(key);
         if (entry == null) entry = TransactionalCrateConfigMenuGUI.findEntry(key, configManager);
         if (entry == null) return;
-        if (event.isMiddleClick() || event.getClick() == ClickType.DROP) {
+        if (event.getClick() == ClickType.MIDDLE || event.getClick() == ClickType.DROP) {
             session.reset(key);
             reopenView(player, holder.getCategory(), session);
             return;

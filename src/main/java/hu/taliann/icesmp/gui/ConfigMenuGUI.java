@@ -353,7 +353,7 @@ public final class ConfigMenuGUI {
                                     final ConfigManager configManager) {
         final Category category = CATEGORIES.get(categoryId);
         if (category == null) {
-            openRoot(player, session);
+            openRoot(player);
             return;
         }
         if (category.entries().size() > 45) {
