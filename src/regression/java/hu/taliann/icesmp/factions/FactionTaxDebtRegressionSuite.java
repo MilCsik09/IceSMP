@@ -14,7 +14,7 @@ public final class FactionTaxDebtRegressionSuite {
         evasionPolicyStaysPendingUntilDurableSettlement();
         treasuryAmountMathFailsClosed();
         productionManagerUsesPlayerProfileTaxAuthority();
-        compatibilityAliasOwnsNoPlayerState();
+        legacyTaxAuthorityIsRemoved();
         System.out.println("Faction tax debt regression suite passed.");
     }
 
@@ -67,23 +67,20 @@ public final class FactionTaxDebtRegressionSuite {
                         && source.contains("taxStore.collect(")
                         && source.contains("taxStore.settle("),
                 "treasury manager bypasses PlayerProfile tax authority/outbox recovery");
-        check(!source.contains("tax-debts.")
+        check(!source.contains("FactionTaxDebtLedger")
+                        && !source.contains("tax-debts.")
                         && !source.contains("legacy-tax-debts")
                         && !source.contains("putUnresolvedLegacy")
                         && !source.contains("resolveLegacyOrigin"),
-                "legacy tax debt persistence or migration remains in production manager");
+                "legacy tax debt authority or migration remains in production manager");
         check(source.contains("CurrencyType.fromFactionType(origin)"),
                 "tax debt is not collected in its origin currency");
     }
 
-    private static void compatibilityAliasOwnsNoPlayerState() throws Exception {
-        final String source = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/factions/FactionTaxDebtLedger.java"));
-        check(!source.contains("Map<UUID")
-                        && !source.contains("UnresolvedLegacyDebt")
-                        && !source.contains("void put(")
-                        && source.contains("PlayerProfileTaxStore"),
-                "tax compatibility alias still owns legacy player state");
+    private static void legacyTaxAuthorityIsRemoved() {
+        check(Files.notExists(Path.of(
+                        "src/main/java/hu/taliann/icesmp/factions/FactionTaxDebtLedger.java")),
+                "legacy tax compatibility alias remains in the production tree");
     }
 
     private static void check(final boolean condition, final String message) {
