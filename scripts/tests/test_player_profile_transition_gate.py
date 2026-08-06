@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-import json
+import sys
 import unittest
 from collections import Counter
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+import check_player_profile_authority as authority  # noqa: E402
+
 
 class PlayerProfileTransitionGateTest(unittest.TestCase):
     def test_no_legacy_player_authority_is_transitional(self) -> None:
-        root = Path(__file__).resolve().parents[2]
-        payload = json.loads(
-            (root / "scripts/player_profile_authority_allowlist.json").read_text(encoding="utf-8")
+        report = authority.audit(
+            ROOT, ROOT / "scripts/player_profile_authority_allowlist.json"
         )
-        transition_by_key = {
-            str(entry.get("key", "")): entry
-            for entry in payload.get("entries", [])
-            if entry.get("category") == "TRANSITION" and str(entry.get("key", ""))
-        }
-        transitions = [transition_by_key[key] for key in sorted(transition_by_key)]
-        by_path: Counter[str] = Counter()
-        for entry in transitions:
-            parts = str(entry.get("key", "")).split("|", 2)
-            by_path[parts[1] if len(parts) > 1 else "<unresolved>"] += 1
+        transitions = list(report["transitions"])
+        by_path: Counter[str] = Counter(
+            str(entry.get("path", "<unresolved>")) for entry in transitions
+        )
         detail = "\n".join(
             f"{count:4d} {path}"
             for path, count in sorted(by_path.items(), key=lambda item: (-item[1], item[0]))
