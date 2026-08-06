@@ -1,54 +1,43 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.JobType;
-import org.bukkit.NamespacedKey;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileClassMechanicStore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * E25 + E32 — kaszt-erőforrás pool-bónuszok, egyetlen szál-biztos lookupban:
- * <ul>
- *   <li><b>Pakt (Boszorkánymester):</b> a rituálé-oltár pakt-ceremóniája tartós
- *       +20% max Lélekerőt ír a player-PDC-be; a gyorsítótár join-kor töltődik
- *       (a játékos SAJÁT régió-szálán — a ResourceManager.max() bármely szálról
- *       csak a concurrent cache-t olvassa, PDC-t soha).</li>
- *   <li><b>Sárkánytojás-töredék (Sárkányidéző):</b> amíg a relikvia az övé,
- *       az Eszencia-pool +10% (a relikvia-tulajdon a RelicManager concurrent
- *       nyilvántartásából, a kaszt a JobManager cache-éből olvasható).</li>
- * </ul>
- */
+/** Class-resource pool bonuses with PlayerProfile-backed warlock pact state. */
 public final class ResourceBonusService implements Listener {
 
+    private static final String PACT_KEY = "warlock.pact.resource-multiplier";
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final JobManager jobManager;
     private final RelicManager relicManager;
-    private final NamespacedKey paktKey;
-    private final Map<UUID, Double> paktCache = new ConcurrentHashMap<>();
-    /** Utolsó ismert „Sárkányidéző-e” flag — a PDC-t CSAK a játékos saját régió-szálán
-     * olvassuk (isOwnedByCurrentRegion), idegen szálról ez a cache válaszol. */
+    private final PlayerProfileClassMechanicStore mechanics =
+            new PlayerProfileClassMechanicStore();
+    private final Map<UUID, Double> pactCache = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> evokerCache = new ConcurrentHashMap<>();
 
     public ResourceBonusService(final JavaPlugin plugin, final ConfigManager configManager,
                                 final JobManager jobManager, final RelicManager relicManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.jobManager = jobManager;
         this.relicManager = relicManager;
-        this.paktKey = new NamespacedKey(plugin, "warlock_pakt");
     }
 
-    /** A max-pool szorzója az adott játékosra (ResourceManager.max() hívja). */
     public double maxMultiplier(final UUID playerId) {
-        double multiplier = paktCache.getOrDefault(playerId, 1.0D);
+        double multiplier = pactCache.getOrDefault(playerId, 1.0D);
         final String relicId = configManager.getString("pakt.dragon-relic-id", "sarkany_tojas");
-        final hu.taliann.icesmp.relics.RelicOwnership ownership = relicManager.getOwnership(relicId);
+        final hu.taliann.icesmp.relics.RelicOwnership ownership =
+                relicManager.getOwnership(relicId);
         if (ownership != null && playerId.equals(ownership.owner()) && isEvoker(playerId)) {
             multiplier *= 1.0D + Math.max(0.0D,
                     configManager.getDouble("pakt.dragon-essence-bonus-percent", 10.0D)) / 100.0D;
@@ -56,12 +45,6 @@ public final class ResourceBonusService implements Listener {
         return multiplier;
     }
 
-    /**
-     * Folia-biztos kaszt-lekérdezés: a max() bármely régió-szálról hívható (pl. a
-     * sebzett fél szálán, projectile-harcban), a MÁSIK játékos PDC-jét ott tilos
-     * olvasni. Saját régión élőben olvasunk és frissítjük a cache-t; idegenről az
-     * utolsó ismert érték megy (a következő saját-szálas hívás úgyis frissíti).
-     */
     private boolean isEvoker(final UUID playerId) {
         final Player online = org.bukkit.Bukkit.getPlayer(playerId);
         if (online != null && org.bukkit.Bukkit.isOwnedByCurrentRegion(online)) {
@@ -72,34 +55,87 @@ public final class ResourceBonusService implements Listener {
         return evokerCache.getOrDefault(playerId, Boolean.FALSE);
     }
 
-    /** Megvan-e már a pakt (nem halmozható). */
     public boolean hasPakt(final Player player) {
-        return player.getPersistentDataContainer().has(paktKey, PersistentDataType.DOUBLE);
+        if (player == null) return false;
+        if (pactCache.containsKey(player.getUniqueId())) return true;
+        try {
+            final boolean present = mechanics.read(player.getUniqueId(), PACT_KEY).isPresent();
+            if (present) loadPact(player.getUniqueId());
+            return present;
+        } catch (final RuntimeException notReady) {
+            return false;
+        }
     }
 
-    /** A pakt megkötése (a RitualManager hívja, a játékos saját régió-szálán). */
+    /** Optimistically updates the runtime mirror; the class-spec CAS proves durability. */
     public void sealPakt(final Player player) {
+        if (player == null || hasPakt(player)) return;
         final double multiplier = 1.0D + Math.max(0.0D,
                 configManager.getDouble("pakt.bonus-percent", 20.0D)) / 100.0D;
-        player.getPersistentDataContainer().set(paktKey, PersistentDataType.DOUBLE, multiplier);
-        paktCache.put(player.getUniqueId(), multiplier);
+        pactCache.put(player.getUniqueId(), multiplier);
+        mechanics.putIfAbsent(player.getUniqueId(), PACT_KEY,
+                        Double.toString(multiplier))
+                .whenComplete((created, failure) -> {
+                    if (failure != null) {
+                        pactCache.remove(player.getUniqueId());
+                        plugin.getLogger().severe("PlayerProfile warlock pact commit failed for "
+                                + player.getUniqueId() + ": " + rootMessage(failure));
+                    } else if (!Boolean.TRUE.equals(created)) {
+                        loadPact(player.getUniqueId());
+                    }
+                });
     }
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
-        final Double stored = event.getPlayer().getPersistentDataContainer()
-                .get(paktKey, PersistentDataType.DOUBLE);
-        if (stored != null) {
-            paktCache.put(event.getPlayer().getUniqueId(), stored);
-        }
-        // A join a játékos saját régió-szálán fut — a kaszt-cache itt biztonsággal töltődik.
         evokerCache.put(event.getPlayer().getUniqueId(),
                 jobManager.getPrimaryJob(event.getPlayer()) == JobType.EVOKER);
+        schedulePactLoad(event.getPlayer(), 0);
+    }
+
+    private void schedulePactLoad(final Player player, final int attempt) {
+        player.getScheduler().runDelayed(plugin, task -> {
+            if (!player.isOnline()) return;
+            if (loadPact(player.getUniqueId()) || attempt >= 39) return;
+            schedulePactLoad(player, attempt + 1);
+        }, null, 5L);
+    }
+
+    private boolean loadPact(final UUID playerId) {
+        try {
+            final var stored = mechanics.read(playerId, PACT_KEY);
+            if (stored.isEmpty()) {
+                pactCache.remove(playerId);
+                return true;
+            }
+            final double multiplier = Double.parseDouble(stored.orElseThrow());
+            if (!Double.isFinite(multiplier) || multiplier < 1.0D || multiplier > 10.0D) {
+                throw new IllegalStateException("invalid warlock pact multiplier");
+            }
+            pactCache.put(playerId, multiplier);
+            return true;
+        } catch (final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.ProfileNotReadyException notReady) {
+            return false;
+        } catch (final RuntimeException corrupt) {
+            plugin.getLogger().severe("PlayerProfile warlock pact read failed for "
+                    + playerId + ": " + corrupt.getMessage());
+            pactCache.remove(playerId);
+            return true;
+        }
     }
 
     @EventHandler
     public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
-        paktCache.remove(event.getPlayer().getUniqueId());
+        pactCache.remove(event.getPlayer().getUniqueId());
         evokerCache.remove(event.getPlayer().getUniqueId());
+    }
+
+    private static String rootMessage(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof java.util.concurrent.CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.getClass().getSimpleName()
+                : current.getMessage();
     }
 }
