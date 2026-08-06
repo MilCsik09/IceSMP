@@ -1,6 +1,6 @@
 # World-event spawn safety
 
-A world-eventek helyét a `EventSpawnGuard` választja és publikálja. A guard a kezdeti
+A world-eventek helyét az `EventSpawnGuard` választja és publikálja. A guard a kezdeti
 spawn előtt egységesen ellenőrzi a játékostávolságot, a látóirányt, a védett területeket,
 a víz- és partpuffert, a teljes event-footprintet, a lejtést, a biomprofilt, a world
 bordert és a friss eseményhelyek memóriáját.
@@ -29,6 +29,24 @@ bordert és a friss eseményhelyek memóriáját.
   tiltja le a játékosok megérkezése, de a víz-, terep- és protection szabályok megmaradnak.
 - `meteor`, `world-boss`, `invasion`, `cultists`, `wild-hunt`, valamint a karavánok saját
   footprint-, lejtés- és biomprofilt használnak.
+
+## Meteor-helyreállítás
+
+A meteor a kráter létrehozása **előtt** kiírja az érintett normál blokkok teljes
+`BlockData` állapotát a `meteor-restore.yml` fájlba. Tile entityt (láda, hordó, tábla,
+spawner stb.) nem ír felül, mert azok NBT-jét a BlockData nem őrizné meg.
+
+- Normál lejáratkor a visszaállítás chunkonként, a megfelelő Folia-régióban fut.
+- Graceful disable alatt ugyanez a helyreállítás indul el.
+- Ha a scheduler már nem fogad taskot, vagy a folyamat félbeszakad, a recovery fájl
+  megmarad, és a következő indulás world-UUID alapján folytatja a helyreállítást.
+- A recovery fájl csak az összes chunk sikeres visszaállítása után törlődik.
+
+## Fix világboss-anchorok
+
+A legacy fix/random világboss-anchor a saját chunkjának egzakt középpontjára normalizálódik.
+A meglévő `[-8, 8)` véletlen eltolás így bizonyítottan ugyanabban a chunkban marad, tehát
+a probe oszlopot mindig az azt birtokló Folia-régiótask olvassa.
 
 ## Admin diagnosztika
 
@@ -60,4 +78,6 @@ külön `Event spawn-védelem` kategóriában jelennek meg. Minden itt szereplő
 7. Két egyidejű eventkeresés, harmadik keresés budget-elutasítása és timeout.
 8. Már generált, de inaktív chunk visszatöltése; nem generált chunk fail-closed viselkedése.
 9. Plugin disable érkezési késleltetés és async chunk-future közben.
-10. `/events debug spawn` eredményének összevetése a tényleges eventindítással.
+10. Meteor lejárat, disable és mesterségesen bent hagyott `meteor-restore.yml` startup-recovery.
+11. Fix világboss-anchor chunkhatár közelében, majd ±8 blokkos probe-szórással.
+12. `/events debug spawn` eredményének összevetése a tényleges eventindítással.

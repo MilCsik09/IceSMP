@@ -21,8 +21,10 @@ public final class EventSpawnSafetyRegressionSuite {
         verifiesVisibilityConePolicy();
         verifiesBoundedCandidateSearch();
         verifiesCircularWaterBuffer();
+        verifiesFixedAnchorChunkGeometry();
         verifiesPackagedSafetyProfiles();
         verifiesRuntimeWiring();
+        verifiesMeteorRecoveryWiring();
         verifiesConfigMenuExtension();
         verifiesKnownEntityEventPaths();
         System.out.println("Event spawn safety regression suite passed.");
@@ -107,6 +109,17 @@ public final class EventSpawnSafetyRegressionSuite {
                 "water mask radius must stay hard-bounded");
     }
 
+    private static void verifiesFixedAnchorChunkGeometry() {
+        for (final int block : List.of(-33, -17, -16, -1, 0, 15, 16, 31, 32, 1_000_003)) {
+            final double center = EventSpawnSafetyPolicy.chunkCenterCoordinate(block);
+            final int expectedChunk = block >> 4;
+            check(((int) Math.floor(center - 8.0D)) >> 4 == expectedChunk,
+                    "legacy -8 offset escaped the scheduler chunk at " + block);
+            check(((int) Math.floor(Math.nextDown(center + 8.0D))) >> 4 == expectedChunk,
+                    "legacy +8 exclusive offset escaped the scheduler chunk at " + block);
+        }
+    }
+
     private static void verifiesPackagedSafetyProfiles() {
         final YamlConfiguration config = YamlConfiguration.loadConfiguration(Path.of(
                 "src/main/resources/config/event-spawn-safety.yml").toFile());
@@ -188,6 +201,25 @@ public final class EventSpawnSafetyRegressionSuite {
                 "admin spawn diagnostics are not wired");
     }
 
+    private static void verifiesMeteorRecoveryWiring() throws Exception {
+        final String meteor = read(
+                "src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java");
+        check(meteor.contains("meteor-restore.yml")
+                        && meteor.contains("persistRecovery")
+                        && meteor.contains("recoverInterruptedCrater")
+                        && meteor.contains("instanceof TileState")
+                        && meteor.contains("getAsString()")
+                        && meteor.contains("Bukkit.createBlockData")
+                        && meteor.contains("scheduleRestore")
+                        && meteor.contains("Bukkit.isOwnedByCurrentRegion")
+                        && meteor.contains("getRegionScheduler().run")
+                        && meteor.contains("Files.deleteIfExists"),
+                "meteor crater lost durable, per-region restoration");
+        check(!meteor.contains("List<BlockState>")
+                        && !meteor.contains("for (final BlockState state : states)"),
+                "meteor must not replay cross-region BlockState snapshots from one task");
+    }
+
     private static void verifiesConfigMenuExtension() throws Exception {
         EventSpawnConfigMenuExtension.install();
         final Set<String> keys = ConfigMenuGUI.allEntries().stream()
@@ -232,6 +264,12 @@ public final class EventSpawnSafetyRegressionSuite {
                         && stranger.contains("this::placeStranger")
                         && !stranger.contains("nextDouble(Math.PI * 2.0D)"),
                 "Stranger still relies on a single direct random placement");
+
+        final String spawnPoints = read(
+                "src/main/java/hu/taliann/icesmp/managers/EventSpawnPointManager.java");
+        check(spawnPoints.contains("chunkCenterCoordinate")
+                        && spawnPoints.contains("\"world-boss\".equals(eventKey)"),
+                "world-boss fixed anchors may escape their Folia scheduler chunk");
 
         final String ambient = read(
                 "src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java");

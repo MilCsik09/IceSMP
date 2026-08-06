@@ -55,6 +55,15 @@ public final class EventSpawnSafetyPolicy {
         return Math.max(configured, rendered);
     }
 
+    /**
+     * Exact coordinate in the middle of the containing chunk. An offset in [-8,8)
+     * from this coordinate stays inside the same chunk, which is useful for legacy
+     * region tasks that randomize a probe after choosing their scheduler anchor.
+     */
+    public static double chunkCenterCoordinate(final int blockCoordinate) {
+        return (blockCoordinate & ~15) + 8.0D;
+    }
+
     public static boolean tooCloseToRelevantPlayer(final Point candidate,
                                                     final Collection<PlayerPoint> players,
                                                     final double minHorizontal,
