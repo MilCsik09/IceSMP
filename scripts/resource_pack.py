@@ -9,7 +9,7 @@ compressed and the small size difference is worth the stronger reproducibility g
 Wearable validation is intentionally part of the pack build. The server-side ITEM_MODEL id and the
 worn EQUIPPABLE asset are different resource identities; a broken equipment JSON, missing layer
 texture, explicit equipment-asset config reference, or an invalid same-id wearable fallback must
-fail before a pack can be published.
+fail before a pack can be published. Runtime and CI consume the same versioned fallback policy.
 """
 
 from __future__ import annotations
@@ -35,12 +35,80 @@ CONFIG_RESOURCE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 FLOW_MATERIAL_PATTERN = re.compile(r"(?:^|[,\{])\s*(?:item|material)\s*:\s*[\"']?([A-Z0-9_]+)", re.IGNORECASE)
+FALLBACK_POLICY_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "src"
+    / "main"
+    / "resources"
+    / "wearable-fallback-policy.properties"
+)
 # Repository documentation belongs beside the source pack but must not affect client bytes/hash.
 SOURCE_ONLY_PATHS = frozenset({"README.md"})
 
 
 class PackError(RuntimeError):
     """A user-facing pack validation/build error."""
+
+
+def _read_simple_properties(path: Path) -> dict[str, str]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exception:
+        raise PackError(f"Wearable fallback policy is missing/unreadable: {path}") from exception
+
+    values: dict[str, str] = {}
+    for line_number, raw in enumerate(lines, start=1):
+        line = raw.strip()
+        if not line or line.startswith(("#", "!")):
+            continue
+        if "=" not in line:
+            raise PackError(f"Invalid wearable fallback policy line {line_number}: {raw!r}")
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise PackError(f"Empty wearable fallback policy key on line {line_number}")
+        values[key] = value.strip()
+    return values
+
+
+def load_wearable_fallback_policy(
+    path: Path = FALLBACK_POLICY_PATH,
+) -> tuple[str, frozenset[str], tuple[str, ...]]:
+    values = _read_simple_properties(path)
+    if values.get("schema") != "1":
+        raise PackError("Unsupported wearable fallback policy schema")
+    minecraft_version = values.get("minecraft-version", "").strip()
+    if not minecraft_version:
+        raise PackError("Wearable fallback policy is missing minecraft-version")
+
+    exact = frozenset(
+        value.strip().upper()
+        for value in values.get("exact", "").split(",")
+        if value.strip()
+    )
+    suffixes = tuple(
+        value.strip().upper()
+        for value in values.get("suffix", "").split(",")
+        if value.strip()
+    )
+    if not exact and not suffixes:
+        raise PackError("Wearable fallback policy contains no material rules")
+    return minecraft_version, exact, suffixes
+
+
+FALLBACK_MINECRAFT_VERSION, FALLBACK_EXACT_MATERIALS, FALLBACK_MATERIAL_SUFFIXES = (
+    load_wearable_fallback_policy()
+)
+
+
+def allows_implicit_same_id_fallback(material: str | None) -> bool:
+    """Return whether the shared pinned policy permits implicit same-render-id fallback."""
+    if not material:
+        return False
+    value = material.strip().upper()
+    if value in FALLBACK_EXACT_MATERIALS:
+        return True
+    return any(value.endswith(suffix) for suffix in FALLBACK_MATERIAL_SUFFIXES)
 
 
 def iter_pack_files(root: Path) -> list[tuple[PurePosixPath, Path]]:
@@ -167,25 +235,6 @@ def validate_equipment_assets(root: Path) -> dict[str, Path]:
     return assets
 
 
-def is_vanilla_equippable_material(material: str | None) -> bool:
-    if not material:
-        return False
-    value = material.strip().upper()
-    if value == "ELYTRA" or value == "CARVED_PUMPKIN":
-        return True
-    if value.endswith(("_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS")):
-        return True
-    return value in {
-        "PLAYER_HEAD",
-        "CREEPER_HEAD",
-        "DRAGON_HEAD",
-        "PIGLIN_HEAD",
-        "SKELETON_SKULL",
-        "WITHER_SKELETON_SKULL",
-        "ZOMBIE_HEAD",
-    }
-
-
 def _strip_yaml_scalar(raw: str) -> str:
     value = raw.strip()
     if value and value[0] in "\"'" and value[-1:] == value[0]:
@@ -219,6 +268,8 @@ def _sibling_scalar(lines: list[str], index: int, key: str) -> str | None:
         end += 1
 
     for candidate in lines[start:end]:
+        if candidate.lstrip().startswith("#"):
+            continue
         match = pattern.match(candidate)
         if match:
             return _strip_yaml_scalar(match.group(1))
@@ -226,7 +277,7 @@ def _sibling_scalar(lines: list[str], index: int, key: str) -> str | None:
 
 
 def validate_config_equipment_references(root: Path, assets: dict[str, Path]) -> tuple[int, int]:
-    """Validate explicit config refs and the documented same-id fallback for vanilla-equippable items."""
+    """Validate explicit refs and shared-policy same-id fallbacks in checked-in config."""
     config_root = root.parent / "src" / "main" / "resources" / "config"
     if not config_root.is_dir():
         return 0, 0
@@ -239,6 +290,8 @@ def validate_config_equipment_references(root: Path, assets: dict[str, Path]) ->
 
         # Any explicit equipment-asset anywhere (block or flow YAML) must resolve to a pack asset.
         for line_number, line in enumerate(lines, start=1):
+            if line.lstrip().startswith("#"):
+                continue
             for match in CONFIG_RESOURCE_PATTERN.finditer(line):
                 if match.group("key").lower() != "equipment-asset":
                     continue
@@ -250,8 +303,10 @@ def validate_config_equipment_references(root: Path, assets: dict[str, Path]) ->
                         f"{asset_id} has no matching assets/<namespace>/equipment/*.json"
                     )
 
-        # Validate the same-id fallback only when the config also proves a vanilla-equippable material.
+        # Runtime uses the exact same versioned policy before it may infer item-model -> equipment asset.
         for index, line in enumerate(lines):
+            if line.lstrip().startswith("#"):
+                continue
             model_match = re.search(
                 r"(?:key-)?item-model\s*:\s*[\"']?([a-z0-9_.-]+(?::[a-z0-9_./-]+)?)",
                 line,
@@ -270,14 +325,15 @@ def validate_config_equipment_references(root: Path, assets: dict[str, Path]) ->
             material = flow_material.group(1) if flow_material else _sibling_scalar(lines, index, "material")
             explicit = explicit_match.group(1) if explicit_match else _sibling_scalar(lines, index, "equipment-asset")
 
-            if explicit or not is_vanilla_equippable_material(material):
+            if explicit or not allows_implicit_same_id_fallback(material):
                 continue
             fallback_count += 1
             if model_id not in assets:
                 raise PackError(
-                    f"{config_path.relative_to(root.parent)}:{index + 1}: equippable material {material} "
-                    f"uses item-model {model_id} without equipment-asset; the documented same-id "
-                    f"fallback requires equipment asset {model_id}, but it is missing"
+                    f"{config_path.relative_to(root.parent)}:{index + 1}: fallback-policy material {material} "
+                    f"uses item-model {model_id} without equipment-asset; the shared "
+                    f"{FALLBACK_MINECRAFT_VERSION} same-id fallback requires equipment asset "
+                    f"{model_id}, but it is missing"
                 )
 
     return explicit_count, fallback_count
@@ -318,8 +374,8 @@ def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
     print(
         f"Validated resource pack: {len(files)} client files, {json_count} JSON/MCMeta, "
         f"{png_count} PNG, {len(equipment)} equipment assets, "
-        f"{explicit_refs} explicit equipment refs, {fallback_refs} checked wearable fallbacks, "
-        f"{total_size} bytes"
+        f"{explicit_refs} explicit equipment refs, {fallback_refs} checked wearable fallbacks "
+        f"(policy {FALLBACK_MINECRAFT_VERSION}), {total_size} bytes"
     )
     return files
 
