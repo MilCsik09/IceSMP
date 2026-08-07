@@ -156,6 +156,47 @@ class ResourcePackToolingTest(unittest.TestCase):
 
             resource_pack.validate_pack(root)
 
+    def test_versioned_policy_covers_body_and_saddle_equipment(self) -> None:
+        self.assertEqual(resource_pack.FALLBACK_MINECRAFT_VERSION, "1.21.11")
+        for material in (
+            "IRON_HORSE_ARMOR",
+            "GOLDEN_HORSE_ARMOR",
+            "DIAMOND_HORSE_ARMOR",
+            "WOLF_ARMOR",
+            "SADDLE",
+            "WHITE_HARNESS",
+        ):
+            with self.subTest(material=material):
+                self.assertTrue(resource_pack.allows_implicit_same_id_fallback(material))
+
+    def test_horse_armor_same_id_fallback_must_have_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.write_config(
+                root,
+                "profession-recipes.yml",
+                "profession-recipes:\n  horse:\n    result: { material: IRON_HORSE_ARMOR, "
+                'item-model: "icesmp:vas_lopancel" }\n',
+            )
+
+            with self.assertRaisesRegex(resource_pack.PackError, "same-id fallback requires equipment asset"):
+                resource_pack.validate_pack(root)
+
+    def test_horse_armor_same_id_fallback_accepts_horse_body_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_equipment(root, asset="vas_lopancel", layer="horse_body")
+            self.write_config(
+                root,
+                "profession-recipes.yml",
+                "profession-recipes:\n  horse:\n    result: { material: IRON_HORSE_ARMOR, "
+                'item-model: "icesmp:vas_lopancel" }\n',
+            )
+
+            resource_pack.validate_pack(root)
+
     def test_non_equippable_item_model_does_not_require_equipment_asset(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "resource-pack"
