@@ -41,6 +41,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `listeners/` | 122 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `classrelic/` | 11 | Class Relic Framework: pure resolver/katalógus + Paper homlokzat (`ClassRelicService`). |
 | `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
@@ -610,8 +611,8 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 721 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
-  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15,
+- **Méret:** 732 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
+  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 11,
   items 12, relics 9, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
@@ -784,6 +785,64 @@ PDC remains permitted only for:
 - No player-owned durable PDC/YAML/map authority remains outside explicitly approved metadata/mirror categories.
 - Repository consistency, Markdown links, tooling self-tests and strict repository/documentation inventory pass with zero blocking or review-required findings.
 - The authority matrix marks every player-owned domain complete.
+
+## Class Relic Framework
+
+A kaszthoz kötött, világ-egyedi Class Relic-ek KÜLÖN domainrétege a generikus relikvia-rendszer
+fölött (`classrelic/` csomag). A generikus `RelicDefinition` érintetlen: a Mételytépő, a
+szárny-ereklyék és minden más relikvia változatlanul működik; kaszt-fogalom (class, resonance,
+awakening) kizárólag a `ClassRelicBinding`-ben él (`relics.class-relics.*` config, fail-fast
+betöltéssel: ismeretlen class/spec, parent-eltérés vagy duplikált class/relic kötés a teljes
+szekció elutasítása — a korábbi katalógus-pillanatkép marad publikálva, félbetöltött registry
+nincs).
+
+**Authority-határok.** Két, szándékosan KÜLÖN igazság-forrás: (1) a világ-szintű relic-store
+(`RelicManager`, relics.yml) mondja meg, kié a relic, elveszett-e (lost/reclaim) és mikor kész
+újra az Awakening — ez NEM játékosprofil-domain; (2) a Profile v2 (`ClassSpecProfileGateway` →
+`ClassSpecSection`) mondja meg a kasztot, az aktív specializációt, a loadout-státuszt és a
+SEALED-állapotot. A framework egyiket sem duplikálja a másikba.
+
+**OWNER ≠ ACTIVE POSSESSION.** Az ownership önmagában nem ad gameplay-erőt: a
+`requires-physical-possession` kötésnél a használható fizikai tárgynak a játékosnál kell
+lennie. Lost/reclaim állapotban (a tárgy halálkor megsemmisült, a tulajdon él) minden
+relic-erő szünetel; sikeres újraidézés után aktiválható újra.
+
+**Három mechanikai réteg.** (A) *Class Power*: állandó, számítás közben lekérdezett modifier —
+a fogyasztók csatornán kérdeznek (`ClassRelicService.modifier(playerId, RelicModifier.…)`),
+relic-id-t és kaszt-vizsgálatot soha nem hordoznak. (B) *Spec Resonance*: szemantikus
+gameplay-eseményekre (`ClassGameplayEvent` + `AbilityTag` szótár) reagáló specializációs
+mechanika — a routing a `ClassRelicActivationResolver`-ben él, az implementáció
+`ClassRelicResonanceHook`-ként regisztrálható (a pilot inert hookokkal bizonyítja a routingot,
+spell-id-függés nélkül). (C) *Awakening*: a világ-egyedi nagy képesség kerete — a nagy
+cooldown a RELIC-kel utazik (relic-id → awakening-ready-at abszolút időbélyeg a világ-szintű
+store-ban), gazdacserénél nem nullázódik és restartot túlél; a rövid proc-cooldownok maradnak
+runtime-állapotok.
+
+**Központi feloldás.** Minden döntés (profil használható? jó kaszt? tulajdonos? nála van?
+melyik resonance?) egyetlen pontban, a pure `ClassRelicActivationResolver`-ben dől el —
+a konkrét képességek csak a kész `ClassRelicActivation`-t fogyasztják. SEALED specializáció
+SOHA nem rezonál, de a kaszt-szintű Class Power tovább élhet (DARK seal/unseal invariáns);
+csak gameplay-re használható profil (READY + nem blokkolt session, `isGameplayUsable`)
+aktiválhat.
+
+**Folia.** A resolver és a katalógus pure (nem függ régió-szálaktól); az inventory-alapú
+birtoklás-vizsgálat kizárólag a játékos saját régió-szálán fut (TTL-es cache, idegen szálról
+a legutóbbi ismert érték, fail-safe: ismeretlen = nincs birtoklás); a resonance-hookok a hívó
+(játékos-scheduler) szálán futnak.
+
+**Evoker pilot.** A `sarkany_tojas` az első migrált Class Relic: a korábbi
+`ResourceBonusService`-beli ownership+isEvoker hardcode megszűnt, a max-Essence bónusz a
+generikus `CLASS_RESOURCE_MAX` csatornán érkezik (változatlan, configolható 10%). A
+Devastation→`dragon_echo` és Preservation→`temporal_echo` routing él, mindkettő inert
+(enabled: false); az `unborn_dragon` Awakening kerete és durable cooldownja kész, gameplay
+nélkül.
+
+**13/35 teljesség-szerződés.** A `relics.require-complete-catalog: false` fejlesztési állapot:
+a katalógus részleges lehet. A teljes class rework kapuja a kulcs true-ra állítása — akkor
+minden classnak pontosan egy relic és minden specializationnek pontosan egy resonance
+kötelező, különben a betöltés (és a CI) bukik. A class reworknek csak a gameplay-oldalt kell
+hoznia (mechanikák, szemantikus események, resource-hookok, ability-tagek): az ownership, a
+birtoklás-validáció, a binding-registry és a cooldown-perzisztencia ebből a keretből jön.
 
 ## Config GUI coverage
 

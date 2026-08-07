@@ -1,6 +1,5 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileClassMechanicStore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,41 +17,26 @@ public final class ResourceBonusService implements Listener {
     private static final String PACT_KEY = "warlock.pact.resource-multiplier";
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
-    private final JobManager jobManager;
-    private final RelicManager relicManager;
+    private final hu.taliann.icesmp.classrelic.ClassRelicService classRelicService;
     private final PlayerProfileClassMechanicStore mechanics =
             new PlayerProfileClassMechanicStore();
     private final Map<UUID, Double> pactCache = new ConcurrentHashMap<>();
-    private final Map<UUID, Boolean> evokerCache = new ConcurrentHashMap<>();
 
     public ResourceBonusService(final JavaPlugin plugin, final ConfigManager configManager,
-                                final JobManager jobManager, final RelicManager relicManager) {
+                                final hu.taliann.icesmp.classrelic.ClassRelicService classRelicService) {
         this.plugin = plugin;
         this.configManager = configManager;
-        this.jobManager = jobManager;
-        this.relicManager = relicManager;
+        this.classRelicService = classRelicService;
     }
 
+    /**
+     * A relic-eredetű bónusz a generikus Class Relic modifier-csatornáról érkezik —
+     * ez a szolgáltatás nem tud relic-id-ről, kasztról vagy ownershipről.
+     */
     public double maxMultiplier(final UUID playerId) {
-        double multiplier = pactCache.getOrDefault(playerId, 1.0D);
-        final String relicId = configManager.getString("pakt.dragon-relic-id", "sarkany_tojas");
-        final hu.taliann.icesmp.relics.RelicOwnership ownership =
-                relicManager.getOwnership(relicId);
-        if (ownership != null && playerId.equals(ownership.owner()) && isEvoker(playerId)) {
-            multiplier *= 1.0D + Math.max(0.0D,
-                    configManager.getDouble("pakt.dragon-essence-bonus-percent", 10.0D)) / 100.0D;
-        }
-        return multiplier;
-    }
-
-    private boolean isEvoker(final UUID playerId) {
-        final Player online = org.bukkit.Bukkit.getPlayer(playerId);
-        if (online != null && org.bukkit.Bukkit.isOwnedByCurrentRegion(online)) {
-            final boolean evoker = jobManager.getPrimaryJob(online) == JobType.EVOKER;
-            evokerCache.put(playerId, evoker);
-            return evoker;
-        }
-        return evokerCache.getOrDefault(playerId, Boolean.FALSE);
+        return pactCache.getOrDefault(playerId, 1.0D)
+                * classRelicService.modifier(playerId,
+                        hu.taliann.icesmp.classrelic.RelicModifier.CLASS_RESOURCE_MAX);
     }
 
     public boolean hasPakt(final Player player) {
@@ -88,8 +72,6 @@ public final class ResourceBonusService implements Listener {
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
-        evokerCache.put(event.getPlayer().getUniqueId(),
-                jobManager.getPrimaryJob(event.getPlayer()) == JobType.EVOKER);
         schedulePactLoad(event.getPlayer(), 0);
     }
 
@@ -127,7 +109,6 @@ public final class ResourceBonusService implements Listener {
     @EventHandler
     public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
         pactCache.remove(event.getPlayer().getUniqueId());
-        evokerCache.remove(event.getPlayer().getUniqueId());
     }
 
     private static String rootMessage(final Throwable failure) {

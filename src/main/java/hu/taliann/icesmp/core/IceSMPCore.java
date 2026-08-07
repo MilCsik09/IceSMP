@@ -242,6 +242,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter classSpecRuntimeAdapter;
     private final hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge profileSessionBridge;
     private final hu.taliann.icesmp.managers.ResourceBonusService resourceBonusService;
+    private final hu.taliann.icesmp.classrelic.ClassRelicService classRelicService;
     private final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
     private final hu.taliann.icesmp.managers.WarWindowManager warWindowManager;
     private final hu.taliann.icesmp.managers.CombatTagManager combatTagManager;
@@ -402,7 +403,6 @@ public final class IceSMPCore {
         this.moneyPouchItemFactory = new hu.taliann.icesmp.items.MoneyPouchItemFactory(plugin);
         this.guildManager = new hu.taliann.icesmp.managers.GuildManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
-        this.resourceBonusService = new hu.taliann.icesmp.managers.ResourceBonusService(plugin, configManager, jobManager, relicManager);
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager, factionManager, seasonManager, messageManager);
         // Hadi-ablak — RED↔BLUE ölés az ablak alatt nem bűn, liga-pontot ér.
         this.warWindowManager = new hu.taliann.icesmp.managers.WarWindowManager(plugin, configManager, messageManager, seasonManager);
@@ -596,6 +596,12 @@ public final class IceSMPCore {
         soulforgeManager.setProfileGateway(classSpecProfileGateway);
         soulShardManager.setProfileGateway(classSpecProfileGateway);
         sinManager.setSpecializationManager(specializationManager);
+        // Class Relic Framework: a resolver a gateway-t (Profile v2 authority) és a
+        // vilag-szintu relic-ownershipet adaptalja — ezert csak a gateway UTAN epulhet.
+        this.classRelicService = new hu.taliann.icesmp.classrelic.ClassRelicService(
+                plugin, configManager, relicManager, classSpecProfileGateway);
+        this.resourceBonusService = new hu.taliann.icesmp.managers.ResourceBonusService(
+                plugin, configManager, classRelicService);
         resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // pool-bónuszok
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // pakt-oltár
         hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // statikus híd
@@ -949,6 +955,7 @@ public final class IceSMPCore {
         craftingRestrictionManager.load();
         professionRecipeCatalog.load();
         crateManager.reloadConfig();
+        classRelicService.reload();
         advancementService.load();
         // The modular PlayerProfile platform is the sole player-owned persistence authority.
         playerProfilePlatform.start();
@@ -1553,6 +1560,7 @@ public final class IceSMPCore {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();
             relicManager.load();
+            classRelicService.reload();
             mobScalingManager.load();
             craftingRestrictionManager.load();
             professionRecipeCatalog.load();
@@ -1811,6 +1819,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(runeEffectListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BestiaryListener(bestiaryManager, worldBossManager, statsManager, professionRecipeCatalog, territoryManager), plugin);
         pluginManager.registerEvents(resourceBonusService, plugin);
+        pluginManager.registerEvents(classRelicService, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpyRevealListener(plugin, spyManager), plugin);
         pluginManager.registerEvents(professionWeeklyGoalManager, plugin);
         // Az offline bajnok-tagok függő szezon-jutalma belépéskor jár.

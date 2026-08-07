@@ -62,6 +62,12 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
      * oltárnál; a rövidített lost-expiry után a relikvia mindenki számára felszabadul.
      */
     private final Map<String, Long> lostSince = new ConcurrentHashMap<>();
+    /**
+     * Class Relic Awakening durable cooldown: relicId → ready-at abszolút időbélyeg.
+     * A RELIC-hez tartozik, nem a tulajdonoshoz — gazdacserénél/reclaimnél nem nullázódik,
+     * és ownership nélkül is megmarad (ezért saját top-level szekcióban perzisztál).
+     */
+    private final Map<String, Long> awakeningReadyAt = new ConcurrentHashMap<>();
     private final File ownershipFile;
 
     private boolean enabled;
@@ -230,6 +236,9 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                     yaml.set(basePath + ".lost-since", lost);
                 }
             }
+            for (final Map.Entry<String, Long> entry : awakeningReadyAt.entrySet()) {
+                yaml.set("awakening." + entry.getKey() + ".ready-at", entry.getValue());
+            }
 
             YamlStore.saveAtomic(ownershipFile, yaml);
         } catch (final IOException exception) {
@@ -240,6 +249,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
     private void loadOwnerships() {
         ownerships.clear();
+        awakeningReadyAt.clear();
 
         if (!ownershipFile.exists()) {
             return;
@@ -247,6 +257,15 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
         try {
             final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(ownershipFile, plugin.getLogger());
+            final ConfigurationSection awakeningSection = yaml.getConfigurationSection("awakening");
+            if (awakeningSection != null) {
+                for (final String relicId : awakeningSection.getKeys(false)) {
+                    final long readyAt = awakeningSection.getLong(relicId + ".ready-at", 0L);
+                    if (readyAt > 0L) {
+                        awakeningReadyAt.put(relicId.toLowerCase(Locale.ROOT), readyAt);
+                    }
+                }
+            }
             final ConfigurationSection ownershipSection = yaml.getConfigurationSection("ownerships");
             if (ownershipSection == null) {
                 return;
@@ -359,6 +378,29 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         if (relicId != null && lostSince.remove(relicId.toLowerCase(Locale.ROOT)) != null) {
             save();
         }
+    }
+
+    /** @return true, ha a relikvia elveszett/reclaim állapotban van (a tárgy megsemmisült). */
+    public boolean isLost(final String relicId) {
+        return relicId != null && lostSince.containsKey(relicId.toLowerCase(Locale.ROOT));
+    }
+
+    /** Awakening durable cooldown olvasása (0 = még sosem használt, azonnal kész). */
+    public long getAwakeningReadyAt(final String relicId) {
+        if (relicId == null) {
+            return 0L;
+        }
+        final Long readyAt = awakeningReadyAt.get(relicId.toLowerCase(Locale.ROOT));
+        return readyAt == null ? 0L : readyAt;
+    }
+
+    /** Awakening-használat rögzítése: az új ready-at azonnal tartósan mentődik. */
+    public void setAwakeningReadyAt(final String relicId, final long readyAtMillis) {
+        if (relicId == null || relicId.isBlank()) {
+            return;
+        }
+        awakeningReadyAt.put(relicId.toLowerCase(Locale.ROOT), readyAtMillis);
+        save();
     }
 
     /**

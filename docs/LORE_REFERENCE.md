@@ -147,6 +147,7 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Jégvirág-por / Parázsmag / Viharkvarc / Mélységi Borostyán | vegyes | köztes anyagok (2. hullám) | ✅ profession-materials ITEM_MODEL-ek; borostyán régészeti lelet is |
 | Sárkánycsont-szilánk / Főnixpihe | BLUE/RED | mob/boss-drop anyagok (2. hullám) | ✅ loot.yml sorok (szilánk boss-only); a 2. hullám fegyver-receptjeinek hozzávalói |
 | Eleftheria Könnye | DARK/közös | relikvia (K5) | ✅ implementálva: egy-példányos relikvia + DARK-kapus rituálé-oltár (relics.yml) |
+| Sárkánytojás-töredék | közös (Evoker-kötés) | Class Relic pilot | ✅ az első Class Relic Frameworkre migrált relikvia: Evoker +10% max Essence (`relics.class-relics.sarkany_tojas`), fizikai-birtoklás követelménnyel; Devastation/Preservation resonance-routing inert, Awakening keret durable cooldownnal (kikapcsolva) |
 | Megrontott Elit Páncél / Fekete Csont / A Néma Királynő Suttogása | DARK/közös | mob-drop (K5 + 2. hullám) | ✅ mindhárom implementálva: undead-only named drop sorok (a Suttogása boss-only, nagyon ritka) |
 | Csontveret | DARK | valuta | a DARK valuta display-neve (K1 reskin) |
 

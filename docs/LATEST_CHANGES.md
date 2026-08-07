@@ -57,6 +57,12 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   szörnyeknél fajonkénti elejtés-számláló, első-elejtés dátum és kill-alapú
   tudás-fokozatok; a világbossok archetípusonként kerülnek a lajstromba;
   `%icesmp_bestiary_*%` placeholderek külső kijelzéshez.
+- **Class Relic Framework (pilot):** kaszthoz kötött, világ-egyedi relikviák
+  külön domainrétege — Class Power / Spec Resonance / Awakening, Profile v2
+  class/spec authorityvel, ownership↔fizikai-birtoklás szétválasztással és a
+  relickel utazó durable Awakening-cooldownnal. Pilot: a Sárkánytojás-töredék
+  Evoker-bónusza az új keretből érkezik (változatlan 10%); a 13/35 teljes
+  roster a class rework kapuja mögött (`require-complete-catalog: false`).
 - **Kódex-bővítés:** mind a 7 ereklye, a 10 világboss-archetípus, a
   kazamata-őrzők és mind a 35 specializáció-iskola kánon-bejegyzést kapott;
   a consistency-kapu gépileg őrzi, hogy nevesített tartalom ne élhessen
