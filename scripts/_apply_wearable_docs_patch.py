@@ -3,6 +3,9 @@ from pathlib import Path
 
 path = Path("docs/RESOURCE_PACK_CMD.md")
 text = path.read_text(encoding="utf-8")
+if "## Wearable / equipment render-szerződés" in text:
+    raise SystemExit(0)
+
 anchor = (
     "Minden tétel négy fogódzót ad a művésznek: **Alap-item** (a vanilla sziluett-referencia), "
     "**Ábrázolás** (mit ábrázoljon), **Színvilág** (paletta + akcent) és **Hangulat / lore** "
@@ -35,6 +38,10 @@ amely eleve `EQUIPPABLE`, használható a determinisztikus same-render-id fallba
 `item-model: "icesmp:x"` → `equipment-asset: "icesmp:x"`. A pack-validator ezt a fallbacket
 is ellenőrzi, tehát hiányzó `assets/icesmp/equipment/x.json` nem juthat át a CI-n.
 
+A relikvia-szárnyak ugyanezt a stabil render identityt használják (`icesmp:relic_<id>`): az
+inventory item-model és az `assets/icesmp/equipment/relic_<id>.json` wings asset azonos néven
+kapcsolódik, de a runtime továbbra is két külön data componentként kezeli őket.
+
 Az equipment JSON layer textúrája például:
 
 ```json
@@ -48,7 +55,7 @@ Az equipment JSON layer textúrája például:
 ```
 
 Ehhez a textúra: `assets/icesmp/textures/entity/equipment/humanoid/pelda_vert.png`;
-leggings layernél a könyvtár `humanoid_leggings`.
+leggings layernél a könyvtár `humanoid_leggings`, elytra-szárnynál `wings`.
 
 ### Vanilla 3D-határ
 
