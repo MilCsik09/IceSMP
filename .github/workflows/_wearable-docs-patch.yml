@@ -1,22 +1,21 @@
 name: Temporary wearable docs patch
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/wearable-equipment-assets
-    paths:
-      - scripts/_apply_wearable_docs_patch.py
-      - .github/workflows/_wearable-docs-patch.yml
+      - master
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   patch:
+    if: github.head_ref == 'fix/wearable-equipment-assets'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout branch
+      - name: Checkout feature branch
         uses: actions/checkout@v4
         with:
           ref: fix/wearable-equipment-assets
