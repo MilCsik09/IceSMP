@@ -85,6 +85,8 @@ public final class ResourcePackRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/items/UniqueMaterialFactory.java"));
         final String loot = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/MobLootListener.java"));
+        final String relic = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java"));
 
         check(profession.contains("presentationBase + \"equipment-asset\"")
                         && profession.contains("WearablePresentation.applyWearablePresentation"),
@@ -97,6 +99,9 @@ public final class ResourcePackRegressionSuite {
         check(loot.contains("chosen.get(\"equipment-asset\")")
                         && loot.contains("WearablePresentation.applyWearablePresentation"),
                 "named loot no longer supports equipment-asset through the wearable boundary");
+        check(relic.contains("WearablePresentation.applyWearablePresentation")
+                        && relic.contains("\"icesmp:relic_\" + relicId"),
+                "relic create/refresh paths no longer route wearable wings through the central boundary");
     }
 
     private static String extractQuotedValue(final String source, final String prefix) {
