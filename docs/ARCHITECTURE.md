@@ -41,12 +41,12 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `listeners/` | 122 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `classrelic/` | 11 | Class Relic Framework: pure resolver/katalógus + Paper homlokzat (`ClassRelicService`). |
+| `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
-| `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
+| `relics/` | 10 (7 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, single-writer világ-store. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
@@ -611,9 +611,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 732 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
-  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 11,
-  items 12, relics 9, integration 6.
+- **Méret:** 736 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
+  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
+  items 12, relics 10, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -794,13 +794,31 @@ szárny-ereklyék és minden más relikvia változatlanul működik; kaszt-fogal
 awakening) kizárólag a `ClassRelicBinding`-ben él (`relics.class-relics.*` config, fail-fast
 betöltéssel: ismeretlen class/spec, parent-eltérés vagy duplikált class/relic kötés a teljes
 szekció elutasítása — a korábbi katalógus-pillanatkép marad publikálva, félbetöltött registry
-nincs).
+nincs). A schema strict: a hiányzó opcionális szekció defaultolhat, de a jelen lévő rossz
+típusú érték (pl. `resonances: "abc"`) reject; az Awakening `cooldown-seconds` egész,
+nem-negatív és korlátos (a felső határ mellett a ready-at aritmetika nem tud túlcsordulni),
+tört érték nem csonkolódik. A candidate a publish előtt a generikus relic-registryvel is
+kereszt-validált: nem létező fizikai relicre mutató kötés a TELJES candidate-et elutasítja —
+a `require-complete-catalog` kapu így kitalált relic-rosterrel sem PASS-olhat. A
+`relics.enabled: false` explicit framework-kapu (use-site élő-config): minden feloldás
+`FRAMEWORK_DISABLED`, a Class Power, a Resonance és az Awakening is inaktív — nem a
+birtoklás-szken mellékhatása dönt.
 
 **Authority-határok.** Két, szándékosan KÜLÖN igazság-forrás: (1) a világ-szintű relic-store
-(`RelicManager`, relics.yml) mondja meg, kié a relic, elveszett-e (lost/reclaim) és mikor kész
-újra az Awakening — ez NEM játékosprofil-domain; (2) a Profile v2 (`ClassSpecProfileGateway` →
-`ClassSpecSection`) mondja meg a kasztot, az aktív specializációt, a loadout-státuszt és a
-SEALED-állapotot. A framework egyiket sem duplikálja a másikba.
+(`RelicManager` → `RelicWorldStateStore`, relics.yml) mondja meg, kié a relic, elveszett-e
+(lost/reclaim) és mikor kész újra az Awakening — ez NEM játékosprofil-domain; (2) a Profile v2
+(`ClassSpecProfileGateway` → `ClassSpecSection`) mondja meg a kasztot, az aktív specializációt,
+a loadout-státuszt és a SEALED-állapotot. A framework egyiket sem duplikálja a másikba.
+
+**Single-writer világ-relic perzisztencia.** A világ-relic aggregátum minden logikai mutációja
+(ownership-rögzítés/felszabadítás, lost/reclaim, Awakening-arm) a `RelicWorldStateStore`
+EGYETLEN szerializált kritikus szekciójában fut: állapot-ellenőrzés → módosítás → durable
+commit egyben — párhuzamos régió-szálak nem veszíthetik el egymás commitolt állapotát (a
+`YamlStore.saveAtomic` csak a fájlcsere atomicitását adja, a mutáció-serializálást ez a határ).
+Az Awakening-arm atomikus: két konkurens hívásból pontosan egy ARMED, a többi ON_COOLDOWN.
+Fail-closed hibakezelés: sikertelen lemez-írásnál a memória-állapot visszaáll a commit előtti
+értékre és az eredmény `PERSISTENCE_FAILED` — a runtime sosem jelent olyan ARMED sikert, ami
+a lemezen nincs meg, és nincs csendes memória/lemez split-brain. Az olvasások lock-mentesek.
 
 **OWNER ≠ ACTIVE POSSESSION.** Az ownership önmagában nem ad gameplay-erőt: a
 `requires-physical-possession` kötésnél a használható fizikai tárgynak a játékosnál kell
@@ -809,14 +827,19 @@ relic-erő szünetel; sikeres újraidézés után aktiválható újra.
 
 **Három mechanikai réteg.** (A) *Class Power*: állandó, számítás közben lekérdezett modifier —
 a fogyasztók csatornán kérdeznek (`ClassRelicService.modifier(playerId, RelicModifier.…)`),
-relic-id-t és kaszt-vizsgálatot soha nem hordoznak. (B) *Spec Resonance*: szemantikus
-gameplay-eseményekre (`ClassGameplayEvent` + `AbilityTag` szótár) reagáló specializációs
-mechanika — a routing a `ClassRelicActivationResolver`-ben él, az implementáció
-`ClassRelicResonanceHook`-ként regisztrálható (a pilot inert hookokkal bizonyítja a routingot,
-spell-id-függés nélkül). (C) *Awakening*: a világ-egyedi nagy képesség kerete — a nagy
-cooldown a RELIC-kel utazik (relic-id → awakening-ready-at abszolút időbélyeg a világ-szintű
-store-ban), gazdacserénél nem nullázódik és restartot túlél; a rövid proc-cooldownok maradnak
-runtime-állapotok.
+relic-id-t és kaszt-vizsgálatot soha nem hordoznak; a modifier-út UUID-only (Player-dereferencia
+és inventory-olvasás nélkül), ezért idegen régió-szálról is biztonságos hot path. (B) *Spec
+Resonance*: tipizált szemantikus jelzésekre reagáló specializációs mechanika — a
+`ClassGameplaySignal` sealed rekord-család hordozza az actort, a cél-identitást (UUID), a
+mennyiséget és a tageket (a payload-hordozó eseményekhez a Generic alak nem használható,
+stringly-typed payload nincs); a routing a `ClassRelicActivationResolver`-ben él, az
+implementáció `ClassRelicResonanceHook`-ként regisztrálható, és a hook a
+`ClassRelicResonanceContext`-ben a régió-helyes `actor` Player referenciát is megkapja —
+globális `Bukkit.getPlayer` lookup a hookban tilos és szükségtelen. (C) *Awakening*: a
+világ-egyedi nagy képesség kerete — a nagy cooldown a RELIC-kel utazik (relic-id →
+awakening-ready-at abszolút időbélyeg a világ-szintű store-ban), gazdacserénél nem nullázódik
+és restartot túlél; az arm a store atomikus műveletén megy át; a rövid proc-cooldownok
+maradnak runtime-állapotok.
 
 **Központi feloldás.** Minden döntés (profil használható? jó kaszt? tulajdonos? nála van?
 melyik resonance?) egyetlen pontban, a pure `ClassRelicActivationResolver`-ben dől el —
@@ -825,10 +848,17 @@ SOHA nem rezonál, de a kaszt-szintű Class Power tovább élhet (DARK seal/unse
 csak gameplay-re használható profil (READY + nem blokkolt session, `isGameplayUsable`)
 aktiválhat.
 
-**Folia.** A resolver és a katalógus pure (nem függ régió-szálaktól); az inventory-alapú
-birtoklás-vizsgálat kizárólag a játékos saját régió-szálán fut (TTL-es cache, idegen szálról
-a legutóbbi ismert érték, fail-safe: ismeretlen = nincs birtoklás); a resonance-hookok a hívó
-(játékos-scheduler) szálán futnak.
+**Folia és birtoklás-pillanatkép.** A resolver, a katalógus és a jelzések pure rétegek (nem
+függenek régió-szálaktól). A fizikai birtoklás immutable pillanatképként él
+(`PossessionSnapshot`): KIZÁRÓLAG a játékos saját régió-szálán készül (join-kori első szken +
+másodpercenkénti frissítés a játékos schedulerén), és a szken a kanonikus
+`RelicManager.canUse`-zal validál — azonos relic-id-jű, de stale/rossz gazdához kötött példány
+nem ad erőt. Az UUID-only olvasók fail-closed szabállyal olvassák: ismeretlen vagy TTL-en túli
+pillanatkép = nincs birtoklás (korlátlan ideig élő stale "true" nem létezhet; a maximális
+konzisztencia-ablak a TTL, ~2,5 mp). Kritikus világ-relic mutáció (transfer, lost/reclaim,
+give, expiry) és halál AZONNAL invalidálja az érintett pillanatképeket. A resonance-dispatch
+kikényszeríti az actor-régió szerződést: idegen szálról érkező hívást maga hoppolja az actor
+schedulerére; cél-oldali effekt idegen entityn csak a cél schedulerére hoppolva megengedett.
 
 **Evoker pilot.** A `sarkany_tojas` az első migrált Class Relic: a korábbi
 `ResourceBonusService`-beli ownership+isEvoker hardcode megszűnt, a max-Essence bónusz a

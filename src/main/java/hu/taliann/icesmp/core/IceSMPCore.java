@@ -955,13 +955,15 @@ public final class IceSMPCore {
         craftingRestrictionManager.load();
         professionRecipeCatalog.load();
         crateManager.reloadConfig();
-        classRelicService.reload();
         advancementService.load();
         // The modular PlayerProfile platform is the sole player-owned persistence authority.
         playerProfilePlatform.start();
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
         storeCoordinator.loadAll();
+        // A class-relic katalógus kereszt-validációja a generikus relic-registryt kérdezi,
+        // ezért csak a RelicManager (persistent store) betöltése UTÁN futhat.
+        classRelicService.reload();
         // Exact-once mastery wallet witnesses are reconciled against PlayerProfile receipts
         // before listeners or commands can admit new gameplay mutations.
         spellMasteryManager.recoverPendingOperations().toCompletableFuture().join();
@@ -1195,6 +1197,9 @@ public final class IceSMPCore {
             // (repository executor, HTTP adapter, Bukkit service, statikus authority) nyitva
             // marad: a záró út minden korai return és kivétel után is lefut, és idempotens.
             closePlayerProfileResources();
+            // A per-player birtoklás-frissítő taskok és a pillanatkép-cache plugin-életciklushoz
+            // kötöttek; részleges enable után is takarítandók.
+            shutdownStep("ClassRelicService.shutdown", classRelicService::shutdown);
             // A root-loggerre akasztott szűrő plugin-életciklushoz kötött: bent hagyva egy
             // eldobott ConfigManager-példányt tartana életben a következő enable-ig.
             shutdownStep("NamedEntityDeathLogFilter.uninstall",

@@ -57,6 +57,27 @@ public final class ClassRelicCatalog {
                 : Optional.ofNullable(byClassId.get(classId.toLowerCase(java.util.Locale.ROOT)));
     }
 
+    public java.util.Collection<ClassRelicBinding> bindings() {
+        return byRelicId.values();
+    }
+
+    /**
+     * Integrációs kereszt-validáció a publish előtt: minden kötésnek LÉTEZŐ generikus
+     * relicre kell mutatnia. A pure loader szándékosan registry-független — ezt a kaput
+     * a hívó futtatja a generikus registry betöltése UTÁN; hibánál a teljes candidate
+     * elutasítandó (a korábbi katalógus marad), nem csak warning.
+     */
+    public void requireKnownRelics(final java.util.function.Predicate<String> knownRelic) {
+        Objects.requireNonNull(knownRelic, "knownRelic");
+        for (final ClassRelicBinding binding : byRelicId.values()) {
+            if (!knownRelic.test(binding.relicId())) {
+                throw new IllegalArgumentException(
+                        "class-relic binding references unknown generic relic: "
+                                + binding.relicId());
+            }
+        }
+    }
+
     public int size() {
         return byRelicId.size();
     }

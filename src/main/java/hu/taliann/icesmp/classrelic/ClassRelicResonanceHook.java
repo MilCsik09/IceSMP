@@ -1,21 +1,19 @@
 package hu.taliann.icesmp.classrelic;
 
-import java.util.Set;
-
 /**
- * A Spec Resonance viselkedési szerződése. A class rework gameplay-eseményei a központi
- * dispatch-en (ClassRelicService.onGameplayEvent) érkeznek, és CSAK aktív resonance-szal
+ * A Spec Resonance viselkedési szerződése. A class rework gameplay-jelzései a központi
+ * dispatch-en (ClassRelicService.onGameplaySignal) érkeznek, és CSAK aktív resonance-szal
  * rendelkező feloldás juthat el ide — a hooknak nem kell (és nem szabad) class/spec/
- * ownership kérdéseket újra feltennie. Az implementáció a hívó szálán fut (Folia:
- * a játékos entity-schedulerén), ezért játékos-állapotot közvetlenül érinthet.
+ * ownership kérdéseket újra feltennie. A kontextus a régió-helyes {@code actor} Player
+ * referenciát is hordozza: a hook az actor saját szálán fut (a dispatch kényszeríti ki),
+ * ezért az actor állapotát közvetlenül érintheti; idegen célt csak scheduler-hoppal.
  */
 @FunctionalInterface
 public interface ClassRelicResonanceHook {
 
     /** Inert placeholder: a routing bizonyítottan működik, gameplay-hatás nélkül. */
-    ClassRelicResonanceHook INERT = (activation, event, tags) -> {
+    ClassRelicResonanceHook INERT = context -> {
     };
 
-    void onGameplayEvent(ClassRelicActivation activation, ClassGameplayEvent event,
-                         Set<AbilityTag> tags);
+    void onSignal(ClassRelicResonanceContext context);
 }

@@ -237,14 +237,14 @@
       "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
     },
     {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicService.java|final ClassRelicActivation activation = resolve(player.getUniqueId());",
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicService.java|public ClassRelicActivation resolve(final UUID playerId) {",
       "category": "RUNTIME",
       "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
     },
     {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicService.java|public ClassRelicActivation resolve(final UUID playerId) {",
-      "category": "RUNTIME",
-      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/relics/RelicWorldStateStore.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "A RelicManager vilag-szintu relic aggregatumanak (relic → owner UUID, lost/reclaim, awakening ready-at) single-writer perzisztencia-hatara; tulajdonosokat stabil UUID-kent referal, sajat tartos player-allapotot nem hoz letre."
     }
   ]
 }

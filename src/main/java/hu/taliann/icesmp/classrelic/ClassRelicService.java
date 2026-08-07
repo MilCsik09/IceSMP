@@ -5,6 +5,8 @@ import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
+import hu.taliann.icesmp.relics.RelicWorldStateStore;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -15,31 +17,39 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A Class Relic Framework Paper/Folia homlokzata. A szabályok a pure resolverben élnek;
- * ez az osztály csak a három authority nézetét adaptálja: világ-relic (RelicManager),
- * Profile v2 class/spec (ClassSpecProfileGateway) és a fizikai birtoklás (inventory a
- * játékos régió-szálán, TTL-es cache-sel — idegen szálról sosem olvasunk inventoryt).
- * A katalógus reloadja atomikus: hibás config a régi pillanatképet hagyja élni.
+ * ez az osztály csak a négy nézetet adaptálja: framework-kapu (relics.enabled, use-site
+ * élő-config), világ-relic (RelicManager), Profile v2 class/spec (ClassSpecProfileGateway)
+ * és a fizikai birtoklás pillanatkép-cache.
+ *
+ * Birtoklás-konzisztencia: a pillanatkép KIZÁRÓLAG a játékos saját régió-szálán készül
+ * (join-kori első szken + másodpercenkénti frissítés + kritikus invalidáció a világ-relic
+ * mutációkról és halálról). Az UUID-only olvasók (pl. ResourceManager hot path) sosem
+ * dereferálnak Player-t: friss pillanatkép nélkül az eredmény fail-closed "nincs
+ * birtoklás". A maximális konzisztencia-ablak a TTL (lásd POSSESSION_TTL_MILLIS);
+ * lost/transfer/reclaim explicit azonnali invalidációt kap.
  */
 public final class ClassRelicService implements org.bukkit.event.Listener {
 
-    /** A birtoklás-vizsgálat régió-szálhoz kötött; két szkennelés közt ennyi ideig hihető. */
-    private static final long POSSESSION_TTL_MILLIS = 1_000L;
-
-    private record Possession(String relicId, boolean present, long scannedAtMillis) {
-    }
+    /** Frissítési periódus a játékos saját schedulerén (1 mp). */
+    private static final long POSSESSION_REFRESH_TICKS = 20L;
+    /**
+     * A pillanatkép elévülése: a periodikus frissítés kimaradását (régió-torlódás,
+     * scheduler-jitter) fedi le; ennél idősebb "true" nem hihető el (fail-closed).
+     */
+    private static final long POSSESSION_TTL_MILLIS = 2_500L;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final RelicManager relicManager;
     private final ClassSpecProfileGateway gateway;
     private final ClassRelicActivationResolver resolver;
-    private final Map<UUID, Possession> possessionCache = new ConcurrentHashMap<>();
+    private final Map<UUID, PossessionSnapshot> possessionCache = new ConcurrentHashMap<>();
+    private final Map<UUID, ScheduledTask> refreshTasks = new ConcurrentHashMap<>();
     private final Map<String, ClassRelicResonanceHook> resonanceHooks = new ConcurrentHashMap<>();
     private volatile ClassRelicCatalog catalog = ClassRelicCatalog.empty();
 
@@ -50,20 +60,37 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
         this.configManager = Objects.requireNonNull(configManager, "configManager");
         this.relicManager = Objects.requireNonNull(relicManager, "relicManager");
         this.gateway = Objects.requireNonNull(gateway, "gateway");
-        this.resolver = new ClassRelicActivationResolver(ownershipView(), possessionView(),
-                profileView());
+        this.resolver = new ClassRelicActivationResolver(this::frameworkEnabled, ownershipView(),
+                possessionView(), profileView());
+        relicManager.setWorldStateListener(this::invalidatePossession);
+    }
+
+    /** Use-site élő-config: reload/override után azonnal konzisztens. */
+    private boolean frameworkEnabled() {
+        return configManager.getBoolean("relics.enabled", true);
     }
 
     // ---------- katalógus ----------
 
-    /** Fail-fast reload: hibánál a korábbi (utoljára érvényes) katalógus marad publikálva. */
+    /**
+     * Fail-fast reload: hibánál a korábbi (utoljára érvényes) katalógus marad publikálva.
+     * A candidate a publish ELŐTT a generikus relic-registryvel is kereszt-validált —
+     * nem létező fizikai relicre mutató kötés a TELJES candidate-et elutasítja (a
+     * require-complete-catalog kapu így nem PASS-olhat kitalált relic-rosterrel).
+     */
     public void reload() {
         try {
             final ConfigurationSection root = configManager.getConfiguration() == null ? null
                     : configManager.getConfiguration().getConfigurationSection("relics.class-relics");
             final boolean requireComplete = configManager.getBoolean(
                     "relics.require-complete-catalog", false);
-            catalog = ClassRelicCatalogLoader.load(toMap(root), requireComplete);
+            final ClassRelicCatalog candidate =
+                    ClassRelicCatalogLoader.load(toMap(root), requireComplete);
+            if (relicManager.isEnabled()) {
+                candidate.requireKnownRelics(relicId ->
+                        relicManager.getDefinition(relicId) != null);
+            }
+            catalog = candidate;
             hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
                     "Loaded " + catalog.size() + " class-relic binding(s).");
         } catch (final RuntimeException invalid) {
@@ -98,6 +125,8 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
     /**
      * Class Power modifier-szorzó (1.0 = nincs bónusz). A fogyasztók csatornán kérdeznek
      * (pl. CLASS_RESOURCE_MAX), relic-id-t és kaszt-vizsgálatot soha nem hordoznak.
+     * UUID-only read path: minden nézete pillanatkép/cache-alapú, Player-dereferencia
+     * nélkül — idegen régió-szálról is biztonságosan hívható.
      */
     public double modifier(final UUID playerId, final RelicModifier modifier) {
         if (playerId == null || modifier == null) {
@@ -115,25 +144,40 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
         return percent == null ? 1.0D : 1.0D + Math.max(0.0D, percent) / 100.0D;
     }
 
-    // ---------- szemantikus gameplay-esemény belépő (a class rework szerződése) ----------
+    // ---------- szemantikus gameplay-jelzés belépő (a class rework szerződése) ----------
 
     /**
-     * A hívó a játékos entity-schedulerén fut (Folia-kontraktus). Csak aktív resonance-szal
-     * rendelkező feloldás jut el a hookig; az inert hook a routing bizonyítéka gameplay nélkül.
+     * Tipizált Resonance-dispatch. Folia-szerződés KIKÉNYSZERÍTVE: ha a hívó nem az actor
+     * régió-szálán fut, a dispatch maga hoppol az actor schedulerére — rossz szálról nem
+     * lehet hamisan biztonságos hívást tenni. A hook a régió-helyes actor referenciát a
+     * kontextusban kapja; a signal cél-oldala csak identitás (UUID), idegen entity
+     * érintése a hookban is csak a cél schedulerére hoppolva megengedett.
      */
-    public void onGameplayEvent(final Player player, final ClassGameplayEvent event,
-                                final Set<AbilityTag> tags) {
-        if (player == null || event == null) {
+    public void onGameplaySignal(final Player actor, final ClassGameplaySignal signal) {
+        if (actor == null || signal == null || !frameworkEnabled()) {
             return;
         }
+        if (!actor.getUniqueId().equals(signal.actorId())) {
+            plugin.getLogger().warning("Class gameplay signal dropped: actor mismatch ("
+                    + signal.actorId() + " != " + actor.getUniqueId() + ")");
+            return;
+        }
+        if (!Bukkit.isOwnedByCurrentRegion(actor)) {
+            actor.getScheduler().run(plugin, task -> dispatchSignal(actor, signal), null);
+            return;
+        }
+        dispatchSignal(actor, signal);
+    }
+
+    private void dispatchSignal(final Player actor, final ClassGameplaySignal signal) {
         final ClassRelicActivation activation = resolver.resolveForClass(catalog,
-                player.getUniqueId());
+                actor.getUniqueId());
         if (!activation.resonanceActive() || activation.resolvedResonanceId().isEmpty()) {
             return;
         }
         resonanceHooks.getOrDefault(activation.resolvedResonanceId().orElseThrow(),
                         ClassRelicResonanceHook.INERT)
-                .onGameplayEvent(activation, event, tags == null ? Set.of() : tags);
+                .onSignal(new ClassRelicResonanceContext(actor, activation, signal));
     }
 
     /** A class rework ide regisztrálja a valódi resonance-implementációkat. */
@@ -149,13 +193,15 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
         NOT_AVAILABLE,
         DISABLED,
         ON_COOLDOWN,
+        PERSISTENCE_FAILED,
         ARMED
     }
 
     /**
-     * Az Awakening keret-aktiválása: a durable cooldown a relickel utazik (RelicManager),
-     * gazdacsere/restart nem nullázza. Gameplay-hatás itt nincs — a tényleges Awakening
-     * a class rework része; a keret csak a jogosultságot és a cooldownt kezeli.
+     * Az Awakening keret-aktiválása. A ready-at ellenőrzés + az új érték durable commitja
+     * a világ-relic store EGY szerializált műveletében történik (RelicManager.tryArmAwakening):
+     * két konkurens hívásból pontosan egy ARMED, sikertelen lemez-írásnál az eredmény
+     * PERSISTENCE_FAILED és az állapot változatlan — ARMED siker csak megtörtént commit után.
      */
     public AwakeningResult tryArmAwakening(final Player player) {
         if (player == null) {
@@ -170,14 +216,12 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
         if (binding == null || !binding.awakening().enabled()) {
             return AwakeningResult.DISABLED;
         }
-        final long now = System.currentTimeMillis();
-        if (!AwakeningCooldownPolicy.ready(now,
-                relicManager.getAwakeningReadyAt(activation.relicId()))) {
-            return AwakeningResult.ON_COOLDOWN;
-        }
-        relicManager.setAwakeningReadyAt(activation.relicId(),
-                AwakeningCooldownPolicy.nextReadyAt(now, binding.awakening().cooldownSeconds()));
-        return AwakeningResult.ARMED;
+        return switch (relicManager.tryArmAwakening(activation.relicId(),
+                System.currentTimeMillis(), binding.awakening().cooldownSeconds())) {
+            case ARMED -> AwakeningResult.ARMED;
+            case ON_COOLDOWN -> AwakeningResult.ON_COOLDOWN;
+            case PERSISTENCE_FAILED -> AwakeningResult.PERSISTENCE_FAILED;
+        };
     }
 
     // ---------- authority-nézetek ----------
@@ -198,54 +242,79 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
     }
 
     private ClassRelicActivationResolver.ProfileView profileView() {
-        return playerId -> {
-            if (!gateway.isSessionReady(playerId)) {
-                return Optional.empty();
-            }
-            final Optional<ClassSpecSection> profile = gateway.currentProfile(playerId);
-            if (profile.isEmpty() || !profile.orElseThrow().isGameplayUsable()) {
-                return Optional.empty();
-            }
-            final ClassSpecSection section = profile.orElseThrow();
-            final var slot = section.activeSlot();
-            final var loadout = slot == null ? null : section.loadout(slot);
-            return Optional.of(new ClassRelicActivationResolver.ProfileFacts(
-                    section.primaryClassId(),
-                    loadout == null ? "" : loadout.specializationId(),
-                    loadout == null ? LoadoutStatus.EMPTY : loadout.status()));
-        };
+        return this::profileFacts;
+    }
+
+    private Optional<ClassRelicActivationResolver.ProfileFacts> profileFacts(final UUID playerId) {
+        if (!gateway.isSessionReady(playerId)) {
+            return Optional.empty();
+        }
+        final Optional<ClassSpecSection> profile = gateway.currentProfile(playerId);
+        if (profile.isEmpty() || !profile.orElseThrow().isGameplayUsable()) {
+            return Optional.empty();
+        }
+        final ClassSpecSection section = profile.orElseThrow();
+        final var slot = section.activeSlot();
+        final var loadout = slot == null ? null : section.loadout(slot);
+        return Optional.of(new ClassRelicActivationResolver.ProfileFacts(
+                section.primaryClassId(),
+                loadout == null ? "" : loadout.specializationId(),
+                loadout == null ? LoadoutStatus.EMPTY : loadout.status()));
     }
 
     /**
-     * Inventory-nézet csak a játékos saját régió-szálán frissül; idegen szálról a TTL-es
-     * cache utolsó értéke él (fail-safe: ismeretlen állapot = nincs birtoklás).
+     * UUID-only birtoklás-nézet: KIZÁRÓLAG a régió-szálon készült pillanatképből olvas,
+     * Player-dereferencia nélkül. Ismeretlen vagy TTL-en túli pillanatkép = fail-closed
+     * "nincs birtoklás" — korlátlan ideig élő stale "true" nem létezhet.
      */
     private ClassRelicActivationResolver.PossessionView possessionView() {
         return (playerId, relicId) -> {
-            final Player player = Bukkit.getPlayer(playerId);
-            if (player == null || !player.isOnline()) {
-                return false;
-            }
-            final long now = System.currentTimeMillis();
-            final Possession cached = possessionCache.get(playerId);
-            if (Bukkit.isOwnedByCurrentRegion(player)
-                    && (cached == null || !cached.relicId().equals(relicId)
-                    || now - cached.scannedAtMillis() >= POSSESSION_TTL_MILLIS)) {
-                final boolean present = scanInventory(player, relicId);
-                possessionCache.put(playerId, new Possession(relicId, present, now));
-                return present;
-            }
-            return cached != null && cached.relicId().equals(relicId) && cached.present();
+            final PossessionSnapshot snapshot = possessionCache.get(playerId);
+            return snapshot != null && snapshot.usableFor(relicId,
+                    System.currentTimeMillis(), POSSESSION_TTL_MILLIS);
         };
     }
 
-    private boolean scanInventory(final Player player, final String relicId) {
+    /** Kritikus világ-relic mutáció (transfer/lost/reclaim/give/expiry) → azonnali invalidáció. */
+    public void invalidatePossession(final String relicId) {
+        if (relicId == null || relicId.isBlank()) {
+            return;
+        }
+        final String normalized = relicId.toLowerCase(java.util.Locale.ROOT);
+        possessionCache.entrySet().removeIf(entry -> entry.getValue().relicId().equals(normalized));
+    }
+
+    /** A pillanatkép frissítése — CSAK a játékos saját régió-szálán hívható. */
+    private void refreshPossession(final Player player) {
+        if (!player.isOnline()) {
+            return;
+        }
+        final Optional<ClassRelicActivationResolver.ProfileFacts> facts =
+                profileFacts(player.getUniqueId());
+        final Optional<ClassRelicBinding> binding = facts.isEmpty() ? Optional.empty()
+                : catalog.byClass(facts.orElseThrow().primaryClassId());
+        if (binding.isEmpty()) {
+            possessionCache.remove(player.getUniqueId());
+            return;
+        }
+        final String relicId = binding.orElseThrow().relicId();
+        possessionCache.put(player.getUniqueId(), new PossessionSnapshot(relicId,
+                scanUsableInventory(player, relicId), System.currentTimeMillis()));
+    }
+
+    /**
+     * "Usable physical relic": nem elég az azonos relic-id — a kanonikus
+     * RelicManager.canUse validáció is kötelező (item-owner PDC + központi ownership),
+     * így stale/duplikált/rossz gazdához kötött példány nem ad Class Powert.
+     */
+    private boolean scanUsableInventory(final Player player, final String relicId) {
         for (final ItemStack stack : player.getInventory().getContents()) {
             if (stack == null || !relicManager.isRelicItem(stack)) {
                 continue;
             }
             final var definition = relicManager.identify(stack);
-            if (definition != null && definition.id().equalsIgnoreCase(relicId)) {
+            if (definition != null && definition.id().equalsIgnoreCase(relicId)
+                    && relicManager.canUse(player, stack)) {
                 return true;
             }
         }
@@ -256,22 +325,39 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
 
     @org.bukkit.event.EventHandler
     public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
-        // Első szkennelés a játékos saját schedulerén, hogy a cache ne üresen induljon.
         final Player player = event.getPlayer();
-        player.getScheduler().runDelayed(plugin, task -> {
-            if (player.isOnline()) {
-                final ClassRelicActivation activation = resolve(player.getUniqueId());
-                if (!activation.relicId().isEmpty()) {
-                    possessionCache.put(player.getUniqueId(), new Possession(
-                            activation.relicId(), scanInventory(player, activation.relicId()),
-                            System.currentTimeMillis()));
-                }
+        final UUID playerId = player.getUniqueId();
+        // Periodikus pillanatkép-frissítés a játékos saját schedulerén; a task a TTL-nél
+        // sűrűbben fut, így friss cache-t tart, amíg a játékos online.
+        final ScheduledTask task = player.getScheduler().runAtFixedRate(plugin,
+                scheduled -> refreshPossession(player), null, 1L, POSSESSION_REFRESH_TICKS);
+        if (task != null) {
+            final ScheduledTask previous = refreshTasks.put(playerId, task);
+            if (previous != null) {
+                previous.cancel();
             }
-        }, null, 20L);
+        }
+    }
+
+    @org.bukkit.event.EventHandler
+    public void onDeath(final org.bukkit.event.entity.PlayerDeathEvent event) {
+        // Halálkor a tárgyak kieshetnek/megsemmisülhetnek — a pillanatkép azonnal hiteltelen.
+        possessionCache.remove(event.getEntity().getUniqueId());
     }
 
     @org.bukkit.event.EventHandler
     public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
-        possessionCache.remove(event.getPlayer().getUniqueId());
+        final UUID playerId = event.getPlayer().getUniqueId();
+        possessionCache.remove(playerId);
+        final ScheduledTask task = refreshTasks.remove(playerId);
+        if (task != null) {
+            task.cancel();
+        }
+    }
+
+    public void shutdown() {
+        refreshTasks.values().forEach(ScheduledTask::cancel);
+        refreshTasks.clear();
+        possessionCache.clear();
     }
 }

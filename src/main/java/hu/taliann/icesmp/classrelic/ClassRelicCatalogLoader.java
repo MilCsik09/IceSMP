@@ -37,9 +37,17 @@ public final class ClassRelicCatalogLoader {
         return new ClassRelicCatalog(bindings, requireCompleteCatalog);
     }
 
+    /**
+     * Az Awakening cooldown integer-szemantikájú és korlátos: a felső határ (100 év) mellett
+     * a ready-at aritmetika (now + cooldown*1000) normál epoch-millis értéknél sem tud
+     * túlcsordulni — a hibás config reloadkor bukik, nem használatkor.
+     */
+    public static final long MAX_AWAKENING_COOLDOWN_SECONDS = 3_153_600_000L;
+
     private static ClassRelicBinding binding(final String relicId, final Map<String, Object> node) {
         final String classId = string(node.get("class"), relicId + ".class");
-        final Map<String, Object> activation = optionalSection(node.get("activation"));
+        final Map<String, Object> activation = optionalSection(node.get("activation"),
+                relicId + ".activation");
         final boolean requiresPossession = bool(
                 activation.getOrDefault("requires-physical-possession", Boolean.TRUE),
                 relicId + ".activation.requires-physical-possession");
@@ -61,7 +69,8 @@ public final class ClassRelicCatalogLoader {
                 string(basePowerNode.get("id"), relicId + ".base-power.id"), modifiers);
 
         final LinkedHashMap<String, ClassRelicBinding.Resonance> resonances = new LinkedHashMap<>();
-        optionalSection(node.get("resonances")).forEach((specKey, value) -> {
+        optionalSection(node.get("resonances"), relicId + ".resonances")
+                .forEach((specKey, value) -> {
             final String specId = specKey == null ? ""
                     : specKey.trim().toLowerCase(Locale.ROOT);
             final Map<String, Object> resonanceNode = section(value,
@@ -78,7 +87,7 @@ public final class ClassRelicCatalogLoader {
                 string(awakeningNode.get("id"), relicId + ".awakening.id"),
                 bool(awakeningNode.getOrDefault("enabled", Boolean.FALSE),
                         relicId + ".awakening.enabled"),
-                (long) number(awakeningNode.getOrDefault("cooldown-seconds", 0L),
+                integerSeconds(awakeningNode.getOrDefault("cooldown-seconds", 0L),
                         relicId + ".awakening.cooldown-seconds"));
 
         return new ClassRelicBinding(relicId, classId, requiresPossession, basePower,
@@ -93,9 +102,21 @@ public final class ClassRelicCatalogLoader {
         return (Map<String, Object>) map;
     }
 
+    /**
+     * A hiányzó és a rossz típusú szekció KÜLÖN eset: az absent mező defaultolhat, a
+     * jelen lévő, de nem szekció alakú érték (pl. {@code resonances: "abc"}) hibás
+     * config, amit a fail-fast szerződés szerint el kell utasítani — nem normalizálható
+     * csendben üresre.
+     */
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> optionalSection(final Object value) {
-        return value instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
+    private static Map<String, Object> optionalSection(final Object value, final String path) {
+        if (value == null) {
+            return Map.of();
+        }
+        if (value instanceof Map<?, ?> map) {
+            return (Map<String, Object>) map;
+        }
+        throw new IllegalArgumentException("invalid config section (wrong type): " + path);
     }
 
     private static String string(final Object value, final String path) {
@@ -117,5 +138,20 @@ public final class ClassRelicCatalogLoader {
             return number.doubleValue();
         }
         throw new IllegalArgumentException("missing/invalid config number: " + path);
+    }
+
+    /** Integer-szemantika: tört érték (120.9) nem csonkolható; negatív és túl nagy érték hibás. */
+    private static long integerSeconds(final Object value, final String path) {
+        if (!(value instanceof Number number)
+                || !(value instanceof Integer || value instanceof Long)) {
+            throw new IllegalArgumentException(
+                    "missing/invalid config integer (whole seconds required): " + path);
+        }
+        final long seconds = number.longValue();
+        if (seconds < 0L || seconds > MAX_AWAKENING_COOLDOWN_SECONDS) {
+            throw new IllegalArgumentException("config integer out of range [0, "
+                    + MAX_AWAKENING_COOLDOWN_SECONDS + "]: " + path);
+        }
+        return seconds;
     }
 }

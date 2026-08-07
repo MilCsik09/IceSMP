@@ -112,7 +112,7 @@ relics:
         requires-physical-possession: true
       base-power:
         id: dragon_essence
-        # A korábbi pakt.dragon-essence-bonus-percent utódja — az érték változatlan.
+        # A Sárkányidéző max-Eszencia bónusza (%): a kanonikus és egyetlen forrás.
         max-resource-percent: 10.0
       resonances:
         devastation:
@@ -1079,9 +1079,9 @@ souls:
       - "0,-1,1:OBSIDIAN"
       - "1,-1,1:OBSIDIAN"
 
-# ===== E25/E32 — kaszt-erőforrás pool-bónuszok (élő kulcsok) =====
+# ===== E25 — Warlock-paktum pool-bónusz (élő kulcsok) =====
+# A Sárkányidéző Eszencia-bónusza már NEM itt él: a Class Relic Framework adja a
+# relics.class-relics.sarkany_tojas.base-power.max-resource-percent kulcson át.
 pakt:
   bonus-percent: 20.0
   material: "elso_csend_szilankja"
-  dragon-relic-id: "sarkany_tojas"
-  dragon-essence-bonus-percent: 10.0

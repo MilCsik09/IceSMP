@@ -20,6 +20,12 @@ import java.util.UUID;
  */
 public final class ClassRelicActivationResolver {
 
+    /** Explicit framework-kapu: false esetén MINDEN feloldás FRAMEWORK_DISABLED. */
+    @FunctionalInterface
+    public interface FrameworkView {
+        boolean enabled();
+    }
+
     /** Világ-szintű relic authority nézete (ownership + lost/reclaim). */
     public interface OwnershipView {
         Optional<UUID> ownerOf(String relicId);
@@ -56,13 +62,16 @@ public final class ClassRelicActivationResolver {
         }
     }
 
+    private final FrameworkView framework;
     private final OwnershipView ownership;
     private final PossessionView possession;
     private final ProfileView profile;
 
-    public ClassRelicActivationResolver(final OwnershipView ownership,
+    public ClassRelicActivationResolver(final FrameworkView framework,
+                                        final OwnershipView ownership,
                                         final PossessionView possession,
                                         final ProfileView profile) {
+        this.framework = Objects.requireNonNull(framework, "framework");
         this.ownership = Objects.requireNonNull(ownership, "ownership");
         this.possession = Objects.requireNonNull(possession, "possession");
         this.profile = Objects.requireNonNull(profile, "profile");
@@ -74,6 +83,12 @@ public final class ClassRelicActivationResolver {
         Objects.requireNonNull(playerId, "playerId");
         final String normalizedRelic = relicId == null ? ""
                 : relicId.trim().toLowerCase(Locale.ROOT);
+        // A kapu a possession-mellékhatás ELŐTT dönt: requires-physical-possession=false
+        // kötés sem aktiválódhat kikapcsolt framework mellett.
+        if (!framework.enabled()) {
+            return ClassRelicActivation.dormant(playerId, normalizedRelic, "",
+                    ClassRelicActivation.DormantReason.FRAMEWORK_DISABLED);
+        }
         final Optional<ClassRelicBinding> bound = catalog.byRelic(normalizedRelic);
         if (bound.isEmpty()) {
             return ClassRelicActivation.dormant(playerId, normalizedRelic, "",
@@ -122,6 +137,10 @@ public final class ClassRelicActivationResolver {
                                                 final UUID playerId) {
         Objects.requireNonNull(catalog, "catalog");
         Objects.requireNonNull(playerId, "playerId");
+        if (!framework.enabled()) {
+            return ClassRelicActivation.dormant(playerId, "", "",
+                    ClassRelicActivation.DormantReason.FRAMEWORK_DISABLED);
+        }
         final Optional<ProfileFacts> facts = profile.facts(playerId);
         if (facts.isEmpty()) {
             return ClassRelicActivation.dormant(playerId, "", "",
