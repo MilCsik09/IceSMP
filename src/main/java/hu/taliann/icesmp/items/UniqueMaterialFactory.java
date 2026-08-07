@@ -25,10 +25,12 @@ import java.util.Locale;
  */
 public final class UniqueMaterialFactory {
 
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final NamespacedKey idKey;
 
     public UniqueMaterialFactory(final JavaPlugin plugin, final ConfigManager configManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.idKey = new NamespacedKey(plugin, "unique_material");
     }
@@ -64,9 +66,18 @@ public final class UniqueMaterialFactory {
         meta.lore(lore);
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
-        final String model = section.getString("item-model", null);
-        if (model != null && !model.isBlank()) {
-            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, model);
+
+        // Presentation data components are deliberately last: any later setItemMeta round-trip
+        // would erase them. The explicit equipment-asset is optional; equippable IceSMP items may
+        // use the documented same-render-id fallback when it is absent.
+        final String itemModel = section.getString("item-model", null);
+        final String equipmentAsset = section.getString("equipment-asset", null);
+        final WearablePresentation.Result presentation = WearablePresentation.applyWearablePresentation(
+                item, itemModel, equipmentAsset);
+        if (equipmentAsset != null && !equipmentAsset.isBlank() && !presentation.equipmentApplied()) {
+            plugin.getLogger().warning("profession-materials." + uniqueId + ".equipment-asset: '"
+                    + equipmentAsset + "' cannot be applied (" + presentation.equipmentStatus() + ")");
+            return null;
         }
         return item;
     }
