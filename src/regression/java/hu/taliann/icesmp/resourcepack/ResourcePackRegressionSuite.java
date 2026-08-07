@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.UUID;
 
-/** Regressions for the additive Paper resource-pack layer, stable id and immutable hash URL. */
+/** Regressions for the additive resource-pack layer and custom wearable presentation contract. */
 public final class ResourcePackRegressionSuite {
 
     private ResourcePackRegressionSuite() {
@@ -15,6 +15,9 @@ public final class ResourcePackRegressionSuite {
         listenerUsesAdditiveApiAndStableId();
         packagedConfigMatchesTheStableId();
         bundledMetadataUsesMatchingImmutableHash();
+        wearablePresentationSeparatesInventoryAndEquippedRendering();
+        wearablePresentationPreservesVanillaEquippableState();
+        wearableCreationPathsUseTheCentralBoundary();
         System.out.println("Resource pack regression suite passed.");
     }
 
@@ -48,6 +51,52 @@ public final class ResourcePackRegressionSuite {
         check(url.startsWith("https://assets.icesmp.taliann.dev/resource-packs/icesmp-")
                         && url.endsWith(sha1 + ".zip"),
                 "resource-pack URL is not the immutable object matching the bundled SHA-1");
+    }
+
+    private static void wearablePresentationSeparatesInventoryAndEquippedRendering() throws Exception {
+        final String source = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"));
+        check(source.contains("ItemDataFactory.applyItemModel(item, normalizedModel)"),
+                "wearable presentation no longer applies ITEM_MODEL through the canonical helper");
+        check(source.contains("item.setData(DataComponentTypes.EQUIPPABLE"),
+                "wearable presentation no longer writes the EQUIPPABLE component");
+        check(source.contains("assetId(assetKey)"),
+                "wearable presentation no longer binds the equipment asset id");
+        check(source.contains("explicitEquipmentAsset") && source.contains("normalizedItemModel"),
+                "wearable presentation lost the explicit-vs-same-id fallback distinction");
+    }
+
+    private static void wearablePresentationPreservesVanillaEquippableState() throws Exception {
+        final String source = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"));
+        final String compact = source.replaceAll("\\s+", "");
+        check(compact.contains("current.toBuilder().assetId(assetKey).build()"),
+                "equipment asset must be applied by rebuilding the existing EQUIPPABLE component");
+        check(!source.contains("Equippable.equippable("),
+                "wearable presentation must not synthesize a replacement EQUIPPABLE/slot");
+        check(!source.contains(".slot("),
+                "wearable presentation must not overwrite the vanilla equipment slot");
+    }
+
+    private static void wearableCreationPathsUseTheCentralBoundary() throws Exception {
+        final String profession = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java"));
+        final String unique = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/UniqueMaterialFactory.java"));
+        final String loot = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/MobLootListener.java"));
+
+        check(profession.contains("presentationBase + \"equipment-asset\"")
+                        && profession.contains("WearablePresentation.applyWearablePresentation"),
+                "profession recipe results no longer support the explicit equipment-asset field");
+        check(profession.contains("uniqueMaterials.applyPresentation(result, recipe.uniqueResult())"),
+                "unique profession results no longer reapply presentation after meta/affix round-trips");
+        check(unique.contains("section.getString(\"equipment-asset\", null)")
+                        && unique.contains("WearablePresentation.applyWearablePresentation"),
+                "unique-material creation no longer uses the wearable presentation boundary");
+        check(loot.contains("chosen.get(\"equipment-asset\")")
+                        && loot.contains("WearablePresentation.applyWearablePresentation"),
+                "named loot no longer supports equipment-asset through the wearable boundary");
     }
 
     private static String extractQuotedValue(final String source, final String prefix) {
