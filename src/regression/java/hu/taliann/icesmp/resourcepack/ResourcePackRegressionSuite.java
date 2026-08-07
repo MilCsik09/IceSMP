@@ -18,8 +18,10 @@ public final class ResourcePackRegressionSuite {
         bundledMetadataUsesMatchingImmutableHash();
         wearablePresentationSeparatesInventoryAndEquippedRendering();
         wearablePresentationPreservesVanillaEquippableState();
+        wearableFallbackPolicyIsSharedAndVersioned();
         wearableCreationPathsUseTheCentralBoundary();
         relicWingEquipmentAssetsStayBundled();
+        horseArmorEquipmentAssetsStayBundled();
         System.out.println("Resource pack regression suite passed.");
     }
 
@@ -80,6 +82,34 @@ public final class ResourcePackRegressionSuite {
                 "wearable presentation must not overwrite the vanilla equipment slot");
     }
 
+    private static void wearableFallbackPolicyIsSharedAndVersioned() throws Exception {
+        final Path policyPath = Path.of("src/main/resources/wearable-fallback-policy.properties");
+        check(Files.isRegularFile(policyPath), "shared wearable fallback policy is missing");
+
+        final Properties policy = new Properties();
+        try (var reader = Files.newBufferedReader(policyPath)) {
+            policy.load(reader);
+        }
+        check("1".equals(policy.getProperty("schema")), "unexpected wearable fallback policy schema");
+        check("1.21.11".equals(policy.getProperty("minecraft-version")),
+                "wearable fallback policy must stay pinned to the server Minecraft target");
+        final String exact = policy.getProperty("exact", "");
+        final String suffix = policy.getProperty("suffix", "");
+        check(exact.contains("SADDLE"), "SADDLE is missing from the shared fallback policy");
+        check(suffix.contains("_ARMOR"), "BODY armor families are missing from the fallback policy");
+        check(suffix.contains("_HARNESS"), "harness BODY equipment is missing from the fallback policy");
+
+        final String runtime = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"));
+        final String validator = Files.readString(Path.of("scripts/resource_pack.py"));
+        check(runtime.contains("wearable-fallback-policy.properties")
+                        && runtime.contains("allowsImplicitSameIdFallback"),
+                "runtime no longer consumes the shared wearable fallback policy");
+        check(validator.contains("wearable-fallback-policy.properties")
+                        && validator.contains("allows_implicit_same_id_fallback"),
+                "resource-pack validator no longer consumes the shared wearable fallback policy");
+    }
+
     private static void wearableCreationPathsUseTheCentralBoundary() throws Exception {
         final String profession = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java"));
@@ -112,6 +142,16 @@ public final class ResourcePackRegressionSuite {
                     "resource-pack/assets/icesmp/equipment/relic_" + relicId + ".json");
             check(Files.isRegularFile(equipment),
                     "relic wing runtime binding has no matching equipment asset: " + equipment);
+        }
+    }
+
+    private static void horseArmorEquipmentAssetsStayBundled() throws Exception {
+        for (final String assetId : List.of("vas_lopancel", "arany_lopancel", "gyemant_lopancel")) {
+            final Path equipment = Path.of("resource-pack/assets/icesmp/equipment/" + assetId + ".json");
+            check(Files.isRegularFile(equipment),
+                    "horse armor fallback has no matching equipment asset: " + equipment);
+            check(Files.readString(equipment).contains("\"horse_body\""),
+                    "horse armor equipment asset must render through horse_body: " + equipment);
         }
     }
 
