@@ -253,21 +253,25 @@ public final class RelicWorldStateStore {
     }
 
     /**
-     * PvP-transfer világ-oldali commitja. A caller által bizonyított expectedOwner
-     * összevetése ugyanazon writeLock kritikus szekcióban történik, mint a candidate
-     * felépítése és durable commit. Egy stale fizikai másolat vagy egy elvesztett
-     * concurrent transfer-verseny ezért nem írhatja felül a központi ownershipet.
+     * PvP-transfer világ-oldali commitja. A death-event scoped expected-owner bizonyítéka
+     * (ha jelen van) felülírja a legacy manager köztes ownership-rereadjét, és az ellenőrzés
+     * ugyanazon writeLock kritikus szekcióban történik, mint a durable commit. Mismatch vagy
+     * persistence-hiba kivétellel állítja meg a legacy void callert, így a fizikai PDC sem
+     * írható át sikertelen világ-commit után.
      */
     public TransferResult beginTransfer(final String relicId, final UUID expectedOwner,
                                         final UUID toOwner, final long nowMillis) {
-        if (relicId == null || relicId.isBlank() || expectedOwner == null || toOwner == null) {
-            return TransferResult.NOT_OWNER;
+        final UUID scopedExpectedOwner = RelicTransferExpectation.currentExpectedOwner();
+        final UUID effectiveExpectedOwner = scopedExpectedOwner == null
+                ? expectedOwner : scopedExpectedOwner;
+        if (relicId == null || relicId.isBlank() || effectiveExpectedOwner == null || toOwner == null) {
+            throw new IllegalArgumentException("relic transfer requires relicId, expectedOwner and toOwner");
         }
         final String key = normalize(relicId);
         synchronized (writeLock) {
             final RelicOwnership ownership = current.ownerships().get(key);
-            if (ownership == null || !ownership.owner().equals(expectedOwner)) {
-                return TransferResult.NOT_OWNER;
+            if (ownership == null || !ownership.owner().equals(effectiveExpectedOwner)) {
+                throw new IllegalStateException("relic transfer owner mismatch for '" + key + "'");
             }
             final LinkedHashMap<String, RelicOwnership> ownerships =
                     new LinkedHashMap<>(current.ownerships());
@@ -277,16 +281,12 @@ public final class RelicWorldStateStore {
             final LinkedHashMap<String, PendingRelicOperation> operations =
                     new LinkedHashMap<>(current.operations());
             operations.put(key, new PendingRelicOperation(
-                    PendingRelicOperation.Type.TRANSFER, expectedOwner, toOwner));
+                    PendingRelicOperation.Type.TRANSFER, effectiveExpectedOwner, toOwner));
             final RelicWorldStateSnapshot candidate = new RelicWorldStateSnapshot(
                     ownerships, lostSince, current.awakeningReadyAt(), operations);
-            try {
-                persistLocked(candidate);
-            } catch (final RuntimeException failure) {
-                logger.severe("Relic transfer rolled back (durable write failed) for '" + key
-                        + "': " + failure.getMessage());
-                return TransferResult.PERSISTENCE_FAILED;
-            }
+            // Deliberately propagate persistence failure: RelicManager's legacy void API catches
+            // RuntimeException and returns before mutating the physical item PDC.
+            persistLocked(candidate);
             current = candidate;
         }
         notifyMutation(key);
