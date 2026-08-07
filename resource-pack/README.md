@@ -14,13 +14,20 @@ A viselhető tárgyaknál **két külön render-identitás** létezik:
 
 A kettő szándékosan nincs összemosva. Egy profession-result, unique item vagy nevesített loot
 megadhatja mindkettőt. Az explicit `equipment-asset` mindig elsőbbséget élvez. Ha nincs megadva,
-akkor kizárólag olyan itemnél használható a dokumentált **same-render-id fallback**, amelynek a
-vanilla Materialja eleve rendelkezik `EQUIPPABLE` komponenssel: ilyenkor
+akkor csak a `src/main/resources/wearable-fallback-policy.properties` **verziózott, közös
+fallback-policyje** által engedélyezett Material használhat same-render-id fallbacket:
 `item-model: "icesmp:x"` → `equipment-asset: "icesmp:x"`.
 
+A policy jelenleg a szerver célverziójára, **Minecraft 1.21.11-re** van pinelve. Ugyanazt a fájlt
+olvassa a Paper runtime és a Python resource-pack validator, ezért nem tarthatnak fenn egymástól
+eltérő kézi „equippable Material” listát. A policy lefedi a játékos armor/head/elytra családokat,
+valamint a BODY/SADDLE jellegű családokat is (`*_ARMOR`, `*_HARNESS`, `*_CARPET`, `SADDLE`). Új
+Minecraft célverziónál ezt a manifestet tudatosan felül kell vizsgálni; policy-n kívüli wearable-höz
+explicit `equipment-asset` használható.
+
 A plugin a meglévő `EQUIPPABLE` komponenst `toBuilder()`-rel építi tovább, és csak az asset id-t
-cseréli. Nem gyárt új equip-slotot, ezért a vanilla head/chest/legs/feet slot, equip sound,
-swappability és a többi equip-tulajdonság megmarad. A presentation data componenteket minden
+cseréli. Nem gyárt új equip-slotot, ezért a vanilla head/chest/legs/feet/body/saddle slot, equip
+sound, swappability és a többi equip-tulajdonság megmarad. A presentation data componenteket minden
 `ItemMeta`/affix módosítás **után** kell alkalmazni.
 
 ### Equipment asset és textúra-konvenció
@@ -42,17 +49,20 @@ Fájlok:
 - `assets/icesmp/equipment/pelda_vert.json`
 - `assets/icesmp/textures/entity/equipment/humanoid/pelda_vert.png`
 - leggings layer esetén: `textures/entity/equipment/humanoid_leggings/<id>.png`
+- lópáncél esetén: `textures/entity/equipment/horse_body/<id>.png`
 
 A `scripts/resource_pack.py` build előtt ellenőrzi az összes equipment JSON layer-textúra
-hivatkozását, az explicit config `equipment-asset` ID-kat, valamint az equippable
-same-render-id fallbackeket. Hiányzó asset vagy texture publikálási hibát okoz.
+hivatkozását, az explicit config `equipment-asset` ID-kat, valamint a közös policy szerint engedett
+same-render-id fallbackeket. Hiányzó asset vagy texture publikálási hibát okoz. Emiatt például az
+`IRON_HORSE_ARMOR + icesmp:vas_lopancel` binding ugyanazzal a policyvel kerül runtime-feloldásra és
+CI-ellenőrzésre; a `vas_lopancel` equipment JSON törlése nem tud csendben átcsúszni.
 
 ### Jelenlegi 3D capability boundary
 
 A vanilla Java resource-pack equipment rendszer a támogatott equipment **layer-típusokhoz**
-(`humanoid`, `humanoid_leggings`, `wings`, stb.) textúrarétegeket köt. Ez kiváló saját armor-skin,
-korona/fátyol/köpeny jellegű, a vanilla testgeometriára illeszkedő megjelenéshez, de az
-`EQUIPPABLE.assetId` önmagában **nem egy általános, tetszőleges új player-armor mesh/bone API**.
+(`humanoid`, `humanoid_leggings`, `horse_body`, `wings`, stb.) textúrarétegeket köt. Ez kiváló
+saját armor-skin, korona/fátyol/köpeny jellegű, a vanilla geometriára illeszkedő megjelenéshez, de
+az `EQUIPPABLE.assetId` önmagában **nem egy általános, tetszőleges új player-armor mesh/bone API**.
 Az inventory `ITEM_MODEL` 3D geometriája sem válik automatikusan viselt player-geometriává.
 
 Ezért a jelenlegi kód nem színlel „3D armor támogatást”. A központi
