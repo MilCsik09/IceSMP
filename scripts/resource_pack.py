@@ -5,6 +5,11 @@ The ZIP builder is intentionally deterministic: identical client-facing contents
 bytes, SHA-1 values and R2 object names regardless of file mtimes, operating system or zlib
 version. Pack files are stored without a second compression pass because PNG assets are already
 compressed and the small size difference is worth the stronger reproducibility guarantee.
+
+Wearable validation is intentionally part of the pack build. The server-side ITEM_MODEL id and the
+worn EQUIPPABLE asset are different resource identities; a broken equipment JSON, missing layer
+texture, explicit equipment-asset config reference, or an invalid same-id wearable fallback must
+fail before a pack can be published.
 """
 
 from __future__ import annotations
@@ -24,6 +29,12 @@ MAX_FILES = 20_000
 MAX_UNCOMPRESSED_BYTES = 100 * 1024 * 1024
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 SHA1_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+RESOURCE_LOCATION_PATTERN = re.compile(r"^[a-z0-9_.-]+:[a-z0-9_./-]+$")
+CONFIG_RESOURCE_PATTERN = re.compile(
+    r"(?P<key>equipment-asset|(?:key-)?item-model)\s*:\s*[\"']?(?P<value>[a-z0-9_.-]+(?::[a-z0-9_./-]+)?)",
+    re.IGNORECASE,
+)
+FLOW_MATERIAL_PATTERN = re.compile(r"(?:^|[,\{])\s*(?:item|material)\s*:\s*[\"']?([A-Z0-9_]+)", re.IGNORECASE)
 # Repository documentation belongs beside the source pack but must not affect client bytes/hash.
 SOURCE_ONLY_PATHS = frozenset({"README.md"})
 
@@ -84,6 +95,194 @@ def validate_png(path: Path, relative: PurePosixPath) -> None:
         raise PackError(f"Implausible PNG dimensions in {relative}: {width}x{height}")
 
 
+def normalize_resource_location(raw: str, *, default_namespace: str = "icesmp") -> str:
+    value = raw.strip().lower()
+    if ":" not in value:
+        value = f"{default_namespace}:{value}"
+    if not RESOURCE_LOCATION_PATTERN.fullmatch(value) or ".." in value.split(":", 1)[1].split("/"):
+        raise PackError(f"Invalid resource location: {raw!r}")
+    return value
+
+
+def equipment_assets(root: Path) -> dict[str, Path]:
+    assets: dict[str, Path] = {}
+    assets_root = root / "assets"
+    if not assets_root.is_dir():
+        return assets
+    for namespace_dir in sorted(path for path in assets_root.iterdir() if path.is_dir()):
+        equipment_root = namespace_dir / "equipment"
+        if not equipment_root.is_dir():
+            continue
+        for path in sorted(equipment_root.rglob("*.json")):
+            relative = path.relative_to(equipment_root).with_suffix("").as_posix()
+            asset_id = f"{namespace_dir.name}:{relative}"
+            previous = assets.get(asset_id)
+            if previous is not None:
+                raise PackError(f"Duplicate equipment asset id {asset_id}: {previous} / {path}")
+            assets[asset_id] = path
+    return assets
+
+
+def validate_equipment_assets(root: Path) -> dict[str, Path]:
+    """Validate equipment JSON shape and every layer -> texture reference."""
+    assets = equipment_assets(root)
+    for asset_id, path in sorted(assets.items()):
+        namespace = asset_id.split(":", 1)[0]
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exception:
+            raise PackError(f"Invalid equipment JSON for {asset_id}: {exception}") from exception
+        layers = data.get("layers") if isinstance(data, dict) else None
+        if not isinstance(layers, dict) or not layers:
+            raise PackError(f"Equipment asset {asset_id} must contain a non-empty 'layers' object")
+        for layer_type, entries in layers.items():
+            if not isinstance(layer_type, str) or not re.fullmatch(r"[a-z0-9_]+", layer_type):
+                raise PackError(f"Equipment asset {asset_id} has invalid layer type: {layer_type!r}")
+            if not isinstance(entries, list) or not entries:
+                raise PackError(f"Equipment asset {asset_id} layer '{layer_type}' must be a non-empty list")
+            for index, entry in enumerate(entries):
+                if not isinstance(entry, dict) or not isinstance(entry.get("texture"), str):
+                    raise PackError(
+                        f"Equipment asset {asset_id} layer '{layer_type}' entry #{index + 1} "
+                        "must contain a string 'texture'"
+                    )
+                texture_id = normalize_resource_location(entry["texture"], default_namespace=namespace)
+                texture_namespace, texture_path = texture_id.split(":", 1)
+                expected = (
+                    root
+                    / "assets"
+                    / texture_namespace
+                    / "textures"
+                    / "entity"
+                    / "equipment"
+                    / layer_type
+                    / f"{texture_path}.png"
+                )
+                if not expected.is_file():
+                    relative = expected.relative_to(root).as_posix()
+                    raise PackError(
+                        f"Equipment asset {asset_id} layer '{layer_type}' references missing texture "
+                        f"{texture_id}; expected {relative}"
+                    )
+    return assets
+
+
+def is_vanilla_equippable_material(material: str | None) -> bool:
+    if not material:
+        return False
+    value = material.strip().upper()
+    if value == "ELYTRA" or value == "CARVED_PUMPKIN":
+        return True
+    if value.endswith(("_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS")):
+        return True
+    return value in {
+        "PLAYER_HEAD",
+        "CREEPER_HEAD",
+        "DRAGON_HEAD",
+        "PIGLIN_HEAD",
+        "SKELETON_SKULL",
+        "WITHER_SKELETON_SKULL",
+        "ZOMBIE_HEAD",
+    }
+
+
+def _strip_yaml_scalar(raw: str) -> str:
+    value = raw.strip()
+    if value and value[0] in "\"'" and value[-1:] == value[0]:
+        value = value[1:-1]
+    return value.strip()
+
+
+def _sibling_scalar(lines: list[str], index: int, key: str) -> str | None:
+    """Return a scalar sibling of a block-style YAML key without needing a YAML dependency."""
+    line = lines[index]
+    indent = len(line) - len(line.lstrip(" "))
+    pattern = re.compile(rf"^\s{{{indent}}}{re.escape(key)}\s*:\s*(.*?)\s*(?:#.*)?$")
+
+    start = index
+    while start > 0:
+        previous = lines[start - 1]
+        stripped = previous.strip()
+        if stripped and not stripped.startswith("#"):
+            previous_indent = len(previous) - len(previous.lstrip(" "))
+            if previous_indent < indent:
+                break
+        start -= 1
+    end = index + 1
+    while end < len(lines):
+        following = lines[end]
+        stripped = following.strip()
+        if stripped and not stripped.startswith("#"):
+            following_indent = len(following) - len(following.lstrip(" "))
+            if following_indent < indent:
+                break
+        end += 1
+
+    for candidate in lines[start:end]:
+        match = pattern.match(candidate)
+        if match:
+            return _strip_yaml_scalar(match.group(1))
+    return None
+
+
+def validate_config_equipment_references(root: Path, assets: dict[str, Path]) -> tuple[int, int]:
+    """Validate explicit config refs and the documented same-id fallback for vanilla-equippable items."""
+    config_root = root.parent / "src" / "main" / "resources" / "config"
+    if not config_root.is_dir():
+        return 0, 0
+
+    explicit_count = 0
+    fallback_count = 0
+    for config_path in sorted(config_root.glob("*.yml")):
+        text = config_path.read_text(encoding="utf-8")
+        lines = text.splitlines()
+
+        # Any explicit equipment-asset anywhere (block or flow YAML) must resolve to a pack asset.
+        for line_number, line in enumerate(lines, start=1):
+            for match in CONFIG_RESOURCE_PATTERN.finditer(line):
+                if match.group("key").lower() != "equipment-asset":
+                    continue
+                explicit_count += 1
+                asset_id = normalize_resource_location(match.group("value"))
+                if asset_id not in assets:
+                    raise PackError(
+                        f"{config_path.relative_to(root.parent)}:{line_number}: equipment-asset "
+                        f"{asset_id} has no matching assets/<namespace>/equipment/*.json"
+                    )
+
+        # Validate the same-id fallback only when the config also proves a vanilla-equippable material.
+        for index, line in enumerate(lines):
+            model_match = re.search(
+                r"(?:key-)?item-model\s*:\s*[\"']?([a-z0-9_.-]+(?::[a-z0-9_./-]+)?)",
+                line,
+                re.IGNORECASE,
+            )
+            if not model_match:
+                continue
+            model_id = normalize_resource_location(model_match.group(1))
+
+            explicit_match = re.search(
+                r"equipment-asset\s*:\s*[\"']?([a-z0-9_.-]+(?::[a-z0-9_./-]+)?)",
+                line,
+                re.IGNORECASE,
+            )
+            flow_material = FLOW_MATERIAL_PATTERN.search(line)
+            material = flow_material.group(1) if flow_material else _sibling_scalar(lines, index, "material")
+            explicit = explicit_match.group(1) if explicit_match else _sibling_scalar(lines, index, "equipment-asset")
+
+            if explicit or not is_vanilla_equippable_material(material):
+                continue
+            fallback_count += 1
+            if model_id not in assets:
+                raise PackError(
+                    f"{config_path.relative_to(root.parent)}:{index + 1}: equippable material {material} "
+                    f"uses item-model {model_id} without equipment-asset; the documented same-id "
+                    f"fallback requires equipment asset {model_id}, but it is missing"
+                )
+
+    return explicit_count, fallback_count
+
+
 def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
     required = (root / "pack.mcmeta", root / "pack.png", root / "assets")
     if not required[0].is_file() or not required[1].is_file() or not required[2].is_dir():
@@ -112,10 +311,15 @@ def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
     if not isinstance(pack_section, dict) or "description" not in pack_section:
         raise PackError("pack.mcmeta pack section must contain a description")
 
+    equipment = validate_equipment_assets(root)
+    explicit_refs, fallback_refs = validate_config_equipment_references(root, equipment)
+
     total_size = sum(path.stat().st_size for _, path in files)
     print(
         f"Validated resource pack: {len(files)} client files, {json_count} JSON/MCMeta, "
-        f"{png_count} PNG, {total_size} bytes"
+        f"{png_count} PNG, {len(equipment)} equipment assets, "
+        f"{explicit_refs} explicit equipment refs, {fallback_refs} checked wearable fallbacks, "
+        f"{total_size} bytes"
     )
     return files
 
