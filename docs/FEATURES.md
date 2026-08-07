@@ -260,7 +260,7 @@ Moderátori rejtőzés, külön láthatósági jog és kapcsolódó játékossz�
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/recovery, valamint utolsó ismert helyre offline teleport.
+Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/recovery, valamint utolsó ismert helyre offline teleport. Egy céljátékoshoz egyszerre egy write session tartozhat: edit joggal az első megnyitó kapja automatikusan, minden további egyidejű megnyitó read-only.
 
 - **Így találkozol vele:** `/invsee`, `/offlinetp`; Invsee GUI. Parancs: /invsee; /offlinetp.
 - **Kinek szól:** Moderátor, Admin, Tesztelő, Fejlesztő/üzemeltető.
@@ -271,7 +271,7 @@ Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/reco
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.inventory.edit`; `icesmp.moderation.inventory.read`; `icesmp.moderation.offlinetp`; `read: icesmp.moderation.inventory.read; edit: icesmp.moderation.inventory.edit`
+- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.inventory.edit`; `icesmp.moderation.inventory.read`; `icesmp.moderation.offlinetp`; `read: icesmp.moderation.inventory.read; write: icesmp.moderation.inventory.edit`
 - Config: `moderation.*`, invsee-, escrow-, audit- és permissionbeállítások.
 - Tartós állapot: Escrow és utolsó ismert hely tartós; nyitott GUI sessionállapot.
 - Reload: Config reloadolható, de függőben lévő escrow-nál előbb settlement/recovery szükséges.

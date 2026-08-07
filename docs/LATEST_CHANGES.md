@@ -44,6 +44,11 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   alapból megszűnt (a területkorlát maradt a valódi kapu).
 - **Konzol:** a boot-kori leltár-sorok elnémultak; hibakereséshez a
   `logging.verbose-startup` kulccsal visszakapcsolhatók.
+- **Lifecycle- és API-hardening:** a PlayerProfile erőforrás-teardown részleges
+  indulás és sikertelen leállítási drain után is garantált (nem marad hátra
+  executor, HTTP listener vagy service-regisztráció); az alapból kikapcsolt
+  read-only HTTP API név-feloldása auth-first — anonim hívás egyetlen
+  tárolóolvasást sem indíthat el.
 
 ## Harminc másodpercben
 
@@ -181,9 +186,12 @@ A release warningot, kicket, állandó és ideiglenes mute-ot/tiltást,
 visszavonást, historyt, aktív punishment-listát, reportkezelést, PM-et,
 SocialSpy-t, vanish-t, moderációs GUI-t és offline teleportot ad.
 
-Az inventory admin online main inventoryt és ender chestet tud külön
-**read** vagy **edit** módban megnyitni. Az edit útvonal escrow- és reconnect
-recoveryt használ; emiatt az edit permission jóval érzékenyebb, mint a read.
+Az inventory admin a `/invsee <játékos>` egyetlen paranccsal nyitja meg az
+online main inventoryt és ender chestet: edit joggal az első megnyitó
+automatikusan **write** sessiont kap, minden további egyidejű megnyitó
+read-only módot; a MAIN ↔ ENDER váltás a GUI gombjával történik. A write
+útvonal escrow- és reconnect recoveryt használ; emiatt az edit permission
+jóval érzékenyebb, mint a read.
 
 ### Natív MOTD és megjelenítés
 
@@ -279,6 +287,9 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
    sebzés/exhaustion policy, provokáció, Enderman, ambient/vad DARK undead,
    Vérhold és harci kivételek, koronaátok, két eltérő frakció ugyanazon mobnál,
    valamint reload–relog–restart–disable lifecycle.
+8. **Integrációs hullám:** PlayerProfile-, invsee/adományláda-, world-event
+   spawn-védelmi, frakciószín- és runtime hardening kézi próbák — az admin
+   kézikönyv „Kiegészítő staging-mátrixok” szakasza szerint.
 
 ## Élesítés rövid sorrendje
 
