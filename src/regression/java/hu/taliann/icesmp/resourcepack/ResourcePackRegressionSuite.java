@@ -2,6 +2,7 @@ package hu.taliann.icesmp.resourcepack;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ public final class ResourcePackRegressionSuite {
         wearablePresentationSeparatesInventoryAndEquippedRendering();
         wearablePresentationPreservesVanillaEquippableState();
         wearableCreationPathsUseTheCentralBoundary();
+        relicWingEquipmentAssetsStayBundled();
         System.out.println("Resource pack regression suite passed.");
     }
 
@@ -102,6 +104,15 @@ public final class ResourcePackRegressionSuite {
         check(relic.contains("WearablePresentation.applyWearablePresentation")
                         && relic.contains("\"icesmp:relic_\" + relicId"),
                 "relic create/refresh paths no longer route wearable wings through the central boundary");
+    }
+
+    private static void relicWingEquipmentAssetsStayBundled() {
+        for (final String relicId : List.of("phoenix_wing", "frost_wing", "wander_wind", "bone_wing")) {
+            final Path equipment = Path.of(
+                    "resource-pack/assets/icesmp/equipment/relic_" + relicId + ".json");
+            check(Files.isRegularFile(equipment),
+                    "relic wing runtime binding has no matching equipment asset: " + equipment);
+        }
     }
 
     private static String extractQuotedValue(final String source, final String prefix) {
