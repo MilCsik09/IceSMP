@@ -63,7 +63,12 @@ public final class RelicPvpTransferListener implements Listener {
                 if (definition == null || relicManager.isWeaponRelic(definition.id())) {
                     return false;
                 }
-                relicManager.markLost(definition.id());
+                // Owner-kötött lost: egy stale (nem a központi tulajhoz tartozó) példány
+                // gazdájának halála nem jelölheti el másvalaki élő relicét — a stale
+                // másolat csendben megsemmisül, üzenet és lost-mutáció nélkül.
+                if (!relicManager.markLost(definition.id(), victim.getUniqueId())) {
+                    return true;
+                }
                 victim.sendMessage(messageManager.getMessage(
                         "relic.death-lost",
                         "<dark_purple>✦ A(z) <white>{relic}</white> köddé vált a halálodban — a kötés él: idézd újra az oltárnál, mielőtt végleg elhagyna ({days} nap).</dark_purple>",
@@ -79,7 +84,7 @@ public final class RelicPvpTransferListener implements Listener {
                     return false;
                 }
                 kept.add(drop);
-                relicManager.markLost(definition.id());
+                relicManager.markLost(definition.id(), victim.getUniqueId());
                 return true;
             });
             if (!kept.isEmpty()) {
@@ -146,7 +151,7 @@ public final class RelicPvpTransferListener implements Listener {
             // különben az oltárnál egy második példány is idézhető lenne mellé.
             final RelicDefinition definition = relicManager.identify(itemStack);
             if (definition != null) {
-                relicManager.clearLost(definition.id());
+                relicManager.clearLost(definition.id(), event.getPlayer().getUniqueId());
             }
         }
         event.getPlayer().sendMessage(messageManager.getMessage(

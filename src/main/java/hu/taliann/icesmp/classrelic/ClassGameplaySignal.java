@@ -24,11 +24,17 @@ public sealed interface ClassGameplaySignal {
     Set<ClassGameplayEvent> PAYLOAD_EVENTS = Set.of(
             ClassGameplayEvent.ABILITY_RESOLVED,
             ClassGameplayEvent.RESOURCE_SPENT,
+            ClassGameplayEvent.RESOURCE_FULL,
             ClassGameplayEvent.DAMAGE_DEALT,
             ClassGameplayEvent.DAMAGE_TAKEN,
             ClassGameplayEvent.HEAL_RESOLVED,
             ClassGameplayEvent.OVERHEAL,
-            ClassGameplayEvent.SUMMON);
+            ClassGameplayEvent.BLOCK,
+            ClassGameplayEvent.SUMMON,
+            ClassGameplayEvent.FORM_CHANGED,
+            ClassGameplayEvent.MOVEMENT_ABILITY,
+            ClassGameplayEvent.KILL,
+            ClassGameplayEvent.LOW_HEALTH_ENTERED);
 
     record AbilityResolved(UUID actorId, String abilityId,
                            Set<AbilityTag> tags) implements ClassGameplaySignal {
@@ -118,6 +124,100 @@ public sealed interface ClassGameplaySignal {
         }
     }
 
+    /** Explicit typed alak akkor is, ha csak actor+tags kell — a szerződés nem hígulhat. */
+    record ResourceFull(UUID actorId, Set<AbilityTag> tags) implements ClassGameplaySignal {
+        public ResourceFull {
+            Objects.requireNonNull(actorId, "actorId");
+            tags = copyTags(tags);
+        }
+
+        @Override
+        public ClassGameplayEvent event() {
+            return ClassGameplayEvent.RESOURCE_FULL;
+        }
+    }
+
+    /** @param targetKind a cél szemantikus fajtája (pl. entity-type kulcs vagy "player") */
+    record Kill(UUID actorId, UUID targetId, String targetKind,
+                Set<AbilityTag> tags) implements ClassGameplaySignal {
+        public Kill {
+            Objects.requireNonNull(actorId, "actorId");
+            Objects.requireNonNull(targetId, "targetId");
+            targetKind = requireId(targetKind, "targetKind");
+            tags = copyTags(tags);
+        }
+
+        @Override
+        public ClassGameplayEvent event() {
+            return ClassGameplayEvent.KILL;
+        }
+    }
+
+    /** @param preventedAmount a blokkal kivédett sebzés-mennyiség */
+    record Block(UUID actorId, Optional<UUID> sourceId, double preventedAmount,
+                 Set<AbilityTag> tags) implements ClassGameplaySignal {
+        public Block {
+            Objects.requireNonNull(actorId, "actorId");
+            Objects.requireNonNull(sourceId, "sourceId");
+            preventedAmount = requireAmount(preventedAmount);
+            tags = copyTags(tags);
+        }
+
+        @Override
+        public ClassGameplayEvent event() {
+            return ClassGameplayEvent.BLOCK;
+        }
+    }
+
+    /** @param previousFormId az előző forma (üres = első formaváltás) */
+    record FormChanged(UUID actorId, String previousFormId, String newFormId,
+                       Set<AbilityTag> tags) implements ClassGameplaySignal {
+        public FormChanged {
+            Objects.requireNonNull(actorId, "actorId");
+            previousFormId = previousFormId == null ? "" : previousFormId;
+            newFormId = requireId(newFormId, "newFormId");
+            tags = copyTags(tags);
+        }
+
+        @Override
+        public ClassGameplayEvent event() {
+            return ClassGameplayEvent.FORM_CHANGED;
+        }
+    }
+
+    record MovementAbility(UUID actorId, String abilityId,
+                           Set<AbilityTag> tags) implements ClassGameplaySignal {
+        public MovementAbility {
+            Objects.requireNonNull(actorId, "actorId");
+            abilityId = requireId(abilityId, "abilityId");
+            tags = copyTags(tags);
+        }
+
+        @Override
+        public ClassGameplayEvent event() {
+            return ClassGameplayEvent.MOVEMENT_ABILITY;
+        }
+    }
+
+    /**
+     * @param healthRatio az aktuális élet-arány (0..1)
+     * @param thresholdRatio az átlépett küszöb-arány (0..1)
+     */
+    record LowHealthEntered(UUID actorId, double healthRatio, double thresholdRatio,
+                            Set<AbilityTag> tags) implements ClassGameplaySignal {
+        public LowHealthEntered {
+            Objects.requireNonNull(actorId, "actorId");
+            healthRatio = requireRatio(healthRatio, "healthRatio");
+            thresholdRatio = requireRatio(thresholdRatio, "thresholdRatio");
+            tags = copyTags(tags);
+        }
+
+        @Override
+        public ClassGameplayEvent event() {
+            return ClassGameplayEvent.LOW_HEALTH_ENTERED;
+        }
+    }
+
     record Summon(UUID actorId, String summonId, int count,
                   Set<AbilityTag> tags) implements ClassGameplaySignal {
         public Summon {
@@ -159,6 +259,13 @@ public sealed interface ClassGameplaySignal {
                     + amount);
         }
         return amount;
+    }
+
+    private static double requireRatio(final double ratio, final String field) {
+        if (!Double.isFinite(ratio) || ratio < 0.0D || ratio > 1.0D) {
+            throw new IllegalArgumentException(field + " must be within [0, 1]: " + ratio);
+        }
+        return ratio;
     }
 
     private static String requireId(final String value, final String field) {

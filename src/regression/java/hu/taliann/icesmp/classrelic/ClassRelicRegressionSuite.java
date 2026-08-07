@@ -53,6 +53,10 @@ public final class ClassRelicRegressionSuite {
         parallelMutationDurability();
         restartAndTransferRoundTrip();
         persistenceFailureSemantics();
+        visibilityBeforeDurability();
+        atomicLoadPublish();
+        ownerBoundLostMatrix();
+        claimTransferRecoveryProtocol();
         possessionSnapshotPolicy();
         typedGameplaySignals();
         packagedYamlContract();
@@ -390,11 +394,12 @@ public final class ClassRelicRegressionSuite {
         final int threads = 4;
         final CyclicBarrier barrier = new CyclicBarrier(threads);
         final CountDownLatch done = new CountDownLatch(threads);
+        store.recordOwnership("relic_d", OTHER_PLAYER, 5_000L);
         final List<Runnable> work = List.of(
                 () -> store.tryArmAwakening("relic_a", 1_000L, 60L),
                 () -> store.tryArmAwakening("relic_b", 1_000L, 90L),
                 () -> store.recordOwnership("relic_c", EVOKER_PLAYER, 7_000L),
-                () -> store.markLost("relic_d", 8_000L));
+                () -> store.markLost("relic_d", OTHER_PLAYER, 8_000L));
         for (final Runnable task : work) {
             new Thread(() -> {
                 try {
@@ -411,11 +416,10 @@ public final class ClassRelicRegressionSuite {
         final YamlConfiguration yaml = lastWrite.get();
         check(yaml.getLong("awakening.relic_a.ready-at") == 61_000L
                         && yaml.getLong("awakening.relic_b.ready-at") == 91_000L
-                        && EVOKER_PLAYER.toString().equals(yaml.getString("ownerships.relic_c.owner")),
+                        && EVOKER_PLAYER.toString().equals(yaml.getString("ownerships.relic_c.owner"))
+                        && yaml.getLong("ownerships.relic_d.lost-since") == 8_000L,
                 "the final durable write contains every parallel mutation's committed state");
-        // relic_d lost-jelölése ownership nélkül nem szerializálódik ownership-ághoz — de a
-        // memóriaállapot őrzi, és a következő ownership-írás sem törli.
-        check(store.isLost("relic_d"), "parallel markLost committed in memory");
+        check(store.isLost("relic_d"), "parallel owner-bound markLost committed");
     }
 
     private static void restartAndTransferRoundTrip() throws Exception {
@@ -432,8 +436,9 @@ public final class ClassRelicRegressionSuite {
                 "ownership transfer keeps the travelling awakening cooldown");
 
         // Reclaim: lost → clear → resummon; a cooldown változatlan.
-        store.markLost("sarkany_tojas", 1_300_000L);
-        store.clearLost("sarkany_tojas");
+        check(store.markLost("sarkany_tojas", OTHER_PLAYER, 1_300_000L)
+                        == RelicWorldStateStore.MarkLostResult.MARKED, "owner marks lost");
+        check(store.clearLost("sarkany_tojas", OTHER_PLAYER), "owner clears lost");
         check(store.awakeningReadyAt("sarkany_tojas") == readyAt,
                 "lost/reclaim cycle keeps the awakening cooldown");
 
@@ -487,6 +492,344 @@ public final class ClassRelicRegressionSuite {
         check(store.tryArmAwakening("sarkany_tojas", readyAt + 1L, 120L)
                         == RelicWorldStateStore.ArmResult.ARMED,
                 "after disk recovery the arm succeeds normally");
+    }
+
+    // ---------- publish-commit sorrend: candidate sosem látható durable commit előtt ----------
+
+    private static void visibilityBeforeDurability() throws Exception {
+        final CountDownLatch writerEntered = new CountDownLatch(1);
+        final CountDownLatch releaseWriter = new CountDownLatch(1);
+        final AtomicReference<Boolean> failWrite = new AtomicReference<>(Boolean.FALSE);
+        final RelicWorldStateStore store = new RelicWorldStateStore(yaml -> {
+            writerEntered.countDown();
+            try {
+                releaseWriter.await(30L, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (final InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            if (failWrite.get()) {
+                throw new IOException("injected failure after visibility check");
+            }
+        }, LOGGER);
+
+        // Siker-ág: a blokkolt durable írás ALATT az olvasó a régi pillanatképet látja.
+        Thread mutation = new Thread(() ->
+                store.recordOwnership("sarkany_tojas", EVOKER_PLAYER, 1_000L));
+        mutation.start();
+        check(writerEntered.await(30L, java.util.concurrent.TimeUnit.SECONDS),
+                "durable writer reached");
+        check(store.ownership("sarkany_tojas") == null,
+                "reader NEVER sees the candidate before the durable commit succeeds");
+        releaseWriter.countDown();
+        mutation.join(30_000L);
+        check(store.ownership("sarkany_tojas") != null
+                        && store.ownership("sarkany_tojas").owner().equals(EVOKER_PLAYER),
+                "reader sees the new snapshot only after the durable commit");
+
+        // Hiba-ág: a candidate az írás-hiba után sem válhat láthatóvá.
+        final CountDownLatch writerEntered2 = new CountDownLatch(1);
+        final CountDownLatch releaseWriter2 = new CountDownLatch(1);
+        final RelicWorldStateStore failing = new RelicWorldStateStore(yaml -> {
+            writerEntered2.countDown();
+            try {
+                releaseWriter2.await(30L, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (final InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            throw new IOException("injected failure");
+        }, LOGGER);
+        final Thread failingMutation = new Thread(() -> {
+            try {
+                failing.recordOwnership("sarkany_tojas", OTHER_PLAYER, 2_000L);
+            } catch (final RuntimeException expected) {
+            }
+        });
+        failingMutation.start();
+        check(writerEntered2.await(30L, java.util.concurrent.TimeUnit.SECONDS),
+                "failing durable writer reached");
+        check(failing.ownership("sarkany_tojas") == null,
+                "reader sees the old snapshot while the failing write is in flight");
+        releaseWriter2.countDown();
+        failingMutation.join(30_000L);
+        check(failing.ownership("sarkany_tojas") == null,
+                "a failed candidate NEVER becomes the runtime authority");
+    }
+
+    // ---------- atomikus load-publish: nincs üres/félig-töltött köztes állapot ----------
+
+    private static void atomicLoadPublish() throws Exception {
+        final YamlConfiguration stateA = new YamlConfiguration();
+        stateA.set("ownerships.relic_x.owner", EVOKER_PLAYER.toString());
+        stateA.set("ownerships.relic_x.last-seen", 1L);
+        stateA.set("ownerships.relic_y.owner", EVOKER_PLAYER.toString());
+        stateA.set("ownerships.relic_y.last-seen", 1L);
+        final YamlConfiguration stateB = new YamlConfiguration();
+        stateB.set("ownerships.relic_x.owner", OTHER_PLAYER.toString());
+        stateB.set("ownerships.relic_x.last-seen", 2L);
+        stateB.set("ownerships.relic_y.owner", OTHER_PLAYER.toString());
+        stateB.set("ownerships.relic_y.last-seen", 2L);
+
+        final RelicWorldStateStore store = new RelicWorldStateStore(yaml -> {
+        }, LOGGER);
+        final AtomicReference<String> violation = new AtomicReference<>();
+        final CountDownLatch stop = new CountDownLatch(1);
+        final Thread reader = new Thread(() -> {
+            while (stop.getCount() > 0 && violation.get() == null) {
+                final var snapshot = store.snapshot();
+                final RelicOwnershipPair pair = new RelicOwnershipPair(
+                        snapshot.ownerships().get("relic_x"), snapshot.ownerships().get("relic_y"));
+                if (!pair.consistent()) {
+                    violation.set("hybrid snapshot observed: " + pair);
+                }
+            }
+        });
+        reader.start();
+        for (int round = 0; round < 500; round++) {
+            store.loadFrom(round % 2 == 0 ? stateA : stateB);
+        }
+        stop.countDown();
+        reader.join(30_000L);
+        check(violation.get() == null,
+                "concurrent readers only ever observe COMPLETE load snapshots ("
+                        + violation.get() + ")");
+    }
+
+    /** relic_x és relic_y mindig együtt, azonos tulajdonossal mozog — a hibrid látvány sérülés. */
+    private record RelicOwnershipPair(hu.taliann.icesmp.relics.RelicOwnership x,
+                                      hu.taliann.icesmp.relics.RelicOwnership y) {
+        boolean consistent() {
+            if (x == null && y == null) {
+                return true;
+            }
+            return x != null && y != null && x.owner().equals(y.owner());
+        }
+    }
+
+    // ---------- owner-kötött lost mutáció ----------
+
+    private static void ownerBoundLostMatrix() throws Exception {
+        final AtomicReference<YamlConfiguration> lastWrite = new AtomicReference<>();
+        final RelicWorldStateStore store = new RelicWorldStateStore(lastWrite::set, LOGGER);
+
+        check(store.markLost("sarkany_tojas", EVOKER_PLAYER, 1_000L)
+                        == RelicWorldStateStore.MarkLostResult.NOT_OWNER,
+                "markLost without any owner is rejected (no orphan lost)");
+        check(!store.isLost("sarkany_tojas"), "no lost state without ownership");
+
+        store.recordOwnership("sarkany_tojas", EVOKER_PLAYER, 2_000L);
+        check(store.markLost("sarkany_tojas", OTHER_PLAYER, 3_000L)
+                        == RelicWorldStateStore.MarkLostResult.NOT_OWNER,
+                "a stale copy's previous owner cannot mark someone else's live relic lost");
+        check(!store.isLost("sarkany_tojas")
+                        && store.ownership("sarkany_tojas").owner().equals(EVOKER_PLAYER),
+                "rejected markLost leaves ownership and lost state untouched");
+
+        check(store.markLost("sarkany_tojas", EVOKER_PLAYER, 4_000L)
+                        == RelicWorldStateStore.MarkLostResult.MARKED,
+                "the proven current owner marks lost");
+        check(store.isLost("sarkany_tojas"), "lost state recorded for the owner");
+        check(!store.clearLost("sarkany_tojas", OTHER_PLAYER),
+                "a non-owner cannot clear the owner's lost mark (reclaim stays available)");
+        check(store.isLost("sarkany_tojas"), "lost mark survives the foreign clear attempt");
+
+        // Restart round-trip: owner + lost EGYÜTT jön vissza (árva lost nem reprezentálható).
+        final YamlConfiguration reloaded = new YamlConfiguration();
+        reloaded.loadFromString(lastWrite.get().saveToString());
+        final RelicWorldStateStore fresh = new RelicWorldStateStore(yaml -> {
+        }, LOGGER);
+        fresh.loadFrom(reloaded);
+        check(fresh.ownership("sarkany_tojas").owner().equals(EVOKER_PLAYER)
+                        && fresh.isLost("sarkany_tojas"),
+                "owner and lost state restart together");
+        check(fresh.clearLost("sarkany_tojas", EVOKER_PLAYER),
+                "the owner clears their own lost mark");
+    }
+
+    // ---------- claim/transfer recovery-protokoll (failure injection minden lépés után) ----------
+
+    /**
+     * A fizikai oldal modellje: relic-id → (birtokolt példány PDC-tulajdonosa). A
+     * recovery-döntések PONTOSAN a production RelicManager join-recovery szabályait
+     * követik: CLAIM/RECLAIM receipt → kézbesítés csak akkor, ha a tulajnál nincs
+     * példány; TRANSFER receipt → a példány PDC-átírása, ha a tulajnál van.
+     */
+    private static final class PhysicalModel {
+        final java.util.HashMap<String, UUID> itemPdcOwner = new java.util.HashMap<>();
+
+        void recover(final RelicWorldStateStore store, final UUID joiningPlayer) {
+            for (final var entry : store.pendingOperationsFor(joiningPlayer).entrySet()) {
+                final String relicId = entry.getKey();
+                final var ownership = store.ownership(relicId);
+                if (ownership == null || !ownership.owner().equals(joiningPlayer)) {
+                    continue;
+                }
+                switch (entry.getValue().type()) {
+                    case CLAIM, RECLAIM -> {
+                        if (!joiningPlayer.equals(itemPdcOwner.get(relicId))) {
+                            itemPdcOwner.put(relicId, joiningPlayer);
+                        }
+                        store.completeOperation(relicId);
+                    }
+                    case TRANSFER -> {
+                        if (itemPdcOwner.containsKey(relicId)) {
+                            itemPdcOwner.put(relicId, joiningPlayer);
+                            store.completeOperation(relicId);
+                        }
+                    }
+                }
+            }
+        }
+
+        void assertConsistent(final RelicWorldStateStore store, final String relicId,
+                              final String label) {
+            final var ownership = store.ownership(relicId);
+            check(ownership != null, label + ": exactly one world owner exists");
+            final UUID pdc = itemPdcOwner.get(relicId);
+            check(pdc == null || pdc.equals(ownership.owner()),
+                    label + ": item PDC owner matches the world owner");
+            check(!store.isLost(relicId) || itemPdcOwner.get(relicId) == null,
+                    label + ": lost implies no live physical copy in the model");
+        }
+    }
+
+    private static RelicWorldStateStore reopened(final AtomicReference<YamlConfiguration> lastWrite,
+                                                 final RelicWorldStateStore.DurableWriter writer)
+            throws Exception {
+        final RelicWorldStateStore fresh = new RelicWorldStateStore(writer, LOGGER);
+        if (lastWrite.get() != null) {
+            final YamlConfiguration reloaded = new YamlConfiguration();
+            reloaded.loadFromString(lastWrite.get().saveToString());
+            fresh.loadFrom(reloaded);
+        }
+        return fresh;
+    }
+
+    private static void claimTransferRecoveryProtocol() throws Exception {
+        final AtomicReference<YamlConfiguration> lastWrite = new AtomicReference<>();
+        final AtomicReference<Boolean> failWrites = new AtomicReference<>(Boolean.FALSE);
+        final RelicWorldStateStore.DurableWriter writer = yaml -> {
+            if (failWrites.get()) {
+                throw new IOException("injected disk failure");
+            }
+            lastWrite.set(yaml);
+        };
+
+        // --- Claim: hiba a világ-commit ELŐTT (a begin írása bukik) → semmi sem történt.
+        RelicWorldStateStore store = new RelicWorldStateStore(writer, LOGGER);
+        final PhysicalModel model = new PhysicalModel();
+        failWrites.set(Boolean.TRUE);
+        boolean rejected = false;
+        try {
+            store.beginClaim("sarkany_tojas", EVOKER_PLAYER, 1_000L,
+                    hu.taliann.icesmp.relics.RelicWorldStateSnapshot
+                            .PendingRelicOperation.Type.CLAIM);
+        } catch (final RuntimeException expected) {
+            rejected = true;
+        }
+        check(rejected && store.ownership("sarkany_tojas") == null
+                        && store.pendingOperation("sarkany_tojas") == null,
+                "claim: failure before the world commit leaves nothing behind (fail-closed)");
+
+        // --- Claim: crash a világ-commit UTÁN, a kézbesítés ELŐTT → recovery kézbesít.
+        failWrites.set(Boolean.FALSE);
+        store.beginClaim("sarkany_tojas", EVOKER_PLAYER, 1_000L,
+                hu.taliann.icesmp.relics.RelicWorldStateSnapshot
+                        .PendingRelicOperation.Type.CLAIM);
+        check(lastWrite.get().getString("operations.sarkany_tojas.type").equals("CLAIM")
+                        && EVOKER_PLAYER.toString()
+                        .equals(lastWrite.get().getString("ownerships.sarkany_tojas.owner")),
+                "claim: ownership, lost-clear and the delivery receipt commit in ONE durable write");
+        store = reopened(lastWrite, writer);
+        check(store.pendingOperation("sarkany_tojas") != null,
+                "claim: the delivery receipt survives the crash");
+        model.recover(store, EVOKER_PLAYER);
+        check(EVOKER_PLAYER.equals(model.itemPdcOwner.get("sarkany_tojas"))
+                        && store.pendingOperation("sarkany_tojas") == null,
+                "claim: recovery delivers exactly one item and settles the receipt");
+        model.assertConsistent(store, "sarkany_tojas", "claim recovery");
+
+        // --- Claim: crash a kézbesítés UTÁN, a receipt-zárás előtt → recovery NEM duplikál.
+        store.beginClaim("sarkany_tojas", EVOKER_PLAYER, 2_000L,
+                hu.taliann.icesmp.relics.RelicWorldStateSnapshot
+                        .PendingRelicOperation.Type.RECLAIM);
+        model.itemPdcOwner.put("sarkany_tojas", EVOKER_PLAYER);
+        store = reopened(lastWrite, writer);
+        final int itemsBefore = model.itemPdcOwner.size();
+        model.recover(store, EVOKER_PLAYER);
+        check(model.itemPdcOwner.size() == itemsBefore
+                        && store.pendingOperation("sarkany_tojas") == null,
+                "claim: recovery after delivery only settles the receipt — no duplicate relic");
+        model.assertConsistent(store, "sarkany_tojas", "claim idempotent recovery");
+
+        // --- Reclaim: lost=true → begin (lost törlődik + receipt) → crash → recovery.
+        check(store.markLost("sarkany_tojas", EVOKER_PLAYER, 3_000L)
+                        == RelicWorldStateStore.MarkLostResult.MARKED, "reclaim: relic lost");
+        model.itemPdcOwner.remove("sarkany_tojas");
+        store.beginClaim("sarkany_tojas", EVOKER_PLAYER, 4_000L,
+                hu.taliann.icesmp.relics.RelicWorldStateSnapshot
+                        .PendingRelicOperation.Type.RECLAIM);
+        store = reopened(lastWrite, writer);
+        check(!store.isLost("sarkany_tojas"),
+                "reclaim: the lost mark clears in the same durable commit as the receipt");
+        model.recover(store, EVOKER_PLAYER);
+        check(EVOKER_PLAYER.equals(model.itemPdcOwner.get("sarkany_tojas")),
+                "reclaim: recovery delivers the resummoned relic");
+        model.assertConsistent(store, "sarkany_tojas", "reclaim recovery");
+
+        // --- Transfer: hiba a világ-commit ELŐTT → régi tulajdon és PDC érintetlen.
+        failWrites.set(Boolean.TRUE);
+        rejected = false;
+        try {
+            store.beginTransfer("sarkany_tojas", EVOKER_PLAYER, OTHER_PLAYER, 5_000L);
+        } catch (final RuntimeException expected) {
+            rejected = true;
+        }
+        check(rejected && store.ownership("sarkany_tojas").owner().equals(EVOKER_PLAYER)
+                        && EVOKER_PLAYER.equals(model.itemPdcOwner.get("sarkany_tojas")),
+                "transfer: failure before the world commit changes nothing");
+
+        // --- Transfer: crash a világ-commit UTÁN, a PDC-átírás ELŐTT → recovery átírja.
+        failWrites.set(Boolean.FALSE);
+        store.beginTransfer("sarkany_tojas", EVOKER_PLAYER, OTHER_PLAYER, 6_000L);
+        model.itemPdcOwner.put("sarkany_tojas", OTHER_PLAYER); // a gyilkos felvette a dropot
+        store = reopened(lastWrite, writer);
+        check(store.ownership("sarkany_tojas").owner().equals(OTHER_PLAYER)
+                        && store.pendingOperation("sarkany_tojas") != null,
+                "transfer: world owner committed first, the PDC receipt survives the crash");
+        model.itemPdcOwner.put("sarkany_tojas", EVOKER_PLAYER); // PDC még a régi tulajé
+        model.recover(store, OTHER_PLAYER);
+        check(OTHER_PLAYER.equals(model.itemPdcOwner.get("sarkany_tojas"))
+                        && store.pendingOperation("sarkany_tojas") == null,
+                "transfer: recovery rewrites the PDC to the new owner and settles the receipt");
+        model.assertConsistent(store, "sarkany_tojas", "transfer recovery");
+
+        // --- Transfer: crash a PDC-átírás UTÁN → recovery csak lezár (idempotens).
+        store.beginTransfer("sarkany_tojas", OTHER_PLAYER, EVOKER_PLAYER, 7_000L);
+        model.itemPdcOwner.put("sarkany_tojas", EVOKER_PLAYER);
+        store = reopened(lastWrite, writer);
+        model.recover(store, EVOKER_PLAYER);
+        check(EVOKER_PLAYER.equals(model.itemPdcOwner.get("sarkany_tojas"))
+                        && store.pendingOperation("sarkany_tojas") == null,
+                "transfer: recovery after the PDC rewrite is a pure receipt settle");
+        model.assertConsistent(store, "sarkany_tojas", "transfer idempotent recovery");
+
+        // --- A receipt-zárás írás-hibája: a receipt függőben marad, később lezárható.
+        store.beginClaim("sarkany_tojas", EVOKER_PLAYER, 8_000L,
+                hu.taliann.icesmp.relics.RelicWorldStateSnapshot
+                        .PendingRelicOperation.Type.CLAIM);
+        failWrites.set(Boolean.TRUE);
+        rejected = false;
+        try {
+            store.completeOperation("sarkany_tojas");
+        } catch (final RuntimeException expected) {
+            rejected = true;
+        }
+        check(rejected && store.pendingOperation("sarkany_tojas") != null,
+                "receipt settle failure keeps the receipt pending (no silent loss)");
+        failWrites.set(Boolean.FALSE);
+        check(store.completeOperation("sarkany_tojas")
+                        && store.pendingOperation("sarkany_tojas") == null,
+                "the pending receipt settles once the disk recovers");
     }
 
     // ---------- birtoklás-pillanatkép fail-closed szabálya ----------
@@ -544,12 +887,51 @@ public final class ClassRelicRegressionSuite {
         }
         check(immutable, "signal tags cannot be mutated by hooks");
 
+        final ClassGameplaySignal.Kill kill = new ClassGameplaySignal.Kill(
+                EVOKER_PLAYER, OTHER_PLAYER, "wither_skeleton", Set.of(AbilityTag.MELEE));
+        check(kill.event() == ClassGameplayEvent.KILL
+                        && kill.targetId().equals(OTHER_PLAYER)
+                        && kill.targetKind().equals("wither_skeleton"),
+                "kill signal carries target identity and semantic kind");
+
+        final ClassGameplaySignal.Block block = new ClassGameplaySignal.Block(
+                EVOKER_PLAYER, java.util.Optional.of(OTHER_PLAYER), 7.5D, Set.of());
+        check(block.event() == ClassGameplayEvent.BLOCK
+                        && block.sourceId().orElseThrow().equals(OTHER_PLAYER)
+                        && block.preventedAmount() == 7.5D,
+                "block signal carries source identity and prevented damage");
+
+        final ClassGameplaySignal.FormChanged form = new ClassGameplaySignal.FormChanged(
+                EVOKER_PLAYER, "", "sarkany_alak", Set.of());
+        check(form.event() == ClassGameplayEvent.FORM_CHANGED
+                        && form.previousFormId().isEmpty()
+                        && form.newFormId().equals("sarkany_alak"),
+                "form-change signal carries previous and new form (first change allowed)");
+
+        check(new ClassGameplaySignal.MovementAbility(EVOKER_PLAYER, "arnyeklepes", Set.of())
+                        .event() == ClassGameplayEvent.MOVEMENT_ABILITY,
+                "movement ability signal carries the semantic ability id");
+        final ClassGameplaySignal.LowHealthEntered lowHealth =
+                new ClassGameplaySignal.LowHealthEntered(EVOKER_PLAYER, 0.18D, 0.2D, Set.of());
+        check(lowHealth.event() == ClassGameplayEvent.LOW_HEALTH_ENTERED
+                        && lowHealth.healthRatio() == 0.18D && lowHealth.thresholdRatio() == 0.2D,
+                "low-health signal carries the ratio and the crossed threshold");
+        check(new ClassGameplaySignal.ResourceFull(EVOKER_PLAYER, Set.of())
+                        .event() == ClassGameplayEvent.RESOURCE_FULL,
+                "resource-full has an explicit typed form");
+
         expectSignalReject(() -> new ClassGameplaySignal.Generic(
                         ClassGameplayEvent.DAMAGE_DEALT, EVOKER_PLAYER, Set.of()),
                 "payload-carrying event cannot hide behind the Generic form");
-        check(new ClassGameplaySignal.Generic(ClassGameplayEvent.BLOCK, EVOKER_PLAYER, Set.of())
-                        .event() == ClassGameplayEvent.BLOCK,
-                "payload-free events use the Generic form");
+        expectSignalReject(() -> new ClassGameplaySignal.Generic(
+                        ClassGameplayEvent.KILL, EVOKER_PLAYER, Set.of()),
+                "kill cannot hide behind the Generic form");
+        expectSignalReject(() -> new ClassGameplaySignal.Generic(
+                        ClassGameplayEvent.BLOCK, EVOKER_PLAYER, Set.of()),
+                "block cannot hide behind the Generic form");
+        check(new ClassGameplaySignal.Generic(ClassGameplayEvent.DODGE, EVOKER_PLAYER, Set.of())
+                        .event() == ClassGameplayEvent.DODGE,
+                "the remaining payload-free event uses the Generic form");
         expectSignalReject(() -> new ClassGameplaySignal.DamageDealt(
                         EVOKER_PLAYER, OTHER_PLAYER, -1.0D, Set.of()),
                 "negative amount rejected");
@@ -559,6 +941,9 @@ public final class ClassRelicRegressionSuite {
         expectSignalReject(() -> new ClassGameplaySignal.Summon(
                         EVOKER_PLAYER, "sarkany", 0, Set.of()),
                 "non-positive summon count rejected");
+        expectSignalReject(() -> new ClassGameplaySignal.LowHealthEntered(
+                        EVOKER_PLAYER, 1.2D, 0.2D, Set.of()),
+                "out-of-range health ratio rejected");
     }
 
     // ---------- csomagolt relics.yml a production loader útján ----------
@@ -631,11 +1016,21 @@ public final class ClassRelicRegressionSuite {
         check(service.contains("previous catalog stays"),
                 "rejected reload keeps the previous catalog snapshot");
 
+        check(!service.contains("relicManager.isEnabled()"),
+                "the generic-relic existence gate runs unconditionally (disabled runtime too)");
+
         final String relicManager = java.nio.file.Files.readString(java.nio.file.Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/RelicManager.java"));
         check(relicManager.contains("worldState.tryArmAwakening")
                         && !relicManager.contains("setAwakeningReadyAt"),
                 "the single awakening writer is the serialized world-state arm operation");
+        check(relicManager.contains("beginClaim") && relicManager.contains("beginTransfer")
+                        && relicManager.contains("recoverPendingOperations"),
+                "the production give/transfer flows run on the receipt-based recovery protocol");
+        check(relicManager.contains("ownership == null || isExpiredFor"),
+                "canUse is fail-closed: no active central owner means no usable physical copy");
+        check(relicManager.contains("definition(s) loaded for validation only"),
+                "generic relic definitions load even while the relic runtime is disabled");
     }
 
     // ---------- fixtures ----------

@@ -86,10 +86,11 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
                     "relics.require-complete-catalog", false);
             final ClassRelicCatalog candidate =
                     ClassRelicCatalogLoader.load(toMap(root), requireComplete);
-            if (relicManager.isEnabled()) {
-                candidate.requireKnownRelics(relicId ->
-                        relicManager.getDefinition(relicId) != null);
-            }
+            // A generikus definíció-registry disabled runtime mellett is betöltött
+            // (definitions ≠ gameplay-enabled), ezért a létezés-kapu FELTÉTEL NÉLKÜL fut:
+            // kikapcsolt rendszerben sem publikálható validálatlan/érvénytelen katalógus.
+            candidate.requireKnownRelics(relicId ->
+                    relicManager.getDefinition(relicId) != null);
             catalog = candidate;
             hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
                     "Loaded " + catalog.size() + " class-relic binding(s).");

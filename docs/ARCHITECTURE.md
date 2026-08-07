@@ -46,7 +46,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
-| `relics/` | 10 (7 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, single-writer világ-store. |
+| `relics/` | 11 (8 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
@@ -611,9 +611,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 736 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
+- **Méret:** 737 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
-  items 12, relics 10, integration 6.
+  items 12, relics 11, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -810,15 +810,33 @@ birtoklás-szken mellékhatása dönt.
 (`ClassSpecProfileGateway` → `ClassSpecSection`) mondja meg a kasztot, az aktív specializációt,
 a loadout-státuszt és a SEALED-állapotot. A framework egyiket sem duplikálja a másikba.
 
-**Single-writer világ-relic perzisztencia.** A világ-relic aggregátum minden logikai mutációja
-(ownership-rögzítés/felszabadítás, lost/reclaim, Awakening-arm) a `RelicWorldStateStore`
-EGYETLEN szerializált kritikus szekciójában fut: állapot-ellenőrzés → módosítás → durable
-commit egyben — párhuzamos régió-szálak nem veszíthetik el egymás commitolt állapotát (a
-`YamlStore.saveAtomic` csak a fájlcsere atomicitását adja, a mutáció-serializálást ez a határ).
-Az Awakening-arm atomikus: két konkurens hívásból pontosan egy ARMED, a többi ON_COOLDOWN.
-Fail-closed hibakezelés: sikertelen lemez-írásnál a memória-állapot visszaáll a commit előtti
-értékre és az eredmény `PERSISTENCE_FAILED` — a runtime sosem jelent olyan ARMED sikert, ami
-a lemezen nincs meg, és nincs csendes memória/lemez split-brain. Az olvasások lock-mentesek.
+**Single-writer világ-relic perzisztencia, publish-commit sorrenddel.** A világ-relic
+aggregátum (ownership, lost/reclaim, awakening, művelet-receiptek) immutable
+`RelicWorldStateSnapshot`-ként publikált; minden logikai mutáció a `RelicWorldStateStore`
+EGYETLEN szerializált kritikus szekciójában candidate pillanatképet épít, azt írja durable-re,
+és CSAK sikeres írás után cseréli be (volatile publish) — a runtime-ból látható committed
+állapot mindig részhalmaza a durable állapotnak, commit előtti candidate-et olvasó SOHA nem
+láthat, sikertelen írásnál a candidate egyszerűen eldobódik. A betöltés/reload ugyanígy
+atomikus: a teljes candidate lokálisan épül fel és egyetlen cserével publikálódik — konkurens
+olvasó sosem lát üres/félig-töltött köztes állapotot. Az Awakening-arm atomikus (két konkurens
+hívásból pontosan egy ARMED), az eredmény `PERSISTENCE_FAILED`, ha a lemez-írás bukik. A
+lost-mutáció owner-kötött: `markLost`/`clearLost` csak a bizonyított aktuális tulajdonossal
+fogadható el (stale példány korábbi gazdájának halála nem jelölheti el másvalaki élő relicét),
+és árva lost állapot (tulajdonos nélkül) se memóriában, se a fájlban nem létezhet.
+
+**Fizikai kézbesítés/transfer recovery-protokoll.** A claim/reclaim (`giveRelic`) és a PvP
+transfer a világ-oldali commitot EGY durable írásban végzi a fizikai mellékhatás függő
+receiptjével együtt (`operations.<relic>`): claim = ownership + lost-törlés + kézbesítés-receipt;
+transfer = új tulajdonos + PDC-átírás-receipt — a fizikai lépés mindig a commit UTÁN fut.
+Crash bármely lépés után determinisztikusan helyreáll a join-recovery-ből: CLAIM/RECLAIM
+receipt → kézbesítés csak akkor, ha a tulajnál nincs példány (duplikátum nem születhet);
+TRANSFER receipt → az új tulajnál lévő példány PDC-átírása (amíg nincs nála, a receipt
+függőben marad). A `canUse` fail-closed: aktív központi tulajdonos nélkül a fizikai példány
+nem használható — persistence-hiba utáni árva singleton nem működhet magától, a jogos
+állapotot a claim/transfer/join-sweep/recovery állítja helyre. A generikus definíció-registry
+kikapcsolt runtime mellett is betöltött (definitions ≠ gameplay-enabled), így a Class Relic
+katalógus létezés-validációja disabled állapotban is fut — validálatlan katalógus akkor sem
+publikálható.
 
 **OWNER ≠ ACTIVE POSSESSION.** Az ownership önmagában nem ad gameplay-erőt: a
 `requires-physical-possession` kötésnél a használható fizikai tárgynak a játékosnál kell
