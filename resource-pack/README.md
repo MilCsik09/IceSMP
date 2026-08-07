@@ -20,10 +20,10 @@ fallback-policyje** által engedélyezett Material használhat same-render-id fa
 
 A policy jelenleg a szerver célverziójára, **Minecraft 1.21.11-re** van pinelve. Ugyanazt a fájlt
 olvassa a Paper runtime és a Python resource-pack validator, ezért nem tarthatnak fenn egymástól
-eltérő kézi „equippable Material” listát. A policy lefedi a játékos armor/head/elytra családokat,
-valamint a BODY/SADDLE jellegű családokat is (`*_ARMOR`, `*_HARNESS`, `*_CARPET`, `SADDLE`). Új
-Minecraft célverziónál ezt a manifestet tudatosan felül kell vizsgálni; policy-n kívüli wearable-höz
-explicit `equipment-asset` használható.
+eltérő kézi „equippable Material” listát. A whitelist szándékosan konzervatív: a játékos
+armor/head/elytra családok mellett a bizonyított BODY/SADDLE fallbackeket is lefedi (`*_ARMOR`,
+`*_HARNESS`, `SADDLE`). Új Minecraft célverziónál ezt a policyt tudatosan felül kell vizsgálni;
+policy-n kívüli wearable-höz explicit `equipment-asset` használható.
 
 A plugin a meglévő `EQUIPPABLE` komponenst `toBuilder()`-rel építi tovább, és csak az asset id-t
 cseréli. Nem gyárt új equip-slotot, ezért a vanilla head/chest/legs/feet/body/saddle slot, equip
