@@ -563,6 +563,29 @@ except Exception as e:
     warn(f"/lore tema-ellenorzes kihagyva: {e}")
 
 
+# ===== lore-lefedettseg: nevesitett tartalom nem elhet kodex-horgony nelkul =====
+# Kezzel talalt drift-osztaly (2026-08-07 audit): 5 relikvia es 3 nevesitett boss letezett a
+# configban a kodex barmely emlitese nelkul. A kapu: minden relics.yml display-name, minden
+# world.yml boss/miniboss nev ES minden SpecializationType display-nev szerepeljen a LORE.md-ben.
+try:
+    _lore_md = read(os.path.join(REPO, "docs/LORE.md"))
+    _relics_yml = read(os.path.join(CFG, "relics.yml"))
+    for _rname in re.findall(r'display-name:\s*"([^"]+)"', _relics_yml):
+        if _rname not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_rname}' relikvianak nincs kodex-bejegyzese a LORE.md-ben")
+    _world_yml = read(os.path.join(CFG, "world.yml"))
+    for _bname in re.findall(r'^\s+name:\s*"([^"]+)"\s*$', _world_yml, re.M):
+        if _bname not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_bname}' nevesitett boss/orzo nincs a LORE.md-ben")
+    _spec_src = read(os.path.join(JAVA, "hu/taliann/icesmp/data/SpecializationType.java"))
+    for _disp in re.findall(r'\("[a-z_]+",\s*"([^"]+)",\s*JobType\.', _spec_src):
+        _plain = re.sub(r"<[^>]+>", "", _disp)
+        if _plain not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_plain}' specializacio-iskola nincs a LORE.md fuggelekeben")
+except Exception as e:
+    warn(f"lore-lefedettseg ellenorzes kihagyva: {e}")
+
+
 # ===== AFK product boundary: global tracking only, no rewarded zones =====
 try:
     _afk = configs.get("afk.yml", {}) or {}
