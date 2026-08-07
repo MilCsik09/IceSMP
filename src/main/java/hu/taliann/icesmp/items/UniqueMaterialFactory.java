@@ -66,10 +66,21 @@ public final class UniqueMaterialFactory {
         meta.lore(lore);
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
+        if (!applyPresentation(item, uniqueId)) {
+            return null;
+        }
+        return item;
+    }
 
-        // Presentation data components are deliberately last: any later setItemMeta round-trip
-        // would erase them. The explicit equipment-asset is optional; equippable IceSMP items may
-        // use the documented same-render-id fallback when it is absent.
+    /**
+     * Reapplies a unique item's data-component presentation after a caller performed ItemMeta
+     * round-trips (for example the profession crafted-by/affix pipeline).
+     */
+    public boolean applyPresentation(final ItemStack item, final String uniqueId) {
+        final ConfigurationSection section = configOf(uniqueId);
+        if (section == null || item == null) {
+            return false;
+        }
         final String itemModel = section.getString("item-model", null);
         final String equipmentAsset = section.getString("equipment-asset", null);
         final WearablePresentation.Result presentation = WearablePresentation.applyWearablePresentation(
@@ -77,9 +88,9 @@ public final class UniqueMaterialFactory {
         if (equipmentAsset != null && !equipmentAsset.isBlank() && !presentation.equipmentApplied()) {
             plugin.getLogger().warning("profession-materials." + uniqueId + ".equipment-asset: '"
                     + equipmentAsset + "' cannot be applied (" + presentation.equipmentStatus() + ")");
-            return null;
+            return false;
         }
-        return item;
+        return true;
     }
 
     /** The unique-material id of an item, or null if it is not a unique material. */
