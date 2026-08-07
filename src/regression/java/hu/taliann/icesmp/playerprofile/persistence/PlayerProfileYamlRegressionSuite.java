@@ -20,6 +20,7 @@ public final class PlayerProfileYamlRegressionSuite {
         greenfieldStructuredRoundTrip();
         sectionCasAndExtensions();
         quarantineIsolationAndRecovery();
+        manifestDeclaredMissingSectionFailsClosed();
         invalidUtf8OversizeOwnerAndTempRecovery();
         strictStructuredCodecPolicies();
         System.out.println("PlayerProfile YAML regression suite passed. assertions=" + assertions);
@@ -146,6 +147,63 @@ public final class PlayerProfileYamlRegressionSuite {
                     PLAYER, ProfileSectionId.STATISTICS,
                     quarantined.evidenceId(), "audit-1"));
             check(replay.idempotent(), "recovery replay idempotent");
+        } finally {
+            shutdown(repo);
+        }
+    }
+
+    private static void manifestDeclaredMissingSectionFailsClosed() throws Exception {
+        Path root = Files.createTempDirectory("pp-yaml-missing-section-");
+        YamlPlayerProfileRepository repo = repository(root);
+        UUID player = UUID.fromString("00000000-0000-0000-0000-000000001102");
+        try {
+            PlayerProfileSnapshot initial = join(repo.load(player));
+            PreferenceSection value = new PreferenceSection(
+                    "hu_HU", true, true, true, true, true, true, true, true,
+                    Map.of("theme", "missing-section-proof"), Map.of());
+            ProfileSectionSnapshot<PreferenceSection> next = new ProfileSectionSnapshot<>(
+                    ProfileSectionId.PREFERENCES, initial.preferences().schema(), 1,
+                    NOW.plusSeconds(1), value, SectionHealth.healthy(), Map.of());
+            PlayerProfileRepository.SectionSaveResult committed = join(repo.saveSection(
+                    player, ProfileSectionId.PREFERENCES, 0, 0, next));
+            check(committed.status() == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED,
+                    "missing-section fixture revision committed");
+
+            Path dir = root.resolve(player.toString());
+            Path section = dir.resolve(ProfileSectionId.PREFERENCES.fileName());
+            Files.delete(section);
+            repo.invalidate(player);
+
+            PlayerProfileSnapshot loaded = join(repo.load(player));
+            check(loaded.health().status() == ProfileHealth.Status.PARTIAL,
+                    "declared missing section makes profile partial");
+            check(!loaded.preferences().health().usable(),
+                    "declared missing section quarantined");
+            check(loaded.preferences().revision() == 1,
+                    "manifest-declared revision preserved in quarantine snapshot");
+            check(loaded.preferences().health().diagnostic().contains("MISSING_SECTION"),
+                    "missing-section diagnostic is explicit");
+            check(!Files.exists(section),
+                    "repository never writes a default over a manifest-declared missing section");
+            check(loaded.classSpec().health().usable(),
+                    "unrelated section remains usable after missing-section quarantine");
+
+            String evidenceId = loaded.preferences().health().evidenceId();
+            check(evidenceId != null && !evidenceId.isBlank(), "missing-section evidence id recorded");
+            Path marker = dir.resolve("quarantine").resolve("preferences.marker.yml");
+            Path evidence = dir.resolve("quarantine").resolve("preferences")
+                    .resolve(evidenceId + ".evidence");
+            check(Files.isRegularFile(marker), "missing-section quarantine marker written");
+            check(Files.isRegularFile(evidence), "missing-section evidence written");
+
+            repo.invalidate(player);
+            PlayerProfileSnapshot reloaded = join(repo.load(player));
+            check(!reloaded.preferences().health().usable(),
+                    "missing-section quarantine survives reload");
+            check(evidenceId.equals(reloaded.preferences().health().evidenceId()),
+                    "missing-section evidence identity is stable across reload");
+            check(!Files.exists(section),
+                    "reload still does not synthesize the lost section file");
         } finally {
             shutdown(repo);
         }
