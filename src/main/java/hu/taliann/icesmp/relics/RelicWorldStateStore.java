@@ -44,6 +44,12 @@ public final class RelicWorldStateStore {
         PERSISTENCE_FAILED
     }
 
+    public enum TransferResult {
+        TRANSFERRED,
+        NOT_OWNER,
+        PERSISTENCE_FAILED
+    }
+
     private final Object writeLock = new Object();
     private final DurableWriter writer;
     private final Logger logger;
@@ -247,30 +253,44 @@ public final class RelicWorldStateStore {
     }
 
     /**
-     * PvP-transfer világ-oldali commitja EGY durable írásban: ownership az új
-     * tulajdonosra + a fizikai PDC-átírás függő receiptje — a világ-commit MEGELŐZI a
-     * fizikai mellékhatást, így crash után a receipt mondja meg, kell-e még PDC-t írni.
+     * PvP-transfer világ-oldali commitja. A caller által bizonyított expectedOwner
+     * összevetése ugyanazon writeLock kritikus szekcióban történik, mint a candidate
+     * felépítése és durable commit. Egy stale fizikai másolat vagy egy elvesztett
+     * concurrent transfer-verseny ezért nem írhatja felül a központi ownershipet.
      */
-    public void beginTransfer(final String relicId, final UUID fromOwner, final UUID toOwner,
-                              final long nowMillis) {
-        Objects.requireNonNull(toOwner, "toOwner");
-        if (relicId == null || relicId.isBlank()) {
-            throw new IllegalArgumentException("relicId required");
+    public TransferResult beginTransfer(final String relicId, final UUID expectedOwner,
+                                        final UUID toOwner, final long nowMillis) {
+        if (relicId == null || relicId.isBlank() || expectedOwner == null || toOwner == null) {
+            return TransferResult.NOT_OWNER;
         }
         final String key = normalize(relicId);
-        commit(key, base -> {
+        synchronized (writeLock) {
+            final RelicOwnership ownership = current.ownerships().get(key);
+            if (ownership == null || !ownership.owner().equals(expectedOwner)) {
+                return TransferResult.NOT_OWNER;
+            }
             final LinkedHashMap<String, RelicOwnership> ownerships =
-                    new LinkedHashMap<>(base.ownerships());
+                    new LinkedHashMap<>(current.ownerships());
             ownerships.put(key, new RelicOwnership(toOwner, nowMillis));
-            final LinkedHashMap<String, Long> lostSince = new LinkedHashMap<>(base.lostSince());
+            final LinkedHashMap<String, Long> lostSince = new LinkedHashMap<>(current.lostSince());
             lostSince.remove(key);
             final LinkedHashMap<String, PendingRelicOperation> operations =
-                    new LinkedHashMap<>(base.operations());
+                    new LinkedHashMap<>(current.operations());
             operations.put(key, new PendingRelicOperation(
-                    PendingRelicOperation.Type.TRANSFER, fromOwner, toOwner));
-            return new RelicWorldStateSnapshot(ownerships, lostSince,
-                    base.awakeningReadyAt(), operations);
-        });
+                    PendingRelicOperation.Type.TRANSFER, expectedOwner, toOwner));
+            final RelicWorldStateSnapshot candidate = new RelicWorldStateSnapshot(
+                    ownerships, lostSince, current.awakeningReadyAt(), operations);
+            try {
+                persistLocked(candidate);
+            } catch (final RuntimeException failure) {
+                logger.severe("Relic transfer rolled back (durable write failed) for '" + key
+                        + "': " + failure.getMessage());
+                return TransferResult.PERSISTENCE_FAILED;
+            }
+            current = candidate;
+        }
+        notifyMutation(key);
+        return TransferResult.TRANSFERRED;
     }
 
     /** A fizikai mellékhatás lezárult: a függő receipt törlése. Idempotens. */
