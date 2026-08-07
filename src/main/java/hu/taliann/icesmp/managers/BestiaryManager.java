@@ -39,12 +39,20 @@ public final class BestiaryManager {
     public boolean isEnabled() { return configManager.getBoolean("bestiary.enabled", true); }
 
     public Set<String> entries(final Player player, final Category category) {
-        if (player == null || category == null) return Set.of();
-        return store.bestiaryEntries(player.getUniqueId(), category.name().toLowerCase(Locale.ROOT));
+        return player == null ? Set.of() : entries(player.getUniqueId(), category);
+    }
+
+    public Set<String> entries(final java.util.UUID playerId, final Category category) {
+        if (playerId == null || category == null) return Set.of();
+        return store.bestiaryEntries(playerId, category.name().toLowerCase(Locale.ROOT));
     }
 
     public int count(final Player player, final Category category) {
         return entries(player, category).size();
+    }
+
+    public int count(final java.util.UUID playerId, final Category category) {
+        return entries(playerId, category).size();
     }
 
     /**
@@ -140,5 +148,60 @@ public final class BestiaryManager {
             case TERRITORIES -> "Territóriumok";
             case BOSSES -> "Világbossok";
         };
+    }
+
+    /**
+     * A lajstrom-kulcs kánonja: ritka variánsnál `<variáns>_<típus>` — a kill-oldali rögzítés
+     * (BestiaryListener, StatsCombatListener) és a GUI-megjelenítés ugyanezt a formát használja.
+     */
+    public static String entryId(final org.bukkit.entity.Entity entity) {
+        final String variant = MobScalingManager.rareVariantOf(entity);
+        return ((variant == null ? "" : variant + "_") + entity.getType().name())
+                .toLowerCase(Locale.ROOT);
+    }
+
+    /** Az ismert szörny-fajok nevezője: minden Monster-besorolású vanilla típus. */
+    public static java.util.List<org.bukkit.entity.EntityType> knownMonsterTypes() {
+        final java.util.ArrayList<org.bukkit.entity.EntityType> types = new java.util.ArrayList<>();
+        for (final org.bukkit.entity.EntityType type : org.bukkit.entity.EntityType.values()) {
+            final Class<?> entityClass = type.getEntityClass();
+            if (entityClass != null && org.bukkit.entity.Monster.class.isAssignableFrom(entityClass)) {
+                types.add(type);
+            }
+        }
+        types.sort(java.util.Comparator.comparing(Enum::name));
+        return types;
+    }
+
+    /** A tudás-fokozat küszöbei (élő-config); a lista i. eleme az (i+1). fokozat kill-igénye. */
+    public java.util.List<Integer> knowledgeTiers() {
+        final java.util.ArrayList<Integer> tiers = new java.util.ArrayList<>();
+        for (final String raw : configManager.getStringList("bestiary.knowledge-tiers")) {
+            try {
+                tiers.add(Integer.parseInt(raw.trim()));
+            } catch (final NumberFormatException ignored) {
+                // hibás sor kimarad; a fallback lent kezeli az üres listát
+            }
+        }
+        if (tiers.isEmpty()) {
+            tiers.add(1);
+            tiers.add(10);
+            tiers.add(50);
+        }
+        tiers.sort(Integer::compareTo);
+        return tiers;
+    }
+
+    public int knowledgeTier(final long speciesKills) {
+        int tier = 0;
+        for (final int threshold : knowledgeTiers()) {
+            if (speciesKills >= threshold) tier++;
+        }
+        return tier;
+    }
+
+    /** Kódex-jegyzet a bejegyzéshez (config-katalógus, kódex-konzisztens szövegekkel). */
+    public String codexNote(final String entryId) {
+        return configManager.getString("bestiary.codex-notes." + entryId, "");
     }
 }

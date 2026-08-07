@@ -52,6 +52,15 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   executor, HTTP listener vagy service-regisztráció); az alapból kikapcsolt
   read-only HTTP API név-feloldása auth-first — anonim hívás egyetlen
   tárolóolvasást sem indíthat el.
+- **Bestiárium-mélység:** a lajstrom négy kategóriája kattintva lapozható
+  (ismeretlen bejegyzés = „???"), teljesítmény-%-kal és nevezőkkel; a
+  szörnyeknél fajonkénti elejtés-számláló, első-elejtés dátum és kill-alapú
+  tudás-fokozatok; a világbossok archetípusonként kerülnek a lajstromba;
+  `%icesmp_bestiary_*%` placeholderek külső kijelzéshez.
+- **Kódex-bővítés:** mind a 7 ereklye, a 10 világboss-archetípus, a
+  kazamata-őrzők és mind a 35 specializáció-iskola kánon-bejegyzést kapott;
+  a consistency-kapu gépileg őrzi, hogy nevesített tartalom ne élhessen
+  kódex-horgony nélkül.
 
 ## Harminc másodpercben
 

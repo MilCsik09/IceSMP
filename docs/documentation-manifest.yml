@@ -5506,6 +5506,12 @@
       "docs": [
         "docs/FEATURES.md"
       ]
+    },
+    "component.hu.taliann.icesmp.gui.BestiaryGUI": {
+      "feature": "feature.world.mobs_loot",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
     }
   },
   "version": 1,

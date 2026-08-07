@@ -50,6 +50,31 @@ public final class PlayerProfileStatisticsStoreRegressionSuite {
             check(Math.abs(store.leaderboard(durable).wealth() - 125.75D) < 0.0001D,
                     "wealth restart durable");
             expect(IllegalArgumentException.class, () -> store.increment(player, "unknown"));
+
+            // Faj-szintű bestiárium-számláló: az összesítő és a faj-kulcs EGY commitban nő,
+            // az első-elejtés időbélyeg csak egyszer íródik, null faj = csak összesítő.
+            final long mobKillsBefore = store.read(player, PlayerProfileStatisticsStore.MOB_KILLS);
+            check(store.recordMobKill(player, "zombie", 1_000L)
+                    .toCompletableFuture().join() == 1L, "first species kill counts one");
+            check(store.recordMobKill(player, "zombie", 2_000L)
+                    .toCompletableFuture().join() == 2L, "second species kill counts two");
+            check(store.speciesKills(player, "zombie") == 2L, "species counter readable");
+            check(store.speciesFirstKillAt(player, "zombie") == 1_000L,
+                    "first-kill timestamp is write-once");
+            check(store.recordMobKill(player, null, 3_000L)
+                    .toCompletableFuture().join() == 0L, "null species increments total only");
+            check(store.read(player, PlayerProfileStatisticsStore.MOB_KILLS)
+                    == mobKillsBefore + 3L, "mob-kill total rides the same commits");
+            check(store.recordMobKill(player, "albino_zombie", 4_000L)
+                    .toCompletableFuture().join() == 1L, "rare variant is a separate species");
+            expect(IllegalArgumentException.class,
+                    () -> store.recordMobKill(player, "Bad Key!", 5_000L));
+            repository.invalidate(player);
+            repository.loadSnapshot(player).toCompletableFuture().join();
+            check(store.speciesKills(player, "zombie") == 2L
+                            && store.speciesFirstKillAt(player, "zombie") == 1_000L,
+                    "species depth restart durable");
+
             check(service.shutdown(Duration.ofSeconds(5)).toCompletableFuture().join().drained(),
                     "repository drained");
         } finally {

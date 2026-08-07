@@ -947,7 +947,7 @@ A release bundled `config/crates.yml` fájljában a `koznapi` crate permissionje
 | Küldetésnapló | /quest log | Játékos / `—` | 54 | Változatlan |
 | Quest builder | /quest admin builder <id> | Admin / `icesmp.admin.quest` | TYPE_PICKER 36; EDITOR 54 | Megváltozott |
 | NPC/frakció bolt | NPC-kötés/interakció | Játékos / `—` | 9–54, tételszám szerint | Megváltozott |
-| Bestiárium | /bestiarium | Játékos / `—` | 27 | Új |
+| Bestiárium | /bestiarium | Játékos / `—` | 27 főoldal + 54 lapozó | Új |
 | Megbízottak kezelése | /claim trustgui vagy Claim menü | Játékos / `—` | 54 | Új |
 | Config menü | /icesmp config menu vagy admin főmenü | Admin / `icesmp.admin.config` | 36 | Új |
 | Crate böngésző és preview | /crate, /crate info, /crate preview | Játékos / `icesmp.crate.use + opcionális crate-specifikus jog` | 54 | Új |

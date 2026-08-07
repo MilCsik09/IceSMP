@@ -164,6 +164,37 @@ public final class WorldBossManager {
                 && entity.getPersistentDataContainer().getOrDefault(worldBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
 
+    /**
+     * A bestiárium a boss-ARCHETÍPUST jegyzi, nem az EntityType-ot: két azonos vanilla-fajú
+     * archetípus külön lajstrom-bejegyzés kell maradjon. Legacy fallback: entity-típusnév.
+     */
+    public String archetypeId(final Entity entity) {
+        if (entity == null) return null;
+        final String stored = entity.getPersistentDataContainer()
+                .get(bossArchetypeKey, PersistentDataType.STRING);
+        return (stored == null || stored.isBlank())
+                ? entity.getType().name().toLowerCase(java.util.Locale.ROOT)
+                : stored.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** id → nyers (&-kódos) display-név; a sorrend a roster deklarációs sorrendje. */
+    public static java.util.Map<String, String> archetypeDisplayNames() {
+        final java.util.LinkedHashMap<String, String> names = new java.util.LinkedHashMap<>();
+        for (final BossArchetype archetype : BossArchetype.values()) {
+            names.put(archetype.name().toLowerCase(java.util.Locale.ROOT), archetype.displayName);
+        }
+        return names;
+    }
+
+    /** A display-név kánon-alakja (szín-kódok, szimbólumok és a [Világboss] címke nélkül). */
+    public static String plainArchetypeName(final String rawDisplayName) {
+        return rawDisplayName
+                .replaceAll("&[0-9a-fk-or]", "")
+                .replace("[Világboss]", "")
+                .replaceAll("^[^\\p{L}]+", "")
+                .trim();
+    }
+
     /** Whether a world boss is currently alive (for HUD / boss-bar display). */
     public boolean isBossActive() {
         return activeBossUntil > System.currentTimeMillis();

@@ -635,6 +635,33 @@ megtagadták őket, s tudásuk ma már csak a Kitaszítottak útján szerezhető
 - **Perzselés** — Soleil lángjának és a sárkánytűznek ötvözete: a lehelet, amely hadsorokat nyit.
 - **Megőrzés** — a jégsárkányok vérének hűvös oldala: az eszencia, amely óv és összeforraszt.
 
+## Függelék — A Káoszkor Nagyjai
+
+*Amikor a Néma Királynő álma mélyebbre fordul, a Káoszkor legnagyobb szörnyei kelnek útra a
+világban. A krónikások tíz Nagyot jegyeztek fel eddig; ledöntésük a birodalmak közös dicsősége,
+s aki elsőként ejti el őket, azt a lajstromok külön említik.*
+
+- **A Gyűrűk Őre** — gyűrűbe zárt harag, amely megelőzi a rengést; a vének szerint a Lapforduló
+  Őrének kisebb visszhangja, amely nem várja meg a fejezet végét.
+- **Lávakohó Behemót** — a Vérszavanna kohóinak szökött szelleme; lépte nyomán megolvad a homok,
+  s a levegő maga is perzsel körülötte.
+- **Fagyott Trón Királya** — bitorló a Jégmezők jegén: Kallan öröksége nélkül való, de annak
+  minden hidegével; ahol megáll, ott a föld trónussá fagy alatta.
+- **Csontkirály** — a sírba szállt nemesség csontjaiból emelt korona; a Királynő átka táplálja,
+  s hívó szavára a holtak sorfalat állnak.
+- **Mélységi Rém** — a törp-tárnák mélyéről felszivárgott iszonyat; a sötétje nem árnyék, hanem
+  a csend maga, amely egyszer visszanézett.
+- **Méreg Anyakirálynő** — a Káoszkor fészekrakója; ivadékai ott várnak a világ minden
+  repedésében, s a marása lassabban öl, mint ahogy felejt.
+- **Vihar Hírnöke** — Kallan viharának elszabadult, gazdátlan visszhangja; égzengés, amely már
+  nem hallgat senkire.
+- **Dögvész Titán** — Eleftheria mérgének járványhordozója; amerre elvonul, a föld is beteg
+  marad utána.
+- **Vas Őrszem** — a Vasművek Akadémiájának őrszeme, amely túlélte az alkotóit — s már nem
+  ismer jelszót, csak betolakodót.
+- **Pokoli Hadúr** — a Kárhozat Kapuján átszivárgott hadúr; a Senkiföldje az ő portyaterülete,
+  s hadizsákmánya minden, ami él.
+
 ---
 
 > *Itt végződik a kódex. A technikai megfeleltetés — mely lore-elem mely szerver-rendszerre képződik

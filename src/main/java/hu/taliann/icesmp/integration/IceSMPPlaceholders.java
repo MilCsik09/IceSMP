@@ -28,10 +28,20 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
     private final HudManager hudManager;
     private final hu.taliann.icesmp.managers.ConfigManager configManager;
 
+    private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
+    private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
+    private final hu.taliann.icesmp.managers.TerritoryManager territoryManager;
+
     private IceSMPPlaceholders(final HudManager hudManager,
-                               final hu.taliann.icesmp.managers.ConfigManager configManager) {
+                               final hu.taliann.icesmp.managers.ConfigManager configManager,
+                               final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager,
+                               final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
+                               final hu.taliann.icesmp.managers.TerritoryManager territoryManager) {
         this.hudManager = hudManager;
         this.configManager = configManager;
+        this.bestiaryManager = bestiaryManager;
+        this.recipeCatalog = recipeCatalog;
+        this.territoryManager = territoryManager;
     }
 
     /**
@@ -42,8 +52,38 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
      * @param hudManager the HUD manager providing the per-player snapshot
      */
     public static void register(final JavaPlugin plugin, final HudManager hudManager,
-                                final hu.taliann.icesmp.managers.ConfigManager configManager) {
-        new IceSMPPlaceholders(hudManager, configManager).register();
+                                final hu.taliann.icesmp.managers.ConfigManager configManager,
+                                final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager,
+                                final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
+                                final hu.taliann.icesmp.managers.TerritoryManager territoryManager) {
+        new IceSMPPlaceholders(hudManager, configManager, bestiaryManager, recipeCatalog,
+                territoryManager).register();
+    }
+
+    /** `%icesmp_bestiary_<kategória>%` és `_total` párja; nem-bestiárium paramra {@code null}. */
+    private String bestiaryParam(final OfflinePlayer player, final String params) {
+        if (!params.startsWith("bestiary_")) {
+            return null;
+        }
+        final boolean total = params.endsWith("_total");
+        final String raw = params.substring("bestiary_".length(),
+                total ? params.length() - "_total".length() : params.length());
+        final hu.taliann.icesmp.managers.BestiaryManager.Category category;
+        try {
+            category = hu.taliann.icesmp.managers.BestiaryManager.Category
+                    .valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException unknown) {
+            return "";
+        }
+        if (!total) {
+            return String.valueOf(bestiaryManager.count(player.getUniqueId(), category));
+        }
+        return String.valueOf(switch (category) {
+            case MOBS -> hu.taliann.icesmp.managers.BestiaryManager.knownMonsterTypes().size();
+            case RECIPES -> recipeCatalog.allIds().size();
+            case TERRITORIES -> territoryManager.all().size();
+            case BOSSES -> hu.taliann.icesmp.managers.WorldBossManager.archetypeDisplayNames().size();
+        });
     }
 
     private static hu.taliann.icesmp.data.FactionType parseFaction(final String factionId) {
@@ -82,6 +122,11 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
     public String onRequest(final OfflinePlayer player, final String params) {
         if (player == null || params == null) {
             return "";
+        }
+        // A bestiárium-lekérés nem HUD-függő: offline/HUD nélküli játékosra is válaszol.
+        final String bestiary = bestiaryParam(player, params.toLowerCase(Locale.ROOT));
+        if (bestiary != null) {
+            return bestiary;
         }
         final HudManager.HudSnapshot snapshot = hudManager.snapshot(player.getUniqueId());
         if (snapshot == null) {

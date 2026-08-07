@@ -196,6 +196,10 @@ val playerProfileApiRegressionTest = registerRegression(
     "playerProfileApiRegressionTest",
     "Runs internal/API DTO, authentication, ETag, rate-limit and shutdown regressions.",
     "hu.taliann.icesmp.playerprofile.api.PlayerProfileApiRegressionSuite")
+val bestiaryRegressionTest = registerRegression(
+    "bestiaryRegressionTest",
+    "Runs bestiary denominator, boss-archetype canon and kill-recording contract regressions.",
+    "hu.taliann.icesmp.managers.BestiaryRegressionSuite")
 val playerProfileHttpContractRegressionTest = registerRegression(
     "playerProfileHttpContractRegressionTest",
     "Runs real-routing HTTP by-name auth-order, SELF/ADMIN scope and stop-idempotency regressions.",
@@ -308,7 +312,7 @@ tasks.check {
         playerProfileTaxRegressionTest, playerProfileRepositoryEnumerationRegressionTest, playerProfileYamlRegressionTest,
         playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
         playerProfileHttpContractRegressionTest, playerProfileLifecycleTeardownRegressionTest,
-        respecTransactionRegressionTest,
+        bestiaryRegressionTest, respecTransactionRegressionTest,
         spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest, eventSpawnSafetyRegressionTest,
         configGuiTransactionRegressionTest, configGuiCoverageRegressionTest, professionRecipeAuditRegressionTest,
         inventoryReadWriteRegressionTest, operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest,

@@ -1042,8 +1042,12 @@ public final class IceSMPCore {
         try {
             Class.forName("hu.taliann.icesmp.integration.IceSMPPlaceholders")
                     .getMethod("register", JavaPlugin.class, HudManager.class,
-                            hu.taliann.icesmp.managers.ConfigManager.class)
-                    .invoke(null, plugin, hudManager, configManager);
+                            hu.taliann.icesmp.managers.ConfigManager.class,
+                            hu.taliann.icesmp.managers.BestiaryManager.class,
+                            hu.taliann.icesmp.managers.ProfessionRecipeCatalog.class,
+                            hu.taliann.icesmp.managers.TerritoryManager.class)
+                    .invoke(null, plugin, hudManager, configManager, bestiaryManager,
+                            professionRecipeCatalog, territoryManager);
             plugin.getLogger().info("PlaceholderAPI integráció bekapcsolva (%icesmp_...% placeholderek).");
         } catch (final Throwable throwable) {
             plugin.getLogger().warning("PlaceholderAPI jelen van, de a placeholder-integráció nem indult: "
@@ -1805,7 +1809,7 @@ public final class IceSMPCore {
         final hu.taliann.icesmp.listeners.RuneEffectListener runeEffectListener = new hu.taliann.icesmp.listeners.RuneEffectListener(configManager);
         runeEffectListener.setJobManager(jobManager); // Varázsló rúna-affinitás
         pluginManager.registerEvents(runeEffectListener, plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BestiaryListener(bestiaryManager, worldBossManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BestiaryListener(bestiaryManager, worldBossManager, statsManager, professionRecipeCatalog, territoryManager), plugin);
         pluginManager.registerEvents(resourceBonusService, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpyRevealListener(plugin, spyManager), plugin);
         pluginManager.registerEvents(professionWeeklyGoalManager, plugin);

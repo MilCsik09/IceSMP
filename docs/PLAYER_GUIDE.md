@@ -687,7 +687,12 @@ csak akkor használd, ha a játék vagy a csapat kifejezetten erre irányít.
 - A történeti fejezetek a szezonhoz kapcsolódhatnak.
 - A rejtvényküldetés nem mutatja meg a konkrét célt — ez szándékos.
 - A sötét és vezeklési láncoknak tartós következménye lehet.
-- A `/bestiarium` felfedezői és harci mérföldköveket gyűjt.
+- A `/bestiarium` felfedezői és harci mérföldköveket gyűjt: a négy kategória
+  (szörnyek, receptek, territóriumok, világbossok) kattintva lapozható, az
+  ismeretlen bejegyzések „???"-ként várnak a felfedezésre. A szörnyeknél
+  fajonként számoljuk az elejtéseket: elég kill után a bejegyzés
+  tudás-fokozatot lép (kódex-jegyzet, zsákmány-jegyzet, végül mestervadász
+  jelölés).
 
 Nem találsz itt megoldókulcsot. Ha elakadsz, olvasd újra a párbeszédet,
 vizsgáld meg a helyszínt, kérdezz más játékosokat — és csak ezután gondolj

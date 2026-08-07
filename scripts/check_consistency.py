@@ -582,6 +582,12 @@ try:
         _plain = re.sub(r"<[^>]+>", "", _disp)
         if _plain not in _lore_md:
             fail(f"lore-lefedettseg: a(z) '{_plain}' specializacio-iskola nincs a LORE.md fuggelekeben")
+    _boss_src = read(os.path.join(JAVA, "hu/taliann/icesmp/managers/WorldBossManager.java"))
+    for _draw in re.findall(r'EntityType\.[A-Z_]+,\s*"([^"]+)"', _boss_src):
+        _plain = re.sub(r"&[0-9a-fk-or]", "", _draw).replace("[Világboss]", "")
+        _plain = re.sub(r"^[^A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+", "", _plain).strip()
+        if _plain and _plain not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_plain}' vilagboss-archetipus nincs a LORE.md-ben")
 except Exception as e:
     warn(f"lore-lefedettseg ellenorzes kihagyva: {e}")
 

@@ -254,7 +254,10 @@ meta-progresszió; tárgyszettek; presztízs és reforge.
 
 💡 Világboss add/interrupt mechanika; esemény-auto-party; heti
 kihívásrotáció; vándorló vagy mythic boss; szörnyfészek; kooperatív
-boss-finisher.
+boss-finisher; bestiárium tanulmány-bónusz (III. tudás-fokozat után kis,
+config-kapcsolós bónusz a tanulmányozott faj ellen — pl. +2–3% sebzés
+és/vagy lélekkő-esély szorzó; balansz-review és a passzív-precedencia
+láncban rögzített hely szükséges hozzá).
 
 ### PvP és frakcióháború
 

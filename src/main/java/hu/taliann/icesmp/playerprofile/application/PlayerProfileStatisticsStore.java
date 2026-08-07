@@ -22,8 +22,53 @@ public final class PlayerProfileStatisticsStore {
     private static final String WEALTH_MILLI_SNAPSHOT = "leaderboard.wealth-milli-snapshot";
     private static final long SCALE = 1_000L;
 
+    /** Faj-szintű bestiárium-kulcsok: a fix allowlist helyett prefix+charset validáció. */
+    private static final String BESTIARY_KILL_PREFIX = "bestiary.kills.";
+    private static final String BESTIARY_FIRST_PREFIX = "bestiary.first.";
+
     public long read(final UUID playerId, final String key) {
         return section(playerId).lifetime().getOrDefault(validateKey(key), 0L);
+    }
+
+    public long speciesKills(final UUID playerId, final String speciesEntry) {
+        return section(playerId).lifetime()
+                .getOrDefault(BESTIARY_KILL_PREFIX + validateSpecies(speciesEntry), 0L);
+    }
+
+    public long speciesFirstKillAt(final UUID playerId, final String speciesEntry) {
+        return section(playerId).lifetime()
+                .getOrDefault(BESTIARY_FIRST_PREFIX + validateSpecies(speciesEntry), 0L);
+    }
+
+    /**
+     * A mob-kill összesítő és a faj-szintű számláló/első-elejtés időbélyeg EGY section-commitban
+     * frissül — a bestiárium-mélység nem adhat második írást a meglévő per-kill útvonal mellé.
+     * {@code speciesEntry == null} esetén csak az összesítő nő (nem-szörny elejtés).
+     */
+    public CompletionStage<Long> recordMobKill(final UUID playerId, final String speciesEntry,
+                                               final long nowEpochMillis) {
+        final String species = speciesEntry == null ? null : validateSpecies(speciesEntry);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.STATISTICS, StatisticsSection.class, current -> {
+                    final LinkedHashMap<String, Long> lifetime = new LinkedHashMap<>(current.lifetime());
+                    lifetime.merge(MOB_KILLS, 1L, Math::addExact);
+                    long speciesAfter = 0L;
+                    if (species != null) {
+                        speciesAfter = lifetime.merge(BESTIARY_KILL_PREFIX + species, 1L, Math::addExact);
+                        lifetime.putIfAbsent(BESTIARY_FIRST_PREFIX + species, nowEpochMillis);
+                    }
+                    final StatisticsSection next = new StatisticsSection(lifetime,
+                            current.season(), current.claimedMilestones(), current.extensions());
+                    return PlayerProfileService.ConditionalMutation.changed(next, speciesAfter);
+                });
+    }
+
+    private static String validateSpecies(final String species) {
+        if (species == null || species.isBlank() || species.length() > 64
+                || !species.matches("[a-z0-9_]+")) {
+            throw new IllegalArgumentException("invalid bestiary species entry: " + species);
+        }
+        return species;
     }
 
     public CompletionStage<Long> increment(final UUID playerId, final String key) {

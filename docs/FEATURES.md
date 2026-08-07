@@ -989,7 +989,7 @@ Szezonállapot, jutalmak, történetmesélés, finálé, monumentum, holiday, am
 
 Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és undead segédszabályok.
 
-- **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium.
+- **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium (kattintható kategória-főoldal + lapozható lajstrom: ismert bejegyzések ikonnal, ismeretlenek „???" sziluettként, teljesítmény-%-kal). A szörny-bejegyzések faj-szintű mélységet kapnak: elejtés-számláló, első-elejtés dátum és kill-alapú tudás-fokozatok (kódex-jegyzet → zsákmány-jegyzet → mestervadász), a világbossok archetípusonként (nem vanilla-fajonként) kerülnek a lajstromba. Külső kijelzéshez: `%icesmp_bestiary_<kategória>%` és `_total` placeholderek.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** Mob spawn, sebzés, ölés, loot, bestiárium-felfedezés és minion lifecycle.
 - **Ami még kellhet hozzá:** Mobspawnokat, arénákat, farmvédelmet és lootforrásokat ellenőrizni kell.
@@ -999,7 +999,7 @@ Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.*`, `loot.*`, mob-, bestiary-, scaling- és miniondefiníciók.
+- Config: `world.*`, `loot.*`, mob-, bestiary- (mérföldkövek, `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`), scaling- és miniondefiníciók.
 - Tartós állapot: Bestiárium progress és egyes loot/event state-ek tartósak; mob entity runtime.
 - Reload: Loot/balance reloadolható; már spawnolt mobok nem feltétlenül változnak visszamenőleg.
 

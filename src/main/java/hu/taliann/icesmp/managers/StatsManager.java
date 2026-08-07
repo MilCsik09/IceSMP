@@ -83,7 +83,26 @@ public final class StatsManager implements PersistentStore {
 
     public void recordKill(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.KILLS); }
     public void recordDeath(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.DEATHS); }
-    public void recordMobKill(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.MOB_KILLS); }
+    public void recordMobKill(final UUID playerId) { recordMobKill(playerId, null); }
+
+    /** A faj-szintű bestiárium-számláló a mob-kill összesítővel EGY commitban frissül. */
+    public void recordMobKill(final UUID playerId, final String speciesEntry) {
+        if (playerId == null) return;
+        store.recordMobKill(playerId, speciesEntry, System.currentTimeMillis())
+                .whenComplete((value, failure) -> {
+                    if (failure != null) logFailure(PlayerProfileStatisticsStore.MOB_KILLS, playerId, failure);
+                });
+    }
+
+    public long getSpeciesKills(final UUID playerId, final String speciesEntry) {
+        if (playerId == null) return 0L;
+        return store.speciesKills(playerId, speciesEntry);
+    }
+
+    public long getSpeciesFirstKillAt(final UUID playerId, final String speciesEntry) {
+        if (playerId == null) return 0L;
+        return store.speciesFirstKillAt(playerId, speciesEntry);
+    }
     public void recordSpellCast(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.SPELL_CASTS); }
     public void recordQuestComplete(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.QUESTS_COMPLETED); }
 
