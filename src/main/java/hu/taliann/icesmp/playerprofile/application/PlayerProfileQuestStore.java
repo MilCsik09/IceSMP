@@ -20,7 +20,14 @@ public final class PlayerProfileQuestStore {
     private static final String DONE_AT_PREFIX = "done-at:";
     private static final String SEASON_PREFIX = "season:";
     private static final String RECEIPT_SEPARATOR = "|";
+    private static final String REWARD_DELIVERY_EXTENSION = "reward-delivery-ledger";
     private static final int MAX_REWARD_RECEIPTS = 2048;
+    private static final int MAX_DELIVERY_COMPONENTS = 512;
+
+    public enum RewardComponentState {
+        PREPARED,
+        DELIVERED
+    }
 
     public record State(Set<String> active, Set<String> completed,
                         Map<String, Map<String, Long>> progress,
@@ -214,28 +221,132 @@ public final class PlayerProfileQuestStore {
         return questId(receipt.substring(0, split));
     }
 
-    public CompletionStage<Boolean> settleReward(final UUID playerId, final String receipt) {
-        Objects.requireNonNull(receipt, "receipt");
+    /**
+     * Durable phase 1 for physical rewards. Every component must be PREPARED before an inventory
+     * side effect can happen. Replays never downgrade DELIVERED components.
+     */
+    public CompletionStage<Boolean> prepareRewardComponents(final UUID playerId,
+                                                            final String receipt,
+                                                            final Set<String> componentIds) {
+        Objects.requireNonNull(playerId, "playerId");
+        final String rewardReceipt = rewardReceipt(receipt);
+        final LinkedHashSet<String> components = normalizedComponents(componentIds);
+        if (components.isEmpty()) return java.util.concurrent.CompletableFuture.completedFuture(false);
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
-                    if (current.rewardReceipts().contains(receipt)) {
+                    if (current.rewardReceipts().contains(rewardReceipt)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
-                    if (!current.claimableRewards().contains(receipt)) {
+                    if (!current.claimableRewards().contains(rewardReceipt)) {
+                        throw new IllegalStateException("unknown claimable quest reward");
+                    }
+                    final LinkedHashMap<String, Map<String, RewardComponentState>> ledger =
+                            mutableDeliveryLedger(current);
+                    final LinkedHashMap<String, RewardComponentState> receiptState =
+                            new LinkedHashMap<>(ledger.getOrDefault(rewardReceipt, Map.of()));
+                    boolean changed = false;
+                    for (final String component : components) {
+                        if (!receiptState.containsKey(component)) {
+                            receiptState.put(component, RewardComponentState.PREPARED);
+                            changed = true;
+                        }
+                    }
+                    if (!changed) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    if (receiptState.size() > MAX_DELIVERY_COMPONENTS) {
+                        throw new IllegalStateException("quest reward component limit exceeded");
+                    }
+                    ledger.put(rewardReceipt, Map.copyOf(receiptState));
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            copyWithDeliveryLedger(current, ledger), true);
+                });
+    }
+
+    /** Current durable component state for one pending reward receipt. */
+    public Map<String, RewardComponentState> rewardComponentStates(final UUID playerId,
+                                                                   final String receipt) {
+        final String rewardReceipt = rewardReceipt(receipt);
+        final QuestSection section = PlayerProfileAuthority.current().requireSection(
+                Objects.requireNonNull(playerId, "playerId"),
+                ProfileSectionId.QUESTS, QuestSection.class);
+        return deliveryLedger(section).getOrDefault(rewardReceipt, Map.of());
+    }
+
+    /**
+     * Durable phase 2 for physical rewards. Call only after every named component either entered
+     * the inventory or was found there as the stamped recovery witness.
+     */
+    public CompletionStage<Boolean> markRewardComponentsDelivered(final UUID playerId,
+                                                                  final String receipt,
+                                                                  final Set<String> componentIds) {
+        Objects.requireNonNull(playerId, "playerId");
+        final String rewardReceipt = rewardReceipt(receipt);
+        final LinkedHashSet<String> components = normalizedComponents(componentIds);
+        if (components.isEmpty()) return java.util.concurrent.CompletableFuture.completedFuture(false);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+                    if (current.rewardReceipts().contains(rewardReceipt)) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    if (!current.claimableRewards().contains(rewardReceipt)) {
+                        throw new IllegalStateException("unknown claimable quest reward");
+                    }
+                    final LinkedHashMap<String, Map<String, RewardComponentState>> ledger =
+                            mutableDeliveryLedger(current);
+                    final Map<String, RewardComponentState> existing = ledger.get(rewardReceipt);
+                    if (existing == null) {
+                        throw new IllegalStateException("quest reward components were not prepared");
+                    }
+                    final LinkedHashMap<String, RewardComponentState> receiptState =
+                            new LinkedHashMap<>(existing);
+                    boolean changed = false;
+                    for (final String component : components) {
+                        final RewardComponentState state = receiptState.get(component);
+                        if (state == null) {
+                            throw new IllegalStateException(
+                                    "quest reward component was not prepared: " + component);
+                        }
+                        if (state != RewardComponentState.DELIVERED) {
+                            receiptState.put(component, RewardComponentState.DELIVERED);
+                            changed = true;
+                        }
+                    }
+                    if (!changed) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    ledger.put(rewardReceipt, Map.copyOf(receiptState));
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            copyWithDeliveryLedger(current, ledger), true);
+                });
+    }
+
+    public CompletionStage<Boolean> settleReward(final UUID playerId, final String receipt) {
+        Objects.requireNonNull(receipt, "receipt");
+        final String rewardReceipt = rewardReceipt(receipt);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+                    if (current.rewardReceipts().contains(rewardReceipt)) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    if (!current.claimableRewards().contains(rewardReceipt)) {
                         throw new IllegalStateException("unknown claimable quest reward");
                     }
                     final LinkedHashSet<String> claimable =
                             new LinkedHashSet<>(current.claimableRewards());
-                    claimable.remove(receipt);
+                    claimable.remove(rewardReceipt);
                     final LinkedHashSet<String> settled =
                             new LinkedHashSet<>(current.rewardReceipts());
                     while (settled.size() >= MAX_REWARD_RECEIPTS) {
                         settled.remove(settled.iterator().next());
                     }
-                    settled.add(receipt);
+                    settled.add(rewardReceipt);
+                    final LinkedHashMap<String, Map<String, RewardComponentState>> ledger =
+                            mutableDeliveryLedger(current);
+                    ledger.remove(rewardReceipt);
                     return PlayerProfileService.ConditionalMutation.changed(
-                            copy(current, current.active(), current.completed(), settled,
-                                    current.cooldowns(), claimable), true);
+                            copyWithDeliveryLedger(current, current.active(), current.completed(),
+                                    settled, current.cooldowns(), claimable, ledger), true);
                 });
     }
 
@@ -252,6 +363,103 @@ public final class PlayerProfileQuestStore {
                                      final Set<String> claimable) {
         return new QuestSection(active, completed, rewardReceipts, cooldowns,
                 current.communityContributions(), claimable, current.extensions());
+    }
+
+    private static QuestSection copyWithDeliveryLedger(
+            final QuestSection current,
+            final Map<String, Map<String, RewardComponentState>> ledger) {
+        return copyWithDeliveryLedger(current, current.active(), current.completed(),
+                current.rewardReceipts(), current.cooldowns(), current.claimableRewards(), ledger);
+    }
+
+    private static QuestSection copyWithDeliveryLedger(
+            final QuestSection current,
+            final Map<String, Map<String, Long>> active,
+            final Set<String> completed,
+            final Set<String> rewardReceipts,
+            final Map<String, Long> cooldowns,
+            final Set<String> claimable,
+            final Map<String, Map<String, RewardComponentState>> ledger) {
+        final LinkedHashMap<String, Object> extensions = new LinkedHashMap<>(current.extensions());
+        if (ledger.isEmpty()) {
+            extensions.remove(REWARD_DELIVERY_EXTENSION);
+        } else {
+            final LinkedHashMap<String, Object> encodedLedger = new LinkedHashMap<>();
+            ledger.forEach((rewardReceipt, components) -> {
+                final LinkedHashMap<String, Object> encodedComponents = new LinkedHashMap<>();
+                components.forEach((component, state) -> encodedComponents.put(
+                        component, state.name().toLowerCase(Locale.ROOT)));
+                encodedLedger.put(rewardReceipt, Map.copyOf(encodedComponents));
+            });
+            extensions.put(REWARD_DELIVERY_EXTENSION, Map.copyOf(encodedLedger));
+        }
+        return new QuestSection(active, completed, rewardReceipts, cooldowns,
+                current.communityContributions(), claimable, Map.copyOf(extensions));
+    }
+
+    private static LinkedHashMap<String, Map<String, RewardComponentState>> mutableDeliveryLedger(
+            final QuestSection section) {
+        return new LinkedHashMap<>(deliveryLedger(section));
+    }
+
+    private static Map<String, Map<String, RewardComponentState>> deliveryLedger(
+            final QuestSection section) {
+        final Object raw = section.extensions().get(REWARD_DELIVERY_EXTENSION);
+        if (raw == null) return Map.of();
+        if (!(raw instanceof Map<?, ?> receipts)) {
+            throw new IllegalStateException("invalid quest reward delivery ledger");
+        }
+        final LinkedHashMap<String, Map<String, RewardComponentState>> decoded = new LinkedHashMap<>();
+        for (final Map.Entry<?, ?> receiptEntry : receipts.entrySet()) {
+            final String receipt = rewardReceipt(String.valueOf(receiptEntry.getKey()));
+            if (!(receiptEntry.getValue() instanceof Map<?, ?> rawComponents)) {
+                throw new IllegalStateException("invalid quest reward component ledger");
+            }
+            if (rawComponents.size() > MAX_DELIVERY_COMPONENTS) {
+                throw new IllegalStateException("quest reward component limit exceeded");
+            }
+            final LinkedHashMap<String, RewardComponentState> components = new LinkedHashMap<>();
+            for (final Map.Entry<?, ?> componentEntry : rawComponents.entrySet()) {
+                final String component = rewardComponentId(String.valueOf(componentEntry.getKey()));
+                final RewardComponentState state;
+                try {
+                    state = RewardComponentState.valueOf(
+                            String.valueOf(componentEntry.getValue()).trim().toUpperCase(Locale.ROOT));
+                } catch (final IllegalArgumentException invalid) {
+                    throw new IllegalStateException(
+                            "invalid quest reward component state: " + componentEntry.getValue(), invalid);
+                }
+                components.put(component, state);
+            }
+            decoded.put(receipt, Map.copyOf(components));
+        }
+        return Map.copyOf(decoded);
+    }
+
+    private static LinkedHashSet<String> normalizedComponents(final Set<String> componentIds) {
+        Objects.requireNonNull(componentIds, "componentIds");
+        if (componentIds.size() > MAX_DELIVERY_COMPONENTS) {
+            throw new IllegalArgumentException("quest reward component limit exceeded");
+        }
+        final LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (final String component : componentIds) result.add(rewardComponentId(component));
+        return result;
+    }
+
+    private static String rewardComponentId(final String raw) {
+        if (raw == null || raw.isBlank()) throw new IllegalArgumentException("reward component id required");
+        final String id = raw.trim().toLowerCase(Locale.ROOT);
+        if (!id.matches("[a-z0-9][a-z0-9._:-]{0,127}")) {
+            throw new IllegalArgumentException("invalid reward component id: " + raw);
+        }
+        return id;
+    }
+
+    private static String rewardReceipt(final String raw) {
+        if (raw == null || raw.isBlank() || raw.length() > 128) {
+            throw new IllegalArgumentException("invalid quest reward receipt");
+        }
+        return raw.trim();
     }
 
     private static String objectiveKey(final int index) {
