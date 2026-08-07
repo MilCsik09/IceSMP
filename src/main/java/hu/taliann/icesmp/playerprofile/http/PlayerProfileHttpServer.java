@@ -165,13 +165,27 @@ public final class PlayerProfileHttpServer implements AutoCloseable {
         }
         if ("by-name".equals(parts[4])) {
             final String name = decode(parts.length > 5 ? parts[5] : "");
+            // Auth resolves BEFORE any storage read: egy anonim hívó különben kikényszeríthetné
+            // az O(N) profilkönyvtár-szkennelést, és a 403-vs-404 különbségből név-létezési
+            // orákulumot kapna. SELF token csak a saját, owner-bound profilját olvashatja.
+            final TokenGrant grant = authenticate(exchange, Scope.SELF);
+            if (grant.scope() == Scope.SELF) {
+                final Optional<PlayerProfileSnapshot> own = await(api.find(grant.playerId()));
+                if (own.isEmpty() || !own.orElseThrow().identity().value()
+                        .lastKnownName().equalsIgnoreCase(name)) {
+                    reply(exchange, 404, Map.of("error", "player-not-found"), null);
+                    return;
+                }
+                final PlayerProfileSnapshot profile = own.orElseThrow();
+                replyDto(exchange, await(api.selfProfile(profile.playerId())), profile.profileRevision());
+                return;
+            }
             final Optional<PlayerProfileSnapshot> found = await(api.findByName(name));
             if (found.isEmpty()) {
                 reply(exchange, 404, Map.of("error", "player-not-found"), null);
                 return;
             }
             final PlayerProfileSnapshot profile = found.orElseThrow();
-            require(exchange, Scope.SELF, profile.playerId());
             replyDto(exchange, await(api.selfProfile(profile.playerId())), profile.profileRevision());
             return;
         }
@@ -278,11 +292,16 @@ public final class PlayerProfileHttpServer implements AutoCloseable {
     }
 
     private TokenGrant require(final HttpExchange exchange, final Scope required, final UUID target) {
+        final TokenGrant grant = authenticate(exchange, required);
+        if (grant.scope() == Scope.SELF && !grant.playerId().equals(target)) throw new Forbidden();
+        return grant;
+    }
+
+    private TokenGrant authenticate(final HttpExchange exchange, final Scope required) {
         final String authorization = exchange.getRequestHeaders().getFirst("Authorization");
         if (authorization == null || !authorization.startsWith("Bearer ")) throw new Forbidden();
         final TokenGrant grant = tokenDigests.get(digest(authorization.substring(7)));
         if (grant == null || grant.scope().ordinal() < required.ordinal()) throw new Forbidden();
-        if (grant.scope() == Scope.SELF && !grant.playerId().equals(target)) throw new Forbidden();
         return grant;
     }
 

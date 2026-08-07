@@ -195,6 +195,14 @@ val playerProfileApiRegressionTest = registerRegression(
     "playerProfileApiRegressionTest",
     "Runs internal/API DTO, authentication, ETag, rate-limit and shutdown regressions.",
     "hu.taliann.icesmp.playerprofile.api.PlayerProfileApiRegressionSuite")
+val playerProfileHttpContractRegressionTest = registerRegression(
+    "playerProfileHttpContractRegressionTest",
+    "Runs real-routing HTTP by-name auth-order, SELF/ADMIN scope and stop-idempotency regressions.",
+    "hu.taliann.icesmp.playerprofile.http.PlayerProfileHttpContractRegressionSuite")
+val playerProfileLifecycleTeardownRegressionTest = registerRegression(
+    "playerProfileLifecycleTeardownRegressionTest",
+    "Runs partial-startup/shutdown-failure resource-teardown regressions.",
+    "hu.taliann.icesmp.playerprofile.persistence.PlayerProfileLifecycleTeardownRegressionSuite")
 val respecTransactionRegressionTest = registerRegression(
     "respecTransactionRegressionTest",
     "Runs Profile v2 respec WAL, restart recovery and crash-decision regressions.",
@@ -297,7 +305,9 @@ tasks.check {
         playerProfileModerationRegressionTest, playerProfileCrateRegressionTest, playerProfileDeathEscrowRegressionTest,
         playerProfileQuestRegressionTest, playerProfileWeeklyGoalRegressionTest, playerProfileStatisticsRegressionTest,
         playerProfileTaxRegressionTest, playerProfileRepositoryEnumerationRegressionTest, playerProfileYamlRegressionTest,
-        playerProfileTransactionRegressionTest, playerProfileApiRegressionTest, respecTransactionRegressionTest,
+        playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
+        playerProfileHttpContractRegressionTest, playerProfileLifecycleTeardownRegressionTest,
+        respecTransactionRegressionTest,
         spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest, eventSpawnSafetyRegressionTest,
         configGuiTransactionRegressionTest, configGuiCoverageRegressionTest, professionRecipeAuditRegressionTest,
         inventoryReadWriteRegressionTest, operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest,

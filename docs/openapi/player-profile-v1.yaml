@@ -131,7 +131,13 @@
     },
     "/api/v1/players/by-name/{name}": {
       "get": {
-        "summary": "Find public profile by last known name",
+        "summary": "Resolve a last known name to a self DTO (SELF: only the caller's own profile; ADMIN: any profile)",
+        "description": "Authentication is resolved before any storage read. A SELF bearer token loads only the token-bound profile and answers 404 unless the requested name matches its last known name; no global name scan runs for SELF callers. An ADMIN bearer token may resolve any last known name.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "name",
@@ -145,10 +151,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Public DTO"
+            "description": "Self DTO"
+          },
+          "403": {
+            "description": "Missing or insufficient bearer token"
           },
           "404": {
-            "description": "Not found"
+            "description": "Not found, or the name does not match the SELF token's own profile"
           }
         }
       }

@@ -691,7 +691,7 @@ Cross-section operations persist an owner-bound WAL and operation fingerprint, w
 
 ### Lifecycle and Folia
 
-Join creates a session generation, recovers WALs, loads/initializes sections asynchronously, validates health, rebuilds derived mirrors, reconciles DARK/spells/companions, then marks the session ready. Quit fences mutations, drains transactions, flushes sections, cleans runtime and invalidates cache. Disable stops HTTP/admission, drains, flushes, cleans runtime and shuts executors down with a bounded timeout. Bukkit entity access remains in owner/region-thread adapters; YAML I/O is asynchronous.
+Join creates a session generation, recovers WALs, loads/initializes sections asynchronously, validates health, rebuilds derived mirrors, reconciles DARK/spells/companions, then marks the session ready. Quit fences mutations, drains transactions, flushes sections, cleans runtime and invalidates cache. Disable stops HTTP/admission, drains, flushes, cleans runtime and shuts executors down with a bounded timeout. Resource teardown is separate from stateful shutdown: the external resources (Bukkit service registration, HTTP adapter, repository executor, static authority) close on an idempotent always-cleanup path that also runs after a partial enable or a failed shutdown drain — refusing to save state never leaves a listener or executor behind. Bukkit entity access remains in owner/region-thread adapters; YAML I/O is asynchronous.
 
 ### YAML format
 
@@ -707,7 +707,7 @@ A corrupt section is copied to immutable evidence and quarantined independently.
 
 ### HTTP API v1
 
-The adapter is disabled by default and binds to `127.0.0.1` only when explicitly enabled. Public endpoints respect profile visibility. SELF bearer credentials are bound to one player UUID; ADMIN credentials may read health, quarantine and moderation/operations summaries. Tokens are deployment secrets, are digested in memory and never logged. The adapter enforces rate, request/response size and timeout limits, supports ETag/`If-None-Match`, returns sanitized 403/404/409/429/500 responses and drains on shutdown. It has no write endpoints.
+The adapter is disabled by default and binds to `127.0.0.1` only when explicitly enabled; the adapter (and its executor) is not even instantiated while disabled. Public endpoints respect profile visibility. SELF bearer credentials are bound to one player UUID; ADMIN credentials may read health, quarantine and moderation/operations summaries. Authentication resolves before any storage read: the by-name endpoint answers 403 to anonymous callers without touching the repository (no unauthenticated O(N) name scan and no 403-vs-404 existence oracle), a SELF token only resolves its own last known name, and only an ADMIN token may run the global name lookup. Tokens are deployment secrets, are digested in memory and never logged. The adapter enforces rate, request/response size and timeout limits, supports ETag/`If-None-Match`, returns sanitized 403/404/409/429/500 responses and drains on shutdown. It has no write endpoints.
 
 The machine contract is [`openapi/player-profile-v1.yaml`](openapi/player-profile-v1.yaml).
 

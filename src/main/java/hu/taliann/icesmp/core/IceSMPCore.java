@@ -1176,13 +1176,20 @@ public final class IceSMPCore {
         // A passzívok per-player megtorlási/célzási állapota nem perzisztens. Sikertelen
         // enable után is takarítani kell, különben hot-reloadnál régi célok maradhatnak.
         factionPassiveListener.clearAllState();
+        try {
+            disableStateful();
+        } finally {
+            // A "nem merek state-et menteni" döntés nem jelentheti azt, hogy külső erőforrás
+            // (repository executor, HTTP adapter, Bukkit service, statikus authority) nyitva
+            // marad: a záró út minden korai return és kivétel után is lefut, és idempotens.
+            closePlayerProfileResources();
+        }
+    }
+
+    private void disableStateful() {
         if (!enableCompleted) {
             plugin.getLogger().severe("IceSMP enable did not complete — skipping stateful manager shutdown "
                     + "and persistent-store writes to protect the last durable state.");
-            if (hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed()
-                    .filter(installed -> installed == playerProfileAuthority).isPresent()) {
-                playerProfileAuthority.uninstall();
-            }
             return;
         }
         if (moderationExpiryTask != null) {
@@ -1308,6 +1315,33 @@ public final class IceSMPCore {
         }
 
         plugin.getLogger().info("IceSMP core disabled.");
+    }
+
+    /**
+     * A PlayerProfile külső erőforrásainak idempotens zárása. Nem ír autoritatív state-et:
+     * a runtime admission-t állítja le, a platform teardownt hívja (service-deregisztráció,
+     * HTTP adapter és repository executor zárása — a repository a már befogadott írásokat
+     * a saját CAS/drain protokollja szerint fejezi be), majd a statikus authority-t szereli
+     * le. Sikeres stateful shutdown után minden lépése no-op.
+     */
+    private void closePlayerProfileResources() {
+        shutdownStep("profileSessionBridge.stopRuntime", profileSessionBridge::stopRuntime);
+        shutdownStep("playerProfilePlatform.shutdown", () -> {
+            try {
+                playerProfilePlatform.shutdown(java.time.Duration.ofSeconds(10))
+                        .toCompletableFuture().get(11, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (final InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("PlayerProfile resource close interrupted", interrupted);
+            } catch (final java.util.concurrent.ExecutionException
+                           | java.util.concurrent.TimeoutException failure) {
+                throw new IllegalStateException("PlayerProfile resource close failed", failure);
+            }
+        });
+        if (hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed()
+                .filter(installed -> installed == playerProfileAuthority).isPresent()) {
+            shutdownStep("playerProfileAuthority.uninstall", playerProfileAuthority::uninstall);
+        }
     }
 
     /**
