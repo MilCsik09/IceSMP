@@ -99,11 +99,26 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
         cleanupOrphanTemps(id);recoverWal(id);Path dir=profileDir(id);Path manifestPath=dir.resolve("manifest.yml");if(!Files.exists(manifestPath)){if(!initialize)throw new FileNotFoundException("profile missing");PlayerProfileSnapshot fresh=PlayerProfileSnapshot.greenfield(id,clock.instant());writeWholeProfile(fresh);cache.put(id,fresh);return fresh;}
         PlayerProfileManifest manifest=StructuredPlayerProfileYaml.decodeManifest(id,readYaml(manifestPath));EnumMap<ProfileSectionId,ProfileSectionSnapshot<?>> sections=new EnumMap<>(ProfileSectionId.class);
         for(ProfileSectionId sid:ProfileSectionId.values()){
-            Path marker=quarantineMarker(id,sid);if(Files.exists(marker)&&sid!=ignoredMarker){Map<String,Object> m=readYaml(marker);String evidence=string(m.get("evidence-id")),reason=string(m.get("reason"));ProfileSectionSnapshot<?> fallback=defaultSection(sid,manifest.updatedAt());sections.put(sid,new ProfileSectionSnapshot<>(sid,sid.currentSchema(),manifest.sections().getOrDefault(sid,new SectionRevision(sid.currentSchema(),0)).revision(),manifest.updatedAt(),fallback.value(),SectionHealth.quarantined(reason,evidence)));continue;}
-            Path path=sectionPath(id,sid);if(!Files.exists(path)){ProfileSectionSnapshot<?> def=defaultSection(sid,manifest.updatedAt());writeSectionFile(path,def);sections.put(sid,def);continue;}
-            try{ProfileSectionSnapshot<?> section=readSectionFile(path,sid);SectionRevision declared=manifest.sections().get(sid);if(declared==null||declared.schema()!=section.schema()||declared.revision()!=section.revision())throw new IllegalArgumentException("manifest/section revision mismatch");sections.put(sid,section);}catch(Exception corrupt){byte[] evidence=Files.readAllBytes(path);String ev=UUID.randomUUID().toString();Path qdir=dir.resolve("quarantine").resolve(sid.id());Files.createDirectories(qdir);atomicBytes(qdir.resolve(ev+".evidence"),evidence);Map<String,Object> mark=Map.of("evidence-id",ev,"reason",safeMessage(corrupt),"created-at",clock.millis());writeYaml(marker,mark);ProfileSectionSnapshot<?> def=defaultSection(sid,manifest.updatedAt());sections.put(sid,new ProfileSectionSnapshot<>(sid,sid.currentSchema(),manifest.sections().getOrDefault(sid,new SectionRevision(sid.currentSchema(),0)).revision(),manifest.updatedAt(),def.value(),SectionHealth.quarantined(safeMessage(corrupt),ev)));}
+            Path marker=quarantineMarker(id,sid);if(Files.exists(marker)&&sid!=ignoredMarker){Map<String,Object> m=readYaml(marker);String evidence=string(m.get("evidence-id")),reason=string(m.get("reason"));SectionRevision declared=manifest.sections().get(sid);ProfileSectionSnapshot<?> fallback=defaultSection(sid,manifest.updatedAt());sections.put(sid,new ProfileSectionSnapshot<>(sid,declared==null?sid.currentSchema():declared.schema(),declared==null?0:declared.revision(),manifest.updatedAt(),fallback.value(),SectionHealth.quarantined(reason,evidence)));continue;}
+            Path path=sectionPath(id,sid);SectionRevision declared=manifest.sections().get(sid);
+            if(!Files.exists(path)){
+                if(declared==null){ProfileSectionSnapshot<?> def=defaultSection(sid,manifest.updatedAt());writeSectionFile(path,def);sections.put(sid,def);}
+                else sections.put(sid,quarantineMissingSection(id,sid,manifest,declared,marker));
+                continue;
+            }
+            try{ProfileSectionSnapshot<?> section=readSectionFile(path,sid);if(declared==null||declared.schema()!=section.schema()||declared.revision()!=section.revision())throw new IllegalArgumentException("manifest/section revision mismatch");sections.put(sid,section);}catch(Exception corrupt){byte[] evidence=Files.readAllBytes(path);String ev=UUID.randomUUID().toString();Path qdir=dir.resolve("quarantine").resolve(sid.id());Files.createDirectories(qdir);atomicBytes(qdir.resolve(ev+".evidence"),evidence);Map<String,Object> mark=Map.of("evidence-id",ev,"reason",safeMessage(corrupt),"created-at",clock.millis());writeYaml(marker,mark);ProfileSectionSnapshot<?> def=defaultSection(sid,manifest.updatedAt());sections.put(sid,new ProfileSectionSnapshot<>(sid,sid.currentSchema(),manifest.sections().getOrDefault(sid,new SectionRevision(sid.currentSchema(),0)).revision(),manifest.updatedAt(),def.value(),SectionHealth.quarantined(safeMessage(corrupt),ev)));}
         }
         PlayerProfileSnapshot result=PlayerProfileSnapshot.fromMap(id,manifest.profileRevision(),manifest.createdAt(),manifest.updatedAt(),sections);cache.put(id,result);return result;
+    }
+
+    private ProfileSectionSnapshot<?> quarantineMissingSection(UUID id,ProfileSectionId sid,PlayerProfileManifest manifest,SectionRevision declared,Path marker)throws Exception{
+        String reason="MISSING_SECTION: manifest declares "+sid.id()+" schema="+declared.schema()+" revision="+declared.revision()+" but the section file is absent";
+        String evidenceId=UUID.randomUUID().toString();Path qdir=profileDir(id).resolve("quarantine").resolve(sid.id());Files.createDirectories(qdir);
+        String evidence="player="+id+"\nsection="+sid.id()+"\nschema="+declared.schema()+"\nrevision="+declared.revision()+"\nmanifest-profile-revision="+manifest.profileRevision()+"\n";
+        atomicBytes(qdir.resolve(evidenceId+".evidence"),evidence.getBytes(StandardCharsets.UTF_8));
+        writeYaml(marker,Map.of("evidence-id",evidenceId,"reason",reason,"created-at",clock.millis()));
+        ProfileSectionSnapshot<?> fallback=defaultSection(sid,manifest.updatedAt());
+        return new ProfileSectionSnapshot<>(sid,declared.schema(),declared.revision(),manifest.updatedAt(),fallback.value(),SectionHealth.quarantined(reason,evidenceId));
     }
 
     private void cleanupOrphanTemps(UUID id)throws IOException{
