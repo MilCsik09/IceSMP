@@ -5,7 +5,14 @@ import io.papermc.paper.datacomponent.item.Equippable;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Central presentation boundary for custom wearable items.
@@ -19,12 +26,15 @@ import java.util.Locale;
  * component already provided by the item's material and changing only {@code assetId}.
  *
  * <p>Configuration convention: an explicit {@code equipment-asset} always wins. If it is omitted,
- * an already-equippable item may use its {@code icesmp:*} {@code item-model} as a deterministic
- * same-render-identity fallback. Resource-pack validation proves that every such fallback used by
- * checked-in content resolves to an actual equipment asset.
+ * an already-equippable item may use its {@code icesmp:*} {@code item-model} only when the material
+ * is covered by the shared, versioned {@code wearable-fallback-policy.properties}. The same policy
+ * is consumed by resource-pack validation, so runtime fallback eligibility cannot drift from CI.
  */
 @SuppressWarnings("UnstableApiUsage")
 public final class WearablePresentation {
+
+    private static final String FALLBACK_POLICY_RESOURCE = "wearable-fallback-policy.properties";
+    private static final FallbackPolicy FALLBACK_POLICY = FallbackPolicy.load();
 
     public enum EquipmentAssetStatus {
         NOT_REQUESTED,
@@ -90,8 +100,8 @@ public final class WearablePresentation {
     }
 
     /**
-     * Explicit asset ids win. Otherwise only an item that is already equippable may use the
-     * documented IceSMP same-id fallback ({@code item-model: icesmp:x -> equipment: icesmp:x}).
+     * Explicit asset ids win. Otherwise only a genuinely equippable item whose Material is covered
+     * by the shared 1.21.11 fallback policy may use the same render id for its equipment asset.
      */
     static String resolveEquipmentAsset(final ItemStack item, final String normalizedItemModel,
                                         final String explicitEquipmentAsset) {
@@ -102,7 +112,19 @@ public final class WearablePresentation {
         if (item == null || normalizedItemModel == null || !normalizedItemModel.startsWith("icesmp:")) {
             return null;
         }
-        return item.getData(DataComponentTypes.EQUIPPABLE) == null ? null : normalizedItemModel;
+        if (item.getData(DataComponentTypes.EQUIPPABLE) == null
+                || !allowsImplicitSameIdFallback(item.getType().name())) {
+            return null;
+        }
+        return normalizedItemModel;
+    }
+
+    static boolean allowsImplicitSameIdFallback(final String materialName) {
+        return FALLBACK_POLICY.allows(materialName);
+    }
+
+    static String fallbackPolicyMinecraftVersion() {
+        return FALLBACK_POLICY.minecraftVersion();
     }
 
     static String normalize(final String id) {
@@ -111,5 +133,60 @@ public final class WearablePresentation {
         }
         final String normalized = id.trim().toLowerCase(Locale.ROOT);
         return normalized.contains(":") ? normalized : "icesmp:" + normalized;
+    }
+
+    private record FallbackPolicy(String minecraftVersion, Set<String> exactMaterials,
+                                  List<String> materialSuffixes) {
+
+        static FallbackPolicy load() {
+            final Properties properties = new Properties();
+            try (InputStream input = WearablePresentation.class.getClassLoader()
+                    .getResourceAsStream(FALLBACK_POLICY_RESOURCE)) {
+                if (input == null) {
+                    throw new IllegalStateException("Missing " + FALLBACK_POLICY_RESOURCE);
+                }
+                properties.load(input);
+            } catch (final IOException exception) {
+                throw new IllegalStateException("Failed to load " + FALLBACK_POLICY_RESOURCE, exception);
+            }
+
+            if (!"1".equals(properties.getProperty("schema"))) {
+                throw new IllegalStateException("Unsupported wearable fallback policy schema");
+            }
+            final String minecraftVersion = properties.getProperty("minecraft-version", "").trim();
+            if (minecraftVersion.isEmpty()) {
+                throw new IllegalStateException("wearable fallback policy is missing minecraft-version");
+            }
+
+            final Set<String> exact = csv(properties.getProperty("exact", "")).stream()
+                    .collect(Collectors.toUnmodifiableSet());
+            final List<String> suffixes = List.copyOf(csv(properties.getProperty("suffix", "")));
+            if (exact.isEmpty() && suffixes.isEmpty()) {
+                throw new IllegalStateException("wearable fallback policy contains no material rules");
+            }
+            return new FallbackPolicy(minecraftVersion, exact, suffixes);
+        }
+
+        boolean allows(final String materialName) {
+            if (materialName == null || materialName.isBlank()) {
+                return false;
+            }
+            final String normalized = materialName.trim().toUpperCase(Locale.ROOT);
+            if (exactMaterials.contains(normalized)) {
+                return true;
+            }
+            return materialSuffixes.stream().anyMatch(normalized::endsWith);
+        }
+
+        private static List<String> csv(final String raw) {
+            if (raw == null || raw.isBlank()) {
+                return List.of();
+            }
+            return Arrays.stream(raw.split(","))
+                    .map(String::trim)
+                    .filter(value -> !value.isEmpty())
+                    .map(value -> value.toUpperCase(Locale.ROOT))
+                    .toList();
+        }
     }
 }
