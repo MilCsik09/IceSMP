@@ -1,0 +1,40 @@
+name: Temporary wearable docs patch
+
+on:
+  push:
+    branches:
+      - fix/wearable-equipment-assets
+    paths:
+      - scripts/_apply_wearable_docs_patch.py
+      - .github/workflows/_wearable-docs-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/wearable-equipment-assets
+          fetch-depth: 0
+
+      - name: Apply documentation insertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/_apply_wearable_docs_patch.py
+          rm scripts/_apply_wearable_docs_patch.py .github/workflows/_wearable-docs-patch.yml
+
+      - name: Commit clean final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/RESOURCE_PACK_CMD.md scripts/_apply_wearable_docs_patch.py .github/workflows/_wearable-docs-patch.yml
+          git commit -m "Document wearable render identities"
+          git push origin HEAD:fix/wearable-equipment-assets
