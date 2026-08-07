@@ -7,6 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** Main quest lifecycle, reward receipt and restart regressions. */
@@ -88,6 +91,9 @@ public final class PlayerProfileQuestStoreRegressionSuite {
                     && store.completed(player).contains("repeatable"),
                     "completed quests restart durable");
 
+            physicalRewardCrashBeforeSettlementIsExactlyOnce(
+                    repository, store, player, pending.receiptId());
+
             check(store.accept(player, "abandon_me").toCompletableFuture().join(),
                     "abandon quest accepted");
             store.setProgress(player, "abandon_me", 0, 7).toCompletableFuture().join();
@@ -111,6 +117,83 @@ public final class PlayerProfileQuestStoreRegressionSuite {
         }
         System.out.println("PlayerProfile quest store regression suite passed. assertions="
                 + assertions);
+    }
+
+    /**
+     * Fault injection for the critical window:
+     * PREPARED durable -> physical item delivered -> crash BEFORE DELIVERED/receipt settle.
+     * Recovery sees the physical witness and acknowledges it instead of delivering again.
+     */
+    private static void physicalRewardCrashBeforeSettlementIsExactlyOnce(
+            final YamlPlayerProfileRepository repository,
+            final PlayerProfileQuestStore store,
+            final UUID player,
+            final String receipt) {
+        final String component = "item:0:0";
+        final Set<String> components = Set.of(component);
+        check(store.prepareRewardComponents(player, receipt, components)
+                        .toCompletableFuture().join(),
+                "physical reward components prepared durably");
+        check(store.rewardComponentStates(player, receipt).get(component)
+                        == PlayerProfileQuestStore.RewardComponentState.PREPARED,
+                "physical reward starts prepared");
+
+        final LinkedHashSet<String> physicalInventory = new LinkedHashSet<>();
+        int deliveries = 0;
+        final var firstDecision = QuestRewardDeliveryProtocol.decide(
+                store.rewardComponentStates(player, receipt).get(component),
+                physicalInventory.contains(component));
+        check(firstDecision == QuestRewardDeliveryProtocol.Decision.DELIVER,
+                "first attempt must deliver physical component");
+        if (firstDecision == QuestRewardDeliveryProtocol.Decision.DELIVER) {
+            physicalInventory.add(component);
+            deliveries++;
+        }
+        check(deliveries == 1 && physicalInventory.size() == 1,
+                "physical reward delivered once before injected crash");
+
+        // Inject crash/failure before component acknowledgement and before reward settlement.
+        repository.invalidate(player);
+        repository.loadSnapshot(player).toCompletableFuture().join();
+        check(store.pendingRewards(player).contains(receipt),
+                "completion receipt remains pending after injected crash");
+        final Map<String, PlayerProfileQuestStore.RewardComponentState> recoveredStates =
+                store.rewardComponentStates(player, receipt);
+        check(recoveredStates.get(component)
+                        == PlayerProfileQuestStore.RewardComponentState.PREPARED,
+                "prepared component survives restart");
+
+        final var recoveryDecision = QuestRewardDeliveryProtocol.decide(
+                recoveredStates.get(component), physicalInventory.contains(component));
+        check(recoveryDecision == QuestRewardDeliveryProtocol.Decision.ACKNOWLEDGE_WITNESS,
+                "recovery recognizes existing physical witness");
+        if (recoveryDecision == QuestRewardDeliveryProtocol.Decision.DELIVER) {
+            physicalInventory.add(component);
+            deliveries++;
+        }
+        check(deliveries == 1 && physicalInventory.size() == 1,
+                "recovery does not duplicate physical reward");
+
+        check(store.markRewardComponentsDelivered(player, receipt, components)
+                        .toCompletableFuture().join(),
+                "physical component acknowledgement committed");
+        repository.invalidate(player);
+        repository.loadSnapshot(player).toCompletableFuture().join();
+        check(store.rewardComponentStates(player, receipt).get(component)
+                        == PlayerProfileQuestStore.RewardComponentState.DELIVERED,
+                "delivered component state restart durable");
+        check(QuestRewardDeliveryProtocol.decide(
+                        store.rewardComponentStates(player, receipt).get(component), false)
+                        == QuestRewardDeliveryProtocol.Decision.SKIP_DELIVERED,
+                "durably delivered component never mints again even without witness");
+
+        check(store.settleReward(player, receipt).toCompletableFuture().join(),
+                "fault-injected reward eventually settles");
+        check(store.pendingRewards(player).isEmpty(),
+                "fault-injected reward removed from pending set");
+        check(store.rewardComponentStates(player, receipt).isEmpty(),
+                "delivery ledger cleaned atomically with settlement");
+        check(deliveries == 1, "physical reward total is exactly one");
     }
 
     private static void check(final boolean condition, final String message) {
