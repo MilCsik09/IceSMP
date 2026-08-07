@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     compileOnly(libs.folia.api)
+    compileOnly(libs.log4j.core)
     compileOnly(libs.placeholderapi)
     compileOnly("LibsDisguises:LibsDisguises:${libs.versions.libsdisguises.get()}@jar") { isTransitive = false }
 }

@@ -46,6 +46,12 @@ pluginoktól. Az első teszt előtt:
 > kerülnek, így a konzol a tényleges eseményeké marad. Hibakereséshez a
 > `logging.verbose-startup: true` élő-config kulccsal (akár
 > `/icesmp config set` útján, restart nélkül) INFO-ra emelhetők.
+> A vanilla "Named entity … died" sort — amelyet minden custom-nevű,
+> tehát minden szintezett mob halála kiváltana — a plugin Log4j-szűrője
+> alapból még az appenderek előtt eldobja, így sem a terminálban, sem a
+> `latest.log`-ban nem jelenik meg. Élő kulcs:
+> `logging.suppress-named-entity-deaths` (false + reload után a sorok
+> azonnal visszatérnek).
 
 ## 2. Jogosultsági modell
 

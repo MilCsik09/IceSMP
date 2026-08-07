@@ -37,7 +37,25 @@ public final class ConfigStartupRegressionSuite {
         verifiesConfigMenuCatalog();
         verifiesBlockRegenerationConfigMenu();
         verifiesConfigMenuResetAndLiveApply();
+        suppressesOnlyNamedEntityDeathLogLines();
         System.out.println("Config startup regression suite passed.");
+    }
+
+    private static void suppressesOnlyNamedEntityDeathLogLines() {
+        check(hu.taliann.icesmp.utils.NamedEntityDeathLogFilter.suppressible(
+                        "Named entity ZombieEntity['Zombi Lv7'/312, l='world'] died: Zombi Lv7 leesett"),
+                "formatted named-entity death line must match");
+        check(hu.taliann.icesmp.utils.NamedEntityDeathLogFilter.suppressible(
+                        "Named entity {} died: {}"),
+                "parameterized (pre-format) named-entity death line must match");
+        check(!hu.taliann.icesmp.utils.NamedEntityDeathLogFilter.suppressible(
+                        "Named entity ZombieEntity['Zombi Lv7'/312] was saved"),
+                "non-death named-entity line must pass through");
+        check(!hu.taliann.icesmp.utils.NamedEntityDeathLogFilter.suppressible(
+                        "Player Steve died: leesett"),
+                "player death message must pass through");
+        check(!hu.taliann.icesmp.utils.NamedEntityDeathLogFilter.suppressible(null),
+                "null message must pass through");
     }
 
     private static void resolvesPersistedMaterialAliases() {

@@ -924,6 +924,7 @@ public final class IceSMPCore {
         // Surface admin typos (bad material/currency names, out-of-range percents, negative
         // durations) as clear log warnings — never blocks startup, only reports.
         ConfigValidator.validate(configManager, plugin.getLogger());
+        hu.taliann.icesmp.utils.NamedEntityDeathLogFilter.install(configManager);
         // Config-driven spell balance: seeds config/spells-balance.yml overrides at startup
         // (startup log + unknown-id warnings). The overridable keys are ALSO read live at
         // cast time (BaseSpell.balance + ConfiguredSpell live accessors), so /icesmp reload
@@ -1183,6 +1184,10 @@ public final class IceSMPCore {
             // (repository executor, HTTP adapter, Bukkit service, statikus authority) nyitva
             // marad: a záró út minden korai return és kivétel után is lefut, és idempotens.
             closePlayerProfileResources();
+            // A root-loggerre akasztott szűrő plugin-életciklushoz kötött: bent hagyva egy
+            // eldobott ConfigManager-példányt tartana életben a következő enable-ig.
+            shutdownStep("NamedEntityDeathLogFilter.uninstall",
+                    hu.taliann.icesmp.utils.NamedEntityDeathLogFilter::uninstall);
         }
     }
 

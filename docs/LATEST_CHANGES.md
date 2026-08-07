@@ -43,7 +43,10 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
 - **Claimek:** fail-closed betöltés + a poligon-kijelölés csúcspont-limitje
   alapból megszűnt (a területkorlát maradt a valódi kapu).
 - **Konzol:** a boot-kori leltár-sorok elnémultak; hibakereséshez a
-  `logging.verbose-startup` kulccsal visszakapcsolhatók.
+  `logging.verbose-startup` kulccsal visszakapcsolhatók. A szintezett
+  (custom-nevű) mobok vanilla „Named entity … died" halál-sorát a plugin
+  szűrője alapból eldobja — se terminál, se `latest.log`
+  (`logging.suppress-named-entity-deaths`, élő kulcs).
 - **Lifecycle- és API-hardening:** a PlayerProfile erőforrás-teardown részleges
   indulás és sikertelen leállítási drain után is garantált (nem marad hátra
   executor, HTTP listener vagy service-regisztráció); az alapból kikapcsolt

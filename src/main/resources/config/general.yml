@@ -443,3 +443,8 @@ player-profile:
 # eseményeké maradjon. true esetén ezek a sorok INFO-ként látszanak (hibakereséshez).
 logging:
   verbose-startup: false
+  # A vanilla "Named entity ... died" sort minden custom-nevű (pl. szintezett) mob halála
+  # a konzolba ÉS a latest.logba írná — true esetén a plugin Log4j-szűrője még az
+  # appenderek előtt eldobja, így egyik helyen sem jelenik meg. Élőben olvasott kulcs:
+  # false + /icesmp reload után a sorok azonnal újra látszanak (hibakereséshez).
+  suppress-named-entity-deaths: true

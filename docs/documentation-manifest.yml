@@ -5500,6 +5500,12 @@
       "docs": [
         "docs/ARCHITECTURE.md"
       ]
+    },
+    "component.hu.taliann.icesmp.utils.NamedEntityDeathLogFilter": {
+      "feature": "feature.core.lifecycle",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
     }
   },
   "version": 1,

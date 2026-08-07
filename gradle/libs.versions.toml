@@ -4,6 +4,10 @@ folia-api = "1.21.11-R0.1-SNAPSHOT"
 
 run-task = "3.0.2"
 
+# A szerver által bundle-ölt Log4j2-hez csak fordításhoz kell (compileOnly) — a Filter API
+# verziók közt stabil, futásidőben a Paper saját példánya él.
+log4j = "2.24.1"
+
 # Soft-dependenciák (compileOnly — futásidőben opcionálisak). A verziókat a szerveren
 # telepített pluginokhoz igazítsd, ha eltér.
 placeholderapi = "2.11.6"     # a szerveren PlaceholderAPI 2.12.2 fut — az API visszafelé kompatibilis
@@ -11,6 +15,7 @@ libsdisguises = "10.0.44"     # csak ha LibsDisguises is fel lesz telepítve (Dr
 
 [libraries]
 folia-api = { module = "dev.folia:folia-api", version.ref = "folia-api" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
 placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
 libsdisguises = { module = "LibsDisguises:LibsDisguises", version.ref = "libsdisguises" }
 
