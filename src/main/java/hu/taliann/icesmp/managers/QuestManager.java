@@ -79,6 +79,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     private final SeasonManager seasonManager;
     private final File customQuestsFile;
     private final PlayerProfileQuestStore questStore = new PlayerProfileQuestStore();
+    private final QuestPhysicalRewardDeliveryService physicalRewardDelivery;
 
     /** Rebuildable online projection; durable truth remains QuestSection. */
     private final ConcurrentMap<UUID, QuestMirror> mirrors = new ConcurrentHashMap<>();
@@ -124,6 +125,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         this.sinManager = Objects.requireNonNull(sinManager);
         this.seasonManager = seasonManager;
         this.customQuestsFile = new File(plugin.getDataFolder(), "custom-quests.yml");
+        this.physicalRewardDelivery = new QuestPhysicalRewardDeliveryService(
+                plugin, questStore, currencyManager, factionManager);
         plugin.getDataFolder().mkdirs();
     }
 
@@ -858,35 +861,12 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             stages.add(jobManager.addXpToJobV2(player, classXp,
                     "quest-xp:" + receiptId));
         }
-        final ConfigurationSection currency = quest.getConfigurationSection("rewards.currency");
-        if (currency != null) {
-            final String raw = currency.getString("type", "");
-            final CurrencyType type = isOwnFactionCurrency(raw)
-                    ? factionManager.getChosenFaction(player.getUniqueId())
-                    .map(CurrencyType::fromFactionType).orElse(null)
-                    : CurrencyType.fromInput(raw);
-            final double amount = currency.getDouble("amount", 0.0D);
-            if (type != null && amount > 0.0D) currencyManager.payOutTokens(player, type, Math.round(amount));
-        }
-        for (final String entry : quest.getStringList("rewards.items")) {
-            final String[] parts = entry.split(":");
-            final Material material = Material.matchMaterial(parts[0].trim());
-            if (material == null || material.isAir()) continue;
-            int amount = 1;
-            if (parts.length >= 2) {
-                try { amount = Math.max(1, Integer.parseInt(parts[1].trim())); }
-                catch (final NumberFormatException ignored) { amount = 1; }
-            }
-            player.getInventory().addItem(new org.bukkit.inventory.ItemStack(material, amount))
-                    .values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-        }
+        stages.add(physicalRewardDelivery.deliver(player, quest, receiptId, () -> crateKeyFactory));
         final String unlockSpell = quest.getString("rewards.unlock-spell");
         if (unlockSpell != null && !unlockSpell.isBlank()) {
             stages.add(jobManager.unlockSpellV2(player, unlockSpell,
                     JobManager.SOURCE_QUEST_PREFIX + normalizeQuestId(quest.getName())));
         }
-        final String crateReward = quest.getString("rewards.crate-key");
-        if (crateReward != null && !crateReward.isBlank()) grantCrateKeyReward(player, crateReward);
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
             factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
             sinManager.breakDarkPact(player);
