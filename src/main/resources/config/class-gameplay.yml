@@ -1,10 +1,10 @@
-# Harcos gameplay vertical slice — live balance. Nem generic mechanic DSL.
+# Gameplay vertical slice-ok (Harcos, Sárkányidéző) — live balance. Nem generic mechanic DSL.
 classes:
   specialization:
-    # Ebben a vertical slice-ban kizárólag a Harcos második megtanult specializációja nyílik ezen a szinten.
-    # A gateway a többi class SECOND-slotját fail-closed elutasítja, amíg azok saját gameplay slice-a el nem készül.
+    # A második megtanult specializáció ezen a szinten nyílik, de kizárólag a kész gameplay-v2
+    # classoknál (GameplayV2ClassPolicy allowlist); a többi class SECOND-slotja fail-closed marad.
     second-slot-level: 28
-    # Berserker <-> Védelmező váltás csak harcon kívül és közeli ellenségtől távol.
+    # Spec-váltás csak harcon kívül és közeli ellenségtől távol.
     switch-combat-grace-seconds: 8
     switch-safe-radius: 12.0
 
@@ -138,6 +138,94 @@ classes:
       last-stand:
         self-duration-ticks: 100
 
+  evoker:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      devastation:
+        - living_flame
+        - azure_strike
+        - fire_breath
+        - disintegrate
+        - pyre
+        - eternity_surge
+        - eternity_breath
+      preservation:
+        - emerald_blossom
+        - dream_breath
+        - spiritbloom
+        - reversion
+        - echo
+        - temporal_anomaly
+        - rewind
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      empowered-release-xp: 4
+      resonance-burst-xp: 5
+      echo-heal-xp: 4
+      imprint-restore-xp: 5
+
+    # Class core: Felerősítés — első kattintás tölt, második elenged; a tartás fokozatot ad.
+    # A találat megszakíthatja a töltést, a túl hosszú tartás elhalványul.
+    empower:
+      spells:
+        - fire_breath
+        - eternity_surge
+        - dream_breath
+        - spiritbloom
+      rank2-hold-millis: 1200
+      rank3-hold-millis: 2400
+      fizzle-millis: 6000
+      long-breath-extra-millis: 2000
+      interrupt-damage: 4.0
+      rank2-power-percent: 20.0
+      rank3-power-percent: 40.0
+
+    # A Felerősítés + Izzás együttes plafonja; a globális spells.total-power-cap felette is véd.
+    max-power-bonus-percent: 65.0
+
+    devastation:
+      # Vörös–Kék Eszencia: váltogatott színek töltik az Izzást; azonos szín újraindítja.
+      essence:
+        red-spells:
+          - living_flame
+          - fire_breath
+          - pyre
+          - firestorm
+          - dragonrage
+        blue-spells:
+          - azure_strike
+          - disintegrate
+          - eternity_surge
+          - shattering_star
+        burst-threshold: 4
+        burst-power-percent: 25.0
+        overheat-extra-percent: 8.0
+        ember-retention: 2
+
+    preservation:
+      # Visszhang: az előkészített gyógyítás egyszer, késleltetve megismétlődik (jelölt társra is).
+      echo:
+        heal-spells:
+          - emerald_blossom
+          - dream_breath
+          - spiritbloom
+          - verdant_embrace
+        window-millis: 6000
+        long-echo-extra-millis: 3000
+        delay-millis: 2000
+        heal-amount: 3.0
+        deep-extra-heal: 2.0
+      # Időlenyomat: kizárólag életerő-visszaállítás (heal-only, egyszer használatos, ablak-korlátos).
+      imprint:
+        window-millis: 8000
+        timeline-extra-millis: 4000
+        anomaly-restore-cap-percent: 30.0
+        rewind-restore-cap-percent: 60.0
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -148,8 +236,16 @@ specializations:
     capstone-spell: last_stand
     spell-unlocks:
       last_stand: 50
+  devastation:
+    capstone-spell: eternity_breath
+    spell-unlocks:
+      eternity_breath: 50
+  preservation:
+    capstone-spell: rewind
+    spell-unlocks:
+      rewind: 50
 
-# Harcosnál a személyes Sárkánykirály Kürtje a kötelező spellbook/fókusz.
+# Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.
 spells:
   melee-catalyst:

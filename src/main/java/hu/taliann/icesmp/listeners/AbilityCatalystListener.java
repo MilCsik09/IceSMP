@@ -1,7 +1,9 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -73,6 +75,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
     private volatile hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway;
     private volatile WarriorGameplayService warriorGameplayService;
+    private volatile EvokerGameplayService evokerGameplayService;
     private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin,
@@ -108,6 +111,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         warriorGameplayService = java.util.Objects.requireNonNull(service, "service");
     }
 
+    public void setEvokerGameplayService(final EvokerGameplayService service) {
+        evokerGameplayService = java.util.Objects.requireNonNull(service, "service");
+    }
+
     public void setItemRarityService(
             final hu.taliann.icesmp.managers.ItemRarityService itemRarityService) {
         this.itemRarityServiceRef = itemRarityService;
@@ -122,8 +129,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (catalystItemFactory.isCatalyst(item)) {
             return catalystItemFactory.isUsableBy(item, player.getUniqueId(), job);
         }
-        // Harcosnál a Sárkánykirály Kürtje a kötelező spellbook/fókusz: fegyver nem kerülheti meg.
-        if (job == JobType.WARRIOR) return false;
+        // Gameplay-v2 classnál a személyes Lélekkapocs a kötelező spellbook/fókusz:
+        // se fegyver, se generikus melee-catalyst nem kerülheti meg.
+        if (job != null && GameplayV2ClassPolicy.isEnabled(job.getId())) return false;
         if (item == null || !configManager.getBoolean("spells.melee-catalyst.enabled", true)) {
             return false;
         }
@@ -275,6 +283,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         final WarriorGameplayService warrior = warriorGameplayService;
         if (warrior != null && !warrior.beforeCast(player, selected)) return;
+        final EvokerGameplayService evoker = evokerGameplayService;
+        if (evoker != null && !evoker.beforeCast(player, selected)) return;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
@@ -295,12 +305,15 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         else selected.consumeCost(player);
 
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
+        final double classBonusPercent = evoker == null
+                ? 0.0D : evoker.castPowerBonusPercent(player, selected);
         final double powerCap = Math.max(1.0D,
                 configManager.getDouble("spells.total-power-cap", 1.75D));
         final double power = Math.min(powerCap,
                 masteryManager.getPowerMultiplier(player, selected.getId())
                         * dynamicPowerMultiplier(player)
-                        * (1.0D + chainBonusPercent / 100.0D));
+                        * (1.0D + chainBonusPercent / 100.0D)
+                        * (1.0D + classBonusPercent / 100.0D));
         if (!selected.executeSpell(player, power)) {
             if (useResource) resourceManager.refund(player, selected);
             else if (selected.getCostType() == hu.taliann.icesmp.spells.SpellCostType.HEALTH) {
@@ -311,6 +324,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
         if (warrior != null) {
             warrior.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
+        }
+        if (evoker != null) {
+            evoker.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -623,12 +639,18 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 .toList();
     }
 
-    /** Actual fast-combat cycle/cast set; Warrior uses max seven via existing favorites/default kit. */
+    /** Actual fast-combat cycle/cast set; gameplay-v2 classes cap it via favorites/default kit. */
     private List<String> resolveActiveSpellIds(final Player player) {
-        final List<String> unlocked = resolveUnlockedSpellIds(player);
+        List<String> active = resolveUnlockedSpellIds(player);
         final WarriorGameplayService warrior = warriorGameplayService;
-        if (warrior == null) return unlocked;
-        return warrior.activeSpellIds(player, unlocked, spellFavoritesManager.favorites(player));
+        if (warrior != null) {
+            active = warrior.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        }
+        final EvokerGameplayService evoker = evokerGameplayService;
+        if (evoker != null) {
+            active = evoker.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        }
+        return active;
     }
 
     public void openSpellbook(final Player player) {
@@ -655,13 +677,14 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return resolveActiveSpellIds(player);
     }
 
-    public boolean isWarrior(final Player player) {
-        return player != null && jobManager.getPrimaryJob(player) == JobType.WARRIOR;
-    }
-
-    public int maximumWarriorActiveSpells() {
-        return Math.max(1, Math.min(7,
-                configManager.getInt("classes.warrior.active-kit.maximum", 7)));
+    /** Favorite/active-kit cap for gameplay-v2 classes; other classes stay uncapped. */
+    public int activeKitLimit(final Player player) {
+        final JobType job = player == null ? null : jobManager.getPrimaryJob(player);
+        if (job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) {
+            return Integer.MAX_VALUE;
+        }
+        return Math.max(1, Math.min(7, configManager.getInt(
+                "classes." + job.getId() + ".active-kit.maximum", 7)));
     }
 
     public String getSelectedSpellId(final Player player) {

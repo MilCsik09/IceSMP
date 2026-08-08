@@ -254,11 +254,12 @@ public final class WarriorGameplayRegressionSuite {
 
         final String gateway = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java"));
-        check(gateway.contains("\"warrior\".equals(p.primaryClassId())&&level>=r.secondSpecUnlockLevel()"),
-                "second-slot XP unlock is Warrior-only in this vertical slice");
-        check(gateway.contains("second-slot gameplay is currently enabled only for warrior"),
+        check(gateway.contains(
+                        "GameplayV2ClassPolicy.isEnabled(p.primaryClassId())&&level>=r.secondSpecUnlockLevel()"),
+                "second-slot XP unlock is limited to the completed gameplay-v2 classes");
+        check(gateway.contains("second-slot gameplay is enabled only for reworked classes"),
                 "SECOND-slot learning is rejected for unreworked classes");
-        check(gateway.contains("loadout switching is currently enabled only for warrior"),
+        check(gateway.contains("loadout switching is enabled only for reworked classes"),
                 "gateway loadout switching is rejected for unreworked classes");
 
         final String protection = Files.readString(Path.of(

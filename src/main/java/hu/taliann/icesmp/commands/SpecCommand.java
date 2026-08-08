@@ -2,6 +2,7 @@ package hu.taliann.icesmp.commands;
 
 import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 
+import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.application.ProfileDiagnostic;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
@@ -89,20 +90,21 @@ public final class SpecCommand implements BasicCommand {
                     "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-        if (jobManager.getPrimaryJob(player) != JobType.WARRIOR) {
-            player.sendMessage(messageManager.get("spec-switch-warrior-only",
-                    "&cA két-slot gameplay váltás ebben a vertical slice-ban a Harcoshoz aktív."));
+        if (!isGameplayV2Class(player)) {
+            player.sendMessage(messageManager.get("spec-switch-class-gated",
+                    "&cA két-slot gameplay váltás egyelőre csak a kész reworkölt classoknál aktív (%s).",
+                    GameplayV2ClassPolicy.enabledList()));
             return;
         }
         if (args.length < 2) {
             player.sendMessage(messageManager.get("spec-switch-usage",
-                    "&cHasználat: /spec switch <first|second|berserker|guardian>"));
+                    "&cHasználat: /spec switch <first|second|spec-id>"));
             return;
         }
         final LoadoutSlot target = resolveTargetSlot(player, args[1]);
         if (target == null) {
             player.sendMessage(messageManager.get("spec-switch-unknown",
-                    "&cNincs ilyen megtanult Harcos-specializáció vagy slot: &f%s", args[1]));
+                    "&cNincs ilyen megtanult specializáció vagy slot: &f%s", args[1]));
             return;
         }
         specializationManager.switchClassSpecializationV2(player, target)
@@ -121,6 +123,11 @@ public final class SpecCommand implements BasicCommand {
                     }
                 }, () -> specializationManager.profileGateway().blockSession(
                         player.getUniqueId(), "Spec switch completion scheduler rejected")));
+    }
+
+    private boolean isGameplayV2Class(final Player player) {
+        final JobType job = jobManager.getPrimaryJob(player);
+        return job != null && GameplayV2ClassPolicy.isEnabled(job.getId());
     }
 
     private LoadoutSlot resolveTargetSlot(final Player player, final String raw) {
@@ -142,9 +149,10 @@ public final class SpecCommand implements BasicCommand {
                     "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-        if (jobManager.getPrimaryJob(player) != JobType.WARRIOR) {
-            player.sendMessage(messageManager.get("spec-doctrine-warrior-only",
-                    "&cA Harcos doctrine-rendszer csak Harcos class alatt használható."));
+        if (!isGameplayV2Class(player)) {
+            player.sendMessage(messageManager.get("spec-doctrine-class-gated",
+                    "&cA doctrine-rendszer egyelőre csak a kész reworkölt classoknál aktív (%s).",
+                    GameplayV2ClassPolicy.enabledList()));
             return;
         }
         if (args.length < 3) {
@@ -539,8 +547,18 @@ public final class SpecCommand implements BasicCommand {
         }
         if ("switch".equals(subcommand) && args.length <= 2) {
             final String prefix = prefixAt(args, 1);
-            return List.of("first", "second", "berserker", "guardian").stream()
-                    .filter(option -> option.startsWith(prefix)).toList();
+            final List<String> options = new ArrayList<>(List.of("first", "second"));
+            if (sender instanceof Player player) {
+                final var profile = specializationManager.profileGateway()
+                        .currentProfile(player.getUniqueId()).orElse(null);
+                if (profile != null) {
+                    for (final LoadoutSlot slot : LoadoutSlot.values()) {
+                        final String spec = profile.loadout(slot).specializationId();
+                        if (!spec.isBlank() && !options.contains(spec)) options.add(spec);
+                    }
+                }
+            }
+            return options.stream().filter(option -> option.startsWith(prefix)).toList();
         }
         if ("doctrine".equals(subcommand)) {
             if (args.length <= 2) {

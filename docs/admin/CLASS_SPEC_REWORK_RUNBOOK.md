@@ -6,7 +6,7 @@ Profile v2 is always enabled and is the sole class/spec authority. There is no m
 dual-write period or kill switch. `class-spec-rework.dependencies.enforce` controls dependency validation only; it
 does not select another runtime.
 
-The first gameplay vertical slice is the **Harcos** (`warrior`) with `berserker` and `guardian`. Its combat meters are transient runtime state; class, loadouts, doctrines, mastery and capstone remain Profile v2 state.
+The first gameplay vertical slice is the **Harcos** (`warrior`) with `berserker` and `guardian`; the second is the **Sárkányidéző** (`evoker`) with `devastation` (Perzselés) and `preservation` (Megőrzés). Combat meters, charges and prepared-heal windows are transient runtime state; class, loadouts, doctrines, mastery and capstone remain Profile v2 state. The completed slices are listed in the explicit `GameplayV2ClassPolicy` allowlist — every other class stays single-spec and fail-closed.
 
 ## Normal states
 
@@ -22,15 +22,15 @@ The first gameplay vertical slice is the **Harcos** (`warrior`) with `berserker`
 
 Use `/spec info` for schema, revision, class, slots, complete seal reasons, slot mastery, doctrine/capstone state and session block detail. Repository logs include owner UUID, bounded error detail and evidence ID; raw payloads are not dumped into logs.
 
-For Warrior gameplay:
+For the completed gameplay-v2 classes (Warrior, Evoker):
 
-- `/spec switch <first|second>` changes the active learned Warrior specialization only when the switch safety gate passes;
+- `/spec switch <first|second|spec-id>` changes the active learned specialization only when the switch safety gate passes;
 - `/spec doctrine <30|40|50> <choice>` commits the active loadout's doctrine choice;
 - class level/XP is shared by the two loadouts; doctrine, mastery and capstone are slot-local;
-- Düh and active spell cooldown consequences are not reset by a legal loadout switch;
-- Berserker Vérőrület/Kimerülés and Guardian Őrség/Eskütárs are transient and are cleared at the switch boundary.
+- resource and active spell cooldown consequences are not reset by a legal loadout switch;
+- spec-local transient state (Berserker Vérőrület/Kimerülés, Guardian Őrség/Eskütárs, Evoker Izzás/Visszhang/Időlenyomat/jelölt társ and any held Felerősítés charge) is cleared at the switch boundary.
 
-## Warrior switch safety
+## Switch safety
 
 The switch gate is live-config driven:
 
@@ -38,7 +38,7 @@ The switch gate is live-config driven:
 - `classes.specialization.switch-combat-grace-seconds` — default 8;
 - `classes.specialization.switch-safe-radius` — default 12 blocks.
 
-The current vertical slice unlocks and accepts the SECOND loadout only for `warrior`. Other classes remain single-spec until their own gameplay slice explicitly enables and validates second-spec switching.
+The SECOND loadout unlocks and is accepted only for the classes in the `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`). Other classes remain single-spec until their own gameplay slice explicitly enables and validates second-spec switching.
 
 A switch fails closed while the player is still in the combat grace, while a hostile living entity is inside the configured radius, while the target slot is unavailable, or while the Profile v2 session is not READY. The switch must never be used as a heal, Düh reset or cooldown reset.
 
@@ -48,7 +48,14 @@ The Sárkánykirály Kürtje is a personal spellbook mirror, not the durable cla
 
 The personal artifact cannot be moved into an external inventory. On death it is removed from the drop list and added to `PlayerDeathEvent#getItemsToKeep()` in the same event, so there is no asynchronous claim/materialize/redeposit crash window. If the physical mirror is ever missing, the normal owner-bound Soulbond refresh path can rebuild it from Profile v2 without changing class/spec progression.
 
-A Warrior cast requires the personal Kürt; the generic melee-catalyst compatibility path does not bypass it. The active combat list is capped at seven spells and reuses the existing spellbook/favorites UX.
+A Warrior cast requires the personal Kürt and an Evoker cast requires the personal **Sárkányvér-fiola**; the generic melee-catalyst compatibility path does not bypass either. The active combat list is capped at seven spells per gameplay-v2 class and reuses the existing spellbook/favorites UX. The Fiola recovery, death retention and foreign-copy rules are identical to the Kürt — one shared owner-bound Soulbond lifecycle, class-specific presentation only.
+
+## Evoker gameplay rules
+
+- **Felerősítés (class core):** the first click on an empowerable spell (`fire_breath`, `eternity_surge`, `dream_breath`, `spiritbloom`) starts a charge without spending resources; the next click releases it at rank I/II/III depending on hold time. An overheld charge fizzles (`classes.evoker.empower.fizzle-millis`) and a hit at or above `classes.evoker.empower.interrupt-damage` interrupts it. A held charge never survives death, logout or a spec switch.
+- **Perzselés (Vörös–Kék Eszencia):** alternating red/blue essence spells build Izzás up to `burst-threshold`; repeating a color restarts the chain. An armed burst empowers the next essence spell through the shared, capped cast-power pipeline (`classes.evoker.max-power-bonus-percent` plus the global `spells.total-power-cap`).
+- **Megőrzés (Visszhang + Időlenyomat):** `echo` arms a single-use echo window — the next prepared heal repeats once, on the caster and on the ally marked with the Fiola (sneak + right-click). `reversion` records a heal-only Időlenyomat: consuming it (`temporal_anomaly`, capstone `rewind`) restores health toward the recorded value, bounded by the configured cap. The imprint never rolls back inventory, position, quests, items or currency — health only, single-use, window-bounded.
+- **Mastery:** empowered releases, resonance bursts, landed echoes and imprint restores grant mastery XP only in combat (`classes.evoker.mastery.combat-window-seconds`); dummy/AFK spam earns nothing.
 
 ## Berserker Dacoló durability rule
 
@@ -60,16 +67,18 @@ A Warrior cast requires the personal Kürt; the generic melee-catalyst compatibi
 
 A crash before the cooldown commit therefore grants no recovery side effect. A scheduler/runtime failure after durable commit is fail-closed and may consume the cooldown without granting the recovery; that is preferable to duplicating a durable death-save effect.
 
-## Warrior capstone/build gates
+## Capstone/build gates
 
 At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable content contracts are:
 
 - Berserker: `warrior_berserker_broken_horn` — **Törött Kürt**;
-- Guardian: `warrior_guardian_last_wall` — **Utolsó Fal**.
+- Guardian: `warrior_guardian_last_wall` — **Utolsó Fal**;
+- Perzselés: `evoker_devastation_trial`;
+- Megőrzés: `evoker_preservation_trial`.
 
-The repository does not claim that the physical arena, caravan or capital-gate build already exists. Do not fabricate coordinates or mark the trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
-The current `relics.class-relics` catalog contains no canonical Warrior Class Relic binding. Do not invent an operational Warrior relic/resonance/awakening entry as a workaround; the class is complete without a relic and the future relic content is a separate gate.
+The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 
 ## Quarantine recovery
 
@@ -112,15 +121,16 @@ spawn/rebuild fails, keep the roster and repair/retry the runtime side rather th
 Disable closes mutation admission, drains accepted operations for bounded intervals, flushes the repository,
 invalidates sessions and then stops executors/runtime adapters. Warrior transient state and live Eskütárs handles are lifecycle-owned and must be cleared before the runtime is considered stopped. A timeout is an operational failure: preserve logs and stores, perform a controlled restart and let recovery protocols evaluate pending operations. Never wait indefinitely or repeatedly reload the plugin in-process.
 
-## Warrior staging acceptance
+## Gameplay staging acceptance
 
-Before moving the gameplay PR out of draft, perform live Folia tests for:
+Before moving a gameplay PR out of draft, perform live Folia tests for:
 
-- legal/illegal second-spec switching, including combat, nearby enemies, reconnect and cooldown/Düh preservation;
+- legal/illegal second-spec switching, including combat, nearby enemies, reconnect and resource/cooldown preservation;
 - Berserker 70+ Fury, 50 ms-equivalent HUD polling, safe dump, overdrive, aftermath, Hóhér PvE/PvP values and durable-before-effect Dacoló critical recovery;
 - Guardian Eskütárs player/NPC/objective assignment, entity removal, intercept, shield and multi-player support without damage recursion;
+- Evoker Felerősítés charge/release/fizzle/interrupt feel, Izzás alternation and burst cadence, echo delivery to the marked ally across regions, and Időlenyomat restore bounds;
 - death/quit/kick/disable cleanup and reconnect reconstruction;
-- personal Kürt loss, death retention, external-container transfer attempts, foreign copy and duplicate-copy behavior;
+- personal Kürt/Fiola loss, death retention, external-container transfer attempts, foreign copy and duplicate-copy behavior;
 - real TTK/healing/CC/party balance. Unit tests prove invariants, not final balance.
 
 Hosted GitHub Actions that fail with `steps=null` are runner/credit infrastructure failures, not evidence of a code failure. Keep the PR draft and rely on a full local or actually-executed runner validation before merge.

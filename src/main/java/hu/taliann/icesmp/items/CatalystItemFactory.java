@@ -217,8 +217,12 @@ public final class CatalystItemFactory {
         } else {
             lore.add(line("<gray>Aktív út: <dark_gray>még nincs specializáció</dark_gray></gray>"));
         }
-        if (jobType == JobType.WARRIOR && classLevel >= 35 && !spec.isBlank()) {
-            addWarriorEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+        if (classLevel >= 35 && !spec.isBlank()) {
+            if (jobType == JobType.WARRIOR) {
+                addWarriorEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            } else if (jobType == JobType.EVOKER) {
+                addEvokerEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            }
         }
         if (masteryRank >= 5) {
             lore.add(line(masteryRank >= 10
@@ -272,6 +276,21 @@ public final class CatalystItemFactory {
         }
     }
 
+    private void addEvokerEvolutionLore(final List<Component> lore, final String spec,
+                                        final Map<String, String> doctrines) {
+        if ("devastation".equals(spec)) {
+            final String first = doctrines.getOrDefault("level_30", "még kialakulatlan");
+            final String second = doctrines.getOrDefault("level_40", "még kialakulatlan");
+            lore.add(line("<gold>Izzó véna I: <white>" + doctrineDisplay(first) + "</white></gold>"));
+            lore.add(line("<red>Izzó véna II: <white>" + doctrineDisplay(second) + "</white></red>"));
+        } else if ("preservation".equals(spec)) {
+            final String first = doctrines.getOrDefault("level_30", "még kialakulatlan");
+            final String second = doctrines.getOrDefault("level_40", "még kialakulatlan");
+            lore.add(line("<aqua>Smaragd-csepp I: <white>" + doctrineDisplay(first) + "</white></aqua>"));
+            lore.add(line("<green>Smaragd-csepp II: <white>" + doctrineDisplay(second) + "</white></green>"));
+        }
+    }
+
     private static String evolution(final int level) {
         if (level >= 50) return "Beteljesedés";
         if (level >= 35) return "Mélyülés";
@@ -292,6 +311,8 @@ public final class CatalystItemFactory {
         return switch (id) {
             case "berserker" -> "Berserker";
             case "guardian" -> "Védelmező";
+            case "devastation" -> "Perzselés";
+            case "preservation" -> "Megőrzés";
             default -> id;
         };
     }
@@ -310,6 +331,18 @@ public final class CatalystItemFactory {
             case "war_signal" -> "Hadijel";
             case "for_one" -> "Egy emberért";
             case "for_all" -> "Mindenkiért";
+            case "gyujtopont" -> "Gyújtópont";
+            case "hosszu_lelegzet" -> "Hosszú Lélegzet";
+            case "iker_aram" -> "Ikeráram";
+            case "tulhevites" -> "Túlhevítés";
+            case "orok_izzas" -> "Örök Izzás";
+            case "kettos_szikra" -> "Kettős Szikra";
+            case "hosszu_visszhang" -> "Hosszú Visszhang";
+            case "melyebb_visszhang" -> "Mélyebb Visszhang";
+            case "idofonal" -> "Időfonál";
+            case "gyors_lenyomat" -> "Gyors Lenyomat";
+            case "orzo_pajzs" -> "Őrző Pajzs";
+            case "tiszta_ido" -> "Tiszta Idő";
             default -> id.replace('_', ' ');
         };
     }

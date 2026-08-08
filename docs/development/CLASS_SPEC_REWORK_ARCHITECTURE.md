@@ -24,9 +24,20 @@ It is event-driven; there is no per-tick online-player scan. Guardian protection
 
 The existing `ResourceManager` remains the Düh authority for spell cost/gain. Csatatempó is intentionally a different transient decision layer. `BukkitClassSpecRuntimeAdapter` preserves class-common Düh and active cooldowns on `LOADOUT_SWITCH`, while the Harcos service clears the old specialization state.
 
+## Sárkányidéző vertical slice
+
+`EvokerGameplayService` is the second concrete gameplay consumer and the deliberate architectural counter-proof: it does not clone the Warrior shape. `EvokerCombatState` contains only the Sárkányidéző mechanics:
+
+- class-core Felerősítés: a seconds-scale charge on a handful of concrete spells (first click charges, second click releases at rank I/II/III; a hit interrupts, overholding fizzles);
+- Perzselés Vörös–Kék Eszencia: one red/blue alternation counter whose armed burst rides the existing capped cast-power pipeline — no damage-amplification event handler and no extra meters;
+- Megőrzés Visszhang + Időlenyomat: a single-use prepared-heal echo (self plus one Fiola-marked ally) and one heal-only health imprint. The imprint restores health toward the recorded value under a configured cap and never touches inventory, position, quests, items or currency;
+- there is no class meter, no target-bound reverse index and no kill-event resource path.
+
+The empower and burst bonuses enter combat exclusively through `AbilityCatalystListener`'s existing power computation (`castPowerBonusPercent`, clamped by `classes.evoker.max-power-bonus-percent` and the global `spells.total-power-cap`). Cross-entity echo heals run on the target entity's scheduler. Mastery contributions are combat-gated through the existing `ResourceManager` combat tracker.
+
 ## Second specialization, doctrines and mastery
 
-The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for this gameplay slice. A Warrior switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset Düh or reset cooldowns.
+The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for the completed gameplay-v2 classes, enumerated by the explicit `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`) — a plain list, not a capability framework. A switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset the class resource or reset cooldowns, and a held Felerősítés charge never survives the switch boundary.
 
 Doctrine choices live in `ClassLoadout#doctrineChoices`, keyed by the level tier (`level_30`, `level_40`, `level_50`). They are slot-local and durable. Mastery and capstone state remain the existing loadout fields; no mastery YAML or separate talent/doctrine store exists.
 
@@ -34,8 +45,8 @@ Doctrine choices live in `ClassLoadout#doctrineChoices`, keyed by the level tier
 
 The Sárkánykirály Kürtje stays the Warrior's spellbook/caster focus and uses the existing catalyst/spellbook UX. The physical `ItemStack` carries only rebuildable owner/class/presentation mirrors; it is never gameplay authority. Profile v2 and spell provenance decide what may be cast.
 
-A Warrior must use its personal Kürt to cast. The active combat set is capped at seven spells by reusing the existing favorites/selection system. Spec changes update the same artifact's presentation and invalidate old spec grants through the existing runtime reconcile path.
+A Warrior must use its personal Kürt and an Evoker its personal Sárkányvér-fiola to cast; the melee-catalyst compatibility path is closed for every allowlisted gameplay-v2 class. The active combat set is capped at seven spells per gameplay-v2 class by reusing the existing favorites/selection system. Spec changes update the same artifact's presentation and invalidate old spec grants through the existing runtime reconcile path. The Fiola additionally serves as the Megőrzés ally-marking tool (sneak + right-click), mirroring the Guardian oath UX without duplicating its target-bound state model.
 
 ## Content gates outside this architecture
 
-The current Class Relic catalog defines only the Evoker/Sárkánytojás pilot, so this slice does not invent a Warrior relic. `Törött Kürt` and `Utolsó Fal` have stable capstone trial identifiers and Profile v2 completion state, but their physical arena/caravan/gate content remains a builder/event gate until it exists in the world.
+The current Class Relic catalog defines only the Evoker/Sárkánytojás pilot, so the Warrior slice does not invent a relic. `Törött Kürt`, `Utolsó Fal`, `evoker_devastation_trial` and `evoker_preservation_trial` have stable capstone trial identifiers and Profile v2 completion state, but their physical content remains a builder/event gate until it exists in the world. The Evoker trial ids carry no lore names because the canonical game-design document is not available in this repository; naming them is content work, not code work.

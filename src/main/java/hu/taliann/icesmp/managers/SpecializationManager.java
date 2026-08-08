@@ -1,17 +1,20 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
+import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.application.GateSnapshot;
 import hu.taliann.icesmp.classspec.application.GateState;
 import hu.taliann.icesmp.classspec.application.ProfileDiagnostic;
 import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.classspec.domain.CapstoneStatus;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
+import hu.taliann.icesmp.classspec.domain.ClassSpecCatalog;
 import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
 import hu.taliann.icesmp.data.SpecializationType;
+import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpecializationProgressStore;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
@@ -40,6 +43,13 @@ import java.util.function.Consumer;
 public final class SpecializationManager {
     private static final String BERSERKER_TRIAL = "warrior_berserker_broken_horn";
     private static final String GUARDIAN_TRIAL = "warrior_guardian_last_wall";
+    private static final String DEVASTATION_TRIAL = "evoker_devastation_trial";
+    private static final String PRESERVATION_TRIAL = "evoker_preservation_trial";
+    private static final Map<String, String> TRIAL_SPECS = Map.of(
+            BERSERKER_TRIAL, "berserker",
+            GUARDIAN_TRIAL, "guardian",
+            DEVASTATION_TRIAL, "devastation",
+            PRESERVATION_TRIAL, "preservation");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -58,9 +68,10 @@ public final class SpecializationManager {
     private volatile ClassSpecProfileGateway profileGateway;
     private volatile ResourceManager resourceManager;
     private volatile WarriorGameplayService warriorGameplayService;
-    private volatile CatalystItemFactory warriorSoulbondFactory;
-    private volatile Consumer<UUID> warriorSwitchCleanup = ignored -> { };
-    private volatile Consumer<Player> warriorProfileRefresh = ignored -> { };
+    private volatile EvokerGameplayService evokerGameplayService;
+    private volatile CatalystItemFactory soulbondFactory;
+    private volatile Consumer<UUID> classSwitchCleanup = ignored -> { };
+    private volatile Consumer<Player> classProfileRefresh = ignored -> { };
 
     public SpecializationManager(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager, final JobManager jobManager,
@@ -84,16 +95,23 @@ public final class SpecializationManager {
         if (factory == null) {
             throw new IllegalStateException("Lélekkapocs factory is not initialized before Profile v2");
         }
-        final WarriorGameplayService runtime = new WarriorGameplayService(
+        final WarriorGameplayService warriorRuntime = new WarriorGameplayService(
                 plugin, configManager, jobManager, this, factory, messageManager);
-        plugin.getServer().getPluginManager().registerEvents(runtime, plugin);
-        warriorSoulbondFactory = factory;
-        warriorGameplayService = runtime;
-        warriorSwitchCleanup = runtime::clearSpecializationState;
-        warriorProfileRefresh = this::scheduleWarriorProfileRefresh;
-        jobManager.setXpChangeHook(player -> reconcileWarriorProgression(player)
+        final EvokerGameplayService evokerRuntime = new EvokerGameplayService(
+                plugin, configManager, jobManager, this, factory, messageManager);
+        plugin.getServer().getPluginManager().registerEvents(warriorRuntime, plugin);
+        plugin.getServer().getPluginManager().registerEvents(evokerRuntime, plugin);
+        soulbondFactory = factory;
+        warriorGameplayService = warriorRuntime;
+        evokerGameplayService = evokerRuntime;
+        classSwitchCleanup = playerId -> {
+            warriorRuntime.clearSpecializationState(playerId);
+            evokerRuntime.clearSpecializationState(playerId);
+        };
+        classProfileRefresh = this::scheduleClassProfileRefresh;
+        jobManager.setXpChangeHook(player -> reconcileClassProgression(player)
                 .exceptionally(failure -> {
-                    plugin.getLogger().severe("Warrior level progression reconcile failed for "
+                    plugin.getLogger().severe("Class level progression reconcile failed for "
                             + player.getUniqueId() + ": " + rootMessage(failure));
                     return null;
                 }));
@@ -103,14 +121,18 @@ public final class SpecializationManager {
         return Optional.ofNullable(warriorGameplayService);
     }
 
+    public Optional<EvokerGameplayService> evokerGameplayService() {
+        return Optional.ofNullable(evokerGameplayService);
+    }
+
     public void setSwitchSafetyResource(final ResourceManager resources) {
         resourceManager = Objects.requireNonNull(resources, "resources");
     }
 
-    public void setWarriorRuntimeCallbacks(final Consumer<UUID> switchCleanup,
-                                           final Consumer<Player> profileRefresh) {
-        warriorSwitchCleanup = switchCleanup == null ? ignored -> { } : switchCleanup;
-        warriorProfileRefresh = profileRefresh == null ? ignored -> { } : profileRefresh;
+    public void setClassRuntimeCallbacks(final Consumer<UUID> switchCleanup,
+                                         final Consumer<Player> profileRefresh) {
+        classSwitchCleanup = switchCleanup == null ? ignored -> { } : switchCleanup;
+        classProfileRefresh = profileRefresh == null ? ignored -> { } : profileRefresh;
     }
 
     public ClassSpecProfileGateway profileGateway() {
@@ -214,15 +236,14 @@ public final class SpecializationManager {
                 .thenApply(result -> {
                     final boolean success = result.committed()
                             || result.status() == ProfileMutationResult.Status.NO_CHANGE;
-                    if (success) warriorProfileRefresh.accept(player);
+                    if (success) classProfileRefresh.accept(player);
                     return success;
                 });
     }
 
     public boolean canSwitchClassSpecialization(final Player player,
                                                 final LoadoutSlot targetSlot) {
-        if (player == null || targetSlot == null
-                || jobManager.getPrimaryJob(player) != JobType.WARRIOR) return false;
+        if (player == null || targetSlot == null || !isGameplayV2Class(player)) return false;
         final ClassSpecProfileGateway gateway = profileGateway;
         final ResourceManager resources = resourceManager;
         if (gateway == null || resources == null
@@ -253,8 +274,8 @@ public final class SpecializationManager {
                     final boolean success = result.committed()
                             || result.status() == ProfileMutationResult.Status.NO_CHANGE;
                     if (success) {
-                        warriorSwitchCleanup.accept(player.getUniqueId());
-                        warriorProfileRefresh.accept(player);
+                        classSwitchCleanup.accept(player.getUniqueId());
+                        classProfileRefresh.accept(player);
                     }
                     return success;
                 });
@@ -276,6 +297,18 @@ public final class SpecializationManager {
                 case 50 -> Set.of("for_one", "for_all");
                 default -> Set.of();
             };
+            case DEVASTATION -> switch (level) {
+                case 30 -> Set.of("gyujtopont", "hosszu_lelegzet");
+                case 40 -> Set.of("iker_aram", "tulhevites");
+                case 50 -> Set.of("orok_izzas", "kettos_szikra");
+                default -> Set.of();
+            };
+            case PRESERVATION -> switch (level) {
+                case 30 -> Set.of("hosszu_visszhang", "melyebb_visszhang");
+                case 40 -> Set.of("idofonal", "gyors_lenyomat");
+                case 50 -> Set.of("orzo_pajzs", "tiszta_ido");
+                default -> Set.of();
+            };
             default -> Set.of();
         };
     }
@@ -293,7 +326,7 @@ public final class SpecializationManager {
                                                      final int level,
                                                      final String choice) {
         if (player == null || choice == null || !Set.of(30, 40, 50).contains(level)
-                || jobManager.getPrimaryJob(player) != JobType.WARRIOR
+                || !isGameplayV2Class(player)
                 || jobManager.getPrimaryLevel(player) < level) {
             return CompletableFuture.completedFuture(false);
         }
@@ -313,36 +346,47 @@ public final class SpecializationManager {
                 .thenApply(result -> {
                     final boolean success = result.committed()
                             || result.status() == ProfileMutationResult.Status.NO_CHANGE;
-                    if (success) warriorProfileRefresh.accept(player);
+                    if (success) classProfileRefresh.accept(player);
                     return success;
                 });
     }
 
     public CompletionStage<Boolean> contributeWarriorMastery(final Player player,
                                                              final int experience) {
-        if (player == null || experience <= 0 || jobManager.getPrimaryJob(player) != JobType.WARRIOR
+        return contributeClassMastery(player, JobType.WARRIOR, experience);
+    }
+
+    /** 50+ mastery is Profile v2 loadout state; only the active spec of the same class earns it. */
+    public CompletionStage<Boolean> contributeClassMastery(final Player player,
+                                                           final JobType classType,
+                                                           final int experience) {
+        if (player == null || classType == null || experience <= 0
+                || !GameplayV2ClassPolicy.isEnabled(classType.getId())
+                || jobManager.getPrimaryJob(player) != classType
                 || jobManager.getPrimaryLevel(player) < 50) {
             return CompletableFuture.completedFuture(false);
         }
         final ClassSpecSection profile = profileGateway().currentProfile(player.getUniqueId())
                 .orElse(null);
         if (profile == null || profile.activeSlot() == null
-                || !isWarriorSpec(profile.loadout(profile.activeSlot()).specializationId())) {
+                || !ClassSpecCatalog.belongsTo(
+                profile.loadout(profile.activeSlot()).specializationId(), classType.getId())) {
             return CompletableFuture.completedFuture(false);
         }
         final long perRank = Math.max(1L, configManager.getLong(
-                "classes.warrior.mastery.experience-per-rank", 100L));
+                "classes." + classType.getId() + ".mastery.experience-per-rank", 100L));
         return profileGateway().contributeMastery(player.getUniqueId(),
                         new ClassSpecProfileGateway.MasteryContributionRequest(
                                 profile.activeSlot(), experience, perRank))
                 .thenApply(result -> {
-                    if (result.committed()) warriorProfileRefresh.accept(player);
+                    if (result.committed()) classProfileRefresh.accept(player);
                     return result.committed();
                 });
     }
 
-    public CompletionStage<Void> reconcileWarriorProgression(final Player player) {
-        if (player == null || jobManager.getPrimaryJob(player) != JobType.WARRIOR
+    public CompletionStage<Void> reconcileClassProgression(final Player player) {
+        final JobType job = player == null ? null : jobManager.getPrimaryJob(player);
+        if (job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())
                 || jobManager.getPrimaryLevel(player) < 50) {
             return CompletableFuture.completedFuture(null);
         }
@@ -352,7 +396,7 @@ public final class SpecializationManager {
         CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
         for (final LoadoutSlot slot : LoadoutSlot.values()) {
             final ClassLoadout loadout = profile.loadout(slot);
-            if (!isWarriorSpec(loadout.specializationId())
+            if (!ClassSpecCatalog.belongsTo(loadout.specializationId(), job.getId())
                     || loadout.capstoneStatus() != CapstoneStatus.LOCKED) continue;
             chain = chain.thenCompose(ignored -> profileGateway().setCapstone(
                             player.getUniqueId(),
@@ -360,21 +404,22 @@ public final class SpecializationManager {
                                     slot, CapstoneStatus.AVAILABLE))
                     .thenApply(result -> null));
         }
-        return chain.thenRun(() -> warriorProfileRefresh.accept(player));
+        return chain.thenRun(() -> classProfileRefresh.accept(player));
     }
 
     public CompletionStage<Boolean> onQuestCompleted(final Player player,
                                                      final String questId) {
-        if (player == null || questId == null || jobManager.getPrimaryJob(player) != JobType.WARRIOR
+        if (player == null || questId == null
                 || jobManager.getPrimaryLevel(player) < 50) {
             return CompletableFuture.completedFuture(false);
         }
-        final String requiredSpec = switch (questId.toLowerCase(Locale.ROOT)) {
-            case BERSERKER_TRIAL -> "berserker";
-            case GUARDIAN_TRIAL -> "guardian";
-            default -> "";
-        };
-        if (requiredSpec.isEmpty()) return CompletableFuture.completedFuture(false);
+        final String requiredSpec = TRIAL_SPECS.getOrDefault(
+                questId.toLowerCase(Locale.ROOT), "");
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (requiredSpec.isEmpty() || job == null
+                || !ClassSpecCatalog.belongsTo(requiredSpec, job.getId())) {
+            return CompletableFuture.completedFuture(false);
+        }
         final ClassSpecSection profile = profileGateway().currentProfile(player.getUniqueId())
                 .orElse(null);
         if (profile == null) return CompletableFuture.completedFuture(false);
@@ -393,7 +438,7 @@ public final class SpecializationManager {
                             ? CompletableFuture.completedFuture(null)
                             : applyClassSpecializationUnlocksV2(player, durable);
                     return grants.thenApply(ignored -> {
-                        warriorProfileRefresh.accept(player);
+                        classProfileRefresh.accept(player);
                         return true;
                     });
                 });
@@ -473,8 +518,8 @@ public final class SpecializationManager {
         return resetClassSpecSection(player.getUniqueId(), adminClassReset, operationId)
                 .thenApply(result -> {
                     if (result.committed() || result.status() == ProfileMutationResult.Status.NO_CHANGE) {
-                        warriorSwitchCleanup.accept(player.getUniqueId());
-                        warriorProfileRefresh.accept(player);
+                        classSwitchCleanup.accept(player.getUniqueId());
+                        classProfileRefresh.accept(player);
                     }
                     return result;
                 });
@@ -513,21 +558,21 @@ public final class SpecializationManager {
         }
         return gateway.reconcile(player.getUniqueId(),
                         new ClassSpecProfileGateway.ReconcileRequest(snapshots))
-                .thenCompose(result -> reconcileCompletedWarriorTrials(player)
+                .thenCompose(result -> reconcileCompletedTrials(player)
                         .thenApply(ignored -> result));
     }
 
-    private CompletionStage<Void> reconcileCompletedWarriorTrials(final Player player) {
-        if (player == null || jobManager.getPrimaryJob(player) != JobType.WARRIOR) {
+    private CompletionStage<Void> reconcileCompletedTrials(final Player player) {
+        final JobType job = player == null ? null : jobManager.getPrimaryJob(player);
+        if (job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) {
             return CompletableFuture.completedFuture(null);
         }
         CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
-        if (questManager.hasCompleted(player, BERSERKER_TRIAL)) {
-            chain = chain.thenCompose(ignored -> onQuestCompleted(player, BERSERKER_TRIAL)
-                    .thenApply(done -> null));
-        }
-        if (questManager.hasCompleted(player, GUARDIAN_TRIAL)) {
-            chain = chain.thenCompose(ignored -> onQuestCompleted(player, GUARDIAN_TRIAL)
+        for (final Map.Entry<String, String> trial : TRIAL_SPECS.entrySet()) {
+            if (!ClassSpecCatalog.belongsTo(trial.getValue(), job.getId())
+                    || !questManager.hasCompleted(player, trial.getKey())) continue;
+            final String questId = trial.getKey();
+            chain = chain.thenCompose(ignored -> onQuestCompleted(player, questId)
                     .thenApply(done -> null));
         }
         return chain;
@@ -656,16 +701,19 @@ public final class SpecializationManager {
         return Optional.empty();
     }
 
-    private void scheduleWarriorProfileRefresh(final Player player) {
+    private void scheduleClassProfileRefresh(final Player player) {
         if (player == null) return;
-        player.getScheduler().run(plugin, task -> refreshWarriorProfile(player), null);
+        player.getScheduler().run(plugin, task -> refreshClassProfile(player), null);
     }
 
-    private void refreshWarriorProfile(final Player player) {
-        final WarriorGameplayService runtime = warriorGameplayService;
-        final CatalystItemFactory factory = warriorSoulbondFactory;
-        if (runtime != null) runtime.reconcileProfile(player);
-        if (factory == null || jobManager.getPrimaryJob(player) != JobType.WARRIOR) return;
+    private void refreshClassProfile(final Player player) {
+        final WarriorGameplayService warriorRuntime = warriorGameplayService;
+        final EvokerGameplayService evokerRuntime = evokerGameplayService;
+        final CatalystItemFactory factory = soulbondFactory;
+        if (warriorRuntime != null) warriorRuntime.reconcileProfile(player);
+        if (evokerRuntime != null) evokerRuntime.reconcileProfile(player);
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (factory == null || job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) return;
         final ClassSpecSection profile = profileGateway().currentProfile(player.getUniqueId()).orElse(null);
         if (profile == null) return;
         String spec = "";
@@ -678,15 +726,16 @@ public final class SpecializationManager {
             doctrines = active.doctrineChoices();
         }
         for (final ItemStack stack : player.getInventory().getContents()) {
-            if (factory.isPersonalCopyFor(stack, player.getUniqueId(), JobType.WARRIOR)) {
-                factory.refreshPresentation(stack, player.getUniqueId(), JobType.WARRIOR,
+            if (factory.isPersonalCopyFor(stack, player.getUniqueId(), job)) {
+                factory.refreshPresentation(stack, player.getUniqueId(), job,
                         spec, profile.classLevel(), mastery, doctrines);
             }
         }
     }
 
-    private static boolean isWarriorSpec(final String specializationId) {
-        return "berserker".equals(specializationId) || "guardian".equals(specializationId);
+    private boolean isGameplayV2Class(final Player player) {
+        final JobType job = jobManager.getPrimaryJob(player);
+        return job != null && GameplayV2ClassPolicy.isEnabled(job.getId());
     }
 
     private static String doctrineTier(final int level) {

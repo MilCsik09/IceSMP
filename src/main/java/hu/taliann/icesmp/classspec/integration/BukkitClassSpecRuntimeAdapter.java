@@ -2,6 +2,7 @@ package hu.taliann.icesmp.classspec.integration;
 
 import hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort;
 import hu.taliann.icesmp.classspec.application.ProfileSessionRegistry;
+import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.AdvancementService;
 import hu.taliann.icesmp.managers.JobManager;
@@ -38,7 +39,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     private final List<PlayerStateCleanup> transientOwners = new CopyOnWriteArrayList<>();
     private final ProfileSessionRegistry sessions;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
-    private final AtomicBoolean warriorWired = new AtomicBoolean(false);
+    private final AtomicBoolean runtimesWired = new AtomicBoolean(false);
     private volatile Consumer<UUID> loadoutSwitchCleanup = ignored -> { };
     private volatile Consumer<Player> postReconcile = ignored -> { };
 
@@ -77,18 +78,28 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         postReconcile = callback == null ? ignored -> { } : callback;
     }
 
-    private void ensureWarriorWiring() {
-        if (warriorWired.get()) return;
-        final WarriorGameplayService runtime = specs.warriorGameplayService().orElse(null);
-        if (runtime == null || !warriorWired.compareAndSet(false, true)) return;
-        catalyst.setWarriorGameplayService(runtime);
-        runtime.setCombatTracker(resources);
-        resources.setHudSuffix(runtime::hudSuffix);
+    private void ensureRuntimeWiring() {
+        if (runtimesWired.get()) return;
+        final WarriorGameplayService warrior = specs.warriorGameplayService().orElse(null);
+        final EvokerGameplayService evoker = specs.evokerGameplayService().orElse(null);
+        if (warrior == null || evoker == null
+                || !runtimesWired.compareAndSet(false, true)) return;
+        catalyst.setWarriorGameplayService(warrior);
+        catalyst.setEvokerGameplayService(evoker);
+        resources.setHudSuffix(player ->
+                warrior.hudSuffix(player).append(evoker.hudSuffix(player)));
         specs.setSwitchSafetyResource(resources);
-        registerTransientOwner(runtime);
-        setLoadoutSwitchCleanup(runtime::clearSpecializationState);
+        warrior.setCombatTracker(resources);
+        evoker.setCombatTracker(resources);
+        registerTransientOwner(warrior);
+        registerTransientOwner(evoker);
+        setLoadoutSwitchCleanup(playerId -> {
+            warrior.clearSpecializationState(playerId);
+            evoker.clearSpecializationState(playerId);
+        });
         setPostReconcile(player -> {
-            runtime.reconcileProfile(player);
+            warrior.reconcileProfile(player);
+            evoker.reconcileProfile(player);
             catalyst.refreshSoulbond(player);
         });
     }
@@ -100,7 +111,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                                                   final MutationKind kind) {
         Objects.requireNonNull(previous);
         Objects.requireNonNull(durable);
-        ensureWarriorWiring();
+        ensureRuntimeWiring();
         if (!ClassSpecRuntimePort.requiresRuntimeReconciliation(kind)) {
             return current(id, token) ? CompletableFuture.completedFuture(null)
                     : CompletableFuture.failedFuture(
@@ -120,7 +131,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     @Override
     public CompletionStage<Void> failClosed(final UUID id, final UUID token,
                                             final String reason) {
-        ensureWarriorWiring();
+        ensureRuntimeWiring();
         return reconcile(id, token, null, false, null);
     }
 
@@ -200,7 +211,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         final boolean switching = kind == MutationKind.LOADOUT_SWITCH;
         for (final PlayerStateCleanup owner : transientOwners) {
             if (switching && (owner == resources || owner == catalyst
-                    || owner instanceof WarriorGameplayService)) {
+                    || owner instanceof WarriorGameplayService
+                    || owner instanceof EvokerGameplayService)) {
                 continue;
             }
             owner.clearPlayerState(id);

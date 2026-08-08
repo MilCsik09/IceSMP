@@ -260,6 +260,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, Set<UUID>> guardiansByTarget = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Reverse index of live oath guardians per target for event-driven Guard gain. Runtime-only, cleared with the oath lifecycle; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, EvokerCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Evoker combat state (Felerősítés charge, essence alternation, echo/imprint windows). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, MarkTarget> markTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Megőrzés marked-ally handles (player + scheduler) for echo delivery. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
     }
   ]
 }

@@ -316,6 +316,14 @@ val warriorProfileRegressionTest = registerRegression(
     "warriorProfileRegressionTest",
     "Runs Profile v2 Warrior second-spec, doctrine, mastery and capstone isolation regressions.",
     "hu.taliann.icesmp.warrior.WarriorProfileRegressionSuite")
+val evokerGameplayRegressionTest = registerRegression(
+    "evokerGameplayRegressionTest",
+    "Runs concrete Sárkányidéző Felerősítés, Eszencia, Visszhang and Időlenyomat state regressions.",
+    "hu.taliann.icesmp.evoker.EvokerGameplayRegressionSuite")
+val evokerProfileRegressionTest = registerRegression(
+    "evokerProfileRegressionTest",
+    "Runs Profile v2 gameplay-v2 allowlist, Evoker second-spec and slot-isolation regressions.",
+    "hu.taliann.icesmp.evoker.EvokerProfileRegressionSuite")
 
 tasks.check {
     dependsOn(
@@ -342,6 +350,7 @@ tasks.check {
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
         professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,
         operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest,
-        warriorGameplayRegressionTest, warriorProfileRegressionTest
+        warriorGameplayRegressionTest, warriorProfileRegressionTest,
+        evokerGameplayRegressionTest, evokerProfileRegressionTest
     )
 }

@@ -163,6 +163,8 @@ jobs:
           grep -F "Onboarding dialog regression suite passed." gradle-build.log
           grep -F "Warrior gameplay regression suite passed." gradle-build.log
           grep -F "Warrior profile regression suite passed." gradle-build.log
+          grep -F "Evoker gameplay regression suite passed." gradle-build.log
+          grep -F "Evoker profile regression suite passed." gradle-build.log
 
       - name: Run full repository consistency
         run: python3 scripts/check_consistency.py

@@ -52,8 +52,7 @@ public final class SpellbookListener implements Listener {
         final String spellId = holder.getSpellAt(slot);
         if (spellId == null) return;
         if (event.isShiftClick()) {
-            final int maximum = catalyst.isWarrior(player)
-                    ? catalyst.maximumWarriorActiveSpells() : Integer.MAX_VALUE;
+            final int maximum = catalyst.activeKitLimit(player);
             favoritesManager.toggleCapped(player, spellId, maximum)
                     .whenComplete((result, failure) -> favoritesManager.runOnOwnerThread(player, () -> {
                         if (!player.isOnline()) return;
