@@ -1,0 +1,89 @@
+# IceSMP class/spec gameplay — live balance values for completed vertical slices.
+# Keep mechanics local to the owning class; this file is not a generic mechanic DSL.
+class-gameplay:
+  mastery:
+    # Active specialization mastery advances in the same idempotent Profile v2 CAS as class XP.
+    xp-per-class-xp: 1.0
+    xp-per-rank: 500
+  doctrine:
+    unlock-mastery-rank: 3
+  second-spec:
+    unlock-level: 40
+
+  specializations:
+    berserker:
+      doctrines: [blood_rush, tempered_fury]
+    guardian:
+      doctrines: [hold_the_line, counterguard]
+    devastation:
+      doctrines: [chromatic_flow, focused_flame]
+    preservation:
+      doctrines: [echo_weaver, time_keeper]
+
+  warrior:
+    berserker:
+      frenzy:
+        max-stacks: 5
+        duration-seconds: 5.0
+        pve-damage-per-stack-percent: 3.0
+        pvp-damage-per-stack-percent: 1.5
+        blood-rush-stack-gain: 2
+        blood-rush-duration-seconds: 3.5
+        tempered-fury-resource-threshold-percent: 70
+        tempered-fury-pve-bonus-percent: 8.0
+        tempered-fury-pvp-bonus-percent: 4.0
+      mastery:
+        duration-per-rank-seconds: 0.15
+      capstone:
+        pve-burst-percent: 35.0
+        pvp-burst-percent: 18.0
+    guardian:
+      guard:
+        max-stacks: 5
+        duration-seconds: 6.0
+        pve-mitigation-per-stack-percent: 4.0
+        pvp-mitigation-per-stack-percent: 2.0
+        hold-the-line-extra-stacks: 2
+        hold-the-line-duration-seconds: 9.0
+        counterguard-pve-damage-per-stack-percent: 5.0
+        counterguard-pvp-damage-per-stack-percent: 2.5
+      mastery:
+        mitigation-cap-per-rank-percent: 0.5
+      capstone:
+        # At full Guard, one incoming hit is clamped and Guard is consumed.
+        pve-hit-cap: 8.0
+        pvp-hit-cap: 10.0
+
+  evoker:
+    devastation:
+      # Red/blue alternation builds Harmony. Repeating the same aspect resets it to 1.
+      harmony:
+        max-stacks: 3
+        duration-seconds: 8.0
+        alternating-cost-reduction-per-stack: 2
+        chromatic-flow-extra-reduction: 2
+        focused-flame-red-reduction: 3
+      mastery:
+        cost-reduction-at-rank-5: 1
+      capstone:
+        # Full Harmony makes the next configured finisher free, then consumes Harmony.
+        finishers: [eternity_surge, shattering_star]
+    preservation:
+      # Direct restorative casts build Echo preparation; echo/rewind consume the preparation.
+      echo:
+        max-stacks: 3
+        duration-seconds: 10.0
+        cost-reduction-per-stack: 2
+        echo-weaver-extra-reduction: 2
+        time-keeper-rewind-reduction: 4
+      mastery:
+        cost-reduction-at-rank-5: 1
+      capstone:
+        # At full preparation, Rewind is free and consumes the preparation.
+        finisher: rewind
+
+    spell-groups:
+      devastation-red: [pyre, firestorm, dragonrage, eternity_breath]
+      devastation-blue: [disintegrate, eternity_surge, shattering_star]
+      preservation-builders: [dream_breath, spiritbloom, reversion]
+      preservation-consumers: [echo, temporal_anomaly, rewind]
