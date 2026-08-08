@@ -321,6 +321,7 @@ public final class PlayerProfileQuestStore {
                 });
     }
 
+    /** Parent receipt may settle only after every prepared physical component is durable DELIVERED. */
     public CompletionStage<Boolean> settleReward(final UUID playerId, final String receipt) {
         Objects.requireNonNull(receipt, "receipt");
         final String rewardReceipt = rewardReceipt(receipt);
@@ -332,6 +333,14 @@ public final class PlayerProfileQuestStore {
                     if (!current.claimableRewards().contains(rewardReceipt)) {
                         throw new IllegalStateException("unknown claimable quest reward");
                     }
+                    final LinkedHashMap<String, Map<String, RewardComponentState>> ledger =
+                            mutableDeliveryLedger(current);
+                    final Map<String, RewardComponentState> componentStates = ledger.get(rewardReceipt);
+                    if (componentStates != null && componentStates.values().stream()
+                            .anyMatch(state -> state != RewardComponentState.DELIVERED)) {
+                        throw new IllegalStateException(
+                                "quest physical reward components are not fully delivered");
+                    }
                     final LinkedHashSet<String> claimable =
                             new LinkedHashSet<>(current.claimableRewards());
                     claimable.remove(rewardReceipt);
@@ -341,8 +350,6 @@ public final class PlayerProfileQuestStore {
                         settled.remove(settled.iterator().next());
                     }
                     settled.add(rewardReceipt);
-                    final LinkedHashMap<String, Map<String, RewardComponentState>> ledger =
-                            mutableDeliveryLedger(current);
                     ledger.remove(rewardReceipt);
                     return PlayerProfileService.ConditionalMutation.changed(
                             copyWithDeliveryLedger(current, current.active(), current.completed(),
