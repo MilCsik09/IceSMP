@@ -57,6 +57,27 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   szörnyeknél fajonkénti elejtés-számláló, első-elejtés dátum és kill-alapú
   tudás-fokozatok; a világbossok archetípusonként kerülnek a lajstromba;
   `%icesmp_bestiary_*%` placeholderek külső kijelzéshez.
+- **Class Relic Framework (pilot):** kaszthoz kötött, világ-egyedi relikviák
+  külön domainrétege — Class Power / Spec Resonance / Awakening, Profile v2
+  class/spec authorityvel, ownership↔fizikai-birtoklás szétválasztással és a
+  relickel utazó durable Awakening-cooldownnal. Pilot: a Sárkánytojás-töredék
+  Evoker-bónusza az új keretből érkezik (változatlan 10%); a 13/35 teljes
+  roster a class rework kapuja mögött (`require-complete-catalog: false`).
+  A review-körök keményítései: a világ-relic állapot (ownership, lost/reclaim,
+  Awakening, művelet-receiptek) immutable pillanatképként publikált, single-writer
+  perzisztencia-határ mögött — a candidate csak sikeres lemez-commit után válik
+  láthatóvá (hamis ARMED siker és félig-töltött reload-állapot nincs); a relic
+  kézbesítés/transfer durable receipt-alapú recovery-protokollt kapott (crash
+  után determinisztikus, duplikátum-mentes helyreállítás, a tárgy-PDC és a
+  világ-tulajdonos nem csúszhat szét tartósan); a lost-jelölés owner-kötött
+  (stale példány gazdája nem jelölheti el más élő relicét, árva lost nincs); a
+  `canUse` fail-closed (központi tulajdonos nélkül a példány nem működik); a
+  Resonance-szerződés tipizált jelzéseket hordoz (actor, cél-identitás,
+  mennyiség — kill/block/forma/mozgás/low-health payloadokkal) és a hook
+  régió-helyes actor-kontextust kap; a fizikai birtoklás régió-szálas
+  pillanatkép fail-closed TTL-lel és azonnali invalidációval; a katalógus csak
+  létező generikus relicre köthet, kikapcsolt rendszer mellett is validálva;
+  strict config-schema; a `relics.enabled` explicit framework-kapu.
 - **Kódex-bővítés:** mind a 7 ereklye, a 10 világboss-archetípus, a
   kazamata-őrzők és mind a 35 specializáció-iskola kánon-bejegyzést kapott;
   a consistency-kapu gépileg őrzi, hogy nevesített tartalom ne élhessen

@@ -94,6 +94,38 @@ relics:
         - "&7Éjjel a viselője maga is"
         - "&7árnyékká válik."
 
+  # ===== Class Relic Framework =====
+  # Kaszthoz kötött világ-egyedi relikviák KÜLÖN domainrétege: a fenti generikus
+  # definition-ök érintetlenek, a kaszt-fogalmak (class, resonance, awakening) csak itt
+  # élnek. A betöltés fail-fast: ismeretlen class/spec, parent-eltérés vagy duplikált
+  # class/relic kötés a TELJES szekció elutasítását jelenti (a korábbi katalógus marad).
+  # A class/spec authority a Profile v2; a relic-ownership a világ-szintű relics-store.
+  # true esetén 13/13 class → 1 relic és 35/35 spec → 1 resonance kötelező (a teljes
+  # class rework kapuja) — addig false marad, csak az Evoker pilot él.
+  require-complete-catalog: false
+  class-relics:
+    sarkany_tojas:
+      class: evoker
+      activation:
+        # Az ownership önmagában NEM elég: a használható fizikai tárgynak a
+        # játékosnál kell lennie (lost/reclaim állapotban a bónusz szünetel).
+        requires-physical-possession: true
+      base-power:
+        id: dragon_essence
+        # A Sárkányidéző max-Eszencia bónusza (%): a kanonikus és egyetlen forrás.
+        max-resource-percent: 10.0
+      resonances:
+        devastation:
+          id: dragon_echo
+          enabled: false
+        preservation:
+          id: temporal_echo
+          enabled: false
+      awakening:
+        id: unborn_dragon
+        enabled: false
+        cooldown-seconds: 120
+
 # ===== Rituálé-oltárok (multi-block szentélyek) =====
 # Egy oltár egy MAG-BLOKK (altar-block), amit SHIFT+jobb kattal aktiválsz. A 'structure' a mag
 # köré megépítendő szentély: minden elem egy "dx,dy,dz:MATERIAL" eltolás a mag-blokkhoz képest,
@@ -1047,9 +1079,9 @@ souls:
       - "0,-1,1:OBSIDIAN"
       - "1,-1,1:OBSIDIAN"
 
-# ===== E25/E32 — kaszt-erőforrás pool-bónuszok (élő kulcsok) =====
+# ===== E25 — Warlock-paktum pool-bónusz (élő kulcsok) =====
+# A Sárkányidéző Eszencia-bónusza már NEM itt él: a Class Relic Framework adja a
+# relics.class-relics.sarkany_tojas.base-power.max-resource-percent kulcson át.
 pakt:
   bonus-percent: 20.0
   material: "elso_csend_szilankja"
-  dragon-relic-id: "sarkany_tojas"
-  dragon-essence-bonus-percent: 10.0

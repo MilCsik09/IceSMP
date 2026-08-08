@@ -196,6 +196,14 @@ val playerProfileApiRegressionTest = registerRegression(
     "playerProfileApiRegressionTest",
     "Runs internal/API DTO, authentication, ETag, rate-limit and shutdown regressions.",
     "hu.taliann.icesmp.playerprofile.api.PlayerProfileApiRegressionSuite")
+val classRelicRegressionTest = registerRegression(
+    "classRelicRegressionTest",
+    "Runs class-relic registry, activation, resonance-routing, transfer and Evoker-migration regressions.",
+    "hu.taliann.icesmp.classrelic.ClassRelicRegressionSuite")
+val relicTransferOwnershipRegressionTest = registerRegression(
+    "relicTransferOwnershipRegressionTest",
+    "Runs stale-owner, durable rollback and concurrent PvP relic transfer regressions.",
+    "hu.taliann.icesmp.relics.RelicTransferOwnershipRegressionSuite")
 val bestiaryRegressionTest = registerRegression(
     "bestiaryRegressionTest",
     "Runs bestiary denominator, boss-archetype canon and kill-recording contract regressions.",
@@ -312,10 +320,10 @@ tasks.check {
         playerProfileTaxRegressionTest, playerProfileRepositoryEnumerationRegressionTest, playerProfileYamlRegressionTest,
         playerProfileTransactionRegressionTest, playerProfileApiRegressionTest,
         playerProfileHttpContractRegressionTest, playerProfileLifecycleTeardownRegressionTest,
-        bestiaryRegressionTest, respecTransactionRegressionTest,
-        spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest, eventSpawnSafetyRegressionTest,
-        configGuiTransactionRegressionTest, configGuiCoverageRegressionTest, professionRecipeAuditRegressionTest,
-        inventoryReadWriteRegressionTest, operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest,
-        factionDisplayColorRegressionTest
+        bestiaryRegressionTest, classRelicRegressionTest, relicTransferOwnershipRegressionTest,
+        respecTransactionRegressionTest, spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest,
+        eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
+        professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest, operationalConfigMenuRegressionTest,
+        advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest
     )
 }

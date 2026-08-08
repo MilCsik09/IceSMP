@@ -225,6 +225,26 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/VanishManager.java|private final ConcurrentHashMap<UUID, Set<UUID>> unlistedByViewer = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Per-viewer vanish visibility projection; session-scoped and re-derived on join."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicActivationResolver.java|public ClassRelicActivation resolve(final ClassRelicCatalog catalog, final UUID playerId,",
+      "category": "RUNTIME",
+      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicActivationResolver.java|return resolve(catalog, playerId, binding.orElseThrow().relicId());",
+      "category": "RUNTIME",
+      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicService.java|public ClassRelicActivation resolve(final UUID playerId) {",
+      "category": "RUNTIME",
+      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/relics/RelicWorldStateStore.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "A RelicManager vilag-szintu relic aggregatumanak (relic → owner UUID, lost/reclaim, awakening ready-at) single-writer perzisztencia-hatara; tulajdonosokat stabil UUID-kent referal, sajat tartos player-allapotot nem hoz letre."
     }
   ]
 }

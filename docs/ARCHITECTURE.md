@@ -41,11 +41,12 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `listeners/` | 122 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
-| `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
+| `relics/` | 11 (8 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
@@ -610,9 +611,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 721 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
-  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15,
-  items 12, relics 9, integration 6.
+- **Méret:** 737 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
+  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
+  items 12, relics 11, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -784,6 +785,112 @@ PDC remains permitted only for:
 - No player-owned durable PDC/YAML/map authority remains outside explicitly approved metadata/mirror categories.
 - Repository consistency, Markdown links, tooling self-tests and strict repository/documentation inventory pass with zero blocking or review-required findings.
 - The authority matrix marks every player-owned domain complete.
+
+## Class Relic Framework
+
+A kaszthoz kötött, világ-egyedi Class Relic-ek KÜLÖN domainrétege a generikus relikvia-rendszer
+fölött (`classrelic/` csomag). A generikus `RelicDefinition` érintetlen: a Mételytépő, a
+szárny-ereklyék és minden más relikvia változatlanul működik; kaszt-fogalom (class, resonance,
+awakening) kizárólag a `ClassRelicBinding`-ben él (`relics.class-relics.*` config, fail-fast
+betöltéssel: ismeretlen class/spec, parent-eltérés vagy duplikált class/relic kötés a teljes
+szekció elutasítása — a korábbi katalógus-pillanatkép marad publikálva, félbetöltött registry
+nincs). A schema strict: a hiányzó opcionális szekció defaultolhat, de a jelen lévő rossz
+típusú érték (pl. `resonances: "abc"`) reject; az Awakening `cooldown-seconds` egész,
+nem-negatív és korlátos (a felső határ mellett a ready-at aritmetika nem tud túlcsordulni),
+tört érték nem csonkolódik. A candidate a publish előtt a generikus relic-registryvel is
+kereszt-validált: nem létező fizikai relicre mutató kötés a TELJES candidate-et elutasítja —
+a `require-complete-catalog` kapu így kitalált relic-rosterrel sem PASS-olhat. A
+`relics.enabled: false` explicit framework-kapu (use-site élő-config): minden feloldás
+`FRAMEWORK_DISABLED`, a Class Power, a Resonance és az Awakening is inaktív — nem a
+birtoklás-szken mellékhatása dönt.
+
+**Authority-határok.** Két, szándékosan KÜLÖN igazság-forrás: (1) a világ-szintű relic-store
+(`RelicManager` → `RelicWorldStateStore`, relics.yml) mondja meg, kié a relic, elveszett-e
+(lost/reclaim) és mikor kész újra az Awakening — ez NEM játékosprofil-domain; (2) a Profile v2
+(`ClassSpecProfileGateway` → `ClassSpecSection`) mondja meg a kasztot, az aktív specializációt,
+a loadout-státuszt és a SEALED-állapotot. A framework egyiket sem duplikálja a másikba.
+
+**Single-writer világ-relic perzisztencia, publish-commit sorrenddel.** A világ-relic
+aggregátum (ownership, lost/reclaim, awakening, művelet-receiptek) immutable
+`RelicWorldStateSnapshot`-ként publikált; minden logikai mutáció a `RelicWorldStateStore`
+EGYETLEN szerializált kritikus szekciójában candidate pillanatképet épít, azt írja durable-re,
+és CSAK sikeres írás után cseréli be (volatile publish) — a runtime-ból látható committed
+állapot mindig részhalmaza a durable állapotnak, commit előtti candidate-et olvasó SOHA nem
+láthat, sikertelen írásnál a candidate egyszerűen eldobódik. A betöltés/reload ugyanígy
+atomikus: a teljes candidate lokálisan épül fel és egyetlen cserével publikálódik — konkurens
+olvasó sosem lát üres/félig-töltött köztes állapotot. Az Awakening-arm atomikus (két konkurens
+hívásból pontosan egy ARMED), az eredmény `PERSISTENCE_FAILED`, ha a lemez-írás bukik. A
+lost-mutáció owner-kötött: `markLost`/`clearLost` csak a bizonyított aktuális tulajdonossal
+fogadható el (stale példány korábbi gazdájának halála nem jelölheti el másvalaki élő relicét),
+és árva lost állapot (tulajdonos nélkül) se memóriában, se a fájlban nem létezhet.
+
+**Fizikai kézbesítés/transfer recovery-protokoll.** A claim/reclaim (`giveRelic`) és a PvP
+transfer a világ-oldali commitot EGY durable írásban végzi a fizikai mellékhatás függő
+receiptjével együtt (`operations.<relic>`): claim = ownership + lost-törlés + kézbesítés-receipt;
+transfer = új tulajdonos + PDC-átírás-receipt — a fizikai lépés mindig a commit UTÁN fut.
+Crash bármely lépés után determinisztikusan helyreáll a join-recovery-ből: CLAIM/RECLAIM
+receipt → kézbesítés csak akkor, ha a tulajnál nincs példány (duplikátum nem születhet);
+TRANSFER receipt → az új tulajnál lévő példány PDC-átírása (amíg nincs nála, a receipt
+függőben marad). A `canUse` fail-closed: aktív központi tulajdonos nélkül a fizikai példány
+nem használható — persistence-hiba utáni árva singleton nem működhet magától, a jogos
+állapotot a claim/transfer/join-sweep/recovery állítja helyre. A generikus definíció-registry
+kikapcsolt runtime mellett is betöltött (definitions ≠ gameplay-enabled), így a Class Relic
+katalógus létezés-validációja disabled állapotban is fut — validálatlan katalógus akkor sem
+publikálható.
+
+**OWNER ≠ ACTIVE POSSESSION.** Az ownership önmagában nem ad gameplay-erőt: a
+`requires-physical-possession` kötésnél a használható fizikai tárgynak a játékosnál kell
+lennie. Lost/reclaim állapotban (a tárgy halálkor megsemmisült, a tulajdon él) minden
+relic-erő szünetel; sikeres újraidézés után aktiválható újra.
+
+**Három mechanikai réteg.** (A) *Class Power*: állandó, számítás közben lekérdezett modifier —
+a fogyasztók csatornán kérdeznek (`ClassRelicService.modifier(playerId, RelicModifier.…)`),
+relic-id-t és kaszt-vizsgálatot soha nem hordoznak; a modifier-út UUID-only (Player-dereferencia
+és inventory-olvasás nélkül), ezért idegen régió-szálról is biztonságos hot path. (B) *Spec
+Resonance*: tipizált szemantikus jelzésekre reagáló specializációs mechanika — a
+`ClassGameplaySignal` sealed rekord-család hordozza az actort, a cél-identitást (UUID), a
+mennyiséget és a tageket (a payload-hordozó eseményekhez a Generic alak nem használható,
+stringly-typed payload nincs); a routing a `ClassRelicActivationResolver`-ben él, az
+implementáció `ClassRelicResonanceHook`-ként regisztrálható, és a hook a
+`ClassRelicResonanceContext`-ben a régió-helyes `actor` Player referenciát is megkapja —
+globális `Bukkit.getPlayer` lookup a hookban tilos és szükségtelen. (C) *Awakening*: a
+világ-egyedi nagy képesség kerete — a nagy cooldown a RELIC-kel utazik (relic-id →
+awakening-ready-at abszolút időbélyeg a világ-szintű store-ban), gazdacserénél nem nullázódik
+és restartot túlél; az arm a store atomikus műveletén megy át; a rövid proc-cooldownok
+maradnak runtime-állapotok.
+
+**Központi feloldás.** Minden döntés (profil használható? jó kaszt? tulajdonos? nála van?
+melyik resonance?) egyetlen pontban, a pure `ClassRelicActivationResolver`-ben dől el —
+a konkrét képességek csak a kész `ClassRelicActivation`-t fogyasztják. SEALED specializáció
+SOHA nem rezonál, de a kaszt-szintű Class Power tovább élhet (DARK seal/unseal invariáns);
+csak gameplay-re használható profil (READY + nem blokkolt session, `isGameplayUsable`)
+aktiválhat.
+
+**Folia és birtoklás-pillanatkép.** A resolver, a katalógus és a jelzések pure rétegek (nem
+függenek régió-szálaktól). A fizikai birtoklás immutable pillanatképként él
+(`PossessionSnapshot`): KIZÁRÓLAG a játékos saját régió-szálán készül (join-kori első szken +
+másodpercenkénti frissítés a játékos schedulerén), és a szken a kanonikus
+`RelicManager.canUse`-zal validál — azonos relic-id-jű, de stale/rossz gazdához kötött példány
+nem ad erőt. Az UUID-only olvasók fail-closed szabállyal olvassák: ismeretlen vagy TTL-en túli
+pillanatkép = nincs birtoklás (korlátlan ideig élő stale "true" nem létezhet; a maximális
+konzisztencia-ablak a TTL, ~2,5 mp). Kritikus világ-relic mutáció (transfer, lost/reclaim,
+give, expiry) és halál AZONNAL invalidálja az érintett pillanatképeket. A resonance-dispatch
+kikényszeríti az actor-régió szerződést: idegen szálról érkező hívást maga hoppolja az actor
+schedulerére; cél-oldali effekt idegen entityn csak a cél schedulerére hoppolva megengedett.
+
+**Evoker pilot.** A `sarkany_tojas` az első migrált Class Relic: a korábbi
+`ResourceBonusService`-beli ownership+isEvoker hardcode megszűnt, a max-Essence bónusz a
+generikus `CLASS_RESOURCE_MAX` csatornán érkezik (változatlan, configolható 10%). A
+Devastation→`dragon_echo` és Preservation→`temporal_echo` routing él, mindkettő inert
+(enabled: false); az `unborn_dragon` Awakening kerete és durable cooldownja kész, gameplay
+nélkül.
+
+**13/35 teljesség-szerződés.** A `relics.require-complete-catalog: false` fejlesztési állapot:
+a katalógus részleges lehet. A teljes class rework kapuja a kulcs true-ra állítása — akkor
+minden classnak pontosan egy relic és minden specializationnek pontosan egy resonance
+kötelező, különben a betöltés (és a CI) bukik. A class reworknek csak a gameplay-oldalt kell
+hoznia (mechanikák, szemantikus események, resource-hookok, ability-tagek): az ownership, a
+birtoklás-validáció, a binding-registry és a cooldown-perzisztencia ebből a keretből jön.
 
 ## Config GUI coverage
 

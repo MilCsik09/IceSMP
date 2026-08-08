@@ -157,6 +157,7 @@ jobs:
           grep -F "PlayerProfile HTTP contract regression suite passed." gradle-build.log
           grep -F "PlayerProfile lifecycle teardown regression suite passed." gradle-build.log
           grep -F "Bestiary regression suite passed." gradle-build.log
+          grep -F "Class relic regression suite passed." gradle-build.log
 
       - name: Run full repository consistency
         run: python3 scripts/check_consistency.py

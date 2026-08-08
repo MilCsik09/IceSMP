@@ -5512,6 +5512,72 @@
       "docs": [
         "docs/FEATURES.md"
       ]
+    },
+    "component.hu.taliann.icesmp.classrelic.AbilityTag": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.AwakeningCooldownPolicy": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassGameplayEvent": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicActivation": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicActivationResolver": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicBinding": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicCatalog": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicCatalogLoader": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicResonanceHook": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicService": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.RelicModifier": {
+      "feature": "feature.progression.relics_souls",
+      "docs": [
+        "docs/FEATURES.md"
+      ]
     }
   },
   "version": 1,

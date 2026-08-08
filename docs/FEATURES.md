@@ -588,7 +588,7 @@ Adatvezérelt ritkaság, egyedi anyag, item-provenance, rúnázás, signature en
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul shard/soulstone és soulforge.
+Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul shard/soulstone és soulforge. A generikus réteg fölött külön **Class Relic Framework** él (`relics.class-relics.*`): kaszthoz kötött, világ-egyedi relikviák Class Power / Spec Resonance / Awakening rétegekkel — a bónusz csak akkor jár, ha a Profile v2 szerinti kaszt egyezik ÉS a használható fizikai tárgy a játékosnál van (az ownership önmagában nem elég); SEALED specializáció nem rezonál; az Awakening nagy cooldownja a relickel utazik (gazdacsere/restart nem nullázza), az aktiválása atomikus és csak megtörtént lemez-commit után számít sikeresnek; a `relics.enabled: false` explicit kapu — ilyenkor Class Power, Resonance és Awakening egyaránt inaktív. Pilot: a Sárkánytojás-töredék (Evoker, +10% max Essence a `CLASS_RESOURCE_MAX` csatornán).
 
 - **Így találkozol vele:** `/relic`, `/souls`, `/soulforge`; itemhasználat és craft. Parancs: /relic (alias: /relics, /relikvia); /soulforge (alias: /lelekkovacs); /souls (alias: /lelek, /soul).
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
