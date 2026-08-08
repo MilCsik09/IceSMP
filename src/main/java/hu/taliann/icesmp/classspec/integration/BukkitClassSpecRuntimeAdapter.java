@@ -12,6 +12,7 @@ import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.spells.Spell;
+import hu.taliann.icesmp.warrior.WarriorGameplayService;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,7 +22,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /** Scheduler-owning spell/companion/transient reconciliation after durable commits. */
@@ -29,10 +32,15 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     private final JavaPlugin plugin;
     private final JobManager jobs;
     private final SpecializationManager specs;
+    private final AbilityCatalystListener catalyst;
     private final SpellRegistry spells;
-    private final List<PlayerStateCleanup> transientOwners;
+    private final ResourceManager resources;
+    private final List<PlayerStateCleanup> transientOwners = new CopyOnWriteArrayList<>();
     private final ProfileSessionRegistry sessions;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
+    private final AtomicBoolean warriorWired = new AtomicBoolean(false);
+    private volatile Consumer<UUID> loadoutSwitchCleanup = ignored -> { };
+    private volatile Consumer<Player> postReconcile = ignored -> { };
 
     public BukkitClassSpecRuntimeAdapter(final JavaPlugin plugin,
                                          final JobManager jobs,
@@ -45,10 +53,43 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         this.plugin = Objects.requireNonNull(plugin);
         this.jobs = Objects.requireNonNull(jobs);
         this.specs = Objects.requireNonNull(specs);
+        this.catalyst = Objects.requireNonNull(catalyst);
         this.spells = Objects.requireNonNull(spells);
+        this.resources = Objects.requireNonNull(resources);
         this.sessions = Objects.requireNonNull(sessions);
-        this.transientOwners = List.of(Objects.requireNonNull(catalyst),
-                Objects.requireNonNull(pets), Objects.requireNonNull(resources));
+        transientOwners.add(catalyst);
+        transientOwners.add(Objects.requireNonNull(pets));
+        transientOwners.add(resources);
+    }
+
+    /** Additional concrete transient owner; durable authority remains Profile v2. */
+    public void registerTransientOwner(final PlayerStateCleanup owner) {
+        transientOwners.add(Objects.requireNonNull(owner, "owner"));
+    }
+
+    /** Spec-local cleanup that deliberately preserves class-common state during slot switch. */
+    public void setLoadoutSwitchCleanup(final Consumer<UUID> cleanup) {
+        loadoutSwitchCleanup = cleanup == null ? ignored -> { } : cleanup;
+    }
+
+    /** Region-thread callback after grants are reconciled (e.g. physical spellbook refresh). */
+    public void setPostReconcile(final Consumer<Player> callback) {
+        postReconcile = callback == null ? ignored -> { } : callback;
+    }
+
+    private void ensureWarriorWiring() {
+        if (warriorWired.get()) return;
+        final WarriorGameplayService runtime = specs.warriorGameplayService().orElse(null);
+        if (runtime == null || !warriorWired.compareAndSet(false, true)) return;
+        catalyst.setWarriorGameplayService(runtime);
+        resources.setHudSuffix(runtime::hudSuffix);
+        specs.setSwitchSafetyResource(resources);
+        registerTransientOwner(runtime);
+        setLoadoutSwitchCleanup(runtime::clearSpecializationState);
+        setPostReconcile(player -> {
+            runtime.reconcileProfile(player);
+            catalyst.refreshSoulbond(player);
+        });
     }
 
     @Override
@@ -58,7 +99,16 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                                                   final MutationKind kind) {
         Objects.requireNonNull(previous);
         Objects.requireNonNull(durable);
+        ensureWarriorWiring();
         if (!ClassSpecRuntimePort.requiresRuntimeReconciliation(kind)) {
+            return current(id, token) ? CompletableFuture.completedFuture(null)
+                    : CompletableFuture.failedFuture(
+                            new ProfileSessionRegistry.StaleSessionException(id, token));
+        }
+        // Selecting the second, inactive slot must not tear down/rebuild the active runtime.
+        if (kind == MutationKind.SELECT
+                && Objects.equals(previous.activeSlot(), durable.activeSlot())
+                && activeSpec(previous).equals(activeSpec(durable))) {
             return current(id, token) ? CompletableFuture.completedFuture(null)
                     : CompletableFuture.failedFuture(
                             new ProfileSessionRegistry.StaleSessionException(id, token));
@@ -69,6 +119,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     @Override
     public CompletionStage<Void> failClosed(final UUID id, final UUID token,
                                             final String reason) {
+        ensureWarriorWiring();
         return reconcile(id, token, null, false, null);
     }
 
@@ -90,7 +141,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 if (!current(id, token)) {
                     throw new ProfileSessionRegistry.StaleSessionException(id, token);
                 }
-                clearUuidOnly(id);
+                clearUuidOnly(id, kind);
                 return CompletableFuture.completedFuture(null);
             } catch (final Throwable failure) {
                 return CompletableFuture.failedFuture(failure);
@@ -101,10 +152,13 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                         || source.startsWith(JobManager.SOURCE_SPEC_PREFIX)
                 : source -> source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
         return jobs.revokeGrantsFromV2(player, revoke)
-                .thenCompose(ignored -> runOnOwner(id, token, player, () -> clearUuidOnly(id)))
+                .thenCompose(ignored -> runOnOwner(id, token, player,
+                        () -> clearUuidOnly(id, kind)))
                 .thenCompose(ignored -> regrant
                         ? specs.applyClassSpecializationUnlocksV2(player, durable)
                         : CompletableFuture.completedFuture(null))
+                .thenCompose(ignored -> runOnOwner(id, token, player,
+                        () -> postReconcile.accept(player)))
                 .thenCompose(ignored -> kind == MutationKind.SELECT
                         ? runOnOwner(id, token, player,
                                 () -> AdvancementService.award(player, "first_spec"))
@@ -141,9 +195,22 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         return accepting.get() && sessions.isCurrent(id, token);
     }
 
-    private void clearUuidOnly(final UUID id) {
-        for (final PlayerStateCleanup owner : transientOwners) owner.clearPlayerState(id);
+    private void clearUuidOnly(final UUID id, final MutationKind kind) {
+        final boolean switching = kind == MutationKind.LOADOUT_SWITCH;
+        for (final PlayerStateCleanup owner : transientOwners) {
+            if (switching && (owner == resources || owner == catalyst
+                    || owner instanceof WarriorGameplayService)) {
+                continue;
+            }
+            owner.clearPlayerState(id);
+        }
+        if (switching) loadoutSwitchCleanup.accept(id);
         for (final Spell spell : spells.getAll()) spell.clearPlayerState(id);
+    }
+
+    private static String activeSpec(final ClassSpecSection profile) {
+        if (profile.activeSlot() == null) return "";
+        return profile.loadout(profile.activeSlot()).specializationId();
     }
 
     public void stop() {

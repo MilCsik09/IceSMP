@@ -1,0 +1,154 @@
+# Harcos gameplay vertical slice — live balance. Nem generic mechanic DSL.
+classes:
+  specialization:
+    # Ebben a vertical slice-ban kizárólag a Harcos második megtanult specializációja nyílik ezen a szinten.
+    # A gateway a többi class SECOND-slotját fail-closed elutasítja, amíg azok saját gameplay slice-a el nem készül.
+    second-slot-level: 28
+    # Berserker <-> Védelmező váltás csak harcon kívül és közeli ellenségtől távol.
+    switch-combat-grace-seconds: 8
+    switch-safe-radius: 12.0
+
+  warrior:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    # Kedvencek felülírják az alap készletet, de ugyanilyen plafonnal.
+    active-kit:
+      maximum: 7
+      berserker:
+        - heroic_leap
+        - pommel_strike
+        - second_wind
+        - reckless_swing
+        - bloodbath
+        - whirlwind
+        - berserk
+      guardian:
+        - bulwark
+        - taunt
+        - fortify
+        - shield_charge
+        - aegis
+        - whirlwind
+        - last_stand
+
+    # 50+ specialization mastery; nem külön XP-engine, Profile v2 loadout mező.
+    mastery:
+      experience-per-rank: 100
+      safe-dump-xp: 4
+      intercept-xp: 4
+      guard-spend-xp: 5
+      capstone-protection-xp: 8
+
+    # Class core: Düh = spell cost, Csatatempó = külön döntési layer.
+    battle-tempo:
+      heated-threshold: 35
+      overflowing-threshold: 75
+      attack-gain: 7
+      block-gain: 12
+      interrupt-gain: 18
+      mobility-gain: 8
+      intercept-gain: 15
+      execution-gain: 12
+      target-switch-gain: 10
+      target-switch-cooldown-millis: 1500
+      # Rövid megszakítás nem nulláz: előbb türelmi ablak, utána lusta decay.
+      decay-delay-millis: 5000
+      decay-per-second: 8.0
+      # Túlcsorduló finisher után részben visszaenged, más fokozat teljesen levezet.
+      overflow-finisher-retain: 25
+
+    berserker:
+      fury:
+        high-threshold: 70
+        dealt-gain-per-damage: 0.9
+        dealt-gain-cap: 14
+        taken-gain-per-damage: 1.2
+        taken-gain-cap: 18
+        ability-gain: 12
+        execution-gain: 16
+      exhaustion:
+        high-fury-per-second: 5.0
+        overdrive-per-second: 9.0
+        recovery-per-second: 7.0
+        overdrive-end-add: 25
+      safe-dump:
+        fury-spend: 55
+        exhaustion-reduction: 30
+      overdrive:
+        duration-millis: 5500
+        aftermath-millis: 7000
+        max-starting-exhaustion: 70
+        pve-damage-percent: 30.0
+        pvp-damage-percent: 14.0
+      # Explicit PvE/PvP caps; nincs one-shotra skálázódó végtelen bonusz.
+      pve-max-bonus-percent: 60.0
+      pvp-max-bonus-percent: 25.0
+      bloodlust:
+        health-threshold: 0.45
+        regen-ticks: 80
+      titan:
+        exhaustion-multiplier: 0.65
+      whirlwind:
+        fury-per-extra-target: 5
+      executioner:
+        health-threshold: 0.25
+        pve-damage-percent: 18.0
+        pvp-damage-percent: 8.0
+      # Dacoló: nem szinkron lethal-cancel. Kritikus, de túlélhető találat után előbb durable
+      # cooldown-witness commitol, és csak ezután fut a region-thread recovery side effect.
+      defiant:
+        cooldown-seconds: 300
+        trigger-health-ratio: 0.20
+        heal-to-health-ratio: 0.35
+      kallan:
+        duration-millis: 8000
+        aftermath-millis: 12000
+
+    guardian:
+      guard:
+        damage-taken-gain: 7
+        block-bonus: 15
+        oath-damage-gain-per-damage: 1.2
+        oath-hit-gain-cap: 20
+        bulwark-gain: 22
+        taunt-gain: 14
+        defense-gain: 18
+        shield-charge-cost: 30
+        aegis-cost: 60
+        last-stand-cost: 80
+      bastion:
+        extra-guard: 8
+      vanguard:
+        intercept-cost-reduction: 8
+      shield-wall:
+        extra-guard: 10
+      shield:
+        intercept-duration-ticks: 60
+        major-duration-ticks: 100
+      war-signal:
+        duration-ticks: 60
+        radius: 8.0
+      for-one:
+        absorption-amplifier: 2
+      for-all:
+        duration-ticks: 70
+        absorption-amplifier: 0
+        radius: 8.0
+      last-stand:
+        self-duration-ticks: 100
+
+# A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
+specializations:
+  berserker:
+    capstone-spell: berserk
+    spell-unlocks:
+      berserk: 50
+  guardian:
+    capstone-spell: last_stand
+    spell-unlocks:
+      last_stand: 50
+
+# Harcosnál a személyes Sárkánykirály Kürtje a kötelező spellbook/fókusz.
+# A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.
+spells:
+  melee-catalyst:
+    classes: [paladin, death_knight, monk, demon_hunter]

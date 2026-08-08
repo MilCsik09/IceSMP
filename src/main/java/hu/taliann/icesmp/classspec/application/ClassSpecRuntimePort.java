@@ -10,7 +10,7 @@ import java.util.concurrent.CompletionStage;
 public interface ClassSpecRuntimePort {
     CompletionStage<Void> profileCommitted(UUID playerId,UUID sessionToken,ClassSpecSection previous,ClassSpecSection durable,MutationKind kind);
     CompletionStage<Void> failClosed(UUID playerId,UUID sessionToken,String reason);
-    static boolean requiresRuntimeReconciliation(MutationKind kind){return switch(Objects.requireNonNull(kind)){case CLASS_EXPERIENCE,SOULFORGE_UPGRADE,SOUL_SHARD_MUTATION,COMPANION_MUTATION,COMPANION_PROGRESS->false;default->true;};}
+    static boolean requiresRuntimeReconciliation(MutationKind kind){return switch(Objects.requireNonNull(kind)){case CLASS_EXPERIENCE,DOCTRINE_CHOICE,MASTERY_CONTRIBUTION,SOULFORGE_UPGRADE,SOUL_SHARD_MUTATION,COMPANION_MUTATION,COMPANION_PROGRESS->false;default->true;};}
     static ClassSpecRuntimePort noop(){return new ClassSpecRuntimePort(){public CompletionStage<Void> profileCommitted(UUID p,UUID t,ClassSpecSection a,ClassSpecSection b,MutationKind k){return CompletableFuture.completedFuture(null);}public CompletionStage<Void> failClosed(UUID p,UUID t,String r){return CompletableFuture.completedFuture(null);}};}
-    enum MutationKind{SELECT,RESPEC_RESET,ADMIN_RESET,EXPLICIT_SEAL,GATE_RECONCILE,CLASS_ASSIGN,CLASS_EXPERIENCE,SOULFORGE_UPGRADE,SOUL_SHARD_MUTATION,COMPANION_MUTATION,COMPANION_PROGRESS,RECOVERY}
+    enum MutationKind{SELECT,LOADOUT_SWITCH,DOCTRINE_CHOICE,MASTERY_CONTRIBUTION,CAPSTONE_UPDATE,RESPEC_RESET,ADMIN_RESET,EXPLICIT_SEAL,GATE_RECONCILE,CLASS_ASSIGN,CLASS_EXPERIENCE,SOULFORGE_UPGRADE,SOUL_SHARD_MUTATION,COMPANION_MUTATION,COMPANION_PROGRESS,RECOVERY}
 }

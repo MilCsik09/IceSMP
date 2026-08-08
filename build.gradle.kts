@@ -308,6 +308,14 @@ val runtimeHardeningRegressionTest = registerRegression(
     "runtimeHardeningRegressionTest",
     "Runs 2D claim, vanish retracking and DARK mob lifecycle regressions.",
     "hu.taliann.icesmp.runtime.RuntimeHardeningRegressionSuite")
+val warriorGameplayRegressionTest = registerRegression(
+    "warriorGameplayRegressionTest",
+    "Runs concrete Harcos Csatatempo, Berserker and Guardian state regressions.",
+    "hu.taliann.icesmp.warrior.WarriorGameplayRegressionSuite")
+val warriorProfileRegressionTest = registerRegression(
+    "warriorProfileRegressionTest",
+    "Runs Profile v2 Warrior second-spec, doctrine, mastery and capstone isolation regressions.",
+    "hu.taliann.icesmp.warrior.WarriorProfileRegressionSuite")
 
 tasks.check {
     dependsOn(
@@ -333,6 +341,7 @@ tasks.check {
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
         professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,
-        operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest
+        operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest,
+        warriorGameplayRegressionTest, warriorProfileRegressionTest
     )
 }

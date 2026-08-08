@@ -152,9 +152,11 @@ public final class JobManager implements PlayerStateCleanup {
         final int baseXp = Math.max(1, configManager.getInt("classes.leveling.base-xp", 100));
         final int increment = Math.max(0, configManager.getInt(
                 "classes.leveling.increment-per-level", 20));
+        final int secondSpecUnlockLevel = Math.max(1, configManager.getInt(
+                "classes.specialization.second-slot-level", 28));
         return gateway().mutateClassExperience(player.getUniqueId(),
                 new ClassSpecProfileGateway.ClassExperienceRequest(mode, value, baseXp,
-                        increment, operationId))
+                        increment, secondSpecUnlockLevel, operationId))
                 .thenCompose(result -> {
                     if (!result.committed() && result.status() != ProfileMutationResult.Status.NO_CHANGE) {
                         return CompletableFuture.completedFuture(false);
@@ -169,8 +171,13 @@ public final class JobManager implements PlayerStateCleanup {
                 });
     }
 
+    /**
+     * Adds a lightweight class-progression callback to the existing XP boundary. Multiple real
+     * consumers compose in registration order; this is not a second event bus or persistence path.
+     */
     public void setXpChangeHook(final java.util.function.Consumer<Player> hook) {
-        xpChangeHook = hook;
+        if (hook == null) return;
+        xpChangeHook = xpChangeHook == null ? hook : xpChangeHook.andThen(hook);
     }
 
     public CompletionStage<Void> applyAutoUnlocksV2(final Player player) {

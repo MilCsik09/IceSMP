@@ -1,7 +1,7 @@
 package hu.taliann.icesmp.classspec.application;
 
-import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.classspec.domain.ProfileStatus;
+import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -37,6 +37,10 @@ public final class ProfileMutationPolicy {
 
     public enum Operation {
         SELECT,
+        LOADOUT_SWITCH,
+        DOCTRINE_CHOICE,
+        MASTERY_CONTRIBUTION,
+        CAPSTONE_UPDATE,
         LOADOUT_RESET,
         ADMIN_RESET,
         EXPLICIT_SEAL,

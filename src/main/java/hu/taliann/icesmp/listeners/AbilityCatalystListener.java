@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.classspec.domain.ClassLoadout;
+import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -13,6 +15,7 @@ import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellbookStateSt
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.spells.Spell;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.warrior.WarriorGameplayService;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -32,14 +35,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Ability Catalyst interaction and cast pipeline.
- *
- * <p>The selected spell and restart-durable cooldown timestamps are canonical
- * {@code SpellbookSection} fields. Maps in this listener are rebuildable session projections only.</p>
+ * Lélekkapocs/catalyst spellcasting pipeline.
+ * Selected spell and durable long cooldowns remain PlayerProfile-backed; runtime maps are projections.
  */
 public final class AbilityCatalystListener implements Listener, PlayerStateCleanup {
 
@@ -56,9 +58,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final PlayerProfileSpellbookStateStore spellbookStateStore =
             new PlayerProfileSpellbookStateStore();
 
-    /** All active cooldown timestamps; long entries are also persisted in PlayerProfile. */
     private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();
-    /** Rebuildable selected-spell projection for immediate UI response while CAS commits. */
     private final Map<UUID, String> selectedSpellProjection = new ConcurrentHashMap<>();
     private final Map<UUID, Long> cycleDebounce = new ConcurrentHashMap<>();
     private final Map<UUID, Long> castDebounce = new ConcurrentHashMap<>();
@@ -72,6 +72,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
     private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
     private volatile hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway;
+    private volatile WarriorGameplayService warriorGameplayService;
     private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin,
@@ -103,6 +104,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         this.profileGateway = java.util.Objects.requireNonNull(profileGateway, "profileGateway");
     }
 
+    public void setWarriorGameplayService(final WarriorGameplayService service) {
+        warriorGameplayService = java.util.Objects.requireNonNull(service, "service");
+    }
+
     public void setItemRarityService(
             final hu.taliann.icesmp.managers.ItemRarityService itemRarityService) {
         this.itemRarityServiceRef = itemRarityService;
@@ -113,7 +118,12 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     private boolean isUsableCatalyst(final Player player, final ItemStack item) {
-        if (catalystItemFactory.isCatalyst(item)) return true;
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (catalystItemFactory.isCatalyst(item)) {
+            return catalystItemFactory.isUsableBy(item, player.getUniqueId(), job);
+        }
+        // Harcosnál a Sárkánykirály Kürtje a kötelező spellbook/fókusz: fegyver nem kerülheti meg.
+        if (job == JobType.WARRIOR) return false;
         if (item == null || !configManager.getBoolean("spells.melee-catalyst.enabled", true)) {
             return false;
         }
@@ -121,7 +131,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 .contains(item.getType().name())) {
             return false;
         }
-        final var job = jobManager.getPrimaryJob(player);
         return job != null && configManager.getStringList("spells.melee-catalyst.classes")
                 .contains(job.getId());
     }
@@ -198,19 +207,15 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     private void cycleSpell(final Player player, final int step) {
-        final List<String> unlocked = resolveUnlockedSpellIds(player);
-        if (unlocked.isEmpty()) {
+        final List<String> cycle = resolveActiveSpellIds(player);
+        if (cycle.isEmpty()) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.no-spells", "<red>Nincs elérhető képesség.</red>"));
             return;
         }
-        final java.util.Set<String> favorites = spellFavoritesManager.favorites(player);
-        List<String> cycle = unlocked;
-        if (!favorites.isEmpty()) {
-            final List<String> onlyFavorites = unlocked.stream().filter(favorites::contains).toList();
-            if (!onlyFavorites.isEmpty()) cycle = onlyFavorites;
-        }
-        final boolean favoritesOnly = cycle != unlocked;
+        final Set<String> favorites = spellFavoritesManager.favorites(player);
+        final boolean favoritesOnly = !favorites.isEmpty()
+                && cycle.stream().allMatch(favorites::contains);
         final String currentId = selectedSpellId(player.getUniqueId());
         final int cyclePos = currentId.isBlank() ? -1 : cycle.indexOf(currentId);
         final int nextCyclePos = Math.floorMod(cyclePos + step, cycle.size());
@@ -228,7 +233,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final String mastery = rank > 0 ? " <aqua>★" + rank + "</aqua>" : "";
         player.sendActionBar(messageManager.getMessage(
                 "catalyst.current-spell",
-                "<gray>[{position}] <gold>{spell}</gold>{mastery} <dark_gray>({cost} {resource})</dark_gray> <dark_gray>— /spellbook</dark_gray></gray>",
+                "<gray>[{position}] <gold>{spell}</gold>{mastery} <dark_gray>({cost} {resource})</dark_gray> <dark_gray>— Shift+jobb katt: spellbook</dark_gray></gray>",
                 Map.of(
                         "spell", selected.getName(),
                         "mastery", mastery,
@@ -237,31 +242,21 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                         "position", (favoritesOnly ? "★" : "")
                                 + (nextCyclePos + 1) + "/" + cycle.size())));
         catalystItemFactory.playCycleSound(player, jobManager.getPrimaryJob(player));
-        renameHeldCatalyst(player, selected);
-    }
-
-    private void renameHeldCatalyst(final Player player, final Spell selected) {
-        final ItemStack held = player.getInventory().getItemInMainHand();
-        if (!catalystItemFactory.isCatalyst(held)) return;
-        held.editMeta(meta -> meta.displayName(
-                net.kyori.adventure.text.Component.text("⚡ " + selected.getName(),
-                                net.kyori.adventure.text.format.NamedTextColor.GOLD)
-                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)));
     }
 
     private void castSelectedSpell(final Player player) {
-        final List<String> unlocked = resolveUnlockedSpellIds(player);
-        if (unlocked.isEmpty()) {
+        final List<String> active = resolveActiveSpellIds(player);
+        if (active.isEmpty()) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.no-unlocked",
-                    "<red>Még nem oldottál fel egyetlen képességet sem.</red>"));
+                    "<red>Még nincs használható aktív képességed.</red>"));
             return;
         }
-        final Spell selected = resolveSelectedSpell(player, unlocked);
+        final Spell selected = resolveSelectedSpell(player, active);
         if (selected == null) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.invalid-selection",
-                    "<red>A kiválasztott képesség nem érhető el.</red>"));
+                    "<red>A kiválasztott képesség nem érhető el az aktív specializationben.</red>"));
             return;
         }
         final long now = System.currentTimeMillis();
@@ -278,6 +273,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                     "catalyst.not-ready", "<red>Most nem tudod használni ezt a képességet.</red>"));
             return;
         }
+        final WarriorGameplayService warrior = warriorGameplayService;
+        if (warrior != null && !warrior.beforeCast(player, selected)) return;
+
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
                 ? resourceManager.canAfford(player, selected)
@@ -292,6 +290,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
 
         final double preCastHealth = player.getHealth();
+        final int spentAmount = displayedCost(selected);
         if (useResource) resourceManager.consume(player, selected);
         else selected.consumeCost(player);
 
@@ -308,6 +307,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 player.setHealth(preCastHealth);
             } else selected.refundCost(player);
             return;
+        }
+
+        if (warrior != null) {
+            warrior.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -354,6 +357,55 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         player.sendActionBar(messageManager.getMessage(
                 "profile-v2.runtime-blocked",
                 "<red>A kaszt/specializáció profilod biztonsági ellenőrzést igényel. /spec info</red>"));
+        return false;
+    }
+
+    /**
+     * Rebuilds/refreshes the one physical personal Lélekkapocs mirror. Duplicate copies are removed;
+     * missing artifact is regenerated only into a free inventory slot, never dropped to the world.
+     */
+    public boolean refreshSoulbond(final Player player) {
+        if (player == null || !profileRuntimeReady(player)) return false;
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (job == null) return false;
+        ItemStack personal = null;
+        for (int slot = 0; slot < player.getInventory().getSize(); slot++) {
+            final ItemStack stack = player.getInventory().getItem(slot);
+            if (!catalystItemFactory.isPersonalCopyFor(stack, player.getUniqueId(), job)) continue;
+            if (personal == null) personal = stack;
+            else player.getInventory().setItem(slot, null);
+        }
+        if (personal == null) {
+            if (player.getInventory().firstEmpty() < 0) {
+                player.sendMessage(messageManager.get("soulbond.inventory-full",
+                        "&cA Lélekkapocs visszaállításához szabadíts fel egy inventory helyet, majd nyisd meg újra a kasztmenüt."));
+                return false;
+            }
+            personal = catalystItemFactory.createCatalyst(job, player.getUniqueId());
+            player.getInventory().addItem(personal);
+        }
+        final var profile = profileGateway.currentProfile(player.getUniqueId()).orElse(null);
+        String activeSpec = "";
+        int masteryRank = 0;
+        Map<String, String> doctrines = Map.of();
+        if (profile != null && profile.activeSlot() != null) {
+            final ClassLoadout loadout = profile.loadout(profile.activeSlot());
+            activeSpec = loadout.specializationId();
+            masteryRank = loadout.mastery().rank();
+            doctrines = loadout.doctrineChoices();
+        }
+        catalystItemFactory.refreshPresentation(personal, player.getUniqueId(), job,
+                activeSpec, jobManager.getPrimaryLevel(player), masteryRank, doctrines);
+        return true;
+    }
+
+    public boolean hasPersonalSoulbond(final Player player) {
+        if (player == null) return false;
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (job == null) return false;
+        for (final ItemStack stack : player.getInventory().getContents()) {
+            if (catalystItemFactory.isPersonalCopyFor(stack, player.getUniqueId(), job)) return true;
+        }
         return false;
     }
 
@@ -529,10 +581,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         };
     }
 
-    private Spell resolveSelectedSpell(final Player player, final List<String> unlocked) {
+    private Spell resolveSelectedSpell(final Player player, final List<String> active) {
         String selected = selectedSpellId(player.getUniqueId());
-        if (!unlocked.contains(selected)) {
-            selected = unlocked.getFirst();
+        if (!active.contains(selected)) {
+            selected = active.getFirst();
             persistSelectedSpell(player, selected);
         }
         return spellRegistry.getById(selected);
@@ -563,11 +615,20 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 });
     }
 
+    /** Full currently-authorized library (base + ACTIVE spec provenance). */
     private List<String> resolveUnlockedSpellIds(final Player player) {
         return jobManager.getUnlockedSpellIds(player).stream()
                 .map(id -> id.toLowerCase(Locale.ROOT))
                 .filter(spellId -> spellRegistry.getById(spellId) != null)
                 .toList();
+    }
+
+    /** Actual fast-combat cycle/cast set; Warrior uses max seven via existing favorites/default kit. */
+    private List<String> resolveActiveSpellIds(final Player player) {
+        final List<String> unlocked = resolveUnlockedSpellIds(player);
+        final WarriorGameplayService warrior = warriorGameplayService;
+        if (warrior == null) return unlocked;
+        return warrior.activeSpellIds(player, unlocked, spellFavoritesManager.favorites(player));
     }
 
     public void openSpellbook(final Player player) {
@@ -590,12 +651,25 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return resolveUnlockedSpellIds(player);
     }
 
+    public List<String> getActiveSpellIds(final Player player) {
+        return resolveActiveSpellIds(player);
+    }
+
+    public boolean isWarrior(final Player player) {
+        return player != null && jobManager.getPrimaryJob(player) == JobType.WARRIOR;
+    }
+
+    public int maximumWarriorActiveSpells() {
+        return Math.max(1, Math.min(7,
+                configManager.getInt("classes.warrior.active-kit.maximum", 7)));
+    }
+
     public String getSelectedSpellId(final Player player) {
-        final List<String> unlocked = resolveUnlockedSpellIds(player);
-        if (unlocked.isEmpty()) return null;
+        final List<String> active = resolveActiveSpellIds(player);
+        if (active.isEmpty()) return null;
         String selected = selectedSpellId(player.getUniqueId());
-        if (!unlocked.contains(selected)) {
-            selected = unlocked.getFirst();
+        if (!active.contains(selected)) {
+            selected = active.getFirst();
             persistSelectedSpell(player, selected);
         }
         return selected;
@@ -604,7 +678,11 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     public boolean selectSpell(final Player player, final String spellId) {
         if (player == null || spellId == null) return false;
         final String normalized = spellId.toLowerCase(Locale.ROOT);
-        if (!resolveUnlockedSpellIds(player).contains(normalized)) return false;
+        if (!resolveActiveSpellIds(player).contains(normalized)) {
+            player.sendActionBar(messageManager.getMessage("catalyst.not-in-active-kit",
+                    "<red>Ez a spell nincs az aktív készletedben. Shift-kattal jelöld kedvencnek a spellbookban.</red>"));
+            return false;
+        }
         persistSelectedSpell(player, normalized);
         return true;
     }
@@ -617,7 +695,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return masteryManager.getRank(player, spellId);
     }
 
-    /** Remaining cooldowns from the rebuildable runtime projection. */
     public Map<String, Long> activeCooldowns(final UUID playerId) {
         final Map<String, Long> bySpell = spellCooldowns.get(playerId);
         if (bySpell == null || bySpell.isEmpty()) return Map.of();
@@ -733,12 +810,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                     selectedSpellProjection.remove(playerId, spellId);
                     plugin.getLogger().severe("PlayerProfile selected-spell commit failed for "
                             + playerId + '/' + spellId + ": " + rootMessage(failure));
-                    if (player.isOnline()) {
-                        player.getScheduler().run(plugin, task -> player.sendActionBar(
-                                messageManager.getMessage(
-                                        "catalyst.selection-persistence-failed",
-                                        "<red>A spellválasztás mentése meghiúsult; válassz újra.</red>")), null);
-                    }
+                    player.getScheduler().run(plugin, task -> player.sendActionBar(
+                            messageManager.getMessage(
+                                    "catalyst.selection-persistence-failed",
+                                    "<red>A spellválasztás mentése meghiúsult; válassz újra.</red>")), null);
                 });
     }
 

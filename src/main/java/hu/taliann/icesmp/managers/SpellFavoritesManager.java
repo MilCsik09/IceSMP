@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileService;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.SpellbookSection;
 import org.bukkit.entity.Player;
@@ -21,6 +22,8 @@ import java.util.concurrent.CompletionStage;
  */
 public final class SpellFavoritesManager {
 
+    public enum ToggleResult { ADDED, REMOVED, LIMIT_REACHED }
+
     private final JavaPlugin plugin;
 
     public SpellFavoritesManager(final JavaPlugin plugin) {
@@ -40,31 +43,55 @@ public final class SpellFavoritesManager {
     }
 
     public CompletionStage<Boolean> toggle(final Player player, final String spellId) {
+        return toggleCapped(player, spellId, Integer.MAX_VALUE)
+                .thenApply(result -> result == ToggleResult.ADDED);
+    }
+
+    /**
+     * Atomically toggles a favorite and enforces the maximum inside the same PlayerProfile CAS.
+     * This closes the read-before-async-toggle race where rapid GUI clicks could exceed the cap.
+     */
+    public CompletionStage<ToggleResult> toggleCapped(final Player player,
+                                                       final String spellId,
+                                                       final int maximum) {
         Objects.requireNonNull(player, "player");
         final String normalized = normalize(spellId);
         if (normalized.isEmpty()) {
             return java.util.concurrent.CompletableFuture.failedFuture(
                     new IllegalArgumentException("spellId cannot be blank"));
         }
-        return PlayerProfileAuthority.current().mutateSection(
-                        player.getUniqueId(),
-                        ProfileSectionId.SPELLBOOK,
-                        SpellbookSection.class,
-                        current -> {
-                            final LinkedHashSet<String> favorites = new LinkedHashSet<>(current.favorites());
-                            if (!favorites.remove(normalized)) {
-                                favorites.add(normalized);
-                            }
-                            return new SpellbookSection(
+        if (maximum < 1) {
+            return java.util.concurrent.CompletableFuture.failedFuture(
+                    new IllegalArgumentException("maximum favorites must be positive"));
+        }
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                player.getUniqueId(),
+                ProfileSectionId.SPELLBOOK,
+                SpellbookSection.class,
+                current -> {
+                    final LinkedHashSet<String> favorites = new LinkedHashSet<>(current.favorites());
+                    final ToggleResult result;
+                    if (favorites.remove(normalized)) {
+                        result = ToggleResult.REMOVED;
+                    } else {
+                        if (favorites.size() >= maximum) {
+                            return PlayerProfileService.ConditionalMutation.unchanged(
+                                    ToggleResult.LIMIT_REACHED);
+                        }
+                        favorites.add(normalized);
+                        result = ToggleResult.ADDED;
+                    }
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            new SpellbookSection(
                                     current.provenance(),
                                     current.selectedSpell(),
                                     List.copyOf(favorites),
                                     current.mastery(),
                                     current.persistentCooldowns(),
                                     current.uiState(),
-                                    current.extensions());
-                        })
-                .thenApply(snapshot -> snapshot.spellbook().value().favorites().contains(normalized));
+                                    current.extensions()),
+                            result);
+                });
     }
 
     public void runOnOwnerThread(final Player player, final Runnable action) {
