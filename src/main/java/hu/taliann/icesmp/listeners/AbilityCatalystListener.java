@@ -5,6 +5,7 @@ import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
+import hu.taliann.icesmp.monk.MonkGameplayService;
 import hu.taliann.icesmp.shaman.ShamanGameplayService;
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
@@ -80,6 +81,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile EvokerGameplayService evokerGameplayService;
     private volatile ArcherGameplayService archerGameplayService;
     private volatile ShamanGameplayService shamanGameplayService;
+    private volatile MonkGameplayService monkGameplayService;
     private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin,
@@ -125,6 +127,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setShamanGameplayService(final ShamanGameplayService service) {
         shamanGameplayService = java.util.Objects.requireNonNull(service, "service");
+    }
+
+    public void setMonkGameplayService(final MonkGameplayService service) {
+        monkGameplayService = java.util.Objects.requireNonNull(service, "service");
     }
 
     public void setItemRarityService(
@@ -301,6 +307,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (archer != null && !archer.beforeCast(player, selected)) return;
         final ShamanGameplayService shaman = shamanGameplayService;
         if (shaman != null && !shaman.beforeCast(player, selected)) return;
+        final MonkGameplayService monk = monkGameplayService;
+        if (monk != null && !monk.beforeCast(player, selected)) return;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
@@ -323,7 +331,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
         final double classBonusPercent = (evoker == null
                 ? 0.0D : evoker.castPowerBonusPercent(player, selected))
-                + (shaman == null ? 0.0D : shaman.castPowerBonusPercent(player, selected));
+                + (shaman == null ? 0.0D : shaman.castPowerBonusPercent(player, selected))
+                + (monk == null ? 0.0D : monk.castPowerBonusPercent(player, selected));
         final double powerCap = Math.max(1.0D,
                 configManager.getDouble("spells.total-power-cap", 1.75D));
         final double power = Math.min(powerCap,
@@ -350,6 +359,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         if (shaman != null) {
             shaman.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
+        }
+        if (monk != null) {
+            monk.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -680,6 +692,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final ShamanGameplayService shaman = shamanGameplayService;
         if (shaman != null) {
             active = shaman.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        }
+        final MonkGameplayService monk = monkGameplayService;
+        if (monk != null) {
+            active = monk.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
         }
         return active;
     }

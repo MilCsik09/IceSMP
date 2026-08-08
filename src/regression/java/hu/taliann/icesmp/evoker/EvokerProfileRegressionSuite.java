@@ -83,22 +83,41 @@ public final class EvokerProfileRegressionSuite {
                 "previous loadout becomes inactive, not deleted");
     }
 
+    /** Class/spec pairs (non-DARK) rotated through as the rework progresses. */
+    private static final java.util.List<String[]> UNREWORKED_CANDIDATES = java.util.List.of(
+            new String[]{"paladin", "holy", "retribution"},
+            new String[]{"demon_hunter", "havoc", "vengeance"},
+            new String[]{"priest", "discipline", "shadow"},
+            new String[]{"death_knight", "blood", "frost"},
+            new String[]{"assassin", "poisoner", "phantom"},
+            new String[]{"druid", "feral", "lunar"},
+            new String[]{"warlock", "affliction", "destruction"});
+
     private static void unreworkedClassStaysFailClosed() {
+        final String[] candidate = UNREWORKED_CANDIDATES.stream()
+                .filter(entry -> !hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy
+                        .isEnabled(entry[0]))
+                .findFirst().orElse(null);
+        if (candidate == null) {
+            System.out.println("All catalog classes are gameplay-v2 enabled; "
+                    + "fail-closed case retired.");
+            return;
+        }
         final Harness h = harness(ClassSpecSection.builder()
-                .primaryClassId("monk").classLevel(28).classExperience(100_000)
-                .loadout(LoadoutSlot.FIRST, loadout("windwalker", LoadoutStatus.ACTIVE))
+                .primaryClassId(candidate[0]).classLevel(28).classExperience(100_000)
+                .loadout(LoadoutSlot.FIRST, loadout(candidate[1], LoadoutStatus.ACTIVE))
                 .activeSlot(LoadoutSlot.FIRST).build());
 
         final var xp = h.gateway.mutateClassExperience(PLAYER,
                 new ClassSpecProfileGateway.ClassExperienceRequest(
                         ClassSpecProfileGateway.ClassExperienceRequest.Mode.ADD,
-                        1_000, 100, 0, 28, "monk-xp")).toCompletableFuture().join();
+                        1_000, 100, 0, 28, "unreworked-xp")).toCompletableFuture().join();
         check(xp.committed(), "unreworked class still earns XP normally");
         check(!h.store.profile.secondSpecUnlocked(),
                 "even past level 28, XP never unlocks the second slot outside the allowlist");
 
         final var select = h.gateway.select(PLAYER, new ClassSpecProfileGateway.SelectRequest(
-                "mistweaver", LoadoutSlot.SECOND, openGates())).toCompletableFuture().join();
+                candidate[2], LoadoutSlot.SECOND, openGates())).toCompletableFuture().join();
         check(select.status() == ProfileMutationResult.Status.REJECTED,
                 "SECOND learning is rejected outside the allowlist");
         final var switched = h.gateway.switchLoadout(PLAYER,

@@ -290,6 +290,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/TotemManager.java|private final java.util.Map<UUID, java.util.Map<TotemCategory, OwnedTotem>> totemsByOwner =",
       "category": "RUNTIME",
       "reason": "Totemkerék projection of live totem entities per owner. Runtime-only live-entity identity, pruned on totem removal/lifetime/shutdown and on owner cleanup; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java|private final Map<UUID, MonkCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Monk combat state (flow, chain, Stagger pool, link identities). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; the Stagger consequence lands before clearing. Durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java|private final Map<UUID, List<LinkTarget>> linkTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Ködszál ally handles (player + scheduler) for single-pass ripple heals. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
     }
   ]
 }

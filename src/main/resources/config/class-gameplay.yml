@@ -403,6 +403,99 @@ classes:
       spring-retention-percent: 25
       life-vein-ticks: 100
 
+  monk:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      windwalker:
+        - tiger_palm
+        - blackout_kick
+        - rising_sun_kick
+        - flying_kick
+        - fists_of_fury
+        - whirling_dragon_punch
+        - serenity
+      brewmaster:
+        - tiger_palm
+        - keg_smash
+        - breath_of_fire
+        - purifying_brew
+        - ironskin_brew
+        - fortifying_brew
+        - invoke_niuzao
+      mistweaver:
+        - vivify
+        - soothing_mist
+        - renewing_mist
+        - enveloping_mist
+        - essence_font
+        - life_cocoon
+        - revival
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      finisher-xp: 5
+      purify-xp: 4
+      ripple-xp: 4
+
+    # Class core: Áramlás — a technika-változatosság épít; az ismételt spell semmit nem ad.
+    flow:
+      variety-gain: 12
+      thousand-extra-gain: 4
+      decay-delay-millis: 6000
+      decay-per-second: 6.0
+
+    max-power-bonus-percent: 40.0
+
+    # Szélfutó: explicit Harcművészeti Lánc — a lépések sorrendje számít, a befejező consume-ol.
+    chain:
+      steps:
+        - tiger_palm
+        - blackout_kick
+        - rising_sun_kick
+      finishers:
+        - fists_of_fury
+        - whirling_dragon_punch
+        - touch_of_death
+        - serenity
+      threshold: 3
+      window-millis: 5000
+      light-step-extra-millis: 2500
+      finisher-bonus-percent: 22.0
+      panther-extra-percent: 6.0
+      dragon-speed-ticks: 80
+
+    # Sörfőző: a kapott sebzés korlátos része halasztva, közvetlen élet-lépésekben csorog le
+    # (fél szív a padló — a Stagger önmagában sosem öl); kilépés/spec-váltás azonnal lehívja.
+    stagger:
+      defer-percent: 35.0
+      thick-extra-percent: 5.0
+      pool-cap-health-percent: 60.0
+      iron-extra-percent: 10.0
+      drain-period-ticks: 20
+      drain-health-percent: 2.5
+      purify-percent: 50.0
+      quick-sip-extra-percent: 10.0
+      breath-purify-percent: 15.0
+      capstone-purify-percent: 60.0
+
+    # Ködszövő: legfeljebb három Ködszál; a gyógyítás a kapcsolt társakra hullámzik tovább.
+    mist:
+      maximum-links: 3
+      heal-spells:
+        - vivify
+        - expel_harm
+        - soothing_mist
+        - renewing_mist
+        - enveloping_mist
+        - essence_font
+        - revival
+      ripple-heal: 3.0
+      deep-extra-heal: 2.0
+      weave-heal: 2.0
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -441,6 +534,18 @@ specializations:
     capstone-spell: spirit_tide
     spell-unlocks:
       spirit_tide: 50
+  windwalker:
+    capstone-spell: serenity
+    spell-unlocks:
+      serenity: 50
+  brewmaster:
+    capstone-spell: invoke_niuzao
+    spell-unlocks:
+      invoke_niuzao: 50
+  mistweaver:
+    capstone-spell: revival
+    spell-unlocks:
+      revival: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

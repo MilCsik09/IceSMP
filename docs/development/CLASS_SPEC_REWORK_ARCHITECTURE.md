@@ -49,9 +49,13 @@ There is no repeating task and no proximity scan in the archer runtime; everythi
 
 `ShamanGameplayService` is the fourth concrete gameplay consumer and the totem-infrastructure proof. `ShamanCombatState` contains only the Sámán mechanics (Overload charge, rhythm-built Maelstrom with alternating blessing sides, one signed Dagály↔Apály tide). The Totemkerék extends the existing TotemManager minimally: every type gains a fő/kísérő category, a per-owner projection tracks the live pair, and placing a same-category totem replaces the old one on its own region scheduler. Resonance queries read that projection; no totem lifecycle logic moved out of the manager, and the shaman runtime adds no repeating task or proximity scan.
 
+## Szerzetes vertical slice
+
+`MonkGameplayService` is the fifth concrete gameplay consumer. `MonkCombatState` contains only the Szerzetes mechanics: the Áramlás variety meter (bounded recent-technique window with lazy decay), one explicit config-declared martial chain, one bounded Stagger pool and up to three Ködszál link identities. The Stagger drain steps health directly on the player's scheduler with a half-heart floor — it can never emit a duplicated damage event or kill on its own — and the remaining pool lands immediately on quit/kick/spec-switch so the deferral cannot be escaped. Ripple heals always hop to the linked ally's scheduler. No repeating global task and no proximity scan lives here.
+
 ## Second specialization, doctrines and mastery
 
-The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for the completed gameplay-v2 classes, enumerated by the explicit `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`, `shaman`) — a plain list, not a capability framework. A switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset the class resource or reset cooldowns, and a held Felerősítés charge never survives the switch boundary.
+The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for the completed gameplay-v2 classes, enumerated by the explicit `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`, `shaman`, `monk`) — a plain list, not a capability framework. A switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset the class resource or reset cooldowns, and a held Felerősítés charge never survives the switch boundary.
 
 Doctrine choices live in `ClassLoadout#doctrineChoices`, keyed by the level tier (`level_30`, `level_40`, `level_50`). They are slot-local and durable. Mastery and capstone state remain the existing loadout fields; no mastery YAML or separate talent/doctrine store exists.
 

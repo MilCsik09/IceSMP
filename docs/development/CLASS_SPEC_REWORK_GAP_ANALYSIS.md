@@ -65,11 +65,21 @@
 - Shaman transient state has explicit death/quit/kick/disable/spec-switch cleanup, and the owner's Totemkerék projection clears with the player lifecycle while live totems expire on their own bounded timers;
 - `ShamanGameplayRegressionSuite` and `ShamanProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
 
+## Gameplay closed by the Szerzetes vertical slice
+
+- the fifth complete class gameplay implementation is `monk` with `windwalker` (Szélfutó), `brewmaster` (Sörfőző) and `mistweaver` (Ködszövő);
+- the class core is Áramlás: technique variety builds flow, repetition earns nothing and refreshes staleness — same-spell spam is never optimal by construction;
+- Szélfutó plays one explicit martial chain declared as plain config data (steps + finishers) with window, threshold and doctrine variants — no generic combo engine;
+- Sörfőző plays Stagger + Főzetöv: a bounded percent of incoming damage defers into a capped pool that drains via direct, half-heart-floored health steps (never a duplicated damage event, never lethal on its own); purifies clear fractions and quit/kick/spec-switch applies the remainder instantly — no consequence-free escape, and no durable combat ledger;
+- Ködszövő plays at most three Ködszál links (oldest replaced at capacity) whose single-pass ripple heals run on the linked ally's scheduler with use-time validity pruning — no generic link framework;
+- Monk mastery XP (finisher, purify, ripple) is combat-gated;
+- `MonkGameplayRegressionSuite` and `MonkProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
 ## Explicitly still open after this PR
 
-- the remaining 9 classes and 26 specializations have not passed this vertical-slice gameplay gate;
+- the remaining 8 classes and 23 specializations have not passed this vertical-slice gameplay gate;
 - no generic mechanics-core primitive library is planned from this first implementation; common extraction is allowed only after real repeated consumers prove the same lifecycle/invariants;
-- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial`, `archer_beast_master_trial`, `shaman_elemental_trial`, `shaman_enhancement_trial` and `shaman_tidal_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker, Archer and Shaman trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker, Archer and Shaman doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
+- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial`, `archer_beast_master_trial`, `shaman_elemental_trial`, `shaman_enhancement_trial`, `shaman_tidal_trial`, `monk_windwalker_trial`, `monk_brewmaster_trial` and `monk_mistweaver_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker, Archer, Shaman and Monk trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker, Archer, Shaman and Monk doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
 - the current Class Relic catalog has no canonical Warrior binding/resonance/awakening definition. The framework is reused but no new Warrior relic design is invented here;
 - full numeric Warrior and Evoker PvE/PvP balance, TTK, party pressure and real Guardian objective protection require staging playtest; the Evoker empower/burst bonus rides the shared cast-power pipeline, so its PvP clamp is the double cap (`classes.evoker.max-power-bonus-percent` + `spells.total-power-cap`), not a per-target split;
 - the separate class-HP/A17 rollout remains disabled and is not activated by this gameplay work;
@@ -82,6 +92,7 @@
 - Evoker empowered-release timing feel, burst cadence and echo/imprint heal pressure under real party play;
 - Archer read/chain cadence, stable capture/release at capacity and live companion coordination across regions;
 - Shaman totem-pair play across region borders, rhythm-window melee feel and tidal heal pressure in real parties;
+- Monk chain/Stagger/Ködszál pressure in real tanking and party healing, including the Stagger consequence timing;
 - gameplay-v2 second-spec switch under real combat/logout/reconnect timing on every allowlisted class;
 - Lélekkapocs loss/full-inventory/reconnect plus external-container transfer tests on a running server;
 - builder provisioning and gameplay validation of both final trials;
