@@ -17,6 +17,7 @@ import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.items.CatalystItemFactory;
+import hu.taliann.icesmp.shaman.ShamanGameplayService;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpecializationProgressStore;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.spells.SpellTargetingUtil;
@@ -54,7 +55,10 @@ public final class SpecializationManager {
             DEVASTATION_TRIAL, "devastation",
             PRESERVATION_TRIAL, "preservation",
             SHARPSHOOTER_TRIAL, "sharpshooter",
-            BEAST_MASTER_TRIAL, "beast_master");
+            BEAST_MASTER_TRIAL, "beast_master",
+            "shaman_elemental_trial", "elemental",
+            "shaman_enhancement_trial", "enhancement",
+            "shaman_tidal_trial", "tidal");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -75,6 +79,7 @@ public final class SpecializationManager {
     private volatile WarriorGameplayService warriorGameplayService;
     private volatile EvokerGameplayService evokerGameplayService;
     private volatile ArcherGameplayService archerGameplayService;
+    private volatile ShamanGameplayService shamanGameplayService;
     private volatile CatalystItemFactory soulbondFactory;
     private volatile Consumer<UUID> classSwitchCleanup = ignored -> { };
     private volatile Consumer<Player> classProfileRefresh = ignored -> { };
@@ -107,17 +112,22 @@ public final class SpecializationManager {
                 plugin, configManager, jobManager, this, factory, messageManager);
         final ArcherGameplayService archerRuntime = new ArcherGameplayService(
                 plugin, configManager, jobManager, this, factory, messageManager);
+        final ShamanGameplayService shamanRuntime = new ShamanGameplayService(
+                plugin, configManager, jobManager, this, factory, messageManager);
         plugin.getServer().getPluginManager().registerEvents(warriorRuntime, plugin);
         plugin.getServer().getPluginManager().registerEvents(evokerRuntime, plugin);
         plugin.getServer().getPluginManager().registerEvents(archerRuntime, plugin);
+        plugin.getServer().getPluginManager().registerEvents(shamanRuntime, plugin);
         soulbondFactory = factory;
         warriorGameplayService = warriorRuntime;
         evokerGameplayService = evokerRuntime;
         archerGameplayService = archerRuntime;
+        shamanGameplayService = shamanRuntime;
         classSwitchCleanup = playerId -> {
             warriorRuntime.clearSpecializationState(playerId);
             evokerRuntime.clearSpecializationState(playerId);
             archerRuntime.clearSpecializationState(playerId);
+            shamanRuntime.clearSpecializationState(playerId);
         };
         classProfileRefresh = this::scheduleClassProfileRefresh;
         jobManager.setXpChangeHook(player -> reconcileClassProgression(player)
@@ -138,6 +148,10 @@ public final class SpecializationManager {
 
     public Optional<ArcherGameplayService> archerGameplayService() {
         return Optional.ofNullable(archerGameplayService);
+    }
+
+    public Optional<ShamanGameplayService> shamanGameplayService() {
+        return Optional.ofNullable(shamanGameplayService);
     }
 
     public void setSwitchSafetyResource(final ResourceManager resources) {
@@ -334,6 +348,24 @@ public final class SpecializationManager {
                 case 30 -> Set.of("vadasz_osztone", "gondozo");
                 case 40 -> Set.of("osszhang", "vastag_bor");
                 case 50 -> Set.of("orok_kotelek", "falka_vezere");
+                default -> Set.of();
+            };
+            case ELEMENTAL -> switch (level) {
+                case 30 -> Set.of("mely_gyokerek", "eleven_szikra");
+                case 40 -> Set.of("vihar_hirnoke", "tulcsordulas");
+                case 50 -> Set.of("orok_rezonancia", "vihar_kegyeltje");
+                default -> Set.of();
+            };
+            case ENHANCEMENT -> switch (level) {
+                case 30 -> Set.of("surito_ritmus", "acel_zapor");
+                case 40 -> Set.of("vihartorok", "foldrenges");
+                case 50 -> Set.of("maelstrom_ura", "vihar_tanca");
+                default -> Set.of();
+            };
+            case TIDAL -> switch (level) {
+                case 30 -> Set.of("aramlat", "melyviz");
+                case 40 -> Set.of("dagaly_ura", "apaly_ura");
+                case 50 -> Set.of("szoko_ar", "eletado_veno");
                 default -> Set.of();
             };
             default -> Set.of();
@@ -737,10 +769,12 @@ public final class SpecializationManager {
         final WarriorGameplayService warriorRuntime = warriorGameplayService;
         final EvokerGameplayService evokerRuntime = evokerGameplayService;
         final ArcherGameplayService archerRuntime = archerGameplayService;
+        final ShamanGameplayService shamanRuntime = shamanGameplayService;
         final CatalystItemFactory factory = soulbondFactory;
         if (warriorRuntime != null) warriorRuntime.reconcileProfile(player);
         if (evokerRuntime != null) evokerRuntime.reconcileProfile(player);
         if (archerRuntime != null) archerRuntime.reconcileProfile(player);
+        if (shamanRuntime != null) shamanRuntime.reconcileProfile(player);
         final JobType job = jobManager.getPrimaryJob(player);
         if (factory == null || job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) return;
         final ClassSpecSection profile = profileGateway().currentProfile(player.getUniqueId()).orElse(null);

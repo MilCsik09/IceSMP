@@ -167,6 +167,8 @@ jobs:
           grep -F "Evoker profile regression suite passed." gradle-build.log
           grep -F "Archer gameplay regression suite passed." gradle-build.log
           grep -F "Archer profile regression suite passed." gradle-build.log
+          grep -F "Shaman gameplay regression suite passed." gradle-build.log
+          grep -F "Shaman profile regression suite passed." gradle-build.log
 
       - name: Run full repository consistency
         run: python3 scripts/check_consistency.py

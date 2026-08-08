@@ -590,6 +590,8 @@ public final class IceSMPCore {
         this.classSpecSectionLifecycleService = new hu.taliann.icesmp.classspec.application.ClassSpecSectionLifecycleService(
                 classSpecSectionRepository);
         specializationManager.setProfileGateway(classSpecProfileGateway);
+        specializationManager.shamanGameplayService()
+                .ifPresent(shaman -> shaman.setTotemManager(totemManager));
         jobManager.setProfileGateway(classSpecProfileGateway);
         abilityCatalystListener.setProfileGateway(classSpecProfileGateway);
         petManager.setProfileGateway(classSpecProfileGateway);

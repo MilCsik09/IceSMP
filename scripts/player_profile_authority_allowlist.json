@@ -280,6 +280,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/archer/ArcherShotLedger.java|private final Map<UUID, ShotRecord> inFlight = new LinkedHashMap<>();",
       "category": "RUNTIME",
       "reason": "In-flight arrow ids mapped to the immutable discipline verdict of the shot that launched them (full draw, pacing, plain copied launch coordinates). Strictly transient: hard-capped, self-expiring on write, removed when the arrow resolves, and dropped for the owner on death/quit/kick/disable. No durable authority and no live entity handle."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/shaman/ShamanGameplayService.java|private final Map<UUID, ShamanCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Shaman combat state (Overload, Maelstrom rhythm, tide). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/TotemManager.java|private final java.util.Map<UUID, java.util.Map<TotemCategory, OwnedTotem>> totemsByOwner =",
+      "category": "RUNTIME",
+      "reason": "Totemkerék projection of live totem entities per owner. Runtime-only live-entity identity, pruned on totem removal/lifetime/shutdown and on owner cleanup; never persisted."
     }
   ]
 }

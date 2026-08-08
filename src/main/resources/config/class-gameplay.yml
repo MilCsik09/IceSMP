@@ -298,6 +298,111 @@ classes:
       king-self-speed-ticks: 100
       death-retention: 50
 
+  shaman:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      elemental:
+        - lightning_bolt
+        - flame_shock
+        - searing_totem
+        - healing_stream_totem
+        - lava_burst
+        - chain_lightning
+        - ascendance_flame
+      enhancement:
+        - stormstrike
+        - lava_lash
+        - windfury_totem
+        - earthbind_totem
+        - crash_lightning
+        - feral_spirit
+        - doom_winds
+      tidal:
+        - healing_surge
+        - riptide
+        - healing_stream_totem
+        - windfury_totem
+        - chain_heal
+        - healing_rain
+        - spirit_tide
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      overload-xp: 5
+      maelstrom-spend-xp: 4
+      capstone-vent-xp: 8
+      tide-xp: 4
+
+    # A Felerősítés/Izzás-hoz hasonlóan a bónuszok a közös power-pipeline-on mennek, kettős sapkával.
+    max-power-bonus-percent: 40.0
+
+    # Class core: Totemkerék — a négy totemtípusból egyszerre egy fő + egy kísérő élhet;
+    # az azonos kategóriájú új totem a régit váltja. Elemi Rezonancia: a totempár elemeihez
+    # illő spellek töltik a Túltöltést.
+    resonance:
+      vihar-spells:
+        - lightning_bolt
+        - chain_lightning
+        - thunderstorm
+        - stormkeeper
+        - elemental_blast
+      tuz-spells:
+        - flame_shock
+        - lava_burst
+        - ascendance_flame
+      fold-spells:
+        - earth_shock
+        - earthquake
+      viz-spells:
+        - frost_shock
+      charge-gain: 1
+      overload-threshold: 4
+      overload-bonus-percent: 25.0
+      overflow-extra-percent: 8.0
+      echo-retention: 2
+      favored-speed-ticks: 80
+
+    # Erősítő: a közelharci találatok ritmusa építi a Maelstromot; az ablakban landoló
+    # találat váltja a Fegyveráldás-oldalt (Vihar↔Föld) és bónuszt ad.
+    maelstrom:
+      hit-gain: 4
+      rhythm-min-millis: 600
+      rhythm-max-millis: 1600
+      dense-extra-millis: 400
+      rhythm-bonus: 4
+      steel-extra-bonus: 2
+      dance-extra-bonus: 3
+      stormstrike-cost: 30
+      stormthroat-reduction: 10
+      crash-cost: 45
+      doom-cost: 70
+      capstone-retention: 25
+      quake-strength-ticks: 60
+
+    # Hullámhívó: a közvetlen gyógyítás Dagály felé, a lánc-gyógyítás Apály felé tol;
+    # az elért oldal a másik család következő castját erősíti, majd visszaáramlik.
+    tide:
+      direct-heal-spells:
+        - healing_surge
+        - healing_wave
+        - riptide
+      chain-heal-spells:
+        - chain_heal
+        - healing_rain
+        - spirit_link
+        - ancestral_guidance
+      push: 20
+      current-extra: 5
+      threshold: 60
+      deepwater-reduction: 10
+      bonus-percent: 20.0
+      lord-extra-percent: 8.0
+      spring-retention-percent: 25
+      life-vein-ticks: 100
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -324,6 +429,18 @@ specializations:
     capstone-spell: king_of_beasts
     spell-unlocks:
       king_of_beasts: 50
+  elemental:
+    capstone-spell: ascendance_flame
+    spell-unlocks:
+      ascendance_flame: 50
+  enhancement:
+    capstone-spell: doom_winds
+    spell-unlocks:
+      doom_winds: 50
+  tidal:
+    capstone-spell: spirit_tide
+    spell-unlocks:
+      spirit_tide: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

@@ -33,6 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class TotemManager implements org.bukkit.event.Listener {
 
+    /** Totemkerék-kategória: egyszerre legfeljebb egy fő és egy kísérő totem élhet gazdánként. */
+    public enum TotemCategory {
+        FO,
+        KISERO
+    }
+
     /** The totem roster: who it affects, the effect/damage it pulses, and its look. */
     public enum TotemType {
         HEALING_STREAM("healing_stream_totem", "Gyógyár-totem",
@@ -92,6 +98,11 @@ public final class TotemManager implements org.bukkit.event.Listener {
             return description;
         }
 
+        public TotemCategory category() {
+            return this == SEARING || this == EARTHBIND
+                    ? TotemCategory.FO : TotemCategory.KISERO;
+        }
+
         /** Applies this totem's pulse to a single nearby entity (allies buff/heal, hostiles damage/debuff). */
         private void affect(final Entity entity, final int durationTicks) {
             if (targetPlayers) {
@@ -116,10 +127,16 @@ public final class TotemManager implements org.bukkit.event.Listener {
         }
     }
 
+    private record OwnedTotem(UUID totemId, TotemType type) {
+    }
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final NamespacedKey totemKey;
     private final Set<UUID> activeTotems = ConcurrentHashMap.newKeySet();
+    /** Totemkerék projection: owner -> category -> live totem. Runtime-only, never durable. */
+    private final java.util.Map<UUID, java.util.Map<TotemCategory, OwnedTotem>> totemsByOwner =
+            new ConcurrentHashMap<>();
 
     public TotemManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
@@ -156,6 +173,19 @@ public final class TotemManager implements org.bukkit.event.Listener {
             return;
         }
 
+        // Totemkerék: az azonos kategóriájú korábbi totemet az új leváltja (nem halmozódik).
+        final java.util.Map<TotemCategory, OwnedTotem> owned = totemsByOwner
+                .computeIfAbsent(owner.getUniqueId(), ignored -> new ConcurrentHashMap<>());
+        final OwnedTotem previous = owned.get(type.category());
+        if (previous != null) {
+            final Entity old = Bukkit.getEntity(previous.totemId());
+            if (old instanceof ArmorStand oldStand && oldStand.isValid()) {
+                oldStand.getScheduler().run(plugin, task -> removeTotem(oldStand), null);
+            } else {
+                activeTotems.remove(previous.totemId());
+            }
+        }
+
         final ArmorStand totem = loc.getWorld().spawn(loc, ArmorStand.class);
         totem.setInvulnerable(true);
         totem.setGravity(false);
@@ -173,6 +203,7 @@ public final class TotemManager implements org.bukkit.event.Listener {
         totem.getPersistentDataContainer().set(totemKey, PersistentDataType.BYTE, (byte) 1);
 
         activeTotems.add(totem.getUniqueId());
+        owned.put(type.category(), new OwnedTotem(totem.getUniqueId(), type));
         startPulse(totem, type);
 
         final int lifeSeconds = Math.max(3, configManager.getInt("spells.totem.lifetime-seconds", 12));
@@ -206,9 +237,36 @@ public final class TotemManager implements org.bukkit.event.Listener {
 
     private void removeTotem(final ArmorStand totem) {
         activeTotems.remove(totem.getUniqueId());
+        pruneOwnedTotem(totem.getUniqueId());
         if (totem.isValid()) {
             totem.remove();
         }
+    }
+
+    private void pruneOwnedTotem(final UUID totemId) {
+        for (final var entry : totemsByOwner.entrySet()) {
+            entry.getValue().values().removeIf(owned -> owned.totemId().equals(totemId));
+            totemsByOwner.computeIfPresent(entry.getKey(),
+                    (ignored, owned) -> owned.isEmpty() ? null : owned);
+        }
+    }
+
+    /** The owner's live Totemkerék pair as types; empty categories are simply absent. */
+    public java.util.Map<TotemCategory, TotemType> activeTotemTypes(final UUID ownerId) {
+        final java.util.Map<TotemCategory, OwnedTotem> owned = totemsByOwner.get(ownerId);
+        if (owned == null || owned.isEmpty()) return java.util.Map.of();
+        final java.util.Map<TotemCategory, TotemType> result =
+                new java.util.EnumMap<>(TotemCategory.class);
+        for (final var entry : owned.entrySet()) {
+            if (activeTotems.contains(entry.getValue().totemId())) {
+                result.put(entry.getKey(), entry.getValue().type());
+            }
+        }
+        return result;
+    }
+
+    public void clearOwnerProjection(final UUID ownerId) {
+        totemsByOwner.remove(ownerId);
     }
 
     public boolean isTotem(final Entity entity) {
@@ -229,5 +287,6 @@ public final class TotemManager implements org.bukkit.event.Listener {
             }
         }
         activeTotems.clear();
+        totemsByOwner.clear();
     }
 }

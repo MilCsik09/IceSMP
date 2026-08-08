@@ -53,11 +53,23 @@
 - Archer transient state has explicit death/quit/kick/disable/spec-switch cleanup; the durable stable deliberately survives a loadout switch while the transient bond clears;
 - `ArcherGameplayRegressionSuite` and `ArcherProfileRegressionSuite` are part of Gradle `check` and the CI marker contract, covering read pacing/single-use/distance anchoring, chain prey/window/retention, bond build/spend/collapse, allowlist gateway behavior, roster survival across switches and slot isolation.
 
+## Gameplay closed by the Sámán vertical slice
+
+- the fourth complete class gameplay implementation is `shaman` with `elemental` (Elemi), `enhancement` (Erősítő) and `tidal` (Hullámhívó) — the first three-spec slice;
+- the class core is the Totemkerék on the existing TotemManager: fő/kísérő categories, at most one live totem per category per shaman, same-category placement replaces (cross-region-safe removal on the old totem's scheduler), and the pair is exposed as a runtime projection;
+- Elemi plays Elemi Rezonancia: totem-element-matching casts charge one Overload; the armed Overload empowers the next resonant cast through the doubly-capped shared power pipeline, with `mely_gyokerek`/`eleven_szikra`/`vihar_hirnoke`/`tulcsordulas`/`orok_rezonancia`/`vihar_kegyeltje` doctrine variants;
+- Erősítő plays the Fegyveráldás rhythm: melee hits inside the rhythm window alternate the Vihar↔Föld side and earn bonus Maelstrom, spam earns base only; `stormstrike`/`crash_lightning` spend, the `doom_winds` capstone vents with doctrine retention;
+- Hullámhívó plays one signed tide where direct and chain heals prepare each other; the reached side empowers exactly one cast of the other family and the consume flows the tide back — no infinite heal feedback loop by construction;
+- a three-spec class still holds only the two Profile v2 loadouts; learning the third spec requires a respec of an occupied slot (regression-proven);
+- Shaman mastery XP (overload, Maelstrom spend/vent, tide consume) is combat-gated;
+- Shaman transient state has explicit death/quit/kick/disable/spec-switch cleanup, and the owner's Totemkerék projection clears with the player lifecycle while live totems expire on their own bounded timers;
+- `ShamanGameplayRegressionSuite` and `ShamanProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
 ## Explicitly still open after this PR
 
-- the remaining 10 classes and 29 specializations have not passed this vertical-slice gameplay gate;
+- the remaining 9 classes and 26 specializations have not passed this vertical-slice gameplay gate;
 - no generic mechanics-core primitive library is planned from this first implementation; common extraction is allowed only after real repeated consumers prove the same lifecycle/invariants;
-- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial` and `archer_beast_master_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker and Archer trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker and Archer doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
+- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial`, `archer_beast_master_trial`, `shaman_elemental_trial`, `shaman_enhancement_trial` and `shaman_tidal_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker, Archer and Shaman trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker, Archer and Shaman doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
 - the current Class Relic catalog has no canonical Warrior binding/resonance/awakening definition. The framework is reused but no new Warrior relic design is invented here;
 - full numeric Warrior and Evoker PvE/PvP balance, TTK, party pressure and real Guardian objective protection require staging playtest; the Evoker empower/burst bonus rides the shared cast-power pipeline, so its PvP clamp is the double cap (`classes.evoker.max-power-bonus-percent` + `spells.total-power-cap`), not a per-target split;
 - the separate class-HP/A17 rollout remains disabled and is not activated by this gameplay work;
@@ -69,6 +81,7 @@
 - Berserker PvP burst/execution, critical-health Defiant recovery and cooldown playtest;
 - Evoker empowered-release timing feel, burst cadence and echo/imprint heal pressure under real party play;
 - Archer read/chain cadence, stable capture/release at capacity and live companion coordination across regions;
+- Shaman totem-pair play across region borders, rhythm-window melee feel and tidal heal pressure in real parties;
 - gameplay-v2 second-spec switch under real combat/logout/reconnect timing on every allowlisted class;
 - Lélekkapocs loss/full-inventory/reconnect plus external-container transfer tests on a running server;
 - builder provisioning and gameplay validation of both final trials;

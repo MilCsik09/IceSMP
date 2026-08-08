@@ -224,6 +224,8 @@ public final class CatalystItemFactory {
                 addEvokerEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             } else if (jobType == JobType.ARCHER) {
                 addArcherEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            } else if (jobType == JobType.SHAMAN) {
+                addShamanEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             }
         }
         if (masteryRank >= 5) {
@@ -308,6 +310,20 @@ public final class CatalystItemFactory {
         }
     }
 
+    private void addShamanEvolutionLore(final List<Component> lore, final String spec,
+                                        final Map<String, String> doctrines) {
+        final String first = doctrines.getOrDefault("level_30", "még kialakulatlan");
+        final String second = doctrines.getOrDefault("level_40", "még kialakulatlan");
+        final String prefix = switch (spec) {
+            case "elemental" -> "Viharjegy";
+            case "enhancement" -> "Acéljegy";
+            case "tidal" -> "Árjegy";
+            default -> "Ősjegy";
+        };
+        lore.add(line("<dark_aqua>" + prefix + " I: <white>" + doctrineDisplay(first) + "</white></dark_aqua>"));
+        lore.add(line("<aqua>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></aqua>"));
+    }
+
     private static String evolution(final int level) {
         if (level >= 50) return "Beteljesedés";
         if (level >= 35) return "Mélyülés";
@@ -332,6 +348,9 @@ public final class CatalystItemFactory {
             case "preservation" -> "Megőrzés";
             case "sharpshooter" -> "Mesterlövész";
             case "beast_master" -> "Vadmester";
+            case "elemental" -> "Elemi";
+            case "enhancement" -> "Erősítő";
+            case "tidal" -> "Hullámhívó";
             default -> id;
         };
     }
@@ -374,6 +393,24 @@ public final class CatalystItemFactory {
             case "vastag_bor" -> "Vastag Bőr";
             case "orok_kotelek" -> "Örök Kötelék";
             case "falka_vezere" -> "Falka Vezére";
+            case "mely_gyokerek" -> "Mély Gyökerek";
+            case "eleven_szikra" -> "Eleven Szikra";
+            case "vihar_hirnoke" -> "Vihar Hírnöke";
+            case "tulcsordulas" -> "Túlcsordulás";
+            case "orok_rezonancia" -> "Örök Rezonancia";
+            case "vihar_kegyeltje" -> "Vihar Kegyeltje";
+            case "surito_ritmus" -> "Sűrítő Ritmus";
+            case "acel_zapor" -> "Acélzápor";
+            case "vihartorok" -> "Vihartorok";
+            case "foldrenges" -> "Földrengés";
+            case "maelstrom_ura" -> "Maelstrom Ura";
+            case "vihar_tanca" -> "Vihar Tánca";
+            case "aramlat" -> "Áramlat";
+            case "melyviz" -> "Mélyvíz";
+            case "dagaly_ura" -> "Dagály Ura";
+            case "apaly_ura" -> "Apály Ura";
+            case "szoko_ar" -> "Szökőár";
+            case "eletado_veno" -> "Életadó Véna";
             default -> id.replace('_', ' ');
         };
     }
