@@ -105,13 +105,13 @@ public final class FactionSetSubcommand implements FactionSubcommand {
                         factionManager.setFaction(targetId, factionType);
                         if (livePrevious == FactionType.DARK && factionType != FactionType.DARK) {
                             sinManager.clearDarkPactForFactionOverride(onlineTarget);
-                            final hu.taliann.icesmp.managers.SpecializationManager specs = specializationManager;
-                            if (specs != null) {
-                                specs.resetDarkGatedSpecialization(onlineTarget);
-                            }
                         }
                         if (factionType == FactionType.DARK) {
                             sinManager.sealDarkPact(onlineTarget);
+                        }
+                        final hu.taliann.icesmp.managers.SpecializationManager specs = specializationManager;
+                        if (specs != null) {
+                            specs.reconcileDarkGates(onlineTarget);
                         }
                         sendSuccess(sender, targetName, factionType);
                     }, () -> sendSafely(sender, retiredMessage));

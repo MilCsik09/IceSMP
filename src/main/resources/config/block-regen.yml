@@ -1,0 +1,18 @@
+# IceSMP blokkregeneráció — a régi factions.yml regen-blokkját kiegészítő,
+# külön fájlba tett látványhangolás. A ConfigManager a csomagolt alapokat is
+# beolvassa, ezért ezek a kulcsok régi szervertelepítésen is azonnal elérhetők.
+territory:
+  protection:
+    regen:
+      # A debris-launch-power radiális X/Z komponensének szorzója.
+      # 0 = nem repül kifelé, 1 = eredeti röppálya, 2 = kétszeres oldalirányú lökés.
+      debris-horizontal-multiplier: 1.0
+      # A radiális Y-komponenst és a 0.35–0.55 közötti természetes emelést együtt szorozza.
+      # 0 = lapos röppálya, 1 = eredeti ív, nagyobb érték = magasabb röppálya.
+      debris-vertical-multiplier: 1.0
+      # Véletlen körkörös X/Z sebességeltérés blokkonként. 0 = szabályos radiális repülés.
+      debris-horizontal-spread: 0.0
+      # Fix, a teljes röppályaszámítás végén hozzáadott felfelé kezdősebesség.
+      debris-extra-upward-velocity: 0.0
+      # true = falling-block gravitációval ívben visszaesik; false = a lifetime végéig lebeg/halad.
+      debris-gravity-enabled: true

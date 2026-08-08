@@ -21,6 +21,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 
@@ -34,6 +35,7 @@ public final class JobGUIListener implements Listener {
             new java.util.concurrent.ConcurrentHashMap<>();
 
     private final JobManager jobManager;
+    private final JavaPlugin plugin;
     private final CatalystItemFactory catalystItemFactory;
     private final SpecializationManager specializationManager;
     private final SpellRegistry spellRegistry;
@@ -46,10 +48,12 @@ public final class JobGUIListener implements Listener {
     private final MessageManager messageManager;
     private final CharacterMenuContext menuContext;
 
-    public JobGUIListener(final JobManager jobManager, final CatalystItemFactory catalystItemFactory,
+    public JobGUIListener(final JavaPlugin plugin, final JobManager jobManager,
+                          final CatalystItemFactory catalystItemFactory,
                           final SpecializationManager specializationManager, final SpellRegistry spellRegistry,
                           final ConfigManager configManager, final MessageManager messageManager,
                           final CharacterMenuContext menuContext) {
+        this.plugin = plugin;
         this.jobManager = jobManager;
         this.catalystItemFactory = catalystItemFactory;
         this.specializationManager = specializationManager;
@@ -134,15 +138,26 @@ public final class JobGUIListener implements Listener {
             }
             classConfirmPending.remove(player.getUniqueId());
         }
-        if (jobManager.setPrimaryJob(player, selectedJob)) {
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.0F);
-            player.sendMessage(messageManager.getComponent("messages.job-select-primary-success", "&aElsodleges kaszt kivalasztva:").append(Component.space()).append(selectedJob.getDisplayName()));
-            JobGUI.openJobMenu(player, jobManager, catalystItemFactory, messageManager);
-            return;
-        }
 
-        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
-        player.sendMessage(messageManager.getComponent("messages.job-select-failed", "&cJelenleg nem valaszthatsz uj kasztot!"));
+            player.closeInventory();
+            jobManager.setPrimaryJobV2(player, selectedJob)
+                    .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (failure == null && Boolean.TRUE.equals(selected)) {
+                            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.0F);
+                            player.sendMessage(messageManager.getComponent(
+                                            "messages.job-select-primary-success",
+                                            "&aElsodleges kaszt kivalasztva:")
+                                    .append(Component.space()).append(selectedJob.getDisplayName()));
+                            JobGUI.openJobMenu(player, jobManager, catalystItemFactory, messageManager);
+                        } else {
+                            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
+                            player.sendMessage(messageManager.getComponent(
+                                    "messages.job-select-failed",
+                                    "&cA Profile v2 mentése meghiúsult; a kaszt nem aktiválódott."));
+                        }
+                    }, null));
+            return;
+
     }
 
     private void handleCatalystClaim(final Player player) {

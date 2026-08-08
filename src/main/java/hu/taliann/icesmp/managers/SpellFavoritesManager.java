@@ -1,80 +1,79 @@
 package hu.taliann.icesmp.managers;
 
-import org.bukkit.NamespacedKey;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.SpellbookSection;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 /**
- * Tracks each player's favorite spells directly in their PDC as a
- * comma-separated spell-id list under the "favorite_spells" key. Only ever touched
- * from the owning player's own thread (spellbook GUI clicks), so no in-memory
- * UUID-keyed cache — and therefore no session cleanup — is needed.
+ * PlayerProfile-backed spell favourites.
+ *
+ * <p>The manager owns no durable state. Reads use the session-fenced cached spellbook
+ * section and mutations become visible only after the section CAS commits.</p>
  */
 public final class SpellFavoritesManager {
 
-    private final NamespacedKey favoritesKey;
+    private final JavaPlugin plugin;
 
     public SpellFavoritesManager(final JavaPlugin plugin) {
-        this.favoritesKey = new NamespacedKey(plugin, "favorite_spells");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+    }
+
+    public Set<String> favorites(final Player player) {
+        Objects.requireNonNull(player, "player");
+        return Set.copyOf(new LinkedHashSet<>(PlayerProfileAuthority.current()
+                .requireSection(player.getUniqueId(), ProfileSectionId.SPELLBOOK, SpellbookSection.class)
+                .favorites()));
     }
 
     public boolean isFavorite(final Player player, final String spellId) {
-        return spellId != null && favorites(player).contains(spellId.toLowerCase(java.util.Locale.ROOT));
+        final String normalized = normalize(spellId);
+        return !normalized.isEmpty() && favorites(player).contains(normalized);
     }
 
-    /**
-     * Toggles a spell's favorite status for the player.
-     *
-     * @return the spell's new favorite state (true if it is now a favorite)
-     */
-    public boolean toggle(final Player player, final String spellId) {
-        if (player == null || spellId == null || spellId.isBlank()) {
-            return false;
+    public CompletionStage<Boolean> toggle(final Player player, final String spellId) {
+        Objects.requireNonNull(player, "player");
+        final String normalized = normalize(spellId);
+        if (normalized.isEmpty()) {
+            return java.util.concurrent.CompletableFuture.failedFuture(
+                    new IllegalArgumentException("spellId cannot be blank"));
         }
-        final String id = spellId.toLowerCase(java.util.Locale.ROOT);
-        final Set<String> current = favorites(player);
-        final boolean nowFavorite;
-        if (current.remove(id)) {
-            nowFavorite = false;
-        } else {
-            current.add(id);
-            nowFavorite = true;
-        }
-        save(player, current);
-        return nowFavorite;
+        return PlayerProfileAuthority.current().mutateSection(
+                        player.getUniqueId(),
+                        ProfileSectionId.SPELLBOOK,
+                        SpellbookSection.class,
+                        current -> {
+                            final LinkedHashSet<String> favorites = new LinkedHashSet<>(current.favorites());
+                            if (!favorites.remove(normalized)) {
+                                favorites.add(normalized);
+                            }
+                            return new SpellbookSection(
+                                    current.provenance(),
+                                    current.selectedSpell(),
+                                    List.copyOf(favorites),
+                                    current.mastery(),
+                                    current.persistentCooldowns(),
+                                    current.uiState(),
+                                    current.extensions());
+                        })
+                .thenApply(snapshot -> snapshot.spellbook().value().favorites().contains(normalized));
     }
 
-    /**
-     * The player's favorite spell ids, or an empty set if none are marked.
-     */
-    public Set<String> favorites(final Player player) {
-        final Set<String> result = new LinkedHashSet<>();
-        if (player == null) {
-            return result;
-        }
-        final String raw = player.getPersistentDataContainer().get(favoritesKey, PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) {
-            return result;
-        }
-        for (final String spellId : raw.split(",")) {
-            if (!spellId.isBlank()) {
-                result.add(spellId.toLowerCase(java.util.Locale.ROOT));
-            }
-        }
-        return result;
+    public void runOnOwnerThread(final Player player, final Runnable action) {
+        Objects.requireNonNull(player, "player");
+        Objects.requireNonNull(action, "action");
+        player.getScheduler().run(plugin, ignored -> action.run(), null);
     }
 
-    private void save(final Player player, final Set<String> favorites) {
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        if (favorites.isEmpty()) {
-            pdc.remove(favoritesKey);
-            return;
-        }
-        pdc.set(favoritesKey, PersistentDataType.STRING, String.join(",", favorites));
+    private static String normalize(final String spellId) {
+        return spellId == null ? "" : spellId.trim().toLowerCase(Locale.ROOT);
     }
 }

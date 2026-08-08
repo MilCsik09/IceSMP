@@ -78,9 +78,15 @@ public final class AfkRegressionSuite {
         final String active = TablistOrdering.key(0, "zzzzzzzzzzzzzzzz", false);
         final String afk = TablistOrdering.key(0, "alice", true);
         expect(active.compareTo(afk) < 0, "active player must sort before AFK player in one rank");
+        expect(TablistOrdering.key(24, "zzz", false)
+                        .compareTo(TablistOrdering.key(0, "aaa", true)) < 0,
+                "every active player must sort before every AFK player");
+        expect(TablistOrdering.key(0, "zzz", true)
+                        .compareTo(TablistOrdering.key(1, "aaa", true)) < 0,
+                "the AFK block must stay rank-ordered");
         expect(TablistOrdering.key(0, "alice", true)
-                        .compareTo(TablistOrdering.key(1, "alice", false)) < 0,
-                "rank priority must remain stronger than AFK state");
+                        .compareTo(TablistOrdering.key(0, "bob", true)) < 0,
+                "the AFK block must stay name-ordered within one rank");
         expect(("nt" + active).length() <= 16, "scoreboard team name exceeds 16 characters");
     }
 

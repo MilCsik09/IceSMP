@@ -19,6 +19,7 @@ public final class ModerationLoginListener implements Listener {
 
     @EventHandler
     public void onPreLogin(final AsyncPlayerPreLoginEvent event) {
+        manager.reconcileProfileSummaryAsync(event.getUniqueId());
         final PunishmentRecord ban = manager.activeBan(event.getUniqueId()).orElse(null);
         if (ban == null) {
             return;

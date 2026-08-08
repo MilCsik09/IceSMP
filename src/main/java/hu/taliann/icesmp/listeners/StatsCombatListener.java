@@ -54,7 +54,10 @@ public final class StatsCombatListener implements Listener {
         }
         final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
         if (killer != null) {
-            statsManager.recordMobKill(killer.getUniqueId());
+            statsManager.recordMobKill(killer.getUniqueId(),
+                    event.getEntity() instanceof org.bukkit.entity.Monster
+                            ? hu.taliann.icesmp.managers.BestiaryManager.entryId(event.getEntity())
+                            : null);
         }
     }
 }

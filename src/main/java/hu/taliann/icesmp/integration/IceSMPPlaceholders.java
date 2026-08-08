@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.integration;
 
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.managers.HudManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
@@ -25,9 +26,22 @@ import java.util.Locale;
 public final class IceSMPPlaceholders extends PlaceholderExpansion {
 
     private final HudManager hudManager;
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
 
-    private IceSMPPlaceholders(final HudManager hudManager) {
+    private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
+    private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
+    private final hu.taliann.icesmp.managers.TerritoryManager territoryManager;
+
+    private IceSMPPlaceholders(final HudManager hudManager,
+                               final hu.taliann.icesmp.managers.ConfigManager configManager,
+                               final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager,
+                               final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
+                               final hu.taliann.icesmp.managers.TerritoryManager territoryManager) {
         this.hudManager = hudManager;
+        this.configManager = configManager;
+        this.bestiaryManager = bestiaryManager;
+        this.recipeCatalog = recipeCatalog;
+        this.territoryManager = territoryManager;
     }
 
     /**
@@ -37,8 +51,51 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
      * @param plugin the owning plugin (unused, kept for a stable reflective signature)
      * @param hudManager the HUD manager providing the per-player snapshot
      */
-    public static void register(final JavaPlugin plugin, final HudManager hudManager) {
-        new IceSMPPlaceholders(hudManager).register();
+    public static void register(final JavaPlugin plugin, final HudManager hudManager,
+                                final hu.taliann.icesmp.managers.ConfigManager configManager,
+                                final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager,
+                                final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
+                                final hu.taliann.icesmp.managers.TerritoryManager territoryManager) {
+        new IceSMPPlaceholders(hudManager, configManager, bestiaryManager, recipeCatalog,
+                territoryManager).register();
+    }
+
+    /** `%icesmp_bestiary_<kategória>%` és `_total` párja; nem-bestiárium paramra {@code null}. */
+    private String bestiaryParam(final OfflinePlayer player, final String params) {
+        if (!params.startsWith("bestiary_")) {
+            return null;
+        }
+        final boolean total = params.endsWith("_total");
+        final String raw = params.substring("bestiary_".length(),
+                total ? params.length() - "_total".length() : params.length());
+        final hu.taliann.icesmp.managers.BestiaryManager.Category category;
+        try {
+            category = hu.taliann.icesmp.managers.BestiaryManager.Category
+                    .valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException unknown) {
+            return "";
+        }
+        if (!total) {
+            return String.valueOf(bestiaryManager.count(player.getUniqueId(), category));
+        }
+        return String.valueOf(switch (category) {
+            case MOBS -> hu.taliann.icesmp.managers.BestiaryManager.knownMonsterTypes().size();
+            case RECIPES -> recipeCatalog.allIds().size();
+            case TERRITORIES -> territoryManager.all().size();
+            case BOSSES -> hu.taliann.icesmp.managers.WorldBossManager.archetypeDisplayNames().size();
+        });
+    }
+
+    private static hu.taliann.icesmp.data.FactionType parseFaction(final String factionId) {
+        if (factionId == null || factionId.isBlank()) {
+            return null;
+        }
+        try {
+            return hu.taliann.icesmp.data.FactionType.valueOf(
+                    factionId.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (final IllegalArgumentException unknown) {
+            return null;
+        }
     }
 
     @Override
@@ -66,6 +123,11 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
         if (player == null || params == null) {
             return "";
         }
+        // A bestiárium-lekérés nem HUD-függő: offline/HUD nélküli játékosra is válaszol.
+        final String bestiary = bestiaryParam(player, params.toLowerCase(Locale.ROOT));
+        if (bestiary != null) {
+            return bestiary;
+        }
         final HudManager.HudSnapshot snapshot = hudManager.snapshot(player.getUniqueId());
         if (snapshot == null) {
             return "";
@@ -83,15 +145,10 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "resource_bar" -> snapshot.hasClass() ? snapshot.resourceBar() : "";
             // Aktív világesemények egy sorban (max 2 név + "+N"), §-színekkel.
             case "event" -> snapshot.event();
-            // A frakció puszta színkódja (§c/§9/§7/§8) — a TAB nametag/tab-prefix végére
-            // fűzve a NÉV kapja a frakció színét külön [Frakció] tag nélkül.
-            case "faction_color" -> switch (snapshot.factionId()) {
-                case "RED" -> "§c";
-                case "BLUE" -> "§9";
-                case "DARK" -> "§8";
-                case "NEUTRAL" -> "§7";
-                default -> "§f";
-            };
+            // A név frakciószíne a közös palettából; külső TAB/scoreboard is ugyanazt kapja.
+            case "faction_color" -> FactionDisplayPalette.legacyCode(
+                    hu.taliann.icesmp.managers.TablistManager.factionColor(
+                            configManager, parseFaction(snapshot.factionId())));
             // Party frames for scoreboard plugins (TAB): the member count and one
             // plain line per member ("👑 Name ▮▮▮░░ 6❤"); blank outside a party.
             case "party_size" -> String.valueOf(snapshot.partyLines().size());

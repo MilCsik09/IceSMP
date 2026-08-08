@@ -118,7 +118,7 @@ public final class ReportManager implements PersistentStore {
             }
             nextId.set(maxId + 1);
             loadPendingFeedback(yaml.getConfigurationSection("pending-feedback"));
-            plugin.getLogger().info("Loaded " + reports.size() + " report(s).");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "Loaded " + reports.size() + " report(s).");
             if (pruned) {
                 // Shrink the on-disk file immediately rather than waiting for the next mutation.
                 save();

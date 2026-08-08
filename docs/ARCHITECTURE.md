@@ -16,7 +16,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~90 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~92 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -36,20 +36,20 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
-| `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 121 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
+| `managers/` | 122 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 122 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 47 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
-| `factions/` | 15 | Explicit tagsági értékobjektum és rollbackelhető membership-mutation, immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és frakcióeredetű adósság-ledger. |
+| `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 24 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
+| `utils/` | 26 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
@@ -258,6 +258,21 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
+
+### 3.8.1 Kaszt/spec rework — verziózárt kapu és adapterhatárok
+
+A 13 kaszt / 35 specializáció reworkje külön, alapból tiltott rollout-kapu mögött épül. Az
+`IceSMPCore.enable()` a gameplay store-ok betöltése előtt futtatja a
+`ClassSpecDependencyPreflight` ellenőrzést. A kapu csak akkor blokkol, ha a rework és az enforcement
+is aktív; legacy módban a jelenlegi production változatlanul elindul.
+
+A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
+megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil
+UUID-t, string ID-t, immutable snapshotot és saját handle-t engednek át. CraftEngine-, BetterHud-,
+ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jelenhet meg.
+
+A helyi 1.21.11-es runServer feladat `-Dpaper.disablePluginRemapping=true` kapcsolóval indul, hogy a
+26.2-portot blokkoló legacy remapping-függés már fejlesztés közben látható legyen.
 
 ### 3.9 Territórium-zónák és zóna-védelem
 
@@ -595,8 +610,8 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 576 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
-  Csomag-megoszlás: listeners 121, managers 121, commands 94, spells 56, gui 47, crates 14, utils 24, data 15,
+- **Méret:** 721 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 122 fájl).
+  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15,
   items 12, relics 9, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
@@ -646,3 +661,365 @@ single-winner gate-et és race-biztos task lease-t használ. Az üzemeltetési
 és recovery-szerződést az
 [admin kézikönyv crate acceptance szakasza](ADMIN_GUIDE.md#natív-crate)
 foglalja össze.
+## PlayerProfile platform
+
+<!-- icesmp-doc-id: feature.platform.player_profile -->
+
+All IceSMP-owned durable player state must enter a registered PlayerProfile section; PDC may only be runtime, item/entity metadata or a deterministic derived mirror.
+
+### Canonical model
+
+`PlayerProfileSnapshot` is the single logical aggregate for IceSMP-owned, restart-durable player state. It is immutable, Bukkit/YAML/SQL/HTTP independent and owner-bound by UUID. The root contains identity, lifecycle, onboarding, faction, economy, class-spec, professions, spellbook, talents, quests, companions, relics, achievements, statistics, preferences, social links, moderation and operations sections. Shared guild, party, market, claim, treasury, council, raid, season and audit-log aggregates remain separate and are referenced only by stable IDs.
+
+### Storage boundary
+
+Gameplay, commands, GUIs and APIs depend on `PlayerProfileRepository` and `PlayerProfileTransactionManager`, not YAML. `YamlPlayerProfileRepository` is the current adapter; a future SQL adapter must implement the same contracts. The class/spec model is `ClassSpecSection`; no independent ClassProfile aggregate or opaque ICS2 profile blob exists. Profile YAML files round-trip with literal keys on both read and write (SnakeYAML safe load/dump, duplicate keys rejected); Bukkit `YamlConfiguration` must not parse them, because it splits dotted extension keys into nested sections and silently breaks restart durability.
+
+### Ledger-derived summaries and shared-goal splits
+
+The shared punishment ledger (`moderation-data.yml`) stays the moderation audit authority; every ledger mutation re-derives the player's `ModerationSection` reference/summary (active punishment record IDs plus strike count) through `PlayerProfileModerationStore`, and the pre-login gate re-syncs it, so a failed publish self-heals. The weekly profession guild goal splits the same way: the week index and global counters stay a shared aggregate, while per-player contributions (`ProfessionSection.weeklyProgress` with a week marker), the per-week award marker and the pending reward XP live in the PROFESSIONS section — the award is idempotent per (player, week) over the durable owner enumeration, and the claim credits XP and clears the pending entry in one section commit. Daily budgets carry a per-budget reservation serial, so a delayed compensation can only revert the exact reservation it belongs to.
+
+Crate settlements follow the fence-and-receipt shape: the shared crates file keeps only placements and opening-recovery fences, while per-player counts, cooldowns, the stored name and a bounded opening-id receipt list live in the STATISTICS section (`PlayerProfileCrateStore`). The profile commit happens before the fence is dropped, the in-memory `CrateLedger` is a load-time-seeded projection of the profile state, and an orphaned fence whose opening id is already receipted finalizes silently at the next load instead of double-counting. The death-to-respawn catalyst hand-back is a durable LIFECYCLE escrow (`PlayerProfileDeathEscrowStore`): the deposit commits before the respawn claim, and the claim empties the escrow in one section commit, so respawn, rejoin and crash recovery all deliver exactly once.
+
+### Revisions and snapshots
+
+Each section has schema and revision; the manifest carries global generation and the committed section revision map. Missing sections initialize with `-1 -> 0`; normal saves require `n -> n+1`. Full reads validate manifest generation before and after section loading, so snapshots are never an arbitrary time mixture.
+
+### Transactions and recovery
+
+Cross-section operations persist an owner-bound WAL and operation fingerprint, write prepared section files, atomically commit the manifest generation, close the operation receipt, apply runtime effects and clean temporary state. Restart before manifest commit rolls back; restart after commit finalizes. Duplicate operation IDs with a different fingerprint fail closed.
+
+### Lifecycle and Folia
+
+Join creates a session generation, recovers WALs, loads/initializes sections asynchronously, validates health, rebuilds derived mirrors, reconciles DARK/spells/companions, then marks the session ready. Quit fences mutations, drains transactions, flushes sections, cleans runtime and invalidates cache. Disable stops HTTP/admission, drains, flushes, cleans runtime and shuts executors down with a bounded timeout. Resource teardown is separate from stateful shutdown: the external resources (Bukkit service registration, HTTP adapter, repository executor, static authority) close on an idempotent always-cleanup path that also runs after a partial enable or a failed shutdown drain — refusing to save state never leaves a listener or executor behind. Bukkit entity access remains in owner/region-thread adapters; YAML I/O is asynchronous.
+
+### YAML format
+
+Profiles live under `plugins/IceSMP/player-profiles/<uuid>/`. `manifest.yml` records owner UUID, format, schema, generation, lifecycle status, timestamps and every section schema/revision/digest. Each section is a separate structured YAML file with `format: ICESMP-PLAYER-PROFILE-SECTION`, stable section ID, schema, revision, updated timestamp, `data` and preserved `extensions`.
+
+The serializer is deterministic and key based. There is no Java serialization and no Base64-encoded complete profile. Missing documented optional fields use safe defaults; missing mandatory fields, wrong types, owner/section mismatches, duplicate normalized keys, invalid UTF-8, oversized input and skipped revisions fail closed. Unknown extension namespaces are preserved. Atomic replacement uses a temporary file, file sync and directory sync where supported; orphan temporary files are removed during recovery.
+
+A corrupt section is copied to immutable evidence and quarantined independently. Identity or manifest corruption blocks the whole profile; subsystem corruption blocks only that subsystem unless a documented lossless default is safe. Recovery requires an explicit, idempotent admin operation and never deletes evidence.
+
+### Internal Java API
+
+`IceSMPPlayerProfileApi` is registered through Bukkit `ServicesManager`. It exposes immutable snapshots, section snapshots, name lookup, filtered public DTOs and a listener subscription. It never exposes repository adapters, YAML, file paths or mutable Bukkit objects, and all storage reads are asynchronous.
+
+### HTTP API v1
+
+The adapter is disabled by default and binds to `127.0.0.1` only when explicitly enabled; the adapter (and its executor) is not even instantiated while disabled. Public endpoints respect profile visibility. SELF bearer credentials are bound to one player UUID; ADMIN credentials may read health, quarantine and moderation/operations summaries. Authentication resolves before any storage read: the by-name endpoint answers 403 to anonymous callers without touching the repository (no unauthenticated O(N) name scan and no 403-vs-404 existence oracle), a SELF token only resolves its own last known name, and only an ADMIN token may run the global name lookup. Tokens are deployment secrets, are digested in memory and never logged. The adapter enforces rate, request/response size and timeout limits, supports ETag/`If-None-Match`, returns sanitized 403/404/409/429/500 responses and drains on shutdown. It has no write endpoints.
+
+The machine contract is [`openapi/player-profile-v1.yaml`](openapi/player-profile-v1.yaml).
+
+### SQL replacement contract
+
+A future `SqlPlayerProfileRepository` and transaction manager must preserve owner binding, per-section CAS, manifest-equivalent snapshot generation, quarantine semantics, operation fingerprints and recovery results. Gameplay managers, DTOs, commands, GUI and HTTP code must not change. A YAML importer performs structured decode, domain validation and repository saves; it never guesses from PDC or invokes gameplay migration.
+
+### Authority matrix
+
+This matrix is versioned together with `scripts/player_profile_authority_allowlist.json` and enforced by `scripts/check_player_profile_authority.py`, which permits only PlayerProfile authority, runtime state, derived mirrors, item/entity metadata and explicit shared-aggregate references; the historical `TRANSITION` rows are complete.
+
+| Current data | Current authority | Final section or aggregate | Runtime mirror | External visibility | Transition |
+| --- | --- | --- | --- | --- | --- |
+| class/spec, class XP, loadouts, DARK seals, Soulforge progression | PlayerProfile class-spec section | `class-spec` | rebuildable PDC/UI mirror | public/self/admin filtered | complete in root |
+| spell grants, selection, favorites, mastery | legacy player PDC/managers | `spellbook` | selected-spell UI mirror | self/admin; selected public by privacy | stacked spellbook scope |
+| talent points and purchased talents | legacy player PDC/manager | `talents` | GUI cache only | self/admin | stacked spellbook/talent scope |
+| faction membership/history/sinner/player cooldowns | managers/PDC/YAML | `faction` | scoreboard/tag mirror | privacy filtered | stacked faction scope |
+| wallets, bank, tax debt, pending refunds | player stores/managers | `economy` | display cache | self/admin | stacked economy scope |
+| professions, XP, level, specialization, recipes | PDC/managers | `professions` | HUD/GUI mirror | self/public summary | stacked professions scope |
+| quest state, objectives and reward receipts | quest managers/YAML/PDC | `quests` and `operations` | tracker UI | self/admin | stacked quest scope |
+| pets/minions and durable companion state | PlayerProfile namespace + runtime manager | `companions` and `class-spec` | live entity map | privacy filtered | root plus lifecycle hardening |
+| achievements, bestiary and milestone claims | managers/PDC/YAML | `achievements` | toast/UI cache | privacy filtered | stacked progression scope |
+| kills/deaths/events/season counters | stats managers/YAML | `statistics` | scoreboard cache | privacy filtered | stacked statistics scope |
+| language/HUD/scoreboard/notification/privacy | config/PDC/managers | `preferences` | online UI state | public visibility flags/self | stacked preferences scope |
+| moderation case details | global moderation aggregate | reference/summary in `moderation` | runtime enforcement cache | admin only | reference integration |
+| guild/party/market/claim/treasury/raid/season | separate global aggregates | stable reference only | runtime membership cache | composed PlayerView | remain separate |
+
+Run `python3 scripts/check_player_profile_authority.py --root .` to verify the exact code-level inventory.
+
+### Full authority scope
+
+The greenfield transition of every IceSMP-owned, restart-durable player domain to the modular PlayerProfile repository is complete. The following domains use PlayerProfile sections as their sole durable authority:
+
+- spellbook, spell mastery and favorites;
+- talents;
+- faction membership, membership history, sinner state and player cooldowns;
+- wallet, bank, tax debt and pending refunds;
+- professions, XP, specialization and learned recipes;
+- quests, objectives and operation receipts;
+- durable companion state;
+- achievements, bestiary and milestone claims;
+- statistics and counters;
+- preferences, HUD, scoreboard, notifications and privacy;
+- moderation reference and summary state.
+
+Shared guild, party, market, claim, treasury, council, raid, season and audit-log aggregates remain separate. PlayerProfile may store only stable references to those aggregates.
+
+### Forbidden runtime patterns
+
+No gameplay path may treat any player PDC key, standalone player YAML file or manager-owned durable map as an authority for the domains above. There is no legacy migration, dual read, dual write, fallback or runtime kill switch.
+
+PDC remains permitted only for:
+
+- rebuildable runtime or UI mirrors;
+- item metadata and provenance;
+- entity metadata and short-lived runtime identity;
+- non-authoritative integration hints that can be recreated from PlayerProfile or shared aggregates.
+
+### Required invariants
+
+- Every durable mutation is owner-bound and section-CAS protected.
+- Cross-section mutations use the PlayerProfile transaction/WAL protocol.
+- Cache state becomes authoritative only after durable commit.
+- Join, quit, reconnect and plugin-disable preserve session fencing and bounded drain semantics.
+- Decode, owner, revision or persistence failure is fail-closed and preserves evidence.
+- Folia entity access remains on the owning entity/region scheduler; persistence I/O remains asynchronous.
+- Runtime mirrors are rebuilt from PlayerProfile after join and invalidated on quit/reset.
+
+### Merge-readiness gates
+
+- Java 21 `clean build` and the complete regression suite pass.
+- Every migrated domain has targeted persistence, CAS, recovery, reconnect and lifecycle regressions.
+- `check_player_profile_authority.py` reports no unknown, stale, invalid or transition authority findings.
+- No player-owned durable PDC/YAML/map authority remains outside explicitly approved metadata/mirror categories.
+- Repository consistency, Markdown links, tooling self-tests and strict repository/documentation inventory pass with zero blocking or review-required findings.
+- The authority matrix marks every player-owned domain complete.
+
+## Config GUI coverage
+
+The admin GUI is an explicit **runtime-safe allowlist**, not a blind renderer for every scalar in the content configs.
+The build-time `configGuiCoverageRegressionTest` merges every supported YAML file and proves:
+
+- every GUI path exists exactly once;
+- GUI type and packaged default type agree;
+- numeric defaults are inside the declared range;
+- enum defaults are among the declared options;
+- all scalar entries under `world-events.safety.*`, `moderation.vanish.*` and
+  `territory.mob-rules.doom-gate.*` are exposed;
+- every remaining scalar is intentionally file/command-only (content records, lore, rewards, item definitions,
+  spell/quest tables or advanced startup tuning), rather than accidentally omitted.
+
+The test prints the exact `total / displayed / intentionally_excluded / missing / stale / duplicate` counts on every build.
+A new scalar under a mandatory runtime-admin prefix fails the build until a matching GUI component is added.
+
+### Config GUI transaction semantics
+
+Opening the menu captures the effective values, packaged defaults, config generation and SHA-256 fingerprint of `config.yml`.
+Clicks only modify an in-memory per-admin session. **Save** performs one asynchronous batch write; **Cancel**, closing the
+inventory or disconnecting writes nothing. Middle-click removes the override and restores the packaged default.
+A second admin save or external file edit makes an older session stale; stale sessions are rejected without overwriting data.
+
+Entries display whether their effect is live, applied by a reload hook, or requires a restart. In particular the faction-tax
+scheduler toggle/interval is restart-required; event safety and vanish capabilities are live/reload-safe.
+
+## Frakcióhoz kötött játékosnév-színek
+
+A játékosnév-színek egyetlen központi palettát használnak minden támogatott felületen.
+
+| Frakció | Natív szín | Legacy/TAB kód | Vizuális szerep |
+|---|---|---|---|
+| RED / Láng | RED | `§c` | támadó, tüzes identitás |
+| BLUE / Fagy | BLUE | `§9` | hideg, kék identitás |
+| NEUTRAL / Menedék | GREEN | `§a` | a Smaragdkő/Ryanora lore-szín, a DARK-tól jól elkülönülő identitás |
+| DARK / Kitaszított | DARK_GRAY | `§8` | sötét, komor identitás |
+| nincs vagy ismeretlen tagság | WHITE | `§f` | fail-safe alapállapot |
+
+A NEUTRAL korábbi szürke (`GRAY` / `§7`) színe megszűnt. A DARK nem kap lich-kék árnyalatot, mert az a vanilla névszín-készletben túl közel kerülne a BLUE frakcióhoz.
+
+Érintett felületek:
+
+- natív tablist játékosnév;
+- fej fölötti scoreboard-team nametag;
+- HUD tablist-fallback;
+- HUD frakcióérték;
+- natív async chat formázás;
+- `%icesmp_faction_color%` PlaceholderAPI-kimenet külső TAB/scoreboard pluginokhoz.
+
+A paletta élő-configgal felülbírálható: `tablist.faction-colors.<frakció|guest>` (NamedTextColor nevek); a defaultot a `FactionDisplayColorPolicy` adja, minden név-felület (tab, nametag, HUD, chat, `%icesmp_faction_color%`) ugyanazon a feloldón megy át. A kézi staging-ellenőrzés az [admin kézikönyv staging-mátrixai](ADMIN_GUIDE.md#kiegészítő-staging-mátrixok) közt található.
+
+## Runtime hardening szerződések
+
+A moderációs láthatóság, a claim-geometria, a BlockDisplay-határ és a DARK territory-spawn mérvadó szerződései.
+
+### Vanish
+
+- `icesmp.moderation.vanish.see` is explicit-only (`PermissionDefault.FALSE`) and is not inherited by OP, the moderation
+  bundle or `icesmp.admin.all`.
+- Every non-observer viewer gets both `hidePlayer(plugin, subject)` for the in-world entity and
+  `unlistPlayer(subject)` for the per-viewer player list.
+- Separate ownership ledgers restore only IceSMP-owned `showPlayer`/`listPlayer` pairs when vanish ends or the plugin stops.
+- Visibility is reasserted after viewer join, subject toggle, teleport, world change, respawn and a delayed tracking rebuild.
+- Damage immunity remains an event capability; no persistent `Player#setInvulnerable` state is written.
+
+### Territory-style normal claims
+
+- Quick square and two-corner rectangle claims remain compatible.
+- Ordinary claims now also support `point`, `undo`, `clearpoints`, `points`, `polygon` and a dedicated `polywand` flow.
+- The immutable `ClaimShape` is an exact set of claimed X-Z columns and supports concave simple polygons.
+- Membership, overlap, column pricing, territory checks, exact WorldGuard row spans, YAML persistence, chunk lookup,
+  particle preview and BlockDisplay rendering all consume the same shape.
+- Polygon area is bounded by `claims.area-max-columns`; the vertex count is unlimited by default (`claims.polygon-max-points: 0`), because the rasterized column set makes runtime checks independent of it.
+- Rasterization uses budgeted row scanlines rather than scanning the full bounding rectangle. Perimeter length, continuous
+  area and every produced column are checked before publication; long/thin hostile inputs fail closed.
+- Malformed stored polygons are rejected and skipped instead of silently widening to their bounding rectangle.
+
+### Exact bounded BlockDisplay boundary
+
+- Every exact X-Z boundary column owns a separate vertical BlockDisplay segment.
+- Each segment starts at the claim's inclusive `minY` and ends at its inclusive `maxY`.
+- No display block is created below or above the actually claimed Y range.
+- Rectangle and concave polygon boundaries use the same stored Y band.
+- RegionScheduler ownership and per-player preview cleanup remain Folia-safe.
+
+### Stable DARK territory spawning
+
+- DARK ambient undead use the shared `resolveSafeStandingLocation` contract.
+- The floor must be solid, occluding, non-gravity, non-liquid and non-hazardous; three body blocks must be passable.
+- Candidates must still be inside the exact target territory and pass claim/region rules.
+- Each mob receives at most `dark-undead.spawn-attempts-per-mob: 12` distinct attempts.
+- No valid location means no spawn. There is no airborne or close fallback.
+
+### Restored original claim Y behaviour
+
+- Claims are again bounded 3D volumes: exact rectangle/polygon X-Z shape plus inclusive `minY..maxY`.
+- New quick claims use the player's Y; rectangle selections use the two Y values' midpoint; polygons use the first boundary point's Y.
+- Packaged defaults remain the proven original values: `default-height: 20`, `default-depth: 20`.
+- `/claim extend up|down` again expands by `y-extend-step: 5` for the original per-column burned cost.
+- X-Z overlap stays exclusive, so vertically separated claims cannot be stacked over the same footprint.
+- The BlockDisplay boundary is created only from `minY` through `maxY`; no wall exists at unclaimed Y levels.
+
+### Claim persistence guarantees
+
+- World upper bounds are stored and restored as inclusive values (`getMaxHeight() - 1`).
+- Legacy `world;chunkX;chunkZ` keys are structurally validated before conversion.
+- Claims from the temporary X-Z-only format, where both Y fields are absent, retain protection by receiving the full known
+  world-height band and emit an operator warning instead of silently becoming a `0..0` claim.
+- A record containing exactly one of `min-y` or `max-y` is corrupted, not an X-Z-only record; it is rejected fail-closed
+  instead of being silently widened to the full world height.
+- Stored Y bounds are clamped to a loaded world's current legal range; reversed or fully out-of-world ranges fail closed.
+- One malformed trusted-player UUID is isolated to that trust entry and cannot discard the enclosing claim.
+- One malformed claim entry is isolated from the rest of `claims.yml` and cannot abort the complete claim load.
+
+### Viewer-private display guarantees
+
+- Viewer-specific BlockDisplays set `visibleByDefault=false` inside the spawn consumer before the entity enters normal
+  client tracking.
+- The selected viewer is revealed only through `Player#showEntity` on the viewer's own entity scheduler.
+- The compatibility `showOnlyTo` path acquires the effect entity's own Folia scheduler before changing default visibility.
+- A public viewer-scoped spawn API is available for new private effects so callers do not need post-spawn hiding.
+- The aurora veil also uses this pre-tracking viewer-scoped spawn API and no longer becomes public before being hidden.
+- `RuntimeHardeningRegressionSuite` asserts pre-tracking privacy, aurora usage and effect/viewer entity-scheduler ownership.
+
+### Other retained hardening
+
+- bounded world-event/invasion/boss spawn safety and reservations;
+- transactional multi-admin config GUI with stale-write rejection;
+- deterministic and atomic profession recipe reload, including removal of one exact fishing-rod duplicate;
+- Java/YAML item-model validation against the manifest and checked-in resource pack;
+- reversible DARK daylight/zombification capability lifecycle.
+
+### Measured audit results
+
+- Config schema scalar entries: **9594**
+- GUI-displayed entries: **203**
+- Intentionally file/command-only entries: **9391**
+- Missing, stale or duplicate GUI entries: **0 / 0 / 0**
+- Profession recipes: **437**, after removal of one proven exact duplicate
+- Profession recipe key duplicates / semantic duplicates: **0 / 0**
+- Used GUI/item models: **269**
+- Manifest models / checked-in pack models: **298 / 298**
+- Missing manifest / pack mappings: **0 / 0**
+
+### Automated hardening coverage
+
+`RuntimeHardeningRegressionSuite` covers vanilla rectangle compatibility, concave polygon membership and wilderness notches,
+exact overlap/boundaries, self-intersection and oversized-input rejection, bounded scanline and fail-closed persistence contracts,
+entity plus tab-list vanish ownership, exact minY/maxY BlockDisplay clipping, restored vertical extension and stable DARK standing
+locations with finite retries.
+
+The full repository `check` also includes event-spawn safety, config transaction/coverage, profession recipe audit and all
+previously registered regression suites.
+
+## World-event spawn-védelem
+
+A world-eventek helyét az `EventSpawnGuard` választja és publikálja. A guard a kezdeti
+spawn előtt egységesen ellenőrzi a játékostávolságot, a látóirányt, a védett területeket,
+a víz- és partpuffert, a teljes event-footprintet, a lejtést, a biomprofilt, a world
+bordert és a friss eseményhelyek memóriáját.
+
+### Alapértelmezett viselkedés
+
+- A minimum játékostávolság legalább 192 blokk, de a tényleges Paper send/view distance
+  és a 32 blokkos margó ezt automatikusan megemelheti.
+- A 110 fokos, 384 blokkos konzervatív nézési kúp elutasítja a játékos előtt lévő
+  helyeket. Ez szándékosan szigorúbb a blokkonkénti ray trace-nál, és Folia alatt nem
+  olvas idegen régiót.
+- A kereső 32 jelöltet próbál; egyszerre alapból két keresés futhat, egy keresés legfeljebb
+  96 egyedi chunkot érinthet és 5 másodperc után watchdog zárja le.
+- Csak már legenerált chunk tölthető vissza aszinkron módon. A kereső sosem generál új
+  világterületet, és nem végez szinkron chunk-loadot régiószálon.
+- A kiválasztott hely alapból 3 másodperces érkezési előjelet kap, majd közvetlenül a
+  tényleges spawn előtt újra lefut a teljes validáció.
+- Az utolsó eventhelyek 45 percig, 256 blokkos körben nem használhatók újra.
+
+### Speciális profilok
+
+- `stranger`: 64–96 blokkos helyi keresés, 48 blokk minimum, saját nézési kúp. Az Idegen
+  így hallótávolságban marad, de nem a játékos előtt materializálódik.
+- `escort`: távoli, teljes footprinttel validált indulóhely és négypontos útvonalvizsgálat.
+- `escort-route` és `escort-wave`: a már aktív esemény belső mozgását és hullámait nem
+  tiltja le a játékosok megérkezése, de a víz-, terep- és protection szabályok megmaradnak.
+- `meteor`, `world-boss`, `invasion`, `cultists`, `wild-hunt`, valamint a karavánok saját
+  footprint-, lejtés- és biomprofilt használnak.
+
+### Meteor-helyreállítás
+
+A meteor a kráter létrehozása **előtt** kiírja az érintett normál blokkok teljes
+`BlockData` állapotát a `meteor-restore.yml` fájlba. Tile entityt (láda, hordó, tábla,
+spawner stb.) nem ír felül, mert azok NBT-jét a BlockData nem őrizné meg.
+
+- Normál lejáratkor a visszaállítás chunkonként, a megfelelő Folia-régióban fut.
+- Graceful disable alatt ugyanez a helyreállítás indul el.
+- Ha a scheduler már nem fogad taskot, vagy a folyamat félbeszakad, a recovery fájl
+  megmarad, és a következő indulás world-UUID alapján folytatja a helyreállítást.
+- A recovery fájl csak az összes chunk sikeres visszaállítása után törlődik.
+
+### Fix világboss-anchorok
+
+A legacy fix/random világboss-anchor a saját chunkjának egzakt középpontjára normalizálódik.
+A meglévő `[-8, 8)` véletlen eltolás így bizonyítottan ugyanabban a chunkban marad, tehát
+a probe oszlopot mindig az azt birtokló Folia-régiótask olvassa.
+
+### Spawn-diagnosztika
+
+Játékos adminnal:
+
+```text
+/events debug spawn <event-kulcs>
+```
+
+A parancs valódi, spawn nélküli keresést futtat, majd megmutatja a dinamikus minimumot,
+a keresési gyűrűt, a footprintet, az érintett chunkokat, az eltelt időt és az elutasítási
+okok darabszámát.
+
+### Spawn-védelem a config menüben
+
+A vízvédelem három kulcsa a `Világesemények` kategóriába kerül. Ha a kategória más
+fejlesztések miatt elérné a 45 elemű kapacitást, a további placement-beállítások egy
+külön `Event spawn-védelem` kategóriában jelennek meg. Minden itt szereplő beállítás
+élőben olvasódik.
+
+A kötelező kézi staging-próbák az [admin kézikönyv staging-mátrixai](ADMIN_GUIDE.md#kiegészítő-staging-mátrixok) közt találhatók.
+
+## Szakma-recept és item-audit
+
+| profession | recipe key | item | problem | previous behaviour | fixed behaviour | balance rationale | migration / compatibility |
+|---|---|---|---|---|---|---|---|
+| Fisher | `egyszeru_horgaszbot` / `kezdo_horgaszbot` | Fishing Rod | Exact semantic duplicate: `3×STICK + 2×STRING → FISHING_ROD` | Two progression records represented the same craft and could diverge by load order | `egyszeru_horgaszbot` is canonical; `kezdo_horgaszbot` and its recipe are removed | One unlock/cost path prevents fake progression depth and recipe ambiguity | Existing fishing rods remain vanilla-compatible; no item migration is required |
+| All | `icesmp:prof_*` legacy masterworks | PDC-stamped masterwork tools/books | Reload/disable did not remove previously registered Bukkit keys | Disabled or removed recipes could remain craftable until restart; repeated registration could be rejected | Manager owns a deterministic key set, removes it before rebuild and on disable, then registers once | No duplicate registry entries or stale craft path | Already crafted items remain valid; only future crafting availability changes |
+| All | Config catalog (438 before, 437 after) | All profession outputs | No early semantic collision validation, and a rejected reload could expose the already-cleared or partially rebuilt live maps | Similar/duplicate recipes were accepted silently; later validation failures could leave an incomplete runtime catalog | Sorted loading plus canonical input/output fingerprints validate a private candidate; immutable maps and recipe metadata are published with one `volatile` snapshot replacement | Exact duplicates fail early without destabilising active crafting, while intentional recipes with distinct input or output remain independent | Existing runtime generation remains active when a reload is rejected; no item migration is required |
+| All | Unique profession outputs | Resource-pack model | Item/model references were distributed across config and pack | Missing mappings were only found visually | Build validator checks every referenced ITEM_MODEL against the manifest and checked-in pack | Visual identity remains stable without changing public model IDs | No public model ID changed; vanilla `PAPER` is the explicit no-pack fallback |
+
+The automated audit verifies **437 recipes**, zero duplicate keys, zero semantic duplicates, immutable recipe metadata,
+transactional catalog reload publication, exact unique/custom ingredient matching, profession/level gates, deterministic key order,
+output-model presence and removal of stale Bukkit registrations after reload or disable.

@@ -14,6 +14,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Locale;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 public final class JobAdminSubcommand implements JobSubcommand {
 
@@ -93,44 +95,94 @@ public final class JobAdminSubcommand implements JobSubcommand {
             }
 
             if ("unlockallskills".equals(action)) {
-                // Az ADMIN forrás sosem esik automatikus visszavonás alá (spec/talent reset).
+                CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
                 for (final Spell spell : spellRegistry.getAll()) {
-                    jobManager.unlockSpell(target, spell.getId(), hu.taliann.icesmp.managers.JobManager.SOURCE_ADMIN);
+                    chain = chain.thenCompose(ignored -> jobManager.unlockSpellV2(
+                                    target, spell.getId(), JobManager.SOURCE_ADMIN)
+                            .thenApply(changed -> null));
                 }
-                sender.sendMessage(messageManager.get(
-                        "admin.job.unlock-all.success",
-                        "&aAz osszes varazslat feloldva: &f%s",
-                        target.getName()
-                ));
-                target.sendMessage(messageManager.get("admin.job.unlock-all.notify", "&eEgy admin feloldotta neked az osszes varazslatot."));
+                chain.whenComplete((ignored, failure) -> target.getScheduler().run(plugin, followup -> {
+                    if (failure != null) {
+                        sender.sendMessage(messageManager.get("admin.job.unlock-all.persistence-failed",
+                                "&cA PlayerProfile spellbook frissítése meghiúsult: &f%s",
+                                target.getName()));
+                        return;
+                    }
+                    sender.sendMessage(messageManager.get(
+                            "admin.job.unlock-all.success",
+                            "&aAz összes varázslat tartósan feloldva: &f%s",
+                            target.getName()));
+                    target.sendMessage(messageManager.get("admin.job.unlock-all.notify",
+                            "&eEgy admin feloldotta neked az összes varázslatot."));
+                }, null));
                 return;
             }
 
             if ("resetskills".equals(action)) {
-                jobManager.clearSpellGrants(target);
-                jobManager.setUnlockedSpellIds(target, List.of());
-                abilityCatalystListener.resetAllSpellState(target);
-                sender.sendMessage(messageManager.get(
-                        "admin.job.reset-skills.success",
-                        "&aMinden varazslat allapot alaphelyzetbe allitva: &f%s",
-                        target.getName()
-                ));
-                target.sendMessage(messageManager.get("admin.job.reset-skills.notify", "&eEgy admin alaphelyzetbe allitotta a varazslataidat."));
+                jobManager.clearSpellGrantsV2(target)
+                        .whenComplete((ignored, failure) -> target.getScheduler().run(plugin, followup -> {
+                            if (failure != null) {
+                                sender.sendMessage(messageManager.get("admin.job.reset-skills.persistence-failed",
+                                        "&cA PlayerProfile spellbook törlése meghiúsult: &f%s",
+                                        target.getName()));
+                                return;
+                            }
+                            abilityCatalystListener.resetAllSpellState(target);
+                            sender.sendMessage(messageManager.get(
+                                    "admin.job.reset-skills.success",
+                                    "&aMinden varázslat állapot tartósan alaphelyzetbe állítva: &f%s",
+                                    target.getName()));
+                            target.sendMessage(messageManager.get("admin.job.reset-skills.notify",
+                                    "&eEgy admin alaphelyzetbe állította a varázslataidat."));
+                        }, null));
                 return;
             }
 
             // resetclass: full class wipe — both job slots + XP/levels, the class specialization,
             // and all unlocked spells + spell state. The player can then pick a fresh class.
-            jobManager.resetClass(target);
-            specializationManager.resetClassSpecialization(target);
-            abilityCatalystListener.resetAllSpellState(target);
-            sender.sendMessage(messageManager.get(
-                    "admin.job.reset-class.success",
-                    "&aKaszt teljesen alaphelyzetbe állítva (kaszt + spec + varázslatok): &f%s",
-                    target.getName()
-            ));
-            target.sendMessage(messageManager.get("admin.job.reset-class.notify",
-                    "&eEgy adminisztrátor alaphelyzetbe állította a kasztodat — válassz újat a /profile menüből."));
+                final long revision = specializationManager.profileGateway()
+                        .diagnostic(target.getUniqueId()).revision();
+                specializationManager.resetClassSpecSection(target, true,
+                                "admin-class-reset:" + target.getUniqueId() + ":" + revision)
+                        .whenComplete((result, failure) -> target.getScheduler().run(plugin, followup -> {
+                            if (failure != null || result == null || !result.durableMutationApplied()) {
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.persistence-failed",
+                                        "&cA Profile v2 commit meghiúsult; a kaszt-PDC érintetlen maradt: &f%s",
+                                        target.getName()));
+                                return;
+                            }
+                            if (!result.committed()) {
+                                specializationManager.profileGateway().blockSession(target.getUniqueId(),
+                                        "Admin class-reset committed, but runtime reconciliation failed");
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.runtime-failed",
+                                        "&cA profil commitolt, de a runtime-befejezés hibázott; a session blokkolva: &f%s",
+                                        target.getName()));
+                                return;
+                            }
+                            try {
+                                jobManager.resetClass(target);
+                                specializationManager.resetProfessionSpecialization(target);
+                                abilityCatalystListener.resetAllSpellState(target);
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.success",
+                                        "&aKaszt teljesen alaphelyzetbe állítva (kaszt + spec + varázslatok): &f%s",
+                                        target.getName()));
+                                target.sendMessage(messageManager.get("admin.job.reset-class.notify",
+                                        "&eEgy adminisztrátor alaphelyzetbe állította a kasztodat — válassz újat a /profile menüből."));
+                            } catch (final Throwable mirrorFailure) {
+                                specializationManager.profileGateway().blockSession(target.getUniqueId(),
+                                        "Admin class-reset PDC mirror failed after Profile v2 commit");
+                                sender.sendMessage(messageManager.get(
+                                        "admin.job.reset-class.mirror-failed",
+                                        "&cA profil commit sikerült, de a runtime/XP cleanup hibázott; a session blokkolva: &f%s",
+                                        target.getName()));
+                            }
+                        }, () -> specializationManager.profileGateway().blockSession(
+                                target.getUniqueId(),
+                                "Admin class-reset PDC mirror scheduler rejected after Profile v2 commit")));
+                return;
         }, null);
         return true;
     }
@@ -159,4 +211,3 @@ public final class JobAdminSubcommand implements JobSubcommand {
     }
 
 }
-

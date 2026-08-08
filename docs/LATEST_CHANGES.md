@@ -12,11 +12,55 @@ A kód és a CI elkészült állapota még nem egyenlő az élesítéssel. Ahol 
 világbejárásos vagy hibaszimulációs próba hiányzik, azt ezen az oldalon külön
 jelezzük.
 
+A 13 kaszt / 35 specializáció teljes reworkjének 1.21.11-es kompatibilitási
+alapja külön, alapból kikapcsolt rollout-kapu mögé került. Ez még nem játékosnak
+kiadható rework: verziózárt dependency-manifestet, fail-fast preflightot,
+Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződéseit adja.
+
 > **Összehasonlítási alap:** az üzemeltető által futóként átadott
 > `IceSMP-1.0-TESTING.jar`. A tartalma nagy bizonyossággal a
 > **2026. július 12-i** forrásállapotnak felel meg; július 13-án nem volt
 > köztes mainline commit. A JAR nem tartalmaz Git SHA-t, ezért ez
 > `HIGH_CONFIDENCE`, nem `EXACT` azonosítás.
+
+## Augusztus eleji integrációs hullám (staging előtt)
+
+A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
+
+- **PlayerProfile-alap:** minden tartós játékos-állapot (kaszt, szakma, quest,
+  pénztárca, statisztika, moderációs összegzés, crate-számlálók, heti céh-cél,
+  halál-escrow) egyetlen, tranzakcióvédett profilrendszerben él — restart és
+  crash ellen journalozott, gépi kapuval őrzött szerkezetben.
+- **Tablist és színek:** LuckPerms-rang szerinti rendezés, AFK játékosok a
+  lista végén; a Menedék-polgár neve zöld (Smaragdkő-szín), így nem
+  téveszthető össze a Kitaszítottal — tab, nametag, chat és külső TAB
+  (`%icesmp_faction_color%`) egységesen.
+- **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
+  adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
+- **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,
+  víz- és partpuffer, nézési kúp), meteor-kráter terrain-visszaállítási
+  journallal.
+- **Claimek:** fail-closed betöltés + a poligon-kijelölés csúcspont-limitje
+  alapból megszűnt (a területkorlát maradt a valódi kapu).
+- **Konzol:** a boot-kori leltár-sorok elnémultak; hibakereséshez a
+  `logging.verbose-startup` kulccsal visszakapcsolhatók. A szintezett
+  (custom-nevű) mobok vanilla „Named entity … died" halál-sorát a plugin
+  szűrője alapból eldobja — se terminál, se `latest.log`
+  (`logging.suppress-named-entity-deaths`, élő kulcs).
+- **Lifecycle- és API-hardening:** a PlayerProfile erőforrás-teardown részleges
+  indulás és sikertelen leállítási drain után is garantált (nem marad hátra
+  executor, HTTP listener vagy service-regisztráció); az alapból kikapcsolt
+  read-only HTTP API név-feloldása auth-first — anonim hívás egyetlen
+  tárolóolvasást sem indíthat el.
+- **Bestiárium-mélység:** a lajstrom négy kategóriája kattintva lapozható
+  (ismeretlen bejegyzés = „???"), teljesítmény-%-kal és nevezőkkel; a
+  szörnyeknél fajonkénti elejtés-számláló, első-elejtés dátum és kill-alapú
+  tudás-fokozatok; a világbossok archetípusonként kerülnek a lajstromba;
+  `%icesmp_bestiary_*%` placeholderek külső kijelzéshez.
+- **Kódex-bővítés:** mind a 7 ereklye, a 10 világboss-archetípus, a
+  kazamata-őrzők és mind a 35 specializáció-iskola kánon-bejegyzést kapott;
+  a consistency-kapu gépileg őrzi, hogy nevesített tartalom ne élhessen
+  kódex-horgony nélkül.
 
 ## Harminc másodpercben
 
@@ -154,9 +198,12 @@ A release warningot, kicket, állandó és ideiglenes mute-ot/tiltást,
 visszavonást, historyt, aktív punishment-listát, reportkezelést, PM-et,
 SocialSpy-t, vanish-t, moderációs GUI-t és offline teleportot ad.
 
-Az inventory admin online main inventoryt és ender chestet tud külön
-**read** vagy **edit** módban megnyitni. Az edit útvonal escrow- és reconnect
-recoveryt használ; emiatt az edit permission jóval érzékenyebb, mint a read.
+Az inventory admin a `/invsee <játékos>` egyetlen paranccsal nyitja meg az
+online main inventoryt és ender chestet: edit joggal az első megnyitó
+automatikusan **write** sessiont kap, minden további egyidejű megnyitó
+read-only módot; a MAIN ↔ ENDER váltás a GUI gombjával történik. A write
+útvonal escrow- és reconnect recoveryt használ; emiatt az edit permission
+jóval érzékenyebb, mint a read.
 
 ### Natív MOTD és megjelenítés
 
@@ -252,6 +299,9 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
    sebzés/exhaustion policy, provokáció, Enderman, ambient/vad DARK undead,
    Vérhold és harci kivételek, koronaátok, két eltérő frakció ugyanazon mobnál,
    valamint reload–relog–restart–disable lifecycle.
+8. **Integrációs hullám:** PlayerProfile-, invsee/adományláda-, world-event
+   spawn-védelmi, frakciószín- és runtime hardening kézi próbák — az admin
+   kézikönyv „Kiegészítő staging-mátrixok” szakasza szerint.
 
 ## Élesítés rövid sorrendje
 

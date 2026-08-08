@@ -82,10 +82,7 @@ public final class ModerationGUI {
         put(viewer, inventory, 19, Permissions.MODERATION_HISTORY, Material.BOOK, messages.get("moderation.gui.history", "Teljes előzmény"), "/history");
         put(viewer, inventory, 20, Permissions.MODERATION_HISTORY, Material.WRITABLE_BOOK, messages.get("moderation.gui.active", "Aktív büntetések"), "/punishments");
         put(viewer, inventory, 21, Permissions.MODERATION, Material.MAP, messages.get("moderation.gui.reports", "Reportok"), "/reports");
-        put(viewer, inventory, 22, Permissions.MODERATION_INVENTORY_READ, Material.CHEST, messages.get("moderation.gui.inventory-read", "Inventory — olvasás"), "/invsee read");
-        put(viewer, inventory, 23, Permissions.MODERATION_INVENTORY_EDIT, Material.ANVIL, messages.get("moderation.gui.inventory-edit", "Inventory — szerkesztés"), "/invsee edit");
-        put(viewer, inventory, 24, Permissions.MODERATION_INVENTORY_READ, Material.ENDER_CHEST, messages.get("moderation.gui.ender-read", "Ender chest — olvasás"), "/invsee read ender");
-        put(viewer, inventory, 25, Permissions.MODERATION_INVENTORY_EDIT, Material.ENDER_EYE, messages.get("moderation.gui.ender-edit", "Ender chest — szerkesztés"), "/invsee edit ender");
+        putInvsee(viewer, inventory, messages);
         put(viewer, inventory, 28, Permissions.MODERATION_OFFLINE_TP, Material.ENDER_PEARL, messages.get("moderation.gui.teleport-online", "Teleport az online játékoshoz"), "online teleport");
         put(viewer, inventory, 29, Permissions.MODERATION_OFFLINE_TP, Material.COMPASS, messages.get("moderation.gui.teleport-offline", "Utolsó kijelentkezési hely"), "/offlinetp");
         put(viewer, inventory, 30, Permissions.MODERATION_SOCIALSPY, Material.SPYGLASS, messages.get("moderation.gui.socialspy", "SocialSpy kapcsoló"), "/socialspy");
@@ -99,12 +96,24 @@ public final class ModerationGUI {
         viewer.openInventory(inventory);
     }
 
+    private static void putInvsee(final Player viewer, final Inventory inventory,
+                                  final MessageManager messages) {
+        if (!viewer.hasPermission(Permissions.MODERATION_INVENTORY_READ)
+                && !viewer.hasPermission(Permissions.MODERATION_INVENTORY_EDIT)) {
+            return;
+        }
+        inventory.setItem(22, GuiUtil.icon(Material.CHEST,
+                GuiUtil.accent(messages.get("moderation.gui.inventory", "Inventory / Ender chest")),
+                List.of(GuiUtil.grey("/invsee — automatikus WRITE/READ"))));
+    }
+
     private static void put(final Player viewer, final Inventory inventory, final int slot,
                             final String permission, final Material material, final String title,
                             final String route) {
         if (!viewer.hasPermission(permission)) {
             return;
         }
-        inventory.setItem(slot, GuiUtil.icon(material, GuiUtil.accent(title), List.of(GuiUtil.grey(route))));
+        inventory.setItem(slot, GuiUtil.icon(
+                material, GuiUtil.accent(title), List.of(GuiUtil.grey(route))));
     }
 }

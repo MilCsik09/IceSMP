@@ -267,6 +267,12 @@ Az adományláda nem piac:
 - `/adomany add` — a kézben tartott stack felajánlása;
 - `/adomany` — a közös kínálat böngészése.
 
+A GUI felső, 0–8. sora egyirányú beadási zóna: bal kattintás a teljes
+kurzorstackot, jobb kattintás egy darabot ad be; a shift-kattintás, a
+hotbar-szám, az offhand-gomb és a drag is működik. Egy közös adományt
+egyszerre csak egy játékos vehet el; ha a fogadó inventoryd megtelik, a
+maradék a lábadnál esik le.
+
 Nincs vételár; amit elviszel, azt egy másik játékos neked szánta.
 
 ### Miért kerül pénzbe ennyi minden?
@@ -681,7 +687,12 @@ csak akkor használd, ha a játék vagy a csapat kifejezetten erre irányít.
 - A történeti fejezetek a szezonhoz kapcsolódhatnak.
 - A rejtvényküldetés nem mutatja meg a konkrét célt — ez szándékos.
 - A sötét és vezeklési láncoknak tartós következménye lehet.
-- A `/bestiarium` felfedezői és harci mérföldköveket gyűjt.
+- A `/bestiarium` felfedezői és harci mérföldköveket gyűjt: a négy kategória
+  (szörnyek, receptek, territóriumok, világbossok) kattintva lapozható, az
+  ismeretlen bejegyzések „???"-ként várnak a felfedezésre. A szörnyeknél
+  fajonként számoljuk az elejtéseket: elég kill után a bejegyzés
+  tudás-fokozatot lép (kódex-jegyzet, zsákmány-jegyzet, végül mestervadász
+  jelölés).
 
 Nem találsz itt megoldókulcsot. Ha elakadsz, olvasd újra a párbeszédet,
 vizsgáld meg a helyszínt, kérdezz más játékosokat — és csak ezután gondolj

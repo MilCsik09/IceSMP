@@ -78,6 +78,10 @@ A kód generikus `RED/BLUE/NEUTRAL/DARK` azonosítókat használ; a lore ezekre 
 | Arany Áramlása (VIII.) | bank/piac/aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő, „nincs addolt pénz" elv; caldesterai ládák = crate-rendszer (kulcs-ár = valuta-nyelő); **adó = 2% + fejadó**, a fedezetlen rész hátralék, a tartós nem-fizetést a Számvevők bűnként jelentik fel (bűn-küszöb → száműzetés a Kitaszítottak közé) |
 | Korszakok Könyve (VIII.) | szezonliga: frakció-pontverseny, szezon-végi jutalom |
 | Oltárok és Ereklyék (VIII.) | egy-példányos relikviák, PvP-átvétel, inaktivitás-elenyészés; multi-block rituálé-oltárok |
+| **Az Ismert Ereklyék** (függelék) | `relics.yml definitions` — a 7 relikvia kánon-szövege a kódexben: Mételytépő, Eleftheria Könnye, a 4 szárny-ereklye (Főnix-/Zúzmara-/Csontszárny, Vándorszél — `wings` repülés-mechanika) és a Sárkánytojás-töredék (Sárkányidéző Eszencia-bővítés); átvétel/elenyészés a VIII. törvény szerint |
+| **A kazamaták és őrzőik** (VII.) | `world.yml minibosses` — `melyseg` = A Mélység Őrzője, `csontkripta` = A Csontkripta Ura (24 h visszatérés = „a Királynő szava újra felrázza"); `kazamata` loot-table; `csontkripta_kulcsa` item |
+| **A Lapforduló Őre** (VIII.) | a szezonzáró kihívás-boss (`world.yml` season challenge `boss`) — a korszak/fejezet lezárásának közös próbája, bónusz szezonpont |
+| **A Források Iskolái** (függelék) | `SpecializationType` — mind a 35 iskola kaszt-bontásban, kánon egy-mondatosokkal; az 5 †-es (sötét) iskola sinner-kapus (lásd a „Kasztok forrásai" sort) |
 | Hírnökök és Krónikák (VIII.) | quest-rendszer, NPC quest-adók, napi rotáció, frakció-közösségi célok, achievementek/ranglisták |
 
 > **Nem-kánon mechanika:** a kaszt-mester NPC-láncok + parkour-próbapályák a kódban léteznek

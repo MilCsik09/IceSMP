@@ -2,7 +2,6 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.EventSpawnGuard;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -14,7 +13,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
-/** Maintains immutable online-player position snapshots for the event spawn policy. */
+/** Maintains immutable player position, look-direction and send-distance snapshots. */
 public final class EventSpawnGuardListener implements Listener {
     private final EventSpawnGuard guard;
 
@@ -35,7 +34,7 @@ public final class EventSpawnGuardListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
         final Location to = event.getTo();
-        if (to != null && changedBlock(event.getFrom(), to)) {
+        if (to != null && changedPositionOrDirection(event.getFrom(), to)) {
             guard.trackPlayer(event.getPlayer(), to, event.getPlayer().getGameMode());
         }
     }
@@ -62,10 +61,12 @@ public final class EventSpawnGuardListener implements Listener {
         guard.trackPlayer(event.getPlayer(), event.getPlayer().getLocation(), event.getNewGameMode());
     }
 
-    private static boolean changedBlock(final Location from, final Location to) {
+    private static boolean changedPositionOrDirection(final Location from, final Location to) {
         return from.getWorld() != to.getWorld()
                 || from.getBlockX() != to.getBlockX()
                 || from.getBlockY() != to.getBlockY()
-                || from.getBlockZ() != to.getBlockZ();
+                || from.getBlockZ() != to.getBlockZ()
+                || Math.abs(from.getYaw() - to.getYaw()) >= 2.0F
+                || Math.abs(from.getPitch() - to.getPitch()) >= 2.0F;
     }
 }

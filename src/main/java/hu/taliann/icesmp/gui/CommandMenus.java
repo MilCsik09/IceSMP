@@ -283,7 +283,7 @@ public final class CommandMenus {
                         List.of(grey("Erős környezeti hőellenállás."), click()));
                 case BLUE -> GuiUtil.icon(Material.BLUE_WOOL, Component.text(prefix + ": Fagy (Cryghaliris)", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false),
                         List.of(grey("Fagyvédelem, részleges vízi és éhségelőny."), click()));
-                case NEUTRAL -> GuiUtil.icon(Material.WHITE_WOOL, Component.text(prefix + ": Menedék (Ryanora & Caldestera)", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                case NEUTRAL -> GuiUtil.icon(Material.LIME_WOOL, Component.text(prefix + ": Menedék (Ryanora & Caldestera)", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false),
                         List.of(grey("Esésvédelem, békés lények jóindulata, adómentesség."), click()));
                 case DARK -> GuiUtil.icon(Material.BLACK_WOOL, Component.text(prefix + ": Kitaszított (A Kitaszítottak)", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false),
                         List.of(grey("Wither-ellenállás, helyzetfüggő élőholt-béke."),

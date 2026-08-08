@@ -175,7 +175,10 @@ claims:
   column-cost: 0.5            # minden további oszlop ára (saját frakció-valuta, ELÉG)
   max-columns-per-player: 8192   # claim-plafon játékosonként, oszlopban (≈ 32 chunknyi)
   area-max-columns: 6400      # téglalap vagy poligon maximális kitöltött oszlopszáma
-  polygon-max-points: 64        # territory-szerű claimhatár maximális csúcspontszáma
+  # A claimhatár csúcspontszáma alapból korlátlan (0) — a claim létrehozáskor oszlop-
+  # halmazzá raszterizálódik, így a futásidejű védelem-ellenőrzés költsége a pontszámtól
+  # független; a tényleges méretkorlát az area-max-columns. Pozitív érték felső korlátot ad.
+  polygon-max-points: 0
   y-extend-step: 5            # a magasítás/mélyítés lépésköze (blokk)
   y-extend-cost-per-column: 0.1  # bővítés ára lépésenként: a claim oszlopai × ez az összeg
   protect-containers: true    # konténerek (láda, hordó, kemence…) védelme idegenektől
@@ -415,3 +418,33 @@ combat:
   # Hadi-ablak pont / párbaj bűn-tisztulás csak ennyi másodpercnyi TÉNYLEGES
   # harc (a pár első kontaktusától) után jár — win-trade/bűn-mosás fék.
   min-fight-seconds: 20
+# Moduláris PlayerProfile platform. A YAML repository az egyetlen IceSMP-owned
+# tartós játékosállapot-authority; a PDC csak újraépíthető mirror lehet.
+player-profile:
+  storage:
+    directory: "player-profiles"
+    shutdown-timeout-ms: 10000
+  http:
+    # Biztonságos alapérték: a read-only API explicit engedélyezésig nem indul.
+    enabled: false
+    bind: "127.0.0.1"
+    port: 8765
+    requests-per-minute: 60
+    max-request-bytes: 1024
+    max-response-bytes: 1048576
+    timeout-ms: 3000
+    # Formátum: "<uuid>:<token>". A tokeneket secret-managed deployment configból add meg.
+    self-tokens: []
+    # Admin tokenek. Ne commitolj valódi tokent a repositoryba.
+    admin-tokens: []
+
+# Naplózás — a boot-kori leltár-sorok ("Loaded N ...", spell-balansz felülbírálások,
+# érvényes-táblák, config-echo) alapból FINE szintre kerülnek, hogy a konzol a tényleges
+# eseményeké maradjon. true esetén ezek a sorok INFO-ként látszanak (hibakereséshez).
+logging:
+  verbose-startup: false
+  # A vanilla "Named entity ... died" sort minden custom-nevű (pl. szintezett) mob halála
+  # a konzolba ÉS a latest.logba írná — true esetén a plugin Log4j-szűrője még az
+  # appenderek előtt eldobja, így egyik helyen sem jelenik meg. Élőben olvasott kulcs:
+  # false + /icesmp reload után a sorok azonnal újra látszanak (hibakereséshez).
+  suppress-named-entity-deaths: true

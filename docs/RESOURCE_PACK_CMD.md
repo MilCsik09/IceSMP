@@ -1,5 +1,7 @@
 # Resource Pack — ITEM_MODEL textúra-leírások
 
+<!-- icesmp-doc-id: feature.resource-pack -->
+
 Ez a fájl a textúra-készítő (és a képgenerátor) bemenete. A plugin minden custom/egyedi tárgya modern **ITEM_MODEL** komponenst visel (`icesmp:<modell-id>`); régi numerikus modelladatot sehol nem használunk. A pack itemenként az `assets/icesmp/items/<modell-id>.json` modell-fájlt és a hozzá tartozó `assets/icesmp/textures/item/<modell-id>.png` textúrát szállítja — a `<modell-id>` egyben a PNG fájlneve is.
 
 Minden tétel négy fogódzót ad a művésznek: **Alap-item** (a vanilla sziluett-referencia), **Ábrázolás** (mit ábrázoljon), **Színvilág** (paletta + akcent) és **Hangulat / lore** (a világon belüli érzet).

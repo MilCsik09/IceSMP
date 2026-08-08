@@ -107,13 +107,18 @@ public final class ProfessionXpListener implements Listener {
         // Az addXpFor false-t ad, ha a játékos NEM gyakorolja ezt a szakmát (nem kapott XP-t).
         // A heti közös cél csak valódi jóváírásra tölthető, különben egy nem-bányász
         // ércbontása is töltötte a Bányász-céh heti célját (szakma-identitás nélküli farm).
-        if (!professionManager.addXpFor(player, profession, totalXp)) {
-            return;
-        }
-        final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
-        if (weeklyRef != null) {
-            weeklyRef.add(player, profession, totalXp);
-        }
+        professionManager.addXpFor(player, profession, totalXp)
+                .whenComplete((change, failure) -> {
+                    if (failure != null || change == null || !change.changed()) {
+                        return;
+                    }
+                    professionManager.runOnOwnerThread(player, () -> {
+                        final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
+                        if (weeklyRef != null && player.isOnline()) {
+                            weeklyRef.add(player, profession, totalXp);
+                        }
+                    });
+                });
     }
 
     // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a

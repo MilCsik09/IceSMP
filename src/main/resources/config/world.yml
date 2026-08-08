@@ -480,6 +480,28 @@ bestiary:
     recipes: [ "10:25", "50:100", "100:250:broadcast" ]
     territories: [ "5:30", "10:80:broadcast" ]
     bosses: [ "1:50", "3:150:broadcast" ]
+  # Faj-szintű tudás-fokozatok: az i. érték az (i+1). fokozat kill-igénye.
+  # I. = név + kódex-jegyzet, II. = zsákmány-jegyzet, III. = mestervadász jelölés.
+  knowledge-tiers: [ "1", "10", "50" ]
+  # Kódex-konzisztens egy-mondatosok a lajstrom-bejegyzések lorejába (bővíthető;
+  # kulcs = lajstrom-id: mob-típus kisbetűvel, boss-archetípus, ritka variánsnál
+  # albino_/arnyek_ prefix). Hiányzó kulcsnál a sor egyszerűen elmarad.
+  codex-notes:
+    ring_warden: "A lezáruló fejezetek haragja gyűrűbe zárva — a krónikák szerint a Lapforduló Őrének kisebb visszhangja."
+    magma_behemoth: "A Vérszavanna kohóinak szökött szelleme; lépte nyomán megolvad a homok."
+    frost_king: "A Jégmezők trónbitorlója — Kallan öröksége nélkül, annak minden hidegével."
+    bone_king: "A sírba szállt nemesség csontjaiból emelt korona; a Királynő átka táplálja."
+    deep_horror: "A törp-tárnák mélyéről felszivárgott iszonyat — a csend, amely visszanézett."
+    venom_broodmother: "A Káoszkor fészekrakója; ivadékai a világ minden repedésében várnak."
+    storm_herald: "Kallan viharának elszabadult visszhangja, gazdátlan égzengés."
+    plague_titan: "Eleftheria mérgének járványhordozója; amerre jár, a föld is beteg."
+    golem_sentinel: "A Vasművek Akadémiájának őrszeme, amely túlélte az alkotóit — s már nem ismer jelszót."
+    piglin_warlord: "A Kárhozat Kapuján átszivárgott hadúr; a Senkiföldje az ő portyaterülete."
+    zombie: "A Néma Királynő első mondatának visszhangja — nincs lelke, csak parancsa."
+    skeleton: "A hetedik vérháború elesettje; kezében még mindig a régi fegyver."
+    creeper: "A rontás-járta vadon szülötte; a bölcsek szerint a Fa sebéből fakadt torzulás."
+    enderman: "Két világ határán jár — a krónikások az Első Csend futárának tartják."
+    wither_skeleton: "Thanaopolis csontkamráinak strázsája, a Csontkripta Urának szolgája."
 
 # ===== DARK undead-népesség =====
 dark-undead:

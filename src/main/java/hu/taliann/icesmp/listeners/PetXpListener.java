@@ -59,7 +59,8 @@ public final class PetXpListener implements Listener {
             if (!petManager.canOwnPet(killer)) {
                 return;
             }
-            petManager.addXp(killer, Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2)));
+            petManager.addXpV2(killer, Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2)),
+                    "pet-kill-xp:" + event.getEntity().getUniqueId()).exceptionally(failure -> false);
             // Rituálé-kellék dropok: a beszerzés-kihívás forrása (a drop a mob helyén esik).
             final hu.taliann.icesmp.items.CaptureItemFactory factory = this.captureItemFactory;
             if (factory == null) {

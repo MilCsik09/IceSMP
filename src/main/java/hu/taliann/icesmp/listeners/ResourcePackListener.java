@@ -79,7 +79,7 @@ public final class ResourcePackListener implements Listener {
     private PackRequest loadRequest() {
         final FileConfiguration config = plugin.getConfig();
         if (!config.getBoolean(CONFIG_ROOT + "enabled", true)) {
-            plugin.getLogger().info("IceSMP resource-pack küldés kikapcsolva.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "IceSMP resource-pack küldés kikapcsolva.");
             return null;
         }
 

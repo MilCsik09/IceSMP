@@ -10,13 +10,18 @@ public final class TablistOrdering {
     private TablistOrdering() {
     }
 
+    /**
+     * Az AFK-flag a kulcs ELSŐ karaktere, ezért minden AFK játékos a teljes lista mögé
+     * kerül; az AFK-blokkon belül (és az aktív blokkon belül is) a rang, azon belül a
+     * kisbetűs név rendez.
+     */
     public static String key(final int rankIndex, final String playerName, final boolean afk) {
         final char rank = (char) ('a' + Math.max(0, Math.min(24, rankIndex)));
         final String lower = playerName == null ? "" : playerName.toLowerCase(Locale.ROOT);
         final String namePart = lower.substring(0, Math.min(MAX_NAME_LENGTH, lower.length()));
         return new StringBuilder(2 + namePart.length())
-                .append(rank)
                 .append(afk ? '1' : '0')
+                .append(rank)
                 .append(namePart)
                 .toString();
     }

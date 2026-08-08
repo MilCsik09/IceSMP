@@ -90,7 +90,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         loadOwnerships();
 
         if (!enabled) {
-            plugin.getLogger().info("Relic system is disabled in config.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Relic system is disabled in config.");
             return;
         }
 
@@ -153,7 +153,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 "LIGHT_PURPLE",
                 List.of("&7Egy sosem kelt sárkány álma, kőbe zárva.", "&7A Sárkányidéző kezében az Eszencia", "&7medre kitágul — másnak csak hideg kő.")
         );
-        plugin.getLogger().info("Loaded " + registry.all().size() + " hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.");
+        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + registry.all().size() + " hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.");
     }
 
     private void registerRelic(
@@ -271,7 +271,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 }
             }
 
-            plugin.getLogger().info("Loaded " + ownerships.size() + " relic ownership record(s).");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + ownerships.size() + " relic ownership record(s).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load relic ownerships: " + exception.getMessage());
         }

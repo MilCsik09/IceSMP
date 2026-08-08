@@ -9,6 +9,8 @@ import hu.taliann.icesmp.managers.RespecService;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
+import hu.taliann.icesmp.classspec.application.ProfileDiagnostic;
+import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -27,6 +29,7 @@ import java.util.Locale;
 public final class SpecCommand implements BasicCommand {
 
     private static final String ADMIN_PERMISSION = "icesmp.admin.spec";
+    private static final String RECOVERY_PERMISSION = hu.taliann.icesmp.core.Permissions.SPEC_RECOVER;
 
     private final JavaPlugin plugin;
     private final SpecializationManager specializationManager;
@@ -63,6 +66,7 @@ public final class SpecCommand implements BasicCommand {
             case "info" -> handleInfo(sender);
             case "respec" -> handleRespec(sender, args);
             case "reset" -> handleReset(sender, args);
+            case "recover" -> handleRecover(sender, args);
             default -> {
                 sender.sendMessage(messageManager.get("spec-unknown-subcommand", "&cIsmeretlen alparancs: &f%s", args[0]));
                 sendHelp(sender);
@@ -75,14 +79,31 @@ public final class SpecCommand implements BasicCommand {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-
-        if (args.length < 2 || (!"class".equalsIgnoreCase(args[1]) && !"profession".equalsIgnoreCase(args[1]))) {
+        if (args.length < 2 || (!"class".equalsIgnoreCase(args[1])
+                && !"profession".equalsIgnoreCase(args[1]))) {
             sender.sendMessage(messageManager.get("spec-respec-usage", "&cHasználat: /spec respec <class|profession>"));
             return;
         }
+        if ("class".equalsIgnoreCase(args[1])) {
+            final long revision = specializationManager.profileGateway()
+                    .diagnostic(player.getUniqueId()).revision();
+            respecService.respecV2(player, "player-respec:" + player.getUniqueId() + ":" + revision)
+                    .whenComplete((outcome, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (failure != null || outcome == null) {
+                            player.sendMessage(messageManager.get("spec-respec-persistence-failed",
+                                    "&cA Profile v2 tranzakció meghiúsult; a költség nem veszett el."));
+                        } else {
+                            sendRespecOutcome(player, player, outcome);
+                        }
+                    }, () -> specializationManager.profileGateway().blockSession(player.getUniqueId(),
+                            "Respec completion scheduler rejected")));
+            return;
+        }
+        sendRespecOutcome(sender, player, respecService.respec(player, false));
+    }
 
-        final RespecService.Outcome outcome =
-                respecService.respec(player, "class".equalsIgnoreCase(args[1]));
+    private void sendRespecOutcome(final CommandSender sender, final Player player,
+                                   final RespecService.Outcome outcome) {
         switch (outcome.status()) {
             case NOTHING_TO_RESPEC -> sender.sendMessage(messageManager.get(
                     "spec-respec-nothing", "&cNincs mit visszaváltani: nincs ilyen specializációd."));
@@ -100,6 +121,15 @@ public final class SpecCommand implements BasicCommand {
                     outcome.currency().getDisplayName(),
                     outcome.refundedTalentPoints()
             ));
+            case PERSISTENCE_FAILED -> sender.sendMessage(messageManager.get(
+                    "spec-respec-persistence-failed",
+                    "&cA Profile v2 mentése meghiúsult; az esetleges költséget visszatérítettük."));
+            case RUNTIME_FAILED -> sender.sendMessage(messageManager.get(
+                    "spec-respec-runtime-failed",
+                    "&4A profil commitolt, de a runtime-befejezés hibázott; a session blokkolva, admin audit szükséges."));
+            case REFUND_FAILED -> sender.sendMessage(messageManager.get(
+                    "spec-respec-refund-failed",
+                    "&4A profil- és valuta-visszaállítás kézi admin auditot igényel; a session blokkolva maradt."));
         }
     }
 
@@ -170,16 +200,18 @@ public final class SpecCommand implements BasicCommand {
 
         final SpecializationType classSpec = SpecializationType.fromId(args[1]);
         if (classSpec != null) {
-            if (specializationManager.selectClassSpecialization(player, classSpec)) {
-                player.sendMessage(messageManager.getMessage("spec-choose-success", "&aSpecializáció kiválasztva:")
-                        .append(Component.space())
-                        .append(classSpec.getDisplayName()));
-            } else {
-                player.sendMessage(messageManager.get(
-                        "spec-choose-failed",
-                        "&cNem választhatod ezt a specializációt (kaszt, szint, frakció vagy bűnös feltétel hiányzik)."
-                ));
-            }
+            specializationManager.selectClassSpecializationV2(player, classSpec)
+                    .whenComplete((success, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (failure == null && Boolean.TRUE.equals(success)) {
+                            player.sendMessage(messageManager.getMessage(
+                                            "spec-choose-success", "&aSpecializáció kiválasztva:")
+                                    .append(Component.space()).append(classSpec.getDisplayName()));
+                        } else {
+                            player.sendMessage(messageManager.get("spec-choose-failed",
+                                    "&cA Profile v2 mentés vagy valamelyik kasztkapu miatt a választás meghiúsult."));
+                        }
+                    }, () -> specializationManager.profileGateway().blockSession(player.getUniqueId(),
+                            "Spec selection completion scheduler rejected")));
             return;
         }
 
@@ -206,18 +238,33 @@ public final class SpecCommand implements BasicCommand {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-
-        final SpecializationType classSpec = specializationManager.getClassSpecialization(player);
-        final ProfessionSpecializationType professionSpec = specializationManager.getProfessionSpecialization(player);
-
-        player.sendMessage(messageManager.getMessage("spec-info-class", "&6Kaszt specializáció: ")
-                .append(classSpec == null
-                        ? messageManager.getMessage("spec-info-none", "&7nincs")
-                        : classSpec.getDisplayName()));
-        player.sendMessage(messageManager.getMessage("spec-info-profession", "&6Szakma specializáció: ")
-                .append(professionSpec == null
-                        ? messageManager.getMessage("spec-info-none", "&7nincs")
-                        : professionSpec.getDisplayName()));
+        final ProfileDiagnostic diagnostic = specializationManager.profileGateway()
+                .diagnostic(player.getUniqueId());
+        player.sendMessage(Component.text("Profile v2: "
+                + (diagnostic.loaded() ? diagnostic.profileStatus() : "UNAVAILABLE")
+                + " | schema=" + diagnostic.schemaVersion() + " | revision=" + diagnostic.revision()));
+        player.sendMessage(Component.text("Primary class="
+                + diagnostic.primaryClassId().orElse("none") + " | level=" + diagnostic.classLevel()
+                + " | xp=" + diagnostic.classExperience() + " | activeSlot="
+                + diagnostic.activeSlot().map(Enum::name).orElse("none")
+                + " | secondSpecUnlocked=" + diagnostic.secondSpecUnlocked()));
+        for (final LoadoutSlot slot : LoadoutSlot.values()) {
+            final ProfileDiagnostic.SlotDiagnostic state = diagnostic.slots().get(slot);
+            if (state == null) {
+                player.sendMessage(Component.text(slot.name() + ": unavailable"));
+                continue;
+            }
+            player.sendMessage(Component.text(slot.name() + ": spec="
+                    + state.specializationId().orElse("none") + " | status=" + state.status()
+                    + " | seal=" + state.sealReason().map(Object::toString).orElse("none")
+                    + " | mastery=" + state.masteryRank() + "/10 xp=" + state.masteryXp()));
+        }
+        diagnostic.reviewReason().ifPresent(reason ->
+                player.sendMessage(Component.text("Review: " + reason)));
+        diagnostic.quarantineReason().ifPresent(reason ->
+                player.sendMessage(Component.text("Quarantine: " + reason)));
+        diagnostic.sessionBlockReason().ifPresent(reason ->
+                player.sendMessage(Component.text("Session block: " + reason)));
     }
 
     private void handleReset(final CommandSender sender, final String[] args) {
@@ -225,23 +272,93 @@ public final class SpecCommand implements BasicCommand {
             sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
-
         if (args.length < 2) {
             sender.sendMessage(messageManager.get("spec-reset-usage", "&cHasználat: /spec reset <játékos>"));
             return;
         }
-
         final Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null) {
             sender.sendMessage(messageManager.get("target-player-offline", "&cA célpont játékos nem elérhető."));
             return;
         }
-
-        // Folia: resetSpecializations writes the target's PDC — run it on the target's region thread.
         target.getScheduler().run(plugin, task -> {
-            specializationManager.resetSpecializations(target);
-            sender.sendMessage(messageManager.get("spec-reset-success", "&aSpecializációk törölve: &f%s", target.getName()));
-        }, null);
+            final long revision = specializationManager.profileGateway()
+                    .diagnostic(target.getUniqueId()).revision();
+            specializationManager.resetClassSpecSection(target, false,
+                            "admin-spec-reset:" + target.getUniqueId() + ":" + revision)
+                    .whenComplete((result, failure) -> target.getScheduler().run(plugin, followup -> {
+                        if (failure == null && result != null && result.committed()) {
+                            specializationManager.resetProfessionSpecialization(target);
+                            sendToSender(sender, messageManager.getComponent("spec-reset-success",
+                                    "&aSpecializációk törölve: &f%s", target.getName()));
+                        } else if (failure == null && result != null && result.durableMutationApplied()) {
+                            specializationManager.profileGateway().blockSession(target.getUniqueId(),
+                                    "Admin spec-reset committed, but runtime reconciliation failed");
+                            sendToSender(sender, messageManager.getComponent("spec-reset-runtime-failed",
+                                    "&cA profil commitolt, de a runtime-befejezés hibázott; a session blokkolva: &f%s",
+                                    target.getName()));
+                        } else {
+                            sendToSender(sender, messageManager.getComponent("spec-reset-failed",
+                                    "&cA Profile v2 mentése meghiúsult; semmi nem lett törölve: &f%s",
+                                    target.getName()));
+                        }
+                    }, () -> specializationManager.profileGateway().blockSession(target.getUniqueId(),
+                            "Admin spec-reset completion scheduler rejected")));
+        }, () -> sendToSender(sender, messageManager.getComponent("spec-reset-failed",
+                "&cA célpont scheduler elutasította a resetet: &f%s", target.getName())));
+    }
+
+    private void handleRecover(final CommandSender sender, final String[] args) {
+        if (!sender.hasPermission(RECOVERY_PERMISSION)) {
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            return;
+        }
+        if (args.length != 3 || !"confirm".equalsIgnoreCase(args[2])) {
+            sender.sendMessage(Component.text("Használat: /spec recover <player|uuid> confirm"));
+            return;
+        }
+        final java.util.UUID targetId = resolveKnownPlayerId(args[1]);
+        if (targetId == null) {
+            sender.sendMessage(Component.text("Ismeretlen játékos vagy hibás UUID: " + args[1]));
+            return;
+        }
+        final var gateway = specializationManager.profileGateway();
+        final String evidenceId = gateway.quarantineEvidenceId(targetId).orElse(null);
+        if (evidenceId == null) {
+            sender.sendMessage(Component.text("Nincs aktív quarantine evidence ehhez a profilhoz."));
+            return;
+        }
+        final String auditId = "spec-recovery:" + sender.getName() + ":" + targetId + ":" + evidenceId;
+        gateway.recoverQuarantined(targetId, evidenceId, auditId).whenComplete((result, failure) -> {
+            if (failure != null || result == null) {
+                sendToSender(sender, Component.text("Profile recovery failed: "
+                        + (failure == null ? "missing result" : failure.getMessage())));
+            } else {
+                sendToSender(sender, Component.text("Profile v2 recovered as clean inactive revision "
+                        + result.profile().revision() + "; evidence preserved: " + result.evidenceId()
+                        + ". A játékosnak újra kell csatlakoznia."));
+            }
+        });
+    }
+
+    private java.util.UUID resolveKnownPlayerId(final String token) {
+        try { return java.util.UUID.fromString(token); }
+        catch (final IllegalArgumentException ignored) { }
+        final Player online = Bukkit.getPlayerExact(token);
+        if (online != null) return online.getUniqueId();
+        for (final org.bukkit.OfflinePlayer known : Bukkit.getOfflinePlayers()) {
+            final String name = known.getName();
+            if (name != null && name.equalsIgnoreCase(token)) return known.getUniqueId();
+        }
+        return null;
+    }
+
+    private void sendToSender(final CommandSender sender, final Component message) {
+        if (sender instanceof Player player) {
+            player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
+        } else {
+            sender.sendMessage(message);
+        }
     }
 
     private void sendHelp(final CommandSender sender) {
@@ -253,12 +370,17 @@ public final class SpecCommand implements BasicCommand {
         if (sender.hasPermission(ADMIN_PERMISSION)) {
             sender.sendMessage(messageManager.get("spec-help-reset", "&e/spec reset <játékos> &7- Specializációk törlése (Admin)."));
         }
+        if (sender.hasPermission(RECOVERY_PERMISSION)) {
+            sender.sendMessage(Component.text("/spec recover <player|uuid> confirm - explicit quarantine recovery (Admin)."));
+        }
     }
 
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
-        final List<String> subcommands = sender.hasPermission(ADMIN_PERMISSION)
+        final List<String> subcommands = sender.hasPermission(RECOVERY_PERMISSION)
+                ? List.of("list", "choose", "info", "respec", "reset", "recover")
+                : sender.hasPermission(ADMIN_PERMISSION)
                 ? List.of("list", "choose", "info", "respec", "reset")
                 : List.of("list", "choose", "info", "respec");
 
@@ -292,7 +414,7 @@ public final class SpecCommand implements BasicCommand {
             return List.of("class", "profession").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        if ("reset".equals(subcommand) && args.length <= 2) {
+        if (("reset".equals(subcommand) || "recover".equals(subcommand)) && args.length <= 2) {
             final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)

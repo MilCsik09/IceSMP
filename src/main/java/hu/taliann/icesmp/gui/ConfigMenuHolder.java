@@ -8,11 +8,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Holder az admin config-menühöz (K: "ingame config menü"). A szokásos GUI-minta:
- * a holder hordozza az owner-UUID-t, az aktuális lapot (null = főmenü, egyébként
- * kategória-id) és a slot→akció kötéseket. Akciók: {@code CAT:<id>},
- * {@code TOGGLE:<kulcs>}, {@code NUM:<kulcs>}, {@code CYCLE:<kulcs>},
- * {@code BACK}, {@code CLOSE}.
+ * Holder az admin config-menühöz. A holder hordozza az owner-UUID-t, az aktuális
+ * nézet/kategória azonosítóját és a slot→akció kötéseket. Az akciók a régi
+ * {@code CAT:/TOGGLE:/NUM:/CYCLE:} készlet mellett az üzemeltetési, advanced,
+ * crate- és strukturált reward-editor navigációs azonosítóit is fogadhatják.
  */
 public final class ConfigMenuHolder implements InventoryHolder {
 
@@ -30,7 +29,7 @@ public final class ConfigMenuHolder implements InventoryHolder {
         return ownerId;
     }
 
-    /** Az aktuális kategória-id, vagy null a főmenün. */
+    /** Az aktuális nézet/kategória-id, vagy null a főmenün. */
     public String getCategory() {
         return category;
     }

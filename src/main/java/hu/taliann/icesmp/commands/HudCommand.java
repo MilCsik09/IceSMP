@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * /hud — a saját HUD-oldalsáv szekcióinak be/kikapcsolása (perzisztens, PDC-alapú).
+ * /hud — a saját HUD-oldalsáv szekcióinak PlayerProfile-alapú be/kikapcsolása.
  * Nem admin parancs: minden játékos a saját HUD-ját állítja.
  */
 public final class HudCommand implements BasicCommand {
@@ -65,21 +65,29 @@ public final class HudCommand implements BasicCommand {
             return;
         }
 
-        final boolean nowHidden = hudManager.toggleSection(player, section);
-        // A parancs a saját szálán fut (a játékos a saját PDC-jét írja), utána azonnal
-        // frissítjük a láthatóságot, hogy a következő HUD-tick előtt is lássa a hatást.
-        hudManager.update(player);
-
-        if (HudManager.SECTION_ALL.equals(section)) {
-            player.sendMessage(nowHidden
-                    ? messageManager.get("hud-toggled-all-off", "&b[HUD] &7A teljes HUD-oldalsáv &ckikapcsolva&7.")
-                    : messageManager.get("hud-toggled-all-on", "&b[HUD] &7A teljes HUD-oldalsáv &abekapcsolva&7."));
-            return;
-        }
-
-        player.sendMessage(nowHidden
-                ? messageManager.get("hud-toggled-off", "&b[HUD] &7%s szekció &ckikapcsolva&7.", displayName(section))
-                : messageManager.get("hud-toggled-on", "&b[HUD] &7%s szekció &abekapcsolva&7.", displayName(section)));
+        hudManager.toggleSection(player, section).whenComplete((nowHidden, failure) ->
+                player.getScheduler().run(
+                        org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(HudCommand.class), task -> {
+                            if (failure != null) {
+                                player.sendMessage(messageManager.get("hud-toggle-storage-failed",
+                                        "&cA HUD-beállítás PlayerProfile mentése meghiúsult."));
+                                return;
+                            }
+                            hudManager.update(player);
+                            if (HudManager.SECTION_ALL.equals(section)) {
+                                player.sendMessage(Boolean.TRUE.equals(nowHidden)
+                                        ? messageManager.get("hud-toggled-all-off",
+                                                "&b[HUD] &7A teljes HUD-oldalsáv &ckikapcsolva&7.")
+                                        : messageManager.get("hud-toggled-all-on",
+                                                "&b[HUD] &7A teljes HUD-oldalsáv &abekapcsolva&7."));
+                            } else {
+                                player.sendMessage(Boolean.TRUE.equals(nowHidden)
+                                        ? messageManager.get("hud-toggled-off",
+                                                "&b[HUD] &7%s szekció &ckikapcsolva&7.", displayName(section))
+                                        : messageManager.get("hud-toggled-on",
+                                                "&b[HUD] &7%s szekció &abekapcsolva&7.", displayName(section)));
+                            }
+                        }, null));
     }
 
     private void sendStatus(final Player player) {

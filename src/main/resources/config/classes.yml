@@ -1,3 +1,11 @@
+# Profile v2 is the sole class/spec runtime. This section configures startup dependency
+# validation only; it is not a feature flag and cannot reactivate an older runtime.
+class-spec-rework:
+  dependencies:
+    # Refuse startup if a required plugin is absent or outside class-spec-dependencies.lock.yml.
+    # Keep true in staging and production.
+    enforce: true
+
 # IceSMP konfiguráció — classes (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Kasztok: progresszió és szint-alapú skill feloldás =====
 # Az XP mob ölésből érkezik; a skálázott (mob_level) mobok bónusz XP-t adnak.

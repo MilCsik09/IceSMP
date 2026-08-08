@@ -260,7 +260,7 @@ Moderátori rejtőzés, külön láthatósági jog és kapcsolódó játékossz�
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/recovery, valamint utolsó ismert helyre offline teleport.
+Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/recovery, valamint utolsó ismert helyre offline teleport. Egy céljátékoshoz egyszerre egy write session tartozhat: edit joggal az első megnyitó kapja automatikusan, minden további egyidejű megnyitó read-only.
 
 - **Így találkozol vele:** `/invsee`, `/offlinetp`; Invsee GUI. Parancs: /invsee; /offlinetp.
 - **Kinek szól:** Moderátor, Admin, Tesztelő, Fejlesztő/üzemeltető.
@@ -271,7 +271,7 @@ Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/reco
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.inventory.edit`; `icesmp.moderation.inventory.read`; `icesmp.moderation.offlinetp`; `read: icesmp.moderation.inventory.read; edit: icesmp.moderation.inventory.edit`
+- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.inventory.edit`; `icesmp.moderation.inventory.read`; `icesmp.moderation.offlinetp`; `read: icesmp.moderation.inventory.read; write: icesmp.moderation.inventory.edit`
 - Config: `moderation.*`, invsee-, escrow-, audit- és permissionbeállítások.
 - Tartós állapot: Escrow és utolsó ismert hely tartós; nyitott GUI sessionállapot.
 - Reload: Config reloadolható, de függőben lévő escrow-nál előbb settlement/recovery szükséges.
@@ -336,7 +336,7 @@ Központi játékosmenük, karakteradatok, tematikus navigáció és jogosultsá
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk.
+Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk. A tablista LuckPerms-rang szerint rendez (`tablist.sorting.group-order`), az AFK játékosok a teljes lista végére kerülnek, és az AFK-blokkon belül is a rang+név sorrend érvényesül. A név-színek frakciónként a `tablist.faction-colors.*` kulcsokból jönnek — a Menedék-polgár zöld (Smaragdkő/Ryanora lore-szín), így nem téveszthető össze a sötétszürke Kitaszítottal; a chat-névszín és a `/menu` frakcióválasztó ugyanezt a palettát követi, a raid alatti háborús jelölés színe pedig a `tablist.nametags.war-color` kulccsal hangolható.
 
 - **Így találkozol vele:** `/hud`; a tablista automatikus.
 - **Kinek szól:** Játékos, Admin, Tesztelő.
@@ -442,14 +442,22 @@ Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Választás, XP-források, szintlépés, képességfeloldás és kapcsolódó combat/craft esemény.
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; resource-pack ikonok és balance-adatok tesztelendők.
-- **Fontos határ:** A konkrét élő balance és már létező játékosadat-migráció az élő config nélkül nem bizonyítható.
+- **Fontos határ:** A konkrét élő balance és több-régiós Folia viselkedés stagingben ellenőrizendő; production legacy játékosadat-migráció nincs.
+
+A teljes, 13 kasztot és 35 specializációt kiszolgáló Profile v2 alap a kaszt/spec egyetlen
+autoritatív adatmodellje és persistence-rétege. Nincs legacy player-profile migráció, PDC fallback,
+dual authority vagy runtime kill switch. Hiányzó profil determinisztikus revision-0 greenfield
+aggregátumként jön létre; hibás vagy owner-eltérő profil quarantine-ba kerül és fail-closed marad.
+Az IceSMP a verziózárt dependency manifest alapján ellenőrzi a kötelező megjelenítési és content
+stacket; eltérésnél nem aktivál félkész profilt.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin`; `icesmp.admin.job`; `icesmp.admin.spec`; `icesmp.job.admin`
+- Permission: `icesmp.admin.job`; `icesmp.admin.spec`; quarantine recovery: `icesmp.admin.spec.recover`
 - Config: `classes.*`, `spells.*`, specialization- és ability-definíciók.
-- Tartós állapot: Kaszt, XP, specializáció és unlockok játékosonként tartósak.
+- Startup dependency policy: `class-spec-rework.dependencies.enforce`; dependency lock: `class-spec-dependencies.lock.yml`. Nincs runtime rollout flag.
+- Tartós állapot: ownerhez kötött Profile v2 kaszt, XP/szint, loadout, companion, Soulforge és operation receipt; explicit spell-provenance ledger.
 - Reload: Balance részben reloadolható; új enum/registry-szerkezet restartot igényel.
 
 </details>
@@ -981,7 +989,7 @@ Szezonállapot, jutalmak, történetmesélés, finálé, monumentum, holiday, am
 
 Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és undead segédszabályok.
 
-- **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium.
+- **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium (kattintható kategória-főoldal + lapozható lajstrom: ismert bejegyzések ikonnal, ismeretlenek „???" sziluettként, teljesítmény-%-kal). A szörny-bejegyzések faj-szintű mélységet kapnak: elejtés-számláló, első-elejtés dátum és kill-alapú tudás-fokozatok (kódex-jegyzet → zsákmány-jegyzet → mestervadász), a világbossok archetípusonként (nem vanilla-fajonként) kerülnek a lajstromba. Külső kijelzéshez: `%icesmp_bestiary_<kategória>%` és `_total` placeholderek.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** Mob spawn, sebzés, ölés, loot, bestiárium-felfedezés és minion lifecycle.
 - **Ami még kellhet hozzá:** Mobspawnokat, arénákat, farmvédelmet és lootforrásokat ellenőrizni kell.
@@ -991,7 +999,7 @@ Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.*`, `loot.*`, mob-, bestiary-, scaling- és miniondefiníciók.
+- Config: `world.*`, `loot.*`, mob-, bestiary- (mérföldkövek, `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`), scaling- és miniondefiníciók.
 - Tartós állapot: Bestiárium progress és egyes loot/event state-ek tartósak; mob entity runtime.
 - Reload: Loot/balance reloadolható; már spawnolt mobok nem feltétlenül változnak visszamenőleg.
 

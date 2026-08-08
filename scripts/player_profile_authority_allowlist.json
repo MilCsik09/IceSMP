@@ -1,0 +1,230 @@
+{
+  "version": 2,
+  "purpose": "Explicit reviewed overrides only. Current source findings are classified dynamically and ambiguous findings fail closed as TRANSITION.",
+  "allowed_categories": [
+    "PLAYER_PROFILE_AUTHORITY",
+    "RUNTIME",
+    "DERIVED_MIRROR",
+    "ITEM_METADATA",
+    "ENTITY_METADATA",
+    "GLOBAL_AGGREGATE_REFERENCE",
+    "TRANSITION"
+  ],
+  "entries": [
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().set(",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: ProjectileLaunchEvent and CreatureSpawnEvent entities receive scripted/dungeon combat identity markers; no player progression is stored."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|final String markedTarget = event.getEntity().getPersistentDataContainer().get(",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: EntityTargetLivingEntityEvent source entity carries the temporary crown-curse target UUID marker."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().remove(",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: the source entity crown-curse target marker is removed when its targeting lifecycle ends."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/SignatureItemListener.java|event.getProjectile().getPersistentDataContainer().set(eclipseArrowKey, PersistentDataType.BYTE, (byte) 1);",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: the freshly spawned projectile carries only the Nightfall impact marker."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/MobMoneyDropListener.java|event.getEntity().getPersistentDataContainer().set(spawnerMobKey,",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: CreatureSpawnEvent entity receives the spawner-origin anti-farm marker."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Core wiring references persistence infrastructure; the class owns no player YAML authority."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "World corruption event aggregate; purge contributors are event-scoped runtime state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/DevItemManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Singleton DEV-item instance registry referencing the holder by stable UUID."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/DungeonLootService.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Chest/boss definitions and per-chest world claim timestamps; no player-keyed durable state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/InvseeManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Admin inventory-escrow operation aggregate; player inventories stay Minecraft-owned."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/ParkourManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Course definition content; runs are session state and run budgets use the PlayerProfile daily budget."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/ProfessionWeeklyGoalManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Shared weekly guild-goal aggregate (week index and global counters); player contribution, award and pending reward live in the PlayerProfile PROFESSIONS section."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/QuestManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Builder-authored custom quest definition content; player quest lifecycle state is PlayerProfile-backed."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/RelicManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "World-unique relic instance registry referencing owners by stable UUID."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/ReportManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Moderation report queue and feedback delivery aggregate referencing players by stable UUID."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java|private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Rebuildable session projection of SpellbookSection cooldowns; cleared on quit."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Combat UI throttle/last-target display state; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Combat UI throttle/last-target display state; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DeathRecapListener.java|private final Map<UUID, Deque<Entry>> recentDamage = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Recent damage recap ring buffer for the death screen; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/QuestBuilderListener.java|private final Map<UUID, Prompt> prompts = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Admin chat-prompt wizard session state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/TerritoryListener.java|private final Map<UUID, String> lastTerritoryIds = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Last-seen territory id for enter/leave transitions; rebuilt from location."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/TheftListener.java|private final Map<UUID, Map<String, Long>> lastTheftAt = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Theft notification throttle timestamps; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|private final Map<UUID, Integer> purgeContributors = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Purge contribution tally scoped to one corruption event."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CraftingRestrictionManager.java|private final Map<UUID, Long> lastNotifyMillis = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Restriction notification debounce timestamps; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/GlobalAfkTracker.java|private final ConcurrentHashMap<UUID, State> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "AFK activity tracking; rebuilt from live movement events."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HonorDuelManager.java|private final Map<UUID, UUID> acceptTokens = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Duel invite handshake tokens; expire in seconds."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, List<Component>> lastLines = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Double> frozenSpeed = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Long> abilityDamageBypass = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MinionManager.java|private final Map<UUID, Set<UUID>> minionsByOwner = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live summoned entity tracking; entities despawn with the session."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/PetManager.java|private final Map<UUID, Long> attackReady = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Pet combat readiness/target tracking for live entities."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/PetManager.java|private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Pet combat readiness/target tracking for live entities."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/ReportManager.java|private final Map<UUID, Long> lastReportAt = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Report submission spam-guard timestamps; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/ResourceManager.java|private final Map<UUID, Double> resource = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Class resource (mana/rage/energy) pool; rebuilt on join by design."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/RitualManager.java|private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Ritual rate-limit documented as in-memory, reset on restart."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/spells/HideSpell.java|private static final Map<UUID, ItemStack[]> HIDDEN_ARMOR = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Stateful spell armor stash with mandatory clearPlayerState cleanup."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/spells/InnerFocusSpell.java|private static final Map<UUID, Float> FROZEN_PLAYERS = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Stateful spell walk-speed freeze with mandatory clearPlayerState cleanup."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CrateManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Crate placements and opening-recovery fences; per-player counts, cooldowns and settlement receipts live in the PlayerProfile STATISTICS section."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Meteor crater terrain-restore journal: world/chunk block data keyed by world UUID, no player-owned state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java|private final Map<UUID, EventSpawnSafetyPolicy.PlayerPoint> players = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live player-position tracking for spawn-distance checks; rebuilt from movement events."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/VanishManager.java|private final ConcurrentHashMap<UUID, Set<UUID>> unlistedByViewer = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Per-viewer vanish visibility projection; session-scoped and re-derived on join."
+    }
+  ]
+}

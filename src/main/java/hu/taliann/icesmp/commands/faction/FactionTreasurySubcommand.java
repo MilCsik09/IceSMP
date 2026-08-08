@@ -31,10 +31,10 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
     private final java.util.concurrent.ConcurrentHashMap<hu.taliann.icesmp.data.FactionType, double[]> councilWithdrawnToday =
             new java.util.concurrent.ConcurrentHashMap<>();
 
-    private final org.bukkit.NamespacedKey withdrawDayKey =
-            org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_day");
-    private final org.bukkit.NamespacedKey withdrawSumKey =
-            org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_sum");
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileTreasuryWithdrawalStore
+            withdrawalStore = new hu.taliann.icesmp.playerprofile.application.PlayerProfileTreasuryWithdrawalStore();
+    private final org.bukkit.plugin.java.JavaPlugin plugin =
+            org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(FactionTreasurySubcommand.class);
 
     public FactionTreasurySubcommand(final FactionTreasuryManager treasuryManager, final FactionManager factionManager,
                                      final CurrencyManager currencyManager, final KingManager kingManager,
@@ -153,45 +153,78 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
                 ? configManager.getDouble("factions.council.withdraw-daily-cap", 400.0D)
                 : configManager.getDouble("factions.treasury.withdraw-daily-cap", 1000.0D);
         final long today = System.currentTimeMillis() / 86_400_000L;
-        final double takenToday;
         if (councilPath) {
             final double[] shared = councilWithdrawnToday.get(faction);
-            takenToday = shared != null && (long) shared[0] == today ? shared[1] : 0.0D;
-        } else {
-            final long storedDay = player.getPersistentDataContainer()
-                    .getOrDefault(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, -1L);
-            takenToday = storedDay == today ? player.getPersistentDataContainer()
-                    .getOrDefault(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D) : 0.0D;
-        }
-        if (dailyCap > 0.0D && takenToday + amount > dailyCap) {
-            player.sendMessage(messageManager.get(
-                    "messages.faction-treasury-daily-cap",
-                    "&cA mai kassza-kivét keret elfogyott (&f%s&c/nap). Holnap folytathatod.",
-                    currencyManager.formatBalance(dailyCap)));
-            return true;
-        }
-
-        if (!treasuryManager.withdraw(faction, amount)) {
-            player.sendMessage(messageManager.get("messages.faction-treasury-insufficient", "&cNincs ennyi a frakciókasszában."));
-            return true;
-        }
-
-        if (councilPath) {
+            final double takenToday = shared != null && (long) shared[0] == today ? shared[1] : 0.0D;
+            if (dailyCap > 0.0D && takenToday + amount > dailyCap) {
+                player.sendMessage(messageManager.get(
+                        "messages.faction-treasury-daily-cap",
+                        "&cA mai kassza-kivét keret elfogyott (&f%s&c/nap). Holnap folytathatod.",
+                        currencyManager.formatBalance(dailyCap)));
+                return true;
+            }
+            if (!treasuryManager.withdraw(faction, amount)) {
+                player.sendMessage(messageManager.get("messages.faction-treasury-insufficient",
+                        "&cNincs ennyi a frakciókasszában."));
+                return true;
+            }
             councilWithdrawnToday.compute(faction, (key, old) ->
                     old == null || (long) old[0] != today
                             ? new double[]{today, amount} : new double[]{today, old[1] + amount});
-        } else {
-            player.getPersistentDataContainer().set(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, today);
-            player.getPersistentDataContainer().set(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, takenToday + amount);
+            finishWithdrawal(player, faction, amount);
+            return true;
         }
-        currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), (long) Math.floor(amount));
+
+        withdrawalStore.reserve(player.getUniqueId(), today, amount, dailyCap)
+                .whenComplete((reservation, reserveFailure) -> {
+                    if (reserveFailure != null) {
+                        runOnOwner(player, () -> player.sendMessage(messageManager.get(
+                                "messages.faction-treasury-profile-failed",
+                                "&cA napi kivételi keret PlayerProfile mentése meghiúsult; a kassza nem változott.")));
+                        return;
+                    }
+                    if (reservation == null || !reservation.allowed()) {
+                        runOnOwner(player, () -> player.sendMessage(messageManager.get(
+                                "messages.faction-treasury-daily-cap",
+                                "&cA mai kassza-kivét keret elfogyott (&f%s&c/nap). Holnap folytathatod.",
+                                currencyManager.formatBalance(dailyCap))));
+                        return;
+                    }
+                    final boolean withdrawn;
+                    try {
+                        withdrawn = treasuryManager.withdraw(faction, amount);
+                    } catch (final RuntimeException failure) {
+                        withdrawalStore.rollback(player.getUniqueId(), reservation);
+                        runOnOwner(player, () -> player.sendMessage(messageManager.get(
+                                "messages.faction-treasury-persistence-failed",
+                                "&cA frakciókassza tartós kivéte meghiúsult; a napi keret kompenzálása elindult.")));
+                        return;
+                    }
+                    if (!withdrawn) {
+                        withdrawalStore.rollback(player.getUniqueId(), reservation)
+                                .whenComplete((rolledBack, rollbackFailure) -> runOnOwner(player, () ->
+                                        player.sendMessage(messageManager.get(
+                                                "messages.faction-treasury-insufficient",
+                                                "&cNincs ennyi a frakciókasszában."))));
+                        return;
+                    }
+                    runOnOwner(player, () -> finishWithdrawal(player, faction, amount));
+                });
+        return true;
+    }
+
+    private void finishWithdrawal(final Player player, final FactionType faction,
+                                  final double amount) {
+        currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction),
+                (long) Math.floor(amount));
         player.sendMessage(messageManager.get(
                 "messages.faction-treasury-withdraw-success",
                 "&aKivét a kasszából: &f%s %s &7(veretben, a kezedbe).",
-                currencyManager.formatBalance(amount),
-                faction.getDisplayName()
-        ));
-        return true;
+                currencyManager.formatBalance(amount), faction.getDisplayName()));
+    }
+
+    private void runOnOwner(final Player player, final Runnable action) {
+        player.getScheduler().run(plugin, ignored -> action.run(), null);
     }
 
     @Override

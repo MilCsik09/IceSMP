@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.integration.LuckPermsBridge;
 import hu.taliann.icesmp.utils.TextAnimator;
 import net.kyori.adventure.text.Component;
@@ -441,7 +442,10 @@ public final class TablistManager {
             final boolean viewerInWar = viewerFaction == raid.attacker() || viewerFaction == raid.defender();
             final boolean targetInWar = info.faction() == raid.attacker() || info.faction() == raid.defender();
             if (viewerInWar && targetInWar && viewerFaction != info.faction()) {
-                return NamedTextColor.RED;
+                final NamedTextColor war = NamedTextColor.NAMES.value(configManager
+                        .getString("tablist.nametags.war-color", "red")
+                        .trim().toLowerCase(java.util.Locale.ROOT));
+                return war == null ? NamedTextColor.RED : war;
             }
         }
         return info.nameColor();
@@ -472,15 +476,26 @@ public final class TablistManager {
         return TextAnimator.legacy(text);
     }
 
-    private static NamedTextColor factionColor(final FactionType faction) {
-        if (faction == null) {
-            return NamedTextColor.WHITE;
+    private NamedTextColor factionColor(final FactionType faction) {
+        return factionColor(configManager, faction);
+    }
+
+    /**
+     * Frakciónkénti név-szín minden név-felületre ({@code tablist.faction-colors.*}, élő-config);
+     * config nélkül a központi {@code FactionDisplayPalette} default érvényesül. A NEUTRAL default
+     * szándékosan NEM szürke: a Menedék-polgár és a Kitaszított (dark_gray) különben
+     * összetéveszthető lenne.
+     */
+    public static NamedTextColor factionColor(final ConfigManager configManager, final FactionType faction) {
+        final NamedTextColor fallback = FactionDisplayPalette.playerName(faction);
+        final String key = faction == null ? "guest" : faction.name().toLowerCase(java.util.Locale.ROOT);
+        if (configManager == null) {
+            return fallback;
         }
-        return switch (faction) {
-            case RED -> NamedTextColor.RED;
-            case BLUE -> NamedTextColor.BLUE;
-            case NEUTRAL -> NamedTextColor.GRAY;
-            case DARK -> NamedTextColor.DARK_GRAY;
-        };
+        final String configured = configManager.getString(
+                "tablist.faction-colors." + key, fallback.toString());
+        final NamedTextColor resolved = NamedTextColor.NAMES.value(
+                configured.trim().toLowerCase(java.util.Locale.ROOT));
+        return resolved == null ? fallback : resolved;
     }
 }

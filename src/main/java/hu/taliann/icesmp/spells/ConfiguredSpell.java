@@ -157,7 +157,7 @@ public final class ConfiguredSpell extends BaseSpell {
         }
 
         if (logger != null) {
-            logger.info("Spell-balansz felülbírálva: " + spell.getId() + " (" + String.join(", ", changes) + ")");
+            hu.taliann.icesmp.utils.StartupLog.info(logger, configManager, "Spell-balansz felülbírálva: " + spell.getId() + " (" + String.join(", ", changes) + ")");
         }
         return b.build();
     }
