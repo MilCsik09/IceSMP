@@ -55,11 +55,15 @@ public final class ConfigManager {
 
     public enum BatchApplyResult { APPLIED, STALE, NO_CHANGES }
 
-    /** Bundled per-subsystem config files under config/. */
+    /**
+     * Bundled per-subsystem config files under config/. Later files intentionally win on the same
+     * leaf. class-gameplay follows relics because completed class slices may promote a previously
+     * dormant Class Relic pilot binding; config.yml still remains the final explicit admin override.
+     */
     private static final String[] CONFIG_FILES = {
-            "general", "economy", "factions", "block-regen", "classes", "class-gameplay",
-            "spells", "spells-balance", "professions", "quests", "world",
-            "event-spawn-safety", "relics", "pets", "crafting", "crates", "afk",
+            "general", "economy", "factions", "block-regen", "classes", "spells",
+            "spells-balance", "professions", "quests", "world", "event-spawn-safety",
+            "relics", "class-gameplay", "pets", "crafting", "crates", "afk",
             "moderation", "item-rarity", "loot", "motd", "profession-materials",
             "profession-recipes", "sit", "tablist", "dev-items"
     };
