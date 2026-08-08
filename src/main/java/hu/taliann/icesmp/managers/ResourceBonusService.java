@@ -1,17 +1,30 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.classrelic.ClassRelicActivation;
+import hu.taliann.icesmp.classrelic.RelicModifier;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileClassMechanicStore;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Class-resource pool bonuses with PlayerProfile-backed warlock pact state. */
+/**
+ * Class-resource bonuses with PlayerProfile-backed warlock pact state and the concrete resource-side
+ * integration of Class Relic Class Power / Resonance / Awakening. It deliberately does not create a
+ * second relic mechanic model: activation, ownership and durable awakening cooldown stay in
+ * {@link hu.taliann.icesmp.classrelic.ClassRelicService}.
+ */
 public final class ResourceBonusService implements Listener {
 
     private static final String PACT_KEY = "warlock.pact.resource-multiplier";
@@ -30,13 +43,21 @@ public final class ResourceBonusService implements Listener {
     }
 
     /**
-     * A relic-eredetű bónusz a generikus Class Relic modifier-csatornáról érkezik —
-     * ez a szolgáltatás nem tud relic-id-ről, kasztról vagy ownershipről.
+     * Base Class Power arrives through the framework's typed modifier channel. An active
+     * specialization Resonance then extends the same resource loop by a small, explicit amount;
+     * no relic id/class ownership checks are duplicated here.
      */
     public double maxMultiplier(final UUID playerId) {
-        return pactCache.getOrDefault(playerId, 1.0D)
-                * classRelicService.modifier(playerId,
-                        hu.taliann.icesmp.classrelic.RelicModifier.CLASS_RESOURCE_MAX);
+        double multiplier = pactCache.getOrDefault(playerId, 1.0D)
+                * classRelicService.modifier(playerId, RelicModifier.CLASS_RESOURCE_MAX);
+        final ClassRelicActivation activation = classRelicService.resolve(playerId);
+        if (activation.resonanceActive() && activation.resolvedResonanceId().isPresent()) {
+            final String resonance = activation.resolvedResonanceId().orElseThrow();
+            final double resonancePercent = Math.max(0.0D, configManager.getDouble(
+                    "class-gameplay.relics.resonance-resource-percent." + resonance, 0.0D));
+            multiplier *= 1.0D + resonancePercent / 100.0D;
+        }
+        return multiplier;
     }
 
     public boolean hasPakt(final Player player) {
@@ -51,14 +72,13 @@ public final class ResourceBonusService implements Listener {
         }
     }
 
-    /** Optimistically updates the runtime mirror; the class-spec CAS proves durability. */
+    /** Optimistically updates the runtime mirror; the PlayerProfile CAS proves durability. */
     public void sealPakt(final Player player) {
         if (player == null || hasPakt(player)) return;
         final double multiplier = 1.0D + Math.max(0.0D,
                 configManager.getDouble("pakt.bonus-percent", 20.0D)) / 100.0D;
         pactCache.put(player.getUniqueId(), multiplier);
-        mechanics.putIfAbsent(player.getUniqueId(), PACT_KEY,
-                        Double.toString(multiplier))
+        mechanics.putIfAbsent(player.getUniqueId(), PACT_KEY, Double.toString(multiplier))
                 .whenComplete((created, failure) -> {
                     if (failure != null) {
                         pactCache.remove(player.getUniqueId());
@@ -96,6 +116,8 @@ public final class ResourceBonusService implements Listener {
             }
             pactCache.put(playerId, multiplier);
             return true;
+        } catch (final PlayerProfileClassMechanicStore.ProfileNotReadyExceptionCompat notReady) {
+            return false;
         } catch (final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.ProfileNotReadyException notReady) {
             return false;
         } catch (final RuntimeException corrupt) {
@@ -106,8 +128,54 @@ public final class ResourceBonusService implements Listener {
         }
     }
 
+    /**
+     * Awakening is a low-health safety valve, not a second class kit. The durable cooldown is armed
+     * first; potion effects are published only after ARMED, so persistence failure never grants the
+     * gameplay effect. The current hit is not rewritten and lethal hits do not retroactively revive.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onLowHealthDamage(final EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player) || event.getFinalDamage() <= 0.0D) return;
+        final var maxHealthAttribute = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealthAttribute == null) return;
+        final double remaining = player.getHealth() - event.getFinalDamage();
+        if (remaining <= 0.0D) return;
+        final double threshold = Math.max(1.0D, Math.min(99.0D, configManager.getDouble(
+                "class-gameplay.relics.awakening.low-health-threshold-percent", 30.0D)));
+        if (remaining / maxHealthAttribute.getValue() * 100.0D > threshold) return;
+
+        final ClassRelicActivation activation = classRelicService.resolve(player.getUniqueId());
+        if (!activation.basePowerActive()
+                || !("warrior".equals(activation.classId()) || "evoker".equals(activation.classId()))) {
+            return;
+        }
+        if (classRelicService.tryArmAwakening(player)
+                != hu.taliann.icesmp.classrelic.ClassRelicService.AwakeningResult.ARMED) {
+            return;
+        }
+
+        final String path = "class-gameplay.relics.awakening." + activation.classId();
+        final int duration = Math.max(20,
+                configManager.getInt(path + ".duration-ticks", 100));
+        if ("warrior".equals(activation.classId())) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, duration,
+                    Math.max(0, configManager.getInt(path + ".absorption-amplifier", 1)),
+                    true, true, true));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration,
+                    Math.max(0, configManager.getInt(path + ".speed-amplifier", 0)),
+                    true, true, true));
+        } else {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, duration,
+                    Math.max(0, configManager.getInt(path + ".absorption-amplifier", 0)),
+                    true, true, true));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration,
+                    Math.max(0, configManager.getInt(path + ".regeneration-amplifier", 1)),
+                    true, true, true));
+        }
+    }
+
     @EventHandler
-    public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
+    public void onQuit(final PlayerQuitEvent event) {
         pactCache.remove(event.getPlayer().getUniqueId());
     }
 
@@ -115,7 +183,9 @@ public final class ResourceBonusService implements Listener {
         Throwable current = failure;
         while ((current instanceof java.util.concurrent.CompletionException
                 || current instanceof java.util.concurrent.ExecutionException)
-                && current.getCause() != null) current = current.getCause();
+                && current.getCause() != null) {
+            current = current.getCause();
+        }
         return current.getMessage() == null ? current.getClass().getSimpleName()
                 : current.getMessage();
     }
