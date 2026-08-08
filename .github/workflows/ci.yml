@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - staging
       - integration/master-candidate
       - rework/class-relic-framework
     paths-ignore:
@@ -158,6 +159,7 @@ jobs:
           grep -F "PlayerProfile lifecycle teardown regression suite passed." gradle-build.log
           grep -F "Bestiary regression suite passed." gradle-build.log
           grep -F "Class relic regression suite passed." gradle-build.log
+          grep -F "Quest framework v2 regression suite passed." gradle-build.log
 
       - name: Run full repository consistency
         run: python3 scripts/check_consistency.py
