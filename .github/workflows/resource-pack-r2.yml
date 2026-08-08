@@ -41,8 +41,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: resource-pack-r2-${{ github.ref }}
-  cancel-in-progress: false
+  group: resource-pack-r2-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   publish:
@@ -71,7 +71,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.RESOURCE_PACK_PUSH_TOKEN || github.token }}
 
       - name: Describe execution
