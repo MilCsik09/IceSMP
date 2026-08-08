@@ -116,8 +116,6 @@ public final class ResourceBonusService implements Listener {
             }
             pactCache.put(playerId, multiplier);
             return true;
-        } catch (final PlayerProfileClassMechanicStore.ProfileNotReadyExceptionCompat notReady) {
-            return false;
         } catch (final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.ProfileNotReadyException notReady) {
             return false;
         } catch (final RuntimeException corrupt) {
