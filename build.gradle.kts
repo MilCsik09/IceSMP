@@ -260,6 +260,10 @@ val questNpcValidationRegressionTest = registerRegression(
     "questNpcValidationRegressionTest",
     "Runs quest-NPC exact-name and manual provisioning regressions.",
     "hu.taliann.icesmp.quests.QuestNpcValidationRegressionSuite")
+val questFrameworkV2RegressionTest = registerRegression(
+    "questFrameworkV2RegressionTest",
+    "Runs quest source-authority, graph-validator, choice-token and migration regressions.",
+    "hu.taliann.icesmp.quest.QuestFrameworkV2RegressionSuite")
 val resourcePackRegressionTest = registerRegression(
     "resourcePackRegressionTest",
     "Runs additive resource-pack id, hash and immutable URL regressions.",
@@ -309,7 +313,8 @@ tasks.check {
         territoryCapitalRegressionTest, hudRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
-        lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, resourcePackRegressionTest,
+        lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
+        resourcePackRegressionTest,
         classSpecCompatibilityRegressionTest, classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
