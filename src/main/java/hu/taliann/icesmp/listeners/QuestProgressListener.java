@@ -27,6 +27,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
@@ -130,6 +131,21 @@ public final class QuestProgressListener implements Listener {
         if (pendingReward(event.getMainHandItem()) || pendingReward(event.getOffHandItem())) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPendingRewardInteract(final PlayerInteractEvent event) {
+        if (pendingReward(event.getItem())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPendingRewardConsume(final PlayerItemConsumeEvent event) {
+        if (pendingReward(event.getItem())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPendingRewardPlace(final BlockPlaceEvent event) {
+        if (pendingReward(event.getItemInHand())) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
