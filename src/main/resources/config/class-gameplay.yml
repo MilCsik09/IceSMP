@@ -82,8 +82,53 @@ class-gameplay:
         # At full preparation, Rewind is free and consumes the preparation.
         finisher: rewind
 
-    spell-groups:
-      devastation-red: [pyre, firestorm, dragonrage, eternity_breath]
-      devastation-blue: [disintegrate, eternity_surge, shattering_star]
-      preservation-builders: [dream_breath, spiritbloom, reversion]
-      preservation-consumers: [echo, temporal_anomaly, rewind]
+  relics:
+    # Resonance extends the existing Class Power rather than creating a second class resource.
+    resonance-resource-percent:
+      frenzy_edge: 5.0
+      guardian_oath: 12.0
+      dragon_echo: 5.0
+      temporal_echo: 12.0
+    awakening:
+      low-health-threshold-percent: 30.0
+      warrior:
+        duration-ticks: 100
+        absorption-amplifier: 1
+        speed-amplifier: 0
+      evoker:
+        duration-ticks: 100
+        absorption-amplifier: 0
+        regeneration-amplifier: 1
+
+# Class Relic catalog completion for the implemented slices. This file loads after relics.yml,
+# so these gameplay-stage leaves intentionally replace the earlier disabled Evoker pilot flags
+# while retaining the catalog's ownership/validation rules. config.yml remains the final admin
+# override layer.
+relics:
+  class-relics:
+    metelytepo:
+      class: warrior
+      activation:
+        requires-physical-possession: true
+      base-power:
+        id: battle_fury
+        max-resource-percent: 10.0
+      resonances:
+        berserker:
+          id: frenzy_edge
+          enabled: true
+        guardian:
+          id: guardian_oath
+          enabled: true
+      awakening:
+        id: deep_judgement
+        enabled: true
+        cooldown-seconds: 120
+    sarkany_tojas:
+      resonances:
+        devastation:
+          enabled: true
+        preservation:
+          enabled: true
+      awakening:
+        enabled: true
