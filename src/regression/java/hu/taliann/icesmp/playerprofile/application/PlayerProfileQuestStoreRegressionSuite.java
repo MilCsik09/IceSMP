@@ -237,8 +237,15 @@ public final class PlayerProfileQuestStoreRegressionSuite {
         check(listenerSource.contains("onPendingRewardClick")
                         && listenerSource.contains("onPendingRewardDrag")
                         && listenerSource.contains("onPendingRewardDrop")
-                        && listenerSource.contains("onPendingRewardHandSwap"),
-                "pending physical witnesses are movement-locked until durable ACK");
+                        && listenerSource.contains("onPendingRewardHandSwap")
+                        && listenerSource.contains("onPendingRewardInteract")
+                        && listenerSource.contains("onPendingRewardConsume")
+                        && listenerSource.contains("onPendingRewardPlace")
+                        && listenerSource.contains("onPendingRewardDeath"),
+                "pending physical witnesses are immutable until durable ACK");
+        check(listenerSource.contains("event.getItemsToKeep().add(drop)")
+                        && listenerSource.contains("iterator.remove()"),
+                "death recovery witness is removed from drops before being retained");
     }
 
     private static void expectStage(final Class<? extends Throwable> expected,
