@@ -132,6 +132,17 @@ public final class QuestProgressListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPendingRewardDeath(final PlayerDeathEvent event) {
+        if (event.getKeepInventory()) return;
+        for (final var iterator = event.getDrops().iterator(); iterator.hasNext();) {
+            final ItemStack drop = iterator.next();
+            if (!pendingReward(drop)) continue;
+            iterator.remove();
+            event.getItemsToKeep().add(drop);
+        }
+    }
+
     private boolean pendingReward(final ItemStack item) {
         return QuestPhysicalRewardDeliveryService.isPendingRewardItem(plugin, item);
     }
