@@ -35,9 +35,19 @@ The existing `ResourceManager` remains the Düh authority for spell cost/gain. C
 
 The empower and burst bonuses enter combat exclusively through `AbilityCatalystListener`'s existing power computation (`castPowerBonusPercent`, clamped by `classes.evoker.max-power-bonus-percent` and the global `spells.total-power-cap`). Cross-entity echo heals run on the target entity's scheduler. Mastery contributions are combat-gated through the existing `ResourceManager` combat tracker.
 
+## Íjász vertical slice
+
+`ArcherGameplayService` is the third concrete gameplay consumer and the first non-DARK companion proof. `ArcherCombatState` contains only the Íjász mechanics:
+
+- class-core Szélolvasás: one single-use read armed by a disciplined hit (full draw + shot pacing + real distance measured from the recorded shot origin — plain coordinates, never a cross-region entity read);
+- Mesterlövész: one prey target with a bounded precision chain and a weak-point finisher, applied as an event-based damage bonus under explicit PvE/PvP caps;
+- Vadmester: one Kötelék percentage built from coordinated hits on the active companion's combat target. The durable stable stays entirely in the existing PetManager/`CompanionProfile` machinery (`beast_master.stable` namespace); the slice only adds a capacity gate at capture, a durable-first `/pet release` REMOVE path, two runtime-projection accessors and a pet-death hook — no new pet framework.
+
+There is no repeating task and no proximity scan in the archer runtime; everything is event-driven off bow-shot and damage events.
+
 ## Second specialization, doctrines and mastery
 
-The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for the completed gameplay-v2 classes, enumerated by the explicit `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`) — a plain list, not a capability framework. A switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset the class resource or reset cooldowns, and a held Felerősítés charge never survives the switch boundary.
+The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for the completed gameplay-v2 classes, enumerated by the explicit `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`) — a plain list, not a capability framework. A switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset the class resource or reset cooldowns, and a held Felerősítés charge never survives the switch boundary.
 
 Doctrine choices live in `ClassLoadout#doctrineChoices`, keyed by the level tier (`level_30`, `level_40`, `level_50`). They are slot-local and durable. Mastery and capstone state remain the existing loadout fields; no mastery YAML or separate talent/doctrine store exists.
 

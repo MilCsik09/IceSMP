@@ -1,4 +1,4 @@
-package hu.taliann.icesmp.evoker;
+package hu.taliann.icesmp.archer;
 
 import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
 import hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort;
@@ -10,11 +10,13 @@ import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.classspec.application.ProfileSessionRegistry;
 import hu.taliann.icesmp.classspec.domain.CapstoneStatus;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
+import hu.taliann.icesmp.classspec.domain.CompanionProfile;
 import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.classspec.domain.MasteryProgress;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,122 +25,104 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Dependency-free Profile v2 gateway regressions for the Sárkányidéző two-loadout rollout:
- * the explicit gameplay-v2 allowlist admits evoker and keeps every unreworked class fail-closed.
+ * Dependency-free Profile v2 gateway regressions for the Íjász rollout: the allowlist admits
+ * archer, the Vadmester stable stays slot-local and a loadout switch never touches the roster.
  */
-public final class EvokerProfileRegressionSuite {
+public final class ArcherProfileRegressionSuite {
 
-    private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000000411");
+    private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000000421");
     private static int assertions;
 
-    private EvokerProfileRegressionSuite() {
+    private ArcherProfileRegressionSuite() {
     }
 
     public static void main(final String[] args) {
-        evokerSecondSlotUnlocksThroughClassExperience();
-        evokerLearnsAndSwitchesBothSpecs();
-        unreworkedClassStaysFailClosed();
-        evokerDoctrineMasteryAndCapstoneStaySlotLocal();
-        System.out.println("Evoker profile regression suite passed. assertions=" + assertions);
+        archerSecondSlotUnlocksAndSwitches();
+        stableRosterSurvivesLoadoutSwitch();
+        archerDoctrineMasteryAndCapstoneStaySlotLocal();
+        System.out.println("Archer profile regression suite passed. assertions=" + assertions);
     }
 
-    private static void evokerSecondSlotUnlocksThroughClassExperience() {
+    private static void archerSecondSlotUnlocksAndSwitches() {
         final Harness h = harness(ClassSpecSection.builder()
-                .primaryClassId("evoker").classLevel(1).build());
-        final var beforeGate = h.gateway.select(PLAYER, new ClassSpecProfileGateway.SelectRequest(
-                "devastation", LoadoutSlot.SECOND, openGates())).toCompletableFuture().join();
-        check(beforeGate.status() == ProfileMutationResult.Status.REJECTED,
-                "locked second slot rejects direct SECOND learning");
-
+                .primaryClassId("archer").classLevel(1).build());
         final var xp = h.gateway.mutateClassExperience(PLAYER,
                 new ClassSpecProfileGateway.ClassExperienceRequest(
                         ClassSpecProfileGateway.ClassExperienceRequest.Mode.SET,
-                        100_000, 100, 0, 28, "evoker-xp-28")).toCompletableFuture().join();
-        check(xp.committed(), "class XP mutation commits for evoker");
-        check(h.store.profile.classLevel() >= 28, "XP reaches the second-spec level");
+                        100_000, 100, 0, 28, "archer-xp-28")).toCompletableFuture().join();
+        check(xp.committed(), "class XP mutation commits for archer");
         check(h.store.profile.secondSpecUnlocked(),
-                "evoker second spec unlocks via the allowlist, exactly like warrior");
-    }
+                "archer second spec unlocks through the allowlist");
 
-    private static void evokerLearnsAndSwitchesBothSpecs() {
-        final Harness h = harness(ClassSpecSection.builder()
-                .primaryClassId("evoker").classLevel(28).classExperience(100_000)
-                .secondSpecUnlocked(true).build());
         check(h.gateway.select(PLAYER, new ClassSpecProfileGateway.SelectRequest(
-                        "devastation", LoadoutSlot.FIRST, openGates()))
-                .toCompletableFuture().join().committed(), "evoker learns Perzselés");
+                        "sharpshooter", LoadoutSlot.FIRST, openGates()))
+                .toCompletableFuture().join().committed(), "archer learns Mesterlövész");
         check(h.gateway.select(PLAYER, new ClassSpecProfileGateway.SelectRequest(
-                        "preservation", LoadoutSlot.SECOND, openGates()))
-                .toCompletableFuture().join().committed(), "evoker learns Megőrzés second");
-        check(h.gateway.activeSpecId(PLAYER).orElseThrow().equals("devastation"),
-                "first learned spec becomes active");
-
+                        "beast_master", LoadoutSlot.SECOND, openGates()))
+                .toCompletableFuture().join().committed(), "archer learns Vadmester second");
         final var switched = h.gateway.switchLoadout(PLAYER,
                         new ClassSpecProfileGateway.SwitchRequest(LoadoutSlot.SECOND))
                 .toCompletableFuture().join();
-        check(switched.committed(), "evoker loadout switching is enabled");
-        check(h.gateway.activeSpecId(PLAYER).orElseThrow().equals("preservation"),
-                "switch activates the second loadout");
-        check(h.store.profile.loadout(LoadoutSlot.FIRST).status() == LoadoutStatus.INACTIVE,
-                "previous loadout becomes inactive, not deleted");
+        check(switched.committed(), "archer loadout switching is enabled");
+        check(h.gateway.activeSpecId(PLAYER).orElseThrow().equals("beast_master"),
+                "switch activates the Vadmester loadout");
     }
 
-    private static void unreworkedClassStaysFailClosed() {
+    private static void stableRosterSurvivesLoadoutSwitch() {
+        final UUID wolfId = UUID.fromString("00000000-0000-0000-0000-000000000431");
+        final CompanionProfile wolf = new CompanionProfile(wolfId, "beast_master.stable",
+                "WOLF", "Csikasz", 3, 240L, "", "ACTIVE", List.of(), 0L, Map.of());
         final Harness h = harness(ClassSpecSection.builder()
-                .primaryClassId("monk").classLevel(28).classExperience(100_000)
-                .loadout(LoadoutSlot.FIRST, loadout("windwalker", LoadoutStatus.ACTIVE))
-                .activeSlot(LoadoutSlot.FIRST).build());
-
-        final var xp = h.gateway.mutateClassExperience(PLAYER,
-                new ClassSpecProfileGateway.ClassExperienceRequest(
-                        ClassSpecProfileGateway.ClassExperienceRequest.Mode.ADD,
-                        1_000, 100, 0, 28, "monk-xp")).toCompletableFuture().join();
-        check(xp.committed(), "unreworked class still earns XP normally");
-        check(!h.store.profile.secondSpecUnlocked(),
-                "even past level 28, XP never unlocks the second slot outside the allowlist");
-
-        final var select = h.gateway.select(PLAYER, new ClassSpecProfileGateway.SelectRequest(
-                "mistweaver", LoadoutSlot.SECOND, openGates())).toCompletableFuture().join();
-        check(select.status() == ProfileMutationResult.Status.REJECTED,
-                "SECOND learning is rejected outside the allowlist");
-        final var switched = h.gateway.switchLoadout(PLAYER,
-                        new ClassSpecProfileGateway.SwitchRequest(LoadoutSlot.SECOND))
-                .toCompletableFuture().join();
-        check(switched.status() == ProfileMutationResult.Status.REJECTED,
-                "loadout switching is rejected outside the allowlist");
-    }
-
-    private static void evokerDoctrineMasteryAndCapstoneStaySlotLocal() {
-        final ClassLoadout devastation = loadout("devastation", LoadoutStatus.ACTIVE)
-                .withDoctrineChoice("level_30", "gyujtopont")
-                .withDoctrineChoice("level_40", "iker_aram")
-                .withMastery(new MasteryProgress(3, 320))
-                .withCapstoneStatus(CapstoneStatus.COMPLETED);
-        final ClassLoadout preservation = loadout("preservation", LoadoutStatus.INACTIVE)
-                .withDoctrineChoice("level_30", "melyebb_visszhang")
-                .withMastery(new MasteryProgress(1, 110))
-                .withCapstoneStatus(CapstoneStatus.AVAILABLE);
-        final ClassSpecSection profile = ClassSpecSection.builder()
-                .revision(6).primaryClassId("evoker").classLevel(50).classExperience(999_999)
+                .primaryClassId("archer").classLevel(30).classExperience(100_000)
                 .secondSpecUnlocked(true)
-                .loadout(LoadoutSlot.FIRST, devastation)
-                .loadout(LoadoutSlot.SECOND, preservation)
+                .loadout(LoadoutSlot.FIRST, new ClassLoadout("beast_master",
+                        LoadoutStatus.ACTIVE, null, Map.of(), MasteryProgress.empty(), null,
+                        Set.of(), "", CapstoneStatus.LOCKED, Map.of(wolfId, wolf), Map.of(), ""))
+                .loadout(LoadoutSlot.SECOND, loadout("sharpshooter", LoadoutStatus.INACTIVE))
+                .activeSlot(LoadoutSlot.FIRST)
+                .build());
+        final var switched = h.gateway.switchLoadout(PLAYER,
+                        new ClassSpecProfileGateway.SwitchRequest(LoadoutSlot.SECOND))
+                .toCompletableFuture().join();
+        check(switched.committed(), "switch away from Vadmester commits");
+        final ClassLoadout stable = h.store.profile.loadout(LoadoutSlot.FIRST);
+        check(stable.companionRoster().containsKey(wolfId),
+                "the stabled companion survives the loadout switch untouched");
+        check(stable.companionRoster().get(wolfId).level() == 3,
+                "companion progression is preserved across the switch");
+    }
+
+    private static void archerDoctrineMasteryAndCapstoneStaySlotLocal() {
+        final ClassLoadout sharpshooter = loadout("sharpshooter", LoadoutStatus.ACTIVE)
+                .withDoctrineChoice("level_30", "nyugodt_kez")
+                .withDoctrineChoice("level_40", "eles_szem")
+                .withMastery(new MasteryProgress(2, 210))
+                .withCapstoneStatus(CapstoneStatus.AVAILABLE);
+        final ClassLoadout beastMaster = loadout("beast_master", LoadoutStatus.INACTIVE)
+                .withDoctrineChoice("level_30", "gondozo")
+                .withMastery(new MasteryProgress(4, 470))
+                .withCapstoneStatus(CapstoneStatus.COMPLETED);
+        final ClassSpecSection profile = ClassSpecSection.builder()
+                .revision(4).primaryClassId("archer").classLevel(50).classExperience(999_999)
+                .secondSpecUnlocked(true)
+                .loadout(LoadoutSlot.FIRST, sharpshooter)
+                .loadout(LoadoutSlot.SECOND, beastMaster)
                 .activeSlot(LoadoutSlot.FIRST)
                 .build();
         check(profile.loadout(LoadoutSlot.FIRST).doctrineChoices()
-                        .equals(Map.of("level_30", "gyujtopont", "level_40", "iker_aram")),
-                "Perzselés doctrines stay in their own slot");
+                        .equals(Map.of("level_30", "nyugodt_kez", "level_40", "eles_szem")),
+                "Mesterlövész doctrines stay in their own slot");
         check(profile.loadout(LoadoutSlot.SECOND).doctrineChoices()
-                        .equals(Map.of("level_30", "melyebb_visszhang")),
-                "Megőrzés doctrines stay in their own slot");
-        check(profile.loadout(LoadoutSlot.FIRST).mastery().rank() == 3
-                        && profile.loadout(LoadoutSlot.SECOND).mastery().rank() == 1,
+                        .equals(Map.of("level_30", "gondozo")),
+                "Vadmester doctrines stay in their own slot");
+        check(profile.loadout(LoadoutSlot.FIRST).mastery().rank() == 2
+                        && profile.loadout(LoadoutSlot.SECOND).mastery().rank() == 4,
                 "mastery progress is slot-local");
-        check(profile.loadout(LoadoutSlot.FIRST).capstoneStatus() == CapstoneStatus.COMPLETED
-                        && profile.loadout(LoadoutSlot.SECOND).capstoneStatus() == CapstoneStatus.AVAILABLE,
+        check(profile.loadout(LoadoutSlot.FIRST).capstoneStatus() == CapstoneStatus.AVAILABLE
+                        && profile.loadout(LoadoutSlot.SECOND).capstoneStatus() == CapstoneStatus.COMPLETED,
                 "capstone/trial state is slot-local");
         expectFailure(() -> profile.loadout(LoadoutSlot.FIRST)
-                        .withDoctrineChoice("level_30", "hosszu_lelegzet"),
+                        .withDoctrineChoice("level_30", "gyors_felhuzas"),
                 "committed doctrine tier cannot silently overwrite");
     }
 

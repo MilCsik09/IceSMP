@@ -226,6 +226,74 @@ classes:
         anomaly-restore-cap-percent: 30.0
         rewind-restore-cap-percent: 60.0
 
+  archer:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      sharpshooter:
+        - hunters_mark
+        - multishot
+        - piercing_bolt
+        - deadeye
+        - headshot
+        - perfect_focus
+        - masterful_shot
+      beast_master:
+        - hunters_mark
+        - multishot
+        - wolf_call
+        - primal_bond
+        - thick_hide
+        - stampede
+        - king_of_beasts
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      weak-point-xp: 5
+      coordination-xp: 3
+      bond-spend-xp: 4
+      capstone-bond-xp: 8
+
+    # Class core: Szélolvasás — fegyelmezett (teljes felhúzású, ritmusban tartott, valós távú)
+    # találat olvassa a szelet; a következő fegyelmezett lövés erősebb. A spam töri az olvasást.
+    wind:
+      full-draw-force: 0.9
+      shot-pacing-millis: 900
+      minimum-distance: 12.0
+      read-window-millis: 5000
+      pve-bonus-percent: 18.0
+      pvp-bonus-percent: 8.0
+
+    # Explicit PvE/PvP plafon a szél + gyenge pont együttesére; nincs one-shotra skálázódó bonusz.
+    pve-max-bonus-percent: 45.0
+    pvp-max-bonus-percent: 20.0
+
+    precision:
+      # Mesterlövész: azonos prédán épülő teljes-felhúzású láncból gyenge pont nyílik.
+      chain-window-millis: 6000
+      calm-extra-millis: 3000
+      maximum-chain: 5
+      weak-point-threshold: 4
+      weak-point-pve-percent: 28.0
+      weak-point-pvp-percent: 12.0
+      deep-shot-extra-percent: 6.0
+      volley-retention: 2
+
+    bond:
+      # Vadmester: a társsal közös célpont találatai építik a Köteléket; a spelljei költik.
+      assist-gain: 7
+      instinct-extra-gain: 3
+      primal-cost: 40
+      harmony-cost-reduction: 10
+      king-cost: 80
+      primal-regen-ticks: 120
+      caretaker-extra-ticks: 60
+      king-pet-regen-ticks: 200
+      king-self-speed-ticks: 100
+      death-retention: 50
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -244,6 +312,14 @@ specializations:
     capstone-spell: rewind
     spell-unlocks:
       rewind: 50
+  sharpshooter:
+    capstone-spell: masterful_shot
+    spell-unlocks:
+      masterful_shot: 50
+  beast_master:
+    capstone-spell: king_of_beasts
+    spell-unlocks:
+      king_of_beasts: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

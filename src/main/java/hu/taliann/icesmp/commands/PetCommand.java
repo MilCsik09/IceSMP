@@ -113,6 +113,12 @@ public final class PetCommand implements BasicCommand {
                             failure == null && Boolean.TRUE.equals(committed)
                                     ? messageManager.get("pet-dismissed", "&7A társad eltűnt.")
                                     : messageManager.get("pet-none", "&7Nincs aktív társad, vagy a mentés sikertelen."))));
+            case "release" -> petManager.releaseV2(player).whenComplete((committed, failure) ->
+                    petManager.runOnPlayer(player, () -> player.sendMessage(
+                            failure == null && Boolean.TRUE.equals(committed)
+                                    ? messageManager.get("pet-released",
+                                            "&7A társad visszatért a vadonba; az Istálló-hely felszabadult.")
+                                    : messageManager.get("pet-none", "&7Nincs aktív társad, vagy a mentés sikertelen."))));
             case "name" -> {
                 if (args.length < 2) {
                     player.sendMessage(messageManager.get("pet-name-usage", "&cHasználat: /pet name <név>"));
@@ -128,7 +134,7 @@ public final class PetCommand implements BasicCommand {
             }
             default -> player.sendMessage(messageManager.getMessage(
                     "pet-info",
-                    "<dark_green>🐺 Társ: <white>{name}</white> &7| Szint: <white>{level}</white> &7| XP: <white>{xp}</white> &8(/pet summon|dismiss|name)</dark_green>",
+                    "<dark_green>🐺 Társ: <white>{name}</white> &7| Szint: <white>{level}</white> &7| XP: <white>{xp}</white> &8(/pet summon|dismiss|release|name)</dark_green>",
                     Map.of(
                             "name", petManager.getName(player),
                             "level", String.valueOf(petManager.getLevel(player)),
@@ -141,7 +147,7 @@ public final class PetCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("menu", "item", "summon", "dismiss", "name", "stance", "info").stream().filter(o -> o.startsWith(prefix)).toList();
+            return List.of("menu", "item", "summon", "dismiss", "release", "name", "stance", "info").stream().filter(o -> o.startsWith(prefix)).toList();
         }
         if (args.length == 2 && "stance".equalsIgnoreCase(args[0])) {
             final String prefix = args[1].toLowerCase(Locale.ROOT);

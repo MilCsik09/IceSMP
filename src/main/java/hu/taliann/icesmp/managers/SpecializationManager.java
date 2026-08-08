@@ -13,6 +13,7 @@ import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
+import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.items.CatalystItemFactory;
@@ -45,11 +46,15 @@ public final class SpecializationManager {
     private static final String GUARDIAN_TRIAL = "warrior_guardian_last_wall";
     private static final String DEVASTATION_TRIAL = "evoker_devastation_trial";
     private static final String PRESERVATION_TRIAL = "evoker_preservation_trial";
+    private static final String SHARPSHOOTER_TRIAL = "archer_sharpshooter_trial";
+    private static final String BEAST_MASTER_TRIAL = "archer_beast_master_trial";
     private static final Map<String, String> TRIAL_SPECS = Map.of(
             BERSERKER_TRIAL, "berserker",
             GUARDIAN_TRIAL, "guardian",
             DEVASTATION_TRIAL, "devastation",
-            PRESERVATION_TRIAL, "preservation");
+            PRESERVATION_TRIAL, "preservation",
+            SHARPSHOOTER_TRIAL, "sharpshooter",
+            BEAST_MASTER_TRIAL, "beast_master");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -69,6 +74,7 @@ public final class SpecializationManager {
     private volatile ResourceManager resourceManager;
     private volatile WarriorGameplayService warriorGameplayService;
     private volatile EvokerGameplayService evokerGameplayService;
+    private volatile ArcherGameplayService archerGameplayService;
     private volatile CatalystItemFactory soulbondFactory;
     private volatile Consumer<UUID> classSwitchCleanup = ignored -> { };
     private volatile Consumer<Player> classProfileRefresh = ignored -> { };
@@ -99,14 +105,19 @@ public final class SpecializationManager {
                 plugin, configManager, jobManager, this, factory, messageManager);
         final EvokerGameplayService evokerRuntime = new EvokerGameplayService(
                 plugin, configManager, jobManager, this, factory, messageManager);
+        final ArcherGameplayService archerRuntime = new ArcherGameplayService(
+                plugin, configManager, jobManager, this, factory, messageManager);
         plugin.getServer().getPluginManager().registerEvents(warriorRuntime, plugin);
         plugin.getServer().getPluginManager().registerEvents(evokerRuntime, plugin);
+        plugin.getServer().getPluginManager().registerEvents(archerRuntime, plugin);
         soulbondFactory = factory;
         warriorGameplayService = warriorRuntime;
         evokerGameplayService = evokerRuntime;
+        archerGameplayService = archerRuntime;
         classSwitchCleanup = playerId -> {
             warriorRuntime.clearSpecializationState(playerId);
             evokerRuntime.clearSpecializationState(playerId);
+            archerRuntime.clearSpecializationState(playerId);
         };
         classProfileRefresh = this::scheduleClassProfileRefresh;
         jobManager.setXpChangeHook(player -> reconcileClassProgression(player)
@@ -123,6 +134,10 @@ public final class SpecializationManager {
 
     public Optional<EvokerGameplayService> evokerGameplayService() {
         return Optional.ofNullable(evokerGameplayService);
+    }
+
+    public Optional<ArcherGameplayService> archerGameplayService() {
+        return Optional.ofNullable(archerGameplayService);
     }
 
     public void setSwitchSafetyResource(final ResourceManager resources) {
@@ -307,6 +322,18 @@ public final class SpecializationManager {
                 case 30 -> Set.of("hosszu_visszhang", "melyebb_visszhang");
                 case 40 -> Set.of("idofonal", "gyors_lenyomat");
                 case 50 -> Set.of("orzo_pajzs", "tiszta_ido");
+                default -> Set.of();
+            };
+            case SHARPSHOOTER -> switch (level) {
+                case 30 -> Set.of("nyugodt_kez", "gyors_felhuzas");
+                case 40 -> Set.of("eles_szem", "mely_loves");
+                case 50 -> Set.of("sorozat", "egy_loves_egy_elet");
+                default -> Set.of();
+            };
+            case BEAST_MASTER -> switch (level) {
+                case 30 -> Set.of("vadasz_osztone", "gondozo");
+                case 40 -> Set.of("osszhang", "vastag_bor");
+                case 50 -> Set.of("orok_kotelek", "falka_vezere");
                 default -> Set.of();
             };
             default -> Set.of();
@@ -709,9 +736,11 @@ public final class SpecializationManager {
     private void refreshClassProfile(final Player player) {
         final WarriorGameplayService warriorRuntime = warriorGameplayService;
         final EvokerGameplayService evokerRuntime = evokerGameplayService;
+        final ArcherGameplayService archerRuntime = archerGameplayService;
         final CatalystItemFactory factory = soulbondFactory;
         if (warriorRuntime != null) warriorRuntime.reconcileProfile(player);
         if (evokerRuntime != null) evokerRuntime.reconcileProfile(player);
+        if (archerRuntime != null) archerRuntime.reconcileProfile(player);
         final JobType job = jobManager.getPrimaryJob(player);
         if (factory == null || job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) return;
         final ClassSpecSection profile = profileGateway().currentProfile(player.getUniqueId()).orElse(null);

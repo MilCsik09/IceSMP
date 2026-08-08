@@ -67,6 +67,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     /** Profile v2 runtime-only owner -> live pet identity; never written to PDC/profile. */
     private final Map<UUID, UUID> activePetEntities = new ConcurrentHashMap<>();
     private volatile ClassSpecProfileGateway profileGateway;
+    private volatile java.util.function.Consumer<UUID> petDeathHook = ignored -> { };
 
     public PetManager(final JavaPlugin plugin, final ConfigManager configManager, final MinionManager minionManager,
                       final SpecializationManager specializationManager, final MessageManager messageManager) {
@@ -225,6 +226,15 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final String spec = activeSpec(player);
         final String namespace = ClassSpecCatalog.companionNamespace(spec);
         if (slot.isEmpty() || namespace == null) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-wrong-spec"));
+        // A Vadmester Istállója szándékosan szűk: legfeljebb ennyi befogott társ férhet el.
+        if ("beast_master.stable".equals(namespace)) {
+            final int capacity = Math.max(1, configManager.getInt("pets.stable.maximum", 3));
+            final int stabled = currentLoadout(player)
+                    .map(loadout -> loadout.companionRoster().size()).orElse(0);
+            if (stabled >= capacity) {
+                return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-stable-full"));
+            }
+        }
         final UUID sessionToken = currentSessionToken(player).orElse(null);
         if (sessionToken == null) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
         final UUID logicalId = UUID.randomUUID();
@@ -312,6 +322,29 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                 });
     }
 
+    /** Durable-first stable release: the roster entry is removed before any live-entity effect. */
+    public CompletionStage<Boolean> releaseV2(final Player player) {
+        final Optional<LoadoutSlot> slot = activeSlot(player);
+        final Optional<CompanionProfile> active = activeCompanion(player);
+        if (slot.isEmpty() || active.isEmpty()) return CompletableFuture.completedFuture(false);
+        final UUID sessionToken = currentSessionToken(player).orElse(null);
+        if (sessionToken == null) return CompletableFuture.completedFuture(false);
+        final UUID companionId = active.orElseThrow().companionId();
+        return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
+                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.REMOVE, companionId,
+                        null, "", 0, 0L, 0L, List.of(), Map.of(), "pet-release:" + companionId))
+                .thenCompose(result -> {
+                    if (!result.committed()) return CompletableFuture.completedFuture(false);
+                    final CompletableFuture<Boolean> completion = new CompletableFuture<>();
+                    runOnCurrentPlayer(player, sessionToken, () -> {
+                        activeOwners.remove(player.getUniqueId());
+                        removeActive(player);
+                        completion.complete(true);
+                    }, () -> completion.complete(false));
+                    return completion;
+                });
+    }
+
     public CompletionStage<Boolean> setNameV2(final Player player, final String name) {
         if(name==null||name.isBlank()||name.length()>24)return CompletableFuture.completedFuture(false);
         final UUID sessionToken=currentSessionToken(player).orElse(null);
@@ -378,6 +411,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             if(!deadId.equals(activePetEntities.get(ownerId)))return;
             final CompanionProfile companion=activeCompanion(owner).orElse(null);final Optional<LoadoutSlot> slot=activeSlot(owner);
             activeOwners.remove(ownerId);activePetEntities.remove(ownerId,deadId);combatTargets.remove(ownerId);
+            petDeathHook.accept(ownerId);
             if(companion!=null&&slot.isPresent()){
                 try {
                     final long seconds=Math.max(0L,configManager.getLong("pets.companion.death-respawn-seconds",120L));
@@ -777,6 +811,25 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             // nem maradhat árva, örök-persistent entitás a világban.
             minionManager.removeAllOwned(playerId);
         }
+    }
+
+    /** Runtime-only projections for class gameplay services; never durable identity. */
+    public Optional<UUID> activePetEntityId(final UUID ownerId) {
+        return Optional.ofNullable(activePetEntities.get(ownerId));
+    }
+
+    public Optional<UUID> currentCombatTarget(final UUID ownerId) {
+        return Optional.ofNullable(combatTargets.get(ownerId));
+    }
+
+    /** Live active pet handle for same-call scheduler hops; may be null. */
+    public Mob livePet(final Player player) {
+        return activePet(player);
+    }
+
+    /** Owner-thread callback after the active companion's live entity died. */
+    public void setPetDeathHook(final java.util.function.Consumer<UUID> hook) {
+        petDeathHook = hook == null ? ignored -> { } : hook;
     }
 
     private Mob activePet(final Player player) {

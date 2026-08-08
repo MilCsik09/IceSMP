@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.data.JobType;
@@ -76,6 +77,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway;
     private volatile WarriorGameplayService warriorGameplayService;
     private volatile EvokerGameplayService evokerGameplayService;
+    private volatile ArcherGameplayService archerGameplayService;
     private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin,
@@ -113,6 +115,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setEvokerGameplayService(final EvokerGameplayService service) {
         evokerGameplayService = java.util.Objects.requireNonNull(service, "service");
+    }
+
+    public void setArcherGameplayService(final ArcherGameplayService service) {
+        archerGameplayService = java.util.Objects.requireNonNull(service, "service");
     }
 
     public void setItemRarityService(
@@ -285,6 +291,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (warrior != null && !warrior.beforeCast(player, selected)) return;
         final EvokerGameplayService evoker = evokerGameplayService;
         if (evoker != null && !evoker.beforeCast(player, selected)) return;
+        final ArcherGameplayService archer = archerGameplayService;
+        if (archer != null && !archer.beforeCast(player, selected)) return;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
@@ -327,6 +335,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         if (evoker != null) {
             evoker.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
+        }
+        if (archer != null) {
+            archer.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -649,6 +660,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final EvokerGameplayService evoker = evokerGameplayService;
         if (evoker != null) {
             active = evoker.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        }
+        final ArcherGameplayService archer = archerGameplayService;
+        if (archer != null) {
+            active = archer.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
         }
         return active;
     }

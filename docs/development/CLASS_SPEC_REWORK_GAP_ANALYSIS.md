@@ -42,11 +42,22 @@
 - `EvokerGameplayRegressionSuite` and `EvokerProfileRegressionSuite` are part of Gradle `check` and the CI marker contract, covering charge ranks/fizzle/interrupt, essence alternation/burst/retention, echo single-use, imprint heal-only bounds, allowlist gateway behavior and slot isolation;
 - a pre-existing staging regression was fixed en route: the `check` dependsOn rewrap had broken the `AdvancedConfigMenuRegressionSuite` source contract, so `./gradlew check` failed on the base branch; the list was re-wrapped to restore the contract.
 
+## Gameplay closed by the Íjász vertical slice
+
+- the third complete class gameplay implementation is `archer` with `sharpshooter` (Mesterlövész) and `beast_master` (Vadmester);
+- the class core is Szélolvasás: a disciplined (full-draw, paced, real-distance) hit arms one single-use read that empowers the next disciplined shot; spam breaks it, static camping alone earns nothing, and distance is measured from the recorded shot origin without cross-region entity access;
+- Mesterlövész plays Préda-jel + Pontossági lánc: consecutive full-draw hits on one prey build a bounded chain; the weak-point finisher consumes it as an event-based damage bonus under explicit `classes.archer.pve/pvp-max-bonus-percent` clamps, with `nyugodt_kez`/`gyors_felhuzas`/`eles_szem`/`mely_loves`/`sorozat`/`egy_loves_egy_elet` doctrine variants;
+- Vadmester plays Kötelék on top of the existing companion authority: coordination with the active companion's combat target builds the bond, `primal_bond`/`king_of_beasts` spend it, and pet death collapses it unless `orok_kotelek` retains part; the companion szerep/viselkedés dimension is the existing stance system;
+- the non-DARK companion lifecycle is proven on the existing PetManager/`CompanionProfile` machinery: the `beast_master.stable` roster is durable and slot-local, live pet entity UUIDs remain runtime-only, capture into a full stable (`pets.stable.maximum`, default 3) fails closed, and the new `/pet release` frees a slot with a durable-first companion REMOVE;
+- Archer mastery XP (weak point, coordination, bond spend, capstone) is combat-gated;
+- Archer transient state has explicit death/quit/kick/disable/spec-switch cleanup; the durable stable deliberately survives a loadout switch while the transient bond clears;
+- `ArcherGameplayRegressionSuite` and `ArcherProfileRegressionSuite` are part of Gradle `check` and the CI marker contract, covering read pacing/single-use/distance anchoring, chain prey/window/retention, bond build/spend/collapse, allowlist gateway behavior, roster survival across switches and slot isolation.
+
 ## Explicitly still open after this PR
 
-- the remaining 11 classes and 31 specializations have not passed this vertical-slice gameplay gate;
+- the remaining 10 classes and 29 specializations have not passed this vertical-slice gameplay gate;
 - no generic mechanics-core primitive library is planned from this first implementation; common extraction is allowed only after real repeated consumers prove the same lifecycle/invariants;
-- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial` and `evoker_preservation_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
+- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial` and `archer_beast_master_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker and Archer trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker and Archer doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
 - the current Class Relic catalog has no canonical Warrior binding/resonance/awakening definition. The framework is reused but no new Warrior relic design is invented here;
 - full numeric Warrior and Evoker PvE/PvP balance, TTK, party pressure and real Guardian objective protection require staging playtest; the Evoker empower/burst bonus rides the shared cast-power pipeline, so its PvP clamp is the double cap (`classes.evoker.max-power-bonus-percent` + `spells.total-power-cap`), not a per-target split;
 - the separate class-HP/A17 rollout remains disabled and is not activated by this gameplay work;
@@ -57,7 +68,8 @@
 - real multi-region Folia staging, including Guardian oath target retirement, Evoker marked-ally echo delivery and cross-region support effects;
 - Berserker PvP burst/execution, critical-health Defiant recovery and cooldown playtest;
 - Evoker empowered-release timing feel, burst cadence and echo/imprint heal pressure under real party play;
-- Warrior and Evoker second-spec switch under real combat/logout/reconnect timing;
+- Archer read/chain cadence, stable capture/release at capacity and live companion coordination across regions;
+- gameplay-v2 second-spec switch under real combat/logout/reconnect timing on every allowlisted class;
 - Lélekkapocs loss/full-inventory/reconnect plus external-container transfer tests on a running server;
 - builder provisioning and gameplay validation of both final trials;
 - deployment plugin bundle and dependency-lock validation;

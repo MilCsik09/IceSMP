@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.classspec.integration;
 
+import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort;
 import hu.taliann.icesmp.classspec.application.ProfileSessionRegistry;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
@@ -36,6 +37,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     private final AbilityCatalystListener catalyst;
     private final SpellRegistry spells;
     private final ResourceManager resources;
+    private final PetManager pets;
     private final List<PlayerStateCleanup> transientOwners = new CopyOnWriteArrayList<>();
     private final ProfileSessionRegistry sessions;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
@@ -58,8 +60,9 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         this.spells = Objects.requireNonNull(spells);
         this.resources = Objects.requireNonNull(resources);
         this.sessions = Objects.requireNonNull(sessions);
+        this.pets = Objects.requireNonNull(pets);
         transientOwners.add(catalyst);
-        transientOwners.add(Objects.requireNonNull(pets));
+        transientOwners.add(pets);
         transientOwners.add(resources);
     }
 
@@ -82,24 +85,33 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         if (runtimesWired.get()) return;
         final WarriorGameplayService warrior = specs.warriorGameplayService().orElse(null);
         final EvokerGameplayService evoker = specs.evokerGameplayService().orElse(null);
-        if (warrior == null || evoker == null
+        final ArcherGameplayService archer = specs.archerGameplayService().orElse(null);
+        if (warrior == null || evoker == null || archer == null
                 || !runtimesWired.compareAndSet(false, true)) return;
         catalyst.setWarriorGameplayService(warrior);
         catalyst.setEvokerGameplayService(evoker);
-        resources.setHudSuffix(player ->
-                warrior.hudSuffix(player).append(evoker.hudSuffix(player)));
+        catalyst.setArcherGameplayService(archer);
+        resources.setHudSuffix(player -> warrior.hudSuffix(player)
+                .append(evoker.hudSuffix(player))
+                .append(archer.hudSuffix(player)));
         specs.setSwitchSafetyResource(resources);
         warrior.setCombatTracker(resources);
         evoker.setCombatTracker(resources);
+        archer.setCombatTracker(resources);
+        archer.setPetManager(pets);
+        pets.setPetDeathHook(archer::onPetDeath);
         registerTransientOwner(warrior);
         registerTransientOwner(evoker);
+        registerTransientOwner(archer);
         setLoadoutSwitchCleanup(playerId -> {
             warrior.clearSpecializationState(playerId);
             evoker.clearSpecializationState(playerId);
+            archer.clearSpecializationState(playerId);
         });
         setPostReconcile(player -> {
             warrior.reconcileProfile(player);
             evoker.reconcileProfile(player);
+            archer.reconcileProfile(player);
             catalyst.refreshSoulbond(player);
         });
     }
@@ -212,7 +224,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         for (final PlayerStateCleanup owner : transientOwners) {
             if (switching && (owner == resources || owner == catalyst
                     || owner instanceof WarriorGameplayService
-                    || owner instanceof EvokerGameplayService)) {
+                    || owner instanceof EvokerGameplayService
+                    || owner instanceof ArcherGameplayService)) {
                 continue;
             }
             owner.clearPlayerState(id);

@@ -426,8 +426,12 @@ menüben kezelheted őket:
 
 - `/pet item` — befogóeszköz, ha az irányod használ ilyet;
 - `/pet summon`, `/pet dismiss` — idézés és elbocsátás;
+- `/pet release` — az aktív társ végleges elengedése (Istálló-hely felszabadítása);
 - `/pet name <név>` — elnevezés;
-- `/pet stance <aktiv|passziv|marad>` — viselkedés.
+- `/pet stance <aktiv|passziv|marad>` — viselkedés (szerep: aktív vadász, passzív kísérő, őrhelyen maradó).
+
+A Vadmester Istállója legfeljebb 3 befogott társat tart; teli Istállóval új befogás
+csak elengedés után lehetséges.
 
 A társ tapasztalatot szerezhet, megvédhet, és ritka Társvértet viselhet. A
 pontos befogható vagy idézhető lényt a választott irány és a játékbeli

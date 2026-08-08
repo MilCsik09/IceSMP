@@ -270,6 +270,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, MarkTarget> markTargets = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Live Megőrzés marked-ally handles (player + scheduler) for echo delivery. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/archer/ArcherGameplayService.java|private final Map<UUID, ArcherCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Archer combat state (Szélolvasás read, precision chain, Kötelék). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec/companion state stays in Profile v2."
     }
   ]
 }
