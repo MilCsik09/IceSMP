@@ -5,6 +5,7 @@ import hu.taliann.icesmp.classspec.application.GateSnapshot;
 import hu.taliann.icesmp.classspec.application.GateState;
 import hu.taliann.icesmp.classspec.application.ProfileDiagnostic;
 import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
+import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.JobType;
@@ -18,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Profile v2 and typed PlayerProfile sections are the sole specialization authorities. */
 public final class SpecializationManager {
+    private static final String DOCTRINE_BRANCH = "core";
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
@@ -66,14 +70,19 @@ public final class SpecializationManager {
 
     public ClassSpecProfileGateway profileGateway() {
         final ClassSpecProfileGateway gateway = profileGateway;
-        if (gateway == null) throw new IllegalStateException("Profile v2 gateway is not initialized");
+        if (gateway == null) {
+            throw new IllegalStateException("Profile v2 gateway is not initialized");
+        }
         return gateway;
     }
 
     public boolean hasMemorySpecUnlock(final Player player) {
         if (player == null) return false;
-        try { return progressStore.memoryUnlocked(player.getUniqueId()); }
-        catch (final RuntimeException notReady) { return false; }
+        try {
+            return progressStore.memoryUnlocked(player.getUniqueId());
+        } catch (final RuntimeException notReady) {
+            return false;
+        }
     }
 
     public void grantMemorySpecUnlock(final Player player) {
@@ -104,6 +113,7 @@ public final class SpecializationManager {
 
     /** No PDC mirror remains; callers may retain the hook as a source-compatible no-op. */
     public void mirrorActiveClassSpecializationV2(final Player player) { }
+
     public void mirrorActiveClassSpecializationV2(final Player player,
                                                   final ClassSpecSection durable) {
         Objects.requireNonNull(durable, "durable");
@@ -124,18 +134,28 @@ public final class SpecializationManager {
         }
     }
 
+    /**
+     * Returns true both for adding a new loadout and for activating an already-owned inactive
+     * loadout. SEALED loadouts fail closed and the second slot is never bypassed.
+     */
     public boolean canSelectClassSpecialization(final Player player,
                                                 final SpecializationType specialization) {
         if (player == null || specialization == null) return false;
         final ClassSpecProfileGateway gateway = profileGateway;
         if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) return false;
-        final ProfileDiagnostic diagnostic = gateway.diagnostic(player.getUniqueId());
-        final ProfileDiagnostic.SlotDiagnostic first = diagnostic.slots().get(LoadoutSlot.FIRST);
-        if (first == null || first.status() != LoadoutStatus.EMPTY) return false;
         if (jobManager.getPrimaryJob(player) != specialization.getParentJob()) return false;
         if (jobManager.getPrimaryLevel(player) < getRequiredClassLevel()
                 && !hasMemorySpecUnlock(player)) return false;
-        return captureGateSnapshot(player, specialization).missingReason() == null;
+        if (captureGateSnapshot(player, specialization).missingReason() != null) return false;
+
+        final ClassSpecSection profile = gateway.currentProfile(player.getUniqueId()).orElse(null);
+        if (profile == null) return false;
+        final LoadoutSlot existing = findSlot(profile, specialization.getId());
+        if (existing != null) {
+            final LoadoutStatus status = profile.loadout(existing).status();
+            return status == LoadoutStatus.ACTIVE || status == LoadoutStatus.INACTIVE;
+        }
+        return selectionSlot(profile).isPresent();
     }
 
     public boolean selectClassSpecialization(final Player player,
@@ -143,23 +163,126 @@ public final class SpecializationManager {
         return false;
     }
 
+    /**
+     * New specs occupy the first available unlocked slot. Selecting an already-owned spec performs
+     * a durable active-loadout switch. Adding slot two is followed by the same switch operation so
+     * `/spec choose` always leaves the chosen specialization active rather than silently parking it.
+     */
     public CompletionStage<Boolean> selectClassSpecializationV2(
             final Player player, final SpecializationType specialization) {
-        if (!canSelectClassSpecialization(player, specialization))
+        if (!canSelectClassSpecialization(player, specialization)) {
             return CompletableFuture.completedFuture(false);
-        return profileGateway().select(player.getUniqueId(),
-                        new ClassSpecProfileGateway.SelectRequest(specialization.getId(),
-                                LoadoutSlot.FIRST, captureGateSnapshot(player, specialization)))
-                .thenApply(result -> result.committed()
-                        || result.status() == ProfileMutationResult.Status.NO_CHANGE);
+        }
+        final ClassSpecProfileGateway gateway = profileGateway();
+        final ClassSpecSection profile = gateway.currentProfile(player.getUniqueId()).orElse(null);
+        if (profile == null) return CompletableFuture.completedFuture(false);
+
+        final LoadoutSlot existing = findSlot(profile, specialization.getId());
+        if (existing != null) {
+            if (profile.activeSlot() == existing
+                    && profile.loadout(existing).status() == LoadoutStatus.ACTIVE) {
+                return CompletableFuture.completedFuture(true);
+            }
+            return gateway.switchActiveLoadout(player.getUniqueId(),
+                            new ClassSpecProfileGateway.SwitchLoadoutRequest(existing))
+                    .thenApply(this::mutationSucceeded);
+        }
+
+        final LoadoutSlot target = selectionSlot(profile).orElse(null);
+        if (target == null) return CompletableFuture.completedFuture(false);
+        final GateSnapshot gates = captureGateSnapshot(player, specialization);
+        return gateway.select(player.getUniqueId(),
+                        new ClassSpecProfileGateway.SelectRequest(
+                                specialization.getId(), target, gates))
+                .thenCompose(result -> {
+                    if (!mutationSucceeded(result)) {
+                        return CompletableFuture.completedFuture(false);
+                    }
+                    final ClassSpecSection durable = gateway.currentProfile(player.getUniqueId())
+                            .orElse(null);
+                    if (durable == null || durable.activeSlot() == target) {
+                        return CompletableFuture.completedFuture(durable != null);
+                    }
+                    return gateway.switchActiveLoadout(player.getUniqueId(),
+                                    new ClassSpecProfileGateway.SwitchLoadoutRequest(target))
+                            .thenApply(this::mutationSucceeded);
+                });
+    }
+
+    public List<String> availableDoctrineChoices(final Player player) {
+        final SpecializationType specialization = getClassSpecialization(player);
+        if (specialization == null) return List.of();
+        return configManager.getStringList("class-gameplay.specializations."
+                        + specialization.getId() + ".doctrines")
+                .stream()
+                .map(value -> value == null ? "" : value.trim().toLowerCase(Locale.ROOT))
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    public String activeDoctrine(final Player player) {
+        if (player == null) return "";
+        final ClassSpecProfileGateway gateway = profileGateway;
+        if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) return "";
+        return gateway.currentProfile(player.getUniqueId())
+                .filter(profile -> profile.activeSlot() != null)
+                .map(profile -> profile.loadout(profile.activeSlot()).doctrineChoices()
+                        .getOrDefault(DOCTRINE_BRANCH, ""))
+                .orElse("");
+    }
+
+    public CompletionStage<Boolean> chooseDoctrineV2(final Player player, final String rawChoice) {
+        if (player == null || rawChoice == null) return CompletableFuture.completedFuture(false);
+        final String choice = rawChoice.trim().toLowerCase(Locale.ROOT);
+        if (!availableDoctrineChoices(player).contains(choice)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        final ClassSpecProfileGateway gateway = profileGateway();
+        final ClassSpecSection profile = gateway.currentProfile(player.getUniqueId()).orElse(null);
+        if (profile == null || profile.activeSlot() == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+        final ClassLoadout active = profile.loadout(profile.activeSlot());
+        final int requiredRank = Math.max(0, Math.min(10,
+                configManager.getInt("class-gameplay.doctrine.unlock-mastery-rank", 3)));
+        if (active.mastery().rank() < requiredRank) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return gateway.chooseDoctrine(player.getUniqueId(),
+                        new ClassSpecProfileGateway.DoctrineChoiceRequest(
+                                profile.activeSlot(), DOCTRINE_BRANCH, choice))
+                .thenApply(this::mutationSucceeded);
+    }
+
+    private boolean mutationSucceeded(final ProfileMutationResult<?> result) {
+        return result != null && (result.committed()
+                || result.status() == ProfileMutationResult.Status.NO_CHANGE);
+    }
+
+    private static LoadoutSlot findSlot(final ClassSpecSection profile, final String specId) {
+        for (final LoadoutSlot slot : LoadoutSlot.values()) {
+            if (specId.equals(profile.loadout(slot).specializationId())) return slot;
+        }
+        return null;
+    }
+
+    private static Optional<LoadoutSlot> selectionSlot(final ClassSpecSection profile) {
+        if (profile.loadout(LoadoutSlot.FIRST).status() == LoadoutStatus.EMPTY) {
+            return Optional.of(LoadoutSlot.FIRST);
+        }
+        if (profile.secondSpecUnlocked()
+                && profile.loadout(LoadoutSlot.SECOND).status() == LoadoutStatus.EMPTY) {
+            return Optional.of(LoadoutSlot.SECOND);
+        }
+        return Optional.empty();
     }
 
     public GateSnapshot captureGateSnapshot(final Player player,
                                             final SpecializationType specialization) {
         final boolean factionRequired = specialization.getRequiredFaction() != null;
         final boolean factionSatisfied = !factionRequired
-                || factionManager.isMember(player.getUniqueId(),
-                specialization.getRequiredFaction());
+                || factionManager.isMember(player.getUniqueId(), specialization.getRequiredFaction());
         final boolean sinnerRequired = specialization.requiresSinner();
         final boolean sinnerSatisfied = !sinnerRequired || sinManager.isSinner(player);
         final String requiredQuest = configManager.getString(
@@ -170,12 +293,15 @@ public final class SpecializationManager {
         final GateState state = GateState.ofRequirements(factionRequired, factionSatisfied,
                 sinnerRequired, sinnerSatisfied, questRequired, questSatisfied);
         final Map<GateState.Gate, String> ids = new EnumMap<>(GateState.Gate.class);
-        if (factionRequired) ids.put(GateState.Gate.FACTION,
-                "faction:" + specialization.getRequiredFaction().name()
-                        .toLowerCase(Locale.ROOT));
+        if (factionRequired) {
+            ids.put(GateState.Gate.FACTION,
+                    "faction:" + specialization.getRequiredFaction().name()
+                            .toLowerCase(Locale.ROOT));
+        }
         if (sinnerRequired) ids.put(GateState.Gate.SINNER, "sinner:permanent");
-        if (questRequired) ids.put(GateState.Gate.QUEST,
-                "quest:" + requiredQuest.toLowerCase(Locale.ROOT));
+        if (questRequired) {
+            ids.put(GateState.Gate.QUEST, "quest:" + requiredQuest.toLowerCase(Locale.ROOT));
+        }
         return new GateSnapshot(state, ids);
     }
 
@@ -201,9 +327,11 @@ public final class SpecializationManager {
                     professionMutationPending.remove(playerId);
                     if (failure != null || !Boolean.TRUE.equals(selected)) {
                         professionMirror.remove(playerId, specialization);
-                        plugin.getLogger().severe("PlayerProfile profession specialization failed for "
-                                + playerId + ": " + (failure == null ? "already selected"
-                                : rootMessage(failure)));
+                        plugin.getLogger().severe(
+                                "PlayerProfile profession specialization failed for "
+                                        + playerId + ": "
+                                        + (failure == null ? "already selected"
+                                        : rootMessage(failure)));
                     }
                 });
         return true;
@@ -222,6 +350,7 @@ public final class SpecializationManager {
     public void resetSpecializations(final Player player) {
         resetProfessionSpecialization(player);
     }
+
     public void resetClassSpecialization(final Player player) { }
 
     public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> resetClassSpecSection(
@@ -279,9 +408,10 @@ public final class SpecializationManager {
     public double getRespecCost() {
         final double configured = configManager.getDouble(
                 "specializations.respec-cost", 100.0D);
-        if (!Double.isFinite(configured) || configured < 0.0D)
+        if (!Double.isFinite(configured) || configured < 0.0D) {
             throw new IllegalStateException(
                     "specializations.respec-cost must be finite and non-negative");
+        }
         return configured;
     }
 
@@ -309,8 +439,9 @@ public final class SpecializationManager {
             final Player player, final SpecializationType specialization,
             final JobType primaryJob, final int classLevel) {
         if (specialization == null || primaryJob != specialization.getParentJob()
-                || configManager.getConfiguration() == null)
+                || configManager.getConfiguration() == null) {
             return CompletableFuture.completedFuture(null);
+        }
         final ConfigurationSection unlocks = configManager.getConfiguration()
                 .getConfigurationSection("specializations." + specialization.getId()
                         + ".spell-unlocks");
@@ -351,7 +482,9 @@ public final class SpecializationManager {
         Throwable current = failure;
         while ((current instanceof java.util.concurrent.CompletionException
                 || current instanceof java.util.concurrent.ExecutionException)
-                && current.getCause() != null) current = current.getCause();
+                && current.getCause() != null) {
+            current = current.getCause();
+        }
         return current.getMessage() == null ? current.getClass().getSimpleName()
                 : current.getMessage();
     }
