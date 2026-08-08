@@ -5,6 +5,7 @@ messages:
       reload:
         success: <green>A konfiguráció sikeresen újratöltve!</green>
         usage: '&cHasználat: /icesmp reload'
+        quest-invalid: '&cA quest-definíciók érvénytelenek (%s hiba) — a korábbi registry maradt élőben, részletek a szerver-logban.'
     job:
       description: Adminisztrációs segédparancsok.
       invalid-usage: '&cHasználat: %s'

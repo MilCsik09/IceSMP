@@ -95,6 +95,11 @@ public final class QuestProgressListener implements Listener {
         questManager.clearPlayerState(event.getPlayer().getUniqueId());
     }
 
+    /**
+     * A stamped physical reward is the crash-recovery witness between materialization and the
+     * durable DELIVERED CAS. Until the stamp is cleared it may not leave PlayerInventory or be
+     * consumed/placed; death keeps it in inventory instead of turning it into a world drop.
+     */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPendingRewardClick(final InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;

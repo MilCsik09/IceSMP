@@ -82,6 +82,21 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   kazamata-őrzők és mind a 35 specializáció-iskola kánon-bejegyzést kapott;
   a consistency-kapu gépileg őrzi, hogy nevesített tartalom ne élhessen
   kódex-horgony nélkül.
+- **Quest Framework v2 (MMO-rework):** minden küldetésnek explicit forrása
+  van (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény), és a
+  felvétel + leadás kizárólag a jogosult forrásnál történhet — a régi nyílt
+  `/quest accept`, a napló távoli felvétele, a `/quest talk`
+  NPC-megszemélyesítés és a bind-alapú átadás bypass-ai megszűntek (a
+  parancsok admin-eszközzé váltak). NPC-questnél a feladatok teljesítése után
+  a küldetés KÉSZ állapotba lép és az adó NPC-nél adható le (záró dialógus +
+  jutalom ott); a napló öt füles (Aktív/Kész/Megbízások/Elérhető/Teljesített),
+  küldetés-követéssel; az NPC-k több questnél kattintható, egyszer
+  használatos tokenes listát kínálnak, a marker-színek központi palettából
+  jönnek (arany=leadható, sárga=új, kék=napi/heti, lila=kaszt, türkiz=titok).
+  Kategória- és láthatóság-rendszer (a rejtett quest felfedezésig sehol nem
+  szivárog), tartós felfedezés- és forrás-audit a PlayerProfile-ban, atomikus
+  és teljes gráf-validációval kapuzott quest-reload (hibás config a korábbi
+  definíciókat hagyja élőben), mind a 160 csomagolt küldetés migrálva.
 
 ## Harminc másodpercben
 

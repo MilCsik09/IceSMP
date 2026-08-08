@@ -82,30 +82,62 @@ A 18 ID-t pontosan kisbetűvel és aláhúzással használd. Átnevezés előtt
 ellenőrizd a questkonfigot, a FancyNpcs állapotot és az `npc-bindings.yml`
 leltárát.
 
-Egy NPC-kattintás runtime sorrendje forrásból biztos:
+Egy NPC-kattintás runtime sorrendje forrásból biztos (Quest Framework v2 —
+MMO-prioritás, a döntést a központi forrás-authority hozza):
 
-1. minden aktív `TALK_TO_NPC` cél teljesül, illetve a megfelelő
-   `DELIVER_ITEMS` cél megpróbálja átvenni a tárgyakat;
-2. ha nincs explicit `/npcbind`, az NPC az első felvehető `giver-npc` questet
-   adja config-sorrendben;
-3. ha van explicit binding, az felülírja a legacy giver-viselkedést:
-   `QUEST`, `SHOP`, `BANK`, `EXCHANGE`, `FACTION` vagy `COMMAND`;
-4. a `COMMAND` a kattintó játékos saját permissionjével fut;
-5. FancyNpcs nélkül a `/quest talk <npc-id>` fallback automatikusan él;
-   aktív híd mellett csak `quest-npc-fallback.always: true` engedi.
+1. minden KÉSZ (minden célját teljesített) quest, amelynek a leadási pontja ez
+   az NPC, leadásra kerül — jutalom + záró dialógus itt jár;
+2. minden aktív `TALK_TO_NPC` cél teljesül, illetve a megfelelő
+   `DELIVER_ITEMS` cél megpróbálja átvenni a tárgyakat; ha ettől a quest
+   minden célja kész ÉS az NPC a jogos leadási pont, ugyanez a kattintás le
+   is adja;
+3. ha az NPC-hez tartozó (`start: NPC` forrású) felvehető questből pontosan
+   egy van, azt azonnal megkapod; többől kattintható, egyszer használatos
+   tokenes listából választasz — a lista sorrendje: story > kaszt > mellék >
+   napi/heti > titok;
+4. a `/npcbind` binding NEM felvételi jogosultság, csak UI-mutató: `QUEST`
+   binding esetén is a quest saját `start.npc` mezője dönt; a `SHOP`, `BANK`,
+   `EXCHANGE`, `FACTION`, `COMMAND` bindingek változatlanul működnek;
+5. a `COMMAND` a kattintó játékos saját permissionjével fut;
+6. a `/quest talk <npc-név>` NPC-szimuláció ADMIN-parancs (`icesmp.admin.quest`)
+   — teszteléshez és híd-kiesés áthidalására; a játékos-út a tényleges
+   NPC-kattintás.
 
-A személyes questmarker alapból 48 blokkon belül, 40 tickenként frissül:
-arany = az NPC most questet adhat a játékosnak; zöld = az aktív quest
-beszélgetést vagy szállítást vár nála. A marker nem helyettesíti a táblázást és
+A személyes questmarker alapból 48 blokkon belül, 40 tickenként frissül, a
+színe a központi palettából jön: arany = leadható questje van a játékosnak;
+sárga = új quest vehető fel; kék = napi/heti kínálat; lila =
+kaszt/specializáció/relikvia-tartalom; türkiz = titok; szürke = folyamatban
+lévő beszélgetés/szállítás célpontja. A marker nem helyettesíti a táblázást és
 a világos útvonalat.
+
+### Forrás-séma (v2) builder-szemmel
+
+A `quests.yml` minden questje deklarálhat forrást és leadást (a teljes
+mező-referencia a fájl fejlécében él):
+
+- `start: { type: NPC, npc: "<pontos NPC-név>" }` — az NPC adja kattintásra;
+  a leadás defaultja ugyanaz az NPC.
+- `start: { type: CHAIN }` (+ `auto-accept: true` az azonnali folytatáshoz) —
+  lánc-feloldás (`next` vagy dialógus-választás) nyitja.
+- `start` nélkül — Megbízások-tábla (küldetésnapló), automatikus lezárással.
+- `category:` a napló-rendezés és a marker-szín; `visibility:` a lista-kori
+  láthatóság (`HIDDEN` = felfedezésig semmilyen player-felületen nem látszik).
+- A gráf-validátor minden reloadnál a TELJES katalógust ellenőrzi (ismeretlen
+  `next`/`requires-quest`, lánc-ciklus, üres quest, hibás forrás-mező) —
+  hibás fájl a korábbi definíciókat hagyja élőben.
 
 ### Mit jelent a „leadás” a világban?
 
-- A quest a legtöbb objektívánál **azonnal teljesül**, amikor a számláló eléri
-  a célt. Nincs automatikus visszatérés a questadó NPC-hez.
-- A `dialogue.complete` ugyanott szólal meg, ahol a teljesítés történt, akár a
-  vadon közepén. Ez player-facing történetszöveg, nem bizonyíték fizikai
-  NPC-leadásra.
+- **NPC-forrású questnél (`start: NPC`) a leadás fizikai:** a feladatok
+  teljesítése után a quest KÉSZ állapotba lép, és a jogos leadási pontnál
+  (alapból ugyanannál az NPC-nél) zárul le — a jutalom és a
+  `dialogue.complete` OTT szólal meg. A játékos a „térj vissza" útmutatást
+  chatben és a napló Kész fülén is látja.
+- **Megbízás-forrású questnél** (tábla, `start` nélkül) a quest a számláló
+  elérésekor azonnal teljesül; a `dialogue.complete` ott szólal meg, ahol a
+  teljesítés történt.
+- Explicit `turn-in:` szekcióval a leadás helye NPC-től eltérő is lehet
+  (territórium vagy esemény).
 - Csak a `TALK_TO_NPC` és `DELIVER_ITEMS` kényszeríti a játékost a megnevezett
   NPC-hez; csak a `VISIT_TERRITORY` és `PARKOUR_TRIAL` kényszerít konkrét
   world-hookhoz.
@@ -131,7 +163,7 @@ Az alábbi kapcsolatok mind forrásból biztosak; a helyszín és a díszlet
 builder-ajánlás. A „cél” lista `TALK_TO_NPC` és `DELIVER_ITEMS` hivatkozást is
 tartalmaz.
 
-| Belső ID | Szerep | Questadó (`giver-npc`) | Cél-NPC |
+| Belső ID | Szerep | Questadó (`start: NPC`) | Cél-NPC |
 |---|---|---|---|
 | `hirnok` | A Hírnök — krónikás, onboarding- és frakcióválasztó kontakt | `hirnok_hirvitel` | `rejtveny_elso_nyom`, `fejezet1_kronikas`, `fejezet2_pecset`, `fejezet3_harmadik_mondat`, `kaszt_orokseg`, `hirnok_hirvitel`, `onboarding_herald`, `onboarding_utmutatas` |
 | `vandor_kereskedo` | Benedek kereskedő — bajba jutott karavános és heti beszállító | `merchant_choice` | `rejtveny_zsakos_vandor`, `merchant_distress`, `merchant_choice`, `merchant_trade_help`, `neutral_heti_vasarjaras`, `beszallito_fa`, `beszallito_ko`, `beszallito_elelem`, `beszallito_bor` |
@@ -160,7 +192,7 @@ tartalmaz.
 - **Lore-kontekstus:** A kódex szerint a hírnökök viszik a nép kéréseit és a krónikák feladatait; a runtime onboarding a Menedék vendégeként küldi a játékost Caldestera fővárosi Hírnökéhez. Ez még nem `NEUTRAL` polgárság.
 - **Builder-ajánlás — hely:** Új Caldestera nyilvános érkezési/főterén, a Radicorából és a komp felől érkező út csomópontján. Legyen messziről olvasható, de ne álljon közvetlenül crate, kapu vagy más kattintható blokk mellett.
 - **Builder-ajánlás — hozzáférés:** Minden új játékos és minden frakció elérje harc, díj és veszélyes zóna nélkül. A Radicora → Caldestera zarándokút végpontjaként legyen kitáblázva.
-- **Binding-döntés:** Ha `/npcbind hirnok faction` készül, a TALK/DELIVER célok előbb továbbra is haladnak, majd a frakciómenü nyílik; viszont az automatikus `giver-npc` keresés kimarad, ezért a `hirnok_hirvitel` csak `/quest accept` úton vehető fel. A napi quest automatikus átadásához hagyd kötetlenül, és a frakciómenühöz használj külön szolgáltató NPC-t vagy parancsot.
+- **Binding-döntés:** Ha `/npcbind hirnok faction` készül, a leadás és a TALK/DELIVER célok továbbra is haladnak, majd a frakciómenü nyílik; viszont az NPC új questet NEM kínál fel, ezért a `hirnok_hirvitel` (start: NPC `hirnok`) elérhetetlenné válik a játékosoknak. A questkínálathoz hagyd kötetlenül a hírnököt, és a frakciómenühöz használj külön szolgáltató NPC-t vagy parancsot.
 
 #### 4.2. `vandor_kereskedo` — Benedek kereskedő — bajba jutott karavános és heti beszállító
 
@@ -296,7 +328,7 @@ tartalmaz.
 - **Lore-kontekstus:** Az új Caldestera a vizeken túl épült; a komp köti össze a gyökereket őrző Radicorával.
 - **Builder-ajánlás — hely:** A tényleges kompút egyik fő, stabil mólóján, a beszállóhelytől néhány blokkal elkülönítve.
 - **Builder-ajánlás — hozzáférés:** Díj nélkül elérhető beszélgetési pont; biztonságos 2×2 padló, fejhely és vízbe lökést gátló korlát.
-- **Binding-döntés:** A `/npcbind revesz command komp <útvonal-id>` a TALK/DELIVER célt még haladja, és a már elindult `next` láncot sem töri meg, de a közvetlen kattintásos `giver-npc` keresést kihagyja. Ha a révésznek külön is fel kell ajánlania a questjeit, maradjon kötetlen, és külön jegykezelő NPC nyissa a `/komp` útvonalat.
+- **Binding-döntés:** A `/npcbind revesz command komp <útvonal-id>` a leadást és a TALK/DELIVER célt még haladja, és a már elindult láncot sem töri meg, de az NPC új questet nem kínál fel. Ha a révésznek külön is fel kell ajánlania a questjeit, maradjon kötetlen, és külön jegykezelő NPC nyissa a `/komp` útvonalat.
 
 ## 5. Történeti és játékmeneti láncok
 

@@ -53,7 +53,11 @@ public final class QuestPhysicalRewardDeliveryService {
         this.componentKey = new NamespacedKey(plugin, COMPONENT_KEY_NAME);
     }
 
-    /** True while an inventory item is the crash-recovery witness of an unfinalized component. */
+    /**
+     * True only during the short physical-delivery/ACK window (or after a crash in that window).
+     * Such an item is a durable recovery witness and must not be moved out of PlayerInventory
+     * until its component state has been committed DELIVERED and the stamp is cleared.
+     */
     public static boolean isPendingRewardItem(final JavaPlugin plugin, final ItemStack item) {
         if (plugin == null || item == null || item.getType().isAir() || !item.hasItemMeta()) {
             return false;

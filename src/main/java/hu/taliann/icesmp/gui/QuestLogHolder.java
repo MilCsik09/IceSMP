@@ -17,10 +17,13 @@ import java.util.UUID;
 public final class QuestLogHolder implements InventoryHolder {
 
     /** What a click on a mapped slot does. */
-    public enum Action { ACCEPT, ABANDON }
+    public enum Action { ACCEPT, ABANDON, TRACK }
 
-    /** Which quests the tab shows. */
-    public enum Tab { ACTIVE, AVAILABLE, COMPLETED }
+    /**
+     * Which quests the tab shows. BOARD = a Megbízások-tábla (QUEST_BOARD-forrású
+     * questek, itt felvehetők); AVAILABLE = más forrású látható questek, csak infó.
+     */
+    public enum Tab { ACTIVE, READY, BOARD, AVAILABLE, COMPLETED }
 
     private final UUID ownerUuid;
     private final Map<Integer, String> slotQuests = new HashMap<>();

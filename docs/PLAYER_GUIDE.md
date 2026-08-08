@@ -657,12 +657,28 @@ A küldetések lehetnek harci, gyűjtögető, készítő, felfedező, beszélget
 szállító, parkour-, raid- vagy világesemény-feladatok. Egy küldetés több célt
 is kezelhet párhuzamosan vagy sorrendben.
 
+### Honnan jön a küldetés, és hová kell visszavinni?
+
+Minden küldetésnek saját forrása van, és csak ott vehető fel:
+
+- **NPC-küldetés** — a mesélőre kattintva veszed fel. Ha a feladatait
+  teljesítetted, a küldetés „kész" állapotba lép, és VISSZA kell térned a
+  jogos leadási ponthoz (jellemzően ugyanahhoz az NPC-hez) — a jutalom és a
+  záró párbeszéd ott jár.
+- **Megbízás** — a küldetésnapló „Megbízások" füléről vállalható el
+  kattintással; a teljesítéskor magától lezárul.
+- **Történet-folytatás** — egy lánc előző lépésének teljesítése oldja fel
+  (van, amelyik azonnal folytatódik, van, amelyikhez el kell menned a
+  forrásához), a dialógus-választások pedig elágazó folytatást nyithatnak.
+- Néhány küldetést helyszín, tárgy vagy világesemény indít.
+
 ### Alapparancsok
 
-- `/quest log` — kattintható napló: Aktív, Felvehető, Teljesített.
-- `/quest list` — elérhető és aktív küldetések.
-- `/quest accept <id>` — felvétel.
-- `/quest info` — haladás.
+- `/quest log` — kattintható napló, öt füllel: Aktív, Kész (leadható),
+  Megbízások (itt vállalhatsz), Elérhető (mutatja, hol indul), Teljesített.
+- `/quest list` — a számodra látható küldetések.
+- `/quest info` — aktív küldetéseid és haladásod.
+- `/quest track <id|off>` — követett küldetés kijelölése (a naplóban ★).
 - `/quest abandon <id>` — feladás.
 
 Az első belépéskor egy rövid kezdő lánc automatikusan vezet végig az alapokon.
@@ -672,13 +688,14 @@ megoldásait.
 ### NPC-k és történet
 
 A küldetést adó vagy folytató NPC fölött személyes részecskejelzés jelenhet
-meg. A párbeszédekben választási lehetőséget is kaphatsz, amely másik
-folytatást nyit.
+meg — a színe elárulja, mi vár ott: arany = leadható küldetésed van nála,
+sárga = új küldetést ad, kék = napi/heti kínálat, lila = kaszt-tartalom,
+szürke = folyamatban lévő feladatod célpontja. Ha egy NPC több küldetést is
+kínál, kattintható listából választhatsz. A párbeszédekben választási
+lehetőséget is kaphatsz, amely másik folytatást nyit.
 
 Egyes NPC-k naponta rotáló kínálatot adnak, más feladat hetente vagy
-szezononként ismételhető. Ha az aktuális világban egy szükséges NPC nincs
-kihelyezve, a szerver engedélyezhet `/quest talk <npc-név>` tartalékutat; ezt
-csak akkor használd, ha a játék vagy a csapat kifejezetten erre irányít.
+szezononként ismételhető.
 
 ### Próbák, rejtvények és fejezetek
 
