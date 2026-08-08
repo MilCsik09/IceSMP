@@ -57,14 +57,16 @@ public final class ConfigManager {
 
     /** Bundled per-subsystem config files under config/. */
     private static final String[] CONFIG_FILES = {
-            "general", "economy", "factions", "block-regen", "classes", "spells", "spells-balance",
-            "professions", "quests", "world", "event-spawn-safety", "relics", "pets", "crafting", "crates",
-            "afk", "moderation", "item-rarity", "loot", "motd", "profession-materials",
+            "general", "economy", "factions", "block-regen", "classes", "class-gameplay",
+            "spells", "spells-balance", "professions", "quests", "world",
+            "event-spawn-safety", "relics", "pets", "crafting", "crates", "afk",
+            "moderation", "item-rarity", "loot", "motd", "profession-materials",
             "profession-recipes", "sit", "tablist", "dev-items"
     };
 
     private final JavaPlugin plugin;
-    private volatile ConfigSnapshot liveSnapshot = new ConfigSnapshot(null, null, Set.of(), 0L, "");
+    private volatile ConfigSnapshot liveSnapshot =
+            new ConfigSnapshot(null, null, Set.of(), 0L, "");
 
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
@@ -115,10 +117,12 @@ public final class ConfigManager {
         final File[] files = dir.listFiles((directory, fileName) -> fileName.endsWith(".yml"));
         if (files != null) {
             for (final File file : files) {
-                final String baseName = file.getName().substring(0, file.getName().length() - 4);
+                final String baseName = file.getName().substring(0,
+                        file.getName().length() - 4);
                 if (java.util.Arrays.stream(CONFIG_FILES).noneMatch(baseName::equals)) {
-                    plugin.getLogger().warning("Ismeretlen config-fájl kihagyva a merge-ből: config/"
-                            + file.getName() + " (csak a CONFIG_FILES lista töltődik be)");
+                    plugin.getLogger().warning(
+                            "Ismeretlen config-fájl kihagyva a merge-ből: config/"
+                                    + file.getName() + " (csak a CONFIG_FILES lista töltődik be)");
                 }
             }
         }
@@ -138,7 +142,8 @@ public final class ConfigManager {
         }
     }
 
-    private static void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {
+    private static void mergeInto(final YamlConfiguration target,
+                                  final ConfigurationSection source) {
         for (final String key : source.getKeys(true)) {
             if (!source.isConfigurationSection(key)) {
                 target.set(key, source.get(key));
@@ -167,9 +172,9 @@ public final class ConfigManager {
      * the on-disk config.yml fingerprint must still match the editor's opening snapshot, otherwise
      * a second admin or an external file edit wins and this stale transaction is rejected.
      */
-    public synchronized BatchApplyResult applyOverridesIfUnchanged(final long expectedGeneration,
-                                                                    final String expectedFingerprint,
-                                                                    final Map<String, Object> changes) {
+    public synchronized BatchApplyResult applyOverridesIfUnchanged(
+            final long expectedGeneration, final String expectedFingerprint,
+            final Map<String, Object> changes) {
         if (changes == null || changes.isEmpty()) {
             return BatchApplyResult.NO_CHANGES;
         }
@@ -207,16 +212,31 @@ public final class ConfigManager {
                     .digest(Files.readAllBytes(file.toPath()));
             return java.util.HexFormat.of().formatHex(digest);
         } catch (final Exception failure) {
-            plugin.getLogger().warning("config.yml fingerprint failed; conservative stale marker used: " + failure);
+            plugin.getLogger().warning(
+                    "config.yml fingerprint failed; conservative stale marker used: " + failure);
             return "ERROR:" + file.length() + ':' + file.lastModified();
         }
     }
 
-    public ConfigSnapshot snapshot() { return liveSnapshot; }
-    public FileConfiguration getConfiguration() { return liveSnapshot.configuration(); }
-    public boolean contains(final String path) { return liveSnapshot.isSet(path); }
-    public boolean hasOverride(final String path) { return liveSnapshot.isOverridden(path); }
-    public Object getBaseValue(final String path) { return liveSnapshot.baseValue(path); }
+    public ConfigSnapshot snapshot() {
+        return liveSnapshot;
+    }
+
+    public FileConfiguration getConfiguration() {
+        return liveSnapshot.configuration();
+    }
+
+    public boolean contains(final String path) {
+        return liveSnapshot.isSet(path);
+    }
+
+    public boolean hasOverride(final String path) {
+        return liveSnapshot.isOverridden(path);
+    }
+
+    public Object getBaseValue(final String path) {
+        return liveSnapshot.baseValue(path);
+    }
 
     public String getBaseString(final String path, final String fallback) {
         final FileConfiguration base = liveSnapshot.baseConfiguration();
@@ -237,26 +257,32 @@ public final class ConfigManager {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getString(path, fallback);
     }
+
     public int getInt(final String path, final int fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getInt(path, fallback);
     }
+
     public long getLong(final String path, final long fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getLong(path, fallback);
     }
+
     public double getDouble(final String path, final double fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getDouble(path, fallback);
     }
+
     public boolean getBoolean(final String path, final boolean fallback) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getBoolean(path, fallback);
     }
+
     public List<String> getStringList(final String path) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? List.of() : configuration.getStringList(path);
     }
+
     public List<Double> getDoubleList(final String path) {
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? List.of() : configuration.getDoubleList(path);
