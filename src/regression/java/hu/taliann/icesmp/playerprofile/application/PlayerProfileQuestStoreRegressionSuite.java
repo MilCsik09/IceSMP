@@ -11,6 +11,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 
 /** Main quest lifecycle, reward receipt and restart regressions. */
 public final class PlayerProfileQuestStoreRegressionSuite {
@@ -71,7 +73,7 @@ public final class PlayerProfileQuestStoreRegressionSuite {
                     "completion replay no-op");
 
             check(store.settleReward(player, receipt.receiptId())
-                    .toCompletableFuture().join(), "reward settled");
+                    .toCompletableFuture().join(), "reward with no physical ledger settles");
             check(!store.settleReward(player, receipt.receiptId())
                     .toCompletableFuture().join(), "reward settlement replay rejected");
             check(store.pendingRewards(player).isEmpty(), "claimable receipt removed");
@@ -93,6 +95,7 @@ public final class PlayerProfileQuestStoreRegressionSuite {
 
             physicalRewardCrashBeforeSettlementIsExactlyOnce(
                     repository, store, player, pending.receiptId());
+            physicalRewardSourceContracts();
 
             check(store.accept(player, "abandon_me").toCompletableFuture().join(),
                     "abandon quest accepted");
@@ -137,6 +140,13 @@ public final class PlayerProfileQuestStoreRegressionSuite {
         check(store.rewardComponentStates(player, receipt).get(component)
                         == PlayerProfileQuestStore.RewardComponentState.PREPARED,
                 "physical reward starts prepared");
+        expectStage(IllegalStateException.class, store.settleReward(player, receipt),
+                "parent receipt cannot settle while physical reward is PREPARED");
+        check(store.pendingRewards(player).contains(receipt),
+                "premature settlement keeps claimable parent receipt");
+        check(store.rewardComponentStates(player, receipt).get(component)
+                        == PlayerProfileQuestStore.RewardComponentState.PREPARED,
+                "premature settlement preserves delivery evidence");
 
         final LinkedHashSet<String> physicalInventory = new LinkedHashSet<>();
         int deliveries = 0;
@@ -152,7 +162,6 @@ public final class PlayerProfileQuestStoreRegressionSuite {
         check(deliveries == 1 && physicalInventory.size() == 1,
                 "physical reward delivered once before injected crash");
 
-        // Inject crash/failure before component acknowledgement and before reward settlement.
         repository.invalidate(player);
         repository.loadSnapshot(player).toCompletableFuture().join();
         check(store.pendingRewards(player).contains(receipt),
@@ -194,6 +203,58 @@ public final class PlayerProfileQuestStoreRegressionSuite {
         check(store.rewardComponentStates(player, receipt).isEmpty(),
                 "delivery ledger cleaned atomically with settlement");
         check(deliveries == 1, "physical reward total is exactly one");
+    }
+
+    private static void physicalRewardSourceContracts() throws Exception {
+        final String questManager = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/QuestManager.java"));
+        final int applyStart = questManager.indexOf(
+                "private CompletionStage<Void> applyRewards");
+        final int applyEnd = questManager.indexOf("private void advanceChain", applyStart);
+        check(applyStart >= 0 && applyEnd > applyStart,
+                "QuestManager reward method source contract located");
+        final String applyBlock = questManager.substring(applyStart, applyEnd);
+        check(applyBlock.contains("QuestPhysicalRewardDeliveryService"),
+                "QuestManager routes physical rewards through durable delivery service");
+        check(!applyBlock.contains("payOutTokens")
+                        && !applyBlock.contains("dropItemNaturally")
+                        && !applyBlock.contains("new org.bukkit.inventory.ItemStack"),
+                "QuestManager has no direct physical reward side effect");
+
+        final String deliverySource = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/QuestPhysicalRewardDeliveryService.java"));
+        check(deliverySource.contains("quest_reward_receipt")
+                        && deliverySource.contains("quest_reward_component"),
+                "physical reward carries durable recovery witness ids");
+        check(deliverySource.contains("inventory.getContents()")
+                        && !deliverySource.contains("dropItemNaturally"),
+                "witness recovery covers all inventory slots without world overflow");
+        check(deliverySource.contains("CompletableFuture.failedFuture(failure)"),
+                "synchronous reward-build failures become failed stages");
+
+        final String listenerSource = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/QuestProgressListener.java"));
+        check(listenerSource.contains("onPendingRewardClick")
+                        && listenerSource.contains("onPendingRewardDrag")
+                        && listenerSource.contains("onPendingRewardDrop")
+                        && listenerSource.contains("onPendingRewardHandSwap"),
+                "pending physical witnesses are movement-locked until durable ACK");
+    }
+
+    private static void expectStage(final Class<? extends Throwable> expected,
+                                    final CompletionStage<?> stage,
+                                    final String message) {
+        assertions++;
+        try {
+            stage.toCompletableFuture().join();
+            throw new AssertionError(message + ": expected " + expected.getSimpleName());
+        } catch (final CompletionException failure) {
+            final Throwable cause = failure.getCause();
+            if (!expected.isInstance(cause)) {
+                throw new AssertionError(message + ": expected " + expected.getSimpleName()
+                        + " but got " + cause, cause);
+            }
+        }
     }
 
     private static void check(final boolean condition, final String message) {
