@@ -53,15 +53,21 @@ public final class JobManager implements PlayerStateCleanup {
         this.profileGateway = Objects.requireNonNull(gateway, "profileGateway");
     }
 
-    public void setFactionManager(final FactionManager manager) { this.factionManagerRef = manager; }
+    public void setFactionManager(final FactionManager manager) {
+        this.factionManagerRef = manager;
+    }
 
     private ClassSpecProfileGateway gateway() {
         final ClassSpecProfileGateway gateway = profileGateway;
-        if (gateway == null) throw new IllegalStateException("Profile v2 gateway is not initialized");
+        if (gateway == null) {
+            throw new IllegalStateException("Profile v2 gateway is not initialized");
+        }
         return gateway;
     }
 
-    public boolean hasPrimaryJob(final Player player) { return getPrimaryJob(player) != null; }
+    public boolean hasPrimaryJob(final Player player) {
+        return getPrimaryJob(player) != null;
+    }
 
     public JobType getPrimaryJob(final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway;
@@ -97,7 +103,9 @@ public final class JobManager implements PlayerStateCleanup {
         return required == null || factionManager.isMember(player.getUniqueId(), required);
     }
 
-    public boolean setPrimaryJob(final Player player, final JobType job) { return false; }
+    public boolean setPrimaryJob(final Player player, final JobType job) {
+        return false;
+    }
 
     public CompletionStage<Boolean> setPrimaryJobV2(final Player player, final JobType job) {
         Objects.requireNonNull(player, "player");
@@ -111,9 +119,11 @@ public final class JobManager implements PlayerStateCleanup {
         }
         final String operationId = "class-assign:" + player.getUniqueId() + ':' + job.getId();
         return gateway().assignClass(player.getUniqueId(),
-                new ClassSpecProfileGateway.ClassAssignmentRequest(job.getId(), 1, 0, operationId))
+                        new ClassSpecProfileGateway.ClassAssignmentRequest(
+                                job.getId(), 1, 0, operationId))
                 .thenCompose(result -> {
-                    if (!result.committed() && result.status() != ProfileMutationResult.Status.NO_CHANGE) {
+                    if (!result.committed()
+                            && result.status() != ProfileMutationResult.Status.NO_CHANGE) {
                         return CompletableFuture.completedFuture(false);
                     }
                     return schedulePlayer(player, () -> {
@@ -129,39 +139,70 @@ public final class JobManager implements PlayerStateCleanup {
                 && profileGateway.isSessionReady(player.getUniqueId()));
     }
 
-    public boolean addXpToJob(final Player player, final int amount) { return false; }
-    public boolean setXp(final Player player, final int xp) { return false; }
+    public boolean addXpToJob(final Player player, final int amount) {
+        return false;
+    }
+
+    public boolean setXp(final Player player, final int xp) {
+        return false;
+    }
 
     public CompletionStage<Boolean> addXpToJobV2(final Player player, final int amount,
                                                   final String operationId) {
+        return addXpToJobV2(player, amount, operationId, false);
+    }
+
+    /**
+     * Adds class XP and, when a specialization is active, advances its Profile v2 mastery in
+     * the same receipt-protected CAS. A rare-variant kill can complete an already-available
+     * capstone trial; the kill that first reaches mastery rank 10 only makes the trial available.
+     */
+    public CompletionStage<Boolean> addXpToJobV2(final Player player, final int amount,
+                                                  final String operationId,
+                                                  final boolean capstoneTrialVictory) {
         if (amount <= 0 || !hasPrimaryJob(player)) return CompletableFuture.completedFuture(false);
         return mutateXp(player, ClassSpecProfileGateway.ClassExperienceRequest.Mode.ADD,
-                amount, operationId);
+                amount, operationId, capstoneTrialVictory);
     }
 
     public CompletionStage<Boolean> setXpV2(final Player player, final int xp,
                                              final String operationId) {
         if (xp < 0 || !hasPrimaryJob(player)) return CompletableFuture.completedFuture(false);
         return mutateXp(player, ClassSpecProfileGateway.ClassExperienceRequest.Mode.SET,
-                xp, operationId);
+                xp, operationId, false);
     }
 
-    private CompletionStage<Boolean> mutateXp(final Player player,
-                                               final ClassSpecProfileGateway.ClassExperienceRequest.Mode mode,
-                                               final int value, final String operationId) {
-        final int baseXp = Math.max(1, configManager.getInt("classes.leveling.base-xp", 100));
-        final int increment = Math.max(0, configManager.getInt(
-                "classes.leveling.increment-per-level", 20));
+    private CompletionStage<Boolean> mutateXp(
+            final Player player,
+            final ClassSpecProfileGateway.ClassExperienceRequest.Mode mode,
+            final int value,
+            final String operationId,
+            final boolean capstoneTrialVictory) {
+        final int baseXp = Math.max(1,
+                configManager.getInt("classes.leveling.base-xp", 100));
+        final int increment = Math.max(0,
+                configManager.getInt("classes.leveling.increment-per-level", 20));
+        final double masteryPerClassXp = Math.max(0.0D,
+                configManager.getDouble("class-gameplay.mastery.xp-per-class-xp", 1.0D));
+        final int masteryGain = mode == ClassSpecProfileGateway.ClassExperienceRequest.Mode.ADD
+                ? Math.max(0, (int) Math.round(value * masteryPerClassXp)) : 0;
+        final int masteryPerRank = Math.max(1,
+                configManager.getInt("class-gameplay.mastery.xp-per-rank", 500));
+        final int secondSpecUnlockLevel = Math.max(0, Math.min(MAX_JOB_LEVEL,
+                configManager.getInt("class-gameplay.second-spec.unlock-level", 40)));
         return gateway().mutateClassExperience(player.getUniqueId(),
-                new ClassSpecProfileGateway.ClassExperienceRequest(mode, value, baseXp,
-                        increment, operationId))
+                        new ClassSpecProfileGateway.ClassExperienceRequest(mode, value, baseXp,
+                                increment, masteryGain, masteryPerRank, secondSpecUnlockLevel,
+                                capstoneTrialVictory, operationId))
                 .thenCompose(result -> {
-                    if (!result.committed() && result.status() != ProfileMutationResult.Status.NO_CHANGE) {
+                    if (!result.committed()
+                            && result.status() != ProfileMutationResult.Status.NO_CHANGE) {
                         return CompletableFuture.completedFuture(false);
                     }
                     return schedulePlayer(player, () -> {
-                        if (getPrimaryLevel(player) >= MAX_JOB_LEVEL)
+                        if (getPrimaryLevel(player) >= MAX_JOB_LEVEL) {
                             AdvancementService.award(player, "class_max");
+                        }
                         final java.util.function.Consumer<Player> hook = xpChangeHook;
                         if (hook != null) hook.accept(player);
                     }).thenCompose(ignored -> applyAutoUnlocksV2(player))
@@ -175,8 +216,9 @@ public final class JobManager implements PlayerStateCleanup {
 
     public CompletionStage<Void> applyAutoUnlocksV2(final Player player) {
         final JobType job = getPrimaryJob(player);
-        if (job == null || configManager.getConfiguration() == null)
+        if (job == null || configManager.getConfiguration() == null) {
             return CompletableFuture.completedFuture(null);
+        }
         final ConfigurationSection unlocks = configManager.getConfiguration()
                 .getConfigurationSection("classes." + job.getId() + ".spell-unlocks");
         if (unlocks == null) return CompletableFuture.completedFuture(null);
@@ -214,12 +256,14 @@ public final class JobManager implements PlayerStateCleanup {
         SpellGrantLedger ledger = SpellGrantLedger.empty();
         if (spellIds != null) {
             for (final String spellId : spellIds) {
-                if (spellId != null && !spellId.isBlank())
+                if (spellId != null && !spellId.isBlank()) {
                     ledger = ledger.add(spellId, SOURCE_ADMIN).ledger();
+                }
             }
         }
         final SpellGrantLedger requested = ledger;
-        return spellGrantStore.replace(player.getUniqueId(), requested).thenApply(ignored -> null);
+        return spellGrantStore.replace(player.getUniqueId(), requested)
+                .thenApply(ignored -> null);
     }
 
     public CompletionStage<Boolean> unlockSpellV2(final Player player,
@@ -257,7 +301,9 @@ public final class JobManager implements PlayerStateCleanup {
         return readLedger(player).sources(spellId);
     }
 
-    public void backfillSpellGrants(final Player player) { readLedger(player); }
+    public void backfillSpellGrants(final Player player) {
+        readLedger(player);
+    }
 
     /** Durable admin reset already removed class state; no PDC cleanup remains. */
     public void resetClass(final Player player) { }
@@ -269,13 +315,21 @@ public final class JobManager implements PlayerStateCleanup {
     private CompletionStage<Void> schedulePlayer(final Player player, final Runnable work) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         player.getScheduler().run(plugin, task -> {
-            try { work.run(); result.complete(null); }
-            catch (final Throwable failure) { result.completeExceptionally(failure); }
+            try {
+                work.run();
+                result.complete(null);
+            } catch (final Throwable failure) {
+                result.completeExceptionally(failure);
+            }
         }, () -> result.completeExceptionally(
                 new IllegalStateException("Player scheduler rejected Profile v2 effect")));
         return result;
     }
 
     public void cleanup(final UUID playerId) { }
-    public void clearPlayerState(final UUID playerId) { cleanup(playerId); }
+
+    @Override
+    public void clearPlayerState(final UUID playerId) {
+        cleanup(playerId);
+    }
 }
