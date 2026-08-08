@@ -3,7 +3,6 @@ package hu.taliann.icesmp.playerprofile.application;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.QuestSection;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /** Typed active/completed quest, objective progress and reward settlement authority. */
@@ -20,6 +20,10 @@ public final class PlayerProfileQuestStore {
     private static final String DONE_AT_PREFIX = "done-at:";
     private static final String SEASON_PREFIX = "season:";
     private static final String RECEIPT_SEPARATOR = "|";
+    private static final String DISCOVERED_PREFIX = "discovered.";
+    private static final String SOURCE_PREFIX = "source.";
+    private static final String ACCEPTED_AT_PREFIX = "accepted-at.";
+    private static final String TRACKED_KEY = "tracked";
     private static final String REWARD_DELIVERY_EXTENSION = "reward-delivery-ledger";
     private static final int MAX_REWARD_RECEIPTS = 2048;
     private static final int MAX_DELIVERY_COMPONENTS = 512;
@@ -81,7 +85,14 @@ public final class PlayerProfileQuestStore {
     }
 
     public CompletionStage<Boolean> accept(final UUID playerId, final String questId) {
+        return accept(playerId, questId, "");
+    }
+
+    /** A felvétel a start-forrás auditjával EGY commitban rögzül (extensions: `source.<id>`). */
+    public CompletionStage<Boolean> accept(final UUID playerId, final String questId,
+                                           final String startSource) {
         final String id = questId(questId);
+        final String source = startSource == null ? "" : startSource.trim().toLowerCase(Locale.ROOT);
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
                     if (current.active().containsKey(id)) {
@@ -90,10 +101,80 @@ public final class PlayerProfileQuestStore {
                     final LinkedHashMap<String, Map<String, Long>> active =
                             new LinkedHashMap<>(current.active());
                     active.put(id, Map.of());
+                    final LinkedHashMap<String, Object> extensions =
+                            new LinkedHashMap<>(current.extensions());
+                    if (!source.isBlank()) {
+                        extensions.put(SOURCE_PREFIX + id, source);
+                    }
+                    extensions.put(ACCEPTED_AT_PREFIX + id, System.currentTimeMillis());
                     return PlayerProfileService.ConditionalMutation.changed(
-                            copy(current, active, current.completed(), current.rewardReceipts(),
-                                    current.cooldowns(), current.claimableRewards()), true);
+                            copyWithExtensions(current, active, current.completed(),
+                                    current.rewardReceipts(), current.cooldowns(),
+                                    current.claimableRewards(), extensions), true);
                 });
+    }
+
+    /** Tartós quest-felfedezés; {@code true}, ha ez volt az első felfedezés. */
+    public CompletionStage<Boolean> discover(final UUID playerId, final String questId,
+                                             final String source) {
+        final String id = questId(questId);
+        final String from = source == null ? "" : source.trim().toLowerCase(Locale.ROOT);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+                    if (current.extensions().containsKey(DISCOVERED_PREFIX + id)) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    final LinkedHashMap<String, Object> extensions =
+                            new LinkedHashMap<>(current.extensions());
+                    extensions.put(DISCOVERED_PREFIX + id, from.isBlank() ? "unknown" : from);
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            copyWithExtensions(current, current.active(), current.completed(),
+                                    current.rewardReceipts(), current.cooldowns(),
+                                    current.claimableRewards(), extensions), true);
+                });
+    }
+
+    public boolean isDiscovered(final UUID playerId, final String questId) {
+        return PlayerProfileAuthority.current().requireSection(playerId,
+                        ProfileSectionId.QUESTS, QuestSection.class)
+                .extensions().containsKey(DISCOVERED_PREFIX + questId(questId));
+    }
+
+    /** Trackelt quest kijelölése ({@code null} = törlés); HUD/waypoint rendszerek alapja. */
+    public CompletionStage<Boolean> setTracked(final UUID playerId, final String questId) {
+        final String id = questId == null || questId.isBlank() ? "" : questId(questId);
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+                    final Object existing = current.extensions().get(TRACKED_KEY);
+                    if (id.isEmpty() ? existing == null : id.equals(existing)) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    final LinkedHashMap<String, Object> extensions =
+                            new LinkedHashMap<>(current.extensions());
+                    if (id.isEmpty()) {
+                        extensions.remove(TRACKED_KEY);
+                    } else {
+                        extensions.put(TRACKED_KEY, id);
+                    }
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            copyWithExtensions(current, current.active(), current.completed(),
+                                    current.rewardReceipts(), current.cooldowns(),
+                                    current.claimableRewards(), extensions), true);
+                });
+    }
+
+    public String tracked(final UUID playerId) {
+        final Object value = PlayerProfileAuthority.current().requireSection(playerId,
+                ProfileSectionId.QUESTS, QuestSection.class).extensions().get(TRACKED_KEY);
+        return value instanceof String id && !id.isBlank() ? id : null;
+    }
+
+    /** A rögzített start-forrás auditja (diagnosztika); {@code null}, ha nincs. */
+    public String startSource(final UUID playerId, final String questId) {
+        final Object value = PlayerProfileAuthority.current().requireSection(playerId,
+                        ProfileSectionId.QUESTS, QuestSection.class)
+                .extensions().get(SOURCE_PREFIX + questId(questId));
+        return value instanceof String source && !source.isBlank() ? source : null;
     }
 
     public CompletionStage<Boolean> abandon(final UUID playerId, final String questId) {
@@ -221,17 +302,14 @@ public final class PlayerProfileQuestStore {
         return questId(receipt.substring(0, split));
     }
 
-    /**
-     * Durable phase 1 for physical rewards. Every component must be PREPARED before an inventory
-     * side effect can happen. Replays never downgrade DELIVERED components.
-     */
+    /** Durable phase 1 for physical rewards. Replays never downgrade DELIVERED components. */
     public CompletionStage<Boolean> prepareRewardComponents(final UUID playerId,
                                                             final String receipt,
                                                             final Set<String> componentIds) {
         Objects.requireNonNull(playerId, "playerId");
         final String rewardReceipt = rewardReceipt(receipt);
         final LinkedHashSet<String> components = normalizedComponents(componentIds);
-        if (components.isEmpty()) return java.util.concurrent.CompletableFuture.completedFuture(false);
+        if (components.isEmpty()) return CompletableFuture.completedFuture(false);
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
                     if (current.rewardReceipts().contains(rewardReceipt)) {
@@ -263,7 +341,6 @@ public final class PlayerProfileQuestStore {
                 });
     }
 
-    /** Current durable component state for one pending reward receipt. */
     public Map<String, RewardComponentState> rewardComponentStates(final UUID playerId,
                                                                    final String receipt) {
         final String rewardReceipt = rewardReceipt(receipt);
@@ -273,17 +350,14 @@ public final class PlayerProfileQuestStore {
         return deliveryLedger(section).getOrDefault(rewardReceipt, Map.of());
     }
 
-    /**
-     * Durable phase 2 for physical rewards. Call only after every named component either entered
-     * the inventory or was found there as the stamped recovery witness.
-     */
+    /** Durable phase 2 after the physical item is present or recovered as a stamped witness. */
     public CompletionStage<Boolean> markRewardComponentsDelivered(final UUID playerId,
                                                                   final String receipt,
                                                                   final Set<String> componentIds) {
         Objects.requireNonNull(playerId, "playerId");
         final String rewardReceipt = rewardReceipt(receipt);
         final LinkedHashSet<String> components = normalizedComponents(componentIds);
-        if (components.isEmpty()) return java.util.concurrent.CompletableFuture.completedFuture(false);
+        if (components.isEmpty()) return CompletableFuture.completedFuture(false);
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
                     if (current.rewardReceipts().contains(rewardReceipt)) {
@@ -323,7 +397,6 @@ public final class PlayerProfileQuestStore {
 
     /** Parent receipt may settle only after every prepared physical component is durable DELIVERED. */
     public CompletionStage<Boolean> settleReward(final UUID playerId, final String receipt) {
-        Objects.requireNonNull(receipt, "receipt");
         final String rewardReceipt = rewardReceipt(receipt);
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
@@ -368,8 +441,19 @@ public final class PlayerProfileQuestStore {
                                      final Set<String> rewardReceipts,
                                      final Map<String, Long> cooldowns,
                                      final Set<String> claimable) {
+        return copyWithExtensions(current, active, completed, rewardReceipts, cooldowns,
+                claimable, current.extensions());
+    }
+
+    private static QuestSection copyWithExtensions(final QuestSection current,
+                                                   final Map<String, Map<String, Long>> active,
+                                                   final Set<String> completed,
+                                                   final Set<String> rewardReceipts,
+                                                   final Map<String, Long> cooldowns,
+                                                   final Set<String> claimable,
+                                                   final Map<String, Object> extensions) {
         return new QuestSection(active, completed, rewardReceipts, cooldowns,
-                current.communityContributions(), claimable, current.extensions());
+                current.communityContributions(), claimable, extensions);
     }
 
     private static QuestSection copyWithDeliveryLedger(
@@ -400,8 +484,8 @@ public final class PlayerProfileQuestStore {
             });
             extensions.put(REWARD_DELIVERY_EXTENSION, Map.copyOf(encodedLedger));
         }
-        return new QuestSection(active, completed, rewardReceipts, cooldowns,
-                current.communityContributions(), claimable, Map.copyOf(extensions));
+        return copyWithExtensions(current, active, completed, rewardReceipts,
+                cooldowns, claimable, Map.copyOf(extensions));
     }
 
     private static LinkedHashMap<String, Map<String, RewardComponentState>> mutableDeliveryLedger(

@@ -57,11 +57,13 @@ public final class OnboardingListener implements Listener {
             return;
         }
 
-        // QuestManager#accept() already refuses a quest that is active or (non-repeatable)
-        // completed, but the isActive/hasCompleted pre-check avoids even attempting it once
-        // the chain has moved on — a re-join must never re-announce step one.
+        // Az accept-út már elutasítja az aktív vagy (nem ismételhető) teljesített questet,
+        // de az isActive/hasCompleted elő-ellenőrzés a próbálkozást is elkerüli, ha a lánc
+        // már továbbhaladt — az újra-belépés nem jelentheti be újra az első lépést. Az
+        // onboarding AUTO-forrás: a lánc-nyitó quest start-policyje ezt engedélyezi.
         if (questManager.isActive(player, firstQuest) || questManager.hasCompleted(player, firstQuest)
-                || !questManager.accept(player, firstQuest)) {
+                || questManager.acceptWithSource(player, firstQuest,
+                        hu.taliann.icesmp.quest.QuestSourceContext.auto()) != null) {
             return;
         }
 

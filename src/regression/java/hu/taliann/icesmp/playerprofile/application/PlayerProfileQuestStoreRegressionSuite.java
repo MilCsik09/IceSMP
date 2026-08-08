@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -73,7 +72,7 @@ public final class PlayerProfileQuestStoreRegressionSuite {
                     "completion replay no-op");
 
             check(store.settleReward(player, receipt.receiptId())
-                    .toCompletableFuture().join(), "reward with no physical ledger settles");
+                    .toCompletableFuture().join(), "reward settled");
             check(!store.settleReward(player, receipt.receiptId())
                     .toCompletableFuture().join(), "reward settlement replay rejected");
             check(store.pendingRewards(player).isEmpty(), "claimable receipt removed");
@@ -93,9 +92,118 @@ public final class PlayerProfileQuestStoreRegressionSuite {
                     && store.completed(player).contains("repeatable"),
                     "completed quests restart durable");
 
-            physicalRewardCrashBeforeSettlementIsExactlyOnce(
-                    repository, store, player, pending.receiptId());
-            physicalRewardSourceContracts();
+            final Set<String> physical = Set.of("item:0:0", "currency:red:0");
+            check(store.prepareRewardComponents(player, pending.receiptId(), physical)
+                            .toCompletableFuture().join(),
+                    "physical reward components prepared durably");
+            check(!store.prepareRewardComponents(player, pending.receiptId(), physical)
+                            .toCompletableFuture().join(),
+                    "physical reward prepare replay is idempotent");
+            Map<String, PlayerProfileQuestStore.RewardComponentState> componentStates =
+                    store.rewardComponentStates(player, pending.receiptId());
+            check(componentStates.size() == 2
+                            && componentStates.values().stream().allMatch(state ->
+                            state == PlayerProfileQuestStore.RewardComponentState.PREPARED),
+                    "prepared component ledger readable");
+
+            repository.invalidate(player);
+            repository.loadSnapshot(player).toCompletableFuture().join();
+            componentStates = store.rewardComponentStates(player, pending.receiptId());
+            check(componentStates.size() == 2,
+                    "prepared component ledger survives restart");
+            expectStage(IllegalStateException.class,
+                    store.settleReward(player, pending.receiptId()),
+                    "parent settlement fails closed while physical components are PREPARED");
+            check(store.pendingRewards(player).contains(pending.receiptId()),
+                    "premature settlement leaves parent receipt claimable");
+            check(store.rewardComponentStates(player, pending.receiptId()).values().stream()
+                            .allMatch(state -> state
+                                    == PlayerProfileQuestStore.RewardComponentState.PREPARED),
+                    "premature settlement preserves prepared component evidence");
+            check(QuestRewardDeliveryProtocol.decide(
+                            PlayerProfileQuestStore.RewardComponentState.PREPARED, false)
+                            == QuestRewardDeliveryProtocol.Decision.DELIVER,
+                    "prepared component without witness must deliver");
+            check(QuestRewardDeliveryProtocol.decide(
+                            PlayerProfileQuestStore.RewardComponentState.PREPARED, true)
+                            == QuestRewardDeliveryProtocol.Decision.ACKNOWLEDGE_WITNESS,
+                    "crash-after-delivery witness is acknowledged instead of duplicated");
+
+            check(store.markRewardComponentsDelivered(player, pending.receiptId(),
+                            Set.of("item:0:0")).toCompletableFuture().join(),
+                    "first physical component marked delivered");
+            check(store.rewardComponentStates(player, pending.receiptId())
+                            .get("item:0:0")
+                            == PlayerProfileQuestStore.RewardComponentState.DELIVERED,
+                    "delivered state stored");
+            expectStage(IllegalStateException.class,
+                    store.settleReward(player, pending.receiptId()),
+                    "parent settlement still rejects a mixed DELIVERED/PREPARED ledger");
+            check(store.markRewardComponentsDelivered(player, pending.receiptId(), physical)
+                            .toCompletableFuture().join(),
+                    "remaining physical component marked delivered");
+            check(!store.markRewardComponentsDelivered(player, pending.receiptId(), physical)
+                            .toCompletableFuture().join(),
+                    "delivered replay is idempotent");
+            check(QuestRewardDeliveryProtocol.decide(
+                            PlayerProfileQuestStore.RewardComponentState.DELIVERED, false)
+                            == QuestRewardDeliveryProtocol.Decision.SKIP_DELIVERED,
+                    "durably delivered component never remints without a witness");
+
+            repository.invalidate(player);
+            repository.loadSnapshot(player).toCompletableFuture().join();
+            check(store.rewardComponentStates(player, pending.receiptId()).values().stream()
+                            .allMatch(state -> state
+                                    == PlayerProfileQuestStore.RewardComponentState.DELIVERED),
+                    "delivered ledger survives restart before parent receipt settlement");
+            check(store.settleReward(player, pending.receiptId()).toCompletableFuture().join(),
+                    "parent reward settles after physical components are durable");
+            check(store.rewardComponentStates(player, pending.receiptId()).isEmpty(),
+                    "component ledger cleaned atomically with parent settlement");
+            check(!store.pendingRewards(player).contains(pending.receiptId()),
+                    "settled physical reward no longer pending");
+
+            final String questManager = Files.readString(Path.of(
+                    "src/main/java/hu/taliann/icesmp/managers/QuestManager.java"));
+            final int applyStart = questManager.indexOf(
+                    "private CompletionStage<Void> applyRewards");
+            final int applyEnd = questManager.indexOf(
+                    "private void unlockNextQuests", applyStart);
+            check(applyStart >= 0 && applyEnd > applyStart,
+                    "QuestManager reward method source contract located");
+            final String applyBlock = questManager.substring(applyStart, applyEnd);
+            check(applyBlock.contains("QuestPhysicalRewardDeliveryService"),
+                    "QuestManager routes physical rewards through durable delivery service");
+            check(!applyBlock.contains("payOutTokens")
+                            && !applyBlock.contains("dropItemNaturally")
+                            && !applyBlock.contains("new org.bukkit.inventory.ItemStack"),
+                    "QuestManager no longer performs direct physical reward side effects");
+
+            final String deliverySource = Files.readString(Path.of(
+                    "src/main/java/hu/taliann/icesmp/managers/QuestPhysicalRewardDeliveryService.java"));
+            check(deliverySource.contains("quest_reward_receipt")
+                            && deliverySource.contains("quest_reward_component"),
+                    "physical reward items carry durable recovery witness ids");
+            check(deliverySource.contains("inventory.getContents()")
+                            && !deliverySource.contains("dropItemNaturally"),
+                    "recovery witnesses cover all inventory slots and never use lossy world overflow");
+            check(deliverySource.contains("CompletableFuture.failedFuture(failure)"),
+                    "synchronous physical reward plan failures surface as failed stages");
+
+            final String listenerSource = Files.readString(Path.of(
+                    "src/main/java/hu/taliann/icesmp/listeners/QuestProgressListener.java"));
+            check(listenerSource.contains("onPendingRewardClick")
+                            && listenerSource.contains("onPendingRewardDrag")
+                            && listenerSource.contains("onPendingRewardDrop")
+                            && listenerSource.contains("onPendingRewardHandSwap")
+                            && listenerSource.contains("onPendingRewardInteract")
+                            && listenerSource.contains("onPendingRewardConsume")
+                            && listenerSource.contains("onPendingRewardPlace")
+                            && listenerSource.contains("onPendingRewardDeath"),
+                    "pending physical witnesses are immutable until durable ACK");
+            check(listenerSource.contains("event.getItemsToKeep().add(drop)")
+                            && listenerSource.contains("iterator.remove()"),
+                    "death witness is removed from drops before being retained");
 
             check(store.accept(player, "abandon_me").toCompletableFuture().join(),
                     "abandon quest accepted");
@@ -120,132 +228,6 @@ public final class PlayerProfileQuestStoreRegressionSuite {
         }
         System.out.println("PlayerProfile quest store regression suite passed. assertions="
                 + assertions);
-    }
-
-    /**
-     * Fault injection for the critical window:
-     * PREPARED durable -> physical item delivered -> crash BEFORE DELIVERED/receipt settle.
-     * Recovery sees the physical witness and acknowledges it instead of delivering again.
-     */
-    private static void physicalRewardCrashBeforeSettlementIsExactlyOnce(
-            final YamlPlayerProfileRepository repository,
-            final PlayerProfileQuestStore store,
-            final UUID player,
-            final String receipt) {
-        final String component = "item:0:0";
-        final Set<String> components = Set.of(component);
-        check(store.prepareRewardComponents(player, receipt, components)
-                        .toCompletableFuture().join(),
-                "physical reward components prepared durably");
-        check(store.rewardComponentStates(player, receipt).get(component)
-                        == PlayerProfileQuestStore.RewardComponentState.PREPARED,
-                "physical reward starts prepared");
-        expectStage(IllegalStateException.class, store.settleReward(player, receipt),
-                "parent receipt cannot settle while physical reward is PREPARED");
-        check(store.pendingRewards(player).contains(receipt),
-                "premature settlement keeps claimable parent receipt");
-        check(store.rewardComponentStates(player, receipt).get(component)
-                        == PlayerProfileQuestStore.RewardComponentState.PREPARED,
-                "premature settlement preserves delivery evidence");
-
-        final LinkedHashSet<String> physicalInventory = new LinkedHashSet<>();
-        int deliveries = 0;
-        final var firstDecision = QuestRewardDeliveryProtocol.decide(
-                store.rewardComponentStates(player, receipt).get(component),
-                physicalInventory.contains(component));
-        check(firstDecision == QuestRewardDeliveryProtocol.Decision.DELIVER,
-                "first attempt must deliver physical component");
-        if (firstDecision == QuestRewardDeliveryProtocol.Decision.DELIVER) {
-            physicalInventory.add(component);
-            deliveries++;
-        }
-        check(deliveries == 1 && physicalInventory.size() == 1,
-                "physical reward delivered once before injected crash");
-
-        repository.invalidate(player);
-        repository.loadSnapshot(player).toCompletableFuture().join();
-        check(store.pendingRewards(player).contains(receipt),
-                "completion receipt remains pending after injected crash");
-        final Map<String, PlayerProfileQuestStore.RewardComponentState> recoveredStates =
-                store.rewardComponentStates(player, receipt);
-        check(recoveredStates.get(component)
-                        == PlayerProfileQuestStore.RewardComponentState.PREPARED,
-                "prepared component survives restart");
-
-        final var recoveryDecision = QuestRewardDeliveryProtocol.decide(
-                recoveredStates.get(component), physicalInventory.contains(component));
-        check(recoveryDecision == QuestRewardDeliveryProtocol.Decision.ACKNOWLEDGE_WITNESS,
-                "recovery recognizes existing physical witness");
-        if (recoveryDecision == QuestRewardDeliveryProtocol.Decision.DELIVER) {
-            physicalInventory.add(component);
-            deliveries++;
-        }
-        check(deliveries == 1 && physicalInventory.size() == 1,
-                "recovery does not duplicate physical reward");
-
-        check(store.markRewardComponentsDelivered(player, receipt, components)
-                        .toCompletableFuture().join(),
-                "physical component acknowledgement committed");
-        repository.invalidate(player);
-        repository.loadSnapshot(player).toCompletableFuture().join();
-        check(store.rewardComponentStates(player, receipt).get(component)
-                        == PlayerProfileQuestStore.RewardComponentState.DELIVERED,
-                "delivered component state restart durable");
-        check(QuestRewardDeliveryProtocol.decide(
-                        store.rewardComponentStates(player, receipt).get(component), false)
-                        == QuestRewardDeliveryProtocol.Decision.SKIP_DELIVERED,
-                "durably delivered component never mints again even without witness");
-
-        check(store.settleReward(player, receipt).toCompletableFuture().join(),
-                "fault-injected reward eventually settles");
-        check(store.pendingRewards(player).isEmpty(),
-                "fault-injected reward removed from pending set");
-        check(store.rewardComponentStates(player, receipt).isEmpty(),
-                "delivery ledger cleaned atomically with settlement");
-        check(deliveries == 1, "physical reward total is exactly one");
-    }
-
-    private static void physicalRewardSourceContracts() throws Exception {
-        final String questManager = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/managers/QuestManager.java"));
-        final int applyStart = questManager.indexOf(
-                "private CompletionStage<Void> applyRewards");
-        final int applyEnd = questManager.indexOf("private void advanceChain", applyStart);
-        check(applyStart >= 0 && applyEnd > applyStart,
-                "QuestManager reward method source contract located");
-        final String applyBlock = questManager.substring(applyStart, applyEnd);
-        check(applyBlock.contains("QuestPhysicalRewardDeliveryService"),
-                "QuestManager routes physical rewards through durable delivery service");
-        check(!applyBlock.contains("payOutTokens")
-                        && !applyBlock.contains("dropItemNaturally")
-                        && !applyBlock.contains("new org.bukkit.inventory.ItemStack"),
-                "QuestManager has no direct physical reward side effect");
-
-        final String deliverySource = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/managers/QuestPhysicalRewardDeliveryService.java"));
-        check(deliverySource.contains("quest_reward_receipt")
-                        && deliverySource.contains("quest_reward_component"),
-                "physical reward carries durable recovery witness ids");
-        check(deliverySource.contains("inventory.getContents()")
-                        && !deliverySource.contains("dropItemNaturally"),
-                "witness recovery covers all inventory slots without world overflow");
-        check(deliverySource.contains("CompletableFuture.failedFuture(failure)"),
-                "synchronous reward-build failures become failed stages");
-
-        final String listenerSource = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/listeners/QuestProgressListener.java"));
-        check(listenerSource.contains("onPendingRewardClick")
-                        && listenerSource.contains("onPendingRewardDrag")
-                        && listenerSource.contains("onPendingRewardDrop")
-                        && listenerSource.contains("onPendingRewardHandSwap")
-                        && listenerSource.contains("onPendingRewardInteract")
-                        && listenerSource.contains("onPendingRewardConsume")
-                        && listenerSource.contains("onPendingRewardPlace")
-                        && listenerSource.contains("onPendingRewardDeath"),
-                "pending physical witnesses are immutable until durable ACK");
-        check(listenerSource.contains("event.getItemsToKeep().add(drop)")
-                        && listenerSource.contains("iterator.remove()"),
-                "death recovery witness is removed from drops before being retained");
     }
 
     private static void expectStage(final Class<? extends Throwable> expected,

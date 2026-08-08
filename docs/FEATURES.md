@@ -636,21 +636,21 @@ Mérföldkövek és jutalmak, datapack advancementek, harci statisztika és rang
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Adatvezérelt küldetések, objective progress, napi feladatok, questnapló és admin/builder questkészítő.
+Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/frakció/napi/heti/titok…), láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, objective progress, napi feladatok és admin/builder questkészítő.
 
-- **Így találkozol vele:** `/quest`, `/daily`; questlog és quest builder GUI. Parancs: /quest (alias: /kuldetes, /quests); /daily. GUI: Küldetésnapló; Quest builder.
+- **Így találkozol vele:** `/quest`, `/daily`; questlog (öt fül: Aktív/Kész/Megbízások/Elérhető/Teljesített) és quest builder GUI. Parancs: /quest (alias: /kuldetes, /quests); /daily. GUI: Küldetésnapló; Quest builder.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
-- **Mitől mozdul meg:** Objective események, NPC-interakció, napi ciklus és admin szerkesztés.
+- **Mitől mozdul meg:** Objective események, hitelesített NPC-interakció (leadás > beszélgetés/szállítás > kínálat prioritással, több questnél tokenes választólistával), napló-megbízás elvállalása, lánc-feloldás és admin szerkesztés.
 - **Ami még kellhet hozzá:** Questhelyszínek, NPC-kötések, biztonságos célterületek és jutalomoverflow tesztelendő.
 - **Fontos határ:** Az élő NPC-k és világhelyek hiányában csak capability-szintű következtetés adható.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.quest`
-- Config: `quests.*`, napi küldetés-, NPC- és rewarddefiníciók.
-- Tartós állapot: Aktív quest, objective progress, napi állapot és builder által mentett definíció tartós.
-- Reload: Adatbetöltés/célzott reload támogatott részen; folyamatban lévő quest kompatibilitását tesztelni kell.
+- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.quest` (a `/quest accept` és `/quest talk` is admin-parancs — a forrás-authority parancsból nem kerülhető meg).
+- Config: `quests.*` (start/turn-in/category/visibility séma), napi küldetés-, NPC- és rewarddefiníciók.
+- Tartós állapot: Aktív quest, objective progress, forrás-audit, felfedezés, követett quest, napi állapot és builder által mentett definíció tartós (PlayerProfile QuestSection az egyetlen player-authority).
+- Reload: a quest-registry csere atomikus és teljes gráf-validációval kapuzott — érvénytelen candidate a korábbi definíciókat hagyja élőben; az admin-szerkesztő ugyanezen a validátoron megy át mentés előtt.
 
 </details>
 

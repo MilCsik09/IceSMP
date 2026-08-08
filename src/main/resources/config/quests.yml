@@ -290,13 +290,27 @@ community-goals:
 #   WIN_RAID (count: nyert raidek JELENTKEZETT harcosként) • KILL_WORLDBOSS (count)
 # Feltételek: requires-job, requires-faction, requires-level, requires-quest (lánc).
 # Ismétlődés: repeatable: true + cooldown-hours (pl. 24 = napi quest; 0 = azonnal).
-# Auto-indulás: auto-start-territory: <territory-id> — a területre lépve a quest
-# magától felkerül (ha a feltételek teljesülnek).
-# Lánc-automatika: next: <quest-id> — teljesítéskor a megnevezett küldetés
-# AZONNAL felkerül a játékosnak (NPC-kattintás vagy terület nélkül is), a
-# giver-npc-s átadáshoz hasonló hang/üzenet/dialógus kísérettel. Ott hasznos,
-# ahol a lánc lépései nem mind NPC-hez/területhez kötöttek (pl. az onboarding-lánc
-# alább: "beszélj a hírnökkel" -> "ölj 5 szörnyet" -> "gyűjts fát").
+# FORRÁS (v2): a start: szekció mondja meg, HONNAN vehető fel a quest — a felvétel
+# kizárólag a jogosult forrásnál történhet (parancsból csak admin):
+#   start: { type: NPC, npc: "Név" }        — a megnevezett NPC adja (kattintásra)
+#   start: { type: LOCATION, territory: X } — a területre lépve indul
+#   start: { type: ITEM, item-id: X } / { type: EVENT, event-id: X }
+#   start: { type: CHAIN }                  — lánc-feloldással (next / dialógus-választás)
+#     + auto-accept: true = a lánc teljesítésekor AZONNAL felkerül (a régi next-automatika)
+#   start: { type: AUTO }                   — rendszer indítja (pl. onboarding-belépés)
+#   start nélkül                            — Megbízások-tábla (küldetésnapló, kattintva
+#                                             elvállalható; leadás alapból automatikus)
+# LEADÁS: turn-in: { type: NPC|LOCATION|EVENT, ... } — a feladatok teljesítése után a
+# quest KÉSZ állapotba lép, és a megadott helyen adható le (NPC-startnál a default
+# ugyanaz az NPC — vissza kell térni hozzá); turn-in nélkül (nem NPC-startnál) a
+# teljesítés automatikusan lezár.
+# Kategória: category: MAIN|SIDE|CLASS|SPECIALIZATION|FACTION|RELIC|DAILY|WEEKLY|
+# WORLD|SECRET|TUTORIAL (napló-rendezés + NPC-marker szín; default SIDE).
+# Láthatóság: visibility: ALWAYS|PREREQUISITES_MET|DISCOVERED|HIDDEN — a HIDDEN
+# quest player-felületen (lista/napló/tab) SOHA nem jelenik meg felfedezésig.
+# Lánc: next: <quest-id vagy lista> — teljesítéskor a megnevezett küldetés FELOLDÓDIK
+# (felfedezés + értesítés a forrásáról); azonnali auto-felvétel CSAK akkor, ha a
+# cél-quest start-ja CHAIN + auto-accept: true.
 # TÖBB OBJEKTÍVA egy questben: a sima "objective:" helyett "objectives:" alá
 # számozott feladatok (1, 2, ...), mindegyik saját type/count/materials/stb.
 # mezőkkel (opcionális "description" a HUD-címkéhez). Az "objectives-mode":
@@ -308,8 +322,6 @@ community-goals:
 #   A currency.type lehet konkrét valuta (RED/BLUE/NEUTRAL/DARK) vagy "OWN" —
 #   utóbbi a játékos SAJÁT frakciójának valutáját adja.
 #   items: tárgy-jutalmak "MATERIAL:DARAB" formában, pl. ["IRON_SWORD:1", "BREAD:16"].
-# giver-npc: a questet ez a FancyNpcs NPC ADJA — rákattintva automatikusan
-# felveszed, ha a feltételek teljesülnek (a /quest accept továbbra is működik).
 # dialogue: az NPC "mondja" a story-t — speaker (megjelenő név), give (sorok a
 # quest átadásakor), complete (sorok a leadáskor / beszélgetéskor); a sorok
 # ~1,5 mp-enként követik egymást. Példa:
@@ -340,6 +352,7 @@ quests:
   # sorszáma; szezonváltáskor nő). A már felvett fejezet-quest kegyelemből befejezhető,
   # de a next-lánc új tagja a lezárt fejezetben már nem nyílik meg.
   rejtveny_elso_nyom:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: Az első nyom"
     description: "„Ahol minden út összefut, és a kikiáltó hangja messzebb ér, mint a harangszó — ott vár, aki a neveket jegyzi.” A cél rejtve marad: fejtsd meg a sorokat!"
@@ -351,6 +364,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_zold_arany:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A zöld arany"
     description: "„Aranyat aratsz, de nem csillog; szélben ring, míg sarló nem éri, s kenyérré lesz, mire elhallgat. Gyűjts belőle egy kosárnyit.”"
@@ -365,6 +379,7 @@ quests:
         type: "OWN"
         amount: 25
   rejtveny_nyolc_lab:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A szövőmester"
     description: "„Nyolc lábon jár, hálót sző, de sosem halász; a sötét zugok takácsa ő. Fizesd ki tízszer a szövőbérét.”"
@@ -378,6 +393,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_csontzenesz:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A csontzenész"
     description: "„Húrt penget, de nem zenész; szárazon zörög, ha táncba kezd, s nyílvesszővel köszönt. Némíts el egy tucatot a zenekarából.”"
@@ -391,6 +407,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_ko_konnye:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A kő könnye"
     description: "„Tűzben sír a kő, és könnye keményebb, mint ő maga volt. Gyűjtsd össze tizenhat cseppjét a láng túloldalán.”"
@@ -405,6 +422,7 @@ quests:
         type: "OWN"
         amount: 40
   rejtveny_rozsaszin_ho:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A rózsaszín hó"
     description: "„Hó hull, de nem tél van; szirom száll, de nem hervad a táj. Állj meg ott, ahol a fák elpirulnak.”"
@@ -417,6 +435,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_ezust_sziv:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: Az ezüst szív"
     description: "„A sötét tükör alatt ezüst szív dobog; türelmed a fonál, a várakozás a fegyvered. Emelj ki tízet a mélység ajándékából.”"
@@ -429,6 +448,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_morgo_vad:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A morgó vad"
     description: "„Benned lakik egy vad, mely naponta morog, s csak az hallgattatja el, mi a zöld aranyból született. Csitítsd el ötször.”"
@@ -443,6 +463,7 @@ quests:
         type: "OWN"
         amount: 25
   rejtveny_csillag_konnye:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A csillagok könnye"
     description: "„A mélység őrzi a csillagok könnyét: fényük jégbe fagyott, s csak a legmohóbb csákány éri el. Hozz fel hármat.”"
@@ -457,6 +478,7 @@ quests:
         type: "OWN"
         amount: 50
   rejtveny_ket_vilag:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A két világ vándora"
     description: "„Ne nézz a szemébe annak, ki két világ közt jár: hosszú árnya köveket cipel, s haragja egy pillantásba fér. Küldj haza hármat közülük.”"
@@ -470,6 +492,7 @@ quests:
         type: "OWN"
         amount: 50
   rejtveny_pasztor_mosolya:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A pásztor mosolya"
     description: "„Ahol kettőből három lesz, ott a pásztor mosolyog. Legyen okod ötször mosolyogni.”"
@@ -482,6 +505,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_tenyernyi_jovo:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A tenyérnyi jövő"
     description: "„Ami ma tenyerednyi, holnap az eget tartja. Ültess nyolc jövőt a földbe.”"
@@ -498,6 +522,7 @@ quests:
         type: "OWN"
         amount: 25
   rejtveny_orrhangu_kalmar:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: Az orrhangú kalmár"
     description: "„Se kardja, se címere, mégis minden faluban úr; bólint, ha zöld kő csörren a pulton. Köss vele háromszor alkut.”"
@@ -510,6 +535,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_zold_banat:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A zöld bánat"
     description: "„Zöld bánat oson mögéd hangtalan, s ölelése a végső búcsú. Előzd meg nyolcszor a búcsút.”"
@@ -523,6 +549,7 @@ quests:
         type: "OWN"
         amount: 40
   rejtveny_zsakos_vandor:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A zsákos vándor"
     description: "„Mindenhol jár, mégsem lakik sehol; zsákjában messzi földek illata, nyelvén ezer piac zaja. Keresd meg, és hallgasd meg.”"
@@ -535,6 +562,7 @@ quests:
         type: "OWN"
         amount: 25
   rejtveny_gyokerek_bolcse:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A gyökerek bölcse"
     description: "„A gyökerek közt ül, ki többet látott, mint a fák évgyűrűi; szava lassú, mint a moha növése. Ülj le mellé.”"
@@ -547,6 +575,7 @@ quests:
         type: "OWN"
         amount: 25
   rejtveny_feher_arany:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A fehér arany"
     description: "„A lángok földjének mélyén terem, fehér, mint a csont, s a tornyok tőle ragyognak. Hozz belőle tizenhatot.”"
@@ -560,6 +589,7 @@ quests:
         type: "OWN"
         amount: 35
   rejtveny_tuz_gyumolcse:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A tűz gyümölcse"
     description: "„Tüske őrzi, vörösen ég, de nem melegít; a fenyők árnyéka rejti, s aki mohó, annak a keze bánja. Szedj egy kosárnyit.”"
@@ -573,6 +603,7 @@ quests:
         type: "OWN"
         amount: 30
   rejtveny_eg_kove:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: Az ég köve"
     description: "„Az ég egyszer a mélybe költözött, és kővé vált — kékebb, mint a tenger, s a bűvölők tőle álmodnak. Fejts ki belőle két tucatnyit.”"
@@ -586,6 +617,7 @@ quests:
         type: "OWN"
         amount: 35
   rejtveny_vilagito_ejfel:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A világító éjfél"
     description: "„Éjfél úszik a vízben, s ha megijed, ragyogó sötétet hagy maga után. Gyűjts négyet a ragyogásából.”"
@@ -599,6 +631,7 @@ quests:
         type: "OWN"
         amount: 40
   rejtveny_edes_ho:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: Az édes hó"
     description: "„Fehér, mint a hó, de nem hideg; a nádból sajtolják, s a szakács keze alatt arannyá lesz. Hozz belőle egy marékkal a világra.”"
@@ -612,6 +645,7 @@ quests:
         type: "OWN"
         amount: 25
   rejtveny_siro_ko:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A síró kő"
     description: "„Fekete, mint az éj, s mégis lila könnyet hullat — a Kapu testvére, kit a láva és a víz nászán túl bűvölet szült. Végy belőle egyet.”"
@@ -625,6 +659,7 @@ quests:
         type: "OWN"
         amount: 45
   rejtveny_lampas_nep:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A lámpás nép"
     description: "„Nem gyertya, mégis világít; nem hal, mégis a mélyben terem. A tenger kertjének fénye — hozz fel négyet a felszínre.”"
@@ -638,6 +673,7 @@ quests:
         type: "OWN"
         amount: 50
   rejtveny_kilenc_elet:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A kilenc élet"
     description: "„Puha talpon jár, s a leghosszabb éjben is hazatalál. Nyerd el a bizalmát — ne karddal, hanem türelemmel.”"
@@ -651,6 +687,7 @@ quests:
         type: "OWN"
         amount: 35
   rejtveny_fold_vere:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A föld vére"
     description: "„A hegy ereiben folyik, de nem víz; vörösen izzik, ha felszínre tör, s kővé dermed, ha nevén nevezik. Meríts belőle egy vödörrel.”"
@@ -664,6 +701,7 @@ quests:
         type: "OWN"
         amount: 40
   rejtveny_hangtalan_dal:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A hangtalan dal"
     description: "„A mélyváros őrzi a dalt, amit senki élő nem énekelt. Egy szilánkja elég — de vigyázz: aki sokáig hallgatja, azt a csend visszahallgatja.”"
@@ -677,6 +715,7 @@ quests:
         type: "OWN"
         amount: 60
   fejezet1_suttogasok:
+    category: MAIN
     chapter: 1
     display-name: "1. fejezet: Suttogások a Kapunál"
     description: "A Kárhozat Kapuja felől furcsa hírek érkeznek. Győzd le a Kapu kisodorta szörnyeket (10 db, 3+ szintű)."
@@ -691,6 +730,11 @@ quests:
         type: "OWN"
         amount: 40
   fejezet1_bizonyitek:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 1
     display-name: "1. fejezet: Bizonyíték a mélyből"
     description: "A céhek bizonyítékot kérnek: gyűjts 24 lőport a Kapu kisodorta szörnyekből — a robbanás-szag a Kapu jele."
@@ -705,6 +749,11 @@ quests:
         type: "OWN"
         amount: 60
   fejezet1_orjarat:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 1
     display-name: "1. fejezet: Őrjárat a peremvidéken"
     description: "A falvak félnek: járd a peremvidéket, és tisztítsd meg — győzz le 12 megerősített szörnyet (min. Lvl 2)."
@@ -719,6 +768,11 @@ quests:
         type: "OWN"
         amount: 45
   fejezet1_jelentes:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 1
     display-name: "1. fejezet: Az írott szó"
     description: "Amit láttál, azt írásba kell adni. Készíts 6 papírt a jelentéshez — a krónika nem szóbeszédből épül."
@@ -733,6 +787,11 @@ quests:
         type: "OWN"
         amount: 35
   fejezet1_kronikas:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 1
     display-name: "1. fejezet: A Krónikás pecsétje"
     description: "Vidd a híreket a fővárosba: beszélj a hírnökkel, hogy a krónikába kerüljön, amit láttál. A fejezet zárása gazdagon fizet."
@@ -763,6 +822,10 @@ quests:
         type: "OWN"
         amount: 40
   fa_uzenete_2:
+    start:
+      type: CHAIN
+      auto-accept: true
+    visibility: DISCOVERED
     min-season-day: 20
     max-season-day: 40
     display-name: "A Fa üzenete: A ligetek védelme"
@@ -778,6 +841,10 @@ quests:
         type: "OWN"
         amount: 60
   fa_uzenete_3:
+    start:
+      type: CHAIN
+      auto-accept: true
+    visibility: DISCOVERED
     min-season-day: 20
     max-season-day: 40
     display-name: "A Fa üzenete: A vének hálája"
@@ -793,6 +860,7 @@ quests:
       crate-key: "koznapi:1"
   # --- 2. fejezet (2. szezon): A Hasadás emlékezete — a világ sebei megnyílnak ---
   fejezet2_repedesek:
+    category: MAIN
     chapter: 2
     display-name: "2. fejezet: A repedések éneke"
     description: "A hegyek közt a föld ma is a Hasadásra emlékszik. Járd meg a szélfútta ormokat, és hallgasd meg, mit mesélnek."
@@ -806,6 +874,11 @@ quests:
         type: "OWN"
         amount: 40
   fejezet2_szilankok:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 2
     display-name: "2. fejezet: A világ könnyei"
     description: "A Hasadás fájdalma kristállyá dermedt a mélyben. Gyűjts 16 ametisztszilánkot — a hegy könnyeit."
@@ -820,6 +893,11 @@ quests:
         type: "OWN"
         amount: 60
   fejezet2_ujjaepites:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 2
     display-name: "2. fejezet: A céhek öröksége"
     description: "A birodalmakat nemcsak karddal építik újjá. Olvassz ki 24 vasrudat a Vasművek Akadémiájának emlékére."
@@ -834,6 +912,11 @@ quests:
         type: "OWN"
         amount: 60
   fejezet2_orzok:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 2
     display-name: "2. fejezet: A mélység őrzői"
     description: "A repedések mélyéről a Káoszkor őrzői másznak elő. Győzz le 15 elit szörnyet (min. Lvl 4)."
@@ -848,6 +931,11 @@ quests:
         type: "OWN"
         amount: 80
   fejezet2_pecset:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 2
     display-name: "2. fejezet: A második pecsét"
     description: "A krónika új lapja megtelt. Vidd a hírnöknek, amit a repedésekről megtudtál — a fejezet zárása gazdagon fizet."
@@ -863,6 +951,7 @@ quests:
         - "EXPERIENCE_BOTTLE:16"
   # --- 3. fejezet (3. szezon): A Néma Királynő árnyéka — a Kapu válaszol ---
   fejezet3_sohajok:
+    category: MAIN
     chapter: 3
     display-name: "3. fejezet: Az álom sóhajai"
     description: "A Királynő nyugtalanul forgolódik, s a holtak megindulnak. Küldj vissza 20 élőhalottat az álomba."
@@ -877,6 +966,11 @@ quests:
         type: "OWN"
         amount: 50
   fejezet3_lelekfeny:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 3
     display-name: "3. fejezet: Lélekfény-virrasztás"
     description: "A virrasztók lélekfénnyel tartják távol az árnyakat. Készíts 8 lélekfáklyát a falak őreinek."
@@ -891,6 +985,11 @@ quests:
         type: "OWN"
         amount: 70
   fejezet3_visszhang:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 3
     display-name: "3. fejezet: Az Első Csend visszhangja"
     description: "A mélyvárosok falai még őrzik a hangot, amely a Királynőt is elragadta. Hozz fel 2 visszhang-szilánkot — de ne hallgasd sokáig."
@@ -905,6 +1004,11 @@ quests:
         type: "OWN"
         amount: 100
   fejezet3_ostrom:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 3
     display-name: "3. fejezet: A Kapu ostroma"
     description: "A Kapu felől a legerősebb fajzatok özönlenek. Törd meg az ostromot: győzz le 20 elit szörnyet (min. Lvl 5)."
@@ -919,6 +1023,11 @@ quests:
         type: "OWN"
         amount: 120
   fejezet3_harmadik_mondat:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: MAIN
+    visibility: DISCOVERED
     chapter: 3
     display-name: "3. fejezet: A harmadik mondat"
     description: "Amit a Kapunál láttál, azt a krónikának tudnia kell — mert a harmadik mondatot senki élő nem akarja hallani. Beszélj a hírnökkel."
@@ -949,6 +1058,10 @@ quests:
         type: "OWN"
         amount: 300
   kaszt_orokseg:
+    start:
+      type: CHAIN
+      auto-accept: true
+    visibility: DISCOVERED
     display-name: "Az örökség pecsétje"
     description: "A Vér Emlékezete beteljesült — az vagy, aki mindig is voltál. A hírnök hirdesse ki a neved a krónikában!"
     objective:
@@ -964,6 +1077,7 @@ quests:
       crate-key: "ritka:2"
   # --- Kaszt-próbák (bevezető questek) ---
   warrior_trial:
+    category: CLASS
     display-name: "A Harcos Próbája"
     description: "Bizonyítsd erődet: ejts el 15 szörnyet."
     requires-job: "warrior"
@@ -973,6 +1087,7 @@ quests:
     rewards:
       class-xp: 200
   archer_trial:
+    category: CLASS
     display-name: "Az Íjász Próbája"
     description: "Vadássz le 12 szörnyet."
     requires-job: "archer"
@@ -982,6 +1097,7 @@ quests:
     rewards:
       class-xp: 200
   wizard_trial:
+    category: CLASS
     display-name: "A Varázsló Próbája"
     description: "Gyűjts mágikus reagenseket: szedj 10 virágot."
     requires-job: "wizard"
@@ -999,6 +1115,7 @@ quests:
     rewards:
       class-xp: 200
   assassin_trial:
+    category: CLASS
     display-name: "Az Orgyilkos Próbája"
     description: "Némítsd el a sötétség 10 teremtményét."
     requires-job: "assassin"
@@ -1013,10 +1130,12 @@ quests:
   # egyszerűen nem haladnak — semmi nem törik. TULAJ-DÖNTÉS: a mester-próbák
   # kaszt-ízű feladatok (NEM parkour) — a parkour opcionális szabadidős tartalom
   # maradt (lásd acrobat_challenge).
-  # A mentor-questet a játékos veszi fel (/quest accept vagy a quest GUI), a
-  # mester-próbát viszont maga a mester-NPC ADJA (giver-npc): a mentor-quest
-  # az NPC-nél teljesül, és ugyanazzal a kattintással megkapod a próbát.
+  # A mentor-quest a Megbízások-tábláról vehető fel (küldetésnapló), a
+  # mester-próbát viszont maga a mester-NPC ADJA (start: NPC): a mentor-quest
+  # az NPC-nél teljesül, a próba pedig ugyanott, kattintással vehető fel és
+  # a teljesítése után NÁLA is adható le (vissza kell térni hozzá).
   warrior_mentor:
+    category: CLASS
     dialogue:
       speaker: "Aldric mester"
       complete:
@@ -1037,7 +1156,9 @@ quests:
         - "Az erőpróba-pálya vár. Ha végigmész rajta, harcosnak nevezhetlek."
       complete:
         - "Végigmentél? Akkor mostantól a tanítványom vagy. Büszkeséggel tölt el."
-    giver-npc: "harcos_mester"
+    start:
+      type: NPC
+      npc: "harcos_mester"
     display-name: "A Harcos Mester-próbája"
     description: "Bizonyítsd a pengéd a vadonban: terítsd le 20 megerősített szörnyet (min. Lvl 2)."
     requires-quest: "warrior_mentor"
@@ -1048,6 +1169,7 @@ quests:
     rewards:
       class-xp: 400
   archer_mentor:
+    category: CLASS
     dialogue:
       speaker: "Lysa mesterasszony"
       complete:
@@ -1068,7 +1190,9 @@ quests:
         - "Fuss végig az ügyességi pályámon — az íjász lába a fegyvere fele."
       complete:
         - "Fürge vagy, mint a nyílvessző. Megérdemled a címed."
-    giver-npc: "ijasz_mester"
+    start:
+      type: NPC
+      npc: "ijasz_mester"
     display-name: "Az Íjász Mester-próbája"
     description: "Párbaj a holt íjászokkal: ejts el 12 csontvázat — vessző vessző ellen."
     requires-quest: "archer_mentor"
@@ -1079,6 +1203,7 @@ quests:
     rewards:
       class-xp: 400
   wizard_mentor:
+    category: CLASS
     dialogue:
       speaker: "Orvus főmágus"
       complete:
@@ -1099,7 +1224,9 @@ quests:
         - "A mágia fegyelem. Mutasd meg, hogy uralod a bűvölés művészetét!"
       complete:
         - "A rúnák elfogadtak. Az elméd immár penge — használd bölcsen."
-    giver-npc: "varazslo_mester"
+    start:
+      type: NPC
+      npc: "varazslo_mester"
     display-name: "A Varázsló Mester-próbája"
     description: "Bizonyítsd a fegyelmed a bűvölő-asztalnál: bűvölj meg 3 tárgyat."
     requires-quest: "wizard_mentor"
@@ -1109,6 +1236,7 @@ quests:
     rewards:
       class-xp: 400
   assassin_mentor:
+    category: CLASS
     dialogue:
       speaker: "A Névtelen"
       complete:
@@ -1129,7 +1257,9 @@ quests:
         - "Az éjszaka vadjai a legjobb tanítók. Vadássz, míg az árnyak be nem fogadnak."
       complete:
         - "Egy hang nélkül tetted meg. Az árnyak mostantól testvérüknek hívnak."
-    giver-npc: "orgyilkos_mester"
+    start:
+      type: NPC
+      npc: "orgyilkos_mester"
     display-name: "Az Orgyilkos Mester-próbája"
     description: "Vadássz az éj leple alatt: terítsd le 15 megerősített szörnyet (min. Lvl 2)."
     requires-quest: "assassin_mentor"
@@ -1140,6 +1270,7 @@ quests:
     rewards:
       class-xp: 400
   druid_mentor:
+    category: CLASS
     dialogue:
       speaker: "Ylvara, a Vén Tölgy"
       complete:
@@ -1160,7 +1291,9 @@ quests:
         - "Aetrinita kötése nem kényszer — bizalom. Szerezd meg a vadon bizalmát!"
       complete:
         - "A vad immár melletted jár. A liget befogadott, gyermekem."
-    giver-npc: "druida_mester"
+    start:
+      type: NPC
+      npc: "druida_mester"
     display-name: "A Druida Mester-próbája"
     description: "Teremtsd meg az ősi kötést: szelídíts meg 3 vadat."
     requires-quest: "druid_mentor"
@@ -1170,6 +1303,7 @@ quests:
     rewards:
       class-xp: 400
   paladin_mentor:
+    category: CLASS
     dialogue:
       speaker: "Seratiel lovag-parancsnok"
       complete:
@@ -1190,7 +1324,9 @@ quests:
         - "Indulj szent hadjáratra: a sötétség erős szolgáit sújtsd le!"
       complete:
         - "A fény veled harcolt. Térdelj le — lovaggá ütlek."
-    giver-npc: "paplovag_mester"
+    start:
+      type: NPC
+      npc: "paplovag_mester"
     display-name: "A Paplovag Mester-próbája"
     description: "Szent hadjárat: győzz le 20 megerősített szörnyet (min. Lvl 3)."
     requires-quest: "paladin_mentor"
@@ -1201,6 +1337,7 @@ quests:
     rewards:
       class-xp: 400
   death_knight_mentor:
+    category: CLASS
     dialogue:
       speaker: "Morvran, a Fagyott Penge"
       complete:
@@ -1221,7 +1358,9 @@ quests:
         - "Az elit fajzatok lelke a tiéd lehet. Arasd le őket!"
       complete:
         - "A fagy és a vér immár egy benned. Kelj fel, lovag."
-    giver-npc: "halallovag_mester"
+    start:
+      type: NPC
+      npc: "halallovag_mester"
     display-name: "A Halállovag Mester-próbája"
     description: "Arass a mélységben: pusztíts el 15 elit szörnyet (min. Lvl 4)."
     requires-quest: "death_knight_mentor"
@@ -1232,6 +1371,7 @@ quests:
     rewards:
       class-xp: 400
   shaman_mentor:
+    category: CLASS
     dialogue:
       speaker: "Tharkun, a Viharlátó"
       complete:
@@ -1252,7 +1392,9 @@ quests:
         - "A vihar fémje a réz. Olvaszd ki a föld ereiből az elemek tiszteletére!"
       complete:
         - "A rézben ott alszik a villám. Az elemek elfogadtak, sámán."
-    giver-npc: "saman_mester"
+    start:
+      type: NPC
+      npc: "saman_mester"
     display-name: "A Sámán Mester-próbája"
     description: "Az elemek kohója: olvassz ki 12 rézrudat."
     requires-quest: "shaman_mentor"
@@ -1263,6 +1405,7 @@ quests:
     rewards:
       class-xp: 400
   monk_mentor:
+    category: CLASS
     dialogue:
       speaker: "Csendes Jin apát"
       complete:
@@ -1283,7 +1426,9 @@ quests:
         - "Test és lélek: küzdj, majd ülj le a vízhez és halássz. Mindkettő ugyanaz a gyakorlat."
       complete:
         - "Az egyensúly megvan benned. A kolostor kapuja nyitva áll."
-    giver-npc: "szerzetes_mester"
+    start:
+      type: NPC
+      npc: "szerzetes_mester"
     display-name: "A Szerzetes Mester-próbája"
     description: "Test és lélek egyensúlya: győzz le 12 szörnyet ÉS fogj ki 5 halat."
     requires-quest: "monk_mentor"
@@ -1300,6 +1445,7 @@ quests:
     rewards:
       class-xp: 400
   priest_mentor:
+    category: CLASS
     dialogue:
       speaker: "Elenora főtisztelendő"
       complete:
@@ -1320,7 +1466,9 @@ quests:
         - "Áldd meg a fegyvert, amely védi a gyengét: bűvölj a szentély asztalánál!"
       complete:
         - "Az áldásod immár erő. A szentély a tiéd is, gyermekem."
-    giver-npc: "pap_mester"
+    start:
+      type: NPC
+      npc: "pap_mester"
     display-name: "A Pap Mester-próbája"
     description: "A szentély áldása: bűvölj meg 3 tárgyat."
     requires-quest: "priest_mentor"
@@ -1330,6 +1478,7 @@ quests:
     rewards:
       class-xp: 400
   warlock_mentor:
+    category: CLASS
     dialogue:
       speaker: "Az Alkuszó"
       complete:
@@ -1350,7 +1499,9 @@ quests:
         - "A paktumhoz lélek-homok kell — a mélység pora, amelyben a holtak lélegzete ül."
       complete:
         - "Az alku megköttetett. A mélység immár válaszol, ha szólítod."
-    giver-npc: "pakt_mester"
+    start:
+      type: NPC
+      npc: "pakt_mester"
     display-name: "A Boszorkánymester Mester-próbája"
     description: "A paktum ára: gyűjts 16 lélekhomokot a mélységből."
     requires-quest: "warlock_mentor"
@@ -1361,6 +1512,7 @@ quests:
     rewards:
       class-xp: 400
   demon_hunter_mentor:
+    category: CLASS
     dialogue:
       speaker: "Karyx, a Megjelölt"
       complete:
@@ -1381,7 +1533,9 @@ quests:
         - "A bosszú nem várhat: a sötétség erős szolgái közül végezz tizennyolccal!"
       complete:
         - "A jeleid immár égnek. Vadász vagy — és soha többé préda."
-    giver-npc: "demonvadasz_mester"
+    start:
+      type: NPC
+      npc: "demonvadasz_mester"
     display-name: "A Démonvadász Mester-próbája"
     description: "Bosszúhadjárat: semmisíts meg 18 megerősített szörnyet (min. Lvl 3)."
     requires-quest: "demon_hunter_mentor"
@@ -1392,6 +1546,7 @@ quests:
     rewards:
       class-xp: 400
   evoker_mentor:
+    category: CLASS
     dialogue:
       speaker: "Vaelith, a Pikkelyes Bölcs"
       complete:
@@ -1412,7 +1567,9 @@ quests:
         - "Az ametiszt a sárkányének kristálya. Gyűjts eleget, hogy meghalljad!"
       complete:
         - "Hallod már, ugye? A pikkelyesek elfogadtak, idéző."
-    giver-npc: "sarkany_mester"
+    start:
+      type: NPC
+      npc: "sarkany_mester"
     display-name: "A Sárkányidéző Mester-próbája"
     description: "Sárkány-rezonancia: gyűjts 24 ametisztszilánkot."
     requires-quest: "evoker_mentor"
@@ -1426,6 +1583,7 @@ quests:
   # "Ölj 10 mobot ÉS hozz 16 kenyeret" — a két feladat egymástól függetlenül
   # halad, a quest akkor zárul, ha mindkettő kész. Repeatable, napi cooldownnal.
   hero_trial:
+    category: DAILY
     display-name: "A Hős Napi Próbája"
     description: "Tisztítsd meg a vidéket és lásd el a falut."
     repeatable: true
@@ -1453,6 +1611,7 @@ quests:
         amount: 40
   # --- Nekromanta beavatás: zarándoklat a Sötét romvárosba ---
   necromancer_initiation:
+    category: FACTION
     display-name: "Sötét Beavatás"
     description: "Zarándokolj el Thanaopolisba, a Holtak Városába, és hajts végre rituálét az oltárnál."
     requires-faction: "DARK"
@@ -1463,6 +1622,7 @@ quests:
       class-xp: 100
   # --- Vezeklés-lánc: az egyetlen visszaút a sötét paktumból ---
   penance_1:
+    category: FACTION
     display-name: "Vezeklés I. — A Penge"
     description: "Fordítsd erődet a sötétség ellen: pusztíts el 30 erős szörnyet (min. Lvl 2)."
     requires-faction: "DARK"
@@ -1498,6 +1658,7 @@ quests:
 
   # --- Hiányzó kaszt-próbák (bevezető questek a maradék kasztokhoz) ---
   druid_trial:
+    category: CLASS
     display-name: "A Druida Próbája"
     description: "Kösd össze magad a természettel: párosíts 5 állatot a vadonban."
     requires-job: "druid"
@@ -1507,6 +1668,7 @@ quests:
     rewards:
       class-xp: 200
   paladin_trial:
+    category: CLASS
     display-name: "A Paplovag Próbája"
     description: "Bizonyítsd szent eltökéltséged: ejts el 15 szörnyet."
     requires-job: "paladin"
@@ -1516,6 +1678,7 @@ quests:
     rewards:
       class-xp: 200
   death_knight_trial:
+    category: CLASS
     display-name: "A Halállovag Próbája"
     description: "Tisztítsd meg a vidéket a rontástól: pusztíts el 15 erős szörnyet (min. Lvl 1)."
     requires-job: "death_knight"
@@ -1526,6 +1689,7 @@ quests:
     rewards:
       class-xp: 200
   shaman_trial:
+    category: CLASS
     display-name: "A Sámán Próbája"
     description: "Faragj totemeket: gyűjts 10 rönköt az erdőből."
     requires-job: "shaman"
@@ -1544,6 +1708,7 @@ quests:
     rewards:
       class-xp: 200
   monk_trial:
+    category: CLASS
     display-name: "A Szerzetes Próbája"
     description: "Fegyelmezd testedet és elmédet: győzz le 15 szörnyet puszta elszántsággal."
     requires-job: "monk"
@@ -1553,6 +1718,7 @@ quests:
     rewards:
       class-xp: 200
   priest_trial:
+    category: CLASS
     display-name: "A Pap Próbája"
     description: "Gyűjts szentfényt a szentély számára: bányássz 10 fénykövet."
     requires-job: "priest"
@@ -1564,6 +1730,7 @@ quests:
     rewards:
       class-xp: 200
   warlock_trial:
+    category: CLASS
     display-name: "A Boszorkánymester Próbája"
     description: "Pecsételd meg paktumod: küldj a mélységbe 15 teremtményt."
     requires-job: "warlock"
@@ -1573,6 +1740,7 @@ quests:
     rewards:
       class-xp: 200
   demon_hunter_trial:
+    category: CLASS
     display-name: "A Démonvadász Próbája"
     description: "Vadássz a sötétség szolgáira: semmisíts meg 15 erős szörnyet (min. Lvl 1)."
     requires-job: "demon_hunter"
@@ -1583,6 +1751,7 @@ quests:
     rewards:
       class-xp: 200
   evoker_trial:
+    category: CLASS
     display-name: "A Sárkányidéző Próbája"
     description: "Hangold rá magad a sárkány-mágiára: gyűjts 10 ametisztfürtöt."
     requires-job: "evoker"
@@ -1677,7 +1846,9 @@ quests:
         type: "OWN"
         amount: 20
   merchant_choice:
-    giver-npc: "vandor_kereskedo"
+    start:
+      type: NPC
+      npc: "vandor_kereskedo"
     dialogue:
       speaker: "Benedek kereskedő"
       give:
@@ -1698,6 +1869,9 @@ quests:
         type: "OWN"
         amount: 10
   merchant_bandit_hunt:
+    start:
+      type: CHAIN
+    visibility: DISCOVERED
     dialogue:
       speaker: "Benedek kereskedő"
       complete:
@@ -1716,6 +1890,9 @@ quests:
         type: "OWN"
         amount: 80
   merchant_trade_help:
+    start:
+      type: CHAIN
+    visibility: DISCOVERED
     dialogue:
       speaker: "Benedek kereskedő"
       complete:
@@ -1753,7 +1930,9 @@ quests:
         type: "OWN"
         amount: 15
   forest_cleansing:
-    giver-npc: "erdei_venek"
+    start:
+      type: NPC
+      npc: "erdei_venek"
     dialogue:
       speaker: "Sylvana vénasszony"
       give:
@@ -1835,6 +2014,7 @@ quests:
 
   # --- Mellék-questek: a kovács és a vének több munkát adnak (rotálódó napi pool) ---
   kovacs_acel_rendeles:
+    category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
@@ -1844,7 +2024,9 @@ quests:
         - "A céh acélt rendelt, de a kohóm nem győzi. Olvassz nekem, és megéri."
       complete:
         - "Ez már beszéd! A Vasművek büszke lenne rád."
-    giver-npc: "kovacs_mester"
+    start:
+      type: NPC
+      npc: "kovacs_mester"
     display-name: "Acél a céhnek"
     description: "Olvassz ki 16 vasrudat a kovácsmester rendelésére."
     objective:
@@ -1857,6 +2039,7 @@ quests:
         type: "OWN"
         amount: 45
   kovacs_szenszallitmany:
+    category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
@@ -1866,7 +2049,9 @@ quests:
         - "Szén nélkül hideg a kohó, hideg kohó mellett éhes a kovács. Segíts!"
       complete:
         - "Meleg a műhely, tele a bendő. Derék munka."
-    giver-npc: "kovacs_mester"
+    start:
+      type: NPC
+      npc: "kovacs_mester"
     display-name: "Szén a kohóba"
     description: "Szállíts 32 szenet a kovácsműhelybe."
     objective:
@@ -1881,6 +2066,7 @@ quests:
       items:
         - "TORCH:16"
   venek_gyogyfu_szuret:
+    category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
@@ -1890,7 +2076,9 @@ quests:
         - "A liget gyógyfüvei megértek. Szedj nekünk — a Fa nevében."
       complete:
         - "A főzeteink újra erősek lesznek. A liget köszöni."
-    giver-npc: "erdei_venek"
+    start:
+      type: NPC
+      npc: "erdei_venek"
     display-name: "Gyógyfű-szüret"
     description: "Gyűjts 24 magas füvet és virágot a vének főzeteihez."
     objective:
@@ -1903,6 +2091,7 @@ quests:
         type: "OWN"
         amount: 35
   venek_mez_aldozat:
+    category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
@@ -1912,7 +2101,9 @@ quests:
         - "A Fa gyökereihez mézet öntünk, hogy édes legyen az álma. Hozz a kaptárakból!"
       complete:
         - "A gyökerek isznak. Az álom ma édes lesz."
-    giver-npc: "erdei_venek"
+    start:
+      type: NPC
+      npc: "erdei_venek"
     display-name: "Méz-áldozat"
     description: "Vigyél 3 mézesüveget a véneknek a Fa áldozatához."
     objective:
@@ -1944,13 +2135,16 @@ quests:
         type: "OWN"
         amount: 20
   revesz_vacsoraja:
+    visibility: DISCOVERED
     dialogue:
       speaker: "A révész"
       give:
         - "A szoros felett hosszú a nap. Hozz halat, és mesélek valamit a vízről."
       complete:
         - "Jó fogás. A víz ma kegyes volt — hozzád is, hozzám is."
-    giver-npc: "revesz"
+    start:
+      type: NPC
+      npc: "revesz"
     display-name: "A révész vacsorája"
     description: "Fogj 12 halat a révésznek — a szoros felett hosszú a nap."
     next: "revesz_moloja"
@@ -1963,13 +2157,16 @@ quests:
         type: "OWN"
         amount: 35
   revesz_moloja:
+    visibility: DISCOVERED
     dialogue:
       speaker: "A révész"
       give:
         - "A móló palánkjai korhadnak. Hozz deszkát, és a komp neked mindig időben indul."
       complete:
         - "Erős munka. Mostantól a mólón mindig van helyed — és a történeteimnek is."
-    giver-npc: "revesz"
+    start:
+      type: NPC
+      npc: "revesz"
     display-name: "A révész mólója"
     description: "Vigyél 24 deszkát a révésznek a móló javításához."
     objective:
@@ -1986,6 +2183,7 @@ quests:
         - "COOKED_SALMON:6"
   # --- Frakció-heti questek (repeatable, 168h — a frakció-élet heti ritmusa) ---
   red_heti_kohok:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "RED"
@@ -2001,6 +2199,7 @@ quests:
         type: "OWN"
         amount: 120
   blue_heti_tisztogatas:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "BLUE"
@@ -2016,6 +2215,7 @@ quests:
         type: "OWN"
         amount: 120
   neutral_heti_vasar:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "NEUTRAL"
@@ -2030,6 +2230,7 @@ quests:
         type: "OWN"
         amount: 120
   dark_heti_aratas:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "DARK"
@@ -2046,6 +2247,7 @@ quests:
         amount: 120
   # --- +2 napi a rotációba ---
   hirnok_hirvitel:
+    category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
@@ -2055,7 +2257,9 @@ quests:
         - "A krónikának papír kell, a hírnek láb. Te most mindkettő leszel."
       complete:
         - "A hír célba ért. A krónika nem felejt — és én sem."
-    giver-npc: "hirnok"
+    start:
+      type: NPC
+      npc: "hirnok"
     display-name: "Hírvitel"
     description: "Vigyél 8 papírt a hírnöknek — a krónika lapjai fogynak."
     objective:
@@ -2069,6 +2273,7 @@ quests:
         type: "OWN"
         amount: 35
   kovacs_fegyvermustra:
+    category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
@@ -2078,7 +2283,9 @@ quests:
         - "Az újoncoknak penge kell, nekem meg segéd. Kovácsolj, és tanulsz is valamit."
       complete:
         - "Nem rossz él. Még lesz belőled valaki."
-    giver-npc: "kovacs_mester"
+    start:
+      type: NPC
+      npc: "kovacs_mester"
     display-name: "Fegyvermustra"
     description: "Kovácsolj 2 vaskardot a céh újoncainak."
     objective:
@@ -2092,6 +2299,7 @@ quests:
         amount: 40
   # --- Frakció-questek ---
   red_supply_run:
+    category: FACTION
     display-name: "A Láng Utánpótlása"
     description: "Gyűjts 40 vasat a Piros frakció hadigazdaságának."
     requires-faction: "RED"
@@ -2105,6 +2313,7 @@ quests:
         type: "OWN"
         amount: 90
   blue_coastal_watch:
+    category: FACTION
     display-name: "Kék Parti Őrjárat"
     description: "Védd a partvidéket: ölj meg 20 vízi szörnyet."
     requires-faction: "BLUE"
@@ -2117,6 +2326,7 @@ quests:
         type: "OWN"
         amount: 90
   neutral_trade_pact:
+    category: FACTION
     display-name: "Semleges Kereskedelmi Egyezmény"
     description: "Köss 10 kereskedést egy falusival a Semleges kassza javára."
     requires-faction: "NEUTRAL"
@@ -2128,6 +2338,7 @@ quests:
         type: "OWN"
         amount: 90
   dark_bone_harvest:
+    category: FACTION
     display-name: "Csontgyűjtés a Sötétségnek"
     description: "Arass 25 csontvázat a Sötét frakció rituáléihoz."
     requires-faction: "DARK"
@@ -2177,6 +2388,7 @@ quests:
 
   # --- Tartalombővítés (2. hullám): az új anyagokhoz/ételekhez kötött questek ---
   jegvirag_szuret:
+    category: DAILY
     display-name: "Jégvirág-szüret"
     description: "Gyűjts 12 búzavirágot a Jégvirág-por őrléséhez."
     requires-faction: "BLUE"
@@ -2193,6 +2405,7 @@ quests:
         type: "OWN"
         amount: 25
   parazs_gyujtes:
+    category: DAILY
     display-name: "Parázs a kohóknak"
     description: "Szerezz 8 lángrúd-port a Parázsmag kinyeréséhez."
     requires-faction: "RED"
@@ -2209,6 +2422,7 @@ quests:
         type: "OWN"
         amount: 30
   borostyan_kutatas:
+    category: DAILY
     display-name: "Borostyán a mélyből"
     description: "Hozz fel 6 nyers aranyat a Mélységi Borostyán tisztításához."
     rotation-group: "napi-npc"
@@ -2225,6 +2439,7 @@ quests:
         type: "OWN"
         amount: 25
   fonixpihe_vadaszat:
+    category: FACTION
     display-name: "Főnixpihe-vadászat"
     description: "Ejts el 10 lángőrt (blaze) — pihéik a Napfogyatkozás íjához kellenek."
     requires-faction: "RED"
@@ -2238,6 +2453,7 @@ quests:
         type: "OWN"
         amount: 45
   sarkanycsont_kutato:
+    category: FACTION
     display-name: "Sárkánycsont-kutató"
     description: "Terítsd le a vidék erősebb szörnyeit — a csontjaik közt sárkánycsont lapulhat."
     requires-faction: "BLUE"
@@ -2251,6 +2467,7 @@ quests:
         type: "OWN"
         amount: 50
   porkolt_lakoma:
+    category: FACTION
     display-name: "Ünnepi lakoma"
     description: "Fogyassz el egy tál pörköltet — Glatziendorf ünnepi étke erőt ad."
     requires-faction: "BLUE"
@@ -2266,6 +2483,7 @@ quests:
       items:
         - "COOKED_SALMON:4"
   uti_kenyer:
+    category: DAILY
     display-name: "A vándor konyhája"
     description: "Süss 6 kenyeret — a karavánok úti kenyérként viszik magukkal."
     rotation-group: "napi-npc"
@@ -2282,6 +2500,7 @@ quests:
         type: "OWN"
         amount: 15
   viharkvarc_fejto:
+    category: DAILY
     display-name: "A vihar kövei"
     description: "Gyűjts 24 kvarcot a Viharkvarc fejtéséhez."
     rotation-group: "napi-npc"
@@ -2298,6 +2517,7 @@ quests:
         type: "OWN"
         amount: 35
   korrupt_irtas:
+    category: DAILY
     display-name: "A rontás ellen"
     description: "Irtsd a vadon fajzatait — a Fa minden leölt szörnnyel könnyebben lélegzik."
     rotation-group: "napi-npc"
@@ -2337,6 +2557,9 @@ quests:
   # /npcbind hirnok faction a királyság-választáshoz) — amíg nincs kint, az 1.
   # lépés egyszerűen nem halad, a lánc nem törik, csak vár.
   onboarding_herald:
+    start:
+      type: AUTO
+    category: TUTORIAL
     dialogue:
       speaker: "Hírnök"
       give:
@@ -2355,6 +2578,11 @@ quests:
         type: "NEUTRAL" # Caldesterai vendég-útravaló (Creutzér), nem frakciójutalom.
         amount: 15
   onboarding_hunt:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: TUTORIAL
+    visibility: DISCOVERED
     display-name: "Első csata"
     description: "Bizonyítsd, hogy készen állsz: ölj meg 5 szörnyet."
     requires-quest: "onboarding_herald"
@@ -2367,6 +2595,11 @@ quests:
         type: "NEUTRAL" # Caldesterai vendég-útravaló (Creutzér), nem frakciójutalom.
         amount: 20
   onboarding_gather:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: TUTORIAL
+    visibility: DISCOVERED
     display-name: "Első gyűjtögetés"
     description: "Vágj ki 10 rönköt — kezdő felszerelés vár érte."
     requires-quest: "onboarding_hunt"
@@ -2394,6 +2627,11 @@ quests:
   # A lánc zárása (gameplay-audit: eddig itt zsákutca volt): a hírnök elmagyarázza a
   # következő lépéseket — kaszt (/class), szakma (/profession join), kaszt-próba.
   onboarding_utmutatas:
+    start:
+      type: CHAIN
+      auto-accept: true
+    category: TUTORIAL
+    visibility: DISCOVERED
     display-name: "Az utad kezdete"
     description: "Térj vissza a hírnökhöz — elmondja, hogyan válassz kasztot (/class), szakmát (/profession join), és hol vár a kaszt-próbád (/quest list)."
     requires-quest: "onboarding_gather"
@@ -2421,6 +2659,7 @@ quests:
   # Napi rotáció-pool bővítés (11→15) — a "napi-npc" csoportból naponta 3 sorsolódik.
 
   napi_ospatak:
+    category: DAILY
     repeatable: true
     cooldown-hours: 24
     rotation-group: "napi-npc"
@@ -2436,6 +2675,7 @@ quests:
         amount: 35
 
   napi_erclelet:
+    category: DAILY
     repeatable: true
     cooldown-hours: 24
     rotation-group: "napi-npc"
@@ -2452,6 +2692,7 @@ quests:
         amount: 35
 
   napi_csontszuret:
+    category: DAILY
     repeatable: true
     cooldown-hours: 24
     rotation-group: "napi-npc"
@@ -2468,6 +2709,7 @@ quests:
         amount: 35
 
   napi_fuvesasszony:
+    category: DAILY
     repeatable: true
     cooldown-hours: 24
     rotation-group: "napi-npc"
@@ -2486,6 +2728,7 @@ quests:
   # Új rejtvények (26→30) — a cél szándékosan rejtve, csak a sorok vezetnek.
 
   rejtveny_soharcos:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A sosem-harcolt harcos"
     description: "„Páncélt hord, de sosem vérzett. Áll, ahová állítod, s némán viseli, amit rábízol. Teremtsd meg — fából lesz, mégis katona.”"
@@ -2499,6 +2742,7 @@ quests:
         amount: 30
 
   rejtveny_feher_csend:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A fehér csend"
     description: "„Van egy táj, ahol a fű elfelejtett zöldellni, s a hó nem vendég, hanem gazda. Állj meg ott, ahol a csend fehér.”"
@@ -2511,6 +2755,7 @@ quests:
         amount: 30
 
   rejtveny_melysegek_szava:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A mélység szava"
     description: "„A tükör alatt némák laknak; öt szótlant húzz a fényre, és a víz elárulja, amit a part sosem mond ki.”"
@@ -2523,6 +2768,7 @@ quests:
         amount: 30
 
   rejtveny_hamu_kenyere:
+    category: SECRET
     riddle: true
     display-name: "Rejtvény: A hamu kenyere"
     description: "„Ami a földben hallgatott, a tűzben szólal meg. Tizenkétszer szólaltasd meg — a kemence tudja, mit ér a türelem.”"
@@ -2538,6 +2784,7 @@ quests:
   # Frakció-heti második kör — minden népnek jusson heti identitás-feladat.
 
   red_heti_hatartisztitas:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "RED"
@@ -2553,6 +2800,7 @@ quests:
         amount: 120
 
   blue_heti_jegszuret:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "BLUE"
@@ -2569,6 +2817,7 @@ quests:
         amount: 120
 
   neutral_heti_vasarjaras:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "NEUTRAL"
@@ -2588,6 +2837,7 @@ quests:
         amount: 120
 
   dark_heti_csonttized:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     requires-faction: "DARK"
@@ -2620,6 +2870,10 @@ quests:
         amount: 40
 
   gyokerek_2:
+    start:
+      type: CHAIN
+      auto-accept: true
+    visibility: DISCOVERED
     display-name: "A gyökerek emlékezete II."
     description: "„A gyökér csak akkor beszél, ha új hajtást hall.” Ültess el négy mangrove-hajtást — hadd folytassák, amit az öregek elkezdtek."
     requires-quest: "gyokerek_1"
@@ -2635,6 +2889,10 @@ quests:
         amount: 45
 
   gyokerek_3:
+    start:
+      type: CHAIN
+      auto-accept: true
+    visibility: DISCOVERED
     display-name: "A gyökerek emlékezete III."
     description: "A hajtások megeredtek. Vidd el a hírüket a Világfa tövéhez, Radicorába — a gyökerek ott futnak össze, ahol a történetek is."
     requires-quest: "gyokerek_2"
@@ -2664,6 +2922,10 @@ quests:
         amount: 45
 
   hamu_zuzmara_2:
+    start:
+      type: CHAIN
+      auto-accept: true
+    visibility: DISCOVERED
     display-name: "Hamu és zúzmara II. — A fal"
     description: "„Aki csak vág, elesik. Aki fedez is, hazatér.” Készíts magadnak pajzsot — a zsoldos addig szóba se áll veled."
     requires-quest: "hamu_zuzmara_1"
@@ -2679,6 +2941,10 @@ quests:
         amount: 45
 
   hamu_zuzmara_3:
+    start:
+      type: CHAIN
+      auto-accept: true
+    visibility: DISCOVERED
     display-name: "Hamu és zúzmara III. — Pengére írt eskü"
     description: "Az utolsó lecke: a fegyver annyit ér, amennyit belefoglalsz. Bűvölj meg három tárgyat — aztán a zsoldos kezet ráz, és a hadi-ablakban már bajtársként köszönt."
     requires-quest: "hamu_zuzmara_2"
@@ -2695,6 +2961,7 @@ quests:
   # Heti beszállító-questek a vándor kereskedőnek (DELIVER_ITEMS — átveszi a tárgyakat).
 
   beszallito_fa:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     display-name: "Beszállítás: épületfa"
@@ -2711,6 +2978,7 @@ quests:
         amount: 90
 
   beszallito_ko:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     display-name: "Beszállítás: faragott kő"
@@ -2727,6 +2995,7 @@ quests:
         amount: 90
 
   beszallito_elelem:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     display-name: "Beszállítás: úti elemózsia"
@@ -2743,6 +3012,7 @@ quests:
         amount: 90
 
   beszallito_bor:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     display-name: "Beszállítás: cserzett bőr"
@@ -2761,6 +3031,7 @@ quests:
   # Nagy heti kihívások — a kései szintek grind-törői (mindenkinek, plafon nélkül).
 
   heti_nagyvadaszat:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     display-name: "A nagy hajtóvadászat"
@@ -2776,6 +3047,7 @@ quests:
       crate-key: "ritka:1"
 
   heti_nagyhalaszat:
+    category: WEEKLY
     repeatable: true
     cooldown-hours: 168
     display-name: "A nagy fogás"
@@ -2790,11 +3062,9 @@ quests:
         amount: 120
       crate-key: "koznapi:2"
 
-# NPC-tartalék-út: a /quest talk <npc> parancs a FancyNpcs-híd NÉLKÜL automatikusan él
-# (TALK_TO_NPC/DELIVER_ITEMS teljesítés + giver-npc quest-felvétel, dialógussal).
-# always: true = a parancs a híd MELLETT is használható (pl. eltűnt NPC áthidalására).
-quest-npc-fallback:
-  always: false
+# NPC-interakció-szimuláció: a /quest talk <npc> parancs ADMIN-jogosultsághoz kötött
+# (icesmp.admin.quest) — tesztelésre és híd-kiesés áthidalására; a hiteles játékos-út
+# a tényleges NPC-kattintás (a nyílt talk NPC-megszemélyesítési bypass volt).
 
 quest-npc-markers:
   enabled: true

@@ -119,6 +119,14 @@ public final class IceSMPCommand implements BasicCommand {
             if (hook != null) {
                 hook.run();
             }
+            // A quest-registry csere atomikus: hibás candidate a korábbi definíciókat
+            // hagyja élni — az admin itt azonnal visszajelzést kap, nem csak a log.
+            final java.util.List<String> questErrors = questManager.reloadDefinitions();
+            if (!questErrors.isEmpty()) {
+                sender.sendMessage(messageManager.get("admin.icesmp.reload.quest-invalid",
+                        "&cA quest-definíciók érvénytelenek (%s hiba) — a korábbi registry maradt élőben, részletek a szerver-logban.",
+                        questErrors.size()));
+            }
             sender.sendMessage(messageManager.get("admin.icesmp.reload.success", "<green>Plugin konfiguracio sikeresen ujratoltve!</green>"));
             return;
         }

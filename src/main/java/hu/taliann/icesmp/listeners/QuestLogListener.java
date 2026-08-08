@@ -44,6 +44,8 @@ public final class QuestLogListener implements Listener {
         final int slot = event.getRawSlot();
         switch (slot) {
             case QuestLogGUI.TAB_ACTIVE_SLOT -> reopen(player, 0, QuestLogHolder.Tab.ACTIVE);
+            case QuestLogGUI.TAB_READY_SLOT -> reopen(player, 0, QuestLogHolder.Tab.READY);
+            case QuestLogGUI.TAB_BOARD_SLOT -> reopen(player, 0, QuestLogHolder.Tab.BOARD);
             case QuestLogGUI.TAB_AVAILABLE_SLOT -> reopen(player, 0, QuestLogHolder.Tab.AVAILABLE);
             case QuestLogGUI.TAB_COMPLETED_SLOT -> reopen(player, 0, QuestLogHolder.Tab.COMPLETED);
             case QuestLogGUI.PREV_SLOT -> reopen(player, holder.getPage() - 1, holder.getTab());
@@ -66,28 +68,36 @@ public final class QuestLogListener implements Listener {
 
         switch (action) {
             case ACCEPT -> {
-                final String blocker = questManager.getAcceptBlocker(player, questId);
+                // Csak a Megbízások-fül ad felvételt, QUEST_BOARD forrás-kontextussal —
+                // a napló nem távoli accept-felület más forrású questekhez.
+                final String blocker = questManager.acceptWithSource(player, questId,
+                        hu.taliann.icesmp.quest.QuestSourceContext.board());
                 if (blocker != null) {
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
                 } else {
-                    questManager.accept(player, questId);
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
                     player.sendMessage(messageManager.get("quest-accept-success", "&aKüldetés felvéve: &e%s",
                             questManager.getDisplayName(questId)));
                 }
                 reopen(player, holder.getPage(), holder.getTab());
             }
-            case ABANDON -> {
-                // Abandon only on shift-click, so a stray click doesn't drop progress.
-                if (!event.isShiftClick()) {
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
+            case TRACK, ABANDON -> {
+                if (event.isShiftClick()) {
+                    if (questManager.abandon(player, questId)) {
+                        player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0F, 1.0F);
+                        player.sendMessage(messageManager.get("quest-abandon-success", "&eKüldetés eldobva: &f%s",
+                                questManager.getDisplayName(questId)));
+                    }
+                    reopen(player, holder.getPage(), holder.getTab());
                     return;
                 }
-                if (questManager.abandon(player, questId)) {
-                    player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0F, 1.0F);
-                    player.sendMessage(messageManager.get("quest-abandon-success", "&eKüldetés eldobva: &f%s",
-                            questManager.getDisplayName(questId)));
-                }
+                final boolean untrack = questId.equals(questManager.getTracked(player));
+                questManager.setTracked(player, untrack ? null : questId);
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.3F);
+                player.sendMessage(untrack
+                        ? messageManager.get("quest-untracked", "&7Küldetés-követés kikapcsolva.")
+                        : messageManager.get("quest-tracked", "&aKövetett küldetés: &e%s",
+                                questManager.getDisplayName(questId)));
                 reopen(player, holder.getPage(), holder.getTab());
             }
         }
