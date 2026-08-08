@@ -6,6 +6,46 @@ Ez a fájl a textúra-készítő (és a képgenerátor) bemenete. A plugin minde
 
 Minden tétel négy fogódzót ad a művésznek: **Alap-item** (a vanilla sziluett-referencia), **Ábrázolás** (mit ábrázoljon), **Színvilág** (paletta + akcent) és **Hangulat / lore** (a világon belüli érzet).
 
+## Wearable / equipment render-szerződés
+
+A custom armor és wearable itemeknél két külön azonosítót kell kezelni:
+
+- `item-model`: az inventory/kéz `ITEM_MODEL` komponense (`icesmp:<render-id>`), az `assets/icesmp/items/<render-id>.json` item modellhez;
+- `equipment-asset`: a felvéve használt `EQUIPPABLE.assetId` (`icesmp:<render-id>`), az `assets/icesmp/equipment/<render-id>.json` equipment assethez.
+
+Profession recipe resultnál a teljes, explicit forma:
+
+```yaml
+result:
+  material: DIAMOND_CHESTPLATE
+  item-model: "icesmp:pelda_vert"
+  equipment-asset: "icesmp:pelda_vert"
+```
+
+Named loot és `profession-materials` definíció ugyanígy használhat `equipment-asset` mezőt. Az explicit mező mindig elsőbbséget élvez. Ha hiányzik, kizárólag olyan vanilla Materialnál, amely eleve `EQUIPPABLE`, használható a determinisztikus same-render-id fallback: `item-model: "icesmp:x"` → `equipment-asset: "icesmp:x"`. A pack-validator ezt a fallbacket is ellenőrzi, tehát hiányzó `assets/icesmp/equipment/x.json` nem juthat át a CI-n.
+
+A relikvia-szárnyak ugyanezt a stabil render identityt használják (`icesmp:relic_<id>`): az inventory item-model és az `assets/icesmp/equipment/relic_<id>.json` `wings` asset azonos néven kapcsolódik, de a runtime továbbra is két külön data componentként kezeli őket.
+
+Az equipment JSON layer textúrája például:
+
+```json
+{
+  "layers": {
+    "humanoid": [
+      { "texture": "icesmp:pelda_vert" }
+    ]
+  }
+}
+```
+
+Ehhez a textúra: `assets/icesmp/textures/entity/equipment/humanoid/pelda_vert.png`; leggings layernél a könyvtár `humanoid_leggings`, elytra-szárnynál `wings`.
+
+### Vanilla 3D-határ
+
+A jelenlegi Java resource-pack equipment rendszer a rögzített equipment layer-típusokon (`humanoid`, `humanoid_leggings`, `wings`, stb.) renderel textúrarétegeket. Az `EQUIPPABLE.assetId` nem általános, tetszőleges új játékos-armor mesh/bone definíció, és az inventory `ITEM_MODEL` 3D geometriája nem kerül automatikusan a játékos testére. Emiatt a plugin nem színlel valódi új 3D armor-geometriát.
+
+A `WearablePresentation` a központi bővítési pont. A stabil `<render-id>` legyen a jövőbeli renderer identitása is; egy későbbi kliensoldali/modded vagy külön entity/display-alapú 3D wearable réteg így ugyanarra a tartalom-azonosítóra épülhet, a jelenlegi vanilla equipment assetek újraírása nélkül.
+
 ## Kiadási és kliens-cache szerződés
 
 Az IceSMP a Paper/Folia additív `Player#addResourcePack(...)` API-ját használja.
@@ -266,6 +306,12 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** derengő varázskönyv — misztikus, kaszt-színű derengéssel (Caldesterai Rúnakódex)
 - **Színvilág:** királylila; akcent: világító cián
 - **Hangulat / lore:** A(z) Wizard kaszt katalizátora — a kaszt-éledés rituálé-tárgya.
+
+### `csodalatos_bingulus` — Csodálatos Bingulus
+- **Fájl:** `csodalatos_bingulus.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
+- **Ábrázolás:** különös, gömbölyű, jóindulatú kis tengeri-mágikus lény vagy mag; két apró szemmel, körülötte csillagpor-szilánkokkal
+- **Színvilág:** világos lila és rózsaszín; akcent: prizmarin-türkiz és fehér csillanás
+- **Hangulat / lore:** Bence örökös DEV iteme; játékos, csodálatos és kissé értelmezhetetlen — 10 aktív percenként ajándékot „talál”.
 
 ## Társ-befogók és pecsétek
 
@@ -777,7 +823,7 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Fájl:** `tozegkocka.png` &nbsp;|&nbsp; **Alap-item:** `PACKED_MUD`
 - **Ábrázolás:** tömör sötétbarna tőzegkocka, rostos növényi textúra, nedves földbarna
 - **Színvilág:** sötét földbarna; akcent: nedves fekete
-- **Hangulat / lore:** A Bokic-láp fekete aranya — ebben minden mag kicsírázik. Gyógynövényész kellék (csak boltból)
+- **Hangulat / lore:** A Bokic-láp fekete aranya — ebben minden mag kicsírázik. Gyógynövényész köztes alapanyag
 
 ### `uvegfiola_keszlet` — Üvegfiola-készlet
 - **Fájl:** `uvegfiola_keszlet.png` &nbsp;|&nbsp; **Alap-item:** `GLASS_BOTTLE`
@@ -795,7 +841,7 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Fájl:** `vaj.png` &nbsp;|&nbsp; **Alap-item:** `HONEYCOMB`
 - **Ábrázolás:** halványsárga vajtömb, sima krémes felület, lágy fényes csillanás, tejsárga
 - **Színvilág:** halvány tejsárga; akcent: krémfehér
-- **Hangulat / lore:** A Bokic-parti tanyák köpült vaja — amin ez megolvad, az már ünnep. Szakács kellék (csak boltból)
+- **Hangulat / lore:** A Bokic-parti tanyák köpült vaja — amin ez megolvad, az már ünnep. Szakács köztes alapanyag
 
 ### `vandorfuszer` — Vándorfűszer
 - **Fájl:** `vandorfuszer.png` &nbsp;|&nbsp; **Alap-item:** `COCOA_BEANS`
@@ -1952,12 +1998,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - Minden élő modell-id kapjon egy `### \`<modell-id>\` — Név` blokkot (a `scripts/check_consistency.py` ezt ellenőrzi); a blokk adja meg az Alap-itemet, Ábrázolást, Színvilágot és a Hangulat/lore sort.
 - A leírás legyen tárgyra szabott; faction/lore-kötött tárgy a Globális paletta akcensét viselje, DARK-nál a hideg türkiz lich-fényt.
 
-
-### `csodalatos_bingulus` — Csodálatos Bingulus
-- **Fájl:** `csodalatos_bingulus.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
-- **Ábrázolás:** különös, gömbölyű, jóindulatú kis tengeri-mágikus lény vagy mag; két apró szemmel, körülötte csillagpor-szilánkokkal
-- **Színvilág:** világos lila és rózsaszín; akcent: prizmarin-türkiz és fehér csillanás
-- **Hangulat / lore:** Bence örökös DEV iteme; játékos, csodálatos és kissé értelmezhetetlen — 10 aktív percenként ajándékot „talál”.
 
 ## Automated GUI/item-model validation
 

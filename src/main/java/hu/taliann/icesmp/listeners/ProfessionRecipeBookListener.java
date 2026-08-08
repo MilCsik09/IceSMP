@@ -267,7 +267,7 @@ public final class ProfessionRecipeBookListener implements Listener {
      * hívja, így a parancsból adott tárgy bitre azonos a craftolttal.
      * A hívó szála a cél-játékos szála legyen (a crafted-by a nevét bélyegzi).
      *
-     * @return a kész tárgy, vagy null (ismeretlen unique-eredmény)
+     * @return a kész tárgy, vagy null (ismeretlen unique-eredmény / hibás presentation-config)
      */
     public ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
         ItemStack result = recipe.uniqueResult() != null
@@ -427,11 +427,28 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (consumableSection != null) {
             hu.taliann.icesmp.items.ItemDataFactory.applyRecipeConsumable(result, consumableSection);
         }
-        final String itemModel = configManager.getString(
-                "profession-recipes." + recipe.id() + ".result.item-model", "");
-        if (!itemModel.isBlank()) {
-            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(result, itemModel);
+
+        // A unique factory által korábban feltett data componenteket a fenti meta/affix lánc
+        // ledobhatta, ezért a végleges resulton újraalkalmazzuk a unique presentationt.
+        if (recipe.uniqueResult() != null && !uniqueMaterials.applyPresentation(result, recipe.uniqueResult())) {
+            return null;
         }
+
+        // Külön identity az inventory/hand modellhez és a viselt equipment assethez.
+        // Explicit equipment-asset elsőbbséget élvez; hiányában az equippable IceSMP itemek
+        // dokumentált 1:1 render-id fallbackje használható. A pack validator ennek létezését bizonyítja.
+        final String presentationBase = "profession-recipes." + recipe.id() + ".result.";
+        final String itemModel = configManager.getString(presentationBase + "item-model", "");
+        final String equipmentAsset = configManager.getString(presentationBase + "equipment-asset", "");
+        final hu.taliann.icesmp.items.WearablePresentation.Result presentation =
+                hu.taliann.icesmp.items.WearablePresentation.applyWearablePresentation(
+                        result, itemModel, equipmentAsset);
+        if (!equipmentAsset.isBlank() && !presentation.equipmentApplied()) {
+            plugin.getLogger().warning(presentationBase + "equipment-asset: '" + equipmentAsset
+                    + "' cannot be applied (" + presentation.equipmentStatus() + ")");
+            return null;
+        }
+
         // Mestermű-mérföldkő: ha az affix-roll a létra felső fokát adta, az elismerést érdemel.
         if (recipe.affixTier() != null && affixService != null) {
             final String rolled = affixService.rarityIdOf(result);

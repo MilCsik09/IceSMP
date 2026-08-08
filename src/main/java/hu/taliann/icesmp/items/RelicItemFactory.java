@@ -65,7 +65,7 @@ public final class RelicItemFactory {
         pdc.set(relicCreatedAtKey, PersistentDataType.LONG, System.currentTimeMillis());
 
         itemStack.setItemMeta(meta);
-        ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
+        applyPresentation(itemStack, definition.id());
         return itemStack;
     }
 
@@ -109,7 +109,7 @@ public final class RelicItemFactory {
         itemStack.setItemMeta(meta);
         final String relicType = getRelicType(itemStack);
         if (relicType != null) {
-            ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + relicType);
+            applyPresentation(itemStack, relicType);
         }
     }
 
@@ -120,7 +120,16 @@ public final class RelicItemFactory {
         final ItemMeta meta = itemStack.getItemMeta();
         applyVisuals(meta, definition);
         itemStack.setItemMeta(meta);
-        ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
+        applyPresentation(itemStack, definition.id());
+    }
+
+    /**
+     * Relics share the same stable render identity for inventory and worn presentation.
+     * Non-equippable relics receive only ITEM_MODEL; ELYTRA wing relics additionally resolve the
+     * matching {@code assets/icesmp/equipment/relic_<id>.json} through the central wearable layer.
+     */
+    private static void applyPresentation(final ItemStack itemStack, final String relicId) {
+        WearablePresentation.applyWearablePresentation(itemStack, "icesmp:relic_" + relicId, null);
     }
 
     private void applyVisuals(final ItemMeta meta, final RelicDefinition definition) {

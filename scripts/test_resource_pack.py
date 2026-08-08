@@ -40,6 +40,29 @@ class ResourcePackToolingTest(unittest.TestCase):
         )
         (root / "README.md").write_text("repository-only documentation\n", encoding="utf-8")
 
+    def add_equipment(self, root: Path, asset: str = "test_helmet",
+                      layer: str = "humanoid", texture: str | None = None,
+                      with_texture: bool = True) -> None:
+        texture_id = texture or asset
+        equipment_dir = root / "assets" / "icesmp" / "equipment"
+        equipment_dir.mkdir(parents=True, exist_ok=True)
+        (equipment_dir / f"{asset}.json").write_text(
+            json.dumps({"layers": {layer: [{"texture": f"icesmp:{texture_id}"}]}}),
+            encoding="utf-8",
+        )
+        if with_texture:
+            texture_path = (
+                root / "assets" / "icesmp" / "textures" / "entity" / "equipment"
+                / layer / f"{texture_id}.png"
+            )
+            texture_path.parent.mkdir(parents=True, exist_ok=True)
+            texture_path.write_bytes(MINIMAL_PNG_HEADER)
+
+    def write_config(self, pack_root: Path, name: str, content: str) -> None:
+        config_root = pack_root.parent / "src" / "main" / "resources" / "config"
+        config_root.mkdir(parents=True, exist_ok=True)
+        (config_root / name).write_text(content, encoding="utf-8")
+
     def test_deterministic_zip_ignores_mtime_and_source_only_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "source"
@@ -81,6 +104,111 @@ class ResourcePackToolingTest(unittest.TestCase):
             (root / "old.zip").write_bytes(b"not a source file")
             with self.assertRaises(resource_pack.PackError):
                 resource_pack.validate_pack(root)
+
+    def test_equipment_layer_texture_reference_is_validated(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_equipment(root, with_texture=False)
+
+            with self.assertRaisesRegex(resource_pack.PackError, "references missing texture"):
+                resource_pack.validate_pack(root)
+
+    def test_explicit_equipment_asset_must_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.write_config(
+                root,
+                "loot.yml",
+                'loot:\n  table:\n    - { type: named, item: IRON_CHESTPLATE, '
+                'item-model: "icesmp:test_helmet", equipment-asset: "icesmp:missing" }\n',
+            )
+
+            with self.assertRaisesRegex(resource_pack.PackError, "equipment-asset icesmp:missing"):
+                resource_pack.validate_pack(root)
+
+    def test_equippable_same_id_fallback_must_have_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.write_config(
+                root,
+                "profession-recipes.yml",
+                "profession-recipes:\n  helmet:\n    result:\n      material: IRON_HELMET\n"
+                '      item-model: "icesmp:missing_helmet"\n',
+            )
+
+            with self.assertRaisesRegex(resource_pack.PackError, "same-id fallback requires equipment asset"):
+                resource_pack.validate_pack(root)
+
+    def test_equippable_same_id_fallback_accepts_existing_asset_and_texture(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_equipment(root, asset="test_helmet")
+            self.write_config(
+                root,
+                "profession-recipes.yml",
+                "profession-recipes:\n  helmet:\n    result:\n      material: IRON_HELMET\n"
+                '      item-model: "icesmp:test_helmet"\n',
+            )
+
+            resource_pack.validate_pack(root)
+
+    def test_versioned_policy_covers_body_and_saddle_equipment(self) -> None:
+        self.assertEqual(resource_pack.FALLBACK_MINECRAFT_VERSION, "1.21.11")
+        for material in (
+            "IRON_HORSE_ARMOR",
+            "GOLDEN_HORSE_ARMOR",
+            "DIAMOND_HORSE_ARMOR",
+            "WOLF_ARMOR",
+            "SADDLE",
+            "WHITE_HARNESS",
+        ):
+            with self.subTest(material=material):
+                self.assertTrue(resource_pack.allows_implicit_same_id_fallback(material))
+
+    def test_horse_armor_same_id_fallback_must_have_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.write_config(
+                root,
+                "profession-recipes.yml",
+                "profession-recipes:\n  horse:\n    result: { material: IRON_HORSE_ARMOR, "
+                'item-model: "icesmp:vas_lopancel" }\n',
+            )
+
+            with self.assertRaisesRegex(resource_pack.PackError, "same-id fallback requires equipment asset"):
+                resource_pack.validate_pack(root)
+
+    def test_horse_armor_same_id_fallback_accepts_horse_body_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_equipment(root, asset="vas_lopancel", layer="horse_body")
+            self.write_config(
+                root,
+                "profession-recipes.yml",
+                "profession-recipes:\n  horse:\n    result: { material: IRON_HORSE_ARMOR, "
+                'item-model: "icesmp:vas_lopancel" }\n',
+            )
+
+            resource_pack.validate_pack(root)
+
+    def test_non_equippable_item_model_does_not_require_equipment_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.write_config(
+                root,
+                "profession-recipes.yml",
+                "profession-recipes:\n  paper:\n    result:\n      material: PAPER\n"
+                '      item-model: "icesmp:paper_icon"\n',
+            )
+
+            resource_pack.validate_pack(root)
 
     def test_metadata_update_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
