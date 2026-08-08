@@ -4,15 +4,20 @@ on:
   pull_request:
     branches:
       - master
-      - rework/class-spec-1.21.11-compatibility
-      - rework/class-spec-profile-v2
-      - profile/player-profile-platform
-      - claude/projekt-audit-u0hkcz
-      - feature/native-moderation-suite
+      - integration/master-candidate
+      - rework/class-relic-framework
+    paths-ignore:
+      - "**/*.md"
   push:
     branches:
       - master
+    paths-ignore:
+      - "**/*.md"
   workflow_dispatch:
+
+concurrency:
+  group: icesmp-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -32,6 +37,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
 
       - name: Resolve base and head commits
         id: refs
@@ -72,12 +79,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install repository consistency dependency
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
 
       - name: Validate PlayerProfile authority contract
         shell: bash
@@ -92,12 +103,8 @@ jobs:
             --root . \
             --json-output build/player-profile-transition-report.json
 
-      - name: Validate deterministic resource pack build
-        run: |
-          python3 scripts/test_resource_pack.py
-          python3 scripts/resource_pack.py build \
-            --source resource-pack \
-            --output build/resource-pack/ci-pack.zip
+      - name: Validate resource-pack bindings
+        run: python3 scripts/test_resource_pack.py
 
       - name: Validate FancyNpcs deployment snapshot
         run: python3 scripts/validate_fancynpcs_snapshot.py
@@ -118,7 +125,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build --no-daemon --stacktrace | tee gradle-build.log
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
 
       - name: Verify stacked regressions ran inside Gradle check
         shell: bash
@@ -132,6 +139,14 @@ jobs:
           grep -F "AFK regression suite passed." gradle-build.log
           grep -F "HUD regression suite passed." gradle-build.log
           grep -F "Pause-menu dialog regression suite passed." gradle-build.log
+          grep -F "Faction passive regression suite passed." gradle-build.log
+          grep -F "Faction passive hardening regression suite passed." gradle-build.log
+          grep -F "Faction tax debt regression suite passed." gradle-build.log
+          grep -F "Relic refresh regression suite passed." gradle-build.log
+          grep -F "Relic refresh pipeline regression suite passed." gradle-build.log
+          grep -F "Lifecycle shutdown regression suite passed." gradle-build.log
+          grep -F "Quest NPC validation regression suite passed." gradle-build.log
+          grep -F "Resource pack regression suite passed." gradle-build.log
           grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log
           grep -F "Class/spec application regression suite passed." gradle-build.log
           grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log
@@ -143,5 +158,22 @@ jobs:
           grep -F "PlayerProfile lifecycle teardown regression suite passed." gradle-build.log
           grep -F "Bestiary regression suite passed." gradle-build.log
 
-      - name: Run targeted DEV regression driver
-        run: python3 scripts/test_dev_item_state.py
+      - name: Run full repository consistency
+        run: python3 scripts/check_consistency.py
+
+      - name: Verify DEV state source contract
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from scripts.test_dev_item_state import verify_removed_paths
+          verify_removed_paths()
+          PY
+
+      - name: Upload plugin JAR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: IceSMP-plugin-${{ github.run_number }}
+          path: build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 30
