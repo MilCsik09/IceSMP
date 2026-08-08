@@ -4,6 +4,7 @@ import hu.taliann.icesmp.gui.BestiaryHolder;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.QuestManager;
+import hu.taliann.icesmp.managers.QuestPhysicalRewardDeliveryService;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import org.bukkit.Location;
@@ -19,14 +20,20 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.FurnaceExtractEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.charset.StandardCharsets;
@@ -85,6 +92,48 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onKick(final PlayerKickEvent event) {
         questManager.clearPlayerState(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPendingRewardClick(final InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (pendingReward(event.getCurrentItem()) || pendingReward(event.getCursor())) {
+            event.setCancelled(true);
+            return;
+        }
+        final int hotbar = event.getHotbarButton();
+        if (hotbar >= 0 && hotbar < 9 && pendingReward(player.getInventory().getItem(hotbar))) {
+            event.setCancelled(true);
+            return;
+        }
+        if (event.getClick() == ClickType.SWAP_OFFHAND
+                && pendingReward(player.getInventory().getItemInOffHand())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPendingRewardDrag(final InventoryDragEvent event) {
+        if (pendingReward(event.getOldCursor())
+                || event.getNewItems().values().stream().anyMatch(this::pendingReward)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPendingRewardDrop(final PlayerDropItemEvent event) {
+        if (pendingReward(event.getItemDrop().getItemStack())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPendingRewardHandSwap(final PlayerSwapHandItemsEvent event) {
+        if (pendingReward(event.getMainHandItem()) || pendingReward(event.getOffHandItem())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean pendingReward(final ItemStack item) {
+        return QuestPhysicalRewardDeliveryService.isPendingRewardItem(plugin, item);
     }
 
     @EventHandler
