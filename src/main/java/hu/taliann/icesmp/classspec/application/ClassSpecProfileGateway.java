@@ -29,6 +29,9 @@ public interface ClassSpecProfileGateway {
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reset(UUID playerId,ResetRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> seal(UUID playerId,SealRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reconcile(UUID playerId,ReconcileRequest request);
+    /** Lifecycle-only reconcile explicitly fenced to the activation generation supplied by join. */
+    CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reconcileDuringActivation(
+            UUID playerId,UUID sessionToken,ReconcileRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> assignClass(UUID playerId,ClassAssignmentRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateClassExperience(UUID playerId,ClassExperienceRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> incrementSoulforge(UUID playerId,String branch,int shardCost,String operationId);
