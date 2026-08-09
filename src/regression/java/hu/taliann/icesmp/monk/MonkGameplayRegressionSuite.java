@@ -17,6 +17,7 @@ public final class MonkGameplayRegressionSuite {
         flowRewardsVarietyNotRepetition();
         martialChainOrderWindowAndRetention();
         staggerPoolBoundsDrainAndConsequence();
+        staggerConservesActualDamage();
         mistLinksCapacityAndReplacement();
         cleanupLifecycle();
         staggerAndAllowlistSourceContracts();
@@ -139,6 +140,22 @@ public final class MonkGameplayRegressionSuite {
 
         final String service = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java"));
+        check(service.contains("final double finalBefore = event.getFinalDamage();")
+                        && service.contains("MonkCombatState.acceptedDefer(finalBefore,"),
+                "phase one takes the deferred share from the FINAL, already mitigated damage");
+        check(service.contains("bankedFromReducedFinal(\n                event.getFinalDamage(), fraction)")
+                        || service.contains("bankedFromReducedFinal(event.getFinalDamage(), fraction)"),
+                "phase two recovers the amount from the authoritative settled final damage");
+        check(service.contains("event.setDamage(Math.max(0.0D, event.getDamage() * (1.0D - fraction)))"),
+                "the event is scaled multiplicatively, so no mitigation is applied twice or skipped");
+        check(service.contains("MonkCombatState.bankedFromReducedFinal("),
+                "phase two banks the exact deferred amount recovered from the settled pipeline");
+        check(service.contains("EventPriority.MONITOR")
+                        && service.contains("onIncomingDamageResolved"),
+                "phase two observes at MONITOR — it never modifies the event or overrides a later plugin");
+        check(!service.contains("event.getDamage() * staggerPercent"),
+                "the raw-damage share that caused the over-charge is gone");
+
         check(service.contains("player.setHealth(Math.max(1.0D,")
                         && !service.contains("player.damage("),
                 "the Stagger drain steps health directly — never a duplicated damage event");
@@ -149,6 +166,111 @@ public final class MonkGameplayRegressionSuite {
                 "Ködszál ripple heals always run on the linked ally's scheduler");
         check(!service.contains("getNearbyEntities") && !service.contains("runAtFixedRate"),
                 "no proximity scans or repeating tasks in the monk runtime");
+    }
+
+    /**
+     * The Stagger must be damage-CONSERVING against the damage actually suffered: the monk should
+     * lose the same total health as without it, only spread over time. The old implementation took
+     * a share of the RAW damage and paid it back as direct health loss, which cost strictly more
+     * health whenever the hit was mitigated. These cases pin the arithmetic.
+     */
+    private static void staggerConservesActualDamage() {
+        // The event pipeline is multiplicative: scaling the base by (1 - q) scales the final by
+        // (1 - q) too. These helpers model exactly that, so the numbers below are the real ones.
+        final double deferPercent = 35.0D;
+        final double room = 1000.0D;
+
+        // 1. no mitigation at all: raw 20 -> final 20
+        conservation(20.0D, 20.0D, deferPercent, room, "mitigation nélkül");
+
+        // 2. the review's own example: raw 20, final 8 (60% effective mitigation)
+        final double accepted = MonkCombatState.acceptedDefer(8.0D, deferPercent, room);
+        check(Math.abs(accepted - 2.8D) < 1e-9,
+                "the deferred amount is a share of the FINAL damage (8 * 35% = 2.8), not of the raw 20");
+        conservation(20.0D, 8.0D, deferPercent, room, "50%+ mitigation mellett");
+        // The regressed model, spelled out: a raw-damage share (7.0) subtracted from the base and
+        // then repaid as direct health loss cost 12.2 HP for a hit that should have cost 8.
+        final double rawShare = 20.0D * deferPercent / 100.0D;
+        final double regressedImmediate = 8.0D * ((20.0D - rawShare) / 20.0D);
+        final double regressedTotal = regressedImmediate + rawShare;
+        check(Math.abs(regressedTotal - 12.2D) < 1e-9,
+                "the old raw-damage model is reproduced exactly: it charged 12.2 HP");
+        check(regressedTotal > 8.0D + 1e-9,
+                "the old model charged MORE than the unmitigated-through hit itself — the defect");
+        check(accepted < rawShare,
+                "the conserving model defers strictly less than the old raw share");
+
+        // 3. very high mitigation
+        conservation(40.0D, 2.0D, deferPercent, room, "nagyon magas mitigation mellett");
+
+        // 4. partial pool cap: only part fits, the rest is suffered immediately
+        final double tightRoom = 1.0D;
+        final double partial = MonkCombatState.acceptedDefer(8.0D, deferPercent, tightRoom);
+        check(Math.abs(partial - 1.0D) < 1e-9, "the pool cap bounds what may be deferred");
+        conservation(20.0D, 8.0D, deferPercent, tightRoom, "részleges pool-cap mellett");
+        check(MonkCombatState.acceptedDefer(8.0D, deferPercent, 0.0D) == 0.0D,
+                "a full pool defers nothing and the hit lands whole");
+
+        // 5. the ceiling holds even if a doctrine stacks the percent up
+        final double capped = MonkCombatState.acceptedDefer(10.0D, 500.0D, room);
+        check(Math.abs(capped - 10.0D * MonkCombatState.MAX_DEFER_PERCENT / 100.0D) < 1e-9,
+                "no configuration can defer more than the hard ceiling");
+
+        // 6. purify removes banked health debt — that is the only way the total drops
+        final MonkCombatState state = new MonkCombatState();
+        state.stagger(8.0D, 100.0D);
+        final double cleared = state.purifyStagger(50.0D);
+        check(Math.abs(cleared - 4.0D) < 1e-9 && Math.abs(state.staggerPool() - 4.0D) < 1e-9,
+                "purify clears exactly its share of the banked damage");
+
+        // 7. logout/spec-switch consequence: the remaining debt is paid, never forgiven
+        final double collapsed = state.collapseStagger();
+        check(Math.abs(collapsed - 4.0D) < 1e-9 && state.staggerPool() == 0.0D,
+                "the logout/spec-switch consequence pays out the whole remaining pool");
+
+        // 8. the pending fraction is one-shot: a hit can never bank twice
+        final MonkCombatState pending = new MonkCombatState();
+        pending.setPendingDeferFraction(0.35D);
+        check(Math.abs(pending.takePendingDeferFraction() - 0.35D) < 1e-9,
+                "phase two reads the fraction phase one recorded");
+        check(pending.takePendingDeferFraction() == 0.0D,
+                "the pending fraction is consumed once — no double banking");
+        pending.setPendingDeferFraction(5.0D);
+        check(pending.takePendingDeferFraction()
+                        <= MonkCombatState.MAX_DEFER_PERCENT / 100.0D + 1e-9,
+                "the pending fraction is bounded by the same ceiling");
+    }
+
+    /**
+     * Runs one hit through both phases and proves the monk loses the same total health as an
+     * identical hit taken without any Stagger at all.
+     */
+    private static void conservation(final double rawDamage, final double finalDamage,
+                                     final double deferPercent, final double room,
+                                     final String label) {
+        final MonkCombatState state = new MonkCombatState();
+        final double accepted = MonkCombatState.acceptedDefer(finalDamage, deferPercent, room);
+        final double fraction = accepted / finalDamage;
+        state.setPendingDeferFraction(fraction);
+
+        // phase one scales the event; the pipeline stays multiplicative, so the final scales too
+        final double reducedBase = rawDamage * (1.0D - fraction);
+        final double reducedFinal = finalDamage * (reducedBase / rawDamage);
+
+        // phase two recovers the deferred amount from the authoritative final damage
+        final double banked = MonkCombatState.bankedFromReducedFinal(
+                reducedFinal, state.takePendingDeferFraction());
+        state.stagger(banked, room);
+
+        final double immediate = reducedFinal;
+        final double deferred = state.staggerPool();
+        final double total = immediate + deferred;
+        check(Math.abs(total - finalDamage) < 1e-6,
+                label + ": a Staggerrel elszenvedett teljes életveszteség (" + total
+                        + ") megegyezik a Stagger nélküli tényleges sebzéssel (" + finalDamage + ")");
+        check(deferred <= finalDamage + 1e-9,
+                label + ": a halasztott rész sosem nagyobb a tényleges sebzésnél");
+        check(immediate >= 0.0D, label + ": az azonnali rész sosem negatív");
     }
 
     private static void check(final boolean condition, final String message) {

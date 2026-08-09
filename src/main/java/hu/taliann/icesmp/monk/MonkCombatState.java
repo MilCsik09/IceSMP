@@ -29,6 +29,7 @@ public final class MonkCombatState {
     private long chainLastStepAt;
 
     private double staggerPool;
+    private double pendingDeferFraction;
 
     private final List<UUID> linkIds = new ArrayList<>(3);
     private final List<String> linkLabels = new ArrayList<>(3);
@@ -102,6 +103,44 @@ public final class MonkCombatState {
 
     // ===== Sörfőző: Stagger =====
 
+    /**
+     * How much of a hit's FINAL (already mitigated) damage may be deferred, given the room left
+     * in the pool. Working in final-damage units is what keeps the Stagger damage-conserving:
+     * the player must end up losing the same total health, only spread over time.
+     */
+    public static double acceptedDefer(final double finalDamage, final double deferPercent,
+                                       final double poolRoom) {
+        if (finalDamage <= 0.0D) return 0.0D;
+        final double share = Math.max(0.0D, Math.min(MAX_DEFER_PERCENT, deferPercent)) / 100.0D;
+        return Math.max(0.0D, Math.min(finalDamage * share, Math.max(0.0D, poolRoom)));
+    }
+
+    /**
+     * The event's damage is scaled by (1 - fraction), and every modifier in the pipeline is
+     * multiplicative, so the deferred amount can be recovered exactly from whatever final damage
+     * the pipeline ends up with — even if another plugin adjusts the hit after us.
+     */
+    public static double bankedFromReducedFinal(final double reducedFinalDamage,
+                                                final double fraction) {
+        if (reducedFinalDamage <= 0.0D || fraction <= 0.0D) return 0.0D;
+        final double bounded = Math.min(fraction, MAX_DEFER_PERCENT / 100.0D);
+        return reducedFinalDamage * bounded / (1.0D - bounded);
+    }
+
+    /** The hard ceiling on how much of a hit may ever be deferred. */
+    public static final double MAX_DEFER_PERCENT = 80.0D;
+
+    /** Phase one records the fraction the event was scaled by; phase two banks the exact amount. */
+    public synchronized void setPendingDeferFraction(final double fraction) {
+        pendingDeferFraction = Math.max(0.0D, Math.min(MAX_DEFER_PERCENT / 100.0D, fraction));
+    }
+
+    public synchronized double takePendingDeferFraction() {
+        final double pending = pendingDeferFraction;
+        pendingDeferFraction = 0.0D;
+        return pending;
+    }
+
     /** Defers part of a hit into the pool, bounded by the cap. Returns the actually deferred amount. */
     public synchronized double stagger(final double amount, final double poolCap) {
         final double deferred = Math.max(0.0D,
@@ -128,6 +167,7 @@ public final class MonkCombatState {
     public synchronized double collapseStagger() {
         final double all = staggerPool;
         staggerPool = 0.0D;
+        pendingDeferFraction = 0.0D;
         return all;
     }
 

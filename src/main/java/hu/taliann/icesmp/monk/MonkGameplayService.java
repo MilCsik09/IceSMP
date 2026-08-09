@@ -299,16 +299,48 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         if ("surubb_fozet".equals(doctrine(playerId, 30))) {
             staggerPercent += config.getDouble("classes.monk.stagger.thick-extra-percent", 5.0D);
         }
+        final double poolCap = staggerPoolCap(victim);
+        // Phase one: decide the share of the FINAL (already mitigated) damage to defer, and scale
+        // the event by that share. Every modifier in the pipeline is multiplicative, so scaling the
+        // base by (1 - q) reduces the final damage by exactly q of it — no mitigation is applied
+        // twice and none is bypassed.
+        final double finalBefore = event.getFinalDamage();
+        if (finalBefore <= 0.0D) return;
+        final double room = poolCap - state.staggerPool();
+        final double accepted = MonkCombatState.acceptedDefer(finalBefore, staggerPercent, room);
+        if (accepted <= 0.0D) return;
+        final double fraction = accepted / finalBefore;
+        state.setPendingDeferFraction(fraction);
+        event.setDamage(Math.max(0.0D, event.getDamage() * (1.0D - fraction)));
+    }
+
+    /** The Stagger pool ceiling, in health units; both phases bound themselves by it. */
+    private double staggerPoolCap(final Player victim) {
+        final UUID playerId = victim.getUniqueId();
         double poolCap = maxHealth(victim) * Math.max(0.0D, Math.min(100.0D, config.getDouble(
                 "classes.monk.stagger.pool-cap-health-percent", 60.0D))) / 100.0D;
         if ("vas_bendo".equals(doctrine(playerId, 40))) {
             poolCap += maxHealth(victim) * config.getDouble(
                     "classes.monk.stagger.iron-extra-percent", 10.0D) / 100.0D;
         }
-        final double wanted = event.getDamage() * staggerPercent / 100.0D;
-        final double deferred = state.stagger(wanted, poolCap);
-        if (deferred <= 0.0D) return;
-        event.setDamage(Math.max(0.0D, event.getDamage() - deferred));
+        return poolCap;
+    }
+
+    /**
+     * Phase two: the pipeline has settled, so the exact deferred amount is recovered from the
+     * authoritative final damage and banked. Reading only — this never modifies the event, never
+     * duplicates a damage event and never overrides a later plugin's adjustment.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onIncomingDamageResolved(final EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player victim) || !isMonk(victim)) return;
+        final MonkCombatState state = state(victim.getUniqueId());
+        final double fraction = state.takePendingDeferFraction();
+        if (fraction <= 0.0D) return;
+        final double banked = MonkCombatState.bankedFromReducedFinal(
+                event.getFinalDamage(), fraction);
+        if (banked <= 0.0D) return;
+        state.stagger(banked, staggerPoolCap(victim));
         scheduleStaggerDrain(victim);
     }
 
