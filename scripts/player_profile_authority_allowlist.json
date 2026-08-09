@@ -315,6 +315,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/demonhunter/DemonHunterGameplayService.java|private final Map<UUID, DemonHunterCombatState> states = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient per-player Demon Hunter combat state (load, fragments/momentum, pain, sigil pair). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java|private final Map<UUID, DruidCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Druid combat state (harmony/season window, combo + live scent target, Nap-Hold balance/eclipse, bark layers/roots, seed timers). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
     }
   ]
 }

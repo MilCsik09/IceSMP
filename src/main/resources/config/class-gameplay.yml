@@ -733,6 +733,167 @@ classes:
       searing-extra-millis: 2000
       spikes-resist-ticks: 60
 
+  druid:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      feral:
+        - savage_claw
+        - maul
+        - swipe
+        - feral_charge
+        - primal_roar
+        - survival_instincts
+        - the_wild_hunt
+      lunar:
+        - moonfire
+        - starsurge
+        - sunfire
+        - solar_beam
+        - starfall
+        - hurricane
+        - celestial_alignment
+      ironbark:
+        - mangle
+        - iron_bark
+        - thornguard
+        - bristling_fur
+        - entangling_roots
+        - frenzied_regen
+        - incarnation_bear
+      restoration:
+        - rejuvenation
+        - regrowth
+        - healing_touch
+        - swiftmend
+        - lifebloom
+        - wild_bloom
+        - flourish
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      season-xp: 5
+      finisher-xp: 5
+      eclipse-xp: 6
+      bark-xp: 4
+      bloom-xp: 5
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Természeti Erő — a természet-castok harmóniát gyűjtenek, az alakváltás (a MEGLÉVŐ
+    # formarendszer, nem új form engine) pedig egy összegben szabadítja fel a formához kötött Évszakként.
+    harmony:
+      nature-spells:
+        - regrowth
+        - sunfire
+        - thornlash
+        - entangling_roots
+        - barkskin
+        - wild_mushroom
+        - cyclone
+        - moonfire
+        - rejuvenation
+        - mangle
+        - savage_claw
+      cast-gain: 8
+      release-threshold: 30
+      decay-delay-millis: 6000
+      decay-per-second: 4.0
+
+    # Évszakok: Tavasz=Holdforma, Nyár=Párducforma, Ősz=Utazóforma, Tél=Medveforma.
+    # A hatás erőssége a felszabadított Természeti Erővel skálázódik.
+    seasons:
+      base-duration-ticks: 100
+      spring-heal: 6.0
+      autumn-window-millis: 6000
+      autumn-bonus-percent: 12.0
+
+    # Vadőr: egy zsákmány nyomán maradni fizet (Szagnyom); a kombópontokat a végzés viszi el.
+    feral:
+      claw-spells:
+        - savage_claw
+        - maul
+        - swipe
+        - mangle
+      finisher-spells:
+        - rampage
+        - the_wild_hunt
+      combo-per-cast: 1
+      combo-maximum: 5
+      hunt-extra-combo: 1
+      instinct-extra-combo: 1
+      per-combo-percent: 5.0
+      finisher-heal-per-combo: 1.0
+      eternal-extra-heal: 2.0
+      scent-window-millis: 8000
+      scent-master-extra-millis: 3000
+      scent-pve-percent: 14.0
+      scent-pvp-percent: 6.0
+
+    # Holdjós: a Nap↔Hold mérleg átbillentése nyitja az Eclipse-ablakot; a mérleg utána újraindul,
+    # így az együttállást mindig a váltogatás termeli ki, nem az egy helyben állás.
+    lunar:
+      solar-spells:
+        - sunfire
+        - solar_beam
+        - stellar_flare
+      lunar-spells:
+        - moonfire
+        - starsurge
+        - starfall
+      shift-per-cast: 25
+      balance-cap: 100
+      eclipse-window-millis: 6000
+      eclipse-bonus-percent: 18.0
+      long-alignment-extra-millis: 2000
+      two-skies-extra-percent: 6.0
+      eternal-restart-value: 20
+
+    # Védelmező: a kéregrétegek kizárólag a druidán ülnek (nincs célpont-index, nincs zóna-scan);
+    # a Gyökérháló a támadót lassítja, a támadó saját régió-szálán.
+    ironbark:
+      bark-spells:
+        - iron_bark
+        - thornguard
+        - bristling_fur
+        - incarnation_bear
+      root-spells:
+        - entangling_roots
+        - guardian_swipe
+      maximum-layers: 3
+      oak-extra-layers: 1
+      layer-reduction-percent: 12.0
+      # Csipetnyi (koplalás, 1-tick tűz, kis esés) sebzés ne vigyen el egy teljes réteget.
+      min-damage-to-crack: 2.0
+      thick-extra-reduction-percent: 4.0
+      roots-window-millis: 6000
+      quick-roots-extra-millis: 2000
+      roots-slow-ticks: 40
+      deep-roots-extra-ticks: 20
+
+    # Helyreállító: Mag → érés → Virágzás. A Magok tiszta számlálók (nincs világban maradó növény-entitás),
+    # és a Virágzás CSAK a beérett Magokat aratja le — a gyógyítás előkészítés-alapú.
+    restoration:
+      seed-spells:
+        - rejuvenation
+        - regrowth
+        - lifebloom
+        - swiftmend
+      bloom-spells:
+        - wild_bloom
+        - tranquility
+        - flourish
+      maximum-seeds: 3
+      rich-extra-seeds: 1
+      ripen-millis: 4000
+      early-ripen-reduction-millis: 1000
+      quick-bloom-reduction-millis: 500
+      expiry-millis: 20000
+      heal-per-ripe-seed: 3.0
+      worldtree-extra-heal: 2.0
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -803,6 +964,22 @@ specializations:
     capstone-spell: fel_blade
     spell-unlocks:
       fel_blade: 50
+  feral:
+    capstone-spell: the_wild_hunt
+    spell-unlocks:
+      the_wild_hunt: 50
+  lunar:
+    capstone-spell: celestial_alignment
+    spell-unlocks:
+      celestial_alignment: 50
+  ironbark:
+    capstone-spell: incarnation_bear
+    spell-unlocks:
+      incarnation_bear: 50
+  restoration:
+    capstone-spell: flourish
+    spell-unlocks:
+      flourish: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

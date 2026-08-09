@@ -124,7 +124,9 @@ public final class ShamanGameplayRegressionSuite {
     private static void totemWheelAndAllowlistSourceContracts() throws Exception {
         final String policy = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/classspec/application/GameplayV2ClassPolicy.java"));
-        check(policy.contains("Set.of(\"warrior\", \"evoker\", \"archer\", \"shaman\", \"monk\", \"paladin\", \"demon_hunter\")"),
+        check(policy.contains("\"warrior\", \"evoker\", \"archer\", \"shaman\", "
+                        + "\"monk\", \"paladin\", \"demon_hunter\",")
+                        && policy.contains("\"druid\")"),
                 "gameplay-v2 allowlist is exactly the completed slices");
 
         final String totems = Files.readString(Path.of(

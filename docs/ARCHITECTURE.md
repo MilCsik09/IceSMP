@@ -56,6 +56,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `monk/` | 2 | Szerzetes gameplay vertical slice: transiens állapot + konkrét runtime (Áramlás, Harcművészeti Lánc, Stagger, Ködszál). |
 | `paladin/` | 2 | Paplovag gameplay vertical slice: transiens állapot + konkrét runtime (Meggyőződés/Eskü, Fényjelző, Ítélet-jelek, Pajzstöltet). |
 | `demonhunter/` | 2 | Démonvadász gameplay vertical slice: transiens állapot + konkrét runtime (Kárhozat-terhelés, Lélektöredék/Momentum, Fájdalom/Sigil). |
+| `druid/` | 2 | Druida gameplay vertical slice: transiens állapot + konkrét runtime (Természeti Erő/Évszak, kombó+Szagnyom, Nap–Hold mérleg/Eclipse, Kéregrétegek/Gyökérháló, Mag→érés→Virágzás). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 26 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |

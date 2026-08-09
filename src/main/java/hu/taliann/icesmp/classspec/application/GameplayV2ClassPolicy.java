@@ -13,7 +13,9 @@ import java.util.TreeSet;
  */
 public final class GameplayV2ClassPolicy {
 
-    private static final Set<String> ENABLED = Set.of("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter");
+    private static final Set<String> ENABLED = Set.of(
+            "warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
+            "druid");
 
     private GameplayV2ClassPolicy() {
     }

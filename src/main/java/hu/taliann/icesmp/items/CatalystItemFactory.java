@@ -232,6 +232,8 @@ public final class CatalystItemFactory {
                 addPaladinEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             } else if (jobType == JobType.DEMON_HUNTER) {
                 addDemonHunterEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            } else if (jobType == JobType.DRUID) {
+                addDruidEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             }
         }
         if (masteryRank >= 5) {
@@ -367,6 +369,20 @@ public final class CatalystItemFactory {
         lore.add(line("<dark_purple>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></dark_purple>"));
     }
 
+    private void addDruidEvolutionLore(final List<Component> lore, final String spec,
+                                       final Map<String, String> doctrines) {
+        final String first = doctrines.getOrDefault("level_30", "még kialakulatlan");
+        final String second = doctrines.getOrDefault("level_40", "még kialakulatlan");
+        final String prefix = switch (spec) {
+            case "feral" -> "Karomjegy";
+            case "lunar" -> "Holdjegy";
+            case "ironbark" -> "Kéregjegy";
+            default -> "Magjegy";
+        };
+        lore.add(line("<green>" + prefix + " I: <white>" + doctrineDisplay(first) + "</white></green>"));
+        lore.add(line("<dark_green>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></dark_green>"));
+    }
+
     private static String evolution(final int level) {
         if (level >= 50) return "Beteljesedés";
         if (level >= 35) return "Mélyülés";
@@ -402,6 +418,10 @@ public final class CatalystItemFactory {
             case "protection" -> "Oltalmazó";
             case "havoc" -> "Tombolás";
             case "vengeance" -> "Bosszú";
+            case "feral" -> "Vadőr";
+            case "lunar" -> "Holdjós";
+            case "ironbark" -> "Védelmező";
+            case "restoration" -> "Helyreállító";
             default -> id;
         };
     }
@@ -510,6 +530,30 @@ public final class CatalystItemFactory {
             case "lelekvago" -> "Lélekvágó";
             case "pokoli_pusztitas" -> "Pokoli Pusztítás";
             case "demontuskek" -> "Démontüskék";
+            case "eles_karom" -> "Éles Karom";
+            case "ragadozo_osztone" -> "Ragadozó Ösztöne";
+            case "szagnyom_mestere" -> "Szagnyom Mestere";
+            case "gyors_marcangolas" -> "Gyors Marcangolás";
+            case "vad_hajsza_ura" -> "Vad Hajsza Ura";
+            case "orok_uldozo" -> "Örök Üldöző";
+            case "napkelte" -> "Napkelte";
+            case "holdkelte" -> "Holdkelte";
+            case "csillagszem" -> "Csillagszem";
+            case "hosszu_egyuttallas" -> "Hosszú Együttállás";
+            case "orok_egyuttallas" -> "Örök Együttállás";
+            case "ket_egbolt" -> "Két Égbolt";
+            case "vastag_kereg" -> "Vastag Kéreg";
+            case "gyors_gyokerek" -> "Gyors Gyökerek";
+            case "tuskes_kereg" -> "Tüskés Kéreg";
+            case "melyre_nyulo_gyokerek" -> "Mélyre Nyúló Gyökerek";
+            case "oreg_tolgy" -> "Öreg Tölgy";
+            case "gyokerek_ura" -> "Gyökerek Ura";
+            case "korai_eres" -> "Korai Érés";
+            case "bo_vetes" -> "Bő Vetés";
+            case "melyebb_gyoker" -> "Mélyebb Gyökér";
+            case "gyors_viragzas" -> "Gyors Virágzás";
+            case "orok_tavasz" -> "Örök Tavasz";
+            case "eletfa" -> "Életfa";
             default -> id.replace('_', ' ');
         };
     }

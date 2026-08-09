@@ -65,6 +65,15 @@ A Warrior cast requires the personal Kürt and an Evoker cast requires the perso
 - **Mastery:** fragment collections, sigils, cleaves and the capstone earn mastery XP only in combat.
 - The melee-catalyst compatibility list now names only `death_knight`; every completed gameplay-v2 class requires its personal Lélekkapocs to cast.
 
+## Druid gameplay rules
+
+- **Természeti Erő és Évszak (class core):** nature casts build harmony with lazy decay. An **alakváltás on the existing form system** (no new form engine) releases the whole pool at once as the season bound to that form — Tavasz = Holdforma (heal + regeneration), Nyár = Párducforma (strength), Ősz = Utazóforma (a short window that empowers the next casts through the capped shared power pipeline), Tél = Medveforma (resistance + absorption). Below `harmony.release-threshold` the form still works, only the blessing is withheld.
+- **Vadőr (kombópont + Szagnyom):** claw casts build combo points (bounded); staying on ONE prey keeps the Szagnyom trail live for a PvE/PvP-split damage bonus, switching prey starts a new trail. The listed finishers spend every point at once — the combo count empowers the finisher through the capped pipeline, and the finisher heal only pays in combat.
+- **Holdjós (Nap↔Hold mérleg → Eclipse):** solar casts lean the balance toward Nap, lunar casts toward Hold. Reaching the cap arms the Eclipse window (both schools empowered) and restarts the sweep — an Eclipse is earned by swinging the balance, never by camping one school.
+- **Védelmező (Kéregrétegek + Gyökérháló):** defensive casts stack bark layers that sit ONLY on the druid; each meaningful hit (at least `min-damage-to-crack`) cracks one layer and is blunted by it, so chip damage cannot strip the armor. `entangling_roots`/`guardian_swipe` arm a root window that slows melee attackers on the attacker's own region thread. No ally binding, no target-bound reverse index and no zone entities — a deliberately different tank identity from both the Warrior Guardian and the Paladin Oltalmazó.
+- **Helyreállító (Mag → érés → Virágzás):** heal-over-time casts plant seeds as pure counters (never persistent world plant entities), bounded by `maximum-seeds`. A seed must ripen (`ripen-millis`) before a bloom can harvest it; a bloom with no ripe seed is rejected up front, unripe seeds keep maturing after a harvest and forgotten seeds wither (`expiry-millis`).
+- **Mastery:** season releases, finishers, Eclipses, bark stacks and blooms earn mastery XP only in combat.
+
 ## Paladin gameplay rules
 
 - **Meggyőződés és Eskü (class core):** the paladin chooses a direction with `/spec esku <irgalom|itelet|oltalmazas>` (session choice; the default follows the active spec's role). In-role casts — and, under Oltalmazás, taking hits — build Meggyőződés with lazy decay; at the threshold, in-role casts empower through the capped shared power pipeline.
@@ -126,9 +135,13 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Megtorló: `paladin_retribution_trial`;
 - Oltalmazó: `paladin_protection_trial`;
 - Tombolás: `demon_hunter_havoc_trial`;
-- Bosszú: `demon_hunter_vengeance_trial`.
+- Bosszú: `demon_hunter_vengeance_trial`;
+- Vadőr: `druid_feral_trial`;
+- Holdjós: `druid_lunar_trial`;
+- Védelmező: `druid_ironbark_trial`;
+- Helyreállító: `druid_restoration_trial`.
 
-The Evoker, Archer, Shaman, Monk, Paladin and Demon Hunter trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter and Druid trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 
