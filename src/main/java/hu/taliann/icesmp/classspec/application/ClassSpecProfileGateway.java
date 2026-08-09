@@ -37,6 +37,9 @@ public interface ClassSpecProfileGateway {
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> incrementSoulforge(UUID playerId,String branch,int shardCost,String operationId);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateSoulShards(UUID playerId,int delta,String operationId);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateCompanion(UUID playerId,CompanionMutationRequest request);
+    /** Progress is computed from the latest durable roster inside the serialized gateway planner. */
+    CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateCompanionProgress(
+            UUID playerId,CompanionProgressRequest request);
     CompletionStage<RecoveryResult> recoverQuarantined(UUID playerId,String evidenceId,String auditId);
     Optional<String> quarantineEvidenceId(UUID playerId);
     CompletionStage<Void> awaitPlayerMutations(UUID playerId);
@@ -72,6 +75,10 @@ public interface ClassSpecProfileGateway {
         public CompanionMutationRequest(LoadoutSlot slot,Kind kind,UUID companionId,CompanionProfile companion,String text,int level,long experience,long resummonAtEpochMillis,List<String> equipment,Map<String,String> state,String operationId){this(slot,kind,companionId,companion,text,level,experience,resummonAtEpochMillis,equipment,state,0,operationId);}
         public CompanionMutationRequest{Objects.requireNonNull(slot);Objects.requireNonNull(kind);text=text==null?"":text.trim();equipment=equipment==null?List.of():List.copyOf(equipment);state=state==null?Map.of():Map.copyOf(state);operationId=requireId(operationId,"operationId");if(level<0||experience<0||resummonAtEpochMillis<0)throw new IllegalArgumentException("negative companion progress/timestamp");if(capacity<0)throw new IllegalArgumentException("negative companion capacity");}
         public enum Kind{ADD,REMOVE,RENAME,STANCE,PROGRESS,EQUIPMENT,STATE,RESPAWN_AT,SET_ACTIVE,DISMISS}
+    }
+    record CompanionProgressRequest(LoadoutSlot slot,UUID companionId,long deltaExperience,
+                                    int baseXp,int incrementPerLevel,int maxLevel,String operationId){
+        public CompanionProgressRequest{Objects.requireNonNull(slot);Objects.requireNonNull(companionId);operationId=requireId(operationId,"operationId");if(deltaExperience<=0L)throw new IllegalArgumentException("companion XP delta must be positive");if(baseXp<1||incrementPerLevel<0)throw new IllegalArgumentException("invalid companion level curve");if(maxLevel<1||maxLevel>CompanionProfile.MAX_LEVEL)throw new IllegalArgumentException("invalid companion max level");}
     }
 
     record RecoveryResult(ClassSpecSection profile,String evidenceId,String auditId,boolean idempotent){
