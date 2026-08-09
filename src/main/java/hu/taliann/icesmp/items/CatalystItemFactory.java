@@ -230,6 +230,8 @@ public final class CatalystItemFactory {
                 addMonkEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             } else if (jobType == JobType.PALADIN) {
                 addPaladinEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            } else if (jobType == JobType.DEMON_HUNTER) {
+                addDemonHunterEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             }
         }
         if (masteryRank >= 5) {
@@ -356,6 +358,15 @@ public final class CatalystItemFactory {
         lore.add(line("<gold>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></gold>"));
     }
 
+    private void addDemonHunterEvolutionLore(final List<Component> lore, final String spec,
+                                             final Map<String, String> doctrines) {
+        final String first = doctrines.getOrDefault("level_30", "még kialakulatlan");
+        final String second = doctrines.getOrDefault("level_40", "még kialakulatlan");
+        final String prefix = "havoc".equals(spec) ? "Hasadékjegy" : "Tüskejegy";
+        lore.add(line("<light_purple>" + prefix + " I: <white>" + doctrineDisplay(first) + "</white></light_purple>"));
+        lore.add(line("<dark_purple>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></dark_purple>"));
+    }
+
     private static String evolution(final int level) {
         if (level >= 50) return "Beteljesedés";
         if (level >= 35) return "Mélyülés";
@@ -389,6 +400,8 @@ public final class CatalystItemFactory {
             case "holy" -> "Szentlélek";
             case "retribution" -> "Megtorló";
             case "protection" -> "Oltalmazó";
+            case "havoc" -> "Tombolás";
+            case "vengeance" -> "Bosszú";
             default -> id;
         };
     }
@@ -485,6 +498,18 @@ public final class CatalystItemFactory {
             case "rendithetetlen" -> "Rendíthetetlen";
             case "kiralyok_orzoje" -> "Királyok Őrzője";
             case "utolso_bastya" -> "Utolsó Bástya";
+            case "elso_vagas" -> "Első Vágás";
+            case "vadaszat" -> "Vadászat";
+            case "lendulet_mestere" -> "Lendület Mestere";
+            case "tancos" -> "Táncos";
+            case "tulvilagi_lendulet" -> "Túlvilági Lendület";
+            case "vadaszat_ura" -> "Vadászat Ura";
+            case "vastag_tuske" -> "Vastag Tüske";
+            case "olcso_pecset" -> "Olcsó Pecsét";
+            case "egeto_marka" -> "Égető Márka";
+            case "lelekvago" -> "Lélekvágó";
+            case "pokoli_pusztitas" -> "Pokoli Pusztítás";
+            case "demontuskek" -> "Démontüskék";
             default -> id.replace('_', ' ');
         };
     }

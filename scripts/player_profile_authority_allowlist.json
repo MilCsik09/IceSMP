@@ -310,6 +310,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java|private final Map<UUID, BeaconTarget> beaconTargets = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Live Fényjelző beacon handle (single ally + scheduler) for bounded heal echoes. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/demonhunter/DemonHunterGameplayService.java|private final Map<UUID, DemonHunterCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Demon Hunter combat state (load, fragments/momentum, pain, sigil pair). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
     }
   ]
 }

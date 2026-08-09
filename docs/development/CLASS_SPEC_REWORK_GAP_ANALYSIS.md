@@ -85,11 +85,21 @@
 - Paladin mastery XP (beacon, Verdict, ground) is combat-gated;
 - `PaladinGameplayRegressionSuite` and `PaladinProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
 
+## Gameplay closed by the Démonvadász vertical slice
+
+- the seventh complete class gameplay implementation is `demon_hunter` with `havoc` (Tombolás) and `vengeance` (Bosszú);
+- the class core is Kárhozat-terhelés: demonic casts build load; the heated band empowers, the overloaded band empowers more but amplifies incoming damage — a readable, ventable (`consume_magic`), lazily decaying, fully player-controlled risk, never a random punish;
+- Tombolás plays Lélektöredék + Momentum: a bounded lightweight counter (no item/entity spam) collected by mobility casts into per-fragment heals and a charge-based Momentum window;
+- Bosszú plays Fájdalom + Sigilek: taken damage funds sigils and cleaves, with at most two concurrently armed Sigils (third rejected) and no zone framework;
+- the melee-catalyst compatibility list shrank to `death_knight` only — every completed class casts exclusively through its personal Lélekkapocs;
+- Demon Hunter mastery XP (collect, sigil, cleave, capstone) is combat-gated;
+- `DemonHunterGameplayRegressionSuite` and `DemonHunterProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
 ## Explicitly still open after this PR
 
-- the remaining 7 classes and 20 specializations have not passed this vertical-slice gameplay gate;
+- the remaining 6 classes and 18 specializations have not passed this vertical-slice gameplay gate;
 - no generic mechanics-core primitive library is planned from this first implementation; common extraction is allowed only after real repeated consumers prove the same lifecycle/invariants;
-- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial`, `archer_beast_master_trial`, `shaman_elemental_trial`, `shaman_enhancement_trial`, `shaman_tidal_trial`, `monk_windwalker_trial`, `monk_brewmaster_trial`, `monk_mistweaver_trial`, `paladin_holy_trial`, `paladin_retribution_trial` and `paladin_protection_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker, Archer, Shaman, Monk and Paladin trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker, Archer, Shaman, Monk and Paladin doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
+- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial`, `archer_beast_master_trial`, `shaman_elemental_trial`, `shaman_enhancement_trial`, `shaman_tidal_trial`, `monk_windwalker_trial`, `monk_brewmaster_trial`, `monk_mistweaver_trial`, `paladin_holy_trial`, `paladin_retribution_trial`, `paladin_protection_trial`, `demon_hunter_havoc_trial` and `demon_hunter_vengeance_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker, Archer, Shaman, Monk, Paladin and Demon Hunter trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker, Archer, Shaman, Monk, Paladin and Demon Hunter doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
 - the current Class Relic catalog has no canonical Warrior binding/resonance/awakening definition. The framework is reused but no new Warrior relic design is invented here;
 - full numeric Warrior and Evoker PvE/PvP balance, TTK, party pressure and real Guardian objective protection require staging playtest; the Evoker empower/burst bonus rides the shared cast-power pipeline, so its PvP clamp is the double cap (`classes.evoker.max-power-bonus-percent` + `spells.total-power-cap`), not a per-target split;
 - the separate class-HP/A17 rollout remains disabled and is not activated by this gameplay work;
@@ -104,6 +114,7 @@
 - Shaman totem-pair play across region borders, rhythm-window melee feel and tidal heal pressure in real parties;
 - Monk chain/Stagger/Ködszál pressure in real tanking and party healing, including the Stagger consequence timing;
 - Paladin role/beacon/Verdict/ground pressure in real parties;
+- Demon Hunter overload-risk feel and the two-Sigil tank rotation in real fights;
 - gameplay-v2 second-spec switch under real combat/logout/reconnect timing on every allowlisted class;
 - Lélekkapocs loss/full-inventory/reconnect plus external-container transfer tests on a running server;
 - builder provisioning and gameplay validation of both final trials;

@@ -173,6 +173,8 @@ jobs:
           grep -F "Monk profile regression suite passed." gradle-build.log
           grep -F "Paladin gameplay regression suite passed." gradle-build.log
           grep -F "Paladin profile regression suite passed." gradle-build.log
+          grep -F "Demon Hunter gameplay regression suite passed." gradle-build.log
+          grep -F "Demon Hunter profile regression suite passed." gradle-build.log
 
       - name: Run full repository consistency
         run: python3 scripts/check_consistency.py

@@ -145,7 +145,7 @@ public final class ArcherGameplayRegressionSuite {
     private static void stableAndAllowlistSourceContracts() throws Exception {
         final String policy = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/classspec/application/GameplayV2ClassPolicy.java"));
-        check(policy.contains("Set.of(\"warrior\", \"evoker\", \"archer\", \"shaman\", \"monk\", \"paladin\")"),
+        check(policy.contains("Set.of(\"warrior\", \"evoker\", \"archer\", \"shaman\", \"monk\", \"paladin\", \"demon_hunter\")"),
                 "gameplay-v2 allowlist is exactly the completed slices");
 
         final String pets = Files.readString(Path.of(

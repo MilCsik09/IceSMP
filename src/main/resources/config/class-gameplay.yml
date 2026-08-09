@@ -628,6 +628,111 @@ classes:
       extended-extra-radius: 2.0
       steadfast-extra-ticks: 40
 
+  demon_hunter:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      havoc:
+        - demons_bite
+        - chaos_strike
+        - fel_rush
+        - blade_dance
+        - eye_beam
+        - vengeful_retreat
+        - the_hunt
+      vengeance:
+        - shear
+        - immolation_aura
+        - soul_cleave
+        - demon_spikes
+        - fiery_brand
+        - sigil_of_flame
+        - fel_blade
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      collect-threshold: 3
+      collect-xp: 4
+      sigil-xp: 4
+      cleave-xp: 3
+      capstone-xp: 8
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Kárhozat-terhelés — a démoni castok terhelést építenek; az áthevült sáv erősít,
+    # a túlterhelt sáv többet ad, de minden kapott találat nagyobbat üt (olvasható, kontrollált
+    # kockázat, consume_magic-kel kiszellőztethető; nem random büntetés).
+    load:
+      demonic-spells:
+        - chaos_strike
+        - immolation_aura
+        - eye_beam
+        - fel_barrage
+        - essence_break
+        - metamorphosis_havoc
+        - metamorphosis_veng
+        - fel_devastation
+        - fel_blade
+        - the_hunt
+      cast-gain: 9
+      heated-threshold: 40
+      overload-threshold: 80
+      heated-bonus-percent: 10.0
+      overload-bonus-percent: 20.0
+      overload-taken-penalty-percent: 15.0
+      consume-vent: 40
+      decay-delay-millis: 5000
+      decay-per-second: 6.0
+
+    # Tombolás: a sebző castok könnyűsúlyú Lélektöredék-számlálót építenek (nincs item-entitás);
+    # a mobilitás-cast gyűjti be őket gyógyulásért és Momentumért.
+    fragments:
+      damage-spells:
+        - demons_bite
+        - chaos_strike
+        - throw_glaive
+        - blade_dance
+        - eye_beam
+        - fel_barrage
+        - essence_break
+        - the_hunt
+      mobility-spells:
+        - fel_rush
+        - vengeful_retreat
+      cast-gain: 1
+      maximum: 5
+      heal-per-fragment: 1.0
+      otherworld-extra-heal: 1.0
+
+    momentum:
+      window-millis: 4000
+      master-extra-millis: 2000
+      bonus-percent: 15.0
+      dancer-extra-percent: 6.0
+
+    # Bosszú: a kapott sebzés Fájdalmat épít; a Sigilek és a lélekvágás ebből táplálkoznak.
+    # Egyszerre legfeljebb két Sigil állhat.
+    pain:
+      hit-gain: 7
+      thick-extra-gain: 2
+      sigil-cost: 25
+      cheap-seal-reduction: 5
+      cleave-cost: 30
+      cleave-heal: 4.0
+      cutter-extra-heal: 2.0
+      capstone-cost: 60
+
+    sigil:
+      spells:
+        - sigil_of_flame
+        - fiery_brand
+        - demon_spikes
+      duration-millis: 8000
+      searing-extra-millis: 2000
+      spikes-resist-ticks: 60
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -690,9 +795,17 @@ specializations:
     capstone-spell: final_stand
     spell-unlocks:
       final_stand: 50
+  havoc:
+    capstone-spell: the_hunt
+    spell-unlocks:
+      the_hunt: 50
+  vengeance:
+    capstone-spell: fel_blade
+    spell-unlocks:
+      fel_blade: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.
 spells:
   melee-catalyst:
-    classes: [paladin, death_knight, monk, demon_hunter]
+    classes: [death_knight]

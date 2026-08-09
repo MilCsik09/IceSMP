@@ -3,6 +3,7 @@ package hu.taliann.icesmp.classspec.integration;
 import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort;
 import hu.taliann.icesmp.classspec.application.ProfileSessionRegistry;
+import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.monk.MonkGameplayService;
 import hu.taliann.icesmp.paladin.PaladinGameplayService;
@@ -92,8 +93,9 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         final ShamanGameplayService shaman = specs.shamanGameplayService().orElse(null);
         final MonkGameplayService monk = specs.monkGameplayService().orElse(null);
         final PaladinGameplayService paladin = specs.paladinGameplayService().orElse(null);
+        final DemonHunterGameplayService demonHunter = specs.demonHunterGameplayService().orElse(null);
         if (warrior == null || evoker == null || archer == null || shaman == null
-                || monk == null || paladin == null
+                || monk == null || paladin == null || demonHunter == null
                 || !runtimesWired.compareAndSet(false, true)) return;
         catalyst.setWarriorGameplayService(warrior);
         catalyst.setEvokerGameplayService(evoker);
@@ -101,12 +103,14 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         catalyst.setShamanGameplayService(shaman);
         catalyst.setMonkGameplayService(monk);
         catalyst.setPaladinGameplayService(paladin);
+        catalyst.setDemonHunterGameplayService(demonHunter);
         resources.setHudSuffix(player -> warrior.hudSuffix(player)
                 .append(evoker.hudSuffix(player))
                 .append(archer.hudSuffix(player))
                 .append(shaman.hudSuffix(player))
                 .append(monk.hudSuffix(player))
-                .append(paladin.hudSuffix(player)));
+                .append(paladin.hudSuffix(player))
+                .append(demonHunter.hudSuffix(player)));
         specs.setSwitchSafetyResource(resources);
         warrior.setCombatTracker(resources);
         evoker.setCombatTracker(resources);
@@ -114,6 +118,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         shaman.setCombatTracker(resources);
         monk.setCombatTracker(resources);
         paladin.setCombatTracker(resources);
+        demonHunter.setCombatTracker(resources);
         archer.setPetManager(pets);
         pets.setPetDeathHook(archer::onPetDeath);
         registerTransientOwner(warrior);
@@ -122,6 +127,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         registerTransientOwner(shaman);
         registerTransientOwner(monk);
         registerTransientOwner(paladin);
+        registerTransientOwner(demonHunter);
         setLoadoutSwitchCleanup(playerId -> {
             warrior.clearSpecializationState(playerId);
             evoker.clearSpecializationState(playerId);
@@ -129,6 +135,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             shaman.clearSpecializationState(playerId);
             monk.clearSpecializationState(playerId);
             paladin.clearSpecializationState(playerId);
+            demonHunter.clearSpecializationState(playerId);
         });
         setPostReconcile(player -> {
             warrior.reconcileProfile(player);
@@ -137,6 +144,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             shaman.reconcileProfile(player);
             monk.reconcileProfile(player);
             paladin.reconcileProfile(player);
+            demonHunter.reconcileProfile(player);
             catalyst.refreshSoulbond(player);
         });
     }
@@ -253,7 +261,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                     || owner instanceof ArcherGameplayService
                     || owner instanceof ShamanGameplayService
                     || owner instanceof MonkGameplayService
-                    || owner instanceof PaladinGameplayService)) {
+                    || owner instanceof PaladinGameplayService
+                    || owner instanceof DemonHunterGameplayService)) {
                 continue;
             }
             owner.clearPlayerState(id);

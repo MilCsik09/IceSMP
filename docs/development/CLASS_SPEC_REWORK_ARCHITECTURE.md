@@ -57,9 +57,13 @@ There is no repeating task and no proximity scan in the archer runtime; everythi
 
 `PaladinGameplayService` is the sixth concrete gameplay consumer. `PaladinCombatState` contains only the Paplovag mechanics: the session Eskü choice (defaulting to the active spec's role, surviving spec switches, reset on logout), the Meggyőződés meter with lazy decay, the three Ítélet-jelek toward a Verdict and one Pajzstöltet charge. The Fényjelző is a single beacon handle whose echo hops to the ally's scheduler; the Megszentelt Föld is a one-shot bounded pass over nearby allies at cast time — no repeating task, no zone entity and no Warrior-Guardian-style target-bound reverse index.
 
+## Démonvadász vertical slice
+
+`DemonHunterGameplayService` is the seventh concrete gameplay consumer. `DemonHunterCombatState` contains only the Démonvadász mechanics: the Kárhozat-terhelés meter with lazy decay and a two-band power/fragility trade applied through the capped power pipeline and an incoming-damage modifier, a lightweight Lélektöredék counter with a charge-based Momentum window (never item or entity spam), the Fájdalom pool and a fixed two-slot Sigil timestamp pair. No repeating task, no proximity scan and no zone entity lives here.
+
 ## Second specialization, doctrines and mastery
 
-The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for the completed gameplay-v2 classes, enumerated by the explicit `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`, `shaman`, `monk`, `paladin`) — a plain list, not a capability framework. A switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset the class resource or reset cooldowns, and a held Felerősítés charge never survives the switch boundary.
+The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the second slot for the completed gameplay-v2 classes, enumerated by the explicit `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`, `shaman`, `monk`, `paladin`, `demon_hunter`) — a plain list, not a capability framework. A switch is allowed only outside the configured combat grace and without a hostile living entity inside the configured safety radius. Switching does not heal, reset the class resource or reset cooldowns, and a held Felerősítés charge never survives the switch boundary.
 
 Doctrine choices live in `ClassLoadout#doctrineChoices`, keyed by the level tier (`level_30`, `level_40`, `level_50`). They are slot-local and durable. Mastery and capstone state remain the existing loadout fields; no mastery YAML or separate talent/doctrine store exists.
 
