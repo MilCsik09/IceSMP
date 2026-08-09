@@ -13,7 +13,7 @@ public final class ClassSpecApplicationRegressionSuite {
     private static int assertions;
     private ClassSpecApplicationRegressionSuite(){}
     public static void main(String[] args){
-        greenfieldClassAndSpec(); allDarkSpecsRequireGates(); completeGateSetSealsAndUnseals(); runtimeFailureIsVisible(); staleSessionFencesRuntime(); concurrentMutationsSerialize(); operationReceiptsAreDurableAndParameterBound(); companionIsolation(); shutdownDrainsAndRejectsNewWork();
+        greenfieldClassAndSpec(); activationReconcileBeforeReady(); allDarkSpecsRequireGates(); completeGateSetSealsAndUnseals(); runtimeFailureIsVisible(); staleSessionFencesRuntime(); concurrentMutationsSerialize(); operationReceiptsAreDurableAndParameterBound(); companionIsolation(); shutdownDrainsAndRejectsNewWork();
         System.out.println("Class/spec application regression suite passed. assertions="+assertions);
     }
     private static void greenfieldClassAndSpec(){
@@ -22,6 +22,37 @@ public final class ClassSpecApplicationRegressionSuite {
         check(assigned.committed(),"class assignment");check(h.store.profile.primaryClassId().equals("wizard"),"class durable");
         var selected=h.gateway.select(PLAYER,new ClassSpecProfileGateway.SelectRequest("elementalist",LoadoutSlot.FIRST,satisfied())).toCompletableFuture().join();
         check(selected.committed(),"spec selection");check(h.gateway.activeSpecId(PLAYER).orElseThrow().equals("elementalist"),"active spec");check(h.store.profile.revision()==2,"exact revisions");
+    }
+    private static void activationReconcileBeforeReady(){
+        FakeStore store=new FakeStore(active("necromancer",Map.of("necromancer.soulforge.shards","5")));
+        ProfileSessionRegistry sessions=new ProfileSessionRegistry();
+        UUID token=sessions.begin(PLAYER);
+        AtomicInteger runtimeCalls=new AtomicInteger();
+        ClassSpecRuntimePort runtime=new ClassSpecRuntimePort(){
+            public CompletionStage<Void> profileCommitted(UUID p,UUID t,ClassSpecSection a,ClassSpecSection b,MutationKind k){runtimeCalls.incrementAndGet();check(t.equals(token),"activation runtime uses exact generation");return CompletableFuture.completedFuture(null);}
+            public CompletionStage<Void> failClosed(UUID p,UUID t,String r){return CompletableFuture.completedFuture(null);}
+        };
+        DefaultClassSpecProfileGateway gateway=new DefaultClassSpecProfileGateway(store,runtime,sessions);
+        check(!gateway.isSessionReady(PLAYER),"activation starts before READY");
+        var sealed=gateway.reconcileDuringActivation(PLAYER,token,
+                new ClassSpecProfileGateway.ReconcileRequest(Map.of(LoadoutSlot.FIRST,missingAll())))
+                .toCompletableFuture().join();
+        check(sealed.committed(),"DARK reconcile commits during activation");
+        check(store.profile.loadout(LoadoutSlot.FIRST).status()==LoadoutStatus.SEALED,
+                "gate loss seals before READY");
+        check(store.profile.activeSlot()==null,"activation seal clears active slot without auto-switch");
+        check(runtimeCalls.get()==1,"activation reconcile runs runtime once");
+        gateway.completeSessionActivation(PLAYER,token);
+        check(gateway.isSessionReady(PLAYER),"sealed usable profile can reach READY");
+
+        UUID replacement=sessions.begin(PLAYER);
+        var stale=gateway.reconcileDuringActivation(PLAYER,token,
+                new ClassSpecProfileGateway.ReconcileRequest(Map.of()))
+                .toCompletableFuture().join();
+        check(stale.status()==ProfileMutationResult.Status.REJECTED,"retired activation rejected");
+        check(stale.detail().contains("stale activation"),"retired generation diagnostic");
+        check(runtimeCalls.get()==1,"retired activation never runs runtime");
+        gateway.completeSessionActivation(PLAYER,replacement);
     }
     private static void allDarkSpecsRequireGates(){
         for(String spec:DarkSpecializationPolicy.IDS){
