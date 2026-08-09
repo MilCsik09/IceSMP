@@ -33,6 +33,8 @@ classes:
     # 50+ specialization mastery; nem külön XP-engine, Profile v2 loadout mező.
     mastery:
       experience-per-rank: 100
+      # A mastery kizárólag valós harci kontextusban gyűlik: ez az anti-AFK/dummy-farm tanú.
+      combat-window-seconds: 10
       safe-dump-xp: 4
       intercept-xp: 4
       guard-spend-xp: 5

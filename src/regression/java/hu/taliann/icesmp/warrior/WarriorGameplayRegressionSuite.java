@@ -20,6 +20,7 @@ public final class WarriorGameplayRegressionSuite {
         berserkerOverdriveAndAftermath();
         guardianGuardAndOathLifecycle();
         specializationAndDeathCleanup();
+        masteryIsUnbypassablyCombatGated();
         reviewBlockerSourceContracts();
         System.out.println("Warrior gameplay regression suite passed. assertions=" + assertions);
     }
@@ -180,6 +181,64 @@ public final class WarriorGameplayRegressionSuite {
         state.clearAll();
         check(state.battleTempo(now, 5_000L, 0.0D) == 0, "death/logout cleanup removes Csatatempó");
         check(state.guard() == 0, "death/logout cleanup removes Guard");
+    }
+
+    /**
+     * The Warrior mastery combat gate, proven two ways: the decision itself is pure and checked
+     * exhaustively, and the service is shown to have exactly one award path that consults it, so
+     * no contribution can slip past the gate.
+     */
+    private static void masteryIsUnbypassablyCombatGated() throws Exception {
+        // 1. the pure decision — the full truth table
+        check(WarriorCombatState.awardsMastery(true, true),
+                "an in-combat qualifying deed awards mastery");
+        check(!WarriorCombatState.awardsMastery(true, false),
+                "the same qualifying deed out of combat awards nothing");
+        check(!WarriorCombatState.awardsMastery(false, true),
+                "an in-combat deed that misses its own condition awards nothing");
+        check(!WarriorCombatState.awardsMastery(false, false),
+                "a non-qualifying deed out of combat awards nothing");
+
+        final String service = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java"));
+
+        // 2. exactly one contribution call site, and it lives inside the funnel
+        final int callSites = service.split("specs\\.contributeWarriorMastery\\(", -1).length - 1;
+        check(callSites == 1,
+                "class mastery is contributed from exactly one funnel — found " + callSites
+                        + " call sites, so a second path could bypass the gate");
+        final int funnelStart = service.indexOf("private void awardMastery(");
+        check(funnelStart > 0, "the award funnel exists");
+        final int funnelEnd = service.indexOf("\n    }", funnelStart);
+        final String funnel = service.substring(funnelStart, funnelEnd);
+        check(funnel.contains("specs.contributeWarriorMastery("),
+                "the single contribution call site is the funnel itself");
+        check(funnel.contains("WarriorCombatState.awardsMastery(")
+                        && funnel.contains("isInCombat(player.getUniqueId())"),
+                "the funnel routes the award through the pure decision with the live combat witness");
+        check(funnel.contains("return;"), "the funnel returns without awarding when the gate is shut");
+
+        // 3. the concrete gameplay deeds the review named all go through the funnel
+        for (final String deed : new String[]{"classes.warrior.mastery.safe-dump-xp",
+                "classes.warrior.mastery.intercept-xp", "classes.warrior.mastery.guard-spend-xp",
+                "classes.warrior.mastery.capstone-protection-xp"}) {
+            final int at = service.indexOf(deed);
+            check(at > 0, deed + " is still awarded");
+            final String context = service.substring(Math.max(0, at - 220), at);
+            check(context.contains("awardMastery("),
+                    deed + " is awarded through the combat-gated funnel — out-of-combat "
+                            + "safe dump / defensive cycling cannot farm it");
+        }
+
+        // 4. the gate has a live, admin-tunable combat window and a real tracker behind it
+        check(service.contains("tracker.isInCombat(playerId, windowMillis)"),
+                "the gate consults the existing ResourceManager combat tracker, not a new system");
+        check(service.contains("classes.warrior.mastery.combat-window-seconds"),
+                "the combat window is live config");
+        final String config = Files.readString(Path.of(
+                "src/main/resources/config/class-gameplay.yml"));
+        check(config.contains("combat-window-seconds: 10"),
+                "the warrior combat window is declared in live config");
     }
 
     private static void reviewBlockerSourceContracts() throws Exception {

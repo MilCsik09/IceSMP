@@ -13,6 +13,15 @@ import java.util.UUID;
  */
 public final class WarriorCombatState {
 
+    /**
+     * The single mastery-award decision, kept pure so it can be proven without Bukkit: a
+     * contribution needs BOTH its own gameplay condition and a live combat context. Defensive
+     * abilities cycled outside combat therefore never advance mastery.
+     */
+    public static boolean awardsMastery(final boolean conditionMet, final boolean inCombat) {
+        return conditionMet && inCombat;
+    }
+
     public enum TempoTier {
         RENDEZETT,
         HEVES,

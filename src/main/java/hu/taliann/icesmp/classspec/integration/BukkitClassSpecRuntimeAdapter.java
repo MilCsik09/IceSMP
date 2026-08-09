@@ -82,6 +82,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         final WarriorGameplayService runtime = specs.warriorGameplayService().orElse(null);
         if (runtime == null || !warriorWired.compareAndSet(false, true)) return;
         catalyst.setWarriorGameplayService(runtime);
+        runtime.setCombatTracker(resources);
         resources.setHudSuffix(runtime::hudSuffix);
         specs.setSwitchSafetyResource(resources);
         registerTransientOwner(runtime);

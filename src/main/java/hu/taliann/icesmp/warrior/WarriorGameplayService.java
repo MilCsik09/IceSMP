@@ -6,6 +6,7 @@ import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileCooldownStore;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -77,6 +78,8 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
     private final PlayerProfileCooldownStore cooldowns = new PlayerProfileCooldownStore();
 
     private final Map<UUID, WarriorCombatState> states = new ConcurrentHashMap<>();
+
+    private volatile ResourceManager combatTracker;
     private final Map<UUID, OathTarget> oathTargets = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> guardiansByTarget = new ConcurrentHashMap<>();
     private final Set<UUID> defiantPending = ConcurrentHashMap.newKeySet();
@@ -124,6 +127,30 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
             if (!chosen.contains(id)) chosen.add(id);
         }
         return List.copyOf(chosen);
+    }
+
+    /** Mastery is combat-gated; the existing combat tracker is the anti-AFK/dummy-farm witness. */
+    public void setCombatTracker(final ResourceManager resources) {
+        combatTracker = java.util.Objects.requireNonNull(resources, "resources");
+    }
+
+    private boolean isInCombat(final UUID playerId) {
+        final ResourceManager tracker = combatTracker;
+        final long windowMillis = Math.max(1L, config.getLong(
+                "classes.warrior.mastery.combat-window-seconds", 10L)) * 1000L;
+        return tracker != null && tracker.isInCombat(playerId, windowMillis);
+    }
+
+    /**
+     * The ONLY path to Warrior class mastery. Routing every contribution through this funnel is
+     * what makes the combat gate unbypassable: there is no second call site to forget.
+     */
+    private void awardMastery(final Player player, final boolean conditionMet,
+                              final String configKey, final int fallbackXp) {
+        if (!WarriorCombatState.awardsMastery(conditionMet, isInCombat(player.getUniqueId()))) {
+            return;
+        }
+        specs.contributeWarriorMastery(player, config.getInt(configKey, fallbackXp));
     }
 
     public boolean beforeCast(final Player player, final Spell spell) {
@@ -523,10 +550,8 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
                     config.getInt("classes.warrior.berserker.bloodlust.regen-ticks", 80),
                     0, false, true, true));
         }
-        if (before >= highFuryThreshold()) {
-            specs.contributeWarriorMastery(player,
-                    config.getInt("classes.warrior.mastery.safe-dump-xp", 4));
-        }
+        awardMastery(player, before >= highFuryThreshold(),
+                "classes.warrior.mastery.safe-dump-xp", 4);
         player.sendActionBar(messages.getMessage("warrior.berserker.safe-dump",
                 "<gold>Biztonságos levezetés: Vérőrület és Kimerülés csökkent.</gold>"));
     }
@@ -547,7 +572,7 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
                 if (state.spendGuard(guardCost(id, spellId))) {
                     protectOathTarget(player, false, false);
                     addTempo(state, config.getInt("classes.warrior.battle-tempo.intercept-gain", 15), now);
-                    specs.contributeWarriorMastery(player, config.getInt("classes.warrior.mastery.intercept-xp", 4));
+                    awardMastery(player, true, "classes.warrior.mastery.intercept-xp", 4);
                 }
             }
             case "aegis" -> {
@@ -556,7 +581,7 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
                     protectOathTarget(player, true, !forAll);
                     if (forAll) protectNearbyAllies(player);
                     if ("war_signal".equals(doctrine(id, 40))) applyWarSignal(player);
-                    specs.contributeWarriorMastery(player, config.getInt("classes.warrior.mastery.guard-spend-xp", 5));
+                    awardMastery(player, true, "classes.warrior.mastery.guard-spend-xp", 5);
                 }
             }
             case "last_stand" -> {
@@ -567,8 +592,8 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
                     player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,
                             config.getInt("classes.warrior.guardian.last-stand.self-duration-ticks", 100),
                             1, false, true, true));
-                    specs.contributeWarriorMastery(player,
-                            config.getInt("classes.warrior.mastery.capstone-protection-xp", 8));
+                    awardMastery(player, true,
+                            "classes.warrior.mastery.capstone-protection-xp", 8);
                 }
             }
             default -> { }
