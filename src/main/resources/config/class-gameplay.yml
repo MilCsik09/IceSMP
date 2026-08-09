@@ -1450,6 +1450,10 @@ classes:
         - sacrifice_pact
       per-demon-percent: 6.0
       hide-extra-percent: 2.0
+      # A paktum mérete: EGYETLEN igazságforrás a durable demonologist.roster companion névsor,
+      # ez a kulcs csak azt mondja meg, hány démon fér bele.
+      roster-capacity: 3
+      legion-extra-slot: 1
       dismiss-heal-per-demon: 2.0
       loyal-extra-heal: 1.0
       call-repay: 4

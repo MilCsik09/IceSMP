@@ -1,7 +1,11 @@
 package hu.taliann.icesmp.warlock;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 /** Dependency-free behavior regression for the concrete Boszorkánymester runtime state. */
@@ -20,7 +24,7 @@ public final class WarlockGameplayRegressionSuite {
         curseGrimoireHoldsThree();
         soulThreadNamesOneVictim();
         embersBurstAndBuyOverheat();
-        rosterIsABoundedTrio();
+        theCombatStateHoldsNoDemonAuthority();
         cleanupLifecycle();
         debtAndAllowlistSourceContracts();
         System.out.println("Warlock gameplay regression suite passed. assertions=" + assertions);
@@ -98,20 +102,37 @@ public final class WarlockGameplayRegressionSuite {
                 "Túlhevülés is a bounded, deterministic lockout — it always lifts");
     }
 
-    private static void rosterIsABoundedTrio() {
+    /**
+     * The Demonológus pact has exactly one truth source, and it is not here. Proven structurally
+     * rather than by grep: no field and no member of the transient combat state may hold, count or
+     * name a demon, so there is nothing that could drift away from the durable roster.
+     */
+    private static void theCombatStateHoldsNoDemonAuthority() {
+        for (final Field field : WarlockCombatState.class.getDeclaredFields()) {
+            final String name = field.getName().toLowerCase(java.util.Locale.ROOT);
+            check(!name.contains("demon") && !name.contains("roster") && !name.contains("legion"),
+                    "no transient field may name a demon: " + field.getName());
+            final Class<?> type = field.getType();
+            final boolean container = type.isArray() || Collection.class.isAssignableFrom(type)
+                    || Map.class.isAssignableFrom(type);
+            check(!container || name.startsWith("curse") || name.startsWith("attunement"),
+                    "the only containers left are the curse grimoire slots: " + field.getName());
+        }
+        for (final Method method : WarlockCombatState.class.getDeclaredMethods()) {
+            final String name = method.getName().toLowerCase(java.util.Locale.ROOT);
+            check(!name.contains("demon") && !name.contains("roster"),
+                    "no transient member may serve a demon roster: " + method.getName());
+        }
+        for (final Class<?> nested : WarlockCombatState.class.getDeclaredClasses()) {
+            check(!nested.getSimpleName().toLowerCase(java.util.Locale.ROOT).contains("demon"),
+                    "no nested demon holder either: " + nested.getSimpleName());
+        }
+
+        // Whatever the state still carries must survive a spec switch cleanly on its own terms.
         final WarlockCombatState state = new WarlockCombatState();
-        check(WarlockCombatState.ROSTER_SLOTS == 3, "the roster is a fixed trio of demon kinds");
-        check(state.callDemon("imp"), "the first demon kind joins the pact");
-        check(state.hasDemon("imp"), "the kind is on the roster");
-        check(!state.callDemon("imp"), "the same kind never takes a second slot");
-        check(state.callDemon("szolga") && state.callDemon("infernal"),
-                "the other two kinds fill the roster");
-        check(state.rosterSize() == 3, "the roster is full");
-        check(!state.callDemon("negyedik"), "a fourth kind finds no slot");
-        check(!state.callDemon("  "), "a blank kind id is never registered");
-        check(state.dismissRoster() == 3, "dismissing empties the pact in one act");
-        check(state.rosterSize() == 0, "the roster is empty afterwards");
-        check(state.dismissRoster() == 0, "an empty roster dismisses nothing");
+        state.addDebt(40, 100);
+        state.clearSpecializationState();
+        check(state.debt() == 0, "the surviving state still clears itself on a spec switch");
     }
 
     private static void cleanupLifecycle() {
@@ -122,14 +143,12 @@ public final class WarlockGameplayRegressionSuite {
         state.tieThread(VICTIM, t0, 8_000L);
         state.addEmbers(3, 4);
         state.enterOverheat(t0, 5_000L);
-        state.callDemon("imp");
         state.clearSpecializationState();
         check(state.debt() == 0, "spec switch writes off the Lélekadósság with its pacts");
         check(state.activeCurses(t0) == 0, "spec switch clears the Átokgrimoár");
         check(state.threadTarget(t0) == null, "spec switch cuts the Lélekfonal");
         check(state.embers() == 0 && !state.isOverheated(t0),
                 "spec switch clears the embers and the lockout");
-        check(state.rosterSize() == 0, "spec switch empties the demon roster");
     }
 
     private static void debtAndAllowlistSourceContracts() throws Exception {
@@ -156,6 +175,32 @@ public final class WarlockGameplayRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/warlock/WarlockCombatState.java"));
         check(state.contains("The debt never decays") || state.contains("never decays on its own"),
                 "the debt is worked off deliberately, never decayed away");
+
+        // The pact runs through the ONE companion gateway, durable-first, and never counts itself.
+        check(service.contains("gateway.bindDemonV2(player, kind, rosterCapacity(")
+                        && service.contains("gateway.releaseDemonRosterV2(player)"),
+                "binding and release both go through the existing PetManager companion gateway");
+        check(service.contains("gateway.demonRoster(player)")
+                        && service.contains("boundDemons(player).size()"),
+                "the roster size the gameplay reads is the durable projection");
+        check(!service.contains("rosterSize()") && !service.contains("callDemon(")
+                        && !service.contains("dismissRoster()"),
+                "no transient roster call survives in the service");
+
+        final String pets = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/PetManager.java"));
+        check(pets.contains("ClassSpecCatalog.companionProjection(currentLoadout(player).orElse(null), DEMON_ROSTER)"),
+                "the demon projection is the one shared companion projection rule");
+        final int bindIndex = pets.indexOf("PetMutationResult> bindDemonV2");
+        final int bindCommit = pets.indexOf("mutateCompanion", bindIndex);
+        final int bindSpawn = pets.indexOf("spawnAndAdopt", bindIndex);
+        check(bindIndex > 0 && bindCommit > bindIndex && bindSpawn > bindCommit,
+                "the demon is embodied only after the durable companion mutation is issued");
+        final int releaseIndex = pets.indexOf("Integer> releaseDemonRosterV2");
+        final int releaseCommit = pets.indexOf("mutateCompanion", releaseIndex);
+        final int releaseDespawn = pets.indexOf("removeActive", releaseIndex);
+        check(releaseIndex > 0 && releaseCommit > releaseIndex && releaseDespawn > releaseCommit,
+                "the despawn only ever follows the durable removals");
 
         final String gameplayConfig = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));

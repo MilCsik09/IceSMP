@@ -349,7 +349,7 @@
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java|private final Map<UUID, WarlockCombatState> states = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
-      "reason": "Transient per-player Warlock combat state (soul-debt meter, three-slot curse grimoire, single soul-thread target, ember bank with the overheat lockout, bounded demon-kind roster). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The debt is a combat meter only and is never an economic balance."
+      "reason": "Transient per-player Warlock combat state (soul-debt meter, three-slot curse grimoire, single soul-thread target, ember bank with the overheat lockout). Holds NO demon roster: the Demonologist pact lives solely in the durable Profile v2 demonologist.roster companion roster. Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The debt is a combat meter only and is never an economic balance."
     }
   ]
 }

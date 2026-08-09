@@ -13,6 +13,12 @@ public record CompanionProfile(UUID companionId, String namespace, String typeId
                                int level, long experience, String traitId, String stance,
                                List<String> equipmentIds, long resummonAtEpochMillis,
                                Map<String, String> persistentState) {
+    /**
+     * The companion kind key. A kind is an ATTRIBUTE of a companion instance, never the roster's
+     * identity: the roster is keyed by logical companion id, so two instances of the same kind are
+     * two companions and the roster capacity stays reachable.
+     */
+    public static final String KIND_KEY = "companion_kind";
     public static final int MAX_LEVEL = 10_000;
     public static final int MAX_EQUIPMENT = 32;
     public static final int MAX_STATE_ENTRIES = 128;
@@ -30,6 +36,7 @@ public record CompanionProfile(UUID companionId, String namespace, String typeId
             throw new IllegalArgumentException("Companion equipment ids must be non-blank");
         persistentState = collisionSafeMap(persistentState);
     }
+    public String kind() { return persistentState.getOrDefault(KIND_KEY, ""); }
     public CompanionProfile withName(final String value) { return copy(value, level, experience, stance, equipmentIds, resummonAtEpochMillis, persistentState); }
     public CompanionProfile withStance(final String value) { return copy(name, level, experience, value, equipmentIds, resummonAtEpochMillis, persistentState); }
     public CompanionProfile withProgress(final int lvl, final long xp) { return copy(name, lvl, xp, stance, equipmentIds, resummonAtEpochMillis, persistentState); }

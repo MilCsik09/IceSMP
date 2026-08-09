@@ -185,6 +185,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     public String summon(final Player player) { return "pet-persistence-required"; }
     public boolean dismiss(final Player player) { return false; }
 
+    private static final String DEMON_ROSTER = "demonologist.roster";
+
     public record PetMutationResult(boolean committed, String error) {
         public PetMutationResult { error = error == null ? "" : error; }
         static PetMutationResult rejected(final String error) { return new PetMutationResult(false, error); }
@@ -265,9 +267,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             else if (level >= configManager.getInt("pets.summon.tier2-level", 15)) { form=EntityType.WITHER_SKELETON; formName="Csontszolga"; }
             else { form=EntityType.HUSK; formName="Ghúl"; }
         } else {
-            if (level >= configManager.getInt("pets.summon.tier3-level", 25)) { form=EntityType.MAGMA_CUBE; formName="Magma-behemót"; }
-            else if (level >= configManager.getInt("pets.summon.tier2-level", 15)) { form=EntityType.BLAZE; formName="Tűz-démon"; }
-            else { form=EntityType.VEX; formName="Imp"; }
+            form=demonForm(level); formName=demonFormName(form);
         }
         final UUID sessionToken=currentSessionToken(player).orElse(null);
         if(sessionToken==null)return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
@@ -278,6 +278,87 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
                         ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0,0L,0L,List.of(),Map.of(),operationId))
                 .thenCompose(result -> afterDurablePetMutation(player,sessionToken,result,()->spawnAndAdopt(player,form)));
+    }
+
+    /**
+     * Demonológus paktum-kötés. A paktum EGYETLEN igazságforrása a durable demonologist.roster:
+     * a kapacitást a tartós névsor dönti el, a névsorbejegyzés előbb commitol, és a démon csak
+     * utána — a játékos saját régió-szálán, élő session mellett — ölt testet.
+     */
+    public CompletionStage<PetMutationResult> bindDemonV2(final Player player, final String kindId,
+                                                          final int capacity) {
+        if (!isWarlock(player)) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-wrong-spec"));
+        final String kind = ClassSpecCatalog.normalize(kindId);
+        final Optional<LoadoutSlot> slot = activeSlot(player);
+        final String namespace = ClassSpecCatalog.companionNamespace(activeSpec(player));
+        if (kind.isEmpty() || slot.isEmpty() || !DEMON_ROSTER.equals(namespace))
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-wrong-spec"));
+        if (demonRoster(player).size() >= Math.max(1, capacity))
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-roster-full"));
+        final UUID sessionToken = currentSessionToken(player).orElse(null);
+        if (sessionToken == null) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
+        final EntityType form = demonForm(Math.max(1, activeCompanion(player).map(CompanionProfile::level).orElse(1)));
+        final UUID logicalId = UUID.randomUUID();
+        final CompanionProfile companion = new CompanionProfile(logicalId, namespace, form.name(),
+                demonFormName(form), 1, 0L, "", MinionManager.Stance.ACTIVE.name(), List.of(), 0L,
+                Map.of("ritual_summoned", "true", CompanionProfile.KIND_KEY, kind));
+        return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
+                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion,
+                        "", 0, 0L, 0L, List.of(), Map.of(), "warlock-bind:" + logicalId))
+                .thenCompose(result -> afterDurablePetMutation(player, sessionToken, result,
+                        () -> { removeActive(player); spawnAndAdopt(player, form); }));
+    }
+
+    /**
+     * Durable-first paktum-bontás: minden kötött démon előbb kikerül a tartós névsorból, és a
+     * megtestesült démon csak azután tűnik el. Bukott commit után a világ nem tarthat olyan démont,
+     * amit a profil már elengedett.
+     */
+    public CompletionStage<Integer> releaseDemonRosterV2(final Player player) {
+        final List<CompanionProfile> bound = demonRoster(player);
+        final Optional<LoadoutSlot> slot = activeSlot(player);
+        final UUID sessionToken = currentSessionToken(player).orElse(null);
+        if (bound.isEmpty() || slot.isEmpty() || sessionToken == null)
+            return CompletableFuture.completedFuture(0);
+        CompletionStage<Integer> released = CompletableFuture.completedFuture(0);
+        for (final CompanionProfile companion : bound) {
+            final UUID companionId = companion.companionId();
+            released = released.thenCompose(count -> gateway().mutateCompanion(player.getUniqueId(),
+                            companionRequest(slot.orElseThrow(),
+                                    ClassSpecProfileGateway.CompanionMutationRequest.Kind.REMOVE,
+                                    companionId, null, "", 0, 0L, 0L, List.of(), Map.of(),
+                                    "warlock-release:" + companionId))
+                    .thenApply(result -> result.durableMutationApplied() ? count + 1 : count));
+        }
+        return released.thenCompose(count -> {
+            if (count <= 0) return CompletableFuture.completedFuture(0);
+            final CompletableFuture<Integer> completion = new CompletableFuture<>();
+            runOnCurrentPlayer(player, sessionToken, () -> {
+                activeOwners.remove(player.getUniqueId());
+                removeActive(player);
+                completion.complete(count);
+            }, () -> completion.complete(count));
+            return completion;
+        });
+    }
+
+    /**
+     * Read-only projekció a durable paktumról. A névsor kizárólag a Profile v2 loadoutban él; egy
+     * lezárt (SEALED) vagy más specializációjú loadout üres projekciót ad, a tartós adat érintetlen.
+     */
+    public List<CompanionProfile> demonRoster(final Player player) {
+        return ClassSpecCatalog.companionProjection(currentLoadout(player).orElse(null), DEMON_ROSTER);
+    }
+
+    private EntityType demonForm(final int level) {
+        if (level >= configManager.getInt("pets.summon.tier3-level", 25)) return EntityType.MAGMA_CUBE;
+        if (level >= configManager.getInt("pets.summon.tier2-level", 15)) return EntityType.BLAZE;
+        return EntityType.VEX;
+    }
+
+    private static String demonFormName(final EntityType form) {
+        if (form == EntityType.MAGMA_CUBE) return "Magma-behemót";
+        return form == EntityType.BLAZE ? "Tűz-démon" : "Imp";
     }
 
     public CompletionStage<String> summonV2(final Player player) {

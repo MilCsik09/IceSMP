@@ -60,7 +60,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `priest/` | 2 | Pap gameplay vertical slice: transiens állapot + konkrét runtime (Litánia-versek, Engesztelés rekurzió-őrrel + pajzsháló, Velő/Osszárium, Őrület-Küszöb). |
 | `deathknight/` | 2 | Halállovag gameplay vertical slice: transiens állapot + konkrét runtime (Rúnakör Vér/Fagy/Halál, fix méretű Vér Emlékezete, Fagyjelek, Dögvész + ghúl-mutáció). |
 | `assassin/` | 2 | Orgyilkos gameplay vertical slice: transiens állapot + konkrét runtime (Lehetőség négy nyitányból, háromhelyes Toxinkészlet + Dózis, Észleltség/időkorlátos rejtőzés, korlátos Járvány-nyilvántartás). |
-| `warlock/` | 2 | Boszorkánymester gameplay vertical slice: transiens állapot + konkrét runtime (Paktum/Lélekadósság, háromhelyes Átokgrimoár + Lélekfonal, Izzó Parázs/Túlhevülés, korlátos démon-roster). |
+| `warlock/` | 2 | Boszorkánymester gameplay vertical slice: transiens állapot + konkrét runtime (Paktum/Lélekadósság, háromhelyes Átokgrimoár + Lélekfonal, Izzó Parázs/Túlhevülés). A Demonológus paktum NEM transziens: egyetlen authorityja a durable `demonologist.roster` companion névsor, amit a runtime csak a közös `ClassSpecCatalog.companionProjection` szabállyal olvas, és a `PetManager` companion-gatewayen keresztül, durable-first módon mutál. |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 26 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
@@ -743,6 +743,8 @@ This matrix is versioned together with `scripts/player_profile_authority_allowli
 | professions, XP, level, specialization, recipes | PDC/managers | `professions` | HUD/GUI mirror | self/public summary | stacked professions scope |
 | quest state, objectives and reward receipts | quest managers/YAML/PDC | `quests` and `operations` | tracker UI | self/admin | stacked quest scope |
 | pets/minions and durable companion state | PlayerProfile namespace + runtime manager | `companions` and `class-spec` | live entity map | privacy filtered | root plus lifecycle hardening |
+
+Companion rosters (`beast_master.stable`, `necromancer.court`, `unholy.ghoul`, `demonologist.roster`) have exactly one authority: the durable `class-spec` loadout roster, keyed by logical companion id. A companion *kind* is an attribute of an instance (`CompanionProfile.KIND_KEY`), never the roster key, so a roster capacity is reachable by repeating a kind. Gameplay runtimes never keep a parallel roster: they read the shared `ClassSpecCatalog.companionProjection(loadout, namespace)` rule, which yields entries only through the ACTIVE loadout owning the namespace — an inactive, foreign or SEALED loadout projects nothing while its durable entries stay untouched. Every binding and release commits durably first, and only a committed mutation may embody or despawn anything; a release that never commits releases nothing.
 | achievements, bestiary and milestone claims | managers/PDC/YAML | `achievements` | toast/UI cache | privacy filtered | stacked progression scope |
 | kills/deaths/events/season counters | stats managers/YAML | `statistics` | scoreboard cache | privacy filtered | stacked statistics scope |
 | language/HUD/scoreboard/notification/privacy | config/PDC/managers | `preferences` | online UI state | public visibility flags/self | stacked preferences scope |

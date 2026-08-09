@@ -10,16 +10,14 @@ import java.util.UUID;
  * the pacts are refused outright. It is a combat meter and nothing else: no balance is stored,
  * transferred or spent anywhere outside this transient state. Átok carries a three-slot
  * Átokgrimoár with per-slot expiry plus one Lélekfonal that can be re-tied. Pusztítás carries
- * Izzó Parázs and the Túlhevülés lockout it can buy. Demonológus carries a bounded roster of
- * called demon kinds. Durable state remains in PlayerProfile.</p>
+ * Izzó Parázs and the Túlhevülés lockout it can buy. Demonológus keeps NOTHING here: the pact's
+ * demons live solely in the durable Profile v2 demonologist.roster companion roster, so this state
+ * has no demon container of any kind to drift from it. Durable state remains in PlayerProfile.</p>
  */
 public final class WarlockCombatState {
 
     /** The Átokgrimoár holds exactly three curses. */
     public static final int CURSE_SLOTS = 3;
-
-    /** The Demonológus roster is bounded by construction. */
-    public static final int ROSTER_SLOTS = 3;
 
     private int debt;
 
@@ -30,8 +28,6 @@ public final class WarlockCombatState {
 
     private int embers;
     private long overheatUntil;
-
-    private final String[] roster = new String[ROSTER_SLOTS];
 
     // ===== Paktum és Lélekadósság (class core) =====
 
@@ -136,45 +132,6 @@ public final class WarlockCombatState {
         return overheatUntil > now;
     }
 
-    // ===== Demonológus: bounded roster =====
-
-    /** Registers one demon kind. The roster is a fixed trio of kinds, never a live entity list. */
-    public synchronized boolean callDemon(final String kindId) {
-        if (kindId == null || kindId.isBlank()) return false;
-        for (final String kind : roster) {
-            if (kindId.equals(kind)) return false;
-        }
-        for (int i = 0; i < ROSTER_SLOTS; i++) {
-            if (roster[i] == null) {
-                roster[i] = kindId;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public synchronized int rosterSize() {
-        int count = 0;
-        for (final String kind : roster) {
-            if (kind != null) count++;
-        }
-        return count;
-    }
-
-    public synchronized boolean hasDemon(final String kindId) {
-        for (final String kind : roster) {
-            if (kindId != null && kindId.equals(kind)) return true;
-        }
-        return false;
-    }
-
-    /** Dismissing the pact empties the roster in one act. */
-    public synchronized int dismissRoster() {
-        final int dismissed = rosterSize();
-        java.util.Arrays.fill(roster, null);
-        return dismissed;
-    }
-
     /** Spec switch cleanup: the debt is written off with everything else it belonged to. */
     public synchronized void clearSpecializationState() {
         debt = 0;
@@ -186,7 +143,6 @@ public final class WarlockCombatState {
         threadUntil = 0L;
         embers = 0;
         overheatUntil = 0L;
-        java.util.Arrays.fill(roster, null);
     }
 
     /** Death/logout/admin reset cleanup. */

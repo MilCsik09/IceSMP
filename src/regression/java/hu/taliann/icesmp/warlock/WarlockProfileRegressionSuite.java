@@ -10,11 +10,14 @@ import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.classspec.application.ProfileSessionRegistry;
 import hu.taliann.icesmp.classspec.domain.CapstoneStatus;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
+import hu.taliann.icesmp.classspec.domain.ClassSpecCatalog;
+import hu.taliann.icesmp.classspec.domain.CompanionProfile;
 import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.classspec.domain.MasteryProgress;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -24,12 +27,17 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Dependency-free Profile v2 gateway regressions for the Boszorkánymester rollout: the allowlist admits
- * warlock, the DARK Demonológus still answers to the existing gate system, and doctrines stay
- * slot-local.
+ * warlock, the DARK Demonológus still answers to the existing gate system, doctrines stay slot-local,
+ * and the Demonológus pact has exactly one authority — the durable demonologist.roster companion
+ * roster, driven through the real gateway and read through the one shared companion projection.
  */
 public final class WarlockProfileRegressionSuite {
 
     private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-0000000004c1");
+    private static final UUID IMP = UUID.fromString("00000000-0000-0000-0000-00000000d001");
+    private static final UUID IMP_TWIN = UUID.fromString("00000000-0000-0000-0000-00000000d002");
+    private static final UUID INFERNAL = UUID.fromString("00000000-0000-0000-0000-00000000d003");
+    private static final String PACT = "demonologist.roster";
     private static int assertions;
 
     private WarlockProfileRegressionSuite() {
@@ -39,6 +47,8 @@ public final class WarlockProfileRegressionSuite {
         warlockSecondSlotUnlocksAndSwitches();
         darkDemonologistObeysTheExistingGates();
         warlockDoctrineMasteryAndCapstoneStaySlotLocal();
+        demonPactHasExactlyOneDurableAuthority();
+        aFailedDurableBindingIsNeverVisible();
         System.out.println("Warlock profile regression suite passed. assertions=" + assertions);
     }
 
@@ -119,6 +129,147 @@ public final class WarlockProfileRegressionSuite {
                 "committed doctrine tier cannot silently overwrite");
     }
 
+    /**
+     * The whole Demonológus pact contract, driven through the real gateway: durable commit precedes
+     * every authoritative read, the projection is a pure function of Profile v2 (so a relog rebuilds
+     * it), a spec switch and a DARK seal only hide it, releases are durable-first, and no replay or
+     * reused identity can ever duplicate a companion.
+     */
+    private static void demonPactHasExactlyOneDurableAuthority() {
+        final Harness h = pactHarness();
+        check(pact(h).isEmpty(), "a fresh pact projects no demons at all");
+
+        check(h.gateway.mutateCompanion(PLAYER, bind(IMP, "imp", "warlock-bind:imp"))
+                .toCompletableFuture().join().committed(), "the pact binding commits durably");
+        check(pact(h).size() == 1,
+                "the demon becomes visible only through the committed durable roster");
+        check(pact(h).get(0).kind().equals("imp"),
+                "the kind rides along as an attribute of the instance");
+        check(h.store.profile.loadout(LoadoutSlot.FIRST).companionRoster().size() == 1,
+                "the durable roster is the thing that actually grew");
+
+        check(h.gateway.mutateCompanion(PLAYER, bind(IMP_TWIN, "imp", "warlock-bind:imp-twin"))
+                        .toCompletableFuture().join().committed(),
+                "a second instance of the same kind is a second companion, not a refused duplicate");
+        check(pact(h).size() == 2, "the pact holds two distinct imps");
+        check(pact(h).stream().map(CompanionProfile::companionId).distinct().count() == 2,
+                "the roster is keyed by logical companion id, never by kind");
+
+        final var replayed = h.gateway.mutateCompanion(PLAYER, bind(IMP, "imp", "warlock-bind:imp"))
+                .toCompletableFuture().join();
+        check(!replayed.committed() && pact(h).size() == 2,
+                "replaying the same binding operation adds nothing");
+        final var reused = h.gateway.mutateCompanion(PLAYER, bind(IMP, "imp", "warlock-bind:again"))
+                .toCompletableFuture().join();
+        check(reused.status() == ProfileMutationResult.Status.REJECTED && pact(h).size() == 2,
+                "a reused companion identity is refused outright — no duplicate on a race");
+
+        final Harness relogged = harness(h.store.profile);
+        check(pact(relogged).size() == 2 && pact(relogged).get(0).kind().equals("imp"),
+                "a completely fresh runtime rebuilds the identical pact from Profile v2 alone");
+
+        check(h.gateway.switchLoadout(PLAYER,
+                        new ClassSpecProfileGateway.SwitchRequest(LoadoutSlot.SECOND))
+                .toCompletableFuture().join().committed(), "the warlock switches to Pusztítás");
+        check(pact(h).isEmpty(), "an inactive Demonológus loadout projects no demons");
+        check(ClassSpecCatalog.companionProjection(
+                        h.store.profile.loadout(LoadoutSlot.FIRST), PACT).isEmpty(),
+                "read head-on, an INACTIVE loadout still projects nothing");
+        check(h.store.profile.loadout(LoadoutSlot.FIRST).companionRoster().size() == 2,
+                "the spec switch hides the pact without touching it");
+        check(h.gateway.switchLoadout(PLAYER,
+                        new ClassSpecProfileGateway.SwitchRequest(LoadoutSlot.FIRST))
+                .toCompletableFuture().join().committed(), "the warlock switches back");
+        check(pact(h).size() == 2, "the pact returns exactly as it was");
+
+        check(h.gateway.reconcile(PLAYER, new ClassSpecProfileGateway.ReconcileRequest(
+                        Map.of(LoadoutSlot.FIRST, closedGates())))
+                .toCompletableFuture().join().committed(), "closed DARK gates seal the Demonológus");
+        check(h.store.profile.loadout(LoadoutSlot.FIRST).status() == LoadoutStatus.SEALED,
+                "the gate closure seals exactly that loadout");
+        check(pact(h).isEmpty(), "a sealed pact projects nothing");
+        check(ClassSpecCatalog.companionProjection(
+                        h.store.profile.loadout(LoadoutSlot.FIRST), PACT).isEmpty(),
+                "read head-on, a SEALED loadout still projects nothing");
+        check(h.store.profile.loadout(LoadoutSlot.FIRST).companionRoster().size() == 2,
+                "sealing never deletes the durable pact");
+        check(h.gateway.mutateCompanion(PLAYER, bind(INFERNAL, "infernal", "warlock-bind:sealed"))
+                        .toCompletableFuture().join().status() == ProfileMutationResult.Status.REJECTED,
+                "no demon may be bound into a sealed pact");
+        check(h.store.profile.loadout(LoadoutSlot.FIRST).companionRoster().size() == 2,
+                "the refused binding left the durable pact untouched");
+
+        check(h.gateway.reconcile(PLAYER, new ClassSpecProfileGateway.ReconcileRequest(
+                        Map.of(LoadoutSlot.FIRST, satisfiedGates())))
+                .toCompletableFuture().join().committed(), "satisfied gates lift the seal");
+        check(h.gateway.switchLoadout(PLAYER,
+                        new ClassSpecProfileGateway.SwitchRequest(LoadoutSlot.FIRST))
+                .toCompletableFuture().join().committed(), "the unsealed pact is activatable again");
+        check(pact(h).size() == 2, "unsealing restores the whole pact, demon for demon");
+
+        for (final CompanionProfile bound : List.copyOf(pact(h))) {
+            check(h.gateway.mutateCompanion(PLAYER, release(bound.companionId(),
+                            "warlock-release:" + bound.companionId()))
+                    .toCompletableFuture().join().committed(), "each demon leaves the durable roster");
+        }
+        check(pact(h).isEmpty()
+                        && h.store.profile.loadout(LoadoutSlot.FIRST).companionRoster().isEmpty(),
+                "the release is durable, not merely a runtime view being cleared");
+        check(h.gateway.mutateCompanion(PLAYER, release(IMP, "warlock-release:absent"))
+                        .toCompletableFuture().join().status()
+                        == ProfileMutationResult.Status.NO_CHANGE,
+                "releasing an absent demon reports no change, so no reward is ever paid twice");
+    }
+
+    /** A durable write that never lands must leave the pact invisible and the session fenced. */
+    private static void aFailedDurableBindingIsNeverVisible() {
+        final Harness h = pactHarness();
+        h.store.rejectSaves = true;
+        final var failed = h.gateway.mutateCompanion(PLAYER, bind(IMP, "imp", "warlock-bind:doomed"))
+                .toCompletableFuture().join();
+        check(!failed.committed(), "a failed durable save is not a committed binding");
+        check(pact(h).isEmpty(),
+                "nothing is authoritative before the durable commit — the demon never appears");
+        check(h.store.profile.loadout(LoadoutSlot.FIRST).companionRoster().isEmpty(),
+                "the durable roster is untouched by the failed write");
+        check(!h.store.blockReason.isBlank(),
+                "the failed durable write fences the session instead of silently continuing");
+    }
+
+    private static Harness pactHarness() {
+        return harness(ClassSpecSection.builder()
+                .revision(3).primaryClassId("warlock").classLevel(50).classExperience(999_999)
+                .secondSpecUnlocked(true)
+                .loadout(LoadoutSlot.FIRST, loadout("demonologist", LoadoutStatus.ACTIVE))
+                .loadout(LoadoutSlot.SECOND, loadout("destruction", LoadoutStatus.INACTIVE))
+                .activeSlot(LoadoutSlot.FIRST)
+                .build());
+    }
+
+    /** The pact exactly as the runtime sees it: the one shared companion projection. */
+    private static List<CompanionProfile> pact(final Harness h) {
+        final ClassSpecSection profile = h.store.profile;
+        return profile == null || profile.activeSlot() == null ? List.of()
+                : ClassSpecCatalog.companionProjection(profile.loadout(profile.activeSlot()), PACT);
+    }
+
+    private static ClassSpecProfileGateway.CompanionMutationRequest bind(
+            final UUID companionId, final String kind, final String operationId) {
+        return new ClassSpecProfileGateway.CompanionMutationRequest(LoadoutSlot.FIRST,
+                ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, companionId,
+                new CompanionProfile(companionId, PACT, "VEX", "Imp", 1, 0L, "", "ACTIVE",
+                        List.of(), 0L, Map.of("ritual_summoned", "true",
+                        CompanionProfile.KIND_KEY, kind)),
+                "", 0, 0L, 0L, List.of(), Map.of(), operationId);
+    }
+
+    private static ClassSpecProfileGateway.CompanionMutationRequest release(
+            final UUID companionId, final String operationId) {
+        return new ClassSpecProfileGateway.CompanionMutationRequest(LoadoutSlot.FIRST,
+                ClassSpecProfileGateway.CompanionMutationRequest.Kind.REMOVE, companionId, null,
+                "", 0, 0L, 0L, List.of(), Map.of(), operationId);
+    }
+
     private static Harness harness(final ClassSpecSection profile) {
         final FakeStore store = new FakeStore(profile);
         final ProfileSessionRegistry sessions = new ProfileSessionRegistry();
@@ -158,6 +309,7 @@ public final class WarlockProfileRegressionSuite {
     private static final class FakeStore implements ClassSpecSectionMutationStore {
         volatile ClassSpecSection profile;
         volatile String blockReason = "";
+        volatile boolean rejectSaves;
 
         FakeStore(final ClassSpecSection profile) {
             this.profile = profile;
@@ -176,6 +328,9 @@ public final class WarlockProfileRegressionSuite {
         @Override
         public CompletionStage<SaveResult> save(final UUID id, final long expected,
                                                 final ClassSpecSection candidate) {
+            if (rejectSaves) {
+                return CompletableFuture.completedFuture(SaveResult.failed(profile, "store offline"));
+            }
             if (profile == null || profile.revision() != expected) {
                 return CompletableFuture.completedFuture(
                         SaveResult.conflict(profile, profile == null ? -1 : profile.revision()));

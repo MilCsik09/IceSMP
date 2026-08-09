@@ -1,11 +1,13 @@
 package hu.taliann.icesmp.warlock;
 
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
+import hu.taliann.icesmp.classspec.domain.CompanionProfile;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -47,8 +49,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * warlock receives. It is strictly a combat meter: nothing here reads or writes any wallet,
  * balance or currency. Átok inscribes a three-slot Átokgrimoár and ties one re-tieable Lélekfonal
  * that drains the linked target. Pusztítás banks Izzó Parázs and buys burst with a deterministic
- * Túlhevülés lockout. Demonológus (DARK, on the existing seal system) keeps a bounded roster of
- * called demon kinds under the demonologist.roster namespace. Durable state remains Profile v2.</p>
+ * Túlhevülés lockout. Demonológus (DARK, on the existing seal system) binds its demons into the
+ * durable Profile v2 demonologist.roster companion roster through the existing PetManager gateway:
+ * that roster is the single authority, this runtime only ever projects it, and every binding or
+ * release commits durably before anything is embodied or despawned. Durable state stays Profile v2.</p>
  */
 public final class WarlockGameplayService implements Listener, PlayerStateCleanup {
 
@@ -66,6 +70,8 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
 
     private volatile ResourceManager combatTracker;
 
+    private volatile PetManager pets;
+
     public WarlockGameplayService(final JavaPlugin plugin,
                                   final ConfigManager config,
                                   final JobManager jobs,
@@ -82,6 +88,11 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
 
     public void setCombatTracker(final ResourceManager resources) {
         combatTracker = Objects.requireNonNull(resources, "resources");
+    }
+
+    /** The one companion gateway: the pact never gets a second framework of its own. */
+    public void setPetManager(final PetManager petManager) {
+        pets = Objects.requireNonNull(petManager, "petManager");
     }
 
     public List<String> activeSpellIds(final Player player,
@@ -172,7 +183,7 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
             if ("vasbor".equals(doctrine(playerId, 40))) {
                 perDemon += config.getDouble("classes.warlock.demonologist.hide-extra-percent", 2.0D);
             }
-            bonus += state.rosterSize() * perDemon;
+            bonus += boundDemons(player).size() * perDemon;
         }
         final double cap = Math.max(0.0D,
                 config.getDouble("classes.warlock.max-power-bonus-percent", 40.0D));
@@ -302,28 +313,46 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
 
     private void handleDemonologistCast(final Player player, final WarlockCombatState state,
                                         final String spellId) {
-        final UUID playerId = player.getUniqueId();
+        final PetManager gateway = pets;
+        if (gateway == null) return;
         if (dismissSpells().contains(spellId)) {
-            final int dismissed = state.dismissRoster();
-            if (dismissed <= 0) return;
-            double perDemonHeal = Math.max(0.0D, config.getDouble(
-                    "classes.warlock.demonologist.dismiss-heal-per-demon", 2.0D));
-            if ("hu_szolga".equals(doctrine(playerId, 30))) {
-                perDemonHeal += config.getDouble(
-                        "classes.warlock.demonologist.loyal-extra-heal", 1.0D);
-            }
-            if ("nagy_legio".equals(doctrine(playerId, 50))
-                    && dismissed >= WarlockCombatState.ROSTER_SLOTS) {
-                perDemonHeal *= 2.0D;
-            }
-            healPlayer(player, dismissed * perDemonHeal);
-            player.sendActionBar(messages.getMessage("warlock.roster.dismissed",
-                    "<dark_purple>{count} démon elbocsátva a paktumból.</dark_purple>",
-                    Map.of("count", Integer.toString(dismissed))));
+            // Durable-first: the reward is paid for what the durable roster actually released.
+            gateway.releaseDemonRosterV2(player).thenAccept(dismissed -> {
+                if (dismissed <= 0) return;
+                gateway.runOnPlayer(player, () -> rewardDismissal(player, dismissed));
+            });
             return;
         }
         final String kind = demonKindOf(spellId);
-        if (kind == null || !state.callDemon(kind)) return;
+        if (kind == null) return;
+        gateway.bindDemonV2(player, kind, rosterCapacity(player.getUniqueId()))
+                .thenAccept(result -> {
+                    if (!result.committed()) return;
+                    gateway.runOnPlayer(player, () -> rewardBinding(player, state, kind));
+                });
+    }
+
+    /** Runs on the player's own region thread, after the durable release committed. */
+    private void rewardDismissal(final Player player, final int dismissed) {
+        final UUID playerId = player.getUniqueId();
+        double perDemonHeal = Math.max(0.0D, config.getDouble(
+                "classes.warlock.demonologist.dismiss-heal-per-demon", 2.0D));
+        if ("hu_szolga".equals(doctrine(playerId, 30))) {
+            perDemonHeal += config.getDouble("classes.warlock.demonologist.loyal-extra-heal", 1.0D);
+        }
+        if ("nagy_legio".equals(doctrine(playerId, 50)) && dismissed >= rosterCapacity(playerId)) {
+            perDemonHeal *= 2.0D;
+        }
+        healPlayer(player, dismissed * perDemonHeal);
+        player.sendActionBar(messages.getMessage("warlock.roster.dismissed",
+                "<dark_purple>{count} démon elbocsátva a paktumból.</dark_purple>",
+                Map.of("count", Integer.toString(dismissed))));
+    }
+
+    /** Runs on the player's own region thread, after the durable binding committed. */
+    private void rewardBinding(final Player player, final WarlockCombatState state,
+                               final String kind) {
+        final UUID playerId = player.getUniqueId();
         if ("gyors_hivas".equals(doctrine(playerId, 30))) {
             state.repayDebt(Math.max(0, config.getInt(
                     "classes.warlock.demonologist.call-repay", 4)));
@@ -338,8 +367,10 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
                     config.getInt("classes.warlock.mastery.call-xp", 5));
         }
         player.sendActionBar(messages.getMessage("warlock.roster.called",
-                "<dark_purple>😈 {kind} a paktumban ({count}/3).</dark_purple>",
-                Map.of("kind", kind, "count", Integer.toString(state.rosterSize()))));
+                "<dark_purple>😈 {kind} a paktumban ({count}/{capacity}).</dark_purple>",
+                Map.of("kind", kind,
+                        "count", Integer.toString(boundDemons(player).size()),
+                        "capacity", Integer.toString(rosterCapacity(playerId)))));
     }
 
     /** Lélekfonal: the thread names exactly one victim, and a new tie moves it. */
@@ -389,7 +420,8 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
                             + (state.isOverheated(now) ? " • Túlhevült!" : ""),
                     state.isOverheated(now) ? NamedTextColor.RED : NamedTextColor.GOLD));
             case "demonologist" -> suffix = suffix.append(Component.text("  • Démonok "
-                    + state.rosterSize() + "/3", NamedTextColor.DARK_PURPLE));
+                            + boundDemons(player).size() + "/" + rosterCapacity(playerId),
+                    NamedTextColor.DARK_PURPLE));
             default -> { }
         }
         return suffix;
@@ -448,6 +480,26 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
             }
         }
         return null;
+    }
+
+    /**
+     * The pact projection. It is a pure read of the durable demonologist.roster, so it is always
+     * reconstructible from Profile v2 alone: a relog, a spec switch or a DARK seal changes what the
+     * projection reports without any transient state having to be kept in step with it.
+     */
+    private List<CompanionProfile> boundDemons(final Player player) {
+        final PetManager gateway = pets;
+        return gateway == null ? List.of() : gateway.demonRoster(player);
+    }
+
+    private int rosterCapacity(final UUID playerId) {
+        int capacity = Math.max(1, config.getInt(
+                "classes.warlock.demonologist.roster-capacity", 3));
+        if ("nagy_legio".equals(doctrine(playerId, 50))) {
+            capacity += Math.max(0, config.getInt(
+                    "classes.warlock.demonologist.legion-extra-slot", 1));
+        }
+        return capacity;
     }
 
     /** The three concrete demon kinds of the roster. */
