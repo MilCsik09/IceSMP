@@ -62,6 +62,13 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
 
     private final Map<UUID, ArcherCombatState> states = new ConcurrentHashMap<>();
 
+    /**
+     * In-flight arrows and the discipline of the shot that launched them. The verdict has to
+     * travel with the arrow: several may be airborne at once, and a fresh shot must never lend
+     * its discipline to an older one.
+     */
+    private final ArcherShotLedger shots = new ArcherShotLedger();
+
     private volatile ResourceManager combatTracker;
     private volatile PetManager pets;
 
@@ -250,21 +257,30 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         if (playerId == null) return;
         final ArcherCombatState state = states.remove(playerId);
         if (state != null) state.clearAll();
+        shots.forgetOwner(playerId);
     }
 
     public void shutdown() {
         for (final UUID id : List.copyOf(states.keySet())) clearPlayerState(id);
         states.clear();
+        shots.clear();
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBowShot(final EntityShootBowEvent event) {
         if (!(event.getEntity() instanceof Player player) || !isArcher(player)) return;
+        final UUID playerId = player.getUniqueId();
         final boolean fullDraw = event.getForce() >= fullDrawForce();
         final var origin = player.getLocation();
-        state(player.getUniqueId()).recordShot(System.currentTimeMillis(), fullDraw,
-                shotPacingMillis(player.getUniqueId()),
-                origin.getX(), origin.getY(), origin.getZ());
+        final long now = System.currentTimeMillis();
+        // The pacing verdict is the shot's own; spam still breaks an armed read here.
+        final boolean paced = state(playerId).recordShot(now, fullDraw,
+                shotPacingMillis(playerId), origin.getX(), origin.getY(), origin.getZ());
+        if (event.getProjectile() == null) return;
+        shots.record(event.getProjectile().getUniqueId(),
+                new ArcherShotLedger.ShotRecord(playerId, fullDraw, paced,
+                        origin.getX(), origin.getY(), origin.getZ(), now),
+                now, inFlightMaximum(), inFlightExpiryMillis());
     }
 
     /** Damage bonus application: the armed read and the weak-point finisher, with PvE/PvP caps. */
@@ -317,14 +333,19 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         final UUID archerId = archer.getUniqueId();
         final ArcherCombatState state = state(archerId);
         final long now = System.currentTimeMillis();
-        final boolean fullDraw = event.getDamager() instanceof AbstractArrow arrow
-                && arrow.isCritical();
-
+        // The arrow carries its own verdict: an unpaced shot can never rebuild what it broke,
+        // and two arrows in flight never trade discipline.
+        final ArcherShotLedger.ShotRecord shot = shots
+                .consume(event.getDamager().getUniqueId(), now, inFlightExpiryMillis())
+                .orElse(null);
         final var victimLocation = victim.getLocation();
-        final double distance = state.distanceFromLastShot(
-                victimLocation.getX(), victimLocation.getY(), victimLocation.getZ());
-        if (fullDraw && distance >= windReadMinimumDistance(archerId)
-                && !state.isWindReadArmed(now)) {
+        final boolean disciplined = shot != null
+                && archerId.equals(shot.ownerId())
+                && shot.buildsWindRead(victimLocation.getX(), victimLocation.getY(),
+                victimLocation.getZ(), windReadMinimumDistance(archerId));
+        final boolean fullDraw = shot != null ? shot.fullDraw()
+                : event.getDamager() instanceof AbstractArrow arrow && arrow.isCritical();
+        if (disciplined && !state.isWindReadArmed(now)) {
             state.armWindRead(now, windReadWindowMillis(archerId));
             archer.sendActionBar(messages.getMessage("archer.wind.read",
                     "<green>➶ Szélolvasás: a következő fegyelmezett lövésed erősebb.</green>"));
@@ -454,6 +475,16 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         final long base = Math.max(0L, config.getLong(
                 "classes.archer.wind.shot-pacing-millis", 900L));
         return "gyors_felhuzas".equals(doctrine(playerId, 30)) ? base * 3L / 4L : base;
+    }
+
+    private int inFlightMaximum() {
+        return Math.max(1, Math.min(256, config.getInt(
+                "classes.archer.wind.in-flight-maximum", 32)));
+    }
+
+    private long inFlightExpiryMillis() {
+        return Math.max(1000L, config.getLong(
+                "classes.archer.wind.in-flight-expiry-millis", 15000L));
     }
 
     private double windReadMinimumDistance(final UUID playerId) {

@@ -262,6 +262,10 @@ classes:
       full-draw-force: 0.9
       shot-pacing-millis: 900
       minimum-distance: 12.0
+      # A repülő nyilak fegyelem-nyilvántartása korlátos és magától lejár: nincs durable
+      # állapot, nincs élő entitás-hivatkozás, és nincs ismétlődő takarító task.
+      in-flight-maximum: 32
+      in-flight-expiry-millis: 15000
       read-window-millis: 5000
       pve-bonus-percent: 18.0
       pvp-bonus-percent: 8.0

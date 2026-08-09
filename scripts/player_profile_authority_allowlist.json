@@ -275,6 +275,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/archer/ArcherGameplayService.java|private final Map<UUID, ArcherCombatState> states = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient per-player Archer combat state (Szélolvasás read, precision chain, Kötelék). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec/companion state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/archer/ArcherShotLedger.java|private final Map<UUID, ShotRecord> inFlight = new LinkedHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-flight arrow ids mapped to the immutable discipline verdict of the shot that launched them (full draw, pacing, plain copied launch coordinates). Strictly transient: hard-capped, self-expiring on write, removed when the arrow resolves, and dropped for the owner on death/quit/kick/disable. No durable authority and no live entity handle."
     }
   ]
 }

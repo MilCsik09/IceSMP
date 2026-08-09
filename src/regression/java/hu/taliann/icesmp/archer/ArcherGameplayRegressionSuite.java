@@ -15,6 +15,7 @@ public final class ArcherGameplayRegressionSuite {
     public static void main(final String[] args) throws Exception {
         windReadPacingAndSingleUse();
         windReadDistanceIsShotAnchored();
+        shotDisciplineTravelsWithTheArrow();
         precisionChainPreyAndWeakPoint();
         precisionChainWindowAndRetention();
         bondBuildSpendAndCollapse();
@@ -160,12 +161,96 @@ public final class ArcherGameplayRegressionSuite {
 
         final String service = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/archer/ArcherGameplayService.java"));
-        check(service.contains("distanceFromLastShot"),
-                "wind-read distance uses shot-anchored coordinates, not cross-region entity reads");
+        check(service.contains("final boolean paced = state(playerId).recordShot("),
+                "the shot handler keeps the pacing verdict instead of discarding it");
+        check(service.contains(".consume(event.getDamager().getUniqueId()"),
+                "the hit handler judges the arrow by its own record, not the archer's last shot");
+        check(service.contains("archerId.equals(shot.ownerId())"),
+                "a record only counts for the archer who fired it");
+        check(service.contains("shots.forgetOwner(playerId)"),
+                "player cleanup drops that archer's in-flight records");
+
+        check(service.contains("shot.buildsWindRead(")
+                        && !service.contains("distanceFromLastShot"),
+                "wind-read distance uses coordinates anchored to THAT arrow's own launch record, "
+                        + "not the archer's latest shot and never a cross-region entity read");
+        final String ledger = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/archer/ArcherShotLedger.java"));
+        check(ledger.contains("double originX") && !ledger.contains("Location")
+                        && !ledger.contains("Entity "),
+                "the shot record stores plain copied coordinates — no live entity or location handle");
         check(service.contains("pvp-max-bonus-percent") && service.contains("pve-max-bonus-percent"),
                 "arrow bonuses carry explicit PvE/PvP caps");
         check(!service.contains("getNearbyEntities") && !service.contains("runAtFixedRate"),
                 "no proximity scans or repeating tasks in the archer runtime");
+    }
+
+    /**
+     * The Szélolvasás may only be built by a shot that was genuinely disciplined, so the verdict
+     * travels with the arrow. These cases cover the review's eight required scenarios.
+     */
+    private static void shotDisciplineTravelsWithTheArrow() {
+        final UUID owner = UUID.fromString("00000000-0000-0000-0000-0000000009a1");
+        final UUID other = UUID.fromString("00000000-0000-0000-0000-0000000009a2");
+        final UUID arrowA = UUID.fromString("00000000-0000-0000-0000-0000000009b1");
+        final UUID arrowB = UUID.fromString("00000000-0000-0000-0000-0000000009b2");
+        final long t0 = 10_000L;
+        final double minDistance = 12.0D;
+
+        final ArcherShotLedger.ShotRecord good =
+                new ArcherShotLedger.ShotRecord(owner, true, true, 0, 0, 0, t0);
+        check(good.buildsWindRead(0, 0, 20, minDistance),
+                "1. a paced full-draw hit from range builds the read");
+
+        final ArcherShotLedger.ShotRecord spam =
+                new ArcherShotLedger.ShotRecord(owner, true, false, 0, 0, 0, t0);
+        check(!spam.buildsWindRead(0, 0, 20, minDistance),
+                "2. an unpaced shot cannot build the read even at full draw and full range");
+
+        check(!new ArcherShotLedger.ShotRecord(owner, false, true, 0, 0, 0, t0)
+                        .buildsWindRead(0, 0, 20, minDistance),
+                "3. a half-drawn shot cannot build the read");
+
+        check(!good.buildsWindRead(0, 0, 5, minDistance),
+                "4. a point-blank hit cannot build the read");
+        check(good.distanceTo(0, 0, 20) == 20.0D, "the range is measured from the shot origin");
+
+        final ArcherCombatState state = new ArcherCombatState();
+        state.recordShot(t0, true, 800L, 0, 0, 0);
+        state.armWindRead(t0, 6_000L);
+        check(state.isWindReadArmed(t0 + 100L), "the read is armed");
+        final boolean pacedSpam = state.recordShot(t0 + 100L, true, 800L, 0, 0, 0);
+        check(!pacedSpam, "firing inside the pacing window is not a paced shot");
+        check(!state.isWindReadArmed(t0 + 200L), "5. the spam shot broke the armed read");
+        check(!new ArcherShotLedger.ShotRecord(owner, true, pacedSpam, 0, 0, 0, t0 + 100L)
+                        .buildsWindRead(0, 0, 20, minDistance),
+                "6. the very shot that broke the read cannot rebuild it when it lands");
+
+        final ArcherShotLedger ledger = new ArcherShotLedger();
+        ledger.record(arrowA, good, t0, 32, 15_000L);
+        ledger.record(arrowB, spam, t0 + 100L, 32, 15_000L);
+        check(ledger.size() == 2, "both airborne arrows are tracked");
+        check(ledger.peek(arrowA, t0 + 200L, 15_000L).orElseThrow().paced(),
+                "7. the disciplined arrow keeps its own verdict");
+        check(!ledger.peek(arrowB, t0 + 200L, 15_000L).orElseThrow().paced(),
+                "7. the spam arrow keeps its own verdict — metadata never mixes between arrows");
+        check(ledger.consume(arrowB, t0 + 200L, 15_000L).isPresent(), "the arrow resolves once");
+        check(ledger.consume(arrowB, t0 + 200L, 15_000L).isEmpty(),
+                "a resolved arrow can never pay twice");
+        check(ledger.size() == 1, "resolving removes only that arrow");
+
+        check(ledger.peek(arrowA, t0 + 15_000L, 15_000L).isEmpty(),
+                "8. an arrow that never lands ages out of the ledger");
+        check(ledger.size() == 0, "8. expiry prunes the ledger without any repeating task");
+        ledger.record(arrowA, good, t0, 32, 15_000L);
+        ledger.record(arrowB, new ArcherShotLedger.ShotRecord(other, true, true, 0, 0, 0, t0),
+                t0, 32, 15_000L);
+        check(ledger.forgetOwner(owner) == 1, "8. player cleanup forgets that archer's arrows");
+        check(ledger.peek(arrowB, t0, 15_000L).isPresent(), "another archer's arrow is untouched");
+        for (int i = 0; i < 40; i++) {
+            ledger.record(UUID.randomUUID(), good, t0 + i, 8, 15_000L);
+        }
+        check(ledger.size() <= 8, "8. the ledger is hard-capped — it can never grow unbounded");
     }
 
     private static void check(final boolean condition, final String message) {
