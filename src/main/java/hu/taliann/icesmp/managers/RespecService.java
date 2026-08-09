@@ -76,10 +76,10 @@ public final class RespecService {
         return new Outcome(Outcome.Status.OK, cost, currency, 0);
     }
 
-    public CompletionStage<Outcome> respecV2(final Player player, final String operationId) {
+    public CompletionStage<Outcome> respecV2(final Player player, final String requestedOperationId) {
         Objects.requireNonNull(player, "player");
-        if (operationId == null || operationId.isBlank()) throw new IllegalArgumentException("operationId required");
         final UUID playerId = player.getUniqueId();
+        final String operationId = attemptOperationId(playerId, requestedOperationId);
         final LinkedHashMap<String, CompletableFuture<Outcome>> playerOps =
                 inFlight.computeIfAbsent(playerId, ignored -> new LinkedHashMap<>());
         synchronized (playerOps) {
@@ -97,6 +97,29 @@ public final class RespecService {
             }
             return created;
         }
+    }
+
+    /**
+     * The old command derived a user attempt ID from the Profile revision. A rolled-back attempt
+     * leaves that revision unchanged, so a later user click could collide with the old terminal
+     * wallet receipt. Treat that legacy request shape only as a CAS witness and mint a fresh nonce.
+     * Callers that already supply an explicit attempt ID keep it unchanged, which preserves exact
+     * replay/recovery identity for one attempt.
+     */
+    static String attemptOperationId(final UUID playerId, final String requestedOperationId) {
+        Objects.requireNonNull(playerId, "playerId");
+        if (requestedOperationId == null || requestedOperationId.isBlank()) {
+            throw new IllegalArgumentException("operationId required");
+        }
+        final String requested = requestedOperationId.trim();
+        final String legacyPrefix = "player-respec:" + playerId + ':';
+        if (requested.startsWith(legacyPrefix)) {
+            final String suffix = requested.substring(legacyPrefix.length());
+            if (suffix.matches("-?[0-9]+")) {
+                return legacyPrefix + "attempt:" + UUID.randomUUID();
+            }
+        }
+        return requested;
     }
 
     private void execute(final Player player, final String operationId,
@@ -238,9 +261,13 @@ public final class RespecService {
     }
 
     private CompletionStage<Integer> completePlayerEffects(final Player player, final UUID sessionToken) {
+        final ClassSpecProfileGateway gateway = specializationManager.profileGateway();
+        final TalentManager.EligibilityContext eligibility = gateway.currentProfile(player.getUniqueId())
+                .map(TalentManager.EligibilityContext::from)
+                .orElseThrow(() -> new IllegalStateException(
+                        "durable class/spec state unavailable during respec recovery"));
         final CompletableFuture<Void> gate = new CompletableFuture<>();
         player.getScheduler().run(plugin, task -> {
-            final ClassSpecProfileGateway gateway = specializationManager.profileGateway();
             if (!gateway.isCurrentSession(player.getUniqueId(), sessionToken)) {
                 gate.completeExceptionally(new IllegalStateException("stale respec session completion"));
                 return;
@@ -248,7 +275,8 @@ public final class RespecService {
             gate.complete(null);
         }, () -> gate.completeExceptionally(
                 new IllegalStateException("Player scheduler rejected respec completion")));
-        return gate.thenCompose(ignored -> talentManager.refundUnavailableTalents(player, true));
+        return gate.thenCompose(ignored ->
+                talentManager.refundUnavailableTalents(player, true, eligibility));
     }
 
     private static Map<String, Double> stringify(final Map<CurrencyType, Double> values) {
