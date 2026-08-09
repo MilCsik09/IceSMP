@@ -60,6 +60,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `priest/` | 2 | Pap gameplay vertical slice: transiens állapot + konkrét runtime (Litánia-versek, Engesztelés rekurzió-őrrel + pajzsháló, Velő/Osszárium, Őrület-Küszöb). |
 | `deathknight/` | 2 | Halállovag gameplay vertical slice: transiens állapot + konkrét runtime (Rúnakör Vér/Fagy/Halál, fix méretű Vér Emlékezete, Fagyjelek, Dögvész + ghúl-mutáció). |
 | `assassin/` | 2 | Orgyilkos gameplay vertical slice: transiens állapot + konkrét runtime (Lehetőség négy nyitányból, háromhelyes Toxinkészlet + Dózis, Észleltség/időkorlátos rejtőzés, korlátos Járvány-nyilvántartás). |
+| `warlock/` | 2 | Boszorkánymester gameplay vertical slice: transiens állapot + konkrét runtime (Paktum/Lélekadósság, háromhelyes Átokgrimoár + Lélekfonal, Izzó Parázs/Túlhevülés, korlátos démon-roster). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 26 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |

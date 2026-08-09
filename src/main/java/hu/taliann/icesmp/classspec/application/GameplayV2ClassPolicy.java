@@ -15,7 +15,7 @@ public final class GameplayV2ClassPolicy {
 
     private static final Set<String> ENABLED = Set.of(
             "warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
-            "druid", "priest", "death_knight", "assassin");
+            "druid", "priest", "death_knight", "assassin", "warlock");
 
     private GameplayV2ClassPolicy() {
     }

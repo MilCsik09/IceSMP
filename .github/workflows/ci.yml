@@ -183,6 +183,8 @@ jobs:
           grep -F "Death Knight profile regression suite passed." gradle-build.log
           grep -F "Assassin gameplay regression suite passed." gradle-build.log
           grep -F "Assassin profile regression suite passed." gradle-build.log
+          grep -F "Warlock gameplay regression suite passed." gradle-build.log
+          grep -F "Warlock profile regression suite passed." gradle-build.log
 
       - name: Run full repository consistency
         run: python3 scripts/check_consistency.py

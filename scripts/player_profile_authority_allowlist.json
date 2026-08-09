@@ -345,6 +345,11 @@
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/assassin/AssassinGameplayService.java|if (target.getPersistentDataContainer().has(WORLD_BOSS_KEY, PersistentDataType.BYTE)) {",
       "category": "ENTITY_METADATA",
       "reason": "Read-only immunity probe of the world-boss marker on a MOB (the scanner cannot tell the receiver is a LivingEntity, not a player), so boss entities can never be infected. No player state is read or written."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java|private final Map<UUID, WarlockCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Warlock combat state (soul-debt meter, three-slot curse grimoire, single soul-thread target, ember bank with the overheat lockout, bounded demon-kind roster). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The debt is a combat meter only and is never an economic balance."
     }
   ]
 }

@@ -1316,6 +1316,145 @@ classes:
         - wither
         - warden
 
+  warlock:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      affliction:
+        - corruption
+        - agony
+        - unstable_affliction
+        - malefic_grasp
+        - siphon_life
+        - seed_of_corruption
+        - darkglare
+      destruction:
+        - immolate
+        - incinerate
+        - conflagrate
+        - chaos_bolt
+        - rain_of_fire
+        - shadowfury
+        - summon_infernal
+      demonologist:
+        - fel_bolt
+        - imp_swarm
+        - magma_servant
+        - demon_skin
+        - chaos_flame
+        - sacrifice_pact
+        - legion
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      repay-xp: 4
+      drain-xp: 4
+      burst-xp: 6
+      call-xp: 5
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Paktum és Lélekadósság — a paktum-castok nagyobb erőt adnak, és KÖNYVELIK az
+    # adósságot, ami kifizette őket. Az adósság magától SOHA nem cseng le: kizárólag a felsorolt
+    # törlesztő tettek dolgozzák le. A plafonon minden paktum elutasításra kerül, a fél plafon
+    # felett pedig a kapott sebzés nagyobbat üt.
+    # FONTOS: ez tisztán HARCI mérőóra — nem pénztárca. Sem egyenleg, sem valuta, sem átutalás
+    # nem tartozik hozzá, és semmilyen gazdasági rendszerhez nem nyúl.
+    pact:
+      pact-spells:
+        - unstable_affliction
+        - chaos_bolt
+        - sacrifice_pact
+        - darkglare
+        - summon_infernal
+        - legion
+      repay-spells:
+        - drain_life
+        - siphon_life
+        - malefic_grasp
+      debt-per-pact: 20
+      cheap-reduction: 5
+      repay-per-cast: 12
+      quick-extra-repay: 5
+      debt-ceiling: 100
+      bearing-extra: 20
+      bonus-percent: 18.0
+      deep-extra-percent: 6.0
+      debt-taken-penalty-percent: 10.0
+
+    # Átok: háromhelyes Átokgrimoár (három konkrét átok, saját lejárattal) + egy Lélekfonal,
+    # ami mindig PONTOSAN egy áldozatot nevez meg, és új kötéssel átköthető.
+    affliction:
+      gyotrelem-spells:
+        - agony
+        - curse_of_agony
+      romlas-spells:
+        - corruption
+        - seed_of_corruption
+      aszaly-spells:
+        - curse_of_weakness
+        - soul_rot
+      drain-spells:
+        - drain_life
+        - siphon_life
+        - malefic_grasp
+      curse-millis: 12000
+      lasting-extra-millis: 4000
+      thread-millis: 8000
+      strong-extra-millis: 3000
+      per-curse-percent: 6.0
+      drain-heal-per-curse: 1.5
+      thread-extra-heal: 2.0
+
+    # Pusztítás: az Izzó Parázs a tűz-castokból gyűlik, a burst EGYBEN égeti el. A kockázat
+    # kizárólag opt-in: csak a TELE parázzsal indított robbanás vásárolja meg a Túlhevülést,
+    # ami rövid, determinisztikus tűz-tiltás — nincs véletlen.
+    destruction:
+      ember-spells:
+        - immolate
+        - incinerate
+        - conflagrate
+        - rain_of_fire
+      burst-spells:
+        - chaos_bolt
+        - cataclysm
+        - summon_infernal
+      ember-per-cast: 1
+      ember-maximum: 4
+      deep-extra-ember: 1
+      per-ember-percent: 5.0
+      core-extra-percent: 1.5
+      overheat-millis: 5000
+      cold-reduction-millis: 1500
+      spark-repay: 2
+      storm-heal-per-ember: 1.0
+
+    # Demonológus (DARK — a meglévő pecsét/kapu rendszer alatt): a roster HÁROM démon-FAJTÁT tart
+    # nyilván (nem élő entitás-listát), a tényleges megidézés a MEGLÉVŐ minion/summon úton fut a
+    # demonologist.roster companion-névtér alatt.
+    demonologist:
+      imp-spells:
+        - imp_swarm
+      szolga-spells:
+        - magma_servant
+      infernal-spells:
+        - summon_infernal
+        - legion
+      demonic-spells:
+        - fel_bolt
+        - chaos_flame
+        - demon_skin
+      dismiss-spells:
+        - sacrifice_pact
+      per-demon-percent: 6.0
+      hide-extra-percent: 2.0
+      dismiss-heal-per-demon: 2.0
+      loyal-extra-heal: 1.0
+      call-repay: 4
+      order-heal: 2.0
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -1438,6 +1577,18 @@ specializations:
     capstone-spell: black_death
     spell-unlocks:
       black_death: 50
+  affliction:
+    capstone-spell: darkglare
+    spell-unlocks:
+      darkglare: 50
+  destruction:
+    capstone-spell: summon_infernal
+    spell-unlocks:
+      summon_infernal: 50
+  demonologist:
+    capstone-spell: legion
+    spell-unlocks:
+      legion: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

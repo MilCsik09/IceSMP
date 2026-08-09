@@ -65,6 +65,14 @@ A Warrior cast requires the personal Kürt and an Evoker cast requires the perso
 - **Mastery:** fragment collections, sigils, cleaves and the capstone earn mastery XP only in combat.
 - The melee-catalyst compatibility list now names only `death_knight`; every completed gameplay-v2 class requires its personal Lélekkapocs to cast.
 
+## Warlock gameplay rules
+
+- **Paktum és Lélekadósság (class core):** the listed pact spells are empowered through the capped shared power pipeline and **book the debt that paid for them**. The debt **never decays on its own** — only the listed repayment casts work it off. At the ceiling every pact is refused until it is paid down, and above half the ceiling incoming damage bites harder. It is a **combat meter only**: no wallet, balance, currency or transfer is involved anywhere, and the runtime touches no economic system.
+- **Átok (Átokgrimoár + Lélekfonal):** exactly **three** curse pages, each with its own expiry; re-casting a held curse refreshes its page instead of taking another, and a fourth distinct curse waits for a page to lapse. The Lélekfonal always names **exactly one** victim and a new strike re-ties it (átkötés); draining pays out per live curse and deeper while the thread holds.
+- **Pusztítás (Izzó Parázs + Túlhevülés):** fire casts bank embers and a burst takes **every** ember at once, scaling through the capped pipeline. The risk is strictly opt-in: **only a burst fired at maximum embers** buys the Túlhevülés lockout, a short, deterministic window in which fire casts are refused. No randomness anywhere.
+- **Demonológus (roster, DARK):** the spec stays on the existing DARK seal/gate system and keeps a bounded roster of **three demon kinds** (kinds, never live entity handles) under the `demonologist.roster` namespace; the actual summoning stays on the **existing** minion/summon spells. Dismissing the pact empties the roster in one act.
+- **Mastery:** repayments, drains, bursts and demon calls earn mastery XP only in combat.
+
 ## Assassin gameplay rules
 
 - **Lehetőség (class core):** four distinct openings arm the same single finisher window — **Pozíció** (a hit landed from behind the target, a deterministic facing check), **Kitérés** (a cancelled or fully absorbed incoming blow), **Interrupt** (a listed interrupt cast) and **Észrevétlen** (a cast fired from stealth). A finisher requires the window, spends it whole, and the runtime remembers which opening paid for it.
@@ -173,9 +181,12 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Szentségtelen: `death_knight_unholy_trial`;
 - Méregkeverő: `assassin_poisoner_trial`;
 - Fantom: `assassin_phantom_trial`;
-- Pestishozó: `assassin_plaguebringer_trial`.
+- Pestishozó: `assassin_plaguebringer_trial`;
+- Átok: `warlock_affliction_trial`;
+- Pusztítás: `warlock_destruction_trial`;
+- Demonológus: `warlock_demonologist_trial`.
 
-The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight and Assassin trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin and Warlock trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 
