@@ -168,7 +168,7 @@ public final class RespecService {
                                     .orElse(hu.taliann.icesmp.classspec.domain.LoadoutSlot.FIRST)),
                             operationId, Double.toString(cost), currency.name()))
                     .toCompletableFuture().join();
-            if (!result.durableMutationApplied()) {
+            if (!result.durableOutcomeAccepted()) {
                 if (wallet != null) currencyManager.rollbackOperation(operationId);
                 journal.delete(operationId);
                 completion.complete(new Outcome(Outcome.Status.PERSISTENCE_FAILED, cost, currency, 0));
