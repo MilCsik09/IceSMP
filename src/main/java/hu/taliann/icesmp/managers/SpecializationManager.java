@@ -16,6 +16,7 @@ import hu.taliann.icesmp.data.ProfessionSpecializationType;
 import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
+import hu.taliann.icesmp.assassin.AssassinGameplayService;
 import hu.taliann.icesmp.deathknight.DeathKnightGameplayService;
 import hu.taliann.icesmp.druid.DruidGameplayService;
 import hu.taliann.icesmp.priest.PriestGameplayService;
@@ -82,7 +83,10 @@ public final class SpecializationManager {
             Map.entry("priest_shadow_trial", "shadow"),
             Map.entry("death_knight_blood_trial", "blood"),
             Map.entry("death_knight_frost_trial", "frost"),
-            Map.entry("death_knight_unholy_trial", "unholy"));
+            Map.entry("death_knight_unholy_trial", "unholy"),
+            Map.entry("assassin_poisoner_trial", "poisoner"),
+            Map.entry("assassin_phantom_trial", "phantom"),
+            Map.entry("assassin_plaguebringer_trial", "plaguebringer"));
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -110,6 +114,7 @@ public final class SpecializationManager {
     private volatile DruidGameplayService druidGameplayService;
     private volatile PriestGameplayService priestGameplayService;
     private volatile DeathKnightGameplayService deathKnightGameplayService;
+    private volatile AssassinGameplayService assassinGameplayService;
     private volatile CatalystItemFactory soulbondFactory;
     private volatile Consumer<UUID> classSwitchCleanup = ignored -> { };
     private volatile Consumer<Player> classProfileRefresh = ignored -> { };
@@ -165,7 +170,10 @@ public final class SpecializationManager {
         final DeathKnightGameplayService deathKnightRuntime = new DeathKnightGameplayService(
                 plugin, configManager, jobManager, this, factory, messageManager);
         plugin.getServer().getPluginManager().registerEvents(priestRuntime, plugin);
+        final AssassinGameplayService assassinRuntime = new AssassinGameplayService(
+                plugin, configManager, jobManager, this, factory, messageManager);
         plugin.getServer().getPluginManager().registerEvents(deathKnightRuntime, plugin);
+        plugin.getServer().getPluginManager().registerEvents(assassinRuntime, plugin);
         soulbondFactory = factory;
         warriorGameplayService = warriorRuntime;
         evokerGameplayService = evokerRuntime;
@@ -177,6 +185,7 @@ public final class SpecializationManager {
         druidGameplayService = druidRuntime;
         priestGameplayService = priestRuntime;
         deathKnightGameplayService = deathKnightRuntime;
+        assassinGameplayService = assassinRuntime;
         classSwitchCleanup = playerId -> {
             warriorRuntime.clearSpecializationState(playerId);
             evokerRuntime.clearSpecializationState(playerId);
@@ -188,6 +197,7 @@ public final class SpecializationManager {
             druidRuntime.clearSpecializationState(playerId);
             priestRuntime.clearSpecializationState(playerId);
             deathKnightRuntime.clearSpecializationState(playerId);
+            assassinRuntime.clearSpecializationState(playerId);
         };
         classProfileRefresh = this::scheduleClassProfileRefresh;
         jobManager.setXpChangeHook(player -> reconcileClassProgression(player)
@@ -236,6 +246,10 @@ public final class SpecializationManager {
 
     public Optional<DeathKnightGameplayService> deathKnightGameplayService() {
         return Optional.ofNullable(deathKnightGameplayService);
+    }
+
+    public Optional<AssassinGameplayService> assassinGameplayService() {
+        return Optional.ofNullable(assassinGameplayService);
     }
 
     public boolean choosePriestLitany(final Player player, final String litanyId) {
@@ -568,6 +582,24 @@ public final class SpecializationManager {
                 case 30 -> Set.of("terjedo_kor", "savas_ver");
                 case 40 -> Set.of("dus_kor", "pusztito_kor");
                 case 50 -> Set.of("torz_ghul", "orok_jarvany");
+                default -> Set.of();
+            };
+            case POISONER -> switch (level) {
+                case 30 -> Set.of("hosszu_pillanat", "gyors_kever");
+                case 40 -> Set.of("arnyekbol", "szeles_hatas");
+                case 50 -> Set.of("melyebb_dozis", "halalos_fozet");
+                default -> Set.of();
+            };
+            case PHANTOM -> switch (level) {
+                case 30 -> Set.of("halk_lepes", "hosszu_nyom");
+                case 40 -> Set.of("tiszta_visszhang", "kettos_lepes");
+                case 50 -> Set.of("mely_arny", "kisertet");
+                default -> Set.of();
+            };
+            case PLAGUEBRINGER -> switch (level) {
+                case 30 -> Set.of("szivos_torzs", "gyors_lappangas");
+                case 40 -> Set.of("szeles_jarvany", "mely_fertozes");
+                case 50 -> Set.of("torzs_mestere", "fekete_halal");
                 default -> Set.of();
             };
             default -> Set.of();
@@ -978,6 +1010,7 @@ public final class SpecializationManager {
         final DruidGameplayService druidRuntime = druidGameplayService;
         final PriestGameplayService priestRuntime = priestGameplayService;
         final DeathKnightGameplayService deathKnightRuntime = deathKnightGameplayService;
+        final AssassinGameplayService assassinRuntime = assassinGameplayService;
         final CatalystItemFactory factory = soulbondFactory;
         if (warriorRuntime != null) warriorRuntime.reconcileProfile(player);
         if (evokerRuntime != null) evokerRuntime.reconcileProfile(player);
@@ -989,6 +1022,7 @@ public final class SpecializationManager {
         if (druidRuntime != null) druidRuntime.reconcileProfile(player);
         if (priestRuntime != null) priestRuntime.reconcileProfile(player);
         if (deathKnightRuntime != null) deathKnightRuntime.reconcileProfile(player);
+        if (assassinRuntime != null) assassinRuntime.reconcileProfile(player);
         final JobType job = jobManager.getPrimaryJob(player);
         if (factory == null || job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) return;
         final ClassSpecSection profile = profileGateway().currentProfile(player.getUniqueId()).orElse(null);

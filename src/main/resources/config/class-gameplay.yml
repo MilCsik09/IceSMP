@@ -1170,6 +1170,152 @@ classes:
       per-mutation-percent: 4.0
       acid-heal-per-plague: 0.5
 
+  assassin:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      poisoner:
+        - venom_strike
+        - toxin_dart
+        - acid_splash
+        - numbing_agent
+        - paralytic_strike
+        - contagion
+        - deathcap
+      phantom:
+        - hide
+        - ghost_step
+        - phase_blink
+        - haunt
+        - cold_spot
+        - ethereal_form
+        - spectre
+      plaguebringer:
+        - plague_cut
+        - plague_contagion
+        - black_boils
+        - miasma
+        - festering_wounds
+        - plague_wind
+        - black_death
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      finisher-xp: 5
+      catalyse-xp: 6
+      echo-xp: 4
+      strain-xp: 5
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Lehetőség — négy KÜLÖNBÖZŐ nyitány teremti meg (pozíció = hátbatámadás,
+    # kitérés = kivédett/megszakított ütés, interrupt = felsorolt megszakító spell, észrevétlen =
+    # rejtekből indított cast). Az ablak EGYET ér: a finisher egyben költi el, és a runtime
+    # megjegyzi, melyik nyitány fizetett érte.
+    opportunity:
+      window-millis: 5000
+      long-extra-millis: 2000
+      bonus-percent: 15.0
+      unseen-extra-percent: 8.0
+      finisher-spells:
+        - death_mark
+        - garrote
+        - deathcap
+        - spectre
+        - black_death
+      interrupt-spells:
+        - blackout
+        - hamstring
+        - phantom_grip
+
+    # Méregkeverő: PONTOSAN három toxin-hely, mindegyiken saját Dózissal. A negyedik toxin
+    # elutasításra kerül — előbb katalizálni kell. Ez három konkrét méreg, nem generic socket engine.
+    poisoner:
+      benito-spells:
+        - numbing_agent
+        - debilitating_poison
+      marokod-spells:
+        - venom_strike
+        - paralytic_strike
+      sorvaszto-spells:
+        - acid_splash
+        - toxic_cloud
+      catalyst-spells:
+        - contagion
+        - deathcap
+      max-dose: 3
+      deep-extra-dose: 1
+      per-dose-percent: 4.0
+      lethal-extra-percent: 1.5
+      catalyse-ticks: 80
+      wide-extra-ticks: 20
+      quick-mix-heal: 2.0
+
+    # Fantom: az Észleltség minden hangos tettre nő és tétlenül cseng le. A rejtőzés IDŐKORLÁTOS,
+    # a küszöb feletti Észleltség azonnal megtöri, és minden ütés megtöri — sosem végtelen,
+    # célozhatatlan állapot.
+    phantom:
+      stealth-spells:
+        - hide
+        - ethereal_form
+      trail-spells:
+        - ghost_step
+        - phase_blink
+      echo-spells:
+        - haunt
+        - dread_whisper
+      quiet-spells:
+        - hide
+        - ghost_step
+        - ethereal_form
+        - cold_spot
+      cast-detection: 12
+      strike-detection: 25
+      detection-break: 60
+      quiet-extra-threshold: 10
+      stealth-millis: 8000
+      deep-extra-millis: 3000
+      trail-window-millis: 5000
+      long-trail-extra-millis: 2000
+      echo-heal: 3.0
+      clear-echo-extra-heal: 2.0
+      ghost-detection-vent: 100
+      decay-delay-millis: 4000
+      decay-per-second: 8.0
+
+    # Pestishozó (DARK — a meglévő pecsét/kapu rendszer alatt). KÖTELEZŐ korlátok, mind kikényszerítve:
+    #  - entity cap: egyszerre legfeljebb ennyi élő fertőzött tartozhat egy játékoshoz;
+    #  - spread cap: a hordozó SOHA nem adja tovább a törzset — minden fertőzést a Pestishozó
+    #    saját ütése vet el, így mob→mob exponenciális terjedés szerkezetileg lehetetlen;
+    #  - cleanup: a bejegyzések lejárnak, a halott entitás azonnal kikerül, spec-váltás/kilépés törli;
+    #  - esemény-precedencia: aktív Vérhold alatt nincs új fertőzés;
+    #  - admin/szkriptelt immunitás: plugin-tulajdonú minionok és world-boss-jelölt entitások immunisak;
+    #  - boss/dungeon policy: az EventSpawnGuard („plague_spread") és az immune-types lista dönt.
+    plague:
+      allow-infection: true
+      mutate-spells:
+        - miasma
+        - festering_wounds
+        - plague_wind
+      strain-maximum: 3
+      master-extra-stage: 1
+      entity-cap: 6
+      wide-extra-cap: 2
+      infection-millis: 15000
+      tough-extra-millis: 5000
+      effect-ticks: 100
+      deep-extra-ticks: 40
+      immune-types:
+        - villager
+        - wandering_trader
+        - armor_stand
+        - iron_golem
+        - ender_dragon
+        - wither
+        - warden
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -1280,6 +1426,18 @@ specializations:
     capstone-spell: army_of_the_dead
     spell-unlocks:
       army_of_the_dead: 50
+  poisoner:
+    capstone-spell: deathcap
+    spell-unlocks:
+      deathcap: 50
+  phantom:
+    capstone-spell: spectre
+    spell-unlocks:
+      spectre: 50
+  plaguebringer:
+    capstone-spell: black_death
+    spell-unlocks:
+      black_death: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

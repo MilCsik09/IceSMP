@@ -4,6 +4,7 @@ import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort;
 import hu.taliann.icesmp.classspec.application.ProfileSessionRegistry;
 import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
+import hu.taliann.icesmp.assassin.AssassinGameplayService;
 import hu.taliann.icesmp.deathknight.DeathKnightGameplayService;
 import hu.taliann.icesmp.druid.DruidGameplayService;
 import hu.taliann.icesmp.priest.PriestGameplayService;
@@ -14,6 +15,8 @@ import hu.taliann.icesmp.shaman.ShamanGameplayService;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.AdvancementService;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.BloodMoonManager;
+import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
@@ -45,6 +48,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     private final SpellRegistry spells;
     private final ResourceManager resources;
     private final PetManager pets;
+    private final BloodMoonManager bloodMoon;
+    private final MinionManager minions;
     private final List<PlayerStateCleanup> transientOwners = new CopyOnWriteArrayList<>();
     private final ProfileSessionRegistry sessions;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
@@ -57,6 +62,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                                          final SpecializationManager specs,
                                          final AbilityCatalystListener catalyst,
                                          final PetManager pets,
+                                         final BloodMoonManager bloodMoon,
+                                         final MinionManager minions,
                                          final ResourceManager resources,
                                          final SpellRegistry spells,
                                          final ProfileSessionRegistry sessions) {
@@ -68,6 +75,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         this.resources = Objects.requireNonNull(resources);
         this.sessions = Objects.requireNonNull(sessions);
         this.pets = Objects.requireNonNull(pets);
+        this.bloodMoon = Objects.requireNonNull(bloodMoon);
+        this.minions = Objects.requireNonNull(minions);
         transientOwners.add(catalyst);
         transientOwners.add(pets);
         transientOwners.add(resources);
@@ -100,8 +109,9 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         final DruidGameplayService druid = specs.druidGameplayService().orElse(null);
         final PriestGameplayService priest = specs.priestGameplayService().orElse(null);
         final DeathKnightGameplayService deathKnight = specs.deathKnightGameplayService().orElse(null);
+        final AssassinGameplayService assassin = specs.assassinGameplayService().orElse(null);
         if (warrior == null || evoker == null || archer == null || shaman == null
-                || monk == null || paladin == null || demonHunter == null || druid == null || priest == null || deathKnight == null
+                || monk == null || paladin == null || demonHunter == null || druid == null || priest == null || deathKnight == null || assassin == null
                 || !runtimesWired.compareAndSet(false, true)) return;
         catalyst.setWarriorGameplayService(warrior);
         catalyst.setEvokerGameplayService(evoker);
@@ -113,6 +123,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         catalyst.setDruidGameplayService(druid);
         catalyst.setPriestGameplayService(priest);
         catalyst.setDeathKnightGameplayService(deathKnight);
+        catalyst.setAssassinGameplayService(assassin);
         resources.setHudSuffix(player -> warrior.hudSuffix(player)
                 .append(evoker.hudSuffix(player))
                 .append(archer.hudSuffix(player))
@@ -122,7 +133,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 .append(demonHunter.hudSuffix(player))
                 .append(druid.hudSuffix(player))
                 .append(priest.hudSuffix(player))
-                .append(deathKnight.hudSuffix(player)));
+                .append(deathKnight.hudSuffix(player))
+                .append(assassin.hudSuffix(player)));
         specs.setSwitchSafetyResource(resources);
         warrior.setCombatTracker(resources);
         evoker.setCombatTracker(resources);
@@ -134,6 +146,9 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         druid.setCombatTracker(resources);
         priest.setCombatTracker(resources);
         deathKnight.setCombatTracker(resources);
+        assassin.setCombatTracker(resources);
+        assassin.setBloodMoonManager(bloodMoon);
+        assassin.setMinionManager(minions);
         archer.setPetManager(pets);
         pets.setPetDeathHook(archer::onPetDeath);
         registerTransientOwner(warrior);
@@ -146,6 +161,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         registerTransientOwner(druid);
         registerTransientOwner(priest);
         registerTransientOwner(deathKnight);
+        registerTransientOwner(assassin);
         setLoadoutSwitchCleanup(playerId -> {
             warrior.clearSpecializationState(playerId);
             evoker.clearSpecializationState(playerId);
@@ -157,6 +173,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             druid.clearSpecializationState(playerId);
             priest.clearSpecializationState(playerId);
             deathKnight.clearSpecializationState(playerId);
+            assassin.clearSpecializationState(playerId);
         });
         setPostReconcile(player -> {
             warrior.reconcileProfile(player);
@@ -169,6 +186,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             druid.reconcileProfile(player);
             priest.reconcileProfile(player);
             deathKnight.reconcileProfile(player);
+            assassin.reconcileProfile(player);
             catalyst.refreshSoulbond(player);
         });
     }
@@ -289,7 +307,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                     || owner instanceof DemonHunterGameplayService
                     || owner instanceof DruidGameplayService
                     || owner instanceof PriestGameplayService
-                    || owner instanceof DeathKnightGameplayService)) {
+                    || owner instanceof DeathKnightGameplayService
+                    || owner instanceof AssassinGameplayService)) {
                 continue;
             }
             owner.clearPlayerState(id);

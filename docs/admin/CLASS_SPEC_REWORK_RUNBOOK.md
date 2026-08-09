@@ -65,6 +65,14 @@ A Warrior cast requires the personal Kürt and an Evoker cast requires the perso
 - **Mastery:** fragment collections, sigils, cleaves and the capstone earn mastery XP only in combat.
 - The melee-catalyst compatibility list now names only `death_knight`; every completed gameplay-v2 class requires its personal Lélekkapocs to cast.
 
+## Assassin gameplay rules
+
+- **Lehetőség (class core):** four distinct openings arm the same single finisher window — **Pozíció** (a hit landed from behind the target, a deterministic facing check), **Kitérés** (a cancelled or fully absorbed incoming blow), **Interrupt** (a listed interrupt cast) and **Észrevétlen** (a cast fired from stealth). A finisher requires the window, spends it whole, and the runtime remembers which opening paid for it.
+- **Méregkeverő (Toxinkészlet + Dózis + katalizálás):** exactly **three** slots, each holding one of three concrete toxins with its own Dózis. Re-applying a held toxin deepens its dose; a fourth toxin is refused until the kit is catalysed. The catalyst burns the whole kit at once and pays out by total dose. Three concrete slots — never a generic socket engine.
+- **Fantom (Árnyéknyom + Visszhang + Észleltség):** every loud act raises Észleltség, which decays lazily while idle. Stealth is **strictly finite**: it is time-boxed, refused above the detection threshold, ended the moment detection crosses it, and broken outright by any strike — never an open-ended untargetable state. An Árnyéknyom carries exactly one Visszhang.
+- **Pestishozó (Járványtörzs, DARK):** the spec stays on the existing DARK seal/gate system, and **every mandatory cap is enforced**: a hard per-player entity cap; **no mob-to-mob hand-on at all** (every infection is seeded by the plaguebringer's own strike, so exponential spread is structurally impossible); expiring entries plus immediate removal on carrier death and full teardown on spec switch/logout; no new infections while a **blood moon** runs; immunity for plugin-owned/scripted minions and world-boss-marked entities; and the existing `EventSpawnGuard` (`plague_spread`) plus the `immune-types` list covering the boss/dungeon policy.
+- **Mastery:** finishers, catalysings, echoes and strain mutations earn mastery XP only in combat.
+
 ## Death Knight gameplay rules
 
 - **Rúnakör (class core):** the Vér and Fagy runes recharge lazily on their own; the **Halál rune never does** — it exists only where `death_strike` transmutes a full natural rune into it. Every spell listed under `runes.<type>-spells` is refused before the cast when its rune is missing, so the wheel is charged as deliberately as it is spent. This is the Death Knight's own system, not a generic rune engine offered to other classes.
@@ -162,9 +170,12 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Árnyék: `priest_shadow_trial`;
 - Vérlovag: `death_knight_blood_trial`;
 - Fagylovag: `death_knight_frost_trial`;
-- Szentségtelen: `death_knight_unholy_trial`.
+- Szentségtelen: `death_knight_unholy_trial`;
+- Méregkeverő: `assassin_poisoner_trial`;
+- Fantom: `assassin_phantom_trial`;
+- Pestishozó: `assassin_plaguebringer_trial`.
 
-The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest and Death Knight trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight and Assassin trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 
