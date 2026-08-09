@@ -7,6 +7,7 @@ import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
 import hu.taliann.icesmp.assassin.AssassinGameplayService;
 import hu.taliann.icesmp.warlock.WarlockGameplayService;
+import hu.taliann.icesmp.wizard.WizardGameplayService;
 import hu.taliann.icesmp.deathknight.DeathKnightGameplayService;
 import hu.taliann.icesmp.druid.DruidGameplayService;
 import hu.taliann.icesmp.priest.PriestGameplayService;
@@ -96,6 +97,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile DeathKnightGameplayService deathKnightGameplayService;
     private volatile AssassinGameplayService assassinGameplayService;
     private volatile WarlockGameplayService warlockGameplayService;
+    private volatile WizardGameplayService wizardGameplayService;
     private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin,
@@ -149,6 +151,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setPaladinGameplayService(final PaladinGameplayService service) {
         paladinGameplayService = java.util.Objects.requireNonNull(service, "service");
+    }
+
+    public void setWizardGameplayService(final WizardGameplayService service) {
+        wizardGameplayService = java.util.Objects.requireNonNull(service, "service");
     }
 
     public void setWarlockGameplayService(final WarlockGameplayService service) {
@@ -365,6 +371,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (assassin != null && !assassin.beforeCast(player, selected)) return;
         final WarlockGameplayService warlock = warlockGameplayService;
         if (warlock != null && !warlock.beforeCast(player, selected)) return;
+        final WizardGameplayService wizard = wizardGameplayService;
+        if (wizard != null && !wizard.beforeCast(player, selected)) return;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
@@ -395,7 +403,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 + (priest == null ? 0.0D : priest.castPowerBonusPercent(player, selected))
                 + (deathKnight == null ? 0.0D : deathKnight.castPowerBonusPercent(player, selected))
                 + (assassin == null ? 0.0D : assassin.castPowerBonusPercent(player, selected))
-                + (warlock == null ? 0.0D : warlock.castPowerBonusPercent(player, selected));
+                + (warlock == null ? 0.0D : warlock.castPowerBonusPercent(player, selected))
+                + (wizard == null ? 0.0D : wizard.castPowerBonusPercent(player, selected));
         final double powerCap = Math.max(1.0D,
                 configManager.getDouble("spells.total-power-cap", 1.75D));
         final double power = Math.min(powerCap,
@@ -446,6 +455,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         if (warlock != null) {
             warlock.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
+        }
+        if (wizard != null) {
+            wizard.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -784,6 +796,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final PaladinGameplayService paladin = paladinGameplayService;
         if (paladin != null) {
             active = paladin.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        }
+        final WizardGameplayService wizardKit = wizardGameplayService;
+        if (wizardKit != null) {
+            active = wizardKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
         }
         final WarlockGameplayService warlockKit = warlockGameplayService;
         if (warlockKit != null) {

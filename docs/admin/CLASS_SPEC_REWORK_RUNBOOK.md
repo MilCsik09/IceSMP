@@ -65,6 +65,13 @@ A Warrior cast requires the personal Kürt and an Evoker cast requires the perso
 - **Mastery:** fragment collections, sigils, cleaves and the capstone earn mastery XP only in combat.
 - The melee-catalyst compatibility list now names only `death_knight`; every completed gameplay-v2 class requires its personal Lélekkapocs to cast.
 
+## Wizard gameplay rules
+
+- **Rúnaszövés (class core):** the runtime keeps **only the last two schools cast** and looks the ordered pair up in a table of **exactly five concrete reactions** — Tűz→Fagy = Gőzrobbanás, Fagy→Vihar = Jégvihar, Vihar→Tűz = Kohó, Árny→Arkán = Árnyvisszhang, Arkán→Árny = Arkán Erősítés. Order matters, every other pair is inert, and the pair is consumed by its own reaction so the same weave cannot fire twice. The reaction arms a short window that empowers the next cast once. There is no combo DSL and no rule engine.
+- **Elementalista (három ráhangolódás):** one three-slot array (Tűz/Fagy/Vihar) with lazy decay, read by exactly two threshold checks — **Konvergencia** (two attunements at or above the bar) and **Elemi Korona** (all three). Not three parallel subsystems.
+- **Nekromanta (Holtak Udvara, DARK):** the spec stays on the existing DARK seal/gate system, and the court is a **bounded roster of raised kinds** (kinds, never live entity handles) under the `necromancer.court` namespace; raising past the capacity is refused before the cast and a harvest releases the whole court at once. **The Lélekszilánk economy is not reimplemented here:** the existing `SoulforgeManager` keeps its CAS, receipt, shard and refund/recovery authority, and this runtime only *reads* its LETSZAM ranks to size the court.
+- **Mastery:** rune reactions, crowns, raisings and harvests earn mastery XP only in combat.
+
 ## Warlock gameplay rules
 
 - **Paktum és Lélekadósság (class core):** the listed pact spells are empowered through the capped shared power pipeline and **book the debt that paid for them**. The debt **never decays on its own** — only the listed repayment casts work it off. At the ceiling every pact is refused until it is paid down, and above half the ceiling incoming damage bites harder. It is a **combat meter only**: no wallet, balance, currency or transfer is involved anywhere, and the runtime touches no economic system.
@@ -184,9 +191,11 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Pestishozó: `assassin_plaguebringer_trial`;
 - Átok: `warlock_affliction_trial`;
 - Pusztítás: `warlock_destruction_trial`;
-- Demonológus: `warlock_demonologist_trial`.
+- Demonológus: `warlock_demonologist_trial`;
+- Elementalista: `wizard_elementalist_trial`;
+- Nekromanta: `wizard_necromancer_trial`.
 
-The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin and Warlock trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin, Warlock and Wizard trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 

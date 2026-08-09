@@ -242,6 +242,8 @@ public final class CatalystItemFactory {
                 addAssassinEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             } else if (jobType == JobType.WARLOCK) {
                 addWarlockEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            } else if (jobType == JobType.WIZARD) {
+                addWizardEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             }
         }
         if (masteryRank >= 5) {
@@ -443,6 +445,15 @@ public final class CatalystItemFactory {
         lore.add(line("<light_purple>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></light_purple>"));
     }
 
+    private void addWizardEvolutionLore(final List<Component> lore, final String spec,
+                                        final Map<String, String> doctrines) {
+        final String first = doctrines.getOrDefault("level_30", "még kialakulatlan");
+        final String second = doctrines.getOrDefault("level_40", "még kialakulatlan");
+        final String prefix = "elementalist".equals(spec) ? "Elemjegy" : "Sírjegy";
+        lore.add(line("<aqua>" + prefix + " I: <white>" + doctrineDisplay(first) + "</white></aqua>"));
+        lore.add(line("<dark_aqua>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></dark_aqua>"));
+    }
+
     private static String evolution(final int level) {
         if (level >= 50) return "Beteljesedés";
         if (level >= 35) return "Mélyülés";
@@ -494,6 +505,8 @@ public final class CatalystItemFactory {
             case "affliction" -> "Átok";
             case "destruction" -> "Pusztítás";
             case "demonologist" -> "Demonológus";
+            case "elementalist" -> "Elementalista";
+            case "necromancer" -> "Nekromanta";
             default -> id;
         };
     }
@@ -698,6 +711,18 @@ public final class CatalystItemFactory {
             case "legios_rend" -> "Légiós Rend";
             case "orok_paktum" -> "Örök Paktum";
             case "nagy_legio" -> "Nagy Légió";
+            case "gyors_rahangolodas" -> "Gyors Ráhangolódás";
+            case "hosszu_visszacsatolas" -> "Hosszú Visszacsatolás";
+            case "mely_szoves" -> "Mély Szövés";
+            case "elemi_egyensuly" -> "Elemi Egyensúly";
+            case "konnyu_korona" -> "Könnyű Korona";
+            case "arkan_ura" -> "Arkán Ura";
+            case "nagyobb_udvar" -> "Nagyobb Udvar";
+            case "hu_holtak" -> "Hű Holtak";
+            case "csontkiraly" -> "Csontkirály";
+            case "lelekaratas" -> "Lélekaratás";
+            case "orok_udvar" -> "Örök Udvar";
+            case "halalmester" -> "Halálmester";
             default -> id.replace('_', ' ');
         };
     }

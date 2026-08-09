@@ -583,7 +583,7 @@ public final class IceSMPCore {
         this.profileSessionRegistry = new hu.taliann.icesmp.classspec.application.ProfileSessionRegistry();
         this.classSpecRuntimeAdapter = new hu.taliann.icesmp.classspec.integration.BukkitClassSpecRuntimeAdapter(
                 plugin, jobManager, specializationManager, abilityCatalystListener, petManager,
-                bloodMoonManager, minionManager,
+                bloodMoonManager, minionManager, soulforgeManager,
                 resourceManager, spellRegistry, profileSessionRegistry);
         this.classSpecProfileGateway = new hu.taliann.icesmp.classspec.application.DefaultClassSpecProfileGateway(
                 new hu.taliann.icesmp.classspec.persistence.ClassSpecSectionMutationStoreAdapter(classSpecSectionRepository),

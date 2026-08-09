@@ -1459,6 +1459,114 @@ classes:
       call-repay: 4
       order-heal: 2.0
 
+  wizard:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      elementalist:
+        - fireball
+        - frost_nova
+        - thunder_strike
+        - ember_storm
+        - gale_burst
+        - stone_skin
+        - elemental_overload
+      necromancer:
+        - life_drain
+        - bone_spear
+        - grave_grasp
+        - raise_horde
+        - bone_archers
+        - wraith_form
+        - soul_harvest
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      reaction-xp: 5
+      crown-xp: 8
+      raise-xp: 5
+      harvest-xp: 6
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Rúnaszövés — a runtime KIZÁRÓLAG az utolsó két iskolát tartja számon, és egy
+    # rövid, TÉTELESEN felsorolt táblából adódik a rúnareakció. Öt konkrét, irányított pár van;
+    # nincs szabálymotor és nincs kombó-DSL. A reakció a KÖVETKEZŐ castot erősíti, egyszer.
+    #   Tűz → Fagy   = Gőzrobbanás
+    #   Fagy → Vihar = Jégvihar
+    #   Vihar → Tűz  = Kohó
+    #   Árny → Arkán = Árnyvisszhang
+    #   Arkán → Árny = Arkán Erősítés
+    weave:
+      tuz-spells:
+        - fireball
+        - ember_storm
+        - sun_dance
+      fagy-spells:
+        - frost_nova
+        - frost_touch
+        - bone_chill
+      vihar-spells:
+        - thunder_strike
+        - gale_burst
+        - riptide_pull
+      arny-spells:
+        - life_drain
+        - soul_siphon
+        - dread_aura
+      arkan-spells:
+        - mana_dart
+        - arcane_nova
+        - blink
+        - arcane_shield
+      reaction-window-millis: 5000
+      long-extra-millis: 2000
+      reaction-bonus-percent: 15.0
+      deep-extra-percent: 5.0
+      arcane-extra-percent: 5.0
+
+    # Elementalista: EGY háromelemű ráhangolódás-tömb (Tűz/Fagy/Vihar), két küszöb-ellenőrzéssel —
+    # Konvergencia (kettő a küszöbön) és Elemi Korona (mindhárom). Nem három külön alrendszer.
+    elementalist:
+      attunement-per-cast: 18
+      quick-extra-gain: 5
+      attunement-threshold: 70
+      light-crown-reduction: 10
+      convergence-bonus-percent: 12.0
+      crown-bonus-percent: 22.0
+      decay-delay-millis: 6000
+      decay-per-second: 6.0
+
+    # Nekromanta (DARK — a meglévő pecsét/kapu rendszer alatt): a Holtak Udvara KORLÁTOS, és
+    # FAJTÁKAT tart nyilván (nem élő entitás-hivatkozásokat) a necromancer.court névtér alatt.
+    # A Lélekszilánk-gazdaságot NEM duplikáljuk: a CAS/nyugta/szilánk/refund authority marad a
+    # meglévő SoulforgeManageré — innen csak az udvar mérete olvas (LETSZAM ág extra slotjai).
+    necromancer:
+      zombi-spells:
+        - raise_horde
+      csontvaz-spells:
+        - bone_archers
+      lidercz-spells:
+        - wraith_form
+      necrotic-spells:
+        - life_drain
+        - bone_spear
+        - grave_grasp
+        - plague_touch
+        - death_pact
+      harvest-spells:
+        - soul_harvest
+      court-capacity: 2
+      wider-extra-slot: 1
+      per-court-percent: 5.0
+      bone-king-extra-percent: 1.5
+      master-extra-percent: 2.0
+      harvest-heal-per-court: 2.0
+      loyal-extra-heal: 1.0
+      eternal-kept-kind: csontvaz
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -1593,6 +1701,14 @@ specializations:
     capstone-spell: legion
     spell-unlocks:
       legion: 50
+  elementalist:
+    capstone-spell: elemental_overload
+    spell-unlocks:
+      elemental_overload: 50
+  necromancer:
+    capstone-spell: soul_harvest
+    spell-unlocks:
+      soul_harvest: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.
