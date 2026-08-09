@@ -214,11 +214,18 @@ public final class SpecializationManager {
     public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reconcileDarkGates(
             final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway();
-        if (!gateway.isSessionReady(player.getUniqueId())) {
+        final var playerId = player.getUniqueId();
+        // Login activation must reconcile DARK gates before the session is marked READY.
+        // Requiring isSessionReady() here creates a circular dependency: the bridge cannot
+        // mark READY until this reconciliation succeeds. A current generation plus a loaded
+        // profile is sufficient; gateway.reconcile() still enforces session fencing and the
+        // persistence/review/quarantine fail-closed policy.
+        if (gateway.currentSessionToken(playerId).isEmpty()
+                || gateway.currentProfile(playerId).isEmpty()) {
             return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
-                    gateway.diagnostic(player.getUniqueId()), "Profile v2 session is not ready"));
+                    gateway.diagnostic(playerId), "Profile v2 session/profile is not available"));
         }
-        final ProfileDiagnostic diagnostic = gateway.diagnostic(player.getUniqueId());
+        final ProfileDiagnostic diagnostic = gateway.diagnostic(playerId);
         final Map<LoadoutSlot, GateSnapshot> snapshots = new EnumMap<>(LoadoutSlot.class);
         for (final Map.Entry<LoadoutSlot, ProfileDiagnostic.SlotDiagnostic> entry
                 : diagnostic.slots().entrySet()) {
@@ -230,7 +237,7 @@ public final class SpecializationManager {
                 snapshots.put(entry.getKey(), captureGateSnapshot(player, type));
             }
         }
-        return gateway.reconcile(player.getUniqueId(),
+        return gateway.reconcile(playerId,
                 new ClassSpecProfileGateway.ReconcileRequest(snapshots));
     }
 
