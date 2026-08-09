@@ -269,13 +269,18 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 return CompletableFuture.failedFuture(failure);
             }
         }
-        final Predicate<String> revoke = kind == MutationKind.ADMIN_RESET
-                ? source -> source.startsWith(JobManager.SOURCE_BASE_PREFIX)
-                        || source.startsWith(JobManager.SOURCE_SPEC_PREFIX)
-                : source -> source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
+        // BASE and SPEC are both pure derivatives of the durable ClassSpecSection. Rebuild both
+        // on every full reconciliation so a durable commit followed by a stale callback cannot
+        // leave missing new BASE grants or stale BASE/SPEC grants after reconnect. Other
+        // provenance (TALENT/QUEST/ADMIN) is deliberately untouched.
+        final Predicate<String> revoke = source -> source.startsWith(JobManager.SOURCE_BASE_PREFIX)
+                || source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
         return jobs.revokeGrantsFromV2(player, revoke)
                 .thenCompose(ignored -> runOnOwner(id, token, player,
                         () -> clearUuidOnly(id, kind)))
+                .thenCompose(ignored -> regrant
+                        ? jobs.applyAutoUnlocksV2(player, durable)
+                        : CompletableFuture.completedFuture(null))
                 .thenCompose(ignored -> regrant
                         ? specs.applyClassSpecializationUnlocksV2(player, durable)
                         : CompletableFuture.completedFuture(null))
