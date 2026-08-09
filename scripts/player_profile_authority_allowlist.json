@@ -245,6 +245,21 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/relics/RelicWorldStateStore.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "A RelicManager vilag-szintu relic aggregatumanak (relic → owner UUID, lost/reclaim, awakening ready-at) single-writer perzisztencia-hatara; tulajdonosokat stabil UUID-kent referal, sajat tartos player-allapotot nem hoz letre."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, WarriorCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Warrior combat state (Csatatempó/Fury/Guard). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, OathTarget> oathTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Guardian oath-target handles (entity + scheduler). Runtime-only projection cleared on death/quit/kick/disable, target death and spec switch; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, Set<UUID>> guardiansByTarget = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Reverse index of live oath guardians per target for event-driven Guard gain. Runtime-only, cleared with the oath lifecycle; never persisted."
     }
   ]
 }
