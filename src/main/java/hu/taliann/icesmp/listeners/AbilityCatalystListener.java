@@ -5,6 +5,7 @@ import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
+import hu.taliann.icesmp.deathknight.DeathKnightGameplayService;
 import hu.taliann.icesmp.druid.DruidGameplayService;
 import hu.taliann.icesmp.priest.PriestGameplayService;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
@@ -90,6 +91,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile DemonHunterGameplayService demonHunterGameplayService;
     private volatile DruidGameplayService druidGameplayService;
     private volatile PriestGameplayService priestGameplayService;
+    private volatile DeathKnightGameplayService deathKnightGameplayService;
     private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin,
@@ -143,6 +145,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setPaladinGameplayService(final PaladinGameplayService service) {
         paladinGameplayService = java.util.Objects.requireNonNull(service, "service");
+    }
+
+    public void setDeathKnightGameplayService(final DeathKnightGameplayService service) {
+        deathKnightGameplayService = java.util.Objects.requireNonNull(service, "service");
     }
 
     public void setPriestGameplayService(final PriestGameplayService service) {
@@ -341,6 +347,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (druid != null && !druid.beforeCast(player, selected)) return;
         final PriestGameplayService priest = priestGameplayService;
         if (priest != null && !priest.beforeCast(player, selected)) return;
+        final DeathKnightGameplayService deathKnight = deathKnightGameplayService;
+        if (deathKnight != null && !deathKnight.beforeCast(player, selected)) return;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
@@ -368,7 +376,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 + (paladin == null ? 0.0D : paladin.castPowerBonusPercent(player, selected))
                 + (demonHunter == null ? 0.0D : demonHunter.castPowerBonusPercent(player, selected))
                 + (druid == null ? 0.0D : druid.castPowerBonusPercent(player, selected))
-                + (priest == null ? 0.0D : priest.castPowerBonusPercent(player, selected));
+                + (priest == null ? 0.0D : priest.castPowerBonusPercent(player, selected))
+                + (deathKnight == null ? 0.0D : deathKnight.castPowerBonusPercent(player, selected));
         final double powerCap = Math.max(1.0D,
                 configManager.getDouble("spells.total-power-cap", 1.75D));
         final double power = Math.min(powerCap,
@@ -410,6 +419,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         if (priest != null) {
             priest.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
+        }
+        if (deathKnight != null) {
+            deathKnight.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -748,6 +760,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final PaladinGameplayService paladin = paladinGameplayService;
         if (paladin != null) {
             active = paladin.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        }
+        final DeathKnightGameplayService deathKnightKit = deathKnightGameplayService;
+        if (deathKnightKit != null) {
+            active = deathKnightKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
         }
         final PriestGameplayService priestKit = priestGameplayService;
         if (priestKit != null) {

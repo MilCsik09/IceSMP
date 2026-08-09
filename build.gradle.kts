@@ -380,6 +380,14 @@ val priestProfileRegressionTest = registerRegression(
     "priestProfileRegressionTest",
     "Runs Profile v2 Priest allowlist, DARK gate and slot-isolation regressions.",
     "hu.taliann.icesmp.priest.PriestProfileRegressionSuite")
+val deathKnightGameplayRegressionTest = registerRegression(
+    "deathKnightGameplayRegressionTest",
+    "Runs concrete Halállovag Rúnakör, Vér Emlékezete, Fagyjel and Dögvész/ghoul-mutation regressions.",
+    "hu.taliann.icesmp.deathknight.DeathKnightGameplayRegressionSuite")
+val deathKnightProfileRegressionTest = registerRegression(
+    "deathKnightProfileRegressionTest",
+    "Runs Profile v2 Death Knight allowlist, DARK gate and slot-isolation regressions.",
+    "hu.taliann.icesmp.deathknight.DeathKnightProfileRegressionSuite")
 
 tasks.check {
     dependsOn(
@@ -414,6 +422,7 @@ tasks.check {
         paladinGameplayRegressionTest, paladinProfileRegressionTest,
         demonHunterGameplayRegressionTest, demonHunterProfileRegressionTest,
         druidGameplayRegressionTest, druidProfileRegressionTest,
-        priestGameplayRegressionTest, priestProfileRegressionTest
+        priestGameplayRegressionTest, priestProfileRegressionTest,
+        deathKnightGameplayRegressionTest, deathKnightProfileRegressionTest
     )
 }

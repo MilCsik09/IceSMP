@@ -65,6 +65,15 @@ A Warrior cast requires the personal Kürt and an Evoker cast requires the perso
 - **Mastery:** fragment collections, sigils, cleaves and the capstone earn mastery XP only in combat.
 - The melee-catalyst compatibility list now names only `death_knight`; every completed gameplay-v2 class requires its personal Lélekkapocs to cast.
 
+## Death Knight gameplay rules
+
+- **Rúnakör (class core):** the Vér and Fagy runes recharge lazily on their own; the **Halál rune never does** — it exists only where `death_strike` transmutes a full natural rune into it. Every spell listed under `runes.<type>-spells` is refused before the cast when its rune is missing, so the wheel is charged as deliberately as it is spent. This is the Death Knight's own system, not a generic rune engine offered to other classes.
+- **Vérlovag (Vér Emlékezete):** taken hits are recorded into a **fixed eight-entry ring** — never a growing damage log; the oldest entry is overwritten. `death_strike`/`vampiric_blood` cash the remembered window as a heal, `rune_tap`/`marrowrend` as a shield: the chosen spell IS the heal-or-shield decision, and the memory is spent whole so it cannot be double-cashed.
+- **Fagylovag (Fagyjelek → Zúzás):** frost casts stack bounded Fagyjelek. `chill_streak` consumes them **partially** (a fixed small bite), while `obliterate` — Zúzás — consumes the **whole** stack for the bigger payoff through the capped shared power pipeline.
+- **Szentségtelen (Dögvész + ghúl, DARK):** the spec stays on the **existing DARK seal/gate system**. Unholy casts plant bounded Dögvész marks that `outbreak`/`epidemic` burst, and every burst advances the ghoul one bounded mutation stage. The ghoul itself is summoned by the **existing** minion/summon spells under the `unholy.ghoul` companion namespace — this is deliberately **not** the Nekromanta Soulforge, and the two systems are never mixed.
+- **Mastery:** memory conversions, Zúzás and Dögvész bursts earn mastery XP only in combat.
+- With the Death Knight migrated, the melee-catalyst compatibility list is now **empty**: every class casts exclusively through its personal Lélekkapocs.
+
 ## Priest gameplay rules
 
 - **Litánia (class core):** the priest takes up a prayer with `/spec ima <vigasz|ostor|csend>` (session choice; the default follows the active spec's role). Deeds matching the prayer speak verses, and the FULL verse count recites it once: a blessing plus a short window that empowers the matching casts through the capped shared power pipeline. The counter then restarts from zero — this is a discrete, re-earned payoff, not a decaying meter.
@@ -150,9 +159,12 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Helyreállító: `druid_restoration_trial`;
 - Fegyelem: `priest_discipline_trial`;
 - Csontpap: `priest_bone_priest_trial`;
-- Árnyék: `priest_shadow_trial`.
+- Árnyék: `priest_shadow_trial`;
+- Vérlovag: `death_knight_blood_trial`;
+- Fagylovag: `death_knight_frost_trial`;
+- Szentségtelen: `death_knight_unholy_trial`.
 
-The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid and Priest trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest and Death Knight trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 

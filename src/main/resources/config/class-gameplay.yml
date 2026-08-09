@@ -1036,6 +1036,140 @@ classes:
       decay-delay-millis: 5000
       decay-per-second: 5.0
 
+  death_knight:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      blood:
+        - heart_strike
+        - marrowrend
+        - death_strike
+        - rune_tap
+        - blood_boil
+        - vampiric_blood
+        - dancing_rune_weapon
+      frost:
+        - obliterate
+        - frost_strike
+        - howling_blast
+        - icy_touch
+        - frostscythe
+        - remorseless_winter
+        - breath_of_sindragosa
+      unholy:
+        - festering_strike
+        - outbreak
+        - unholy_coil
+        - raise_ghoul
+        - grip_of_the_dead
+        - epidemic
+        - army_of_the_dead
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      memory-xp: 5
+      crush-xp: 5
+      burst-xp: 6
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Rúnakör — a Vér és a Fagy rúna magától tölt vissza, a HALÁL rúna SOHA:
+    # az kizárólag ott keletkezik, ahol a lovag egy teli természetes rúnát átalakít. Így a kört
+    # ugyanolyan tudatosan kell tölteni, mint amilyen tudatosan költi. Ez a Halállovag saját
+    # rendszere — nem generic rune engine más classok számára.
+    runes:
+      natural-capacity: 2
+      deep-extra: 1
+      death-capacity: 1
+      death-extra: 1
+      recharge-millis: 6000
+      quick-reduction-millis: 1500
+      blood-spells:
+        - heart_strike
+        - marrowrend
+        - blood_boil
+        - rune_tap
+      frost-spells:
+        - obliterate
+        - frost_strike
+        - howling_blast
+        - icy_touch
+        - frostscythe
+      death-spells:
+        - dancing_rune_weapon
+        - breath_of_sindragosa
+        - army_of_the_dead
+      transmute-spells:
+        - death_strike
+
+    # Vérlovag: a Vér Emlékezete FIX méretű gyűrű (nyolc bejegyzés) — sosem korlátlan damage log.
+    # A begyűjtött közelmúlt EGYBEN kerül elköltésre, és hogy gyógyítás vagy pajzs lesz-e belőle,
+    # azt a választott spell dönti el.
+    blood:
+      memory-window-millis: 8000
+      long-memory-extra-millis: 4000
+      heal-spells:
+        - death_strike
+        - vampiric_blood
+      shield-spells:
+        - rune_tap
+        - marrowrend
+      heal-percent: 30.0
+      thick-extra-percent: 8.0
+      shield-percent: 30.0
+      shield-step: 4.0
+      shield-ticks: 120
+      sea-extra-ticks: 60
+
+    # Fagylovag: a Fagyjelek részlegesen (frost_strike) vagy teljesen (Zúzás = obliterate)
+    # fogyaszthatók; a teljes consume a nagyobb kifizetés.
+    frost:
+      mark-spells:
+        - frost_strike
+        - howling_blast
+        - icy_touch
+        - frostscythe
+        - remorseless_winter
+      partial-spells:
+        - chill_streak
+      crush-spells:
+        - obliterate
+      mark-per-cast: 1
+      mark-maximum: 5
+      armor-extra-mark: 2
+      partial-consume: 2
+      per-mark-percent: 4.0
+      fracture-extra-percent: 1.5
+      crush-heal-per-mark: 0.5
+      rime-extra-heal: 0.5
+      breath-resist-ticks: 60
+
+    # Szentségtelen (DARK — a meglévő pecsét/kapu rendszer alatt): a Dögvész-bélyegek a robbanó
+    # spellekben sülnek el, és minden robbanás egy fokozatot léptet a ghúl mutációján.
+    # A ghúl megidézése a MEGLÉVŐ minion/summon rendszeren fut (unholy.ghoul companion-névtér) —
+    # ez nem a Nekromanta Soulforge, a két rendszert nem mossuk össze.
+    unholy:
+      plague-spells:
+        - festering_strike
+        - unholy_coil
+        - grip_of_the_dead
+        - frost_fever
+      burst-spells:
+        - outbreak
+        - epidemic
+      plague-per-cast: 1
+      plague-maximum: 6
+      rich-extra-plague: 2
+      eternal-retention: 1
+      mutation-maximum: 3
+      twisted-extra-stage: 1
+      per-plague-percent: 3.0
+      ravage-extra-percent: 1.5
+      per-mutation-percent: 4.0
+      acid-heal-per-plague: 0.5
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -1134,9 +1268,23 @@ specializations:
     capstone-spell: void_torrent
     spell-unlocks:
       void_torrent: 50
+  blood:
+    capstone-spell: dancing_rune_weapon
+    spell-unlocks:
+      dancing_rune_weapon: 50
+  frost:
+    capstone-spell: breath_of_sindragosa
+    spell-unlocks:
+      breath_of_sindragosa: 50
+  unholy:
+    capstone-spell: army_of_the_dead
+    spell-unlocks:
+      army_of_the_dead: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.
+# A Halállovag átállásával a kompatibilitási lista KIÜRÜLT: minden közelharci class a saját
+# Lélekkapcsán keresztül kasztol.
 spells:
   melee-catalyst:
-    classes: [death_knight]
+    classes: []

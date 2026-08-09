@@ -236,6 +236,8 @@ public final class CatalystItemFactory {
                 addDruidEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             } else if (jobType == JobType.PRIEST) {
                 addPriestEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            } else if (jobType == JobType.DEATH_KNIGHT) {
+                addDeathKnightEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             }
         }
         if (masteryRank >= 5) {
@@ -398,6 +400,19 @@ public final class CatalystItemFactory {
         lore.add(line("<gray>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></gray>"));
     }
 
+    private void addDeathKnightEvolutionLore(final List<Component> lore, final String spec,
+                                             final Map<String, String> doctrines) {
+        final String first = doctrines.getOrDefault("level_30", "még kialakulatlan");
+        final String second = doctrines.getOrDefault("level_40", "még kialakulatlan");
+        final String prefix = switch (spec) {
+            case "blood" -> "Vérrúna";
+            case "frost" -> "Fagyrúna";
+            default -> "Dögrúna";
+        };
+        lore.add(line("<dark_red>" + prefix + " I: <white>" + doctrineDisplay(first) + "</white></dark_red>"));
+        lore.add(line("<red>" + prefix + " II: <white>" + doctrineDisplay(second) + "</white></red>"));
+    }
+
     private static String evolution(final int level) {
         if (level >= 50) return "Beteljesedés";
         if (level >= 35) return "Mélyülés";
@@ -440,6 +455,9 @@ public final class CatalystItemFactory {
             case "discipline" -> "Fegyelem";
             case "bone_priest" -> "Csontpap";
             case "shadow" -> "Árnyék";
+            case "blood" -> "Vérlovag";
+            case "frost" -> "Fagylovag";
+            case "unholy" -> "Szentségtelen";
             default -> id;
         };
     }
@@ -590,6 +608,24 @@ public final class CatalystItemFactory {
             case "gyors_szorodas" -> "Gyors Szóródás";
             case "uresseg_ura" -> "Üresség Ura";
             case "tiszta_orulet" -> "Tiszta Őrület";
+            case "hosszu_emlekezet" -> "Hosszú Emlékezet";
+            case "suru_ver" -> "Sűrű Vér";
+            case "melyebb_rovas" -> "Mélyebb Rovás";
+            case "gyors_verkor" -> "Gyors Vérkör";
+            case "halal_jegye" -> "Halál Jegye";
+            case "vertenger" -> "Vértenger";
+            case "dermeszto_kez" -> "Dermesztő Kéz";
+            case "jeges_szel" -> "Jeges Szél";
+            case "toresvonal" -> "Törésvonal";
+            case "zuzmara" -> "Zúzmara";
+            case "jegpancel" -> "Jégpáncél";
+            case "sindragosa_lehelete" -> "Sindragosa Lehelete";
+            case "terjedo_kor" -> "Terjedő Kór";
+            case "savas_ver" -> "Savas Vér";
+            case "dus_kor" -> "Dús Kór";
+            case "pusztito_kor" -> "Pusztító Kór";
+            case "torz_ghul" -> "Torz Ghúl";
+            case "orok_jarvany" -> "Örök Járvány";
             default -> id.replace('_', ' ');
         };
     }

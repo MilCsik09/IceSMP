@@ -177,8 +177,8 @@ public final class DruidGameplayRegressionSuite {
 
         final String gameplayConfig = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));
-        check(gameplayConfig.contains("classes: [death_knight]"),
-                "only the not-yet-reworked class keeps the melee-catalyst compatibility path");
+        check(gameplayConfig.contains("classes: []"),
+                "the melee-catalyst compatibility list stays empty once every class casts through its Lélekkapocs");
         check(gameplayConfig.contains("ripen-millis") && gameplayConfig.contains("expiry-millis"),
                 "the seed ripening and withering windows are admin-tunable live config");
 

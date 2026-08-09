@@ -325,6 +325,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/priest/PriestGameplayService.java|private final Map<UUID, PriestCombatState> states = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient per-player Priest combat state (chosen Litany + verse count, Atonement window/shield web/reentrancy guard, Marrow and Ossuary charges, Madness meter). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java|private final Map<UUID, DeathKnightCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Death Knight combat state (rune wheel charges and recharge stamps, fixed-size recent-damage ring, frost marks, plague marks and ghoul mutation stage). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
     }
   ]
 }
