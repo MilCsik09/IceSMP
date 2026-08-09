@@ -496,6 +496,138 @@ classes:
       deep-extra-heal: 2.0
       weave-heal: 2.0
 
+  paladin:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      holy:
+        - flash_heal
+        - holy_light
+        - beacon_of_light
+        - word_of_glory
+        - lay_on_hands
+        - divine_shield
+        - avenging_wrath
+      retribution:
+        - smite
+        - crusader_strike
+        - judgment
+        - blade_of_justice
+        - holy_fire
+        - divine_storm
+        - final_verdict
+      protection:
+        - consecration
+        - avengers_shield
+        - shield_of_the_righteous
+        - blessed_hammer
+        - consecrated_ground
+        - guardian_of_kings
+        - final_stand
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      beacon-xp: 4
+      verdict-xp: 5
+      ground-xp: 5
+      capstone-ground-xp: 8
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Meggyőződés és Eskü — a választott irányhoz illő cselekedet épít; magas
+    # Meggyőződésnél az irányba vágó castok erősebbek. Az Eskü ülésen belüli választás
+    # (/spec esku), alapértelmezése az aktív spec szerepe.
+    conviction:
+      mercy-spells:
+        - flash_heal
+        - radiance
+        - lay_on_hands
+        - holy_light
+        - beacon_of_light
+        - word_of_glory
+        - guardian_angel
+      judgment-spells:
+        - smite
+        - hammer_of_justice
+        - holy_wrath
+        - crusader_strike
+        - judgment
+        - blade_of_justice
+        - holy_fire
+        - divine_storm
+        - wake_of_ashes
+        - final_verdict
+      protection-spells:
+        - devotion_aura
+        - divine_protection
+        - consecration
+        - avengers_shield
+        - shield_of_the_righteous
+        - blessed_hammer
+        - consecrated_ground
+        - ardent_defender
+        - guardian_of_kings
+        - final_stand
+      cast-gain: 8
+      hit-gain: 4
+      blessing-extra-gain: 2
+      zeal-extra-gain: 2
+      threshold: 70
+      blessed-reduction: 10
+      bonus-percent: 12.0
+      decay-delay-millis: 6000
+      decay-per-second: 5.0
+
+    # Szentlélek: egy Fényjelző-célpont; a gyógyítás visszhangja egyetlen, korlátos heal.
+    beacon:
+      echo-spells:
+        - flash_heal
+        - holy_light
+        - word_of_glory
+        - lay_on_hands
+        - radiance
+      echo-heal: 3.0
+      warm-extra-heal: 1.5
+
+    # Megtorló: Bűn (judgment) + Dac (blade_of_justice) + Kárhozat (holy_fire) → Verdict.
+    verdict:
+      finishers:
+        - final_verdict
+        - divine_storm
+      mark-window-millis: 8000
+      swift-extra-millis: 2500
+      bonus-percent: 24.0
+      wrath-extra-percent: 8.0
+      weight-strength-ticks: 60
+      holy-war-heal: 4.0
+
+    # Oltalmazó: védekező castok és elszenvedett találatok töltik a Pajzstöltetet;
+    # a költése Megszentelt Földet terít (egyszeri, korlátos sugarú védő-hullám).
+    shield:
+      charge-spells:
+        - devotion_aura
+        - divine_protection
+        - consecration
+        - avengers_shield
+        - blessed_hammer
+        - consecrated_ground
+        - hammer_of_the_righteous
+        - ardent_defender
+      cast-gain: 12
+      hit-gain: 6
+      steel-extra-gain: 3
+      righteous-cost: 30
+      kings-cost: 60
+      final-stand-cost: 80
+      holy-wall-reduction: 10
+      area-duration-ticks: 80
+      capstone-duration-ticks: 120
+      area-radius: 7.0
+      extended-extra-radius: 2.0
+      steadfast-extra-ticks: 40
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -546,6 +678,18 @@ specializations:
     capstone-spell: revival
     spell-unlocks:
       revival: 50
+  holy:
+    capstone-spell: avenging_wrath
+    spell-unlocks:
+      avenging_wrath: 50
+  retribution:
+    capstone-spell: final_verdict
+    spell-unlocks:
+      final_verdict: 50
+  protection:
+    capstone-spell: final_stand
+    spell-unlocks:
+      final_stand: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

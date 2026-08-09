@@ -6,7 +6,7 @@ Profile v2 is always enabled and is the sole class/spec authority. There is no m
 dual-write period or kill switch. `class-spec-rework.dependencies.enforce` controls dependency validation only; it
 does not select another runtime.
 
-The completed gameplay vertical slices are the **Harcos** (`warrior`: `berserker`, `guardian`), the **Sárkányidéző** (`evoker`: `devastation`/Perzselés, `preservation`/Megőrzés) and the **Íjász** (`archer`: `sharpshooter`/Mesterlövész, `beast_master`/Vadmester) the **Sámán** (`shaman`: `elemental`/Elemi, `enhancement`/Erősítő, `tidal`/Hullámhívó) and the **Szerzetes** (`monk`: `windwalker`/Szélfutó, `brewmaster`/Sörfőző, `mistweaver`/Ködszövő). Combat meters, charges, chains and prepared-heal windows are transient runtime state; class, loadouts, doctrines, mastery, capstone and the companion stable remain Profile v2 state. The completed slices are listed in the explicit `GameplayV2ClassPolicy` allowlist — every other class stays single-spec and fail-closed.
+The completed gameplay vertical slices are the **Harcos** (`warrior`: `berserker`, `guardian`), the **Sárkányidéző** (`evoker`: `devastation`/Perzselés, `preservation`/Megőrzés) and the **Íjász** (`archer`: `sharpshooter`/Mesterlövész, `beast_master`/Vadmester) the **Sámán** (`shaman`: `elemental`/Elemi, `enhancement`/Erősítő, `tidal`/Hullámhívó) the **Szerzetes** (`monk`: `windwalker`/Szélfutó, `brewmaster`/Sörfőző, `mistweaver`/Ködszövő) and the **Paplovag** (`paladin`: `holy`/Szentlélek, `retribution`/Megtorló, `protection`/Oltalmazó). Combat meters, charges, chains and prepared-heal windows are transient runtime state; class, loadouts, doctrines, mastery, capstone and the companion stable remain Profile v2 state. The completed slices are listed in the explicit `GameplayV2ClassPolicy` allowlist — every other class stays single-spec and fail-closed.
 
 ## Normal states
 
@@ -22,13 +22,13 @@ The completed gameplay vertical slices are the **Harcos** (`warrior`: `berserker
 
 Use `/spec info` for schema, revision, class, slots, complete seal reasons, slot mastery, doctrine/capstone state and session block detail. Repository logs include owner UUID, bounded error detail and evidence ID; raw payloads are not dumped into logs.
 
-For the completed gameplay-v2 classes (Warrior, Evoker, Archer, Shaman, Monk):
+For the completed gameplay-v2 classes (Warrior, Evoker, Archer, Shaman, Monk, Paladin):
 
 - `/spec switch <first|second|spec-id>` changes the active learned specialization only when the switch safety gate passes;
 - `/spec doctrine <30|40|50> <choice>` commits the active loadout's doctrine choice;
 - class level/XP is shared by the two loadouts; doctrine, mastery and capstone are slot-local;
 - resource and active spell cooldown consequences are not reset by a legal loadout switch;
-- spec-local transient state (Berserker Vérőrület/Kimerülés, Guardian Őrség/Eskütárs, Evoker Izzás/Visszhang/Időlenyomat/jelölt társ, any held Felerősítés charge, Archer Szélolvasás/Pontossági lánc/Kötelék, Sámán Rezonancia/Maelstrom/Ár, and Szerzetes Áramlás/Lánc/Ködszál) is cleared at the switch boundary. The Sörfőző Stagger pool is applied immediately (never lethal on its own) before it clears — a switch or logout is not a consequence-free escape. The Vadmester **stable roster is durable Profile v2 state** and deliberately survives the switch; only the transient bond clears.
+- spec-local transient state (Berserker Vérőrület/Kimerülés, Guardian Őrség/Eskütárs, Evoker Izzás/Visszhang/Időlenyomat/jelölt társ, any held Felerősítés charge, Archer Szélolvasás/Pontossági lánc/Kötelék, Sámán Rezonancia/Maelstrom/Ár, Szerzetes Áramlás/Lánc/Ködszál, and Paplovag Meggyőződés/Jelek/Pajzstöltet) is cleared at the switch boundary. The Paplovag session Eskü choice deliberately survives a spec switch (class-level identity) and resets on relog. The Sörfőző Stagger pool is applied immediately (never lethal on its own) before it clears — a switch or logout is not a consequence-free escape. The Vadmester **stable roster is durable Profile v2 state** and deliberately survives the switch; only the transient bond clears.
 
 ## Switch safety
 
@@ -38,7 +38,7 @@ The switch gate is live-config driven:
 - `classes.specialization.switch-combat-grace-seconds` — default 8;
 - `classes.specialization.switch-safe-radius` — default 12 blocks.
 
-The SECOND loadout unlocks and is accepted only for the classes in the `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`, `shaman`, `monk`). Other classes remain single-spec until their own gameplay slice explicitly enables and validates second-spec switching.
+The SECOND loadout unlocks and is accepted only for the classes in the `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`, `shaman`, `monk`, `paladin`). Other classes remain single-spec until their own gameplay slice explicitly enables and validates second-spec switching.
 
 A switch fails closed while the player is still in the combat grace, while a hostile living entity is inside the configured radius, while the target slot is unavailable, or while the Profile v2 session is not READY. The switch must never be used as a heal, Düh reset or cooldown reset.
 
@@ -56,6 +56,14 @@ A Warrior cast requires the personal Kürt and an Evoker cast requires the perso
 - **Mesterlövész (Préda-jel + Pontossági lánc):** consecutive full-draw hits on the same prey build a bounded chain (`precision.maximum-chain`); at `weak-point-threshold` the next hit on the prey (or `masterful_shot`) consumes it as a weak-point strike. Switching targets or letting the window lapse restarts the chain. Wind + weak-point bonuses are capped by explicit `classes.archer.pve/pvp-max-bonus-percent` clamps.
 - **Vadmester (Kötelék + Istálló):** arrow hits on the active companion's current combat target build the Kötelék; `primal_bond` and the capstone `king_of_beasts` spend it (durable roster and pet identity stay in Profile v2/PetManager). The stable holds at most `pets.stable.maximum` (default 3) captured companions; capture into a full stable fails closed and `/pet release` frees a slot with a durable-first REMOVE. The companion's szerep/viselkedés is the existing stance system (`/pet stance`). Pet death collapses the bond unless the level-50 doctrine retains part of it.
 - **Mastery:** weak-point finishes, pet coordination, bond spends and the capstone grant mastery XP only in combat (`classes.archer.mastery.combat-window-seconds`).
+
+## Paladin gameplay rules
+
+- **Meggyőződés és Eskü (class core):** the paladin chooses a direction with `/spec esku <irgalom|itelet|oltalmazas>` (session choice; the default follows the active spec's role). In-role casts — and, under Oltalmazás, taking hits — build Meggyőződés with lazy decay; at the threshold, in-role casts empower through the capped shared power pipeline.
+- **Szentlélek (Fényjelző):** sneak + right-click with the Harang marks ONE beacon ally; listed heals echo once as a bounded flat heal on the beacon's own scheduler. No raid-wide passive heal by construction.
+- **Megtorló (Ítélet-jelek):** `judgment` lights Bűn, `blade_of_justice` lights Dac, `holy_fire` lights Kárhozat; all three inside the window arm the Verdict, which the listed finishers consume for a capped burst.
+- **Oltalmazó (Pajzstöltet → Megszentelt Föld):** defensive casts and taken hits build the charge; `shield_of_the_righteous`/`guardian_of_kings`/`final_stand` spend it for self-resistance plus a single bounded protective pass over nearby allies (scheduler hops; no oath-target reverse index — a deliberately different tank identity from the Warrior Guardian).
+- **Mastery:** beacon echoes, Verdicts and Megszentelt Föld grants earn mastery XP only in combat.
 
 ## Monk gameplay rules
 
@@ -105,9 +113,12 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Hullámhívó: `shaman_tidal_trial`;
 - Szélfutó: `monk_windwalker_trial`;
 - Sörfőző: `monk_brewmaster_trial`;
-- Ködszövő: `monk_mistweaver_trial`.
+- Ködszövő: `monk_mistweaver_trial`;
+- Szentlélek: `paladin_holy_trial`;
+- Megtorló: `paladin_retribution_trial`;
+- Oltalmazó: `paladin_protection_trial`.
 
-The Evoker, Archer, Shaman and Monk trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker, Archer, Shaman, Monk and Paladin trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 
@@ -163,6 +174,7 @@ Before moving a gameplay PR out of draft, perform live Folia tests for:
 - Archer Szélolvasás pacing/distance feel, precision-chain and weak-point cadence, stable capture/release at capacity, bond coordination with a live companion across regions, and pet-death bond collapse;
 - Shaman Totemkerék replacement across regions, resonance/overload cadence with the live pair, Fegyveráldás rhythm feel and Dagály↔Apály heal pressure without feedback loops;
 - Monk chain cadence, Stagger drain/purify pressure under real tanking (including the logout/switch consequence), and Ködszál ripple delivery across regions;
+- Paladin Eskü/Meggyőződés role feel, beacon echo across regions, Verdict cadence and Megszentelt Föld area pressure;
 - death/quit/kick/disable cleanup and reconnect reconstruction;
 - personal Kürt/Fiola loss, death retention, external-container transfer attempts, foreign copy and duplicate-copy behavior;
 - real TTK/healing/CC/party balance. Unit tests prove invariants, not final balance.

@@ -300,6 +300,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java|private final Map<UUID, List<LinkTarget>> linkTargets = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Live Ködszál ally handles (player + scheduler) for single-pass ripple heals. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java|private final Map<UUID, PaladinCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Paladin combat state (Eskü choice, Meggyőződés, Ítélet-jelek, Pajzstöltet). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java|private final Map<UUID, BeaconTarget> beaconTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Fényjelző beacon handle (single ally + scheduler) for bounded heal echoes. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
     }
   ]
 }

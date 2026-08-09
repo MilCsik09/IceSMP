@@ -809,6 +809,7 @@ legtöbb művelet a `/menu` felületéről is elérhető.
 | `/spec list` | választható specializációk |
 | `/spec choose <id>` | specializáció választása |
 | `/spec respec <class|profession>` | specializáció visszaváltása |
+| `/spec esku <irgalom|itelet|oltalmazas>` | Paplovag-irány (Eskü) választása az ülésre |
 | `/talent` | talentfa |
 | `/profession info` | szakmai állapot |
 | `/profession recipes` | receptkönyv |

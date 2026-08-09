@@ -348,6 +348,14 @@ val monkProfileRegressionTest = registerRegression(
     "monkProfileRegressionTest",
     "Runs Profile v2 Monk allowlist and slot-isolation regressions.",
     "hu.taliann.icesmp.monk.MonkProfileRegressionSuite")
+val paladinGameplayRegressionTest = registerRegression(
+    "paladinGameplayRegressionTest",
+    "Runs concrete Paplovag Meggyőződés, Ítélet-jelek and Pajzstöltet state regressions.",
+    "hu.taliann.icesmp.paladin.PaladinGameplayRegressionSuite")
+val paladinProfileRegressionTest = registerRegression(
+    "paladinProfileRegressionTest",
+    "Runs Profile v2 Paladin allowlist and slot-isolation regressions.",
+    "hu.taliann.icesmp.paladin.PaladinProfileRegressionSuite")
 
 tasks.check {
     dependsOn(
@@ -378,6 +386,7 @@ tasks.check {
         evokerGameplayRegressionTest, evokerProfileRegressionTest,
         archerGameplayRegressionTest, archerProfileRegressionTest,
         shamanGameplayRegressionTest, shamanProfileRegressionTest,
-        monkGameplayRegressionTest, monkProfileRegressionTest
+        monkGameplayRegressionTest, monkProfileRegressionTest,
+        paladinGameplayRegressionTest, paladinProfileRegressionTest
     )
 }
