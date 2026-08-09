@@ -7,9 +7,10 @@ package hu.taliann.icesmp.wizard;
  * short, explicitly enumerated table turns that ordered pair into one rune reaction. There is no
  * rule engine and no combo DSL — the pairs are a handful of concrete cases. Elementalista keeps
  * one three-slot attunement array (Tűz/Fagy/Vihar) read by two threshold checks, Konvergencia and
- * Elemi Korona, rather than three separate subsystems. Nekromanta keeps only the bounded Holtak
- * Udvara roster of raised kinds; the shard economy stays entirely with the existing Soulforge
- * authority. Durable state remains in PlayerProfile.</p>
+ * Elemi Korona, rather than three separate subsystems. Nekromanta keeps NOTHING here: the Holtak
+ * Udvara lives solely in the durable Profile v2 necromancer.court companion roster, and the shard
+ * economy stays entirely with the existing Soulforge authority. Durable state remains in
+ * PlayerProfile.</p>
  */
 public final class WizardCombatState {
 
@@ -31,9 +32,6 @@ public final class WizardCombatState {
         ARKAN_EROSITES
     }
 
-    /** The Holtak Udvara is a bounded court of raised kinds, never a live entity list. */
-    public static final int COURT_SLOTS = 4;
-
     /** Tűz, Fagy, Vihar — one array, not three subsystems. */
     public static final int ATTUNEMENTS = 3;
 
@@ -44,9 +42,7 @@ public final class WizardCombatState {
 
     private final int[] attunement = new int[ATTUNEMENTS];
     private long attunementLastGainAt;
-    private long attunementLastDecayAt;
-
-    private final String[] court = new String[COURT_SLOTS];
+    private int decayApplied;
 
     // ===== Rúnaszövés (class core) =====
 
@@ -106,7 +102,7 @@ public final class WizardCombatState {
         decayAttunements(now, decayDelayMillis, decayPerSecond);
         attunement[index] = clampPercent(attunement[index] + Math.max(0, amount));
         attunementLastGainAt = now;
-        attunementLastDecayAt = now;
+        decayApplied = 0;
         return attunement[index];
     }
 
@@ -144,52 +140,7 @@ public final class WizardCombatState {
         return count;
     }
 
-    // ===== Nekromanta: Holtak Udvara =====
-
-    /** Registers one raised kind. The court is bounded and holds kinds, never entity handles. */
-    public synchronized boolean raise(final String kindId, final int capacity) {
-        if (kindId == null || kindId.isBlank()) return false;
-        final int cap = Math.max(1, Math.min(COURT_SLOTS, capacity));
-        int occupied = 0;
-        for (final String kind : court) {
-            if (kind != null) {
-                if (kindId.equals(kind)) return false;
-                occupied++;
-            }
-        }
-        if (occupied >= cap) return false;
-        for (int i = 0; i < COURT_SLOTS; i++) {
-            if (court[i] == null) {
-                court[i] = kindId;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public synchronized int courtSize() {
-        int count = 0;
-        for (final String kind : court) {
-            if (kind != null) count++;
-        }
-        return count;
-    }
-
-    public synchronized boolean holds(final String kindId) {
-        for (final String kind : court) {
-            if (kindId != null && kindId.equals(kind)) return true;
-        }
-        return false;
-    }
-
-    /** Harvesting releases the whole court at once and reports what it held. */
-    public synchronized int harvestCourt() {
-        final int harvested = courtSize();
-        java.util.Arrays.fill(court, null);
-        return harvested;
-    }
-
-    /** Spec switch cleanup: the weave, the attunements and the court are all dropped. */
+    /** Spec switch cleanup: the weave and the attunements are dropped. */
     public synchronized void clearSpecializationState() {
         previousSchool = null;
         lastSchool = null;
@@ -197,8 +148,7 @@ public final class WizardCombatState {
         reactionUntil = 0L;
         java.util.Arrays.fill(attunement, 0);
         attunementLastGainAt = 0L;
-        attunementLastDecayAt = 0L;
-        java.util.Arrays.fill(court, null);
+        decayApplied = 0;
     }
 
     /** Death/logout/admin reset cleanup. */
@@ -206,19 +156,26 @@ public final class WizardCombatState {
         clearSpecializationState();
     }
 
+    /**
+     * Lazy decay that cannot drift with how often it is polled.
+     *
+     * <p>The total decay owed is computed from the fixed anchor — the moment decay began after the
+     * last gain — so it is a pure function of elapsed time. Each call subtracts only the part not yet
+     * applied, and the sub-point remainder is therefore carried instead of being truncated away: ten
+     * reads in a second decay exactly as much as one read after that second.</p>
+     */
     private void decayAttunements(final long now, final long decayDelayMillis,
                                   final double decayPerSecond) {
         if (attunementLastGainAt <= 0L || decayPerSecond <= 0.0D) return;
         final long decayStartsAt = attunementLastGainAt + Math.max(0L, decayDelayMillis);
         if (now <= decayStartsAt) return;
-        final long from = Math.max(decayStartsAt, attunementLastDecayAt);
-        if (now <= from) return;
-        final int decay = (int) Math.floor((now - from) / 1000.0D * decayPerSecond);
-        if (decay <= 0) return;
+        final int owed = (int) Math.floor((now - decayStartsAt) / 1000.0D * decayPerSecond);
+        final int pending = owed - decayApplied;
+        if (pending <= 0) return;
+        decayApplied = owed;
         for (int i = 0; i < ATTUNEMENTS; i++) {
-            attunement[i] = clampPercent(attunement[i] - decay);
+            attunement[i] = clampPercent(attunement[i] - pending);
         }
-        attunementLastDecayAt = now;
     }
 
     private static int clampPercent(final int value) {

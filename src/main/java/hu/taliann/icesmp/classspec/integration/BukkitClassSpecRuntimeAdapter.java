@@ -163,6 +163,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         warlock.setPetManager(pets);
         wizard.setCombatTracker(resources);
         wizard.setSoulforgeManager(soulforge);
+        wizard.setPetManager(pets);
         assassin.setBloodMoonManager(bloodMoon);
         assassin.setMinionManager(minions);
         archer.setPetManager(pets);

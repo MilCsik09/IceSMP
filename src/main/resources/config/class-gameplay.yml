@@ -1558,7 +1558,14 @@ classes:
         - death_pact
       harvest-spells:
         - soul_harvest
+      # Az udvar EGYETLEN igazságforrása a durable necromancer.court companion névsor. A fajta
+      # csak attribútum: ugyanaz a fajta ismételhető, ezért a felső korlát mindig elérhető.
+      court-slots: 4
       court-capacity: 2
+      # A feltámasztott udvaroncok vanília teste — nincs új mobfaj, csak kötés a meglévőkhöz.
+      zombi-entity: ZOMBIE
+      csontvaz-entity: SKELETON
+      lidercz-entity: VEX
       wider-extra-slot: 1
       per-court-percent: 5.0
       bone-king-extra-percent: 1.5

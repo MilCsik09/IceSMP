@@ -1,7 +1,12 @@
 package hu.taliann.icesmp.wizard;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Map;
 
 /** Dependency-free behavior regression for the concrete Varázsló runtime state. */
 public final class WizardGameplayRegressionSuite {
@@ -15,7 +20,8 @@ public final class WizardGameplayRegressionSuite {
         weaveIsAnExplicitPairTable();
         reactionArmsAndIsSpentOnce();
         attunementsFeedConvergenceAndCrown();
-        courtIsBoundedAndHarvestedWhole();
+        theCombatStateHoldsNoCourtAuthority();
+        attunementDecayIsPollingFrequencyInvariant();
         cleanupLifecycle();
         soulforgeAndAllowlistSourceContracts();
         System.out.println("Wizard gameplay regression suite passed. assertions=" + assertions);
@@ -102,22 +108,78 @@ public final class WizardGameplayRegressionSuite {
                 "idle attunements decay and the crown slips");
     }
 
-    private static void courtIsBoundedAndHarvestedWhole() {
-        final WizardCombatState state = new WizardCombatState();
-        check(WizardCombatState.COURT_SLOTS == 4, "the Holtak Udvara has a fixed slot count");
-        check(state.raise("zombi", 2), "the first kind is raised");
-        check(state.holds("zombi"), "the court holds the kind");
-        check(!state.raise("zombi", 2), "the same kind never takes a second slot");
-        check(state.raise("csontvaz", 2), "a second kind fits the capacity");
-        check(!state.raise("lidercz", 2),
-                "the capacity is hard — nothing beyond it is ever raised");
-        check(state.courtSize() == 2, "the court reports its size");
-        check(state.raise("lidercz", 3), "a wider capacity admits the third kind");
-        check(!state.raise("  ", 4), "a blank kind id is never raised");
+    /**
+     * The Holtak Udvara has exactly one truth source, and it is not here. Proven structurally rather
+     * than by grep: nothing in the transient combat state may hold, count or name a courtier, so
+     * there is nothing that could drift away from the durable necromancer.court roster.
+     */
+    private static void theCombatStateHoldsNoCourtAuthority() {
+        for (final Field field : WizardCombatState.class.getDeclaredFields()) {
+            final String name = field.getName().toLowerCase(Locale.ROOT);
+            check(!name.contains("court") && !name.contains("udvar") && !name.contains("roster"),
+                    "no transient field may name the court: " + field.getName());
+            final Class<?> type = field.getType();
+            final boolean container = type.isArray() || Collection.class.isAssignableFrom(type)
+                    || Map.class.isAssignableFrom(type);
+            check(!container || name.startsWith("attunement"),
+                    "the only container left is the attunement array: " + field.getName());
+        }
+        for (final Method method : WizardCombatState.class.getDeclaredMethods()) {
+            final String name = method.getName().toLowerCase(Locale.ROOT);
+            check(!name.contains("court") && !name.contains("raise") && !name.contains("harvest")
+                            && !name.equals("holds"),
+                    "no transient member may serve the court: " + method.getName());
+        }
+    }
 
-        check(state.harvestCourt() == 3, "harvesting releases the whole court at once");
-        check(state.courtSize() == 0, "the court is empty afterwards");
-        check(state.harvestCourt() == 0, "an empty court harvests nothing");
+    /**
+     * Lazy decay must be a function of elapsed time, not of how often it is read. The old model
+     * truncated the sub-point remainder on every poll and then moved its clock forward, so frequent
+     * reads decayed strictly slower than rare ones — the rate silently depended on the caller.
+     */
+    private static void attunementDecayIsPollingFrequencyInvariant() {
+        final long t0 = 500_000L;
+        final long delay = 6_000L;
+        final double perSecond = 6.0D;
+
+        // One read after a full second versus ten reads inside it: the same attunement must remain.
+        final WizardCombatState rare = new WizardCombatState();
+        final WizardCombatState frequent = new WizardCombatState();
+        rare.addAttunement(0, 100, t0, delay, perSecond);
+        frequent.addAttunement(0, 100, t0, delay, perSecond);
+        final long end = t0 + delay + 1_000L;
+        for (long now = t0 + delay + 100L; now <= end; now += 100L) {
+            frequent.attunement(0, now, delay, perSecond);
+        }
+        check(rare.attunement(0, end, delay, perSecond)
+                        == frequent.attunement(0, end, delay, perSecond),
+                "ten reads inside a second decay exactly as much as one read after it");
+        check(rare.attunement(0, end, delay, perSecond) == 94,
+                "one second at 6/s takes exactly six points");
+
+        // The pathological case: polls far shorter than one whole point of decay.
+        final WizardCombatState pounded = new WizardCombatState();
+        pounded.addAttunement(0, 100, t0, delay, perSecond);
+        for (long now = t0 + delay + 10L; now <= end; now += 10L) {
+            pounded.attunement(0, now, delay, perSecond);
+        }
+        check(pounded.attunement(0, end, delay, perSecond) == 94,
+                "sub-point polling never rounds the decay away");
+
+        // A fresh gain restarts the grace window and the accounting with it.
+        final WizardCombatState regained = new WizardCombatState();
+        regained.addAttunement(0, 100, t0, delay, perSecond);
+        regained.attunement(0, end, delay, perSecond);
+        check(regained.attunement(0, end, delay, perSecond) == 94, "the decay so far stands");
+        regained.addAttunement(0, 6, end, delay, perSecond);
+        check(regained.attunement(0, end + delay, delay, perSecond) == 100,
+                "a new gain re-arms the grace window instead of paying an old decay debt");
+
+        // Long idling still bottoms out at zero rather than going negative.
+        final WizardCombatState idle = new WizardCombatState();
+        idle.addAttunement(0, 100, t0, delay, perSecond);
+        check(idle.attunement(0, t0 + delay + 60_000L, delay, perSecond) == 0,
+                "a long idle drains the attunement to zero, never below");
     }
 
     private static void cleanupLifecycle() {
@@ -126,12 +188,10 @@ public final class WizardGameplayRegressionSuite {
         state.weave(WizardCombatState.School.TUZ, t0, 5_000L);
         state.weave(WizardCombatState.School.FAGY, t0, 5_000L);
         state.addAttunement(0, 80, t0, 6_000L, 6.0D);
-        state.raise("zombi", 2);
         state.clearSpecializationState();
         check(state.armedReaction(t0) == null, "spec switch clears the armed reaction");
         check(state.lastSchool() == null, "spec switch clears the weave memory");
         check(state.attunement(0, t0, 6_000L, 6.0D) == 0, "spec switch clears the attunements");
-        check(state.courtSize() == 0, "spec switch empties the Holtak Udvara");
     }
 
     private static void soulforgeAndAllowlistSourceContracts() throws Exception {
@@ -158,6 +218,35 @@ public final class WizardGameplayRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/wizard/WizardCombatState.java"));
         check(state.contains("reactionFor") && !state.contains("Rule") && !state.contains("Pattern"),
                 "the weave is a plain enumerated table, not a rule or pattern engine");
+
+        // One admission rule, one gateway, and the raise only ever follows the durable commit.
+        check(service.contains("ClassSpecCatalog.admitsCompanion(activeLoadout(player.getUniqueId()),")
+                        && service.contains("if (admitsRaise(player)) return true;"),
+                "the pre-cast gate is the shared admission rule read from the durable loadout");
+        check(service.contains("gateway.raiseCourtV2(player, kind, courtEntityType(kind), courtCapacity(player))")
+                        && service.contains("gateway.releaseCourtV2(player)"),
+                "raise and harvest both go through the existing PetManager companion gateway");
+        check(service.contains("gateway.courtRoster(player)")
+                        && service.contains("court(player).size()"),
+                "the court size the gameplay reads is the durable projection");
+        for (final String gone : new String[]{"courtSize()", "harvestCourt()", "state.raise(",
+                "state.holds("}) {
+            check(!service.contains(gone), "no transient court call survives in the service: " + gone);
+        }
+
+        final String pets = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/PetManager.java"));
+        final int raiseIndex = pets.indexOf("PetMutationResult> raiseCourtV2");
+        final int raiseCommit = pets.indexOf("mutateCompanion", raiseIndex);
+        final int raiseSpawn = pets.indexOf("spawnAndAdopt", raiseIndex);
+        check(raiseIndex > 0 && raiseCommit > raiseIndex && raiseSpawn > raiseCommit,
+                "the courtier is embodied only after the durable companion mutation is issued");
+
+        final String gateway = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java"));
+        check(gateway.contains("if(r.capacity()>0&&roster.size()>=r.capacity())"
+                        + "return Plan.reject(\"companion roster is full\");"),
+                "the committed mutation re-evaluates the very capacity the caller validated");
 
         final String catalog = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/classspec/domain/ClassSpecCatalog.java"));

@@ -354,7 +354,7 @@
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/wizard/WizardGameplayService.java|private final Map<UUID, WizardCombatState> states = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
-      "reason": "Transient per-player Wizard combat state (last two woven schools plus the armed rune reaction, the three-slot attunement array, the bounded court of raised kinds). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The soul-shard economy remains entirely with the existing SoulforgeManager authority."
+      "reason": "Transient per-player Wizard combat state (last two woven schools plus the armed rune reaction and the three-slot attunement array). Holds NO court: the Holtak Udvara lives solely in the durable Profile v2 necromancer.court companion roster. Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The soul-shard economy remains entirely with the existing SoulforgeManager authority."
     }
   ]
 }

@@ -1,12 +1,15 @@
 package hu.taliann.icesmp.wizard;
 
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
+import hu.taliann.icesmp.classspec.domain.ClassSpecCatalog;
+import hu.taliann.icesmp.classspec.domain.CompanionProfile;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ResourceManager;
+import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.SoulforgeManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -44,8 +47,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * window that empowers the next cast. There is no combo DSL and no rule engine. Elementalista
  * reads one three-slot attunement array through exactly two threshold checks — Konvergencia (two
  * at or above the bar) and Elemi Korona (all three) — rather than three parallel subsystems.
- * Nekromanta (DARK, on the existing seal system) keeps only the bounded Holtak Udvara of raised
- * kinds under the necromancer.court namespace; the Lélekszilánk economy is <em>not</em>
+ * Nekromanta (DARK, on the existing seal system) raises its Holtak Udvara into the durable Profile
+ * v2 necromancer.court companion roster through the existing PetManager gateway: that roster is the
+ * single authority, a kind is only an attribute of an instance (so the capacity is reachable), and
+ * one admission rule decides both before the cast and at the commit. The Lélekszilánk economy is <em>not</em>
  * reimplemented here — the existing {@link SoulforgeManager} keeps its CAS, receipt, shard and
  * refund/recovery authority, and this runtime only reads its ranks to size the court. Durable
  * state remains Profile v2.</p>
@@ -65,6 +70,8 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
 
     private volatile ResourceManager combatTracker;
     private volatile SoulforgeManager soulforge;
+
+    private volatile PetManager pets;
 
     public WizardGameplayService(final JavaPlugin plugin,
                                  final ConfigManager config,
@@ -87,6 +94,11 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
     /** The existing shard authority; the Nekromanta only reads it, it never duplicates it. */
     public void setSoulforgeManager(final SoulforgeManager manager) {
         soulforge = Objects.requireNonNull(manager, "manager");
+    }
+
+    /** The one companion gateway: the court never gets a second framework of its own. */
+    public void setPetManager(final PetManager petManager) {
+        pets = Objects.requireNonNull(petManager, "petManager");
     }
 
     public List<String> activeSpellIds(final Player player,
@@ -121,21 +133,32 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
         return List.copyOf(chosen);
     }
 
-    /** Raising beyond the court's size is refused before the cast, never silently ignored. */
+    /**
+     * Raising beyond the court's size is refused before the cast, never silently ignored. The check
+     * is the shared admission rule evaluated on the durable roster — exactly what the commit will
+     * re-evaluate — so a pre-cast pass can never turn into a refused mutation and a phantom cast.
+     */
     public boolean beforeCast(final Player player, final Spell spell) {
         if (!isWizard(player) || spell == null) return true;
         final UUID playerId = player.getUniqueId();
         final String spellId = spell.getId().toLowerCase(Locale.ROOT);
         if (!"necromancer".equals(activeSpec(playerId))) return true;
-        final String kind = raiseKindOf(spellId);
-        if (kind == null) return true;
-        final WizardCombatState state = state(playerId);
-        if (state.holds(kind) || state.courtSize() < courtCapacity(player)) return true;
+        if (raiseKindOf(spellId) == null) return true;
+        if (admitsRaise(player)) return true;
+        courtFullMessage(player);
+        return false;
+    }
+
+    private boolean admitsRaise(final Player player) {
+        return ClassSpecCatalog.admitsCompanion(activeLoadout(player.getUniqueId()),
+                "necromancer.court", courtCapacity(player));
+    }
+
+    private void courtFullMessage(final Player player) {
         player.sendActionBar(messages.getMessage("wizard.court.full",
                 "<dark_gray>A Holtak Udvara megtelt ({count}/{max}) — előbb arasd le.</dark_gray>",
-                Map.of("count", Integer.toString(state.courtSize()),
+                Map.of("count", Integer.toString(court(player).size()),
                         "max", Integer.toString(courtCapacity(player)))));
-        return false;
     }
 
     /** Pure peek: an armed rune reaction, Konvergencia/Elemi Korona and the court empower casts. */
@@ -171,7 +194,7 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
             if ("halalmester".equals(doctrine(playerId, 50))) {
                 perCourt += config.getDouble("classes.wizard.necromancer.master-extra-percent", 2.0D);
             }
-            bonus += state.courtSize() * perCourt;
+            bonus += court(player).size() * perCourt;
         }
         final double cap = Math.max(0.0D,
                 config.getDouble("classes.wizard.max-power-bonus-percent", 40.0D));
@@ -258,44 +281,69 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
 
     private void handleNecromancerCast(final Player player, final WizardCombatState state,
                                        final String spellId) {
-        final UUID playerId = player.getUniqueId();
+        final PetManager gateway = pets;
+        if (gateway == null) return;
         if (harvestSpells().contains(spellId)) {
-            final boolean wasFull = state.courtSize() >= courtCapacity(player);
-            final int harvested = state.harvestCourt();
-            if (harvested <= 0) return;
-            double healPerCourt = Math.max(0.0D, config.getDouble(
-                    "classes.wizard.necromancer.harvest-heal-per-court", 2.0D));
-            if ("hu_holtak".equals(doctrine(playerId, 30))) {
-                healPerCourt += config.getDouble(
-                        "classes.wizard.necromancer.loyal-extra-heal", 1.0D);
-            }
-            if (wasFull && "lelekaratas".equals(doctrine(playerId, 40))) {
-                healPerCourt *= 2.0D;
-            }
-            healPlayer(player, harvested * healPerCourt);
-            if ("orok_udvar".equals(doctrine(playerId, 50))) {
-                state.raise(config.getString(
-                        "classes.wizard.necromancer.eternal-kept-kind", "csontvaz"),
-                        courtCapacity(player));
-            }
-            if (isInCombat(playerId)) {
-                specs.contributeClassMastery(player, JobType.WIZARD,
-                        config.getInt("classes.wizard.mastery.harvest-xp", 6));
-            }
-            player.sendActionBar(messages.getMessage("wizard.court.harvested",
-                    "<dark_gray>💀 {count} udvaronc lelke betakarítva.</dark_gray>",
-                    Map.of("count", Integer.toString(harvested))));
+            final boolean wasFull = !admitsRaise(player);
+            // Durable-first: the harvest pays for what the durable court actually released.
+            gateway.releaseCourtV2(player).thenAccept(harvested -> {
+                if (harvested <= 0) return;
+                gateway.runOnPlayer(player, () -> rewardHarvest(player, harvested, wasFull));
+            });
             return;
         }
         final String kind = raiseKindOf(spellId);
-        if (kind == null || !state.raise(kind, courtCapacity(player))) return;
+        if (kind == null) return;
+        gateway.raiseCourtV2(player, kind, courtEntityType(kind), courtCapacity(player))
+                .thenAccept(result -> gateway.runOnPlayer(player, () -> {
+                    if (!result.committed()) {
+                        // A refused commit is never silent: the same rule that gated the cast says why.
+                        courtFullMessage(player);
+                        return;
+                    }
+                    rewardRaise(player, kind);
+                }));
+    }
+
+    /** Runs on the player's own region thread, after the durable harvest committed. */
+    private void rewardHarvest(final Player player, final int harvested, final boolean wasFull) {
+        final UUID playerId = player.getUniqueId();
+        double healPerCourt = Math.max(0.0D, config.getDouble(
+                "classes.wizard.necromancer.harvest-heal-per-court", 2.0D));
+        if ("hu_holtak".equals(doctrine(playerId, 30))) {
+            healPerCourt += config.getDouble("classes.wizard.necromancer.loyal-extra-heal", 1.0D);
+        }
+        if (wasFull && "lelekaratas".equals(doctrine(playerId, 40))) {
+            healPerCourt *= 2.0D;
+        }
+        healPlayer(player, harvested * healPerCourt);
+        if (isInCombat(playerId)) {
+            specs.contributeClassMastery(player, JobType.WIZARD,
+                    config.getInt("classes.wizard.mastery.harvest-xp", 6));
+        }
+        player.sendActionBar(messages.getMessage("wizard.court.harvested",
+                "<dark_gray>💀 {count} udvaronc lelke betakarítva.</dark_gray>",
+                Map.of("count", Integer.toString(harvested))));
+        if ("orok_udvar".equals(doctrine(playerId, 50))) {
+            final String kept = ClassSpecCatalog.normalize(config.getString(
+                    "classes.wizard.necromancer.eternal-kept-kind", "csontvaz"));
+            final PetManager gateway = pets;
+            if (gateway != null) {
+                gateway.raiseCourtV2(player, kept, courtEntityType(kept), courtCapacity(player));
+            }
+        }
+    }
+
+    /** Runs on the player's own region thread, after the durable raise committed. */
+    private void rewardRaise(final Player player, final String kind) {
+        final UUID playerId = player.getUniqueId();
         if (isInCombat(playerId)) {
             specs.contributeClassMastery(player, JobType.WIZARD,
                     config.getInt("classes.wizard.mastery.raise-xp", 5));
         }
         player.sendActionBar(messages.getMessage("wizard.court.raised",
                 "<dark_gray>💀 {kind} a Holtak Udvarában ({count}/{max}).</dark_gray>",
-                Map.of("kind", kind, "count", Integer.toString(state.courtSize()),
+                Map.of("kind", kind, "count", Integer.toString(court(player).size()),
                         "max", Integer.toString(courtCapacity(player)))));
     }
 
@@ -326,7 +374,7 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
                         crowned ? NamedTextColor.GOLD : NamedTextColor.AQUA));
             }
             case "necromancer" -> suffix = suffix.append(Component.text("  • Udvar "
-                            + state.courtSize() + "/" + courtCapacity(player),
+                            + court(player).size() + "/" + courtCapacity(player),
                     NamedTextColor.DARK_GRAY));
             default -> { }
         }
@@ -423,9 +471,15 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
         };
     }
 
-    /** The court's size rides the EXISTING Soulforge LETSZAM authority — no parallel ladder. */
+    /**
+     * The court's size rides the EXISTING Soulforge LETSZAM authority — no parallel ladder. The
+     * ceiling is a plain configured number: nothing about it depends on how many kinds exist, so
+     * every slot is reachable by raising the same kind again.
+     */
     private int courtCapacity(final Player player) {
-        int capacity = Math.max(1, Math.min(WizardCombatState.COURT_SLOTS,
+        final int ceiling = Math.max(1, config.getInt(
+                "classes.wizard.necromancer.court-slots", 4));
+        int capacity = Math.max(1, Math.min(ceiling,
                 config.getInt("classes.wizard.necromancer.court-capacity", 2)));
         if ("nagyobb_udvar".equals(doctrine(player.getUniqueId(), 30))) {
             capacity += Math.max(0, config.getInt(
@@ -433,10 +487,30 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
         }
         final SoulforgeManager forge = soulforge;
         if (forge != null) {
-            capacity = Math.min(WizardCombatState.COURT_SLOTS,
-                    capacity + Math.max(0, forge.extraSlots(player)));
+            capacity += Math.max(0, forge.extraSlots(player));
         }
-        return Math.min(WizardCombatState.COURT_SLOTS, capacity);
+        return Math.min(ceiling, capacity);
+    }
+
+    /**
+     * The court projection. It is a pure read of the durable necromancer.court, so it is always
+     * reconstructible from Profile v2 alone: a relog, a spec switch or a DARK seal changes what the
+     * projection reports without any transient state having to be kept in step with it.
+     */
+    private List<CompanionProfile> court(final Player player) {
+        final PetManager gateway = pets;
+        return gateway == null ? List.of() : gateway.courtRoster(player);
+    }
+
+    private ClassLoadout activeLoadout(final UUID playerId) {
+        final var profile = specs.profileGateway().currentProfile(playerId).orElse(null);
+        return profile == null || profile.activeSlot() == null
+                ? null : profile.loadout(profile.activeSlot());
+    }
+
+    /** The vanilla body each raised kind wears, admin-tunable and never invented in code. */
+    private String courtEntityType(final String kind) {
+        return config.getString("classes.wizard.necromancer." + kind + "-entity", "");
     }
 
     private String raiseKindOf(final String spellId) {

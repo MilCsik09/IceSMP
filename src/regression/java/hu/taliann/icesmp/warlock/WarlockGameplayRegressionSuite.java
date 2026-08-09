@@ -187,7 +187,9 @@ public final class WarlockGameplayRegressionSuite {
 
         final String pets = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/PetManager.java"));
-        check(pets.contains("ClassSpecCatalog.companionProjection(currentLoadout(player).orElse(null), DEMON_ROSTER)"),
+        check(pets.contains("return companionRoster(player, DEMON_ROSTER);")
+                        && pets.contains("return ClassSpecCatalog.companionProjection("
+                        + "currentLoadout(player).orElse(null), namespace);"),
                 "the demon projection is the one shared companion projection rule");
         final int bindIndex = pets.indexOf("PetMutationResult> bindDemonV2");
         final int bindCommit = pets.indexOf("mutateCompanion", bindIndex);
