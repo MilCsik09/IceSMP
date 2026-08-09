@@ -272,6 +272,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         } else {
             form=demonForm(level); formName=demonFormName(form);
         }
+        // A paktum plafonja minden úton tart: a rituálé sem kerülheti meg a durable névsor kapacitását.
+        final int rosterCapacity=demonologist
+                ?Math.max(1,configManager.getInt("classes.warlock.demonologist.roster-capacity",3)):0;
+        if(rosterCapacity>0&&!ClassSpecCatalog.admitsCompanion(currentLoadout(player).orElse(null),namespace,rosterCapacity))
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-roster-full"));
         final UUID sessionToken=currentSessionToken(player).orElse(null);
         if(sessionToken==null)return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
         final UUID logicalId=UUID.randomUUID();
@@ -279,7 +284,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                 MinionManager.Stance.ACTIVE.name(),List.of(),0L,Map.of("ritual_summoned","true"));
         final String operationId="pet-ritual:"+logicalId;
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
-                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0,0L,0L,List.of(),Map.of(),operationId))
+                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0,0L,0L,List.of(),Map.of(),rosterCapacity,operationId))
                 .thenCompose(result -> afterDurablePetMutation(player,sessionToken,result,()->spawnAndAdopt(player,form)));
     }
 

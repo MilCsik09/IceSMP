@@ -297,8 +297,8 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
         gateway.raiseCourtV2(player, kind, courtEntityType(kind), courtCapacity(player))
                 .thenAccept(result -> gateway.runOnPlayer(player, () -> {
                     if (!result.committed()) {
-                        // A refused commit is never silent: the same rule that gated the cast says why.
-                        courtFullMessage(player);
+                        // A refused commit is never silent, but it may only claim the reason it had.
+                        if ("pet-court-full".equals(result.error())) courtFullMessage(player);
                         return;
                     }
                     rewardRaise(player, kind);

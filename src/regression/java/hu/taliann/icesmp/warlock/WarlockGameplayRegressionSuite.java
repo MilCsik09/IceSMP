@@ -196,6 +196,15 @@ public final class WarlockGameplayRegressionSuite {
         final int bindSpawn = pets.indexOf("spawnAndAdopt", bindIndex);
         check(bindIndex > 0 && bindCommit > bindIndex && bindSpawn > bindCommit,
                 "the demon is embodied only after the durable companion mutation is issued");
+        // The pact ceiling must hold on EVERY path into the roster, not just the spell path.
+        final int ritualIndex = pets.indexOf("PetMutationResult> ritualSummonV2");
+        final int ritualGuard = pets.indexOf("ClassSpecCatalog.admitsCompanion(", ritualIndex);
+        final int ritualCommit = pets.indexOf("mutateCompanion", ritualIndex);
+        check(ritualIndex > 0 && ritualGuard > ritualIndex && ritualGuard < ritualCommit,
+                "the /pet ritual answers to the same durable roster capacity as the pact spell");
+        check(pets.indexOf("List.of(),Map.of(),rosterCapacity,operationId", ritualIndex) > ritualIndex,
+                "and it carries that capacity into the commit, so the rule is re-checked there");
+
         final int releaseIndex = pets.indexOf("Integer> releaseDemonRosterV2");
         final int releaseCommit = pets.indexOf("mutateCompanion", releaseIndex);
         final int releaseDespawn = pets.indexOf("removeActive", releaseIndex);
