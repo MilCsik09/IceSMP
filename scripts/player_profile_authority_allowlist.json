@@ -320,6 +320,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java|private final Map<UUID, DruidCombatState> states = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient per-player Druid combat state (harmony/season window, combo + live scent target, Nap-Hold balance/eclipse, bark layers/roots, seed timers). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/priest/PriestGameplayService.java|private final Map<UUID, PriestCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Priest combat state (chosen Litany + verse count, Atonement window/shield web/reentrancy guard, Marrow and Ossuary charges, Madness meter). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
     }
   ]
 }

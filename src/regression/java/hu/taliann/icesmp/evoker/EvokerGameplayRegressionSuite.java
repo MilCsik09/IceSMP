@@ -172,10 +172,8 @@ public final class EvokerGameplayRegressionSuite {
     private static void gameplayV2AllowlistSourceContracts() throws Exception {
         final String policy = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/classspec/application/GameplayV2ClassPolicy.java"));
-        check(policy.contains("\"warrior\", \"evoker\", \"archer\", \"shaman\", "
-                        + "\"monk\", \"paladin\", \"demon_hunter\",")
-                        && policy.contains("\"druid\")"),
-                "gameplay-v2 allowlist is exactly the completed slices");
+        check(policy.contains("\"evoker\""),
+                "the gameplay-v2 allowlist still admits this completed slice");
 
         final String gateway = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java"));

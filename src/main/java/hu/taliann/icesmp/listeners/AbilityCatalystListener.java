@@ -6,6 +6,7 @@ import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
 import hu.taliann.icesmp.druid.DruidGameplayService;
+import hu.taliann.icesmp.priest.PriestGameplayService;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.monk.MonkGameplayService;
 import hu.taliann.icesmp.paladin.PaladinGameplayService;
@@ -88,6 +89,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile PaladinGameplayService paladinGameplayService;
     private volatile DemonHunterGameplayService demonHunterGameplayService;
     private volatile DruidGameplayService druidGameplayService;
+    private volatile PriestGameplayService priestGameplayService;
     private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin,
@@ -141,6 +143,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setPaladinGameplayService(final PaladinGameplayService service) {
         paladinGameplayService = java.util.Objects.requireNonNull(service, "service");
+    }
+
+    public void setPriestGameplayService(final PriestGameplayService service) {
+        priestGameplayService = java.util.Objects.requireNonNull(service, "service");
     }
 
     public void setDruidGameplayService(final DruidGameplayService service) {
@@ -333,6 +339,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (demonHunter != null && !demonHunter.beforeCast(player, selected)) return;
         final DruidGameplayService druid = druidGameplayService;
         if (druid != null && !druid.beforeCast(player, selected)) return;
+        final PriestGameplayService priest = priestGameplayService;
+        if (priest != null && !priest.beforeCast(player, selected)) return;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
@@ -359,7 +367,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 + (monk == null ? 0.0D : monk.castPowerBonusPercent(player, selected))
                 + (paladin == null ? 0.0D : paladin.castPowerBonusPercent(player, selected))
                 + (demonHunter == null ? 0.0D : demonHunter.castPowerBonusPercent(player, selected))
-                + (druid == null ? 0.0D : druid.castPowerBonusPercent(player, selected));
+                + (druid == null ? 0.0D : druid.castPowerBonusPercent(player, selected))
+                + (priest == null ? 0.0D : priest.castPowerBonusPercent(player, selected));
         final double powerCap = Math.max(1.0D,
                 configManager.getDouble("spells.total-power-cap", 1.75D));
         final double power = Math.min(powerCap,
@@ -398,6 +407,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         if (druid != null) {
             druid.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
+        }
+        if (priest != null) {
+            priest.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -736,6 +748,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final PaladinGameplayService paladin = paladinGameplayService;
         if (paladin != null) {
             active = paladin.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        }
+        final PriestGameplayService priestKit = priestGameplayService;
+        if (priestKit != null) {
+            active = priestKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
         }
         final DruidGameplayService druidKit = druidGameplayService;
         if (druidKit != null) {

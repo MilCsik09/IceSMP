@@ -894,6 +894,148 @@ classes:
       heal-per-ripe-seed: 3.0
       worldtree-extra-heal: 2.0
 
+  priest:
+    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
+    active-kit:
+      maximum: 7
+      discipline:
+        - heal
+        - power_word_shield
+        - penance
+        - power_word_radiance
+        - atonement
+        - barrier
+        - evangelism
+      bone_priest:
+        - bone_mend
+        - leeching_ray
+        - bone_ward
+        - queens_lament
+        - blood_tithe
+        - silence_of_the_grave
+        - last_rites
+      shadow:
+        - shadow_word_pain
+        - mind_blast
+        - mind_flay
+        - vampiric_touch
+        - shadow_word_death
+        - dispersion
+        - void_torrent
+
+    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+    mastery:
+      experience-per-rank: 100
+      combat-window-seconds: 10
+      recite-xp: 5
+      atonement-xp: 3
+      ossuary-xp: 5
+      threshold-xp: 4
+
+    max-power-bonus-percent: 40.0
+
+    # Class core: Litánia — a pap felvesz egy imát (/spec ima), és a hozzá illő tettek mondják el
+    # a verseit. A TELJES verssor elmondja az imát: egyszeri áldás + rövid ablak, majd a számláló
+    # nulláról indul. Nem lecsengő mérőóra: a jutalmat mindig újra ki kell érdemelni.
+    litany:
+      verses-required: 3
+      window-millis: 6000
+      bonus-percent: 15.0
+      blessing-ticks: 100
+      solace-heal: 4.0
+      vigasz-spells:
+        - heal
+        - renew
+        - power_word_shield
+        - power_word_radiance
+        - bone_mend
+        - bone_ward
+        - blood_tithe
+      ostor-spells:
+        - holy_smite
+        - shadow_word_pain
+        - mind_blast
+        - mind_flay
+        - shadow_word_death
+        - leeching_ray
+        - queens_lament
+      csend-spells:
+        - dispel
+        - fade
+        - levitate
+        - holy_nova
+        - dispersion
+        - silence_of_the_grave
+
+    # Fegyelem: az Engesztelés ablakában az OKOZOTT sebzés gyógyulássá és pajzshálóvá alakul.
+    # A konverzió explicit, nem-újrabelépő őr mögött fut: a belőle született gyógyítás SOHA nem
+    # indíthat újabb konverziót (a lista is kizárólag sebző/pajzs-nyitó spelleket tartalmaz).
+    discipline:
+      atonement-spells:
+        - atonement
+        - penance
+        - power_word_shield
+      window-millis: 8000
+      lasting-extra-millis: 3000
+      conversion-percent: 35.0
+      shield-cap: 20
+      wide-extra-cap: 6
+
+    # Csontpap (DARK — a meglévő pecsét/kapu rendszer alatt): a KONTROLLÁLT áldozat (élet-költségű
+    # spellek) Velőt ad, a Velő Osszárium-töltetté sűrűsödik, a sötét gyógyítás ezt égeti el.
+    # Az áldozat élet-padló alatt már a cast előtt elutasításra kerül — sosem lehet halálos.
+    bone:
+      sacrifice-spells:
+        - blood_tithe
+        - leeching_ray
+      mend-spells:
+        - bone_mend
+        - bone_ward
+        - last_rites
+      marrow-per-sacrifice: 20
+      deep-extra-marrow: 5
+      marrow-maximum: 100
+      store-extra-marrow: 20
+      ossuary-threshold: 40
+      cheap-threshold-reduction: 8
+      ossuary-maximum: 2
+      rich-extra-charge: 1
+      empowered-heal: 5.0
+      queen-extra-heal: 2.0
+      wall-absorption-ticks: 100
+      min-health-ratio: 0.35
+
+    # Árnyék: az Őrület a Küszöb körül a legerősebb. A Küszöbön TÚL minden árny-cast fix,
+    # élet-padlóval korlátozott vámot szed; a padló alatt a cast elutasításra kerül, nem öl.
+    # Nincs véletlenszerű, irányíthatatlan önpusztítás — a dispersion tudatos leeresztés.
+    shadow:
+      madness-spells:
+        - shadow_word_pain
+        - mind_blast
+        - mind_flay
+        - vampiric_touch
+        - shadow_word_death
+        - mind_sear
+        - void_eruption
+        - void_torrent
+      vent-spells:
+        - dispersion
+        - fade
+      cast-gain: 12
+      calm-reduction: 3
+      threshold: 60
+      deep-threshold-reduction: 10
+      master-threshold-reduction: 5
+      threshold-bonus-percent: 20.0
+      void-extra-percent: 6.0
+      strain-health: 2.0
+      pure-strain-reduction: 0.5
+      vent-amount: 40
+      quick-extra-vent: 15
+      min-health-ratio: 0.25
+      decay-delay-millis: 5000
+      decay-per-second: 5.0
+
 # A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
@@ -980,6 +1122,18 @@ specializations:
     capstone-spell: flourish
     spell-unlocks:
       flourish: 50
+  discipline:
+    capstone-spell: evangelism
+    spell-unlocks:
+      evangelism: 50
+  bone_priest:
+    capstone-spell: last_rites
+    spell-unlocks:
+      last_rites: 50
+  shadow:
+    capstone-spell: void_torrent
+    spell-unlocks:
+      void_torrent: 50
 
 # Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
 # A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.

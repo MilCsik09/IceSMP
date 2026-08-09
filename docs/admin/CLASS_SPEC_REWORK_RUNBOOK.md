@@ -65,6 +65,14 @@ A Warrior cast requires the personal Kürt and an Evoker cast requires the perso
 - **Mastery:** fragment collections, sigils, cleaves and the capstone earn mastery XP only in combat.
 - The melee-catalyst compatibility list now names only `death_knight`; every completed gameplay-v2 class requires its personal Lélekkapocs to cast.
 
+## Priest gameplay rules
+
+- **Litánia (class core):** the priest takes up a prayer with `/spec ima <vigasz|ostor|csend>` (session choice; the default follows the active spec's role). Deeds matching the prayer speak verses, and the FULL verse count recites it once: a blessing plus a short window that empowers the matching casts through the capped shared power pipeline. The counter then restarts from zero — this is a discrete, re-earned payoff, not a decaying meter.
+- **Fegyelem (Engesztelés + pajzsháló):** `atonement`/`penance`/`power_word_shield` arm the Engesztelés window; while it runs, a configured share of the priest's DEALT damage becomes self-healing and feeds the shield web, which then absorbs incoming hits. The conversion runs inside an **explicit non-reentrant guard** released in a `finally` block, and the source list contains no pure heal — Engesztelés can never heal off its own healing.
+- **Csontpap (Velő + Osszárium, DARK):** the spec stays on the **existing DARK seal/gate system** — no second gate mechanism was added. Controlled sacrifice (the health-cost `blood_tithe`/`leeching_ray`) yields Velő, which condenses into bounded Osszárium charges; the dark mends burn a charge for an empowered heal. A sacrifice below `bone.min-health-ratio` is refused before the cast, so the sacrifice can never be lethal.
+- **Árnyék (Őrület + Küszöb):** shadow casts build Őrület with lazy decay. Beyond the Küszöb the casts are empowered but each one pays a fixed health toll floored at `shadow.min-health-ratio`; below the floor the cast is refused outright rather than killing the priest. `dispersion`/`fade` vent deliberately. There is no random tick and no uncontrollable self-kill — the whole risk is deterministic and player-driven.
+- **Mastery:** recitations, Engesztelés conversions, Osszárium condensations and over-threshold casts earn mastery XP only in combat.
+
 ## Druid gameplay rules
 
 - **Természeti Erő és Évszak (class core):** nature casts build harmony with lazy decay. An **alakváltás on the existing form system** (no new form engine) releases the whole pool at once as the season bound to that form — Tavasz = Holdforma (heal + regeneration), Nyár = Párducforma (strength), Ősz = Utazóforma (a short window that empowers the next casts through the capped shared power pipeline), Tél = Medveforma (resistance + absorption). Below `harmony.release-threshold` the form still works, only the blessing is withheld.
@@ -139,9 +147,12 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Vadőr: `druid_feral_trial`;
 - Holdjós: `druid_lunar_trial`;
 - Védelmező: `druid_ironbark_trial`;
-- Helyreállító: `druid_restoration_trial`.
+- Helyreállító: `druid_restoration_trial`;
+- Fegyelem: `priest_discipline_trial`;
+- Csontpap: `priest_bone_priest_trial`;
+- Árnyék: `priest_shadow_trial`.
 
-The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter and Druid trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid and Priest trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 

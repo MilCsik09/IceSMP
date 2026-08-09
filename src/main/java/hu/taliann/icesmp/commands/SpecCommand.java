@@ -73,6 +73,7 @@ public final class SpecCommand implements BasicCommand {
             case "switch" -> handleSwitch(sender, args);
             case "doctrine" -> handleDoctrine(sender, args);
             case "esku" -> handleOath(sender, args);
+            case "ima" -> handleLitany(sender, args);
             case "info" -> handleInfo(sender);
             case "respec" -> handleRespec(sender, args);
             case "reset" -> handleReset(sender, args);
@@ -135,6 +136,18 @@ public final class SpecCommand implements BasicCommand {
         if (args.length < 2 || !specializationManager.choosePaladinOath(player, args[1])) {
             player.sendMessage(messageManager.get("spec-oath-usage",
                     "&cHasználat (csak Paplovag): /spec esku <irgalom|itelet|oltalmazas>"));
+        }
+    }
+
+    private void handleLitany(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only",
+                    "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        if (args.length < 2 || !specializationManager.choosePriestLitany(player, args[1])) {
+            player.sendMessage(messageManager.get("spec-litany-usage",
+                    "&cHasználat (csak Pap): /spec ima <vigasz|ostor|csend>"));
         }
     }
 
@@ -538,7 +551,7 @@ public final class SpecCommand implements BasicCommand {
             final @NonNull CommandSourceStack commandSourceStack,
             final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
-        final List<String> base = List.of("list", "choose", "switch", "doctrine", "esku", "info", "respec");
+        final List<String> base = List.of("list", "choose", "switch", "doctrine", "esku", "ima", "info", "respec");
         final List<String> subcommands = new ArrayList<>(base);
         if (sender.hasPermission(ADMIN_PERMISSION)) subcommands.add("reset");
         if (sender.hasPermission(RECOVERY_PERMISSION)) subcommands.add("recover");
@@ -595,6 +608,11 @@ public final class SpecCommand implements BasicCommand {
         if ("esku".equals(subcommand) && args.length <= 2) {
             final String prefix = prefixAt(args, 1);
             return List.of("irgalom", "itelet", "oltalmazas").stream()
+                    .filter(option -> option.startsWith(prefix)).toList();
+        }
+        if ("ima".equals(subcommand) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
+            return List.of("vigasz", "ostor", "csend").stream()
                     .filter(option -> option.startsWith(prefix)).toList();
         }
         if ("respec".equals(subcommand) && args.length <= 2) {

@@ -5,6 +5,7 @@ import hu.taliann.icesmp.classspec.application.ClassSpecRuntimePort;
 import hu.taliann.icesmp.classspec.application.ProfileSessionRegistry;
 import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
 import hu.taliann.icesmp.druid.DruidGameplayService;
+import hu.taliann.icesmp.priest.PriestGameplayService;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.monk.MonkGameplayService;
 import hu.taliann.icesmp.paladin.PaladinGameplayService;
@@ -96,8 +97,9 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         final PaladinGameplayService paladin = specs.paladinGameplayService().orElse(null);
         final DemonHunterGameplayService demonHunter = specs.demonHunterGameplayService().orElse(null);
         final DruidGameplayService druid = specs.druidGameplayService().orElse(null);
+        final PriestGameplayService priest = specs.priestGameplayService().orElse(null);
         if (warrior == null || evoker == null || archer == null || shaman == null
-                || monk == null || paladin == null || demonHunter == null || druid == null
+                || monk == null || paladin == null || demonHunter == null || druid == null || priest == null
                 || !runtimesWired.compareAndSet(false, true)) return;
         catalyst.setWarriorGameplayService(warrior);
         catalyst.setEvokerGameplayService(evoker);
@@ -107,6 +109,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         catalyst.setPaladinGameplayService(paladin);
         catalyst.setDemonHunterGameplayService(demonHunter);
         catalyst.setDruidGameplayService(druid);
+        catalyst.setPriestGameplayService(priest);
         resources.setHudSuffix(player -> warrior.hudSuffix(player)
                 .append(evoker.hudSuffix(player))
                 .append(archer.hudSuffix(player))
@@ -114,7 +117,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 .append(monk.hudSuffix(player))
                 .append(paladin.hudSuffix(player))
                 .append(demonHunter.hudSuffix(player))
-                .append(druid.hudSuffix(player)));
+                .append(druid.hudSuffix(player))
+                .append(priest.hudSuffix(player)));
         specs.setSwitchSafetyResource(resources);
         warrior.setCombatTracker(resources);
         evoker.setCombatTracker(resources);
@@ -124,6 +128,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         paladin.setCombatTracker(resources);
         demonHunter.setCombatTracker(resources);
         druid.setCombatTracker(resources);
+        priest.setCombatTracker(resources);
         archer.setPetManager(pets);
         pets.setPetDeathHook(archer::onPetDeath);
         registerTransientOwner(warrior);
@@ -134,6 +139,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         registerTransientOwner(paladin);
         registerTransientOwner(demonHunter);
         registerTransientOwner(druid);
+        registerTransientOwner(priest);
         setLoadoutSwitchCleanup(playerId -> {
             warrior.clearSpecializationState(playerId);
             evoker.clearSpecializationState(playerId);
@@ -143,6 +149,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             paladin.clearSpecializationState(playerId);
             demonHunter.clearSpecializationState(playerId);
             druid.clearSpecializationState(playerId);
+            priest.clearSpecializationState(playerId);
         });
         setPostReconcile(player -> {
             warrior.reconcileProfile(player);
@@ -153,6 +160,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             paladin.reconcileProfile(player);
             demonHunter.reconcileProfile(player);
             druid.reconcileProfile(player);
+            priest.reconcileProfile(player);
             catalyst.refreshSoulbond(player);
         });
     }
@@ -271,7 +279,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                     || owner instanceof MonkGameplayService
                     || owner instanceof PaladinGameplayService
                     || owner instanceof DemonHunterGameplayService
-                    || owner instanceof DruidGameplayService)) {
+                    || owner instanceof DruidGameplayService
+                    || owner instanceof PriestGameplayService)) {
                 continue;
             }
             owner.clearPlayerState(id);
