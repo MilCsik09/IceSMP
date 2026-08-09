@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -219,9 +220,10 @@ public final class SpecializationManager {
         // Requiring isSessionReady() here creates a circular dependency: the bridge cannot
         // mark READY until this reconciliation succeeds. A current generation plus a loaded
         // profile is sufficient; gateway.reconcile() still enforces session fencing and the
-        // persistence/review/quarantine fail-closed policy.
-        if (gateway.currentSessionToken(playerId).isEmpty()
-                || gateway.currentProfile(playerId).isEmpty()) {
+        // persistence/review/quarantine fail-closed policy. The generation observed here is
+        // captured so the RESULT can be fenced to it as well.
+        final UUID sessionToken = gateway.currentSessionToken(playerId).orElse(null);
+        if (sessionToken == null || gateway.currentProfile(playerId).isEmpty()) {
             return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
                     gateway.diagnostic(playerId), "Profile v2 session/profile is not available"));
         }
@@ -237,8 +239,15 @@ public final class SpecializationManager {
                 snapshots.put(entry.getKey(), captureGateSnapshot(player, type));
             }
         }
+        // A reconcile that outlived its activation must not be reported as if it still applied.
         return gateway.reconcile(playerId,
-                new ClassSpecProfileGateway.ReconcileRequest(snapshots));
+                        new ClassSpecProfileGateway.ReconcileRequest(snapshots))
+                .thenApply(result -> gateway.isCurrentSession(playerId, sessionToken)
+                        ? result
+                        : ProfileMutationResult.stale(
+                                result.durableProfileOptional().orElseGet(
+                                        () -> gateway.diagnostic(playerId)),
+                                "DARK gate reconcile completed for a retired session"));
     }
 
     public void resetProfessionSpecialization(final Player player) {
