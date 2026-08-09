@@ -519,19 +519,30 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     public CompletionStage<Boolean> addXpV2(final Player player, final int amount, final String operationId) {
         if(amount<=0||!canOwnPet(player))return CompletableFuture.completedFuture(false);
-        final CompanionProfile active=activeCompanion(player).orElse(null);if(active==null)return CompletableFuture.completedFuture(false);
-        final int maxLevel=Math.max(1,configManager.getInt("pets.companion.max-level",30));
-        int level=active.level();long xp=NumericGuards.addLong(active.experience(),amount,"companion experience");boolean leveled=false;
-        while(level<maxLevel){final int cost=levelCost(level);if(xp<cost)break;xp-=cost;level=NumericGuards.addInt(level,1,"companion level");leveled=true;}
-        final int committedLevel=level;final long committedXp=xp;final boolean didLevel=leveled;
-        return mutateActive(player,ClassSpecProfileGateway.CompanionMutationRequest.Kind.PROGRESS,"",committedLevel,committedXp,0L,List.of(),Map.of(),operationId)
+        final CompanionProfile before=activeCompanion(player).orElse(null);
+        final Optional<LoadoutSlot> slot=activeSlot(player);
+        if(before==null||slot.isEmpty())return CompletableFuture.completedFuture(false);
+        final int maxLevel=Math.max(1,Math.min(CompanionProfile.MAX_LEVEL,
+                configManager.getInt("pets.companion.max-level",30)));
+        final int baseXp=Math.max(1,configManager.getInt("pets.companion.base-xp",10));
+        final int increment=Math.max(0,configManager.getInt("pets.companion.increment-per-level",5));
+        return gateway().mutateCompanionProgress(player.getUniqueId(),
+                        new ClassSpecProfileGateway.CompanionProgressRequest(slot.orElseThrow(),
+                                before.companionId(),amount,baseXp,increment,maxLevel,operationId))
                 .thenCompose(result->{
-                    if(!result.committed())return CompletableFuture.completedFuture(false);
-                    if(!didLevel)return CompletableFuture.completedFuture(true);
+                    if(!result.durableOutcomeAccepted())return CompletableFuture.completedFuture(false);
+                    // Replay, stale generation and runtime-failed commits are already durable; never
+                    // fabricate a second feedback effect. Reconnect rebuilds the live companion.
+                    if(!result.committed())return CompletableFuture.completedFuture(true);
+                    final CompanionProfile committed=gateway().currentProfile(player.getUniqueId())
+                            .map(profile->profile.loadout(slot.orElseThrow()).companionRoster().get(before.companionId()))
+                            .orElse(null);
+                    if(committed==null||committed.level()<=before.level())return CompletableFuture.completedFuture(true);
                     final UUID sessionToken=currentSessionToken(player).orElse(null);
-                    if(sessionToken==null)return CompletableFuture.completedFuture(false);
+                    if(sessionToken==null)return CompletableFuture.completedFuture(true);
+                    final int committedLevel=committed.level();
                     final CompletableFuture<Boolean> completion=new CompletableFuture<>();
-                    runOnCurrentPlayer(player,sessionToken,()->{if(committedLevel>=maxLevel)AdvancementService.award(player,"pet_bond");Mob pet=activePet(player);if(pet!=null){applyBuffs(pet,committedLevel,false);updateName(pet,player);}player.sendMessage(messageManager.getMessage("pet-level-up","<dark_green>🐾 A társad szintet lépett: <white>{level}</white></dark_green>",Map.of("level",String.valueOf(committedLevel))));completion.complete(true);},()->completion.complete(false));
+                    runOnCurrentPlayer(player,sessionToken,()->{if(committedLevel>=maxLevel)AdvancementService.award(player,"pet_bond");Mob pet=activePet(player);if(pet!=null){applyBuffs(pet,committedLevel,false);updateName(pet,player);}player.sendMessage(messageManager.getMessage("pet-level-up","<dark_green>🐾 A társad szintet lépett: <white>{level}</white></dark_green>",Map.of("level",String.valueOf(committedLevel))));completion.complete(true);},()->completion.complete(true));
                     return completion;
                 });
     }
