@@ -12,7 +12,7 @@ public final class ClassSpecApplicationRegressionSuite {
     private static int assertions;
     private ClassSpecApplicationRegressionSuite(){}
     public static void main(String[] args){
-        greenfieldClassAndSpec(); allDarkSpecsRequireGates(); completeGateSetSealsAndUnseals(); runtimeFailureIsVisible(); staleSessionFencesRuntime(); concurrentMutationsSerialize(); operationReceiptsAreDurableAndParameterBound(); companionIsolation(); shutdownDrainsAndRejectsNewWork();
+        greenfieldClassAndSpec(); activationReconcileBeforeReady(); allDarkSpecsRequireGates(); completeGateSetSealsAndUnseals(); runtimeFailureIsVisible(); staleSessionFencesRuntime(); concurrentMutationsSerialize(); operationReceiptsAreDurableAndParameterBound(); companionIsolation(); shutdownDrainsAndRejectsNewWork();
         System.out.println("Class/spec application regression suite passed. assertions="+assertions);
     }
     private static void greenfieldClassAndSpec(){
@@ -21,6 +21,13 @@ public final class ClassSpecApplicationRegressionSuite {
         check(assigned.committed(),"class assignment");check(h.store.profile.primaryClassId().equals("wizard"),"class durable");
         var selected=h.gateway.select(PLAYER,new ClassSpecProfileGateway.SelectRequest("elementalist",LoadoutSlot.FIRST,satisfied())).toCompletableFuture().join();
         check(selected.committed(),"spec selection");check(h.gateway.activeSpecId(PLAYER).orElseThrow().equals("elementalist"),"active spec");check(h.store.profile.revision()==2,"exact revisions");
+    }
+    private static void activationReconcileBeforeReady(){
+        FakeStore store=new FakeStore(ClassProfile.empty(PLAYER,0));ProfileSessionRegistry sessions=new ProfileSessionRegistry();UUID token=sessions.begin(PLAYER);DefaultClassSpecProfileGateway gateway=new DefaultClassSpecProfileGateway(store,ClassSpecRuntimePort.noop(),sessions);
+        check(!gateway.isSessionReady(PLAYER),"activation begins non-ready");
+        var result=gateway.reconcile(PLAYER,new ClassSpecProfileGateway.ReconcileRequest(Map.of())).toCompletableFuture().join();
+        check(result.status()==ProfileMutationResult.Status.NO_CHANGE,"activation reconcile allowed before ready");check(sessions.isCurrent(PLAYER,token),"activation generation retained");check(!gateway.isSessionReady(PLAYER),"reconcile alone does not publish ready");
+        sessions.markReady(PLAYER,token);check(gateway.isSessionReady(PLAYER),"session becomes ready after activation reconcile");
     }
     private static void allDarkSpecsRequireGates(){
         for(String spec:DarkSpecializationPolicy.IDS){
