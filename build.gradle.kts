@@ -22,10 +22,142 @@ dependencies {
 
 java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
 
+data class LockedDevPlugin(
+    val id: String,
+    val runtimeRole: String,
+    val devProvision: String,
+    val devProject: String?,
+    val devVersionId: String?,
+    val devLocalFile: String?
+)
+
+data class ClassSpecDependencyLock(
+    val minecraft: String,
+    val plugins: List<LockedDevPlugin>
+)
+
+fun yamlScalar(raw: String): String = raw.substringBefore(" #").trim()
+    .removeSurrounding("\"").removeSurrounding("'")
+
+fun parseClassSpecDependencyLock(file: java.io.File): ClassSpecDependencyLock {
+    require(file.isFile) { "Missing class/spec dependency lock: $file" }
+    val text = file.readText()
+    val schema = Regex("(?m)^schema-version:\\s*(\\d+)\\s*$")
+        .find(text)?.groupValues?.get(1)?.toIntOrNull()
+        ?: error("class-spec-dependencies.lock.yml has no schema-version")
+    require(schema == 2) { "Unsupported class/spec dependency lock schema $schema; expected 2" }
+    val minecraft = Regex("(?m)^\\s{2}minecraft:\\s*[\\\"']?([^\\\"'#\\s]+)[\\\"']?\\s*$")
+        .find(text)?.groupValues?.get(1)
+        ?: error("class-spec-dependencies.lock.yml has no target.minecraft")
+
+    val plugins = mutableListOf<LockedDevPlugin>()
+    var inPlugins = false
+    var currentId: String? = null
+    var fields = linkedMapOf<String, String>()
+
+    fun flush() {
+        val id = currentId ?: return
+        val role = fields["runtime-role"]
+            ?: error("class-spec dependency '$id' has no runtime-role")
+        require(role in setOf("required-runtime", "optional-integration", "dev-only", "validation-only")) {
+            "class-spec dependency '$id' has invalid runtime-role '$role'"
+        }
+        val provision = fields["dev-provision"] ?: "disabled"
+        require(provision in setOf("modrinth", "local", "disabled")) {
+            "class-spec dependency '$id' has invalid dev-provision '$provision'"
+        }
+        val project = fields["dev-project"]
+        val versionId = fields["dev-version-id"]
+        val localFile = fields["dev-local-file"]
+        if (provision == "modrinth") {
+            require(!project.isNullOrBlank() && !versionId.isNullOrBlank()) {
+                "class-spec dependency '$id' needs dev-project and dev-version-id for Modrinth provisioning"
+            }
+        }
+        if (provision == "local") {
+            require(!localFile.isNullOrBlank()) {
+                "class-spec dependency '$id' needs dev-local-file for local provisioning"
+            }
+        }
+        plugins += LockedDevPlugin(id, role, provision, project, versionId, localFile)
+    }
+
+    file.forEachLine { raw ->
+        val trimmed = raw.trim()
+        if (trimmed == "plugins:") {
+            inPlugins = true
+            return@forEachLine
+        }
+        if (!inPlugins || trimmed.isEmpty() || trimmed.startsWith("#")) return@forEachLine
+        val first = raw.indexOfFirst { !it.isWhitespace() }
+        val indent = if (first < 0) raw.length else first
+        if (indent == 2 && trimmed.endsWith(":")) {
+            flush()
+            currentId = trimmed.dropLast(1)
+            fields = linkedMapOf()
+        } else if (indent == 4 && currentId != null) {
+            val separator = trimmed.indexOf(':')
+            if (separator > 0) {
+                fields[trimmed.substring(0, separator)] = yamlScalar(trimmed.substring(separator + 1))
+            }
+        }
+    }
+    flush()
+    require(plugins.isNotEmpty()) { "class-spec-dependencies.lock.yml contains no plugins" }
+    return ClassSpecDependencyLock(minecraft, plugins.toList())
+}
+
+val classSpecDependencyLock = parseClassSpecDependencyLock(
+    layout.projectDirectory.file("src/main/resources/class-spec-dependencies.lock.yml").asFile
+)
+val configuredMinecraftVersion = libs.versions.minecraft.get()
+require(classSpecDependencyLock.minecraft == configuredMinecraftVersion) {
+    "class-spec dependency lock targets ${classSpecDependencyLock.minecraft}, " +
+        "but Gradle targets $configuredMinecraftVersion"
+}
+
+val localDevPluginDirectory = providers.gradleProperty("icesmpDevPluginDir")
+    .orElse(providers.environmentVariable("ICESMP_DEV_PLUGIN_DIR"))
+val localClassSpecPlugins = classSpecDependencyLock.plugins.filter { it.devProvision == "local" }
+val prepareLocalClassSpecPlugins = tasks.register("prepareLocalClassSpecPlugins") {
+    group = "icesmp development"
+    description = "Copies licensed/local class-spec dev plugins into run/plugins when a local directory is configured."
+    doLast {
+        if (localClassSpecPlugins.isEmpty()) return@doLast
+        val configured = localDevPluginDirectory.orNull
+        if (configured.isNullOrBlank()) {
+            logger.lifecycle(
+                "IceSMP local dev plugins skipped. Set -PicesmpDevPluginDir=<dir> or " +
+                    "ICESMP_DEV_PLUGIN_DIR to provision licensed/local artifacts."
+            )
+            return@doLast
+        }
+        val sourceDirectory = project.file(configured)
+        require(sourceDirectory.isDirectory) { "IceSMP dev plugin directory does not exist: $sourceDirectory" }
+        val targetDirectory = layout.projectDirectory.dir("run/plugins").asFile
+        targetDirectory.mkdirs()
+        localClassSpecPlugins.forEach { locked ->
+            val fileName = requireNotNull(locked.devLocalFile)
+            val source = sourceDirectory.resolve(fileName)
+            require(source.isFile) { "Missing local dev plugin for ${locked.id}: $source" }
+            source.copyTo(targetDirectory.resolve(fileName), overwrite = true)
+            logger.lifecycle("Provisioned local IceSMP dev plugin ${locked.id}: $fileName")
+        }
+    }
+}
+
 tasks {
     runServer {
-        minecraftVersion(libs.versions.minecraft.get())
+        dependsOn(prepareLocalClassSpecPlugins)
+        minecraftVersion(classSpecDependencyLock.minecraft)
         jvmArgs("-Xms2G", "-Xmx2G", "-Dpaper.disablePluginRemapping=true")
+        downloadPlugins {
+            classSpecDependencyLock.plugins
+                .filter { it.devProvision == "modrinth" }
+                .forEach { locked ->
+                    modrinth(requireNotNull(locked.devProject), requireNotNull(locked.devVersionId))
+                }
+        }
     }
     processResources {
         val props = mapOf("version" to version, "description" to project.description)
