@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +31,7 @@ public final class CrateRegressionSuite {
         validatesWeightsAmountsAndExactIntegers();
         validatesStrictBooleanAndWorldLists();
         resolvesBundledAndInstalledSoundNames();
+        validatesBundledCrateCollection();
         validatesCommandTemplates();
         consumesExactKeysAcrossStacks();
         boundsPartialMassOpen();
@@ -131,6 +133,33 @@ public final class CrateRegressionSuite {
             final String sound = crates.getString(crateId + ".opening-sound.sound", "");
             check(hasSoundField(sound),
                     "bundled crate has invalid opening sound: " + crateId + " -> " + sound);
+        }
+    }
+
+    private static void validatesBundledCrateCollection() {
+        final YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/crates.yml").toFile());
+        final ConfigurationSection crates = defaults.getConfigurationSection("crates");
+        final Set<String> expected = Set.of("koznapi", "ritka", "hosi", "mitikus",
+                "mesterseg", "expedicio", "hadizsakmany", "arkanum");
+        check(crates != null && crates.getKeys(false).equals(expected),
+                "the bundled lower-floor crate collection must contain exactly eight definitions");
+        check(defaults.get("crates-settings.spin-animation") == null,
+                "removed inventory roulette config returned");
+        for (final String crateId : expected) {
+            check(crates.getString(crateId + ".permission", "").isBlank(),
+                    "bundled crate unexpectedly requires permission: " + crateId);
+            check(crates.getInt(crateId + ".required-key-count", 0) == 1,
+                    "bundled crate must consume exactly one key: " + crateId);
+            check(crates.getString(crateId + ".key-item-model", "")
+                            .startsWith("icesmp:crate_key_"),
+                    "bundled crate key model missing: " + crateId);
+            final double totalWeight = crates.getMapList(crateId + ".rewards").stream()
+                    .map(Map.class::cast)
+                    .mapToDouble(reward -> ((Number) reward.get("weight")).doubleValue())
+                    .sum();
+            check(Math.abs(totalWeight - 100.0D) < 0.000_001D,
+                    "bundled crate reward weights must total 100: " + crateId);
         }
     }
 
@@ -490,7 +519,7 @@ public final class CrateRegressionSuite {
         final String core = source("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
         final String keyFactory = source("src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java");
         final String browser = source("src/main/java/hu/taliann/icesmp/gui/CrateBrowserGUI.java");
-        final String spin = source("src/main/java/hu/taliann/icesmp/gui/CrateSpinGUI.java");
+        final String configMenu = source("src/main/java/hu/taliann/icesmp/gui/CrateConfigMenuGUI.java");
         final String currency = source("src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java");
 
         check(listener.contains("event.getHand() != EquipmentSlot.HAND"),
@@ -538,8 +567,16 @@ public final class CrateRegressionSuite {
                 "stats reset can race a pending opening/recovery");
         check(manager.contains("new CrateAuditWriter") && manager.contains("auditWriter.append(line)"),
                 "audit append/rotation is not behind a serialized writer");
-        check(spin.contains("CrateTaskLease") && spin.contains("CrateTaskSubmission.entityDelayed"),
-                "spin scheduler rejection cleanup is missing");
+        check(!manager.contains("CrateSpinGUI") && !manager.contains("spin-animation"),
+                "crate roulette inventory UI must not be reachable");
+        check(!core.contains("CrateSpinGUIListener")
+                        && !configMenu.contains("crates-settings.spin-animation"),
+                "crate roulette listener/config toggle must not be registered");
+        check(manager.contains("startRevealThenGrant(pending, player)")
+                        && manager.contains("REVEAL_DURATION_TICKS")
+                        && manager.indexOf("startRevealThenGrant(pending, player)")
+                        < manager.indexOf("armIrreversibleFence(pending, player);"),
+                "reward side effects must remain behind the world-space reveal");
         check(manager.contains("display.remove()") && manager.contains("lease.publish(task)"),
                 "reveal scheduler rejection can leak a display holder/entity");
         check(manager.contains("KeyConsumption.plan(amounts, pending.keysRequired)"),
@@ -567,8 +604,8 @@ public final class CrateRegressionSuite {
                         .contains("ledger.rollback"),
                 "restart key refund rolls back a ledger mutation that was never applied");
 
-        final List<String> crateSources = List.of(manager, listener, command, core, keyFactory, browser,
-                spin, source("src/main/java/hu/taliann/icesmp/listeners/CrateBrowserGUIListener.java"));
+        final List<String> crateSources = List.of(manager, listener, command, core, keyFactory, browser, configMenu,
+                source("src/main/java/hu/taliann/icesmp/listeners/CrateBrowserGUIListener.java"));
         for (final String code : crateSources) {
             check(!code.contains("Bukkit.getScheduler()"), "forbidden Bukkit scheduler introduced");
             check(!code.contains("new BukkitRunnable"), "forbidden BukkitRunnable introduced");

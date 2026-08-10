@@ -286,6 +286,17 @@ keletkezhet, ezért ne hagyd figyelmen kívül a pénzügyi figyelmeztetéseket.
 frakcióváltás a régi tartozást nem váltja át: azt továbbra is az eredeti
 frakció valutájában, az eredeti kassza felé kell rendezni.
 
+### Ládák és kulcsok
+
+A lenti ládaszinten nyolc, alapból mindenki számára nyitható láda kap helyet:
+Köznapi, Ritka, Hősi, Mitikus, Mesterség, Expedíció, Hadizsákmány és Arkánum.
+A permission nem választja szét őket; az ár, a cooldown és a jutalomprofil igen.
+
+A `/crate` böngészőben megnézheted az esélyeket és kulcsot vásárolhatsz. A
+fizikai láda nyitásakor nem jelenik meg inventory-rulett: a kiválasztás a láda
+felett pörgő ItemDisplayen látszik, és a jutalom csak a reveal lezárása után
+kerül kiosztásra. Minden bundled láda nyitásonként pontosan egy kulcsot kér.
+
 ---
 
 ## 4. Kasztok
@@ -956,3 +967,4 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
+

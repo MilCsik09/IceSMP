@@ -63,7 +63,7 @@ Minden helyszínhez legyen egy rövid átadólap:
 
 | Rendszer | Fizikai hely kell? | Hogyan kötődik a világhoz? | Bundled állapot | Fő builderteendő |
 |---|---|---|---|---|
-| Crate | Igen, ha blokkra kattintható crate kell | Tartós világ UUID + világnév + blokkkoordináta | Két definíció van; fizikai placement runtime adat | Építs pickup-biztos környezetet, majd `/crate set <id>` |
+| Crate | Igen, ha blokkra kattintható crate kell | Tartós világ UUID + világnév + blokkkoordináta | Nyolc alapdefiníció van; fizikai placement runtime adat | Kösd az alsó szint 8 állomását, majd `/crate set <id>` |
 | Sit-only | Nem külön helyszín, de a blokkok geometriája számít | Engedélyezett világok, anyagok és blokkállapot | Alapból engedélyezett | Támogatott ülőfelületekkel és megfelelő fejhellyel építs |
 | Territórium/főváros | Igen | Kör- vagy poligonzóna és opcionális magassági sáv | Nincs bundled élő zónapéldány | Határ, típus, frakció és spawn adminbekötése |
 | Játékosclaim | Játékos hozza létre | Blokkpontos doboz a világ nevével | Runtime tartós adat | Úgy tervezz telkeket, hogy a claimhatárok ne vágják ketté a közös infrastruktúrát |
@@ -154,9 +154,12 @@ Egy crate-definíció attól még létezhet, hogy egyetlen blokk sincs hozzá
 regisztrálva. Egy regisztrált blokk pedig veszélyessé válhat, ha a hozzá
 tartozó definíciót előbb törlitek a configból.
 
-A bundled release két crate ID-t ad: `koznapi` és `ritka`. Mindkettő
-`TRIPWIRE_HOOK` alapú kulcsot használ, de külön item-modellel,
-jutalomkészlettel és szabályokkal. Az elhelyezéskor az ID-t pontosan,
+A bundled release nyolc crate ID-t ad: `koznapi`, `ritka`, `hosi`,
+`mitikus`, `mesterseg`, `expedicio`, `hadizsakmany` és `arkanum`.
+Ezek az alsó szint 8 állomását töltik ki; a felső szint 8 helye későbbi
+szezonális, frakciós és eventládáknak marad. Mindegyik `TRIPWIRE_HOOK`
+alapú, saját item-modellel és jutalomprofillal, és a bundled configban egyik
+sem kér crate-specifikus permissiont. Az elhelyezéskor az ID-t pontosan,
 ékezet nélkül add meg.
 
 ### 4.2. Crate-hely létrehozása
@@ -196,7 +199,7 @@ Cserénél:
 5. próbáld ki a régi és az új kulcsot is;
 6. restart után ismét ellenőrizd.
 
-Ne cserélj crate-definíciót egy aktív spin vagy settlement közben. A
+Ne cserélj crate-definíciót aktív ItemDisplay-reveal vagy settlement közben. A
 config-generáció változása megszakíthatja a folyamatot, amely ezután
 recovery-ágra kerülhet.
 
@@ -1032,3 +1035,4 @@ rituáléstruktúrákat és rejtett helyeket.
 
 A teljes pipálható csapatfolyamat:
 [release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).
+

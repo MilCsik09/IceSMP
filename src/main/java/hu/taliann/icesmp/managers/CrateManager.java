@@ -14,7 +14,6 @@ import hu.taliann.icesmp.crates.KeyConsumption;
 import hu.taliann.icesmp.crates.WeightedSelector;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.gui.CrateBrowserGUI;
-import hu.taliann.icesmp.gui.CrateSpinGUI;
 import hu.taliann.icesmp.items.BlueprintItemFactory;
 import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
@@ -75,6 +74,9 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
     private static final long AUDIT_ROTATE_BYTES = 5L * 1024L * 1024L;
     private static final double MAX_KEY_PRICE = 1_000_000_000.0D;
     private static final int MAX_CRATES = 128;
+    private static final int REVEAL_CYCLES = 12;
+    private static final int REVEAL_CYCLE_TICKS = 3;
+    private static final long REVEAL_DURATION_TICKS = (long) REVEAL_CYCLES * REVEAL_CYCLE_TICKS;
 
     public enum RewardType {
         ITEM,
@@ -218,7 +220,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         }
     }
 
-    private record ConfigSnapshot(long generation, boolean enabled, boolean spinAnimation,
+    private record ConfigSnapshot(long generation, boolean enabled,
                                   Map<String, CrateDefinition> definitions, List<String> errors) {
         private ConfigSnapshot {
             definitions = Map.copyOf(definitions);
@@ -226,7 +228,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         }
 
         private static ConfigSnapshot disabled() {
-            return new ConfigSnapshot(0L, false, false, Map.of(), List.of("A crate config még nincs betöltve."));
+            return new ConfigSnapshot(0L, false, Map.of(), List.of("A crate config még nincs betöltve."));
         }
     }
 
@@ -290,16 +292,12 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         final ConfigurationSection root = configuration == null ? null
                 : configuration.getConfigurationSection("crates");
         final boolean globallyEnabled;
-        final boolean spin;
         try {
             globallyEnabled = CrateRules.strictBoolean(configuration == null ? null
                     : configuration.get("crates-settings.enabled"), true, "crates-settings.enabled");
-            spin = CrateRules.strictBoolean(configuration == null ? null
-                    : configuration.get("crates-settings.spin-animation"), true,
-                    "crates-settings.spin-animation");
         } catch (final IllegalArgumentException invalidGlobal) {
             errors.add(invalidGlobal.getMessage());
-            configSnapshot = new ConfigSnapshot(generation, false, false, Map.of(), errors);
+            configSnapshot = new ConfigSnapshot(generation, false, Map.of(), errors);
             plugin.getLogger().warning("Crate config: " + invalidGlobal.getMessage());
             return;
         }
@@ -344,7 +342,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         } while (changed);
 
         final ConfigSnapshot next = new ConfigSnapshot(generation,
-                globallyEnabled && !definitions.isEmpty(), spin, definitions, errors);
+                globallyEnabled && !definitions.isEmpty(), definitions, errors);
         configSnapshot = next;
         hu.taliann.icesmp.core.Permissions.registerCratePermissions(definitions.values().stream()
                 .map(CrateDefinition::permission).filter(permission -> permission != null && !permission.isBlank()).toList());
@@ -1094,7 +1092,31 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     "&cA kulcsok nem fogyaszthatók biztonságosan; a nyitás visszavonva."));
             return;
         }
-        armIrreversibleFence(pending, player);
+        startRevealThenGrant(pending, player);
+    }
+
+    /**
+     * Keeps reward side effects behind the world-space reveal. The selected reward is already
+     * fixed, but no item, currency or command is delivered until the ItemDisplay finishes.
+     */
+    private void startRevealThenGrant(final PendingOpen pending, final Player player) {
+        if (pending.opens != 1 || pending.source == null
+                || !configManager.getBoolean("display-fx.crate-reveal.enabled", true)) {
+            armIrreversibleFence(pending, player);
+            return;
+        }
+        final World world = Bukkit.getWorld(pending.source.worldId());
+        if (world == null || !world.getName().equals(pending.source.worldName())) {
+            armIrreversibleFence(pending, player);
+            return;
+        }
+        final Location source = new Location(world, pending.source.x(), pending.source.y(), pending.source.z());
+        spawnCrateReveal(source, pending.definition.rewards(), pending.rewards.getFirst());
+        CrateTaskSubmission.entityDelayed(plugin, player.getScheduler(),
+                () -> armIrreversibleFence(pending, player),
+                () -> beginCompensation(pending, player,
+                        "player scheduler retired during crate reveal"),
+                REVEAL_DURATION_TICKS);
     }
 
     private void revertUnconsumedFenceAndRollback(final PendingOpen pending, final Player player,
@@ -1652,19 +1674,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     definition.displayName(), pending.opens, rewardSummary));
         };
 
-        final World sourceWorld = pending.source == null ? null : Bukkit.getWorld(pending.source.worldId());
-        final Location sourceLocation = sourceWorld == null ? null
-                : new Location(sourceWorld, pending.source.x(), pending.source.y(), pending.source.z());
-        if (sourceLocation != null) {
-            spawnCrateReveal(sourceLocation, definition.rewards(),
-                    pending.rewards.get(pending.rewards.size() - 1));
-        }
-        if (pending.snapshot.spinAnimation() && pending.opens == 1) {
-            CrateSpinGUI.open(plugin, player, definition.displayName(), definition.rewards(),
-                    pending.rewards.getFirst(), feedback);
-        } else {
-            feedback.run();
-        }
+        feedback.run();
         if (definition.broadcastEnabled()) {
             broadcast(definition.broadcastMessage()
                     .replace("{player}", pending.playerName)
@@ -1950,9 +1960,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         if (crateLocation.getWorld() == null || !configManager.getBoolean("display-fx.crate-reveal.enabled", true)) {
             return;
         }
-        final int cycles = 12;
-        final int cycleTicks = 3;
-        final int despawn = cycles * cycleTicks + 45;
+        final int despawn = (int) REVEAL_DURATION_TICKS + 45;
         final Location at = crateLocation.clone().add(0.5D, 1.4D, 0.5D);
         hu.taliann.icesmp.utils.DisplayFxUtil.spawnItemDisplay(plugin, at,
                 new ItemStack(rewards.getFirst().iconMaterial()), despawn, display -> {
@@ -1975,10 +1983,11 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                                 hu.taliann.icesmp.utils.TransientEntities.markGone(display.getUniqueId());
                                 return;
                             }
-                            if (step[0] < cycles) {
+                            if (step[0] < REVEAL_CYCLES) {
                                 display.setItemStack(new ItemStack(rewards.get(
                                         ThreadLocalRandom.current().nextInt(rewards.size())).iconMaterial()));
                                 step[0]++;
+                                display.setRotation(step[0] * 30.0F, 0.0F);
                             } else {
                                 scheduled.cancel();
                                 lease.retire();
@@ -1990,7 +1999,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                                 display.setTransformation(hu.taliann.icesmp.utils.DisplayFxUtil.scale(
                                         0.95F, 0.95F, 0.95F));
                             }
-                        }, retired, cycleTicks, cycleTicks);
+                        }, retired, REVEAL_CYCLE_TICKS, REVEAL_CYCLE_TICKS);
                 if (!lease.publish(task)) {
                     if (display.isValid()) {
                         display.remove();
@@ -2329,7 +2338,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
      */
     public void shutdown() {
         acceptingOpens = false;
-        CrateSpinGUI.cancelAll();
         final long deadline = System.nanoTime() + 500_000_000L;
         while (inFlightGrants.get() > 0 && System.nanoTime() < deadline) {
             try {
@@ -2378,7 +2386,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
 
     @Override
     public void clearPlayerState(final UUID playerId) {
-        CrateSpinGUI.cancel(playerId);
         final PendingOpen pending;
         synchronized (stateLock) {
             pending = pendingOpens.get(playerId);
@@ -2398,3 +2405,4 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         }
     }
 }
+

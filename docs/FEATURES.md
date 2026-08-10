@@ -792,9 +792,9 @@ Játékospiac, NPC/frakció shop, vevőszolgáltatás, kézbesítés, adományl�
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Fizikai crate-helyek, kulcsvásárlás/-felhasználás, browser/spin GUI, több jutalomtípus, audit, settlement és recovery.
+Nyolc permission nélküli alapláda, fizikai crate-helyek, kulcsvásárlás/-felhasználás, browser/preview GUI, világban futó ItemDisplay-reveal, több jutalomtípus, audit, settlement és recovery.
 
-- **Így találkozol vele:** `/crate`; crate blokk, browser és spin GUI. Parancs: /crate (alias: /crates, /ladak). GUI: Crate böngésző és preview; Crate nyitási animáció.
+- **Így találkozol vele:** `/crate`; crate blokk, browser/preview GUI és a láda felett futó ItemDisplay-reveal. Parancs: /crate (alias: /crates, /ladak). A nyitás nem nyit inventory-rulettet.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Fejlesztő/üzemeltető.
 - **Mitől mozdul meg:** Blokkinterakció, kulcshasználat, GUI-kattintás, settlement/recovery és adminparancs.
 - **Ami még kellhet hozzá:** Minden crate-hez világ, blokk és hely szükséges; cserét/törlést kontrollált adminfolyamattal kell végezni.
@@ -803,7 +803,7 @@ Fizikai crate-helyek, kulcsvásárlás/-felhasználás, browser/spin GUI, több 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.crate`; `icesmp.crate.ritka`; `icesmp.crate.use`; `icesmp.crate.use + opcionális crate-specifikus jog`
+- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.crate`; `icesmp.crate.use`. A nyolc bundled láda permissionje üres; az opcionális `icesmp.*` crate-specifikus gate támogatott marad.
 - Config: `crates.*`, crate location/world policy, reward- és auditbeállítások.
 - Tartós állapot: Crate-, opening-, ledger-, audit- és recovery-állapot tartós.
 - Reload: Definíciók generációváltással reloadolhatók; futó opening a saját snapshotján fejeződik be.
@@ -1282,3 +1282,4 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 <sub>Dokumentációs snapshot: 2026-07-30 · release `4643ab535…` · deployed mapping:
 `775d9e247…` (`HIGH_CONFIDENCE`, nem `EXACT`).</sub>
+
