@@ -33,7 +33,7 @@ public final class IceSMP extends JavaPlugin {
 
         // Hot plugin reloads may enable while players are already online. Every actual call is
         // scheduled onto the player's owning region thread by the listener.
-        resourcePackListener.reloadAndResend();
+        resourcePackListener.resendCurrent();
     }
 
     @Override
