@@ -1,9 +1,13 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.PendingReward;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.RewardKind;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.RewardReservation;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -13,6 +17,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /** Achievement milestones backed exclusively by PlayerProfile. */
 public final class AchievementManager {
@@ -109,34 +116,132 @@ public final class AchievementManager {
     }
 
     /**
-     * Evaluation is optimistic and non-blocking. Section-CAS makes unlock and reward receipt
-     * reservation idempotent even when multiple metric events race the periodic tick.
+     * Unlock is durable first. Existing pending rewards are replayed independently of the current
+     * metric (important for WEALTH after spending money) and independently of later config changes.
      */
     public void evaluate(final Player player) {
         if (!isEnabled() || player == null) return;
+        try {
+            for (final PendingReward pending : store.pendingRewards(player.getUniqueId())) {
+                deliverPending(player, pending, achievementForReceipt(pending.receiptId()));
+            }
+        } catch (final RuntimeException notReady) {
+            return; // PlayerProfile/class session has not reached a readable state yet.
+        }
+
         for (final Achievement achievement : achievements) {
-            if (metricValue(player, achievement.metric()) < achievement.threshold()) continue;
-            store.unlock(player.getUniqueId(), achievement.id())
-                    .thenCompose(unlocked -> reserveReward(player, achievement))
-                    .whenComplete((reserved, failure) -> {
-                        if (failure != null) {
-                            plugin.getLogger().severe("PlayerProfile achievement commit failed for "
-                                    + player.getUniqueId() + '/' + achievement.id() + ": "
-                                    + failure.getMessage());
-                            return;
+            final boolean alreadyUnlocked;
+            try {
+                alreadyUnlocked = store.isUnlocked(player.getUniqueId(), achievement.id());
+            } catch (final RuntimeException notReady) {
+                return;
+            }
+            if (!alreadyUnlocked && metricValue(player, achievement.metric()) < achievement.threshold()) {
+                continue;
+            }
+            final CompletionStage<Boolean> unlock = alreadyUnlocked
+                    ? CompletableFuture.completedFuture(true)
+                    : store.unlock(player.getUniqueId(), achievement.id());
+            unlock.thenCompose(ignored -> ensureReservation(player, achievement))
+                    .thenAccept(reservation -> {
+                        if (reservation != null && reservation.pending()) {
+                            deliverPending(player, reservation.reward(), Optional.of(achievement));
                         }
-                        if (!Boolean.TRUE.equals(reserved)) return;
-                        player.getScheduler().run(plugin,
-                                task -> award(player, achievement), null);
+                    }).exceptionally(failure -> {
+                        plugin.getLogger().severe("PlayerProfile achievement reservation failed for "
+                                + player.getUniqueId() + '/' + achievement.id() + ": "
+                                + rootMessage(failure));
+                        return null;
                     });
         }
     }
 
-    private java.util.concurrent.CompletionStage<Boolean> reserveReward(
+    private CompletionStage<RewardReservation> ensureReservation(
             final Player player, final Achievement achievement) {
-        // A zero reward still gets a durable receipt so announcements cannot repeat.
-        return store.reserveReward(player.getUniqueId(),
-                "achievement:" + achievement.id());
+        final String receiptId = receiptId(achievement.id());
+        final Optional<PendingReward> existing = store.pendingReward(player.getUniqueId(), receiptId);
+        if (existing.isPresent()) {
+            return CompletableFuture.completedFuture(new RewardReservation(
+                    PlayerProfileAchievementStore.RewardState.PENDING,
+                    existing.orElseThrow(), false));
+        }
+        if (store.rewardSettled(player.getUniqueId(), receiptId)) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return store.reserveReward(player.getUniqueId(), rewardPayload(player, achievement));
+    }
+
+    private PendingReward rewardPayload(final Player player, final Achievement achievement) {
+        final String receipt = receiptId(achievement.id());
+        if (achievement.reward() <= 0L) {
+            return new PendingReward(receipt, RewardKind.NONE, 0L, "");
+        }
+        if (achievement.metric() == Metric.WEALTH) {
+            return new PendingReward(receipt, RewardKind.CLASS_XP,
+                    Math.min(Integer.MAX_VALUE, achievement.reward()), "");
+        }
+        final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
+        final CurrencyType currency = CurrencyType.fromFactionType(faction);
+        return new PendingReward(receipt, RewardKind.CURRENCY,
+                achievement.reward(), currency.name().toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * External delivery is idempotent and receipt-bound. XP STALE_SESSION/RUNTIME_EFFECT_FAILED
+     * deliberately remains PENDING; reconnect replays the same Profile operation ID, observes
+     * NO_CHANGE after an already-durable commit, then settles the achievement receipt exactly once.
+     */
+    private void deliverPending(final Player player, final PendingReward pending,
+                                final Optional<Achievement> achievement) {
+        deliver(pending, player).thenCompose(delivered -> delivered
+                        ? store.settleReward(player.getUniqueId(), pending)
+                        : CompletableFuture.completedFuture(false))
+                .whenComplete((settled, failure) -> {
+                    if (failure != null) {
+                        plugin.getLogger().warning("Achievement reward remains pending for "
+                                + player.getUniqueId() + '/' + pending.receiptId() + ": "
+                                + rootMessage(failure));
+                        return;
+                    }
+                    if (!Boolean.TRUE.equals(settled) || !player.isOnline()) return;
+                    player.getScheduler().run(plugin,
+                            task -> announce(player, pending, achievement), null);
+                });
+    }
+
+    private CompletionStage<Boolean> deliver(final PendingReward pending, final Player player) {
+        return switch (pending.kind()) {
+            case NONE -> CompletableFuture.completedFuture(true);
+            case CLASS_XP -> deliverClassXp(player, pending);
+            case CURRENCY -> deliverCurrency(player, pending);
+        };
+    }
+
+    private CompletionStage<Boolean> deliverClassXp(final Player player,
+                                                     final PendingReward pending) {
+        if (!jobManager.hasPrimaryJob(player)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return jobManager.addXpToJobResultV2(player, (int) pending.amount(),
+                        "achievement-xp:" + pending.receiptId())
+                .thenApply(result -> result.status() == ProfileMutationResult.Status.COMMITTED
+                        || result.status() == ProfileMutationResult.Status.NO_CHANGE);
+    }
+
+    private CompletionStage<Boolean> deliverCurrency(final Player player,
+                                                      final PendingReward pending) {
+        final CurrencyType currency = CurrencyType.fromInput(pending.currencyId());
+        if (currency == null || pending.amount() <= 0L) {
+            return CompletableFuture.failedFuture(
+                    new IllegalStateException("invalid pending achievement currency reward"));
+        }
+        // PlayerProfileEconomyStore credits balance + operation receipt in one ECONOMY CAS.
+        // Run the synchronous durability boundary off the region thread; replay is a no-op.
+        return CompletableFuture.supplyAsync(() -> {
+            currencyManager.creditOnceDurably(player.getUniqueId(), currency,
+                    pending.amount(), "achievement-currency:" + pending.receiptId());
+            return true;
+        });
     }
 
     public boolean isEarned(final Player player, final String id) {
@@ -162,29 +267,18 @@ public final class AchievementManager {
         return total;
     }
 
-    private void award(final Player player, final Achievement achievement) {
-        if (!player.isOnline()) {
-            plugin.getLogger().warning("Achievement reward reserved while player went offline: "
-                    + player.getUniqueId() + '/' + achievement.id());
-            return;
-        }
-        final boolean xpReward = achievement.metric() == Metric.WEALTH;
-        if (achievement.reward() > 0) {
-            if (xpReward) {
-                jobManager.addXpToJobV2(player,
-                                (int) Math.min(Integer.MAX_VALUE, achievement.reward()),
-                                "achievement:" + player.getUniqueId() + ':' + achievement.id())
-                        .exceptionally(failure -> {
-                            plugin.getLogger().warning("Achievement class XP failed: "
-                                    + failure.getMessage());
-                            return false;
-                        });
-            } else {
-                final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
-                currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction),
-                        achievement.reward());
-            }
-        }
+    private Optional<Achievement> achievementForReceipt(final String receipt) {
+        final String prefix = "achievement:";
+        if (receipt == null || !receipt.startsWith(prefix)) return Optional.empty();
+        final String id = receipt.substring(prefix.length());
+        return achievements.stream().filter(value -> value.id().equals(id)).findFirst();
+    }
+
+    private void announce(final Player player, final PendingReward pending,
+                          final Optional<Achievement> achievement) {
+        final String name = achievement.map(Achievement::name)
+                .orElseGet(() -> pending.receiptId().replaceFirst("^achievement:", ""));
+        final boolean xpReward = pending.kind() == RewardKind.CLASS_XP;
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE,
                 1.0F, 1.0F);
         player.sendMessage(messageManager.getMessage(
@@ -192,7 +286,18 @@ public final class AchievementManager {
                 xpReward
                         ? "<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} kaszt-XP)</gray></gold>"
                         : "<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta)</gray></gold>",
-                Map.of("name", achievement.name(),
-                        "reward", String.valueOf(achievement.reward()))));
+                Map.of("name", name, "reward", String.valueOf(pending.amount()))));
+    }
+
+    private static String receiptId(final String achievementId) {
+        return "achievement:" + achievementId.toLowerCase(Locale.ROOT);
+    }
+
+    private static String rootMessage(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof java.util.concurrent.CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
     }
 }
