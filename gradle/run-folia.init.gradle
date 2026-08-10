@@ -83,6 +83,21 @@ allprojects { project ->
             outputs.dirs(betterHudRunDir, iceSmpPackMergeDir)
             outputs.file(externalPackFile)
             doLast {
+                // Treat the IceSMP-owned BetterHud layout set as a mirror. Without pruning,
+                // renamed generated layouts remain active in run/plugins and render duplicate,
+                // independently aligned HUD canvases after an upgrade.
+                def sourceLayouts = new File(betterHudDeployDir, 'layouts')
+                def targetLayouts = new File(betterHudRunDir, 'layouts')
+                def sourceLayoutFiles = sourceLayouts.listFiles({ file ->
+                    file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
+                } as FileFilter) ?: [] as File[]
+                def currentLayoutNames = sourceLayoutFiles.collect { it.name }.toSet()
+                def targetLayoutFiles = targetLayouts.listFiles({ file ->
+                    file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
+                } as FileFilter) ?: [] as File[]
+                targetLayoutFiles.findAll { !currentLayoutNames.contains(it.name) }.each { stale ->
+                    java.nio.file.Files.deleteIfExists(stale.toPath())
+                }
                 java.nio.file.Files.walk(betterHudDeployDir.toPath()).withCloseable { paths ->
                     paths.forEach { source ->
                         def relative = betterHudDeployDir.toPath().relativize(source)

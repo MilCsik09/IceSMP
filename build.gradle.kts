@@ -45,6 +45,7 @@ val validateBetterHudPackage by tasks.registering {
         listOf("red", "blue", "neutral", "dark").forEach { faction ->
             require(layoutText.contains("frame_$faction:")) { "Missing graphical faction skin: $faction" }
             require(assets.resolve("frame-$faction.png").isFile) { "Missing faction frame asset: $faction" }
+            require(assets.resolve("frame-hud-$faction.png").isFile) { "Missing render-safe faction frame: $faction" }
         }
         listOf("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
             "druid", "priest", "death_knight", "assassin", "warlock", "wizard").forEach { job ->
@@ -71,7 +72,10 @@ val validateBetterHudPackage by tasks.registering {
         require(imageText.contains("number:icesmp_class_slot_8_progress")) {
             "Death Knight slot listener mapping is incomplete"
         }
-        require(layoutText.contains("x: -218") && layoutText.contains("scale: 0.3")) {
+        require(hudText.contains("icesmp_main_layout")
+                && !hudText.contains("icesmp_identity_layout")
+                && layoutText.contains("icesmp_main_layout:")
+                && layoutText.contains("x: -218") && layoutText.contains("scale: 1.0")) {
             "The faction frame must remain inside the upper-right HUD safe area"
         }
         require(layoutText.contains("outline: true")) {
@@ -114,9 +118,14 @@ val validateBetterHudPackage by tasks.registering {
                     "HUD sprite is empty or clipped against its 64x64 cell: $file"
                 }
             }
-            if (file.name.startsWith("frame-")) {
+            if (file.name.startsWith("frame-") && !file.name.startsWith("frame-hud-")) {
                 require(image.width >= 640 && image.height >= 400) {
                     "HUD frames must retain high-resolution source detail: $file (${image.width}x${image.height})"
+                }
+            }
+            if (file.name.startsWith("frame-hud-")) {
+                require(image.width == 204 && image.height == 126) {
+                    "BetterHud runtime frames must stay inside bitmap-provider safe dimensions: $file"
                 }
             }
             if (file.name.startsWith("popup-")) {

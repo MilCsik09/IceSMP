@@ -208,7 +208,7 @@ icesmp_class_proc_layout:
       y: -13
       scale: 0.48
       align: left
-      layer: 4
+      layer: 7
       outline: true
       use-legacy-format: false
     2:
@@ -218,6 +218,6 @@ icesmp_class_proc_layout:
       y: 0
       scale: 0.32
       align: left
-      layer: 4
+      layer: 7
       outline: true
       use-legacy-format: false

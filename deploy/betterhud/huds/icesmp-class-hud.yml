@@ -8,22 +8,10 @@ icesmp_class_hud:
       operation: "=="
   layouts:
     1:
-      name: icesmp_identity_layout
+      name: icesmp_main_layout
       gui: &icesmp_anchor
         x: 100
         y: 0
       pixel: &icesmp_pixel
         x: 0
         y: 0
-    2:
-      name: icesmp_resource_layout
-      gui: *icesmp_anchor
-      pixel: *icesmp_pixel
-    3:
-      name: icesmp_world_layout
-      gui: *icesmp_anchor
-      pixel: *icesmp_pixel
-    4:
-      name: icesmp_mechanic_layout
-      gui: *icesmp_anchor
-      pixel: *icesmp_pixel

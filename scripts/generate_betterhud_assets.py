@@ -357,6 +357,11 @@ def main():
         utility_icons = {kind: utility_icon(kind) for kind in ("money", "event", "level")}
     for theme in THEMES:
         assets[f"frame-{theme}"] = frames[theme]; save(assets[f"frame-{theme}"], f"frame-{theme}.png")
+        # Minecraft bitmap-font providers are more reliable with a render-sized texture below
+        # 256 px on each axis. Keep the high-resolution source above for regeneration/contact
+        # sheets, but feed BetterHud this antialiased 204x126 runtime copy at scale 1.0.
+        assets[f"frame-hud-{theme}"] = frames[theme].resize((204, 126), Image.Resampling.LANCZOS)
+        save(assets[f"frame-hud-{theme}"], f"frame-hud-{theme}.png")
         assets[f"emblem-{theme}"] = emblem(theme); save(assets[f"emblem-{theme}"], f"emblem-{theme}.png")
     for name, glyph in CLASS_GLYPHS.items():
         assets[f"class-{name}"] = class_icons[name]; save(assets[f"class-{name}"], f"class-{name}.png")

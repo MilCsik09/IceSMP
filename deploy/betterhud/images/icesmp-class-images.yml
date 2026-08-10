@@ -1,9 +1,9 @@
 # Generated visual catalogue. Source: scripts/generate_betterhud_assets.py
-icesmp_frame_guest: { type: single, file: icesmp/frame-guest.png }
-icesmp_frame_red: { type: single, file: icesmp/frame-red.png }
-icesmp_frame_blue: { type: single, file: icesmp/frame-blue.png }
-icesmp_frame_neutral: { type: single, file: icesmp/frame-neutral.png }
-icesmp_frame_dark: { type: single, file: icesmp/frame-dark.png }
+icesmp_frame_guest: { type: single, file: icesmp/frame-hud-guest.png }
+icesmp_frame_red: { type: single, file: icesmp/frame-hud-red.png }
+icesmp_frame_blue: { type: single, file: icesmp/frame-hud-blue.png }
+icesmp_frame_neutral: { type: single, file: icesmp/frame-hud-neutral.png }
+icesmp_frame_dark: { type: single, file: icesmp/frame-hud-dark.png }
 
 icesmp_emblem_guest: { type: single, file: icesmp/emblem-guest.png }
 icesmp_emblem_red: { type: single, file: icesmp/emblem-red.png }

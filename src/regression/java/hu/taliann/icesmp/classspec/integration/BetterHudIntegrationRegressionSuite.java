@@ -128,13 +128,31 @@ public final class BetterHudIntegrationRegressionSuite {
             check(image.getWidth() == 64 && image.getHeight() == 64,
                     "class and rune visual sources must remain 64x64: " + asset);
         }
-        check(hud.contains("icesmp_identity_layout") && hud.contains("icesmp_resource_layout")
-                        && hud.contains("icesmp_world_layout") && hud.contains("icesmp_mechanic_layout")
+        for (final String asset : List.of("frame-hud-guest.png", "frame-hud-red.png",
+                "frame-hud-blue.png", "frame-hud-neutral.png", "frame-hud-dark.png")) {
+            final var image = javax.imageio.ImageIO.read(Path.of("deploy/betterhud/assets/icesmp", asset).toFile());
+            check(image.getWidth() == 204 && image.getHeight() == 126,
+                    "render-safe BetterHud frame must remain 204x126: " + asset);
+        }
+        check(hud.contains("icesmp_main_layout")
+                        && !hud.contains("icesmp_identity_layout")
+                        && !hud.contains("icesmp_resource_layout")
+                        && !hud.contains("icesmp_world_layout")
+                        && !hud.contains("icesmp_mechanic_layout")
                         && hud.contains("icesmp_hud_visible")
                         && hud.contains("y: 0") && !hud.contains("y: 100")
                         && layout.contains("outline: true")
-                        && layout.contains("x: -218") && layout.contains("scale: 0.3"),
-                "HUD package must use every generic module and the readable upper-right safe-area layout");
+                        && layout.contains("icesmp_main_layout:")
+                        && layout.contains("x: -218") && layout.contains("scale: 1.0"),
+                "HUD package must use one shared readable upper-right canvas for every generic module");
+        try (var layouts = Files.list(Path.of("deploy/betterhud/layouts"))) {
+            final List<String> persistentFiles = layouts
+                    .map(path -> path.getFileName().toString())
+                    .filter(name -> name.startsWith("icesmp-") && name.endsWith(".yml"))
+                    .sorted().toList();
+            check(persistentFiles.equals(List.of("icesmp-main-layout.yml", "icesmp-proc-layout.yml")),
+                    "stale independent IceSMP layout canvases must not survive generation: " + persistentFiles);
+        }
         check(!read("src/main/java/hu/taliann/icesmp/managers/HudManager.java").contains("🌕 VÉRHOLD"),
                 "the Blood Moon bossbar must not use an unsupported astral emoji glyph");
         check(layout.contains("icesmp_class_proc_layout:")
@@ -151,8 +169,9 @@ public final class BetterHudIntegrationRegressionSuite {
         check(launcher.contains("prepareBetterHudForFolia")
                         && launcher.contains("betterhud-dev.config.yml")
                         && launcher.contains("icesmp.dev.mergedBetterHudPack=true")
+                        && launcher.contains("targetLayoutFiles.findAll")
                         && launcher.contains("IceSMPResourcePack"),
-                "runFolia must provision the layout and local development pack delivery");
+                "runFolia must mirror layouts without stale canvases and provision local pack delivery");
         check(devConfig.contains("- IceSMPResourcePack")
                         && devConfig.contains("- IceSMPExternalBase.zip")
                         && devConfig.indexOf("IceSMPResourcePack") < devConfig.indexOf("IceSMPExternalBase.zip")
