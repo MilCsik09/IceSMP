@@ -591,8 +591,11 @@ A szezon végén jutalom és új pontverseny jön.
 
 ### A halkabb történetek
 
-Tábortűz mellett régi történetet hallhatsz, a krónikák megőrzik a korszak
-eredményeit, és titkos helyek várják az első felfedezőt. Egyes világhelyek vagy
+Tábortűzi történethez ülj le egy olyan székre vagy ülőblokkra, amelytől egy főirányban
+pontosan egy üres blokk, majd egy égő normál vagy lélektűz-campfire áll. A közvetlen
+tábortűz-kattintás nem indít mesét; a kivárás és a jutalom pillanatában is ugyanazon
+a széken kell ülnöd, és az elrendezésnek változatlannak kell maradnia. A krónikák
+megőrzik a korszak eredményeit, és titkos helyek várják az első felfedezőt. Egyes világhelyek vagy
 NPC-k csak akkor élnek, ha az aktuális szezon térképén a csapat már
 aktiválta őket. Ha nem találod őket, az nem feltétlenül rejtvény: kérdezz rá
 az adminoknál vagy nézd meg a szerver közleményeit.
