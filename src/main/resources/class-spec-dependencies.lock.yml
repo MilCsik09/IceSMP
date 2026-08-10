@@ -11,9 +11,9 @@ target:
 #   dev-only             -> development tooling only; ignored by runtime preflight
 #   validation-only      -> compatibility/staging evidence only; ignored by runtime preflight
 #
-# Development provisioning is consumed only by Gradle runServer. Production IceSMP never downloads
-# plugins. Public artifacts use exact Modrinth project + version IDs; licensed/private or otherwise
-# non-redistributable artifacts use a local developer directory.
+# Development provisioning is consumed only by development tooling. Production IceSMP never
+# downloads plugins. Public artifacts use exact Modrinth project + version IDs; licensed/private
+# or otherwise non-redistributable artifacts use a local developer directory.
 plugins:
   LuckPerms:
     server-name: LuckPerms
@@ -28,13 +28,13 @@ plugins:
   WorldEdit:
     server-name: WorldEdit
     runtime-role: optional-integration
-    accepted-versions: ["7.3.18"]
-    verification: official-release
-    source-page: "https://modrinth.com/plugin/worldedit/version/XlUIRmF8"
+    accepted-versions: ["7.4.4"]
+    verification: official-release-folia
+    source-page: "https://modrinth.com/plugin/worldedit/version/qNuPcliz"
     artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
     dev-provision: modrinth
     dev-project: "worldedit"
-    dev-version-id: "XlUIRmF8"
+    dev-version-id: "qNuPcliz"
   WorldGuard:
     server-name: WorldGuard
     runtime-role: optional-integration
@@ -97,13 +97,13 @@ plugins:
   FancyNpcs:
     server-name: FancyNpcs
     runtime-role: optional-integration
-    accepted-versions: ["2.11.0"]
-    verification: official-release
-    source-page: "https://modrinth.com/plugin/fancynpcs/version/zM6uZoPe"
+    accepted-versions: ["2.10.1-java21"]
+    verification: official-java21-pin
+    source-page: "https://modrinth.com/plugin/fancynpcs/version/axfBJcKs"
     artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
     dev-provision: modrinth
     dev-project: "fancynpcs"
-    dev-version-id: "zM6uZoPe"
+    dev-version-id: "axfBJcKs"
   FancyDialogs:
     server-name: FancyDialogs
     runtime-role: optional-integration
