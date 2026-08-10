@@ -82,6 +82,10 @@ allprojects { project ->
             inputs.property('externalPackSha1', externalPackSha1)
             outputs.dirs(betterHudRunDir, iceSmpPackMergeDir)
             outputs.file(externalPackFile)
+            // BetterHud may keep generated/runtime files next to the mirrored configuration and
+            // Gradle cannot safely infer from that mutable directory that the IceSMP subset is
+            // still current. Always re-mirror before a dev server start.
+            outputs.upToDateWhen { false }
             doLast {
                 // Treat the IceSMP-owned BetterHud layout set as a mirror. Without pruning,
                 // renamed generated layouts remain active in run/plugins and render duplicate,
@@ -156,6 +160,41 @@ allprojects { project ->
                 logger.lifecycle("Provisioned one merged IceSMP + external + BetterHud development resource pack for IceSMP delivery at ${devHost}:8164.")
             }
         }
+
+        def verifyBetterHudMirror = {
+            def sourceLayouts = new File(betterHudDeployDir, 'layouts')
+            def targetLayouts = new File(betterHudRunDir, 'layouts')
+            def sourceLayoutFiles = sourceLayouts.listFiles({ file ->
+                file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
+            } as FileFilter) ?: [] as File[]
+            def targetLayoutFiles = targetLayouts.listFiles({ file ->
+                file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
+            } as FileFilter) ?: [] as File[]
+            def sourceNames = sourceLayoutFiles.collect { it.name }.sort()
+            def targetNames = targetLayoutFiles.collect { it.name }.sort()
+            if (sourceNames != targetNames) {
+                throw new GradleException("Stale IceSMP BetterHud layout set: source=${sourceNames}, run=${targetNames}")
+            }
+            sourceLayoutFiles.each { source ->
+                def target = new File(targetLayouts, source.name)
+                if (!target.isFile() || !java.util.Arrays.equals(
+                        java.nio.file.Files.readAllBytes(source.toPath()),
+                        java.nio.file.Files.readAllBytes(target.toPath()))) {
+                    throw new GradleException("IceSMP BetterHud layout mirror mismatch: ${source.name}")
+                }
+            }
+            ['huds/icesmp-class-hud.yml', 'images/icesmp-class-images.yml',
+             'texts/icesmp-class-font.yml', 'popups/icesmp-class-proc-popup.yml'].each { relative ->
+                def source = new File(betterHudDeployDir, relative)
+                def target = new File(betterHudRunDir, relative)
+                if (!source.isFile() || !target.isFile() || !java.util.Arrays.equals(
+                        java.nio.file.Files.readAllBytes(source.toPath()),
+                        java.nio.file.Files.readAllBytes(target.toPath()))) {
+                    throw new GradleException("IceSMP BetterHud mirror mismatch: ${relative}")
+                }
+            }
+            logger.lifecycle("Verified IceSMP BetterHud mirror: ${sourceNames.join(', ')}")
+        }
         def prepareLocal = project.tasks.register('prepareLocalClassSpecPluginsForFolia') {
             group = 'icesmp development'
             description = 'Copies licensed/local dependency-lock artifacts into the Folia dev server.'
@@ -207,6 +246,7 @@ allprojects { project ->
             group = 'icesmp development'
             description = 'Runs the canonical IceSMP Folia 1.21.11 dev server with lock-pinned plugins.'
             dependsOn(prepareLocal, prepareBetterHud)
+            doFirst verifyBetterHudMirror
         }
     }
 }

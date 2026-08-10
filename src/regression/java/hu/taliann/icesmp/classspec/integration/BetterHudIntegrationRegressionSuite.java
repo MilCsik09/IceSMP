@@ -170,8 +170,12 @@ public final class BetterHudIntegrationRegressionSuite {
                         && launcher.contains("betterhud-dev.config.yml")
                         && launcher.contains("icesmp.dev.mergedBetterHudPack=true")
                         && launcher.contains("targetLayoutFiles.findAll")
+                        && launcher.contains("outputs.upToDateWhen { false }")
+                        && launcher.contains("verifyBetterHudMirror")
+                        && launcher.contains("Stale IceSMP BetterHud layout set")
+                        && launcher.contains("IceSMP BetterHud layout mirror mismatch")
                         && launcher.contains("IceSMPResourcePack"),
-                "runFolia must mirror layouts without stale canvases and provision local pack delivery");
+                "runFolia must re-mirror and verify layouts without stale canvases before local pack delivery");
         check(devConfig.contains("- IceSMPResourcePack")
                         && devConfig.contains("- IceSMPExternalBase.zip")
                         && devConfig.indexOf("IceSMPResourcePack") < devConfig.indexOf("IceSMPExternalBase.zip")
