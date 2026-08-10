@@ -89,6 +89,11 @@ public final class PlayerProfileEconomyStore {
         public CreditResult { Objects.requireNonNull(wallet, "wallet"); }
     }
 
+    /**
+     * Durable debit receipt. The before/expected snapshots are retained for audit/backward codec
+     * compatibility only; terminalization never requires whole-wallet equality and rollback never
+     * restores a snapshot over unrelated concurrent mutations.
+     */
     public record DurableOperation(String operationId,
                                    UUID playerId,
                                    CurrencyType currency,
@@ -285,6 +290,13 @@ public final class PlayerProfileEconomyStore {
         return List.copyOf(result);
     }
 
+    /**
+     * Terminalizes an already-applied debit without using a whole-wallet snapshot as a witness.
+     * COMMITTED never touches balances. ROLLED_BACK adds exactly the debited amount back to the
+     * operation currency in the same ECONOMY section CAS as the terminal receipt, so unrelated
+     * or same-currency concurrent mutations are preserved and duplicate recovery cannot compensate
+     * twice.
+     */
     public CompletionStage<DurableOperation> transitionOperation(
             final UUID playerId,
             final String operationId,
@@ -309,11 +321,9 @@ public final class PlayerProfileEconomyStore {
                         throw new IllegalStateException("wallet operation is already terminal");
                     }
                     final WalletState live = decodeWallet(current);
-                    if (!live.equals(existing.expected())) {
-                        throw new IllegalStateException("wallet operation witness no longer matches wallet");
-                    }
                     final WalletState after = target == OperationStatus.ROLLED_BACK
-                            ? existing.previous() : live;
+                            ? live.add(existing.currency(), existing.amountMilli())
+                            : live;
                     final DurableOperation updated = existing.withStatus(target);
                     pending.put(key, encodeOperation(updated));
                     final EconomySection next = withWalletAndPending(current, after, pending);
