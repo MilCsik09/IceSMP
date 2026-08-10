@@ -14,6 +14,7 @@ public final class ResourcePackRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         listenerUsesAdditiveApiAndStableId();
+        reloadOnlyResendsEffectiveChanges();
         developmentCompositeSurvivesReloads();
         packagedConfigMatchesTheStableId();
         bundledMetadataUsesMatchingImmutableHash();
@@ -24,6 +25,26 @@ public final class ResourcePackRegressionSuite {
         relicWingEquipmentAssetsStayBundled();
         horseArmorEquipmentAssetsStayBundled();
         System.out.println("Resource pack regression suite passed.");
+    }
+
+    private static void reloadOnlyResendsEffectiveChanges() throws Exception {
+        final String listener = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java"));
+        final String entrypoint = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/IceSMP.java"));
+
+        check(listener.contains("if (sameRequest(previous, current))"),
+                "unchanged effective resource-pack requests must not be re-sent on reload");
+        check(listener.contains("Arrays.equals(first.hash(), second.hash())")
+                        && listener.contains("first.id().equals(second.id())")
+                        && listener.contains("first.url().equals(second.url())")
+                        && listener.contains("first.prompt().equals(second.prompt())")
+                        && listener.contains("first.required() == second.required()"),
+                "reload change detection must cover id, URL, SHA-1, prompt and required");
+        check(listener.contains("player.removeResourcePack(previous.id())"),
+                "disabling the pack or changing its UUID must remove the previous IceSMP layer");
+        check(entrypoint.contains("resourcePackListener.resendCurrent();"),
+                "plugin enable must still force-send the current pack to already-online players");
     }
 
     private static void developmentCompositeSurvivesReloads() throws Exception {
