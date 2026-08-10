@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.PendingReward;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -98,34 +99,55 @@ public final class BestiaryManager {
             if (threshold != size) continue;
             final String receipt = "bestiary:" + category.name().toLowerCase(Locale.ROOT)
                     + ':' + threshold;
-            store.reserveReward(player.getUniqueId(), receipt)
-                    .whenComplete((reserved, failure) -> {
+            // The payout currency is part of the durable reservation identity, so a faction change
+            // between reserving and paying cannot alter what was promised.
+            reserve(player, receipt, reward)
+                    .whenComplete((reservation, failure) -> {
                         if (failure != null) {
                             plugin.getLogger().severe("PlayerProfile bestiary reward receipt failed for "
                                     + player.getUniqueId() + '/' + receipt + ": "
                                     + failure.getMessage());
                             return;
                         }
-                        if (!Boolean.TRUE.equals(reserved)) return;
+                        if (reservation == null) return;
+                        final PendingReward pending = reservation.reward();
                         player.getScheduler().run(plugin, task ->
-                                deliverMilestone(player, category, size, reward, parts), null);
+                                deliverMilestone(player, category, size, pending, parts), null);
                     });
         }
     }
 
+    /**
+     * Reservation-first payout. An already reserved but undelivered milestone stays PENDING and is
+     * replayed on reconnect by the shared achievement recovery loop, so a logout can no longer make
+     * the reward disappear. Both paths credit under the SAME operation id, so a replay is a no-op.
+     */
     private void deliverMilestone(final Player player, final Category category,
-                                  final int size, final long reward,
+                                  final int size, final PendingReward pending,
                                   final String[] parts) {
+        final long reward = pending.amount();
         if (!player.isOnline()) {
-            plugin.getLogger().warning("Bestiary reward reserved while player went offline: "
+            plugin.getLogger().warning("Bestiary reward stays pending until reconnect: "
                     + player.getUniqueId() + '/' + category + '/' + size);
             return;
         }
-        if (reward > 0) {
-            currencyManager.payOutTokens(player,
-                    CurrencyType.fromFactionType(
-                            factionManager.getEconomyFaction(player.getUniqueId())), reward);
+        if (pending.kind() == PlayerProfileAchievementStore.RewardKind.CURRENCY && reward > 0L) {
+            final CurrencyType currency = CurrencyType.fromInput(pending.currencyId());
+            if (currency == null) {
+                plugin.getLogger().severe("Bestiary reward has an unknown reserved currency: "
+                        + pending.currencyId());
+                return;
+            }
+            currencyManager.creditOnceDurably(player.getUniqueId(), currency, reward,
+                    "achievement-currency:" + pending.receiptId());
         }
+        store.settleReward(player.getUniqueId(), pending)
+                .exceptionally(failure -> {
+                    plugin.getLogger().warning("Bestiary reward remains pending for "
+                            + player.getUniqueId() + '/' + pending.receiptId() + ": "
+                            + failure.getMessage());
+                    return false;
+                });
         player.playSound(player.getLocation(),
                 org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.1F);
         player.sendMessage(messageManager.getMessage("bestiary-milestone",
@@ -139,6 +161,32 @@ public final class BestiaryManager {
                     Map.of("player", player.getName(), "count", String.valueOf(size),
                             "category", categoryName(category))));
         }
+    }
+
+    private CompletionStage<PlayerProfileAchievementStore.RewardReservation> reserve(
+            final Player player, final String receipt, final long reward) {
+        final java.util.Optional<PendingReward> existing =
+                store.pendingReward(player.getUniqueId(), receipt);
+        if (existing.isPresent()) {
+            return java.util.concurrent.CompletableFuture.completedFuture(
+                    new PlayerProfileAchievementStore.RewardReservation(
+                            PlayerProfileAchievementStore.RewardState.PENDING,
+                            existing.orElseThrow(), false));
+        }
+        if (store.rewardSettled(player.getUniqueId(), receipt)) {
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
+        return store.reserveReward(player.getUniqueId(), payload(player, receipt, reward));
+    }
+
+    private PendingReward payload(final Player player, final String receipt, final long reward) {
+        if (reward <= 0L) {
+            return new PendingReward(receipt, PlayerProfileAchievementStore.RewardKind.NONE, 0L, "");
+        }
+        final CurrencyType currency = CurrencyType.fromFactionType(
+                factionManager.getEconomyFaction(player.getUniqueId()));
+        return new PendingReward(receipt, PlayerProfileAchievementStore.RewardKind.CURRENCY,
+                reward, currency.name().toLowerCase(Locale.ROOT));
     }
 
     public static String categoryName(final Category category) {

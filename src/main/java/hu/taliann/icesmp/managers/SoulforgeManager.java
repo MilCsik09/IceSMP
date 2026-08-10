@@ -107,7 +107,11 @@ public final class SoulforgeManager implements PlayerStateCleanup {
                         branch.name().toLowerCase(Locale.ROOT), cost, operationId)
                 .handle((result, failure) -> {
                     if (failure != null) return "soulforge-persistence-failed";
-                    if (result.committed() || result.status() == ProfileMutationResult.Status.NO_CHANGE) return null;
+                    if (result.committed()
+                            || result.status() == ProfileMutationResult.Status.NO_CHANGE
+                            || result.status() == ProfileMutationResult.Status.STALE_SESSION) {
+                        return null; // durable rank/shard authority is already correct; reconnect derives runtime.
+                    }
                     if (result.status() == ProfileMutationResult.Status.RUNTIME_EFFECT_FAILED) {
                         gateway.blockSession(player.getUniqueId(),
                                 "Soulforge durable commit requires runtime reconciliation: " + result.detail());
