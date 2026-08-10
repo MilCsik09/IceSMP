@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.classspec.integration;
 
 import hu.taliann.icesmp.classspec.application.*;
+import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
+import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.managers.RespecService;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileService;
@@ -8,6 +10,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -116,7 +120,7 @@ public final class BukkitClassSpecSectionSessionBridge {
     private void scheduleActivation(final Player online, final UUID id, final UUID token) {
         online.getScheduler().run(plugin, task -> {
             if (!sessions.isCurrent(id, token)) return;
-            specializationManager.reconcileDarkGates(online).whenComplete((gateResult, gateFailure) -> {
+            reconcileActivationDarkGates(online, id, token).whenComplete((gateResult, gateFailure) -> {
                 if (!sessions.isCurrent(id, token)) return;
                 if (gateFailure != null || gateResult == null) {gateway.blockSession(id, gateFailure == null ? "missing DARK gate result" : "DARK gate reconciliation failed: " + message(gateFailure));return;}
                 if (gateResult.status() != ProfileMutationResult.Status.NO_CHANGE && !gateResult.committed()) {gateway.blockSession(id, "DARK gate reconciliation blocked login: " + gateResult.detail());return;}
@@ -131,6 +135,34 @@ public final class BukkitClassSpecSectionSessionBridge {
                         });
             });
         }, () -> {if (sessions.isCurrent(id, token)) gateway.blockSession(id, "Player scheduler rejected PlayerProfile activation");});
+    }
+
+    /**
+     * Activation-internal authoritative read. It deliberately does not call any READY-gated
+     * gameplay getter. Every occupied slot receives a gate snapshot; non-DARK snapshots are
+     * ignored by the domain reconcile planner, while DARK slots are sealed/unsealed from the
+     * durable ClassSpecSection. The exact join token is passed into the gateway so a queued
+     * reconcile can never land on a later reconnect generation.
+     */
+    private CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reconcileActivationDarkGates(
+            final Player player, final UUID id, final UUID token) {
+        if (!gateway.isCurrentSession(id, token)) {
+            return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
+                    gateway.diagnostic(id), "stale activation generation"));
+        }
+        final ProfileDiagnostic diagnostic = gateway.diagnostic(id);
+        final Map<LoadoutSlot, GateSnapshot> snapshots = new EnumMap<>(LoadoutSlot.class);
+        for (final Map.Entry<LoadoutSlot, ProfileDiagnostic.SlotDiagnostic> entry
+                : diagnostic.slots().entrySet()) {
+            final SpecializationType specialization = entry.getValue().specializationId()
+                    .map(SpecializationType::fromId).orElse(null);
+            if (specialization != null) {
+                snapshots.put(entry.getKey(),
+                        specializationManager.captureGateSnapshot(player, specialization));
+            }
+        }
+        return gateway.reconcileDuringActivation(id, token,
+                new ClassSpecProfileGateway.ReconcileRequest(snapshots));
     }
 
     private static String message(final Throwable failure){
