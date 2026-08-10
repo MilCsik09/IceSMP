@@ -215,13 +215,13 @@ icesmp_main_layout:
       scale: 0.23
     resource_track:
       name: icesmp_resource_track
-      x: -166
+      x: 4
       y: 72
       layer: 2
       scale: 0.45
     resource_fill:
       name: icesmp_resource_fill
-      x: -166
+      x: 4
       y: 72
       layer: 3
       scale: 0.45
@@ -248,13 +248,13 @@ icesmp_main_layout:
           operation: "=="
     event_icon:
       name: icesmp_icon_event
-      x: -198
+      x: -28
       y: 130
       layer: 5
       scale: 0.23
     metric_primary_track:
       name: icesmp_metric_track
-      x: -198
+      x: -28
       y: 101
       layer: 3
       scale: 0.45
@@ -269,7 +269,7 @@ icesmp_main_layout:
           operation: ">"
     metric_primary_fill:
       name: icesmp_metric_primary_fill
-      x: -198
+      x: -28
       y: 101
       layer: 4
       scale: 0.45
@@ -310,7 +310,7 @@ icesmp_main_layout:
           operation: ">"
     metric_secondary_track:
       name: icesmp_metric_track
-      x: -105
+      x: 65
       y: 101
       layer: 3
       scale: 0.45
@@ -325,7 +325,7 @@ icesmp_main_layout:
           operation: ">"
     metric_secondary_fill:
       name: icesmp_metric_secondary_fill
-      x: -105
+      x: 65
       y: 101
       layer: 4
       scale: 0.45
@@ -366,7 +366,7 @@ icesmp_main_layout:
           operation: ">"
     metric_tertiary_track:
       name: icesmp_metric_mini_track
-      x: -198
+      x: -28
       y: 120
       layer: 3
       scale: 0.4
@@ -381,7 +381,7 @@ icesmp_main_layout:
           operation: ">"
     metric_tertiary_fill:
       name: icesmp_metric_tertiary_fill
-      x: -198
+      x: -28
       y: 120
       layer: 4
       scale: 0.4
@@ -427,7 +427,7 @@ icesmp_main_layout:
           operation: ">"
     metric_quaternary_track:
       name: icesmp_metric_mini_track
-      x: -151
+      x: 19
       y: 120
       layer: 3
       scale: 0.4
@@ -442,7 +442,7 @@ icesmp_main_layout:
           operation: ">"
     metric_quaternary_fill:
       name: icesmp_metric_quaternary_fill
-      x: -151
+      x: 19
       y: 120
       layer: 4
       scale: 0.4
@@ -488,7 +488,7 @@ icesmp_main_layout:
           operation: ">"
     metric_quinary_track:
       name: icesmp_metric_mini_track
-      x: -104
+      x: 66
       y: 120
       layer: 3
       scale: 0.4
@@ -503,7 +503,7 @@ icesmp_main_layout:
           operation: ">"
     metric_quinary_fill:
       name: icesmp_metric_quinary_fill
-      x: -104
+      x: 66
       y: 120
       layer: 4
       scale: 0.4
@@ -549,7 +549,7 @@ icesmp_main_layout:
           operation: ">"
     charge_1_ready:
       name: icesmp_charge_ready
-      x: -198
+      x: -28
       y: 109
       layer: 5
       scale: 0.25
@@ -590,7 +590,7 @@ icesmp_main_layout:
           operation: "=="
     charge_1_spent:
       name: icesmp_charge_spent
-      x: -198
+      x: -28
       y: 109
       layer: 5
       scale: 0.25
@@ -605,7 +605,7 @@ icesmp_main_layout:
           operation: "=="
     charge_2_ready:
       name: icesmp_charge_ready
-      x: -188
+      x: -18
       y: 109
       layer: 5
       scale: 0.25
@@ -646,7 +646,7 @@ icesmp_main_layout:
           operation: "=="
     charge_2_spent:
       name: icesmp_charge_spent
-      x: -188
+      x: -18
       y: 109
       layer: 5
       scale: 0.25
@@ -661,7 +661,7 @@ icesmp_main_layout:
           operation: "=="
     charge_3_ready:
       name: icesmp_charge_ready
-      x: -178
+      x: -8
       y: 109
       layer: 5
       scale: 0.25
@@ -702,7 +702,7 @@ icesmp_main_layout:
           operation: "=="
     charge_3_spent:
       name: icesmp_charge_spent
-      x: -178
+      x: -8
       y: 109
       layer: 5
       scale: 0.25
@@ -717,7 +717,7 @@ icesmp_main_layout:
           operation: "=="
     charge_4_ready:
       name: icesmp_charge_ready
-      x: -168
+      x: 2
       y: 109
       layer: 5
       scale: 0.25
@@ -758,7 +758,7 @@ icesmp_main_layout:
           operation: "=="
     charge_4_spent:
       name: icesmp_charge_spent
-      x: -168
+      x: 2
       y: 109
       layer: 5
       scale: 0.25
@@ -773,7 +773,7 @@ icesmp_main_layout:
           operation: "=="
     charge_5_ready:
       name: icesmp_charge_ready
-      x: -158
+      x: 12
       y: 109
       layer: 5
       scale: 0.25
@@ -814,7 +814,7 @@ icesmp_main_layout:
           operation: "=="
     charge_5_spent:
       name: icesmp_charge_spent
-      x: -158
+      x: 12
       y: 109
       layer: 5
       scale: 0.25
@@ -829,7 +829,7 @@ icesmp_main_layout:
           operation: "=="
     charge_6_ready:
       name: icesmp_charge_ready
-      x: -148
+      x: 22
       y: 109
       layer: 5
       scale: 0.25
@@ -870,7 +870,7 @@ icesmp_main_layout:
           operation: "=="
     charge_6_spent:
       name: icesmp_charge_spent
-      x: -148
+      x: 22
       y: 109
       layer: 5
       scale: 0.25
@@ -885,7 +885,7 @@ icesmp_main_layout:
           operation: "=="
     charge_7_ready:
       name: icesmp_charge_ready
-      x: -138
+      x: 32
       y: 109
       layer: 5
       scale: 0.25
@@ -926,7 +926,7 @@ icesmp_main_layout:
           operation: "=="
     charge_7_spent:
       name: icesmp_charge_spent
-      x: -138
+      x: 32
       y: 109
       layer: 5
       scale: 0.25
@@ -941,7 +941,7 @@ icesmp_main_layout:
           operation: "=="
     charge_8_ready:
       name: icesmp_charge_ready
-      x: -128
+      x: 42
       y: 109
       layer: 5
       scale: 0.25
@@ -982,7 +982,7 @@ icesmp_main_layout:
           operation: "=="
     charge_8_spent:
       name: icesmp_charge_spent
-      x: -128
+      x: 42
       y: 109
       layer: 5
       scale: 0.25
@@ -997,7 +997,7 @@ icesmp_main_layout:
           operation: "=="
     charge_9_ready:
       name: icesmp_charge_ready
-      x: -118
+      x: 52
       y: 109
       layer: 5
       scale: 0.25
@@ -1038,7 +1038,7 @@ icesmp_main_layout:
           operation: "=="
     charge_9_spent:
       name: icesmp_charge_spent
-      x: -118
+      x: 52
       y: 109
       layer: 5
       scale: 0.25
@@ -1053,7 +1053,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1072,7 +1072,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1091,7 +1091,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1110,7 +1110,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1129,7 +1129,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1148,7 +1148,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1167,7 +1167,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1186,7 +1186,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1205,7 +1205,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_death_ready:
       name: icesmp_rune_death_ready
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1224,7 +1224,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_death_spent:
       name: icesmp_rune_death_spent
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1243,7 +1243,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1262,7 +1262,7 @@ icesmp_main_layout:
           operation: "=="
     rune_1_death_locked:
       name: icesmp_rune_death_locked
-      x: -198
+      x: -28
       y: 91
       layer: 5
       scale: 0.25
@@ -1281,7 +1281,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_1:
       name: icesmp_rune_progress_1
-      x: -196
+      x: -26
       y: 108
       layer: 6
       scale: 0.25
@@ -1296,7 +1296,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1315,7 +1315,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1334,7 +1334,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1353,7 +1353,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1372,7 +1372,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1391,7 +1391,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1410,7 +1410,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1429,7 +1429,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1448,7 +1448,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_death_ready:
       name: icesmp_rune_death_ready
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1467,7 +1467,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_death_spent:
       name: icesmp_rune_death_spent
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1486,7 +1486,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1505,7 +1505,7 @@ icesmp_main_layout:
           operation: "=="
     rune_2_death_locked:
       name: icesmp_rune_death_locked
-      x: -178
+      x: -8
       y: 91
       layer: 5
       scale: 0.25
@@ -1524,7 +1524,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_2:
       name: icesmp_rune_progress_2
-      x: -176
+      x: -6
       y: 108
       layer: 6
       scale: 0.25
@@ -1539,7 +1539,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1558,7 +1558,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1577,7 +1577,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1596,7 +1596,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1615,7 +1615,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1634,7 +1634,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1653,7 +1653,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1672,7 +1672,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1691,7 +1691,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_death_ready:
       name: icesmp_rune_death_ready
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1710,7 +1710,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_death_spent:
       name: icesmp_rune_death_spent
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1729,7 +1729,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1748,7 +1748,7 @@ icesmp_main_layout:
           operation: "=="
     rune_3_death_locked:
       name: icesmp_rune_death_locked
-      x: -158
+      x: 12
       y: 91
       layer: 5
       scale: 0.25
@@ -1767,7 +1767,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_3:
       name: icesmp_rune_progress_3
-      x: -156
+      x: 14
       y: 108
       layer: 6
       scale: 0.25
@@ -1782,7 +1782,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1801,7 +1801,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1820,7 +1820,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1839,7 +1839,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1858,7 +1858,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1877,7 +1877,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1896,7 +1896,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1915,7 +1915,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1934,7 +1934,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_death_ready:
       name: icesmp_rune_death_ready
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1953,7 +1953,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_death_spent:
       name: icesmp_rune_death_spent
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1972,7 +1972,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -1991,7 +1991,7 @@ icesmp_main_layout:
           operation: "=="
     rune_4_death_locked:
       name: icesmp_rune_death_locked
-      x: -138
+      x: 32
       y: 91
       layer: 5
       scale: 0.25
@@ -2010,7 +2010,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_4:
       name: icesmp_rune_progress_4
-      x: -136
+      x: 34
       y: 108
       layer: 6
       scale: 0.25
@@ -2025,7 +2025,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2044,7 +2044,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2063,7 +2063,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2082,7 +2082,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2101,7 +2101,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2120,7 +2120,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2139,7 +2139,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2158,7 +2158,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2177,7 +2177,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_death_ready:
       name: icesmp_rune_death_ready
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2196,7 +2196,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_death_spent:
       name: icesmp_rune_death_spent
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2215,7 +2215,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2234,7 +2234,7 @@ icesmp_main_layout:
           operation: "=="
     rune_5_death_locked:
       name: icesmp_rune_death_locked
-      x: -118
+      x: 52
       y: 91
       layer: 5
       scale: 0.25
@@ -2253,7 +2253,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_5:
       name: icesmp_rune_progress_5
-      x: -116
+      x: 54
       y: 108
       layer: 6
       scale: 0.25
@@ -2268,7 +2268,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2287,7 +2287,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2306,7 +2306,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2325,7 +2325,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2344,7 +2344,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2363,7 +2363,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2382,7 +2382,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2401,7 +2401,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2420,7 +2420,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_death_ready:
       name: icesmp_rune_death_ready
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2439,7 +2439,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_death_spent:
       name: icesmp_rune_death_spent
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2458,7 +2458,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2477,7 +2477,7 @@ icesmp_main_layout:
           operation: "=="
     rune_6_death_locked:
       name: icesmp_rune_death_locked
-      x: -98
+      x: 72
       y: 91
       layer: 5
       scale: 0.25
@@ -2496,7 +2496,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_6:
       name: icesmp_rune_progress_6
-      x: -96
+      x: 74
       y: 108
       layer: 6
       scale: 0.25
@@ -2511,7 +2511,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2530,7 +2530,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2549,7 +2549,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2568,7 +2568,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2587,7 +2587,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2606,7 +2606,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2625,7 +2625,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2644,7 +2644,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2663,7 +2663,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_death_ready:
       name: icesmp_rune_death_ready
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2682,7 +2682,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_death_spent:
       name: icesmp_rune_death_spent
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2701,7 +2701,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2720,7 +2720,7 @@ icesmp_main_layout:
           operation: "=="
     rune_7_death_locked:
       name: icesmp_rune_death_locked
-      x: -78
+      x: 92
       y: 91
       layer: 5
       scale: 0.25
@@ -2739,7 +2739,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_7:
       name: icesmp_rune_progress_7
-      x: -76
+      x: 94
       y: 108
       layer: 6
       scale: 0.25
@@ -2754,7 +2754,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_blood_ready:
       name: icesmp_rune_blood_ready
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2773,7 +2773,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_blood_spent:
       name: icesmp_rune_blood_spent
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2792,7 +2792,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_blood_regenerating:
       name: icesmp_rune_blood_regenerating
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2811,7 +2811,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_blood_locked:
       name: icesmp_rune_blood_locked
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2830,7 +2830,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_frost_ready:
       name: icesmp_rune_frost_ready
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2849,7 +2849,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_frost_spent:
       name: icesmp_rune_frost_spent
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2868,7 +2868,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_frost_regenerating:
       name: icesmp_rune_frost_regenerating
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2887,7 +2887,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_frost_locked:
       name: icesmp_rune_frost_locked
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2906,7 +2906,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_death_ready:
       name: icesmp_rune_death_ready
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2925,7 +2925,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_death_spent:
       name: icesmp_rune_death_spent
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2944,7 +2944,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_death_regenerating:
       name: icesmp_rune_death_regenerating
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2963,7 +2963,7 @@ icesmp_main_layout:
           operation: "=="
     rune_8_death_locked:
       name: icesmp_rune_death_locked
-      x: -58
+      x: 112
       y: 91
       layer: 5
       scale: 0.25
@@ -2982,7 +2982,7 @@ icesmp_main_layout:
           operation: "=="
     rune_progress_8:
       name: icesmp_rune_progress_8
-      x: -56
+      x: 114
       y: 108
       layer: 6
       scale: 0.25
@@ -2999,7 +2999,7 @@ icesmp_main_layout:
     1:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent]><b>[string:icesmp_class_name]</b> <#A9B7C6>[string:icesmp_class_spec_name]"
-      x: -166
+      x: 4
       y: 39
       scale: 0.48
       align: left
@@ -3009,7 +3009,7 @@ icesmp_main_layout:
     2:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent]>[string:icesmp_faction]"
-      x: -166
+      x: 4
       y: 55
       scale: 0.39
       align: left
@@ -3019,7 +3019,7 @@ icesmp_main_layout:
     3:
       name: icesmp_class_font
       pattern: "<#D6A74B>[string:icesmp_balance]"
-      x: -74
+      x: 96
       y: 55
       scale: 0.37
       align: left
@@ -3029,7 +3029,7 @@ icesmp_main_layout:
     4:
       name: icesmp_class_font
       pattern: "<#71809A>Lv. <#FFFFFF>[string:icesmp_class_level]"
-      x: -54
+      x: 116
       y: 39
       scale: 0.37
       align: left
@@ -3039,7 +3039,7 @@ icesmp_main_layout:
     5:
       name: icesmp_class_font
       pattern: "<#C7D4EA>[string:icesmp_resource_name] <#FFFFFF>[string:icesmp_resource_current]<#75819A>//[string:icesmp_resource_max]"
-      x: -166
+      x: 4
       y: 68
       scale: 0.36
       align: left
@@ -3049,7 +3049,7 @@ icesmp_main_layout:
     6:
       name: icesmp_class_font
       pattern: "<#71809A>ESEMENY <#F0D88D>[string:icesmp_event]"
-      x: -178
+      x: -8
       y: 133
       scale: 0.36
       align: left
@@ -3059,7 +3059,7 @@ icesmp_main_layout:
     7:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]"
-      x: -198
+      x: -28
       y: 88
       scale: 0.3
       align: left
@@ -3074,7 +3074,7 @@ icesmp_main_layout:
     8:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent_soft]>[string:icesmp_class_mechanic_secondary]"
-      x: -105
+      x: 65
       y: 88
       scale: 0.29
       align: left
@@ -3089,7 +3089,7 @@ icesmp_main_layout:
     9:
       name: icesmp_class_font
       pattern: "<#A9B7C6>[string:icesmp_class_state] <#F4C96B>[string:icesmp_class_proc]"
-      x: -105
+      x: 65
       y: 111
       scale: 0.27
       align: left
@@ -3108,7 +3108,7 @@ icesmp_main_layout:
     10:
       name: icesmp_class_font
       pattern: "<#E7683F>[string:icesmp_class_metric_tertiary_label] <#FFFFFF>[string:icesmp_class_metric_tertiary_text]"
-      x: -198
+      x: -28
       y: 109
       scale: 0.22
       align: left
@@ -3127,7 +3127,7 @@ icesmp_main_layout:
     13:
       name: icesmp_class_font
       pattern: "<#8BE9FD>[string:icesmp_class_metric_quaternary_label] <#FFFFFF>[string:icesmp_class_metric_quaternary_text]"
-      x: -151
+      x: 19
       y: 109
       scale: 0.22
       align: left
@@ -3146,7 +3146,7 @@ icesmp_main_layout:
     14:
       name: icesmp_class_font
       pattern: "<#A08CC8>[string:icesmp_class_metric_quinary_label] <#FFFFFF>[string:icesmp_class_metric_quinary_text]"
-      x: -104
+      x: 66
       y: 109
       scale: 0.22
       align: left
@@ -3165,7 +3165,7 @@ icesmp_main_layout:
     11:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]"
-      x: -198
+      x: -28
       y: 82
       scale: 0.35
       align: left
@@ -3180,7 +3180,7 @@ icesmp_main_layout:
     12:
       name: icesmp_class_font
       pattern: "<#A9B7C6>[string:icesmp_class_state] <#586781>| <#F4C96B>[string:icesmp_class_proc]"
-      x: -198
+      x: -28
       y: 115
       scale: 0.32
       align: left

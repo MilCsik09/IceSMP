@@ -12,6 +12,16 @@ FACTION_COLORS = {"ice": "#77DDF2", "ember": "#E7683F", "frost": "#8BE9FD",
 CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
            "druid", "priest", "death_knight", "assassin", "warlock", "wizard")
 
+# BetterHud 1.14.1 renders dynamic text/listener rows from a separate action-bar
+# component origin than the static frame/header images when the HUD is anchored at
+# gui.x=100. Keep that implementation offset in one place so every dynamic row
+# stays on the 204 px panel canvas instead of forming a second block to its left.
+PANEL_CONTENT_X = 170
+
+
+def panel_x(x):
+    return x + PANEL_CONTENT_X
+
 
 def condition(name, placeholder, value, operation="==", kind="string", indent=6):
     pad = " " * indent
@@ -63,22 +73,22 @@ def main():
               (("class", "icesmp_class_id", class_id),), scale=0.46)
     image(main_layout, "money_icon", "icesmp_icon_money", -92, 55, 5, scale=0.23)
     image(main_layout, "level_icon", "icesmp_icon_level", -74, 39, 5, scale=0.23)
-    image(main_layout, "resource_track", "icesmp_resource_track", -166, 72, 2, scale=0.45)
-    image(main_layout, "resource_fill", "icesmp_resource_fill", -166, 72, 3,
+    image(main_layout, "resource_track", "icesmp_resource_track", panel_x(-166), 72, 2, scale=0.45)
+    image(main_layout, "resource_fill", "icesmp_resource_fill", panel_x(-166), 72, 3,
           color_overrides=(("red", "#E7683F", "icesmp_faction_id", "RED"),
                            ("blue", "#8BE9FD", "icesmp_faction_id", "BLUE"),
                            ("neutral", "#D6A74B", "icesmp_faction_id", "NEUTRAL"),
                            ("dark", "#62D7CE", "icesmp_faction_id", "DARK")), scale=0.45)
-    image(main_layout, "event_icon", "icesmp_icon_event", -198, 130, 5, scale=0.23)
+    image(main_layout, "event_icon", "icesmp_icon_event", panel_x(-198), 130, 5, scale=0.23)
 
     not_death_knight = (("not_dk", "icesmp_class_id", "death_knight", "!="),)
     faction_colors = tuple((theme, color, "icesmp_faction_theme", theme)
                            for theme, color in FACTION_COLORS.items())
     for channel, x in (("primary", -198), ("secondary", -105)):
         visible = not_death_knight + (("numeric", f"icesmp_class_metric_{channel}_max", 0, ">", "number"),)
-        image(main_layout, f"metric_{channel}_track", "icesmp_metric_track", x, 101, 3,
+        image(main_layout, f"metric_{channel}_track", "icesmp_metric_track", panel_x(x), 101, 3,
               visible, scale=0.45)
-        image(main_layout, f"metric_{channel}_fill", f"icesmp_metric_{channel}_fill", x, 101, 4,
+        image(main_layout, f"metric_{channel}_fill", f"icesmp_metric_{channel}_fill", panel_x(x), 101, 4,
               visible, color_overrides=faction_colors, scale=0.45)
 
     semantic_colors = {
@@ -88,17 +98,17 @@ def main():
     }
     for channel, x in (("tertiary", -198), ("quaternary", -151), ("quinary", -104)):
         visible = not_death_knight + (("numeric", f"icesmp_class_metric_{channel}_max", 0, ">", "number"),)
-        image(main_layout, f"metric_{channel}_track", "icesmp_metric_mini_track", x, 120, 3,
+        image(main_layout, f"metric_{channel}_track", "icesmp_metric_mini_track", panel_x(x), 120, 3,
               visible, scale=0.40)
-        image(main_layout, f"metric_{channel}_fill", f"icesmp_metric_{channel}_fill", x, 120, 4,
+        image(main_layout, f"metric_{channel}_fill", f"icesmp_metric_{channel}_fill", panel_x(x), 120, 4,
               visible, color_overrides=semantic_colors[channel] + faction_colors, scale=0.40)
 
     for slot, x in enumerate(range(-198, -108, 10), start=1):
         state_key = f"icesmp_class_slot_{slot}_state"
-        image(main_layout, f"charge_{slot}_ready", "icesmp_charge_ready", x, 109, 5,
+        image(main_layout, f"charge_{slot}_ready", "icesmp_charge_ready", panel_x(x), 109, 5,
               not_death_knight + (("state", state_key, "ready"),),
               color_overrides=faction_colors, scale=0.25)
-        image(main_layout, f"charge_{slot}_spent", "icesmp_charge_spent", x, 109, 5,
+        image(main_layout, f"charge_{slot}_spent", "icesmp_charge_spent", panel_x(x), 109, 5,
               not_death_knight + (("state", state_key, "spent"),), scale=0.25)
 
     slot_x = [-198, -178, -158, -138, -118, -98, -78, -58]
@@ -107,49 +117,49 @@ def main():
         kind_key = f"icesmp_class_slot_{slot}_kind"
         for kind in ("blood", "frost", "death"):
             for state in ("ready", "spent", "regenerating", "locked"):
-                image(main_layout, f"rune_{slot}_{kind}_{state}", f"icesmp_rune_{kind}_{state}", x, 91, 5,
+                image(main_layout, f"rune_{slot}_{kind}_{state}", f"icesmp_rune_{kind}_{state}", panel_x(x), 91, 5,
                       (("death_knight", "icesmp_class_id", "death_knight"),
                        ("kind", kind_key, kind), ("state", state_key, state)), scale=0.25)
-        image(main_layout, f"rune_progress_{slot}", f"icesmp_rune_progress_{slot}", x + 2, 108, 6,
+        image(main_layout, f"rune_progress_{slot}", f"icesmp_rune_progress_{slot}", panel_x(x + 2), 108, 6,
               (("death_knight", "icesmp_class_id", "death_knight"),
                ("regenerating", state_key, "regenerating")), scale=0.25)
 
     main_layout += ["  texts:"]
     text(main_layout, 1,
          "<#[string:icesmp_faction_accent]><b>[string:icesmp_class_name]</b> <#A9B7C6>[string:icesmp_class_spec_name]",
-         -166, 39, 0.48)
+         panel_x(-166), 39, 0.48)
     text(main_layout, 2, "<#[string:icesmp_faction_accent]>[string:icesmp_faction]",
-         -166, 55, 0.39)
-    text(main_layout, 3, "<#D6A74B>[string:icesmp_balance]", -74, 55, 0.37)
-    text(main_layout, 4, "<#71809A>Lv. <#FFFFFF>[string:icesmp_class_level]", -54, 39, 0.37)
+         panel_x(-166), 55, 0.39)
+    text(main_layout, 3, "<#D6A74B>[string:icesmp_balance]", panel_x(-74), 55, 0.37)
+    text(main_layout, 4, "<#71809A>Lv. <#FFFFFF>[string:icesmp_class_level]", panel_x(-54), 39, 0.37)
     text(main_layout, 5,
          "<#C7D4EA>[string:icesmp_resource_name] <#FFFFFF>[string:icesmp_resource_current]<#75819A>//[string:icesmp_resource_max]",
-         -166, 68, 0.36)
-    text(main_layout, 6, "<#71809A>ESEMENY <#F0D88D>[string:icesmp_event]", -178, 133, 0.36)
+         panel_x(-166), 68, 0.36)
+    text(main_layout, 6, "<#71809A>ESEMENY <#F0D88D>[string:icesmp_event]", panel_x(-178), 133, 0.36)
     text(main_layout, 7, "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]",
-         -198, 88, 0.30, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
+         panel_x(-198), 88, 0.30, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
     text(main_layout, 8, "<#[string:icesmp_faction_accent_soft]>[string:icesmp_class_mechanic_secondary]",
-         -105, 88, 0.29, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
+         panel_x(-105), 88, 0.29, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
     text(main_layout, 9, "<#A9B7C6>[string:icesmp_class_state] <#F4C96B>[string:icesmp_class_proc]",
-         -105, 111, 0.27,
+         panel_x(-105), 111, 0.27,
          (("not_dk", "icesmp_class_id", "death_knight", "!="),
           ("simple", "icesmp_class_metric_count", 2, "<=", "number")))
     text(main_layout, 10, "<#E7683F>[string:icesmp_class_metric_tertiary_label] <#FFFFFF>[string:icesmp_class_metric_tertiary_text]",
-         -198, 109, 0.22,
+         panel_x(-198), 109, 0.22,
          (("not_dk", "icesmp_class_id", "death_knight", "!="),
           ("visible", "icesmp_class_metric_tertiary_max", 0, ">", "number")))
     text(main_layout, 13, "<#8BE9FD>[string:icesmp_class_metric_quaternary_label] <#FFFFFF>[string:icesmp_class_metric_quaternary_text]",
-         -151, 109, 0.22,
+         panel_x(-151), 109, 0.22,
          (("not_dk", "icesmp_class_id", "death_knight", "!="),
           ("visible", "icesmp_class_metric_quaternary_max", 0, ">", "number")))
     text(main_layout, 14, "<#A08CC8>[string:icesmp_class_metric_quinary_label] <#FFFFFF>[string:icesmp_class_metric_quinary_text]",
-         -104, 109, 0.22,
+         panel_x(-104), 109, 0.22,
          (("not_dk", "icesmp_class_id", "death_knight", "!="),
           ("visible", "icesmp_class_metric_quinary_max", 0, ">", "number")))
     text(main_layout, 11, "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]",
-         -198, 82, 0.35, (("death_knight", "icesmp_class_id", "death_knight"),))
+         panel_x(-198), 82, 0.35, (("death_knight", "icesmp_class_id", "death_knight"),))
     text(main_layout, 12, "<#A9B7C6>[string:icesmp_class_state] <#586781>| <#F4C96B>[string:icesmp_class_proc]",
-         -198, 115, 0.32, (("death_knight", "icesmp_class_id", "death_knight"),))
+         panel_x(-198), 115, 0.32, (("death_knight", "icesmp_class_id", "death_knight"),))
 
     proc = [
         "# GENERATED by scripts/generate_betterhud_layout.py; edit the generator, not this file.",

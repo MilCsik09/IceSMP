@@ -155,6 +155,8 @@ public final class BetterHudIntegrationRegressionSuite {
     }
 
     private static void packagedLayoutContract() throws Exception {
+        final String mainLayout = read("deploy/betterhud/layouts/icesmp-main-layout.yml")
+                .replace("\r\n", "\n");
         final String layout = Files.list(Path.of("deploy/betterhud/layouts"))
                 .filter(path -> path.getFileName().toString().endsWith(".yml"))
                 .sorted().map(path -> {
@@ -168,6 +170,7 @@ public final class BetterHudIntegrationRegressionSuite {
         final String bridge = read("src/main/java/hu/taliann/icesmp/classspec/integration/BetterHudSnapshotBridge.java");
         final String launcher = read("gradle/run-folia.init.gradle");
         final String devConfig = read("gradle/betterhud-dev.config.yml");
+        final String layoutGenerator = read("scripts/generate_betterhud_layout.py");
         check(layout.contains("[string:icesmp_resource_current]")
                         && layout.contains("[string:icesmp_resource_max]")
                         && layout.contains("[string:icesmp_resource_current]<#75819A>//[string:icesmp_resource_max]")
@@ -221,6 +224,11 @@ public final class BetterHudIntegrationRegressionSuite {
                         && layout.contains("icesmp_main_layout:")
                         && layout.contains("x: -218") && layout.contains("scale: 1.0"),
                 "HUD package must use one shared readable upper-right canvas for every generic module");
+        check(layoutGenerator.contains("PANEL_CONTENT_X = 170")
+                        && layoutGenerator.contains("panel_x(-166)")
+                        && mainLayout.contains("resource_track:\n      name: icesmp_resource_track\n      x: 4")
+                        && mainLayout.contains("rune_1_blood_ready:\n      name: icesmp_rune_blood_ready\n      x: -28"),
+                "dynamic BetterHud rows must retain the 1.14.1 right-edge panel-origin correction");
         try (var layouts = Files.list(Path.of("deploy/betterhud/layouts"))) {
             final List<String> persistentFiles = layouts
                     .map(path -> path.getFileName().toString())
