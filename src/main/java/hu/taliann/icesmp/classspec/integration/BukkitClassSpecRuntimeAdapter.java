@@ -41,6 +41,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.EnumMap;
+import hu.taliann.icesmp.data.JobType;
 
 /** Scheduler-owning spell/companion/transient reconciliation after durable commits. */
 public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort {
@@ -147,6 +149,24 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 .append(assassin.hudSuffix(player))
                 .append(warlock.hudSuffix(player))
                 .append(wizard.hudSuffix(player)));
+        final EnumMap<JobType, ClassHudStateAdapter> hudAdapters = new EnumMap<>(JobType.class);
+        hudAdapters.put(JobType.WARRIOR, new ClassHudStateAdapter(JobType.WARRIOR, specs::getClassSpecialization, warrior::hudSuffix));
+        hudAdapters.put(JobType.EVOKER, new ClassHudStateAdapter(JobType.EVOKER, specs::getClassSpecialization, evoker::hudSuffix));
+        hudAdapters.put(JobType.ARCHER, new ClassHudStateAdapter(JobType.ARCHER, specs::getClassSpecialization, archer::hudSuffix));
+        hudAdapters.put(JobType.SHAMAN, new ClassHudStateAdapter(JobType.SHAMAN, specs::getClassSpecialization, shaman::hudSuffix));
+        hudAdapters.put(JobType.MONK, new ClassHudStateAdapter(JobType.MONK, specs::getClassSpecialization, monk::hudSuffix));
+        hudAdapters.put(JobType.PALADIN, new ClassHudStateAdapter(JobType.PALADIN, specs::getClassSpecialization, paladin::hudSuffix));
+        hudAdapters.put(JobType.DEMON_HUNTER, new ClassHudStateAdapter(JobType.DEMON_HUNTER, specs::getClassSpecialization, demonHunter::hudSuffix));
+        hudAdapters.put(JobType.DRUID, new ClassHudStateAdapter(JobType.DRUID, specs::getClassSpecialization, druid::hudSuffix));
+        hudAdapters.put(JobType.PRIEST, new ClassHudStateAdapter(JobType.PRIEST, specs::getClassSpecialization, priest::hudSuffix));
+        hudAdapters.put(JobType.DEATH_KNIGHT, new ClassHudStateAdapter(JobType.DEATH_KNIGHT, specs::getClassSpecialization, deathKnight::hudSuffix));
+        hudAdapters.put(JobType.ASSASSIN, new ClassHudStateAdapter(JobType.ASSASSIN, specs::getClassSpecialization, assassin::hudSuffix));
+        hudAdapters.put(JobType.WARLOCK, new ClassHudStateAdapter(JobType.WARLOCK, specs::getClassSpecialization, warlock::hudSuffix));
+        hudAdapters.put(JobType.WIZARD, new ClassHudStateAdapter(JobType.WIZARD, specs::getClassSpecialization, wizard::hudSuffix));
+        resources.setClassHudState(player -> {
+            final ClassHudStateAdapter adapter = hudAdapters.get(jobs.getPrimaryJob(player));
+            return adapter == null ? ClassHudState.empty() : adapter.snapshot(player);
+        });
         specs.setSwitchSafetyResource(resources);
         warrior.setCombatTracker(resources);
         evoker.setCombatTracker(resources);

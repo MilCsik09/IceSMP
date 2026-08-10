@@ -1,0 +1,35 @@
+# Generic for all 13 classes; PAPI values come only from IceSMP's immutable owner-thread snapshot.
+icesmp_class_layout:
+  texts:
+    1:
+      name: icesmp_class_font
+      pattern: "✦ [papi:icesmp_class_name] [papi:icesmp_class_spec_name]"
+      x: 0
+      y: 0
+      scale: 0.75
+      align: center
+      use-legacy-format: true
+    2:
+      name: icesmp_class_font
+      pattern: "[papi:icesmp_resource_name] [papi:icesmp_resource_bar]"
+      x: 0
+      y: 10
+      scale: 0.75
+      align: center
+      use-legacy-format: true
+    3:
+      name: icesmp_class_font
+      pattern: "[papi:icesmp_class_mechanic_primary]  [papi:icesmp_class_mechanic_secondary]"
+      x: 0
+      y: 20
+      scale: 0.65
+      align: center
+      use-legacy-format: true
+    4:
+      name: icesmp_class_font
+      pattern: "[papi:icesmp_class_state]  [papi:icesmp_class_proc]  [papi:icesmp_class_charges]/[papi:icesmp_class_charges_max]"
+      x: 0
+      y: 29
+      scale: 0.6
+      align: center
+      use-legacy-format: true

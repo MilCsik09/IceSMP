@@ -31,6 +31,8 @@ public final class ResourceManager implements PlayerStateCleanup {
     private volatile java.util.function.ToDoubleFunction<UUID> maxMultiplier;
     /** Optional compact class-gameplay suffix rendered on the same HUD resource line. */
     private volatile java.util.function.Function<Player, Component> hudSuffix = ignored -> Component.empty();
+    private volatile java.util.function.Function<Player, hu.taliann.icesmp.classspec.integration.ClassHudState>
+            classHudState = ignored -> hu.taliann.icesmp.classspec.integration.ClassHudState.empty();
 
     public void setMaxMultiplier(final java.util.function.ToDoubleFunction<UUID> maxMultiplier) {
         this.maxMultiplier = maxMultiplier;
@@ -38,6 +40,22 @@ public final class ResourceManager implements PlayerStateCleanup {
 
     public void setHudSuffix(final java.util.function.Function<Player, Component> hudSuffix) {
         this.hudSuffix = hudSuffix == null ? ignored -> Component.empty() : hudSuffix;
+    }
+
+    public void setClassHudState(final java.util.function.Function<Player,
+            hu.taliann.icesmp.classspec.integration.ClassHudState> provider) {
+        classHudState = provider == null
+                ? ignored -> hu.taliann.icesmp.classspec.integration.ClassHudState.empty() : provider;
+    }
+
+    /** Owner-thread capture only; async integrations consume the copy embedded in HudSnapshot. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudState classHudState(final Player player) {
+        try {
+            final var snapshot = classHudState.apply(player);
+            return snapshot == null ? hu.taliann.icesmp.classspec.integration.ClassHudState.empty() : snapshot;
+        } catch (final RuntimeException invalidRuntimeState) {
+            return hu.taliann.icesmp.classspec.integration.ClassHudState.empty();
+        }
     }
 
     /** Harc utáni türelmi idő: eddig számít "harcban" a játékos (düh-típusú tárnál nincs decay). */

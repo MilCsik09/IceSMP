@@ -105,10 +105,16 @@ public final class HudManager {
     public record HudSnapshot(String faction, String factionId, String className, int classLevel,
                               String balance, boolean hasClass, int resource, int resourceMax,
                               int resourcePercent, String resourceName, String resourceBar,
-                              String event, List<String> partyLines) {
+                              String event, List<String> partyLines,
+                              hu.taliann.icesmp.classspec.integration.ClassHudState classHud) {
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
+    private volatile boolean placeholderBridgeReady;
+
+    public void setPlaceholderBridgeReady(final boolean ready) {
+        placeholderBridgeReady = ready;
+    }
 
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
@@ -150,6 +156,14 @@ public final class HudManager {
      */
     private boolean sidebarEnabled() {
         return configManager.getBoolean("hud.sidebar-enabled", true);
+    }
+
+    /** BetterHud is display-only; PlaceholderAPI transports the immutable IceSMP snapshot. */
+    public boolean betterHudActive() {
+        return configManager.getBoolean("hud.betterhud.enabled", true)
+                && placeholderBridgeReady
+                && plugin.getServer().getPluginManager().isPluginEnabled("BetterHud")
+                && plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
     }
 
     /** Whether IceSMP sets faction-coloured tab-list names. Set false when TAB owns the tab list. */
@@ -368,7 +382,7 @@ public final class HudManager {
                 resourceManager.resourceName(player),
                 showResource ? resourceManager.resourceBarPlain(player) : "",
                 net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(eventLabel()),
-                partyLinesPlain(player));
+                partyLinesPlain(player), resourceManager.classHudState(player));
     }
 
     /**
@@ -494,7 +508,7 @@ public final class HudManager {
                     }
                 }
                 case RESOURCE -> {
-                    if (job != null && resourceManager.isEnabled()) {
+                    if (!betterHudActive() && job != null && resourceManager.isEnabled()) {
                         rows.add(new HudSidebarLayout.Row<>(entry.section(),
                                 renderTemplate(entry.text(), tokens)));
                     }

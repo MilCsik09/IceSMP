@@ -96,6 +96,10 @@ val classSpecCompatibilityRegressionTest = registerRegression(
     "classSpecCompatibilityRegressionTest",
     "Runs class/spec dependency-lock and portability regressions.",
     "hu.taliann.icesmp.classspec.compat.ClassSpecCompatibilityRegressionSuite")
+val betterHudIntegrationRegressionTest = registerRegression(
+    "betterHudIntegrationRegressionTest",
+    "Runs generic immutable class HUD, PAPI safety and BetterHud fallback regressions.",
+    "hu.taliann.icesmp.classspec.integration.BetterHudIntegrationRegressionSuite")
 val classSpecApplicationRegressionTest = registerRegression(
     "classSpecApplicationRegressionTest",
     "Runs Profile v2 mutation, DARK gate and fail-closed application regressions.",
@@ -415,7 +419,8 @@ tasks.check {
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
-        classSpecCompatibilityRegressionTest, classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
+        classSpecCompatibilityRegressionTest, betterHudIntegrationRegressionTest,
+        classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
         playerProfileDailyQuestRegressionTest, playerProfileEconomyRegressionTest, playerProfileFactionAuthorityRegressionTest,

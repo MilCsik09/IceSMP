@@ -69,6 +69,8 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    # Optional display-only class HUD over immutable %icesmp_...% snapshots; never authority/fatal.
+    # When absent or disabled, IceSMP keeps its native compact class HUD automatically.
     BetterHud:
       load: BEFORE
       required: false

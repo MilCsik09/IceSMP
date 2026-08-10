@@ -1146,3 +1146,11 @@ A kötelező kézi staging-próbák az [admin kézikönyv staging-mátrixai](ADM
 The automated audit verifies **437 recipes**, zero duplicate keys, zero semantic duplicates, immutable recipe metadata,
 transactional catalog reload publication, exact unique/custom ingredient matching, profession/level gates, deterministic key order,
 output-model presence and removal of stale Bukkit registrations after reload or disable.
+### Generic class HUD projection
+
+`ClassHudState` is an immutable, class-agnostic projection of Profile v2 class/spec identity and the
+13 transient class runtime services. One `ClassHudStateAdapter` per class maps its compact mechanics
+to primary, secondary, state, proc, charges and an ordered mechanics list. `HudManager` captures that
+projection on the player's Folia region thread and embeds it in `HudSnapshot`; PlaceholderAPI and
+BetterHud only read the concurrent immutable cache. Neither integration can mutate Profile v2 or a
+class runtime. BetterHud capability detection controls rendering ownership only, with native fallback.

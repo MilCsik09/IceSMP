@@ -40,6 +40,10 @@ world-tweaks:
     mobs: true
 
 hud:
+  betterhud:
+    # Opcionális, kizárólag megjelenítési integráció. BetterHud + PlaceholderAPI esetén a
+    # generikus immutable snapshotból rajzol; hiányukban a natív resource sor automatikusan marad.
+    enabled: true
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
   # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
   # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.

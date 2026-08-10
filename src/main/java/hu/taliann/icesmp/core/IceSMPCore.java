@@ -999,6 +999,7 @@ public final class IceSMPCore {
         Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin,
                 task -> blockRegenService.tick(), regenTicks, regenTicks);
         registerPlaceholders();
+        logClassHudCapability();
         registerNpcQuestBridge();
         applyWorldGameRules();
 
@@ -1060,10 +1061,23 @@ public final class IceSMPCore {
                             hu.taliann.icesmp.managers.TerritoryManager.class)
                     .invoke(null, plugin, hudManager, configManager, bestiaryManager,
                             professionRecipeCatalog, territoryManager);
+            hudManager.setPlaceholderBridgeReady(true);
             plugin.getLogger().info("PlaceholderAPI integráció bekapcsolva (%icesmp_...% placeholderek).");
         } catch (final Throwable throwable) {
+            hudManager.setPlaceholderBridgeReady(false);
             plugin.getLogger().warning("PlaceholderAPI jelen van, de a placeholder-integráció nem indult: "
                     + throwable.getMessage());
+        }
+    }
+
+    private void logClassHudCapability() {
+        if (hudManager.betterHudActive()) {
+            plugin.getLogger().info("BetterHud present+ready: BetterHud class HUD active; native class resource row suppressed.");
+        } else {
+            final boolean present = plugin.getServer().getPluginManager().isPluginEnabled("BetterHud");
+            final boolean papi = plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
+            plugin.getLogger().info("BetterHud class HUD inactive (present=" + present + ", PlaceholderAPI=" + papi
+                    + "); native compact class HUD fallback active.");
         }
     }
 

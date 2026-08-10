@@ -56,8 +56,10 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
                                 final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager,
                                 final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
                                 final hu.taliann.icesmp.managers.TerritoryManager territoryManager) {
-        new IceSMPPlaceholders(hudManager, configManager, bestiaryManager, recipeCatalog,
-                territoryManager).register();
+        if (!new IceSMPPlaceholders(hudManager, configManager, bestiaryManager, recipeCatalog,
+                territoryManager).register()) {
+            throw new IllegalStateException("PlaceholderAPI rejected the IceSMP expansion");
+        }
     }
 
     /** `%icesmp_bestiary_<kategória>%` és `_total` párja; nem-bestiárium paramra {@code null}. */
@@ -143,6 +145,16 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "resource_percent" -> snapshot.hasClass() ? String.valueOf(snapshot.resourcePercent()) : "";
             case "resource_name" -> snapshot.resourceName();
             case "resource_bar" -> snapshot.hasClass() ? snapshot.resourceBar() : "";
+            case "class_id" -> snapshot.classHud().classId();
+            case "class_spec", "class_spec_id" -> snapshot.classHud().specId();
+            case "class_spec_name" -> snapshot.classHud().specName();
+            case "class_mechanic_primary" -> snapshot.classHud().mechanicPrimary();
+            case "class_mechanic_secondary" -> snapshot.classHud().mechanicSecondary();
+            case "class_state" -> snapshot.classHud().state();
+            case "class_proc" -> snapshot.classHud().proc();
+            case "class_charges" -> String.valueOf(snapshot.classHud().charges());
+            case "class_charges_max" -> String.valueOf(snapshot.classHud().chargesMax());
+            case "class_mechanics" -> String.join(" • ", snapshot.classHud().mechanics());
             // Aktív világesemények egy sorban (max 2 név + "+N"), §-színekkel.
             case "event" -> snapshot.event();
             // A név frakciószíne a közös palettából; külső TAB/scoreboard is ugyanazt kapja.

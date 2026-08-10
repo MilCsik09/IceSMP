@@ -2006,3 +2006,11 @@ reference to exist both in this manifest and in `resource-pack/assets/icesmp/ite
 When the resource pack is absent, GUI code keeps its declared vanilla Material (the explicit fallback); the server never emits
 an invented CustomModelData magic number. The profession recipe audit additionally requires every unique profession output to
 resolve through `profession-materials.*.item-model`.
+## BetterHud merge hook
+
+`deploy/betterhud/` intentionally contains no external bitmap assets: its class HUD uses Minecraft's
+vanilla-safe Unicode/unifont. BetterHud still generates its shader/font resource-pack layer. Point
+BetterHud's generated-pack destination or external-pack merge setting at a staging directory, then
+merge that output through the existing IceSMP pack pipeline and run the normal pack validation.
+Never select the live IceSMP pack directory as an overwrite target. Shader/font path conflicts must be
+resolved explicitly; BetterHud must not blindly replace an existing IceSMP resource pack.

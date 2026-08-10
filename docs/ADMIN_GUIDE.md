@@ -1601,3 +1601,19 @@ world-location- vagy lifecycle-teszt hibás, a döntés automatikusan
 Ha egy kritikus persistence-, duplikációs, permission-, reconnect-,
 world-location- vagy lifecycle-teszt hibás, a release döntése automatikusan
 **NO-GO**. A zöld build nem írja felül a hiányzó runtime bizonyítékot.
+## BetterHud class HUD (optional)
+
+The locked BetterHud 1.14.1 integration is display-only and requires PlaceholderAPI. Enable it with
+`hud.betterhud.enabled: true`. When both plugins are ready, IceSMP suppresses only its native class
+resource/mechanic row to prevent duplicate flicker; the rest of the native sidebar remains available.
+If either plugin is absent, startup continues and the compact native row is restored automatically.
+
+Copy the files below `deploy/betterhud/` into the matching BetterHud data folders, reload BetterHud,
+then assign `icesmp_class_hud` using BetterHud's normal HUD assignment. The package uses vanilla
+Unicode/unifont and these generic placeholders: `%icesmp_class_id%`, `%icesmp_class_spec%`,
+`%icesmp_class_spec_name%`, `%icesmp_class_mechanic_primary%`,
+`%icesmp_class_mechanic_secondary%`, `%icesmp_class_state%`, `%icesmp_class_proc%`,
+`%icesmp_class_charges%`, `%icesmp_class_charges_max%`, and `%icesmp_class_mechanics%`.
+All are served from the immutable per-player HUD cache; PAPI/BetterHud async reads never touch live
+Player/PDC state. Acceptance: test startup with BetterHud+PAPI present and absent, verify the
+diagnostic log, verify exactly one class HUD, and verify all 13 classes plus their active spec.

@@ -1,0 +1,5 @@
+# BetterHud 1.14.1. Vanilla/unifont only: no invented external bitmap assets.
+icesmp_class_font:
+  merge-default-bitmap: true
+  use-unifont: true
+  include: []
