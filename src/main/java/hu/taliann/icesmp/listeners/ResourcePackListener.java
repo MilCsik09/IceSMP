@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -78,11 +79,27 @@ public final class ResourcePackListener implements Listener {
                 + event.getStatus() + " (id=" + event.getID() + ")");
     }
 
-    /** Reloads config/metadata and safely re-sends the current layer to every online player. */
-    public void reloadAndResend() {
+    /** Reloads config/metadata and updates online players only when the effective request changed. */
+    public synchronized void reloadAndResend() {
+        final PackRequest previous = request;
         reload();
+        final PackRequest current = request;
+        if (sameRequest(previous, current)) {
+            return;
+        }
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            player.getScheduler().run(plugin, task -> send(player), null);
+            player.getScheduler().run(plugin, task -> applyTransition(player, previous, current), null);
+        }
+    }
+
+    /** Force-sends the current layer when the plugin enables with players already online. */
+    public void resendCurrent() {
+        final PackRequest current = request;
+        if (current == null) {
+            return;
+        }
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            player.getScheduler().run(plugin, task -> send(player, current), null);
         }
     }
 
@@ -102,6 +119,19 @@ public final class ResourcePackListener implements Listener {
         if (current == null) {
             return;
         }
+        send(player, current);
+    }
+
+    private void applyTransition(final Player player, final PackRequest previous, final PackRequest current) {
+        if (previous != null && (current == null || !previous.id().equals(current.id()))) {
+            player.removeResourcePack(previous.id());
+        }
+        if (current != null) {
+            send(player, current);
+        }
+    }
+
+    private void send(final Player player, final PackRequest current) {
         try {
             player.addResourcePack(current.id(), current.url(), current.hash(), current.prompt(), current.required());
         } catch (final IllegalArgumentException exception) {
@@ -186,6 +216,18 @@ public final class ResourcePackListener implements Listener {
                                       final Properties metadata, final String metadataKey) {
         final String override = config.getString(CONFIG_ROOT + overrideKey, "").trim();
         return override.isEmpty() ? metadata.getProperty(metadataKey, "").trim() : override;
+    }
+
+    private static boolean sameRequest(final PackRequest first, final PackRequest second) {
+        if (first == second) {
+            return true;
+        }
+        return first != null && second != null
+                && first.id().equals(second.id())
+                && first.url().equals(second.url())
+                && Arrays.equals(first.hash(), second.hash())
+                && first.prompt().equals(second.prompt())
+                && first.required() == second.required();
     }
 
     public void close() {
