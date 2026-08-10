@@ -500,6 +500,7 @@ public final class AssassinGameplayService implements Listener, PlayerStateClean
                 opening == null ? "idle" : opening.name().toLowerCase(Locale.ROOT));
         var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
         String stateText = "";
+        String proc = opening == null ? "" : "Nyitás kész";
         int charges = 0;
         int maximum = 0;
         switch (activeSpec(id)) {
@@ -508,7 +509,10 @@ public final class AssassinGameplayService implements Listener, PlayerStateClean
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                         "toxin", "Toxin", "Toxin " + charges + "/3",
                         charges, 3, charges == 3 ? "full" : "active");
-                stateText = "Dózis " + combat.totalDose();
+                final String toxins = combat.heldToxins().stream()
+                        .map(AssassinGameplayService::toxinName)
+                        .collect(java.util.stream.Collectors.joining("/"));
+                stateText = "Dózis " + combat.totalDose() + (toxins.isBlank() ? "" : " · " + toxins);
             }
             case "phantom" -> {
                 final int detection = combat.detection(now, detectionDecayDelayMillis(), detectionDecayPerSecond());
@@ -517,7 +521,8 @@ public final class AssassinGameplayService implements Listener, PlayerStateClean
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                         "detection", "Észleltség", "Észleltség " + detection,
                         detection, detectionBreak(id), hidden ? "hidden" : "exposed");
-                stateText = hidden ? "Rejtve" : "";
+                stateText = combat.isTrailLive(now) ? "Árnyéknyom" : hidden ? "Rejtve" : "";
+                if (combat.isEchoArmed(now)) proc = "Visszhang kész";
             }
             case "plaguebringer" -> {
                 charges = combat.infectionCount(now); maximum = entityCap(id);
@@ -529,7 +534,7 @@ public final class AssassinGameplayService implements Listener, PlayerStateClean
             default -> { }
         }
         return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
-                primary, secondary, stateText, opening == null ? "" : "Nyitás kész", charges, maximum);
+                primary, secondary, stateText, proc, charges, maximum);
     }
 
     public void reconcileProfile(final Player player) {
@@ -593,6 +598,15 @@ public final class AssassinGameplayService implements Listener, PlayerStateClean
             case KITERES -> "Kitérés";
             case INTERRUPT -> "Interrupt";
             case ESZREVETLEN -> "Észrevétlen";
+        };
+    }
+
+    private static String toxinName(final String toxin) {
+        return switch (toxin) {
+            case "benito" -> "Bénító";
+            case "marokod" -> "Maróköd";
+            case "sorvaszto" -> "Sorvasztó";
+            default -> toxin;
         };
     }
 

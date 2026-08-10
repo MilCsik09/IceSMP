@@ -1621,13 +1621,36 @@ A közös contract fő csatornái:
 - resource: `resource_name`, `resource_current`, `resource_max`, `resource_percent`;
 - mechanika: `class_mechanic_primary`, `class_mechanic_secondary`, `class_state`, `class_proc`,
   `class_charges`, `class_charges_max`;
-- típusos csatornák: `class_metric_<primary|secondary>_<id|label|text|value|max|percent|state>`;
+- típusos csatornák: `class_metric_count`, valamint
+  `class_metric_<primary|secondary|tertiary|quaternary|quinary>_<id|label|text|value|max|percent|state>`;
 - diszkrét slotok: `class_slot_count`, valamint
   `class_slot_<1..9>_<id|kind|state|progress|label>`.
 
 A PAPI-változat minden név elé `%icesmp_` prefixet és a végére `%` jelet kap. BetterHudban az
 IceSMP közvetlen `icesmp_...` snapshot-változókat használja, tehát a BetterHud megjelenítéséhez a
 PlaceholderAPI jelenléte nem kötelező.
+
+Az aktuális class-runtime lefedettség:
+
+| Class | HUD-on olvasható élő mechanika |
+|---|---|
+| Warrior | csatatempó és tier, vér/kimerülés, overdrive/utóhatás, őrség és eskücél |
+| Evoker | empower rank, vörös/kék eszencia, rezonancia/burst, időlenyomat, ally-jel és echo |
+| Archer | szélolvasás, precision chain/weak point és beast bond |
+| Shaman | fő/kísérő totemelem, rezonancia/overload, Maelstrom, árapály és áldásoldal |
+| Monk | flow, combo chain, Stagger és mist-thread slotok |
+| Paladin | oath/conviction, beacon cél, judgement jelek és shield charge |
+| Demon Hunter | load band/overload, fragment/momentum, pain és sigil slotok |
+| Druid | harmony/season, autumn window, feral combo/scent, lunar balance/eclipse, bark/roots és seedek |
+| Priest | litany/verse, shield/atonement/conversion, marrow/ossuary és madness threshold |
+| Death Knight | typed rune slotok és recharge, blood memory, frost marks, plague és ghoul mutation |
+| Assassin | opening, toxin/dose, stealth/detection, shadow trail/echo, infection/strain |
+| Warlock | soul debt, curse/soul thread, ember/overheat és demon roster |
+| Wizard | runewaving első iskola/reakció, három külön attunement/Korona és necromancer court |
+
+A két fő numerikus metric saját faction-színű fill bart kap. A tényleges diszkrét számlálók
+legfeljebb kilenc ready/spent pipként jelennek meg; ezek az adapter charge-értékéből származnak,
+nem BetterHudban fenntartott állapotok. Az Elementalista három extra metricje három külön mini bar.
 
 ### Readiness és fallback
 
@@ -1662,8 +1685,9 @@ A forrás- és ellenőrzőlapok a `deploy/betterhud/previews/` könyvtárban, a 
 ./gradlew validateBetterHudPackage
 ```
 
-A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, a nyolc DK slotcsatornát, a
-progress-maszkok alfáját és a 2,5 MB-os runtime asset budgetet. A generált layout jobb alsó
+A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, a kilenc generic charge- és
+nyolc DK slotcsatornát, a progress-maszkok alfáját és a 2,5 MB-os runtime asset budgetet.
+A generált layout jobb felső
 sarokhoz horgonyzott; a forrásképeket a BetterHud rendereléskor skálázza, így a 64×64-es ikonok
 GUI scale-váltáskor is részletesek maradnak.
 

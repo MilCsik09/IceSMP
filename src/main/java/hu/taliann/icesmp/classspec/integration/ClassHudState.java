@@ -36,6 +36,14 @@ public record ClassHudState(String classId, String specId, String specName,
                 List.of(), List.of(), List.of());
     }
 
+    public int metricCount() {
+        return (int) metrics.stream().filter(metric -> !metric.id().isBlank()).count();
+    }
+
+    public ClassHudMetric metric(final int index) {
+        return index >= 0 && index < metrics.size() ? metrics.get(index) : null;
+    }
+
     private static String safe(final String value) {
         return value == null ? "" : value.trim();
     }

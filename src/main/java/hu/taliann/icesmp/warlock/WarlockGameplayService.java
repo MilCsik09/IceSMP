@@ -444,9 +444,11 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
         switch (activeSpec(id)) {
             case "affliction" -> {
                 charges = combat.activeCurses(now); maximum = 3;
+                final boolean threaded = combat.threadTarget(now) != null;
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                         "curses", "Átok", "Átok " + charges + "/3", charges, 3,
-                        combat.threadTarget(now) != null ? "soul_thread" : "active");
+                        threaded ? "soul_thread" : "active");
+                if (threaded) proc = "Lélekfonal aktív";
             }
             case "destruction" -> {
                 charges = combat.embers(); maximum = emberMaximum(id);

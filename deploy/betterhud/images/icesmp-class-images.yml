@@ -63,6 +63,54 @@ icesmp_resource_fill:
       value: "number:icesmp_resource_current"
       max: "number:icesmp_resource_max"
 
+icesmp_metric_track: { type: single, file: icesmp/metric-track.png }
+icesmp_metric_mini_track: { type: single, file: icesmp/metric-mini-track.png }
+icesmp_charge_ready: { type: single, file: icesmp/charge-ready.png }
+icesmp_charge_spent: { type: single, file: icesmp/charge-spent.png }
+
+icesmp_metric_primary_fill: &metric_primary_fill
+  type: listener
+  file: icesmp/metric-fill.png
+  split: 100
+  split-type: left
+  setting:
+    listener:
+      class: placeholder
+      value: "number:icesmp_class_metric_primary_value"
+      max: "number:icesmp_class_metric_primary_max"
+icesmp_metric_secondary_fill:
+  <<: *metric_primary_fill
+  setting:
+    listener:
+      class: placeholder
+      value: "number:icesmp_class_metric_secondary_value"
+      max: "number:icesmp_class_metric_secondary_max"
+
+icesmp_metric_tertiary_fill: &metric_tertiary_fill
+  type: listener
+  file: icesmp/metric-mini-fill.png
+  split: 100
+  split-type: left
+  setting:
+    listener:
+      class: placeholder
+      value: "number:icesmp_class_metric_tertiary_value"
+      max: "number:icesmp_class_metric_tertiary_max"
+icesmp_metric_quaternary_fill:
+  <<: *metric_tertiary_fill
+  setting:
+    listener:
+      class: placeholder
+      value: "number:icesmp_class_metric_quaternary_value"
+      max: "number:icesmp_class_metric_quaternary_max"
+icesmp_metric_quinary_fill:
+  <<: *metric_tertiary_fill
+  setting:
+    listener:
+      class: placeholder
+      value: "number:icesmp_class_metric_quinary_value"
+      max: "number:icesmp_class_metric_quinary_max"
+
 icesmp_rune_progress_1: &rune_progress_1
   type: listener
   file: icesmp/rune-progress.png

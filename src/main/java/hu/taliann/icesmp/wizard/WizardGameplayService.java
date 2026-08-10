@@ -399,6 +399,15 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
         final java.util.ArrayList<hu.taliann.icesmp.classspec.integration.ClassHudMetric> metrics =
                 new java.util.ArrayList<>();
         metrics.add(primary);
+        if (reaction == null && combat.lastSchool() != null) {
+            stateText = "Első rúna " + switch (combat.lastSchool()) {
+                case TUZ -> "Tűz";
+                case FAGY -> "Fagy";
+                case VIHAR -> "Vihar";
+                case ARNY -> "Árny";
+                case ARKAN -> "Arkán";
+            };
+        }
         if ("elementalist".equals(activeSpec(id))) {
             final int threshold = attunementThreshold(id);
             final int fire = combat.attunement(0, now, attunementDecayDelayMillis(), attunementDecayPerSecond());
@@ -427,7 +436,9 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
             metrics.add(secondary);
         }
         return new hu.taliann.icesmp.classspec.integration.ClassHudMechanics(
-                primary, secondary, stateText, proc, charges, maximum, metrics, java.util.List.of());
+                primary, secondary, stateText, proc, charges, maximum, metrics,
+                hu.taliann.icesmp.classspec.integration.ClassHudSlot.charges(
+                        secondary.id(), secondary.id(), secondary.label(), charges, maximum));
     }
 
     public void reconcileProfile(final Player player) {

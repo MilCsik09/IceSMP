@@ -257,6 +257,23 @@ def rune_progress():
     return image
 
 
+def charge_pip(ready):
+    """Tintable 32px mechanic pip; faction colour is applied by BetterHud at render time."""
+    scale = 4
+    image = canvas(32 * scale, 32 * scale)
+    d = ImageDraw.Draw(image)
+    frame = rgba("#71809A")
+    fill = rgba("#EAF7FF") if ready else rgba("#273241")
+    d.polygon([(64, 6), (121, 64), (64, 121), (7, 64)],
+              fill=rgba("#0A0F16"), outline=frame, width=7)
+    d.polygon([(64, 27), (101, 64), (64, 101), (27, 64)], fill=fill)
+    if ready:
+        d.polygon([(64, 38), (90, 64), (64, 90), (38, 64)], fill=rgba("#FFFFFF"))
+    else:
+        d.line((42, 64, 86, 64), fill=rgba("#111820"), width=7)
+    return image.resize((32, 32), Image.Resampling.LANCZOS)
+
+
 def utility_icon(kind):
     """64px IceSMP utility mark, drawn large and downsampled for controlled HUD AA."""
     scale = 4
@@ -321,7 +338,7 @@ def popup_frame(theme):
 
 
 def contact_sheet(assets):
-    sheet = Image.new("RGBA", (700, 610), (18, 20, 24, 255))
+    sheet = Image.new("RGBA", (700, 660), (18, 20, 24, 255))
     positions = {"red": (8, 8), "blue": (356, 8), "neutral": (8, 220), "dark": (356, 220)}
     for theme, position in positions.items():
         thumb = assets[f"frame-{theme}"].copy(); thumb.thumbnail((336, 204), Image.Resampling.LANCZOS)
@@ -342,6 +359,10 @@ def contact_sheet(assets):
     popup = assets["popup-dark"].copy(); popup.thumbnail((300, 72), Image.Resampling.LANCZOS)
     sheet.alpha_composite(popup, (14, 530))
     sheet.alpha_composite(assets["class-death_knight"].resize((48, 48), Image.Resampling.LANCZOS), (34, 542))
+    sheet.alpha_composite(assets["metric-track"].resize((156, 10), Image.Resampling.LANCZOS), (330, 550))
+    sheet.alpha_composite(assets["metric-fill"].resize((110, 10), Image.Resampling.LANCZOS), (330, 570))
+    sheet.alpha_composite(assets["charge-ready"], (510, 546))
+    sheet.alpha_composite(assets["charge-spent"], (550, 546))
     PREVIEW.parent.mkdir(parents=True, exist_ok=True); sheet.save(PREVIEW, optimize=True)
 
 
@@ -377,6 +398,15 @@ def main():
         save(assets[f"popup-{theme}"], f"popup-{theme}.png")
     save(bar("track", "#354355"), "resource-track.png")
     save(bar("fill", "#77DDF2"), "resource-fill.png")
+    assets["metric-track"] = bar("track", "#354355", 156)
+    assets["metric-fill"] = bar("fill", "#EAF7FF", 156)
+    assets["metric-mini-track"] = bar("track", "#354355", 100)
+    assets["metric-mini-fill"] = bar("fill", "#EAF7FF", 100)
+    assets["charge-ready"] = charge_pip(True)
+    assets["charge-spent"] = charge_pip(False)
+    for key in ("metric-track", "metric-fill", "metric-mini-track", "metric-mini-fill",
+                "charge-ready", "charge-spent"):
+        save(assets[key], key + ".png")
     save(rune_progress(), "rune-progress.png")
     contact_sheet(assets)
 

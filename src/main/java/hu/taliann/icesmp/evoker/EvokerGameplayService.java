@@ -396,6 +396,8 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
             secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                     "resonance", "Izzás", "Izzás " + combat.resonance() + "/" + threshold,
                     combat.resonance(), threshold, armed ? "ready" : "building");
+            stateText = combat.lastEssenceColor().map(color -> color == EvokerCombatState.EssenceColor.VOROS
+                    ? "Eszencia Vörös" : "Eszencia Kék").orElse("");
             proc = armed ? "Kitörés kész" : "";
         } else if ("preservation".equals(spec)) {
             final long imprint = combat.imprintRemainingMillis(now);

@@ -1151,8 +1151,11 @@ output-model presence and removal of stale Bukkit registrations after reload or 
 
 `ClassHudState` is an immutable, class-agnostic projection of Profile v2 class/spec identity and the
 13 transient class runtime services. One `ClassHudStateAdapter` per class maps its compact mechanics
-to primary, secondary, state, proc, charges and an ordered mechanics list. `HudManager` captures that
-projection on the player's Folia region thread and embeds it in `HudSnapshot`; PlaceholderAPI and
-BetterHud only read the concurrent immutable cache. Neither integration can mutate Profile v2 or a
-class runtime. BetterHud capability detection controls rendering ownership per player only, with
-native fallback; a joining player's not-yet-created BetterHud cache cannot toggle other players.
+to primary/secondary and up to three additional typed metrics, state, proc, charges and generic
+discrete slots. `ClassHudMechanics.of` derives a bounded visual pip row from actual charge counts;
+the Death Knight replaces it with its typed ready/spent/regenerating/locked rune slots.
+`HudManager` captures that projection on the player's Folia region thread and embeds it in
+`HudSnapshot`; PlaceholderAPI and BetterHud only read the concurrent immutable cache. Neither
+integration can mutate Profile v2 or a class runtime. BetterHud capability detection controls
+rendering ownership per player only, with native fallback; a joining player's not-yet-created
+BetterHud cache cannot toggle other players.

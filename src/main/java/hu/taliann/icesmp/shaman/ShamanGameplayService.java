@@ -355,10 +355,11 @@ public final class ShamanGameplayService implements Listener, PlayerStateCleanup
                     "maelstrom", "Maelstrom", "Maelstrom " + combat.maelstrom(),
                     combat.maelstrom(), 100, combat.blessingSide().name().toLowerCase(Locale.ROOT));
             case "tidal" -> {
-                final int tide = combat.tide(); maximum = tideThreshold(id);
+                final int tide = combat.tide();
+                final int threshold = tideThreshold(id);
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
-                        "tide", "Ár", "Ár " + tide, Math.abs(tide), maximum,
-                        tide >= maximum ? "high_tide" : tide <= -maximum ? "low_tide" : "flowing");
+                        "tide", "Ár", "Ár " + tide, Math.abs(tide), threshold,
+                        tide >= threshold ? "high_tide" : tide <= -threshold ? "low_tide" : "flowing");
             }
             default -> { }
         }

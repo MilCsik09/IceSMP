@@ -245,6 +245,7 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
                 "wind_read", "Szélolvasás", wind ? "Szél olvasva" : "Szél —", wind ? "ready" : "idle");
         var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
         String proc = wind ? "Szélolvasás kész" : "";
+        String stateText = "";
         int charges = 0;
         int maximum = 0;
         if ("sharpshooter".equals(activeSpec(id))) {
@@ -253,13 +254,14 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
             secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                     "precision_chain", "Lánc", "Lánc " + charges + "/" + maximum,
                     charges, maximum, charges >= maximum ? "ready" : "building");
+            stateText = combat.preyTargetId().isPresent() ? "Préda kijelölve" : "";
             if (charges >= maximum) proc = "Gyengepont kész";
         } else if ("beast_master".equals(activeSpec(id))) {
             secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                     "bond", "Kötelék", "Kötelék " + combat.bond(), combat.bond(), 100, "active");
         }
         return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
-                primary, secondary, "", proc, charges, maximum);
+                primary, secondary, stateText, proc, charges, maximum);
     }
 
     public void reconcileProfile(final Player player) {

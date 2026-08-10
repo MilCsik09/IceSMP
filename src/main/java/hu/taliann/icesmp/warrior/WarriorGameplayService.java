@@ -274,8 +274,11 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
             secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                     "blood_frenzy", "Vér", "Vér " + blood + " / Kim " + exhaustion,
                     blood, 100, blood >= highFuryThreshold() ? "overdrive" : "building");
-            stateText = "Kimerülés " + exhaustion;
-            proc = blood >= highFuryThreshold() ? "Túlpörgés" : "";
+            stateText = combat.overdriveActive(now) ? "Túlpörgés aktív"
+                    : combat.aftermathActive(now) ? "Utóhatás " + exhaustion
+                    : "Kimerülés " + exhaustion;
+            proc = blood >= highFuryThreshold() && !combat.overdriveActive(now)
+                    ? "Túlpörgés kész" : "";
         } else if ("guardian".equals(spec)) {
             final String oath = combat.oathTargetLabel().isBlank() ? "—" : combat.oathTargetLabel();
             secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(

@@ -7,14 +7,17 @@ ROOT = Path(__file__).resolve().parents[1]
 LAYOUT_DIR = ROOT / "deploy" / "betterhud" / "layouts"
 
 FACTION_THEMES = {"guest": "ice", "red": "ember", "blue": "frost", "neutral": "guild", "dark": "lich"}
+FACTION_COLORS = {"ice": "#77DDF2", "ember": "#E7683F", "frost": "#8BE9FD",
+                  "guild": "#D6A74B", "lich": "#62D7CE"}
 CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
            "druid", "priest", "death_knight", "assassin", "warlock", "wizard")
 
 
-def condition(name, placeholder, value, operation="==", indent=6):
+def condition(name, placeholder, value, operation="==", kind="string", indent=6):
     pad = " " * indent
-    return [f"{pad}{name}:", f'{pad}  first: "string:{placeholder}"',
-            f'{pad}  second: "\'{value}\'"', f'{pad}  operation: "{operation}"']
+    second = f'"\'{value}\'"' if kind == "string" else str(value)
+    return [f"{pad}{name}:", f'{pad}  first: "{kind}:{placeholder}"',
+            f'{pad}  second: {second}', f'{pad}  operation: "{operation}"']
 
 
 def image(lines, key, name, x, y, layer, conditions=(), color_overrides=(), scale=None):
@@ -68,6 +71,36 @@ def main():
                            ("dark", "#62D7CE", "icesmp_faction_id", "DARK")), scale=0.45)
     image(main_layout, "event_icon", "icesmp_icon_event", -198, 130, 5, scale=0.23)
 
+    not_death_knight = (("not_dk", "icesmp_class_id", "death_knight", "!="),)
+    faction_colors = tuple((theme, color, "icesmp_faction_theme", theme)
+                           for theme, color in FACTION_COLORS.items())
+    for channel, x in (("primary", -198), ("secondary", -105)):
+        visible = not_death_knight + (("numeric", f"icesmp_class_metric_{channel}_max", 0, ">", "number"),)
+        image(main_layout, f"metric_{channel}_track", "icesmp_metric_track", x, 101, 3,
+              visible, scale=0.45)
+        image(main_layout, f"metric_{channel}_fill", f"icesmp_metric_{channel}_fill", x, 101, 4,
+              visible, color_overrides=faction_colors, scale=0.45)
+
+    semantic_colors = {
+        "tertiary": (("element_fire", "#E7683F", "icesmp_class_metric_tertiary_state", "fire"),),
+        "quaternary": (("element_frost", "#8BE9FD", "icesmp_class_metric_quaternary_state", "frost"),),
+        "quinary": (("element_arcane", "#A08CC8", "icesmp_class_metric_quinary_state", "arcane"),),
+    }
+    for channel, x in (("tertiary", -198), ("quaternary", -151), ("quinary", -104)):
+        visible = not_death_knight + (("numeric", f"icesmp_class_metric_{channel}_max", 0, ">", "number"),)
+        image(main_layout, f"metric_{channel}_track", "icesmp_metric_mini_track", x, 120, 3,
+              visible, scale=0.40)
+        image(main_layout, f"metric_{channel}_fill", f"icesmp_metric_{channel}_fill", x, 120, 4,
+              visible, color_overrides=semantic_colors[channel] + faction_colors, scale=0.40)
+
+    for slot, x in enumerate(range(-198, -108, 10), start=1):
+        state_key = f"icesmp_class_slot_{slot}_state"
+        image(main_layout, f"charge_{slot}_ready", "icesmp_charge_ready", x, 109, 5,
+              not_death_knight + (("state", state_key, "ready"),),
+              color_overrides=faction_colors, scale=0.25)
+        image(main_layout, f"charge_{slot}_spent", "icesmp_charge_spent", x, 109, 5,
+              not_death_knight + (("state", state_key, "spent"),), scale=0.25)
+
     slot_x = [-198, -178, -158, -138, -118, -98, -78, -58]
     for slot, x in enumerate(slot_x, start=1):
         state_key = f"icesmp_class_slot_{slot}_state"
@@ -94,13 +127,25 @@ def main():
          -166, 68, 0.36)
     text(main_layout, 6, "<#71809A>ESEMENY <#F0D88D>[string:icesmp_event]", -178, 133, 0.36)
     text(main_layout, 7, "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]",
-         -198, 88, 0.38, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
+         -198, 88, 0.30, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
     text(main_layout, 8, "<#[string:icesmp_faction_accent_soft]>[string:icesmp_class_mechanic_secondary]",
-         -105, 88, 0.35, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
-    text(main_layout, 9, "<#A9B7C6>[string:icesmp_class_state]",
-         -198, 112, 0.34, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
-    text(main_layout, 10, "<#F4C96B>[string:icesmp_class_proc]",
-         -105, 112, 0.34, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
+         -105, 88, 0.29, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
+    text(main_layout, 9, "<#A9B7C6>[string:icesmp_class_state] <#F4C96B>[string:icesmp_class_proc]",
+         -105, 111, 0.27,
+         (("not_dk", "icesmp_class_id", "death_knight", "!="),
+          ("simple", "icesmp_class_metric_count", 2, "<=", "number")))
+    text(main_layout, 10, "<#E7683F>[string:icesmp_class_metric_tertiary_label] <#FFFFFF>[string:icesmp_class_metric_tertiary_text]",
+         -198, 109, 0.22,
+         (("not_dk", "icesmp_class_id", "death_knight", "!="),
+          ("visible", "icesmp_class_metric_tertiary_max", 0, ">", "number")))
+    text(main_layout, 13, "<#8BE9FD>[string:icesmp_class_metric_quaternary_label] <#FFFFFF>[string:icesmp_class_metric_quaternary_text]",
+         -151, 109, 0.22,
+         (("not_dk", "icesmp_class_id", "death_knight", "!="),
+          ("visible", "icesmp_class_metric_quaternary_max", 0, ">", "number")))
+    text(main_layout, 14, "<#A08CC8>[string:icesmp_class_metric_quinary_label] <#FFFFFF>[string:icesmp_class_metric_quinary_text]",
+         -104, 109, 0.22,
+         (("not_dk", "icesmp_class_id", "death_knight", "!="),
+          ("visible", "icesmp_class_metric_quinary_max", 0, ">", "number")))
     text(main_layout, 11, "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]",
          -198, 82, 0.35, (("death_knight", "icesmp_class_id", "death_knight"),))
     text(main_layout, 12, "<#A9B7C6>[string:icesmp_class_state] <#586781>| <#F4C96B>[string:icesmp_class_proc]",

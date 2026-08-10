@@ -46,6 +46,8 @@ public final class HudManager {
     private static final String OBJECTIVE = "icesmp_hud";
     /** Statikus elválasztó, ha nincs 'bar' animáció definiálva a tablist.yml-ben. */
     private static final String FALLBACK_SEPARATOR = "&8&m                       ";
+    private static final List<String> CLASS_HUD_METRIC_CHANNELS = List.of(
+            "primary", "secondary", "tertiary", "quaternary", "quinary");
 
     // /hud toggleable section keys (buildLines() rows). "mind" hides the whole sidebar.
     public static final String SECTION_FACTION = "frakcio";
@@ -484,10 +486,12 @@ public final class HudManager {
         values.put("icesmp_class_proc", state.proc());
         values.put("icesmp_class_charges", Integer.toString(state.charges()));
         values.put("icesmp_class_charges_max", Integer.toString(state.chargesMax()));
+        values.put("icesmp_class_metric_count", Integer.toString(state.metricCount()));
         values.put("icesmp_hud_visible", Boolean.toString(!hiddenSectionsCache
                 .getOrDefault(playerId, Set.of()).contains(SECTION_ALL)));
-        putMetric(values, "primary", state.metrics().isEmpty() ? null : state.metrics().getFirst());
-        putMetric(values, "secondary", state.metrics().size() < 2 ? null : state.metrics().get(1));
+        for (int index = 0; index < CLASS_HUD_METRIC_CHANNELS.size(); index++) {
+            putMetric(values, CLASS_HUD_METRIC_CHANNELS.get(index), state.metric(index));
+        }
         values.put("icesmp_class_slot_count", Integer.toString(state.slots().size()));
         for (int index = 0; index < 9; index++) {
             final String prefix = "icesmp_class_slot_" + (index + 1) + "_";

@@ -21,9 +21,13 @@ import java.util.Locale;
  *
  * <p>Available placeholders: {@code faction}, {@code faction_id}, {@code class} / {@code class_name},
  * {@code class_level} / {@code level}, {@code balance}, {@code resource}, {@code resource_max},
- * {@code resource_percent}, {@code resource_name}, {@code resource_bar}.
+ * {@code resource_percent}, {@code resource_name}, {@code resource_bar}, the five generic
+ * {@code class_metric_*} channels and up to nine immutable {@code class_slot_*} channels.
  */
 public final class IceSMPPlaceholders extends PlaceholderExpansion {
+
+    private static final java.util.List<String> CLASS_HUD_METRIC_CHANNELS = java.util.List.of(
+            "primary", "secondary", "tertiary", "quaternary", "quinary");
 
     private final HudManager hudManager;
     private final hu.taliann.icesmp.managers.ConfigManager configManager;
@@ -160,6 +164,7 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "class_proc" -> snapshot.classHud().proc();
             case "class_charges" -> String.valueOf(snapshot.classHud().charges());
             case "class_charges_max" -> String.valueOf(snapshot.classHud().chargesMax());
+            case "class_metric_count" -> String.valueOf(snapshot.classHud().metricCount());
             case "class_mechanics" -> String.join(" • ", snapshot.classHud().mechanics());
             // Aktív világesemények egy sorban (max 2 név + "+N"), §-színekkel.
             case "event" -> snapshot.event();
@@ -182,13 +187,18 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             final hu.taliann.icesmp.classspec.integration.ClassHudState state,
             final String key) {
         if (key.startsWith("class_metric_")) {
-            final boolean primary = key.startsWith("class_metric_primary_");
-            final boolean secondary = key.startsWith("class_metric_secondary_");
-            if (!primary && !secondary) return null;
-            final int index = primary ? 0 : 1;
-            final var metric = state.metrics().size() > index ? state.metrics().get(index) : null;
-            final String field = key.substring((primary
-                    ? "class_metric_primary_" : "class_metric_secondary_").length());
+            int index = -1;
+            String field = "";
+            for (int channel = 0; channel < CLASS_HUD_METRIC_CHANNELS.size(); channel++) {
+                final String prefix = "class_metric_" + CLASS_HUD_METRIC_CHANNELS.get(channel) + "_";
+                if (key.startsWith(prefix)) {
+                    index = channel;
+                    field = key.substring(prefix.length());
+                    break;
+                }
+            }
+            if (index < 0) return null;
+            final var metric = state.metric(index);
             return switch (field) {
                 case "id" -> metric == null ? "" : metric.id();
                 case "label" -> metric == null ? "" : metric.label();

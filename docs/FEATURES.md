@@ -342,11 +342,13 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
 - **Kinek szól:** Játékos, Admin, Tesztelő.
 - **Mitől mozdul meg:** Csatlakozáskor, periodikus frissítéskor, státusz- és adatváltozáskor.
 - **BetterHud réteg:** opcionális, játékosonként detektált kijelzés a négy külön frakcióskinből,
-  13 class-ikonból, class/spec/resource/mechanika állapotból, DK-rúnákból és proc-toastból;
+  13 class-ikonból, class/spec/resource/mechanika állapotból, újrahasznosítható mechanic barokból,
+  legfeljebb kilenc charge-pipből, DK-rúnákból és proc-toastból;
   hiányában a natív compact HUD automatikusan marad.
 - **Információs parity:** frakció, class, specializáció, class-szint, pénz, aktuális event,
-  class resource és a játékhoz szükséges elsődleges/másodlagos mechanika ugyanabból az immutable
-  HUD snapshotból készül.
+  class resource és a játékhoz szükséges elsődleges/másodlagos, illetve összetett kiegészítő
+  mechanikák ugyanabból az immutable HUD snapshotból készülnek. A Wizard három elemi
+  ráhangolódása külön mini bar, a diszkrét combo/stack/charge értékek pedig vizuális pipsort kapnak.
 - **Ami még kellhet hozzá:** Nincs builderfeladat; a saját tablista és HUD production megjelenését deployment előtt ellenőrizni kell.
 - **Fontos határ:** A natív tablista az IceSMP-hez szükséges funkciókat biztosítja, nem általános külső tablista-motor.
 

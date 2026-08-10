@@ -150,6 +150,10 @@ public final class AssassinCombatState {
         return trailUntil > now;
     }
 
+    public synchronized boolean isEchoArmed(final long now) {
+        return isTrailLive(now) && !echoSpent;
+    }
+
     /** The Árnyéknyom carries exactly one Visszhang; the second call inside a trail fails. */
     public synchronized boolean consumeEcho(final long now) {
         if (!isTrailLive(now) || echoSpent) return false;

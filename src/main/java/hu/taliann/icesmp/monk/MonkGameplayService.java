@@ -453,6 +453,7 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         int charges = 0;
         int maximum = 0;
         String proc = "";
+        String stateText = "";
         switch (activeSpec(id)) {
             case "windwalker" -> {
                 charges = combat.chainStep(now, chainWindowMillis(id)); maximum = chainThreshold(id);
@@ -470,11 +471,14 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                         "mist_threads", "Szálak", "Szálak " + charges + "/" + maximum,
                         charges, maximum, charges >= maximum ? "full" : "active");
+                final java.util.List<String> labels = combat.linkLabels().stream()
+                        .filter(label -> !label.isBlank()).limit(2).toList();
+                stateText = labels.isEmpty() ? "" : "Köd " + String.join("/", labels);
             }
             default -> { }
         }
         return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
-                primary, secondary, "", proc, charges, maximum);
+                primary, secondary, stateText, proc, charges, maximum);
     }
 
     public void reconcileProfile(final Player player) {

@@ -252,6 +252,805 @@ icesmp_main_layout:
       y: 130
       layer: 5
       scale: 0.23
+    metric_primary_track:
+      name: icesmp_metric_track
+      x: -198
+      y: 101
+      layer: 3
+      scale: 0.45
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_primary_max"
+          second: 0
+          operation: ">"
+    metric_primary_fill:
+      name: icesmp_metric_primary_fill
+      x: -198
+      y: 101
+      layer: 4
+      scale: 0.45
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_primary_max"
+          second: 0
+          operation: ">"
+    metric_secondary_track:
+      name: icesmp_metric_track
+      x: -105
+      y: 101
+      layer: 3
+      scale: 0.45
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_secondary_max"
+          second: 0
+          operation: ">"
+    metric_secondary_fill:
+      name: icesmp_metric_secondary_fill
+      x: -105
+      y: 101
+      layer: 4
+      scale: 0.45
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_secondary_max"
+          second: 0
+          operation: ">"
+    metric_tertiary_track:
+      name: icesmp_metric_mini_track
+      x: -198
+      y: 120
+      layer: 3
+      scale: 0.4
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_tertiary_max"
+          second: 0
+          operation: ">"
+    metric_tertiary_fill:
+      name: icesmp_metric_tertiary_fill
+      x: -198
+      y: 120
+      layer: 4
+      scale: 0.4
+      color-overrides:
+        element_fire:
+          color: "#E7683F"
+          first: "string:icesmp_class_metric_tertiary_state"
+          second: "'fire'"
+          operation: "=="
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_tertiary_max"
+          second: 0
+          operation: ">"
+    metric_quaternary_track:
+      name: icesmp_metric_mini_track
+      x: -151
+      y: 120
+      layer: 3
+      scale: 0.4
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_quaternary_max"
+          second: 0
+          operation: ">"
+    metric_quaternary_fill:
+      name: icesmp_metric_quaternary_fill
+      x: -151
+      y: 120
+      layer: 4
+      scale: 0.4
+      color-overrides:
+        element_frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_class_metric_quaternary_state"
+          second: "'frost'"
+          operation: "=="
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_quaternary_max"
+          second: 0
+          operation: ">"
+    metric_quinary_track:
+      name: icesmp_metric_mini_track
+      x: -104
+      y: 120
+      layer: 3
+      scale: 0.4
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_quinary_max"
+          second: 0
+          operation: ">"
+    metric_quinary_fill:
+      name: icesmp_metric_quinary_fill
+      x: -104
+      y: 120
+      layer: 4
+      scale: 0.4
+      color-overrides:
+        element_arcane:
+          color: "#A08CC8"
+          first: "string:icesmp_class_metric_quinary_state"
+          second: "'arcane'"
+          operation: "=="
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        numeric:
+          first: "number:icesmp_class_metric_quinary_max"
+          second: 0
+          operation: ">"
+    charge_1_ready:
+      name: icesmp_charge_ready
+      x: -198
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_1_state"
+          second: "'ready'"
+          operation: "=="
+    charge_1_spent:
+      name: icesmp_charge_spent
+      x: -198
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_1_state"
+          second: "'spent'"
+          operation: "=="
+    charge_2_ready:
+      name: icesmp_charge_ready
+      x: -188
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_2_state"
+          second: "'ready'"
+          operation: "=="
+    charge_2_spent:
+      name: icesmp_charge_spent
+      x: -188
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_2_state"
+          second: "'spent'"
+          operation: "=="
+    charge_3_ready:
+      name: icesmp_charge_ready
+      x: -178
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_3_state"
+          second: "'ready'"
+          operation: "=="
+    charge_3_spent:
+      name: icesmp_charge_spent
+      x: -178
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_3_state"
+          second: "'spent'"
+          operation: "=="
+    charge_4_ready:
+      name: icesmp_charge_ready
+      x: -168
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_4_state"
+          second: "'ready'"
+          operation: "=="
+    charge_4_spent:
+      name: icesmp_charge_spent
+      x: -168
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_4_state"
+          second: "'spent'"
+          operation: "=="
+    charge_5_ready:
+      name: icesmp_charge_ready
+      x: -158
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_5_state"
+          second: "'ready'"
+          operation: "=="
+    charge_5_spent:
+      name: icesmp_charge_spent
+      x: -158
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_5_state"
+          second: "'spent'"
+          operation: "=="
+    charge_6_ready:
+      name: icesmp_charge_ready
+      x: -148
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_6_state"
+          second: "'ready'"
+          operation: "=="
+    charge_6_spent:
+      name: icesmp_charge_spent
+      x: -148
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_6_state"
+          second: "'spent'"
+          operation: "=="
+    charge_7_ready:
+      name: icesmp_charge_ready
+      x: -138
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_7_state"
+          second: "'ready'"
+          operation: "=="
+    charge_7_spent:
+      name: icesmp_charge_spent
+      x: -138
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_7_state"
+          second: "'spent'"
+          operation: "=="
+    charge_8_ready:
+      name: icesmp_charge_ready
+      x: -128
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_8_state"
+          second: "'ready'"
+          operation: "=="
+    charge_8_spent:
+      name: icesmp_charge_spent
+      x: -128
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_8_state"
+          second: "'spent'"
+          operation: "=="
+    charge_9_ready:
+      name: icesmp_charge_ready
+      x: -118
+      y: 109
+      layer: 5
+      scale: 0.25
+      color-overrides:
+        ice:
+          color: "#77DDF2"
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
+        ember:
+          color: "#E7683F"
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
+          operation: "=="
+        frost:
+          color: "#8BE9FD"
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
+          operation: "=="
+        guild:
+          color: "#D6A74B"
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
+          operation: "=="
+        lich:
+          color: "#62D7CE"
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
+          operation: "=="
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_9_state"
+          second: "'ready'"
+          operation: "=="
+    charge_9_spent:
+      name: icesmp_charge_spent
+      x: -118
+      y: 109
+      layer: 5
+      scale: 0.25
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        state:
+          first: "string:icesmp_class_slot_9_state"
+          second: "'spent'"
+          operation: "=="
     rune_1_blood_ready:
       name: icesmp_rune_blood_ready
       x: -198
@@ -2262,7 +3061,7 @@ icesmp_main_layout:
       pattern: "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]"
       x: -198
       y: 88
-      scale: 0.38
+      scale: 0.3
       align: left
       layer: 7
       outline: true
@@ -2277,7 +3076,7 @@ icesmp_main_layout:
       pattern: "<#[string:icesmp_faction_accent_soft]>[string:icesmp_class_mechanic_secondary]"
       x: -105
       y: 88
-      scale: 0.35
+      scale: 0.29
       align: left
       layer: 7
       outline: true
@@ -2289,10 +3088,10 @@ icesmp_main_layout:
           operation: "!="
     9:
       name: icesmp_class_font
-      pattern: "<#A9B7C6>[string:icesmp_class_state]"
-      x: -198
-      y: 112
-      scale: 0.34
+      pattern: "<#A9B7C6>[string:icesmp_class_state] <#F4C96B>[string:icesmp_class_proc]"
+      x: -105
+      y: 111
+      scale: 0.27
       align: left
       layer: 7
       outline: true
@@ -2302,12 +3101,16 @@ icesmp_main_layout:
           first: "string:icesmp_class_id"
           second: "'death_knight'"
           operation: "!="
+        simple:
+          first: "number:icesmp_class_metric_count"
+          second: 2
+          operation: "<="
     10:
       name: icesmp_class_font
-      pattern: "<#F4C96B>[string:icesmp_class_proc]"
-      x: -105
-      y: 112
-      scale: 0.34
+      pattern: "<#E7683F>[string:icesmp_class_metric_tertiary_label] <#FFFFFF>[string:icesmp_class_metric_tertiary_text]"
+      x: -198
+      y: 109
+      scale: 0.22
       align: left
       layer: 7
       outline: true
@@ -2317,6 +3120,48 @@ icesmp_main_layout:
           first: "string:icesmp_class_id"
           second: "'death_knight'"
           operation: "!="
+        visible:
+          first: "number:icesmp_class_metric_tertiary_max"
+          second: 0
+          operation: ">"
+    13:
+      name: icesmp_class_font
+      pattern: "<#8BE9FD>[string:icesmp_class_metric_quaternary_label] <#FFFFFF>[string:icesmp_class_metric_quaternary_text]"
+      x: -151
+      y: 109
+      scale: 0.22
+      align: left
+      layer: 7
+      outline: true
+      use-legacy-format: false
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        visible:
+          first: "number:icesmp_class_metric_quaternary_max"
+          second: 0
+          operation: ">"
+    14:
+      name: icesmp_class_font
+      pattern: "<#A08CC8>[string:icesmp_class_metric_quinary_label] <#FFFFFF>[string:icesmp_class_metric_quinary_text]"
+      x: -104
+      y: 109
+      scale: 0.22
+      align: left
+      layer: 7
+      outline: true
+      use-legacy-format: false
+      conditions:
+        not_dk:
+          first: "string:icesmp_class_id"
+          second: "'death_knight'"
+          operation: "!="
+        visible:
+          first: "number:icesmp_class_metric_quinary_max"
+          second: 0
+          operation: ">"
     11:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]"

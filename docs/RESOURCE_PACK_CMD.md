@@ -2015,7 +2015,8 @@ resolve through `profession-materials.*.item-model`.
 
 A `deploy/betterhud/` tartalmazza a négy frakció nagy felbontású keretét, a 64×64-es class-, rune-,
 pénz-, event- és szintikonokat, az öt témához tartozó 300×72-es proc-popup keretet, a BetterHud
-layoutot és a preview/contact sheet fájlokat. A futásidejű képek
+layoutot, a reprodukálható 156×10-es mechanic bart, a 100×10-es háromcsatornás mini bart, a
+32×32-es ready/spent charge-pipeket és a preview/contact sheet fájlokat. A futásidejű képek
 reprodukálhatók a `generateBetterHudPackage`, ellenőrizhetők a `validateBetterHudPackage` Gradle
 feladattal. A kereteknél kontrollált antialiasing engedett; a progress-maszkok alfája csak 0/255.
 

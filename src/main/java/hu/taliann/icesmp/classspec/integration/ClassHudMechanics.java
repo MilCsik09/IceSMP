@@ -24,11 +24,30 @@ public record ClassHudMechanics(ClassHudMetric primary, ClassHudMetric secondary
                 ? ClassHudMetric.text("", "", "", "") : primary;
         final ClassHudMetric safeSecondary = secondary == null
                 ? ClassHudMetric.text("", "", "", "") : secondary;
+        final ClassHudMetric chargeMetric = matchingChargeMetric(
+                safePrimary, safeSecondary, charges, chargesMax);
+        final String slotId = chargeMetric == null ? "charge" : chargeMetric.id();
+        final String slotLabel = chargeMetric == null ? "" : chargeMetric.label();
         return new ClassHudMechanics(safePrimary, safeSecondary, state, proc, charges, chargesMax,
-                List.of(safePrimary, safeSecondary), List.of());
+                List.of(safePrimary, safeSecondary),
+                ClassHudSlot.charges(slotId, slotId, slotLabel, charges, chargesMax));
     }
 
     public static ClassHudMechanics empty() {
         return of(null, null, "", "", 0, 0);
+    }
+
+    private static ClassHudMetric matchingChargeMetric(final ClassHudMetric primary,
+                                                        final ClassHudMetric secondary,
+                                                        final int charges, final int chargesMax) {
+        if (matches(secondary, charges, chargesMax)) return secondary;
+        if (matches(primary, charges, chargesMax)) return primary;
+        return null;
+    }
+
+    private static boolean matches(final ClassHudMetric metric, final int charges, final int chargesMax) {
+        return metric != null && !metric.id().isBlank() && chargesMax > 0
+                && Math.round(metric.value()) == charges
+                && Math.round(metric.maximum()) == chargesMax;
     }
 }

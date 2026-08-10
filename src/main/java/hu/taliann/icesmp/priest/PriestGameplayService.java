@@ -446,7 +446,8 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                         "shield_web", "Pajzsháló", "Pajzsháló " + combat.shield(),
                         combat.shield(), 100, combat.isAtonementActive(now) ? "atonement" : "active");
-                if (combat.isAtonementActive(now)) stateText = "Engesztelés";
+                if (combat.isConverting()) stateText = "Átváltás";
+                else if (combat.isAtonementActive(now)) stateText = "Engesztelés";
             }
             case "bone_priest" -> {
                 charges = combat.ossuary(); maximum = ossuaryMaximum(id);

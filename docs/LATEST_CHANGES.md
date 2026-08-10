@@ -36,8 +36,9 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   téveszthető össze a Kitaszítottal — a saját tablista, nametag, chat és a
   csak olvasó `%icesmp_faction_color%` kimenet egységesen.
 - **Adaptív BetterHud:** négy külön frakciógrafika, 64×64-es class/utility/rúna ikonok,
-  class/spec/szint/pénz/event parity, minden class strukturált mechanikaállapota, DK slotonkénti
-  rúnaregeneráció és automatikus proc-toast; kieséskor játékosonkénti natív fallback.
+  class/spec/szint/pénz/event parity, minden class strukturált mechanikaállapota, generic
+  primary/secondary barok, automatikus charge-pipek, Wizard háromcsatornás ráhangolódása,
+  DK slotonkénti rúnaregeneráció és automatikus proc-toast; kieséskor játékosonkénti natív fallback.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,
