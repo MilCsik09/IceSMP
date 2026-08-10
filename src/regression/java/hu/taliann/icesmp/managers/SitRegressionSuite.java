@@ -56,15 +56,39 @@ public final class SitRegressionSuite {
     }
 
     private static void seatGeometry() {
-        equal(0.30D, SitGeometry.offset(SitGeometry.Shape.STAIRS_BOTTOM, 1), "bottom stair");
-        equal(0.80D, SitGeometry.offset(SitGeometry.Shape.STAIRS_TOP, 1), "top stair");
+        equal(0.50D, SitGeometry.offset(SitGeometry.Shape.STAIRS_BOTTOM, 1), "bottom stair surface");
+        equal(1.00D, SitGeometry.offset(SitGeometry.Shape.STAIRS_TOP, 1), "top stair surface");
         equal(0.50D, SitGeometry.offset(SitGeometry.Shape.SLAB_BOTTOM, 1), "bottom slab");
         equal(1.00D, SitGeometry.offset(SitGeometry.Shape.SLAB_TOP_OR_DOUBLE, 1), "top/double slab");
         equal(0.0625D, SitGeometry.offset(SitGeometry.Shape.CARPET, 1), "carpet/moss carpet");
         equal(0.125D, SitGeometry.offset(SitGeometry.Shape.SNOW, 1), "one snow layer");
         equal(1.00D, SitGeometry.offset(SitGeometry.Shape.SNOW, 8), "eight snow layers");
-        equal(0.30D, SitGeometry.offset(SitGeometry.Shape.GENERIC, 1), "generic seat");
+        equal(1.00D, SitGeometry.offset(SitGeometry.Shape.GENERIC, 1), "generic full-block surface");
         rejects(() -> SitGeometry.offset(SitGeometry.Shape.SNOW, 0), "invalid snow layers");
+
+        final SitGeometry.Anchor north = SitGeometry.stairAnchor(false,
+                SitGeometry.Facing.NORTH, SitGeometry.StairShape.STRAIGHT);
+        equal(0.50D, north.x(), "north stair centered x");
+        equal(0.50D, north.y(), "north stair lower tread height");
+        equal(0.75D, north.z(), "north stair front tread");
+
+        final SitGeometry.Anchor east = SitGeometry.stairAnchor(false,
+                SitGeometry.Facing.EAST, SitGeometry.StairShape.STRAIGHT);
+        equal(0.25D, east.x(), "east stair front tread");
+        equal(0.50D, east.z(), "east stair centered z");
+
+        final SitGeometry.Anchor innerLeft = SitGeometry.stairAnchor(false,
+                SitGeometry.Facing.NORTH, SitGeometry.StairShape.INNER_LEFT);
+        equal(0.75D, innerLeft.x(), "inner-left chooses open tread quadrant");
+        equal(0.75D, innerLeft.z(), "inner-left stays at stair front");
+
+        final SitGeometry.Anchor outerLeft = SitGeometry.stairAnchor(false,
+                SitGeometry.Facing.NORTH, SitGeometry.StairShape.OUTER_LEFT);
+        equal(0.25D, outerLeft.x(), "outer-left follows its backrest quadrant");
+
+        final SitGeometry.Anchor top = SitGeometry.stairAnchor(true,
+                SitGeometry.Facing.WEST, SitGeometry.StairShape.INNER_RIGHT);
+        equal(new SitGeometry.Anchor(0.50D, 1.00D, 0.50D), top, "top stair uses full top surface");
     }
 
     private static void atomicReservation() throws Exception {
@@ -138,6 +162,7 @@ public final class SitRegressionSuite {
     private static void productionWiring() throws IOException {
         final String manager = source("src/main/java/hu/taliann/icesmp/managers/SitManager.java");
         final String listener = source("src/main/java/hu/taliann/icesmp/listeners/SitListener.java");
+        final String campfire = source("src/main/java/hu/taliann/icesmp/listeners/CampfireStoryListener.java");
         final String command = source("src/main/java/hu/taliann/icesmp/commands/SitCommand.java");
         final String core = source("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
         final String permissions = source("src/main/java/hu/taliann/icesmp/core/Permissions.java");
@@ -157,6 +182,17 @@ public final class SitRegressionSuite {
         contains(manager, "Material.MOSS_CARPET", "moss carpet support");
         contains(manager, "Material.PALE_MOSS_CARPET", "pale moss carpet support");
         contains(manager, "data instanceof Snow", "snow shape support");
+        contains(manager, "successfulSitHandler.accept", "successful sit callback");
+        contains(manager, "SitGeometry.stairAnchor", "directional stair anchor");
+        contains(manager, "seatSessionId", "continuous seat identity");
+        contains(manager, "isSittingOn", "exact active seat validation");
+        contains(campfire, "onSuccessfulSit", "sit-only campfire admission");
+        contains(campfire, "seatBlock.getRelative(direction, 2)", "campfire two blocks from seat");
+        contains(campfire, "middle.getType().isAir()", "empty middle block requirement");
+        contains(campfire, "campfire.isLit()", "lit campfire requirement");
+        contains(campfire, "seatSessionId", "continuous seat capture");
+        contains(campfire, "stillEligible", "reward-time seating revalidation");
+        absent(campfire, "PlayerInteractEvent", "direct campfire click trigger");
         contains(listener, "EquipmentSlot.HAND", "off-hand double-event rejection");
         contains(listener, "EntityDismountEvent", "dismount cleanup");
         contains(listener, "PlayerChangedWorldEvent", "world-change cleanup");
@@ -165,6 +201,7 @@ public final class SitRegressionSuite {
         contains(listener, "PlayerQuitEvent", "quit cleanup");
         contains(listener, "PlayerKickEvent", "kick cleanup");
         contains(core, "sitManager.reload()", "reload cleanup wiring");
+        contains(core, "setSuccessfulSitHandler", "campfire sit callback wiring");
         contains(core, "sitManager::shutdown", "disable cleanup wiring");
         contains(core, "key.startsWith(\"sit.\")", "live config generation refresh");
         contains(permissions, "icesmp.sit", "central player permission");
@@ -172,7 +209,7 @@ public final class SitRegressionSuite {
         contains(config, "PALE_MOSS_CARPET", "supported material config");
         contains(messages, "Használat: &f/sit [fel]", "sit-only usage");
 
-        final String all = manager + listener + command + core + permissions + config + messages + build;
+        final String all = manager + listener + campfire + command + core + permissions + config + messages + build;
         absent(all, "LayPoseBridge", "lay bridge");
         absent(all, "toggleLay", "lay runtime");
         absent(all, "toggleCrawl", "crawl runtime");
