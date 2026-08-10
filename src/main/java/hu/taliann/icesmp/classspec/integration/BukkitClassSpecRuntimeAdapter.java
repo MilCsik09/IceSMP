@@ -63,17 +63,14 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         transientOwners.add(resources);
     }
 
-    /** Additional concrete transient owner; durable authority remains Profile v2. */
     public void registerTransientOwner(final PlayerStateCleanup owner) {
         transientOwners.add(Objects.requireNonNull(owner, "owner"));
     }
 
-    /** Spec-local cleanup that deliberately preserves class-common state during slot switch. */
     public void setLoadoutSwitchCleanup(final Consumer<UUID> cleanup) {
         loadoutSwitchCleanup = cleanup == null ? ignored -> { } : cleanup;
     }
 
-    /** Region-thread callback after grants are reconciled (e.g. physical spellbook refresh). */
     public void setPostReconcile(final Consumer<Player> callback) {
         postReconcile = callback == null ? ignored -> { } : callback;
     }
@@ -117,7 +114,6 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                     : CompletableFuture.failedFuture(
                             new ProfileSessionRegistry.StaleSessionException(id, token));
         }
-        // Selecting the second, inactive slot must not tear down/rebuild the active runtime.
         if (kind == MutationKind.SELECT
                 && Objects.equals(previous.activeSlot(), durable.activeSlot())
                 && activeSpec(previous).equals(activeSpec(durable))) {
@@ -159,13 +155,14 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 return CompletableFuture.failedFuture(failure);
             }
         }
-        final Predicate<String> revoke = kind == MutationKind.ADMIN_RESET
-                ? source -> source.startsWith(JobManager.SOURCE_BASE_PREFIX)
-                        || source.startsWith(JobManager.SOURCE_SPEC_PREFIX)
-                : source -> source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
+        final Predicate<String> revoke = source -> source.startsWith(JobManager.SOURCE_BASE_PREFIX)
+                || source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
         return jobs.revokeGrantsFromV2(player, revoke)
                 .thenCompose(ignored -> runOnOwner(id, token, player,
                         () -> clearUuidOnly(id, kind)))
+                .thenCompose(ignored -> regrant
+                        ? jobs.applyAutoUnlocksV2(player, durable)
+                        : CompletableFuture.completedFuture(null))
                 .thenCompose(ignored -> regrant
                         ? specs.applyClassSpecializationUnlocksV2(player, durable)
                         : CompletableFuture.completedFuture(null))
