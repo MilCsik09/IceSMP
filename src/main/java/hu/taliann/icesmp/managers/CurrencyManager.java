@@ -313,6 +313,27 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         }
     }
 
+    /**
+     * Idempotent durable credit. Replaying the same operation ID with the same currency/amount is
+     * a no-op success; reusing it with different parameters is rejected by the ECONOMY authority.
+     */
+    public void creditOnceDurably(final UUID playerId, final CurrencyType currency,
+                                  final double amount, final String operationId) {
+        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(currency, "currency");
+        awaitPending(playerId);
+        try {
+            final long milli = PlayerProfileEconomyStore.toPositiveMilli(amount);
+            final PlayerProfileEconomyStore.CreditResult result = economyStore
+                    .creditOnce(playerId, currency, milli, operationId)
+                    .toCompletableFuture().join();
+            installProjection(playerId, result.wallet());
+        } catch (final CompletionException failure) {
+            failStorage("idempotent durable wallet credit", failure);
+            throw unavailable(rootMessage(failure));
+        }
+    }
+
     public DurableMutation planDurableDeduction(final UUID playerId,
                                                 final CurrencyType currencyType,
                                                 final double amount) {
@@ -440,8 +461,9 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
             final PlayerProfileEconomyStore.DurableOperation updated = economyStore
                     .transitionOperation(current.playerId(), operationId, target)
                     .toCompletableFuture().join();
-            installProjection(current.playerId(), target == PlayerProfileEconomyStore.OperationStatus.ROLLED_BACK
-                    ? updated.previous() : updated.expected());
+            // Terminalization may race with legitimate wallet mutations. The durable ECONOMY
+            // section is authoritative; never reinstall the debit-time expected/previous snapshot.
+            installProjection(current.playerId(), economyStore.readCached(current.playerId()));
             return fromStore(updated);
         } catch (final CompletionException failure) {
             failStorage("durable wallet transition", failure);
@@ -456,6 +478,50 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
             total = Math.addExact(total, state.milli(currencyType));
         }
         return PlayerProfileEconomyStore.fromMilli(total);
+    }
+
+    public double getTotalSupply(final FactionType currencyType) {
+        return currencyType == null ? 0.0D : getTotalSupply(CurrencyType.fromFactionType(currencyType));
+    }
+
+    public void addToBalance(final Player player, final long amount) {
+        addToBalance(player, defaultCurrencyType.toFactionType(), amount);
+    }
+
+    public void addToBalance(final Player player, final FactionType currencyType, final long amount) {
+        if (player != null && amount > 0L) {
+            addToBalance(player.getUniqueId(), currencyType == null ? defaultCurrencyType
+                    : CurrencyType.fromFactionType(currencyType), amount);
+        }
+    }
+
+    public void addToBalance(final Player player, final FactionType currencyType, final double amount) {
+        if (player != null && amount > 0.0D) {
+            addToBalance(player.getUniqueId(), currencyType == null ? defaultCurrencyType
+                    : CurrencyType.fromFactionType(currencyType), amount);
+        }
+    }
+
+    public boolean deductFromBalance(final Player player, final long amount) {
+        return deductFromBalance(player, defaultCurrencyType.toFactionType(), amount);
+    }
+
+    public boolean deductFromBalance(final Player player, final FactionType currencyType,
+                                     final long amount) {
+        return player != null && amount > 0L && deductFromBalance(player.getUniqueId(),
+                currencyType == null ? defaultCurrencyType : CurrencyType.fromFactionType(currencyType), amount);
+    }
+
+    public boolean deductFromBalance(final Player player, final FactionType currencyType,
+                                     final double amount) {
+        return player != null && amount > 0.0D && deductFromBalance(player.getUniqueId(),
+                currencyType == null ? defaultCurrencyType : CurrencyType.fromFactionType(currencyType), amount);
+    }
+
+    public boolean deductFromBalance(final Player player, final CurrencyType currencyType,
+                                     final double amount) {
+        return player != null && amount > 0.0D && deductFromBalance(player.getUniqueId(),
+                currencyType == null ? defaultCurrencyType : currencyType, amount);
     }
 
     public void setBalance(final Player player, final long amount) {

@@ -28,9 +28,11 @@ authors: [ Taliann ]
 #    (LuckPermsBridge) join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
 #  - TAB: csak load-order (az indulási kompatibilitás-tanácsadó megbízhatóan észlelje);
 #    az IceSMP nem hívja az API-ját.
-#  - A class/spec rework új tartalmi motorjai továbbra is soft-depend bejegyzések. A rework
-#    alapból ki van kapcsolva; bekapcsolva a saját verziózárt preflight dönti el, hogy a
-#    kötelező runtime stack hiánytalan és elfogadott verziójú-e.
+#  - A class/spec tartalmi motorjai is opcionális integrációk. A
+#    class-spec-dependencies.lock.yml verzió-pin + dev-provisioning authority; a runtime
+#    preflight kizárólag explicit `required-runtime` lock-bejegyzést tehet startup-fatalra.
+#    A jelenlegi 1.21.11 lockban nincs ilyen külső plugin. Production induláskor az IceSMP
+#    soha nem tölt le plugint; az automatikus provisioning kizárólag a Gradle runServer feladata.
 dependencies:
   server:
     LibsDisguises:
