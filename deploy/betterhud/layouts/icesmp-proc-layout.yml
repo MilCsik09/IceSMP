@@ -8,6 +8,11 @@ icesmp_class_proc_layout:
       y: -22
       layer: 0
       scale: 0.75
+      conditions:
+        theme:
+          first: "string:icesmp_faction_theme"
+          second: "'ice'"
+          operation: "=="
     popup_red:
       name: icesmp_popup_red
       x: -110
@@ -15,9 +20,9 @@ icesmp_class_proc_layout:
       layer: 0
       scale: 0.75
       conditions:
-        faction:
-          first: "string:icesmp_faction_id"
-          second: "'RED'"
+        theme:
+          first: "string:icesmp_faction_theme"
+          second: "'ember'"
           operation: "=="
     popup_blue:
       name: icesmp_popup_blue
@@ -26,9 +31,9 @@ icesmp_class_proc_layout:
       layer: 0
       scale: 0.75
       conditions:
-        faction:
-          first: "string:icesmp_faction_id"
-          second: "'BLUE'"
+        theme:
+          first: "string:icesmp_faction_theme"
+          second: "'frost'"
           operation: "=="
     popup_neutral:
       name: icesmp_popup_neutral
@@ -37,9 +42,9 @@ icesmp_class_proc_layout:
       layer: 0
       scale: 0.75
       conditions:
-        faction:
-          first: "string:icesmp_faction_id"
-          second: "'NEUTRAL'"
+        theme:
+          first: "string:icesmp_faction_theme"
+          second: "'guild'"
           operation: "=="
     popup_dark:
       name: icesmp_popup_dark
@@ -48,9 +53,9 @@ icesmp_class_proc_layout:
       layer: 0
       scale: 0.75
       conditions:
-        faction:
-          first: "string:icesmp_faction_id"
-          second: "'DARK'"
+        theme:
+          first: "string:icesmp_faction_theme"
+          second: "'lich'"
           operation: "=="
     class_warrior:
       name: icesmp_class_warrior

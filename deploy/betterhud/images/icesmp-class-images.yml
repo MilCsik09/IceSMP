@@ -35,9 +35,18 @@ icesmp_class_assassin: { type: single, file: icesmp/class-assassin.png }
 icesmp_class_warlock: { type: single, file: icesmp/class-warlock.png }
 icesmp_class_wizard: { type: single, file: icesmp/class-wizard.png }
 
-icesmp_rune_blood: { type: single, file: icesmp/rune-blood-ready.png }
-icesmp_rune_frost: { type: single, file: icesmp/rune-frost-ready.png }
-icesmp_rune_death: { type: single, file: icesmp/rune-death-ready.png }
+icesmp_rune_blood_ready: { type: single, file: icesmp/rune-blood-ready.png }
+icesmp_rune_blood_spent: { type: single, file: icesmp/rune-blood-spent.png }
+icesmp_rune_blood_regenerating: { type: single, file: icesmp/rune-blood-regenerating.png }
+icesmp_rune_blood_locked: { type: single, file: icesmp/rune-blood-locked.png }
+icesmp_rune_frost_ready: { type: single, file: icesmp/rune-frost-ready.png }
+icesmp_rune_frost_spent: { type: single, file: icesmp/rune-frost-spent.png }
+icesmp_rune_frost_regenerating: { type: single, file: icesmp/rune-frost-regenerating.png }
+icesmp_rune_frost_locked: { type: single, file: icesmp/rune-frost-locked.png }
+icesmp_rune_death_ready: { type: single, file: icesmp/rune-death-ready.png }
+icesmp_rune_death_spent: { type: single, file: icesmp/rune-death-spent.png }
+icesmp_rune_death_regenerating: { type: single, file: icesmp/rune-death-regenerating.png }
+icesmp_rune_death_locked: { type: single, file: icesmp/rune-death-locked.png }
 
 icesmp_resource_track:
   type: single

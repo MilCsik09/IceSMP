@@ -55,8 +55,21 @@ val validateBetterHudPackage by tasks.registering {
         require((1..8).all { layoutText.contains("rune_progress_$it:") }) {
             "Death Knight rune slots/progress are incomplete"
         }
+        listOf("blood", "frost", "death").forEach { kind ->
+            listOf("ready", "spent", "regenerating", "locked").forEach { state ->
+                require(imageText.contains("icesmp_rune_${kind}_${state}:")) {
+                    "Death Knight rune artwork is missing: $kind/$state"
+                }
+                require(layoutText.contains("rune_1_${kind}_${state}:")) {
+                    "Death Knight rune state is not mapped into the generic slot layout: $kind/$state"
+                }
+            }
+        }
         require(imageText.contains("number:icesmp_class_slot_8_progress")) {
             "Death Knight slot listener mapping is incomplete"
+        }
+        require(layoutText.contains("x: -180") && layoutText.contains("scale: 0.22")) {
+            "The compact faction frame must remain inside the lower-right HUD safe area"
         }
         listOf("money", "event", "level").forEach { icon ->
             require(assets.resolve("icon-$icon.png").isFile) { "Missing HUD utility icon: $icon" }
@@ -70,19 +83,34 @@ val validateBetterHudPackage by tasks.registering {
         require(pngs.sumOf { it.length() } <= 2_500_000L) { "BetterHud runtime asset budget exceeded 2.5 MB" }
         pngs.forEach { file ->
             val image: BufferedImage = ImageIO.read(file) ?: error("Unreadable PNG: $file")
-            if (file.name.startsWith("class-") || file.name.startsWith("rune-") && file.name != "rune-progress.png") {
+            if (file.name.startsWith("class-") || file.name.startsWith("icon-")
+                    || file.name.startsWith("rune-") && file.name != "rune-progress.png") {
                 require(image.width == 64 && image.height == 64) {
-                    "Class and rune icons must retain their 64x64 source resolution: $file (${image.width}x${image.height})"
+                    "HUD cutout icons must retain their 64x64 source resolution: $file (${image.width}x${image.height})"
+                }
+                val alpha = image.alphaRaster ?: error("HUD sprite requires alpha: $file")
+                val corners = listOf(0 to 0, 63 to 0, 0 to 63, 63 to 63)
+                require(corners.all { (x, y) -> alpha.getSample(x, y, 0) == 0 }) {
+                    "HUD sprite has an opaque square/backplate instead of a transparent cutout: $file"
+                }
+                var minX = image.width
+                var minY = image.height
+                var maxX = -1
+                var maxY = -1
+                for (y in 0 until image.height) for (x in 0 until image.width) {
+                    if (alpha.getSample(x, y, 0) > 0) {
+                        minX = minOf(minX, x); minY = minOf(minY, y)
+                        maxX = maxOf(maxX, x); maxY = maxOf(maxY, y)
+                    }
+                }
+                require(maxX >= 0 && minX >= 3 && minY >= 3
+                        && maxX <= image.width - 4 && maxY <= image.height - 4) {
+                    "HUD sprite is empty or clipped against its 64x64 cell: $file"
                 }
             }
             if (file.name.startsWith("frame-")) {
                 require(image.width >= 640 && image.height >= 400) {
                     "HUD frames must retain high-resolution source detail: $file (${image.width}x${image.height})"
-                }
-            }
-            if (file.name.startsWith("icon-")) {
-                require(image.width == 64 && image.height == 64) {
-                    "HUD utility icons must retain 64x64 resolution: $file"
                 }
             }
             if (file.name.startsWith("popup-")) {

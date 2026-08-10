@@ -3,16 +3,16 @@ icesmp_resource_layout:
   images:
     resource_track:
       name: icesmp_resource_track
-      x: -215
-      y: -151
+      x: -144
+      y: -108
       layer: 1
-      scale: 0.5
+      scale: 0.32
     resource_fill:
       name: icesmp_resource_fill
-      x: -215
-      y: -151
+      x: -144
+      y: -108
       layer: 2
-      scale: 0.5
+      scale: 0.32
       color-overrides:
         red:
           color: "#E7683F"
@@ -38,9 +38,9 @@ icesmp_resource_layout:
     1:
       name: icesmp_class_font
       pattern: "<#C7D4EA>[string:icesmp_resource_name] <#FFFFFF>[string:icesmp_resource_current]<#75819A>//[string:icesmp_resource_max]"
-      x: -215
-      y: -148
-      scale: 0.39
+      x: -144
+      y: -104
+      scale: 0.3
       align: left
       layer: 4
       use-legacy-format: false

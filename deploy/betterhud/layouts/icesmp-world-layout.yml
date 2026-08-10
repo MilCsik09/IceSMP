@@ -3,17 +3,17 @@ icesmp_world_layout:
   images:
     event_icon:
       name: icesmp_icon_event
-      x: -248
-      y: -38
+      x: -169
+      y: -60
       layer: 3
-      scale: 0.25
+      scale: 0.18
   texts:
     1:
       name: icesmp_class_font
       pattern: "<#71809A>ESEMENY <#F0D88D>[string:icesmp_event]"
-      x: -228
-      y: -34
-      scale: 0.38
+      x: -154
+      y: -57
+      scale: 0.3
       align: left
       layer: 4
       use-legacy-format: false

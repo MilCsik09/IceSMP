@@ -9,6 +9,7 @@ OUT = ROOT / "deploy" / "betterhud" / "assets" / "icesmp"
 PREVIEW = ROOT / "deploy" / "betterhud" / "previews" / "icesmp-hud-contact-sheet.png"
 CONCEPT = ROOT / "deploy" / "betterhud" / "previews" / "icesmp-hud-concept.png"
 FRAME_SOURCE = ROOT / "deploy" / "betterhud" / "previews" / "icesmp-hud-runtime-source.png"
+ICON_SOURCE = ROOT / "deploy" / "betterhud" / "previews" / "icesmp-hud-icons-source-v2.png"
 
 THEMES = {
     "guest":   ("#111820", "#263443", "#77DDF2", "#A9B7C6"),
@@ -141,25 +142,43 @@ def extracted_frames():
     return result
 
 
-def extracted_class_icons():
-    source = Image.open(CONCEPT).convert("RGBA")
-    centers = (95, 205, 317, 427, 536, 648, 758, 870, 981, 1092, 1204, 1315, 1425)
-    result = {}
-    for name, center in zip(CLASS_GLYPHS, centers):
-        tile = source.crop((center - 42, 570, center + 42, 654))
-        tile = tile.resize((64, 64), Image.Resampling.LANCZOS)
-        result[name] = tile
-    return result
+def atlas_icons():
+    """Extracts padded, transparent 64px sprites from the regular 6x5 chroma atlas."""
+    source = remove_magenta(Image.open(ICON_SOURCE).convert("RGBA"))
+    class_cells = {
+        "warrior": (0, 0), "evoker": (1, 0), "archer": (2, 0),
+        "shaman": (3, 0), "monk": (4, 0), "paladin": (5, 0),
+        "demon_hunter": (0, 1), "druid": (1, 1), "priest": (2, 1),
+        "death_knight": (3, 1), "assassin": (4, 1), "warlock": (5, 1),
+        "wizard": (0, 2),
+    }
+    rune_cells = {
+        ("blood", "ready"): (1, 2), ("blood", "regenerating"): (2, 2),
+        ("blood", "spent"): (3, 2), ("blood", "locked"): (4, 2),
+        ("frost", "ready"): (5, 2), ("frost", "regenerating"): (0, 3),
+        ("frost", "spent"): (1, 3), ("frost", "locked"): (2, 3),
+        ("death", "ready"): (3, 3), ("death", "regenerating"): (4, 3),
+        ("death", "spent"): (5, 3), ("death", "locked"): (0, 4),
+    }
+    utility_cells = {"money": (1, 4), "level": (2, 4), "event": (3, 4)}
 
+    def extract(cell, maximum):
+        column, row = cell
+        left = round(column * source.width / 6)
+        right = round((column + 1) * source.width / 6)
+        top = round(row * source.height / 5)
+        bottom = round((row + 1) * source.height / 5)
+        tile = source.crop((left, top, right, bottom))
+        bbox = tile.getchannel("A").getbbox()
+        sprite = tile.crop(bbox) if bbox else tile
+        sprite.thumbnail((maximum, maximum), Image.Resampling.LANCZOS)
+        output = canvas(64, 64)
+        output.alpha_composite(sprite, ((64 - sprite.width) // 2, (64 - sprite.height) // 2))
+        return output
 
-def extracted_runes():
-    source = Image.open(CONCEPT).convert("RGBA")
-    centers = {"blood": (409, 794), "frost": (409, 855), "death": (409, 916)}
-    result = {}
-    for kind, (x, y) in centers.items():
-        tile = source.crop((x - 29, y - 29, x + 29, y + 29))
-        result[kind] = tile.resize((64, 64), Image.Resampling.LANCZOS)
-    return result
+    return ({name: extract(cell, 54) for name, cell in class_cells.items()},
+            {key: extract(cell, 52) for key, cell in rune_cells.items()},
+            {name: extract(cell, 50) for name, cell in utility_cells.items()})
 
 
 def emblem(theme):
@@ -329,10 +348,13 @@ def contact_sheet(assets):
 def main():
     assets = {}
     frames = extracted_frames() if FRAME_SOURCE.is_file() else {theme: panel(theme) for theme in THEMES}
-    class_icons = extracted_class_icons() if CONCEPT.is_file() else {
-        name: class_icon(name, glyph) for name, glyph in CLASS_GLYPHS.items()}
-    rune_icons = extracted_runes() if CONCEPT.is_file() else {
-        kind: rune(kind, "ready") for kind in ("blood", "frost", "death")}
+    if ICON_SOURCE.is_file():
+        class_icons, rune_icons, utility_icons = atlas_icons()
+    else:
+        class_icons = {name: class_icon(name, glyph) for name, glyph in CLASS_GLYPHS.items()}
+        rune_icons = {(kind, state): rune(kind, state) for kind in ("blood", "frost", "death")
+                      for state in ("ready", "spent", "regenerating", "locked")}
+        utility_icons = {kind: utility_icon(kind) for kind in ("money", "event", "level")}
     for theme in THEMES:
         assets[f"frame-{theme}"] = frames[theme]; save(assets[f"frame-{theme}"], f"frame-{theme}.png")
         assets[f"emblem-{theme}"] = emblem(theme); save(assets[f"emblem-{theme}"], f"emblem-{theme}.png")
@@ -341,13 +363,9 @@ def main():
     for kind in ("blood", "frost", "death"):
         for state in ("ready", "spent", "regenerating", "locked"):
             key = f"rune-{kind}-{state}"
-            base = rune_icons[kind].copy()
-            if state != "ready":
-                overlay = Image.new("RGBA", base.size, (35, 39, 47, 150 if state == "spent" else 95))
-                base = Image.alpha_composite(base, overlay)
-            assets[key] = base; save(assets[key], key + ".png")
+            assets[key] = rune_icons[(kind, state)]; save(assets[key], key + ".png")
     for kind in ("money", "event", "level"):
-        assets[f"icon-{kind}"] = utility_icon(kind)
+        assets[f"icon-{kind}"] = utility_icons[kind]
         save(assets[f"icon-{kind}"], f"icon-{kind}.png")
     for theme in THEMES:
         assets[f"popup-{theme}"] = popup_frame(theme)
