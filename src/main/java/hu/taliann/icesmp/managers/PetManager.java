@@ -186,6 +186,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     public boolean dismiss(final Player player) { return false; }
 
     private static final String DEMON_ROSTER = "demonologist.roster";
+    private static final String NECRO_COURT = "necromancer.court";
 
     public record PetMutationResult(boolean committed, String error) {
         public PetMutationResult { error = error == null ? "" : error; }
@@ -228,6 +229,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final String spec = activeSpec(player);
         final String namespace = ClassSpecCatalog.companionNamespace(spec);
         if (slot.isEmpty() || namespace == null) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-wrong-spec"));
+        int stableCapacity = 0;
         // A Vadmester Istállója szándékosan szűk: legfeljebb ennyi befogott társ férhet el.
         if ("beast_master.stable".equals(namespace)) {
             final int capacity = Math.max(1, configManager.getInt("pets.stable.maximum", 3));
@@ -236,6 +238,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             if (stabled >= capacity) {
                 return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-stable-full"));
             }
+            stableCapacity = capacity;
         }
         final UUID sessionToken = currentSessionToken(player).orElse(null);
         if (sessionToken == null) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
@@ -244,7 +247,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                 1, 0L, "", MinionManager.Stance.ACTIVE.name(), List.of(), 0L, Map.of("ritual_summoned", "false"));
         final String operationId = "pet-capture:" + logicalId;
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
-                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0, 0L, 0L, List.of(), Map.of(), operationId))
+                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0, 0L, 0L, List.of(), Map.of(), stableCapacity, operationId))
                 .thenCompose(result -> afterDurablePetMutation(player, sessionToken, result,
                         () -> { removeActive(player); adopt(mob, player); }));
     }
@@ -269,6 +272,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         } else {
             form=demonForm(level); formName=demonFormName(form);
         }
+        // A paktum plafonja minden úton tart: a rituálé sem kerülheti meg a durable névsor kapacitását.
+        final int rosterCapacity=demonologist
+                ?Math.max(1,configManager.getInt("classes.warlock.demonologist.roster-capacity",3)):0;
+        if(rosterCapacity>0&&!ClassSpecCatalog.admitsCompanion(currentLoadout(player).orElse(null),namespace,rosterCapacity))
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-roster-full"));
         final UUID sessionToken=currentSessionToken(player).orElse(null);
         if(sessionToken==null)return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
         final UUID logicalId=UUID.randomUUID();
@@ -276,7 +284,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                 MinionManager.Stance.ACTIVE.name(),List.of(),0L,Map.of("ritual_summoned","true"));
         final String operationId="pet-ritual:"+logicalId;
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
-                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0,0L,0L,List.of(),Map.of(),operationId))
+                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0,0L,0L,List.of(),Map.of(),rosterCapacity,operationId))
                 .thenCompose(result -> afterDurablePetMutation(player,sessionToken,result,()->spawnAndAdopt(player,form)));
     }
 
@@ -293,7 +301,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final String namespace = ClassSpecCatalog.companionNamespace(activeSpec(player));
         if (kind.isEmpty() || slot.isEmpty() || !DEMON_ROSTER.equals(namespace))
             return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-wrong-spec"));
-        if (demonRoster(player).size() >= Math.max(1, capacity))
+        if (!ClassSpecCatalog.admitsCompanion(currentLoadout(player).orElse(null), namespace, capacity))
             return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-roster-full"));
         final UUID sessionToken = currentSessionToken(player).orElse(null);
         if (sessionToken == null) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
@@ -304,7 +312,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                 Map.of("ritual_summoned", "true", CompanionProfile.KIND_KEY, kind));
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
                         ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion,
-                        "", 0, 0L, 0L, List.of(), Map.of(), "warlock-bind:" + logicalId))
+                        "", 0, 0L, 0L, List.of(), Map.of(), Math.max(1, capacity),
+                        "warlock-bind:" + logicalId))
                 .thenCompose(result -> afterDurablePetMutation(player, sessionToken, result,
                         () -> { removeActive(player); spawnAndAdopt(player, form); }));
     }
@@ -315,7 +324,17 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * amit a profil már elengedett.
      */
     public CompletionStage<Integer> releaseDemonRosterV2(final Player player) {
-        final List<CompanionProfile> bound = demonRoster(player);
+        return releaseCompanionRosterV2(player, DEMON_ROSTER);
+    }
+
+    /** Durable-first Holtak Udvara betakarítás — ugyanaz a szabály, csak másik névtér. */
+    public CompletionStage<Integer> releaseCourtV2(final Player player) {
+        return releaseCompanionRosterV2(player, NECRO_COURT);
+    }
+
+    private CompletionStage<Integer> releaseCompanionRosterV2(final Player player,
+                                                              final String namespace) {
+        final List<CompanionProfile> bound = companionRoster(player, namespace);
         final Optional<LoadoutSlot> slot = activeSlot(player);
         final UUID sessionToken = currentSessionToken(player).orElse(null);
         if (bound.isEmpty() || slot.isEmpty() || sessionToken == null)
@@ -327,7 +346,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                             companionRequest(slot.orElseThrow(),
                                     ClassSpecProfileGateway.CompanionMutationRequest.Kind.REMOVE,
                                     companionId, null, "", 0, 0L, 0L, List.of(), Map.of(),
-                                    "warlock-release:" + companionId))
+                                    namespace + "-release:" + companionId))
                     .thenApply(result -> result.durableMutationApplied() ? count + 1 : count));
         }
         return released.thenCompose(count -> {
@@ -347,7 +366,46 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * lezárt (SEALED) vagy más specializációjú loadout üres projekciót ad, a tartós adat érintetlen.
      */
     public List<CompanionProfile> demonRoster(final Player player) {
-        return ClassSpecCatalog.companionProjection(currentLoadout(player).orElse(null), DEMON_ROSTER);
+        return companionRoster(player, DEMON_ROSTER);
+    }
+
+    /** Read-only projection of the durable Holtak Udvara. */
+    public List<CompanionProfile> courtRoster(final Player player) {
+        return companionRoster(player, NECRO_COURT);
+    }
+
+    private List<CompanionProfile> companionRoster(final Player player, final String namespace) {
+        return ClassSpecCatalog.companionProjection(currentLoadout(player).orElse(null), namespace);
+    }
+
+    /**
+     * Holtak Udvara feltámasztás a MEGLÉVŐ companion-gatewayen. A fajta csak attribútum: az udvar
+     * logikai companion-id szerint kulcsolt, így ugyanaz a fajta ismételhető és a kapacitás elérhető
+     * marad. Ugyanaz a felvételi szabály dönt itt és a commitban, ezért nincs fantom-cast.
+     */
+    public CompletionStage<PetMutationResult> raiseCourtV2(final Player player, final String kindId,
+                                                           final String entityTypeId,
+                                                           final int capacity) {
+        final String kind = ClassSpecCatalog.normalize(kindId);
+        final EntityType form = entityType(entityTypeId);
+        final Optional<LoadoutSlot> slot = activeSlot(player);
+        final String namespace = ClassSpecCatalog.companionNamespace(activeSpec(player));
+        if (kind.isEmpty() || form == null || slot.isEmpty() || !NECRO_COURT.equals(namespace))
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-wrong-spec"));
+        if (!ClassSpecCatalog.admitsCompanion(currentLoadout(player).orElse(null), namespace, capacity))
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-court-full"));
+        final UUID sessionToken = currentSessionToken(player).orElse(null);
+        if (sessionToken == null) return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
+        final UUID logicalId = UUID.randomUUID();
+        final CompanionProfile companion = new CompanionProfile(logicalId, namespace, form.name(),
+                "Udvaronc", 1, 0L, "", MinionManager.Stance.ACTIVE.name(), List.of(), 0L,
+                Map.of("ritual_summoned", "true", CompanionProfile.KIND_KEY, kind));
+        return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
+                        ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion,
+                        "", 0, 0L, 0L, List.of(), Map.of(), Math.max(1, capacity),
+                        "necromancer-raise:" + logicalId))
+                .thenCompose(result -> afterDurablePetMutation(player, sessionToken, result,
+                        () -> { removeActive(player); spawnAndAdopt(player, form); }));
     }
 
     private EntityType demonForm(final int level) {
@@ -461,19 +519,30 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     public CompletionStage<Boolean> addXpV2(final Player player, final int amount, final String operationId) {
         if(amount<=0||!canOwnPet(player))return CompletableFuture.completedFuture(false);
-        final CompanionProfile active=activeCompanion(player).orElse(null);if(active==null)return CompletableFuture.completedFuture(false);
-        final int maxLevel=Math.max(1,configManager.getInt("pets.companion.max-level",30));
-        int level=active.level();long xp=NumericGuards.addLong(active.experience(),amount,"companion experience");boolean leveled=false;
-        while(level<maxLevel){final int cost=levelCost(level);if(xp<cost)break;xp-=cost;level=NumericGuards.addInt(level,1,"companion level");leveled=true;}
-        final int committedLevel=level;final long committedXp=xp;final boolean didLevel=leveled;
-        return mutateActive(player,ClassSpecProfileGateway.CompanionMutationRequest.Kind.PROGRESS,"",committedLevel,committedXp,0L,List.of(),Map.of(),operationId)
+        final CompanionProfile before=activeCompanion(player).orElse(null);
+        final Optional<LoadoutSlot> slot=activeSlot(player);
+        if(before==null||slot.isEmpty())return CompletableFuture.completedFuture(false);
+        final int maxLevel=Math.max(1,Math.min(CompanionProfile.MAX_LEVEL,
+                configManager.getInt("pets.companion.max-level",30)));
+        final int baseXp=Math.max(1,configManager.getInt("pets.companion.base-xp",10));
+        final int increment=Math.max(0,configManager.getInt("pets.companion.increment-per-level",5));
+        return gateway().mutateCompanionProgress(player.getUniqueId(),
+                        new ClassSpecProfileGateway.CompanionProgressRequest(slot.orElseThrow(),
+                                before.companionId(),amount,baseXp,increment,maxLevel,operationId))
                 .thenCompose(result->{
-                    if(!result.committed())return CompletableFuture.completedFuture(false);
-                    if(!didLevel)return CompletableFuture.completedFuture(true);
+                    if(!result.durableOutcomeAccepted())return CompletableFuture.completedFuture(false);
+                    // Replay, stale generation and runtime-failed commits are already durable; never
+                    // fabricate a second feedback effect. Reconnect rebuilds the live companion.
+                    if(!result.committed())return CompletableFuture.completedFuture(true);
+                    final CompanionProfile committed=gateway().currentProfile(player.getUniqueId())
+                            .map(profile->profile.loadout(slot.orElseThrow()).companionRoster().get(before.companionId()))
+                            .orElse(null);
+                    if(committed==null||committed.level()<=before.level())return CompletableFuture.completedFuture(true);
                     final UUID sessionToken=currentSessionToken(player).orElse(null);
-                    if(sessionToken==null)return CompletableFuture.completedFuture(false);
+                    if(sessionToken==null)return CompletableFuture.completedFuture(true);
+                    final int committedLevel=committed.level();
                     final CompletableFuture<Boolean> completion=new CompletableFuture<>();
-                    runOnCurrentPlayer(player,sessionToken,()->{if(committedLevel>=maxLevel)AdvancementService.award(player,"pet_bond");Mob pet=activePet(player);if(pet!=null){applyBuffs(pet,committedLevel,false);updateName(pet,player);}player.sendMessage(messageManager.getMessage("pet-level-up","<dark_green>🐾 A társad szintet lépett: <white>{level}</white></dark_green>",Map.of("level",String.valueOf(committedLevel))));completion.complete(true);},()->completion.complete(false));
+                    runOnCurrentPlayer(player,sessionToken,()->{if(committedLevel>=maxLevel)AdvancementService.award(player,"pet_bond");Mob pet=activePet(player);if(pet!=null){applyBuffs(pet,committedLevel,false);updateName(pet,player);}player.sendMessage(messageManager.getMessage("pet-level-up","<dark_green>🐾 A társad szintet lépett: <white>{level}</white></dark_green>",Map.of("level",String.valueOf(committedLevel))));completion.complete(true);},()->completion.complete(true));
                     return completion;
                 });
     }
@@ -965,7 +1034,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     private static ClassSpecProfileGateway.CompanionMutationRequest companionRequest(LoadoutSlot slot,ClassSpecProfileGateway.CompanionMutationRequest.Kind kind,UUID id,CompanionProfile companion,String text,int level,long experience,long at,List<String> equipment,Map<String,String> state,String operationId){
-        return new ClassSpecProfileGateway.CompanionMutationRequest(slot,kind,id,companion,text,level,experience,at,equipment,state,operationId);
+        return companionRequest(slot,kind,id,companion,text,level,experience,at,equipment,state,0,operationId);
+    }
+
+    private static ClassSpecProfileGateway.CompanionMutationRequest companionRequest(LoadoutSlot slot,ClassSpecProfileGateway.CompanionMutationRequest.Kind kind,UUID id,CompanionProfile companion,String text,int level,long experience,long at,List<String> equipment,Map<String,String> state,int capacity,String operationId){
+        return new ClassSpecProfileGateway.CompanionMutationRequest(slot,kind,id,companion,text,level,experience,at,equipment,state,capacity,operationId);
     }
 
     private CompletionStage<PetMutationResult> afterDurablePetMutation(final Player player,

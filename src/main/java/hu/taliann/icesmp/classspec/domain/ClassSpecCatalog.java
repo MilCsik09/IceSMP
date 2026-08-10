@@ -88,6 +88,16 @@ public final class ClassSpecCatalog {
         return List.copyOf(loadout.companionRoster().values());
     }
 
+    /**
+     * The single admission rule for a new companion, shared by pre-cast validation and the committed
+     * mutation. Because a kind is only an attribute, admission depends on nothing but the number of
+     * instances already bound — so repeating a kind is legal and the capacity is always reachable.
+     */
+    public static boolean admitsCompanion(final ClassLoadout loadout, final String namespace,
+                                          final int capacity) {
+        return companionProjection(loadout, namespace).size() < Math.max(1, capacity);
+    }
+
     /** NFKC + Locale.ROOT normalization used by domain maps and duplicate detection. */
     public static String normalize(final String value) {
         if (value == null) {

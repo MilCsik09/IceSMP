@@ -1,0 +1,108 @@
+// IceSMP Folia 1.21.11 development launcher.
+// Usage: ./gradlew -I gradle/run-folia.init.gradle runFolia
+// The class-spec dependency lock remains the only version/provisioning authority.
+
+def lockFile = new File(rootDir, 'src/main/resources/class-spec-dependencies.lock.yml')
+if (!lockFile.isFile()) {
+    throw new GradleException("Missing class-spec dependency lock: ${lockFile}")
+}
+
+def targetMinecraft = null
+def dependencies = []
+def inPlugins = false
+def current = null
+
+lockFile.eachLine('UTF-8') { raw ->
+    def trimmed = raw.trim()
+    if (trimmed == 'plugins:') {
+        inPlugins = true
+        return
+    }
+    if (!inPlugins && raw ==~ /\s{2}minecraft:\s*.*/) {
+        targetMinecraft = raw.substring(raw.indexOf(':') + 1).trim()
+                .replace('"', '').replace("'", '')
+        return
+    }
+    if (!inPlugins || trimmed.isEmpty() || trimmed.startsWith('#')) return
+    int indent = raw.length() - raw.stripLeading().length()
+    if (indent == 2 && trimmed.endsWith(':')) {
+        current = [id: trimmed[0..-2]]
+        dependencies << current
+    } else if (indent == 4 && current != null) {
+        int separator = trimmed.indexOf(':')
+        if (separator > 0) {
+            def key = trimmed.substring(0, separator)
+            def value = trimmed.substring(separator + 1).trim()
+            int comment = value.indexOf(' #')
+            if (comment >= 0) value = value.substring(0, comment).trim()
+            value = value.replaceAll(/^['"]|['"]$/, '')
+            current[key] = value
+        }
+    }
+}
+
+if (targetMinecraft != '1.21.11') {
+    throw new GradleException("Folia dev launcher requires lock target 1.21.11, got ${targetMinecraft}")
+}
+
+def modrinthDeps = dependencies.findAll { it['dev-provision'] == 'modrinth' }
+def localDeps = dependencies.findAll { it['dev-provision'] == 'local' }
+
+allprojects { project ->
+    if (project != rootProject) return
+    project.plugins.withId('xyz.jpenilla.run-paper') {
+        def prepareLocal = project.tasks.register('prepareLocalClassSpecPluginsForFolia') {
+            group = 'icesmp development'
+            description = 'Copies licensed/local dependency-lock artifacts into the Folia dev server.'
+            doLast {
+                def configured = project.findProperty('icesmpDevPluginDir') ?: System.getenv('ICESMP_DEV_PLUGIN_DIR')
+                if (configured == null || configured.toString().isBlank()) {
+                    project.logger.lifecycle('IceSMP local dev plugins skipped. Set -PicesmpDevPluginDir=<dir> or ICESMP_DEV_PLUGIN_DIR when licensed/local artifacts are needed.')
+                    return
+                }
+                def sourceDir = project.file(configured.toString())
+                if (!sourceDir.isDirectory()) {
+                    throw new GradleException("IceSMP dev plugin directory does not exist: ${sourceDir}")
+                }
+                def targetDir = project.file('run/plugins')
+                targetDir.mkdirs()
+                localDeps.each { dep ->
+                    def name = dep['dev-local-file']
+                    if (name == null || name.isBlank()) {
+                        throw new GradleException("${dep.id} uses dev-provision=local without dev-local-file")
+                    }
+                    def source = new File(sourceDir, name)
+                    if (!source.isFile()) {
+                        throw new GradleException("Missing local dev plugin for ${dep.id}: ${source}")
+                    }
+                    project.copy {
+                        from source
+                        into targetDir
+                    }
+                    project.logger.lifecycle("Provisioned local IceSMP dev plugin ${dep.id}: ${name}")
+                }
+            }
+        }
+
+        def extension = project.extensions.getByName('runPaper')
+        extension.folia.registerTask {
+            minecraftVersion(targetMinecraft)
+            jvmArgs('-Xms2G', '-Xmx2G', '-Dpaper.disablePluginRemapping=true')
+            downloadPlugins {
+                modrinthDeps.each { dep ->
+                    def projectId = dep['dev-project']
+                    def versionId = dep['dev-version-id']
+                    if (projectId == null || projectId.isBlank() || versionId == null || versionId.isBlank()) {
+                        throw new GradleException("${dep.id} has incomplete Modrinth provisioning metadata")
+                    }
+                    modrinth(projectId, versionId)
+                }
+            }
+        }
+        project.tasks.named('runFolia').configure {
+            group = 'icesmp development'
+            description = 'Runs the canonical IceSMP Folia 1.21.11 dev server with lock-pinned plugins.'
+            dependsOn(prepareLocal)
+        }
+    }
+}
