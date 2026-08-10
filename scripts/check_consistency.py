@@ -264,12 +264,15 @@ except Exception as e:
 # HIGH/HIGHEST prioritason cancel-elnek, ezert egy NORMAL prioritasu progressz-handler MAR
 # konyvelt, mire a vedelem visszavonta az akciot (tiltott tores is adott XP-t/questet). Az
 # ignoreCancelled=true csak a KORABBI cancel ellen ved. A megfigyelo progressz-handlereknek
-# ezert MONITOR prioritason kell futniuk.
+# ezert MONITOR prioritason kell futniuk. KIVETEL: a cancel-only vedelmi handler (pl. a quest
+# fizikai jutalom-stamp zarolasa) direkt HIGH/HIGHEST prioritason cancel-el es semmit nem
+# konyvel — az ilyet a torzse azonositja: van setCancelled(true), es nincs manager-hivas.
 _PROGRESS_LISTENERS = ["QuestProgressListener", "DailyQuestListener", "ProfessionXpListener",
                        "ServerChallengeListener", "GatheringBuffListener"]
 _CANCELLABLE = {"BlockBreakEvent", "BlockPlaceEvent", "CraftItemEvent", "PlayerFishEvent",
                 "EntityPickupItemEvent", "PlayerHarvestBlockEvent", "SmithItemEvent",
                 "EnchantItemEvent", "InventoryClickEvent", "PlayerItemConsumeEvent"}
+_PROGRESS_CALL = re.compile(r"\b[a-z][A-Za-z]*Manager\s*\.")
 try:
     for _name in _PROGRESS_LISTENERS:
         _lp = pathlib.Path(REPO, "src/main/java/hu/taliann/icesmp/listeners", _name + ".java")
@@ -285,10 +288,17 @@ try:
                 _j += 1
             _sig = _lines[_j] if _j < len(_lines) else ""
             _m = re.search(r"final\s+([A-Za-z]+Event)\s+event", _sig)
-            if _m and _m.group(1) in _CANCELLABLE:
-                fail(f"listener-prioritas: {_name}.java:{_i + 1} — {_m.group(1)} handler NEM MONITOR "
-                     f"prioritason fut, igy a vedelem (HIGH/HIGHEST) cancel-je ELOTT konyvel "
-                     f"(tiltott akcio is jutalmazna)")
+            if not _m or _m.group(1) not in _CANCELLABLE:
+                continue
+            _body_end = _j + 1
+            while _body_end < len(_lines) and "@EventHandler" not in _lines[_body_end]:
+                _body_end += 1
+            _body = "\n".join(_lines[_j:_body_end])
+            if "setCancelled(true)" in _body and not _PROGRESS_CALL.search(_body):
+                continue
+            fail(f"listener-prioritas: {_name}.java:{_i + 1} — {_m.group(1)} handler NEM MONITOR "
+                 f"prioritason fut, igy a vedelem (HIGH/HIGHEST) cancel-je ELOTT konyvel "
+                 f"(tiltott akcio is jutalmazna)")
 except Exception as e:
     warn(f"listener-prioritas ellenorzes kihagyva: {e}")
 

@@ -191,11 +191,12 @@ onboarding:
   welcome-dialog-delay-ticks: 80
   welcome-dialog-title: "<gradient:#8ab4ff:#c9a3ff>Üdv az IceSMP-n!</gradient>"
   welcome-dialog-lines:
-    - "<gray>A <white>Fa árnyékában</white> írod a legendád. Első lépések:</gray>"
-    - "<yellow>•</yellow> <white>/kaszt</white> — válassz hivatást (13 kaszt)."
-    - "<yellow>•</yellow> <white>/faction</white> — a Menedékben kezdesz — állj a Láng vagy a Fagy zászlaja alá."
-    - "<yellow>•</yellow> <white>/menu</white> — minden rendszer egy helyen."
-    - "<gray>A haladásodat a <white>Haladás</white> képernyőn (L) is követheted.</gray>"
+    - "<gray>Aetrinita visszahívott. A <white>Menedék vendégeként</white> kezded az utad.</gray>"
+    - "<yellow>•</yellow> <white>/menu</white> — innen eléred a fő rendszereket."
+    - "<yellow>•</yellow> <white>/profile</white> — itt választasz kasztot, szakmát, később specializációt és talenteket."
+    - "<red>!</red> <gray>A kasztválasztás tartós döntés; teljes kaszt-resethez adminisztrátor kell.</gray>"
+    - "<yellow>•</yellow> <white>Kövesd a kezdő küldetést</white> — játék közben végigvezet az alapokon."
+    - "<gray>A frakció külön, tudatos döntés. Addig Menedék-vendég vagy, nem automatikus neutral tag.</gray>"
 
 # ===== Közösségi célok (frakció-szintű, közös számláló) =====
 # Egy megosztott számláló, amibe egy frakció (vagy az egész szerver) minden

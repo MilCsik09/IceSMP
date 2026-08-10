@@ -37,18 +37,18 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
-| `managers/` | 122 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 123 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 122 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
-| `quest/` | 7 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta. |
+| `quest/` | 8 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
 | `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
-| `relics/` | 11 (8 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, immutable világ-pillanatkép + single-writer store. |
-| `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
+| `relics/` | 12 (8 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, immutable világ-pillanatkép + single-writer store. |
+| `items/` | 13 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 26 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
