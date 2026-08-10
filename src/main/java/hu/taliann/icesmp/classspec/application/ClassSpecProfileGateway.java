@@ -29,11 +29,17 @@ public interface ClassSpecProfileGateway {
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reset(UUID playerId,ResetRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> seal(UUID playerId,SealRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reconcile(UUID playerId,ReconcileRequest request);
+    /** Lifecycle-only reconcile explicitly fenced to the activation generation supplied by join. */
+    CompletionStage<ProfileMutationResult<ProfileDiagnostic>> reconcileDuringActivation(
+            UUID playerId,UUID sessionToken,ReconcileRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> assignClass(UUID playerId,ClassAssignmentRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateClassExperience(UUID playerId,ClassExperienceRequest request);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> incrementSoulforge(UUID playerId,String branch,int shardCost,String operationId);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateSoulShards(UUID playerId,int delta,String operationId);
     CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateCompanion(UUID playerId,CompanionMutationRequest request);
+    /** Progress is computed from the latest durable roster inside the serialized gateway planner. */
+    CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateCompanionProgress(
+            UUID playerId,CompanionProgressRequest request);
     CompletionStage<RecoveryResult> recoverQuarantined(UUID playerId,String evidenceId,String auditId);
     Optional<String> quarantineEvidenceId(UUID playerId);
     CompletionStage<Void> awaitPlayerMutations(UUID playerId);
@@ -60,9 +66,19 @@ public interface ClassSpecProfileGateway {
     }
     record SealRequest(LoadoutSlot slot,SealReason reason){public SealRequest{Objects.requireNonNull(slot);Objects.requireNonNull(reason);}}
     record ReconcileRequest(Map<LoadoutSlot,GateSnapshot> gatesBySlot){public ReconcileRequest{Objects.requireNonNull(gatesBySlot);EnumMap<LoadoutSlot,GateSnapshot> copy=new EnumMap<>(LoadoutSlot.class);gatesBySlot.forEach((k,v)->copy.put(Objects.requireNonNull(k),Objects.requireNonNull(v)));gatesBySlot=Collections.unmodifiableMap(copy);}}
-    record CompanionMutationRequest(LoadoutSlot slot,Kind kind,UUID companionId,CompanionProfile companion,String text,int level,long experience,long resummonAtEpochMillis,List<String> equipment,Map<String,String> state,String operationId){
-        public CompanionMutationRequest{Objects.requireNonNull(slot);Objects.requireNonNull(kind);text=text==null?"":text.trim();equipment=equipment==null?List.of():List.copyOf(equipment);state=state==null?Map.of():Map.copyOf(state);operationId=requireId(operationId,"operationId");if(level<0||experience<0||resummonAtEpochMillis<0)throw new IllegalArgumentException("negative companion progress/timestamp");}
+    /**
+     * {@code capacity} is the effective roster ceiling the caller validated against before the cast.
+     * It is re-evaluated here at commit time so a pre-cast check and the committed mutation can never
+     * disagree; 0 means the mutation carries no capacity rule.
+     */
+    record CompanionMutationRequest(LoadoutSlot slot,Kind kind,UUID companionId,CompanionProfile companion,String text,int level,long experience,long resummonAtEpochMillis,List<String> equipment,Map<String,String> state,int capacity,String operationId){
+        public CompanionMutationRequest(LoadoutSlot slot,Kind kind,UUID companionId,CompanionProfile companion,String text,int level,long experience,long resummonAtEpochMillis,List<String> equipment,Map<String,String> state,String operationId){this(slot,kind,companionId,companion,text,level,experience,resummonAtEpochMillis,equipment,state,0,operationId);}
+        public CompanionMutationRequest{Objects.requireNonNull(slot);Objects.requireNonNull(kind);text=text==null?"":text.trim();equipment=equipment==null?List.of():List.copyOf(equipment);state=state==null?Map.of():Map.copyOf(state);operationId=requireId(operationId,"operationId");if(level<0||experience<0||resummonAtEpochMillis<0)throw new IllegalArgumentException("negative companion progress/timestamp");if(capacity<0)throw new IllegalArgumentException("negative companion capacity");}
         public enum Kind{ADD,REMOVE,RENAME,STANCE,PROGRESS,EQUIPMENT,STATE,RESPAWN_AT,SET_ACTIVE,DISMISS}
+    }
+    record CompanionProgressRequest(LoadoutSlot slot,UUID companionId,long deltaExperience,
+                                    int baseXp,int incrementPerLevel,int maxLevel,String operationId){
+        public CompanionProgressRequest{Objects.requireNonNull(slot);Objects.requireNonNull(companionId);operationId=requireId(operationId,"operationId");if(deltaExperience<=0L)throw new IllegalArgumentException("companion XP delta must be positive");if(baseXp<1||incrementPerLevel<0)throw new IllegalArgumentException("invalid companion level curve");if(maxLevel<1||maxLevel>CompanionProfile.MAX_LEVEL)throw new IllegalArgumentException("invalid companion max level");}
     }
 
     record RecoveryResult(ClassSpecSection profile,String evidenceId,String auditId,boolean idempotent){
