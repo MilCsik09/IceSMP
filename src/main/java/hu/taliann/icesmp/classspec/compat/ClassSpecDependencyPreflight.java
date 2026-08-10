@@ -17,15 +17,17 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Fail-fast compatibility gate for the opt-in class/spec rework.
+ * Compatibility gate for the mandatory Profile v2 runtime and its optional external integrations.
  *
- * <p>The legacy runtime remains available while {@code class-spec-rework.enabled} is false. Once the
- * rework is enabled, every required engine in the checked-in lock manifest must be present at an
- * explicitly accepted version. This prevents a partially-rendered profile from becoming authoritative.</p>
+ * <p>The checked-in lock is the version/provisioning authority, but only entries explicitly marked
+ * {@code required-runtime} may block IceSMP startup. Optional integrations are inspected when they
+ * are installed and degrade to their existing fallback/no-op paths when absent. Dev-only and
+ * validation-only entries never participate in server runtime enforcement.</p>
  */
 public final class ClassSpecDependencyPreflight {
 
     private static final String RESOURCE = "class-spec-dependencies.lock.yml";
+    private static final int LOCK_SCHEMA_VERSION = 2;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -37,33 +39,28 @@ public final class ClassSpecDependencyPreflight {
         this.requirements = loadRequirements(plugin);
     }
 
-    /** Runs the gate and throws before gameplay startup when strict rework dependencies are invalid. */
+    /** Runs the compatibility check; only required-runtime failures are startup-fatal. */
     public Report verify() {
-        final boolean enabled = configManager.getBoolean("class-spec-rework.enabled", false);
         final boolean enforce = configManager.getBoolean("class-spec-rework.dependencies.enforce", true);
-        if (!enabled) {
-            plugin.getLogger().info("A class/spec rework ki van kapcsolva; a verziózárt dependency "
-                    + "preflight nem futott le.");
-            return new Report(false, enforce, List.of());
-        }
         final List<Result> results = inspect(plugin.getServer().getPluginManager(), requirements);
-        final Report report = new Report(enabled, enforce, results);
+        final Report report = new Report(true, enforce, results);
 
         for (final Result result : results) {
-            final String prefix = result.ok() ? "Class/spec dependency OK: " : "Class/spec dependency HIBA: ";
-            final String message = prefix + result.requirement().pluginName() + " — " + result.detail();
+            final VersionRequirement requirement = result.requirement();
+            final String label = requirement.pluginName() + " [" + requirement.role().lockValue() + "] — ";
             if (result.ok()) {
-                plugin.getLogger().info(message);
-            } else if (result.requirement().required()) {
-                plugin.getLogger().warning(message);
+                plugin.getLogger().info("Class/spec dependency: " + label + result.detail());
+            } else if (requirement.blocksStartup()) {
+                plugin.getLogger().warning("Class/spec dependency HIBA: " + label + result.detail());
             } else {
-                plugin.getLogger().info(message);
+                plugin.getLogger().warning("Class/spec opcionális integráció nem kompatibilis: "
+                        + label + result.detail() + "; az IceSMP ettől tovább indul.");
             }
         }
 
-        if (enabled && enforce && !report.requiredDependenciesValid()) {
-            throw new IllegalStateException("A class/spec rework nem indulhat: hiányzó vagy nem zárolt "
-                    + "kötelező pluginverzió. Lásd: " + RESOURCE);
+        if (enforce && !report.requiredDependenciesValid()) {
+            throw new IllegalStateException("A class/spec runtime nem indulhat: hiányzó vagy nem zárolt "
+                    + "required-runtime capability. Lásd: " + RESOURCE);
         }
         return report;
     }
@@ -72,10 +69,16 @@ public final class ClassSpecDependencyPreflight {
                                 final List<VersionRequirement> requirements) {
         final List<Result> results = new ArrayList<>(requirements.size());
         for (final VersionRequirement requirement : requirements) {
+            if (!requirement.participatesInRuntimeCheck()) {
+                results.add(new Result(requirement, true, null,
+                        "nem runtime dependency; csak " + requirement.role().lockValue() + " metadata"));
+                continue;
+            }
             final Plugin dependency = pluginManager.getPlugin(requirement.pluginName());
             if (dependency == null) {
                 results.add(new Result(requirement, requirement.acceptsMissingDependency(), null,
-                        requirement.required() ? "nincs telepítve" : "opcionális és nincs telepítve"));
+                        requirement.blocksStartup() ? "required-runtime plugin nincs telepítve"
+                                : "opcionális integráció nincs telepítve; fallback/no-op aktív"));
                 continue;
             }
             final String runtimeVersion = dependency.getPluginMeta().getVersion();
@@ -94,6 +97,11 @@ public final class ClassSpecDependencyPreflight {
             }
             final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(
                     new InputStreamReader(stream, StandardCharsets.UTF_8));
+            final int schemaVersion = yaml.getInt("schema-version", -1);
+            if (schemaVersion != LOCK_SCHEMA_VERSION) {
+                throw new IllegalStateException("Nem támogatott dependency lock schema-version: "
+                        + schemaVersion + "; elvárt: " + LOCK_SCHEMA_VERSION);
+            }
             final ConfigurationSection plugins = yaml.getConfigurationSection("plugins");
             if (plugins == null || plugins.getKeys(false).isEmpty()) {
                 throw new IllegalStateException("Üres dependency lock resource: " + RESOURCE);
@@ -105,12 +113,17 @@ public final class ClassSpecDependencyPreflight {
                     continue;
                 }
                 final String pluginName = section.getString("server-name", id);
-                final boolean required = section.getBoolean("required", false);
+                final VersionRequirement.RuntimeRole role;
+                try {
+                    role = VersionRequirement.RuntimeRole.parse(section.getString("runtime-role"));
+                } catch (final IllegalArgumentException invalidRole) {
+                    throw new IllegalStateException("Érvénytelen runtime-role: plugins." + id, invalidRole);
+                }
                 final List<String> accepted = section.getStringList("accepted-versions");
                 if (accepted.isEmpty()) {
                     throw new IllegalStateException("Nincs accepted-versions: plugins." + id);
                 }
-                loaded.add(new VersionRequirement(pluginName, required, accepted,
+                loaded.add(new VersionRequirement(pluginName, role, accepted,
                         section.getString("verification", "unverified").toLowerCase(Locale.ROOT)));
             }
             return List.copyOf(loaded);
@@ -127,8 +140,9 @@ public final class ClassSpecDependencyPreflight {
             results = List.copyOf(results);
         }
 
+        /** Compatibility name retained for callers; now means required-runtime only. */
         public boolean requiredDependenciesValid() {
-            return results.stream().noneMatch(result -> result.requirement().required() && !result.ok());
+            return results.stream().noneMatch(result -> result.requirement().blocksStartup() && !result.ok());
         }
     }
 }
