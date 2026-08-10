@@ -1,0 +1,48 @@
+# runFolia-only override. Local self-hosting makes the generated BetterHud font/shader layer
+# available without publishing it; production uses deploy/betterhud/config.yml and the pack pipeline.
+debug: false
+auto-save-time: 300
+location-provide-time: 1
+debug-level: assets
+metrics: true
+version-check: true
+number-format: "#,###.#"
+tick-speed: 1
+namespace: "betterhud"
+default-font-name: "font.ttf"
+bossbar-line: 1
+bossbar-resource-pack-line: 0
+merge-boss-bar: true
+disable-to-bedrock-player: true
+build-folder-location: "BetterHud/build"
+pack-type: zip
+enable-protection: false
+enable-self-host: false
+force-update: false
+# Replaced by prepareBetterHudForFolia with InetAddress.getLocalHost().hostAddress.
+# BetterHud 1.14.1 binds to that address internally, so advertising 127.0.0.1 can point at
+# a different interface and produce FAILED_DOWNLOAD even though it logs "server opened".
+self-host-ip: "__ICESMP_DEV_HOST__"
+self-host-port: 8163
+# prepareBetterHudForFolia mirrors the canonical IceSMP pack here. BetterHud 1.14.1 uses
+# setResourcePack, so local development must send one merged pack instead of racing the R2 layer.
+merge-other-folders:
+  - IceSMPResourcePack
+  - IceSMPExternalBase.zip
+loading-head: random
+default-hud:
+  - icesmp_class_hud
+default-popup: []
+default-compass: []
+load-minecraft-default-textures: false
+included-minecraft-list:
+  - block
+  - item
+resourcepack-obfuscation: false
+clear-build-folder: true
+use-legacy-format: false
+legacy-serializer: ampersand
+minecraft-jar-version: bukkit
+remove-default-hotbar: false
+disable-legacy-offset: true
+merge-with-external-resources: false

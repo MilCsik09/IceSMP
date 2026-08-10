@@ -401,6 +401,44 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isPaladin(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final PaladinCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final PaladinCombatState.Oath oath = combat.oathOrDefault(specDefaultOath(id));
+        final int conviction = combat.conviction(now, convictionDecayDelayMillis(), convictionDecayPerSecond());
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "conviction", oathName(oath), oathName(oath) + " " + conviction,
+                conviction, 100, oath.name().toLowerCase(Locale.ROOT));
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        int charges = 0;
+        int maximum = 0;
+        String proc = "";
+        switch (activeSpec(id)) {
+            case "holy" -> {
+                final BeaconTarget beacon = beaconTargets.get(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text(
+                        "beacon", "Fényjelző", "Fényjelző " + (beacon == null ? "—" : beacon.label()),
+                        beacon == null ? "idle" : "active");
+            }
+            case "retribution" -> {
+                charges = combat.markCount(now, markWindowMillis(id)); maximum = 3;
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "judgement_marks", "Jelek", "Jelek " + charges + "/3",
+                        charges, 3, charges == 3 ? "ready" : "building");
+                if (charges == 3) proc = "Ítélet kész";
+            }
+            case "protection" -> secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "shield_charge", "Pajzstöltet", "Pajzstöltet " + combat.shieldCharge(),
+                    combat.shieldCharge(), 100, "active");
+            default -> { }
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, "", proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.PALADIN) {

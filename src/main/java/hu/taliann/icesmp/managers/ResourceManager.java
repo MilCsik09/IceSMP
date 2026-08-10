@@ -323,7 +323,7 @@ public final class ResourceManager implements PlayerStateCleanup {
 
     /**
      * A §-colour-coded 10-segment bar string of the resource for PlaceholderAPI
-     * consumers (TAB renders the legacy codes): filled segments in the CLASS
+     * consumers (legacy-colour-aware renderers): filled segments in the CLASS
      * resource colour (Düh=piros, Energia=sárga…, mint a saját sidebar), empty
      * ones dark grey, then a vivid numeric counter — an uncoloured bar was
      * nearly unreadable on the scoreboard.

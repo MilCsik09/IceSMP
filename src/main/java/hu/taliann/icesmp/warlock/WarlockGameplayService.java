@@ -427,6 +427,47 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isWarlock(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final WarlockCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final int ceiling = debtCeiling(id);
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "soul_debt", "Lélekadósság", "Lélekadósság " + combat.debt() + "/" + ceiling,
+                combat.debt(), ceiling, combat.debt() >= ceiling ? "capped" : "active");
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String proc = combat.debt() >= ceiling ? "Adósságplafon" : "";
+        int charges = 0;
+        int maximum = 0;
+        switch (activeSpec(id)) {
+            case "affliction" -> {
+                charges = combat.activeCurses(now); maximum = 3;
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "curses", "Átok", "Átok " + charges + "/3", charges, 3,
+                        combat.threadTarget(now) != null ? "soul_thread" : "active");
+            }
+            case "destruction" -> {
+                charges = combat.embers(); maximum = emberMaximum(id);
+                final boolean overheated = combat.isOverheated(now);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "embers", "Parázs", "Parázs " + charges + "/" + maximum,
+                        charges, maximum, overheated ? "overheated" : "active");
+                if (overheated) proc = "Túlhevült";
+            }
+            case "demonologist" -> {
+                charges = boundDemons(player).size(); maximum = rosterCapacity(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "demons", "Démonok", "Démonok " + charges + "/" + maximum,
+                        charges, maximum, charges >= maximum ? "full" : "active");
+            }
+            default -> { }
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, "", proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.WARLOCK) {

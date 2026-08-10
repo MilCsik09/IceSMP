@@ -47,6 +47,9 @@ public final class DeathKnightGameplayRegressionSuite {
 
         check(state.runes(DeathKnightCombatState.Rune.VER, 2, t0 + 5_999L, 6_000L) == 0,
                 "a rune needs its full recharge step");
+        check(state.rechargePercent(DeathKnightCombatState.Rune.VER, 2,
+                        t0 + 3_000L, 6_000L) == 50,
+                "the HUD receives the exact lazy-recharge progress without creating new authority");
         check(state.runes(DeathKnightCombatState.Rune.VER, 2, t0 + 6_000L, 6_000L) == 1,
                 "one step restores exactly one rune");
         check(state.runes(DeathKnightCombatState.Rune.VER, 2, t0 + 60_000L, 6_000L) == 2,

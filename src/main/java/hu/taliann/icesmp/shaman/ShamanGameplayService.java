@@ -323,6 +323,50 @@ public final class ShamanGameplayService implements Listener, PlayerStateCleanup
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isShaman(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final ShamanCombatState combat = state(id);
+        String wheel = "Kerék —/—";
+        if (totems != null) {
+            final Map<TotemManager.TotemCategory, TotemManager.TotemType> pair = totems.activeTotemTypes(id);
+            final String main = pair.containsKey(TotemManager.TotemCategory.FO)
+                    ? elementName(elementOfTotem(pair.get(TotemManager.TotemCategory.FO))) : "—";
+            final String companion = pair.containsKey(TotemManager.TotemCategory.KISERO)
+                    ? elementName(elementOfTotem(pair.get(TotemManager.TotemCategory.KISERO))) : "—";
+            wheel = "Kerék " + main + "/" + companion;
+        }
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text(
+                "totem_wheel", "Kerék", wheel, wheel.endsWith("—/—") ? "idle" : "active");
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String proc = "";
+        int charges = 0;
+        int maximum = 0;
+        switch (activeSpec(id)) {
+            case "elemental" -> {
+                charges = combat.overload(); maximum = overloadThreshold(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "resonance", "Rezonancia", "Rezonancia " + charges + "/" + maximum,
+                        charges, maximum, charges >= maximum ? "ready" : "building");
+                if (charges >= maximum) proc = "Túlterhelés kész";
+            }
+            case "enhancement" -> secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "maelstrom", "Maelstrom", "Maelstrom " + combat.maelstrom(),
+                    combat.maelstrom(), 100, combat.blessingSide().name().toLowerCase(Locale.ROOT));
+            case "tidal" -> {
+                final int tide = combat.tide(); maximum = tideThreshold(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "tide", "Ár", "Ár " + tide, Math.abs(tide), maximum,
+                        tide >= maximum ? "high_tide" : tide <= -maximum ? "low_tide" : "flowing");
+            }
+            default -> { }
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, combat.blessingSide() == ShamanCombatState.BlessingSide.VIHAR
+                        ? "Áldás Vihar" : "Áldás Föld", proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.SHAMAN) {

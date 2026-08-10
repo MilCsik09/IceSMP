@@ -64,7 +64,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `wizard/` | 2 | Varázsló gameplay vertical slice: transiens állapot + konkrét runtime (Rúnaszövés öt tételes párral, három ráhangolódás Konvergenciával/Elemi Koronával; a lecsengés rögzített horgonyból számol, ezért lekérdezés-gyakoriságtól független). A Holtak Udvara NEM transziens: egyetlen authorityja a durable `necromancer.court` companion névsor, és ugyanaz a felvételi szabály (`ClassSpecCatalog.admitsCompanion`) dönt a cast előtt és a commitban. |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 26 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
+| `utils/` | 27 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, `PlatformCapabilities`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
@@ -286,8 +286,9 @@ megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` p
 UUID-t, string ID-t, immutable snapshotot és saját handle-t engednek át. CraftEngine-, BetterHud-,
 ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jelenhet meg.
 
-A helyi 1.21.11-es runServer feladat `-Dpaper.disablePluginRemapping=true` kapcsolóval indul, hogy a
-26.2-portot blokkoló legacy remapping-függés már fejlesztés közben látható legyen.
+A class/spec integráció teljes helyi próbája a `runFolia` feladattal fut: ugyanazt a lockolt
+Folia 1.21.11 build 14-et és a lockolt pluginverziókat használja, mint a production cél, és előkészíti az egyetlen
+IceSMP + külső + BetterHud composite packot. A sima `runServer` nem production-helyettesítő.
 
 ### 3.9 Territórium-zónák és zóna-védelem
 
@@ -939,7 +940,7 @@ scheduler toggle/interval is restart-required; event safety and vanish capabilit
 
 A játékosnév-színek egyetlen központi palettát használnak minden támogatott felületen.
 
-| Frakció | Natív szín | Legacy/TAB kód | Vizuális szerep |
+| Frakció | Natív szín | Legacy kód | Vizuális szerep |
 |---|---|---|---|
 | RED / Láng | RED | `§c` | támadó, tüzes identitás |
 | BLUE / Fagy | BLUE | `§9` | hideg, kék identitás |
@@ -956,7 +957,7 @@ A NEUTRAL korábbi szürke (`GRAY` / `§7`) színe megszűnt. A DARK nem kap lic
 - HUD tablist-fallback;
 - HUD frakcióérték;
 - natív async chat formázás;
-- `%icesmp_faction_color%` PlaceholderAPI-kimenet külső TAB/scoreboard pluginokhoz.
+- `%icesmp_faction_color%` PlaceholderAPI-kimenet külső, csak olvasó megjelenítőkhöz.
 
 A paletta élő-configgal felülbírálható: `tablist.faction-colors.<frakció|guest>` (NamedTextColor nevek); a defaultot a `FactionDisplayColorPolicy` adja, minden név-felület (tab, nametag, HUD, chat, `%icesmp_faction_color%`) ugyanazon a feloldón megy át. A kézi staging-ellenőrzés az [admin kézikönyv staging-mátrixai](ADMIN_GUIDE.md#kiegészítő-staging-mátrixok) közt található.
 
@@ -1153,4 +1154,5 @@ output-model presence and removal of stale Bukkit registrations after reload or 
 to primary, secondary, state, proc, charges and an ordered mechanics list. `HudManager` captures that
 projection on the player's Folia region thread and embeds it in `HudSnapshot`; PlaceholderAPI and
 BetterHud only read the concurrent immutable cache. Neither integration can mutate Profile v2 or a
-class runtime. BetterHud capability detection controls rendering ownership only, with native fallback.
+class runtime. BetterHud capability detection controls rendering ownership per player only, with
+native fallback; a joining player's not-yet-created BetterHud cache cannot toggle other players.

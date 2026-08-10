@@ -381,6 +381,55 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isWizard(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final WizardCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final WizardCombatState.Reaction reaction = combat.armedReaction(now);
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text(
+                "runewaving", "Rúnaszövés", "Rúnaszövés " + (reaction == null ? "—" : reactionName(reaction)),
+                reaction == null ? "idle" : reaction.name().toLowerCase(Locale.ROOT));
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String stateText = "";
+        String proc = reaction == null ? "" : "Reakció kész";
+        int charges = 0;
+        int maximum = 0;
+        final java.util.ArrayList<hu.taliann.icesmp.classspec.integration.ClassHudMetric> metrics =
+                new java.util.ArrayList<>();
+        metrics.add(primary);
+        if ("elementalist".equals(activeSpec(id))) {
+            final int threshold = attunementThreshold(id);
+            final int fire = combat.attunement(0, now, attunementDecayDelayMillis(), attunementDecayPerSecond());
+            final int frost = combat.attunement(1, now, attunementDecayDelayMillis(), attunementDecayPerSecond());
+            final int arcane = combat.attunement(2, now, attunementDecayDelayMillis(), attunementDecayPerSecond());
+            final boolean crowned = combat.isCrowned(threshold, now,
+                    attunementDecayDelayMillis(), attunementDecayPerSecond());
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "attunement", "Elemek", "Elemek " + fire + "/" + frost + "/" + arcane,
+                    Math.min(fire, Math.min(frost, arcane)), threshold, crowned ? "crowned" : "active");
+            metrics.add(secondary);
+            metrics.add(hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "attunement_fire", "Tűz", Integer.toString(fire), fire, threshold, "fire"));
+            metrics.add(hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "attunement_frost", "Fagy", Integer.toString(frost), frost, threshold, "frost"));
+            metrics.add(hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "attunement_arcane", "Arkán", Integer.toString(arcane), arcane, threshold, "arcane"));
+            if (crowned) proc = "Korona";
+            else if (combat.isConvergent(threshold, now, attunementDecayDelayMillis(),
+                    attunementDecayPerSecond())) proc = "Konvergencia";
+        } else if ("necromancer".equals(activeSpec(id))) {
+            charges = court(player).size(); maximum = courtCapacity(player);
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "court", "Udvar", "Udvar " + charges + "/" + maximum,
+                    charges, maximum, charges >= maximum ? "full" : "active");
+            metrics.add(secondary);
+        }
+        return new hu.taliann.icesmp.classspec.integration.ClassHudMechanics(
+                primary, secondary, stateText, proc, charges, maximum, metrics, java.util.List.of());
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.WIZARD) {

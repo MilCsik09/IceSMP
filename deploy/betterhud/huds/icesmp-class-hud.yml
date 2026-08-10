@@ -1,12 +1,29 @@
 # One contract/layout serves Warrior, Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter,
 # Druid, Priest, Death Knight, Assassin, Warlock and Wizard without class-specific placeholders.
 icesmp_class_hud:
+  conditions:
+    enabled:
+      first: "boolean:icesmp_hud_visible"
+      second: true
+      operation: "=="
   layouts:
     1:
-      name: icesmp_class_layout
-      gui:
-        x: 50
+      name: icesmp_identity_layout
+      gui: &icesmp_anchor
+        x: 100
         y: 100
-      pixel:
+      pixel: &icesmp_pixel
         x: 0
-        y: -62
+        y: 0
+    2:
+      name: icesmp_resource_layout
+      gui: *icesmp_anchor
+      pixel: *icesmp_pixel
+    3:
+      name: icesmp_world_layout
+      gui: *icesmp_anchor
+      pixel: *icesmp_pixel
+    4:
+      name: icesmp_mechanic_layout
+      gui: *icesmp_anchor
+      pixel: *icesmp_pixel

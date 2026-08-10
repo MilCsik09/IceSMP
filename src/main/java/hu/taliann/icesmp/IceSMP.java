@@ -43,6 +43,9 @@ public final class IceSMP extends JavaPlugin {
                 core.disable();
             }
         } finally {
+            if (resourcePackListener != null) {
+                resourcePackListener.close();
+            }
             TransientEntities.shutdown();
         }
     }

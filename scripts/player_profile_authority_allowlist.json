@@ -152,6 +152,11 @@
       "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."
     },
     {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, BossBar> foliaCompactBars = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Folia-only native fallback view handles; rebuilt from the immutable HUD snapshot and removed on player cleanup."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Double> frozenSpeed = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."

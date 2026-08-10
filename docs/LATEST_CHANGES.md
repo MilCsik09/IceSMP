@@ -33,8 +33,11 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   crash ellen journalozott, gépi kapuval őrzött szerkezetben.
 - **Tablist és színek:** LuckPerms-rang szerinti rendezés, AFK játékosok a
   lista végén; a Menedék-polgár neve zöld (Smaragdkő-szín), így nem
-  téveszthető össze a Kitaszítottal — tab, nametag, chat és külső TAB
-  (`%icesmp_faction_color%`) egységesen.
+  téveszthető össze a Kitaszítottal — a saját tablista, nametag, chat és a
+  csak olvasó `%icesmp_faction_color%` kimenet egységesen.
+- **Adaptív BetterHud:** négy külön frakciógrafika, 64×64-es class/utility/rúna ikonok,
+  class/spec/szint/pénz/event parity, minden class strukturált mechanikaállapota, DK slotonkénti
+  rúnaregeneráció és automatikus proc-toast; kieséskor játékosonkénti natív fallback.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,
@@ -244,8 +247,8 @@ jóval érzékenyebb, mint a read.
 ### Natív MOTD és megjelenítés
 
 A server-list MOTD idő- vagy véletlen választással, eseményprioritással,
-vanished játékosok kiszűrésével és több ikonmóddal működhet. A natív HUD és
-tablista az IceSMP-hez szükséges részhalmazt adja, nem általános TAB-klón.
+vanished játékosok kiszűrésével és több ikonmóddal működhet. A HUD és a saját
+tablista az IceSMP-hez szükséges megjelenítési funkciókat adja.
 
 ### Biztonságosabb mentés és recovery
 
@@ -277,7 +280,7 @@ végig kell járni.
 | AFK-zóna payout, idő és bossbar | Nincs a release-ben |
 | Lay és crawl | Nem része a natív ülésnek |
 | Player/NPC sitting és stacking | Nem része a natív ülésnek |
-| Teljes TAB-klón | Nem cél; csak az IceSMP-hez szükséges subset |
+| Általános külső tablista-motor | Nem cél; az IceSMP saját tablistája a szükséges felületeket kezeli |
 | Teljes GSit-klón | Nem cél; sit-only |
 | Offline inventory edit | Nem bizonyított natív képesség |
 
@@ -302,7 +305,6 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
 | SModeration | Natív moderáció kiváltási jelölt | Permission, persistence, expiry, reconnect és audit |
 | InvSee++ | Az online read/edit scope kiváltási jelöltje | Escrow/recovery és az élő offline igény külön vizsgálata |
 | MiniMOTD | Natív MOTD kiváltási jelölt | Párhuzamos ping, ikon, reload, proxy/server-list próba |
-| TAB | Csak akkor váltható ki, ha elég a natív subset | Élő TAB-config és ütközések leltára |
 | ICEsmpadditions | Warden-XP natív megfelelője jelen van | Drop-tartomány és dupla felülírás teszt |
 | FarmProtect | Player- és mob-trample natív megfelelője jelen van | Mindkét eseményút és védelmi kompatibilitás teszt |
 

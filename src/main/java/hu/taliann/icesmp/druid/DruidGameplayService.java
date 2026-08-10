@@ -473,6 +473,57 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isDruid(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final DruidCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final Season season = currentSeason(id);
+        final int harmony = combat.harmony(now, harmonyDecayDelayMillis(), harmonyDecayPerSecond());
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "harmony", "Természeti Erő", "Természeti Erő " + harmony,
+                harmony, 100, season == null ? "natural" : season.name().toLowerCase(Locale.ROOT));
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String stateText = season == null ? "" : seasonName(season);
+        String proc = combat.isAutumnWindowArmed(now) ? "Őszi ablak" : "";
+        int charges = 0;
+        int maximum = 0;
+        switch (activeSpec(id)) {
+            case "feral" -> {
+                charges = combat.combo(); maximum = 5;
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "combo", "Kombó", "Kombó " + charges, charges, maximum,
+                        combat.isScentLive(now) ? "scent" : "active");
+                if (combat.isScentLive(now)) stateText = "Szagnyom";
+            }
+            case "lunar" -> {
+                final int balance = combat.balance();
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "balance", "Mérleg", "Mérleg " + balance, Math.abs(balance), 100,
+                        balance < 0 ? "lunar" : balance > 0 ? "solar" : "balanced");
+                if (combat.isEclipseArmed(now)) proc = "Eclipse";
+            }
+            case "ironbark" -> {
+                charges = combat.barkLayers(); maximum = barkMaximum(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "bark", "Kéreg", "Kéreg " + charges + "/" + maximum,
+                        charges, maximum, combat.isRootsArmed(now) ? "roots" : "active");
+                if (combat.isRootsArmed(now)) proc = "Gyökérháló";
+            }
+            case "restoration" -> {
+                charges = combat.ripeSeedCount(now, ripenMillis(id), seedExpiryMillis());
+                maximum = combat.seedCount(now, seedExpiryMillis());
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "seeds", "Mag", "Mag " + charges + "/" + maximum + " érett",
+                        charges, Math.max(1, maximum), charges > 0 ? "ripe" : "growing");
+            }
+            default -> { }
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, stateText, proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.DRUID) {

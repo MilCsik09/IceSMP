@@ -440,6 +440,43 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isMonk(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final MonkCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final int flow = combat.flow(now, flowDecayDelayMillis(), flowDecayPerSecond());
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "flow", "Áramlás", "Áramlás " + flow, flow, 100, "active");
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        int charges = 0;
+        int maximum = 0;
+        String proc = "";
+        switch (activeSpec(id)) {
+            case "windwalker" -> {
+                charges = combat.chainStep(now, chainWindowMillis(id)); maximum = chainThreshold(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "combo_chain", "Lánc", "Lánc " + charges + "/" + maximum,
+                        charges, maximum, charges >= maximum ? "ready" : "building");
+                if (charges >= maximum) proc = "Kombó kész";
+            }
+            case "brewmaster" -> secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "stagger", "Stagger", String.format(Locale.ROOT, "Stagger %.1f", combat.staggerPool()),
+                    combat.staggerPool(), 100, "active");
+            case "mistweaver" -> {
+                charges = combat.linkIds().size(); maximum = Math.max(1, Math.min(3,
+                        config.getInt("classes.monk.mist.maximum-links", 3)));
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "mist_threads", "Szálak", "Szálak " + charges + "/" + maximum,
+                        charges, maximum, charges >= maximum ? "full" : "active");
+            }
+            default -> { }
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, "", proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.MONK) {

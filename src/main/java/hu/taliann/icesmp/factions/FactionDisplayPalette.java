@@ -25,7 +25,7 @@ public final class FactionDisplayPalette {
         return FactionDisplayColorPolicy.legacyPlayerName(factionId);
     }
 
-    /** A konfigurált Adventure-szín §-kódja külső TAB/scoreboard fogyasztóknak. */
+    /** A konfigurált Adventure-szín §-kódja külső, csak olvasó megjelenítőknek. */
     public static String legacyCode(final NamedTextColor color) {
         return org.bukkit.ChatColor.valueOf(
                 color.toString().toUpperCase(java.util.Locale.ROOT)).toString();

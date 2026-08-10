@@ -41,13 +41,14 @@ world-tweaks:
 
 hud:
   betterhud:
-    # Opcionális, kizárólag megjelenítési integráció. BetterHud + PlaceholderAPI esetén a
-    # generikus immutable snapshotból rajzol; hiányukban a natív resource sor automatikusan marad.
+    # Opcionális, kizárólag megjelenítési integráció. A BetterHud közvetlenül a generikus,
+    # immutable snapshotból rajzol; a PlaceholderAPI csak külön külső olvasókhoz szükséges.
+    # BetterHud hiányában a natív resource sor automatikusan marad.
     enabled: true
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
   # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
   # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.
-  # A TAB plugin többé NEM szükséges — leszedhető; a teljes megjelenés house-ban van.
+  # A teljes tablista-megjelenés IceSMP-tulajdonú; külső tablista-plugin nem része a stacknek.
   enabled: true
   # Alacsony-HP piros vignetta (P8e): a küszöb alatt a képernyő szélén vörös vészköd
   # (per-player világperem-vészjel kihasználva; a peremnek NINCS játékmenet-hatása).
@@ -55,10 +56,12 @@ hud:
   low-hp-vignette:
     enabled: true
     threshold-percent: 30.0   # ez alatti HP%-nál jelenik meg
-  # Az IceSMP saját scoreboard-oldalsávja. Ha mégis külső scoreboard-plugint futtatsz
-  # (pl. TAB), kapcsold false-ra ezt ÉS a tablist.enabled-et a tablist.yml-ben — az
+  # Az IceSMP saját scoreboard-oldalsávja. Ha külső scoreboard-renderert futtatsz,
+  # kapcsold false-ra ezt ÉS a tablist.enabled-et a tablist.yml-ben — az
   # IceSMP-adatok akkor a %icesmp_...% placeholderekkel jeleníthetők meg
   # (docs/SERVER_INTEGRATION.md).
+  # Folia alatt a Bukkit scoreboard API tiltott; ugyanez a kapcsoló a játékosonkénti
+  # compact bossbar fallbacket vezérli. BetterHud aktív állapotban a fallback automatikusan rejtett.
   sidebar-enabled: true
   sidebar:
     # Az oldalsáv címe (legacy &-kódokkal; a ㍐ a resource pack glyph-je — RP nélkül

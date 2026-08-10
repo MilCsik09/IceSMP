@@ -1,0 +1,83 @@
+# Generated visual catalogue. Source: scripts/generate_betterhud_assets.py
+icesmp_frame_guest: { type: single, file: icesmp/frame-guest.png }
+icesmp_frame_red: { type: single, file: icesmp/frame-red.png }
+icesmp_frame_blue: { type: single, file: icesmp/frame-blue.png }
+icesmp_frame_neutral: { type: single, file: icesmp/frame-neutral.png }
+icesmp_frame_dark: { type: single, file: icesmp/frame-dark.png }
+
+icesmp_emblem_guest: { type: single, file: icesmp/emblem-guest.png }
+icesmp_emblem_red: { type: single, file: icesmp/emblem-red.png }
+icesmp_emblem_blue: { type: single, file: icesmp/emblem-blue.png }
+icesmp_emblem_neutral: { type: single, file: icesmp/emblem-neutral.png }
+icesmp_emblem_dark: { type: single, file: icesmp/emblem-dark.png }
+
+icesmp_icon_money: { type: single, file: icesmp/icon-money.png }
+icesmp_icon_event: { type: single, file: icesmp/icon-event.png }
+icesmp_icon_level: { type: single, file: icesmp/icon-level.png }
+
+icesmp_popup_guest: { type: single, file: icesmp/popup-guest.png }
+icesmp_popup_red: { type: single, file: icesmp/popup-red.png }
+icesmp_popup_blue: { type: single, file: icesmp/popup-blue.png }
+icesmp_popup_neutral: { type: single, file: icesmp/popup-neutral.png }
+icesmp_popup_dark: { type: single, file: icesmp/popup-dark.png }
+
+icesmp_class_warrior: { type: single, file: icesmp/class-warrior.png }
+icesmp_class_evoker: { type: single, file: icesmp/class-evoker.png }
+icesmp_class_archer: { type: single, file: icesmp/class-archer.png }
+icesmp_class_shaman: { type: single, file: icesmp/class-shaman.png }
+icesmp_class_monk: { type: single, file: icesmp/class-monk.png }
+icesmp_class_paladin: { type: single, file: icesmp/class-paladin.png }
+icesmp_class_demon_hunter: { type: single, file: icesmp/class-demon_hunter.png }
+icesmp_class_druid: { type: single, file: icesmp/class-druid.png }
+icesmp_class_priest: { type: single, file: icesmp/class-priest.png }
+icesmp_class_death_knight: { type: single, file: icesmp/class-death_knight.png }
+icesmp_class_assassin: { type: single, file: icesmp/class-assassin.png }
+icesmp_class_warlock: { type: single, file: icesmp/class-warlock.png }
+icesmp_class_wizard: { type: single, file: icesmp/class-wizard.png }
+
+icesmp_rune_blood: { type: single, file: icesmp/rune-blood-ready.png }
+icesmp_rune_frost: { type: single, file: icesmp/rune-frost-ready.png }
+icesmp_rune_death: { type: single, file: icesmp/rune-death-ready.png }
+
+icesmp_resource_track:
+  type: single
+  file: icesmp/resource-track.png
+
+icesmp_resource_fill:
+  type: listener
+  file: icesmp/resource-fill.png
+  split: 100
+  split-type: left
+  setting:
+    listener:
+      class: placeholder
+      value: "number:icesmp_resource_current"
+      max: "number:icesmp_resource_max"
+
+icesmp_rune_progress_1: &rune_progress_1
+  type: listener
+  file: icesmp/rune-progress.png
+  split: 100
+  split-type: left
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_1_progress", max: 100 } }
+icesmp_rune_progress_2:
+  <<: *rune_progress_1
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_2_progress", max: 100 } }
+icesmp_rune_progress_3:
+  <<: *rune_progress_1
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_3_progress", max: 100 } }
+icesmp_rune_progress_4:
+  <<: *rune_progress_1
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_4_progress", max: 100 } }
+icesmp_rune_progress_5:
+  <<: *rune_progress_1
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_5_progress", max: 100 } }
+icesmp_rune_progress_6:
+  <<: *rune_progress_1
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_6_progress", max: 100 } }
+icesmp_rune_progress_7:
+  <<: *rune_progress_1
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_7_progress", max: 100 } }
+icesmp_rune_progress_8:
+  <<: *rune_progress_1
+  setting: { listener: { class: placeholder, value: "number:icesmp_class_slot_8_progress", max: 100 } }

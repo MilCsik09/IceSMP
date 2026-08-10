@@ -345,6 +345,83 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection with individual rune slots. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isDeathKnight(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final DeathKnightCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final int naturalMax = naturalCapacity(id);
+        final int deathMax = deathCapacity(id);
+        final long recharge = rechargeMillis(id);
+        final int blood = combat.runes(DeathKnightCombatState.Rune.VER, naturalMax, now, recharge);
+        final int frost = combat.runes(DeathKnightCombatState.Rune.FAGY, naturalMax, now, recharge);
+        final int death = combat.runes(DeathKnightCombatState.Rune.HALAL, naturalMax, now, recharge);
+        final int total = blood + frost + death;
+        final int totalMax = naturalMax * 2 + deathMax;
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "rune_wheel", "Rúnakör", "Rúnák V" + blood + " F" + frost + " H" + death,
+                total, totalMax, total == totalMax ? "ready" : "active");
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String stateText = "";
+        String proc = "";
+        switch (activeSpec(id)) {
+            case "blood" -> {
+                final double memory = combat.recentDamage(now, memoryWindowMillis(id));
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "blood_memory", "Emlékezet", String.format(Locale.ROOT, "Emlékezet %.1f", memory),
+                        memory, 100, memory > 0 ? "stored" : "empty");
+            }
+            case "frost" -> {
+                final int marks = combat.frostMarks();
+                final int maximum = markMaximum(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "frost_marks", "Fagyjel", "Fagyjel " + marks + "/" + maximum,
+                        marks, maximum, marks >= maximum ? "ready" : "building");
+                if (marks >= maximum) proc = "Zúzás kész";
+            }
+            case "unholy" -> {
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "plague", "Dögvész", "Dögvész " + combat.plague(),
+                        combat.plague(), 100, "active");
+                stateText = "Ghúl " + combat.mutation() + ". fokozat";
+            }
+            default -> { }
+        }
+        final java.util.ArrayList<hu.taliann.icesmp.classspec.integration.ClassHudSlot> slots =
+                new java.util.ArrayList<>();
+        addRuneSlots(slots, "blood", "Vér", blood, naturalMax,
+                combat.rechargePercent(DeathKnightCombatState.Rune.VER, naturalMax, now, recharge), true);
+        addRuneSlots(slots, "frost", "Fagy", frost, naturalMax,
+                combat.rechargePercent(DeathKnightCombatState.Rune.FAGY, naturalMax, now, recharge), true);
+        addRuneSlots(slots, "death", "Halál", death, deathMax, death > 0 ? 100 : 0, false);
+        return new hu.taliann.icesmp.classspec.integration.ClassHudMechanics(
+                primary, secondary, stateText, proc, total, totalMax,
+                java.util.List.of(primary, secondary), slots);
+    }
+
+    private static void addRuneSlots(
+            final java.util.List<hu.taliann.icesmp.classspec.integration.ClassHudSlot> slots,
+            final String kind, final String label, final int ready, final int capacity,
+            final int rechargeProgress, final boolean regenerates) {
+        for (int index = 1; index <= capacity; index++) {
+            final String state;
+            final int progress;
+            if (index <= ready) {
+                state = "ready";
+                progress = 100;
+            } else if (regenerates && index == ready + 1) {
+                state = "regenerating";
+                progress = rechargeProgress;
+            } else {
+                state = "spent";
+                progress = 0;
+            }
+            slots.add(new hu.taliann.icesmp.classspec.integration.ClassHudSlot(
+                    "rune_" + kind + "_" + index, kind, state, progress, label));
+        }
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.DEATH_KNIGHT) {

@@ -32,6 +32,7 @@ public final class ConfigStartupRegressionSuite {
         parsesEveryBundledProfessionIngredient();
         validatesPactUniqueMaterialReference();
         rejectsNonFiniteAndWrongTypeNumericConfig();
+        validatesDurationListsElementByElement();
         verifiesPackagedDefaults();
         verifiesSupportedFirstSpawnEvent();
         verifiesConfigMenuCatalog();
@@ -173,6 +174,18 @@ public final class ConfigStartupRegressionSuite {
         valid.set("factions.tax.rate-percent", 2.0D);
         check(ConfigValidator.validateConfiguration(valid, LOGGER) == 0,
                 "valid finite numeric config was rejected");
+    }
+
+    private static void validatesDurationListsElementByElement() {
+        final YamlConfiguration valid = new YamlConfiguration();
+        valid.set("moderation.escalation-minutes", List.of(5, 30, 180, 1440));
+        check(ConfigValidator.validateConfiguration(valid, LOGGER) == 0,
+                "valid duration list must not be treated as a scalar");
+
+        final YamlConfiguration invalid = new YamlConfiguration();
+        invalid.set("moderation.escalation-minutes", List.of(5, -30, "180"));
+        check(ConfigValidator.validateConfiguration(invalid, LOGGER) == 2,
+                "duration lists must validate every element without accepting negative or string values");
     }
 
     private static void verifiesPackagedDefaults() {

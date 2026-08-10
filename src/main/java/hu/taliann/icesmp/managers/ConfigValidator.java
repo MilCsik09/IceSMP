@@ -86,9 +86,13 @@ public final class ConfigValidator {
                 problems += checkFiniteNonNegative(logger, key, config.get(key), "érték");
             } else if ((key.startsWith("factions.passives.")
                     || key.startsWith("factions.whisper.")) && isDurationKey(leaf)) {
-                problems += checkNonNegativeInteger(logger, key, config.get(key));
+                problems += config.isList(key)
+                        ? checkNonNegativeList(logger, key, config.getList(key), true)
+                        : checkNonNegativeInteger(logger, key, config.get(key));
             } else if (isDurationKey(leaf)) {
-                problems += checkNonNegative(logger, key, config.get(key));
+                problems += config.isList(key)
+                        ? checkNonNegativeList(logger, key, config.getList(key), false)
+                        : checkNonNegative(logger, key, config.get(key));
             }
         }
         return problems;
@@ -184,6 +188,20 @@ public final class ConfigValidator {
             return 1;
         }
         return 0;
+    }
+
+    private static int checkNonNegativeList(final Logger logger, final String key,
+                                            final java.util.List<?> values,
+                                            final boolean integersOnly) {
+        int problems = 0;
+        for (int index = 0; index < values.size(); index++) {
+            final Object value = values.get(index);
+            final String itemKey = key + "[" + index + "]";
+            problems += integersOnly
+                    ? checkNonNegativeInteger(logger, itemKey, value)
+                    : checkNonNegative(logger, itemKey, value);
+        }
+        return problems;
     }
 
     private static int checkFiniteNonNegative(final Logger logger, final String key,

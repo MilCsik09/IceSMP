@@ -248,6 +248,45 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isWarrior(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final WarriorCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final WarriorCombatState.TempoTier tier = tempoTier(combat, now);
+        final int tempo = battleTempo(combat, now);
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "battle_tempo", "Tempó", "Tempó " + tempoName(tier) + " " + tempo,
+                tempo, 100, tier.name().toLowerCase(Locale.ROOT));
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String stateText = "";
+        String proc = "";
+        final String spec = activeSpec(id);
+        if ("berserker".equals(spec)) {
+            refreshBerserker(combat, id, now);
+            final int blood = combat.bloodFrenzy(now, highFuryThreshold(), exhaustionRate(id),
+                    exhaustionRecovery(), overdriveExhaustionRate(), aftermathMillis(id),
+                    overdriveEndExhaustion());
+            final int exhaustion = combat.exhaustion(now, highFuryThreshold(), exhaustionRate(id),
+                    exhaustionRecovery(), overdriveExhaustionRate(), aftermathMillis(id),
+                    overdriveEndExhaustion());
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "blood_frenzy", "Vér", "Vér " + blood + " / Kim " + exhaustion,
+                    blood, 100, blood >= highFuryThreshold() ? "overdrive" : "building");
+            stateText = "Kimerülés " + exhaustion;
+            proc = blood >= highFuryThreshold() ? "Túlpörgés" : "";
+        } else if ("guardian".equals(spec)) {
+            final String oath = combat.oathTargetLabel().isBlank() ? "—" : combat.oathTargetLabel();
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "guard", "Őrség", "Őrség " + combat.guard(), combat.guard(), 100,
+                    oath.equals("—") ? "unbound" : "oath");
+            stateText = "Eskü " + oath;
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, stateText, proc, 0, 0);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.WARRIOR) {

@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.integration.LuckPermsBridge;
 import hu.taliann.icesmp.utils.TextAnimator;
+import hu.taliann.icesmp.utils.PlatformCapabilities;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -93,6 +94,10 @@ public final class TablistManager {
         this.factionManager = factionManager;
         this.animator = animator;
         this.afkManager = afkManager;
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            plugin.getLogger().info("Folia detected: native tab header/footer and player names remain active; "
+                    + "scoreboard-backed nametag teams and ping objective are disabled.");
+        }
     }
 
     public boolean isEnabled() {
@@ -160,6 +165,10 @@ public final class TablistManager {
         cleanup(player.getUniqueId());
         player.playerListName(null);
         player.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
+
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            return;
+        }
 
         final Scoreboard board = player.getScoreboard();
         for (final Team team : List.copyOf(board.getTeams())) {
@@ -307,6 +316,9 @@ public final class TablistManager {
      */
     private void syncViewerBoard(final Player viewer, final boolean sweep,
                                  final java.util.Set<String> validTeams, final java.util.Set<String> onlineNames) {
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            return;
+        }
         final boolean nametags = configManager.getBoolean("tablist.nametags.enabled", true);
         final boolean pingColumn = configManager.getBoolean("tablist.playerlist-ping.enabled", true);
         if (!nametags && !pingColumn) {
@@ -457,6 +469,9 @@ public final class TablistManager {
      * néző saját régió-szálán történik, így a setScoreboard biztonságos.
      */
     private Scoreboard ownBoard(final Player player) {
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            return null;
+        }
         final ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager == null) {
             return null;

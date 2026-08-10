@@ -234,6 +234,34 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isArcher(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final ArcherCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final boolean wind = combat.isWindReadArmed(now);
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text(
+                "wind_read", "Szélolvasás", wind ? "Szél olvasva" : "Szél —", wind ? "ready" : "idle");
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String proc = wind ? "Szélolvasás kész" : "";
+        int charges = 0;
+        int maximum = 0;
+        if ("sharpshooter".equals(activeSpec(id))) {
+            charges = combat.precisionChain(now, chainWindowMillis(id));
+            maximum = weakPointThreshold(id);
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "precision_chain", "Lánc", "Lánc " + charges + "/" + maximum,
+                    charges, maximum, charges >= maximum ? "ready" : "building");
+            if (charges >= maximum) proc = "Gyengepont kész";
+        } else if ("beast_master".equals(activeSpec(id))) {
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "bond", "Kötelék", "Kötelék " + combat.bond(), combat.bond(), 100, "active");
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, "", proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.ARCHER) {

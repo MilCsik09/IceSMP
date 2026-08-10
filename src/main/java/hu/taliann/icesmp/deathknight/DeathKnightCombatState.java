@@ -54,6 +54,19 @@ public final class DeathKnightCombatState {
         return runes[rune.ordinal()];
     }
 
+    /** Progress of the next naturally regenerating rune; ready/death runes report 100 or 0. */
+    public synchronized int rechargePercent(final Rune rune, final int naturalCapacity,
+                                            final long now, final long rechargeMillis) {
+        recharge(naturalCapacity, now, rechargeMillis);
+        final int index = rune.ordinal();
+        if (rune == Rune.HALAL) return runes[index] > 0 ? 100 : 0;
+        if (runes[index] >= Math.max(1, naturalCapacity)) return 100;
+        final long since = runeLastRechargeAt[index];
+        if (since <= 0L) return 0;
+        final long step = Math.max(1L, rechargeMillis);
+        return (int) Math.max(0L, Math.min(99L, (now - since) * 100L / step));
+    }
+
     public synchronized boolean spendRune(final Rune rune, final int naturalCapacity,
                                           final long now, final long rechargeMillis) {
         recharge(naturalCapacity, now, rechargeMillis);

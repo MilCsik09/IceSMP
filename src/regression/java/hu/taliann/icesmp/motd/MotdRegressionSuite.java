@@ -254,8 +254,17 @@ public final class MotdRegressionSuite {
         final Path data = Files.createTempDirectory("icesmp-motd-data-");
         final Path icons = Files.createDirectory(data.resolve("icons"));
         copyBundledIcon(icons.resolve("valid.png"));
-        require(MotdIconValidator.scanPngDirectory(data, Path.of("icons"), 64, 1_048_576L)
-                        .icons().size() == 1,
+        final MotdIconValidator.ScanResult firstScan;
+        try {
+            firstScan = MotdIconValidator.scanPngDirectory(
+                    data, Path.of("icons"), 64, 1_048_576L);
+        } catch (final IOException unsupportedSecureDirectory) {
+            require(unsupportedSecureDirectory.getMessage().contains("no-follow"),
+                    "a filesystem without SecureDirectoryStream must fail closed explicitly");
+            deleteTree(data);
+            return;
+        }
+        require(firstScan.icons().size() == 1,
                 "a regular valid icon must load through the secure directory handle");
         copyBundledIcon(icons.resolve("valid-second.png"));
         final MotdIconValidator.ScanResult limited = MotdIconValidator.scanPngDirectory(

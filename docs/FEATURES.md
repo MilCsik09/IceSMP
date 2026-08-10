@@ -341,8 +341,14 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
 - **Így találkozol vele:** `/hud`; a tablista automatikus.
 - **Kinek szól:** Játékos, Admin, Tesztelő.
 - **Mitől mozdul meg:** Csatlakozáskor, periodikus frissítéskor, státusz- és adatváltozáskor.
-- **Ami még kellhet hozzá:** Nincs builderfeladat; a meglévő TAB-plugin funkcióigényét deployment előtt fel kell mérni.
-- **Fontos határ:** Nem cél a TAB teljes upstream-paritása.
+- **BetterHud réteg:** opcionális, játékosonként detektált kijelzés a négy külön frakcióskinből,
+  13 class-ikonból, class/spec/resource/mechanika állapotból, DK-rúnákból és proc-toastból;
+  hiányában a natív compact HUD automatikusan marad.
+- **Információs parity:** frakció, class, specializáció, class-szint, pénz, aktuális event,
+  class resource és a játékhoz szükséges elsődleges/másodlagos mechanika ugyanabból az immutable
+  HUD snapshotból készül.
+- **Ami még kellhet hozzá:** Nincs builderfeladat; a saját tablista és HUD production megjelenését deployment előtt ellenőrizni kell.
+- **Fontos határ:** A natív tablista az IceSMP-hez szükséges funkciókat biztosítja, nem általános külső tablista-motor.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
@@ -1257,7 +1263,7 @@ Tervezett, de ebben a release-ben nem aktív. A LORE.md és TEASER.md kizáróla
 
 - Nincs jutalmazó AFK-zóna, zónaidő, payout vagy AFK-bossbar. A globális AFK ettől még aktív rendszer.
 - A natív ülés **sit-only**: nincs lay, crawl, stacking, más játékos vagy NPC megülése.
-- A natív tablista és ülés az IceSMP-hez szükséges részhalmaz; nem teljes TAB- vagy GSit-klón.
+- A natív tablista és ülés az IceSMP-hez szükséges részhalmaz; nem általános tablista-motor vagy teljes GSit-klón.
 - A lore-ban és teaserben szereplő hely, szereplő vagy ötlet csak akkor aktív gameplay,
   ha a forrásban parancs, GUI, listener, registry vagy configolt elérési út is tartozik hozzá.
 - A repository egy képességet bizonyít; azt nem, hogy az élő világban minden NPC, zóna,

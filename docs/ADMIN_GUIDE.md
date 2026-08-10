@@ -1566,7 +1566,7 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 2. Ellenőrizd a tablistát és a fej fölötti nametaget világos és sötét háttér előtt.
 3. Ellenőrizd a natív chatet mind a négy frakcióval.
 4. Kapcsold ki a natív tablistát, és ellenőrizd a HUD fallbacket.
-5. Külső TAB mellett ellenőrizd a `%icesmp_faction_color%` kimenetet: NEUTRAL `§a`, DARK `§8`.
+5. PlaceholderAPI-olvasóval ellenőrizd a `%icesmp_faction_color%` kimenetet: NEUTRAL `§a`, DARK `§8`.
 6. Aktív raidben az ellenség piros felülírása továbbra is előzze meg a frakció alapszínét.
 
 #### Runtime hardening vizuális és integrációs próbák
@@ -1601,19 +1601,102 @@ world-location- vagy lifecycle-teszt hibás, a döntés automatikusan
 Ha egy kritikus persistence-, duplikációs, permission-, reconnect-,
 world-location- vagy lifecycle-teszt hibás, a release döntése automatikusan
 **NO-GO**. A zöld build nem írja felül a hiányzó runtime bizonyítékot.
-## BetterHud class HUD (optional)
+## BetterHud class HUD (opcionális)
 
-The locked BetterHud 1.14.1 integration is display-only and requires PlaceholderAPI. Enable it with
-`hud.betterhud.enabled: true`. When both plugins are ready, IceSMP suppresses only its native class
-resource/mechanic row to prevent duplicate flicker; the rest of the native sidebar remains available.
-If either plugin is absent, startup continues and the compact native row is restored automatically.
+A lockolt BetterHud 1.14.1 kizárólag megjelenítési réteg. Bekapcsolása:
+`hud.betterhud.enabled: true`. A tartós class/spec/frakció/profil authority továbbra is a
+Profile v2 / `PlayerProfileSnapshot`; a harci mechanikák authority-ja a class service-ek mulandó
+runtime state-je. A BetterHud egyik állapotot sem írhatja vissza.
 
-Copy the files below `deploy/betterhud/` into the matching BetterHud data folders, reload BetterHud,
-then assign `icesmp_class_hud` using BetterHud's normal HUD assignment. The package uses vanilla
-Unicode/unifont and these generic placeholders: `%icesmp_class_id%`, `%icesmp_class_spec%`,
-`%icesmp_class_spec_name%`, `%icesmp_class_mechanic_primary%`,
-`%icesmp_class_mechanic_secondary%`, `%icesmp_class_state%`, `%icesmp_class_proc%`,
-`%icesmp_class_charges%`, `%icesmp_class_charges_max%`, and `%icesmp_class_mechanics%`.
-All are served from the immutable per-player HUD cache; PAPI/BetterHud async reads never touch live
-Player/PDC state. Acceptance: test startup with BetterHud+PAPI present and absent, verify the
-diagnostic log, verify exactly one class HUD, and verify all 13 classes plus their active spec.
+Minden játékos saját Folia-régiószálán készül egy immutable `HudSnapshot`. A 13 class külön Java
+`hudState` adaptere közvetlenül típusos `ClassHudMetric` és `ClassHudSlot` adatot ad át; renderelt
+magyar szöveg visszaparzolása tilos. A BetterHud bridge csak ennek a másolatát írja a játékos
+BetterHud variable mapjébe. A PlaceholderAPI ugyanezt a cache-t olvassa, ezért az async kérés nem
+érinti az élő `Player`, PDC vagy PlayerProfile objektumot.
+
+A közös contract fő csatornái:
+
+- identity: `class_id`, `class_name`, `class_spec_id`, `class_spec_name`, `class_level`;
+- világ/profil: `faction_id`, `faction`, `balance`, `event`;
+- resource: `resource_name`, `resource_current`, `resource_max`, `resource_percent`;
+- mechanika: `class_mechanic_primary`, `class_mechanic_secondary`, `class_state`, `class_proc`,
+  `class_charges`, `class_charges_max`;
+- típusos csatornák: `class_metric_<primary|secondary>_<id|label|text|value|max|percent|state>`;
+- diszkrét slotok: `class_slot_count`, valamint
+  `class_slot_<1..9>_<id|kind|state|progress|label>`.
+
+A PAPI-változat minden név elé `%icesmp_` prefixet és a végére `%` jelet kap. BetterHudban az
+IceSMP közvetlen `icesmp_...` snapshot-változókat használja, tehát a BetterHud megjelenítéséhez a
+PlaceholderAPI jelenléte nem kötelező.
+
+### Readiness és fallback
+
+Az IceSMP játékosonként csak akkor tekinti aktívnak a külső HUD-ot, ha a BetterHud plugin
+engedélyezett, az `icesmp_class_hud` ténylegesen betöltődött, és az adott BetterHud-player cache
+létrejött. Addig — YAML/asset hiba vagy join-verseny esetén is — a natív compact
+Folia bossbar/scoreboard fallback marad. Sikeres readiness után a natív class/resource sor elnémul,
+így nincs duplikáció vagy villogás. A `/hud mind` az immutable `icesmp_hud_visible` csatornán a
+BetterHud panelt is elrejti.
+
+Várt diagnosztika:
+
+- `BetterHud present+ready: IceSMP HUD active; native class HUD suppressed.`
+- hiány vagy hibás layout esetén a natív fallback marad, a szerverindulás nem fatal;
+- egy korábban aktív HUD elvesztésekor: `native class HUD fallback restored`.
+
+### Vizuális rendszer
+
+A HUD négy külön grafikai skint használ, nem egyszerű átszínezést: RED kovácsolt vas/főnix,
+BLUE fagyacél/jégkristály, NEUTRAL faragott tölgy/céhes réz, DARK obszidián/csont/lich-rúna.
+Mind a 13 class, továbbá a pénz-, event- és szintjelölés saját 64×64-es ikont kap. A Death Knight rúnaköre slotonként adja át a Vér,
+Fagy és Halál típust, valamint a `ready`, `spent`, `regenerating` állapotot és a regenerációs
+százalékot. A nagy keretek kontrollált antialiasingot és anyagárnyalást használhatnak; a progress
+maszkok kemény alfájúak. A proc-toast mind az öt megjelenítési témához külön 300×72-es keretet
+kap; a production layout ezt class-ikonnal és frakció-accenttel rétegezi.
+
+A forrás- és ellenőrzőlapok a `deploy/betterhud/previews/` könyvtárban, a futásidejű assetek a
+`deploy/betterhud/assets/icesmp/` alatt vannak. A reprodukálható generátorok:
+
+```text
+./gradlew generateBetterHudPackage
+./gradlew validateBetterHudPackage
+```
+
+A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, a nyolc DK slotcsatornát, a
+progress-maszkok alfáját és a 2,5 MB-os runtime asset budgetet. A generált layout jobb alsó
+sarokhoz horgonyzott; a forrásképeket a BetterHud rendereléskor skálázza, így a 64×64-es ikonok
+GUI scale-váltáskor is részletesek maradnak.
+
+Az új, nem üres proc-állapot első megjelenésekor az IceSMP a játékos Folia-régiószáláról a
+BetterHud dokumentált `custom` eseményét küldi. Ez kizárólag egy rövid, class-ikonnal és
+frakciószínnel renderelt toastot indít; nem ad visszaírási vagy gameplay authority-t a BetterHudnak.
+
+### A korábbi felső négyzet oka
+
+A képernyő tetején látható négyzet nem scoreboard-adat volt, hanem a BetterHud font-glyph
+resource-pack nélküli kliensoldali fallbackje. A régi fejlesztői indítás két külön pack-küldőt
+versenyeztetett, miközben a BetterHud self-host címe nem volt a kliens által elérhető; ezért a
+glyph már megjelent, a hozzá tartozó textúra viszont nem. A javított útvonal egyetlen, stabil UUID-jű
+IceSMP + külső + BetterHud composite packot küld LAN-címről, productionben pedig ugyanezt az R2
+pipeline publikálja. A csomag nem foglal kézzel private-use codepointot: a glyph-kiosztás a lockolt
+BetterHud generátoré, az IceSMP layout vanilla/unifont szöveget és saját `icesmp/` PNG-ket használ.
+
+### Resource-pack útvonal
+
+A `runFolia` egyetlen lokális IceSMP + lockolt külső + BetterHud composite packot készít, majd az
+IceSMP a LAN-címen, stabil pack UUID-val szolgálja ki. Productionben nincs auto-download és a
+BetterHud self-host tiltott. A `.github/workflows/resource-pack-r2.yml` fix Folia 1.21.11-en
+generál, `stageMergedResourcePackForR2` feladattal normalizál, SHA-1 néven R2-re tölt, és csak a
+publikus URL ellenőrzése után frissíti a beépített fallback metadatát. A pipeline nem írja felül
+vakon a meglévő packot.
+
+### Profile/menu verdict
+
+Jelenleg a helyes modell **hibrid**: a persistent/contextual HUD és proc-visszajelzések BetterHudon
+jelennek meg, a kattintható Profile v2 szerkesztőmenük inventory GUI-k maradnak. A BetterHud nem
+biztonságos mutációs authority; egy későbbi menüvizuál-rework csak a meglévő tranzakciós parancsok és
+GUI callbackek fölötti megjelenítési réteg lehet.
+
+Kézi elfogadási minimum: mind a négy frakció, mind a 13 class, legalább egy spec/class, DK teljes
+és fogyó/regeneráló rúnák, aktív/nyugalmi event, balance/level, `/hud mind`, pack elfogadás/elutasítás,
+BetterHud nélküli indulás, két Folia-régió és több GUI scale/screen resolution.

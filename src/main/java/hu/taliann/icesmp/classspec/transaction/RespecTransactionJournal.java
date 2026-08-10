@@ -306,8 +306,8 @@ public final class RespecTransactionJournal {
     private static void forceDirectory(final Path directory) throws IOException {
         try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
             channel.force(true);
-        } catch (final UnsupportedOperationException ignored) {
-            // Some filesystems do not expose directory fsync. File content was already forced.
+        } catch (final UnsupportedOperationException | java.nio.file.AccessDeniedException ignored) {
+            // Windows and some filesystems do not expose directory fsync. File content was already forced.
         }
     }
 

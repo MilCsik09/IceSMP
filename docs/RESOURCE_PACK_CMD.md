@@ -102,6 +102,11 @@ A faction- vagy lore-kötött tárgyak (a nevükben szereplő hely/örökség al
 | DARK / Kitaszítottak (Thanaopolis, Eleftheria, Néma Királyné) | csont-törtfehér, éjfekete-lila, hideg türkiz lich-fény |
 | Mélység / tenger / prizmarin (Mélység Népe, tengeri ereklyék) | prizmarin-türkiz, gyöngyház, tengerkék |
 
+A BetterHud panel ugyanezt a palettát négy külön grafikai skinben viszi tovább: RED kovácsolt
+vas/főnix, BLUE fagyacél/jégkristály, NEUTRAL tölgy/céhes réz, DARK obszidián/csont/lich-rúna.
+Az IceSMP immutable `faction_theme`, `faction_accent` és `faction_accent_soft` display értéket
+publikál; a BetterHud csak renderel, nem válik frakció-authorityvá.
+
 ## AI-generálási prompt-sablon
 
 Ha a textúrákat képgenerátorral készíted, ez a sablon jó kiindulás. **Tippek:** egyszerre csak 4–6 itemet kérj egy lapra (úgy tartja a stílust); sima FEHÉR hátteret kérj; NE kérj szöveget a képre; az itemek leírását a lenti blokkok **Ábrázolás + Színvilág** sorából másold be.
@@ -2008,9 +2013,25 @@ an invented CustomModelData magic number. The profession recipe audit additional
 resolve through `profession-materials.*.item-model`.
 ## BetterHud merge hook
 
-`deploy/betterhud/` intentionally contains no external bitmap assets: its class HUD uses Minecraft's
-vanilla-safe Unicode/unifont. BetterHud still generates its shader/font resource-pack layer. Point
-BetterHud's generated-pack destination or external-pack merge setting at a staging directory, then
-merge that output through the existing IceSMP pack pipeline and run the normal pack validation.
-Never select the live IceSMP pack directory as an overwrite target. Shader/font path conflicts must be
-resolved explicitly; BetterHud must not blindly replace an existing IceSMP resource pack.
+A `deploy/betterhud/` tartalmazza a négy frakció nagy felbontású keretét, a 64×64-es class-, rune-,
+pénz-, event- és szintikonokat, az öt témához tartozó 300×72-es proc-popup keretet, a BetterHud
+layoutot és a preview/contact sheet fájlokat. A futásidejű képek
+reprodukálhatók a `generateBetterHudPackage`, ellenőrizhetők a `validateBetterHudPackage` Gradle
+feladattal. A kereteknél kontrollált antialiasing engedett; a progress-maszkok alfája csak 0/255.
+
+A `prepareBetterHudForFolia` a kanonikus `resource-pack/` fát és a változtathatatlan külső packot
+(`4900b0a9bed8db710143393916db3687e01def54`) rendezett BetterHud inputként stage-eli. A külső
+letöltés kizárólag fejlesztői/CI lépés, SHA-1 eltérésnél fail-closed.
+
+Lokális `runFolia` alatt a BetterHud generál, az IceSMP pedig ugyanazon LAN-interfészen egyetlen
+normalizált composite packot szolgál ki. Production nem self-hostol és nem tölt le runtime packot.
+A `Publish resource pack to R2` workflow a lockolt Folia/BetterHud stacket indítja, megvárja a
+`Zip packed` és `Plugin enabled` állapotot, futtatja a `stageMergedResourcePackForR2` feladatot,
+majd SHA-1 néven tölti fel a `build/resource-pack/icesmp.zip` fájlt. A publikus URL végponttól végpontig
+ellenőrzése után az IceSMP lesz az egyetlen production pack-küldő. A live pack könyvtár sosem
+vak overwrite-célpont.
+
+A HUD nem tart fenn kézi private-use codepoint táblát. A BetterHud a saját generált fontterében
+determinista glyph-kiosztást készít; az IceSMP inputok külön `icesmp/` textúraútvonalon élnek, a
+szöveg pedig vanilla/unifont fallbacket használ. Ez megszünteti a korábbi resource-pack nélkül
+kirajzolt felső missing-glyph négyzetet és elkerüli a CraftEngine fontütközést.

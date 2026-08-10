@@ -488,6 +488,50 @@ public final class AssassinGameplayService implements Listener, PlayerStateClean
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isAssassin(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final AssassinCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final AssassinCombatState.Opening opening = combat.opening(now);
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text(
+                "opening", "Lehetőség", "Lehetőség " + (opening == null ? "—" : openingName(opening)),
+                opening == null ? "idle" : opening.name().toLowerCase(Locale.ROOT));
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String stateText = "";
+        int charges = 0;
+        int maximum = 0;
+        switch (activeSpec(id)) {
+            case "poisoner" -> {
+                charges = combat.filledToxinSlots(); maximum = 3;
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "toxin", "Toxin", "Toxin " + charges + "/3",
+                        charges, 3, charges == 3 ? "full" : "active");
+                stateText = "Dózis " + combat.totalDose();
+            }
+            case "phantom" -> {
+                final int detection = combat.detection(now, detectionDecayDelayMillis(), detectionDecayPerSecond());
+                final boolean hidden = combat.isStealthed(now, detectionBreak(id),
+                        detectionDecayDelayMillis(), detectionDecayPerSecond());
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "detection", "Észleltség", "Észleltség " + detection,
+                        detection, detectionBreak(id), hidden ? "hidden" : "exposed");
+                stateText = hidden ? "Rejtve" : "";
+            }
+            case "plaguebringer" -> {
+                charges = combat.infectionCount(now); maximum = entityCap(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "infection", "Fertőzött", "Fertőzött " + charges + "/" + maximum,
+                        charges, maximum, "stage_" + combat.strainStage());
+                stateText = "Törzs " + combat.strainStage() + ". fok";
+            }
+            default -> { }
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, stateText, opening == null ? "" : "Nyitás kész", charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.ASSASSIN) {

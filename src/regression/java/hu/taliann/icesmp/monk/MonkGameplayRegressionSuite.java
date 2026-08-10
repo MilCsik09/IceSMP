@@ -139,7 +139,8 @@ public final class MonkGameplayRegressionSuite {
                 "the gameplay-v2 allowlist still admits this completed slice");
 
         final String service = Files.readString(Path.of(
-                "src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java"));
+                "src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java"))
+                .replace("\r\n", "\n");
         check(service.contains("final double finalBefore = event.getFinalDamage();")
                         && service.contains("MonkCombatState.acceptedDefer(finalBefore,"),
                 "phase one takes the deferred share from the FINAL, already mitigated damage");

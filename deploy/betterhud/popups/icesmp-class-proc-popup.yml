@@ -1,5 +1,5 @@
-# Optional hook for server owners: invoke this popup through BetterHud's documented command/API
-# when %icesmp_class_proc% changes. IceSMP intentionally does not call BetterHud or grant authority.
+# Display-only proc toast. IceSMP emits BetterHud's custom event from the player's Folia region
+# thread after a new non-empty immutable proc snapshot appears.
 icesmp_class_proc_popup:
   move:
     duration: 4
@@ -8,13 +8,17 @@ icesmp_class_proc_popup:
       y-equation: -2t
   push: true
   key-mapping: true
+  triggers:
+    1:
+      class: custom
+      name: icesmp_class_proc
   layouts:
     1:
-      name: icesmp_class_layout
+      name: icesmp_class_proc_layout
       gui:
         x: 50
-        y: 50
+        y: 68
       pixel:
         x: 0
-        y: 28
-  duration: 30
+        y: 0
+  duration: 24

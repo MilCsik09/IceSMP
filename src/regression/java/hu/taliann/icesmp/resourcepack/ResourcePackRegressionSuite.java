@@ -14,6 +14,7 @@ public final class ResourcePackRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         listenerUsesAdditiveApiAndStableId();
+        developmentCompositeSurvivesReloads();
         packagedConfigMatchesTheStableId();
         bundledMetadataUsesMatchingImmutableHash();
         wearablePresentationSeparatesInventoryAndEquippedRendering();
@@ -25,6 +26,21 @@ public final class ResourcePackRegressionSuite {
         System.out.println("Resource pack regression suite passed.");
     }
 
+    private static void developmentCompositeSurvivesReloads() throws Exception {
+        final String source = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java"));
+        check(source.contains("return;\n        }\n        this.request = loadRequest();"),
+                "a config reload must not clear an already prepared development composite pack");
+        check(source.contains("new PackRequest(DEFAULT_PACK_ID")
+                        && !source.contains("UUID.nameUUIDFromBytes(hash)"),
+                "development pack updates must retain a stable additive pack UUID");
+        check(source.contains("ensureDevelopmentServer(address)")
+                        && source.contains("developmentPayload = new DevelopmentPayload"),
+                "development updates must swap the payload without rebinding the HTTP server");
+        check(source.contains("normalizedEntry.setTime(0L)"),
+                "development composite ZIP output must be deterministic");
+    }
+
     private static void listenerUsesAdditiveApiAndStableId() throws Exception {
         final String source = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java"));
@@ -32,6 +48,8 @@ public final class ResourcePackRegressionSuite {
                 "IceSMP resource pack no longer uses Paper's additive API");
         check(!source.contains("player.setResourcePack("),
                 "IceSMP must not overwrite the native/server or another plugin's pack layer");
+        check(source.contains("icesmp.dev.mergedBetterHudPack"),
+                "runFolia merged BetterHud pack must suppress the conflicting standalone R2 request");
         check(source.contains("UUID.fromString(\"7c847f1e-d942-3c8f-bd46-5c43bb1a3e67\")"),
                 "stable IceSMP pack UUID changed unexpectedly");
     }

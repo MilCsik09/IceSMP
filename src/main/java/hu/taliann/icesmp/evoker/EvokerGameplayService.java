@@ -374,6 +374,41 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isEvoker(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final EvokerCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final String charging = combat.chargingSpellId();
+        final int rank = charging.isEmpty() ? 0 : combat.releaseRank(charging, now,
+                rank2HoldMillis(id), rank3HoldMillis(id), fizzleMillis(id));
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "empower", "Felerősítés", rank > 0 ? "Felerősítés " + roman(rank) : "Felerősítés —",
+                rank, 3, rank > 0 ? "charging" : "idle");
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String stateText = "";
+        String proc = "";
+        final String spec = activeSpec(id);
+        if ("devastation".equals(spec)) {
+            final int threshold = burstThreshold(id);
+            final boolean armed = combat.isBurstArmed(threshold);
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "resonance", "Izzás", "Izzás " + combat.resonance() + "/" + threshold,
+                    combat.resonance(), threshold, armed ? "ready" : "building");
+            proc = armed ? "Kitörés kész" : "";
+        } else if ("preservation".equals(spec)) {
+            final long imprint = combat.imprintRemainingMillis(now);
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "imprint", "Lenyomat", imprint > 0 ? "Lenyomat " + ((imprint + 999L) / 1000L) + "s" : "Lenyomat —",
+                    imprint, fizzleMillis(id), imprint > 0 ? "active" : "idle");
+            stateText = combat.markedAllyLabel().isBlank() ? "" : "Jel: " + combat.markedAllyLabel();
+            proc = combat.isEchoArmed(now) ? "Visszhang kész" : "";
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, stateText, proc, rank, 3);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.EVOKER) {

@@ -424,6 +424,50 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isPriest(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final PriestCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final PriestCombatState.Litany litany = litany(id, combat);
+        final int verses = combat.verses();
+        final int required = versesRequired(id);
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "litany", litanyName(litany), litanyName(litany) + " " + verses + "/" + required,
+                verses, required, combat.isRecited(now) ? "recited" : "building");
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        String stateText = "";
+        String proc = combat.isRecited(now) ? "Litánia kész" : "";
+        int charges = verses;
+        int maximum = required;
+        switch (activeSpec(id)) {
+            case "discipline" -> {
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "shield_web", "Pajzsháló", "Pajzsháló " + combat.shield(),
+                        combat.shield(), 100, combat.isAtonementActive(now) ? "atonement" : "active");
+                if (combat.isAtonementActive(now)) stateText = "Engesztelés";
+            }
+            case "bone_priest" -> {
+                charges = combat.ossuary(); maximum = ossuaryMaximum(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "marrow", "Velő", "Velő " + combat.marrow(), combat.marrow(), 100, "active");
+                stateText = "Osszárium " + charges + "/" + maximum;
+            }
+            case "shadow" -> {
+                final int madness = combat.madness(now, madnessDecayDelayMillis(), madnessDecayPerSecond());
+                final int threshold = madnessThreshold(id);
+                secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                        "madness", "Őrület", "Őrület " + madness, madness, threshold,
+                        madness >= threshold ? "beyond" : "building");
+                if (madness >= threshold) proc = "Küszöbön túl";
+            }
+            default -> { }
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, stateText, proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.PRIEST) {

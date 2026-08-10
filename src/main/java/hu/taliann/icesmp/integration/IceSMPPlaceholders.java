@@ -10,12 +10,12 @@ import java.util.Locale;
 
 /**
  * PlaceholderAPI bridge — exposes IceSMP player data as {@code %icesmp_<id>%} placeholders so an
- * external scoreboard/tab plugin (e.g. TAB) can display them (instead of IceSMP drawing its own
- * sidebar). This is a soft dependency: the class is only loaded/registered when PlaceholderAPI is
+ * external HUD can display them (instead of IceSMP drawing its own sidebar). This is a soft
+ * dependency: the class is only loaded/registered when PlaceholderAPI is
  * present (see {@code IceSMPCore.registerPlaceholders}, which calls {@link #register} reflectively),
  * so the plugin runs fine without PlaceholderAPI on the build- or runtime classpath.
  *
- * <p>Folia: placeholder requests can arrive on any thread (TAB refreshes asynchronously), so this
+ * <p>Folia: placeholder requests can arrive on any thread, so this
  * reads ONLY {@link HudManager.HudSnapshot} — an immutable snapshot refreshed on each player's own
  * region thread — never the live player or its PDC off-thread.
  *
@@ -134,9 +134,15 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
         if (snapshot == null) {
             return "";
         }
-        return switch (params.toLowerCase(Locale.ROOT)) {
+        final String key = params.toLowerCase(Locale.ROOT);
+        final String genericHud = genericClassHud(snapshot.classHud(), key);
+        if (genericHud != null) return genericHud;
+        return switch (key) {
             case "faction" -> snapshot.faction();
             case "faction_id" -> snapshot.factionId();
+            case "faction_theme" -> snapshot.factionTheme();
+            case "faction_accent" -> snapshot.factionAccent();
+            case "faction_accent_soft" -> snapshot.factionAccentSoft();
             case "class", "class_name" -> snapshot.className();
             case "class_level", "level" -> String.valueOf(snapshot.classLevel());
             case "balance" -> snapshot.balance();
@@ -157,17 +163,55 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "class_mechanics" -> String.join(" • ", snapshot.classHud().mechanics());
             // Aktív világesemények egy sorban (max 2 név + "+N"), §-színekkel.
             case "event" -> snapshot.event();
-            // A név frakciószíne a közös palettából; külső TAB/scoreboard is ugyanazt kapja.
+            // A név frakciószíne a közös palettából; külső scoreboard is ugyanazt kapja.
             case "faction_color" -> FactionDisplayPalette.legacyCode(
                     hu.taliann.icesmp.managers.TablistManager.factionColor(
                             configManager, parseFaction(snapshot.factionId())));
-            // Party frames for scoreboard plugins (TAB): the member count and one
+            // Party frames for external scoreboard renderers: the member count and one
             // plain line per member ("👑 Name ▮▮▮░░ 6❤"); blank outside a party.
             case "party_size" -> String.valueOf(snapshot.partyLines().size());
             case "party_1", "party_2", "party_3", "party_4", "party_5" -> {
                 final int index = params.charAt(params.length() - 1) - '1';
                 yield index < snapshot.partyLines().size() ? snapshot.partyLines().get(index) : "";
             }
+            default -> null;
+        };
+    }
+
+    private static String genericClassHud(
+            final hu.taliann.icesmp.classspec.integration.ClassHudState state,
+            final String key) {
+        if (key.startsWith("class_metric_")) {
+            final boolean primary = key.startsWith("class_metric_primary_");
+            final boolean secondary = key.startsWith("class_metric_secondary_");
+            if (!primary && !secondary) return null;
+            final int index = primary ? 0 : 1;
+            final var metric = state.metrics().size() > index ? state.metrics().get(index) : null;
+            final String field = key.substring((primary
+                    ? "class_metric_primary_" : "class_metric_secondary_").length());
+            return switch (field) {
+                case "id" -> metric == null ? "" : metric.id();
+                case "label" -> metric == null ? "" : metric.label();
+                case "text" -> metric == null ? "" : metric.text();
+                case "value" -> metric == null ? "0" : Double.toString(metric.value());
+                case "max" -> metric == null ? "0" : Double.toString(metric.maximum());
+                case "percent" -> metric == null ? "0" : Integer.toString(metric.percent());
+                case "state" -> metric == null ? "" : metric.state();
+                default -> null;
+            };
+        }
+        if ("class_slot_count".equals(key)) return Integer.toString(state.slots().size());
+        final java.util.regex.Matcher slotKey = java.util.regex.Pattern
+                .compile("class_slot_([1-9])_(id|kind|state|progress|label)").matcher(key);
+        if (!slotKey.matches()) return null;
+        final int index = Integer.parseInt(slotKey.group(1)) - 1;
+        final var slot = index < state.slots().size() ? state.slots().get(index) : null;
+        return switch (slotKey.group(2)) {
+            case "id" -> slot == null ? "" : slot.id();
+            case "kind" -> slot == null ? "" : slot.kind();
+            case "state" -> slot == null ? "hidden" : slot.state();
+            case "progress" -> slot == null ? "0" : Integer.toString(slot.progress());
+            case "label" -> slot == null ? "" : slot.label();
             default -> null;
         };
     }

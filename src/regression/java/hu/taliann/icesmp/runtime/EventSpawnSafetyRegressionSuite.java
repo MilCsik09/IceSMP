@@ -303,7 +303,7 @@ public final class EventSpawnSafetyRegressionSuite {
     }
 
     private static String read(final String path) throws Exception {
-        return Files.readString(Path.of(path));
+        return Files.readString(Path.of(path)).replace("\r\n", "\n");
     }
 
     private static void check(final boolean condition, final String message) {

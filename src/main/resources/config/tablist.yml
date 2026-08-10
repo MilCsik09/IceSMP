@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — natív tablist (a TAB plugin kiváltása)
+# IceSMP konfiguráció — natív, saját tablista
 # A ConfigManager az összes config/*.yml-t betölti; a data-mappa config.yml-je felülírhatja.
 #
 # Funkciók (mind külön kapcsolható):
@@ -7,10 +7,10 @@
 #   nametags       — fej fölötti prefix/suffix/név-szín + LP-rang szerinti RENDEZÉS (scoreboard-teamek)
 #   playerlist-ping— ping-oszlop a tablistában
 #   animations     — frame-listák; a frame-et a rendszeridő választja (nincs külön scheduler);
-#                    intervallum-minimum 250 ms (az 50 ms-os TAB-marquee API-n át packet-pazarlás
+#                    intervallum-minimum 250 ms (az ennél gyorsabb marquee packet-pazarlás
 #                    lenne — a portolt defaultok ritkított frame-ekkel adják ugyanazt a hatást)
 #
-# A ㍿ / ㍐ karakterek a szerver resource packjének glyph-jei (a TAB-configból örökölve) —
+# A ㍿ / ㍐ karakterek a szerver resource packjének saját glyph-jei —
 # RP nélküli szerveren cseréld sima szövegre.
 tablist:
   enabled: true

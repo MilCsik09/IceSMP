@@ -2,12 +2,15 @@
 // Usage: ./gradlew -I gradle/run-folia.init.gradle runFolia
 // The class-spec dependency lock remains the only version/provisioning authority.
 
-def lockFile = new File(rootDir, 'src/main/resources/class-spec-dependencies.lock.yml')
+// Init scripts are evaluated against Gradle, not a Project; rootDir is therefore unavailable here.
+def invocationDir = gradle.startParameter.projectDir ?: gradle.startParameter.currentDir
+def lockFile = new File(invocationDir, 'src/main/resources/class-spec-dependencies.lock.yml')
 if (!lockFile.isFile()) {
     throw new GradleException("Missing class-spec dependency lock: ${lockFile}")
 }
 
 def targetMinecraft = null
+def targetFoliaBuild = null
 def dependencies = []
 def inPlugins = false
 def current = null
@@ -21,6 +24,10 @@ lockFile.eachLine('UTF-8') { raw ->
     if (!inPlugins && raw ==~ /\s{2}minecraft:\s*.*/) {
         targetMinecraft = raw.substring(raw.indexOf(':') + 1).trim()
                 .replace('"', '').replace("'", '')
+        return
+    }
+    if (!inPlugins && raw ==~ /\s{2}folia-build:\s*.*/) {
+        targetFoliaBuild = Integer.parseInt(raw.substring(raw.indexOf(':') + 1).trim())
         return
     }
     if (!inPlugins || trimmed.isEmpty() || trimmed.startsWith('#')) return
@@ -44,28 +51,111 @@ lockFile.eachLine('UTF-8') { raw ->
 if (targetMinecraft != '1.21.11') {
     throw new GradleException("Folia dev launcher requires lock target 1.21.11, got ${targetMinecraft}")
 }
+if (targetFoliaBuild == null || targetFoliaBuild <= 0) {
+    throw new GradleException("Folia dev launcher requires a positive target.folia-build lock")
+}
 
 def modrinthDeps = dependencies.findAll { it['dev-provision'] == 'modrinth' }
 def localDeps = dependencies.findAll { it['dev-provision'] == 'local' }
+def externalPackUrl = 'https://download.mc-packs.net/pack/4900b0a9bed8db710143393916db3687e01def54.zip'
+def externalPackSha1 = '4900b0a9bed8db710143393916db3687e01def54'
 
 allprojects { project ->
     if (project != rootProject) return
     project.plugins.withId('xyz.jpenilla.run-paper') {
+        def localPluginDir = project.providers.gradleProperty('icesmpDevPluginDir')
+                .orElse(project.providers.environmentVariable('ICESMP_DEV_PLUGIN_DIR'))
+        def runPluginsDir = new File(invocationDir, 'run/plugins')
+        def betterHudDeployDir = new File(invocationDir, 'deploy/betterhud')
+        def betterHudDevConfig = new File(invocationDir, 'gradle/betterhud-dev.config.yml')
+        def betterHudRunDir = new File(runPluginsDir, 'BetterHud')
+        def iceSmpPackSourceDir = new File(invocationDir, 'resource-pack')
+        def iceSmpPackMergeDir = new File(runPluginsDir, 'IceSMPResourcePack')
+        def externalPackFile = new File(runPluginsDir, 'IceSMPExternalBase.zip')
+        def prepareBetterHud = project.tasks.register('prepareBetterHudForFolia') {
+            group = 'icesmp development'
+            description = 'Installs the IceSMP BetterHud layout and local-only resource-pack hosting config.'
+            inputs.dir(betterHudDeployDir)
+            inputs.file(betterHudDevConfig)
+            inputs.dir(iceSmpPackSourceDir)
+            inputs.property('externalPackUrl', externalPackUrl)
+            inputs.property('externalPackSha1', externalPackSha1)
+            outputs.dirs(betterHudRunDir, iceSmpPackMergeDir)
+            outputs.file(externalPackFile)
+            doLast {
+                java.nio.file.Files.walk(betterHudDeployDir.toPath()).withCloseable { paths ->
+                    paths.forEach { source ->
+                        def relative = betterHudDeployDir.toPath().relativize(source)
+                        def target = betterHudRunDir.toPath().resolve(relative)
+                        if (java.nio.file.Files.isDirectory(source)) {
+                            java.nio.file.Files.createDirectories(target)
+                        } else {
+                            java.nio.file.Files.createDirectories(target.parent)
+                            java.nio.file.Files.copy(source, target,
+                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                        }
+                    }
+                }
+                def betterHudRunConfig = new File(betterHudRunDir, 'config.yml').toPath()
+                def devHost = java.net.InetAddress.getLocalHost().hostAddress
+                def devConfigText = java.nio.file.Files.readString(betterHudDevConfig.toPath(),
+                        java.nio.charset.StandardCharsets.UTF_8)
+                        .replace('__ICESMP_DEV_HOST__', devHost)
+                java.nio.file.Files.writeString(betterHudRunConfig, devConfigText,
+                        java.nio.charset.StandardCharsets.UTF_8)
+                java.nio.file.Files.walk(iceSmpPackSourceDir.toPath()).withCloseable { paths ->
+                    paths.forEach { source ->
+                        def relative = iceSmpPackSourceDir.toPath().relativize(source)
+                        if (relative.toString() == 'README.md') return
+                        def target = iceSmpPackMergeDir.toPath().resolve(relative)
+                        if (java.nio.file.Files.isDirectory(source)) {
+                            java.nio.file.Files.createDirectories(target)
+                        } else {
+                            java.nio.file.Files.createDirectories(target.parent)
+                            java.nio.file.Files.copy(source, target,
+                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                        }
+                    }
+                }
+                def digest = java.security.MessageDigest.getInstance('SHA-1')
+                def currentHash = externalPackFile.isFile()
+                        ? java.util.HexFormat.of().formatHex(digest.digest(java.nio.file.Files.readAllBytes(externalPackFile.toPath())))
+                        : ''
+                if (currentHash != externalPackSha1) {
+                    runPluginsDir.mkdirs()
+                    def temporary = new File(runPluginsDir, 'IceSMPExternalBase.zip.part')
+                    new URI(externalPackUrl).toURL().openStream().withCloseable { input ->
+                        java.nio.file.Files.copy(input, temporary.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                    }
+                    digest.reset()
+                    def downloadedHash = java.util.HexFormat.of().formatHex(
+                            digest.digest(java.nio.file.Files.readAllBytes(temporary.toPath())))
+                    if (downloadedHash != externalPackSha1) {
+                        temporary.delete()
+                        throw new GradleException("External resource-pack SHA-1 mismatch: ${downloadedHash}")
+                    }
+                    java.nio.file.Files.move(temporary.toPath(), externalPackFile.toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                }
+                logger.lifecycle("Provisioned one merged IceSMP + external + BetterHud development resource pack for IceSMP delivery at ${devHost}:8164.")
+            }
+        }
         def prepareLocal = project.tasks.register('prepareLocalClassSpecPluginsForFolia') {
             group = 'icesmp development'
             description = 'Copies licensed/local dependency-lock artifacts into the Folia dev server.'
             doLast {
-                def configured = project.findProperty('icesmpDevPluginDir') ?: System.getenv('ICESMP_DEV_PLUGIN_DIR')
+                def configured = localPluginDir.orNull
                 if (configured == null || configured.toString().isBlank()) {
-                    project.logger.lifecycle('IceSMP local dev plugins skipped. Set -PicesmpDevPluginDir=<dir> or ICESMP_DEV_PLUGIN_DIR when licensed/local artifacts are needed.')
+                    logger.lifecycle('IceSMP local dev plugins skipped. Set -PicesmpDevPluginDir=<dir> or ICESMP_DEV_PLUGIN_DIR when licensed/local artifacts are needed.')
                     return
                 }
-                def sourceDir = project.file(configured.toString())
+                def configuredFile = new File(configured.toString())
+                def sourceDir = configuredFile.isAbsolute() ? configuredFile : new File(invocationDir, configured.toString())
                 if (!sourceDir.isDirectory()) {
                     throw new GradleException("IceSMP dev plugin directory does not exist: ${sourceDir}")
                 }
-                def targetDir = project.file('run/plugins')
-                targetDir.mkdirs()
+                runPluginsDir.mkdirs()
                 localDeps.each { dep ->
                     def name = dep['dev-local-file']
                     if (name == null || name.isBlank()) {
@@ -75,11 +165,9 @@ allprojects { project ->
                     if (!source.isFile()) {
                         throw new GradleException("Missing local dev plugin for ${dep.id}: ${source}")
                     }
-                    project.copy {
-                        from source
-                        into targetDir
-                    }
-                    project.logger.lifecycle("Provisioned local IceSMP dev plugin ${dep.id}: ${name}")
+                    java.nio.file.Files.copy(source.toPath(), new File(runPluginsDir, name).toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                    logger.lifecycle("Provisioned local IceSMP dev plugin ${dep.id}: ${name}")
                 }
             }
         }
@@ -87,7 +175,8 @@ allprojects { project ->
         def extension = project.extensions.getByName('runPaper')
         extension.folia.registerTask {
             minecraftVersion(targetMinecraft)
-            jvmArgs('-Xms2G', '-Xmx2G', '-Dpaper.disablePluginRemapping=true')
+            build(targetFoliaBuild)
+            jvmArgs('-Xms2G', '-Xmx2G', '-Dicesmp.dev.mergedBetterHudPack=true')
             downloadPlugins {
                 modrinthDeps.each { dep ->
                     def projectId = dep['dev-project']
@@ -102,7 +191,7 @@ allprojects { project ->
         project.tasks.named('runFolia').configure {
             group = 'icesmp development'
             description = 'Runs the canonical IceSMP Folia 1.21.11 dev server with lock-pinned plugins.'
-            dependsOn(prepareLocal)
+            dependsOn(prepareLocal, prepareBetterHud)
         }
     }
 }

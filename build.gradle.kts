@@ -1,6 +1,170 @@
+import java.security.MessageDigest
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+
 plugins {
     id("java-library")
     alias(libs.plugins.run.paper)
+}
+
+val betterHudPython = if (System.getProperty("os.name").lowercase().contains("windows")) "python" else "python3"
+val generateBetterHudAssets by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Regenerates deterministic IceSMP BetterHud pixel assets."
+    commandLine(betterHudPython, "scripts/generate_betterhud_assets.py")
+}
+val generateBetterHudLayout by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Regenerates the class-agnostic BetterHud layout."
+    commandLine(betterHudPython, "scripts/generate_betterhud_layout.py")
+}
+val generateBetterHudPackage by tasks.registering {
+    group = "build"
+    description = "Regenerates deterministic IceSMP BetterHud pixel assets and layout."
+    dependsOn(generateBetterHudAssets, generateBetterHudLayout)
+}
+
+val validateBetterHudPackage by tasks.registering {
+    group = "verification"
+    description = "Validates BetterHud layout coverage, asset dimensions, progress-mask alpha and budget."
+    val deploy = layout.projectDirectory.dir("deploy/betterhud")
+    inputs.dir(deploy)
+    inputs.files("scripts/generate_betterhud_assets.py", "scripts/generate_betterhud_layout.py")
+    doLast {
+        val assets = deploy.dir("assets/icesmp").asFile
+        val layoutText = deploy.dir("layouts").asFile.listFiles { file -> file.extension == "yml" }
+            ?.sortedBy { it.name }?.joinToString("\n") { it.readText(Charsets.UTF_8) }.orEmpty()
+        val imageText = deploy.file("images/icesmp-class-images.yml").asFile.readText(Charsets.UTF_8)
+        val hudText = deploy.file("huds/icesmp-class-hud.yml").asFile.readText(Charsets.UTF_8)
+        listOf("red", "blue", "neutral", "dark").forEach { faction ->
+            require(layoutText.contains("frame_$faction:")) { "Missing graphical faction skin: $faction" }
+            require(assets.resolve("frame-$faction.png").isFile) { "Missing faction frame asset: $faction" }
+        }
+        listOf("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
+            "druid", "priest", "death_knight", "assassin", "warlock", "wizard").forEach { job ->
+            require(layoutText.contains("class_$job:")) { "Missing class icon mapping: $job" }
+            require(assets.resolve("class-$job.png").isFile) { "Missing class icon asset: $job" }
+        }
+        require(hudText.contains("icesmp_hud_visible")) { "BetterHud must honour the IceSMP /hud visibility snapshot" }
+        require((1..8).all { layoutText.contains("rune_progress_$it:") }) {
+            "Death Knight rune slots/progress are incomplete"
+        }
+        require(imageText.contains("number:icesmp_class_slot_8_progress")) {
+            "Death Knight slot listener mapping is incomplete"
+        }
+        listOf("money", "event", "level").forEach { icon ->
+            require(assets.resolve("icon-$icon.png").isFile) { "Missing HUD utility icon: $icon" }
+        }
+        listOf("guest", "red", "blue", "neutral", "dark").forEach { theme ->
+            require(assets.resolve("popup-$theme.png").isFile) { "Missing proc popup skin: $theme" }
+            require(layoutText.contains("popup_$theme:")) { "Missing proc popup layout skin: $theme" }
+        }
+        val pngs = assets.listFiles { file -> file.extension.equals("png", true) }?.toList().orEmpty()
+        require(pngs.isNotEmpty()) { "No BetterHud PNG assets found" }
+        require(pngs.sumOf { it.length() } <= 2_500_000L) { "BetterHud runtime asset budget exceeded 2.5 MB" }
+        pngs.forEach { file ->
+            val image: BufferedImage = ImageIO.read(file) ?: error("Unreadable PNG: $file")
+            if (file.name.startsWith("class-") || file.name.startsWith("rune-") && file.name != "rune-progress.png") {
+                require(image.width == 64 && image.height == 64) {
+                    "Class and rune icons must retain their 64x64 source resolution: $file (${image.width}x${image.height})"
+                }
+            }
+            if (file.name.startsWith("frame-")) {
+                require(image.width >= 640 && image.height >= 400) {
+                    "HUD frames must retain high-resolution source detail: $file (${image.width}x${image.height})"
+                }
+            }
+            if (file.name.startsWith("icon-")) {
+                require(image.width == 64 && image.height == 64) {
+                    "HUD utility icons must retain 64x64 resolution: $file"
+                }
+            }
+            if (file.name.startsWith("popup-")) {
+                require(image.width == 300 && image.height == 72) {
+                    "Proc popup skins must retain 300x72 resolution: $file"
+                }
+            }
+            for (y in 0 until image.height) for (x in 0 until image.width) {
+                val alpha = image.getRGB(x, y).ushr(24) and 0xff
+                if (file.name.startsWith("resource-") || file.name == "rune-progress.png") {
+                    require(alpha == 0 || alpha == 255) {
+                        "Progress masks require hard alpha: $file ($x,$y=$alpha)"
+                    }
+                }
+            }
+        }
+        logger.lifecycle("BetterHud package valid: ${pngs.size} assets, ${pngs.sumOf { it.length() }} bytes")
+    }
+}
+
+val stageMergedResourcePackForR2 by tasks.registering {
+    group = "distribution"
+    description = "Validates and stages the BetterHud-generated composite pack for immutable R2 publishing."
+    val generatedPack = layout.projectDirectory.file("run/plugins/BetterHud/build.zip")
+    val stagedPack = layout.buildDirectory.file("resource-pack/icesmp.zip")
+    val metadata = layout.buildDirectory.file("resource-pack/merged.properties")
+    inputs.file(generatedPack)
+    outputs.files(stagedPack, metadata)
+    doLast {
+        val source = generatedPack.asFile
+        if (!source.isFile) {
+            throw GradleException("Missing BetterHud generated pack: $source. Run runFolia until BetterHud reports 'Zip packed' first.")
+        }
+        ZipFile(source).use { zip ->
+            val names = zip.entries().asSequence().map { it.name }.toSet()
+            val required = listOf(
+                "pack.mcmeta",
+                "assets/minecraft/textures/logo/logo.png"
+            )
+            required.forEach { entry ->
+                if (entry !in names) throw GradleException("Composite resource pack is missing $entry")
+            }
+            if (names.none { it.startsWith("assets/icesmp/") }) {
+                throw GradleException("Composite resource pack is missing the IceSMP namespace")
+            }
+            if (names.none { it.startsWith("assets/betterhud/") || it.startsWith("betterhud_") }) {
+                throw GradleException("Composite resource pack is missing the BetterHud layer")
+            }
+        }
+        val target = stagedPack.get().asFile
+        target.parentFile.mkdirs()
+        ZipInputStream(source.inputStream().buffered()).use { input ->
+            ZipOutputStream(target.outputStream().buffered()).use { output ->
+                var entry = input.nextEntry
+                while (entry != null) {
+                    val content = input.readBytes()
+                    output.putNextEntry(ZipEntry(entry.name).apply { time = 0L })
+                    if (entry.name == "pack.mcmeta") {
+                        @Suppress("UNCHECKED_CAST")
+                        val root = JsonSlurper().parseText(content.toString(Charsets.UTF_8))
+                                as MutableMap<String, Any?>
+                        @Suppress("UNCHECKED_CAST")
+                        val pack = root["pack"] as MutableMap<String, Any?>
+                        pack.remove("supported_formats")
+                        pack["pack_format"] = 75
+                        pack["min_format"] = 75
+                        pack["max_format"] = 75
+                        output.write(JsonOutput.toJson(root).toByteArray(Charsets.UTF_8))
+                    } else {
+                        output.write(content)
+                    }
+                    output.closeEntry()
+                    input.closeEntry()
+                    entry = input.nextEntry
+                }
+            }
+        }
+        val sha1 = MessageDigest.getInstance("SHA-1")
+            .digest(target.readBytes()).joinToString("") { "%02x".format(it) }
+        metadata.get().asFile.writeText("sha1=$sha1\nsize=${target.length()}\n", Charsets.UTF_8)
+        logger.lifecycle("Staged merged R2 pack: ${target.path} (${target.length()} bytes, SHA-1 $sha1)")
+    }
 }
 
 repositories {
@@ -25,7 +189,7 @@ java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
 tasks {
     runServer {
         minecraftVersion(libs.versions.minecraft.get())
-        jvmArgs("-Xms2G", "-Xmx2G", "-Dpaper.disablePluginRemapping=true")
+        jvmArgs("-Xms2G", "-Xmx2G")
     }
     processResources {
         val props = mapOf("version" to version, "description" to project.description)
@@ -92,6 +256,10 @@ val hudRegressionTest = registerRegression(
     "hudRegressionTest",
     "Runs editable native HUD layout and Paper team-colour regressions.",
     "hu.taliann.icesmp.managers.HudRegressionSuite")
+val platformCapabilitiesRegressionTest = registerRegression(
+    "platformCapabilitiesRegressionTest",
+    "Runs Paper/Folia scoreboard capability and compact fallback regressions.",
+    "hu.taliann.icesmp.utils.PlatformCapabilitiesRegressionSuite")
 val classSpecCompatibilityRegressionTest = registerRegression(
     "classSpecCompatibilityRegressionTest",
     "Runs class/spec dependency-lock and portability regressions.",
@@ -410,11 +578,12 @@ val warlockProfileRegressionTest = registerRegression(
     "hu.taliann.icesmp.warlock.WarlockProfileRegressionSuite")
 
 tasks.check {
+    dependsOn(validateBetterHudPackage)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
         configStartupRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
-        territoryCapitalRegressionTest, hudRegressionTest, pauseMenuDialogRegressionTest,
+        territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,

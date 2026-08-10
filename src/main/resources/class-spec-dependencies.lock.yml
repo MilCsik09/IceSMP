@@ -2,7 +2,8 @@ schema-version: 2
 verified-on: "2026-08-10"
 target:
   minecraft: "1.21.11"
-  platform: "Paper/Folia 1.21.11"
+  platform: "Folia 1.21.11"
+  folia-build: 14
   java: 21
 
 # Runtime roles:
@@ -28,23 +29,23 @@ plugins:
   WorldEdit:
     server-name: WorldEdit
     runtime-role: optional-integration
-    accepted-versions: ["7.4.4"]
-    verification: official-release-folia
-    source-page: "https://modrinth.com/plugin/worldedit/version/qNuPcliz"
+    accepted-versions: ["7.4.1"]
+    verification: java21-folia-1.21.11-smoke
+    source-page: "https://modrinth.com/plugin/worldedit/version/JUWRHdru"
     artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
     dev-provision: modrinth
     dev-project: "worldedit"
-    dev-version-id: "qNuPcliz"
+    dev-version-id: "JUWRHdru"
   WorldGuard:
     server-name: WorldGuard
     runtime-role: optional-integration
-    accepted-versions: ["7.0.17"]
-    verification: official-release
-    source-page: "https://modrinth.com/plugin/worldguard/version/pI4UHLJL"
+    accepted-versions: ["7.0.16"]
+    verification: java21-folia-1.21.11-smoke
+    source-page: "https://modrinth.com/plugin/worldguard/version/EZl3moba"
     artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
     dev-provision: modrinth
     dev-project: "worldguard"
-    dev-version-id: "pI4UHLJL"
+    dev-version-id: "EZl3moba"
   PlaceholderAPI:
     server-name: PlaceholderAPI
     runtime-role: optional-integration
@@ -88,7 +89,7 @@ plugins:
     server-name: MythicMobs
     runtime-role: optional-integration
     accepted-versions: ["5.13.0"]
-    verification: official-release
+    verification: java21-folia-1.21.11-smoke
     source-page: "https://modrinth.com/plugin/mythicmobs/version/YVgkWAjK"
     artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
     dev-provision: modrinth
@@ -107,13 +108,13 @@ plugins:
   FancyDialogs:
     server-name: FancyDialogs
     runtime-role: optional-integration
-    accepted-versions: ["1.3.0"]
-    verification: official-release
-    source-page: "https://modrinth.com/plugin/fancydialogs/version/nBkggYSH"
+    accepted-versions: ["1.1.2"]
+    verification: java21-folia-1.21.11-smoke
+    source-page: "https://modrinth.com/plugin/fancydialogs/version/FDN3VGi4"
     artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
     dev-provision: modrinth
     dev-project: "fancydialogs"
-    dev-version-id: "nBkggYSH"
+    dev-version-id: "FDN3VGi4"
   PacketEvents:
     server-name: packetevents
     runtime-role: optional-integration

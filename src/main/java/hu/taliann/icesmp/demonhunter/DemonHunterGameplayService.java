@@ -337,6 +337,38 @@ public final class DemonHunterGameplayService implements Listener, PlayerStateCl
         return suffix;
     }
 
+    /** Owner-thread, structured HUD projection; no rendered-text parsing. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudMechanics hudState(final Player player) {
+        if (!isDemonHunter(player)) return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.empty();
+        final UUID id = player.getUniqueId();
+        final DemonHunterCombatState combat = state(id);
+        final long now = System.currentTimeMillis();
+        final int load = combat.load(now, loadDecayDelayMillis(), loadDecayPerSecond());
+        final DemonHunterCombatState.LoadBand band = combat.loadBand(now, heatedThreshold(),
+                overloadThreshold(), loadDecayDelayMillis(), loadDecayPerSecond());
+        final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                "load", "Terhelés", "Terhelés " + load + " " + bandName(band),
+                load, 100, band.name().toLowerCase(Locale.ROOT));
+        var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
+        int charges = 0;
+        int maximum = 0;
+        String stateText = "";
+        String proc = band == DemonHunterCombatState.LoadBand.TULTERHELT ? "Túlterhelt" : "";
+        if ("havoc".equals(activeSpec(id))) {
+            charges = combat.fragments(); maximum = 5;
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "fragments", "Töredék", "Töredék " + charges, charges, maximum, "active");
+            stateText = combat.isMomentumArmed(now) ? "Momentum" : "";
+        } else if ("vengeance".equals(activeSpec(id))) {
+            secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
+                    "pain", "Fájdalom", "Fájdalom " + combat.pain(), combat.pain(), 100, "active");
+            charges = combat.armedSigils(now); maximum = 2;
+            stateText = "Sigil " + charges + "/2";
+        }
+        return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
+                primary, secondary, stateText, proc, charges, maximum);
+    }
+
     public void reconcileProfile(final Player player) {
         if (player == null) return;
         if (jobs.getPrimaryJob(player) != JobType.DEMON_HUNTER) {

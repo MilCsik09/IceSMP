@@ -92,7 +92,8 @@ public final class ProfessionRecipeAuditRegressionSuite {
         check(catalog.indexOf("final Set<String> semanticFingerprints")
                         < catalog.lastIndexOf("state = new CatalogState"),
                 "candidate validation completes before atomic publication");
-        final String core = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
+        final String core = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"))
+                .replace("\r\n", "\n");
         check(core.contains("professionRecipeCatalog.load();\n            professionRecipeManager.registerRecipes();"),
                 "full reload rebuilds recipe registry");
         check(core.contains("professionRecipeManager::shutdown"), "disable removes owned recipe keys");

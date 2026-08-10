@@ -1061,23 +1061,20 @@ public final class IceSMPCore {
                             hu.taliann.icesmp.managers.TerritoryManager.class)
                     .invoke(null, plugin, hudManager, configManager, bestiaryManager,
                             professionRecipeCatalog, territoryManager);
-            hudManager.setPlaceholderBridgeReady(true);
             plugin.getLogger().info("PlaceholderAPI integráció bekapcsolva (%icesmp_...% placeholderek).");
         } catch (final Throwable throwable) {
-            hudManager.setPlaceholderBridgeReady(false);
             plugin.getLogger().warning("PlaceholderAPI jelen van, de a placeholder-integráció nem indult: "
                     + throwable.getMessage());
         }
     }
 
     private void logClassHudCapability() {
-        if (hudManager.betterHudActive()) {
-            plugin.getLogger().info("BetterHud present+ready: BetterHud class HUD active; native class resource row suppressed.");
+        final boolean present = plugin.getServer().getPluginManager().isPluginEnabled("BetterHud");
+        if (present) {
+            plugin.getLogger().info("BetterHud detected; HUD readiness is verified against the loaded icesmp_class_hud "
+                    + "on the first immutable snapshot. Native fallback remains active until then.");
         } else {
-            final boolean present = plugin.getServer().getPluginManager().isPluginEnabled("BetterHud");
-            final boolean papi = plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
-            plugin.getLogger().info("BetterHud class HUD inactive (present=" + present + ", PlaceholderAPI=" + papi
-                    + "); native compact class HUD fallback active.");
+            plugin.getLogger().info("BetterHud missing; native compact class HUD fallback active.");
         }
     }
 
@@ -1173,17 +1170,6 @@ public final class IceSMPCore {
     private void adviseOnPluginCompatibility() {
         final org.bukkit.plugin.PluginManager pluginManager = plugin.getServer().getPluginManager();
 
-        if (pluginManager.getPlugin("TAB") != null) {
-            // A tablist/scoreboard mostantól natívan megy (TablistManager + HudManager) — a TAB
-            // plugin felesleges, és ha mindkettő aktív, a teameken/neveken verekedni fognak.
-            if (configManager.getBoolean("tablist.enabled", true)
-                    || configManager.getBoolean("hud.sidebar-enabled", true)) {
-                plugin.getLogger().warning("TAB észlelve, miközben az IceSMP natív tablist/scoreboard rétege aktív —"
-                        + " a kettő ütközni fog! Ajánlott: a TAB plugin eltávolítása (a teljes funkciója house-ban van:"
-                        + " config/tablist.yml + hud.sidebar). Ha mégis a TAB-ot tartod meg: tablist.enabled: false"
-                        + " és general.yml → hud.sidebar-enabled: false (%icesmp_...% placeholderek).");
-            }
-        }
         if (pluginManager.getPlugin("WorldGuard") != null) {
             plugin.getLogger().info("WorldGuard észlelve: a meteor/kincs események kerülik a WG-régiókat (ProtectionBridge).");
         }

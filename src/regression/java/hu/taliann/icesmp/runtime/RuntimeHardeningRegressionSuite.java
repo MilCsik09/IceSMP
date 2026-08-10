@@ -219,7 +219,7 @@ public final class RuntimeHardeningRegressionSuite {
     }
 
     private static String source(final String relative) throws Exception {
-        return Files.readString(Path.of(relative));
+        return Files.readString(Path.of(relative)).replace("\r\n", "\n");
     }
 
     private static void check(final boolean condition, final String message) {
