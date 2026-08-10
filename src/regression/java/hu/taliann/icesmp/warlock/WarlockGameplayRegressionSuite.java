@@ -27,6 +27,8 @@ public final class WarlockGameplayRegressionSuite {
         theCombatStateHoldsNoDemonAuthority();
         cleanupLifecycle();
         debtAndAllowlistSourceContracts();
+        hu.taliann.icesmp.wizard.WizardGameplayRegressionSuite.main(args);
+        hu.taliann.icesmp.wizard.WizardProfileRegressionSuite.main(args);
         System.out.println("Warlock gameplay regression suite passed. assertions=" + assertions);
     }
 
