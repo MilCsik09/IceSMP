@@ -67,17 +67,14 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         transientOwners.add(resources);
     }
 
-    /** Additional concrete transient owner; durable authority remains Profile v2. */
     public void registerTransientOwner(final PlayerStateCleanup owner) {
         transientOwners.add(Objects.requireNonNull(owner, "owner"));
     }
 
-    /** Spec-local cleanup that deliberately preserves class-common state during slot switch. */
     public void setLoadoutSwitchCleanup(final Consumer<UUID> cleanup) {
         loadoutSwitchCleanup = cleanup == null ? ignored -> { } : cleanup;
     }
 
-    /** Region-thread callback after grants are reconciled (e.g. physical spellbook refresh). */
     public void setPostReconcile(final Consumer<Player> callback) {
         postReconcile = callback == null ? ignored -> { } : callback;
     }
@@ -134,23 +131,19 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         ensureRuntimeWiring();
         if (!ClassSpecRuntimePort.requiresRuntimeReconciliation(kind)) {
             return current(id, token) ? CompletableFuture.completedFuture(null)
-                    : CompletableFuture.failedFuture(
-                            new ProfileSessionRegistry.StaleSessionException(id, token));
+                    : CompletableFuture.failedFuture(new ProfileSessionRegistry.StaleSessionException(id, token));
         }
-        // Selecting the second, inactive slot must not tear down/rebuild the active runtime.
         if (kind == MutationKind.SELECT
                 && Objects.equals(previous.activeSlot(), durable.activeSlot())
                 && activeSpec(previous).equals(activeSpec(durable))) {
             return current(id, token) ? CompletableFuture.completedFuture(null)
-                    : CompletableFuture.failedFuture(
-                            new ProfileSessionRegistry.StaleSessionException(id, token));
+                    : CompletableFuture.failedFuture(new ProfileSessionRegistry.StaleSessionException(id, token));
         }
         return reconcile(id, token, durable, durable.isGameplayUsable(), kind);
     }
 
     @Override
-    public CompletionStage<Void> failClosed(final UUID id, final UUID token,
-                                            final String reason) {
+    public CompletionStage<Void> failClosed(final UUID id, final UUID token, final String reason) {
         ensureRuntimeWiring();
         return reconcile(id, token, null, false, null);
     }
@@ -159,73 +152,41 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                                             final ClassSpecSection durable,
                                             final boolean regrant,
                                             final MutationKind kind) {
-        if (!accepting.get()) {
-            return CompletableFuture.failedFuture(
-                    new IllegalStateException("Profile runtime adapter stopped"));
-        }
-        if (!current(id, token)) {
-            return CompletableFuture.failedFuture(
-                    new ProfileSessionRegistry.StaleSessionException(id, token));
-        }
+        if (!accepting.get()) return CompletableFuture.failedFuture(new IllegalStateException("Profile runtime adapter stopped"));
+        if (!current(id, token)) return CompletableFuture.failedFuture(new ProfileSessionRegistry.StaleSessionException(id, token));
         final Player player = Bukkit.getPlayer(id);
         if (player == null) {
             try {
-                if (!current(id, token)) {
-                    throw new ProfileSessionRegistry.StaleSessionException(id, token);
-                }
+                if (!current(id, token)) throw new ProfileSessionRegistry.StaleSessionException(id, token);
                 clearUuidOnly(id, kind);
                 return CompletableFuture.completedFuture(null);
             } catch (final Throwable failure) {
                 return CompletableFuture.failedFuture(failure);
             }
         }
-        final Predicate<String> revoke = kind == MutationKind.ADMIN_RESET
-                ? source -> source.startsWith(JobManager.SOURCE_BASE_PREFIX)
-                        || source.startsWith(JobManager.SOURCE_SPEC_PREFIX)
-                : source -> source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
+        final Predicate<String> revoke = source -> source.startsWith(JobManager.SOURCE_BASE_PREFIX)
+                || source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
         return jobs.revokeGrantsFromV2(player, revoke)
-                .thenCompose(ignored -> runOnOwner(id, token, player,
-                        () -> clearUuidOnly(id, kind)))
-                .thenCompose(ignored -> regrant
-                        ? specs.applyClassSpecializationUnlocksV2(player, durable)
-                        : CompletableFuture.completedFuture(null))
-                .thenCompose(ignored -> runOnOwner(id, token, player,
-                        () -> postReconcile.accept(player)))
+                .thenCompose(ignored -> runOnOwner(id, token, player, () -> clearUuidOnly(id, kind)))
+                .thenCompose(ignored -> regrant ? jobs.applyAutoUnlocksV2(player, durable) : CompletableFuture.completedFuture(null))
+                .thenCompose(ignored -> regrant ? specs.applyClassSpecializationUnlocksV2(player, durable) : CompletableFuture.completedFuture(null))
+                .thenCompose(ignored -> runOnOwner(id, token, player, () -> postReconcile.accept(player)))
                 .thenCompose(ignored -> kind == MutationKind.SELECT
-                        ? runOnOwner(id, token, player,
-                                () -> AdvancementService.award(player, "first_spec"))
+                        ? runOnOwner(id, token, player, () -> AdvancementService.award(player, "first_spec"))
                         : CompletableFuture.completedFuture(null));
     }
 
-    private CompletionStage<Void> runOnOwner(final UUID id, final UUID token,
-                                             final Player player,
-                                             final Runnable action) {
+    private CompletionStage<Void> runOnOwner(final UUID id, final UUID token, final Player player, final Runnable action) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         player.getScheduler().run(plugin, task -> {
-            if (!accepting.get()) {
-                result.completeExceptionally(
-                        new IllegalStateException("Profile runtime adapter stopped"));
-                return;
-            }
-            if (!current(id, token)) {
-                result.completeExceptionally(
-                        new ProfileSessionRegistry.StaleSessionException(id, token));
-                return;
-            }
-            try {
-                action.run();
-                result.complete(null);
-            } catch (final Throwable failure) {
-                result.completeExceptionally(failure);
-            }
-        }, () -> result.completeExceptionally(
-                new IllegalStateException("Player scheduler rejected Profile v2 reconciliation")));
+            if (!accepting.get()) { result.completeExceptionally(new IllegalStateException("Profile runtime adapter stopped")); return; }
+            if (!current(id, token)) { result.completeExceptionally(new ProfileSessionRegistry.StaleSessionException(id, token)); return; }
+            try { action.run(); result.complete(null); } catch (final Throwable failure) { result.completeExceptionally(failure); }
+        }, () -> result.completeExceptionally(new IllegalStateException("Player scheduler rejected Profile v2 reconciliation")));
         return result;
     }
 
-    private boolean current(final UUID id, final UUID token) {
-        return accepting.get() && sessions.isCurrent(id, token);
-    }
+    private boolean current(final UUID id, final UUID token) { return accepting.get() && sessions.isCurrent(id, token); }
 
     private void clearUuidOnly(final UUID id, final MutationKind kind) {
         final boolean switching = kind == MutationKind.LOADOUT_SWITCH;
@@ -234,9 +195,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                     || owner instanceof WarriorGameplayService
                     || owner instanceof EvokerGameplayService
                     || owner instanceof ArcherGameplayService
-                    || owner instanceof ShamanGameplayService)) {
-                continue;
-            }
+                    || owner instanceof ShamanGameplayService)) continue;
             owner.clearPlayerState(id);
         }
         if (switching) loadoutSwitchCleanup.accept(id);
@@ -248,7 +207,5 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         return profile.loadout(profile.activeSlot()).specializationId();
     }
 
-    public void stop() {
-        accepting.set(false);
-    }
+    public void stop() { accepting.set(false); }
 }
