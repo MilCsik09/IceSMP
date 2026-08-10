@@ -50,7 +50,8 @@ public final class ResourcePackRegressionSuite {
     private static void developmentCompositeSurvivesReloads() throws Exception {
         final String source = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java"));
-        check(source.contains("return;\n        }\n        this.request = loadRequest();"),
+        final String normalizedSource = source.replace("\r\n", "\n");
+        check(normalizedSource.contains("return;\n        }\n        this.request = loadRequest();"),
                 "a config reload must not clear an already prepared development composite pack");
         check(source.contains("new PackRequest(DEFAULT_PACK_ID")
                         && !source.contains("UUID.nameUUIDFromBytes(hash)"),
