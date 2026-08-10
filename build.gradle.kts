@@ -52,6 +52,9 @@ val validateBetterHudPackage by tasks.registering {
             require(assets.resolve("class-$job.png").isFile) { "Missing class icon asset: $job" }
         }
         require(hudText.contains("icesmp_hud_visible")) { "BetterHud must honour the IceSMP /hud visibility snapshot" }
+        require(hudText.contains("y: 0") && !hudText.contains("y: 100")) {
+            "The persistent HUD must use the upper-right anchor and stay clear of the hand/hotbar"
+        }
         require((1..8).all { layoutText.contains("rune_progress_$it:") }) {
             "Death Knight rune slots/progress are incomplete"
         }
@@ -68,8 +71,11 @@ val validateBetterHudPackage by tasks.registering {
         require(imageText.contains("number:icesmp_class_slot_8_progress")) {
             "Death Knight slot listener mapping is incomplete"
         }
-        require(layoutText.contains("x: -180") && layoutText.contains("scale: 0.22")) {
-            "The compact faction frame must remain inside the lower-right HUD safe area"
+        require(layoutText.contains("x: -218") && layoutText.contains("scale: 0.3")) {
+            "The faction frame must remain inside the upper-right HUD safe area"
+        }
+        require(layoutText.contains("outline: true")) {
+            "Persistent HUD text must retain its readability outline"
         }
         listOf("money", "event", "level").forEach { icon ->
             require(assets.resolve("icon-$icon.png").isFile) { "Missing HUD utility icon: $icon" }

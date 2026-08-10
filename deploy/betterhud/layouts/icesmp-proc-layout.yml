@@ -209,6 +209,7 @@ icesmp_class_proc_layout:
       scale: 0.48
       align: left
       layer: 4
+      outline: true
       use-legacy-format: false
     2:
       name: icesmp_class_font
@@ -218,4 +219,5 @@ icesmp_class_proc_layout:
       scale: 0.32
       align: left
       layer: 4
+      outline: true
       use-legacy-format: false

@@ -605,7 +605,7 @@ public final class HudManager {
             raidBar.name(Component.text(label, NamedTextColor.RED));
             raidBar.progress(clamp((float) remaining / (float) totalMs));
         }
-        bloodMoonBar.name(Component.text("🌕 VÉRHOLD — a szörnyek erősebbek", NamedTextColor.DARK_RED));
+        bloodMoonBar.name(Component.text("VÉRHOLD — a szörnyek erősebbek", NamedTextColor.DARK_RED));
         final float bossFraction = clamp(worldBossManager.getBossHealthFraction());
         worldBossBar.name(Component.text("☠ Világboss — " + Math.round(bossFraction * 100.0F) + "% HP",
                 NamedTextColor.LIGHT_PURPLE));

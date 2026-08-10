@@ -11,7 +11,7 @@ icesmp_class_hud:
       name: icesmp_identity_layout
       gui: &icesmp_anchor
         x: 100
-        y: 100
+        y: 0
       pixel: &icesmp_pixel
         x: 0
         y: 0

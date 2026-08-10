@@ -4,10 +4,10 @@ icesmp_identity_layout:
   images:
     frame_guest:
       name: icesmp_frame_guest
-      x: -180
-      y: -147
+      x: -218
+      y: 18
       layer: 0
-      scale: 0.22
+      scale: 0.3
       conditions:
         theme:
           first: "string:icesmp_faction_theme"
@@ -15,10 +15,10 @@ icesmp_identity_layout:
           operation: "=="
     frame_red:
       name: icesmp_frame_red
-      x: -180
-      y: -147
+      x: -218
+      y: 18
       layer: 0
-      scale: 0.22
+      scale: 0.3
       conditions:
         theme:
           first: "string:icesmp_faction_theme"
@@ -26,10 +26,10 @@ icesmp_identity_layout:
           operation: "=="
     frame_blue:
       name: icesmp_frame_blue
-      x: -180
-      y: -147
+      x: -218
+      y: 18
       layer: 0
-      scale: 0.22
+      scale: 0.3
       conditions:
         theme:
           first: "string:icesmp_faction_theme"
@@ -37,10 +37,10 @@ icesmp_identity_layout:
           operation: "=="
     frame_neutral:
       name: icesmp_frame_neutral
-      x: -180
-      y: -147
+      x: -218
+      y: 18
       layer: 0
-      scale: 0.22
+      scale: 0.3
       conditions:
         theme:
           first: "string:icesmp_faction_theme"
@@ -48,10 +48,10 @@ icesmp_identity_layout:
           operation: "=="
     frame_dark:
       name: icesmp_frame_dark
-      x: -180
-      y: -147
+      x: -218
+      y: 18
       layer: 0
-      scale: 0.22
+      scale: 0.3
       conditions:
         theme:
           first: "string:icesmp_faction_theme"
@@ -59,10 +59,10 @@ icesmp_identity_layout:
           operation: "=="
     class_warrior:
       name: icesmp_class_warrior
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -70,10 +70,10 @@ icesmp_identity_layout:
           operation: "=="
     class_evoker:
       name: icesmp_class_evoker
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -81,10 +81,10 @@ icesmp_identity_layout:
           operation: "=="
     class_archer:
       name: icesmp_class_archer
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -92,10 +92,10 @@ icesmp_identity_layout:
           operation: "=="
     class_shaman:
       name: icesmp_class_shaman
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -103,10 +103,10 @@ icesmp_identity_layout:
           operation: "=="
     class_monk:
       name: icesmp_class_monk
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -114,10 +114,10 @@ icesmp_identity_layout:
           operation: "=="
     class_paladin:
       name: icesmp_class_paladin
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -125,10 +125,10 @@ icesmp_identity_layout:
           operation: "=="
     class_demon_hunter:
       name: icesmp_class_demon_hunter
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -136,10 +136,10 @@ icesmp_identity_layout:
           operation: "=="
     class_druid:
       name: icesmp_class_druid
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -147,10 +147,10 @@ icesmp_identity_layout:
           operation: "=="
     class_priest:
       name: icesmp_class_priest
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -158,10 +158,10 @@ icesmp_identity_layout:
           operation: "=="
     class_death_knight:
       name: icesmp_class_death_knight
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -169,10 +169,10 @@ icesmp_identity_layout:
           operation: "=="
     class_assassin:
       name: icesmp_class_assassin
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -180,10 +180,10 @@ icesmp_identity_layout:
           operation: "=="
     class_warlock:
       name: icesmp_class_warlock
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -191,10 +191,10 @@ icesmp_identity_layout:
           operation: "=="
     class_wizard:
       name: icesmp_class_wizard
-      x: -170
-      y: -133
+      x: -200
+      y: 38
       layer: 3
-      scale: 0.34
+      scale: 0.46
       conditions:
         class:
           first: "string:icesmp_class_id"
@@ -202,50 +202,54 @@ icesmp_identity_layout:
           operation: "=="
     money_icon:
       name: icesmp_icon_money
-      x: -80
-      y: -121
+      x: -92
+      y: 55
       layer: 3
-      scale: 0.18
+      scale: 0.23
     level_icon:
       name: icesmp_icon_level
-      x: -63
-      y: -134
+      x: -74
+      y: 39
       layer: 3
-      scale: 0.18
+      scale: 0.23
   texts:
     1:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent]><b>[string:icesmp_class_name]</b> <#A9B7C6>[string:icesmp_class_spec_name]"
-      x: -144
-      y: -132
-      scale: 0.4
+      x: -166
+      y: 39
+      scale: 0.48
       align: left
       layer: 4
+      outline: true
       use-legacy-format: false
     2:
       name: icesmp_class_font
       pattern: "<#[string:icesmp_faction_accent]>[string:icesmp_faction]"
-      x: -144
-      y: -120
-      scale: 0.32
+      x: -166
+      y: 55
+      scale: 0.39
       align: left
       layer: 4
+      outline: true
       use-legacy-format: false
     3:
       name: icesmp_class_font
       pattern: "<#D6A74B>[string:icesmp_balance]"
-      x: -66
-      y: -120
-      scale: 0.3
+      x: -74
+      y: 55
+      scale: 0.37
       align: left
       layer: 4
+      outline: true
       use-legacy-format: false
     4:
       name: icesmp_class_font
       pattern: "<#71809A>Lv. <#FFFFFF>[string:icesmp_class_level]"
-      x: -50
-      y: -132
-      scale: 0.3
+      x: -54
+      y: 39
+      scale: 0.37
       align: left
       layer: 4
+      outline: true
       use-legacy-format: false

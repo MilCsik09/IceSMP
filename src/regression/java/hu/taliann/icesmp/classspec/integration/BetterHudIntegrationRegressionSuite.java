@@ -130,8 +130,13 @@ public final class BetterHudIntegrationRegressionSuite {
         }
         check(hud.contains("icesmp_identity_layout") && hud.contains("icesmp_resource_layout")
                         && hud.contains("icesmp_world_layout") && hud.contains("icesmp_mechanic_layout")
-                        && hud.contains("icesmp_hud_visible"),
-                "HUD package must reference every generic module and honour /hud visibility");
+                        && hud.contains("icesmp_hud_visible")
+                        && hud.contains("y: 0") && !hud.contains("y: 100")
+                        && layout.contains("outline: true")
+                        && layout.contains("x: -218") && layout.contains("scale: 0.3"),
+                "HUD package must use every generic module and the readable upper-right safe-area layout");
+        check(!read("src/main/java/hu/taliann/icesmp/managers/HudManager.java").contains("🌕 VÉRHOLD"),
+                "the Blood Moon bossbar must not use an unsupported astral emoji glyph");
         check(layout.contains("icesmp_class_proc_layout:")
                         && popup.contains("class: custom")
                         && popup.contains("name: icesmp_class_proc")
