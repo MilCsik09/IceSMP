@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - master
+      - staging
     paths-ignore:
       - "**/*.md"
   workflow_dispatch:
