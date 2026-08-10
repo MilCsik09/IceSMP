@@ -42,9 +42,7 @@ public final class CrateConfigMenuGUI {
 
     private static final List<AdvancedConfigEntry> GLOBAL_ENTRIES = List.of(
             AdvancedConfigEntry.toggle("crates-settings.enabled", "Natív crate-rendszer",
-                    "A teljes natív crate-rendszer főkapcsolója. Kikapcsolva egyetlen crate sem nyitható, a definíciók és statisztikák megmaradnak."),
-            AdvancedConfigEntry.toggle("crates-settings.spin-animation", "Egyes nyitás pörgős animációja",
-                    "Egyetlen crate nyitásakor megjelenjen-e a kozmetikai pörgős GUI. Többszörös nyitás továbbra is összegzést használ.")
+                    "A teljes natív crate-rendszer főkapcsolója. Kikapcsolva egyetlen crate sem nyitható, a definíciók és statisztikák megmaradnak.")
     );
 
     private CrateConfigMenuGUI() {
@@ -156,7 +154,7 @@ public final class CrateConfigMenuGUI {
         }
         inventory.setItem(47, GuiUtil.item(Material.REDSTONE_TORCH,
                 "&bGlobális crate-beállítások",
-                List.of("&7Mesterkapcsoló és pörgős animáció")));
+                List.of("&7Mesterkapcsoló; a reveal a világban fut")));
         holder.bind(47, GLOBAL_ACTION);
         inventory.setItem(49, GuiUtil.item(Material.ARROW, "&7Vissza a config főmenübe", List.of()));
         holder.bind(49, "BACK");
@@ -430,3 +428,4 @@ public final class CrateConfigMenuGUI {
         }
     }
 }
+

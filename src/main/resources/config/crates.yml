@@ -1,8 +1,8 @@
 # IceSMP natív ládarendszer. Ez a végleges saját séma; CrazyCrates-config és legacy kulcs nem támogatott.
+# A világban 16 fizikai ládaállomás fér el. Az alapcsomag az alsó szint 8
+# állomását használja; a felső 8 hely szezonális, frakciós és eventládáknak marad.
 crates-settings:
   enabled: true
-  # Az egyetlen nyitás jutalmát kozmetikai pörgős GUI mutatja. Többszörös nyitás összegzést használ.
-  spin-animation: true
 
 crates:
   koznapi:
@@ -11,46 +11,22 @@ crates:
     key-material: TRIPWIRE_HOOK
     key-name: "&aKöznapi Kulcs"
     key-item-model: "icesmp:crate_key_common"
-    key-price:
-      currency: NEUTRAL
-      amount: 250
-    # Üres: csak az általános icesmp.crate.use jog kell. Egyedi gate csak icesmp.* lehet.
+    key-price: { currency: NEUTRAL, amount: 250 }
+    # Az üres permission azt jelenti, hogy minden játékos nyithatja.
+    # Az icesmp.* jogosultsági gate adminopcióként továbbra is támogatott.
     permission: ""
-    # Üres: minden betöltött világban használható. Ismeretlen világnév a crate-et letiltja.
     worlds: []
     required-key-count: 1
     cooldown-seconds: 5
-    mass-open:
-      enabled: true
-      max-openings: 10
-    opening-sound:
-      sound: minecraft:entity.player.levelup
-      volume: 1.0
-      pitch: 1.2
-    broadcast:
-      enabled: false
-      message: "&6[Láda] &f{player} &ekinyitotta: &f{crate} &7({amount}×)"
+    mass-open: { enabled: true, max-openings: 10 }
+    opening-sound: { sound: "minecraft:entity.player.levelup", volume: 1.0, pitch: 1.2 }
+    broadcast: { enabled: false, message: "&6[Láda] &f{player} &ekinyitotta: &f{crate} &7({amount}×)" }
     rewards:
-      - type: item
-        weight: 55.0
-        material: IRON_INGOT
-        amount: 8
-        description: "&f8× Vasrúd"
-      - type: currency
-        weight: 25.0
-        currency: NEUTRAL
-        amount: 125
-        description: "&e125 Creutzér"
-      - type: unique-item
-        weight: 12.0
-        id: emlekszilank
-        amount: 2
-        description: "&b2× Emlékszilánk"
-      - type: crate-key
-        weight: 8.0
-        id: ritka
-        amount: 1
-        description: "&dRitka ládakulcs"
+      - { type: item, weight: 35.0, material: IRON_INGOT, amount: 16, description: "&f16× Vasrúd" }
+      - { type: item, weight: 20.0, material: COAL, amount: 32, description: "&832× Szén" }
+      - { type: currency, weight: 25.0, currency: NEUTRAL, amount: 225, description: "&e225 Creutzér" }
+      - { type: unique-item, weight: 12.0, id: emlekszilank, amount: 3, description: "&b3× Emlékszilánk" }
+      - { type: crate-key, weight: 8.0, id: ritka, amount: 1, description: "&dRitka ládakulcs" }
 
   ritka:
     enabled: true
@@ -58,46 +34,158 @@ crates:
     key-material: TRIPWIRE_HOOK
     key-name: "&dRitka Kulcs"
     key-item-model: "icesmp:crate_key_rare"
-    key-price:
-      currency: NEUTRAL
-      amount: 1200
-    permission: "icesmp.crate.ritka"
+    key-price: { currency: NEUTRAL, amount: 900 }
+    permission: ""
     worlds: []
-    required-key-count: 2
-    cooldown-seconds: 30
-    mass-open:
-      enabled: true
-      max-openings: 5
-    opening-sound:
-      sound: minecraft:ui.toast.challenge_complete
-      volume: 0.8
-      pitch: 1.1
-    broadcast:
-      enabled: true
-      message: "&d[Láda] &f{player} &7kinyitotta: &d{crate} &7({amount}×)"
+    required-key-count: 1
+    cooldown-seconds: 15
+    mass-open: { enabled: true, max-openings: 5 }
+    opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 0.8, pitch: 1.1 }
+    broadcast: { enabled: false, message: "&d[Láda] &f{player} &7kinyitotta: &d{crate} &7({amount}×)" }
     rewards:
-      - type: item
-        weight: 35.0
-        material: DIAMOND
-        amount: 4
-        description: "&b4× Gyémánt"
-      - type: recipe-item
-        weight: 20.0
-        id: netherit_torzsalek_otvozet
-        amount: 1
-        description: "&6Netherit ötvözet"
-      - type: blueprint
-        weight: 15.0
-        id: netherit_torzsalek_otvozet
-        amount: 1
-        description: "&bNetherit Ötvözés tervrajz"
-      - type: currency
-        weight: 20.0
-        currency: NEUTRAL
-        amount: 1000
-        description: "&e1000 Creutzér"
-      - type: command
-        weight: 10.0
-        # Csak {player}, {uuid}, {crate}, {amount} használható. Kezdő / és sortörés tiltott.
-        command: "xp add {player} 10 levels"
-        description: "&a10 tapasztalati szint"
+      - { type: item, weight: 28.0, material: DIAMOND, amount: 5, description: "&b5× Gyémánt" }
+      - { type: item, weight: 18.0, material: GOLD_BLOCK, amount: 4, description: "&64× Aranyblokk" }
+      - { type: item, weight: 12.0, material: NETHERITE_SCRAP, amount: 2, description: "&82× Netherit törmelék" }
+      - { type: recipe-item, weight: 12.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&6Netherit ötvözet" }
+      - { type: currency, weight: 20.0, currency: NEUTRAL, amount: 850, description: "&e850 Creutzér" }
+      - { type: crate-key, weight: 10.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
+
+  hosi:
+    enabled: true
+    display-name: "&6Hősi Láda"
+    key-material: TRIPWIRE_HOOK
+    key-name: "&6Hősi Kulcs"
+    key-item-model: "icesmp:crate_key_heroic"
+    key-price: { currency: NEUTRAL, amount: 3200 }
+    permission: ""
+    worlds: []
+    required-key-count: 1
+    cooldown-seconds: 45
+    mass-open: { enabled: true, max-openings: 3 }
+    opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 1.0, pitch: 0.95 }
+    broadcast: { enabled: false, message: "&6[Láda] &f{player} &ekinyitotta: &6{crate} &7({amount}×)" }
+    rewards:
+      - { type: item, weight: 22.0, material: DIAMOND, amount: 12, description: "&b12× Gyémánt" }
+      - { type: item, weight: 15.0, material: NETHERITE_INGOT, amount: 1, description: "&81× Netherit rúd" }
+      - { type: item, weight: 10.0, material: TOTEM_OF_UNDYING, amount: 1, description: "&eHalhatatlanság toteme" }
+      - { type: recipe-item, weight: 15.0, id: netherit_torzsalek_otvozet, amount: 2, description: "&62× Netherit ötvözet" }
+      - { type: blueprint, weight: 12.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&bNetherit Ötvözés tervrajz" }
+      - { type: currency, weight: 18.0, currency: NEUTRAL, amount: 3000, description: "&e3000 Creutzér" }
+      - { type: crate-key, weight: 8.0, id: mitikus, amount: 1, description: "&5Mitikus ládakulcs" }
+
+  mitikus:
+    enabled: true
+    display-name: "&5Mitikus Láda"
+    key-material: TRIPWIRE_HOOK
+    key-name: "&5Mitikus Kulcs"
+    key-item-model: "icesmp:crate_key_mythic"
+    key-price: { currency: NEUTRAL, amount: 9500 }
+    permission: ""
+    worlds: []
+    required-key-count: 1
+    cooldown-seconds: 120
+    mass-open: { enabled: true, max-openings: 2 }
+    opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 1.0, pitch: 0.75 }
+    broadcast: { enabled: true, message: "&5[Láda] &f{player} &dkinyitotta: &5{crate} &7({amount}×)" }
+    rewards:
+      - { type: item, weight: 22.0, material: NETHERITE_INGOT, amount: 3, description: "&83× Netherit rúd" }
+      - { type: item, weight: 8.0, material: ELYTRA, amount: 1, description: "&dElytra" }
+      - { type: item, weight: 12.0, material: TOTEM_OF_UNDYING, amount: 2, description: "&e2× Halhatatlanság toteme" }
+      - { type: item, weight: 12.0, material: ENCHANTED_GOLDEN_APPLE, amount: 3, description: "&63× Bűvös aranyalma" }
+      - { type: recipe-item, weight: 14.0, id: netherit_torzsalek_otvozet, amount: 3, description: "&63× Netherit ötvözet" }
+      - { type: blueprint, weight: 10.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&bNetherit Ötvözés tervrajz" }
+      - { type: currency, weight: 17.0, currency: NEUTRAL, amount: 9000, description: "&e9000 Creutzér" }
+      - { type: crate-key, weight: 5.0, id: hosi, amount: 2, description: "&62× Hősi ládakulcs" }
+
+  mesterseg:
+    enabled: true
+    display-name: "&6Mesterség Láda"
+    key-material: TRIPWIRE_HOOK
+    key-name: "&6Mesterség Kulcs"
+    key-item-model: "icesmp:crate_key_craft"
+    key-price: { currency: NEUTRAL, amount: 1400 }
+    permission: ""
+    worlds: []
+    required-key-count: 1
+    cooldown-seconds: 20
+    mass-open: { enabled: true, max-openings: 5 }
+    opening-sound: { sound: "minecraft:block.anvil.use", volume: 0.8, pitch: 1.05 }
+    broadcast: { enabled: false, message: "&6[Láda] &f{player} &ekinyitotta: &6{crate} &7({amount}×)" }
+    rewards:
+      - { type: item, weight: 24.0, material: IRON_BLOCK, amount: 8, description: "&f8× Vasblokk" }
+      - { type: item, weight: 18.0, material: GOLD_INGOT, amount: 24, description: "&624× Aranyrúd" }
+      - { type: item, weight: 14.0, material: DIAMOND, amount: 5, description: "&b5× Gyémánt" }
+      - { type: unique-item, weight: 14.0, id: emlekszilank, amount: 8, description: "&b8× Emlékszilánk" }
+      - { type: recipe-item, weight: 12.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&6Netherit ötvözet" }
+      - { type: blueprint, weight: 8.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&bNetherit Ötvözés tervrajz" }
+      - { type: currency, weight: 10.0, currency: NEUTRAL, amount: 1400, description: "&e1400 Creutzér" }
+
+  expedicio:
+    enabled: true
+    display-name: "&bExpedíció Láda"
+    key-material: TRIPWIRE_HOOK
+    key-name: "&bExpedíció Kulcs"
+    key-item-model: "icesmp:crate_key_expedition"
+    key-price: { currency: NEUTRAL, amount: 2200 }
+    permission: ""
+    worlds: []
+    required-key-count: 1
+    cooldown-seconds: 30
+    mass-open: { enabled: true, max-openings: 5 }
+    opening-sound: { sound: "minecraft:item.goat_horn.sound.1", volume: 0.75, pitch: 1.0 }
+    broadcast: { enabled: false, message: "&b[Láda] &f{player} &7kinyitotta: &b{crate} &7({amount}×)" }
+    rewards:
+      - { type: item, weight: 22.0, material: ENDER_PEARL, amount: 16, description: "&516× Endergyöngy" }
+      - { type: item, weight: 18.0, material: BLAZE_ROD, amount: 12, description: "&612× Lángrúd" }
+      - { type: item, weight: 14.0, material: SHULKER_SHELL, amount: 4, description: "&d4× Shulkerhéj" }
+      - { type: item, weight: 10.0, material: TOTEM_OF_UNDYING, amount: 1, description: "&eHalhatatlanság toteme" }
+      - { type: item, weight: 14.0, material: EMERALD, amount: 32, description: "&a32× Smaragd" }
+      - { type: currency, weight: 14.0, currency: NEUTRAL, amount: 2000, description: "&e2000 Creutzér" }
+      - { type: crate-key, weight: 8.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
+
+  hadizsakmany:
+    enabled: true
+    display-name: "&cHadizsákmány Láda"
+    key-material: TRIPWIRE_HOOK
+    key-name: "&cHadizsákmány Kulcs"
+    key-item-model: "icesmp:crate_key_war"
+    key-price: { currency: NEUTRAL, amount: 1800 }
+    permission: ""
+    worlds: []
+    required-key-count: 1
+    cooldown-seconds: 25
+    mass-open: { enabled: true, max-openings: 5 }
+    opening-sound: { sound: "minecraft:entity.iron_golem.attack", volume: 0.75, pitch: 0.85 }
+    broadcast: { enabled: false, message: "&c[Láda] &f{player} &7kinyitotta: &c{crate} &7({amount}×)" }
+    rewards:
+      - { type: item, weight: 22.0, material: SPECTRAL_ARROW, amount: 64, description: "&e64× Spektrálnyíl" }
+      - { type: item, weight: 18.0, material: GOLDEN_APPLE, amount: 8, description: "&68× Aranyalma" }
+      - { type: item, weight: 14.0, material: END_CRYSTAL, amount: 4, description: "&d4× End-kristály" }
+      - { type: item, weight: 10.0, material: TOTEM_OF_UNDYING, amount: 1, description: "&eHalhatatlanság toteme" }
+      - { type: item, weight: 14.0, material: NETHERITE_SCRAP, amount: 3, description: "&83× Netherit törmelék" }
+      - { type: currency, weight: 16.0, currency: NEUTRAL, amount: 1700, description: "&e1700 Creutzér" }
+      - { type: crate-key, weight: 6.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
+
+  arkanum:
+    enabled: true
+    display-name: "&5Arkánum Láda"
+    key-material: TRIPWIRE_HOOK
+    key-name: "&5Arkánum Kulcs"
+    key-item-model: "icesmp:crate_key_arcane"
+    key-price: { currency: NEUTRAL, amount: 2600 }
+    permission: ""
+    worlds: []
+    required-key-count: 1
+    cooldown-seconds: 35
+    mass-open: { enabled: true, max-openings: 4 }
+    opening-sound: { sound: "minecraft:block.enchantment_table.use", volume: 0.85, pitch: 1.15 }
+    broadcast: { enabled: false, message: "&5[Láda] &f{player} &dkinyitotta: &5{crate} &7({amount}×)" }
+    rewards:
+      - { type: item, weight: 18.0, material: LAPIS_LAZULI, amount: 64, description: "&964× Lazurit" }
+      - { type: item, weight: 20.0, material: EXPERIENCE_BOTTLE, amount: 64, description: "&a64× Varázslat palackja" }
+      - { type: item, weight: 10.0, material: ENCHANTED_GOLDEN_APPLE, amount: 2, description: "&62× Bűvös aranyalma" }
+      - { type: item, weight: 14.0, material: AMETHYST_BLOCK, amount: 16, description: "&d16× Ametisztblokk" }
+      - { type: item, weight: 12.0, material: ECHO_SHARD, amount: 8, description: "&38× Visszhangszilánk" }
+      - { type: unique-item, weight: 12.0, id: emlekszilank, amount: 12, description: "&b12× Emlékszilánk" }
+      - { type: currency, weight: 10.0, currency: NEUTRAL, amount: 2400, description: "&e2400 Creutzér" }
+      - { type: crate-key, weight: 4.0, id: mitikus, amount: 1, description: "&5Mitikus ládakulcs" }

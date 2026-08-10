@@ -1456,6 +1456,9 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-18 Restart | Üzemeltető | opening után kontrollált restart | ledger/state konzisztens | rollout stop | `crate/CRATE-18/` |
 | [ ] | CRATE-19 MANUAL_REVIEW | Vezető admin | szándékos nem eldönthető failure | nem auto-complete; dokumentált emberi döntés | jutalmat csak bizonyíték után adj | `crate/CRATE-19/` |
 | [ ] | CRATE-20 CrazyCrates nélkül | Üzemeltető | külső jar/adat nélkül, backup mellett | native set/buy/open/recovery működik | külső plugin vissza, hibajegy | `crate/CRATE-20/` |
+| [ ] | CRATE-21 Nincs inventory-rulett | Tesztelő | mind a 8 bundled láda, egyes nyitás | nem nyílik spin GUI; csak a világban pörög ItemDisplay | crate rollout stop | `crate/CRATE-21/` |
+| [ ] | CRATE-22 Reveal → reward sorrend | Tesztelő/admin | determinisztikus item-, currency- és command reward | jutalom-side-effect csak a 36 tickes reveal után indul; quit közben kulcs refund/recovery | opening id + audit megőrzése | `crate/CRATE-22/` |
+| [ ] | CRATE-23 Nyolc alsó állomás | Builder | `koznapi`, `ritka`, `hosi`, `mitikus`, `mesterseg`, `expedicio`, `hadizsakmany`, `arkanum` | mind a 8 hely külön ID-val, saját kulcsmodellel és permission nélkül nyitható | hibás placement eltávolítása | `crate/CRATE-23/` |
 
 ### Globális AFK
 
@@ -1725,3 +1728,4 @@ GUI callbackek fölötti megjelenítési réteg lehet.
 Kézi elfogadási minimum: mind a négy frakció, mind a 13 class, legalább egy spec/class, DK teljes
 és fogyó/regeneráló rúnák, aktív/nyugalmi event, balance/level, `/hud mind`, pack elfogadás/elutasítás,
 BetterHud nélküli indulás, két Folia-régió és több GUI scale/screen resolution.
+

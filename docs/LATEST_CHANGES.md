@@ -117,7 +117,7 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
 | Szakmai alapanyag | 9 | 81 |
 | Relikvia | 5 | 6 |
 | Rituálé | 19 | 21 |
-| Natív crate | 0 | 2 |
+| Natív crate | 0 | 8 |
 
 A 420 konfigurált spell-balance azonosító nem 420 automatikusan elérhető
 képességet jelent: a registry, a kaszt, a specializáció és a feloldási
@@ -220,8 +220,12 @@ GSit-funkciókészlet: nincs lay, crawl, stacking, játékos- vagy NPC-megülés
 ### Natív crate-ek
 
 A játékos vásárolhat kulcsot, információt és preview-t kérhet, majd fizikai
-crate-nél animált nyitást indíthat. A release két csomagolt definíciót
-bizonyít: `koznapi` és `ritka`. Éles megnyitás előtt a helyeket, rewardokat,
+crate-nél világban futó ItemDisplay-revealt indíthat. Inventory-rulett nem
+nyílik; a jutalom side effectje csak a reveal lezárása után indul. A release
+nyolc, permission nélküli definíciót bizonyít: `koznapi`, `ritka`, `hosi`,
+`mitikus`, `mesterseg`, `expedicio`, `hadizsakmany` és `arkanum`.
+Ezek az alsó nyolc fizikai állomást töltik ki; a felső nyolc hely különleges
+ládáknak marad. Éles megnyitás előtt a helyeket, rewardokat,
 inventory-overflow-t, settlementet és recoveryt kötelező stagingen tesztelni.
 
 ### Privát üzenetek és report
@@ -377,3 +381,4 @@ a JAR-ban. Emiatt több rendszerről csak képességszintű következtetés adha
 A teljes 68 root parancs, 286 route, 79 root alias, 93 routing alias,
 44 permission, 13 550 configútvonal és 545 production komponens gépi
 referenciáját a `Repository Docs Inventory` workflow artifactja tartalmazza.
+

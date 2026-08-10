@@ -1997,6 +1997,42 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** hideg ezüst; akcent: mély lila és halvány mágikus fény
 - **Hangulat / lore:** A ritka jutalomtáblához kötött, új IceSMP-formátumú ládakulcs.
 
+### `crate_key_heroic` — Hősi Láda Kulcsa
+- **Fájl:** `crate_key_heroic.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** díszes aranykulcs pajzsszerű fejjel és vörös kristállyal
+- **Színvilág:** fényes arany; akcent: rubinvörös
+- **Hangulat / lore:** A nagy tettekért járó hősi zsákmány kapuját nyitja.
+
+### `crate_key_mythic` — Mitikus Láda Kulcsa
+- **Fájl:** `crate_key_mythic.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** obszidián-ezüst kulcs nagyméretű jégkék kristályfoglalattal
+- **Színvilág:** mély ibolya és fekete; akcent: jeges türkiz
+- **Hangulat / lore:** A legfelső alap-tier ritka, látványos kulcsa.
+
+### `crate_key_craft` — Mesterség Láda Kulcsa
+- **Fájl:** `crate_key_craft.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** kovácsolt acél-bronz kulcs üllő-, kalapács- és fogaskerékmotívummal
+- **Színvilág:** sötét acél és bronz; akcent: borostyán
+- **Hangulat / lore:** Mesterek alapanyagait, receptjeit és tervrajzait őrző láda kulcsa.
+
+### `crate_key_expedition` — Expedíció Láda Kulcsa
+- **Fájl:** `crate_key_expedition.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** iránytűrózsás ezüstkulcs térképrészletekkel és jégkék kővel
+- **Színvilág:** öreg ezüst és pergamenarany; akcent: jeges türkiz
+- **Hangulat / lore:** Távoli utak, dimenziók és felfedezések készleteit nyitja.
+
+### `crate_key_war` — Hadizsákmány Láda Kulcsa
+- **Fájl:** `crate_key_war.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** csatákban kopott sötétvaskulcs pajzsfejjel és keresztezett pengékkel
+- **Színvilág:** gunmetal és tompa bronz; akcent: vérvörös
+- **Hangulat / lore:** Harci fogyóeszközök és túlélési zsákmány zárját töri fel.
+
+### `crate_key_arcane` — Arkánum Láda Kulcsa
+- **Fájl:** `crate_key_arcane.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** rúnagyűrűs ezüst-obszidián kulcs lebegő ibolyakristállyal
+- **Színvilág:** hideg ezüst és obszidián; akcent: fénylő ibolya
+- **Hangulat / lore:** Enchantolási és mágikus progression-jutalmak kulcsa.
+
 ## Karbantartási szabály
 
 - Új itemnél a config/kód `item-model` értéke legyen `icesmp:<modell-id>`; ugyanez a `<modell-id>` a blokk-fejlécben és a PNG fájlnevében.
@@ -2036,3 +2072,4 @@ A HUD nem tart fenn kézi private-use codepoint táblát. A BetterHud a saját g
 determinista glyph-kiosztást készít; az IceSMP inputok külön `icesmp/` textúraútvonalon élnek, a
 szöveg pedig vanilla/unifont fallbacket használ. Ez megszünteti a korábbi resource-pack nélkül
 kirajzolt felső missing-glyph négyzetet és elkerüli a CraftEngine fontütközést.
+
