@@ -17,6 +17,7 @@ public final class RuntimeBugfixRegressionSuite {
         loreUsageIsReadableAndNotAParsedTag();
         spectatorClicksReachTheCommandMenu();
         corruptionIsFullyConfigurable();
+        resourcePackReloadOnlyResendsEffectiveChanges();
         System.out.println("Runtime bugfix regression suite passed.");
     }
 
@@ -91,6 +92,22 @@ public final class RuntimeBugfixRegressionSuite {
                         && world.isSet("corruption.spread-per-night")
                         && world.isSet("corruption.mob-lifespan-seconds"),
                 "corruption balance controls are missing from config");
+    }
+
+    private static void resourcePackReloadOnlyResendsEffectiveChanges() throws IOException {
+        final String listener = read("src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java");
+        check(listener.contains("sameRequest(previous, current)"),
+                "resource-pack reload must compare the previous and current effective requests");
+        check(listener.contains("applyTransition(player, previous, current)"),
+                "changed resource-pack requests must be applied on each player's scheduler");
+        check(listener.contains("player.removeResourcePack(previous.id())"),
+                "disabling or replacing the resource-pack layer must remove its previous UUID");
+
+        final String plugin = read("src/main/java/hu/taliann/icesmp/IceSMP.java");
+        check(plugin.contains("resourcePackListener.resendCurrent()"),
+                "hot plugin enable must force-send the already loaded snapshot");
+        check(!plugin.contains("resourcePackListener.reloadAndResend();"),
+                "plugin enable must not route through config change detection");
     }
 
     private static String read(final String path) throws IOException {
