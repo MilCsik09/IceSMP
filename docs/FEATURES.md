@@ -672,7 +672,7 @@ A forrásban ténylegesen bekötött krónika, emlék, lore-parancs, párbeszéd
 
 - **Így találkozol vele:** `/kronika`, `/emlek`, `/lore`; dialógus- és történeti triggerek. Parancs: /emlek (alias: /emlekek, /memory); /kronika (alias: /chronicle); /lore (alias: /kodex).
 - **Kinek szól:** Játékos, Builder, Eventes, Tesztelő.
-- **Mitől mozdul meg:** Felfedezés, interakció, campfire vagy konfigurált történeti esemény.
+- **Mitől mozdul meg:** Felfedezés, konfigurált történeti esemény, illetve sikeres leülés egy `szék → 1 üres blokk → égő campfire` elrendezésben; a campfire közvetlen kattintása nem trigger.
 - **Ami még kellhet hozzá:** Történeti helyszínek, NPC-k és aktiváló blokkok/területek előkészítendők.
 - **Fontos határ:** Csak a regisztrált forrás- és resource-tartalom aktív; a LORE.md/TEASER.md önmagában nem implementáció.
 
@@ -1091,7 +1091,7 @@ Parkourpályák, checkpoint/progress, archeológiai megosztás és rejtett helye
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Ülés támogatott lépcsőn, alsó/felső slabon, carpet/moss carpet/pale moss carpet és snow geometrián; foglalás- és lifecycle-cleanuppal.
+Ülés támogatott lépcsőn, alsó/felső slabon, carpet/moss carpet/pale moss carpet és snow geometrián; a marker a tényleges ülőfelületre, alsó lépcsőn az irány és a stair-shape szerinti treadre kerül, foglalás- és lifecycle-cleanuppal.
 
 - **Így találkozol vele:** `/sit [fel]`; jobb kattintás, ha a policy engedi.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő.

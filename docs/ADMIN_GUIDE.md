@@ -1430,6 +1430,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | SIT-14 Seat entity sweep | Admin | szándékosan árva marker tesztvilágban | indulási/disable sweep eltakarítja | kézi entity cleanup | `sit/SIT-14/` |
 | [ ] | SIT-15 GSit nélkül | Üzemeltető | GSit jar/adat nélkül, backup mellett | `/sit` és click-to-sit működik | GSit vissza, rollout stop | `sit/SIT-15/` |
 | [ ] | SIT-16 Nem támogatott pózok | Tesztelő | lay/crawl/stack/player/NPC próbák | IceSMP nem kínál ilyen útvonalat | command/plugin ütközés vizsgálata | `sit/SIT-16/` |
+| [ ] | SIT-17 Campfire story | Builder/tesztelő | `campfire → 1 levegőblokk → ülőblokk` mind a négy főirányban; click és `/sit`; majd felállás/köztes blokk kitöltése/tűz eloltása | csak sikeres ülés indít; a jutalom előtt ugyanaz a szék, üres köz és égő tűz kell | story trigger kikapcsolása, sit megtartása | `sit/SIT-17/` |
 
 ### Natív crate
 

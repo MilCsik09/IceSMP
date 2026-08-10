@@ -41,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 /** IceSMP-specific, Folia-owned, sit-only seat manager. */
 public final class SitManager implements PlayerStateCleanup {
@@ -128,6 +129,7 @@ public final class SitManager implements PlayerStateCleanup {
     private final NamespacedKey seatKey;
     private final SitState seatState = new SitState();
     private final Map<UUID, SeatEntityHandle> handles = new ConcurrentHashMap<>();
+    private volatile BiConsumer<Player, Block> successfulSitHandler = (player, block) -> { };
     private volatile Settings settings;
     private volatile boolean shuttingDown;
 
@@ -156,6 +158,23 @@ public final class SitManager implements PlayerStateCleanup {
     public boolean hasActiveSits() { return seatState.size() > 0; }
     public boolean isBlockedCommand(final String rawCommand) {
         return SitPolicy.isCommandBlocked(settings.blockedCommands(), rawCommand);
+    }
+
+    public void setSuccessfulSitHandler(final BiConsumer<Player, Block> handler) {
+        successfulSitHandler = handler == null ? (player, block) -> { } : handler;
+    }
+
+    public UUID seatSessionId(final UUID playerId, final Block block) {
+        if (playerId == null || block == null || !Bukkit.isOwnedByCurrentRegion(block)) {
+            return null;
+        }
+        final SitState.SeatLease lease = seatState.get(playerId);
+        return lease != null && lease.standId() != null && lease.key().equals(seatKey(block))
+                ? lease.standId() : null;
+    }
+
+    public boolean isSittingOn(final UUID playerId, final Block block, final UUID seatSessionId) {
+        return seatSessionId != null && seatSessionId.equals(seatSessionId(playerId, block));
     }
 
     /** Cheap material/world prefilter used before a right-click is claimed by the listener. */
@@ -242,6 +261,11 @@ public final class SitManager implements PlayerStateCleanup {
                 final SitState.SeatLease released = seatState.release(playerId);
                 removeReleasedStand(released);
                 return SitResult.OBSTRUCTED;
+            }
+            try {
+                successfulSitHandler.accept(player, supportBlock);
+            } catch (final RuntimeException storyFailure) {
+                plugin.getLogger().warning("Ülés utáni trigger sikertelen: " + storyFailure.getMessage());
             }
             return SitResult.OK;
         } catch (final RuntimeException failure) {
@@ -443,31 +467,39 @@ public final class SitManager implements PlayerStateCleanup {
 
     private Location computeSeatLocation(final Block block) {
         final BlockData data = block.getBlockData();
-        final SitGeometry.Shape shape;
-        final int snowLayers;
+        final SitGeometry.Anchor anchor;
         if (data instanceof Stairs stairs) {
-            shape = stairs.getHalf() == Bisected.Half.TOP
-                    ? SitGeometry.Shape.STAIRS_TOP : SitGeometry.Shape.STAIRS_BOTTOM;
-            snowLayers = 1;
+            anchor = SitGeometry.stairAnchor(
+                    stairs.getHalf() == Bisected.Half.TOP,
+                    switch (stairs.getFacing()) {
+                        case NORTH -> SitGeometry.Facing.NORTH;
+                        case SOUTH -> SitGeometry.Facing.SOUTH;
+                        case EAST -> SitGeometry.Facing.EAST;
+                        case WEST -> SitGeometry.Facing.WEST;
+                        default -> throw new IllegalArgumentException("Nem vízszintes lépcsőirány: "
+                                + stairs.getFacing());
+                    },
+                    switch (stairs.getShape()) {
+                        case STRAIGHT -> SitGeometry.StairShape.STRAIGHT;
+                        case INNER_LEFT -> SitGeometry.StairShape.INNER_LEFT;
+                        case INNER_RIGHT -> SitGeometry.StairShape.INNER_RIGHT;
+                        case OUTER_LEFT -> SitGeometry.StairShape.OUTER_LEFT;
+                        case OUTER_RIGHT -> SitGeometry.StairShape.OUTER_RIGHT;
+                    });
         } else if (data instanceof Slab slab) {
-            shape = slab.getType() == Slab.Type.BOTTOM
-                    ? SitGeometry.Shape.SLAB_BOTTOM : SitGeometry.Shape.SLAB_TOP_OR_DOUBLE;
-            snowLayers = 1;
+            anchor = SitGeometry.centered(slab.getType() == Slab.Type.BOTTOM
+                    ? SitGeometry.Shape.SLAB_BOTTOM : SitGeometry.Shape.SLAB_TOP_OR_DOUBLE, 1);
         } else if (data instanceof Snow snow) {
-            shape = SitGeometry.Shape.SNOW;
-            snowLayers = snow.getLayers();
+            anchor = SitGeometry.centered(SitGeometry.Shape.SNOW, snow.getLayers());
         } else if (Tag.CARPETS.isTagged(block.getType())
                 || block.getType() == Material.MOSS_CARPET
                 || block.getType() == Material.PALE_MOSS_CARPET) {
-            shape = SitGeometry.Shape.CARPET;
-            snowLayers = 1;
+            anchor = SitGeometry.centered(SitGeometry.Shape.CARPET, 1);
         } else {
-            shape = SitGeometry.Shape.GENERIC;
-            snowLayers = 1;
+            anchor = SitGeometry.centered(SitGeometry.Shape.GENERIC, 1);
         }
-        final double offset = SitGeometry.offset(shape, snowLayers);
-        return new Location(block.getWorld(), block.getX() + 0.5D,
-                block.getY() + offset, block.getZ() + 0.5D);
+        return new Location(block.getWorld(), block.getX() + anchor.x(),
+                block.getY() + anchor.y(), block.getZ() + anchor.z());
     }
 
     private boolean withinClickDistance(final Player player, final Block block, final double maxDistance) {

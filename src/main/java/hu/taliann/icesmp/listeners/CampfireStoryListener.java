@@ -2,16 +2,22 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.SitManager;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileCooldownStore;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.type.Campfire;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -20,10 +26,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Campfire storytelling with a durable PlayerProfile cooldown and runtime hold state. */
+/** Campfire storytelling admitted by a real native sit and protected by a durable cooldown. */
 public final class CampfireStoryListener implements Listener {
 
     private static final String COOLDOWN = "campfire.story.last-success";
+    private static final BlockFace[] CARDINAL_DIRECTIONS = {
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST
+    };
     private static final String[] FALLBACK_STORIES = {
             "<gray>🔥 „A Vérháborúk előtt a két nép egy tűznél ült — mint most mi. A tűz emlékszik.”</gray>",
             "<gray>🔥 „A Néma Királynő két mondatot mondott. Az elsőre felkeltek a holtak. A másodikra eltűnt a nemesség.”</gray>",
@@ -35,26 +44,33 @@ public final class CampfireStoryListener implements Listener {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final FactionManager factionManager;
+    private final SitManager sitManager;
     private final PlayerProfileCooldownStore cooldowns = new PlayerProfileCooldownStore();
     /** A hold attempt has no value after disconnect/restart, therefore it is runtime-only. */
     private final Map<UUID, Long> pendingUntil = new ConcurrentHashMap<>();
 
     public CampfireStoryListener(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager,
-                                 final FactionManager factionManager) {
+                                 final FactionManager factionManager,
+                                 final SitManager sitManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.factionManager = factionManager;
+        this.sitManager = sitManager;
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onCampfireUse(final PlayerInteractEvent event) {
-        if (!event.getAction().isRightClick() || event.getClickedBlock() == null) return;
-        final Material type = event.getClickedBlock().getType();
-        if (type != Material.CAMPFIRE && type != Material.SOUL_CAMPFIRE) return;
-        final Player player = event.getPlayer();
-        if (!player.isSneaking() || !configManager.getBoolean("campfire-story.enabled", true)) return;
+    /** Called only after SitManager has mounted the player on the requested support block. */
+    public void onSuccessfulSit(final Player player, final Block seatBlock) {
+        if (player == null || seatBlock == null
+                || !configManager.getBoolean("campfire-story.enabled", true)) {
+            return;
+        }
+        final BlockFace direction = findCampfireDirection(seatBlock);
+        final UUID seatSessionId = sitManager.seatSessionId(player.getUniqueId(), seatBlock);
+        if (direction == null || seatSessionId == null) {
+            return;
+        }
 
         final long now = System.currentTimeMillis();
         final long cooldownMillis = Math.max(0L,
@@ -66,34 +82,83 @@ public final class CampfireStoryListener implements Listener {
         } catch (final RuntimeException profileNotReady) {
             return;
         }
-        if (now - last < cooldownMillis) return;
-        if (pendingUntil.getOrDefault(player.getUniqueId(), 0L) > now) return;
+        if (now - last < cooldownMillis
+                || pendingUntil.getOrDefault(player.getUniqueId(), 0L) > now) {
+            return;
+        }
 
         final long holdSeconds = Math.max(2L,
                 configManager.getLong("campfire-story.hold-seconds", 6L));
-        pendingUntil.put(player.getUniqueId(), now + holdSeconds * 1000L + 2_000L);
-        final Location fire = event.getClickedBlock().getLocation().add(0.5D, 0.5D, 0.5D);
+        final UUID playerId = player.getUniqueId();
+        pendingUntil.put(playerId, now + holdSeconds * 1000L + 2_000L);
         player.sendActionBar(messageManager.getMessage("campfire-story-start",
-                "<gray>🔥 Leülsz a tűzhöz… maradj mellette, és hallgasd a mesét.</gray>"));
+                "<gray>🔥 Leültél a tűzhöz… maradj a helyeden, és hallgasd a mesét.</gray>"));
 
         player.getScheduler().runDelayed(plugin, task -> {
-            pendingUntil.remove(player.getUniqueId());
-            final double radius = Math.max(1.5D,
-                    configManager.getDouble("campfire-story.radius", 3.5D));
-            if (!player.getWorld().equals(fire.getWorld())
-                    || player.getLocation().distanceSquared(fire) > radius * radius) {
+            pendingUntil.remove(playerId);
+            if (!stillEligible(player, seatBlock, direction, seatSessionId)) {
                 player.sendActionBar(messageManager.getMessage("campfire-story-left",
-                        "<gray>🔥 A mese félbeszakadt — elhagytad a tüzet.</gray>"));
+                        "<gray>🔥 A mese félbeszakadt — felálltál, vagy megváltozott a tűzrakóhely.</gray>"));
                 return;
             }
             final long completedAt = System.currentTimeMillis();
-            cooldowns.reserve(player.getUniqueId(), PlayerProfileCooldownStore.Domain.QUEST,
+            cooldowns.reserve(playerId, PlayerProfileCooldownStore.Domain.QUEST,
                             COOLDOWN, completedAt - cooldownMillis, completedAt)
                     .whenComplete((accepted, failure) -> player.getScheduler().run(plugin, ownerTask -> {
-                        if (failure != null || !Boolean.TRUE.equals(accepted)) return;
-                        deliverStory(player, fire, radius);
-                    }, null));
-        }, null, holdSeconds * 20L);
+                        if (failure != null || !Boolean.TRUE.equals(accepted)
+                                || !stillEligible(player, seatBlock, direction, seatSessionId)) {
+                            return;
+                        }
+                        final Block fireBlock = seatBlock.getRelative(direction, 2);
+                        final double radius = Math.max(1.5D,
+                                configManager.getDouble("campfire-story.radius", 3.5D));
+                        deliverStory(player, fireBlock.getLocation().add(0.5D, 0.5D, 0.5D), radius);
+                    }, () -> pendingUntil.remove(playerId)));
+        }, () -> pendingUntil.remove(playerId), holdSeconds * 20L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(final PlayerQuitEvent event) {
+        pendingUntil.remove(event.getPlayer().getUniqueId());
+    }
+
+    private boolean stillEligible(final Player player, final Block seatBlock,
+                                  final BlockFace direction, final UUID seatSessionId) {
+        return player.isOnline()
+                && sitManager.isSittingOn(player.getUniqueId(), seatBlock, seatSessionId)
+                && matchesArrangement(seatBlock, direction);
+    }
+
+    private BlockFace findCampfireDirection(final Block seatBlock) {
+        for (final BlockFace direction : CARDINAL_DIRECTIONS) {
+            if (matchesArrangement(seatBlock, direction)) {
+                return direction;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Required top-down layout at the seat block's Y level:
+     * seat -> one genuinely empty block -> one lit campfire.
+     */
+    private boolean matchesArrangement(final Block seatBlock, final BlockFace direction) {
+        if (!Bukkit.isOwnedByCurrentRegion(seatBlock)) {
+            return false;
+        }
+        final Block middle = seatBlock.getRelative(direction);
+        final Block fire = seatBlock.getRelative(direction, 2);
+        return Bukkit.isOwnedByCurrentRegion(middle)
+                && Bukkit.isOwnedByCurrentRegion(fire)
+                && middle.getType().isAir()
+                && isLitCampfire(fire);
+    }
+
+    private boolean isLitCampfire(final Block block) {
+        final Material type = block.getType();
+        return (type == Material.CAMPFIRE || type == Material.SOUL_CAMPFIRE)
+                && block.getBlockData() instanceof Campfire campfire
+                && campfire.isLit();
     }
 
     private void deliverStory(final Player player, final Location fire, final double radius) {
@@ -120,7 +185,7 @@ public final class CampfireStoryListener implements Listener {
         player.playSound(fire, Sound.AMBIENT_CAVE, 0.3F, 1.4F);
         for (final org.bukkit.entity.Entity nearby : player.getNearbyEntities(radius, radius, radius)) {
             if (nearby instanceof Player listener
-                    && org.bukkit.Bukkit.isOwnedByCurrentRegion(listener)) {
+                    && Bukkit.isOwnedByCurrentRegion(listener)) {
                 listener.sendActionBar(messageManager.getMessage("campfire-story-nearby",
                         "<gray>🔥 {player} mesél a tűznél…</gray>",
                         Map.of("player", player.getName())));
