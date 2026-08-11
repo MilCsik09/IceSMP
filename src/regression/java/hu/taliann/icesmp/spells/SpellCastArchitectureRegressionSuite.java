@@ -7,7 +7,10 @@ import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Pure-Java/source regression for shared modifiers, cast transactions and graph wiring. */
+/**
+ * Pure-Java/source contract regression for shared spell modifiers, outcome
+ * transactions, registry/config graph hardening and orphan task wiring.
+ */
 public final class SpellCastArchitectureRegressionSuite {
 
     private SpellCastArchitectureRegressionSuite() {
@@ -27,10 +30,13 @@ public final class SpellCastArchitectureRegressionSuite {
         require(power.healingMultiplier() == 1.75D, "healing must inherit standard power");
         require(power.shieldingMultiplier() == 1.75D, "shielding must inherit standard power");
         require(power.ccDurationMultiplier() == 1.0D, "standard power must not lengthen hard CC");
-        require(power.harmfulDurationMultiplier() == 1.0D, "standard power must not lengthen harmful duration");
-        require(power.beneficialDurationMultiplier() == 1.0D, "standard power must not lengthen beneficial duration");
+        require(power.harmfulDurationMultiplier() == 1.0D,
+                "standard power must not lengthen harmful effect duration");
+        require(power.beneficialDurationMultiplier() == 1.0D,
+                "standard power must not lengthen beneficial effect duration");
         require(power.cooldownMultiplier() == 1.0D, "standard power must not alter cooldowns");
         require(power.costMultiplier() == 1.0D, "standard power must not alter costs");
+
         final CastModifiers explicitCc = new CastModifiers(
                 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.25D, 1.0D, 1.0D, 1.0D);
         require(power.combine(explicitCc).ccDurationMultiplier() == 1.25D,
@@ -58,6 +64,7 @@ public final class SpellCastArchitectureRegressionSuite {
                 require(SpellExecutionContext.current().equals(inner), "nested context missing");
             }
             require(SpellExecutionContext.current().equals(outer), "nested close did not restore outer context");
+
             final AtomicReference<CastModifiers> otherThread = new AtomicReference<>();
             final CountDownLatch done = new CountDownLatch(1);
             final Thread thread = Thread.ofPlatform().start(() -> {
@@ -75,44 +82,61 @@ public final class SpellCastArchitectureRegressionSuite {
         final String registry = read(root, "src/main/java/hu/taliann/icesmp/managers/SpellRegistry.java");
         require(registry.contains("putIfAbsent") && registry.contains("Duplicate spell id"),
                 "spell registry must fail fast instead of silently replacing ids");
+
         final String spell = read(root, "src/main/java/hu/taliann/icesmp/spells/Spell.java");
         require(spell.contains("SpellExecutionContext.open") && spell.contains("CastModifiers.standardPower"),
                 "bespoke spells must inherit the shared modifier context");
+
         final String configured = read(root, "src/main/java/hu/taliann/icesmp/spells/ConfiguredSpell.java");
         require(configured.contains("CastOutcome.NO_TARGET"), "configured no-target casts must be typed");
-        require(configured.contains("ccDurationMultiplier"), "configured CC needs an explicit modifier channel");
+        require(configured.contains("ccDurationMultiplier"), "configured CC must have an explicit modifier channel");
         require(!configured.contains("effect.getDuration() * power"),
-                "generic power must not implicitly lengthen potion effects");
-        require(configured.contains("rejects an empty cast"), "instant AoE empty policy must be explicit");
+                "generic spell power must not implicitly lengthen potion effects");
+        require(configured.contains("REJECT_EMPTY") || configured.contains("rejects an empty cast"),
+                "instant AoE empty-target policy must be explicit");
+
         final String damage = read(root, "src/main/java/hu/taliann/icesmp/utils/SpellDamageUtil.java");
         final String healing = read(root, "src/main/java/hu/taliann/icesmp/utils/SpellHealingUtil.java");
-        require(damage.contains("SpellExecutionContext.current()"), "damage primitive must inherit modifiers");
-        require(healing.contains("SpellExecutionContext.current()"), "healing primitive must inherit modifiers");
+        require(damage.contains("SpellExecutionContext.current()"), "damage primitive must inherit cast modifiers");
+        require(healing.contains("SpellExecutionContext.current()"), "healing primitive must inherit cast modifiers");
         require(damage.contains("markProjectile") && damage.contains("projectileDamageMultiplier"),
                 "projectiles must carry an immutable cast snapshot");
+
         final String projectile = read(root, "src/main/java/hu/taliann/icesmp/spells/ProjectileBurstSpell.java");
         require(projectile.contains("SpellDamageUtil.markProjectile"),
-                "projectile volleys must propagate the cast snapshot");
+                "projectile volleys must propagate the cast snapshot to hit time");
+
         final String combos = read(root, "src/main/resources/config/spells.yml");
         require(!combos.contains("soul-collapse:"), "cross-spec Affliction/Destruction chain must be removed");
-        require(!combos.contains("way-of-hundred-fists:"), "Monk native rotation must not be double rewarded");
+        require(!combos.contains("way-of-hundred-fists:"), "Monk native rotation must not be double-rewarded globally");
+
         final String druid = read(root, "src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java");
         require(druid.contains("Harmónia"), "Druid secondary harmony needs a distinct player-facing name");
         require(!druid.contains("\"harmony\", \"Természeti Erő\""),
                 "Druid primary and secondary resources may not share a label");
+
+        final String aggregate = read(root,
+                "src/regression/java/hu/taliann/icesmp/spells/ClassSpellAuditRegressionSuite.java");
+        require(aggregate.contains("SpellCastArchitectureRegressionSuite.main")
+                        && aggregate.contains("WizardGameplayRegressionSuite.main")
+                        && aggregate.contains("WizardProfileRegressionSuite.main"),
+                "cast and Wizard regressions must execute through one explicit aggregate");
+        final String grantGate = read(root,
+                "src/regression/java/hu/taliann/icesmp/classspec/domain/SpellGrantLedgerRegressionSuite.java");
+        require(grantGate.contains("ClassSpellAuditRegressionSuite.main"),
+                "the class/spell aggregate must be invoked by a check-wired Gradle regression gate");
         final String build = read(root, "build.gradle.kts");
-        require(build.contains("wizardGameplayRegressionTest") && build.contains("WizardGameplayRegressionSuite"),
-                "Wizard gameplay regression must have a Gradle task");
-        require(build.contains("wizardProfileRegressionTest") && build.contains("WizardProfileRegressionSuite"),
-                "Wizard profile regression must have a Gradle task");
-        require(build.contains("spellCastArchitectureRegressionTest"),
-                "cast architecture regression must be wired into check");
+        require(build.contains("spellGrantLedgerRegressionTest")
+                        && build.contains("dependsOn(")
+                        && build.contains("spellGrantLedgerRegressionTest"),
+                "the aggregate host must remain wired into Gradle check");
+
         final String listener = read(root, "src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java");
         require(listener.contains("CastOutcome") && listener.contains("commitsCast()"),
-                "cast listener must commit from typed outcomes");
+                "cast listener must commit cost/cooldown/state from typed outcomes");
         require(listener.contains("prepareClassCast"), "class preparation must be a named lifecycle phase");
         require(listener.contains("authorizedByPersonalSoulbond"),
-                "casting authorization must be separated from the held item");
+                "casting authorization must be separated from the currently held item");
     }
 
     private static Path repoRoot() {
