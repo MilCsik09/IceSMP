@@ -410,8 +410,10 @@ def validate_hud_shader_contract(root: Path) -> None:
             or "fog_spherical_distance" not in vertex_text
             or "<minecraft:globals.glsl>" not in vertex_text
             or "vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize" not in vertex_text
-            or "clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x" not in vertex_text
-            or "clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y" not in vertex_text
+            or "const float HUD_LAYOUT_SCALES[8]" not in vertex_text
+            or "int layoutCode = (packedColor.r & 15)" not in vertex_text
+            or "vec2 selectedHudScale = hudScale * layoutScale" not in vertex_text
+            or "layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y" not in vertex_text
             or "uniform int FogShape" in vertex_text):
         raise PackError("IceSMP HUD vertex shader does not match Minecraft 1.21.11")
     if (not fragment_text.startswith("#version 330")
