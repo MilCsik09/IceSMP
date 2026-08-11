@@ -6,7 +6,10 @@ not derivable from the live resource pack lives under ``dev-assets/icesmp-hud``;
 external HUD plugin is involved in generation or delivery.
 """
 
+import io
 import json
+import os
+import time
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
@@ -97,6 +100,29 @@ def write_font(name: str, providers: list[dict]) -> None:
         json.dumps({"providers": providers}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def save_png(image: Image.Image, path: Path) -> None:
+    """Write generated PNGs only when bytes changed, using a retryable atomic replace."""
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG", optimize=True)
+    payload = buffer.getvalue()
+    if path.is_file() and path.read_bytes() == payload:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_bytes(payload)
+    try:
+        for attempt in range(8):
+            try:
+                os.replace(temporary, path)
+                return
+            except OSError:
+                if attempt == 7:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def largest_component_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
@@ -252,7 +278,7 @@ def generate_mechanic_icons() -> None:
             base = centered_sprite(sheet.crop(box), 52, True)
             for variant in MECHANIC_VARIANTS:
                 file_name = f"mechanic-{class_id}-{mechanic_id}-{variant}.png"
-                mechanic_variant(base, variant).save(TEXTURES / file_name, optimize=True)
+                save_png(mechanic_variant(base, variant), TEXTURES / file_name)
 
 
 def guest_frame_with_canonical_layout(canonical: Image.Image) -> Image.Image:
@@ -319,8 +345,8 @@ def generate_frames() -> None:
         sprite.thumbnail((260, 160), Image.Resampling.LANCZOS)
         output = Image.new("RGBA", (260, 160), (0, 0, 0, 0))
         output.alpha_composite(sprite, ((260 - sprite.width) // 2, (160 - sprite.height) // 2))
-        strip_magenta_resample_spill(output).save(
-            TEXTURES / f"frame-hud-{theme}.png", optimize=True)
+        save_png(strip_magenta_resample_spill(output),
+                 TEXTURES / f"frame-hud-{theme}.png")
 
 
 def generate_currency_icons() -> None:
@@ -328,8 +354,8 @@ def generate_currency_icons() -> None:
         source = ITEM_SOURCE / f"currency_{currency}.png"
         if not source.is_file():
             raise FileNotFoundError(f"Missing canonical currency icon: {source}")
-        centered_sprite(Image.open(source), 52).save(
-            TEXTURES / f"currency-{currency}.png", optimize=True)
+        save_png(centered_sprite(Image.open(source), 52),
+                 TEXTURES / f"currency-{currency}.png")
 
 
 def generate_none_class_icon() -> None:
@@ -352,7 +378,7 @@ def generate_none_class_icon() -> None:
                  fill=(11, 20, 27, 255), outline=(230, 239, 232, 255), width=scale)
     image = image.resize((64, 64), Image.Resampling.LANCZOS)
     image.putpixel((63, 63), (255, 255, 255, 1))
-    image.save(TEXTURES / "class-none.png", optimize=True)
+    save_png(image, TEXTURES / "class-none.png")
 
 
 def generate_text_atlas() -> tuple[list[str], int, int]:
@@ -382,7 +408,7 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
                       fill=(235, 247, 255, 255))
             atlas.putpixel((x + 7, y + 11), (255, 255, 255, 1))
     TEXTURES.mkdir(parents=True, exist_ok=True)
-    atlas.save(TEXTURES / "text-atlas.png", optimize=True)
+    save_png(atlas, TEXTURES / "text-atlas.png")
     return [padded[row * columns:(row + 1) * columns] for row in range(rows)], cell_width, cell_height
 
 
@@ -399,7 +425,7 @@ def generate_segments() -> None:
         draw = ImageDraw.Draw(image)
         draw.rounded_rectangle((0, 0, 11, 4), radius=1, fill=base)
         draw.line((1, 0, 10, 0), fill=highlight)
-        image.save(TEXTURES / name, optimize=True)
+        save_png(image, TEXTURES / name)
 
 
 def generate_wallet_strip() -> None:
@@ -413,8 +439,8 @@ def generate_wallet_strip() -> None:
         draw.line((x, 4 * scale, x, 18 * scale), fill=(53, 67, 85, 220), width=1 * scale)
     draw.line((6 * scale, 2 * scale, 252 * scale, 2 * scale),
               fill=(102, 181, 163, 150), width=1 * scale)
-    image.resize((260, 22), Image.Resampling.LANCZOS).save(
-        TEXTURES / "wallet-strip.png", optimize=True)
+    save_png(image.resize((260, 22), Image.Resampling.LANCZOS),
+             TEXTURES / "wallet-strip.png")
 
     details = Image.new("RGBA", (260 * scale, 22 * scale), (0, 0, 0, 0))
     detail_draw = ImageDraw.Draw(details)
@@ -424,44 +450,39 @@ def generate_wallet_strip() -> None:
         x = round((1 + index * 85.7) * scale)
         detail_draw.line((x, 4 * scale, x, 18 * scale),
                          fill=(53, 67, 85, 210), width=1 * scale)
-    details.resize((260, 22), Image.Resampling.LANCZOS).save(
-        TEXTURES / "detail-strip.png", optimize=True)
+    save_png(details.resize((260, 22), Image.Resampling.LANCZOS),
+             TEXTURES / "detail-strip.png")
 
 
 def generate_transparent_white_bossbar() -> None:
     target = ROOT / "resource-pack" / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "boss_bar"
     target.mkdir(parents=True, exist_ok=True)
     transparent = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
-    transparent.save(target / "white_background.png", optimize=True)
-    transparent.save(target / "white_progress.png", optimize=True)
+    save_png(transparent, target / "white_background.png")
+    save_png(transparent, target / "white_progress.png")
 
 
 def generate_hud_shader() -> None:
     """Install the first-party IceSMP positioning shader."""
     target = ROOT / "resource-pack" / "assets" / "minecraft" / "shaders" / "core"
     target.mkdir(parents=True, exist_ok=True)
-    vertex = """#version 150
+    vertex = """#version 330
 #define HEIGHT_BIT 13
 #define MAX_BIT 10
 #define ADD_OFFSET 4095
 #define DEFAULT_OFFSET 10
-#moj_import <fog.glsl>
-uniform mat4 ProjMat;
-uniform mat4 ModelViewMat;
-uniform int FogShape;
-uniform vec2 ScreenSize;
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:projection.glsl>
 in vec3 Position;
 in vec4 Color;
 in vec2 UV0;
 in ivec2 UV2;
 uniform sampler2D Sampler2;
-out float vertexDistance;
+out float sphericalVertexDistance;
+out float cylindricalVertexDistance;
 out vec4 vertexColor;
 out vec2 texCoord0;
-float fogDistance(vec3 pos, int shape) {
-    if (shape == 0) return length(pos);
-    return max(length(pos.xz), abs(pos.y));
-}
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
@@ -488,26 +509,29 @@ void main() {
             }
         }
     }
-    vertexDistance = fogDistance(pos, FogShape);
+    sphericalVertexDistance = fog_spherical_distance(pos);
+    cylindricalVertexDistance = fog_cylindrical_distance(pos);
     texCoord0 = UV0;
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 }
 """
-    fragment = """#version 150
-#moj_import <fog.glsl>
-uniform vec4 ColorModulator;
-uniform float FogStart;
-uniform float FogEnd;
-uniform vec4 FogColor;
+    fragment = """#version 330
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
 uniform sampler2D Sampler0;
-in float vertexDistance;
+in float sphericalVertexDistance;
+in float cylindricalVertexDistance;
 in vec4 vertexColor;
 in vec2 texCoord0;
 out vec4 fragColor;
 void main() {
     vec4 color = texture(Sampler0, texCoord0) * vertexColor * ColorModulator;
-    if (color.a < 0.1) discard;
-    fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
+    if (color.a < 0.1) {
+        discard;
+    }
+    fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance,
+            FogEnvironmentalStart, FogEnvironmentalEnd,
+            FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
 }
 """
     (target / "rendertype_text.vsh").write_text(vertex, encoding="utf-8")
@@ -548,7 +572,7 @@ def generate_contact_sheet() -> None:
         sheet.alpha_composite(icon, (x + 25, y))
         label = f"{class_id[:8]}:{mechanic_id[:10]}"
         draw.text((x, y + 64), label, font=label_font, fill=(199, 212, 234, 255))
-    sheet.save(target, optimize=True)
+    save_png(sheet, target)
 
 
 def main() -> None:

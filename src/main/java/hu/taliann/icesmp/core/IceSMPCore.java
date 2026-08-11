@@ -1083,13 +1083,8 @@ public final class IceSMPCore {
     private void logClassHudCapability() {
         if (configManager.getBoolean("hud.icesmp-hud.enabled", true)) {
             plugin.getLogger().info("First-party IceSMP HUD enabled: it activates per player after the IceSMP pack reports SUCCESSFULLY_LOADED; native HUD remains the readiness fallback.");
-        } else if (hudManager.betterHudActive()) {
-            plugin.getLogger().info("BetterHud present+ready: BetterHud class HUD active; native class resource row suppressed.");
         } else {
-            final boolean present = plugin.getServer().getPluginManager().isPluginEnabled("BetterHud");
-            final boolean papi = plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
-            plugin.getLogger().info("BetterHud class HUD inactive (present=" + present + ", PlaceholderAPI=" + papi
-                    + "); native compact class HUD fallback active.");
+            plugin.getLogger().info("First-party IceSMP HUD disabled; native compact class HUD fallback active.");
         }
     }
 

@@ -61,7 +61,9 @@ public final class IceSmpHudRegressionSuite {
         final String backend = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java");
         final String hud = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
         check(listener.contains("ConcurrentHashMap.newKeySet()")
-                        && listener.contains("SUCCESSFULLY_LOADED") && listener.contains("isLoaded(final UUID"),
+                        && listener.contains("SUCCESSFULLY_LOADED")
+                        && listener.contains("FAILED_RELOAD")
+                        && listener.contains("isLoaded(final UUID"),
                 "custom HUD readiness must come from a thread-safe pack status snapshot");
         check(backend.contains("resourcePackReady.test(player.getUniqueId())")
                         && !backend.contains("PersistentDataContainer") && !backend.contains("PlayerProfile"),
@@ -92,6 +94,22 @@ public final class IceSmpHudRegressionSuite {
         check(Files.isRegularFile(Path.of("resource-pack/assets/minecraft/shaders/core/rendertype_text.vsh"))
                         && Files.isRegularFile(Path.of("resource-pack/assets/icesmp_hud/font/space.json")),
                 "standalone shader and BMP spacing font must be packaged by the first-party HUD");
+        final String vertexShader = read(
+                "resource-pack/assets/minecraft/shaders/core/rendertype_text.vsh");
+        final String fragmentShader = read(
+                "resource-pack/assets/minecraft/shaders/core/rendertype_text.fsh");
+        check(vertexShader.startsWith("#version 330")
+                        && vertexShader.contains("<minecraft:dynamictransforms.glsl>")
+                        && vertexShader.contains("<minecraft:projection.glsl>")
+                        && vertexShader.contains("fog_spherical_distance(pos)")
+                        && !vertexShader.contains("uniform int FogShape"),
+                "HUD vertex shader must implement the Minecraft 1.21.11 UBO contract");
+        check(fragmentShader.startsWith("#version 330")
+                        && fragmentShader.contains("<minecraft:dynamictransforms.glsl>")
+                        && fragmentShader.contains("apply_fog(color")
+                        && !fragmentShader.contains("uniform vec4 FogColor")
+                        && !fragmentShader.contains("linear_fog("),
+                "HUD fragment shader must not redeclare 1.21.11 Fog UBO members or call legacy fog");
         final String generator = read("scripts/generate_icesmp_hud_assets.py");
         check(generator.contains("guest_frame_with_canonical_layout")
                         && generator.contains("canonical_frames")

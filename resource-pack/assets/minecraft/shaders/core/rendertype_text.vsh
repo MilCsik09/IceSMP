@@ -1,25 +1,20 @@
-#version 150
+#version 330
 #define HEIGHT_BIT 13
 #define MAX_BIT 10
 #define ADD_OFFSET 4095
 #define DEFAULT_OFFSET 10
-#moj_import <fog.glsl>
-uniform mat4 ProjMat;
-uniform mat4 ModelViewMat;
-uniform int FogShape;
-uniform vec2 ScreenSize;
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:projection.glsl>
 in vec3 Position;
 in vec4 Color;
 in vec2 UV0;
 in ivec2 UV2;
 uniform sampler2D Sampler2;
-out float vertexDistance;
+out float sphericalVertexDistance;
+out float cylindricalVertexDistance;
 out vec4 vertexColor;
 out vec2 texCoord0;
-float fogDistance(vec3 pos, int shape) {
-    if (shape == 0) return length(pos);
-    return max(length(pos.xz), abs(pos.y));
-}
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
@@ -46,7 +41,8 @@ void main() {
             }
         }
     }
-    vertexDistance = fogDistance(pos, FogShape);
+    sphericalVertexDistance = fog_spherical_distance(pos);
+    cylindricalVertexDistance = fog_cylindrical_distance(pos);
     texCoord0 = UV0;
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 }

@@ -66,10 +66,34 @@ class ResourcePackToolingTest(unittest.TestCase):
     def add_first_party_hud_layer(self, root: Path) -> None:
         shader = root / "assets" / "minecraft" / "shaders" / "core" / "rendertype_text.vsh"
         shader.parent.mkdir(parents=True, exist_ok=True)
-        shader.write_text("icesmp-owned-shader\n", encoding="utf-8")
+        shader.write_text(
+            "#version 330\n#moj_import <minecraft:dynamictransforms.glsl>\n"
+            "#moj_import <minecraft:projection.glsl>\nvoid main(){fog_spherical_distance(vec3(0));}\n",
+            encoding="utf-8",
+        )
+        shader.with_suffix(".fsh").write_text(
+            "#version 330\n#moj_import <minecraft:dynamictransforms.glsl>\n"
+            "void main(){apply_fog(vec4(0),0,0,0,0,0,0,vec4(0));}\n",
+            encoding="utf-8",
+        )
         manifest = root / "assets" / "icesmp_hud" / "hud-manifest.json"
         manifest.parent.mkdir(parents=True, exist_ok=True)
         manifest.write_text('{"schema":1}\n', encoding="utf-8")
+
+    def test_legacy_hud_shader_contract_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "source"
+            self.make_pack(root)
+            shader_root = root / "assets" / "minecraft" / "shaders" / "core"
+            shader_root.mkdir(parents=True, exist_ok=True)
+            (shader_root / "rendertype_text.vsh").write_text(
+                "#version 150\nuniform int FogShape;\n", encoding="utf-8")
+            (shader_root / "rendertype_text.fsh").write_text(
+                "#version 150\nuniform vec4 FogColor;\nvoid main(){linear_fog();}\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(resource_pack.PackError, "Minecraft 1.21.11"):
+                resource_pack.validate_pack(root)
 
     def test_deterministic_zip_ignores_mtime_and_source_only_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -251,8 +275,8 @@ class ResourcePackToolingTest(unittest.TestCase):
                 self.assertEqual(archive.read("assets/external/example.txt"), b"base")
                 self.assertEqual(
                     archive.read("assets/minecraft/shaders/core/rendertype_text.vsh")
-                    .decode("utf-8").strip(),
-                    "icesmp-owned-shader",
+                    .decode("utf-8").splitlines()[0],
+                    "#version 330",
                 )
                 pack = json.loads(archive.read("pack.mcmeta"))
                 self.assertEqual(pack["pack"]["min_format"], 75)

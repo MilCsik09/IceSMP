@@ -380,6 +380,7 @@ def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
 
     equipment = validate_equipment_assets(root)
     explicit_refs, fallback_refs = validate_config_equipment_references(root, equipment)
+    validate_hud_shader_contract(root)
 
     total_size = sum(path.stat().st_size for _, path in files)
     print(
@@ -389,6 +390,32 @@ def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
         f"(policy {FALLBACK_MINECRAFT_VERSION}), {total_size} bytes"
     )
     return files
+
+
+def validate_hud_shader_contract(root: Path) -> None:
+    """Reject the pre-1.21.11 text shader contract that makes clients fail reload."""
+    shader_root = root / "assets" / "minecraft" / "shaders" / "core"
+    vertex = shader_root / "rendertype_text.vsh"
+    fragment = shader_root / "rendertype_text.fsh"
+    if not vertex.exists() and not fragment.exists():
+        return
+    if not vertex.is_file() or not fragment.is_file():
+        raise PackError("IceSMP HUD text shader requires both rendertype_text.vsh and .fsh")
+
+    vertex_text = vertex.read_text(encoding="utf-8")
+    fragment_text = fragment.read_text(encoding="utf-8")
+    if (not vertex_text.startswith("#version 330")
+            or "<minecraft:dynamictransforms.glsl>" not in vertex_text
+            or "<minecraft:projection.glsl>" not in vertex_text
+            or "fog_spherical_distance" not in vertex_text
+            or "uniform int FogShape" in vertex_text):
+        raise PackError("IceSMP HUD vertex shader does not match Minecraft 1.21.11")
+    if (not fragment_text.startswith("#version 330")
+            or "<minecraft:dynamictransforms.glsl>" not in fragment_text
+            or "apply_fog(" not in fragment_text
+            or "uniform vec4 FogColor" in fragment_text
+            or "linear_fog(" in fragment_text):
+        raise PackError("IceSMP HUD fragment shader does not match Minecraft 1.21.11")
 
 
 def build_pack(root: Path, output: Path) -> tuple[str, int]:

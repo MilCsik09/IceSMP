@@ -87,9 +87,12 @@ public final class ResourcePackListener implements Listener {
         }
         if (event.getStatus() == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) {
             loadedPlayers.add(event.getPlayer().getUniqueId());
-        } else if (Set.of("DECLINED", "FAILED_DOWNLOAD", "INVALID_URL", "DISCARDED")
+        } else if (Set.of("DECLINED", "FAILED_DOWNLOAD", "FAILED_RELOAD", "INVALID_URL", "DISCARDED")
                 .contains(event.getStatus().name())) {
             loadedPlayers.remove(event.getPlayer().getUniqueId());
+            plugin.getLogger().warning("Az IceSMP resource pack nem aktiválódott ["
+                    + event.getPlayer().getName() + "]: " + event.getStatus()
+                    + "; a natív Folia HUD fallback marad aktív.");
         }
     }
 

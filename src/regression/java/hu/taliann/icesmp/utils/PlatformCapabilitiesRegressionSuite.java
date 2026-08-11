@@ -21,8 +21,8 @@ public final class PlatformCapabilitiesRegressionSuite {
         check(hud.contains("foliaCompactFallbackEnabled(final Player player)")
                         && hud.contains("applyFoliaCompactHud(player, snapshot)"),
                 "Folia lost the native compact HUD fallback");
-        check(hud.contains("!betterHudActive(player)"),
-                "BetterHud activation no longer suppresses the native Folia class HUD");
+        check(hud.contains("!iceSmpHudActive(player)"),
+                "first-party HUD readiness no longer suppresses the native Folia class HUD");
         check(hud.contains("isSectionHidden(player, SECTION_ALL) || !snapshot.hasClass()")
                         && !hud.contains("!sidebarVisibleFor(player) || !snapshot.hasClass()"),
                 "compact Folia HUD visibility is incorrectly coupled to the disabled scoreboard renderer");
