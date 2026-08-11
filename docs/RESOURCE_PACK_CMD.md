@@ -2054,7 +2054,7 @@ A `resource-pack/assets/icesmp_hud/` a primary first-party HUD futásidejű rét
 BMP spacing/text fontok és a Minecraft 1.21.11 pozicionáló shader. A Menedék-vendég saját
 erőd/kapu külső héjat kap, de ugyanabból a kanonikus belső panelgeometriából készül, mint a
 frakciókeretek. A reprodukálható feladatok: `generateIceSmpHudAssets`,
-`validateIceSmpHudPackage`, `iceSmpHudRegressionTest`.
+`validateIceSmpHudPackage`, `iceSmpHudRegressionTest`, `hudEditorRegressionTest`.
 
 A `runFolia` fejlesztői provisioning a változtathatatlan külső packot
 (`4900b0a9bed8db710143393916db3687e01def54`) a first-party merge bemeneteként stage-eli. A külső
@@ -2072,8 +2072,19 @@ nem támaszkodik külső HUD motor supplementary-plane sentinelére. Minden dina
 logikai cellát kap, minden rajzparancs visszatér a kezdőpontra, így érték- vagy ikonváltás nem mozdítja
 el a panelt. A shader a Minecraft 1.21.11 `Globals.ScreenSize` értékével kompenzálja a kliens
 GUI-skáláját, így a teljes kompozíció — keret, szöveg, ikonok és alsó sávok — együtt skálázódik
-a jobb felső sarok körül. A 240×160-as keretek és 240×22-es sávok beleférnek a Minecraft 256×256-os font-stitcherébe;
+a jobb felső sarok körül. Az admin editor X-eltolását és biztonsági margóját a szerveroldali
+zéró-nettó-szélességű komponenspozíció alkalmazza. Az Y-eltolást és a méretet egy 12 bites,
+HUD-glyph színébe kódolt layout-azonosító viszi a shaderhez. A nyolc támogatott buildkori
+scale-variáns `0.75/0.90/1.00/1.15/1.25/1.40/1.60/1.80`; productionben nincs Gradle-, Python-
+vagy assetgenerálás, a runtime csak variánst választ. A scale-tábla és az Y `-256..255` tartománya
+a `hud-manifest.json`, a generátor, a Java snapshot és a shader közös validált contractja.
+A 240×160-as keretek és 240×22-es sávok beleférnek a Minecraft 256×256-os font-stitcherébe;
 a jobb oldali horgony clip-space alapú, a magyar szöveg pedig a licencelt DejaVu Sans forrásból
 négyszeresen túlmintavételezett atlasz. A backend csak `SUCCESSFULLY_LOADED` pack után renderel,
 ezért pack nélkül nem jelenhet meg felső missing-glyph négyzet.
+
+Az editor kizárólag sikeres `SUCCESSFULLY_LOADED` státusznál preview-zik; pack nélkül nem próbál
+HUD-fontot kirajzolni, és nem rontja el a natív/Folia fallbacket. A felbontás/GUI-scale presetek
+szerveroldali ellenőrzési profilok, nem kliensdetektálás. A staging vizuális elfogadást valódi
+Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- és shader-contractot igazol.
 
