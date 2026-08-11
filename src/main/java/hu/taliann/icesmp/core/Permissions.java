@@ -32,6 +32,7 @@ public final class Permissions {
 
     public static final String RELOAD = "icesmp.admin.reload";
     public static final String CONFIG = "icesmp.admin.config";
+    public static final String HUD_EDITOR = "icesmp.admin.hud-editor";
     public static final String EVENTS = "icesmp.admin.events";
     public static final String NPC = "icesmp.admin.npc";
     public static final String QUEST = "icesmp.admin.quest";
@@ -83,6 +84,7 @@ public final class Permissions {
         final Map<String, String> canonical = new LinkedHashMap<>();
         canonical.put(RELOAD, "Config + üzenetek újratöltése (/icesmp reload)");
         canonical.put(CONFIG, "Ingame config-felülbírálás (/icesmp config)");
+        canonical.put(HUD_EDITOR, "Első fél HUD-layout editor (/hud edit)");
         canonical.put(EVENTS, "Világesemény-triggerek (/events)");
         canonical.put(NPC, "NPC-kötések (/npcbind)");
         canonical.put(QUEST, "Quest admin + force-complete (/quest admin)");
