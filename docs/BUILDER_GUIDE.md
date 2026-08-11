@@ -162,6 +162,15 @@ alapú, saját item-modellel és jutalomprofillal, és a bundled configban egyik
 sem kér crate-specifikus permissiont. Az elhelyezéskor az ID-t pontosan,
 ékezet nélkül add meg.
 
+A reward-preview nem puszta Material-ikont használ: unique itemnél,
+recepttárgynál, tervrajznál és ládakulcsnál a tényleges `ITEM_MODEL` kerül a
+GUI-ba és a világban futó revealbe. A `random-blueprint` jutalom szakmával,
+`min-level`/`max-level` tartománnyal és az alapból hamis
+`include-loot-only` kapcsolóval szűrhető. Üres pool érvényteleníti a crate
+definícióját. `ELYTRA` sem közvetlen itemként, sem Elytrát eredményező
+receptből/tervrajzból nem engedélyezett; repülőszárnyat csak a relikviarendszer
+kezelhet.
+
 ### 4.2. Crate-hely létrehozása
 
 Szükséges permission: `icesmp.admin.crate`.

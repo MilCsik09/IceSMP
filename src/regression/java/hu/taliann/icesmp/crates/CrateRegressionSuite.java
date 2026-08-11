@@ -32,6 +32,7 @@ public final class CrateRegressionSuite {
         validatesStrictBooleanAndWorldLists();
         resolvesBundledAndInstalledSoundNames();
         validatesBundledCrateCollection();
+        validatesProgressionLootAndTexturedPreviews();
         validatesCommandTemplates();
         consumesExactKeysAcrossStacks();
         boundsPartialMassOpen();
@@ -161,6 +162,57 @@ public final class CrateRegressionSuite {
             check(Math.abs(totalWeight - 100.0D) < 0.000_001D,
                     "bundled crate reward weights must total 100: " + crateId);
         }
+    }
+
+    private static void validatesProgressionLootAndTexturedPreviews() throws IOException {
+        final YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/crates.yml").toFile());
+        final ConfigurationSection crates = defaults.getConfigurationSection("crates");
+        check(crates != null, "bundled crate definitions missing");
+        int customRewards = 0;
+        int vanillaRewards = 0;
+        int randomBlueprintPools = 0;
+        for (final String crateId : crates.getKeys(false)) {
+            for (final Map<?, ?> reward : crates.getMapList(crateId + ".rewards")) {
+                final String type = String.valueOf(reward.get("type"));
+                if ("item".equals(type)) {
+                    vanillaRewards++;
+                    check(!"ELYTRA".equals(String.valueOf(reward.get("material"))),
+                            "bundled crate reintroduced a direct Elytra: " + crateId);
+                } else if (Set.of("unique-item", "recipe-item", "blueprint", "random-blueprint")
+                        .contains(type)) {
+                    customRewards++;
+                }
+                if ("random-blueprint".equals(type)) {
+                    randomBlueprintPools++;
+                    final Object minimum = reward.get("min-level");
+                    final Object maximum = reward.get("max-level");
+                    check((minimum == null ? 1 : ((Number) minimum).intValue())
+                                    <= (maximum == null ? 100 : ((Number) maximum).intValue()),
+                            "random blueprint range is inverted: " + crateId);
+                }
+            }
+        }
+        check(customRewards >= 40, "bundled loot is still dominated by flat vanilla rewards");
+        check(vanillaRewards <= 4, "too many flat vanilla rewards remain");
+        check(randomBlueprintPools >= 8, "every progression path needs random-blueprint access");
+
+        final String manager = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/CrateManager.java"));
+        final String browser = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/gui/CrateBrowserGUI.java"));
+        check(manager.contains("material == Material.ELYTRA")
+                        && manager.contains("recipe.result() != Material.ELYTRA"),
+                "crate parser no longer rejects direct/indirect Elytra rewards");
+        check(manager.contains("pending.resolvedItems.getFirst().getFirst().clone()")
+                        && manager.contains("display.setItemStack(picked.clone())")
+                        && manager.contains("buildDeferredReward(player, recipe)")
+                        && manager.indexOf("awardMasterworkIfEligible(player, item)")
+                        < manager.indexOf("commitSuccessfulOpening(pending, player)"),
+                "world reveal no longer displays the exact delivered stack");
+        check(browser.contains("manager.rewardPreview(reward)")
+                        && browser.contains("manager.applyRewardPreviewAppearance(icon, reward)"),
+                "crate browser no longer reapplies real ITEM_MODEL previews");
     }
 
     /**

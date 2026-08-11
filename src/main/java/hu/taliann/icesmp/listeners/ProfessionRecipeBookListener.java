@@ -270,6 +270,17 @@ public final class ProfessionRecipeBookListener implements Listener {
      * @return a kész tárgy, vagy null (ismeretlen unique-eredmény / hibás presentation-config)
      */
     public ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
+        return buildResult(player, recipe, true);
+    }
+
+    /** Builds a crate reward without firing an advancement before the world reveal finishes. */
+    public ItemStack buildDeferredReward(final Player player,
+                                         final ProfessionRecipeCatalog.Recipe recipe) {
+        return buildResult(player, recipe, false);
+    }
+
+    private ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe,
+                                  final boolean awardMasterwork) {
         ItemStack result = recipe.uniqueResult() != null
                 ? uniqueMaterials.create(recipe.uniqueResult(), recipe.resultAmount())
                 : new ItemStack(recipe.result(), recipe.resultAmount());
@@ -450,11 +461,8 @@ public final class ProfessionRecipeBookListener implements Listener {
         }
 
         // Mestermű-mérföldkő: ha az affix-roll a létra felső fokát adta, az elismerést érdemel.
-        if (recipe.affixTier() != null && affixService != null) {
-            final String rolled = affixService.rarityIdOf(result);
-            if ("legendas".equals(rolled) || "ereklye".equals(rolled)) {
-                hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
-            }
+        if (awardMasterwork) {
+            awardMasterworkIfEligible(player, result);
         }
         // result.rarity: a saját létra egy foka (ocska…ereklye) — tervezett itemnek, amely nem
         // esik át affix-rollon. Az affix-rollos gear a rollott fokot kapja az ItemRarityService-től.
@@ -495,5 +503,16 @@ public final class ProfessionRecipeBookListener implements Listener {
                     (float) cooldownSection.getDouble("seconds", 1.0D));
         }
         return result;
+    }
+
+    /** Fires the milestone only after a deferred item has crossed its real delivery boundary. */
+    public void awardMasterworkIfEligible(final Player player, final ItemStack result) {
+        if (player == null || result == null || affixService == null) {
+            return;
+        }
+        final String rolled = affixService.rarityIdOf(result);
+        if ("legendas".equals(rolled) || "ereklye".equals(rolled)) {
+            hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
+        }
     }
 }

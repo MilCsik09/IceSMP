@@ -296,6 +296,11 @@ A `/crate` böngészőben megnézheted az esélyeket és kulcsot vásárolhatsz.
 fizikai láda nyitásakor nem jelenik meg inventory-rulett: a kiválasztás a láda
 felett pörgő ItemDisplayen látszik, és a jutalom csak a reveal lezárása után
 kerül kiosztásra. Minden bundled láda nyitásonként pontosan egy kulcsot kér.
+A preview és a világban megjelenő tárgy a valódi resource-pack modellt mutatja.
+A lootban unique szakmaalapanyagok, ténylegesen craftolt és affixet rolloló
+felszerelések, valamint szakma- és szinttartományból sorsolt tervrajzok is
+vannak. Boss-only tervrajz csak a Mitikus poolból jöhet. Elytra egyik ládából
+sem eshet; szárnyként kizárólag a relikviák léteznek.
 
 ---
 
