@@ -7,21 +7,28 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Applies the persisted vanish state through the supported Bukkit visibility API. It tracks only
- * visibility changes made by IceSMP, so refresh/disable never calls showPlayer for another
- * system's hidden subjects.
+ * Applies persisted vanish to both entity tracking and the per-viewer player list.
+ *
+ * <p>Both ledgers are ownership ledgers: IceSMP restores only pairs it changed. Entity
+ * visibility remains plugin-scoped through hide/showPlayer; tab-list visibility is
+ * tracked separately because Paper's list/unlist API is viewer-scoped rather than
+ * plugin-scoped.</p>
  */
 public final class VanishManager implements PlayerStateCleanup {
+
+    private static final long TRACKING_REASSERT_TICKS = 20L;
 
     private final JavaPlugin plugin;
     private final ModerationManager moderationManager;
     private final ConfigManager configManager;
     private final ConcurrentHashMap<UUID, Set<UUID>> hiddenByViewer = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Set<UUID>> unlistedByViewer = new ConcurrentHashMap<>();
     private final Set<UUID> onlinePlayers = ConcurrentHashMap.newKeySet();
 
     public VanishManager(final JavaPlugin plugin, final ModerationManager moderationManager,
@@ -40,22 +47,15 @@ public final class VanishManager implements PlayerStateCleanup {
     }
 
     public int visibleOnlineCount() {
-        if (!excludedFromOnlineCount()) {
-            return onlineCount();
-        }
-        return onlineCountExcludingVanished();
+        return excludedFromOnlineCount() ? onlineCountExcludingVanished() : onlineCount();
     }
 
-    /** Thread-safe tracked online count for async server-list presentation. */
     public int onlineCount() {
         return onlinePlayers.size();
     }
 
-    /** Thread-safe count that always excludes vanished UUIDs, independent of moderation config. */
     public int onlineCountExcludingVanished() {
-        return (int) onlinePlayers.stream()
-                .filter(playerId -> !isVanished(playerId))
-                .count();
+        return (int) onlinePlayers.stream().filter(playerId -> !isVanished(playerId)).count();
     }
 
     public void markOnline(final UUID playerId) {
@@ -66,13 +66,16 @@ public final class VanishManager implements PlayerStateCleanup {
         onlinePlayers.remove(playerId);
     }
 
-    /** Reconciles one viewer on that viewer's entity scheduler. */
     public void refreshViewer(final Player viewer) {
         PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> applyViewer(viewer), () -> { });
     }
 
-    /** Reconciles every viewer; global discovery is followed by one entity-owned task per viewer. */
     public void refreshAll() {
+        reconcileAllOnce();
+        Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> reconcileAllOnce(), TRACKING_REASSERT_TICKS);
+    }
+
+    private void reconcileAllOnce() {
         Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
             final Set<UUID> current = ConcurrentHashMap.newKeySet();
             for (final Player viewer : Bukkit.getOnlinePlayers()) {
@@ -84,8 +87,13 @@ public final class VanishManager implements PlayerStateCleanup {
         });
     }
 
-    /** Reconciles a changed subject across all viewers without discovering them off-global. */
     public void refreshSubject(final UUID subjectId) {
+        refreshSubjectOnce(subjectId);
+        Bukkit.getGlobalRegionScheduler().runDelayed(plugin,
+                task -> refreshSubjectOnce(subjectId), TRACKING_REASSERT_TICKS);
+    }
+
+    private void refreshSubjectOnce(final UUID subjectId) {
         Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
             for (final Player viewer : Bukkit.getOnlinePlayers()) {
                 PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
@@ -98,19 +106,19 @@ public final class VanishManager implements PlayerStateCleanup {
         if (!viewer.isOnline()) {
             return;
         }
-        final Set<UUID> hidden = hiddenByViewer.computeIfAbsent(viewer.getUniqueId(), ignored ->
-                ConcurrentHashMap.newKeySet());
         for (final UUID subjectId : Set.copyOf(onlinePlayers)) {
             if (!subjectId.equals(viewer.getUniqueId())) {
                 applySubject(viewer, subjectId);
             }
         }
-        hidden.removeIf(subjectId -> {
-            if (Bukkit.getPlayer(subjectId) != null) {
-                return false;
-            }
-            return true;
-        });
+        pruneOffline(hiddenByViewer.computeIfAbsent(viewer.getUniqueId(), ignored ->
+                ConcurrentHashMap.newKeySet()));
+        pruneOffline(unlistedByViewer.computeIfAbsent(viewer.getUniqueId(), ignored ->
+                ConcurrentHashMap.newKeySet()));
+    }
+
+    private static void pruneOffline(final Set<UUID> subjects) {
+        subjects.removeIf(subjectId -> Bukkit.getPlayer(subjectId) == null);
     }
 
     private void applySubject(final Player viewer, final UUID subjectId) {
@@ -120,45 +128,72 @@ public final class VanishManager implements PlayerStateCleanup {
         final Player subject = Bukkit.getPlayer(subjectId);
         final Set<UUID> hidden = hiddenByViewer.computeIfAbsent(viewer.getUniqueId(), ignored ->
                 ConcurrentHashMap.newKeySet());
+        final Set<UUID> unlisted = unlistedByViewer.computeIfAbsent(viewer.getUniqueId(), ignored ->
+                ConcurrentHashMap.newKeySet());
         final boolean shouldHide = subject != null && isVanished(subjectId)
                 && !viewer.hasPermission(Permissions.MODERATION_VANISH_SEE);
+
         if (shouldHide) {
-            if (hidden.add(subjectId)) {
-                viewer.hidePlayer(plugin, subject);
+            hidden.add(subjectId);
+            viewer.hidePlayer(plugin, subject);
+            if (viewer.isListed(subject)) {
+                viewer.unlistPlayer(subject);
+                unlisted.add(subjectId);
+            } else if (unlisted.contains(subjectId)) {
+                viewer.unlistPlayer(subject);
             }
-        } else if (hidden.remove(subjectId) && subject != null) {
+            return;
+        }
+
+        if (subject != null && hidden.remove(subjectId)) {
             viewer.showPlayer(plugin, subject);
+        }
+        if (subject != null && unlisted.remove(subjectId)
+                && viewer.canSee(subject) && !viewer.isListed(subject)) {
+            viewer.listPlayer(subject);
         }
     }
 
-    /** Best-effort visibility restoration during plugin shutdown/reload teardown. */
     public void shutdown() {
-        // Capture before scheduling: clearing the shared map immediately after scheduling would make
-        // every task observe null and leave IceSMP-owned visibility pairs hidden until disconnect.
         for (final Player viewer : Bukkit.getOnlinePlayers()) {
             final Set<UUID> hidden = hiddenByViewer.remove(viewer.getUniqueId());
-            if (hidden == null || hidden.isEmpty()) {
+            final Set<UUID> unlisted = unlistedByViewer.remove(viewer.getUniqueId());
+            if ((hidden == null || hidden.isEmpty()) && (unlisted == null || unlisted.isEmpty())) {
                 continue;
             }
-            final Set<UUID> snapshot = Set.copyOf(hidden);
+            final Set<UUID> subjects = new LinkedHashSet<>();
+            if (hidden != null) subjects.addAll(hidden);
+            if (unlisted != null) subjects.addAll(unlisted);
+            final Set<UUID> hiddenSnapshot = hidden == null ? Set.of() : Set.copyOf(hidden);
+            final Set<UUID> unlistedSnapshot = unlisted == null ? Set.of() : Set.copyOf(unlisted);
             PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
-                for (final UUID subjectId : snapshot) {
+                for (final UUID subjectId : subjects) {
                     final Player subject = Bukkit.getPlayer(subjectId);
-                    if (subject != null) {
+                    if (subject == null) continue;
+                    if (hiddenSnapshot.contains(subjectId)) {
                         viewer.showPlayer(plugin, subject);
+                    }
+                    if (unlistedSnapshot.contains(subjectId)
+                            && viewer.canSee(subject) && !viewer.isListed(subject)) {
+                        viewer.listPlayer(subject);
                     }
                 }
             }, () -> { });
         }
         hiddenByViewer.clear();
+        unlistedByViewer.clear();
     }
 
     @Override
     public void clearPlayerState(final UUID playerId) {
         onlinePlayers.remove(playerId);
         hiddenByViewer.remove(playerId);
+        unlistedByViewer.remove(playerId);
         for (final Set<UUID> hidden : hiddenByViewer.values()) {
             hidden.remove(playerId);
+        }
+        for (final Set<UUID> unlisted : unlistedByViewer.values()) {
+            unlisted.remove(playerId);
         }
     }
 }

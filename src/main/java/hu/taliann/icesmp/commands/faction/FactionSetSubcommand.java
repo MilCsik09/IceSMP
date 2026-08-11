@@ -12,6 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public final class FactionSetSubcommand implements FactionSubcommand {
 
@@ -21,6 +22,12 @@ public final class FactionSetSubcommand implements FactionSubcommand {
     private final FactionManager factionManager;
     private final SinManager sinManager;
     private final MessageManager messageManager;
+    private volatile hu.taliann.icesmp.managers.SpecializationManager specializationManager;
+
+    public void setSpecializationManager(
+            final hu.taliann.icesmp.managers.SpecializationManager specializationManager) {
+        this.specializationManager = specializationManager;
+    }
 
     public FactionSetSubcommand(final JavaPlugin plugin, final FactionManager factionManager, final SinManager sinManager,
                                 final MessageManager messageManager) {
@@ -75,21 +82,67 @@ public final class FactionSetSubcommand implements FactionSubcommand {
             return true;
         }
 
-        factionManager.setFaction(target.getUniqueId(), factionType);
-
-        // Admin placement into the Dark faction also seals the permanent pact (requires the target online).
-        // Folia: sealDarkPact writes the target's PDC — run it on the target's own region thread.
-        if (factionType == FactionType.DARK && target.getPlayer() instanceof Player onlineTarget) {
-            onlineTarget.getScheduler().run(plugin, task -> sinManager.sealDarkPact(onlineTarget), null);
+        final FactionType previous = factionManager.getChosenFaction(target.getUniqueId()).orElse(null);
+        final UUID targetId = target.getUniqueId();
+        final String targetName = target.getName() == null ? targetId.toString() : target.getName();
+        final Player onlineTarget = target.getPlayer();
+        if (onlineTarget == null && (previous == FactionType.DARK || factionType == FactionType.DARK)) {
+            sender.sendMessage(messageManager.get("messages.faction-set-dark-online-required",
+                    "&cDARK tagságot csak online játékosnál módosíthatsz, mert a paktum és a specializáció PDC-állapotát ugyanabban az atomi átmenetben kell egyeztetni."));
+            return true;
         }
 
-        sender.sendMessage(messageManager.get(
+        if (onlineTarget != null && (previous == FactionType.DARK || factionType == FactionType.DARK)) {
+            final String retiredMessage = messageManager.get(
+                    "messages.faction-set-target-retired",
+                    "&cA frakcióváltás meghiúsult, mert a céljátékos közben lecsatlakozott: &f%s",
+                    targetName);
+            final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
+                    onlineTarget.getScheduler().run(plugin, task -> {
+                        final FactionType livePrevious = factionManager.getChosenFaction(targetId).orElse(null);
+                        // Membership persistence commits first. PDC/spec side effects must never
+                        // advertise a transition whose factions.yml write failed.
+                        factionManager.setFaction(targetId, factionType);
+                        if (livePrevious == FactionType.DARK && factionType != FactionType.DARK) {
+                            sinManager.clearDarkPactForFactionOverride(onlineTarget);
+                        }
+                        if (factionType == FactionType.DARK) {
+                            sinManager.sealDarkPact(onlineTarget);
+                        }
+                        final hu.taliann.icesmp.managers.SpecializationManager specs = specializationManager;
+                        if (specs != null) {
+                            specs.reconcileDarkGates(onlineTarget);
+                        }
+                        sendSuccess(sender, targetName, factionType);
+                    }, () -> sendSafely(sender, retiredMessage));
+            if (scheduled == null) {
+                sendSafely(sender, retiredMessage);
+            }
+            return true;
+        } else {
+            factionManager.setFaction(targetId, factionType);
+        }
+
+        sendSuccess(sender, targetName, factionType);
+        return true;
+    }
+
+    private void sendSuccess(final CommandSender sender, final String targetName,
+                             final FactionType factionType) {
+        sendSafely(sender, messageManager.get(
                 "messages.faction-set-target-success",
                 "&aFrakció beállítva: &f%s &7-> &f%s",
-                target.getName(),
+                targetName,
                 factionType.getDisplayName()
         ));
-        return true;
+    }
+
+    private void sendSafely(final CommandSender sender, final String message) {
+        if (sender instanceof Player player) {
+            player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
+        } else {
+            sender.sendMessage(message);
+        }
     }
 
     @Override
@@ -110,6 +163,3 @@ public final class FactionSetSubcommand implements FactionSubcommand {
         return List.of();
     }
 }
-
-
-

@@ -180,10 +180,10 @@ public final class CommandMenus {
     public static void openFaction(final Player player, final CommandMenuContext ctx) {
         final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.FACTION, player.getUniqueId());
         final Inventory inv = create(holder, 36, "<dark_aqua>» Frakció «</dark_aqua>", ctx);
-        final FactionType faction = ctx.factionManager().getFaction(player.getUniqueId());
+        final FactionType faction = ctx.factionManager().getChosenFaction(player.getUniqueId()).orElse(null);
 
         final List<Component> headerLore = new ArrayList<>();
-        headerLore.add(label("Frakciód", Component.text(faction == null ? "nincs"
+        headerLore.add(label("Frakciód", Component.text(faction == null ? "Menedék vendége"
                 : faction.getDisplayName() + " (" + faction.getFullName() + ")", NamedTextColor.WHITE)));
         final UUID kingId = faction == null ? null : ctx.kingManager().getKing(faction);
         if (faction != null) {
@@ -244,20 +244,23 @@ public final class CommandMenus {
     public static void openFactionSwitch(final Player player, final CommandMenuContext ctx) {
         final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.FACTION_SWITCH, player.getUniqueId());
         final Inventory inv = create(holder, 36, "<dark_aqua>» Frakcióváltás «</dark_aqua>", ctx);
-        final FactionType current = ctx.factionManager().getFaction(player.getUniqueId());
+        final FactionType current = ctx.factionManager().getChosenFaction(player.getUniqueId()).orElse(null);
 
         put(inv, holder, 4, GuiUtil.icon(Material.COMPASS, accent("Frakcióváltás"),
-                List.of(label("Jelenlegi", Component.text(current == null ? "nincs" : current.getDisplayName(), NamedTextColor.WHITE)),
-                        label("Váltás ára", Component.text(ctx.currencyManager().formatBalance(ctx.factionManager().getSwitchCost())
+                List.of(label("Jelenlegi", Component.text(current == null ? "Menedék vendége" : current.getDisplayName(), NamedTextColor.WHITE)),
+                        label(current == null ? "Első választás ára" : "Váltás ára", Component.text(current == null
+                                ? "ingyenes"
+                                : ctx.currencyManager().formatBalance(ctx.factionManager().getSwitchCost())
                                 + " (jelenlegi valutádban)", NamedTextColor.GOLD)),
                         label("Várakozás két váltás közt", Component.text(
                                 (long) ctx.factionManager().getSwitchCooldownHours() + " óra", NamedTextColor.WHITE)),
-                        grey("A Menedékből bárhová ingyenes a váltás."),
+                        grey(current == null ? "Az első frakcióválasztás ingyenes."
+                                : "A Menedékből bárhová ingyenes a váltás."),
                         grey("A passzívák azonnal cserélődnek."),
                         Component.text("A Kitaszítottak közé nem lépni lehet:", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
                         Component.text("a bűn visz oda — és a paktum örök.", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))), null);
 
-        putJoinButtons(inv, holder, player, ctx, current, "Váltás");
+        putJoinButtons(inv, holder, player, ctx, current, current == null ? "Választás" : "Váltás");
 
         put(inv, holder, 31, backButton(), "MENU:FACTION");
         player.openInventory(inv);
@@ -277,13 +280,13 @@ public final class CommandMenus {
             }
             final ItemStack icon = switch (type) {
                 case RED -> GuiUtil.icon(Material.RED_WOOL, Component.text(prefix + ": Láng (Perinfernicitas)", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
-                        List.of(grey("Tűz-immunitás."), click()));
+                        List.of(grey("Erős környezeti hőellenállás."), click()));
                 case BLUE -> GuiUtil.icon(Material.BLUE_WOOL, Component.text(prefix + ": Fagy (Cryghaliris)", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false),
-                        List.of(grey("Fagy-immunitás, lassabb éhség."), click()));
-                case NEUTRAL -> GuiUtil.icon(Material.WHITE_WOOL, Component.text(prefix + ": Menedék (Ryanora & Caldestera)", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
-                        List.of(grey("Esés-immunitás, adómentesség."), click()));
+                        List.of(grey("Fagyvédelem, részleges vízi és éhségelőny."), click()));
+                case NEUTRAL -> GuiUtil.icon(Material.LIME_WOOL, Component.text(prefix + ": Menedék (Ryanora & Caldestera)", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false),
+                        List.of(grey("Esésvédelem, békés lények jóindulata, adómentesség."), click()));
                 case DARK -> GuiUtil.icon(Material.BLACK_WOOL, Component.text(prefix + ": Kitaszított (A Kitaszítottak)", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false),
-                        List.of(grey("Wither-immunitás, élőholtak békéje."),
+                        List.of(grey("Wither-ellenállás, helyzetfüggő élőholt-béke."),
                                 ctx.sinManager() != null && ctx.sinManager().isSinner(player)
                                         ? Component.text("A sötét paktum vár rád…", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false)
                                         : Component.text("Feltétel: bűnös jelölés", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
@@ -314,8 +317,9 @@ public final class CommandMenus {
         final Component capitalNote = grey(capitalOnly ? "Csak fővárosban működik!" : " ");
         put(inv, holder, 11, GuiUtil.icon(Material.HOPPER, title("Befizetés (összes)"),
                 List.of(grey("A nálad lévő érméket bankba teszi."), capitalNote, click())), "RUN:bank deposit");
-        final FactionType own = ctx.factionManager().getFaction(player.getUniqueId());
-        final String cur = (own == null ? FactionType.NEUTRAL : own).name().toLowerCase();
+        // A vendég gazdasági alapvalutája szándékosan a Menedék valutája; ez nem tagság.
+        final FactionType own = ctx.factionManager().getEconomyFaction(player.getUniqueId());
+        final String cur = own.name().toLowerCase();
         put(inv, holder, 13, GuiUtil.icon(Material.DROPPER, title("Kivét: 64 (saját valuta)"),
                 List.of(grey("64 érme kivétele itemként (KP)."), capitalNote, click())), "RUN:bank withdraw " + cur + " 64");
         put(inv, holder, 15, GuiUtil.icon(Material.PAPER, title("Árfolyamok"),
@@ -337,8 +341,9 @@ public final class CommandMenus {
     // ===== VALUTAVÁLTÓ =====
     /** Opens the interactive currency exchanger with the caller's own currency preselected as source. */
     public static void openExchange(final Player player, final CommandMenuContext ctx) {
-        final FactionType own = ctx.factionManager().getFaction(player.getUniqueId());
-        openExchange(player, ctx, own == null ? FactionType.NEUTRAL : own, null);
+        // A vendég gazdasági alapvalutája szándékosan a Menedék valutája; ez nem tagság.
+        final FactionType own = ctx.factionManager().getEconomyFaction(player.getUniqueId());
+        openExchange(player, ctx, own, null);
     }
 
     /**

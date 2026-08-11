@@ -29,9 +29,33 @@ public final class ResourceManager implements PlayerStateCleanup {
 
     /** E25/E32 — setter-injektált pool-bónusz lookup (pakt + sárkánytojás-relikvia). */
     private volatile java.util.function.ToDoubleFunction<UUID> maxMultiplier;
+    /** Optional compact class-gameplay suffix rendered on the same HUD resource line. */
+    private volatile java.util.function.Function<Player, Component> hudSuffix = ignored -> Component.empty();
+    private volatile java.util.function.Function<Player, hu.taliann.icesmp.classspec.integration.ClassHudState>
+            classHudState = ignored -> hu.taliann.icesmp.classspec.integration.ClassHudState.empty();
 
     public void setMaxMultiplier(final java.util.function.ToDoubleFunction<UUID> maxMultiplier) {
         this.maxMultiplier = maxMultiplier;
+    }
+
+    public void setHudSuffix(final java.util.function.Function<Player, Component> hudSuffix) {
+        this.hudSuffix = hudSuffix == null ? ignored -> Component.empty() : hudSuffix;
+    }
+
+    public void setClassHudState(final java.util.function.Function<Player,
+            hu.taliann.icesmp.classspec.integration.ClassHudState> provider) {
+        classHudState = provider == null
+                ? ignored -> hu.taliann.icesmp.classspec.integration.ClassHudState.empty() : provider;
+    }
+
+    /** Owner-thread capture only; async integrations consume the copy embedded in HudSnapshot. */
+    public hu.taliann.icesmp.classspec.integration.ClassHudState classHudState(final Player player) {
+        try {
+            final var snapshot = classHudState.apply(player);
+            return snapshot == null ? hu.taliann.icesmp.classspec.integration.ClassHudState.empty() : snapshot;
+        } catch (final RuntimeException invalidRuntimeState) {
+            return hu.taliann.icesmp.classspec.integration.ClassHudState.empty();
+        }
     }
 
     /** Harc utáni türelmi idő: eddig számít "harcban" a játékos (düh-típusú tárnál nincs decay). */
@@ -258,7 +282,14 @@ public final class ResourceManager implements PlayerStateCleanup {
         for (int i = 0; i < 10; i++) {
             bar = bar.append(Component.text("▰", i < filled ? color : NamedTextColor.DARK_GRAY));
         }
-        return bar.append(Component.text(" " + value, NamedTextColor.WHITE));
+        final Component core = bar.append(Component.text(" " + value, NamedTextColor.WHITE));
+        final Component suffix;
+        try {
+            suffix = hudSuffix.apply(player);
+        } catch (final RuntimeException invalid) {
+            return core;
+        }
+        return suffix == null ? core : core.append(suffix);
     }
 
     /** The player's class-resource display name (Mana / Düh / Energia …) for cast/cost messages. */
@@ -292,7 +323,7 @@ public final class ResourceManager implements PlayerStateCleanup {
 
     /**
      * A §-colour-coded 10-segment bar string of the resource for PlaceholderAPI
-     * consumers (TAB renders the legacy codes): filled segments in the CLASS
+     * consumers (legacy-colour-aware renderers): filled segments in the CLASS
      * resource colour (Düh=piros, Energia=sárga…, mint a saját sidebar), empty
      * ones dark grey, then a vivid numeric counter — an uncoloured bar was
      * nearly unreadable on the scoreboard.

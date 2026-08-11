@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.gui.ConfigChatInputGate;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ModerationManager;
 import hu.taliann.icesmp.moderation.ModerationSpamGuard;
@@ -57,11 +58,17 @@ public final class ChatModerationListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onChat(final AsyncChatEvent event) {
+        final Player sender = event.getPlayer();
+        final UUID senderId = sender.getUniqueId();
+        // A config-editor chatje privát admin-input. Nem szabad cenzúrázni, spamként
+        // blokkolni vagy naplózni — különben éppen a tiltott szavak listája nem lenne
+        // szerkeszthető. A ConfigMenuGUIListener ugyanebben a LOWEST fázisban elnyeli.
+        if (ConfigChatInputGate.isOpen(senderId)) {
+            return;
+        }
         if (!configManager.getBoolean("moderation.enabled", true)) {
             return;
         }
-        final Player sender = event.getPlayer();
-        final UUID senderId = sender.getUniqueId();
         final String senderName = sender.getName();
         final String plain = PLAIN.serialize(event.message());
 

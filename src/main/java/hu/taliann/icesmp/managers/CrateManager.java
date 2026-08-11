@@ -8,14 +8,19 @@ import hu.taliann.icesmp.crates.CrateOpeningLifecycle;
 import hu.taliann.icesmp.crates.CrateRecoveryLedger;
 import hu.taliann.icesmp.crates.CrateRewardProgress;
 import hu.taliann.icesmp.crates.CrateTaskSubmission;
+import hu.taliann.icesmp.crates.CrateSoundResolver;
 import hu.taliann.icesmp.crates.CrateRules;
 import hu.taliann.icesmp.crates.KeyConsumption;
 import hu.taliann.icesmp.crates.WeightedSelector;
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.gui.CrateBrowserGUI;
-import hu.taliann.icesmp.gui.CrateSpinGUI;
 import hu.taliann.icesmp.items.BlueprintItemFactory;
 import hu.taliann.icesmp.items.CrateKeyFactory;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileCrateStore;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -26,8 +31,6 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -72,6 +75,9 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
     private static final long AUDIT_ROTATE_BYTES = 5L * 1024L * 1024L;
     private static final double MAX_KEY_PRICE = 1_000_000_000.0D;
     private static final int MAX_CRATES = 128;
+    private static final int REVEAL_CYCLES = 12;
+    private static final int REVEAL_CYCLE_TICKS = 3;
+    private static final long REVEAL_DURATION_TICKS = (long) REVEAL_CYCLES * REVEAL_CYCLE_TICKS;
 
     public enum RewardType {
         ITEM,
@@ -80,13 +86,19 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         UNIQUE_ITEM,
         RECIPE_ITEM,
         BLUEPRINT,
+        RANDOM_BLUEPRINT,
         CRATE_KEY
+    }
+
+    /** Validated, bounded selector for a random profession blueprint reward. */
+    public record BlueprintPool(ProfessionType profession, int minimumLevel, int maximumLevel,
+                                boolean includeLootOnly) {
     }
 
     /** Fully validated immutable reward entry. */
     public record RewardEntry(double weight, RewardType type, String value, int amount,
                               CurrencyType currency, double currencyAmount, String command,
-                              String description, Material iconMaterial) {
+                              String description, Material iconMaterial, BlueprintPool blueprintPool) {
         public RewardEntry {
             Objects.requireNonNull(type, "type");
             Objects.requireNonNull(iconMaterial, "iconMaterial");
@@ -215,7 +227,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         }
     }
 
-    private record ConfigSnapshot(long generation, boolean enabled, boolean spinAnimation,
+    private record ConfigSnapshot(long generation, boolean enabled,
                                   Map<String, CrateDefinition> definitions, List<String> errors) {
         private ConfigSnapshot {
             definitions = Map.copyOf(definitions);
@@ -223,7 +235,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         }
 
         private static ConfigSnapshot disabled() {
-            return new ConfigSnapshot(0L, false, false, Map.of(), List.of("A crate config még nincs betöltve."));
+            return new ConfigSnapshot(0L, false, Map.of(), List.of("A crate config még nincs betöltve."));
         }
     }
 
@@ -242,6 +254,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
     private final Object stateLock = new Object();
     private final Map<StoredLocation, String> crateBlocks = new ConcurrentHashMap<>();
     private final CrateLedger ledger = new CrateLedger();
+    private final PlayerProfileCrateStore profileCrateStore = new PlayerProfileCrateStore();
     private final CrateRecoveryLedger recoveryLedger = new CrateRecoveryLedger();
     private final CrateAuditWriter auditWriter;
     private final Map<UUID, PendingOpen> pendingOpens = new HashMap<>();
@@ -286,16 +299,12 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         final ConfigurationSection root = configuration == null ? null
                 : configuration.getConfigurationSection("crates");
         final boolean globallyEnabled;
-        final boolean spin;
         try {
             globallyEnabled = CrateRules.strictBoolean(configuration == null ? null
                     : configuration.get("crates-settings.enabled"), true, "crates-settings.enabled");
-            spin = CrateRules.strictBoolean(configuration == null ? null
-                    : configuration.get("crates-settings.spin-animation"), true,
-                    "crates-settings.spin-animation");
         } catch (final IllegalArgumentException invalidGlobal) {
             errors.add(invalidGlobal.getMessage());
-            configSnapshot = new ConfigSnapshot(generation, false, false, Map.of(), errors);
+            configSnapshot = new ConfigSnapshot(generation, false, Map.of(), errors);
             plugin.getLogger().warning("Crate config: " + invalidGlobal.getMessage());
             return;
         }
@@ -340,12 +349,12 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         } while (changed);
 
         final ConfigSnapshot next = new ConfigSnapshot(generation,
-                globallyEnabled && !definitions.isEmpty(), spin, definitions, errors);
+                globallyEnabled && !definitions.isEmpty(), definitions, errors);
         configSnapshot = next;
         hu.taliann.icesmp.core.Permissions.registerCratePermissions(definitions.values().stream()
                 .map(CrateDefinition::permission).filter(permission -> permission != null && !permission.isBlank()).toList());
         if (errors.isEmpty()) {
-            plugin.getLogger().info("Natív crate config betöltve: " + definitions.size() + " láda.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Natív crate config betöltve: " + definitions.size() + " láda.");
         } else {
             errors.forEach(error -> plugin.getLogger().warning("Crate config: " + error));
             plugin.getLogger().warning("Érvényes crate-ek: " + definitions.size()
@@ -394,10 +403,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
 
         final String soundName = requiredText(section.getString("opening-sound.sound",
                 "ENTITY_PLAYER_LEVELUP"), "opening-sound.sound");
-        final NamespacedKey soundKey = NamespacedKey.fromString(soundName.contains(":")
-                ? soundName.toLowerCase(Locale.ROOT)
-                : "minecraft:" + soundName.toLowerCase(Locale.ROOT));
-        final Sound openingSound = soundKey == null ? null : Registry.SOUNDS.get(soundKey);
+        final Sound openingSound = CrateSoundResolver.resolve(soundName);
         if (openingSound == null) {
             throw new IllegalArgumentException("ismeretlen opening-sound: " + soundName);
         }
@@ -448,17 +454,17 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         return switch (type) {
             case ITEM -> {
                 final Material material = Material.matchMaterial(requiredText(stringValue(raw.get("material")), "material"));
-                if (material == null || material.isAir()) {
-                    throw new IllegalArgumentException("ismeretlen vagy AIR material");
+                if (material == null || material.isAir() || material == Material.ELYTRA) {
+                    throw new IllegalArgumentException("ismeretlen, AIR vagy tiltott ELYTRA material");
                 }
                 final int amount = CrateRules.itemAmount(raw.get("amount"), 1);
                 yield new RewardEntry(weight, type, material.name(), amount, null, 0.0D,
-                        null, description, material);
+                        null, description, material, null);
             }
             case COMMAND -> {
                 final String command = CrateRules.validateCommand(stringValue(raw.get("command")));
                 yield new RewardEntry(weight, type, null, 1, null, 0.0D,
-                        command, description, Material.COMMAND_BLOCK);
+                        command, description, Material.COMMAND_BLOCK, null);
             }
             case CURRENCY -> {
                 final CurrencyType currency = CurrencyType.fromInput(stringValue(raw.get("currency")));
@@ -467,7 +473,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 }
                 final double amount = CrateRules.currencyAmount(raw.get("amount"));
                 yield new RewardEntry(weight, type, currency.name(), 1, currency, amount,
-                        null, description, Material.EMERALD);
+                        null, description, Material.EMERALD, null);
             }
             case UNIQUE_ITEM -> {
                 final String id = normalizedReference(raw.get("id"), "id");
@@ -476,40 +482,85 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 }
                 final int amount = CrateRules.itemAmount(raw.get("amount"), 1);
                 final ItemStack icon = uniqueMaterialFactory.create(id, 1);
-                if (icon == null || icon.getType().isAir()) {
+                if (icon == null || icon.getType().isAir() || icon.getType() == Material.ELYTRA) {
                     throw new IllegalArgumentException("a unique item nem építhető: " + id);
                 }
                 yield new RewardEntry(weight, type, id, amount, null, 0.0D,
-                        null, description, icon.getType());
+                        null, description, icon.getType(), null);
             }
             case RECIPE_ITEM -> {
                 final String id = normalizedReference(raw.get("id"), "id");
                 final ProfessionRecipeCatalog.Recipe recipe = recipeCatalog.get(id);
-                if (recipe == null) {
+                if (recipe == null || recipe.result() == Material.ELYTRA) {
                     throw new IllegalArgumentException("ismeretlen profession recipe: " + id);
                 }
                 final int amount = CrateRules.boundedPositiveInt(raw.get("amount"), 1,
                         CrateRules.MAX_RECIPE_REWARD_AMOUNT, "amount");
                 yield new RewardEntry(weight, type, id, amount, null, 0.0D,
-                        null, description, recipe.result());
+                        null, description, recipe.result(), null);
             }
             case BLUEPRINT -> {
                 final String id = normalizedReference(raw.get("id"), "id");
                 final ProfessionRecipeCatalog.Recipe recipe = recipeCatalog.get(id);
-                if (recipe == null || !recipe.blueprint()) {
+                if (recipe == null || !recipe.blueprint() || recipe.result() == Material.ELYTRA) {
                     throw new IllegalArgumentException("ismeretlen vagy nem tervrajzos recept: " + id);
                 }
                 final int amount = CrateRules.itemAmount(raw.get("amount"), 1);
                 yield new RewardEntry(weight, type, id, amount, null, 0.0D,
-                        null, description, Material.KNOWLEDGE_BOOK);
+                        null, description, Material.KNOWLEDGE_BOOK, null);
+            }
+            case RANDOM_BLUEPRINT -> {
+                final String professionRaw = blankToNull(stringValue(raw.get("profession")));
+                final ProfessionType profession;
+                if (professionRaw == null || "*".equals(professionRaw)) {
+                    profession = null;
+                } else {
+                    profession = ProfessionType.fromId(professionRaw);
+                    if (profession == null) {
+                        throw new IllegalArgumentException("ismeretlen blueprint szakma: " + professionRaw);
+                    }
+                }
+                final int minimumLevel = CrateRules.boundedPositiveInt(raw.get("min-level"), 1,
+                        100, "min-level");
+                final int maximumLevel = CrateRules.boundedPositiveInt(raw.get("max-level"), 100,
+                        100, "max-level");
+                if (maximumLevel < minimumLevel) {
+                    throw new IllegalArgumentException("a max-level kisebb a min-level értékénél");
+                }
+                final boolean includeLootOnly = CrateRules.strictBoolean(raw.get("include-loot-only"),
+                        false, "include-loot-only");
+                final int amount = CrateRules.boundedPositiveInt(raw.get("amount"), 1,
+                        CrateRules.MAX_RECIPE_REWARD_AMOUNT, "amount");
+                final BlueprintPool pool = new BlueprintPool(profession, minimumLevel, maximumLevel,
+                        includeLootOnly);
+                if (blueprintCandidates(pool).isEmpty()) {
+                    throw new IllegalArgumentException("a random blueprint pool üres");
+                }
+                yield new RewardEntry(weight, type, "random", amount, null, 0.0D,
+                        null, description, Material.KNOWLEDGE_BOOK, pool);
             }
             case CRATE_KEY -> {
                 final String id = normalizedReference(raw.get("id"), "id");
                 final int amount = CrateRules.itemAmount(raw.get("amount"), 1);
                 yield new RewardEntry(weight, type, id, amount, null, 0.0D,
-                        null, description, Material.TRIPWIRE_HOOK);
+                        null, description, Material.TRIPWIRE_HOOK, null);
             }
         };
+    }
+
+    private List<ProfessionRecipeCatalog.Recipe> blueprintCandidates(final BlueprintPool pool) {
+        if (pool == null) {
+            return List.of();
+        }
+        return recipeCatalog.allIds().stream()
+                .map(recipeCatalog::get)
+                .filter(Objects::nonNull)
+                .filter(ProfessionRecipeCatalog.Recipe::blueprint)
+                .filter(recipe -> recipe.result() != Material.ELYTRA)
+                .filter(recipe -> pool.profession() == null || recipe.profession() == pool.profession())
+                .filter(recipe -> recipe.level() >= pool.minimumLevel() && recipe.level() <= pool.maximumLevel())
+                .filter(recipe -> pool.includeLootOnly() || !recipe.lootOnly())
+                .toList();
     }
 
     private static String normalizedReference(final Object raw, final String field) {
@@ -588,6 +639,65 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         return definition.rewards().stream()
                 .map(reward -> new RewardOdds(reward, describeReward(reward), reward.weight() / total * 100.0D))
                 .toList();
+    }
+
+    /**
+     * Builds a side-effect-free reward icon with the same ITEM_MODEL as the delivered item.
+     * Rolled affixes and crafted-by metadata are intentionally deferred until the real opening.
+     */
+    public ItemStack rewardPreview(final RewardEntry reward) {
+        if (reward == null) {
+            return new ItemStack(Material.BARRIER);
+        }
+        final ItemStack preview = switch (reward.type()) {
+            case ITEM -> new ItemStack(Material.valueOf(reward.value()));
+            case COMMAND -> new ItemStack(Material.COMMAND_BLOCK);
+            case CURRENCY -> new ItemStack(Material.EMERALD);
+            case UNIQUE_ITEM -> uniqueMaterialFactory.create(reward.value(), 1);
+            case RECIPE_ITEM -> {
+                final ProfessionRecipeCatalog.Recipe recipe = recipeCatalog.get(reward.value());
+                if (recipe == null) {
+                    yield null;
+                }
+                yield recipe.uniqueResult() == null
+                        ? new ItemStack(recipe.result())
+                        : uniqueMaterialFactory.create(recipe.uniqueResult(), 1);
+            }
+            case BLUEPRINT -> blueprintFactory.create(reward.value());
+            case RANDOM_BLUEPRINT -> {
+                final List<ProfessionRecipeCatalog.Recipe> candidates = blueprintCandidates(reward.blueprintPool());
+                yield candidates.isEmpty() ? null : blueprintFactory.create(candidates.getFirst().id());
+            }
+            case CRATE_KEY -> {
+                final CrateDefinition target = configSnapshot.definitions().get(reward.value());
+                yield target == null ? null : crateKeyFactory.createKey(target, 1);
+            }
+        };
+        final ItemStack safe = preview == null || preview.getType().isAir()
+                ? new ItemStack(reward.iconMaterial()) : preview;
+        safe.setAmount(Math.min(Math.max(1, reward.amount()), safe.getMaxStackSize()));
+        applyRewardPreviewAppearance(safe, reward);
+        return safe;
+    }
+
+    /** Re-applies model components after a GUI metadata edit. */
+    public void applyRewardPreviewAppearance(final ItemStack item, final RewardEntry reward) {
+        if (item == null || reward == null) {
+            return;
+        }
+        final String model = switch (reward.type()) {
+            case UNIQUE_ITEM -> configManager.getString(
+                    "profession-materials." + reward.value() + ".item-model", "");
+            case RECIPE_ITEM -> configManager.getString(
+                    "profession-recipes." + reward.value() + ".result.item-model", "");
+            case BLUEPRINT, RANDOM_BLUEPRINT -> "icesmp:blueprint";
+            case CRATE_KEY -> {
+                final CrateDefinition target = configSnapshot.definitions().get(reward.value());
+                yield target == null ? "" : target.keyItemModel();
+            }
+            case ITEM, COMMAND, CURRENCY -> "";
+        };
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, model);
     }
 
     public long cooldownRemaining(final UUID playerId, final String crateId) {
@@ -1093,7 +1203,37 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     "&cA kulcsok nem fogyaszthatók biztonságosan; a nyitás visszavonva."));
             return;
         }
-        armIrreversibleFence(pending, player);
+        startRevealThenGrant(pending, player);
+    }
+
+    /**
+     * Keeps reward side effects behind the world-space reveal. The selected reward is already
+     * fixed, but no item, currency or command is delivered until the ItemDisplay finishes.
+     */
+    private void startRevealThenGrant(final PendingOpen pending, final Player player) {
+        if (pending.opens != 1 || pending.source == null
+                || !configManager.getBoolean("display-fx.crate-reveal.enabled", true)) {
+            armIrreversibleFence(pending, player);
+            return;
+        }
+        final World world = Bukkit.getWorld(pending.source.worldId());
+        if (world == null || !world.getName().equals(pending.source.worldName())) {
+            armIrreversibleFence(pending, player);
+            return;
+        }
+        final Location source = new Location(world, pending.source.x(), pending.source.y(), pending.source.z());
+        final List<ItemStack> candidates = pending.definition.rewards().stream()
+                .map(this::rewardPreview)
+                .toList();
+        final ItemStack picked = pending.resolvedItems.getFirst().isEmpty()
+                ? rewardPreview(pending.rewards.getFirst())
+                : pending.resolvedItems.getFirst().getFirst().clone();
+        spawnCrateReveal(source, candidates, picked);
+        CrateTaskSubmission.entityDelayed(plugin, player.getScheduler(),
+                () -> armIrreversibleFence(pending, player),
+                () -> beginCompensation(pending, player,
+                        "player scheduler retired during crate reveal"),
+                REVEAL_DURATION_TICKS);
     }
 
     private void revertUnconsumedFenceAndRollback(final PendingOpen pending, final Player player,
@@ -1245,6 +1385,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     synchronized (stateLock) {
                         pending.successfulItems++;
                     }
+                    recipeBuilder.awardMasterworkIfEligible(player, item);
                 }
             }
         } catch (final RuntimeException failure) {
@@ -1267,36 +1408,60 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         commitSuccessfulOpening(pending, player);
     }
 
-    /** Removes the manual-recovery fence durably before emitting the success presentation. */
+    /**
+     * Settles the durable player-side statistics/cooldown in PlayerProfile first, then removes the
+     * manual-recovery fence. The opening-id receipt keeps a crash between the two writes
+     * exact-once: an orphaned fence finalizes against the receipt at the next load.
+     */
     private void commitSuccessfulOpening(final PendingOpen pending, final Player player) {
+        profileCrateStore.applyMutation(pending.playerId, pending.ledgerMutation, pending.openingId)
+                .whenComplete((status, profileFailure) -> {
+                    if (profileFailure != null
+                            || status == PlayerProfileCrateStore.ApplyStatus.STALE) {
+                        if (profileFailure != null) {
+                            plugin.getLogger().log(Level.SEVERE,
+                                    "Crate settlement PlayerProfile commit failed", profileFailure);
+                        }
+                        submitAsync(() -> {
+                            synchronized (stateLock) {
+                                if (isCurrent(pending, CrateOpeningLifecycle.State.GRANTING)) {
+                                    recoveryLedger.transition(pending.openingId,
+                                            CrateRecoveryLedger.Disposition.MANUAL_REVIEW,
+                                            profileFailure != null
+                                                    ? "settlement-profile-commit-failed"
+                                                    : "settlement-profile-token-stale");
+                                    writeStateLocked();
+                                }
+                            }
+                            failPartial(pending, player,
+                                    "completion persistence failed after reward delivery");
+                        }, () -> failPartial(pending, player,
+                                "completion async scheduler rejected after reward delivery"));
+                        return;
+                    }
+                    finalizeSettledOpening(pending, player);
+                });
+    }
+
+    /** The profile commit is durable at this point; the projection must not roll back anymore. */
+    private void finalizeSettledOpening(final PendingOpen pending, final Player player) {
         submitAsync(() -> {
             boolean committed = false;
             synchronized (stateLock) {
                 if (isCurrent(pending, CrateOpeningLifecycle.State.GRANTING)) {
                     final CrateRecoveryLedger.Recovery recovery = recoveryLedger.remove(pending.openingId);
-                    boolean ledgerApplied = false;
-                    try {
-                        if (recovery != null) {
+                    if (recovery != null) {
+                        if (ledger.canApply(pending.ledgerMutation)) {
                             ledger.apply(pending.ledgerMutation);
-                            ledgerApplied = true;
-                            if (writeStateLocked()) {
-                                committed = pending.lifecycle.complete();
-                                finishPendingLocked(pending);
-                            }
                         }
-                    } catch (final RuntimeException failure) {
-                        plugin.getLogger().log(Level.SEVERE,
-                                "Crate settlement ledger/persistence failed", failure);
-                    }
-                    if (!committed) {
-                        if (ledgerApplied && ledger.canRollback(pending.ledgerMutation)) {
-                            ledger.rollback(pending.ledgerMutation);
+                        if (!writeStateLocked()) {
+                            recoveryLedger.add(recovery);
+                            plugin.getLogger().severe("Crate fence persistence failed after durable "
+                                    + "profile settlement; the receipt finalizes it at next load: "
+                                    + pending.openingId);
                         }
-                        if (recovery != null && recoveryLedger.get(recovery.openingId()) == null) {
-                            recoveryLedger.add(recovery.withDisposition(
-                                    CrateRecoveryLedger.Disposition.MANUAL_REVIEW,
-                                    "completion-persistence-failed"));
-                        }
+                        committed = pending.lifecycle.complete();
+                        finishPendingLocked(pending);
                     }
                 }
             }
@@ -1549,7 +1714,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 }
                 final List<ItemStack> built = new ArrayList<>();
                 for (int index = 0; index < reward.amount(); index++) {
-                    final ItemStack item = recipeBuilder.buildResult(player, recipe);
+                    final ItemStack item = recipeBuilder.buildDeferredReward(player, recipe);
                     if (item == null || item.getType().isAir()) {
                         built.clear();
                         break;
@@ -1561,6 +1726,24 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
             case BLUEPRINT -> {
                 final ItemStack base = blueprintFactory.create(reward.value());
                 yield base == null ? List.of() : split(base, reward.amount());
+            }
+            case RANDOM_BLUEPRINT -> {
+                final List<ProfessionRecipeCatalog.Recipe> candidates = blueprintCandidates(reward.blueprintPool());
+                if (candidates.isEmpty()) {
+                    yield List.of();
+                }
+                final List<ItemStack> built = new ArrayList<>();
+                for (int index = 0; index < reward.amount(); index++) {
+                    final ProfessionRecipeCatalog.Recipe recipe = candidates.get(
+                            ThreadLocalRandom.current().nextInt(candidates.size()));
+                    final ItemStack blueprint = blueprintFactory.create(recipe.id());
+                    if (blueprint == null || blueprint.getType().isAir()) {
+                        built.clear();
+                        break;
+                    }
+                    built.add(blueprint);
+                }
+                yield List.copyOf(built);
             }
             case CRATE_KEY -> {
                 final CrateDefinition target = pending.snapshot.definitions().get(reward.value());
@@ -1627,19 +1810,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     definition.displayName(), pending.opens, rewardSummary));
         };
 
-        final World sourceWorld = pending.source == null ? null : Bukkit.getWorld(pending.source.worldId());
-        final Location sourceLocation = sourceWorld == null ? null
-                : new Location(sourceWorld, pending.source.x(), pending.source.y(), pending.source.z());
-        if (sourceLocation != null) {
-            spawnCrateReveal(sourceLocation, definition.rewards(),
-                    pending.rewards.get(pending.rewards.size() - 1));
-        }
-        if (pending.snapshot.spinAnimation() && pending.opens == 1) {
-            CrateSpinGUI.open(plugin, player, definition.displayName(), definition.rewards(),
-                    pending.rewards.getFirst(), feedback);
-        } else {
-            feedback.run();
-        }
+        feedback.run();
         if (definition.broadcastEnabled()) {
             broadcast(definition.broadcastMessage()
                     .replace("{player}", pending.playerName)
@@ -1899,30 +2070,36 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     callback.accept(MutationResult.fail("crate-opening-busy"));
                     return;
                 }
-                final CrateLedger.ResetToken token = ledger.reset(playerId, crateId);
-                if (!writeStateLocked()) {
-                    ledger.rollbackReset(token);
+            }
+            profileCrateStore.reset(playerId, crateId).whenComplete((changed, failure) -> {
+                if (failure != null) {
+                    plugin.getLogger().log(Level.SEVERE,
+                            "Crate stat reset PlayerProfile commit failed", failure);
                     callback.accept(MutationResult.fail("crate-storage-unavailable"));
                     return;
                 }
-            }
-            callback.accept(MutationResult.ok());
+                submitAsync(() -> {
+                    // The profile commit is durable; the projection follows it unconditionally.
+                    synchronized (stateLock) {
+                        ledger.reset(playerId, crateId);
+                    }
+                    callback.accept(MutationResult.ok());
+                }, () -> callback.accept(MutationResult.fail("crate-storage-unavailable")));
+            });
         }, () -> callback.accept(MutationResult.fail("crate-storage-unavailable")));
     }
 
     // ==================== reveal and labels ====================
 
-    private void spawnCrateReveal(final Location crateLocation, final List<RewardEntry> rewards,
-                                  final RewardEntry picked) {
+    private void spawnCrateReveal(final Location crateLocation, final List<ItemStack> previews,
+                                  final ItemStack picked) {
         if (crateLocation.getWorld() == null || !configManager.getBoolean("display-fx.crate-reveal.enabled", true)) {
             return;
         }
-        final int cycles = 12;
-        final int cycleTicks = 3;
-        final int despawn = cycles * cycleTicks + 45;
+        final int despawn = (int) REVEAL_DURATION_TICKS + 45;
         final Location at = crateLocation.clone().add(0.5D, 1.4D, 0.5D);
         hu.taliann.icesmp.utils.DisplayFxUtil.spawnItemDisplay(plugin, at,
-                new ItemStack(rewards.getFirst().iconMaterial()), despawn, display -> {
+                previews.getFirst().clone(), despawn, display -> {
             display.setBillboard(org.bukkit.entity.Display.Billboard.VERTICAL);
             display.setTransformation(hu.taliann.icesmp.utils.DisplayFxUtil.scale(0.5F, 0.5F, 0.5F));
             display.setViewRange(3.0F);
@@ -1942,14 +2119,15 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                                 hu.taliann.icesmp.utils.TransientEntities.markGone(display.getUniqueId());
                                 return;
                             }
-                            if (step[0] < cycles) {
-                                display.setItemStack(new ItemStack(rewards.get(
-                                        ThreadLocalRandom.current().nextInt(rewards.size())).iconMaterial()));
+                            if (step[0] < REVEAL_CYCLES) {
+                                display.setItemStack(previews.get(
+                                        ThreadLocalRandom.current().nextInt(previews.size())).clone());
                                 step[0]++;
+                                display.setRotation(step[0] * 30.0F, 0.0F);
                             } else {
                                 scheduled.cancel();
                                 lease.retire();
-                                display.setItemStack(new ItemStack(picked.iconMaterial()));
+                                display.setItemStack(picked.clone());
                                 display.setGlowing(true);
                                 display.setGlowColorOverride(org.bukkit.Color.fromRGB(0xFFD24A));
                                 display.setInterpolationDelay(0);
@@ -1957,7 +2135,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                                 display.setTransformation(hu.taliann.icesmp.utils.DisplayFxUtil.scale(
                                         0.95F, 0.95F, 0.95F));
                             }
-                        }, retired, cycleTicks, cycleTicks);
+                        }, retired, REVEAL_CYCLE_TICKS, REVEAL_CYCLE_TICKS);
                 if (!lease.publish(task)) {
                     if (display.isValid()) {
                         display.remove();
@@ -1985,6 +2163,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
             case UNIQUE_ITEM -> "&bEgyedi tárgy: " + reward.value() + " ×" + reward.amount();
             case RECIPE_ITEM -> "&6Recepttárgy: " + reward.value() + " ×" + reward.amount();
             case BLUEPRINT -> "&bTervrajz: " + reward.value() + " ×" + reward.amount();
+            case RANDOM_BLUEPRINT -> "&bVéletlenszerű tervrajz ×" + reward.amount();
             case CRATE_KEY -> "&eLádakulcs: " + reward.value() + " ×" + reward.amount();
         };
     }
@@ -2014,7 +2193,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 return;
             }
             final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
-            final Set<String> allowedRoot = Set.of("schema", "blocks", "players", "recoveries");
+            final Set<String> allowedRoot = Set.of("schema", "blocks", "recoveries");
             for (final String key : yaml.getKeys(false)) {
                 if (!allowedRoot.contains(key)) {
                     corrupt("ismeretlen root kulcs: " + key);
@@ -2061,37 +2240,38 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 }
             }
 
-            final Map<UUID, CrateLedger.PlayerSnapshot> loadedStats = new LinkedHashMap<>();
-            if (yaml.get("players") != null && yaml.getConfigurationSection("players") == null) {
-                corrupt("players csak objektum lehet");
+            crateBlocks.putAll(loadedBlocks);
+            // The projection must be seeded before recovery validation, because the recovery
+            // tokens' previous values are compared against the durable per-player crate state.
+            if (PlayerProfileAuthority.installed().isEmpty()) {
+                throw new IllegalStateException(
+                        "PlayerProfile authority is required before CrateManager.load");
             }
-            final ConfigurationSection stats = yaml.getConfigurationSection("players");
-            if (stats != null) {
-                for (final String uuidRaw : stats.getKeys(false)) {
-                    try {
-                        final UUID uuid = UUID.fromString(uuidRaw);
-                        final ConfigurationSection player = stats.getConfigurationSection(uuidRaw);
-                        if (player == null) {
-                            throw new IllegalArgumentException("nem objektum");
-                        }
-                        final String name = optionalStoredText(player.get("last-known-name"),
-                                "last-known-name", 64);
-                        final Map<String, Long> counts = readNonNegativeLongMap(
-                                player.getConfigurationSection("counts"), true);
-                        long total = 0L;
-                        for (final long count : counts.values()) {
-                            total = Math.addExact(total, count);
-                        }
-                        final Map<String, Long> cooldowns = readNonNegativeLongMap(
-                                player.getConfigurationSection("cooldowns"), false);
-                        loadedStats.put(uuid, new CrateLedger.PlayerSnapshot(name, counts, cooldowns));
-                    } catch (final ArithmeticException | IllegalArgumentException invalid) {
-                        corrupt("players." + uuidRaw + ": " + invalid.getMessage());
-                    }
+            final Map<UUID, CrateLedger.PlayerSnapshot> seededStats = new LinkedHashMap<>();
+            final Map<UUID, List<String>> settlementReceipts = new LinkedHashMap<>();
+            final Set<UUID> ownerIds = PlayerProfileAuthority.current().repository()
+                    .listPlayerIds().toCompletableFuture().join();
+            for (final UUID ownerId : ownerIds) {
+                final var profile = PlayerProfileAuthority.current().repository()
+                        .find(ownerId).toCompletableFuture().join();
+                if (profile.isEmpty()) {
+                    continue;
+                }
+                final var section = profile.orElseThrow().section(ProfileSectionId.STATISTICS);
+                if (section.isEmpty() || !section.orElseThrow().health().usable()
+                        || !(section.orElseThrow().value() instanceof StatisticsSection stats)) {
+                    continue;
+                }
+                final PlayerProfileCrateStore.PlayerCrateState state =
+                        PlayerProfileCrateStore.read(stats);
+                if (!state.isEmpty()) {
+                    seededStats.put(ownerId, state.toLedgerSnapshot());
+                }
+                if (!state.recentOps().isEmpty()) {
+                    settlementReceipts.put(ownerId, state.recentOps());
                 }
             }
-            crateBlocks.putAll(loadedBlocks);
-            ledger.replace(loadedStats);
+            ledger.replace(seededStats);
 
             if (schema >= SCHEMA) {
                 final Object recoveriesNode = yaml.get("recoveries");
@@ -2107,6 +2287,12 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                     try {
                         final CrateRecoveryLedger.Recovery recovery = decodeRecovery(rawRecoveries.get(index));
                         if (!ledger.canApply(recovery.ledgerMutation())) {
+                            if (settlementReceipts.getOrDefault(recovery.playerId(), List.of())
+                                    .contains(recovery.openingId().toString())) {
+                                // A settlement profil-commitja tartós, csak a fence maradt árván —
+                                // a receipt igazolja, ezért a fence csendben véglegesíthető.
+                                continue;
+                            }
                             throw new IllegalArgumentException("a ledger mutation token elavult vagy ellentmondó");
                         }
                         if (loadedRecoveries.putIfAbsent(recovery.openingId(), recovery) != null) {
@@ -2132,25 +2318,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 }
             }
         }
-    }
-
-    private Map<String, Long> readNonNegativeLongMap(final ConfigurationSection section,
-                                                      final boolean strictlyPositive) {
-        if (section == null) {
-            return Map.of();
-        }
-        final Map<String, Long> result = new LinkedHashMap<>();
-        for (final String rawId : section.getKeys(false)) {
-            final String id = CrateRules.normalizeId(rawId);
-            if (id == null || !id.equals(rawId)) {
-                throw new IllegalArgumentException("hibás crate state id: " + rawId);
-            }
-            final long value = CrateRules.exactLong(section.get(rawId), 0L,
-                    strictlyPositive ? 1L : 0L, Long.MAX_VALUE,
-                    "state." + rawId);
-            result.put(id, value);
-        }
-        return Map.copyOf(result);
     }
 
     private static int stateCoordinate(final Object raw, final String field, final int minimum,
@@ -2261,14 +2428,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
             blocks.add(block);
         }
         yaml.set("blocks", blocks);
-        for (final Map.Entry<UUID, CrateLedger.PlayerSnapshot> entry : ledger.snapshot().entrySet()) {
-            final String path = "players." + entry.getKey();
-            yaml.set(path + ".last-known-name", entry.getValue().lastKnownName());
-            entry.getValue().counts().forEach((crate, count) ->
-                    yaml.set(path + ".counts." + crate, count));
-            entry.getValue().cooldowns().forEach((crate, until) ->
-                    yaml.set(path + ".cooldowns." + crate, until));
-        }
         final List<Map<String, Object>> recoveries = new ArrayList<>();
         for (final CrateRecoveryLedger.Recovery recovery : recoveryLedger.snapshot().values().stream()
                 .sorted(Comparator.comparing(value -> value.openingId().toString())).toList()) {
@@ -2316,7 +2475,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
      */
     public void shutdown() {
         acceptingOpens = false;
-        CrateSpinGUI.cancelAll();
         final long deadline = System.nanoTime() + 500_000_000L;
         while (inFlightGrants.get() > 0 && System.nanoTime() < deadline) {
             try {
@@ -2365,7 +2523,6 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
 
     @Override
     public void clearPlayerState(final UUID playerId) {
-        CrateSpinGUI.cancel(playerId);
         final PendingOpen pending;
         synchronized (stateLock) {
             pending = pendingOpens.get(playerId);

@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -33,6 +34,11 @@ public final class MindBlastSpell extends BaseSpell {
     }
 
     @Override
+    public CastOutcome executeCast(final Player player) {
+        return executeSpell(player) ? CastOutcome.SUCCESS : CastOutcome.NO_TARGET;
+    }
+
+    @Override
     public boolean executeSpell(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, balance("range", 14.0D));
         if (target == null) {
@@ -41,6 +47,7 @@ public final class MindBlastSpell extends BaseSpell {
         }
 
         final UUID casterId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final double blastDamage = balance("damage", 6.0D);
         final double splashRadius = balance("splash-radius", 3.0D);
         final double splashDamage = balance("splash-damage", 5.0D);
@@ -59,9 +66,9 @@ public final class MindBlastSpell extends BaseSpell {
             final boolean casterInCurrentRegion = caster != null && Bukkit.isOwnedByCurrentRegion(caster);
 
             if (casterInCurrentRegion) {
-                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, target, blastDamage, getId());
+                SpellDamageUtil.damageBySpell(caster, target, blastDamage, getId(), modifiers);
             } else {
-                target.damage(blastDamage);
+                target.damage(SpellDamageUtil.scaledDamage(blastDamage, modifiers));
             }
 
             for (final Entity nearby : target.getNearbyEntities(splashRadius, splashRadius, splashRadius)) {
@@ -72,9 +79,9 @@ public final class MindBlastSpell extends BaseSpell {
                 }
 
                 if (casterInCurrentRegion) {
-                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, splashDamage, getId());
+                    SpellDamageUtil.damageBySpell(caster, living, splashDamage, getId(), modifiers);
                 } else {
-                    living.damage(splashDamage);
+                    living.damage(SpellDamageUtil.scaledDamage(splashDamage, modifiers));
                 }
             }
 

@@ -83,19 +83,34 @@ public final class SpellCommand implements BasicCommand {
         }
 
         final long cost = masteryManager.getUpgradeCost(player, spellId);
-        final SpellMasteryManager.UpgradeResult result = masteryManager.upgrade(player, spellId);
-        switch (result) {
-            case SUCCESS -> player.sendMessage(messageManager.getMessage(
-                    "spell-mastery-upgraded",
-                    "&aMesterség fejlesztve: &e{spell} &7(rang &f{rank}&7, ár: &f{cost}&7)",
-                    Map.of(
-                            "spell", spellRegistry.getById(spellId).getName(),
-                            "rank", String.valueOf(masteryManager.getRank(player, spellId)),
-                            "cost", String.valueOf(cost)
-                    )));
-            case MAX_RANK -> player.sendMessage(messageManager.get("spell-mastery-max", "&7Ez a képesség már maximális mesterségű."));
-            case INSUFFICIENT_FUNDS -> player.sendMessage(messageManager.get("spell-mastery-poor", "&cNincs elég frakcióvalutád (&f%s&c kellene).", cost));
-        }
+        masteryManager.upgrade(player, spellId).whenComplete((result, failure) ->
+                masteryManager.runOnOwnerThread(player, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (failure != null) {
+                        player.sendMessage(messageManager.get(
+                                "spell-mastery-storage-failed",
+                                "&cA mesterség tartós mentése sikertelen; a wallet művelet helyreállításra került."));
+                        return;
+                    }
+                    switch (result) {
+                        case SUCCESS -> player.sendMessage(messageManager.getMessage(
+                                "spell-mastery-upgraded",
+                                "&aMesterség fejlesztve: &e{spell} &7(rang &f{rank}&7, ár: &f{cost}&7)",
+                                Map.of(
+                                        "spell", spellRegistry.getById(spellId).getName(),
+                                        "rank", String.valueOf(masteryManager.getRank(player, spellId)),
+                                        "cost", String.valueOf(cost)
+                                )));
+                        case MAX_RANK -> player.sendMessage(messageManager.get(
+                                "spell-mastery-max",
+                                "&7Ez a képesség már maximális mesterségű."));
+                        case INSUFFICIENT_FUNDS -> player.sendMessage(messageManager.get(
+                                "spell-mastery-poor",
+                                "&cNincs elég frakcióvalutád (&f%s&c kellene).", cost));
+                    }
+                }));
     }
 
     @Override

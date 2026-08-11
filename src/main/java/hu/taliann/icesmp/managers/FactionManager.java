@@ -1,304 +1,350 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.storage.PersistentStore;
-
-import hu.taliann.icesmp.session.PlayerStateCleanup;
-
-import hu.taliann.icesmp.storage.YamlStore;
-
+import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
-import org.bukkit.NamespacedKey;
-import org.bukkit.configuration.file.YamlConfiguration;
+import hu.taliann.icesmp.factions.FactionMembership;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
+import hu.taliann.icesmp.storage.PersistentStore;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
-/**
- * Manager for player faction assignments.
- * Tracks which faction each player belongs to with YAML-based persistent storage.
- */
+/** PlayerProfile-backed faction membership and switch policy facade. */
 public final class FactionManager implements PlayerStateCleanup, PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
-    private final File storageFile;
-    private final Map<UUID, FactionType> playerFactions = new ConcurrentHashMap<>();
-    /** PDC key storing the epoch-millis timestamp of the player's last PAID faction switch. */
-    private final NamespacedKey lastSwitchKey;
-    /** PDC key: melyik szezonban (seasonStart-bélyeg) számoltuk a váltásokat. */
-    private final NamespacedKey switchSeasonKey;
-    /** PDC key: hány FIZETETT váltás történt a {@link #switchSeasonKey} szerinti szezonban. */
-    private final NamespacedKey switchCountKey;
-    /** Setter-injektált (a SeasonManager a FactionManager UTÁN épül fel a core-ban). */
+    private final CurrencyManager currencyManager;
+    private final PlayerProfileFactionStore factionStore = new PlayerProfileFactionStore();
+    /** Rebuildable all-owner projection for taxes, treasury and offline composition. */
+    private final ConcurrentMap<UUID, PlayerProfileFactionStore.State> projection =
+            new ConcurrentHashMap<>();
+    private volatile AutoCloseable profileSubscription;
     private volatile SeasonManager seasonManager;
+    private volatile Consumer<UUID> membershipChangeHook = ignored -> { };
+    private volatile GuildManager guildManager;
 
-    public FactionManager(final JavaPlugin plugin, final ConfigManager configManager) {
-        this.plugin = plugin;
-        this.configManager = configManager;
-        this.storageFile = new File(plugin.getDataFolder(), "factions.yml");
-        this.lastSwitchKey = new NamespacedKey(plugin, "faction_last_switch");
-        this.switchSeasonKey = new NamespacedKey(plugin, "faction_switch_season");
-        this.switchCountKey = new NamespacedKey(plugin, "faction_switch_count");
-        plugin.getDataFolder().mkdirs();
+    public FactionManager(final JavaPlugin plugin, final ConfigManager configManager,
+                          final CurrencyManager currencyManager) {
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.configManager = Objects.requireNonNull(configManager, "configManager");
+        this.currencyManager = Objects.requireNonNull(currencyManager, "currencyManager");
     }
 
     public void setSeasonManager(final SeasonManager seasonManager) {
         this.seasonManager = seasonManager;
     }
 
+    /** Rebuilds the derived assignment/history projection; no factions.yml is read. */
+    @Override
     public void load() {
-        playerFactions.clear();
-
-        if (!storageFile.exists()) {
-            return;
+        final Optional<PlayerProfileAuthority> installed = PlayerProfileAuthority.installed();
+        if (installed.isEmpty()) {
+            throw new IllegalStateException("PlayerProfile authority is required before FactionManager.load");
         }
-
-        try {
-            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
-
-            for (final String uuidKey : yaml.getKeys(false)) {
-                try {
-                    final UUID uuid = UUID.fromString(uuidKey);
-                    final String factionName = yaml.getString(uuidKey, FactionType.NEUTRAL.name());
-                    final FactionType faction = FactionType.fromString(factionName);
-                    playerFactions.put(uuid, faction);
-                } catch (final IllegalArgumentException e) {
-                    // Fail-closed: a hibás rekord átugrása után a következő teljes-snapshot
-                    // mentés VÉGLEG eltüntetné a kézzel még javítható bejegyzést.
-                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                            "Érvénytelen UUID a factions.yml-ben: " + uuidKey);
-                }
-            }
-
-            plugin.getLogger().info("Loaded " + playerFactions.size() + " faction assignments.");
-        } catch (final Exception e) {
-            plugin.getLogger().severe("Failed to load factions: " + e.getMessage());
+        if (profileSubscription == null) {
+            profileSubscription = installed.orElseThrow().service().subscribe((playerId, revision, changed) -> {
+                if (changed.contains(ProfileSectionId.FACTION)) refreshProjection(playerId);
+            });
         }
+        installed.orElseThrow().repository().listPlayerIds()
+                .thenAccept(ids -> ids.forEach(this::refreshProjection))
+                .toCompletableFuture().join();
+        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "Rebuilt " + getFactionAssignments().size()
+                + " PlayerProfile faction assignments.");
     }
 
+    /** Membership mutations commit immediately; disable only drains PlayerProfile. */
+    @Override
     public void save() {
-        try {
-            final YamlConfiguration yaml = new YamlConfiguration();
-
-            for (final Map.Entry<UUID, FactionType> entry : playerFactions.entrySet()) {
-                yaml.set(entry.getKey().toString(), entry.getValue().name());
-            }
-
-            YamlStore.saveAtomic(storageFile, yaml);
-            plugin.getLogger().info("Saved " + playerFactions.size() + " faction assignments.");
-        } catch (final IOException e) {
-            plugin.getLogger().severe("Failed to save factions: " + e.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save factions", e);
-        }
+        PlayerProfileAuthority.installed().ifPresent(authority ->
+                authority.repository().flushAll().toCompletableFuture().join());
     }
 
-    /** @return the player's faction, or NEUTRAL if not found */
-    public FactionType getFaction(final UUID uuid) {
-        return playerFactions.getOrDefault(uuid, FactionType.NEUTRAL);
+    /** Display/currency fallback only; missing membership is a benefit-free guest. */
+    public FactionType getEconomyFaction(final UUID uuid) {
+        return state(uuid).flatMap(PlayerProfileFactionStore.State::membership)
+                .orElse(FactionType.NEUTRAL);
     }
 
-    /**
-     * Gets a snapshot of every stored player → faction assignment
-     * (used by the periodic faction tax).
-     *
-     * @return immutable copy of the assignments
-     */
+    public FactionMembership getMembership(final UUID uuid) {
+        final Optional<FactionType> chosen = state(uuid)
+                .flatMap(PlayerProfileFactionStore.State::membership);
+        return chosen.map(FactionMembership::citizen).orElseGet(FactionMembership::guest);
+    }
+
+    public Optional<FactionType> getChosenFaction(final UUID uuid) {
+        return state(uuid).flatMap(PlayerProfileFactionStore.State::membership);
+    }
+
+    public boolean isEligibleForFactionBenefits(final UUID uuid) {
+        return getChosenFaction(uuid).isPresent();
+    }
+
+    public boolean isMember(final UUID uuid, final FactionType faction) {
+        return faction != null && getChosenFaction(uuid).orElse(null) == faction;
+    }
+
+    public boolean sameChosenFaction(final UUID first, final UUID second) {
+        final FactionType faction = getChosenFaction(first).orElse(null);
+        return faction != null && faction == getChosenFaction(second).orElse(null);
+    }
+
+    /** Immutable derived projection; PlayerProfile remains the sole durable authority. */
     public Map<UUID, FactionType> getFactionAssignments() {
-        return Map.copyOf(playerFactions);
+        final LinkedHashMap<UUID, FactionType> result = new LinkedHashMap<>();
+        projection.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> entry.getValue().membership()
+                        .ifPresent(faction -> result.put(entry.getKey(), faction)));
+        return Map.copyOf(result);
     }
 
-    /** @param factionType the faction to set (null defaults to NEUTRAL) */
-    /**
-     * Setter-injektált: a frakcióváltás a céhtagságot is egyezteti. A hívás KÖZPONTILAG itt van,
-     * nem a parancsokban — így minden út (belépés, kilépés, admin-beállítás, száműzetés, vezeklés)
-     * egyeztet, és egy új út sem tudja kihagyni.
-     */
-    private volatile hu.taliann.icesmp.managers.GuildManager guildManager;
-
-    public void setGuildManager(final hu.taliann.icesmp.managers.GuildManager guildManager) {
+    public void setGuildManager(final GuildManager guildManager) {
         this.guildManager = guildManager;
     }
 
+    public void setMembershipChangeHook(final Consumer<UUID> membershipChangeHook) {
+        this.membershipChangeHook = membershipChangeHook == null ? ignored -> { } : membershipChangeHook;
+    }
+
     public void setFaction(final UUID uuid, final FactionType factionType) {
-        final FactionType target = factionType == null ? FactionType.NEUTRAL : factionType;
-        playerFactions.put(uuid, target);
-        save();
-        final hu.taliann.icesmp.managers.GuildManager guildRef = guildManager;
-        if (guildRef != null) {
-            guildRef.reconcileFaction(uuid, target);
-        }
-        final Player online = org.bukkit.Bukkit.getPlayer(uuid);
-        if (online != null) {
-            AdvancementService.award(online, "faction_join");
+        final UUID playerId = Objects.requireNonNull(uuid, "player UUID");
+        final FactionType target = Objects.requireNonNull(factionType, "chosen faction");
+        final FactionType previous = getChosenFaction(playerId).orElse(null);
+        try {
+            final PlayerProfileFactionStore.State committed = factionStore.assign(playerId, target)
+                    .toCompletableFuture().join();
+            projection.put(playerId, committed);
+            publishMembershipChange(playerId, target, previous != target);
+        } catch (final CompletionException failure) {
+            throw new IllegalStateException("PlayerProfile faction assignment failed", unwrap(failure));
         }
     }
 
     /**
-     * Checks whether the player has already made an explicit faction choice
-     * (as opposed to merely defaulting to NEUTRAL because no record exists yet).
-     * Used to tell a free first join apart from a paid/cooldown-gated switch.
-     *
-     * @param uuid the player UUID
-     * @return true if a faction assignment is on record for this player
+     * Publishes a membership change that another PlayerProfile store already committed in the same
+     * faction section (for example sinner exile). No second persistence mutation is performed.
      */
+    public void publishExternalMembershipCommit(final UUID playerId,
+                                                final FactionType previous,
+                                                final FactionType target) {
+        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(target, "target");
+        final PlayerProfileFactionStore.State committed = factionStore.readCached(playerId);
+        if (committed.membership().orElse(null) != target) {
+            throw new IllegalStateException("external faction commit does not match PlayerProfile");
+        }
+        projection.put(playerId, committed);
+        publishMembershipChange(playerId, target, previous != target);
+    }
+
+    private void publishMembershipChange(final UUID playerId, final FactionType target,
+                                         final boolean changed) {
+        if (changed) membershipChangeHook.accept(playerId);
+        final GuildManager guildRef = guildManager;
+        if (changed && guildRef != null) guildRef.reconcileFaction(playerId, target);
+        final Player online = org.bukkit.Bukkit.getPlayer(playerId);
+        if (online != null && changed) {
+            online.getScheduler().run(plugin,
+                    task -> AdvancementService.award(online, "faction_join"), null);
+        }
+    }
+
+    /**
+     * Paid switch is one PlayerProfile WAL transaction: wallet, membership, history, paid
+     * cooldown and per-season counter commit or roll back together.
+     */
+    public boolean switchFactionDurably(final UUID playerId,
+                                        final FactionType expectedCurrent,
+                                        final FactionType target,
+                                        final CurrencyType currency,
+                                        final double cost) {
+        final long seasonId = seasonManager == null ? 0L : seasonManager.getSeasonStart();
+        try {
+            final boolean committed = factionStore.switchDurably(playerId, expectedCurrent,
+                    target, currency, cost, seasonId).toCompletableFuture().join();
+            if (!committed) return false;
+            final PlayerProfileFactionStore.State state = factionStore.readCached(playerId);
+            projection.put(playerId, state);
+            publishMembershipChange(playerId, target, expectedCurrent != target);
+            return true;
+        } catch (final CompletionException failure) {
+            throw new IllegalStateException("PlayerProfile faction switch failed", unwrap(failure));
+        }
+    }
+
     public boolean hasChosenFaction(final UUID uuid) {
-        return playerFactions.containsKey(uuid);
+        return isEligibleForFactionBenefits(uuid);
     }
 
-    /**
-     * Gets the currency cost of switching from one faction to another
-     * (charged in the player's CURRENT faction currency). First join is free.
-     *
-     * @return the switch cost, from {@code factions.switch.cost} (default 500.0)
-     */
+    /** Fail-closed anti-reset history. */
+    public boolean hasEverChosenFaction(final Player player) {
+        if (player == null) return true;
+        return state(player.getUniqueId()).map(PlayerProfileFactionStore.State::everChosen)
+                .orElse(true);
+    }
+
+    public FactionType getLastChosenFaction(final Player player) {
+        return player == null ? FactionType.NEUTRAL
+                : getLastChosenFaction(player.getUniqueId()).orElse(FactionType.NEUTRAL);
+    }
+
+    public Optional<FactionType> getLastChosenFaction(final UUID uuid) {
+        return state(uuid).flatMap(PlayerProfileFactionStore.State::lastChosen);
+    }
+
+    /** PlayerProfile already owns history; join only refreshes the derived projection. */
+    public void reconcileMembershipHistory(final Player player) {
+        if (player != null) refreshProjection(player.getUniqueId());
+    }
+
     public double getSwitchCost() {
-        return configManager.getDouble("factions.switch.cost", 500.0);
+        return configManager.getDouble("factions.switch.cost", 500.0D);
     }
 
-    /**
-     * Gets the minimum number of hours a player must wait between faction switches.
-     *
-     * @return the cooldown in hours, from {@code factions.switch.cooldown-hours} (default 72.0, 0 = off)
-     */
     public double getSwitchCooldownHours() {
-        return configManager.getDouble("factions.switch.cooldown-hours", 72.0);
+        return configManager.getDouble("factions.switch.cooldown-hours", 72.0D);
     }
 
-    /** @return the cooldown in milliseconds (0 = no cooldown) */
     public long getSwitchCooldownMillis() {
         return Math.round(getSwitchCooldownHours() * 3_600_000.0D);
     }
 
-    /**
-     * Gets how much longer the player must wait before their next paid faction switch.
-     *
-     * @param player the player
-     * @return remaining cooldown in milliseconds, or 0 if the player may switch now
-     */
     public long getRemainingSwitchCooldownMillis(final Player player) {
-        final long cooldownMillis = getSwitchCooldownMillis();
-        if (cooldownMillis <= 0) {
-            return 0L;
-        }
-
-        final long lastSwitchMillis = player.getPersistentDataContainer()
-                .getOrDefault(lastSwitchKey, PersistentDataType.LONG, 0L);
-        final long elapsed = System.currentTimeMillis() - lastSwitchMillis;
-        return Math.max(0L, cooldownMillis - elapsed);
+        final long cooldown = getSwitchCooldownMillis();
+        if (cooldown <= 0L) return 0L;
+        if (player == null) return cooldown;
+        final Optional<PlayerProfileFactionStore.State> state = state(player.getUniqueId());
+        if (state.isEmpty()) return cooldown;
+        final long elapsed = System.currentTimeMillis() - state.orElseThrow().lastPaidSwitchAt();
+        return Math.max(0L, cooldown - elapsed);
     }
 
-    /**
-     * Records "now" as the player's last paid faction switch timestamp, starting the cooldown,
-     * and bumps the per-season switch counter (resetting it when a new season has started since
-     * the last recorded switch).
-     *
-     * @param player the player who just paid to switch factions
-     */
+    /** Compatibility path for external callers; paid command flow commits this atomically already. */
     public void recordSwitch(final Player player) {
-        player.getPersistentDataContainer().set(lastSwitchKey, PersistentDataType.LONG, System.currentTimeMillis());
-        recordSeasonSwitch(player);
+        if (player == null) return;
+        final long seasonId = seasonManager == null ? 0L : seasonManager.getSeasonStart();
+        try {
+            factionStore.recordSeasonSwitch(player.getUniqueId(), seasonId, true)
+                    .thenAccept(count -> refreshProjection(player.getUniqueId()));
+        } catch (final RuntimeException failure) {
+            throw new IllegalStateException("PlayerProfile paid switch marker failed", failure);
+        }
     }
 
-    /**
-     * Bumps the per-season switch counter WITHOUT starting the paid-switch cooldown — az
-     * ingyenes váltás-utak (Menedékből kilépés, Sötétbe lépés) is ide számolnak, de nem
-     * indítanak fizetős cooldownt.
-     *
-     * @param player the player whose faction just changed
-     */
     public void recordSeasonSwitch(final Player player) {
-        final SeasonManager seasons = this.seasonManager;
-        if (seasons == null) {
-            return;
-        }
-        final long season = seasons.getSeasonStart();
-        final var pdc = player.getPersistentDataContainer();
-        final long storedSeason = pdc.getOrDefault(switchSeasonKey, PersistentDataType.LONG, 0L);
-        final int count = storedSeason == season
-                ? pdc.getOrDefault(switchCountKey, PersistentDataType.INTEGER, 0)
-                : 0;
-        pdc.set(switchSeasonKey, PersistentDataType.LONG, season);
-        pdc.set(switchCountKey, PersistentDataType.INTEGER, count + 1);
+        if (player == null || seasonManager == null) return;
+        factionStore.recordSeasonSwitch(player.getUniqueId(), seasonManager.getSeasonStart(), false)
+                .thenAccept(count -> refreshProjection(player.getUniqueId()))
+                .exceptionally(failure -> {
+                    plugin.getLogger().severe("PlayerProfile season switch counter failed for "
+                            + player.getUniqueId() + ": " + rootMessage(failure));
+                    return null;
+                });
     }
 
-    /** @return hány fizetett frakció-váltása volt a játékosnak a FUTÓ szezonban */
     public int getSwitchesThisSeason(final Player player) {
-        final SeasonManager seasons = this.seasonManager;
-        if (seasons == null) {
-            return 0;
-        }
-        final var pdc = player.getPersistentDataContainer();
-        if (pdc.getOrDefault(switchSeasonKey, PersistentDataType.LONG, 0L) != seasons.getSeasonStart()) {
-            return 0;
-        }
-        return pdc.getOrDefault(switchCountKey, PersistentDataType.INTEGER, 0);
+        if (player == null || seasonManager == null) return 0;
+        return state(player.getUniqueId())
+                .map(value -> value.switchSeason() == seasonManager.getSeasonStart()
+                        ? value.switchesThisSeason() : 0)
+                .orElse(getMaxSwitchesPerSeason());
     }
 
-    /** @return szezononként engedélyezett fizetett váltások száma ({@code factions.switch.max-per-season}, 0 = korlátlan) */
     public int getMaxSwitchesPerSeason() {
         return configManager.getInt("factions.switch.max-per-season", 2);
     }
 
-    /** @return a szezon-végi váltás-zár hossza napokban ({@code factions.switch.lockout-final-days}, 0 = nincs zár) */
     public int getSwitchLockoutFinalDays() {
         return configManager.getInt("factions.switch.lockout-final-days", 7);
     }
 
-    /**
-     * A szezon hajrájában (az utolsó {@code lockout-final-days} napban) a frakció-váltás
-     * teljesen tilos — a liga-végjátékot ne lehessen oldalt váltva megjátszani.
-     *
-     * @return true, ha most a szezon-végi váltás-zár él
-     */
     public boolean isInSeasonEndLockout() {
-        final SeasonManager seasons = this.seasonManager;
+        final SeasonManager seasons = seasonManager;
         final int lockoutDays = getSwitchLockoutFinalDays();
-        if (seasons == null || lockoutDays <= 0) {
-            return false;
-        }
-        return seasons.getSeasonEndMillis() - System.currentTimeMillis() <= lockoutDays * 86_400_000L;
+        return seasons != null && lockoutDays > 0
+                && seasons.getSeasonEndMillis() - System.currentTimeMillis()
+                <= lockoutDays * 86_400_000L;
     }
 
-    /**
-     * Erases the assignment entirely, putting the player back into the "never chose"
-     * state. NOT for /faction leave: a missing record reads as a free FIRST join, which
-     * skips the neutral-capital gate, the season lockout and the switch cooldown — leaving
-     * must record an explicit {@link FactionType#NEUTRAL} instead. Admin/test resets only.
-     */
     public void removeFaction(final UUID uuid) {
-        if (uuid == null) {
-            return;
+        if (uuid == null) return;
+        final FactionType previous = getChosenFaction(uuid).orElse(null);
+        if (previous == null) return;
+        try {
+            final PlayerProfileFactionStore.State committed = factionStore.remove(uuid)
+                    .toCompletableFuture().join();
+            projection.put(uuid, committed);
+            membershipChangeHook.accept(uuid);
+            final GuildManager guildRef = guildManager;
+            if (guildRef != null) guildRef.reconcileFaction(uuid, null);
+        } catch (final CompletionException failure) {
+            throw new IllegalStateException("PlayerProfile faction removal failed", unwrap(failure));
         }
-
-        playerFactions.remove(uuid);
-        save();
     }
 
-    /** @return comma-separated faction display names */
     public String describeAvailableFactions() {
         final StringBuilder builder = new StringBuilder();
         for (final FactionType factionType : FactionType.values()) {
-            if (!builder.isEmpty()) {
-                builder.append(", ");
-            }
+            if (!builder.isEmpty()) builder.append(", ");
             builder.append(factionType.getDisplayName());
         }
         return builder.toString();
     }
 
+    private Optional<PlayerProfileFactionStore.State> state(final UUID playerId) {
+        if (playerId == null) return Optional.empty();
+        final PlayerProfileFactionStore.State projected = projection.get(playerId);
+        if (projected != null) return Optional.of(projected);
+        try {
+            final PlayerProfileFactionStore.State cached = factionStore.readCached(playerId);
+            projection.put(playerId, cached);
+            return Optional.of(cached);
+        } catch (final RuntimeException notReady) {
+            return Optional.empty();
+        }
+    }
+
+    private void refreshProjection(final UUID playerId) {
+        factionStore.load(playerId).thenAccept(state -> projection.put(playerId, state))
+                .exceptionally(failure -> {
+                    plugin.getLogger().severe("PlayerProfile faction projection failed for "
+                            + playerId + ": " + rootMessage(failure));
+                    return null;
+                });
+    }
+
+    @Override
     public void cleanup(final UUID playerId) {
-        // No volatile per-session faction state exists; assignments are persisted data.
+        // The all-owner projection remains rebuildable and is needed by offline tax consumers.
     }
 
     public void clearPlayerState(final UUID playerId) {
         cleanup(playerId);
     }
+
+    private static Throwable unwrap(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current;
+    }
+
+    private static String rootMessage(final Throwable failure) {
+        final Throwable root = unwrap(failure);
+        return root.getMessage() == null ? root.getClass().getSimpleName() : root.getMessage();
+    }
 }
-
-

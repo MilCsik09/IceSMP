@@ -63,23 +63,32 @@ public final class TalentCommand implements BasicCommand {
             return;
         }
 
-        if (!talentManager.spendPoint(player, classPool, args[2])) {
-            player.sendMessage(messageManager.get(
-                    "talent-spend-failed",
-                    "&cNem sikerült a pont elköltése (nincs pont, ismeretlen talent vagy max szint)."
-            ));
-            return;
-        }
-
-        player.sendMessage(messageManager.getMessage(
-                "talent-spend-success",
-                "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
-                Map.of(
-                        "talent", args[2].toLowerCase(Locale.ROOT),
-                        "rank", String.valueOf(talentManager.getRank(player, classPool, args[2])),
-                        "points", String.valueOf(talentManager.getAvailablePoints(player, classPool))
-                )
-        ));
+        talentManager.spendPoint(player, classPool, args[2]).whenComplete((spent, failure) ->
+                talentManager.runOnOwnerThread(player, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (failure != null) {
+                        player.sendMessage(messageManager.get(
+                                "talent-storage-failed",
+                                "&cA talent tartós mentése sikertelen; az állapot nem változott."));
+                        return;
+                    }
+                    if (!Boolean.TRUE.equals(spent)) {
+                        player.sendMessage(messageManager.get(
+                                "talent-spend-failed",
+                                "&cNem sikerült a pont elköltése (nincs pont, ismeretlen talent vagy max szint)."));
+                        return;
+                    }
+                    player.sendMessage(messageManager.getMessage(
+                            "talent-spend-success",
+                            "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
+                            Map.of(
+                                    "talent", args[2].toLowerCase(Locale.ROOT),
+                                    "rank", String.valueOf(talentManager.getRank(player, classPool, args[2])),
+                                    "points", String.valueOf(talentManager.getAvailablePoints(player, classPool))
+                            )));
+                }));
     }
 
     private void sendOverview(final Player player) {

@@ -40,6 +40,7 @@ public final class Permissions {
     public static final String TERRITORY = "icesmp.admin.territory";
     public static final String TERRITORY_BYPASS = "icesmp.admin.territory.bypass";
     public static final String SPEC = "icesmp.admin.spec";
+    public static final String SPEC_RECOVER = "icesmp.admin.spec.recover";
     public static final String PROFESSION = "icesmp.admin.profession";
     public static final String JOB = "icesmp.admin.job";
     public static final String CURRENCY = "icesmp.admin.currency";
@@ -90,6 +91,7 @@ public final class Permissions {
         canonical.put(TERRITORY, "Territórium- és claim-admin (/territory, /claim admin)");
         canonical.put(TERRITORY_BYPASS, "Zóna- és claim-védelem teljes megkerülése");
         canonical.put(SPEC, "Specializáció-admin (/spec más játékosra)");
+        canonical.put(SPEC_RECOVER, "Quarantine Profile v2 explicit recovery (/spec recover)");
         canonical.put(PROFESSION, "Szakma-admin (/profession más játékosra)");
         canonical.put(JOB, "Kaszt-admin (/class addxp/setxp/givecatalyst/unlockspell/admin)");
         canonical.put(CURRENCY, "Egyenleg-admin (/currency set)");
@@ -116,7 +118,6 @@ public final class Permissions {
         moderationNodes.put(MODERATION_HISTORY, "Büntetési előzmények megtekintése");
         moderationNodes.put(MODERATION_SOCIALSPY, "Natív privát üzenetek megfigyelése");
         moderationNodes.put(MODERATION_VANISH, "Vanish állapot kezelése");
-        moderationNodes.put(MODERATION_VANISH_SEE, "Vanish állapotú adminok megtekintése");
         moderationNodes.put(MODERATION_OFFLINE_TP, "Teleport az utolsó kijelentkezési helyre");
         moderationNodes.put(MODERATION_INVENTORY_READ, "Online inventory és ender-láda olvasása");
         moderationNodes.put(MODERATION_INVENTORY_EDIT, "Online inventory és ender-láda szerkesztése");
@@ -126,6 +127,11 @@ public final class Permissions {
             registerNode(pm, new Permission(entry.getKey(), entry.getValue(), PermissionDefault.OP));
             moderationChildren.put(entry.getKey(), Boolean.TRUE);
         }
+        // Deliberately NOT inherited by OP, the moderation bundle or icesmp.admin.all.
+        // Otherwise every operator testing /vanish can still see the subject and the
+        // feature appears completely broken. Grant this node only to explicit observers.
+        registerNode(pm, new Permission(MODERATION_VANISH_SEE,
+                "Vanish állapotú adminok megtekintése", PermissionDefault.FALSE));
         registerNode(pm, new Permission(MODERATION,
                 "IceSMP natív moderációs jogosultságcsomag", PermissionDefault.OP, moderationChildren));
         allChildren.put(MODERATION, Boolean.TRUE);

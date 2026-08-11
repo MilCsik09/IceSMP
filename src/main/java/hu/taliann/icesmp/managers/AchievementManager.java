@@ -1,33 +1,33 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.PendingReward;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.RewardKind;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.RewardReservation;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
-/**
- * Achievements: milestone goals checked against tracked player
- * data on the periodic stats tick. Newly-earned achievements are stored in the
- * player's PDC, announced, and pay a currency reward. Read-only helpers back the
- * achievements GUI.
- */
+/** Achievement milestones backed exclusively by PlayerProfile. */
 public final class AchievementManager {
 
     public enum Metric { CLASS_LEVEL, WEALTH, RAID_KILLS, PROFESSION_LEVEL, DAILY_STREAK }
 
-    public record Achievement(String id, String name, String description, Metric metric, double threshold, long reward) { }
+    public record Achievement(String id, String name, String description, Metric metric,
+                              double threshold, long reward) { }
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -38,14 +38,16 @@ public final class AchievementManager {
     private final StatsManager statsManager;
     private final DailyQuestManager dailyQuestManager;
     private final MessageManager messageManager;
-    private final NamespacedKey earnedKey;
+    private final PlayerProfileAchievementStore store = new PlayerProfileAchievementStore();
     /** Reloadra build-then-swap cserélődik; a tick több régió-szálról olvassa. */
     private volatile List<Achievement> achievements = List.of();
 
-    public AchievementManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
-                              final CurrencyManager currencyManager, final ProfessionManager professionManager,
+    public AchievementManager(final JavaPlugin plugin, final ConfigManager configManager,
+                              final JobManager jobManager, final CurrencyManager currencyManager,
+                              final ProfessionManager professionManager,
                               final FactionManager factionManager, final StatsManager statsManager,
-                              final DailyQuestManager dailyQuestManager, final MessageManager messageManager) {
+                              final DailyQuestManager dailyQuestManager,
+                              final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.jobManager = jobManager;
@@ -55,115 +57,201 @@ public final class AchievementManager {
         this.statsManager = statsManager;
         this.dailyQuestManager = dailyQuestManager;
         this.messageManager = messageManager;
-        this.earnedKey = new NamespacedKey(plugin, "achievements");
         reload();
     }
 
-    /**
-     * Az elérés-lista újraépítése a configból ({@code achievements.definitions.*}).
-     * A tick játékosonként fut, ezért a listát NEM olvassuk minden hívásnál — a
-     * {@code /icesmp reload} hívja újra (a Relic/MobScaling minta szerint).
-     */
     public void reload() {
         final org.bukkit.configuration.ConfigurationSection section =
                 configManager.getConfiguration() == null ? null
-                        : configManager.getConfiguration().getConfigurationSection("achievements.definitions");
+                        : configManager.getConfiguration().getConfigurationSection(
+                                "achievements.definitions");
         if (section == null) {
-            plugin.getLogger().warning("achievements.definitions hianyzik a configbol - nincs elereny.");
-            this.achievements = List.of();
+            plugin.getLogger().warning(
+                    "achievements.definitions hianyzik a configbol - nincs elereny.");
+            achievements = List.of();
             return;
         }
         final List<Achievement> parsed = new java.util.ArrayList<>();
         for (final String rawId : section.getKeys(false)) {
-            final org.bukkit.configuration.ConfigurationSection entry = section.getConfigurationSection(rawId);
-            if (entry == null) {
-                continue;
-            }
-            // KANONIKUS id. A megszerzett-lista PDC-ből visszaolvasva kisbetűsít, a tárolás viszont
-            // a config eredeti casingjét használta: egy „RichOne" id mentés után „richone" lett, a
-            // contains("RichOne") hamis maradt, és a periodikus tick MINDEN körben újra kifizette a
-            // jutalmat. A vessző pedig szét is hasította volna a CSV-t.
-            final String id = rawId.toLowerCase(java.util.Locale.ROOT);
+            final org.bukkit.configuration.ConfigurationSection entry =
+                    section.getConfigurationSection(rawId);
+            if (entry == null) continue;
+            final String id = rawId.toLowerCase(Locale.ROOT);
             if (!id.matches("[a-z0-9_]+")) {
-                plugin.getLogger().warning("achievements." + rawId + ": az azonosito csak [a-z0-9_] "
-                        + "karaktereket tartalmazhat - a sor kimarad (kulonben ismetelt jutalmat adna).");
+                plugin.getLogger().warning("achievements." + rawId
+                        + ": az azonosito csak [a-z0-9_] karaktereket tartalmazhat - a sor kimarad.");
                 continue;
             }
             final String metricName = entry.getString("metric", "");
             final Metric metric;
             try {
-                metric = Metric.valueOf(metricName.toUpperCase(java.util.Locale.ROOT));
+                metric = Metric.valueOf(metricName.toUpperCase(Locale.ROOT));
             } catch (final IllegalArgumentException exception) {
-                plugin.getLogger().warning("achievements." + id + ": ismeretlen metric \"" + metricName
-                        + "\" - a sor kimarad. Ervenyes: CLASS_LEVEL, WEALTH, RAID_KILLS, PROFESSION_LEVEL, DAILY_STREAK.");
+                plugin.getLogger().warning("achievements." + id + ": ismeretlen metric \""
+                        + metricName + "\" - a sor kimarad.");
                 continue;
             }
             final double threshold = entry.getDouble("threshold", -1.0D);
             if (threshold <= 0.0D) {
-                plugin.getLogger().warning("achievements." + id + ": a threshold hianyzik vagy nem pozitiv - a sor kimarad.");
+                plugin.getLogger().warning("achievements." + id
+                        + ": a threshold hianyzik vagy nem pozitiv - a sor kimarad.");
                 continue;
             }
-            parsed.add(new Achievement(id,
-                    entry.getString("name", id),
-                    entry.getString("description", ""),
-                    metric,
-                    threshold,
+            parsed.add(new Achievement(id, entry.getString("name", id),
+                    entry.getString("description", ""), metric, threshold,
                     Math.max(0L, entry.getLong("reward", 0L))));
         }
-        // Küszöb szerint növekvő: a HUD/GUI így a következő mérföldkövet mutatja elöl.
         parsed.sort(java.util.Comparator.comparingDouble(Achievement::threshold));
-        this.achievements = List.copyOf(parsed);
+        achievements = List.copyOf(parsed);
     }
 
-    public boolean isEnabled() {
-        return configManager.getBoolean("achievements.enabled", true);
-    }
+    public boolean isEnabled() { return configManager.getBoolean("achievements.enabled", true); }
+    public List<Achievement> getAchievements() { return achievements; }
 
-    public List<Achievement> getAchievements() {
-        return achievements;
-    }
-
-    /** Periodic per-player evaluation (each on its own region thread; Folia-safe). */
     public void tick() {
-        if (!isEnabled()) {
-            return;
-        }
+        if (!isEnabled()) return;
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> evaluate(player), null);
         }
     }
 
-    /** Checks every achievement for the player and awards any newly-completed ones. */
+    /**
+     * Unlock is durable first. Existing pending rewards are replayed independently of the current
+     * metric (important for WEALTH after spending money) and independently of later config changes.
+     */
     public void evaluate(final Player player) {
-        if (!isEnabled() || player == null) {
-            return;
+        if (!isEnabled() || player == null) return;
+        try {
+            for (final PendingReward pending : store.pendingRewards(player.getUniqueId())) {
+                deliverPending(player, pending, achievementForReceipt(pending.receiptId()));
+            }
+        } catch (final RuntimeException notReady) {
+            return; // PlayerProfile/class session has not reached a readable state yet.
         }
-        final Set<String> earned = getEarned(player);
-        boolean changed = false;
+
         for (final Achievement achievement : achievements) {
-            if (earned.contains(achievement.id())) {
+            final boolean alreadyUnlocked;
+            try {
+                alreadyUnlocked = store.isUnlocked(player.getUniqueId(), achievement.id());
+            } catch (final RuntimeException notReady) {
+                return;
+            }
+            if (!alreadyUnlocked && metricValue(player, achievement.metric()) < achievement.threshold()) {
                 continue;
             }
-            if (metricValue(player, achievement.metric()) >= achievement.threshold()) {
-                earned.add(achievement.id());
-                changed = true;
-                award(player, achievement);
-            }
-        }
-        if (changed) {
-            saveEarned(player, earned);
+            final CompletionStage<Boolean> unlock = alreadyUnlocked
+                    ? CompletableFuture.completedFuture(true)
+                    : store.unlock(player.getUniqueId(), achievement.id());
+            unlock.thenCompose(ignored -> ensureReservation(player, achievement))
+                    .thenAccept(reservation -> {
+                        if (reservation != null && reservation.pending()) {
+                            deliverPending(player, reservation.reward(), Optional.of(achievement));
+                        }
+                    }).exceptionally(failure -> {
+                        plugin.getLogger().severe("PlayerProfile achievement reservation failed for "
+                                + player.getUniqueId() + '/' + achievement.id() + ": "
+                                + rootMessage(failure));
+                        return null;
+                    });
         }
     }
 
+    private CompletionStage<RewardReservation> ensureReservation(
+            final Player player, final Achievement achievement) {
+        final String receiptId = receiptId(achievement.id());
+        final Optional<PendingReward> existing = store.pendingReward(player.getUniqueId(), receiptId);
+        if (existing.isPresent()) {
+            return CompletableFuture.completedFuture(new RewardReservation(
+                    PlayerProfileAchievementStore.RewardState.PENDING,
+                    existing.orElseThrow(), false));
+        }
+        if (store.rewardSettled(player.getUniqueId(), receiptId)) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return store.reserveReward(player.getUniqueId(), rewardPayload(player, achievement));
+    }
+
+    private PendingReward rewardPayload(final Player player, final Achievement achievement) {
+        final String receipt = receiptId(achievement.id());
+        if (achievement.reward() <= 0L) {
+            return new PendingReward(receipt, RewardKind.NONE, 0L, "");
+        }
+        if (achievement.metric() == Metric.WEALTH) {
+            return new PendingReward(receipt, RewardKind.CLASS_XP,
+                    Math.min(Integer.MAX_VALUE, achievement.reward()), "");
+        }
+        final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
+        final CurrencyType currency = CurrencyType.fromFactionType(faction);
+        return new PendingReward(receipt, RewardKind.CURRENCY,
+                achievement.reward(), currency.name().toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * External delivery is idempotent and receipt-bound. XP STALE_SESSION/RUNTIME_EFFECT_FAILED
+     * deliberately remains PENDING; reconnect replays the same Profile operation ID, observes
+     * NO_CHANGE after an already-durable commit, then settles the achievement receipt exactly once.
+     */
+    private void deliverPending(final Player player, final PendingReward pending,
+                                final Optional<Achievement> achievement) {
+        deliver(pending, player).thenCompose(delivered -> delivered
+                        ? store.settleReward(player.getUniqueId(), pending)
+                        : CompletableFuture.completedFuture(false))
+                .whenComplete((settled, failure) -> {
+                    if (failure != null) {
+                        plugin.getLogger().warning("Achievement reward remains pending for "
+                                + player.getUniqueId() + '/' + pending.receiptId() + ": "
+                                + rootMessage(failure));
+                        return;
+                    }
+                    if (!Boolean.TRUE.equals(settled) || !player.isOnline()) return;
+                    player.getScheduler().run(plugin,
+                            task -> announce(player, pending, achievement), null);
+                });
+    }
+
+    private CompletionStage<Boolean> deliver(final PendingReward pending, final Player player) {
+        return switch (pending.kind()) {
+            case NONE -> CompletableFuture.completedFuture(true);
+            case CLASS_XP -> deliverClassXp(player, pending);
+            case CURRENCY -> deliverCurrency(player, pending);
+        };
+    }
+
+    private CompletionStage<Boolean> deliverClassXp(final Player player,
+                                                     final PendingReward pending) {
+        if (!jobManager.hasPrimaryJob(player)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return jobManager.addXpToJobResultV2(player, (int) pending.amount(),
+                        "achievement-xp:" + pending.receiptId())
+                .thenApply(result -> result.status() == ProfileMutationResult.Status.COMMITTED
+                        || result.status() == ProfileMutationResult.Status.NO_CHANGE);
+    }
+
+    private CompletionStage<Boolean> deliverCurrency(final Player player,
+                                                      final PendingReward pending) {
+        final CurrencyType currency = CurrencyType.fromInput(pending.currencyId());
+        if (currency == null || pending.amount() <= 0L) {
+            return CompletableFuture.failedFuture(
+                    new IllegalStateException("invalid pending achievement currency reward"));
+        }
+        // PlayerProfileEconomyStore credits balance + operation receipt in one ECONOMY CAS.
+        // Run the synchronous durability boundary off the region thread; replay is a no-op.
+        return CompletableFuture.supplyAsync(() -> {
+            currencyManager.creditOnceDurably(player.getUniqueId(), currency,
+                    pending.amount(), "achievement-currency:" + pending.receiptId());
+            return true;
+        });
+    }
+
     public boolean isEarned(final Player player, final String id) {
-        return getEarned(player).contains(id.toLowerCase(Locale.ROOT));
+        return player != null && store.isUnlocked(player.getUniqueId(),
+                id.toLowerCase(Locale.ROOT));
     }
 
     public double metricValue(final Player player, final Metric metric) {
         return switch (metric) {
             case CLASS_LEVEL -> jobManager.getPrimaryLevel(player);
-            // Vagyon = az ÖSSZES valuta-egyenleg összege (a default-valutás olvasás a
-            // RED/BLUE/DARK játékosokat kizárta volna a vagyon-elérésekből).
             case WEALTH -> currencyManager.getTotalBalance(player);
             case RAID_KILLS -> statsManager.getRaidKills(player.getUniqueId());
             case PROFESSION_LEVEL -> totalProfessionLevel(player);
@@ -179,43 +267,37 @@ public final class AchievementManager {
         return total;
     }
 
-    private void award(final Player player, final Achievement achievement) {
-        // A VAGYON-elérések kaszt-XP-t fizetnek, NEM veretet: az egyenleg-küszöb
-        // kölcsönkért tokenekkel (alt-számláról) átléphető, és pénz-jutalommal ez
-        // ingyen-pénz-nyomda lenne (befizet → jutalom → visszaadja). Az XP nem
-        // átruházható, így a kör értelmetlen; a többi metrika veretben fizet tovább.
-        final boolean xpReward = achievement.metric() == Metric.WEALTH;
-        if (achievement.reward() > 0) {
-            if (xpReward) {
-                jobManager.addXpToJob(player, (int) Math.min(Integer.MAX_VALUE, achievement.reward()));
-            } else {
-                final FactionType faction = factionManager.getFaction(player.getUniqueId());
-                currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), achievement.reward());
-            }
-        }
-        player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
+    private Optional<Achievement> achievementForReceipt(final String receipt) {
+        final String prefix = "achievement:";
+        if (receipt == null || !receipt.startsWith(prefix)) return Optional.empty();
+        final String id = receipt.substring(prefix.length());
+        return achievements.stream().filter(value -> value.id().equals(id)).findFirst();
+    }
+
+    private void announce(final Player player, final PendingReward pending,
+                          final Optional<Achievement> achievement) {
+        final String name = achievement.map(Achievement::name)
+                .orElseGet(() -> pending.receiptId().replaceFirst("^achievement:", ""));
+        final boolean xpReward = pending.kind() == RewardKind.CLASS_XP;
+        player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE,
+                1.0F, 1.0F);
         player.sendMessage(messageManager.getMessage(
                 xpReward ? "achievement-earned-xp" : "achievement-earned",
                 xpReward
                         ? "<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} kaszt-XP)</gray></gold>"
                         : "<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta)</gray></gold>",
-                Map.of("name", achievement.name(), "reward", String.valueOf(achievement.reward()))));
+                Map.of("name", name, "reward", String.valueOf(pending.amount()))));
     }
 
-    private Set<String> getEarned(final Player player) {
-        final Set<String> earned = new LinkedHashSet<>();
-        final String raw = player.getPersistentDataContainer().get(earnedKey, PersistentDataType.STRING);
-        if (raw != null && !raw.isBlank()) {
-            for (final String id : raw.split(",")) {
-                if (!id.isBlank()) {
-                    earned.add(id.trim().toLowerCase(Locale.ROOT));
-                }
-            }
-        }
-        return earned;
+    private static String receiptId(final String achievementId) {
+        return "achievement:" + achievementId.toLowerCase(Locale.ROOT);
     }
 
-    private void saveEarned(final Player player, final Set<String> earned) {
-        player.getPersistentDataContainer().set(earnedKey, PersistentDataType.STRING, String.join(",", earned));
+    private static String rootMessage(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof java.util.concurrent.CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
     }
 }

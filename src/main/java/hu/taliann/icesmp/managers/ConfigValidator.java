@@ -1,9 +1,11 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -37,6 +39,17 @@ public final class ConfigValidator {
             return;
         }
 
+        final int problems = validateConfiguration(config, logger);
+        if (problems == 0) {
+            logger.fine("Konfiguráció ellenőrizve: nem található elgépelés.");
+        } else {
+            logger.warning("Konfiguráció-ellenőrzés: " + problems
+                    + " lehetséges hiba (a plugin nem módosítja automatikusan a hibás értékeket — "
+                    + "javítsd a fenti sorokat).");
+        }
+    }
+
+    static int validateConfiguration(final FileConfiguration config, final Logger logger) {
         int problems = 0;
         for (final String key : config.getKeys(true)) {
             if (config.isConfigurationSection(key)) {
@@ -44,7 +57,9 @@ public final class ConfigValidator {
             }
             final String leaf = leafOf(key);
 
-            if (leaf.equals("material")) {
+            if ("pakt.material".equals(key)) {
+                problems += checkUniqueMaterialReference(config, logger, key, config.getString(key));
+            } else if (leaf.equals("material")) {
                 problems += checkMaterial(logger, key, config.getString(key));
             } else if (leaf.equals("materials") && config.isList(key)) {
                 for (final String value : config.getStringList(key)) {
@@ -58,21 +73,45 @@ public final class ConfigValidator {
                 problems += checkCurrency(logger, key, config.getString(key));
             } else if (leaf.endsWith("percent")) {
                 problems += checkPercent(logger, key, config.get(key));
+            } else if (leaf.endsWith("-multiplier")) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "szorzó");
+            } else if ((key.startsWith("factions.passives.") || key.startsWith("factions.whisper."))
+                    && leaf.endsWith("-chance")) {
+                problems += checkUnitInterval(logger, key, config.get(key));
+            } else if (key.startsWith("factions.passives.") && leaf.endsWith("-radius")) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "sugár");
+            } else if ((key.startsWith("factions.tax.") || key.startsWith("factions.switch."))
+                    && (leaf.equals("cost") || leaf.endsWith("-amount")
+                    || leaf.endsWith("-cost") || leaf.endsWith("-arrears"))) {
+                problems += checkFiniteNonNegative(logger, key, config.get(key), "érték");
+            } else if ((key.startsWith("factions.passives.")
+                    || key.startsWith("factions.whisper.")) && isDurationKey(leaf)) {
+                problems += config.isList(key)
+                        ? checkNonNegativeList(logger, key, config.getList(key), true)
+                        : checkNonNegativeInteger(logger, key, config.get(key));
             } else if (isDurationKey(leaf)) {
-                problems += checkNonNegative(logger, key, config.get(key));
+                problems += config.isList(key)
+                        ? checkNonNegativeList(logger, key, config.getList(key), false)
+                        : checkNonNegative(logger, key, config.get(key));
             }
         }
+        return problems;
+    }
 
-        if (problems == 0) {
-            logger.info("Konfiguráció ellenőrizve: nem található elgépelés.");
-        } else {
-            logger.warning("Konfiguráció-ellenőrzés: " + problems
-                    + " lehetséges hiba (a plugin a biztonságos alapértékekkel indul — javítsd a fenti sorokat).");
+    private static int checkUniqueMaterialReference(final FileConfiguration config, final Logger logger,
+                                                    final String key, final String value) {
+        final String reference = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        if (reference.isEmpty()
+                || !config.isConfigurationSection("profession-materials." + reference)) {
+            logger.warning("Config: ismeretlen profession-material hivatkozás a(z) '" + key
+                    + "' kulcsnál: '" + value + "'.");
+            return 1;
         }
+        return 0;
     }
 
     private static int checkMaterial(final Logger logger, final String key, final String value) {
-        if (value == null || value.isBlank() || Material.matchMaterial(value) == null) {
+        if (value == null || value.isBlank() || ConfigMaterialResolver.match(value) == null) {
             logger.warning("Config: ismeretlen Material a(z) '" + key + "' kulcsnál: '" + value
                     + "' — ellenőrizd a nevet (pl. DIAMOND, ENCHANTED_GOLDEN_APPLE).");
             return 1;
@@ -107,10 +146,11 @@ public final class ConfigValidator {
 
     private static int checkPercent(final Logger logger, final String key, final Object value) {
         if (!(value instanceof Number number)) {
-            return 0;
+            logger.warning("Config: a(z) '" + key + "' százalék csak szám lehet: " + value + ".");
+            return 1;
         }
         final double percent = number.doubleValue();
-        if (percent < 0.0D || percent > 100.0D) {
+        if (!Double.isFinite(percent) || percent < 0.0D || percent > 100.0D) {
             logger.warning("Config: a(z) '" + key + "' százalék-érték a 0–100 tartományon kívül esik: "
                     + percent + ".");
             return 1;
@@ -118,12 +158,76 @@ public final class ConfigValidator {
         return 0;
     }
 
+    private static int checkNonNegativeInteger(final Logger logger, final String key,
+                                               final Object value) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key
+                    + "' időtartam csak egész szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D || parsed > Long.MAX_VALUE
+                || parsed != Math.rint(parsed)) {
+            logger.warning("Config: a(z) '" + key
+                    + "' időtartam csak véges, nem negatív egész szám lehet: "
+                    + value + ".");
+            return 1;
+        }
+        return 0;
+    }
+
     private static int checkNonNegative(final Logger logger, final String key, final Object value) {
         if (!(value instanceof Number number)) {
-            return 0;
+            logger.warning("Config: a(z) '" + key + "' időtartam csak szám lehet: " + value + ".");
+            return 1;
         }
-        if (number.doubleValue() < 0.0D) {
-            logger.warning("Config: a(z) '" + key + "' időtartam nem lehet negatív: " + number + ".");
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D) {
+            logger.warning("Config: a(z) '" + key
+                    + "' időtartam csak véges, nem negatív szám lehet: " + value + ".");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int checkNonNegativeList(final Logger logger, final String key,
+                                            final java.util.List<?> values,
+                                            final boolean integersOnly) {
+        int problems = 0;
+        for (int index = 0; index < values.size(); index++) {
+            final Object value = values.get(index);
+            final String itemKey = key + "[" + index + "]";
+            problems += integersOnly
+                    ? checkNonNegativeInteger(logger, itemKey, value)
+                    : checkNonNegative(logger, itemKey, value);
+        }
+        return problems;
+    }
+
+    private static int checkFiniteNonNegative(final Logger logger, final String key,
+                                              final Object value, final String kind) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key + "' " + kind + " csak szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D) {
+            logger.warning("Config: a(z) '" + key + "' " + kind
+                    + " csak véges, nem negatív szám lehet: " + value + ".");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int checkUnitInterval(final Logger logger, final String key, final Object value) {
+        if (!(value instanceof Number number)) {
+            logger.warning("Config: a(z) '" + key + "' esély csak szám lehet: " + value + ".");
+            return 1;
+        }
+        final double parsed = number.doubleValue();
+        if (!Double.isFinite(parsed) || parsed < 0.0D || parsed > 1.0D) {
+            logger.warning("Config: a(z) '" + key + "' esély csak 0 és 1 közötti szám lehet: "
+                    + value + ".");
             return 1;
         }
         return 0;

@@ -6,6 +6,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
@@ -21,12 +22,14 @@ import java.util.Map;
 public final class SoulforgeCommand implements BasicCommand {
 
     private final SoulforgeManager soulforgeManager;
+    private final JavaPlugin plugin;
     private final SoulShardManager soulShardManager;
     private final MessageManager messageManager;
 
-    public SoulforgeCommand(final SoulforgeManager soulforgeManager,
+    public SoulforgeCommand(final JavaPlugin plugin, final SoulforgeManager soulforgeManager,
                             final SoulShardManager soulShardManager,
                             final MessageManager messageManager) {
+        this.plugin = plugin;
         this.soulforgeManager = soulforgeManager;
         this.soulShardManager = soulShardManager;
         this.messageManager = messageManager;
@@ -46,20 +49,9 @@ public final class SoulforgeCommand implements BasicCommand {
                         "&cÁgak: elet | sebzes | letszam"));
                 return;
             }
-            final String error = soulforgeManager.upgrade(player, branch);
-            if (error == null) {
-                player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_SOUL_SAND_PLACE, 1.0F, 0.7F);
-                player.sendMessage(messageManager.getMessage("soulforge-upgraded",
-                        "<dark_purple>☠ A kovácstűz lelket nyelt: <white>{branch}</white> ág — <white>{rank}. rang</white>. A sereged érzi.</dark_purple>",
-                        Map.of("branch", branchName(branch),
-                                "rank", String.valueOf(soulforgeManager.getRank(player, branch)))));
-            } else {
-                player.sendMessage(messageManager.get("soulforge-error." + error, switch (error) {
-                    case "soulforge-max" -> "&cEz az ág már a csúcson jár (5. rang).";
-                    case "soulforge-poor" -> "&cNincs elég lélekszilánkod.";
-                    default -> "&cA lélek-kovácsolás most nem elérhető.";
-                }));
-            }
+            soulforgeManager.upgradeV2(player, branch).whenComplete((error, failure) ->
+                    player.getScheduler().run(plugin, task -> showUpgradeResult(
+                            player, branch, failure == null ? error : "soulforge-persistence-failed"), null));
             return;
         }
         player.sendMessage(messageManager.get("soulforge-header",
@@ -74,6 +66,27 @@ public final class SoulforgeCommand implements BasicCommand {
         }
         player.sendMessage(messageManager.get("soulforge-hint",
                 "&8Élet: +8%/rang idézett-társ HP • Sebzés: +6%/rang • Létszám: extra idézés-slot (max +3)"));
+    }
+
+    private void showUpgradeResult(final Player player, final SoulforgeManager.Branch branch,
+                                   final String error) {
+            if (error == null) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_SOUL_SAND_PLACE, 1.0F, 0.7F);
+                player.sendMessage(messageManager.getMessage("soulforge-upgraded",
+                        "<dark_purple>☠ A kovácstűz lelket nyelt: <white>{branch}</white> ág — <white>{rank}. rang</white>. A sereged érzi.</dark_purple>",
+                        Map.of("branch", branchName(branch),
+                                "rank", String.valueOf(soulforgeManager.getRank(player, branch)))));
+            } else {
+                player.sendMessage(messageManager.get("soulforge-error." + error, switch (error) {
+                    case "soulforge-max" -> "&cEz az ág már a csúcson jár (5. rang).";
+                    case "soulforge-poor" -> "&cNincs elég lélekszilánkod.";
+                    case "soulforge-necromancer-only" -> "&cCsak aktív, használható Nekromanta loadout fejlesztheti a Lélek-kovácsot.";
+                    case "soulforge-persistence-failed" -> "&cA profil mentése meghiúsult; a lélekszilánk visszajárt.";
+                    case "soulforge-runtime-failed" -> "&4A rang commitolt, de a runtime-befejezés hibázott; admin audit szükséges.";
+                    case "soulforge-refund-failed" -> "&4A visszatérítés kézi admin auditot igényel.";
+                    default -> "&cA lélek-kovácsolás most nem elérhető.";
+                }));
+            }
     }
 
     private static SoulforgeManager.Branch parseBranch(final String raw) {

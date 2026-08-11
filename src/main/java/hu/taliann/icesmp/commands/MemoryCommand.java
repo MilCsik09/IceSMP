@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
@@ -22,15 +23,12 @@ import java.util.concurrent.ThreadLocalRandom;
  * érkeztek; az Opálos Emlékszilánkokból (mob/boss-loot) emlék-töredékeket lehet
  * kirakni: kaszt-XP, extra talentpont, a spec-választás szint-kapujának korai
  * feloldása, vagy egy kódex-töredék feltárása. Minden költség configból jön
- * (memory-shards.*), élőben olvasva. A parancs a játékos saját régió-szálán fut
- * — a szilánk-fogyasztás és a jóváírás így atomi (dupe-mentes).
+ * (memory-shards.*), élőben olvasva.
  */
 public final class MemoryCommand implements BasicCommand {
 
-    /** A szilánk unique-material azonosítója (profession-materials.yml). */
     private static final String SHARD_ID = "emlekszilank";
 
-    /** Kódex-töredékek a lore-beváltáshoz (a /emlek lore kimenete — hangulat-jutalom). */
     private static final List<String> MEMORY_FRAGMENTS = List.of(
             "&7…egy kéz, amely a tiéd volt, mégis idegen — pecsétgyűrűt visel, és a gyűrűn a Fa jele…",
             "&7…hó hull egy égő városra. Valaki a nevedet kiáltja, de a hang elvész a viharban…",
@@ -88,8 +86,6 @@ public final class MemoryCommand implements BasicCommand {
     }
 
     private void redeemXp(final Player player) {
-        // ELŐBB a jóváírás feltétele, csak UTÁNA a fizetés: az addXpToJob kaszt nélkül false-t ad,
-        // és a boolean elvesztésével a játékos elveszítette a ritka szilánkokat, mégis sikert olvasott.
         if (!jobManager.hasPrimaryJob(player)) {
             player.sendMessage(messageManager.get("memory-no-class",
                     "&cElőbb kaszt kell, hogy legyen mibe visszaemlékezned (&f/menu&c → Kaszt)."));
@@ -99,15 +95,36 @@ public final class MemoryCommand implements BasicCommand {
         if (!consumeShards(player, cost)) {
             return;
         }
-        if (!jobManager.addXpToJob(player, xpAmount())) {
-            // Ide nem szabad eljutni (a feltételt fentebb ellenőriztük ugyanezen a szálon):
-            // ha mégis, a szilánk elfogyott volna jóváírás nélkül.
-            java.util.logging.Logger.getLogger("IceSMP").severe(
-                    "Emlék-XP jóváírás elbukott a feltétel-ellenőrzés után: " + player.getName());
-            return;
-        }
-        remembered(player, messageManager.get("memory-redeemed-xp",
-                "&d✦ Emlékek törnek fel — &f+%s kaszt-XP&d. A kéz emlékszik, amit az elme elfelejtett.", xpAmount()));
+        final int amount = xpAmount();
+        final String operationId = "memory-xp:" + player.getUniqueId() + ":" + java.util.UUID.randomUUID();
+        jobManager.addXpToJobResultV2(player, amount, operationId).whenComplete((result, failure) ->
+                player.getScheduler().run(org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(MemoryCommand.class), task -> {
+                    if (failure != null) {
+                        // An exceptional completion is an uncertain boundary. Never mint a shard refund
+                        // without proof that the Profile mutation did not durably commit.
+                        player.sendMessage(messageManager.get("memory-xp-uncertain",
+                                "&4Az XP-jóváírás állapota bizonytalan; automatikus szilánk-visszatérítés nem történt a duplázás elkerülésére. Jelentkezz vissza, a profil újraépül."));
+                        return;
+                    }
+                    if (result == null || !result.durableOutcomeAccepted()) {
+                        refundShards(player, cost);
+                        player.sendMessage(messageManager.get("memory-xp-failed",
+                                "&cAz XP-jóváírás nem commitolt; az Emlékszilánkokat visszakaptad."));
+                        return;
+                    }
+                    if (result.status() == ProfileMutationResult.Status.STALE_SESSION) {
+                        player.sendMessage(messageManager.get("memory-xp-stale",
+                                "&eAz XP tartósan jóváíródott. A régi session runtime callbackje már nem futhatott le; visszajelentkezéskor a kasztállapot újraépül."));
+                        return;
+                    }
+                    if (result.status() == ProfileMutationResult.Status.RUNTIME_EFFECT_FAILED) {
+                        player.sendMessage(messageManager.get("memory-xp-runtime-failed",
+                                "&4Az XP tartósan jóváíródott, de a runtime helyreállítás szükséges; szilánk-visszatérítés nem történt."));
+                        return;
+                    }
+                    remembered(player, messageManager.get("memory-redeemed-xp",
+                            "&d✦ Emlékek törnek fel — &f+%s kaszt-XP&d. A kéz emlékszik, amit az elme elfelejtett.", amount));
+                }, null));
     }
 
     private void redeemTalent(final Player player) {
@@ -115,9 +132,20 @@ public final class MemoryCommand implements BasicCommand {
         if (!consumeShards(player, cost)) {
             return;
         }
-        talentManager.grantBonusPoints(player, true, 1);
-        remembered(player, messageManager.get("memory-redeemed-talent",
-                "&d✦ Egy régi lecke tér vissza — &f+1 kaszt-talentpont&d (&7/talent&d)."));
+        talentManager.grantBonusPoints(player, true, 1).whenComplete((bonus, failure) ->
+                talentManager.runOnOwnerThread(player, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (failure != null) {
+                        refundShards(player, cost);
+                        player.sendMessage(messageManager.get("memory-talent-failed",
+                                "&cA talentpont jóváírása meghiúsult; az Emlékszilánkokat visszakaptad."));
+                        return;
+                    }
+                    remembered(player, messageManager.get("memory-redeemed-talent",
+                            "&d✦ Egy régi lecke tér vissza — &f+1 kaszt-talentpont&d (&7/talent&d)."));
+                }));
     }
 
     private void redeemSpec(final Player player) {
@@ -145,6 +173,16 @@ public final class MemoryCommand implements BasicCommand {
         player.sendMessage(messageManager.get("memory-fragment", fragment));
     }
 
+    private void refundShards(final Player player, final int amount) {
+        final ItemStack refund = uniqueMaterials.create(SHARD_ID, amount);
+        if (refund == null) {
+            java.util.logging.Logger.getLogger("IceSMP").severe("Cannot refund memory shards: material is undefined");
+            return;
+        }
+        final var leftovers = player.getInventory().addItem(refund);
+        leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+    }
+
     private void remembered(final Player player, final String message) {
         player.sendMessage(message);
         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1.0F, 0.8F);
@@ -170,7 +208,6 @@ public final class MemoryCommand implements BasicCommand {
         return count;
     }
 
-    /** Levonja a költséget, vagy hibaüzenettel false — a játékos saját szálán atomi. */
     private boolean consumeShards(final Player player, final int cost) {
         if (countShards(player) < cost) {
             player.sendMessage(messageManager.get("memory-not-enough",

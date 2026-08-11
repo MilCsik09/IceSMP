@@ -64,6 +64,7 @@ public final class CrateBrowserGUI {
             lore.add(GuiUtil.grey("Kattints a jutalmak előnézetéhez."));
             meta.lore(lore);
             icon.setItemMeta(meta);
+            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(icon, definition.keyItemModel());
             inventory.setItem(slot, icon);
             holder.bind(slot, "PREVIEW:" + crateId);
         }
@@ -95,15 +96,19 @@ public final class CrateBrowserGUI {
             }
             final int slot = CONTENT_SLOTS[index++];
             final CrateManager.RewardEntry reward = odds.reward();
-            final ItemStack icon = new ItemStack(reward.iconMaterial());
+            final ItemStack icon = manager.rewardPreview(reward);
             final ItemMeta meta = icon.getItemMeta();
             meta.displayName(LEGACY.deserialize(TextUtil.color(odds.description()))
                     .decoration(TextDecoration.ITALIC, false));
-            meta.lore(List.of(
-                    GuiUtil.label("Esély", Component.text(CrateFormatting.decimal(odds.percent()) + "%", NamedTextColor.YELLOW)),
-                    GuiUtil.label("Típus", Component.text(reward.type().name(), NamedTextColor.AQUA)),
-                    GuiUtil.grey("Csak előnézet — innen tárgy nem vehető ki.")));
+            final List<Component> lore = meta.lore() == null
+                    ? new ArrayList<>() : new ArrayList<>(meta.lore());
+            lore.add(GuiUtil.label("Esély", Component.text(
+                    CrateFormatting.decimal(odds.percent()) + "%", NamedTextColor.YELLOW)));
+            lore.add(GuiUtil.label("Típus", Component.text(reward.type().name(), NamedTextColor.AQUA)));
+            lore.add(GuiUtil.grey("Csak előnézet — innen tárgy nem vehető ki."));
+            meta.lore(lore);
             icon.setItemMeta(meta);
+            manager.applyRewardPreviewAppearance(icon, reward);
             inventory.setItem(slot, icon);
         }
         inventory.setItem(45, GuiUtil.icon(Material.ARROW,

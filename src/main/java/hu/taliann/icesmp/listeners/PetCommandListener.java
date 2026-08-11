@@ -44,12 +44,25 @@ public final class PetCommandListener implements Listener {
         }
 
         event.setCancelled(true);
-        // A companion állásmódja a gazda PDC-jében él (PetManager), a spell-idézett
-        // minioné a saját entitás-PDC-jében — a váltásnak oda kell írnia, ahonnan
-        // a megfelelő vezérlő olvas.
-        final MinionManager.Stance stance = petManager.isActivePetEntity(player, minion)
-                ? petManager.cycleStance(player)
-                : minionManager.cycleStance(minion);
+        // A tartós companion állásmódja a Profile v2 aggregátumban él; a spell-idézett
+        // minion állásmódja továbbra is az entitás-PDC-ben. Tartós petmutáció után
+        // minden Bukkit-visszajelzés visszaugrik a játékos schedulerére.
+        if (petManager.isActivePetEntity(player, minion)) {
+            petManager.cycleStanceV2(player).whenComplete((stance, failure) ->
+                    petManager.runOnPlayer(player, () -> {
+                        if (failure != null || stance == null) {
+                            player.sendActionBar(messageManager.get("pet-persistence-failed",
+                                    "&cA társ parancsát nem sikerült menteni."));
+                            return;
+                        }
+                        showStance(player, stance);
+                    }));
+            return;
+        }
+        showStance(player, minionManager.cycleStance(minion));
+    }
+
+    private void showStance(final Player player, final MinionManager.Stance stance) {
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8F, 1.3F);
         player.sendActionBar(messageManager.getMessage(
                 "pet-stance",

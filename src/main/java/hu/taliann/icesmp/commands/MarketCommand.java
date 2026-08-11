@@ -93,7 +93,7 @@ public final class MarketCommand implements BasicCommand {
             return;
         }
         if (currency == null) {
-            currency = CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId()));
+            currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
         }
 
         final String errorKey = marketManager.createListing(player, price, currency);
@@ -206,7 +206,7 @@ public final class MarketCommand implements BasicCommand {
             return;
         }
         if (currency == null) {
-            currency = CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId()));
+            currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
         }
 
         final String errorKey = marketManager.createAuction(player, startPrice, currency,

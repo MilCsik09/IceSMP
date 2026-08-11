@@ -85,10 +85,10 @@ public final class CouncilManager implements PersistentStore {
         if (!isEnabled()) {
             return "council-disabled";
         }
-        if (factionManager.getFaction(voter.getUniqueId()) != FactionType.NEUTRAL) {
+        if (!factionManager.isMember(voter.getUniqueId(), FactionType.NEUTRAL)) {
             return "council-neutral-only";
         }
-        if (factionManager.getFaction(target.getUniqueId()) != FactionType.NEUTRAL) {
+        if (!factionManager.isMember(target.getUniqueId(), FactionType.NEUTRAL)) {
             return "council-target-not-neutral";
         }
         votes.put(voter.getUniqueId(), target.getUniqueId());
@@ -102,12 +102,15 @@ public final class CouncilManager implements PersistentStore {
             return List.of();
         }
         final Map<UUID, Integer> tally = new ConcurrentHashMap<>();
-        for (final UUID target : votes.values()) {
-            tally.merge(target, 1, Integer::sum);
+        for (final Map.Entry<UUID, UUID> vote : votes.entrySet()) {
+            if (factionManager.isMember(vote.getKey(), FactionType.NEUTRAL)
+                    && factionManager.isMember(vote.getValue(), FactionType.NEUTRAL)) {
+                tally.merge(vote.getValue(), 1, Integer::sum);
+            }
         }
         final int seats = Math.max(1, configManager.getInt("factions.council.seats", 3));
         return tally.entrySet().stream()
-                .filter(entry -> factionManager.getFaction(entry.getKey()) == FactionType.NEUTRAL)
+                .filter(entry -> factionManager.isMember(entry.getKey(), FactionType.NEUTRAL))
                 .sorted(Comparator.<Map.Entry<UUID, Integer>>comparingInt(Map.Entry::getValue).reversed()
                         .thenComparing(entry -> entry.getKey().toString()))
                 .limit(seats)
@@ -123,12 +126,27 @@ public final class CouncilManager implements PersistentStore {
     /** A jelölt kapott szavazatai (info-kijelzés). */
     public int votesFor(final UUID playerId) {
         int count = 0;
-        for (final UUID target : votes.values()) {
-            if (target.equals(playerId)) {
+        for (final Map.Entry<UUID, UUID> vote : votes.entrySet()) {
+            if (vote.getValue().equals(playerId)
+                    && factionManager.isMember(vote.getKey(), FactionType.NEUTRAL)
+                    && factionManager.isMember(playerId, FactionType.NEUTRAL)) {
                 count++;
             }
         }
         return count;
+    }
+
+    /** A faction switch invalidates both the player's ballot and candidacy immediately. */
+    public synchronized void onMembershipChange(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        final boolean removedVote = votes.remove(playerId) != null;
+        final boolean removedCandidacy = votes.entrySet().removeIf(
+                entry -> entry.getValue().equals(playerId));
+        if (removedVote || removedCandidacy) {
+            save();
+        }
     }
 
     @Override

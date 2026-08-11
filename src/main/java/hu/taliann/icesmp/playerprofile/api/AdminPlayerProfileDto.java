@@ -1,0 +1,5 @@
+package hu.taliann.icesmp.playerprofile.api;
+import java.util.*;
+public record AdminPlayerProfileDto(SelfPlayerProfileDto selfProfile,String profileHealth,Map<String,String> sectionHealth,Map<String,String> quarantineEvidence,Map<String,String> operationStatus,Set<String> activePunishmentRefs,int strikeCount,Set<String> adminNoteRefs,Map<String,String> moderationAuditState){
+ public AdminPlayerProfileDto{Objects.requireNonNull(selfProfile);profileHealth=profileHealth==null?"":profileHealth;sectionHealth=Map.copyOf(sectionHealth==null?Map.of():sectionHealth);quarantineEvidence=Map.copyOf(quarantineEvidence==null?Map.of():quarantineEvidence);operationStatus=Map.copyOf(operationStatus==null?Map.of():operationStatus);activePunishmentRefs=Set.copyOf(activePunishmentRefs==null?Set.of():activePunishmentRefs);adminNoteRefs=Set.copyOf(adminNoteRefs==null?Set.of():adminNoteRefs);moderationAuditState=Map.copyOf(moderationAuditState==null?Map.of():moderationAuditState);if(strikeCount<0)throw new IllegalArgumentException("negative strike count");}
+}

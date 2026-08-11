@@ -32,35 +32,49 @@ public final class ModerationGUIListener implements Listener {
         }
         event.setCancelled(true);
         final int slot = event.getRawSlot();
-        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()) {
+        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()
+                || !holder.ownerId().equals(viewer.getUniqueId())) {
             return;
         }
+
+        final ModerationGuiHolder.Action action = holder.actionAt(slot);
+        if (action != null) {
+            handleAction(viewer, holder, action);
+            return;
+        }
+
         if (holder.page() == ModerationGuiHolder.Page.PLAYERS) {
-            if (slot == 49) {
-                viewer.closeInventory();
+            final ModerationGuiHolder.PlayerTarget selected = holder.playerAt(slot);
+            if (selected == null) {
                 return;
             }
-            final String targetName = event.getCurrentItem() == null || event.getCurrentItem().getItemMeta() == null
-                    ? null : net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                    .serialize(event.getCurrentItem().getItemMeta().displayName());
-            final Player target = targetName == null ? null : Bukkit.getPlayerExact(targetName);
-            if (target != null) {
-                ModerationGUI.openPlayer(viewer, target, messages);
+            final Player target = Bukkit.getPlayer(selected.uniqueId());
+            if (target == null || !visibleTo(viewer, target)) {
+                viewer.sendMessage(messages.get("moderation.player-offline",
+                        "&cA játékos nincs online: &f%s", selected.name()));
+                ModerationGUI.openPlayers(viewer, messages, holder.listPage());
+                return;
             }
+            ModerationGUI.openPlayer(viewer, target, messages, holder.listPage());
             return;
         }
+
         final Player target = Bukkit.getPlayer(holder.targetId());
-        if (slot == 49) {
-            ModerationGUI.openPlayers(viewer, messages);
-            return;
-        }
-        if (slot == 53) {
-            viewer.closeInventory();
+        if (target != null && !visibleTo(viewer, target)) {
+            viewer.sendMessage(messages.get("moderation.player-offline",
+                    "&cA játékos nincs online: &f%s", holder.targetName()));
+            ModerationGUI.openPlayers(viewer, messages, holder.listPage());
             return;
         }
         if (target == null && slot != 29) {
-            viewer.sendMessage(messages.get("moderation.player-offline", "&cA játékos nincs online: &f%s", holder.targetName()));
+            viewer.sendMessage(messages.get("moderation.player-offline",
+                    "&cA játékos nincs online: &f%s", holder.targetName()));
             viewer.closeInventory();
+            return;
+        }
+        if (slot == 22 && !hasInvseePermission(viewer)) {
+            viewer.sendMessage(messages.get("moderation.permission-denied",
+                    "&cNincs jogod ehhez a moderációs művelethez."));
             return;
         }
         final String requiredPermission = permissionForSlot(slot);
@@ -69,7 +83,7 @@ public final class ModerationGUIListener implements Listener {
                     "&cNincs jogod ehhez a moderációs művelethez."));
             return;
         }
-        final String name = holder.targetName();
+        final String name = target == null ? holder.targetName() : target.getName();
         switch (slot) {
             case 10 -> viewer.performCommand("warn " + name + " Moderációs GUI");
             case 11 -> viewer.performCommand("mute " + name + " 30m Moderációs GUI");
@@ -80,16 +94,32 @@ public final class ModerationGUIListener implements Listener {
             case 19 -> viewer.performCommand("history " + name);
             case 20 -> viewer.performCommand("punishments " + name);
             case 21 -> viewer.performCommand("reports");
-            case 22 -> viewer.performCommand("invsee " + name + " read main");
-            case 23 -> viewer.performCommand("invsee " + name + " edit main");
-            case 24 -> viewer.performCommand("invsee " + name + " read ender");
-            case 25 -> viewer.performCommand("invsee " + name + " edit ender");
+            case 22 -> viewer.performCommand("invsee " + name);
             case 28 -> teleportToOnline(viewer, target);
             case 29 -> viewer.performCommand("offlinetp " + name);
             case 30 -> viewer.performCommand("socialspy");
             case 31 -> viewer.performCommand("vanish " + name);
             default -> { }
         }
+    }
+
+    private void handleAction(final Player viewer, final ModerationGuiHolder holder,
+                              final ModerationGuiHolder.Action action) {
+        switch (action) {
+            case PREVIOUS_PAGE -> ModerationGUI.openPlayers(viewer, messages, holder.listPage() - 1);
+            case NEXT_PAGE -> ModerationGUI.openPlayers(viewer, messages, holder.listPage() + 1);
+            case BACK -> ModerationGUI.openPlayers(viewer, messages, holder.listPage());
+            case CLOSE -> viewer.closeInventory();
+        }
+    }
+
+    private static boolean visibleTo(final Player viewer, final Player target) {
+        return target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target);
+    }
+
+    private static boolean hasInvseePermission(final Player viewer) {
+        return viewer.hasPermission(Permissions.MODERATION_INVENTORY_READ)
+                || viewer.hasPermission(Permissions.MODERATION_INVENTORY_EDIT);
     }
 
     private static String permissionForSlot(final int slot) {
@@ -100,8 +130,6 @@ public final class ModerationGUIListener implements Listener {
             case 13 -> Permissions.MODERATION_KICK;
             case 19, 20 -> Permissions.MODERATION_HISTORY;
             case 21 -> Permissions.MODERATION;
-            case 22, 24 -> Permissions.MODERATION_INVENTORY_READ;
-            case 23, 25 -> Permissions.MODERATION_INVENTORY_EDIT;
             case 28, 29 -> Permissions.MODERATION_OFFLINE_TP;
             case 30 -> Permissions.MODERATION_SOCIALSPY;
             case 31 -> Permissions.MODERATION_VANISH;

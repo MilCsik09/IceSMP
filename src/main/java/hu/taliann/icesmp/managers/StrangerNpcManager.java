@@ -7,7 +7,6 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WanderingTrader;
@@ -15,50 +14,17 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * D19 — a Rejtélyes Idegen (lore: a Suttogók toborzója vagy az Első Csend hírnöke —
- * kódex VII.). Ritkán, véletlen helyen és időben feltűnik egy név nélküli, csuklyás
- * alak: mond egy talányos sort a közelben állóknak, majd lélek-köddel eltűnik.
- * SZÁNDÉKOSAN nincs mechanikai jutalma — se bolt, se quest: tisztán atmoszféra,
- * a "láttátok az Idegent?" beszélgetésekért.
- *
- * <p>Megvalósítás: néma, mozdulatlan, sérthetetlen WANDERING_TRADER (kék köpenyes
- * vándor-sziluett), PDC-taggel; az interakciót a {@code StrangerListener} nyeli el
- * (nincs kereskedés). Folia: a tick a globális schedulerről a horgony-játékos, majd a
- * cél-hely régió-schedulerére hopol (világboss-minta); a despawn az entitás saját
- * schedulerén fut. Minden kulcs élőben olvasódik (world-events.stranger-npc.*).
+ * A Rejtélyes Idegen: helyi, jutalom nélküli lore-esemény. A konkrét helyet a
+ * központi spawnőr választja több jelöltből, ezért az NPC nem materializálódhat
+ * vízen, tiltott biomon vagy a horgony játékos aktuális látóirányában.
  */
 public final class StrangerNpcManager {
+    private static final long SPAWN_GRACE_MILLIS = 30_000L;
 
-    private final JavaPlugin plugin;
-    private final ConfigManager configManager;
-    private final MessageManager messageManager;
-    private final NamespacedKey strangerKey;
-    /** Setter-injected (a guard később épül a DI-sorrendben); null = nincs hely-korlát. */
-    private volatile EventSpawnGuard spawnGuard;
-
-    /**
-     * Az Idegen egyszerre CSAK EGY példányban mutatkozhat (a magányos, talányos alak a lényege).
-     * A spawn két szálon hopol, ezért az activeStrangerId csak a lánc végén áll be — addig a
-     * schedule rezervációja zárja ki, hogy a tick és a /events force két Idegent állítson.
-     */
-    private final hu.taliann.icesmp.utils.PeriodicChanceEvent schedule =
-            new hu.taliann.icesmp.utils.PeriodicChanceEvent();
-
-    /** A két szál-hop kivárása; lejáratkor a rezerváció magától felszabadul (öngyógyulás). */
-    private static final long SPAWN_GRACE_MILLIS = 10_000L;
-
-    private volatile UUID activeStrangerId;
-
-    /**
-     * Talányos sor-variánsok; a messages-kulcs soronkénti: {@code stranger-line-<index+1>}.
-     * Az Idegen az egyik fő sztori-csatorna a kódex olvasása NÉLKÜL: a sorok kánon-elemeket
-     * tanítanak (a Fa négy gyermeke, a Hasadás, a Káoszkor, a Suttogók, a Kapu).
-     */
     private static final String[] LINES = {
             "<dark_gray>„A Fa gyökerei mélyebbre nyúlnak, mint a Királynő álma… és mindkettő alattad van.”</dark_gray>",
             "<dark_gray>„Hallod? A Csend nem üres. A Csend vár.”</dark_gray>",
@@ -104,8 +70,18 @@ public final class StrangerNpcManager {
             "<dark_gray>„Vannak, akik már hallgatnak rá, és nappal a te asztalodnál esznek.”</dark_gray>",
             "<dark_gray>„A Suttogók nem gonoszak. Csak korábban feleltek egy kérdésre, amit neked még nem tettek fel.”</dark_gray>",
             "<dark_gray>„A vérhold nem jel. Mozdulás. Ő fordul meg álmában, és a világ megbillen.”</dark_gray>",
-            "<dark_gray>„Két mondat elhangzott. A harmadikra készül. Tudod, mit tesz addig? Vár. Mint én.”</dark_gray>",
+            "<dark_gray>„Két mondat elhangzott. A harmadikra készül. Tudod, mit tesz addig? Vár. Mint én.”</dark_gray>"
     };
+
+    private final JavaPlugin plugin;
+    private final ConfigManager configManager;
+    private final MessageManager messageManager;
+    private final NamespacedKey strangerKey;
+    private final hu.taliann.icesmp.utils.PeriodicChanceEvent schedule =
+            new hu.taliann.icesmp.utils.PeriodicChanceEvent();
+
+    private volatile EventSpawnGuard spawnGuard;
+    private volatile UUID activeStrangerId;
 
     public StrangerNpcManager(final JavaPlugin plugin, final ConfigManager configManager,
                               final MessageManager messageManager) {
@@ -119,24 +95,20 @@ public final class StrangerNpcManager {
         this.spawnGuard = spawnGuard;
     }
 
-    /** Az entitás a (még élő) Idegen-e (az interakció-elnyelő listener szűrője). */
     public boolean isStranger(final Entity entity) {
         return entity != null && entity.getPersistentDataContainer()
                 .getOrDefault(strangerKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
 
-    /** Periodikus esély-próba a globális world-events tickről (AmbientEventManager-minta). */
     public void tick() {
-        if (!configManager.getBoolean("world-events.stranger-npc.enabled", true)) {
+        if (!configManager.getBoolean("world-events.stranger-npc.enabled", true)
+                || strangerStanding()) {
             return;
         }
-        if (strangerStanding()) {
-            return; // Már áll egy Idegen — kettő sosem mutatkozhat egyszerre.
-        }
-        final long intervalMillis = Math.max(1L,
-                configManager.getLong("world-events.stranger-npc.check-interval-minutes", 90L)) * 60_000L;
-        if (!schedule.tryAttempt(intervalMillis,
-                configManager.getDouble("world-events.stranger-npc.chance-percent", 6.0D), SPAWN_GRACE_MILLIS)) {
+        final long intervalMillis = Math.max(1L, configManager.getLong(
+                "world-events.stranger-npc.check-interval-minutes", 90L)) * 60_000L;
+        if (!schedule.tryAttempt(intervalMillis, configManager.getDouble(
+                "world-events.stranger-npc.chance-percent", 6.0D), SPAWN_GRACE_MILLIS)) {
             return;
         }
         final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
@@ -147,7 +119,6 @@ public final class StrangerNpcManager {
         spawnNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
     }
 
-    /** Admin-próba (/events stranger): azonnali felbukkanás a horgony közelében. */
     public boolean forceSpawn(final Player anchor) {
         if (strangerStanding() || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
             return false;
@@ -166,91 +137,81 @@ public final class StrangerNpcManager {
     }
 
     private void spawnNear(final Player anchor) {
-        // Folia: a horgony helyét a SAJÁT szálán olvassuk, majd a cél-hely régiójára hopolunk.
         anchor.getScheduler().run(plugin, task -> {
-            final Location base = anchor.getLocation().clone();
-            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
-            final int minDist = Math.max(8, configManager.getInt("world-events.stranger-npc.min-distance", 16));
-            final int maxDist = Math.max(minDist + 1, configManager.getInt("world-events.stranger-npc.max-distance", 40));
-            final int dist = ThreadLocalRandom.current().nextInt(minDist, maxDist + 1);
-            final int x = base.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
-            final int z = base.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
-            final World world = base.getWorld();
-            if (world == null) {
+            final EventSpawnGuard guard = spawnGuard;
+            if (guard == null) {
+                schedule.release();
                 return;
             }
-            plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z),
-                    place -> placeStranger(world, x, z));
-        }, null);
+            final Location origin = anchor.getLocation().clone();
+            guard.findSafeNear("stranger", origin, System.nanoTime(),
+                    this::placeStranger, schedule::release);
+        }, schedule::release);
     }
 
-    /** A cél-oszlop régió-szálán: guard-ellenőrzés, spawn, suttogás a közelieknek, időzített köddé válás. */
-    private void placeStranger(final World world, final int x, final int z) {
-        final int y = world.getHighestBlockYAt(x, z) + 1;
-        final Location spot = new Location(world, x + 0.5D, y, z + 0.5D);
-        final EventSpawnGuard guard = spawnGuard;
-        if (guard != null && (guard.isBlocked("stranger", spot)
-                || guard.isUnsafeSurface("stranger", world, x, z))) {
-            schedule.release(); // Ma nem mutatkozik — a következő próba máshol keres.
+    /** Runs on the selected location's region thread. */
+    private void placeStranger(final Location spot) {
+        if (spot.getWorld() == null || strangerStanding()) {
+            schedule.release();
             return;
         }
-        final WanderingTrader stranger = world.spawn(spot, WanderingTrader.class);
+        final WanderingTrader stranger = spot.getWorld().spawn(spot, WanderingTrader.class);
         stranger.getPersistentDataContainer().set(strangerKey, PersistentDataType.BYTE, (byte) 1);
         stranger.setAI(false);
         stranger.setSilent(true);
         stranger.setInvulnerable(true);
         stranger.setPersistent(false);
         stranger.setDespawnDelay(0);
-        stranger.customName(messageManager.getMessage("stranger-name", "<dark_gray>Az Idegen</dark_gray>"));
+        stranger.customName(messageManager.getMessage(
+                "stranger-name", "<dark_gray>Az Idegen</dark_gray>"));
         stranger.setCustomNameVisible(true);
         hu.taliann.icesmp.utils.TransientEntities.register(plugin, stranger);
         activeStrangerId = stranger.getUniqueId();
+        schedule.release();
 
-        world.playSound(spot, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.8F, 0.6F);
-        hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.ASH, spot.clone().add(0.0D, 1.0D, 0.0D),
+        spot.getWorld().playSound(spot, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.8F, 0.6F);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(spot.getWorld(), Particle.ASH,
+                spot.clone().add(0.0D, 1.0D, 0.0D),
                 20, 0.4D, 0.9D, 0.4D, 0.01D);
 
-        // A talányos sor a közelben állóknak (a saját szálukon — más régióban állókhoz hop).
         final int index = ThreadLocalRandom.current().nextInt(LINES.length);
-        final Component line = messageManager.getMessage("stranger-line-" + (index + 1), LINES[index]);
-        final double radius = Math.max(4.0D, configManager.getDouble("world-events.stranger-npc.whisper-radius", 24.0D));
+        final Component line = messageManager.getMessage(
+                "stranger-line-" + (index + 1), LINES[index]);
+        final double radius = Math.max(4.0D, configManager.getDouble(
+                "world-events.profiles.stranger.whisper-radius",
+                configManager.getDouble("world-events.stranger-npc.whisper-radius", 24.0D)));
         for (final Entity nearby : stranger.getNearbyEntities(radius, radius, radius)) {
             if (nearby instanceof Player player) {
                 if (Bukkit.isOwnedByCurrentRegion(player)) {
                     player.sendMessage(line);
-                    player.playSound(player.getLocation(), Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.5F, 1.5F);
+                    player.playSound(player.getLocation(),
+                            Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.5F, 1.5F);
                 } else {
-                    player.getScheduler().run(plugin, t -> {
+                    player.getScheduler().run(plugin, task -> {
                         player.sendMessage(line);
-                        player.playSound(player.getLocation(), Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.5F, 1.5F);
+                        player.playSound(player.getLocation(),
+                                Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.5F, 1.5F);
                     }, null);
                 }
             }
         }
 
-        // Köddé válás: az entitás saját schedulerén (retire-safe), lélek-örvénnyel.
-        final long despawnTicks = Math.max(5L,
-                configManager.getLong("world-events.stranger-npc.despawn-seconds", 45L)) * 20L;
+        final long despawnTicks = Math.max(5L, configManager.getLong(
+                "world-events.profiles.stranger.despawn-seconds",
+                configManager.getLong("world-events.stranger-npc.despawn-seconds", 45L))) * 20L;
         stranger.getScheduler().runDelayed(plugin, task -> {
             if (stranger.isValid()) {
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(stranger.getWorld(), Particle.SOUL,
-                        stranger.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.4D, 0.9D, 0.4D, 0.02D);
-                stranger.getWorld().playSound(stranger.getLocation(), Sound.PARTICLE_SOUL_ESCAPE, 1.0F, 0.7F);
+                        stranger.getLocation().add(0.0D, 1.0D, 0.0D),
+                        30, 0.4D, 0.9D, 0.4D, 0.02D);
+                stranger.getWorld().playSound(stranger.getLocation(),
+                        Sound.PARTICLE_SOUL_ESCAPE, 1.0F, 0.7F);
                 stranger.remove();
             }
             activeStrangerId = null;
-            // A retired-callback KÖTELEZŐ: ha az Idegent a késleltetés lejárta előtt eltávolítják
-            // (megölik, /kill, chunk-eltávolítás), a task retire-el és sosem fut le — enélkül a
-            // mező örökre beragadna, és az esemény szerver-újraindításig leállna.
         }, () -> activeStrangerId = null, despawnTicks);
     }
 
-    /**
-     * Áll-e még Idegen. A mező önmagában nem elég: a retired-callback mellett ez a MÁSODIK
-     * védőháló, mert nem minden eltávolítási út vált ki retire-t (pl. az entitás nem betöltött
-     * régióban szűnik meg). Ha a mező be van állítva, de az entitás már nincs, a kapu magától
-     * felnyílik — így az esemény nem tud véglegesen leállni.
-     */
     private boolean strangerStanding() {
         final UUID id = activeStrangerId;
         if (id == null) {
@@ -263,20 +224,10 @@ public final class StrangerNpcManager {
         return false;
     }
 
-    /** Leállás-takarítás: az élő Idegen nem maradhat a világban. */
     public void shutdown() {
         final UUID id = activeStrangerId;
-        if (id != null) {
-            try {
-                final Entity entity = Bukkit.getEntity(id);
-                if (entity != null && entity.isValid()) {
-                    entity.remove();
-                }
-            } catch (final Exception ignored) {
-                // Shutdown közben a régió már nem elérhető — a nem-persistent entitás magától eltűnik.
-            }
-            activeStrangerId = null;
-        }
+        activeStrangerId = null;
+        schedule.release();
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
     }
-
 }

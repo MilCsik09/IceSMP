@@ -1,8 +1,10 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.integration.LuckPermsBridge;
 import hu.taliann.icesmp.utils.TextAnimator;
+import hu.taliann.icesmp.utils.PlatformCapabilities;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -92,6 +94,10 @@ public final class TablistManager {
         this.factionManager = factionManager;
         this.animator = animator;
         this.afkManager = afkManager;
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            plugin.getLogger().info("Folia detected: native tab header/footer and player names remain active; "
+                    + "scoreboard-backed nametag teams and ping objective are disabled.");
+        }
     }
 
     public boolean isEnabled() {
@@ -160,6 +166,10 @@ public final class TablistManager {
         player.playerListName(null);
         player.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
 
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            return;
+        }
+
         final Scoreboard board = player.getScoreboard();
         for (final Team team : List.copyOf(board.getTeams())) {
             if (team.getName().startsWith(TEAM_PREFIX)) {
@@ -186,7 +196,7 @@ public final class TablistManager {
 
     private void publishSnapshot(final Player player) {
         final UUID id = player.getUniqueId();
-        final FactionType faction = factionManager.getFaction(id);
+        final FactionType faction = factionManager.getChosenFaction(id).orElse(null);
         final String group = LuckPermsBridge.primaryGroup(id);
         // AFK-jelzés a tab-név (és a fej fölötti nametag) végén — a diff-cache miatt a
         // váltás csak egyszer megy ki csomagként.
@@ -306,6 +316,9 @@ public final class TablistManager {
      */
     private void syncViewerBoard(final Player viewer, final boolean sweep,
                                  final java.util.Set<String> validTeams, final java.util.Set<String> onlineNames) {
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            return;
+        }
         final boolean nametags = configManager.getBoolean("tablist.nametags.enabled", true);
         final boolean pingColumn = configManager.getBoolean("tablist.playerlist-ping.enabled", true);
         if (!nametags && !pingColumn) {
@@ -333,7 +346,7 @@ public final class TablistManager {
             // Relációs szín — a néző frakciója + az aktív raid dönti el, hogy egy
             // célpont ellenségként (piros) jelenjen-e meg ENNEK a nézőnek. Per-viewer boardon
             // ez legálisan nézőnként más — a rendezési kulcsot nem érinti (nincs sorrend-ugrálás).
-            final FactionType viewerFaction = factionManager.getFaction(viewer.getUniqueId());
+            final FactionType viewerFaction = factionManager.getChosenFaction(viewer.getUniqueId()).orElse(null);
             final RaidManager raids = raidManager;
             final RaidManager.ActiveRaid raid = raids == null ? null : raids.getActiveRaid();
             for (final TabInfo info : snapshots.values()) {
@@ -415,7 +428,16 @@ public final class TablistManager {
         if (!suffix.equals(team.suffix())) {
             team.suffix(suffix);
         }
-        if (team.color() != color) {
+        syncTeamColor(team, color);
+    }
+
+    /**
+     * Paper/Folia 1.21.11 throws from {@link Team#color()} while a newly created team is still
+     * uncoloured. The short-circuited {@link Team#hasColor()} check is therefore part of the
+     * correctness contract, not merely an optimization.
+     */
+    static void syncTeamColor(final Team team, final NamedTextColor color) {
+        if (!team.hasColor() || !color.equals(team.color())) {
             team.color(color);
         }
     }
@@ -432,7 +454,10 @@ public final class TablistManager {
             final boolean viewerInWar = viewerFaction == raid.attacker() || viewerFaction == raid.defender();
             final boolean targetInWar = info.faction() == raid.attacker() || info.faction() == raid.defender();
             if (viewerInWar && targetInWar && viewerFaction != info.faction()) {
-                return NamedTextColor.RED;
+                final NamedTextColor war = NamedTextColor.NAMES.value(configManager
+                        .getString("tablist.nametags.war-color", "red")
+                        .trim().toLowerCase(java.util.Locale.ROOT));
+                return war == null ? NamedTextColor.RED : war;
             }
         }
         return info.nameColor();
@@ -444,6 +469,9 @@ public final class TablistManager {
      * néző saját régió-szálán történik, így a setScoreboard biztonságos.
      */
     private Scoreboard ownBoard(final Player player) {
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            return null;
+        }
         final ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager == null) {
             return null;
@@ -463,15 +491,26 @@ public final class TablistManager {
         return TextAnimator.legacy(text);
     }
 
-    private static NamedTextColor factionColor(final FactionType faction) {
-        if (faction == null) {
-            return NamedTextColor.WHITE;
+    private NamedTextColor factionColor(final FactionType faction) {
+        return factionColor(configManager, faction);
+    }
+
+    /**
+     * Frakciónkénti név-szín minden név-felületre ({@code tablist.faction-colors.*}, élő-config);
+     * config nélkül a központi {@code FactionDisplayPalette} default érvényesül. A NEUTRAL default
+     * szándékosan NEM szürke: a Menedék-polgár és a Kitaszított (dark_gray) különben
+     * összetéveszthető lenne.
+     */
+    public static NamedTextColor factionColor(final ConfigManager configManager, final FactionType faction) {
+        final NamedTextColor fallback = FactionDisplayPalette.playerName(faction);
+        final String key = faction == null ? "guest" : faction.name().toLowerCase(java.util.Locale.ROOT);
+        if (configManager == null) {
+            return fallback;
         }
-        return switch (faction) {
-            case RED -> NamedTextColor.RED;
-            case BLUE -> NamedTextColor.BLUE;
-            case NEUTRAL -> NamedTextColor.GRAY;
-            case DARK -> NamedTextColor.DARK_GRAY;
-        };
+        final String configured = configManager.getString(
+                "tablist.faction-colors." + key, fallback.toString());
+        final NamedTextColor resolved = NamedTextColor.NAMES.value(
+                configured.trim().toLowerCase(java.util.Locale.ROOT));
+        return resolved == null ? fallback : resolved;
     }
 }

@@ -8,14 +8,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Config-vezérelt szöveg-animációk a natív tablist/HUD-hoz (a TAB plugin animations.yml-jének
- * kiváltása). Egy animáció = frame-lista + intervallum ({@code tablist.animations.<név>});
+ * Config-vezérelt szöveg-animációk az IceSMP natív tablist/HUD felületeihez.
+ * Egy animáció = frame-lista + intervallum ({@code tablist.animations.<név>});
  * az aktuális frame-et a RENDSZERIDŐ választja ki, így nincs szükség külön schedulerre —
  * az animáció "magától halad", bármelyik renderelő tick olvassa (Folia-safe: csak
  * konkurens cache-t és időt olvas).
  *
- * <p>Az intervallum alsó korlátja {@link #MIN_INTERVAL_MILLIS}: a TAB 50 ms-os marquee-i
- * API-n keresztül (packet-flood) nem gazdaságosak — a defaultok eleve ritkított frame-ekkel
+ * <p>Az intervallum alsó korlátja {@link #MIN_INTERVAL_MILLIS}: az 50 ms-os marquee
+ * packet-flood nem gazdaságos — a defaultok eleve ritkított frame-ekkel
  * portolódtak.
  */
 public final class TextAnimator {
@@ -66,7 +66,7 @@ public final class TextAnimator {
     // ==================== közös legacy-szöveg segédek ====================
 
     /**
-     * Legacy '&' + '&#RRGGBB' kódok Component-té (a TAB config-formátumával kompatibilis) —
+     * Legacy '&' + '&#RRGGBB' kódok Component-té —
      * a header/footer, a tab-nevek és az oldalsáv-elválasztók közös renderelője.
      */
     public static net.kyori.adventure.text.Component legacy(final String text) {

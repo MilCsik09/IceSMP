@@ -3,12 +3,16 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
+import hu.taliann.icesmp.relics.RelicOwnership;
+import hu.taliann.icesmp.relics.RelicTransferExpectation;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -26,6 +30,7 @@ public final class RelicPvpTransferListener implements Listener {
     private final RelicManager relicManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final NamespacedKey relicOwnerKey;
 
     public RelicPvpTransferListener(final JavaPlugin plugin, final RelicManager relicManager,
                                     final ConfigManager configManager,
@@ -34,6 +39,7 @@ public final class RelicPvpTransferListener implements Listener {
         this.relicManager = relicManager;
         this.configManager = configManager;
         this.messageManager = messageManager;
+        this.relicOwnerKey = new NamespacedKey(plugin, "relic_owner");
     }
 
     /**
@@ -63,7 +69,12 @@ public final class RelicPvpTransferListener implements Listener {
                 if (definition == null || relicManager.isWeaponRelic(definition.id())) {
                     return false;
                 }
-                relicManager.markLost(definition.id());
+                // Owner-kötött lost: egy stale (nem a központi tulajhoz tartozó) példány
+                // gazdájának halála nem jelölheti el másvalaki élő relicét — a stale
+                // másolat csendben megsemmisül, üzenet és lost-mutáció nélkül.
+                if (!relicManager.markLost(definition.id(), victim.getUniqueId())) {
+                    return true;
+                }
                 victim.sendMessage(messageManager.getMessage(
                         "relic.death-lost",
                         "<dark_purple>✦ A(z) <white>{relic}</white> köddé vált a halálodban — a kötés él: idézd újra az oltárnál, mielőtt végleg elhagyna ({days} nap).</dark_purple>",
@@ -79,7 +90,7 @@ public final class RelicPvpTransferListener implements Listener {
                     return false;
                 }
                 kept.add(drop);
-                relicManager.markLost(definition.id());
+                relicManager.markLost(definition.id(), victim.getUniqueId());
                 return true;
             });
             if (!kept.isEmpty()) {
@@ -108,7 +119,36 @@ public final class RelicPvpTransferListener implements Listener {
                 continue;
             }
 
-            relicManager.transferOwnership(definition.id(), drop, killer);
+            // A death event csak olyan fizikai példányból indíthat transfert, amelynek PDC owner
+            // metaadata PONTOSAN a meghalt játékos. Null/corrupt/stale owner fail-closed: a tárgy
+            // leeshet, de a központi ownershipet nem írhatja át.
+            final String itemOwner = drop.hasItemMeta()
+                    ? drop.getItemMeta().getPersistentDataContainer()
+                            .get(relicOwnerKey, PersistentDataType.STRING)
+                    : null;
+            if (!victim.getUniqueId().toString().equals(itemOwner)) {
+                continue;
+            }
+
+            // A caller-proven victim UUID scoped guardként eljut a store writeLockjáig. Ha a
+            // central owner időközben megváltozott, a store exceptionnel megállítja a legacy
+            // void manager-hívást, ezért a fizikai PDC sem íródik át.
+            RelicTransferExpectation.withExpectedOwner(victim.getUniqueId(), () ->
+                    relicManager.transferOwnership(definition.id(), drop, killer));
+
+            // A manager legacy API-ja void és belül kezeli a store kivételét, ezért az üzeneteket
+            // csak a durable ownership ÉS a fizikai PDC sikeres, egyező átírása után adjuk ki.
+            final RelicOwnership transferred = relicManager.getOwnership(definition.id());
+            final String rewrittenOwner = drop.hasItemMeta()
+                    ? drop.getItemMeta().getPersistentDataContainer()
+                            .get(relicOwnerKey, PersistentDataType.STRING)
+                    : null;
+            if (transferred == null
+                    || !killer.getUniqueId().equals(transferred.owner())
+                    || !killer.getUniqueId().toString().equals(rewrittenOwner)) {
+                continue;
+            }
+
             claimedNames.add(definition.displayName());
             victim.sendMessage(messageManager.getMessage(
                     "relic.pvp-lost",
@@ -146,7 +186,7 @@ public final class RelicPvpTransferListener implements Listener {
             // különben az oltárnál egy második példány is idézhető lenne mellé.
             final RelicDefinition definition = relicManager.identify(itemStack);
             if (definition != null) {
-                relicManager.clearLost(definition.id());
+                relicManager.clearLost(definition.id(), event.getPlayer().getUniqueId());
             }
         }
         event.getPlayer().sendMessage(messageManager.getMessage(

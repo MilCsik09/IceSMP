@@ -2,7 +2,9 @@ package hu.taliann.icesmp.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
@@ -25,15 +27,44 @@ public final class DisplayFxUtil {
 
     public static void spawnBlockDisplay(final Plugin plugin, final Location loc, final BlockData block,
                                          final int despawnTicks, final Consumer<BlockDisplay> setup) {
+        spawnBlockDisplay(plugin, loc, block, despawnTicks, null, setup);
+    }
+
+    /**
+     * Spawns a BlockDisplay that is private from its first tracking packet. The
+     * default visibility bit is disabled inside the world spawn consumer, before
+     * the entity becomes visible, then only the requested viewer is revealed on
+     * that player's own Folia entity scheduler.
+     */
+    public static void spawnBlockDisplayForViewer(final Plugin plugin, final Location loc,
+                                                  final BlockData block, final int despawnTicks,
+                                                  final Player viewer,
+                                                  final Consumer<BlockDisplay> setup) {
+        if (viewer == null) return;
+        spawnBlockDisplay(plugin, loc, block, despawnTicks, viewer, setup);
+    }
+
+    /**
+     * Viewer-scoped implementation used by private visual effects. Visibility is
+     * disabled inside the spawn consumer, so no other client can observe a one-tick
+     * flash and players joining later cannot inherit the effect.
+     */
+    private static void spawnBlockDisplay(final Plugin plugin, final Location loc, final BlockData block,
+                                          final int despawnTicks, final Player viewer,
+                                          final Consumer<BlockDisplay> setup) {
         if (plugin == null || loc == null || loc.getWorld() == null || block == null) return;
         plugin.getServer().getRegionScheduler().run(plugin, loc, task -> {
             final BlockDisplay display = loc.getWorld().spawn(loc, BlockDisplay.class, entity -> {
                 entity.setBlock(block);
                 entity.setPersistent(false);
                 entity.addScoreboardTag(FX_TAG);
+                if (viewer != null) {
+                    entity.setVisibleByDefault(false);
+                }
             });
             TransientEntities.register(plugin, display);
             if (setup != null) setup.accept(display);
+            if (viewer != null) revealTo(plugin, display, viewer);
             if (despawnTicks > 0) scheduleDespawn(plugin, display, despawnTicks);
         });
     }
@@ -53,12 +84,41 @@ public final class DisplayFxUtil {
         });
     }
 
+    /**
+     * Converts an already-spawned effect to private visibility. New effects should
+     * use {@link #spawnBlockDisplayForViewer(Plugin, Location, BlockData, int, Player, Consumer)}
+     * so privacy is established before tracking. The compatibility path acquires
+     * the effect entity's owning region before mutating its visibility state.
+     */
     public static void showOnlyTo(final Plugin plugin, final Entity fx, final Player viewer) {
         if (plugin == null || fx == null || viewer == null) return;
-        final UUID viewerId = viewer.getUniqueId();
-        for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (online.getUniqueId().equals(viewerId)) continue;
-            online.getScheduler().run(plugin, task -> online.hideEntity(plugin, fx), null);
+        final Runnable restrictVisibility = () -> {
+            if (!fx.isValid()) return;
+            fx.setVisibleByDefault(false);
+            final UUID viewerId = viewer.getUniqueId();
+            for (final Player online : Bukkit.getOnlinePlayers()) {
+                if (online.getUniqueId().equals(viewerId)) continue;
+                online.getScheduler().run(plugin, task -> online.hideEntity(plugin, fx), null);
+            }
+            revealTo(plugin, fx, viewer);
+        };
+        if (Bukkit.isOwnedByCurrentRegion(fx)) {
+            restrictVisibility.run();
+        } else {
+            fx.getScheduler().run(plugin, task -> restrictVisibility.run(), null);
+        }
+    }
+
+    private static void revealTo(final Plugin plugin, final Entity fx, final Player viewer) {
+        final Runnable reveal = () -> {
+            if (viewer.isOnline() && fx.isValid()) {
+                viewer.showEntity(plugin, fx);
+            }
+        };
+        if (Bukkit.isOwnedByCurrentRegion(viewer)) {
+            reveal.run();
+        } else {
+            viewer.getScheduler().run(plugin, task -> reveal.run(), null);
         }
     }
 
@@ -109,7 +169,7 @@ public final class DisplayFxUtil {
     public static void wallSegment(final Plugin plugin, final Location corner, final float sizeX,
                                    final float sizeY, final float sizeZ, final BlockData block,
                                    final Color glow, final int despawnTicks, final Player viewer) {
-        spawnBlockDisplay(plugin, corner, block, despawnTicks, display -> {
+        spawnBlockDisplay(plugin, corner, block, despawnTicks, viewer, display -> {
             display.setTransformation(scale(sizeX, sizeY, sizeZ));
             display.setBrightness(new Display.Brightness(15, 15));
             display.setViewRange(2.0F);
@@ -117,7 +177,55 @@ public final class DisplayFxUtil {
                 display.setGlowing(true);
                 display.setGlowColorOverride(glow);
             }
-            if (viewer != null) showOnlyTo(plugin, display, viewer);
+        });
+    }
+
+    /**
+     * Spawns one vertical wall column from the real terrain surface of the sampled
+     * X/Z column. Region ownership is acquired for every boundary column.
+     */
+    public static void terrainWallColumn(final Plugin plugin, final World world,
+                                         final int sampleX, final int sampleZ,
+                                         final double displayX, final double displayZ,
+                                         final float sizeX, final float sizeY, final float sizeZ,
+                                         final BlockData block, final Color glow,
+                                         final int despawnTicks, final Player viewer) {
+        if (plugin == null || world == null || block == null || sizeY <= 0.0F) return;
+        final Location owner = new Location(world, sampleX + 0.5D, world.getMinHeight(), sampleZ + 0.5D);
+        plugin.getServer().getRegionScheduler().run(plugin, owner, task -> {
+            if (!world.isChunkLoaded(sampleX >> 4, sampleZ >> 4)) return;
+            final int floorY = world.getHighestBlockYAt(
+                    sampleX, sampleZ, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+            final Location corner = new Location(world, displayX, floorY + 1.0D, displayZ);
+            wallSegment(plugin, corner, sizeX, sizeY, sizeZ,
+                    block, glow, despawnTicks, viewer);
+        });
+    }
+
+    /**
+     * Spawns one wall column exactly inside an inclusive claimed Y range.
+     * Region ownership is acquired from the sampled X/Z column; nothing is rendered
+     * below minY or above maxY.
+     */
+    public static void claimedWallColumn(final Plugin plugin, final World world,
+                                         final int sampleX, final int sampleZ,
+                                         final double displayX, final double displayZ,
+                                         final float sizeX, final float sizeZ,
+                                         final int minY, final int maxY,
+                                         final BlockData block, final Color glow,
+                                         final int despawnTicks, final Player viewer) {
+        if (plugin == null || world == null || block == null) return;
+        final int clampedMinY = Math.max(world.getMinHeight(), minY);
+        final int clampedMaxY = Math.min(world.getMaxHeight() - 1, maxY);
+        if (clampedMinY > clampedMaxY) return;
+        final Location owner = new Location(
+                world, sampleX + 0.5D, clampedMinY, sampleZ + 0.5D);
+        plugin.getServer().getRegionScheduler().run(plugin, owner, task -> {
+            if (!world.isChunkLoaded(sampleX >> 4, sampleZ >> 4)) return;
+            final Location corner = new Location(world, displayX, clampedMinY, displayZ);
+            wallSegment(plugin, corner, sizeX,
+                    clampedMaxY - clampedMinY + 1.0F, sizeZ,
+                    block, glow, despawnTicks, viewer);
         });
     }
 

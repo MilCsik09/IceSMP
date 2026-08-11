@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -8,56 +9,62 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
+import org.bukkit.block.TileState;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Meteor impact world event: periodically a
- * meteor lands in the wilderness, leaving a small crater studded with rare, mineable
- * ore blocks that players race to strip before it erodes away. The reward is the ore
- * they mine — raw items, never currency.
- *
- * <p><b>Terrain safety (server rule: events never grief the world).</b> The meteor
- * does <em>not</em> explode: it <em>places</em> a crater and snapshots every block it
- * overwrites ({@link BlockState}), then restores those originals on expiry (and on
- * plugin disable). It also refuses to land inside a claimed faction territory. So the
- * only lasting change is whatever ore players carry off before it fades.
+ * Meteor impact world event. Landing uses the shared distant spawn search, so the
+ * crater cannot visibly appear beside a player. Every overwritten ordinary block
+ * is persisted before mutation and restored per owning chunk on expiry, graceful
+ * disable, or the next startup after an interrupted shutdown.
  */
 public final class MeteorEventManager {
 
-    /** Blackened crater lining (cosmetic; harmless blocks). */
     private static final Material[] LINING = {
             Material.BLACKSTONE, Material.BASALT, Material.COBBLED_DEEPSLATE, Material.MAGMA_BLOCK
     };
 
-    /** Mineable ore blocks embedded in the crater (drop real materials when mined). */
     private static final Material[] ORES = {
             Material.DEEPSLATE_DIAMOND_ORE, Material.DEEPSLATE_GOLD_ORE, Material.DEEPSLATE_IRON_ORE,
             Material.DEEPSLATE_EMERALD_ORE, Material.AMETHYST_BLOCK, Material.ANCIENT_DEBRIS
     };
 
+    private record BlockKey(UUID worldId, int x, int y, int z) { }
+
+    private record SavedBlock(UUID worldId, String worldName, int x, int y, int z,
+                              String blockData) { }
+
+    private record PlannedChange(SavedBlock original, Material replacement) { }
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final EventSpawnGuard spawnGuard;
     private final MessageManager messageManager;
+    private final File recoveryFile;
 
     private volatile Location craterCenter;
     private volatile long expiresAt;
-    private volatile List<BlockState> restoreStates;
+    private volatile List<SavedBlock> restoreStates;
     private volatile long nextAttemptAt;
-    /**
-     * Reserved while a spawn hops threads (set synchronously, self-heals after 10s):
-     * craterCenter is only written at the END of the async landing chain, so without this a
-     * second force-spawn issued during the hop could carve two craters and orphan one
-     * (same pattern as TreasureEventManager.spawnGraceUntil).
-     */
     private volatile long spawnGraceUntil;
+    private volatile boolean recoveryInProgress;
+    private volatile long nextRecoveryAttemptAt;
 
     public MeteorEventManager(final JavaPlugin plugin, final ConfigManager configManager,
                               final EventSpawnGuard spawnGuard, final MessageManager messageManager) {
@@ -65,33 +72,32 @@ public final class MeteorEventManager {
         this.configManager = configManager;
         this.spawnGuard = spawnGuard;
         this.messageManager = messageManager;
+        this.recoveryFile = new File(plugin.getDataFolder(), "meteor-restore.yml");
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
 
-    /** Whether a crater is currently present. */
     public boolean isActive() {
         return craterCenter != null;
     }
 
-    /** Milliseconds left before the crater fades, or -1 when none is active. */
     public long getRemainingMillis() {
         return isActive() ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
     }
 
-    /** Periodic driver on the global world-events tick. */
     public void tick() {
-        if (!configManager.getBoolean("meteor.enabled", true)) {
-            if (isActive()) {
+        final boolean enabled = configManager.getBoolean("meteor.enabled", true);
+        final long now = System.currentTimeMillis();
+        if (isActive()) {
+            if (!enabled) {
                 restoreCrater(false);
+            } else if (now >= expiresAt) {
+                restoreCrater(true);
             }
             return;
         }
 
-        final long now = System.currentTimeMillis();
-        if (isActive()) {
-            if (now >= expiresAt) {
-                restoreCrater(true);
-            }
+        recoverInterruptedCrater();
+        if (recoveryFile.exists() || recoveryInProgress || !enabled) {
             return;
         }
 
@@ -105,78 +111,72 @@ public final class MeteorEventManager {
         }
     }
 
-    /** Admin override: lands a meteor now near the anchor (or a random player).
-     * synchronized: két egyidejű admin-hívás ne áshasson két krátert (grace-rés). */
     public synchronized boolean forceSpawn(final Player anchor) {
-        if (isActive() || System.currentTimeMillis() < spawnGraceUntil) {
+        if (isActive() || recoveryFile.exists() || recoveryInProgress
+                || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
         return spawn(anchor);
     }
 
-    /** Restores the crater on plugin disable so no terrain change survives a graceful restart. */
-    public void shutdown() {
+    public synchronized void shutdown() {
+        spawnGraceUntil = 0L;
         restoreCrater(false);
     }
 
     private synchronized boolean spawn(final Player preferredAnchor) {
-        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick
-        // és egy egyidejű admin-hívás közül csak az első juthat át.
-        if (System.currentTimeMillis() < spawnGraceUntil) {
+        if (isActive() || recoveryFile.exists() || recoveryInProgress
+                || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
-        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
+        spawnGraceUntil = System.currentTimeMillis() + 60_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
+                spawnGraceUntil = 0L;
                 return false;
             }
             anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         }
 
-        final int radius = Math.max(24, configManager.getInt("meteor.spawn-radius", 90));
         final Player target = anchor;
         target.getScheduler().run(plugin, task -> {
-            final Location base = target.getLocation().clone();
-            final int x = base.getBlockX() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
-            final int z = base.getBlockZ() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
-            final World world = base.getWorld();
-            if (world == null) {
-                return;
-            }
-            final Location probe = new Location(world, x, 0.0D, z);
-            plugin.getServer().getRegionScheduler().run(plugin, probe, place -> land(world, x, z));
-        }, null);
+            final Location origin = target.getLocation().clone();
+            final long seed = System.nanoTime() ^ target.getUniqueId().getMostSignificantBits()
+                    ^ target.getUniqueId().getLeastSignificantBits();
+            spawnGuard.findSafeNear("meteor", origin, seed,
+                    this::land, () -> spawnGraceUntil = 0L);
+        }, () -> spawnGraceUntil = 0L);
         return true;
     }
 
-    private void land(final World world, final int x, final int z) {
-        final int surfaceY = world.getHighestBlockYAt(x, z);
-        final Location center = new Location(world, x + 0.5D, surfaceY + 1, z + 0.5D);
-
-        // Terrain safety: never land inside a claimed faction territory, a player claim, nor
-        // a WorldGuard region (config: world-events.spawn-rules.meteor — replaces the old
-        // meteor.avoid-territory key).
-        if (spawnGuard.isBlocked("meteor", center)) {
-            return; // Try again next interval, elsewhere.
+    /** Called on the region thread owning an already dry and player-distant center. */
+    private synchronized void land(final Location center) {
+        final World world = center.getWorld();
+        if (world == null || isActive() || recoveryFile.exists() || recoveryInProgress
+                || spawnGuard.isBlocked("meteor", center)) {
+            spawnGraceUntil = 0L;
+            return;
         }
-
-        // Terrain rule: a crater in a tree canopy or on a water surface would look broken
-        // (getHighestBlockYAt reports leaf/water tops) — pick another spot next interval.
-        final org.bukkit.block.Block surface = world.getBlockAt(x, surfaceY, z);
+        final int x = center.getBlockX();
+        final int z = center.getBlockZ();
+        final int surfaceY = center.getBlockY() - 1;
+        final Block surface = world.getBlockAt(x, surfaceY, z);
         if (surface.isLiquid() || org.bukkit.Tag.LEAVES.isTagged(surface.getType())
                 || org.bukkit.Tag.LOGS.isTagged(surface.getType())) {
+            spawnGraceUntil = 0L;
             return;
         }
 
-        // Upper clamp: the carve loop runs in ONE region-scheduler callback keyed to the
-        // centre block, so the scan must stay region-local (Folia) even if misconfigured.
-        final int craterRadius = Math.min(8, Math.max(2, configManager.getInt("meteor.crater-radius", 3)));
-        final int craterDepth = Math.max(1, configManager.getInt("meteor.crater-depth", 2));
-        final double oreChance = Math.max(0.0D, Math.min(1.0D, configManager.getDouble("meteor.ore-chance", 0.45D)));
+        final int craterRadius = Math.min(8,
+                Math.max(2, configManager.getInt("meteor.crater-radius", 3)));
+        final int craterDepth = Math.max(1,
+                configManager.getInt("meteor.crater-depth", 2));
+        final double oreChance = Math.max(0.0D, Math.min(1.0D,
+                configManager.getDouble("meteor.ore-chance", 0.45D)));
 
-        final List<BlockState> snapshots = new ArrayList<>();
+        final Map<BlockKey, PlannedChange> plan = new LinkedHashMap<>();
         for (int dx = -craterRadius; dx <= craterRadius; dx++) {
             for (int dz = -craterRadius; dz <= craterRadius; dz++) {
                 final double dist = Math.sqrt(dx * dx + dz * dz);
@@ -186,73 +186,274 @@ public final class MeteorEventManager {
                 final int cx = x + dx;
                 final int cz = z + dz;
                 final int columnTop = world.getHighestBlockYAt(cx, cz);
-                final int depth = (int) Math.round((1.0D - dist / (craterRadius + 0.5D)) * craterDepth);
-
-                // Carve a shallow bowl (snapshot each cell first so it can be restored).
+                final int depth = (int) Math.round(
+                        (1.0D - dist / (craterRadius + 0.5D)) * craterDepth);
                 for (int dy = 0; dy < depth; dy++) {
-                    carve(snapshots, world.getBlockAt(cx, columnTop - dy, cz), Material.AIR);
+                    if (!planChange(plan, world.getBlockAt(cx, columnTop - dy, cz), Material.AIR)) {
+                        spawnGraceUntil = 0L;
+                        return;
+                    }
                 }
-                // Line/seed the bowl floor: ore near the centre, blackened lining toward the rim.
-                final Material floor = (dist <= craterRadius * 0.6D && ThreadLocalRandom.current().nextDouble() < oreChance)
+                final Material floor = (dist <= craterRadius * 0.6D
+                        && ThreadLocalRandom.current().nextDouble() < oreChance)
                         ? ORES[ThreadLocalRandom.current().nextInt(ORES.length)]
                         : LINING[ThreadLocalRandom.current().nextInt(LINING.length)];
-                carve(snapshots, world.getBlockAt(cx, columnTop - depth, cz), floor);
+                if (!planChange(plan, world.getBlockAt(cx, columnTop - depth, cz), floor)) {
+                    spawnGraceUntil = 0L;
+                    return;
+                }
             }
         }
 
+        final List<SavedBlock> snapshots = plan.values().stream()
+                .map(PlannedChange::original).toList();
+        if (snapshots.isEmpty() || !persistRecovery(snapshots)) {
+            spawnGraceUntil = 0L;
+            return;
+        }
+
+        try {
+            for (final PlannedChange change : plan.values()) {
+                final SavedBlock original = change.original();
+                world.getBlockAt(original.x(), original.y(), original.z())
+                        .setType(change.replacement(), false);
+            }
+        } catch (final RuntimeException mutationFailure) {
+            plugin.getLogger().severe("Meteor crater mutation failed after recovery snapshot: "
+                    + mutationFailure.getMessage());
+            restoreStates = snapshots;
+            spawnGraceUntil = 0L;
+            restoreCrater(false);
+            return;
+        }
+
         restoreStates = snapshots;
-        craterCenter = center;
+        craterCenter = center.clone();
         expiresAt = System.currentTimeMillis() + expireMillis();
+        spawnGraceUntil = 0L;
 
         world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 2);
-        world.spawnParticle(Particle.LAVA, center, 40, craterRadius, 1.0D, craterRadius, 0.0D);
+        world.spawnParticle(Particle.LAVA, center, 40,
+                craterRadius, 1.0D, craterRadius, 0.0D);
         world.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 0.6F);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "meteor-landed",
                 "&c☄ METEOR csapódott be a(z) {world} világban ({x}, {z}) — a kráterben ritka érc, de {minutes} perc múlva elenyészik!",
-                Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z),
-                        "minutes", String.valueOf(Math.max(1L, expireMillis() / 60_000L)))
-        ));
+                Map.of("world", world.getName(), "x", String.valueOf(x),
+                        "z", String.valueOf(z),
+                        "minutes", String.valueOf(Math.max(1L,
+                                expireMillis() / 60_000L)))));
     }
 
-    /** Snapshots {@code block}'s current state (for later restore) then sets the new material. */
-    private void carve(final List<BlockState> snapshots, final Block block, final Material material) {
-        snapshots.add(block.getState());
-        block.setType(material, false);
+    /** Tile entities are never overwritten because block-data alone cannot preserve their NBT. */
+    private static boolean planChange(final Map<BlockKey, PlannedChange> plan,
+                                      final Block block, final Material replacement) {
+        if (block.getState() instanceof TileState) {
+            return false;
+        }
+        final World world = block.getWorld();
+        final BlockKey key = new BlockKey(world.getUID(), block.getX(), block.getY(), block.getZ());
+        final PlannedChange existing = plan.get(key);
+        if (existing == null) {
+            plan.put(key, new PlannedChange(new SavedBlock(world.getUID(), world.getName(),
+                    block.getX(), block.getY(), block.getZ(),
+                    block.getBlockData().getAsString()), replacement));
+        } else {
+            plan.put(key, new PlannedChange(existing.original(), replacement));
+        }
+        return true;
     }
 
-    private void restoreCrater(final boolean announce) {
-        final Location center = craterCenter;
-        final List<BlockState> states = restoreStates;
-        craterCenter = null;
-        restoreStates = null;
-        if (center == null || states == null) {
+    private boolean persistRecovery(final List<SavedBlock> snapshots) {
+        try {
+            final YamlConfiguration yaml = new YamlConfiguration();
+            int index = 0;
+            for (final SavedBlock block : snapshots) {
+                final String base = "blocks." + index++ + ".";
+                yaml.set(base + "world-id", block.worldId().toString());
+                yaml.set(base + "world", block.worldName());
+                yaml.set(base + "x", block.x());
+                yaml.set(base + "y", block.y());
+                yaml.set(base + "z", block.z());
+                yaml.set(base + "block-data", block.blockData());
+            }
+            YamlStore.saveAtomic(recoveryFile, yaml);
+            return true;
+        } catch (final IOException failure) {
+            plugin.getLogger().severe("Meteor recovery snapshot could not be saved; crater aborted: "
+                    + failure.getMessage());
+            return false;
+        }
+    }
+
+    private void recoverInterruptedCrater() {
+        final long now = System.currentTimeMillis();
+        if (!recoveryFile.exists() || recoveryInProgress || now < nextRecoveryAttemptAt) {
             return;
         }
-        try {
-            plugin.getServer().getRegionScheduler().run(plugin, center, task -> {
-                for (final BlockState state : states) {
-                    state.update(true, false);
-                }
-                if (announce && center.getWorld() != null) {
-                    center.getWorld().spawnParticle(Particle.CLOUD, center, 30, 2.0D, 1.0D, 2.0D, 0.02D);
-                }
-            });
-        } catch (final Exception ignored) {
-            // Scheduler unavailable during shutdown — a graceful disable normally still runs it.
+        final List<SavedBlock> pending = loadRecovery();
+        if (pending == null || pending.isEmpty()) {
+            return;
         }
+        plugin.getLogger().warning("Recovering " + pending.size()
+                + " meteor-modified blocks from an interrupted previous runtime.");
+        scheduleRestore(pending, false, null);
+    }
+
+    private List<SavedBlock> loadRecovery() {
+        final YamlConfiguration yaml;
+        try {
+            yaml = YamlStore.loadTracked(recoveryFile, plugin.getLogger());
+        } catch (final hu.taliann.icesmp.storage.CorruptStateFileError corrupt) {
+            nextRecoveryAttemptAt = Long.MAX_VALUE;
+            plugin.getLogger().severe("Meteor recovery is blocked until "
+                    + recoveryFile.getName() + " is repaired or restored from quarantine.");
+            return null;
+        }
+        final ConfigurationSection root = yaml.getConfigurationSection("blocks");
+        if (root == null || root.getKeys(false).isEmpty()) {
+            nextRecoveryAttemptAt = Long.MAX_VALUE;
+            plugin.getLogger().severe("Meteor recovery file has no block journal; preserving it for manual recovery.");
+            return null;
+        }
+        final List<SavedBlock> result = new ArrayList<>();
+        for (final String key : root.getKeys(false)) {
+            final ConfigurationSection section = root.getConfigurationSection(key);
+            if (section == null) {
+                nextRecoveryAttemptAt = Long.MAX_VALUE;
+                plugin.getLogger().severe("Malformed meteor recovery section: " + key);
+                return null;
+            }
+            try {
+                result.add(new SavedBlock(
+                        UUID.fromString(section.getString("world-id", "")),
+                        section.getString("world", "world"),
+                        section.getInt("x"), section.getInt("y"), section.getInt("z"),
+                        section.getString("block-data", "minecraft:air")));
+            } catch (final IllegalArgumentException malformed) {
+                nextRecoveryAttemptAt = Long.MAX_VALUE;
+                plugin.getLogger().severe("Malformed meteor recovery entry " + key
+                        + ": " + malformed.getMessage()
+                        + ". The journal is preserved for manual recovery.");
+                return null;
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private synchronized void restoreCrater(final boolean announce) {
+        final Location center = craterCenter;
+        final List<SavedBlock> states = restoreStates;
+        craterCenter = null;
+        restoreStates = null;
+        expiresAt = 0L;
+        if (states == null || states.isEmpty()) {
+            return;
+        }
+        scheduleRestore(states, announce, center);
+    }
+
+    private void scheduleRestore(final List<SavedBlock> states, final boolean announce,
+                                 final Location center) {
+        if (states.isEmpty() || recoveryInProgress) {
+            return;
+        }
+        recoveryInProgress = true;
+        final Map<String, List<SavedBlock>> groups = new LinkedHashMap<>();
+        for (final SavedBlock block : states) {
+            final String key = block.worldId() + ":" + (block.x() >> 4) + ":" + (block.z() >> 4);
+            groups.computeIfAbsent(key, ignored -> new ArrayList<>()).add(block);
+        }
+        final AtomicInteger remaining = new AtomicInteger(groups.size());
+        final AtomicBoolean success = new AtomicBoolean(true);
+        for (final List<SavedBlock> group : groups.values()) {
+            final SavedBlock first = group.getFirst();
+            final World world = Bukkit.getWorld(first.worldId());
+            if (world == null) {
+                success.set(false);
+                finishRestoreGroup(remaining, success, announce, center);
+                continue;
+            }
+            final World targetWorld = world;
+            final int chunkX = first.x() >> 4;
+            final int chunkZ = first.z() >> 4;
+            final Location owner = new Location(targetWorld,
+                    (chunkX << 4) + 8.0D, first.y(), (chunkZ << 4) + 8.0D);
+            final Runnable restore = () -> {
+                try {
+                    for (final SavedBlock saved : group) {
+                        final BlockData data = Bukkit.createBlockData(saved.blockData());
+                        targetWorld.getBlockAt(saved.x(), saved.y(), saved.z())
+                                .setBlockData(data, false);
+                    }
+                } catch (final RuntimeException failure) {
+                    success.set(false);
+                    plugin.getLogger().severe("Meteor block recovery failed in chunk "
+                            + chunkX + "," + chunkZ + ": " + failure.getMessage());
+                } finally {
+                    finishRestoreGroup(remaining, success, announce, center);
+                }
+            };
+            try {
+                if (Bukkit.isOwnedByCurrentRegion(targetWorld, chunkX, chunkZ)) {
+                    restore.run();
+                } else {
+                    plugin.getServer().getRegionScheduler().run(plugin, owner, task -> restore.run());
+                }
+            } catch (final RuntimeException unavailable) {
+                success.set(false);
+                finishRestoreGroup(remaining, success, announce, center);
+            }
+        }
+    }
+
+    private void finishRestoreGroup(final AtomicInteger remaining, final AtomicBoolean success,
+                                    final boolean announce, final Location center) {
+        if (remaining.decrementAndGet() != 0) {
+            return;
+        }
+        recoveryInProgress = false;
+        if (!success.get()) {
+            nextRecoveryAttemptAt = System.currentTimeMillis() + 60_000L;
+            plugin.getLogger().warning("Meteor recovery remains pending in "
+                    + recoveryFile.getName() + "; retry scheduled.");
+            return;
+        }
+        deleteRecoveryFile();
+        nextRecoveryAttemptAt = 0L;
         if (announce) {
             Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "meteor-faded", "&7☄ A meteor-kráter beomlott és elenyészett — a táj visszanyerte régi formáját."));
+                    "meteor-faded",
+                    "&7☄ A meteor-kráter beomlott és elenyészett — a táj visszanyerte régi formáját."));
+        }
+        if (center != null && center.getWorld() != null && plugin.isEnabled()) {
+            try {
+                plugin.getServer().getRegionScheduler().run(plugin, center, task ->
+                        center.getWorld().spawnParticle(Particle.CLOUD, center,
+                                30, 2.0D, 1.0D, 2.0D, 0.02D));
+            } catch (final RuntimeException ignored) {
+                // Visual only; block recovery already completed.
+            }
+        }
+    }
+
+    private void deleteRecoveryFile() {
+        try {
+            Files.deleteIfExists(recoveryFile.toPath());
+        } catch (final IOException failure) {
+            plugin.getLogger().warning("Recovered meteor blocks but could not delete "
+                    + recoveryFile.getName() + ": " + failure.getMessage());
         }
     }
 
     private long intervalMillis() {
-        return Math.max(1L, configManager.getLong("meteor.interval-minutes", 85L)) * 60_000L;
+        return Math.max(1L,
+                configManager.getLong("meteor.interval-minutes", 85L)) * 60_000L;
     }
 
     private long expireMillis() {
-        return Math.max(1L, configManager.getLong("meteor.expire-minutes", 10L)) * 60_000L;
+        return Math.max(1L,
+                configManager.getLong("meteor.expire-minutes", 10L)) * 60_000L;
     }
 }

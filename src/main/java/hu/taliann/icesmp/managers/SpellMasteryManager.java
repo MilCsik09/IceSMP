@@ -2,36 +2,39 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
-import org.bukkit.NamespacedKey;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.SpellbookSection;
+import hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.LinkedHashMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.logging.Level;
 
-/**
- * Spell mastery / ranks: players spend faction currency to
- * rank up an unlocked spell, which lowers its effective cooldown (a clean,
- * non-invasive "spell strength" that the cast pipeline applies). Ranks are
- * stored per player in PDC as "spellId:rank,..." (mirrors the talent storage).
- */
+/** PlayerProfile-backed spell mastery with restart-durable wallet compensation. */
 public final class SpellMasteryManager {
 
     public enum UpgradeResult { SUCCESS, MAX_RANK, INSUFFICIENT_FUNDS }
 
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
-    private final NamespacedKey masteryKey;
 
     public SpellMasteryManager(final JavaPlugin plugin, final ConfigManager configManager,
                                final CurrencyManager currencyManager, final FactionManager factionManager) {
-        this.configManager = configManager;
-        this.currencyManager = currencyManager;
-        this.factionManager = factionManager;
-        this.masteryKey = new NamespacedKey(plugin, "spell_mastery");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.configManager = Objects.requireNonNull(configManager, "configManager");
+        this.currencyManager = Objects.requireNonNull(currencyManager, "currencyManager");
+        this.factionManager = Objects.requireNonNull(factionManager, "factionManager");
     }
 
     public boolean isEnabled() {
@@ -46,104 +49,209 @@ public final class SpellMasteryManager {
         if (player == null || spellId == null) {
             return 0;
         }
-        return getRanks(player).getOrDefault(spellId.toLowerCase(Locale.ROOT), 0);
+        return getRanks(player.getUniqueId()).getOrDefault(
+                SpellMasteryTransactionProtocol.normalizeSpell(spellId), 0);
     }
 
-    /**
-     * The cooldown multiplier for the player's mastery of a spell:
-     * {@code 1 - rank * reduction}, clamped to a configured floor.
-     *
-     * @param player the caster
-     * @param spellId the spell id
-     * @return a value in (0, 1]; 1.0 = no reduction
-     */
     public double getCooldownMultiplier(final Player player, final String spellId) {
         if (!isEnabled()) {
             return 1.0D;
         }
-        final double perRank = Math.max(0.0D, configManager.getDouble("spells.mastery.cooldown-reduction-per-rank", 0.08D));
-        final double floor = Math.max(0.1D, Math.min(1.0D, configManager.getDouble("spells.mastery.min-cooldown-multiplier", 0.5D)));
+        final double perRank = Math.max(0.0D,
+                configManager.getDouble("spells.mastery.cooldown-reduction-per-rank", 0.08D));
+        final double floor = Math.max(0.1D, Math.min(1.0D,
+                configManager.getDouble("spells.mastery.min-cooldown-multiplier", 0.5D)));
         return Math.max(floor, 1.0D - (getRank(player, spellId) * perRank));
     }
 
-    /**
-     * The power multiplier for the player's mastery of a spell:
-     * {@code 1 + rank * power-per-rank}, capped at a configured maximum. Scales
-     * the spell's offensive output (damage, self-heal, effect duration); 1.0 =
-     * no boost.
-     *
-     * @param player the caster
-     * @param spellId the spell id
-     * @return a value >= 1.0
-     */
     public double getPowerMultiplier(final Player player, final String spellId) {
         if (!isEnabled()) {
             return 1.0D;
         }
-        final double perRank = Math.max(0.0D, configManager.getDouble("spells.mastery.power-per-rank", 0.05D));
-        final double cap = Math.max(1.0D, configManager.getDouble("spells.mastery.max-power-multiplier", 1.5D));
+        final double perRank = Math.max(0.0D,
+                configManager.getDouble("spells.mastery.power-per-rank", 0.05D));
+        final double cap = Math.max(1.0D,
+                configManager.getDouble("spells.mastery.max-power-multiplier", 1.5D));
         return Math.min(cap, 1.0D + (getRank(player, spellId) * perRank));
     }
 
-    /** The currency cost of the player's next rank for a spell. */
     public long getUpgradeCost(final Player player, final String spellId) {
-        final long base = Math.max(1L, configManager.getLong("spells.mastery.upgrade-base-cost", 50L));
-        return base * (getRank(player, spellId) + 1L);
+        final long base = Math.max(1L,
+                configManager.getLong("spells.mastery.upgrade-base-cost", 50L));
+        return Math.multiplyExact(base, getRank(player, spellId) + 1L);
     }
 
-    public UpgradeResult upgrade(final Player player, final String spellId) {
-        final String normalized = spellId.toLowerCase(Locale.ROOT);
-        if (getRank(player, normalized) >= getMaxRank()) {
-            return UpgradeResult.MAX_RANK;
+    public CompletionStage<UpgradeResult> upgrade(final Player player, final String spellId) {
+        Objects.requireNonNull(player, "player");
+        final String normalized = SpellMasteryTransactionProtocol.normalizeSpell(spellId);
+        if (normalized.isEmpty()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("spellId cannot be blank"));
         }
-
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final UUID playerId = player.getUniqueId();
+        final int previousRank = getRanks(playerId).getOrDefault(normalized, 0);
+        if (previousRank >= getMaxRank()) {
+            return CompletableFuture.completedFuture(UpgradeResult.MAX_RANK);
+        }
+        final int targetRank = Math.addExact(previousRank, 1);
+        final FactionType faction = factionManager.getEconomyFaction(playerId);
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
-        final long cost = getUpgradeCost(player, normalized);
-        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
-        if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
-            return UpgradeResult.INSUFFICIENT_FUNDS;
-        }
-        final Map<String, Integer> ranks = getRanks(player);
-        ranks.merge(normalized, 1, Integer::sum);
-        saveRanks(player, ranks);
-        return UpgradeResult.SUCCESS;
+        final long base = Math.max(1L,
+                configManager.getLong("spells.mastery.upgrade-base-cost", 50L));
+        final long cost = Math.multiplyExact(base, targetRank);
+        final SpellMasteryTransactionProtocol.Identity identity =
+                SpellMasteryTransactionProtocol.create(playerId, normalized, previousRank,
+                        targetRank, currency, cost, UUID.randomUUID());
+
+        return async(() -> currencyManager.debitOperation(playerId, currency, cost,
+                        identity.operationId()))
+                .thenCompose(debit -> {
+                    if (debit == null) {
+                        return CompletableFuture.completedFuture(
+                                new ProfileCommit(UpgradeResult.INSUFFICIENT_FUNDS, null, false));
+                    }
+                    return PlayerProfileAuthority.current().transact(playerId, current -> {
+                        final SpellbookSection spellbook = current.spellbook().value();
+                        final int durableRank = Math.toIntExact(
+                                spellbook.mastery().getOrDefault(normalized, 0L));
+                        if (durableRank != previousRank) {
+                            throw new StaleMasteryUpgradeException(
+                                    "mastery rank changed before durable commit");
+                        }
+                        if (targetRank > getMaxRank()) {
+                            throw new StaleMasteryUpgradeException("mastery maximum changed");
+                        }
+                        final Map<String, Long> mastery = new LinkedHashMap<>(spellbook.mastery());
+                        mastery.put(normalized, (long) targetRank);
+                        final SpellbookSection next = new SpellbookSection(
+                                spellbook.provenance(), spellbook.selectedSpell(), spellbook.favorites(),
+                                mastery, spellbook.persistentCooldowns(), spellbook.uiState(),
+                                spellbook.extensions());
+                        return new PlayerProfileTransactionManager.TransactionPlan<>(
+                                identity.operationId(), SpellMasteryTransactionProtocol.OPERATION_TYPE,
+                                identity.fingerprint(),
+                                List.of(new PlayerProfileTransactionManager.SectionUpdate(
+                                        ProfileSectionId.SPELLBOOK,
+                                        current.spellbook().revision(), next)),
+                                UpgradeResult.SUCCESS);
+                    }).handle((result, failure) -> new ProfileCommit(result, failure, true));
+                })
+                .thenCompose(profileCommit -> finalizeWallet(identity, profileCommit));
     }
 
-    private Map<String, Integer> getRanks(final Player player) {
+    /** Reconciles wallet debits whose matching PlayerProfile transaction was interrupted. */
+    public CompletionStage<Void> recoverPendingOperations() {
+        return async(() -> currencyManager.durableOperationsByPrefix(
+                        SpellMasteryTransactionProtocol.OPERATION_PREFIX))
+                .thenCompose(operations -> {
+                    CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
+                    for (final CurrencyManager.DurableWalletOperation operation : operations) {
+                        if (operation.status() != CurrencyManager.DurableWalletOperationStatus.DEBITED) {
+                            continue;
+                        }
+                        chain = chain.thenCompose(ignored -> reconcile(operation));
+                    }
+                    return chain;
+                });
+    }
+
+    public void runOnOwnerThread(final Player player, final Runnable action) {
+        player.getScheduler().run(plugin, ignored -> action.run(), null);
+    }
+
+    private CompletionStage<UpgradeResult> finalizeWallet(
+            final SpellMasteryTransactionProtocol.Identity identity,
+            final ProfileCommit profileCommit) {
+        if (!profileCommit.debited()) {
+            return CompletableFuture.completedFuture(profileCommit.result());
+        }
+        if (profileCommit.failure() != null) {
+            return async(() -> currencyManager.rollbackOperation(identity.operationId()))
+                    .handle((rolledBack, rollbackFailure) -> {
+                        final Throwable original = unwrap(profileCommit.failure());
+                        if (rollbackFailure != null) {
+                            original.addSuppressed(unwrap(rollbackFailure));
+                        }
+                        throw new java.util.concurrent.CompletionException(original);
+                    });
+        }
+        return async(() -> currencyManager.commitOperation(identity.operationId()))
+                .handle((ignored, finalizeFailure) -> {
+                    if (finalizeFailure != null) {
+                        plugin.getLogger().log(Level.SEVERE,
+                                "Spell mastery wallet finalize deferred to restart recovery: "
+                                        + identity.operationId(),
+                                unwrap(finalizeFailure));
+                    }
+                    return profileCommit.result();
+                });
+    }
+
+    private CompletionStage<Void> reconcile(final CurrencyManager.DurableWalletOperation wallet) {
+        final UUID playerId = wallet.playerId();
+        return PlayerProfileAuthority.current().repository().loadSnapshot(playerId)
+                .thenCompose(profile -> {
+                    final PlayerProfileOperation receipt = profile.operations().value().operations()
+                            .get(wallet.operationId());
+                    boolean committed = false;
+                    if (receipt != null) {
+                        try {
+                            SpellMasteryTransactionProtocol.verifyCommittedReceipt(wallet, receipt);
+                            committed = true;
+                        } catch (final IllegalStateException invalidReceipt) {
+                            plugin.getLogger().log(Level.WARNING,
+                                    "Rejecting invalid spell mastery receipt during recovery: "
+                                            + wallet.operationId(), invalidReceipt);
+                        }
+                    }
+                    final boolean shouldCommit = committed;
+                    return async(() -> {
+                        if (shouldCommit) {
+                            currencyManager.commitOperation(wallet.operationId());
+                        } else {
+                            currencyManager.rollbackOperation(wallet.operationId());
+                        }
+                        return null;
+                    });
+                });
+    }
+
+    private Map<String, Integer> getRanks(final UUID playerId) {
+        final SpellbookSection spellbook = PlayerProfileAuthority.current().requireSection(
+                playerId, ProfileSectionId.SPELLBOOK, SpellbookSection.class);
         final Map<String, Integer> ranks = new LinkedHashMap<>();
-        final String raw = player.getPersistentDataContainer().get(masteryKey, PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) {
-            return ranks;
-        }
-        for (final String token : raw.split(",")) {
-            final String[] parts = token.split(":");
-            if (parts.length != 2) {
-                continue;
-            }
-            try {
-                final int rank = Integer.parseInt(parts[1].trim());
-                if (rank > 0) {
-                    ranks.put(parts[0].trim().toLowerCase(Locale.ROOT), rank);
-                }
-            } catch (final NumberFormatException ignored) {
-            }
-        }
-        return ranks;
+        spellbook.mastery().forEach((spell, rank) -> ranks.put(spell, Math.toIntExact(rank)));
+        return Map.copyOf(ranks);
     }
 
-    private void saveRanks(final Player player, final Map<String, Integer> ranks) {
-        if (ranks.isEmpty()) {
-            player.getPersistentDataContainer().remove(masteryKey);
-            return;
-        }
-        final StringBuilder serialized = new StringBuilder();
-        for (final Map.Entry<String, Integer> entry : ranks.entrySet()) {
-            if (!serialized.isEmpty()) {
-                serialized.append(',');
+    private <T> CompletionStage<T> async(final java.util.concurrent.Callable<T> work) {
+        final CompletableFuture<T> result = new CompletableFuture<>();
+        plugin.getServer().getAsyncScheduler().runNow(plugin, ignored -> {
+            try {
+                result.complete(work.call());
+            } catch (final Throwable failure) {
+                result.completeExceptionally(failure);
             }
-            serialized.append(entry.getKey()).append(':').append(entry.getValue());
+        });
+        return result;
+    }
+
+    private static Throwable unwrap(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof java.util.concurrent.CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) {
+            current = current.getCause();
         }
-        player.getPersistentDataContainer().set(masteryKey, PersistentDataType.STRING, serialized.toString());
+        return current;
+    }
+
+    private record ProfileCommit(UpgradeResult result, Throwable failure, boolean debited) {
+    }
+
+    private static final class StaleMasteryUpgradeException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+        private StaleMasteryUpgradeException(final String message) {
+            super(message);
+        }
     }
 }

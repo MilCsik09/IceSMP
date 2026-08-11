@@ -1,8 +1,10 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileOperationStore;
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
-import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -23,15 +25,18 @@ import org.bukkit.potion.PotionEffectType;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,9 +44,12 @@ import java.util.function.BooleanSupplier;
 
 /**
  * Seasonal league: factions earn points from raid victories and world boss kills over a
- * configurable season. State persists to season.yml; expiry is checked on the global tick.
+ * configurable season. Shared league state persists to season.yml. Player-owned member reward
+ * receipts are stored exclusively in PlayerProfile OperationSection.
  */
 public final class SeasonManager implements PersistentStore, org.bukkit.event.Listener {
+
+    private static final String MEMBER_OPERATION_TYPE = "season-member-reward";
 
     private record RewardItem(Material material, int amount) {
         private RewardItem {
@@ -51,11 +59,9 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
     }
 
-    private record Standing(FactionType faction, int points) {
-    }
+    private record Standing(FactionType faction, int points) { }
 
-    private record TreasuryGrant(String grantId, FactionType faction, double amount) {
-    }
+    private record TreasuryGrant(String grantId, FactionType faction, double amount) { }
 
     private record RewardBatch(
             UUID batchId,
@@ -95,31 +101,30 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
     }
 
+    private record RewardEvidence(int expectedAmount, int taggedAmount, boolean invalid) {
+        boolean none() { return taggedAmount == 0 && !invalid; }
+        boolean complete() { return taggedAmount == expectedAmount && !invalid; }
+        boolean partial() { return taggedAmount > 0 && taggedAmount < expectedAmount && !invalid; }
+    }
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final FactionTreasuryManager treasuryManager;
     private final FactionManager factionManager;
     private final File storageFile;
-    /** Minden pont/nyugta mutáció, snapshot, tartós írás és rollback közös monitora. */
     private final Object stateLock = new Object();
     private final Map<FactionType, Integer> points = new ConcurrentHashMap<>();
-    /**
-     * Már alkalmazott, azonosítóhoz kötött pont-jóváírások. A bejegyzés a pontokkal EGY atomi
-     * fájl-képbe kerül, ezért a hívó (kifizetés-outbox) pontosan egyszeri alkalmazást kap.
-     */
     private final Map<String, Long> appliedGrants = new ConcurrentHashMap<>();
-    // Grant-nyugtát nem szabad véges darabszám alapján kidobni: egy hosszan függő outbox
-    // későbbi replaye különben újra alkalmazhatná a már kifizetett rész-jutalmat.
-    /** J9 — fejezet-sorszám: a szezon = story-fejezet; váltáskor nő, perzisztens. */
-    private volatile int seasonNumber = 1;
-    /** G16 — nagydöntő-hétvége: bejelentés-flag (szezononként egyszer, volatilis). */
-    private volatile boolean grandFinaleAnnounced;
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
     private final Map<UUID, MemberRewardClaim> pendingMemberClaims = new HashMap<>();
-    private final Set<UUID> claimDeliveryQueued = ConcurrentHashMap.newKeySet();
+    private final java.util.Set<UUID> claimDeliveryQueued = ConcurrentHashMap.newKeySet();
     private final AtomicBoolean playerSaveWarningSent = new AtomicBoolean(false);
-    private final NamespacedKey seasonRewardReceiptKey;
+    private final PlayerProfileOperationStore operationStore = new PlayerProfileOperationStore();
+    private final NamespacedKey seasonRewardGrantKey;
+
+    private volatile int seasonNumber = 1;
+    private volatile boolean grandFinaleAnnounced;
     private volatile RewardBatch pendingRewardBatch;
     private volatile boolean playerSaveSupported = true;
     private volatile long seasonStart = System.currentTimeMillis();
@@ -134,7 +139,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         this.treasuryManager = treasuryManager;
         this.factionManager = factionManager;
         this.storageFile = new File(plugin.getDataFolder(), "season.yml");
-        this.seasonRewardReceiptKey = new NamespacedKey(plugin, "season_reward_receipts");
+        this.seasonRewardGrantKey = new NamespacedKey(plugin, "season_reward_grant");
         YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
     }
@@ -195,7 +200,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
             if (!yaml.getStringList("season.pending-champion-spoils").isEmpty()) {
                 YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                        "A legacy pending champion reward nem tartalmaz grant-ID/playerdata nyugtát; kézi egyeztetés szükséges");
+                        "A legacy pending champion reward nem tartalmaz PlayerProfile műveletnyugtát; kézi egyeztetés szükséges");
                 return;
             }
             pendingRewardBatch = loadRewardBatch(yaml);
@@ -206,14 +211,11 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     public synchronized void save() {
         synchronized (stateLock) {
             if (!writeStateLocked()) {
-                // A koordinátor hibagyűjtése csak dobásból lát.
                 throw new IllegalStateException("season.yml mentése sikertelen — részletek a logban");
             }
         }
     }
 
-    /** A hívónak tartania kell a stateLock monitort. */
-    /** A hívónak tartania kell a stateLock monitort. */
     private boolean writeStateLocked() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
@@ -235,46 +237,27 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 yaml.set(path + ".items", claim.items().stream()
                         .map(item -> item.material().name() + ":" + item.amount()).toList());
             }
-
             YamlStore.saveAtomic(storageFile, yaml);
             return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save season.yml: " + exception.getMessage());
             return false;
         } catch (final hu.taliann.icesmp.storage.CriticalPersistenceWriteError fatal) {
-            // A kritikus write-circuit már beállt (minden további írás tiltva) — itt false-t
-            // adunk, hogy a hívó rollback-ága lefusson; a koordinátort a void save() wrapper
-            // dobása értesíti. A fatal elnyelése nélkül a rollback kimaradna (Error != IOException).
             plugin.getLogger().severe(fatal.getMessage() == null ? fatal.toString() : fatal.getMessage());
             return false;
         }
     }
 
-    /**
-     * Kompatibilis idempotens pont-jóváírás: a live szabályok szerint kiszámított deltát ugyanazon
-     * lock alatt alkalmazza. No-opot nem ACK-ol, mert az később jogos jutalmat zárhatna le.
-     */
     public boolean addPointsOnce(final String grantId, final FactionType faction,
                                  final int amount, final String source) {
         synchronized (stateLock) {
-            if (grantId == null || grantId.isBlank()) {
-                return false;
-            }
-            if (appliedGrants.containsKey(grantId)) {
-                return true;
-            }
+            if (grantId == null || grantId.isBlank()) return false;
+            if (appliedGrants.containsKey(grantId)) return true;
             final int exactDelta = calculatePointsDeltaLocked(faction, amount, source);
-            if (exactDelta <= 0) {
-                return false;
-            }
-            return addExactPointsOnceLocked(grantId, faction, exactDelta);
+            return exactDelta > 0 && addExactPointsOnceLocked(grantId, faction, exactDelta);
         }
     }
 
-    /**
-     * A teljesítés pillanatában kiszámítja a VÉGLEGES, frakcióra alkalmazandó deltát. Ezt kell az
-     * outbox immutable pillanatképébe írni; replaykor már nem szabad újraszámolni.
-     */
     public int calculatePointsDelta(final FactionType faction, final int amount,
                                     final String source) {
         synchronized (stateLock) {
@@ -282,20 +265,14 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
     }
 
-    /** Több frakció végleges deltáját egyetlen konzisztens season-state snapshot alatt számolja. */
     public Map<FactionType, Integer> calculatePointsDeltas(
             final Iterable<FactionType> factions, final int amount, final String source) {
-        if (factions == null) {
-            return Map.of();
-        }
+        if (factions == null) return Map.of();
         synchronized (stateLock) {
-            final java.util.EnumMap<FactionType, Integer> deltas =
-                    new java.util.EnumMap<>(FactionType.class);
+            final EnumMap<FactionType, Integer> deltas = new EnumMap<>(FactionType.class);
             for (final FactionType faction : factions) {
                 final int delta = calculatePointsDeltaLocked(faction, amount, source);
-                if (delta > 0) {
-                    deltas.put(faction, delta);
-                }
+                if (delta > 0) deltas.put(faction, delta);
             }
             return Map.copyOf(deltas);
         }
@@ -312,12 +289,8 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 "world-events.season.source-weights." + sourceKey + "."
                         + faction.name().toLowerCase(java.util.Locale.ROOT), 1.0D));
         final long weightedLong = Math.round(amount * weight);
-        if (weightedLong <= 0L) {
-            return 0;
-        }
+        if (weightedLong <= 0L) return 0;
         final int weighted = (int) Math.min(Integer.MAX_VALUE, weightedLong);
-
-        // A két idő-szorzó nem szorzódik össze; a nagyobbik érvényesül.
         final SeasonFinaleManager finaleRef = seasonFinale;
         double timeMultiplier = finaleRef == null
                 ? 1.0D : Math.max(1.0D, finaleRef.leaguePointMultiplier());
@@ -330,10 +303,6 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         return (int) Math.min(Integer.MAX_VALUE, Math.max(weighted, scaledLong));
     }
 
-    /**
-     * Immutable outboxból érkező exact-delta alkalmazása. Sem configot, sem időablakot, sem
-     * ranglistát nem olvas újra; a nyugta és a pont egyetlen atomi fájlképbe kerül.
-     */
     public boolean addExactPointsOnce(final String grantId, final FactionType faction,
                                       final int exactDelta) {
         synchronized (stateLock) {
@@ -343,26 +312,14 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     private boolean addExactPointsOnceLocked(final String grantId, final FactionType faction,
                                              final int exactDelta) {
-        if (grantId == null || grantId.isBlank() || faction == null || exactDelta <= 0) {
-            return false;
-        }
-        if (appliedGrants.containsKey(grantId)) {
-            return true;
-        }
-
+        if (grantId == null || grantId.isBlank() || faction == null || exactDelta <= 0) return false;
+        if (appliedGrants.containsKey(grantId)) return true;
         final Integer previous = points.get(faction);
         mergeExactPointsLocked(faction, exactDelta);
         appliedGrants.put(grantId, System.currentTimeMillis());
-        if (!YamlStore.isLoadFailed(storageFile) && writeStateLocked()) {
-            return true;
-        }
-
+        if (!YamlStore.isLoadFailed(storageFile) && writeStateLocked()) return true;
         appliedGrants.remove(grantId);
-        if (previous == null) {
-            points.remove(faction);
-        } else {
-            points.put(faction, previous);
-        }
+        if (previous == null) points.remove(faction); else points.put(faction, previous);
         return false;
     }
 
@@ -377,7 +334,6 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
     }
 
-    /** G16 — a nagydöntő-ablak: a szezon utolsó konfigurált órái. */
     public boolean isGrandFinaleWindow() {
         synchronized (stateLock) {
             return isGrandFinaleWindowLocked();
@@ -385,50 +341,40 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     private boolean isGrandFinaleWindowLocked() {
-        if (!configManager.getBoolean("world-events.season-finale.top2-enabled", true)) {
-            return false;
-        }
+        if (!configManager.getBoolean("world-events.season-finale.top2-enabled", true)) return false;
         final long windowMillis = Math.max(1, configManager.getInt(
                 "world-events.season-finale.top2-window-hours", 48)) * 3_600_000L;
         final long remaining = getSeasonEndMillisLocked() - System.currentTimeMillis();
         return remaining > 0 && remaining <= windowMillis;
     }
 
-    /** A liga-tábla első két helyezettje. */
-    public java.util.List<FactionType> topTwo() {
+    public List<FactionType> topTwo() {
         synchronized (stateLock) {
             return topTwoLocked();
         }
     }
 
-    private java.util.List<FactionType> topTwoLocked() {
+    private List<FactionType> topTwoLocked() {
         return points.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
-                .limit(2)
-                .map(Map.Entry::getKey)
-                .toList();
+                .limit(2).map(Map.Entry::getKey).toList();
     }
 
-    /** G16 — az ablak nyíltakor egyszeri szerver-broadcast a párosítással. */
     private void announceGrandFinale() {
-        final java.util.List<FactionType> top;
+        final List<FactionType> top;
         synchronized (stateLock) {
-            if (grandFinaleAnnounced || !isGrandFinaleWindowLocked()) {
-                return;
-            }
+            if (grandFinaleAnnounced || !isGrandFinaleWindowLocked()) return;
             grandFinaleAnnounced = true;
             top = topTwoLocked();
         }
-        if (top.size() < 2) {
-            return;
-        }
+        if (top.size() < 2) return;
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "season-grand-finale",
                 "<gold>🏟 NAGYDÖNTŐ! A krónikák ítélnek: <white>{first}</white> ⚔ <white>{second}</white> — a záró hétvégén a két éllovas minden liga-pontja DUPLÁN számít! Királyok, hirdessetek raidet!</gold>",
-                Map.of("first", top.get(0).getDisplayName(), "second", top.get(1).getDisplayName())));
+                Map.of("first", top.get(0).getDisplayName(),
+                        "second", top.get(1).getDisplayName())));
     }
 
-    /** A futó szezon hányadik napja (1-től). */
     public int getSeasonDay() {
         synchronized (stateLock) {
             return (int) Math.max(1L,
@@ -437,81 +383,66 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     public int getSeasonNumber() {
-        synchronized (stateLock) {
-            return seasonNumber;
-        }
+        synchronized (stateLock) { return seasonNumber; }
     }
 
-    /** A futó szezon kezdő-bélyege. */
     public long getSeasonStart() {
-        synchronized (stateLock) {
-            return seasonStart;
-        }
+        synchronized (stateLock) { return seasonStart; }
     }
 
     public long getSeasonEndMillis() {
-        synchronized (stateLock) {
-            return getSeasonEndMillisLocked();
-        }
+        synchronized (stateLock) { return getSeasonEndMillisLocked(); }
     }
 
     private long getSeasonEndMillisLocked() {
         final long lengthDays = Math.max(1L,
                 configManager.getLong("world-events.season.length-days", 60L));
-        return seasonStart + (lengthDays * 24L * 60L * 60L * 1000L);
+        final long lengthMillis = lengthDays > Long.MAX_VALUE / 86_400_000L
+                ? Long.MAX_VALUE : lengthDays * 86_400_000L;
+        return seasonStart > Long.MAX_VALUE - lengthMillis
+                ? Long.MAX_VALUE : seasonStart + lengthMillis;
     }
 
     public void addPoints(final FactionType faction, final int amount) {
         addPoints(faction, amount, "other");
     }
 
-    /** Awards league points from a named source. */
     public void addPoints(final FactionType faction, final int amount, final String source) {
         final int exactDelta;
         synchronized (stateLock) {
             exactDelta = calculatePointsDeltaLocked(faction, amount, source);
-            if (exactDelta <= 0) {
-                return;
-            }
+            if (exactDelta <= 0) return;
             mergeExactPointsLocked(faction, exactDelta);
         }
         requestSave();
     }
 
-    /** Setter-injected finálé-eszkaláció. */
     private volatile SeasonFinaleManager seasonFinale;
-
     public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
         this.seasonFinale = seasonFinale;
     }
 
-    /** Coordinates the season commit with stores whose generation must advance afterwards. */
     @FunctionalInterface
     public interface SeasonTransitionCoordinator {
         boolean commit(int closingSeason, int openedSeason, BooleanSupplier seasonCommit);
     }
 
     private volatile SeasonTransitionCoordinator seasonTransitionCoordinator;
-
     public void setSeasonTransitionCoordinator(
             final SeasonTransitionCoordinator seasonTransitionCoordinator) {
         this.seasonTransitionCoordinator = seasonTransitionCoordinator;
     }
 
     private volatile SeasonStoryTeller storyTeller;
-
     public void setStoryTeller(final SeasonStoryTeller storyTeller) {
         this.storyTeller = storyTeller;
     }
 
-    /** Setter-injected emlékmű-vésnök. */
     private volatile SeasonMonumentManager monumentManager;
-
     public void setMonumentManager(final SeasonMonumentManager monumentManager) {
         this.monumentManager = monumentManager;
     }
 
-    /** Debounced async flush. */
     private void requestSave() {
         if (saveScheduled.compareAndSet(false, true)) {
             plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
@@ -521,20 +452,15 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
     }
 
-    /** Periodic check on the global world-events tick: closes expired seasons. */
     public void tick() {
         processPendingSeasonRewards();
         queueOnlineMemberClaims();
-        if (!configManager.getBoolean("world-events.season.enabled", true)) {
-            return;
-        }
+        if (!configManager.getBoolean("world-events.season.enabled", true)) return;
         announceGrandFinale();
 
         final int closingSeason;
         synchronized (stateLock) {
-            if (System.currentTimeMillis() < getSeasonEndMillisLocked()) {
-                return;
-            }
+            if (System.currentTimeMillis() < getSeasonEndMillisLocked()) return;
             closingSeason = seasonNumber;
         }
         if (closingSeason == Integer.MAX_VALUE) {
@@ -543,7 +469,6 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
         final int openedSeason = closingSeason + 1;
         final BooleanSupplier seasonCommit = () -> closeExpiredSeason(closingSeason, openedSeason);
-
         final SeasonTransitionCoordinator coordinator = seasonTransitionCoordinator;
         try {
             final boolean committed = coordinator == null
@@ -560,20 +485,11 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
     }
 
-    /**
-     * Atomically commits the opened season together with an immutable reward outbox and all
-     * champion-member claims. The community coordinator holds its monitor for the whole callback,
-     * so contributions cannot cross the standings snapshot/generation boundary. Target-store and
-     * playerdata side effects run only after this callback and the coordinated community ACK return.
-     */
     private boolean closeExpiredSeason(final int expectedSeason, final int openedSeason) {
         final EnumMap<FactionType, Integer> closingPoints = new EnumMap<>(FactionType.class);
         synchronized (stateLock) {
-            if (seasonNumber != expectedSeason
-                    || pendingRewardBatch != null
-                    || System.currentTimeMillis() < getSeasonEndMillisLocked()) {
-                return false;
-            }
+            if (seasonNumber != expectedSeason || pendingRewardBatch != null
+                    || System.currentTimeMillis() < getSeasonEndMillisLocked()) return false;
             closingPoints.putAll(points);
         }
 
@@ -589,21 +505,17 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 tie = true;
             }
         }
-        if (tie || best <= 0) {
-            champion = null;
-        }
+        if (tie || best <= 0) champion = null;
 
         final List<Standing> standings = closingPoints.entrySet().stream()
                 .filter(entry -> entry.getValue() > 0)
                 .sorted(Map.Entry.<FactionType, Integer>comparingByValue().reversed())
-                .map(entry -> new Standing(entry.getKey(), entry.getValue()))
-                .toList();
-        final RewardPlan rewardPlan = buildRewardPlan(expectedSeason, openedSeason, champion, best, standings);
+                .map(entry -> new Standing(entry.getKey(), entry.getValue())).toList();
+        final RewardPlan rewardPlan = buildRewardPlan(
+                expectedSeason, openedSeason, champion, best, standings);
 
         synchronized (stateLock) {
-            if (seasonNumber != expectedSeason || pendingRewardBatch != null) {
-                return false;
-            }
+            if (seasonNumber != expectedSeason || pendingRewardBatch != null) return false;
             final EnumMap<FactionType, Integer> previousPoints = new EnumMap<>(FactionType.class);
             previousPoints.putAll(points);
             final long previousStart = seasonStart;
@@ -616,9 +528,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             for (final FactionType faction : FactionType.values()) {
                 final int current = points.getOrDefault(faction, 0);
                 final int closed = closingPoints.getOrDefault(faction, 0);
-                if (current > closed) {
-                    carry.put(faction, current - closed);
-                }
+                if (current > closed) carry.put(faction, current - closed);
             }
             points.clear();
             points.putAll(carry);
@@ -630,30 +540,32 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
             try {
                 if (!writeStateLocked()) {
-                    points.clear();
-                    points.putAll(previousPoints);
-                    seasonStart = previousStart;
-                    seasonNumber = previousNumber;
-                    grandFinaleAnnounced = previousFinale;
-                    pendingRewardBatch = previousBatch;
-                    pendingMemberClaims.clear();
-                    pendingMemberClaims.putAll(previousClaims);
+                    restoreSeasonClose(previousPoints, previousStart, previousNumber,
+                            previousFinale, previousBatch, previousClaims);
                     return false;
                 }
             } catch (final RuntimeException | Error failure) {
-                points.clear();
-                points.putAll(previousPoints);
-                seasonStart = previousStart;
-                seasonNumber = previousNumber;
-                grandFinaleAnnounced = previousFinale;
-                pendingRewardBatch = previousBatch;
-                pendingMemberClaims.clear();
-                pendingMemberClaims.putAll(previousClaims);
+                restoreSeasonClose(previousPoints, previousStart, previousNumber,
+                        previousFinale, previousBatch, previousClaims);
                 throw failure;
             }
         }
-
         return true;
+    }
+
+    private void restoreSeasonClose(final Map<FactionType, Integer> previousPoints,
+                                    final long previousStart, final int previousNumber,
+                                    final boolean previousFinale,
+                                    final RewardBatch previousBatch,
+                                    final Map<UUID, MemberRewardClaim> previousClaims) {
+        points.clear();
+        points.putAll(previousPoints);
+        seasonStart = previousStart;
+        seasonNumber = previousNumber;
+        grandFinaleAnnounced = previousFinale;
+        pendingRewardBatch = previousBatch;
+        pendingMemberClaims.clear();
+        pendingMemberClaims.putAll(previousClaims);
     }
 
     private RewardPlan buildRewardPlan(final int closingSeason, final int openedSeason,
@@ -662,7 +574,6 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         final UUID batchId = UUID.randomUUID();
         final List<TreasuryGrant> treasuryGrants = new ArrayList<>();
         final Map<UUID, MemberRewardClaim> claims = new LinkedHashMap<>();
-
         if (champion != null) {
             final double reward = configManager.getDouble("world-events.season.treasury-reward", 1000.0D);
             if (!Double.isFinite(reward) || reward < 0.0D) {
@@ -687,7 +598,6 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                     }
                 }
             }
-
             final List<RewardItem> items = parseRewardItemsStrict();
             final long buffMinutes = configManager.getLong(
                     "world-events.season.champion-buff-minutes", 30L);
@@ -696,16 +606,13 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                     "world-events.season.champion-firework", true);
             for (final Map.Entry<UUID, FactionType> member
                     : factionManager.getFactionAssignments().entrySet()) {
-                if (member.getValue() != champion) {
-                    continue;
-                }
+                if (member.getValue() != champion) continue;
                 final UUID grantId = UUID.nameUUIDFromBytes((batchId + ":" + member.getKey())
                         .getBytes(StandardCharsets.UTF_8));
                 claims.put(grantId, new MemberRewardClaim(
                         grantId, member.getKey(), closingSeason, items, buffTicks, firework));
             }
         }
-
         final RewardBatch batch = new RewardBatch(
                 batchId, closingSeason, openedSeason, champion, championPoints,
                 champion == null ? 0.0D : treasuryGrants.stream()
@@ -733,9 +640,8 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             } catch (final NumberFormatException invalid) {
                 throw new IllegalStateException("Invalid season reward amount: " + raw, invalid);
             }
-            if (amount <= 0) {
-                throw new IllegalStateException("Season reward amount must be positive: " + raw);
-            }
+            if (amount <= 0) throw new IllegalStateException(
+                    "Season reward amount must be positive: " + raw);
             items.add(new RewardItem(material, amount));
         }
         return List.copyOf(items);
@@ -743,27 +649,17 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     private void processPendingSeasonRewards() {
         RewardBatch batch;
-        synchronized (stateLock) {
-            batch = pendingRewardBatch;
-        }
-        if (batch == null) {
-            return;
-        }
+        synchronized (stateLock) { batch = pendingRewardBatch; }
+        if (batch == null) return;
         SeasonRewardStateData.validateBatchGeneration(
                 getSeasonNumber(), batch.closingSeason(), batch.openedSeason());
-
         for (final TreasuryGrant grant : batch.treasuryGrants()) {
             if (treasuryManager.depositOnce(grant.grantId(), grant.faction(), grant.amount())) {
                 acknowledgeTreasuryGrant(batch.batchId(), grant.grantId());
             }
         }
-
-        synchronized (stateLock) {
-            batch = pendingRewardBatch;
-        }
-        if (batch == null) {
-            return;
-        }
+        synchronized (stateLock) { batch = pendingRewardBatch; }
+        if (batch == null) return;
         if (batch.monumentPending()) {
             final SeasonMonumentManager monumentRef = monumentManager;
             if (batch.champion() == null || (monumentRef != null && monumentRef.recordSeasonOnce(
@@ -772,9 +668,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 acknowledgeBatchFlag(batch.batchId(), "monument");
             }
         }
-        if (claimBestEffortBatchFlag(batch.batchId(), "announcement")) {
-            announceRewardBatch(batch);
-        }
+        if (claimBestEffortBatchFlag(batch.batchId(), "announcement")) announceRewardBatch(batch);
         final SeasonStoryTeller storyRef = storyTeller;
         if (storyRef != null && claimBestEffortBatchFlag(batch.batchId(), "story")) {
             storyRef.tellTransition(batch.champion());
@@ -786,16 +680,13 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         if (!batch.standings().isEmpty()) {
             final StringBuilder summary = new StringBuilder();
             for (int i = 0; i < batch.standings().size(); i++) {
-                if (i > 0) {
-                    summary.append(" <gray>•</gray> ");
-                }
+                if (i > 0) summary.append(" <gray>•</gray> ");
                 final Standing standing = batch.standings().get(i);
                 summary.append(i + 1).append(". ").append(standing.faction().getDisplayName())
                         .append(" <gray>(").append(standing.points()).append(")</gray>");
             }
             Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "season-final-standings",
-                    "<gold>🏁 Szezon-végeredmény: {standings}</gold>",
+                    "season-final-standings", "<gold>🏁 Szezon-végeredmény: {standings}</gold>",
                     Map.of("standings", summary.toString())));
         }
         if (batch.champion() == null) {
@@ -803,13 +694,12 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                     "season-ended-no-champion",
                     "<gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>"));
         } else {
-            final double championReward = batch.championTreasuryReward();
             Bukkit.getServer().broadcast(messageManager.getMessage(
                     "season-ended",
                     "<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>",
                     Map.of("champion", batch.champion().getDisplayName(),
                             "points", String.valueOf(batch.championPoints()),
-                            "reward", String.valueOf(championReward))));
+                            "reward", String.valueOf(batch.championTreasuryReward()))));
         }
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "season-chapter-opened",
@@ -820,23 +710,17 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     private void acknowledgeTreasuryGrant(final UUID batchId, final String grantId) {
         synchronized (stateLock) {
             final RewardBatch current = pendingRewardBatch;
-            if (current == null || !current.batchId().equals(batchId)) {
-                return;
-            }
+            if (current == null || !current.batchId().equals(batchId)) return;
             final List<TreasuryGrant> remaining = current.treasuryGrants().stream()
                     .filter(grant -> !grant.grantId().equals(grantId)).toList();
-            if (remaining.size() == current.treasuryGrants().size()) {
-                return;
-            }
+            if (remaining.size() == current.treasuryGrants().size()) return;
             final RewardBatch updated = new RewardBatch(
                     current.batchId(), current.closingSeason(), current.openedSeason(),
                     current.champion(), current.championPoints(), current.championTreasuryReward(),
-                    current.standings(), remaining,
-                    current.monumentPending(), current.announcementPending(), current.storyPending());
+                    current.standings(), remaining, current.monumentPending(),
+                    current.announcementPending(), current.storyPending());
             pendingRewardBatch = updated;
-            if (!writeStateLocked()) {
-                pendingRewardBatch = current;
-            }
+            if (!writeStateLocked()) pendingRewardBatch = current;
         }
     }
 
@@ -851,18 +735,14 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     private boolean updateBatchFlag(final UUID batchId, final String flag, final boolean value) {
         synchronized (stateLock) {
             final RewardBatch current = pendingRewardBatch;
-            if (current == null || !current.batchId().equals(batchId)) {
-                return false;
-            }
+            if (current == null || !current.batchId().equals(batchId)) return false;
             final boolean oldValue = switch (flag) {
                 case "monument" -> current.monumentPending();
                 case "announcement" -> current.announcementPending();
                 case "story" -> current.storyPending();
                 default -> throw new IllegalArgumentException("Unknown reward batch flag: " + flag);
             };
-            if (oldValue == value) {
-                return false;
-            }
+            if (oldValue == value) return false;
             final RewardBatch updated = new RewardBatch(
                     current.batchId(), current.closingSeason(), current.openedSeason(),
                     current.champion(), current.championPoints(), current.championTreasuryReward(),
@@ -883,29 +763,27 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         synchronized (stateLock) {
             final RewardBatch current = pendingRewardBatch;
             if (current == null || !current.treasuryGrants().isEmpty()
-                    || current.monumentPending() || current.announcementPending() || current.storyPending()) {
-                return;
-            }
+                    || current.monumentPending() || current.announcementPending()
+                    || current.storyPending()) return;
             pendingRewardBatch = null;
-            if (!writeStateLocked()) {
-                pendingRewardBatch = current;
-            }
+            if (!writeStateLocked()) pendingRewardBatch = current;
         }
     }
 
     private void queueOnlineMemberClaims() {
-        for (final Player player : Bukkit.getOnlinePlayers()) {
-            if (!hasPendingClaim(player.getUniqueId()) || !claimDeliveryQueued.add(player.getUniqueId())) {
-                continue;
+        for (final Player player : Bukkit.getOnlinePlayers()) queueMemberClaim(player);
+    }
+
+    private void queueMemberClaim(final Player player) {
+        if (!hasPendingClaim(player.getUniqueId())
+                || !claimDeliveryQueued.add(player.getUniqueId())) return;
+        deliverMemberClaim(player).whenComplete((ignored, failure) -> {
+            claimDeliveryQueued.remove(player.getUniqueId());
+            if (failure != null) {
+                plugin.getLogger().severe("Season member reward delivery failed for "
+                        + player.getUniqueId() + ": " + rootMessage(failure));
             }
-            player.getScheduler().run(plugin, task -> {
-                try {
-                    deliverMemberClaim(player);
-                } finally {
-                    claimDeliveryQueued.remove(player.getUniqueId());
-                }
-            }, null);
-        }
+        });
     }
 
     private boolean hasPendingClaim(final UUID recipient) {
@@ -917,10 +795,10 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     @org.bukkit.event.EventHandler
     public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
-        deliverMemberClaim(event.getPlayer());
+        queueMemberClaim(event.getPlayer());
     }
 
-    private void deliverMemberClaim(final Player player) {
+    private CompletionStage<Void> deliverMemberClaim(final Player player) {
         final MemberRewardClaim claim;
         synchronized (stateLock) {
             claim = pendingMemberClaims.values().stream()
@@ -928,79 +806,117 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                     .sorted(java.util.Comparator.comparingInt(MemberRewardClaim::closingSeason))
                     .findFirst().orElse(null);
         }
-        if (claim == null) {
-            return;
-        }
+        if (claim == null) return CompletableFuture.completedFuture(null);
+        final String operationId = memberOperationId(claim);
+        final String fingerprint = memberFingerprint(claim);
+        final long proposedBuffUntil = buffUntil(System.currentTimeMillis(), claim.buffTicks());
+        return operationStore.prepare(player.getUniqueId(), operationId,
+                        MEMBER_OPERATION_TYPE, fingerprint,
+                        Map.of("grant-id", claim.grantId().toString(),
+                                "closing-season", String.valueOf(claim.closingSeason()),
+                                "buff-until", String.valueOf(proposedBuffUntil)))
+                .thenCompose(operation -> runOnOwner(player,
+                        () -> deliverMemberClaimOnOwner(player, claim, operation,
+                                operationId, fingerprint)));
+    }
 
-        final Set<UUID> receipts;
-        try {
-            receipts = seasonRewardReceipts(player);
-        } catch (final IllegalStateException corruptReceipt) {
-            plugin.getLogger().severe("Season reward delivery fail-closed for " + player.getUniqueId()
-                    + ": " + corruptReceipt.getMessage());
-            return;
+    private CompletionStage<Void> deliverMemberClaimOnOwner(
+            final Player player, final MemberRewardClaim claim,
+            final PlayerProfileOperation operation,
+            final String operationId, final String fingerprint) {
+        if (!player.isOnline()) return CompletableFuture.completedFuture(null);
+        if (operation.status() == PlayerProfileOperation.Status.COMMITTED) {
+            acknowledgeMemberClaim(claim.grantId());
+            return CompletableFuture.completedFuture(null);
         }
-        final SeasonRewardStateData.DeliveryDecision decision = SeasonRewardStateData.deliveryDecision(
-                claim.recipient(), player.getUniqueId(), claim.grantId(), receipts);
-        if (decision == SeasonRewardStateData.DeliveryDecision.WRONG_RECIPIENT) {
-            return;
+        if (operation.status() != PlayerProfileOperation.Status.PREPARED) {
+            return CompletableFuture.failedFuture(new IllegalStateException(
+                    "Season reward operation requires admin recovery: " + operation.status()));
         }
-        if (decision == SeasonRewardStateData.DeliveryDecision.ACKNOWLEDGE) {
-            if (persistPlayer(player) && acknowledgeMemberClaim(claim.grantId())) {
-                celebrateMemberClaim(player, claim, true);
-            }
-            return;
+        final RewardEvidence evidence = rewardEvidence(player, claim);
+        if (evidence.invalid() || evidence.partial()) {
+            player.sendMessage(messageManager.getMessage(
+                    "season-champion-member-review",
+                    "<red>🏆 A szezonjutalom részleges vagy sérült tanút talált. Admin egyeztetés szükséges; semmi nem lett hozzáadva.</red>"));
+            return CompletableFuture.failedFuture(new IllegalStateException(
+                    "partial/corrupt season reward item evidence for " + claim.grantId()));
         }
-        if (!canFitAll(player.getInventory(), claim.items())) {
+        final List<ItemStack> stacks = rewardStacks(claim);
+        if (evidence.none() && !canFitAll(player.getInventory(), stacks)) {
             player.sendMessage(messageManager.getMessage(
                     "season-champion-member-inventory-full",
                     "<yellow>🏆 A szezonjutalmad várakozik. Szabadíts fel elegendő inventoryhelyet!</yellow>"));
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
         final ItemStack[] inventoryBefore = cloneStorageContents(player.getInventory());
         final Map<PotionEffectType, PotionEffect> effectsBefore = snapshotPotionEffects(player);
-        final Set<UUID> receiptsBefore = Set.copyOf(receipts);
+        final boolean recoveringSavedItems = evidence.complete();
         try {
-            for (final ItemStack stack : rewardStacks(claim.items())) {
-                final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(stack);
-                if (!leftovers.isEmpty()) {
-                    player.getInventory().setStorageContents(inventoryBefore);
-                    return;
+            if (evidence.none()) {
+                for (final ItemStack stack : stacks) {
+                    final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(stack);
+                    if (!leftovers.isEmpty()) {
+                        player.getInventory().setStorageContents(inventoryBefore);
+                        return CompletableFuture.completedFuture(null);
+                    }
                 }
             }
-            if (claim.buffTicks() > 0) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
-                        claim.buffTicks(), 0, false, true, true), true);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
-                        claim.buffTicks(), 0, false, true, true), true);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE,
-                        claim.buffTicks(), 0, false, true, true), true);
-            }
-            final Set<UUID> committedReceipts = new HashSet<>(receipts);
-            committedReceipts.add(claim.grantId());
-            setSeasonRewardReceipts(player, committedReceipts);
-
+            applyMemberBuff(player, operation);
             if (!persistPlayer(player)) {
                 player.getInventory().setStorageContents(inventoryBefore);
                 restorePotionEffects(player, effectsBefore);
-                setSeasonRewardReceipts(player, receiptsBefore);
-                return;
+                return CompletableFuture.completedFuture(null);
             }
         } catch (final RuntimeException | Error failure) {
             player.getInventory().setStorageContents(inventoryBefore);
             restorePotionEffects(player, effectsBefore);
-            setSeasonRewardReceipts(player, receiptsBefore);
             throw failure;
         }
-        if (acknowledgeMemberClaim(claim.grantId())) {
-            celebrateMemberClaim(player, claim, false);
-        }
+
+        return operationStore.commit(player.getUniqueId(), operationId,
+                        MEMBER_OPERATION_TYPE, fingerprint)
+                .thenApply(committed -> {
+                    if (acknowledgeMemberClaim(claim.grantId())) {
+                        celebrateMemberClaim(player, claim, recoveringSavedItems);
+                    }
+                    return null;
+                });
     }
 
-    private boolean canFitAll(final PlayerInventory inventory, final List<RewardItem> items) {
+    private RewardEvidence rewardEvidence(final Player player, final MemberRewardClaim claim) {
+        final Map<Material, Integer> expected = new EnumMap<>(Material.class);
+        int expectedAmount = 0;
+        for (final RewardItem item : claim.items()) {
+            expected.merge(item.material(), item.amount(), Math::addExact);
+            expectedAmount = Math.addExact(expectedAmount, item.amount());
+        }
+        final Map<Material, Integer> actual = new EnumMap<>(Material.class);
+        int taggedAmount = 0;
+        boolean invalid = false;
+        for (final ItemStack stack : player.getInventory().getStorageContents()) {
+            if (stack == null || stack.getType().isAir() || !stack.hasItemMeta()) continue;
+            final String raw = stack.getItemMeta().getPersistentDataContainer().get(
+                    seasonRewardGrantKey, PersistentDataType.STRING);
+            if (raw == null) continue;
+            if (!claim.grantId().toString().equals(raw)) continue;
+            final Integer allowed = expected.get(stack.getType());
+            if (allowed == null) {
+                invalid = true;
+                continue;
+            }
+            actual.merge(stack.getType(), stack.getAmount(), Math::addExact);
+            taggedAmount = Math.addExact(taggedAmount, stack.getAmount());
+            if (actual.get(stack.getType()) > allowed) invalid = true;
+        }
+        if (!actual.equals(expected) && taggedAmount == expectedAmount) invalid = true;
+        return new RewardEvidence(expectedAmount, taggedAmount, invalid);
+    }
+
+    private boolean canFitAll(final PlayerInventory inventory, final List<ItemStack> stacks) {
         final ItemStack[] simulated = cloneStorageContents(inventory);
-        for (final ItemStack stack : rewardStacks(items)) {
+        for (final ItemStack original : stacks) {
+            final ItemStack stack = original.clone();
             int remaining = stack.getAmount();
             final int max = Math.max(1, stack.getMaxStackSize());
             for (int slot = 0; slot < simulated.length && remaining > 0; slot++) {
@@ -1015,29 +931,54 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 final ItemStack existing = simulated[slot];
                 if (existing == null || existing.getType().isAir()) {
                     final int moved = Math.min(remaining, max);
-                    simulated[slot] = new ItemStack(stack.getType(), moved);
+                    final ItemStack placed = stack.clone();
+                    placed.setAmount(moved);
+                    simulated[slot] = placed;
                     remaining -= moved;
                 }
             }
-            if (remaining > 0) {
-                return false;
-            }
+            if (remaining > 0) return false;
         }
         return true;
     }
 
-    private List<ItemStack> rewardStacks(final List<RewardItem> items) {
+    private List<ItemStack> rewardStacks(final MemberRewardClaim claim) {
         final List<ItemStack> stacks = new ArrayList<>();
-        for (final RewardItem item : items) {
+        for (final RewardItem item : claim.items()) {
             int remaining = item.amount();
             final int max = Math.max(1, item.material().getMaxStackSize());
             while (remaining > 0) {
                 final int amount = Math.min(remaining, max);
-                stacks.add(new ItemStack(item.material(), amount));
+                final ItemStack stack = new ItemStack(item.material(), amount);
+                final var meta = stack.getItemMeta();
+                meta.getPersistentDataContainer().set(seasonRewardGrantKey,
+                        PersistentDataType.STRING, claim.grantId().toString());
+                stack.setItemMeta(meta);
+                stacks.add(stack);
                 remaining -= amount;
             }
         }
         return stacks;
+    }
+
+    private void applyMemberBuff(final Player player, final PlayerProfileOperation operation) {
+        final long until;
+        try {
+            until = Long.parseLong(operation.metadata().getOrDefault("buff-until", "0"));
+        } catch (final NumberFormatException invalid) {
+            throw new IllegalStateException("Invalid season reward buff deadline", invalid);
+        }
+        final long remainingMillis = Math.max(0L, until - System.currentTimeMillis());
+        if (remainingMillis <= 0L) return;
+        final long ticksLong = Math.min(Integer.MAX_VALUE,
+                Math.max(1L, (remainingMillis + 49L) / 50L));
+        final int ticks = (int) ticksLong;
+        player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
+                ticks, 0, false, true, true), true);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
+                ticks, 0, false, true, true), true);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE,
+                ticks, 0, false, true, true), true);
     }
 
     private ItemStack[] cloneStorageContents(final PlayerInventory inventory) {
@@ -1064,44 +1005,12 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         for (final PotionEffectType type : snapshot.keySet()) {
             player.removePotionEffect(type);
             final PotionEffect previous = snapshot.get(type);
-            if (previous != null) {
-                player.addPotionEffect(previous, true);
-            }
+            if (previous != null) player.addPotionEffect(previous, true);
         }
-    }
-
-    private Set<UUID> seasonRewardReceipts(final Player player) {
-        final String raw = player.getPersistentDataContainer().get(
-                seasonRewardReceiptKey, PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) {
-            return new HashSet<>();
-        }
-        final Set<UUID> receipts = new HashSet<>();
-        for (final String token : raw.split(";")) {
-            try {
-                receipts.add(UUID.fromString(token));
-            } catch (final IllegalArgumentException invalid) {
-                throw new IllegalStateException("invalid playerdata receipt token", invalid);
-            }
-        }
-        return receipts;
-    }
-
-    private void setSeasonRewardReceipts(final Player player, final Set<UUID> receipts) {
-        if (receipts.isEmpty()) {
-            player.getPersistentDataContainer().remove(seasonRewardReceiptKey);
-            return;
-        }
-        final String encoded = receipts.stream().map(UUID::toString).sorted()
-                .collect(java.util.stream.Collectors.joining(";"));
-        player.getPersistentDataContainer().set(
-                seasonRewardReceiptKey, PersistentDataType.STRING, encoded);
     }
 
     private boolean persistPlayer(final Player player) {
-        if (!playerSaveSupported) {
-            return false;
-        }
+        if (!playerSaveSupported) return false;
         try {
             player.saveData();
             playerSaveWarningSent.set(false);
@@ -1125,9 +1034,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     private boolean acknowledgeMemberClaim(final UUID grantId) {
         synchronized (stateLock) {
             final MemberRewardClaim claim = pendingMemberClaims.remove(grantId);
-            if (claim == null) {
-                return true;
-            }
+            if (claim == null) return true;
             if (!writeStateLocked()) {
                 pendingMemberClaims.put(grantId, claim);
                 return false;
@@ -1138,31 +1045,77 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     private void celebrateMemberClaim(final Player player, final MemberRewardClaim claim,
                                       final boolean recoveredReceipt) {
-        if (claim.firework()) {
-            spawnCelebrationFirework(player);
-        }
+        if (claim.firework()) spawnCelebrationFirework(player);
         player.sendMessage(messageManager.getMessage(
                 recoveredReceipt ? "season-champion-member-late" : "season-champion-member",
                 recoveredReceipt
-                        ? "<gold>🏆 A frakciód megnyerte az előző szezont — a győzelmi jutalmad tartós nyugtáját helyreállítottuk.</gold>"
+                        ? "<gold>🏆 A frakciód megnyerte az előző szezont — a jutalom PlayerProfile nyugtáját helyreállítottuk.</gold>"
                         : "<gold>🏆 A frakciód lett a szezon bajnoka — fogadd a győzelmi jutalmadat!</gold>"));
+    }
+
+    private CompletionStage<Void> runOnOwner(
+            final Player player,
+            final java.util.function.Supplier<CompletionStage<Void>> action) {
+        final CompletableFuture<Void> result = new CompletableFuture<>();
+        player.getScheduler().run(plugin, task -> {
+            try {
+                action.get().whenComplete((ignored, failure) -> {
+                    if (failure == null) result.complete(null);
+                    else result.completeExceptionally(failure);
+                });
+            } catch (final Throwable failure) {
+                result.completeExceptionally(failure);
+            }
+        }, () -> result.completeExceptionally(
+                new IllegalStateException("Player scheduler rejected season reward delivery")));
+        return result;
+    }
+
+    private static String memberOperationId(final MemberRewardClaim claim) {
+        return "season-member-" + claim.grantId();
+    }
+
+    private static String memberFingerprint(final MemberRewardClaim claim) {
+        final StringBuilder value = new StringBuilder()
+                .append(claim.recipient()).append('|')
+                .append(claim.closingSeason()).append('|')
+                .append(claim.buffTicks()).append('|')
+                .append(claim.firework());
+        for (final RewardItem item : claim.items()) {
+            value.append('|').append(item.material().name()).append(':').append(item.amount());
+        }
+        try {
+            return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(value.toString().getBytes(StandardCharsets.UTF_8)));
+        } catch (final NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 unavailable", impossible);
+        }
+    }
+
+    private static long buffUntil(final long now, final int buffTicks) {
+        if (buffTicks <= 0) return now;
+        final long millis = (long) buffTicks * 50L;
+        return now > Long.MAX_VALUE - millis ? Long.MAX_VALUE : now + millis;
+    }
+
+    private static String rootMessage(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof java.util.concurrent.CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.toString() : current.getMessage();
     }
 
     private RewardBatch loadRewardBatch(final YamlConfiguration yaml) {
         final ConfigurationSection section = yaml.getConfigurationSection("season.reward-batch");
-        if (section == null) {
-            return null;
-        }
+        if (section == null) return null;
         try {
             if (section.getInt("schema-version", -1) != 1
-                    || !section.contains("id")
-                    || !section.contains("closing-season")
-                    || !section.contains("opened-season")
-                    || !section.contains("champion")
+                    || !section.contains("id") || !section.contains("closing-season")
+                    || !section.contains("opened-season") || !section.contains("champion")
                     || !section.contains("champion-points")
                     || !section.contains("champion-treasury-reward")
-                    || !section.isList("standings")
-                    || !section.isList("treasury-grants")
+                    || !section.isList("standings") || !section.isList("treasury-grants")
                     || !section.isBoolean("monument-pending")
                     || !section.isBoolean("announcement-pending")
                     || !section.isBoolean("story-pending")) {
@@ -1174,20 +1127,15 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             SeasonRewardStateData.validateBatchGeneration(seasonNumber, closingSeason, openedSeason);
             final String rawChampion = section.getString("champion", "");
             final FactionType champion = rawChampion.isBlank() ? null : FactionType.fromInput(rawChampion);
-            if (!rawChampion.isBlank() && champion == null) {
-                throw new IllegalArgumentException("unknown champion");
-            }
+            if (!rawChampion.isBlank() && champion == null) throw new IllegalArgumentException("unknown champion");
             final int championPoints = section.getInt("champion-points", 0);
-            if (championPoints < 0) {
-                throw new IllegalArgumentException("negative champion points");
-            }
+            if (championPoints < 0) throw new IllegalArgumentException("negative champion points");
             final List<Standing> standings = new ArrayList<>();
             for (final Map<?, ?> raw : section.getMapList("standings")) {
                 final FactionType faction = FactionType.fromInput(String.valueOf(raw.get("faction")));
                 final Object pointsValue = raw.get("points");
-                if (faction == null || !(pointsValue instanceof Number number) || number.intValue() < 0) {
-                    throw new IllegalArgumentException("invalid standing");
-                }
+                if (faction == null || !(pointsValue instanceof Number number)
+                        || number.intValue() < 0) throw new IllegalArgumentException("invalid standing");
                 standings.add(new Standing(faction, number.intValue()));
             }
             final List<TreasuryGrant> grants = new ArrayList<>();
@@ -1205,8 +1153,9 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             if (!Double.isFinite(championReward) || championReward < 0.0D) {
                 throw new IllegalArgumentException("invalid champion treasury reward");
             }
-            return new RewardBatch(batchId, closingSeason, openedSeason, champion, championPoints,
-                    championReward, standings, grants, section.getBoolean("monument-pending", false),
+            return new RewardBatch(batchId, closingSeason, openedSeason, champion,
+                    championPoints, championReward, standings, grants,
+                    section.getBoolean("monument-pending", false),
                     section.getBoolean("announcement-pending", false),
                     section.getBoolean("story-pending", false));
         } catch (final RuntimeException invalid) {
@@ -1218,9 +1167,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     private void loadMemberClaims(final YamlConfiguration yaml) {
         final ConfigurationSection claims = yaml.getConfigurationSection("season.member-claims");
-        if (claims == null) {
-            return;
-        }
+        if (claims == null) return;
         for (final String key : claims.getKeys(false)) {
             try {
                 final UUID grantId = UUID.fromString(key);
@@ -1250,9 +1197,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     private void writeRewardBatch(final YamlConfiguration yaml, final RewardBatch batch) {
-        if (batch == null) {
-            return;
-        }
+        if (batch == null) return;
         final String path = "season.reward-batch";
         yaml.set(path + ".schema-version", 1);
         yaml.set(path + ".id", batch.batchId().toString());
@@ -1271,16 +1216,12 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 "amount", grant.amount())).toList());
     }
 
-    /** Spawns a short celebratory firework at the player. */
     private void spawnCelebrationFirework(final Player player) {
         final Firework firework = player.getWorld().spawn(player.getLocation(), Firework.class);
         final FireworkMeta meta = firework.getFireworkMeta();
         meta.addEffect(org.bukkit.FireworkEffect.builder()
-                .withColor(Color.YELLOW, Color.WHITE)
-                .withFade(Color.ORANGE)
-                .with(org.bukkit.FireworkEffect.Type.BALL_LARGE)
-                .trail(true)
-                .build());
+                .withColor(Color.YELLOW, Color.WHITE).withFade(Color.ORANGE)
+                .with(org.bukkit.FireworkEffect.Type.BALL_LARGE).trail(true).build());
         meta.setPower(1);
         firework.setFireworkMeta(meta);
     }

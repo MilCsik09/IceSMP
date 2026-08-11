@@ -67,6 +67,8 @@ public final class RaidManager implements PersistentStore {
     private ScheduledTask combatStartTask;
     private ScheduledTask captureTask;
     private ScheduledTask endTask;
+    /** Invalidates queued winner callbacks after a new raid/reload/shutdown lifecycle. */
+    private volatile long lifecycleRevision;
     private java.util.function.Consumer<Player> winHook;
 
     /** Sets the callback fired for every ONLINE winning-side fighter when a raid is won (quest bridge). */
@@ -139,7 +141,15 @@ public final class RaidManager implements PersistentStore {
     }
 
     public boolean isParticipant(final UUID playerId) {
-        return playerId != null && participants.containsKey(playerId);
+        final FactionType side = playerId == null ? null : participants.get(playerId);
+        return side != null && factionManager.isMember(playerId, side);
+    }
+
+    /** Immediate transition cleanup; lazy membership checks remain a second line of defence. */
+    public void onMembershipChange(final UUID playerId) {
+        if (playerId != null) {
+            participants.remove(playerId);
+        }
     }
 
     /**
@@ -155,7 +165,9 @@ public final class RaidManager implements PersistentStore {
 
         final FactionType killerSide = participants.get(killerId);
         final FactionType victimSide = participants.get(victimId);
-        return killerSide != null && victimSide != null && killerSide != victimSide;
+        return killerSide != null && victimSide != null && killerSide != victimSide
+                && factionManager.isMember(killerId, killerSide)
+                && factionManager.isMember(victimId, victimSide);
     }
 
     /**
@@ -170,7 +182,8 @@ public final class RaidManager implements PersistentStore {
         }
 
         final FactionType looterSide = participants.get(looterId);
-        if (looterSide == null || looterSide == territoryOwner) {
+        if (looterSide == null || looterSide == territoryOwner
+                || !factionManager.isMember(looterId, looterSide)) {
             return false;
         }
 
@@ -239,6 +252,7 @@ public final class RaidManager implements PersistentStore {
         final long now = System.currentTimeMillis();
         points.clear();
         participants.clear();
+        lifecycleRevision++;
         activeRaid = new ActiveRaid(attacker, defender,
                 territory == null ? null : territory.id(),
                 now + (warmupMinutes * 60_000L),
@@ -290,7 +304,7 @@ public final class RaidManager implements PersistentStore {
             return "faction-raid-none";
         }
 
-        final FactionType side = factionManager.getFaction(player.getUniqueId());
+        final FactionType side = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         if (side != raid.attacker() && side != raid.defender()) {
             return "faction-raid-not-party";
         }
@@ -314,7 +328,10 @@ public final class RaidManager implements PersistentStore {
     }
 
     public long countParticipants(final FactionType side) {
-        return participants.values().stream().filter(faction -> faction == side).count();
+        return participants.entrySet().stream()
+                .filter(entry -> entry.getValue() == side
+                        && factionManager.isMember(entry.getKey(), side))
+                .count();
     }
 
     public int getPoints(final FactionType side) {
@@ -383,9 +400,14 @@ public final class RaidManager implements PersistentStore {
                 if (activeRaid == null || !fighter.isOnline() || fighter.isDead()) {
                     return;
                 }
+                if (!factionManager.isMember(fighter.getUniqueId(), side)) {
+                    participants.remove(fighter.getUniqueId(), side);
+                    return;
+                }
 
                 final Location location = fighter.getLocation();
-                if (!territory.world().equals(location.getWorld().getName())) {
+                if (!territory.contains(location.getWorld().getName(),
+                        location.getX(), location.getY(), location.getZ())) {
                     return;
                 }
 
@@ -428,7 +450,8 @@ public final class RaidManager implements PersistentStore {
         if (raid.territoryId() != null) {
             final Territory territory = territoryManager.getById(raid.territoryId());
             if (territory != null && (deathLocation == null || deathLocation.getWorld() == null
-                    || !territory.contains(deathLocation.getWorld().getName(), deathLocation.getX(), deathLocation.getZ()))) {
+                    || !territory.contains(deathLocation.getWorld().getName(),
+                            deathLocation.getX(), deathLocation.getY(), deathLocation.getZ()))) {
                 return false;
             }
         }
@@ -454,6 +477,7 @@ public final class RaidManager implements PersistentStore {
         save();
         activeRaid = null;
         cancelTasks();
+        final long rewardRevision = ++lifecycleRevision;
 
         final int attackerPoints = points.getOrDefault(raid.attacker(), 0);
         final int defenderPoints = points.getOrDefault(raid.defender(), 0);
@@ -489,17 +513,24 @@ public final class RaidManager implements PersistentStore {
         // használni: a participants map ennek a metódusnak az elején már kiürült, tehát az
         // isParticipant() itt mindenkire false-t adna (a bejegyzés holt maradna).
         for (final Map.Entry<UUID, FactionType> fighter : fighters.entrySet()) {
-            if (fighter.getValue() != winner) {
+            if (fighter.getValue() != winner
+                    || !factionManager.isMember(fighter.getKey(), winner)) {
                 continue;
             }
             final org.bukkit.entity.Player online = Bukkit.getPlayer(fighter.getKey());
             if (online != null) {
-                AdvancementService.award(online, "raid_win");
+                online.getScheduler().run(plugin, task -> {
+                    if (online.isOnline()
+                            && lifecycleRevision == rewardRevision
+                            && factionManager.isMember(online.getUniqueId(), winner)) {
+                        AdvancementService.award(online, "raid_win");
+                    }
+                }, null);
             }
         }
 
         // Victor's spoils buff: a temporary boon for the winning faction's online members.
-        applyWinnerBuff(winner);
+        applyWinnerBuff(winner, rewardRevision);
 
         // Quest bridge (WIN_RAID objectives): only registered fighters on the winning
         // side count, each on their own region thread.
@@ -510,7 +541,13 @@ public final class RaidManager implements PersistentStore {
                 }
                 final Player online = Bukkit.getPlayer(fighter.getKey());
                 if (online != null) {
-                    online.getScheduler().run(plugin, task -> winHook.accept(online), null);
+                    online.getScheduler().run(plugin, task -> {
+                        if (online.isOnline()
+                                && lifecycleRevision == rewardRevision
+                                && factionManager.isMember(online.getUniqueId(), winner)) {
+                            winHook.accept(online);
+                        }
+                    }, null);
                 }
             }
         }
@@ -555,7 +592,7 @@ public final class RaidManager implements PersistentStore {
         ));
     }
 
-    private void applyWinnerBuff(final FactionType winner) {
+    private void applyWinnerBuff(final FactionType winner, final long rewardRevision) {
         final int buffMinutes = Math.max(0, configManager.getInt("factions.raid.winner-buff-minutes", 30));
         if (buffMinutes <= 0) {
             return;
@@ -565,13 +602,18 @@ public final class RaidManager implements PersistentStore {
         final int strengthLevel = Math.max(0, configManager.getInt("factions.raid.winner-buff-strength", 0));
         final int regenLevel = Math.max(0, configManager.getInt("factions.raid.winner-buff-regen", 0));
         for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (factionManager.getFaction(online.getUniqueId()) != winner) {
+            if (!factionManager.isMember(online.getUniqueId(), winner)) {
                 continue;
             }
 
             // Folia: endRaid() runs on the global region scheduler, so each player's
             // potion effects must be applied on that player's own region thread.
             online.getScheduler().run(plugin, task -> {
+                if (!online.isOnline()
+                        || lifecycleRevision != rewardRevision
+                        || !factionManager.isMember(online.getUniqueId(), winner)) {
+                    return;
+                }
                 online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, strengthLevel, false, true, true));
                 online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, regenLevel, false, true, true));
                 online.sendMessage(messageManager.getMessage(
@@ -615,6 +657,7 @@ public final class RaidManager implements PersistentStore {
                             + "a krónikák nem jegyzik, a nevezési díj visszakerült a kasszába.</yellow>"));
         }
         cancelTasks();
+        lifecycleRevision++;
         activeRaid = null;
         participants.clear();
         save();

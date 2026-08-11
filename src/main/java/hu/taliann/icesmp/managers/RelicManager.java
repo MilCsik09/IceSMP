@@ -13,6 +13,8 @@ import hu.taliann.icesmp.relics.RelicOwnership;
 import hu.taliann.icesmp.relics.RelicRegistry;
 import hu.taliann.icesmp.relics.RelicTrigger;
 import hu.taliann.icesmp.relics.RelicTriggerConfig;
+import hu.taliann.icesmp.relics.RelicWorldStateSnapshot;
+import hu.taliann.icesmp.relics.RelicWorldStateStore;
 import hu.taliann.icesmp.relics.SimpleRelicDefinition;
 import hu.taliann.icesmp.relics.ability.RelicAbility;
 import hu.taliann.icesmp.relics.ability.RelicAbilityContext;
@@ -30,7 +32,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
@@ -38,9 +39,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public final class RelicManager implements PlayerStateCleanup, PersistentStore {
+
+    private static final long REFRESH_FAILURE_LOG_INTERVAL_MILLIS = 5L * 60L * 1000L;
+    private static final int REFRESH_FAILURE_LOG_CACHE_LIMIT = 512;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -50,13 +55,13 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     private final RelicAbilityRegistry abilityRegistry;
     // Reload (clear+rebuild) közben régió-szálak olvassák — concurrent szerkezet kell.
     private final Map<String, EnumMap<RelicTrigger, RelicTriggerConfig>> triggerConfigs = new ConcurrentHashMap<>();
-    private final Map<String, RelicOwnership> ownerships = new ConcurrentHashMap<>();
+    private final Map<String, Long> refreshFailureLogTimes = new ConcurrentHashMap<>();
     /**
-     * "Elveszett" passzív relikviák (halálkor a tárgy megsemmisül, de a tulajdon marad):
-     * relicId → az elvesztés időpontja. Amíg él, CSAK a tulajdonos idézheti újra az
-     * oltárnál; a rövidített lost-expiry után a relikvia mindenki számára felszabadul.
+     * A világ-szintű relic aggregátum (ownership + lost/reclaim + awakening ready-at)
+     * egyetlen single-writer perzisztencia-határa: minden logikai mutáció szerializált
+     * check→mutate→durable-commit művelet, sikertelen írásnál rollbackkel (fail-closed).
      */
-    private final Map<String, Long> lostSince = new ConcurrentHashMap<>();
+    private final RelicWorldStateStore worldState;
     private final File ownershipFile;
 
     private boolean enabled;
@@ -71,7 +76,14 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         this.cooldownService = new RelicCooldownService();
         this.abilityRegistry = new RelicAbilityRegistry();
         this.ownershipFile = new File(plugin.getDataFolder(), "relics.yml");
+        this.worldState = new RelicWorldStateStore(
+                yaml -> YamlStore.saveAtomic(ownershipFile, yaml), plugin.getLogger());
         plugin.getDataFolder().mkdirs();
+    }
+
+    /** Sikeres világ-relic mutáció (transfer/lost/reclaim/give/expiry) értesítője. */
+    public void setWorldStateListener(final java.util.function.Consumer<String> listener) {
+        worldState.setMutationListener(listener);
     }
 
     public void load() {
@@ -84,15 +96,15 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         // Ownerships are loaded even when the system is disabled so a later save() cannot wipe them.
         loadOwnerships();
 
-        if (!enabled) {
-            plugin.getLogger().info("Relic system is disabled in config.");
-            return;
-        }
-
         if (configManager.getConfiguration() == null) {
             plugin.getLogger().warning("Relic config is not available; using built-in relic defaults.");
         }
 
+        // A definíció-registry a kikapcsolt runtime mellett IS betöltődik: a Class Relic
+        // katalógus generikus-létezés kereszt-validációja disabled állapotban is kötelező
+        // (a "definitions available" és a "gameplay enabled" két külön állapot). A
+        // gameplay-oldalt (trigger, give/use, join-sweep, item-azonosítás) az enabled
+        // flag kapuzza a use-site-okon.
         registerRelic(
                 "metelytepo",
                 Material.GOLDEN_AXE,
@@ -148,7 +160,13 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 "LIGHT_PURPLE",
                 List.of("&7Egy sosem kelt sárkány álma, kőbe zárva.", "&7A Sárkányidéző kezében az Eszencia", "&7medre kitágul — másnak csak hideg kő.")
         );
-        plugin.getLogger().info("Loaded " + registry.all().size() + " hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.");
+        if (!enabled) {
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
+                    "Relic system is disabled in config; " + registry.all().size()
+                            + " definition(s) loaded for validation only.");
+            return;
+        }
+        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + registry.all().size() + " hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.");
     }
 
     private void registerRelic(
@@ -213,60 +231,20 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     }
 
     public void save() {
-        try {
-            final YamlConfiguration yaml = new YamlConfiguration();
-
-            for (final Map.Entry<String, RelicOwnership> entry : ownerships.entrySet()) {
-                final String basePath = "ownerships." + entry.getKey();
-                yaml.set(basePath + ".owner", entry.getValue().owner().toString());
-                yaml.set(basePath + ".last-seen", entry.getValue().lastSeenMillis());
-                final Long lost = lostSince.get(entry.getKey());
-                if (lost != null) {
-                    yaml.set(basePath + ".lost-since", lost);
-                }
-            }
-
-            YamlStore.saveAtomic(ownershipFile, yaml);
-        } catch (final IOException exception) {
-            plugin.getLogger().severe("Failed to save relic ownerships: " + exception.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save relic ownerships", exception);
-        }
+        worldState.persist();
     }
 
     private void loadOwnerships() {
-        ownerships.clear();
-
         if (!ownershipFile.exists()) {
+            worldState.loadFrom(null);
             return;
         }
 
         try {
             final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(ownershipFile, plugin.getLogger());
-            final ConfigurationSection ownershipSection = yaml.getConfigurationSection("ownerships");
-            if (ownershipSection == null) {
-                return;
-            }
-
-            for (final String relicId : ownershipSection.getKeys(false)) {
-                final String rawOwner = ownershipSection.getString(relicId + ".owner");
-                final long lastSeenMillis = ownershipSection.getLong(relicId + ".last-seen", 0L);
-                if (rawOwner == null || rawOwner.isBlank()) {
-                    continue;
-                }
-
-                try {
-                    final UUID owner = UUID.fromString(rawOwner);
-                    ownerships.put(relicId.toLowerCase(Locale.ROOT), new RelicOwnership(owner, lastSeenMillis));
-                    final long lost = ownershipSection.getLong(relicId + ".lost-since", 0L);
-                    if (lost > 0L) {
-                        lostSince.put(relicId.toLowerCase(Locale.ROOT), lost);
-                    }
-                } catch (final IllegalArgumentException exception) {
-                    plugin.getLogger().warning("Invalid owner UUID in relics.yml for relic '" + relicId + "': " + rawOwner);
-                }
-            }
-
-            plugin.getLogger().info("Loaded " + ownerships.size() + " relic ownership record(s).");
+            worldState.loadFrom(yaml);
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded "
+                    + worldState.ownershipsView().size() + " relic ownership record(s).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load relic ownerships: " + exception.getMessage());
         }
@@ -274,11 +252,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
     /** @return the relic's persistent ownership record, or null if the relic is unclaimed */
     public RelicOwnership getOwnership(final String relicId) {
-        if (relicId == null || relicId.isBlank()) {
-            return null;
-        }
-
-        return ownerships.get(relicId.toLowerCase(Locale.ROOT));
+        return worldState.ownership(relicId);
     }
 
     /**
@@ -288,31 +262,18 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
      * @param owner the owning player's UUID
      */
     public void recordOwnership(final String relicId, final UUID owner) {
-        if (relicId == null || relicId.isBlank() || owner == null) {
-            return;
-        }
-
-        ownerships.put(relicId.toLowerCase(Locale.ROOT), new RelicOwnership(owner, System.currentTimeMillis()));
-        save();
+        worldState.recordOwnership(relicId, owner, System.currentTimeMillis());
     }
 
     /**
-     * Releases the ownership of a relic so it can be claimed again.
+     * Releases the ownership of a relic so it can be claimed again. Az elveszett-jelölés a
+     * tulajdonnal együtt jár — felszabadításkor az is törlődik, különben a következő
+     * tulajdonos öröklött "lost" állapotot kapna.
      *
      * @param relicId the relic identifier
      */
     public void releaseOwnership(final String relicId) {
-        if (relicId == null || relicId.isBlank()) {
-            return;
-        }
-
-        // Az elveszett-jelölés a tulajdonnal együtt jár — felszabadításkor az is törlendő,
-        // különben a következő tulajdonos öröklött "lost" állapotot kapna.
-        final boolean removedOwnership = ownerships.remove(relicId.toLowerCase(Locale.ROOT)) != null;
-        final boolean removedLost = lostSince.remove(relicId.toLowerCase(Locale.ROOT)) != null;
-        if (removedOwnership || removedLost) {
-            save();
-        }
+        worldState.releaseOwnership(relicId);
     }
 
     private boolean isExpired(final RelicOwnership ownership) {
@@ -331,7 +292,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         if (isExpired(ownership)) {
             return true;
         }
-        final Long lost = relicId == null ? null : lostSince.get(relicId.toLowerCase(Locale.ROOT));
+        final Long lost = relicId == null ? null : worldState.lostSince(relicId);
         if (lost == null) {
             return false;
         }
@@ -340,20 +301,43 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         return lostExpiryMillis > 0L && (System.currentTimeMillis() - lost) > lostExpiryMillis;
     }
 
-    /** A relikvia "elveszett" állapotba kerül (halál reclaim-módban): a tárgy megsemmisült,
-     * a tulajdon marad — csak a tulaj idézheti újra, a rövidített lejáratig. */
-    public void markLost(final String relicId) {
-        if (relicId != null) {
-            lostSince.put(relicId.toLowerCase(Locale.ROOT), System.currentTimeMillis());
-            save();
-        }
+    /**
+     * A relikvia "elveszett" állapotba kerül (halál reclaim-módban): a tárgy megsemmisült,
+     * a tulajdon marad — csak a tulaj idézheti újra, a rövidített lejáratig. Owner-kötött:
+     * csak a bizonyított aktuális tulajdonossal fogadható el, így egy stale fizikai
+     * példány korábbi gazdájának halála nem teheti LOST-ra másvalaki élő relicét.
+     *
+     * @return true, ha a jelölés ténylegesen megtörtént
+     */
+    public boolean markLost(final String relicId, final UUID expectedOwner) {
+        return worldState.markLost(relicId, expectedOwner, System.currentTimeMillis())
+                == hu.taliann.icesmp.relics.RelicWorldStateStore.MarkLostResult.MARKED;
     }
 
-    /** Az elveszett-jelölés törlése (sikeres újraidézés / új tulajdonos / visszakapott tárgy). */
-    public void clearLost(final String relicId) {
-        if (relicId != null && lostSince.remove(relicId.toLowerCase(Locale.ROOT)) != null) {
-            save();
-        }
+    /** Az elveszett-jelölés törlése (visszakapott tárgy) — a markLost owner-kötött párja. */
+    public boolean clearLost(final String relicId, final UUID expectedOwner) {
+        return worldState.clearLost(relicId, expectedOwner);
+    }
+
+    /** @return true, ha a relikvia elveszett/reclaim állapotban van (a tárgy megsemmisült). */
+    public boolean isLost(final String relicId) {
+        return worldState.isLost(relicId);
+    }
+
+    /** Awakening durable cooldown olvasása (0 = még sosem használt, azonnal kész). */
+    public long getAwakeningReadyAt(final String relicId) {
+        return worldState.awakeningReadyAt(relicId);
+    }
+
+    /**
+     * Atomikus Awakening-aktiválás: a ready-at ellenőrzés, az új érték és a durable commit
+     * EGY szerializált világ-relic műveletben — két konkurens hívásból pontosan egy ARMED,
+     * sikertelen lemez-írásnál rollback + PERSISTENCE_FAILED (hamis ARMED siker nincs).
+     */
+    public RelicWorldStateStore.ArmResult tryArmAwakening(final String relicId,
+                                                          final long nowMillis,
+                                                          final long cooldownSeconds) {
+        return worldState.tryArmAwakening(relicId, nowMillis, cooldownSeconds);
     }
 
     /**
@@ -368,12 +352,13 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             return;
         }
 
+        recoverPendingOperations(player);
+
         final UUID playerId = player.getUniqueId();
         final long now = System.currentTimeMillis();
         final PlayerInventory inventory = player.getInventory();
         final ItemStack[] contents = inventory.getContents();
         boolean inventoryChanged = false;
-        boolean ownershipChanged = false;
         final java.util.Set<String> seenRelics = new java.util.HashSet<>();
 
         // EGYETLEN bejárás. A PlayerInventory#getContents() a TELJES slotteret adja
@@ -388,14 +373,12 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             }
 
             final String relicId = definition.id().toLowerCase(Locale.ROOT);
-            final RelicOwnership ownership = ownerships.get(relicId);
+            final RelicOwnership ownership = worldState.ownership(relicId);
 
             if (isExpiredFor(relicId, ownership)) {
                 contents[slot] = null;
                 inventoryChanged = true;
-                ownerships.remove(relicId);
-                lostSince.remove(relicId);
-                ownershipChanged = true;
+                worldState.releaseOwnership(relicId);
                 playExpiryEffect(player);
                 sendExpiryMessage(player, definition);
                 continue;
@@ -422,17 +405,12 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             // példány belépése nem írhatja felül (ownership-eltérítés).
             if ((itemOwner == null || itemOwner.equals(playerId))
                     && (ownership == null || ownership.owner().equals(playerId) || isExpiredFor(relicId, ownership))) {
-                ownerships.put(relicId, new RelicOwnership(playerId, now));
-                ownershipChanged = true;
+                worldState.recordOwnership(relicId, playerId, now);
             }
         }
 
         if (inventoryChanged) {
             inventory.setContents(contents);
-        }
-
-        if (ownershipChanged) {
-            save();
         }
     }
 
@@ -489,12 +467,12 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
 
         final String normalizedId = definition.id().toLowerCase(Locale.ROOT);
-        final RelicOwnership currentOwnership = ownerships.get(normalizedId);
+        final RelicOwnership currentOwnership = worldState.ownership(normalizedId);
         // Reclaim-út: a halálban ELVESZETT relikviát a tulajdonosa a lost-expiry lejártáig
         // újraidézheti (más nem); minden más aktív-tulajdonos eset tiltott (self-dup védelem).
         final boolean ownerReclaim = currentOwnership != null
                 && currentOwnership.owner().equals(player.getUniqueId())
-                && lostSince.containsKey(normalizedId);
+                && worldState.isLost(normalizedId);
         if (!force && !ownerReclaim && currentOwnership != null && !isExpiredFor(normalizedId, currentOwnership)) {
             // Singleton rule: while ANY active owner exists — the requester included — no new
             // copy may be minted. A self-re-summon would otherwise duplicate a usable relic
@@ -502,8 +480,22 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             // recovered via the reclaim ritual, the lost/inactivity expiry or an admin force-give.
             return false;
         }
-        clearLost(normalizedId);
 
+        // 1) Világ-oldali commit EGY durable írásban: ownership + lost-törlés + a fizikai
+        // kézbesítés függő receiptje. Ha a kézbesítés előtt crash jön, a join-recovery a
+        // receiptből determinisztikusan pótolja a tárgyat — a reclaim-út nem blokkolódhat.
+        try {
+            worldState.beginClaim(normalizedId, player.getUniqueId(), System.currentTimeMillis(),
+                    ownerReclaim ? RelicWorldStateSnapshot.PendingRelicOperation.Type.RECLAIM
+                            : RelicWorldStateSnapshot.PendingRelicOperation.Type.CLAIM);
+        } catch (final RuntimeException failure) {
+            // Fail-closed: a publikált világ-állapot változatlan, tárgy nem készült.
+            plugin.getLogger().severe("Relic claim world-commit failed for '" + normalizedId
+                    + "': " + failure.getMessage());
+            return false;
+        }
+
+        // 2) Fizikai kézbesítés.
         int remaining = amount;
         while (remaining > 0) {
             final ItemStack itemStack = itemFactory.create(definition, player.getUniqueId());
@@ -515,9 +507,71 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             remaining -= itemStack.getAmount();
         }
 
-        recordOwnership(normalizedId, player.getUniqueId());
+        // 3) Receipt lezárása; hibánál a receipt megmarad, és a join-recovery zárja le
+        // (idempotens: csak akkor kézbesít újra, ha a tulajnál nincs példány).
+        settleOperation(normalizedId);
         AdvancementService.award(player, "first_relic");
         return true;
+    }
+
+    /**
+     * Determinisztikus join-recovery a világ-commit és a fizikai mellékhatás közti
+     * crash-ablakokra: CLAIM/RECLAIM receipt → kézbesítés, ha a tulajnál nincs példány
+     * (különben csak lezárás — duplikátum nem születhet); TRANSFER receipt → az új
+     * tulajnál lévő példány PDC-átírása (amíg a tárgy nincs nála, a receipt függőben
+     * marad, a régi-PDC-s példányt a fail-closed canUse tartja használhatatlanul).
+     */
+    private void recoverPendingOperations(final Player player) {
+        for (final Map.Entry<String, RelicWorldStateSnapshot.PendingRelicOperation> entry
+                : worldState.pendingOperationsFor(player.getUniqueId()).entrySet()) {
+            final String relicId = entry.getKey();
+            final RelicOwnership ownership = worldState.ownership(relicId);
+            if (ownership == null || !ownership.owner().equals(player.getUniqueId())) {
+                continue;
+            }
+            final RelicDefinition definition = registry.findById(relicId);
+            if (definition == null) {
+                continue;
+            }
+            switch (entry.getValue().type()) {
+                case CLAIM, RECLAIM -> {
+                    if (findRelicItem(player, relicId) == null) {
+                        final ItemStack item = itemFactory.create(definition, player.getUniqueId());
+                        player.getInventory().addItem(item).values().forEach(left ->
+                                player.getWorld().dropItemNaturally(player.getLocation(), left));
+                        plugin.getLogger().info("Relic claim recovered by delivery: " + relicId);
+                    }
+                    settleOperation(relicId);
+                }
+                case TRANSFER -> {
+                    final ItemStack item = findRelicItem(player, relicId);
+                    if (item != null) {
+                        itemFactory.setOwner(item, player.getUniqueId());
+                        settleOperation(relicId);
+                        plugin.getLogger().info("Relic transfer recovered by PDC rewrite: " + relicId);
+                    }
+                }
+            }
+        }
+    }
+
+    private void settleOperation(final String relicId) {
+        try {
+            worldState.completeOperation(relicId);
+        } catch (final RuntimeException failure) {
+            plugin.getLogger().warning("Relic operation receipt still pending for '" + relicId
+                    + "' (join-recovery will settle): " + failure.getMessage());
+        }
+    }
+
+    private ItemStack findRelicItem(final Player player, final String relicId) {
+        for (final ItemStack stack : player.getInventory().getContents()) {
+            final RelicDefinition definition = identify(stack);
+            if (definition != null && definition.id().equalsIgnoreCase(relicId)) {
+                return stack;
+            }
+        }
+        return null;
     }
 
     public boolean isRelicItem(final ItemStack itemStack) {
@@ -544,14 +598,17 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             return false;
         }
 
-        // Singleton enforcement: the CENTRAL ownership record is authoritative. A stale copy
-        // (transferred/expired-then-reclaimed by someone else) keeps its item PDC owner but is no
-        // longer the active owner — so it must not work, preventing two usable copies of one relic.
+        // Singleton enforcement: the CENTRAL ownership record is authoritative, fail-closed
+        // irányban. Aktív központi tulajdonos NÉLKÜL a fizikai példány nem használható —
+        // egy persistence-hiba utáni árva singleton nem működhet magától; a jogos
+        // állapotot a claim/transfer/join-sweep/recovery állítja helyre (ownership-
+        // felvétellel), nem a használat. Idegen aktív tulajdonos példánya sem működik.
         final RelicDefinition definition = identify(itemStack);
         if (definition != null) {
             final String relicId = definition.id().toLowerCase(Locale.ROOT);
-            final RelicOwnership ownership = ownerships.get(relicId);
-            if (ownership != null && !ownership.owner().equals(player.getUniqueId()) && !isExpiredFor(relicId, ownership)) {
+            final RelicOwnership ownership = worldState.ownership(relicId);
+            if (ownership == null || isExpiredFor(relicId, ownership)
+                    || !ownership.owner().equals(player.getUniqueId())) {
                 return false;
             }
         }
@@ -592,8 +649,24 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             return;
         }
 
+        final String normalizedId = relicId.toLowerCase(Locale.ROOT);
+        final RelicOwnership currentOwnership = worldState.ownership(normalizedId);
+        // 1) Világ-commit + a PDC-átírás függő receiptje EGY durable írásban — a fizikai
+        // mellékhatás a commit UTÁN fut; crashnél a join-recovery a receiptből írja át a
+        // PDC-t, addig a régi-PDC-s példányt a fail-closed canUse tartja inaktívan.
+        try {
+            worldState.beginTransfer(normalizedId,
+                    currentOwnership == null ? null : currentOwnership.owner(),
+                    newOwner.getUniqueId(), System.currentTimeMillis());
+        } catch (final RuntimeException failure) {
+            // Fail-closed: a régi tulajdon él, az item PDC érintetlen.
+            plugin.getLogger().severe("Relic transfer world-commit failed for '" + normalizedId
+                    + "': " + failure.getMessage());
+            return;
+        }
+        // 2) Fizikai PDC-átírás, majd 3) a receipt lezárása.
         itemFactory.setOwner(itemStack, newOwner.getUniqueId());
-        recordOwnership(relicId.toLowerCase(Locale.ROOT), newOwner.getUniqueId());
+        settleOperation(normalizedId);
     }
 
     public boolean handleTrigger(final Player player, final ItemStack itemStack, final RelicTrigger trigger) {
@@ -658,28 +731,55 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
         final PlayerInventory inventory = player.getInventory();
         final ItemStack[] contents = inventory.getContents();
-        boolean changed = false;
-
-        for (int slot = 0; slot < contents.length; slot++) {
-            final ItemStack itemStack = contents[slot];
-            final RelicDefinition definition = identify(itemStack);
-            if (definition == null) {
-                continue;
-            }
-
-            itemFactory.refresh(itemStack, definition);
-            contents[slot] = itemStack;
-            changed = true;
-        }
+        final int changed = RelicRefreshPipeline.refresh(
+                contents,
+                this::identify,
+                itemFactory::refresh,
+                (slot, itemStack, definition, exception) ->
+                        logRelicRefreshFailure(player, slot, itemStack, definition, exception)
+        );
 
         // A getContents() a páncél- és offhand-slotokat IS tartalmazza, ezért a viselt
         // relikviák (a szárnyak jellemzően a mellvért-slotban élnek) itt frissülnek — külön
-        // páncél-/offhand-kör csak duplikált munka lenne.
-        if (changed) {
+        // páncél-/offhand-kör csak duplikált munka lenne. A join event a játékos saját
+        // entity-régiószálán fut; az inventory írása nem kerül globális vagy async taskba.
+        if (changed > 0) {
             inventory.setContents(contents);
         }
     }
 
+
+    private void logRelicRefreshFailure(final Player player,
+                                        final int slot,
+                                        final ItemStack itemStack,
+                                        final RelicDefinition definition,
+                                        final RuntimeException exception) {
+        final String relicId = definition == null ? "<azonosítatlan>" : definition.id();
+        final String itemType = itemStack == null ? "<null>" : itemStack.getType().getKey().asString();
+        final String signature = player.getUniqueId() + "|" + slot + "|" + itemType + "|" + relicId
+                + "|" + exception.getClass().getName() + "|" + String.valueOf(exception.getMessage());
+        final long now = System.currentTimeMillis();
+        final Long previous = refreshFailureLogTimes.put(signature, now);
+        if (previous != null && now - previous < REFRESH_FAILURE_LOG_INTERVAL_MILLIS) {
+            return;
+        }
+        if (refreshFailureLogTimes.size() > REFRESH_FAILURE_LOG_CACHE_LIMIT) {
+            refreshFailureLogTimes.entrySet().removeIf(entry ->
+                    now - entry.getValue() >= REFRESH_FAILURE_LOG_INTERVAL_MILLIS);
+            while (refreshFailureLogTimes.size() > REFRESH_FAILURE_LOG_CACHE_LIMIT) {
+                refreshFailureLogTimes.entrySet().stream()
+                        .min(Map.Entry.comparingByValue())
+                        .ifPresent(entry -> refreshFailureLogTimes.remove(entry.getKey(), entry.getValue()));
+            }
+        }
+        plugin.getLogger().log(Level.SEVERE,
+                "Relikvia-frissítés hibázott; playerUuid=" + player.getUniqueId()
+                        + ", slot=" + slot
+                        + ", itemType=" + itemType
+                        + ", relicId=" + relicId
+                        + ". A többi inventory-slot frissítése folytatódik.",
+                exception);
+    }
 
     private String toLegacyColorCode(final String rawColor, final String fallback) {
         if (rawColor == null || rawColor.isBlank()) {
@@ -764,23 +864,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
      * @param playerId the player UUID
      */
     public void markOwnerSeen(final UUID playerId) {
-        if (playerId == null) {
-            return;
-        }
-
-        final long now = System.currentTimeMillis();
-        boolean changed = false;
-
-        for (final Map.Entry<String, RelicOwnership> entry : ownerships.entrySet()) {
-            if (playerId.equals(entry.getValue().owner())) {
-                entry.setValue(new RelicOwnership(playerId, now));
-                changed = true;
-            }
-        }
-
-        if (changed) {
-            save();
-        }
+        worldState.markOwnerSeen(playerId, System.currentTimeMillis());
     }
 }
 

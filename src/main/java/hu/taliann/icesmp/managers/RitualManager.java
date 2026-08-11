@@ -3,6 +3,7 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.TerritoryDestination;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -143,8 +144,8 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         }
         final String requiredFaction = ritual.getString("requires-faction", "");
         if (!requiredFaction.isBlank()) {
-            final FactionType faction = factionManager.getFaction(player.getUniqueId());
-            if (faction == null || !faction.name().equalsIgnoreCase(requiredFaction.trim())) {
+            final FactionType faction = FactionType.fromInput(requiredFaction.trim());
+            if (faction == null || !factionManager.isMember(player.getUniqueId(), faction)) {
                 player.sendMessage(messageManager.getMessage(
                         "ritual-wrong-faction",
                         "<red>Ez az oltár nem a te frakciódhoz szól.</red>"
@@ -361,7 +362,7 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
      */
     private void performHomeRitual(final Player player, final String ritualId,
                                    final Map<Material, Integer> sacrifices, final long cooldownSeconds) {
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         final Territory capital = faction == null ? null : territoryManager.getCapital(faction);
         final World world = capital == null ? null : Bukkit.getWorld(capital.world());
         if (capital == null || world == null) {
@@ -390,8 +391,20 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         // The highest-block lookup reads the capital's chunk — it must run on the DESTINATION region's
         // thread (Folia), not the altar's. Hop there, resolve the safe Y, then teleportAsync.
         plugin.getServer().getRegionScheduler().run(plugin, world, capital.x() >> 4, capital.z() >> 4, task -> {
-            final int y = world.getHighestBlockYAt(capital.x(), capital.z()) + 1;
-            player.teleportAsync(new Location(world, capital.x() + 0.5D, y, capital.z() + 0.5D, yaw, pitch))
+            final Integer safeY = TerritoryDestination.findSafeStandingY(world, capital);
+            if (safeY == null) {
+                player.getScheduler().run(plugin, failed -> {
+                    homeInFlight.remove(player.getUniqueId());
+                    refundSacrifices(player, sacrifices);
+                    player.sendMessage(messageManager.getMessage(
+                            "ritual-home-failed",
+                            "<red>A főváros középpontjában nincs biztonságos érkezési hely — az áldozatodat visszakaptad.</red>"
+                    ));
+                }, () -> homeInFlight.remove(player.getUniqueId()));
+                return;
+            }
+            player.teleportAsync(new Location(
+                            world, capital.x() + 0.5D, safeY, capital.z() + 0.5D, yaw, pitch))
                     .whenComplete((success, failure) -> player.getScheduler().run(plugin, done -> {
                         homeInFlight.remove(player.getUniqueId());
                         if (failure != null || success == null || !success) {

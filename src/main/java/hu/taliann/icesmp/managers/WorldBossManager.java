@@ -164,6 +164,37 @@ public final class WorldBossManager {
                 && entity.getPersistentDataContainer().getOrDefault(worldBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
 
+    /**
+     * A bestiárium a boss-ARCHETÍPUST jegyzi, nem az EntityType-ot: két azonos vanilla-fajú
+     * archetípus külön lajstrom-bejegyzés kell maradjon. Legacy fallback: entity-típusnév.
+     */
+    public String archetypeId(final Entity entity) {
+        if (entity == null) return null;
+        final String stored = entity.getPersistentDataContainer()
+                .get(bossArchetypeKey, PersistentDataType.STRING);
+        return (stored == null || stored.isBlank())
+                ? entity.getType().name().toLowerCase(java.util.Locale.ROOT)
+                : stored.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** id → nyers (&-kódos) display-név; a sorrend a roster deklarációs sorrendje. */
+    public static java.util.Map<String, String> archetypeDisplayNames() {
+        final java.util.LinkedHashMap<String, String> names = new java.util.LinkedHashMap<>();
+        for (final BossArchetype archetype : BossArchetype.values()) {
+            names.put(archetype.name().toLowerCase(java.util.Locale.ROOT), archetype.displayName);
+        }
+        return names;
+    }
+
+    /** A display-név kánon-alakja (szín-kódok, szimbólumok és a [Világboss] címke nélkül). */
+    public static String plainArchetypeName(final String rawDisplayName) {
+        return rawDisplayName
+                .replaceAll("&[0-9a-fk-or]", "")
+                .replace("[Világboss]", "")
+                .replaceAll("^[^\\p{L}]+", "")
+                .trim();
+    }
+
     /** Whether a world boss is currently alive (for HUD / boss-bar display). */
     public boolean isBossActive() {
         return activeBossUntil > System.currentTimeMillis();
@@ -359,16 +390,20 @@ public final class WorldBossManager {
         // Folia: read the anchor's location on its OWN region thread first (it may be in a
         // different region than the caller), then hop to the spawn location's region.
         anchor.getScheduler().run(plugin, task -> {
-            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
-            final double distance = 24.0D + ThreadLocalRandom.current().nextDouble(16.0D);
-            final Location approx = anchor.getLocation().clone().add(
-                    Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
-
-            final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
-            // activeBossUntil is set inside spawnBoss only AFTER the spawn is confirmed, so a bad
-            // entity-type config never leaves the manager reporting a phantom active boss.
-            plugin.getServer().getRegionScheduler().run(plugin, approx, spawnTask -> spawnBoss(approx, lifetimeMinutes));
-        }, null);
+            final Location origin = anchor.getLocation().clone();
+            final long lifetimeMinutes = Math.max(1L,
+                    configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
+            final EventSpawnGuard guard = spawnGuard;
+            if (guard == null) {
+                spawnGraceUntil = 0L;
+                plugin.getLogger().warning("World boss spawn aborted: EventSpawnGuard is unavailable.");
+                return;
+            }
+            guard.findSafeNear("world-boss", origin,
+                    System.nanoTime() ^ anchor.getUniqueId().getLeastSignificantBits(),
+                    location -> spawnBoss(location, lifetimeMinutes),
+                    () -> spawnGraceUntil = 0L);
+        }, () -> spawnGraceUntil = 0L);
     }
 
     private void spawnBoss(final Location approx, final long lifetimeMinutes) {
@@ -653,6 +688,9 @@ public final class WorldBossManager {
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
                     final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
                     EventSpawnGuard.prepare(add); // daytime SUMMON adds must not burn away instantly
+                    add.getPersistentDataContainer().set(
+                            hu.taliann.icesmp.factions.FactionCombatMarkers.EVENT_MOB,
+                            PersistentDataType.BYTE, (byte) 1);
                     add.setGlowing(true);
                     add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, (int) addLifespanTicks, 0, false, false, false));
                     // Bounded lifespan so summoned adds never accumulate / outlive the fight (on the add's own scheduler).
@@ -744,13 +782,17 @@ public final class WorldBossManager {
             }
         }
 
-        final FactionType faction = factionManager.getFaction(killer.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(
+                killer.getUniqueId()).orElse(null);
         final double reward = Math.max(0.0D, configManager.getDouble("world-events.world-boss.treasury-reward", 300.0D)) * rewardMult;
-        if (reward > 0.0D) {
+        if (faction != null && reward > 0.0D) {
             treasuryManager.deposit(faction, reward);
         }
 
-        seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
+        if (faction != null) {
+            seasonManager.addPoints(faction, Math.max(0,
+                    configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
+        }
         AdvancementService.award(killer, "world_boss");
 
         // Szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
@@ -761,12 +803,19 @@ public final class WorldBossManager {
                     : LootTable.roll(configManager, "world-events.season-finale.boss.loot", rolls)) {
                 boss.getWorld().dropItemNaturally(boss.getLocation(), loot);
             }
-            seasonManager.addPoints(faction, Math.max(0,
-                    configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)), "world-boss");
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "season-finale-boss-slain",
-                    "<dark_purple>📖 {player} ledöntötte a Lapforduló Őrét — a Korszakok Könyve új fejezetet nyit! A(z) {faction} extra liga-pontot nyert a záráshoz.</dark_purple>",
-                    Map.of("player", killer.getName(), "faction", faction.getDisplayName())));
+            if (faction != null) {
+                seasonManager.addPoints(faction, Math.max(0,
+                        configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)), "world-boss");
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        "season-finale-boss-slain",
+                        "<dark_purple>📖 {player} ledöntötte a Lapforduló Őrét — a Korszakok Könyve új fejezetet nyit! A(z) {faction} extra liga-pontot nyert a záráshoz.</dark_purple>",
+                        Map.of("player", killer.getName(), "faction", faction.getDisplayName())));
+            } else {
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        "season-finale-boss-slain-guest",
+                        "<dark_purple>📖 {player}, a Menedék vendége ledöntötte a Lapforduló Őrét — személyes jutalma jár, de frakciópont nem.</dark_purple>",
+                        Map.of("player", killer.getName())));
+            }
         }
 
         final int buffMinutes = Math.max(1, configManager.getInt("world-events.world-boss.buff-minutes", 10));
@@ -787,15 +836,22 @@ public final class WorldBossManager {
             }
         }, null);
 
-        Bukkit.getServer().broadcast(messageManager.getMessage(
-                "world-boss-slain",
-                "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>",
-                Map.of(
-                        "player", killer.getName(),
-                        "faction", faction.getDisplayName(),
-                        "reward", String.valueOf(reward),
-                        "points", String.valueOf(configManager.getInt("world-events.world-boss.season-points", 10))
-                )
-        ));
+        if (faction == null) {
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "world-boss-slain-guest",
+                    "<gold>⚔ {player}, a Menedék vendége legyőzte a világbosst! Személyes jutalma jár, de frakciókassza- és liga-jóváírás nem.</gold>",
+                    Map.of("player", killer.getName())));
+        } else {
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "world-boss-slain",
+                    "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>",
+                    Map.of(
+                            "player", killer.getName(),
+                            "faction", faction.getDisplayName(),
+                            "reward", String.valueOf(reward),
+                            "points", String.valueOf(configManager.getInt("world-events.world-boss.season-points", 10))
+                    )
+            ));
+        }
     }
 }

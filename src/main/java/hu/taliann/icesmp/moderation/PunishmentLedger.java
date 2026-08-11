@@ -111,6 +111,10 @@ public final class PunishmentLedger {
     }
 
     public int expireDue(final long nowMillis) {
+        return expireDueDetailed(nowMillis).size();
+    }
+
+    public List<PunishmentRecord> expireDueDetailed(final long nowMillis) {
         final List<PunishmentRecord> due = new ArrayList<>();
         for (final PunishmentRecord record : records.values()) {
             if (record.state() == PunishmentState.ACTIVE && record.type().isTemporary()
@@ -121,7 +125,7 @@ public final class PunishmentLedger {
         for (final PunishmentRecord record : due) {
             records.put(record.id(), record.expired(nowMillis));
         }
-        return due.size();
+        return List.copyOf(due);
     }
 
     private void validateInvariants() {

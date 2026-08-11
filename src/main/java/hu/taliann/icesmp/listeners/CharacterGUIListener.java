@@ -23,6 +23,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 
@@ -33,9 +34,11 @@ import java.util.Map;
  */
 public final class CharacterGUIListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final CharacterMenuContext ctx;
 
-    public CharacterGUIListener(final CharacterMenuContext ctx) {
+    public CharacterGUIListener(final JavaPlugin plugin, final CharacterMenuContext ctx) {
+        this.plugin = plugin;
         this.ctx = ctx;
     }
 
@@ -128,14 +131,20 @@ public final class CharacterGUIListener implements Listener {
 
         final SpecializationType classSpec = SpecGUI.resolveClassSpec(player, ctx, slot);
         if (classSpec != null) {
-            if (ctx.specializationManager().selectClassSpecialization(player, classSpec)) {
-                success(player, ctx.messageManager().getMessage("spec-choose-success", "&aSpecializáció kiválasztva:")
-                        .append(Component.space()).append(classSpec.getDisplayName()));
-            } else {
-                fail(player, ctx.messageManager().getComponent("spec-choose-failed",
-                        "&cNem választhatod ezt a specializációt (kaszt, szint, frakció vagy bűnös feltétel hiányzik)."));
-            }
-            SpecGUI.open(player, ctx);
+            player.closeInventory();
+            ctx.specializationManager().selectClassSpecializationV2(player, classSpec)
+                    .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (failure == null && Boolean.TRUE.equals(selected)) {
+                            success(player, ctx.messageManager().getMessage(
+                                            "spec-choose-success", "&aSpecializáció kiválasztva:")
+                                    .append(Component.space()).append(classSpec.getDisplayName()));
+                        } else {
+                            fail(player, ctx.messageManager().getComponent("spec-choose-failed",
+                                    "&cA Profile v2 mentés vagy valamelyik kasztkapu miatt a választás meghiúsult."));
+                        }
+                        SpecGUI.open(player, ctx);
+                    }, () -> ctx.specializationManager().profileGateway().blockSession(
+                            player.getUniqueId(), "Spec GUI completion scheduler rejected")));
             return;
         }
 
@@ -164,14 +173,21 @@ public final class CharacterGUIListener implements Listener {
             return;
         }
 
-        if (ctx.professionManager().selectProfession(player, profession)) {
-            success(player, ctx.messageManager().getMessage("profession-gui-learned", "&aSzakma megtanulva:")
-                    .append(Component.space()).append(profession.getDisplayName()));
-        } else {
-            fail(player, ctx.messageManager().getComponent("profession-gui-cannot",
-                    "&cEzt a szakmát most nem tanulhatod — ebben a kategóriában már betöltötted a helyed."));
-        }
-        ProfessionGUI.open(player, ctx);
+        ctx.professionManager().selectProfession(player, profession)
+                .whenComplete((selected, failure) -> ctx.professionManager().runOnOwnerThread(player, () -> {
+                    if (failure != null) {
+                        fail(player, ctx.messageManager().getComponent("profession-storage-failed",
+                                "&cA PlayerProfile szakma mentése meghiúsult."));
+                    } else if (Boolean.TRUE.equals(selected)) {
+                        success(player, ctx.messageManager().getMessage("profession-gui-learned",
+                                        "&aSzakma megtanulva:")
+                                .append(Component.space()).append(profession.getDisplayName()));
+                    } else {
+                        fail(player, ctx.messageManager().getComponent("profession-gui-cannot",
+                                "&cEzt a szakmát most nem tanulhatod — ebben a kategóriában már betöltötted a helyed."));
+                    }
+                    if (player.isOnline()) ProfessionGUI.open(player, ctx);
+                }));
     }
 
     private void handleTalent(final Player player, final int slot) {
@@ -186,27 +202,61 @@ public final class CharacterGUIListener implements Listener {
             return;
         }
 
-        if (ctx.talentManager().spendPoint(player, node.classPool(), node.id())) {
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.4F);
-            player.sendMessage(ctx.messageManager().getMessage(
-                    "talent-spend-success",
-                    "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
-                    Map.of(
-                            "talent", talentDisplayName(ctx, node),
-                            "rank", String.valueOf(ctx.talentManager().getRank(player, node.classPool(), node.id())),
-                            "points", String.valueOf(ctx.talentManager().getAvailablePoints(player, node.classPool()))
-                    )));
-        } else {
-            fail(player, ctx.messageManager().getComponent("talent-spend-failed",
-                    "&cNem sikerült a pont elköltése (zárolt talent, nincs pont, vagy max rang)."));
-        }
-        TalentGUI.open(player, ctx);
+        ctx.talentManager().spendPoint(player, node.classPool(), node.id())
+                .whenComplete((spent, failure) -> ctx.talentManager().runOnOwnerThread(player, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (failure != null) {
+                        fail(player, ctx.messageManager().getComponent("talent-storage-failed",
+                                "&cA talent tartós mentése sikertelen; az állapot nem változott."));
+                    } else if (Boolean.TRUE.equals(spent)) {
+                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.4F);
+                        player.sendMessage(ctx.messageManager().getMessage(
+                                "talent-spend-success",
+                                "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
+                                Map.of(
+                                        "talent", talentDisplayName(ctx, node),
+                                        "rank", String.valueOf(ctx.talentManager().getRank(
+                                                player, node.classPool(), node.id())),
+                                        "points", String.valueOf(ctx.talentManager().getAvailablePoints(
+                                                player, node.classPool()))
+                                )));
+                    } else {
+                        fail(player, ctx.messageManager().getComponent("talent-spend-failed",
+                                "&cNem sikerült a pont elköltése (zárolt talent, nincs pont, vagy max rang)."));
+                    }
+                    TalentGUI.open(player, ctx);
+                }));
     }
 
     /** Respecs the class or profession specialization for the faction-currency cost. */
     private void respec(final Player player, final boolean classPool) {
+        if (classPool) {
+            player.closeInventory();
+            final long revision = ctx.specializationManager().profileGateway()
+                    .diagnostic(player.getUniqueId()).revision();
+            ctx.respecService().respecV2(player,
+                            "gui-respec:" + player.getUniqueId() + ":" + revision)
+                    .whenComplete((outcome, failure) -> player.getScheduler().run(plugin, task -> {
+                        if (failure != null || outcome == null) {
+                            fail(player, ctx.messageManager().getComponent(
+                                    "spec-respec-persistence-failed",
+                                    "&cA Profile v2 tranzakció meghiúsult; a költség nem veszett el."));
+                        } else {
+                            displayRespecOutcome(player, outcome);
+                        }
+                    }, null));
+            return;
+        }
         final hu.taliann.icesmp.managers.RespecService.Outcome outcome =
                 ctx.respecService().respec(player, classPool);
+        displayRespecOutcome(player, outcome);
+    }
+
+    private void displayRespecOutcome(
+            final Player player,
+            final hu.taliann.icesmp.managers.RespecService.Outcome outcome) {
         switch (outcome.status()) {
             case NOTHING_TO_RESPEC -> {
                 fail(player, ctx.messageManager().getComponent("spec-respec-nothing",
@@ -233,6 +283,15 @@ public final class CharacterGUIListener implements Listener {
                         outcome.refundedTalentPoints()));
                 SpecGUI.open(player, ctx);
             }
+            case PERSISTENCE_FAILED -> fail(player, ctx.messageManager().getComponent(
+                    "spec-respec-persistence-failed",
+                    "&cA Profile v2 mentése meghiúsult; az esetleges költséget visszatérítettük."));
+            case RUNTIME_FAILED -> fail(player, ctx.messageManager().getComponent(
+                    "spec-respec-runtime-failed",
+                    "&4A profil commitolt, de a runtime-befejezés hibázott; admin audit szükséges."));
+            case REFUND_FAILED -> fail(player, ctx.messageManager().getComponent(
+                    "spec-respec-refund-failed",
+                    "&4A profil- és valuta-visszaállítás kézi admin auditot igényel."));
         }
     }
 

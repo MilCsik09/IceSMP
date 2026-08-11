@@ -181,7 +181,7 @@ public final class ParkourManager implements PersistentStore {
         AdvancementService.award(player, "parkour");
         final boolean paid = course.reward > 0 && tryConsumeDailyRun(player.getUniqueId(), run.courseId());
         if (paid) {
-            final FactionType faction = factionManager.getFaction(player.getUniqueId());
+            final FactionType faction = factionManager.getEconomyFaction(player.getUniqueId());
             currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), Math.round(course.reward));
         } else if (course.reward > 0) {
             player.sendMessage(messageManager.getMessage(

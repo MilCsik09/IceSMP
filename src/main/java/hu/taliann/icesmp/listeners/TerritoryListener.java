@@ -56,8 +56,9 @@ public final class TerritoryListener implements Listener {
 
         final Location from = event.getFrom();
         final Location to = event.getTo();
-        // Only re-evaluate on block-level movement to keep the hot path cheap.
-        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
+        // A height-limited 3D zone can be crossed vertically in the same X/Z
+        // column, and a portal may preserve all coordinates while changing world.
+        if (sameBlock(from, to)) {
             return;
         }
 
@@ -135,6 +136,13 @@ public final class TerritoryListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onPlayerTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
         onPlayerMove(event);
+    }
+
+    private static boolean sameBlock(final Location first, final Location second) {
+        return first.getWorld() == second.getWorld()
+                && first.getBlockX() == second.getBlockX()
+                && first.getBlockY() == second.getBlockY()
+                && first.getBlockZ() == second.getBlockZ();
     }
 
     @EventHandler

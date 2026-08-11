@@ -8,8 +8,8 @@ import org.bukkit.entity.Zombie;
 
 /**
  * Shared undead classification — the single source of truth used by the DARK faction
- * passive (undead ignore the marked) and the soul-drop rules (the Queen's word carries
- * no harvestable soul). Keep the type list in sync with the lore's "élőhalott" notion.
+ * target policy (ambient/wild/combat context) and the soul-drop rules (the Queen's word
+ * carries no harvestable soul). Keep the type list in sync with the lore's "élőhalott" notion.
  */
 public final class UndeadUtil {
 

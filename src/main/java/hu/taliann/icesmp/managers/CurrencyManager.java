@@ -4,197 +4,159 @@ import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Wallet;
 import hu.taliann.icesmp.items.CurrencyItemFactory;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStore;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStore.WalletState;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.TransactionJournal;
-import hu.taliann.icesmp.storage.YamlStore;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
+/**
+ * PlayerProfile-backed wallet facade.
+ *
+ * <p>The canonical balances and durable debit witnesses live in the typed
+ * {@code EconomySection}. The in-memory maps below are projections only: they are rebuilt from
+ * PlayerProfile, discarded on logout and never serialized independently. Ordinary legacy-shaped
+ * synchronous calls reserve a deterministic per-player mutation and enqueue section CAS in order;
+ * durable transaction APIs wait for the section commit before returning.</p>
+ */
 @SuppressWarnings("unused")
 public final class CurrencyManager implements PlayerStateCleanup, PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final CurrencyItemFactory itemFactory;
-    private final File storageFile;
-    private final Map<UUID, EnumMap<CurrencyType, Double>> balances = new ConcurrentHashMap<>();
-    /** Serializes every wallet mutation with the durable snapshot writer. */
-    private final Object saveLock = new Object();
-    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
-    private CurrencyType defaultCurrencyType = CurrencyType.NEUTRAL;
+    private final PlayerProfileEconomyStore economyStore = new PlayerProfileEconomyStore();
 
-    /** Exact before/after wallet snapshot used by crate compensation. */
+    /** Online/touched runtime projection. Never a persistence authority. */
+    private final ConcurrentMap<UUID, WalletState> mirrors = new ConcurrentHashMap<>();
+    /** Durable-owner projection used only for supply/operation lookup. */
+    private final ConcurrentMap<UUID, WalletState> durableProjection = new ConcurrentHashMap<>();
+    /** Serializes asynchronous CAS writes per player. */
+    private final ConcurrentMap<UUID, CompletableFuture<Void>> mutationTails = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Object> playerLocks = new ConcurrentHashMap<>();
+    private final AtomicBoolean healthy = new AtomicBoolean(true);
+    private volatile AutoCloseable profileSubscription;
+    private volatile CurrencyType defaultCurrencyType = CurrencyType.NEUTRAL;
+
+    /** Exact before/after wallet snapshot used by market/crate compensation. */
     public record DurableMutation(UUID playerId, boolean previousPresent,
                                   Map<CurrencyType, Double> previous,
                                   Map<CurrencyType, Double> expected) {
         public DurableMutation {
-            previous = Map.copyOf(previous);
-            expected = Map.copyOf(expected);
+            Objects.requireNonNull(playerId, "playerId");
+            previous = normalizeDoubleWallet(previous);
+            expected = normalizeDoubleWallet(expected);
+        }
+    }
+
+    public enum DurableWalletOperationStatus { DEBITED, COMMITTED, ROLLED_BACK }
+
+    public record DurableWalletOperation(String operationId, UUID playerId, CurrencyType currency,
+                                         double amount, long createdAtEpochMillis,
+                                         DurableWalletOperationStatus status,
+                                         boolean previousPresent,
+                                         Map<CurrencyType, Double> previous,
+                                         Map<CurrencyType, Double> expected) {
+        public DurableWalletOperation {
+            if (operationId == null || operationId.isBlank() || operationId.length() > 192) {
+                throw new IllegalArgumentException("invalid durable operation id");
+            }
+            Objects.requireNonNull(playerId, "playerId");
+            Objects.requireNonNull(currency, "currency");
+            Objects.requireNonNull(status, "status");
+            if (!Double.isFinite(amount) || amount <= 0.0D || createdAtEpochMillis <= 0L) {
+                throw new IllegalArgumentException("invalid durable wallet operation");
+            }
+            previous = normalizeDoubleWallet(previous);
+            expected = normalizeDoubleWallet(expected);
+        }
+    }
+
+    private record LocalDecision<R>(boolean changed, WalletState wallet, R result) {
+        static <R> LocalDecision<R> unchanged(final R result) {
+            return new LocalDecision<>(false, null, result);
+        }
+        static <R> LocalDecision<R> changed(final WalletState wallet, final R result) {
+            return new LocalDecision<>(true, Objects.requireNonNull(wallet, "wallet"), result);
         }
     }
 
     public CurrencyManager(final JavaPlugin plugin, final ConfigManager configManager) {
-        this.plugin = plugin;
-        this.configManager = configManager;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.configManager = Objects.requireNonNull(configManager, "configManager");
         this.itemFactory = new CurrencyItemFactory(plugin, configManager);
-        this.storageFile = new File(plugin.getDataFolder(), "currency-balances.yml");
-        YamlStore.registerCriticalWrite(storageFile);
-        plugin.getDataFolder().mkdirs();
     }
 
-    /** Parses into a temporary candidate and swaps live state only after full validation. */
+    /** Rebuilds projections only; no legacy wallet file is read. */
+    @Override
     public void load() {
-        final CurrencyType loadedDefault = resolveDefaultCurrencyType();
-        final YamlConfiguration configuration = YamlStore.loadTracked(storageFile, plugin.getLogger());
-        final Map<UUID, EnumMap<CurrencyType, Double>> loaded = new HashMap<>();
-        final ConfigurationSection playersSection = configuration.getConfigurationSection("players");
-        if (playersSection != null) {
-            for (final String uuidKey : playersSection.getKeys(false)) {
-                final UUID uuid;
-                try {
-                    uuid = UUID.fromString(uuidKey);
-                } catch (final IllegalArgumentException invalidUuid) {
-                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                            "Érvénytelen wallet UUID: " + uuidKey);
-                    return;
-                }
-                final ConfigurationSection playerSection = playersSection.getConfigurationSection(uuidKey);
-                if (playerSection == null) {
-                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                            "Hiányzó wallet szakasz: players." + uuidKey);
-                    return;
-                }
-                final EnumMap<CurrencyType, Double> wallet = createEmptyBalanceMap();
-                for (final CurrencyType currency : CurrencyType.values()) {
-                    final Object raw = playerSection.get(currency.name());
-                    if (raw == null) {
-                        continue;
-                    }
-                    if (!(raw instanceof Number number)) {
-                        YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                                "Nem numerikus wallet érték: players." + uuidKey + "." + currency.name());
-                        return;
-                    }
-                    final double amount = number.doubleValue();
-                    if (!Double.isFinite(amount) || amount < 0.0D) {
-                        YamlStore.failCorrupt(storageFile, plugin.getLogger(),
-                                "Érvénytelen wallet érték: players." + uuidKey + "." + currency.name());
-                        return;
-                    }
-                    wallet.put(currency, amount);
-                }
-                loaded.put(uuid, wallet);
-            }
+        defaultCurrencyType = resolveDefaultCurrencyType();
+        final Optional<PlayerProfileAuthority> installed = PlayerProfileAuthority.installed();
+        if (installed.isEmpty()) {
+            plugin.getLogger().warning("PlayerProfile authority is not installed while CurrencyManager loads; "
+                    + "wallet projections will initialize lazily.");
+            return;
         }
-        synchronized (saveLock) {
-            defaultCurrencyType = loadedDefault;
-            balances.clear();
-            balances.putAll(loaded);
+        if (profileSubscription == null) {
+            profileSubscription = installed.orElseThrow().service().subscribe((playerId, revision, changed) -> {
+                if (changed.contains(ProfileSectionId.ECONOMY)) refreshProjection(playerId);
+            });
         }
+        installed.orElseThrow().repository().listPlayerIds()
+                .thenAccept(ids -> ids.forEach(this::refreshProjection))
+                .exceptionally(failure -> {
+                    failStorage("wallet owner enumeration", failure);
+                    return null;
+                });
     }
 
-    /** Synchronous durable flush. A failure propagates to the transaction caller. */
+    /** Every mutation already commits through PlayerProfile; disable waits for queued CAS writes. */
+    @Override
     public void save() {
-        if (!flushToDisk()) {
-            throw unavailable("A wallet mentése piaci tranzakció közben zárolva van.");
-        }
-    }
-
-    /**
-     * Debounced save during ordinary gameplay. During journal recovery the current thread owns the
-     * wallet gate, therefore the repair MUST be written synchronously before the journal entry can
-     * be removed. This closes the crash window where recovery mutated memory, deleted the WAL entry,
-     * and died before the delayed wallet flush.
-     */
-    public void requestSave() {
-        if (YamlStore.hasCriticalWriteFailure()) {
-            return;
-        }
-        if (TransactionJournal.isRecoveryOwnerThread()) {
-            save();
-            return;
-        }
-        if (saveScheduled.compareAndSet(false, true)) {
-            scheduleFlushAttempt(2L);
-        }
-    }
-
-    private void scheduleFlushAttempt(final long delaySeconds) {
-        plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
-            if (YamlStore.hasCriticalWriteFailure()) {
-                saveScheduled.set(false);
-                return;
-            }
-            if (!flushToDisk()) {
-                scheduleFlushAttempt(1L);
-                return;
-            }
-            saveScheduled.set(false);
-        }, delaySeconds, TimeUnit.SECONDS);
-    }
-
-    /** @return false only when another thread owns the market transaction gate. */
-    private boolean flushToDisk() {
-        return TransactionJournal.withCurrencyMutationPermit(() -> {
-            if (!isStorageHealthy()) {
-                throw unavailable("A wallet store hibás vagy írási hiba után letiltott.");
-            }
-            synchronized (saveLock) {
-                if (!isStorageHealthy()) {
-                    throw unavailable("A wallet store hibás vagy írási hiba után letiltott.");
-                }
-                writeBalancesLocked();
-            }
-            return Boolean.TRUE;
-        }, Boolean.FALSE);
-    }
-
-    /** Caller owns {@link #saveLock} and the currency mutation permit. */
-    private void writeBalancesLocked() {
-        final YamlConfiguration configuration = new YamlConfiguration();
-        for (final Map.Entry<UUID, EnumMap<CurrencyType, Double>> entry : balances.entrySet()) {
-            final String basePath = "players." + entry.getKey();
-            final EnumMap<CurrencyType, Double> playerBalances = entry.getValue();
-            for (final CurrencyType currencyType : CurrencyType.values()) {
-                final double value = playerBalances.getOrDefault(currencyType, 0.0D);
-                if (!Double.isFinite(value) || value < 0.0D) {
-                    throw unavailable("Nem menthető wallet érték: " + entry.getKey()
-                            + "/" + currencyType.name());
-                }
-                configuration.set(basePath + "." + currencyType.name(), value);
-            }
-        }
         try {
-            YamlStore.saveAtomic(storageFile, configuration);
-        } catch (final IOException exception) {
-            plugin.getLogger().severe("Failed to save currency balances: "
-                    + exception.getMessage());
-            throw unavailable("A wallet tartós mentése sikertelen.");
+            final CompletableFuture<?>[] pending = mutationTails.values()
+                    .toArray(CompletableFuture[]::new);
+            CompletableFuture.allOf(pending).join();
+            PlayerProfileAuthority.installed().ifPresent(authority ->
+                    authority.repository().flushAll().toCompletableFuture().join());
+        } catch (final CompletionException failure) {
+            throw unavailable("A PlayerProfile wallet drain sikertelen: " + rootMessage(failure));
         }
+    }
+
+    /** Compatibility hook: there is no debounced secondary wallet store anymore. */
+    public void requestSave() {
+        // Intentionally empty. Each accepted mutation owns a section-CAS future.
     }
 
     public boolean isStorageHealthy() {
-        return !YamlStore.isLoadFailed(storageFile) && !YamlStore.hasCriticalWriteFailure();
+        return healthy.get() && PlayerProfileAuthority.installed().isPresent();
     }
 
     public FactionType getDefaultCurrencyType() {
@@ -218,8 +180,9 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         return itemFactory.isCurrencyItem(itemStack);
     }
 
-    /** Physical token payout; does not mutate the bank ledger. */
+    /** Physical token payout; it deliberately does not mutate the bank ledger. */
     public void payOutTokens(final Player player, final CurrencyType currencyType, final long amount) {
+        if (player == null) return;
         final CurrencyType currency = currencyType == null ? defaultCurrencyType : currencyType;
         long left = Math.max(0L, amount);
         while (left > 0L) {
@@ -241,57 +204,57 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
     }
 
     public double getBalance(final Player player) {
-        return getBalance(player, defaultCurrencyType);
+        return player == null ? 0.0D : getBalance(player, defaultCurrencyType);
     }
 
     public double getBalance(final Player player, final FactionType currencyType) {
-        return getBalance(player, currencyType == null ? defaultCurrencyType
-                : CurrencyType.fromFactionType(currencyType));
+        return player == null ? 0.0D : getBalance(player, currencyType == null
+                ? defaultCurrencyType : CurrencyType.fromFactionType(currencyType));
     }
 
     public double getBalance(final Player player, final CurrencyType currencyType) {
-        final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType : currencyType;
-        return getStoredBalance(player.getUniqueId(), resolvedType);
+        return player == null ? 0.0D : getBalance(player.getUniqueId(),
+                currencyType == null ? defaultCurrencyType : currencyType);
+    }
+
+    public double getBalance(final UUID playerId, final CurrencyType currencyType) {
+        if (playerId == null || currencyType == null) return 0.0D;
+        return stateForRead(playerId).amount(currencyType);
     }
 
     public double getTotalBalance(final Player player) {
-        if (player == null) {
-            return 0.0D;
-        }
+        if (player == null) return 0.0D;
+        final WalletState state = stateForRead(player.getUniqueId());
         double total = 0.0D;
-        for (final CurrencyType currencyType : CurrencyType.values()) {
-            total += getBalance(player, currencyType);
-        }
+        for (final CurrencyType type : CurrencyType.values()) total += state.amount(type);
         return total;
     }
 
     public Map<FactionType, Double> getBalances(final Player player) {
-        final EnumMap<FactionType, Double> balancesByFaction = new EnumMap<>(FactionType.class);
-        for (final CurrencyType currencyType : CurrencyType.values()) {
-            balancesByFaction.put(currencyType.toFactionType(), getBalance(player, currencyType));
+        final EnumMap<FactionType, Double> result = new EnumMap<>(FactionType.class);
+        if (player != null) {
+            final WalletState state = stateForRead(player.getUniqueId());
+            for (final CurrencyType type : CurrencyType.values()) {
+                result.put(type.toFactionType(), state.amount(type));
+            }
         }
-        return Map.copyOf(balancesByFaction);
+        for (final FactionType type : FactionType.values()) result.putIfAbsent(type, 0.0D);
+        return Map.copyOf(result);
     }
 
     public String describeBalances(final Player player) {
-        final Map<FactionType, Double> currentBalances = getBalances(player);
+        final Map<FactionType, Double> balances = getBalances(player);
         final StringJoiner joiner = new StringJoiner(", ");
-        for (final FactionType factionType : FactionType.values()) {
-            joiner.add(factionType.getDisplayName() + ": "
-                    + formatBalance(currentBalances.getOrDefault(factionType, 0.0D)));
+        for (final FactionType faction : FactionType.values()) {
+            joiner.add(faction.getDisplayName() + ": "
+                    + formatBalance(balances.getOrDefault(faction, 0.0D)));
         }
         return joiner.toString();
     }
 
     public String formatBalance(final double amount) {
-        return new DecimalFormat("0.##", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(amount);
-    }
-
-    public double getBalance(final UUID playerId, final CurrencyType currencyType) {
-        if (playerId == null || currencyType == null) {
-            return 0.0D;
-        }
-        return getStoredBalance(playerId, currencyType);
+        return new DecimalFormat("0.###", DecimalFormatSymbols.getInstance(Locale.ROOT))
+                .format(amount);
     }
 
     public boolean deductFromBalance(final UUID playerId, final CurrencyType currencyType,
@@ -299,205 +262,266 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         if (playerId == null || currencyType == null || !Double.isFinite(amount) || amount <= 0.0D) {
             return false;
         }
-        final boolean deducted = withMutation(() -> tryDeductUnsafe(playerId, currencyType, amount),
-                false);
-        if (deducted) {
-            requestSave();
-        }
-        return deducted;
+        final long milli;
+        try { milli = PlayerProfileEconomyStore.toPositiveMilli(amount); }
+        catch (final RuntimeException invalid) { return false; }
+        return enqueueMutation(playerId, before -> {
+            final long current = before.milli(currencyType);
+            return current < milli ? LocalDecision.unchanged(false)
+                    : LocalDecision.changed(before.with(currencyType, current - milli), true);
+        }, false, ignored -> { }, failure -> { });
     }
 
     public void addToBalance(final UUID playerId, final CurrencyType currencyType,
                              final double amount) {
-        if (playerId == null || currencyType == null || !Double.isFinite(amount) || amount <= 0.0D) {
-            return;
-        }
+        if (playerId == null || currencyType == null || !Double.isFinite(amount) || amount <= 0.0D) return;
         addBalances(playerId, Map.of(currencyType, amount));
     }
 
-    /** Applies one reward batch under a single wallet mutation permit, without partial currency types. */
     public void addBalances(final UUID playerId, final Map<CurrencyType, Double> additions) {
-        if (playerId == null || additions == null || additions.isEmpty()) {
-            return;
-        }
-        final EnumMap<CurrencyType, Double> validated = new EnumMap<>(CurrencyType.class);
-        for (final Map.Entry<CurrencyType, Double> entry : additions.entrySet()) {
-            final CurrencyType type = entry.getKey();
-            final Double amount = entry.getValue();
-            if (type == null || amount == null || !Double.isFinite(amount) || amount <= 0.0D) {
-                throw new IllegalArgumentException("A wallet batch csak véges, pozitív összegeket fogad.");
+        final EnumMap<CurrencyType, Long> validated = validatePositiveBatch(additions);
+        final boolean accepted = enqueueMutation(playerId, before -> {
+            WalletState after = before;
+            for (final Map.Entry<CurrencyType, Long> entry : validated.entrySet()) {
+                after = after.add(entry.getKey(), entry.getValue());
             }
-            validated.merge(type, amount, Double::sum);
-            if (!Double.isFinite(validated.get(type))) {
-                throw new IllegalArgumentException("A wallet batch összege nem véges.");
-            }
-        }
-        requireMutation(() -> balances.compute(playerId, (key, existing) -> {
-            final EnumMap<CurrencyType, Double> updated = existing == null
-                    ? createEmptyBalanceMap() : new EnumMap<>(existing);
-            for (final Map.Entry<CurrencyType, Double> entry : validated.entrySet()) {
-                final double next = updated.getOrDefault(entry.getKey(), 0.0D) + entry.getValue();
-                if (!Double.isFinite(next) || next < 0.0D) {
-                    throw new IllegalArgumentException("A wallet batch túlcsordulna.");
+            return LocalDecision.changed(after, true);
+        }, false, ignored -> { }, failure -> { });
+        if (!accepted) throw unavailable("A PlayerProfile wallet-módosítás nem indítható.");
+    }
+
+    /** Synchronous section-CAS reward batch used by journaled transactions. */
+    public DurableMutation addBalancesDurably(final UUID playerId,
+                                               final Map<CurrencyType, Double> additions) {
+        Objects.requireNonNull(playerId, "playerId");
+        final EnumMap<CurrencyType, Long> validated = validatePositiveBatch(additions);
+        awaitPending(playerId);
+        try {
+            final DurableMutation mutation = economyStore.mutate(playerId, before -> {
+                WalletState after = before;
+                for (final Map.Entry<CurrencyType, Long> entry : validated.entrySet()) {
+                    after = after.add(entry.getKey(), entry.getValue());
                 }
-                updated.put(entry.getKey(), next);
-            }
-            return updated;
-        }));
-        requestSave();
+                return PlayerProfileEconomyStore.Decision.changed(after,
+                        toDurableMutation(playerId, before, after));
+            }).toCompletableFuture().join();
+            installProjection(playerId, stateFrom(mutation.expected()));
+            return mutation;
+        } catch (final CompletionException failure) {
+            failStorage("durable wallet reward", failure);
+            throw unavailable(rootMessage(failure));
+        }
     }
 
     /**
-     * Applies one currency reward batch and synchronously persists it before returning. On write
-     * failure the in-memory wallet is restored before the exception escapes.
+     * Idempotent durable credit. Replaying the same operation ID with the same currency/amount is
+     * a no-op success; reusing it with different parameters is rejected by the ECONOMY authority.
      */
-    public DurableMutation addBalancesDurably(final UUID playerId,
-                                               final Map<CurrencyType, Double> additions) {
-        if (playerId == null || additions == null || additions.isEmpty()) {
-            throw new IllegalArgumentException("A tartós wallet batch nem lehet üres.");
+    public void creditOnceDurably(final UUID playerId, final CurrencyType currency,
+                                  final double amount, final String operationId) {
+        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(currency, "currency");
+        awaitPending(playerId);
+        try {
+            final long milli = PlayerProfileEconomyStore.toPositiveMilli(amount);
+            final PlayerProfileEconomyStore.CreditResult result = economyStore
+                    .creditOnce(playerId, currency, milli, operationId)
+                    .toCompletableFuture().join();
+            installProjection(playerId, result.wallet());
+        } catch (final CompletionException failure) {
+            failStorage("idempotent durable wallet credit", failure);
+            throw unavailable(rootMessage(failure));
         }
-        final EnumMap<CurrencyType, Double> validated = validatePositiveBatch(additions);
-        final DurableMutation mutation = TransactionJournal.withCurrencyMutationPermit(() -> {
-            if (!isStorageHealthy()) {
-                throw unavailable("A wallet store jelenleg nem írható.");
-            }
-            synchronized (saveLock) {
-                if (!isStorageHealthy()) {
-                    throw unavailable("A wallet store jelenleg nem írható.");
-                }
-                final boolean previousPresent = balances.containsKey(playerId);
-                final EnumMap<CurrencyType, Double> previous = previousPresent
-                        ? new EnumMap<>(balances.get(playerId)) : createEmptyBalanceMap();
-                final EnumMap<CurrencyType, Double> expected = new EnumMap<>(previous);
-                for (final Map.Entry<CurrencyType, Double> entry : validated.entrySet()) {
-                    final double next = expected.getOrDefault(entry.getKey(), 0.0D) + entry.getValue();
-                    if (!Double.isFinite(next) || next < 0.0D) {
-                        throw new IllegalArgumentException("A wallet batch túlcsordulna.");
-                    }
-                    expected.put(entry.getKey(), next);
-                }
-                balances.put(playerId, expected);
-                try {
-                    writeBalancesLocked();
-                } catch (final RuntimeException failure) {
-                    restoreWalletUnsafe(playerId, previousPresent, previous);
-                    throw failure;
-                }
-                return new DurableMutation(playerId, previousPresent, previous, expected);
-            }
-        }, null);
-        if (mutation == null) {
-            throw unavailable("Piaci tranzakció alatt a tartós wallet-módosítás nem indítható.");
-        }
-        return mutation;
     }
 
-    /** Durable purchase deduction. Null means insufficient balance; storage failures throw. */
-    public DurableMutation deductDurably(final UUID playerId, final CurrencyType currencyType,
-                                         final double amount) {
+    public DurableMutation planDurableDeduction(final UUID playerId,
+                                                final CurrencyType currencyType,
+                                                final double amount) {
         if (playerId == null || currencyType == null || !Double.isFinite(amount) || amount <= 0.0D) {
             throw new IllegalArgumentException("Érvénytelen tartós wallet levonás.");
         }
-        final Object result = TransactionJournal.withCurrencyMutationPermit(() -> {
-            if (!isStorageHealthy()) {
-                throw unavailable("A wallet store jelenleg nem írható.");
-            }
-            synchronized (saveLock) {
-                if (!isStorageHealthy()) {
-                    throw unavailable("A wallet store jelenleg nem írható.");
-                }
-                final boolean previousPresent = balances.containsKey(playerId);
-                final EnumMap<CurrencyType, Double> previous = previousPresent
-                        ? new EnumMap<>(balances.get(playerId)) : createEmptyBalanceMap();
-                final double current = previous.getOrDefault(currencyType, 0.0D);
-                if (!Double.isFinite(current) || current < amount) {
-                    return Boolean.FALSE;
-                }
-                final EnumMap<CurrencyType, Double> expected = new EnumMap<>(previous);
-                expected.put(currencyType, current - amount);
-                balances.put(playerId, expected);
-                try {
-                    writeBalancesLocked();
-                } catch (final RuntimeException failure) {
-                    restoreWalletUnsafe(playerId, previousPresent, previous);
-                    throw failure;
-                }
-                return new DurableMutation(playerId, previousPresent, previous, expected);
-            }
-        }, null);
-        if (result == null) {
-            throw unavailable("Piaci tranzakció alatt a tartós wallet-módosítás nem indítható.");
-        }
-        return result instanceof DurableMutation mutation ? mutation : null;
+        awaitPending(playerId);
+        final WalletState before = stateForMutation(playerId);
+        final long wanted = PlayerProfileEconomyStore.toPositiveMilli(amount);
+        if (before.milli(currencyType) < wanted) return null;
+        return toDurableMutation(playerId, before,
+                before.with(currencyType, before.milli(currencyType) - wanted));
     }
 
-    /** Restores a durable mutation only while its exact expected snapshot is still current. */
+    public void applyDurably(final DurableMutation mutation) {
+        Objects.requireNonNull(mutation, "mutation");
+        awaitPending(mutation.playerId());
+        final WalletState before = stateFrom(mutation.previous());
+        final WalletState after = stateFrom(mutation.expected());
+        try {
+            economyStore.replace(mutation.playerId(), before, after).toCompletableFuture().join();
+            installProjection(mutation.playerId(), after);
+        } catch (final CompletionException failure) {
+            failStorage("durable wallet apply", failure);
+            throw unavailable(rootMessage(failure));
+        }
+    }
+
+    public Map<CurrencyType, Double> walletSnapshot(final UUID playerId) {
+        return toDoubleWallet(stateForRead(playerId));
+    }
+
+    public boolean walletMatches(final DurableMutation mutation, final boolean expectedAfter) {
+        if (mutation == null) return false;
+        final WalletState live = stateForRead(mutation.playerId());
+        final WalletState expected = stateFrom(expectedAfter
+                ? mutation.expected() : mutation.previous());
+        return live.equals(expected) && (expectedAfter || live.present() == mutation.previousPresent());
+    }
+
+    public DurableMutation deductDurably(final UUID playerId, final CurrencyType currencyType,
+                                         final double amount) {
+        final DurableMutation mutation = planDurableDeduction(playerId, currencyType, amount);
+        if (mutation != null) applyDurably(mutation);
+        return mutation;
+    }
+
     public void rollbackDurably(final DurableMutation mutation) {
-        if (mutation == null) {
-            return;
-        }
-        final boolean success = TransactionJournal.runCurrencyMutation(() -> {
-            if (!isStorageHealthy()) {
-                throw unavailable("A wallet store jelenleg nem írható.");
-            }
-            synchronized (saveLock) {
-                final EnumMap<CurrencyType, Double> current = balances.get(mutation.playerId());
-                if (current == null || !current.equals(mutation.expected())) {
-                    throw new IllegalStateException("A wallet rollback token elavult; kézi audit szükséges.");
-                }
-                final EnumMap<CurrencyType, Double> expected = new EnumMap<>(current);
-                restoreWalletUnsafe(mutation.playerId(), mutation.previousPresent(),
-                        new EnumMap<>(mutation.previous()));
-                try {
-                    writeBalancesLocked();
-                } catch (final RuntimeException failure) {
-                    balances.put(mutation.playerId(), expected);
-                    throw failure;
-                }
-            }
-        });
-        if (!success) {
-            throw unavailable("Piaci tranzakció alatt a wallet rollback nem indítható.");
+        if (mutation == null) return;
+        awaitPending(mutation.playerId());
+        final WalletState expected = stateFrom(mutation.expected());
+        final WalletState previous = stateFrom(mutation.previous());
+        try {
+            economyStore.replace(mutation.playerId(), expected, previous).toCompletableFuture().join();
+            installProjection(mutation.playerId(), previous);
+        } catch (final CompletionException failure) {
+            failStorage("durable wallet rollback", failure);
+            throw unavailable(rootMessage(failure));
         }
     }
 
-    private EnumMap<CurrencyType, Double> validatePositiveBatch(
-            final Map<CurrencyType, Double> additions) {
-        final EnumMap<CurrencyType, Double> validated = new EnumMap<>(CurrencyType.class);
-        for (final Map.Entry<CurrencyType, Double> entry : additions.entrySet()) {
-            final CurrencyType type = entry.getKey();
-            final Double amount = entry.getValue();
-            if (type == null || amount == null || !Double.isFinite(amount) || amount <= 0.0D) {
-                throw new IllegalArgumentException("A wallet batch csak véges, pozitív összegeket fogad.");
-            }
-            validated.merge(type, amount, Double::sum);
-            if (!Double.isFinite(validated.get(type))) {
-                throw new IllegalArgumentException("A wallet batch összege nem véges.");
-            }
+    public DurableWalletOperation debitOperation(final UUID playerId, final CurrencyType currency,
+                                                  final double amount, final String operationId) {
+        awaitPending(playerId);
+        try {
+            final PlayerProfileEconomyStore.DurableOperation operation = economyStore
+                    .debitOperation(playerId, currency, amount, operationId)
+                    .toCompletableFuture().join();
+            if (operation == null) return null;
+            installProjection(playerId, operation.expected());
+            return fromStore(operation);
+        } catch (final CompletionException failure) {
+            failStorage("durable wallet debit", failure);
+            throw unavailable(rootMessage(failure));
         }
-        return validated;
     }
 
-    private void restoreWalletUnsafe(final UUID playerId, final boolean previousPresent,
-                                     final EnumMap<CurrencyType, Double> previous) {
-        if (previousPresent) {
-            balances.put(playerId, new EnumMap<>(previous));
-        } else {
-            balances.remove(playerId);
+    public Optional<DurableWalletOperation> durableOperation(final String operationId) {
+        if (operationId == null || operationId.isBlank()) return Optional.empty();
+        for (final UUID playerId : List.copyOf(durableProjection.keySet())) {
+            try {
+                final Optional<PlayerProfileEconomyStore.DurableOperation> found =
+                        economyStore.operationCached(playerId, operationId);
+                if (found.isPresent()) return found.map(CurrencyManager::fromStore);
+            } catch (final RuntimeException ignored) {
+                // A profile may have been invalidated between the projection snapshot and lookup.
+            }
+        }
+        return Optional.empty();
+    }
+
+    public List<DurableWalletOperation> durableOperationsByPrefix(final String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            throw new IllegalArgumentException("operation prefix cannot be blank");
+        }
+        final List<DurableWalletOperation> result = new ArrayList<>();
+        for (final UUID playerId : List.copyOf(durableProjection.keySet())) {
+            try {
+                economyStore.operationsByPrefixCached(playerId, prefix).stream()
+                        .map(CurrencyManager::fromStore).forEach(result::add);
+            } catch (final RuntimeException ignored) {
+                // Fail-closed callers will see no unproven operation from an unavailable profile.
+            }
+        }
+        result.sort(Comparator.comparingLong(DurableWalletOperation::createdAtEpochMillis)
+                .thenComparing(DurableWalletOperation::operationId));
+        return List.copyOf(result);
+    }
+
+    public DurableWalletOperation commitOperation(final String operationId) {
+        return transitionOperation(operationId, PlayerProfileEconomyStore.OperationStatus.COMMITTED);
+    }
+
+    public DurableWalletOperation rollbackOperation(final String operationId) {
+        return transitionOperation(operationId, PlayerProfileEconomyStore.OperationStatus.ROLLED_BACK);
+    }
+
+    private DurableWalletOperation transitionOperation(
+            final String operationId,
+            final PlayerProfileEconomyStore.OperationStatus target) {
+        final DurableWalletOperation current = durableOperation(operationId)
+                .orElseThrow(() -> new IllegalStateException("Unknown durable wallet operation"));
+        awaitPending(current.playerId());
+        try {
+            final PlayerProfileEconomyStore.DurableOperation updated = economyStore
+                    .transitionOperation(current.playerId(), operationId, target)
+                    .toCompletableFuture().join();
+            // Terminalization may race with legitimate wallet mutations. The durable ECONOMY
+            // section is authoritative; never reinstall the debit-time expected/previous snapshot.
+            installProjection(current.playerId(), economyStore.readCached(current.playerId()));
+            return fromStore(updated);
+        } catch (final CompletionException failure) {
+            failStorage("durable wallet transition", failure);
+            throw unavailable(rootMessage(failure));
         }
     }
 
     public double getTotalSupply(final CurrencyType currencyType) {
-        if (currencyType == null) {
-            return 0.0D;
+        if (currencyType == null) return 0.0D;
+        long total = 0L;
+        for (final WalletState state : durableProjection.values()) {
+            total = Math.addExact(total, state.milli(currencyType));
         }
-        synchronized (saveLock) {
-            double total = 0.0D;
-            for (final EnumMap<CurrencyType, Double> playerBalances : balances.values()) {
-                total += playerBalances.getOrDefault(currencyType, 0.0D);
-            }
-            return total;
+        return PlayerProfileEconomyStore.fromMilli(total);
+    }
+
+    public double getTotalSupply(final FactionType currencyType) {
+        return currencyType == null ? 0.0D : getTotalSupply(CurrencyType.fromFactionType(currencyType));
+    }
+
+    public void addToBalance(final Player player, final long amount) {
+        addToBalance(player, defaultCurrencyType.toFactionType(), amount);
+    }
+
+    public void addToBalance(final Player player, final FactionType currencyType, final long amount) {
+        if (player != null && amount > 0L) {
+            addToBalance(player.getUniqueId(), currencyType == null ? defaultCurrencyType
+                    : CurrencyType.fromFactionType(currencyType), amount);
         }
+    }
+
+    public void addToBalance(final Player player, final FactionType currencyType, final double amount) {
+        if (player != null && amount > 0.0D) {
+            addToBalance(player.getUniqueId(), currencyType == null ? defaultCurrencyType
+                    : CurrencyType.fromFactionType(currencyType), amount);
+        }
+    }
+
+    public boolean deductFromBalance(final Player player, final long amount) {
+        return deductFromBalance(player, defaultCurrencyType.toFactionType(), amount);
+    }
+
+    public boolean deductFromBalance(final Player player, final FactionType currencyType,
+                                     final long amount) {
+        return player != null && amount > 0L && deductFromBalance(player.getUniqueId(),
+                currencyType == null ? defaultCurrencyType : CurrencyType.fromFactionType(currencyType), amount);
+    }
+
+    public boolean deductFromBalance(final Player player, final FactionType currencyType,
+                                     final double amount) {
+        return player != null && amount > 0.0D && deductFromBalance(player.getUniqueId(),
+                currencyType == null ? defaultCurrencyType : CurrencyType.fromFactionType(currencyType), amount);
+    }
+
+    public boolean deductFromBalance(final Player player, final CurrencyType currencyType,
+                                     final double amount) {
+        return player != null && amount > 0.0D && deductFromBalance(player.getUniqueId(),
+                currencyType == null ? defaultCurrencyType : currencyType, amount);
     }
 
     public void setBalance(final Player player, final long amount) {
@@ -515,156 +539,161 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
     }
 
     public void setBalance(final Player player, final CurrencyType currencyType, final double amount) {
-        if (player == null || !Double.isFinite(amount)) {
-            return;
-        }
-        final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType : currencyType;
-        final double clamped = Math.max(0.0D, amount);
-        requireMutation(() -> balances.compute(player.getUniqueId(), (key, existing) -> {
-            final EnumMap<CurrencyType, Double> map = existing != null
-                    ? existing : createEmptyBalanceMap();
-            map.put(resolvedType, clamped);
-            return map;
-        }));
-        requestSave();
+        if (player == null || !Double.isFinite(amount)) return;
+        final CurrencyType type = currencyType == null ? defaultCurrencyType : currencyType;
+        final long milli = PlayerProfileEconomyStore.toMilli(Math.max(0.0D, amount));
+        final boolean accepted = enqueueMutation(player.getUniqueId(), before ->
+                        LocalDecision.changed(before.with(type, milli), true),
+                false, ignored -> { }, failure -> { });
+        if (!accepted) throw unavailable("A PlayerProfile wallet beállítása nem indítható.");
     }
 
+    /**
+     * Reserves all physical currency stacks and commits their value to PlayerProfile. On a durable
+     * failure the removed stacks are restored on the player's owner scheduler.
+     */
     public double deposit(final Player player) {
-        if (player == null) {
-            return 0.0D;
+        if (player == null) return 0.0D;
+        final PlayerInventory inventory = player.getInventory();
+        final ItemStack[] original = inventory.getContents();
+        final ItemStack[] nextContents = original.clone();
+        final List<ItemStack> removed = new ArrayList<>();
+        final EnumMap<CurrencyType, Long> additions = new EnumMap<>(CurrencyType.class);
+        long totalMilli = 0L;
+        for (int slot = 0; slot < nextContents.length; slot++) {
+            final ItemStack stack = nextContents[slot];
+            if (!itemFactory.isCurrencyItem(stack)) continue;
+            final CurrencyType type = itemFactory.getCurrencyType(stack);
+            if (type == null) continue;
+            final ItemStack copy = stack.clone();
+            removed.add(copy);
+            final long value = Math.multiplyExact((long) stack.getAmount(),
+                    PlayerProfileEconomyStore.SCALE);
+            additions.merge(type, value, Math::addExact);
+            totalMilli = Math.addExact(totalMilli, value);
+            nextContents[slot] = null;
         }
-        final double deposited = withMutation(() -> {
-            final PlayerInventory inventory = player.getInventory();
-            final ItemStack[] contents = inventory.getContents();
-            double total = 0.0D;
-            final Map<CurrencyType, Double> pending = new EnumMap<>(CurrencyType.class);
-            for (int slot = 0; slot < contents.length; slot++) {
-                final ItemStack itemStack = contents[slot];
-                if (!itemFactory.isCurrencyItem(itemStack)) {
-                    continue;
-                }
-                final CurrencyType currencyType = itemFactory.getCurrencyType(itemStack);
-                if (currencyType == null) {
-                    continue;
-                }
-                total += itemStack.getAmount();
-                pending.merge(currencyType, (double) itemStack.getAmount(), Double::sum);
-                contents[slot] = null;
+        if (totalMilli == 0L) return 0.0D;
+        final long depositedMilli = totalMilli;
+        final boolean accepted = enqueueMutation(player.getUniqueId(), before -> {
+            WalletState after = before;
+            for (final Map.Entry<CurrencyType, Long> entry : additions.entrySet()) {
+                after = after.add(entry.getKey(), entry.getValue());
             }
-            if (total > 0.0D) {
-                for (final Map.Entry<CurrencyType, Double> entry : pending.entrySet()) {
-                    adjustBalanceUnsafe(player.getUniqueId(), entry.getKey(), entry.getValue());
-                }
-                inventory.setContents(contents);
+            return LocalDecision.changed(after, true);
+        }, false, ignored -> { }, failure -> player.getScheduler().run(plugin, task -> {
+            for (final ItemStack stack : removed) {
+                player.getInventory().addItem(stack).values().forEach(left ->
+                        player.getWorld().dropItemNaturally(player.getLocation(), left));
             }
-            return total;
-        }, 0.0D);
-        if (deposited > 0.0D) {
-            requestSave();
-        }
-        return deposited;
+        }, null));
+        if (!accepted) return 0.0D;
+        inventory.setContents(nextContents);
+        return PlayerProfileEconomyStore.fromMilli(depositedMilli);
     }
 
     public void refreshPlayerCurrencyItems(final Player player) {
-        if (player == null) {
-            return;
-        }
+        if (player == null) return;
         final PlayerInventory inventory = player.getInventory();
         final ItemStack[] contents = inventory.getContents();
         boolean changed = false;
         for (int slot = 0; slot < contents.length; slot++) {
-            final ItemStack itemStack = contents[slot];
-            if (!itemFactory.isCurrencyItem(itemStack)) {
-                continue;
-            }
-            contents[slot] = itemFactory.refresh(itemStack);
+            if (!itemFactory.isCurrencyItem(contents[slot])) continue;
+            contents[slot] = itemFactory.refresh(contents[slot]);
             changed = true;
         }
-        if (changed) {
-            inventory.setContents(contents);
-        }
+        if (changed) inventory.setContents(contents);
     }
 
     public boolean withdraw(final Player player, final FactionType currencyType, final int amount) {
-        final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType
-                : CurrencyType.fromFactionType(currencyType);
-        return withdraw(player, resolvedType, amount);
+        return withdraw(player, currencyType == null ? defaultCurrencyType
+                : CurrencyType.fromFactionType(currencyType), amount);
     }
 
+    /** Physical items are delivered only after the durable section-CAS commits. */
     public boolean withdraw(final Player player, final CurrencyType currencyType, final int amount) {
-        if (player == null || amount <= 0) {
-            return false;
-        }
-        final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType : currencyType;
-        final boolean success = withMutation(() -> {
-            if (!tryDeductUnsafe(player.getUniqueId(), resolvedType, amount)) {
-                return false;
-            }
-            giveCurrency(player, resolvedType, amount);
-            return true;
-        }, false);
-        if (success) {
-            requestSave();
-        }
-        return success;
+        if (player == null || amount <= 0) return false;
+        final CurrencyType type = currencyType == null ? defaultCurrencyType : currencyType;
+        final long milli = Math.multiplyExact((long) amount, PlayerProfileEconomyStore.SCALE);
+        return enqueueMutation(player.getUniqueId(), before -> {
+            final long current = before.milli(type);
+            return current < milli ? LocalDecision.unchanged(false)
+                    : LocalDecision.changed(before.with(type, current - milli), true);
+        }, false, success -> player.getScheduler().run(plugin,
+                task -> giveCurrency(player, type, amount), null), failure -> { });
     }
 
     public boolean transfer(final Player from, final Player to, final long amount) {
         return transfer(from, to, defaultCurrencyType.toFactionType(), amount);
     }
 
+    /**
+     * Cross-owner transfer uses two durable CAS commits with deterministic compensation. It does
+     * not publish either runtime projection until the receiver commit succeeds.
+     */
     public boolean transfer(final Player from, final Player to, final FactionType currencyType,
                             final long amount) {
-        if (from == null || to == null || amount <= 0L) {
+        if (from == null || to == null || amount <= 0L || from.getUniqueId().equals(to.getUniqueId())) {
             return false;
         }
-        final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType
+        final CurrencyType type = currencyType == null ? defaultCurrencyType
                 : CurrencyType.fromFactionType(currencyType);
-        final boolean success = withMutation(() -> {
-            if (!tryDeductUnsafe(from.getUniqueId(), resolvedType, amount)) {
-                return false;
+        final UUID sender = from.getUniqueId();
+        final UUID receiver = to.getUniqueId();
+        awaitPending(sender);
+        awaitPending(receiver);
+        final long milli = Math.multiplyExact(amount, PlayerProfileEconomyStore.SCALE);
+        try {
+            final DurableMutation debit = economyStore.mutate(sender, before -> {
+                if (before.milli(type) < milli) {
+                    return PlayerProfileEconomyStore.Decision.unchanged(null);
+                }
+                final WalletState after = before.with(type, before.milli(type) - milli);
+                return PlayerProfileEconomyStore.Decision.changed(after,
+                        toDurableMutation(sender, before, after));
+            }).toCompletableFuture().join();
+            if (debit == null) return false;
+            try {
+                final WalletState receiverAfter = economyStore.mutate(receiver, before -> {
+                    final WalletState after = before.add(type, milli);
+                    return PlayerProfileEconomyStore.Decision.changed(after, after);
+                }).toCompletableFuture().join();
+                installProjection(sender, stateFrom(debit.expected()));
+                installProjection(receiver, receiverAfter);
+                return true;
+            } catch (final RuntimeException receiverFailure) {
+                economyStore.replace(sender, stateFrom(debit.expected()), stateFrom(debit.previous()))
+                        .toCompletableFuture().join();
+                installProjection(sender, stateFrom(debit.previous()));
+                throw receiverFailure;
             }
-            adjustBalanceUnsafe(to.getUniqueId(), resolvedType, amount);
-            return true;
-        }, false);
-        if (success) {
-            requestSave();
+        } catch (final CompletionException failure) {
+            failStorage("wallet transfer", failure);
+            throw unavailable(rootMessage(failure));
         }
-        return success;
     }
 
     public long exchange(final Player player, final FactionType from, final FactionType to,
                          final long amount, final double rate, final double feePercent) {
         if (player == null || from == null || to == null || amount <= 0L
                 || !Double.isFinite(rate) || rate <= 0.0D
-                || !Double.isFinite(feePercent) || feePercent < 0.0D) {
-            return -1L;
-        }
-        final CurrencyType fromType = CurrencyType.fromFactionType(from);
-        final CurrencyType toType = CurrencyType.fromFactionType(to);
-        if (fromType == toType) {
-            return -1L;
-        }
-        final double grossTargetAmount = amount * rate;
-        final double fee = grossTargetAmount * feePercent / 100.0D;
-        if (!Double.isFinite(grossTargetAmount) || !Double.isFinite(fee)) {
-            return -1L;
-        }
-        final long netTargetAmount = Math.round(Math.max(0.0D, grossTargetAmount - fee));
-        if (netTargetAmount <= 0L) {
-            return -1L;
-        }
-        final long result = withMutation(() -> {
-            if (!tryDeductUnsafe(player.getUniqueId(), fromType, amount)) {
-                return -1L;
-            }
-            adjustBalanceUnsafe(player.getUniqueId(), toType, netTargetAmount);
-            return netTargetAmount;
-        }, -1L);
-        if (result > 0L) {
-            requestSave();
-        }
-        return result;
+                || !Double.isFinite(feePercent) || feePercent < 0.0D) return -1L;
+        final CurrencyType source = CurrencyType.fromFactionType(from);
+        final CurrencyType target = CurrencyType.fromFactionType(to);
+        if (source == target) return -1L;
+        final double gross = amount * rate;
+        final double fee = gross * feePercent / 100.0D;
+        if (!Double.isFinite(gross) || !Double.isFinite(fee)) return -1L;
+        final long credited = Math.round(Math.max(0.0D, gross - fee));
+        if (credited <= 0L) return -1L;
+        final long sourceMilli = Math.multiplyExact(amount, PlayerProfileEconomyStore.SCALE);
+        final long targetMilli = Math.multiplyExact(credited, PlayerProfileEconomyStore.SCALE);
+        return enqueueMutation(player.getUniqueId(), before -> {
+            if (before.milli(source) < sourceMilli) return LocalDecision.unchanged(-1L);
+            WalletState after = before.with(source, before.milli(source) - sourceMilli);
+            after = after.add(target, targetMilli);
+            return LocalDecision.changed(after, credited);
+        }, -1L, ignored -> { }, failure -> { });
     }
 
     private void giveCurrency(final Player player, final CurrencyType currencyType,
@@ -673,111 +702,210 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         while (remaining > 0L) {
             final int stackAmount = (int) Math.min(64L, remaining);
             final ItemStack currencyItem = createCurrencyItem(currencyType, stackAmount);
-            final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(currencyItem);
-            if (!leftovers.isEmpty()) {
-                leftovers.values().forEach(item -> player.getWorld()
-                        .dropItemNaturally(player.getLocation(), item));
-            }
+            player.getInventory().addItem(currencyItem).values().forEach(item ->
+                    player.getWorld().dropItemNaturally(player.getLocation(), item));
             remaining -= stackAmount;
         }
     }
 
-    private <T> T withMutation(final Supplier<T> mutation, final T deniedValue) {
+    private <R> R enqueueMutation(final UUID playerId,
+                                  final Function<WalletState, LocalDecision<R>> planner,
+                                  final R deniedValue,
+                                  final Consumer<R> afterCommit,
+                                  final Consumer<Throwable> afterFailure) {
+        if (playerId == null || !isStorageHealthy()) return deniedValue;
         return TransactionJournal.withCurrencyMutationPermit(() -> {
-            if (!isStorageHealthy()) {
-                return deniedValue;
-            }
-            synchronized (saveLock) {
-                if (!isStorageHealthy()) {
-                    return deniedValue;
-                }
-                return mutation.get();
+            final Object lock = playerLocks.computeIfAbsent(playerId, ignored -> new Object());
+            synchronized (lock) {
+                if (!isStorageHealthy()) return deniedValue;
+                final WalletState before;
+                try { before = stateForMutation(playerId); }
+                catch (final RuntimeException unavailable) { return deniedValue; }
+                final LocalDecision<R> decision = Objects.requireNonNull(
+                        planner.apply(before), "wallet planner result");
+                if (!decision.changed()) return decision.result();
+                final WalletState after = Objects.requireNonNull(decision.wallet(), "wallet after");
+                installProjection(playerId, after);
+
+                final CompletableFuture<Void> previous = mutationTails.getOrDefault(playerId,
+                        CompletableFuture.completedFuture(null));
+                final CompletableFuture<Void> next = previous.thenCompose(ignored ->
+                        economyStore.replace(playerId, before, after).thenApply(committed -> (Void) null))
+                        .toCompletableFuture();
+                mutationTails.put(playerId, next);
+                next.whenComplete((ignored, failure) -> {
+                    mutationTails.remove(playerId, next);
+                    if (failure == null) {
+                        try { afterCommit.accept(decision.result()); }
+                        catch (final RuntimeException callbackFailure) {
+                            plugin.getLogger().severe("Wallet post-commit callback failed for "
+                                    + playerId + ": " + callbackFailure.getMessage());
+                        }
+                        return;
+                    }
+                    mirrors.remove(playerId);
+                    refreshProjection(playerId);
+                    failStorage("queued wallet mutation", failure);
+                    try { afterFailure.accept(unwrap(failure)); }
+                    catch (final RuntimeException callbackFailure) {
+                        plugin.getLogger().severe("Wallet compensation callback failed for "
+                                + playerId + ": " + callbackFailure.getMessage());
+                    }
+                });
+                return decision.result();
             }
         }, deniedValue);
     }
 
-    private void requireMutation(final Runnable mutation) {
-        final boolean success = TransactionJournal.runCurrencyMutation(() -> {
-            if (!isStorageHealthy()) {
-                throw unavailable("A wallet store jelenleg nem írható.");
-            }
-            synchronized (saveLock) {
-                if (!isStorageHealthy()) {
-                    throw unavailable("A wallet store jelenleg nem írható.");
-                }
-                mutation.run();
-            }
+    private WalletState stateForRead(final UUID playerId) {
+        if (playerId == null) return new WalletState(Map.of());
+        final WalletState mirror = mirrors.get(playerId);
+        if (mirror != null) return mirror;
+        final WalletState projected = durableProjection.get(playerId);
+        if (projected != null) return projected;
+        try {
+            final WalletState loaded = economyStore.readCached(playerId);
+            installProjection(playerId, loaded);
+            return loaded;
+        } catch (final RuntimeException notReady) {
+            return new WalletState(Map.of());
+        }
+    }
+
+    private WalletState stateForMutation(final UUID playerId) {
+        final WalletState mirror = mirrors.get(playerId);
+        if (mirror != null) return mirror;
+        final WalletState loaded = economyStore.readCached(playerId);
+        installProjection(playerId, loaded);
+        return loaded;
+    }
+
+    private void installProjection(final UUID playerId, final WalletState state) {
+        mirrors.put(playerId, state);
+        durableProjection.put(playerId, state);
+    }
+
+    private void refreshProjection(final UUID playerId) {
+        economyStore.load(playerId).thenAccept(state -> {
+            durableProjection.put(playerId, state);
+            if (mirrors.containsKey(playerId)) mirrors.put(playerId, state);
+        }).exceptionally(failure -> {
+            failStorage("wallet projection rebuild", failure);
+            return null;
         });
-        if (!success) {
-            throw unavailable("Piaci tranzakció alatt egy másik wallet-módosítás nem indítható.");
-        }
     }
 
-    private void adjustBalanceUnsafe(final UUID uuid, final CurrencyType currencyType,
-                                     final double delta) {
-        balances.compute(uuid, (key, existing) -> {
-            final EnumMap<CurrencyType, Double> map = existing != null
-                    ? existing : createEmptyBalanceMap();
-            final double current = map.getOrDefault(currencyType, 0.0D);
-            final double updated = current + delta;
-            if (!Double.isFinite(updated)) {
-                throw new IllegalArgumentException("A wallet művelet nem véges eredményt adna.");
+    private void awaitPending(final UUID playerId) {
+        final CompletableFuture<Void> pending = mutationTails.get(playerId);
+        if (pending != null) {
+            try { pending.join(); }
+            catch (final CompletionException failure) {
+                throw unavailable("A korábbi wallet-módosítás meghiúsult: " + rootMessage(failure));
             }
-            map.put(currencyType, Math.max(0.0D, updated));
-            return map;
-        });
+        }
+        if (!isStorageHealthy()) throw unavailable("A PlayerProfile wallet authority nem elérhető.");
     }
 
-    private boolean tryDeductUnsafe(final UUID uuid, final CurrencyType currencyType,
-                                    final double amount) {
-        if (!Double.isFinite(amount) || amount <= 0.0D) {
-            return false;
+    private EnumMap<CurrencyType, Long> validatePositiveBatch(
+            final Map<CurrencyType, Double> additions) {
+        if (additions == null || additions.isEmpty()) {
+            throw new IllegalArgumentException("A wallet batch nem lehet üres.");
         }
-        final boolean[] deducted = {false};
-        balances.compute(uuid, (key, existing) -> {
-            final EnumMap<CurrencyType, Double> map = existing != null
-                    ? existing : createEmptyBalanceMap();
-            final double current = map.getOrDefault(currencyType, 0.0D);
-            if (Double.isFinite(current) && current >= amount) {
-                map.put(currencyType, current - amount);
-                deducted[0] = true;
-            }
-            return map;
-        });
-        return deducted[0];
-    }
-
-    private double getStoredBalance(final UUID uuid, final CurrencyType currencyType) {
-        synchronized (saveLock) {
-            final EnumMap<CurrencyType, Double> currentBalances = balances.get(uuid);
-            if (currentBalances == null) {
-                return 0.0D;
-            }
-            return currentBalances.getOrDefault(currencyType, 0.0D);
+        final EnumMap<CurrencyType, Long> result = new EnumMap<>(CurrencyType.class);
+        for (final Map.Entry<CurrencyType, Double> entry : additions.entrySet()) {
+            final CurrencyType type = Objects.requireNonNull(entry.getKey(), "currency");
+            final Double amount = Objects.requireNonNull(entry.getValue(), "amount");
+            final long milli = PlayerProfileEconomyStore.toPositiveMilli(amount);
+            result.merge(type, milli, Math::addExact);
         }
-    }
-
-    private EnumMap<CurrencyType, Double> createEmptyBalanceMap() {
-        final EnumMap<CurrencyType, Double> map = new EnumMap<>(CurrencyType.class);
-        for (final CurrencyType currencyType : CurrencyType.values()) {
-            map.put(currencyType, 0.0D);
-        }
-        return map;
+        return result;
     }
 
     private CurrencyType resolveDefaultCurrencyType() {
-        final String configuredType = configManager.getString("currency.default-type",
-                CurrencyType.NEUTRAL.name());
-        final CurrencyType parsedType = CurrencyType.fromInput(configuredType);
-        return parsedType == null ? CurrencyType.NEUTRAL : parsedType;
+        final CurrencyType parsed = CurrencyType.fromInput(configManager.getString(
+                "currency.default-type", CurrencyType.NEUTRAL.name()));
+        return parsed == null ? CurrencyType.NEUTRAL : parsed;
+    }
+
+    private void failStorage(final String operation, final Throwable failure) {
+        healthy.set(false);
+        plugin.getLogger().severe("PlayerProfile " + operation + " failed: "
+                + rootMessage(failure));
     }
 
     private CurrencyStorageUnavailableException unavailable(final String message) {
         return new CurrencyStorageUnavailableException(message);
     }
 
+    private static DurableMutation toDurableMutation(final UUID playerId,
+                                                      final WalletState before,
+                                                      final WalletState after) {
+        return new DurableMutation(playerId, before.present(),
+                toDoubleWallet(before), toDoubleWallet(after));
+    }
+
+    private static DurableWalletOperation fromStore(
+            final PlayerProfileEconomyStore.DurableOperation operation) {
+        return new DurableWalletOperation(operation.operationId(), operation.playerId(),
+                operation.currency(), operation.amount(), operation.createdAtEpochMillis(),
+                DurableWalletOperationStatus.valueOf(operation.status().name()),
+                operation.previousPresent(), toDoubleWallet(operation.previous()),
+                toDoubleWallet(operation.expected()));
+    }
+
+    private static WalletState stateFrom(final Map<CurrencyType, Double> values) {
+        final EnumMap<CurrencyType, Long> result = new EnumMap<>(CurrencyType.class);
+        for (final CurrencyType type : CurrencyType.values()) {
+            result.put(type, PlayerProfileEconomyStore.toMilli(
+                    values == null ? 0.0D : values.getOrDefault(type, 0.0D)));
+        }
+        return new WalletState(result);
+    }
+
+    private static Map<CurrencyType, Double> toDoubleWallet(final WalletState state) {
+        final EnumMap<CurrencyType, Double> result = new EnumMap<>(CurrencyType.class);
+        for (final CurrencyType type : CurrencyType.values()) result.put(type, state.amount(type));
+        return Map.copyOf(result);
+    }
+
+    private static Map<CurrencyType, Double> normalizeDoubleWallet(
+            final Map<CurrencyType, Double> values) {
+        final EnumMap<CurrencyType, Double> result = new EnumMap<>(CurrencyType.class);
+        for (final CurrencyType type : CurrencyType.values()) {
+            final double value = values == null ? 0.0D : values.getOrDefault(type, 0.0D);
+            if (!Double.isFinite(value) || value < 0.0D) {
+                throw new IllegalArgumentException("invalid wallet snapshot");
+            }
+            result.put(type, value);
+        }
+        return Map.copyOf(result);
+    }
+
+    private static Throwable unwrap(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current;
+    }
+
+    private static String rootMessage(final Throwable failure) {
+        final Throwable root = unwrap(failure);
+        return root.getMessage() == null ? root.getClass().getSimpleName() : root.getMessage();
+    }
+
+    @Override
     public void cleanup(final UUID playerId) {
-        // No volatile per-session caches currently stored for currency operations.
+        final CompletableFuture<Void> pending = mutationTails.get(playerId);
+        if (pending == null) {
+            mirrors.remove(playerId);
+            playerLocks.remove(playerId);
+            return;
+        }
+        pending.whenComplete((ignored, failure) -> {
+            mirrors.remove(playerId);
+            playerLocks.remove(playerId);
+        });
     }
 
     public void clearPlayerState(final UUID playerId) {

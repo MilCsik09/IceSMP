@@ -5,6 +5,7 @@ import hu.taliann.icesmp.storage.PersistentStore;
 
 import hu.taliann.icesmp.storage.YamlStore;
 
+import hu.taliann.icesmp.data.BlockCuboid;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
@@ -151,7 +152,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 ));
             }
 
-            plugin.getLogger().info("Loaded " + territories.size() + " faction territory zone(s).");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "Loaded " + territories.size() + " faction territory zone(s).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load territories: " + exception.getMessage());
         }
@@ -328,6 +329,56 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 Territory.NO_MIN_Y,
                 Territory.NO_MAX_Y
         );
+        territories.put(normalizedId, territory);
+        rebuildIndex();
+        save();
+        return territory;
+    }
+
+    /**
+     * Defines an exact block-inclusive cuboid in one atomic mutation. The X/Z
+     * footprint is persisted through the existing polygon schema while the selected
+     * Y range is stored directly, so no migration or transient full-height zone is
+     * involved.
+     */
+    public synchronized Territory defineCuboid(final String id, final FactionType faction, final String name,
+                                               final TerritoryType type, final BlockCuboid bounds) {
+        if (id == null || id.isBlank() || faction == null || type == null || bounds == null) {
+            throw new IllegalArgumentException("id, faction, type and bounds are required");
+        }
+        final List<int[]> points = bounds.footprintPolygon();
+        final String normalizedId = id.toLowerCase(Locale.ROOT);
+
+        // Use an actual selected block as the operational centre. Averaging the
+        // outer polygon edges with integer division rounds negative half-block
+        // centres toward zero and can place a one-block cuboid's centre outside.
+        final int centroidX = bounds.centerX();
+        final int centroidZ = bounds.centerZ();
+        int boundingRadius = 1;
+        for (final int[] point : points) {
+            final long dx = (long) point[0] - centroidX;
+            final long dz = (long) point[1] - centroidZ;
+            boundingRadius = Math.max(boundingRadius,
+                    Math.toIntExact((long) Math.ceil(Math.sqrt((double) dx * dx + (double) dz * dz))));
+        }
+
+        final Territory territory = new Territory(
+                normalizedId,
+                faction,
+                name == null || name.isBlank() ? normalizedId : name,
+                type,
+                bounds.world(),
+                centroidX,
+                centroidZ,
+                boundingRadius,
+                List.copyOf(points),
+                bounds.minY(),
+                bounds.maxY()
+        );
+
+        // Validation and candidate construction complete before the old capital is
+        // demoted, so a bad/overflowing selection cannot leave the faction seatless.
+        demotePreviousCapital(type, faction, normalizedId);
         territories.put(normalizedId, territory);
         rebuildIndex();
         save();

@@ -87,7 +87,12 @@ public final class FactionRaidSubcommand implements FactionSubcommand {
             return;
         }
 
-        final FactionType attacker = factionManager.getFaction(player.getUniqueId());
+        final FactionType attacker = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        if (attacker == null) {
+            player.sendMessage(messageManager.get("messages.faction-choose-first",
+                    "&cElőbb válassz frakciót: &f/faction join <frakció>&c."));
+            return;
+        }
         final String territoryId = args.length >= 2 ? args[1] : null;
         final String errorKey = raidManager.startRaid(attacker, defender, territoryId);
         if (errorKey != null) {
@@ -106,7 +111,12 @@ public final class FactionRaidSubcommand implements FactionSubcommand {
             return;
         }
 
-        final FactionType side = factionManager.getFaction(player.getUniqueId());
+        final FactionType side = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
+        if (side == null) {
+            player.sendMessage(messageManager.get("messages.faction-choose-first",
+                    "&cElőbb válassz frakciót: &f/faction join <frakció>&c."));
+            return;
+        }
         player.sendMessage(messageManager.get(
                 "messages.faction-raid-joined",
                 "&aBeálltál a(z) &f%s &ahadseregébe (&f%s&a/&f%s&a). Csak a jelentkezett harcosok közti ölés számít a raidbe!",

@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.FactionType;
+import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
@@ -9,15 +10,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 /**
  * Kingdom-spawn placement (a "királyságok spawnpoint" feature):
  * <ul>
  *   <li><b>First join:</b> a brand-new player appears at the NEUTRAL kingdom's admin-set spawn
  *       ({@code /territory setspawn neutral}) instead of the vanilla world spawn — set via
- *       {@link PlayerSpawnLocationEvent} BEFORE the player materialises, so there is no visible
- *       teleport. New players default to the NEUTRAL faction, so this is where they belong.</li>
+ *       {@link AsyncPlayerSpawnLocationEvent} BEFORE the player materialises, so there is no visible
+ *       teleport. New players are Menedék guests until they explicitly choose a faction, so this
+ *       is their safe arrival point without granting NEUTRAL membership benefits.</li>
  *   <li><b>Respawn:</b> a player with no bed/anchor respawns at their OWN faction's kingdom spawn
  *       (falling back to the NEUTRAL spawn), steering everyone back to the capitals.</li>
  * </ul>
@@ -38,8 +39,8 @@ public final class FactionSpawnListener implements Listener {
     }
 
     @EventHandler
-    public void onSpawnLocation(final PlayerSpawnLocationEvent event) {
-        if (event.getPlayer().hasPlayedBefore()
+    public void onSpawnLocation(final AsyncPlayerSpawnLocationEvent event) {
+        if (!event.isNewPlayer()
                 || !configManager.getBoolean("factions.spawn.first-join-at-neutral", true)) {
             return;
         }
@@ -59,7 +60,9 @@ public final class FactionSpawnListener implements Listener {
             return;
         }
         final Player player = event.getPlayer();
-        Location spawn = territoryManager.getFactionSpawn(factionManager.getFaction(player.getUniqueId()));
+        // A Menedék a hozzárendelés nélküli vendég biztonságos fogadóhelye, nem tagsági fallback.
+        Location spawn = territoryManager.getFactionSpawn(
+                factionManager.getChosenFaction(player.getUniqueId()).orElse(FactionType.NEUTRAL));
         if (spawn == null) {
             spawn = territoryManager.getFactionSpawn(FactionType.NEUTRAL);
         }

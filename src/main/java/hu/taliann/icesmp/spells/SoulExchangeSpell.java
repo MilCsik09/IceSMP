@@ -1,11 +1,11 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
+import hu.taliann.icesmp.utils.SpellHealingUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -34,6 +34,7 @@ public final class SoulExchangeSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final UUID shooterId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final Vector direction = player.getEyeLocation().getDirection().normalize();
         final ArmorStand projectile = player.getWorld().spawn(
                 player.getEyeLocation().add(direction.clone().multiply(0.8D)), ArmorStand.class, as -> {
@@ -72,9 +73,9 @@ public final class SoulExchangeSpell extends BaseSpell {
 
                 final double amount = living.getHealth() * exchangePercent;
                 if (shooterInCurrentRegion) {
-                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, amount, getId());
+                    SpellDamageUtil.damageBySpell(shooter, living, amount, getId(), modifiers);
                 } else {
-                    living.damage(amount);
+                    living.damage(SpellDamageUtil.scaledDamage(amount, modifiers));
                 }
 
                 if (shooter != null) {
@@ -82,9 +83,7 @@ public final class SoulExchangeSpell extends BaseSpell {
                         if (!shooter.isOnline()) {
                             return;
                         }
-                        final AttributeInstance maxHealth = shooter.getAttribute(Attribute.MAX_HEALTH);
-                        final double cap = maxHealth != null ? maxHealth.getValue() : 20.0D;
-                        shooter.setHealth(Math.min(cap, shooter.getHealth() + amount));
+                        SpellHealingUtil.heal(shooter, amount, modifiers);
                         shooter.getWorld().spawnParticle(Particle.HEART, shooter.getLocation().add(0.0D, 2.0D, 0.0D), 4, 0.2D, 0.2D, 0.2D);
                     }, null);
                 }

@@ -1,8 +1,11 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStore;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileTaxStore;
+import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -14,14 +17,26 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Faction treasury (hadi kassza): a per-faction currency pool persisted to treasury.yml.
+ * Shared faction treasury plus PlayerProfile-owned tax debt/outbox coordinator.
+ *
+ * <p>The YAML store contains only global treasury balances, tax rates and idempotent shared-grant
+ * receipts. Player debt, evasion strikes, wallet deduction and settlement outboxes live solely in
+ * each owner's EconomySection.</p>
  */
 public final class FactionTreasuryManager implements PersistentStore {
 
@@ -29,129 +44,93 @@ public final class FactionTreasuryManager implements PersistentStore {
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
+    private final SinManager sinManager;
     private final MessageManager messageManager;
     private final File storageFile;
-    /** Minden store-mutáció, snapshot, tartós írás és rollback közös monitora. */
     private final Object stateLock = new Object();
-    private final Map<FactionType, Double> balances = new ConcurrentHashMap<>();
-    /** Már alkalmazott, azonosítóhoz kötött jóváírások. */
-    private final Map<String, Long> appliedGrants = new ConcurrentHashMap<>();
-    // Grant-nyugtát nem dobunk ki pusztán darabszám alapján: a másik cél-store tartós
-    // hibája miatt hosszan nyitva maradó outbox replaye különben duplán jóváírhatna.
-    private final Map<FactionType, Double> taxRates = new ConcurrentHashMap<>();
-    /** Unpaid citizen tax per player. */
-    private final Map<UUID, Double> taxArrears = new ConcurrentHashMap<>();
-    /** Tax-evasion strikes. */
-    private final Map<UUID, Integer> evasionStrikes = new ConcurrentHashMap<>();
-    private final SinManager sinManager;
-    private final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
-            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final Map<FactionType, Double> balances = new EnumMap<>(FactionType.class);
+    private final Map<FactionType, Double> taxRates = new EnumMap<>(FactionType.class);
+    private final Map<String, Long> appliedGrants = new LinkedHashMap<>();
+    private final Map<UUID, Map<FactionType, Double>> arrearsProjection =
+            new ConcurrentHashMap<>();
+    private final PlayerProfileTaxStore taxStore = new PlayerProfileTaxStore();
+    private final PlayerProfileEconomyStore economyStore = new PlayerProfileEconomyStore();
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
-    public FactionTreasuryManager(final JavaPlugin plugin, final ConfigManager configManager,
+    public FactionTreasuryManager(final JavaPlugin plugin,
+                                  final ConfigManager configManager,
                                   final CurrencyManager currencyManager,
                                   final FactionManager factionManager,
                                   final SinManager sinManager,
                                   final MessageManager messageManager) {
-        this.plugin = plugin;
-        this.configManager = configManager;
-        this.currencyManager = currencyManager;
-        this.factionManager = factionManager;
-        this.sinManager = sinManager;
-        this.messageManager = messageManager;
+        this.plugin = Objects.requireNonNull(plugin);
+        this.configManager = Objects.requireNonNull(configManager);
+        this.currencyManager = Objects.requireNonNull(currencyManager);
+        this.factionManager = Objects.requireNonNull(factionManager);
+        this.sinManager = Objects.requireNonNull(sinManager);
+        this.messageManager = Objects.requireNonNull(messageManager);
         this.storageFile = new File(plugin.getDataFolder(), "treasury.yml");
+        YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
     }
 
+    @Override
     public void load() {
-        synchronized (stateLock) {
-            balances.clear();
-            appliedGrants.clear();
-
-            if (!storageFile.exists()) {
-                return;
-            }
-
-            try {
-                final YamlConfiguration yaml = YamlStore.loadTracked(
-                        storageFile, plugin.getLogger());
-                final ConfigurationSection section = yaml.getConfigurationSection("treasury");
-                if (section == null) {
+        final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
+        final EnumMap<FactionType, Double> loadedBalances = new EnumMap<>(FactionType.class);
+        final EnumMap<FactionType, Double> loadedRates = new EnumMap<>(FactionType.class);
+        for (final FactionType faction : FactionType.values()) {
+            loadedBalances.put(faction, readNonNegative(yaml,
+                    "treasury." + faction.name(), 0.0D));
+            loadedRates.put(faction, readNonNegative(yaml,
+                    "tax-rates." + faction.name(),
+                    nonNegativeConfig("factions.tax.rate-percent", 2.0D)));
+        }
+        final LinkedHashMap<String, Long> loadedGrants = new LinkedHashMap<>();
+        final ConfigurationSection grants = yaml.getConfigurationSection("applied-grants");
+        if (grants != null) {
+            for (final String key : grants.getKeys(false)) {
+                final Object raw = grants.get(key);
+                if (!(raw instanceof Number number) || number.longValue() < 0L) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Invalid treasury grant receipt: " + key);
                     return;
                 }
+                loadedGrants.put(key, number.longValue());
+            }
+        }
+        synchronized (stateLock) {
+            balances.clear();
+            balances.putAll(loadedBalances);
+            taxRates.clear();
+            taxRates.putAll(loadedRates);
+            appliedGrants.clear();
+            appliedGrants.putAll(loadedGrants);
+        }
+        rebuildPlayerTaxProjectionAndOutboxes();
+    }
 
-                for (final String factionKey : section.getKeys(false)) {
-                    final FactionType faction = FactionType.fromInput(factionKey);
-                    if (faction == null) {
-                        plugin.getLogger().warning(
-                                "Unknown faction in treasury.yml: " + factionKey);
-                        continue;
-                    }
-                    balances.put(faction,
-                            Math.max(0.0D, section.getDouble(factionKey, 0.0D)));
-                }
-
-                final ConfigurationSection rateSection = yaml.getConfigurationSection("tax-rates");
-                if (rateSection != null) {
-                    for (final String factionKey : rateSection.getKeys(false)) {
-                        final FactionType faction = FactionType.fromInput(factionKey);
-                        if (faction != null) {
-                            taxRates.put(faction, Math.max(0.0D,
-                                    rateSection.getDouble(factionKey, 0.0D)));
-                        }
-                    }
-                }
-
-                taxArrears.clear();
-                final ConfigurationSection arrearsSection =
-                        yaml.getConfigurationSection("tax-arrears");
-                if (arrearsSection != null) {
-                    for (final String key : arrearsSection.getKeys(false)) {
-                        try {
-                            final double owed = arrearsSection.getDouble(key, 0.0D);
-                            if (owed > 0.0D) {
-                                taxArrears.put(UUID.fromString(key), owed);
-                            }
-                        } catch (final IllegalArgumentException ignored) {
-                            plugin.getLogger().warning(
-                                    "Invalid UUID in treasury.yml tax-arrears: " + key);
-                        }
-                    }
-                }
-
-                evasionStrikes.clear();
-                final ConfigurationSection strikesSection =
-                        yaml.getConfigurationSection("tax-evasion-strikes");
-                if (strikesSection != null) {
-                    for (final String key : strikesSection.getKeys(false)) {
-                        try {
-                            final int strikes = strikesSection.getInt(key, 0);
-                            if (strikes > 0) {
-                                evasionStrikes.put(UUID.fromString(key), strikes);
-                            }
-                        } catch (final IllegalArgumentException ignored) {
-                            plugin.getLogger().warning(
-                                    "Invalid UUID in treasury.yml tax-evasion-strikes: " + key);
-                        }
-                    }
-                }
-
-                final ConfigurationSection grants =
-                        yaml.getConfigurationSection("applied-grants");
-                if (grants != null) {
-                    for (final String key : grants.getKeys(false)) {
-                        appliedGrants.put(key,
-                                grants.getLong(key, System.currentTimeMillis()));
-                    }
-                }
-                plugin.getLogger().info("Loaded faction treasury balances.");
-            } catch (final Exception exception) {
-                plugin.getLogger().severe(
-                        "Failed to load faction treasury: " + exception.getMessage());
+    @Override
+    public void save() {
+        synchronized (stateLock) {
+            final YamlConfiguration yaml = new YamlConfiguration();
+            for (final FactionType faction : FactionType.values()) {
+                yaml.set("treasury." + faction.name(),
+                        balances.getOrDefault(faction, 0.0D));
+                yaml.set("tax-rates." + faction.name(),
+                        taxRates.getOrDefault(faction,
+                                nonNegativeConfig("factions.tax.rate-percent", 2.0D)));
+            }
+            appliedGrants.forEach((id, timestamp) ->
+                    yaml.set("applied-grants." + id, timestamp));
+            try {
+                YamlStore.saveAtomic(storageFile, yaml);
+            } catch (final IOException failure) {
+                throw new java.io.UncheckedIOException("Failed to save faction treasury", failure);
             }
         }
     }
 
-    /** Debounced asynchronous save request. */
     public void requestSave() {
         if (saveScheduled.compareAndSet(false, true)) {
             plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
@@ -161,288 +140,257 @@ public final class FactionTreasuryManager implements PersistentStore {
         }
     }
 
-    public void save() {
-        synchronized (stateLock) {
-            if (!writeStateLocked()) {
-                // A koordinátor hibagyűjtése csak dobásból lát.
-                throw new IllegalStateException("faction-treasury mentése sikertelen — részletek a logban");
-            }
-        }
-    }
-
-    /** A hívónak tartania kell a stateLock monitort. */
-    private boolean writeStateLocked() {
-        final YamlConfiguration yaml = new YamlConfiguration();
-        for (final Map.Entry<FactionType, Double> entry : balances.entrySet()) {
-            yaml.set("treasury." + entry.getKey().name(), entry.getValue());
-        }
-        for (final Map.Entry<FactionType, Double> entry : taxRates.entrySet()) {
-            yaml.set("tax-rates." + entry.getKey().name(), entry.getValue());
-        }
-        for (final Map.Entry<UUID, Double> entry : taxArrears.entrySet()) {
-            if (entry.getValue() > 0.0D) {
-                yaml.set("tax-arrears." + entry.getKey(), entry.getValue());
-            }
-        }
-        for (final Map.Entry<UUID, Integer> entry : evasionStrikes.entrySet()) {
-            if (entry.getValue() > 0) {
-                yaml.set("tax-evasion-strikes." + entry.getKey(), entry.getValue());
-            }
-        }
-        for (final Map.Entry<String, Long> entry : appliedGrants.entrySet()) {
-            yaml.set("applied-grants." + entry.getKey(), entry.getValue());
-        }
-
-        try {
-            YamlStore.saveAtomic(storageFile, yaml);
-            return true;
-        } catch (final IOException exception) {
-            plugin.getLogger().severe(
-                    "Failed to save faction treasury: " + exception.getMessage());
-            return false;
-        } catch (final hu.taliann.icesmp.storage.CriticalPersistenceWriteError fatal) {
-            // A kritikus write-circuit már beállt (minden további írás tiltva) — itt false-t
-            // adunk, hogy a hívó rollback-ága lefusson; a koordinátort a void save() wrapper
-            // dobása értesíti. A fatal elnyelése nélkül a rollback kimaradna (Error != IOException).
-            plugin.getLogger().severe(fatal.getMessage() == null ? fatal.toString() : fatal.getMessage());
-            return false;
-        }
-    }
-
     public double getBalance(final FactionType faction) {
         synchronized (stateLock) {
             return faction == null ? 0.0D : balances.getOrDefault(faction, 0.0D);
         }
     }
 
-    /** Gets a faction's effective citizen-tax rate. */
     public double getTaxRate(final FactionType faction) {
         synchronized (stateLock) {
-            final double configDefault = Math.max(0.0D,
-                    configManager.getDouble("factions.tax.rate-percent", 2.0D));
             return faction == null
-                    ? configDefault : taxRates.getOrDefault(faction, configDefault);
+                    ? nonNegativeConfig("factions.tax.rate-percent", 2.0D)
+                    : taxRates.getOrDefault(faction,
+                    nonNegativeConfig("factions.tax.rate-percent", 2.0D));
         }
     }
 
-    /** Sets a faction's citizen-tax rate. */
     public double setTaxRate(final FactionType faction, final double ratePercent) {
-        final double max = Math.max(0.0D,
-                configManager.getDouble("factions.tax.max-rate-percent", 10.0D));
-        final double safeRate = Double.isFinite(ratePercent) ? ratePercent : 0.0D;
-        final double applied = Math.max(0.0D, Math.min(max, safeRate));
-        if (faction != null) {
-            synchronized (stateLock) {
-                taxRates.put(faction, applied);
-            }
-            requestSave();
+        if (faction == null || !Double.isFinite(ratePercent) || ratePercent < 0.0D) {
+            return faction == null ? 0.0D : getTaxRate(faction);
         }
+        final double maximum = nonNegativeConfig("factions.tax.max-rate-percent", 10.0D);
+        final double applied = Math.min(maximum, ratePercent);
+        synchronized (stateLock) { taxRates.put(faction, applied); }
+        requestSave();
         return applied;
     }
 
-    /**
-     * Idempotens jóváírás. A candidate balance, grant-nyugta, snapshot, írás és sikertelen
-     * írás utáni rollback ugyanazon store-lock alatt fut, ezért egy közben érkező ordinary
-     * deposit/withdraw módosítást a rollback nem írhat felül.
-     */
     public boolean depositOnce(final String grantId, final FactionType faction,
                                final double amount) {
+        if (grantId == null || grantId.isBlank() || faction == null
+                || !Double.isFinite(amount) || amount <= 0.0D) return false;
         synchronized (stateLock) {
-            if (grantId == null || grantId.isBlank()) {
-                return false;
-            }
-            if (appliedGrants.containsKey(grantId)) {
-                return true;
-            }
-            if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) {
-                return false;
-            }
-
-            final Double previous = balances.get(faction);
-            balances.merge(faction, amount, Double::sum);
+            if (appliedGrants.containsKey(grantId)) return true;
+            final double before = balances.getOrDefault(faction, 0.0D);
+            final double after = PlayerProfileTaxStore.checkedAmountAdd(before, amount);
+            if (!Double.isFinite(after)) return false;
+            balances.put(faction, after);
             appliedGrants.put(grantId, System.currentTimeMillis());
-            if (!YamlStore.isLoadFailed(storageFile) && writeStateLocked()) {
+            try {
+                save();
                 return true;
+            } catch (final RuntimeException failure) {
+                balances.put(faction, before);
+                appliedGrants.remove(grantId);
+                plugin.getLogger().severe("Treasury grant commit failed: " + rootMessage(failure));
+                return false;
             }
-
-            appliedGrants.remove(grantId);
-            if (previous == null) {
-                balances.remove(faction);
-            } else {
-                balances.put(faction, previous);
-            }
-            return false;
         }
     }
 
     public void deposit(final FactionType faction, final double amount) {
-        if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) {
-            return;
-        }
+        if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) return;
         synchronized (stateLock) {
-            balances.merge(faction, amount, Double::sum);
+            final double next = PlayerProfileTaxStore.checkedAmountAdd(
+                    balances.getOrDefault(faction, 0.0D), amount);
+            if (!Double.isFinite(next)) return;
+            balances.put(faction, next);
         }
         requestSave();
     }
 
-    /** Withdraws from a faction treasury if it has sufficient funds. */
     public boolean withdraw(final FactionType faction, final double amount) {
-        if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) {
-            return false;
-        }
-
+        if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) return false;
         synchronized (stateLock) {
-            final double balance = balances.getOrDefault(faction, 0.0D);
-            if (balance < amount) {
-                return false;
-            }
-            balances.put(faction, balance - amount);
+            final double current = balances.getOrDefault(faction, 0.0D);
+            if (current < amount) return false;
+            balances.put(faction, current - amount);
         }
         requestSave();
         return true;
     }
 
-    /** A player's outstanding tax arrears. */
     public double getArrears(final UUID playerId) {
-        synchronized (stateLock) {
-            return playerId == null ? 0.0D : taxArrears.getOrDefault(playerId, 0.0D);
+        if (playerId == null) return 0.0D;
+        return arrearsProjection.getOrDefault(playerId, Map.of()).values().stream()
+                .mapToDouble(Double::doubleValue).sum();
+    }
+
+    public double getArrears(final UUID playerId, final FactionType originFaction) {
+        if (playerId == null || originFaction == null) return 0.0D;
+        return arrearsProjection.getOrDefault(playerId, Map.of())
+                .getOrDefault(originFaction, 0.0D);
+    }
+
+    public void collectTaxes() {
+        final var config = configManager.snapshot();
+        final var live = config.configuration();
+        if (live == null || !live.getBoolean("factions.tax.enabled", true)
+                || YamlStore.hasCriticalWriteFailure()) return;
+        final Set<String> exempt = live.getStringList("factions.tax.exempt").stream()
+                .map(value -> value.toUpperCase(Locale.ROOT)).collect(java.util.stream.Collectors.toSet());
+        final double minimum = nonNegativeConfig("factions.tax.minimum-amount", 2.0D);
+        final double maxArrears = nonNegativeConfig("factions.tax.max-arrears", 50.0D);
+        final int threshold = nonNegativeIntConfig("factions.tax.evasion-strikes", 3);
+        final Map<UUID, FactionType> assignments = factionManager.getFactionAssignments();
+        final String run = Long.toUnsignedString(System.currentTimeMillis(), 36);
+
+        PlayerProfileAuthority.current().repository().listPlayerIds().thenAccept(ids -> {
+            for (final UUID playerId : ids) {
+                final FactionType currentFaction = assignments.get(playerId);
+                final EnumSet<FactionType> origins = EnumSet.noneOf(FactionType.class);
+                try { origins.addAll(taxStore.origins(playerId)); }
+                catch (final RuntimeException notReady) { continue; }
+                if (currentFaction != null && !exempt.contains(currentFaction.name()))
+                    origins.add(currentFaction);
+                for (final FactionType origin : origins) {
+                    final double assessment;
+                    if (currentFaction == origin && !exempt.contains(origin.name())) {
+                        final CurrencyType currency = CurrencyType.fromFactionType(origin);
+                        final double wallet;
+                        try { wallet = economyStore.readCached(playerId).amount(currency); }
+                        catch (final RuntimeException notReady) { continue; }
+                        final double percent = getTaxRate(origin) <= 0.0D ? 0.0D
+                                : Math.floor(wallet * getTaxRate(origin)) / 100.0D;
+                        assessment = Math.max(percent, minimum);
+                    } else assessment = 0.0D;
+                    final String operationId = "tax:" + run + ':' + playerId + ':'
+                            + origin.name().toLowerCase(Locale.ROOT);
+                    taxStore.collect(playerId, origin, assessment, maxArrears, threshold,
+                                    operationId)
+                            .whenComplete((collection, failure) -> {
+                                if (failure != null || collection == null) {
+                                    plugin.getLogger().severe("PlayerProfile tax collection failed for "
+                                            + playerId + '/' + origin + ": " + rootMessage(failure));
+                                    return;
+                                }
+                                refreshArrears(playerId);
+                                if (collection.outbox() != null)
+                                    processOutbox(playerId, collection.outbox());
+                                notifyTax(playerId, origin, collection);
+                            });
+                }
+            }
+        }).exceptionally(failure -> {
+            plugin.getLogger().severe("PlayerProfile tax owner enumeration failed: "
+                    + rootMessage(failure));
+            return null;
+        });
+    }
+
+    private void processOutbox(final UUID playerId,
+                               final PlayerProfileTaxStore.Outbox outbox) {
+        if (outbox.paidMilli() > 0L && !depositOnce("tax-credit:" + outbox.operationId(),
+                outbox.origin(), outbox.paid())) return;
+        final CompletableFuture<Boolean> sin = outbox.reportSin()
+                ? sinManager.addSinOnce(playerId, 1, "tax-sin:" + outbox.operationId())
+                .toCompletableFuture()
+                : CompletableFuture.completedFuture(false);
+        sin.thenCompose(ignored -> taxStore.settle(playerId, outbox.operationId()))
+                .whenComplete((settled, failure) -> {
+                    if (failure != null) {
+                        plugin.getLogger().severe("Tax outbox remains pending for " + playerId
+                                + '/' + outbox.operationId() + ": " + rootMessage(failure));
+                        return;
+                    }
+                    if (outbox.reportSin()) {
+                        final Player online = Bukkit.getPlayer(playerId);
+                        if (online != null) online.getScheduler().run(plugin, task ->
+                                online.sendMessage(messageManager.getMessage("faction-tax-evasion",
+                                        "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked.")), null);
+                    }
+                });
+    }
+
+    private void notifyTax(final UUID playerId, final FactionType origin,
+                           final PlayerProfileTaxStore.Collection collection) {
+        if (!collection.changed() || collection.paidMilli() == 0L
+                && collection.owedAfterMilli() <= collection.owedBeforeMilli()) return;
+        final Player online = Bukkit.getPlayer(playerId);
+        if (online == null) return;
+        final CurrencyType currency = CurrencyType.fromFactionType(origin);
+        online.getScheduler().run(plugin, task -> {
+            if (!online.isOnline()) return;
+            online.sendMessage(collection.owedAfterMilli() > 0L
+                    ? messageManager.getMessage("faction-tax-arrears",
+                    "&6Állampolgári adó: &f{amount} {currency}&6 levonva, hátralékod: &c{arrears} {currency}&7.",
+                    Map.of("amount", currencyManager.formatBalance(collection.paid()),
+                            "arrears", currencyManager.formatBalance(collection.owedAfter()),
+                            "currency", currency.getDisplayName()))
+                    : messageManager.getMessage("faction-tax-notice",
+                    "&6Állampolgári adó levonva: &f{amount} {currency}&7.",
+                    Map.of("amount", currencyManager.formatBalance(collection.paid()),
+                            "currency", currency.getDisplayName())));
+        }, null);
+    }
+
+    private void rebuildPlayerTaxProjectionAndOutboxes() {
+        PlayerProfileAuthority.current().repository().listPlayerIds().thenAccept(ids -> {
+            for (final UUID playerId : ids) {
+                PlayerProfileAuthority.current().repository().loadSnapshot(playerId)
+                        .thenAccept(profile -> {
+                            refreshArrears(playerId);
+                            for (final PlayerProfileTaxStore.Outbox outbox : taxStore.pending(playerId))
+                                processOutbox(playerId, outbox);
+                        }).exceptionally(failure -> {
+                            plugin.getLogger().severe("Tax profile rebuild failed for " + playerId
+                                    + ": " + rootMessage(failure));
+                            return null;
+                        });
+            }
+        });
+    }
+
+    private void refreshArrears(final UUID playerId) {
+        try {
+            final EnumMap<FactionType, Double> values = new EnumMap<>(FactionType.class);
+            for (final PlayerProfileTaxStore.Debt debt : taxStore.debts(playerId))
+                values.put(debt.origin(), debt.amount());
+            if (values.isEmpty()) arrearsProjection.remove(playerId);
+            else arrearsProjection.put(playerId, Map.copyOf(values));
+        } catch (final RuntimeException notReady) {
+            arrearsProjection.remove(playerId);
         }
     }
 
-    /** Collects the periodic citizen tax. */
-    public void collectTaxes() {
-        if (!configManager.getBoolean("factions.tax.enabled", true)) {
-            return;
+    private double readNonNegative(final YamlConfiguration yaml, final String path,
+                                   final double fallback) {
+        final Object raw = yaml.get(path);
+        if (raw == null) return fallback;
+        if (!(raw instanceof Number number) || !Double.isFinite(number.doubleValue())
+                || number.doubleValue() < 0.0D) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Invalid shared treasury value at " + path);
+            return fallback;
         }
+        return number.doubleValue();
+    }
 
-        final List<String> exempt = configManager.getStringList("factions.tax.exempt").stream()
-                .map(name -> name.toUpperCase(Locale.ROOT))
-                .toList();
-        final double minimum = Math.max(0.0D,
-                configManager.getDouble("factions.tax.minimum-amount", 2.0D));
-        final double maxArrears = Math.max(0.0D,
-                configManager.getDouble("factions.tax.max-arrears", 50.0D));
+    private double nonNegativeConfig(final String path, final double fallback) {
+        final Object raw = configManager.snapshot().configuration() == null ? fallback
+                : configManager.snapshot().configuration().get(path);
+        if (raw instanceof Number number && Double.isFinite(number.doubleValue())
+                && number.doubleValue() >= 0.0D) return number.doubleValue();
+        return fallback;
+    }
 
-        final Map<FactionType, Double> collected = new EnumMap<>(FactionType.class);
-        boolean arrearsChanged = false;
-        for (final Map.Entry<UUID, FactionType> entry
-                : factionManager.getFactionAssignments().entrySet()) {
-            final FactionType faction = entry.getValue();
-            if (faction == null || exempt.contains(faction.name())) {
-                continue;
-            }
+    private int nonNegativeIntConfig(final String path, final int fallback) {
+        final Object raw = configManager.snapshot().configuration() == null ? fallback
+                : configManager.snapshot().configuration().get(path);
+        if (raw instanceof Number number && number.doubleValue() >= 0.0D
+                && number.doubleValue() <= Integer.MAX_VALUE
+                && number.doubleValue() == Math.rint(number.doubleValue())) return number.intValue();
+        return fallback;
+    }
 
-            final double ratePercent = getTaxRate(faction);
-            final UUID citizenId = entry.getKey();
-            final CurrencyType currency = CurrencyType.fromFactionType(faction);
-            final double balance = currencyManager.getBalance(citizenId, currency);
-
-            final double percentDue = ratePercent <= 0.0D
-                    ? 0.0D : Math.floor(balance * ratePercent) / 100.0D;
-            final double owedBefore;
-            synchronized (stateLock) {
-                owedBefore = taxArrears.getOrDefault(citizenId, 0.0D);
-            }
-            final double due = Math.max(percentDue, minimum) + owedBefore;
-            if (due <= 0.0D) {
-                continue;
-            }
-
-            double payable = 0.0D;
-            double paid = 0.0D;
-            for (int attempt = 0; attempt < 2 && paid <= 0.0D; attempt++) {
-                final double fresh = currencyManager.getBalance(citizenId, currency);
-                payable = Math.floor(Math.min(due, fresh) * 100.0D) / 100.0D;
-                if (payable <= 0.0D) {
-                    break;
-                }
-                paid = currencyManager.deductFromBalance(citizenId, currency, payable)
-                        ? payable : 0.0D;
-            }
-            final double owedAfter = Math.min(maxArrears,
-                    Math.round((due - paid) * 100.0D) / 100.0D);
-            synchronized (stateLock) {
-                if (owedAfter > 0.0D) {
-                    taxArrears.put(citizenId, owedAfter);
-                } else {
-                    taxArrears.remove(citizenId);
-                }
-            }
-            arrearsChanged |= owedAfter != owedBefore;
-
-            if (paid > 0.0D) {
-                collected.merge(faction, paid, Double::sum);
-            }
-
-            final int evasionThreshold = Math.max(0,
-                    configManager.getInt("factions.tax.evasion-strikes", 3));
-            if (evasionThreshold > 0 && maxArrears > 0.0D
-                    && paid <= 0.0D && owedAfter >= maxArrears) {
-                final int strikes;
-                synchronized (stateLock) {
-                    strikes = evasionStrikes.merge(citizenId, 1,
-                            (current, one) -> Math.min(evasionThreshold, current + one));
-                }
-                arrearsChanged = true;
-                if (strikes >= evasionThreshold) {
-                    final Player evader = Bukkit.getPlayer(citizenId);
-                    if (evader != null) {
-                        synchronized (stateLock) {
-                            evasionStrikes.remove(citizenId);
-                        }
-                        evader.getScheduler().run(plugin, task -> {
-                            sinManager.addSin(evader, 1);
-                            evader.sendMessage(messageManager.getMessage(
-                                    "faction-tax-evasion",
-                                    "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!"));
-                        }, null);
-                    }
-                }
-            } else if (owedAfter < maxArrears) {
-                synchronized (stateLock) {
-                    if (evasionStrikes.remove(citizenId) != null) {
-                        arrearsChanged = true;
-                    }
-                }
-            }
-
-            final Player citizen = Bukkit.getPlayer(citizenId);
-            if (citizen != null && (paid > 0.0D || owedAfter > owedBefore)) {
-                final net.kyori.adventure.text.Component notice = owedAfter > 0.0D
-                        ? messageManager.getMessage(
-                                "faction-tax-arrears",
-                                "&6Állampolgári adó: &f{amount} {currency}&6 levonva, hátralékod: &c{arrears} {currency}&7 — a Számvevők a következő beszedéskor is behajtják.",
-                                Map.of("amount", currencyManager.formatBalance(paid),
-                                        "arrears", currencyManager.formatBalance(owedAfter),
-                                        "currency", currency.getDisplayName()))
-                        : messageManager.getMessage(
-                                "faction-tax-notice",
-                                "&6Állampolgári adó levonva: &f{amount} {currency} &7(a frakciókasszába került).",
-                                Map.of("amount", currencyManager.formatBalance(paid),
-                                        "currency", currency.getDisplayName()));
-                citizen.getScheduler().run(plugin,
-                        task -> citizen.sendMessage(notice), null);
-            }
-        }
-
-        final java.util.Set<UUID> known = factionManager.getFactionAssignments().keySet();
-        synchronized (stateLock) {
-            arrearsChanged |= taxArrears.keySet().removeIf(id -> !known.contains(id));
-            arrearsChanged |= evasionStrikes.keySet().removeIf(id -> !known.contains(id));
-        }
-
-        if (collected.isEmpty() && !arrearsChanged) {
-            return;
-        }
-
-        synchronized (stateLock) {
-            for (final Map.Entry<FactionType, Double> entry : collected.entrySet()) {
-                balances.merge(entry.getKey(), entry.getValue(), Double::sum);
-                plugin.getLogger().info("Faction tax collected: "
-                        + currencyManager.formatBalance(entry.getValue())
-                        + " -> " + entry.getKey().name() + " treasury");
-            }
-            writeStateLocked();
-        }
+    private static String rootMessage(final Throwable failure) {
+        if (failure == null) return "unknown failure";
+        Throwable current = failure;
+        while ((current instanceof CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.getClass().getSimpleName()
+                : current.getMessage();
     }
 }

@@ -95,7 +95,7 @@ public final class MotdListener implements Listener {
         }
         snapshot = parsed;
         if (!parsed.enabled()) {
-            logger.info("A natív MOTD ki van kapcsolva.");
+            hu.taliann.icesmp.utils.StartupLog.info(logger, configManager, "A natív MOTD ki van kapcsolva.");
             return;
         }
         scheduleIconLoad(parsed, requestedGeneration);
@@ -380,7 +380,7 @@ public final class MotdListener implements Listener {
         generations.publishIfCurrent(requestedGeneration, () -> {
             iconCache = published;
             warnMissingConfiguredIcons(requested, immutable.keySet());
-            logger.info("MOTD ikonkészlet betöltve: " + immutable.size() + " érvényes 64×64 PNG.");
+            hu.taliann.icesmp.utils.StartupLog.info(logger, configManager, "MOTD ikonkészlet betöltve: " + immutable.size() + " érvényes 64×64 PNG.");
         });
     }
 

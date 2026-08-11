@@ -11,19 +11,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * B6 — játékos-indított karaván (szállítmány-rablás): a király a frakciókasszából
- * rakományt indít; a szállítmány egy KIHIRDETETT őrzőponton áll egy védési ablakig
- * (v1: nincs entitás-pathfinding — a spec Folia-buktatóját így kerüljük el; a
- * „mozgást" a narratív broadcastok adják). Ha az ablak végéig túléli → a kassza a
- * rakományt SZORZÓVAL kapja vissza (profit); ha ellenséges játékos leöli → a rakomány
- * a rabló frakció kasszájába megy; saját/azonos frakciós ölésnél a rakomány elvész
- * (grief-fék). Frakciónként cooldown. Folia: a spawn/despawn a helyszín régió-
- * schedulerén fut; az állapot volatile/synchronized (a tick a global schedulerről jön).
+ * B6 — játékos-indított karaván (szállítmány-rablás). A konvoj helyét a közös
+ * {@link EventSpawnGuard} keresi; nincs közvetlen X/Z + highest-block vízbypass.
  */
 public final class PlayerCaravanManager {
+
+    private static final UUID PENDING_CONVOY_ID = new UUID(0L, 0L);
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -36,6 +31,7 @@ public final class PlayerCaravanManager {
     private volatile double cargo;
     private volatile long windowEndMillis;
     private volatile UUID convoyId;
+    private volatile UUID initiatingPlayerId;
     private volatile Location site;
     private final Map<FactionType, Long> cooldownUntil = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -58,10 +54,10 @@ public final class PlayerCaravanManager {
 
     public boolean isConvoy(final UUID entityId) {
         final UUID current = convoyId;
-        return current != null && current.equals(entityId);
+        return current != null && !PENDING_CONVOY_ID.equals(current) && current.equals(entityId);
     }
 
-    /** Indítás (a hívó a király, a parancs ellenőrzi); hibakulcs vagy null. */
+    /** Indítás (a hívó a király/tanácstag); hibakulcs vagy null. */
     public synchronized String send(final Player king, final double amount) {
         if (!configManager.getBoolean("player-caravan.enabled", true)) {
             return "pcaravan-disabled";
@@ -69,7 +65,7 @@ public final class PlayerCaravanManager {
         if (isActive()) {
             return "pcaravan-busy";
         }
-        final FactionType faction = factionManager.getFaction(king.getUniqueId());
+        final FactionType faction = factionManager.getChosenFaction(king.getUniqueId()).orElse(null);
         if (faction == null) {
             return "pcaravan-no-faction";
         }
@@ -85,84 +81,134 @@ public final class PlayerCaravanManager {
         if (!treasuryManager.withdraw(faction, amount)) {
             return "pcaravan-poor";
         }
-        // Őrzőpont sorsolása a küldő játékos körül (vadonban, guard-mátrixszal szűrve).
-        final World world = king.getWorld();
-        final int radius = Math.max(64, configManager.getInt("player-caravan.site-radius", 300));
-        Location chosen = null;
-        for (int attempt = 0; attempt < 12; attempt++) {
-            final int x = king.getLocation().getBlockX() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
-            final int z = king.getLocation().getBlockZ() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
-            final Location candidate = new Location(world, x + 0.5, 0, z + 0.5);
-            if (!eventSpawnGuard.isBlocked("player-caravan", candidate)) {
-                chosen = candidate;
-                break;
-            }
-        }
-        if (chosen == null) {
-            treasuryManager.deposit(faction, amount); // visszatérítés — nem találtunk helyet
-            return "pcaravan-no-site";
-        }
+
         senderFaction = faction;
         cargo = amount;
-        site = chosen;
-        windowEndMillis = now + Math.max(60, configManager.getInt("player-caravan.window-seconds", 300)) * 1000L;
-        cooldownUntil.put(faction, now + Math.max(1, configManager.getInt("player-caravan.cooldown-minutes", 90)) * 60_000L);
-        convoyId = new UUID(0L, 0L); // placeholder, a spawn cseréli — az isActive() már igaz
+        site = null;
+        windowEndMillis = Long.MAX_VALUE;
+        convoyId = PENDING_CONVOY_ID;
+        initiatingPlayerId = king.getUniqueId();
 
-        final Location target = chosen;
-        plugin.getServer().getRegionScheduler().run(plugin, target, task -> {
-            final int y = world.getHighestBlockYAt(target.getBlockX(), target.getBlockZ()) + 1;
-            target.setY(y);
-            final Llama llama = world.spawn(target, Llama.class, mob -> {
+        final Location origin = king.getLocation().clone();
+        final long seed = now ^ king.getUniqueId().getMostSignificantBits()
+                ^ king.getUniqueId().getLeastSignificantBits();
+        eventSpawnGuard.findSafeNear("player-caravan", origin, seed,
+                location -> completeSpawn(faction, amount, location),
+                () -> failPendingSpawn(faction, amount));
+        return null;
+    }
+
+    /** Runs on the chosen location's region thread. */
+    private void completeSpawn(final FactionType faction, final double amount,
+                               final Location chosen) {
+        synchronized (this) {
+            if (!PENDING_CONVOY_ID.equals(convoyId) || senderFaction != faction
+                    || Double.compare(cargo, amount) != 0) {
+                return;
+            }
+        }
+
+        final World world = chosen.getWorld();
+        if (world == null) {
+            failPendingSpawn(faction, amount);
+            return;
+        }
+        try {
+            final Llama llama = world.spawn(chosen, Llama.class, mob -> {
                 EventSpawnGuard.prepare(mob);
                 mob.customName(net.kyori.adventure.text.Component.text(
                         "🐫 Szállítmány — " + faction.getDisplayName()));
                 mob.setCustomNameVisible(true);
                 mob.setAI(false);
-                final double hp = Math.max(20.0D, configManager.getDouble("player-caravan.convoy-hp", 120.0D));
-                mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(hp);
-                mob.setHealth(hp);
+                final double hp = Math.max(20.0D,
+                        configManager.getDouble("player-caravan.convoy-hp", 120.0D));
+                final org.bukkit.attribute.AttributeInstance maxHealth =
+                        mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                if (maxHealth != null) {
+                    maxHealth.setBaseValue(hp);
+                    mob.setHealth(Math.min(hp, maxHealth.getValue()));
+                }
             });
-            convoyId = llama.getUniqueId();
-        });
 
-        Bukkit.getServer().broadcast(messageManager.getMessage("pcaravan-sent",
-                "<gold>🐫 A(z) <white>{faction}</white> szállítmányt indított (<white>{cargo}</white> értékben)! Őrzőpont: <white>{x} / {z}</white> környéke — {minutes} percig védhető VAGY rabolható!</gold>",
-                Map.of("faction", faction.getDisplayName(), "cargo", String.valueOf(amount),
-                        "x", String.valueOf(chosen.getBlockX()), "z", String.valueOf(chosen.getBlockZ()),
-                        "minutes", String.valueOf(configManager.getInt("player-caravan.window-seconds", 300) / 60))));
-        return null;
+            final long now = System.currentTimeMillis();
+            synchronized (this) {
+                if (!PENDING_CONVOY_ID.equals(convoyId) || senderFaction != faction) {
+                    llama.remove();
+                    return;
+                }
+                site = chosen.clone();
+                windowEndMillis = now + Math.max(60,
+                        configManager.getInt("player-caravan.window-seconds", 300)) * 1000L;
+                cooldownUntil.put(faction, now + Math.max(1,
+                        configManager.getInt("player-caravan.cooldown-minutes", 90)) * 60_000L);
+                convoyId = llama.getUniqueId();
+                initiatingPlayerId = null;
+            }
+
+            Bukkit.getServer().broadcast(messageManager.getMessage("pcaravan-sent",
+                    "<gold>🐫 A(z) <white>{faction}</white> szállítmányt indított (<white>{cargo}</white> értékben)! Őrzőpont: <white>{x} / {z}</white> környéke — {minutes} percig védhető VAGY rabolható!</gold>",
+                    Map.of("faction", faction.getDisplayName(), "cargo", String.valueOf(amount),
+                            "x", String.valueOf(chosen.getBlockX()),
+                            "z", String.valueOf(chosen.getBlockZ()),
+                            "minutes", String.valueOf(configManager.getInt(
+                                    "player-caravan.window-seconds", 300) / 60))));
+        } catch (final RuntimeException failure) {
+            plugin.getLogger().warning("Player caravan spawn failed at validated location: " + failure);
+            failPendingSpawn(faction, amount);
+        }
+    }
+
+    private void failPendingSpawn(final FactionType faction, final double amount) {
+        final UUID playerId;
+        synchronized (this) {
+            if (!PENDING_CONVOY_ID.equals(convoyId) || senderFaction != faction
+                    || Double.compare(cargo, amount) != 0) {
+                return;
+            }
+            playerId = initiatingPlayerId;
+            clearState();
+        }
+        treasuryManager.deposit(faction, amount);
+        if (playerId != null) {
+            final Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                player.getScheduler().run(plugin, task -> player.sendMessage(messageManager.get(
+                        "faction-caravan-error.pcaravan-no-site",
+                        "&cNem találtunk száraz, vízparttól biztonságos őrzőpontot — a rakomány visszakerült a kasszába.")), null);
+            }
+        }
     }
 
     /** A world-events tick hívja: ablak-lejárat = sikeres célba érés. */
     public synchronized void tick() {
-        if (!isActive() || System.currentTimeMillis() < windowEndMillis) {
+        if (!isActive() || PENDING_CONVOY_ID.equals(convoyId)
+                || System.currentTimeMillis() < windowEndMillis) {
             return;
         }
         final FactionType faction = senderFaction;
         final double amount = cargo;
-        final double multiplier = Math.max(1.0D, configManager.getDouble("player-caravan.success-multiplier", 1.25D));
+        final double multiplier = Math.max(1.0D,
+                configManager.getDouble("player-caravan.success-multiplier", 1.25D));
         finishAndDespawn();
         if (faction != null) {
             treasuryManager.deposit(faction, amount * multiplier);
             Bukkit.getServer().broadcast(messageManager.getMessage("pcaravan-arrived",
                     "<gold>🐫 A(z) <white>{faction}</white> szállítmánya CÉLBA ÉRT — a kassza <white>{reward}</white>-t kap (a kereskedők bőkezűek)!</gold>",
                     Map.of("faction", faction.getDisplayName(),
-                            "reward", String.format(java.util.Locale.ROOT, "%.0f", amount * multiplier))));
+                            "reward", String.format(java.util.Locale.ROOT,
+                                    "%.0f", amount * multiplier))));
         }
     }
 
-    /** A kill-listener hívja, ha a konvoj meghalt; a killer régió-szálán fut. */
     public synchronized void onConvoyKilled(final Player killer) {
-        if (!isActive()) {
+        if (!isActive() || PENDING_CONVOY_ID.equals(convoyId)) {
             return;
         }
         final FactionType sender = senderFaction;
         final double amount = cargo;
-        convoyId = null;
-        senderFaction = null;
-        site = null;
-        final FactionType robber = killer == null ? null : factionManager.getFaction(killer.getUniqueId());
+        clearState();
+        final FactionType robber = killer == null ? null : factionManager.getChosenFaction(
+                killer.getUniqueId()).orElse(null);
         if (robber != null && robber != sender) {
             treasuryManager.deposit(robber, amount);
             Bukkit.getServer().broadcast(messageManager.getMessage("pcaravan-robbed",
@@ -176,13 +222,11 @@ public final class PlayerCaravanManager {
         }
     }
 
-    /** Konvoj-despawn a saját régió-szálán + állapot-nullázás (ablak-lejáratkor). */
     private synchronized void finishAndDespawn() {
         final UUID id = convoyId;
-        convoyId = null;
         final Location where = site;
-        site = null;
-        if (id == null || where == null) {
+        clearState();
+        if (id == null || PENDING_CONVOY_ID.equals(id) || where == null) {
             return;
         }
         plugin.getServer().getRegionScheduler().run(plugin, where, task -> {
@@ -193,8 +237,17 @@ public final class PlayerCaravanManager {
         });
     }
 
-    /** Leállításkor: aktív szállítmány visszatérítése (ne vesszen kasszapénz restartkor). */
-    public void shutdown() {
+    private void clearState() {
+        convoyId = null;
+        senderFaction = null;
+        cargo = 0.0D;
+        windowEndMillis = 0L;
+        site = null;
+        initiatingPlayerId = null;
+    }
+
+    /** Leállításkor az aktív vagy még helyet kereső szállítmány teljesen visszatérül. */
+    public synchronized void shutdown() {
         final FactionType faction = senderFaction;
         final double amount = cargo;
         if (isActive() && faction != null) {
