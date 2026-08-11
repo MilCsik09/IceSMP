@@ -44,6 +44,19 @@ hud:
     # Elsődleges, saját IceSMP HUD. Kizárólag a region-threaden előállított immutable
     # HudSnapshotot rajzolja; a resource pack sikeres betöltéséig a natív Folia HUD marad.
     enabled: true
+    # Admin-only, első fél által kezelt élő HUD-editor (/hud edit). Productionben
+    # szándékosan kikapcsolt; csak ellenőrzött admin-munkamenethez engedélyezd.
+    editor:
+      enabled: false
+    # A renderer által ténylegesen alkalmazott, validált alap-layout. Hibás vagy
+    # tartományon kívüli mező külön-külön a biztonságos alapértékre esik vissza.
+    layout:
+      x-offset-pixels: 0       # -512..512; pozitív érték jobbra
+      y-offset-pixels: 16      # -256..255; pozitív érték lefelé
+      safe-margin-pixels: 16   # 0..128; távolság a jobb képernyőszéltől
+      # Buildkor generált shader-variánsra illeszkedik: 0.75, 0.90, 1.00, 1.15,
+      # 1.25, 1.40, 1.60 vagy 1.80. Más érvényes érték a legközelebbire kerekül.
+      scale: 1.25
     # Előkészített HP-rework kapuk. Csak akkor lesznek bekapcsolhatók, amikor az egyedi
     # HP/armor kijelzés és a pack-készültségi védelem teljes körűen elkészült.
     hide-vanilla-health: false
