@@ -1,11 +1,17 @@
 package hu.taliann.icesmp.utils;
 
 import hu.taliann.icesmp.data.SpellSchool;
+import hu.taliann.icesmp.spells.CastModifiers;
+import hu.taliann.icesmp.spells.SpellExecutionContext;
 import org.bukkit.NamespacedKey;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 /**
  * Közös spell-sebzés út: minden varázslat a saját ISKOLÁJA damage-type-jával üt
@@ -14,6 +20,11 @@ import org.bukkit.entity.Player;
  * iskola-counter enchantok ellenállása, plusz a magyar halál-üzenet
  * (SpellDamageListener). A caster causing-entityként rákerül a source-ra, ezért a
  * kill-attribúció (getKiller → bűn/raid/bounty logika) változatlanul működik.
+ *
+ * <p><b>Skálázás:</b> a szinkron spell-output automatikusan a
+ * {@link SpellExecutionContext} damage multiplierét használja. Scheduler-hop után
+ * az explicit {@link CastModifiers} overloadot kell hívni. A projectile volley-k
+ * immutable PDC snapshotot visznek a damage eventig.</p>
  *
  * <p><b>Iskola-besorolás</b> (élőben olvasott config, spells.yml):
  * {@code spells.spell-schools.by-spell.<spellId>} felülírás → a caster kasztjának
@@ -30,6 +41,11 @@ import org.bukkit.entity.Player;
  */
 public final class SpellDamageUtil {
 
+    private static final NamespacedKey PROJECTILE_DAMAGE_MULTIPLIER =
+            new NamespacedKey("icesmp", "cast_damage_multiplier");
+    private static final NamespacedKey PROJECTILE_SPELL_ID =
+            new NamespacedKey("icesmp", "cast_spell_id");
+
     private static volatile hu.taliann.icesmp.managers.ConfigManager configManager;
     private static volatile hu.taliann.icesmp.managers.JobManager jobManager;
 
@@ -43,25 +59,29 @@ public final class SpellDamageUtil {
         jobManager = jobs;
     }
 
-    /**
-     * Spell-sebzés a spell iskolájának damage-type-jával.
-     *
-     * @param caster a varázsló (lehet null a cross-region fallback-ágakon)
-     * @param victim a cél (a hívó a cél régió-szálán fut)
-     * @param amount a sebzés
-     * @param spellId a spell azonosítója (a by-spell felüliráshoz; lehet null)
-     */
+    /** Spell-sebzés a jelenlegi szinkron cast-contexttel. */
     public static void damageBySpell(final Player caster, final LivingEntity victim,
                                      final double amount, final String spellId) {
-        if (victim == null || amount <= 0.0D) {
+        damageBySpell(caster, victim, amount, spellId, SpellExecutionContext.current());
+    }
+
+    /**
+     * Spell-sebzés explicit immutable modifier snapshottal. Ezt kell használni
+     * delayed/channel/scheduler-hop utáni outputhoz.
+     */
+    public static void damageBySpell(final Player caster, final LivingEntity victim,
+                                     final double amount, final String spellId,
+                                     final CastModifiers modifiers) {
+        final double scaledAmount = scaledDamage(amount, modifiers);
+        if (victim == null || scaledAmount <= 0.0D) {
             return;
         }
         final DamageType type = resolveType(schoolFor(caster, spellId));
         if (type == null) {
             if (caster != null) {
-                victim.damage(amount, caster);
+                victim.damage(scaledAmount, caster);
             } else {
-                victim.damage(amount);
+                victim.damage(scaledAmount);
             }
             return;
         }
@@ -69,12 +89,56 @@ public final class SpellDamageUtil {
         if (caster != null) {
             builder.withCausingEntity(caster).withDirectEntity(caster);
         }
-        victim.damage(amount, builder.build());
+        victim.damage(scaledAmount, builder.build());
     }
 
     /** Iskola-besorolás nélküli (ősmágia) út — régi hívásokhoz. */
     public static void damageBySpell(final Player caster, final LivingEntity victim, final double amount) {
         damageBySpell(caster, victim, amount, null);
+    }
+
+    /** Pure scaling helper for cross-region vanilla fallback branches. */
+    public static double scaledDamage(final double baseAmount, final CastModifiers modifiers) {
+        if (!Double.isFinite(baseAmount) || baseAmount <= 0.0D) {
+            return 0.0D;
+        }
+        final CastModifiers effective = modifiers == null ? CastModifiers.IDENTITY : modifiers;
+        final double scaled = baseAmount * effective.damageMultiplier();
+        return Double.isFinite(scaled) && scaled > 0.0D ? scaled : 0.0D;
+    }
+
+    /** Stores the immutable cast snapshot on a launched projectile. */
+    public static void markProjectile(final Projectile projectile, final String spellId,
+                                      final CastModifiers modifiers) {
+        if (projectile == null) {
+            return;
+        }
+        final CastModifiers effective = modifiers == null ? CastModifiers.IDENTITY : modifiers;
+        final PersistentDataContainer pdc = projectile.getPersistentDataContainer();
+        pdc.set(PROJECTILE_DAMAGE_MULTIPLIER, PersistentDataType.DOUBLE, effective.damageMultiplier());
+        if (spellId == null || spellId.isBlank()) {
+            pdc.remove(PROJECTILE_SPELL_ID);
+        } else {
+            pdc.set(PROJECTILE_SPELL_ID, PersistentDataType.STRING, spellId.trim().toLowerCase(java.util.Locale.ROOT));
+        }
+    }
+
+    /** Returns the projectile snapshot multiplier, or identity for non-spell damage. */
+    public static double projectileDamageMultiplier(final Entity damager) {
+        if (!(damager instanceof Projectile projectile)) {
+            return 1.0D;
+        }
+        final Double value = projectile.getPersistentDataContainer()
+                .get(PROJECTILE_DAMAGE_MULTIPLIER, PersistentDataType.DOUBLE);
+        return value == null || !Double.isFinite(value) || value < 0.0D ? 1.0D : value;
+    }
+
+    /** Returns the spell id carried by a marked projectile, or null. */
+    public static String projectileSpellId(final Entity damager) {
+        if (!(damager instanceof Projectile projectile)) {
+            return null;
+        }
+        return projectile.getPersistentDataContainer().get(PROJECTILE_SPELL_ID, PersistentDataType.STRING);
     }
 
     /** A spell iskolája: by-spell felülírás → a caster kasztjának by-class defaultja → ŐSMÁGIA. */
