@@ -66,80 +66,19 @@ allprojects { project ->
         def localPluginDir = project.providers.gradleProperty('icesmpDevPluginDir')
                 .orElse(project.providers.environmentVariable('ICESMP_DEV_PLUGIN_DIR'))
         def runPluginsDir = new File(invocationDir, 'run/plugins')
-        def betterHudDeployDir = new File(invocationDir, 'deploy/betterhud')
-        def betterHudDevConfig = new File(invocationDir, 'gradle/betterhud-dev.config.yml')
-        def betterHudRunDir = new File(runPluginsDir, 'BetterHud')
-        def iceSmpPackSourceDir = new File(invocationDir, 'resource-pack')
-        def iceSmpPackMergeDir = new File(runPluginsDir, 'IceSMPResourcePack')
         def externalPackFile = new File(runPluginsDir, 'IceSMPExternalBase.zip')
-        def prepareBetterHud = project.tasks.register('prepareBetterHudForFolia') {
+
+        def prepareExternalPack = project.tasks.register('prepareIceSmpExternalPackForFolia') {
             group = 'icesmp development'
-            description = 'Installs the IceSMP BetterHud layout and local-only resource-pack hosting config.'
-            inputs.dir(betterHudDeployDir)
-            inputs.file(betterHudDevConfig)
-            inputs.dir(iceSmpPackSourceDir)
+            description = 'Downloads and verifies the immutable external resource-pack base used by the first-party IceSMP pack.'
             inputs.property('externalPackUrl', externalPackUrl)
             inputs.property('externalPackSha1', externalPackSha1)
-            outputs.dirs(betterHudRunDir, iceSmpPackMergeDir)
             outputs.file(externalPackFile)
-            dependsOn(project.tasks.named('generateIceSmpHudAssets'))
-            // BetterHud may keep generated/runtime files next to the mirrored configuration and
-            // Gradle cannot safely infer from that mutable directory that the IceSMP subset is
-            // still current. Always re-mirror before a dev server start.
-            outputs.upToDateWhen { false }
             doLast {
-                // Treat the IceSMP-owned BetterHud layout set as a mirror. Without pruning,
-                // renamed generated layouts remain active in run/plugins and render duplicate,
-                // independently aligned HUD canvases after an upgrade.
-                def sourceLayouts = new File(betterHudDeployDir, 'layouts')
-                def targetLayouts = new File(betterHudRunDir, 'layouts')
-                def sourceLayoutFiles = sourceLayouts.listFiles({ file ->
-                    file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
-                } as FileFilter) ?: [] as File[]
-                def currentLayoutNames = sourceLayoutFiles.collect { it.name }.toSet()
-                def targetLayoutFiles = targetLayouts.listFiles({ file ->
-                    file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
-                } as FileFilter) ?: [] as File[]
-                targetLayoutFiles.findAll { !currentLayoutNames.contains(it.name) }.each { stale ->
-                    java.nio.file.Files.deleteIfExists(stale.toPath())
-                }
-                java.nio.file.Files.walk(betterHudDeployDir.toPath()).withCloseable { paths ->
-                    paths.forEach { source ->
-                        def relative = betterHudDeployDir.toPath().relativize(source)
-                        def target = betterHudRunDir.toPath().resolve(relative)
-                        if (java.nio.file.Files.isDirectory(source)) {
-                            java.nio.file.Files.createDirectories(target)
-                        } else {
-                            java.nio.file.Files.createDirectories(target.parent)
-                            java.nio.file.Files.copy(source, target,
-                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
-                        }
-                    }
-                }
-                def betterHudRunConfig = new File(betterHudRunDir, 'config.yml').toPath()
-                def devHost = java.net.InetAddress.getLocalHost().hostAddress
-                def devConfigText = java.nio.file.Files.readString(betterHudDevConfig.toPath(),
-                        java.nio.charset.StandardCharsets.UTF_8)
-                        .replace('__ICESMP_DEV_HOST__', devHost)
-                java.nio.file.Files.writeString(betterHudRunConfig, devConfigText,
-                        java.nio.charset.StandardCharsets.UTF_8)
-                java.nio.file.Files.walk(iceSmpPackSourceDir.toPath()).withCloseable { paths ->
-                    paths.forEach { source ->
-                        def relative = iceSmpPackSourceDir.toPath().relativize(source)
-                        if (relative.toString() == 'README.md') return
-                        def target = iceSmpPackMergeDir.toPath().resolve(relative)
-                        if (java.nio.file.Files.isDirectory(source)) {
-                            java.nio.file.Files.createDirectories(target)
-                        } else {
-                            java.nio.file.Files.createDirectories(target.parent)
-                            java.nio.file.Files.copy(source, target,
-                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
-                        }
-                    }
-                }
                 def digest = java.security.MessageDigest.getInstance('SHA-1')
                 def currentHash = externalPackFile.isFile()
-                        ? java.util.HexFormat.of().formatHex(digest.digest(java.nio.file.Files.readAllBytes(externalPackFile.toPath())))
+                        ? java.util.HexFormat.of().formatHex(
+                                digest.digest(java.nio.file.Files.readAllBytes(externalPackFile.toPath())))
                         : ''
                 if (currentHash != externalPackSha1) {
                     runPluginsDir.mkdirs()
@@ -158,44 +97,10 @@ allprojects { project ->
                     java.nio.file.Files.move(temporary.toPath(), externalPackFile.toPath(),
                             java.nio.file.StandardCopyOption.REPLACE_EXISTING)
                 }
-                logger.lifecycle("Provisioned the immutable external base and first-party IceSMP HUD inputs for local delivery at ${devHost}:8164; BetterHud remains optional.")
+                logger.lifecycle('Provisioned the immutable external resource-pack base for the first-party IceSMP HUD.')
             }
         }
 
-        def verifyBetterHudMirror = {
-            def sourceLayouts = new File(betterHudDeployDir, 'layouts')
-            def targetLayouts = new File(betterHudRunDir, 'layouts')
-            def sourceLayoutFiles = sourceLayouts.listFiles({ file ->
-                file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
-            } as FileFilter) ?: [] as File[]
-            def targetLayoutFiles = targetLayouts.listFiles({ file ->
-                file.isFile() && file.name.startsWith('icesmp-') && file.name.endsWith('.yml')
-            } as FileFilter) ?: [] as File[]
-            def sourceNames = sourceLayoutFiles.collect { it.name }.sort()
-            def targetNames = targetLayoutFiles.collect { it.name }.sort()
-            if (sourceNames != targetNames) {
-                throw new GradleException("Stale IceSMP BetterHud layout set: source=${sourceNames}, run=${targetNames}")
-            }
-            sourceLayoutFiles.each { source ->
-                def target = new File(targetLayouts, source.name)
-                if (!target.isFile() || !java.util.Arrays.equals(
-                        java.nio.file.Files.readAllBytes(source.toPath()),
-                        java.nio.file.Files.readAllBytes(target.toPath()))) {
-                    throw new GradleException("IceSMP BetterHud layout mirror mismatch: ${source.name}")
-                }
-            }
-            ['huds/icesmp-class-hud.yml', 'images/icesmp-class-images.yml',
-             'texts/icesmp-class-font.yml', 'popups/icesmp-class-proc-popup.yml'].each { relative ->
-                def source = new File(betterHudDeployDir, relative)
-                def target = new File(betterHudRunDir, relative)
-                if (!source.isFile() || !target.isFile() || !java.util.Arrays.equals(
-                        java.nio.file.Files.readAllBytes(source.toPath()),
-                        java.nio.file.Files.readAllBytes(target.toPath()))) {
-                    throw new GradleException("IceSMP BetterHud mirror mismatch: ${relative}")
-                }
-            }
-            logger.lifecycle("Verified IceSMP BetterHud mirror: ${sourceNames.join(', ')}")
-        }
         def prepareLocal = project.tasks.register('prepareLocalClassSpecPluginsForFolia') {
             group = 'icesmp development'
             description = 'Copies licensed/local dependency-lock artifacts into the Folia dev server.'
@@ -206,7 +111,8 @@ allprojects { project ->
                     return
                 }
                 def configuredFile = new File(configured.toString())
-                def sourceDir = configuredFile.isAbsolute() ? configuredFile : new File(invocationDir, configured.toString())
+                def sourceDir = configuredFile.isAbsolute()
+                        ? configuredFile : new File(invocationDir, configured.toString())
                 if (!sourceDir.isDirectory()) {
                     throw new GradleException("IceSMP dev plugin directory does not exist: ${sourceDir}")
                 }
@@ -238,24 +144,25 @@ allprojects { project ->
                 modrinthDeps.each { dep ->
                     def projectId = dep['dev-project']
                     def versionId = dep['dev-version-id']
-                    if (projectId == null || projectId.isBlank() || versionId == null || versionId.isBlank()) {
+                    if (projectId == null || projectId.isBlank()
+                            || versionId == null || versionId.isBlank()) {
                         throw new GradleException("${dep.id} has incomplete Modrinth provisioning metadata")
                     }
                     modrinth(projectId, versionId)
                 }
             }
         }
+
         def firstPartyMergeTasks = project.tasks.matching {
             it.name == 'stageMergedResourcePackForR2'
         }
         project.tasks.named('runFolia').configure {
             group = 'icesmp development'
             description = 'Runs the canonical IceSMP Folia 1.21.11 dev server with lock-pinned plugins.'
-            dependsOn(prepareLocal, prepareBetterHud, firstPartyMergeTasks)
-            doFirst verifyBetterHudMirror
+            dependsOn(prepareLocal, prepareExternalPack, firstPartyMergeTasks)
         }
         firstPartyMergeTasks.configureEach { mergeTask ->
-            mergeTask.dependsOn(prepareBetterHud)
+            mergeTask.dependsOn(prepareExternalPack)
         }
     }
 }
