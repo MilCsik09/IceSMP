@@ -23,8 +23,7 @@ self-host-ip: "*"
 self-host-port: 8163
 merge-other-folders: []
 loading-head: random
-default-hud:
-  - icesmp_class_hud
+default-hud: []
 default-popup: []
 default-compass: []
 load-minecraft-default-textures: false

@@ -40,11 +40,18 @@ world-tweaks:
     mobs: true
 
 hud:
-  betterhud:
-    # Opcionális, kizárólag megjelenítési integráció. A BetterHud közvetlenül a generikus,
-    # immutable snapshotból rajzol; a PlaceholderAPI csak külön külső olvasókhoz szükséges.
-    # BetterHud hiányában a natív resource sor automatikusan marad.
+  icesmp-hud:
+    # Elsődleges, saját IceSMP HUD. Kizárólag a region-threaden előállított immutable
+    # HudSnapshotot rajzolja; a resource pack sikeres betöltéséig a natív Folia HUD marad.
     enabled: true
+    # Előkészített HP-rework kapuk. Csak akkor lesznek bekapcsolhatók, amikor az egyedi
+    # HP/armor kijelzés és a pack-készültségi védelem teljes körűen elkészült.
+    hide-vanilla-health: false
+    hide-vanilla-armor: false
+  betterhud:
+    # Átmeneti, opcionális megjelenítési fallback. Nem state-authority és nem startup-fatal.
+    # A saját IceSMP HUD aktív játékosainál automatikusan elnémul.
+    enabled: false
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
   # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
   # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.

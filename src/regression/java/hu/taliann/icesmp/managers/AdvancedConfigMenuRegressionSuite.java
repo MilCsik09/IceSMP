@@ -57,8 +57,8 @@ public final class AdvancedConfigMenuRegressionSuite {
         final YamlConfiguration crates = merged("crates.yml");
         check(crates.getBoolean("crates-settings.enabled"),
                 "packaged native crate master toggle missing");
-        check(crates.isSet("crates-settings.spin-animation"),
-                "packaged crate spin toggle missing");
+        check(!crates.isSet("crates-settings.spin-animation"),
+                "retired inventory spin toggle must not return to the packaged crate schema");
         final ConfigurationSection root = crates.getConfigurationSection("crates");
         check(root != null && !root.getKeys(false).isEmpty(), "packaged crates missing");
 

@@ -44,6 +44,17 @@ FALLBACK_POLICY_PATH = (
 )
 # Repository documentation belongs beside the source pack but must not affect client bytes/hash.
 SOURCE_ONLY_PATHS = frozenset({"README.md"})
+MERGE_OWNED_PREFIXES = ("assets/icesmp/", "assets/icesmp_hud/")
+MERGE_OWNED_FILES = frozenset(
+    {
+        "pack.mcmeta",
+        "pack.png",
+        "assets/minecraft/shaders/core/rendertype_text.vsh",
+        "assets/minecraft/shaders/core/rendertype_text.fsh",
+        "assets/minecraft/textures/gui/sprites/boss_bar/white_background.png",
+        "assets/minecraft/textures/gui/sprites/boss_bar/white_progress.png",
+    }
+)
 
 
 class PackError(RuntimeError):
@@ -410,6 +421,105 @@ def build_pack(root: Path, output: Path) -> tuple[str, int]:
     return sha1, len(payload)
 
 
+def _safe_base_entries(path: Path) -> dict[str, bytes]:
+    if not path.is_file():
+        raise PackError(f"External base pack is missing: {path}")
+    entries: dict[str, bytes] = {}
+    total_size = 0
+    try:
+        with zipfile.ZipFile(path) as archive:
+            for info in archive.infolist():
+                if info.is_dir() or info.filename.startswith(("__MACOSX/", ".DS_Store")):
+                    continue
+                name = info.filename.replace("\\", "/")
+                relative = PurePosixPath(name)
+                if relative.is_absolute() or ".." in relative.parts or name != str(relative):
+                    raise PackError(f"Unsafe external ZIP entry: {info.filename}")
+                if name in entries:
+                    raise PackError(f"Duplicate external ZIP entry: {name}")
+                total_size += info.file_size
+                if len(entries) >= MAX_FILES or total_size > MAX_UNCOMPRESSED_BYTES:
+                    raise PackError("External pack exceeds the safe file-count or size budget")
+                entries[name] = archive.read(info)
+    except zipfile.BadZipFile as exception:
+        raise PackError(f"External base pack is not a valid ZIP: {path}") from exception
+    if "pack.mcmeta" not in entries:
+        raise PackError("External base pack has no root pack.mcmeta")
+    return entries
+
+
+def _overlay_may_replace(name: str) -> bool:
+    return name in MERGE_OWNED_FILES or name.startswith(MERGE_OWNED_PREFIXES)
+
+
+def merge_pack(base: Path, overlay_root: Path, output: Path,
+               metadata: Path | None = None) -> tuple[str, int]:
+    """Merge an immutable external base with the explicitly owned IceSMP layer."""
+    entries = _safe_base_entries(base)
+    collisions: list[str] = []
+    for relative, source in validate_pack(overlay_root):
+        name = str(relative)
+        if name in entries:
+            if not _overlay_may_replace(name):
+                raise PackError(f"Unowned resource-pack collision: {name}")
+            collisions.append(name)
+        entries[name] = source.read_bytes()
+
+    required = (
+        "pack.mcmeta",
+        "assets/minecraft/shaders/core/rendertype_text.vsh",
+        "assets/icesmp_hud/hud-manifest.json",
+    )
+    for name in required:
+        if name not in entries:
+            raise PackError(f"Merged resource pack is missing required IceSMP entry: {name}")
+    if not any(name.startswith("assets/icesmp/") for name in entries):
+        raise PackError("Merged resource pack is missing the IceSMP gameplay namespace")
+
+    try:
+        root = json.loads(entries["pack.mcmeta"].decode("utf-8"))
+        pack = root["pack"]
+        if not isinstance(pack, dict):
+            raise TypeError
+    except (UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as exception:
+        raise PackError("Merged pack.mcmeta is invalid") from exception
+    pack.pop("supported_formats", None)
+    pack["pack_format"] = 75
+    pack["min_format"] = 75
+    pack["max_format"] = 75
+    entries["pack.mcmeta"] = json.dumps(
+        root, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(output.suffix + ".tmp")
+    temporary.unlink(missing_ok=True)
+    try:
+        with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_STORED,
+                             strict_timestamps=True) as archive:
+            for name in sorted(entries):
+                info = zipfile.ZipInfo(name, date_time=DOS_EPOCH)
+                info.compress_type = zipfile.ZIP_STORED
+                info.create_system = 3
+                info.external_attr = 0o100644 << 16
+                info.flag_bits |= 0x800
+                archive.writestr(info, entries[name])
+        temporary.replace(output)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+    payload = output.read_bytes()
+    sha1 = hashlib.sha1(payload).hexdigest()
+    if metadata is not None:
+        metadata.parent.mkdir(parents=True, exist_ok=True)
+        metadata.write_text(f"sha1={sha1}\nsize={len(payload)}\n", encoding="utf-8")
+    print(
+        f"Merged {output}: {len(entries)} files, {len(collisions)} owned collisions, "
+        f"{len(payload)} bytes, SHA-1 {sha1}"
+    )
+    return sha1, len(payload)
+
+
 def write_github_outputs(path: Path, values: dict[str, str | int]) -> None:
     with path.open("a", encoding="utf-8") as handle:
         for key, value in values.items():
@@ -475,6 +585,11 @@ def command_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_merge(args: argparse.Namespace) -> int:
+    merge_pack(args.base, args.source, args.output, args.metadata)
+    return 0
+
+
 def command_update_metadata(args: argparse.Namespace) -> int:
     changed = update_metadata(args.metadata, args.url, args.sha1)
     print("Updated resource-pack metadata." if changed else "Resource-pack metadata already current.")
@@ -507,6 +622,14 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--object-prefix", default="resource-packs")
     build.add_argument("--github-output", type=Path)
     build.set_defaults(handler=command_build)
+
+    merge = subparsers.add_parser(
+        "merge", help="Deterministically merge an external base with the owned IceSMP layer")
+    merge.add_argument("--base", type=Path, required=True)
+    merge.add_argument("--source", type=Path, default=Path("resource-pack"))
+    merge.add_argument("--output", type=Path, required=True)
+    merge.add_argument("--metadata", type=Path)
+    merge.set_defaults(handler=command_merge)
 
     metadata = subparsers.add_parser("update-metadata", help="Update the generated JAR metadata")
     metadata.add_argument("--metadata", type=Path, default=Path("src/main/resources/resource-pack.properties"))

@@ -20,7 +20,7 @@ public final class IceSMP extends JavaPlugin {
         getServer().getPluginManager().registerEvents(resourcePackListener, this);
 
         TransientEntities.install(this);
-        core = new IceSMPCore(this, resourcePackListener::reloadAndResend);
+        core = new IceSMPCore(this, resourcePackListener::reloadAndResend, resourcePackListener::isLoaded);
         core.enable();
 
         if (getServer().getPluginManager().getPlugin("WorldGuard") != null

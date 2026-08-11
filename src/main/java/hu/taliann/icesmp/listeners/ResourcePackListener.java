@@ -12,6 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -31,6 +32,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -58,13 +61,14 @@ public final class ResourcePackListener implements Listener {
     private volatile DevelopmentPayload developmentPayload;
     private volatile ScheduledTask developmentPollTask;
     private volatile long developmentSourceStamp = Long.MIN_VALUE;
+    private final Set<UUID> loadedPlayers = ConcurrentHashMap.newKeySet();
 
     public ResourcePackListener(final JavaPlugin plugin) {
         this.plugin = plugin;
         reload();
-        if (developmentCompositeMode()) {
+        if (developmentFirstPartyPackMode()) {
             developmentPollTask = Bukkit.getAsyncScheduler().runAtFixedRate(plugin,
-                    ignored -> refreshDevelopmentCompositePack(), 1L, 2L, TimeUnit.SECONDS);
+                    ignored -> refreshDevelopmentFirstPartyPack(), 1L, 2L, TimeUnit.SECONDS);
         }
     }
 
@@ -77,6 +81,26 @@ public final class ResourcePackListener implements Listener {
     public void onPackStatus(final PlayerResourcePackStatusEvent event) {
         plugin.getLogger().info("Resource-pack status [" + event.getPlayer().getName() + "]: "
                 + event.getStatus() + " (id=" + event.getID() + ")");
+        final PackRequest current = request;
+        if (current == null || !current.id().equals(event.getID())) {
+            return;
+        }
+        if (event.getStatus() == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) {
+            loadedPlayers.add(event.getPlayer().getUniqueId());
+        } else if (Set.of("DECLINED", "FAILED_DOWNLOAD", "INVALID_URL", "DISCARDED")
+                .contains(event.getStatus().name())) {
+            loadedPlayers.remove(event.getPlayer().getUniqueId());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(final PlayerQuitEvent event) {
+        loadedPlayers.remove(event.getPlayer().getUniqueId());
+    }
+
+    /** Thread-safe capability snapshot; HUD consumers never inspect a live Player off-thread. */
+    public boolean isLoaded(final UUID playerId) {
+        return playerId != null && loadedPlayers.contains(playerId);
     }
 
     /** Reloads config/metadata and updates online players only when the effective request changed. */
@@ -105,9 +129,9 @@ public final class ResourcePackListener implements Listener {
 
     /** Reloads only the immutable request snapshot; invalid configuration disables delivery. */
     public void reload() {
-        if (developmentCompositeMode()) {
-            plugin.getLogger().info("Fejlesztői egyesített BetterHud pack aktív: a külön IceSMP R2 réteg nincs kiküldve; "
-                    + "az IceSMP a 1.21.11-re normalizált lokális composite ZIP-et szolgálja ki.");
+        if (developmentFirstPartyPackMode()) {
+            plugin.getLogger().info("Fejlesztői first-party IceSMP pack aktív: a külön R2 réteg nincs kiküldve; "
+                    + "az IceSMP a determinisztikusan egyesített 1.21.11-es ZIP-et szolgálja ki.");
             return;
         }
         this.request = loadRequest();
@@ -123,6 +147,7 @@ public final class ResourcePackListener implements Listener {
     }
 
     private void applyTransition(final Player player, final PackRequest previous, final PackRequest current) {
+        loadedPlayers.remove(player.getUniqueId());
         if (previous != null && (current == null || !previous.id().equals(current.id()))) {
             player.removeResourcePack(previous.id());
         }
@@ -133,6 +158,7 @@ public final class ResourcePackListener implements Listener {
 
     private void send(final Player player, final PackRequest current) {
         try {
+            loadedPlayers.remove(player.getUniqueId());
             player.addResourcePack(current.id(), current.url(), current.hash(), current.prompt(), current.required());
         } catch (final IllegalArgumentException exception) {
             plugin.getLogger().warning("Az IceSMP resource pack nem küldhető ki: " + exception.getMessage());
@@ -231,6 +257,7 @@ public final class ResourcePackListener implements Listener {
     }
 
     public void close() {
+        loadedPlayers.clear();
         final ScheduledTask task = developmentPollTask;
         developmentPollTask = null;
         if (task != null) task.cancel();
@@ -240,13 +267,14 @@ public final class ResourcePackListener implements Listener {
         if (server != null) server.stop(0);
     }
 
-    private boolean developmentCompositeMode() {
-        return Boolean.getBoolean("icesmp.dev.mergedBetterHudPack");
+    private boolean developmentFirstPartyPackMode() {
+        return Boolean.getBoolean("icesmp.dev.firstPartyPack");
     }
 
-    private void refreshDevelopmentCompositePack() {
-        final Path source = plugin.getDataFolder().toPath().getParent()
-                .resolve("BetterHud").resolve("build.zip");
+    private void refreshDevelopmentFirstPartyPack() {
+        final String configured = System.getProperty("icesmp.dev.packPath", "").trim();
+        if (configured.isEmpty()) return;
+        final Path source = Path.of(configured).toAbsolutePath().normalize();
         try {
             if (!Files.isRegularFile(source)) return;
             final long stamp = Files.getLastModifiedTime(source).toMillis() ^ Files.size(source);

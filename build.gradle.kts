@@ -1,9 +1,4 @@
 import java.security.MessageDigest
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
@@ -14,6 +9,11 @@ plugins {
 }
 
 val betterHudPython = if (System.getProperty("os.name").lowercase().contains("windows")) "python" else "python3"
+val generateIceSmpHudAssets by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Regenerates the first-party IceSMP HUD fonts, sprites and positioning shader."
+    commandLine(betterHudPython, "scripts/generate_icesmp_hud_assets.py")
+}
 val generateBetterHudAssets by tasks.registering(Exec::class) {
     group = "build"
     description = "Regenerates deterministic IceSMP BetterHud pixel assets."
@@ -27,7 +27,69 @@ val generateBetterHudLayout by tasks.registering(Exec::class) {
 val generateBetterHudPackage by tasks.registering {
     group = "build"
     description = "Regenerates deterministic IceSMP BetterHud pixel assets and layout."
-    dependsOn(generateBetterHudAssets, generateBetterHudLayout)
+    dependsOn(generateBetterHudAssets, generateBetterHudLayout, generateIceSmpHudAssets)
+}
+
+val validateIceSmpHudPackage by tasks.registering {
+    group = "verification"
+    description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
+    val pack = layout.projectDirectory.dir("resource-pack")
+    val hud = pack.dir("assets/icesmp_hud")
+    val rendererSource = layout.projectDirectory.file(
+        "src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java")
+    inputs.dir(hud)
+    inputs.files(
+        "scripts/generate_icesmp_hud_assets.py",
+        "src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java"
+    )
+    doLast {
+        val manifest = JsonSlurper().parse(hud.file("hud-manifest.json").asFile) as Map<*, *>
+        require((manifest["fixed_segment_count"] as Number).toInt() == 12) {
+            "First-party HUD bars must use 12 fixed cells"
+        }
+        require((manifest["wallet_slots"] as Number).toInt() == 4) {
+            "First-party HUD must expose four fixed wallet slots"
+        }
+        require(manifest["vanilla_health_hidden"] == false && manifest["vanilla_armor_hidden"] == false) {
+            "Vanilla health/armor may not be hidden before the HP-rework renderer is complete"
+        }
+        val fonts = hud.dir("font").asFile
+        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "runes", "charges", "resource_segments",
+            "metric_segments", "text_header", "text_subheader", "text_resource",
+            "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet").forEach { name ->
+            require(fonts.resolve("$name.json").isFile) { "Missing IceSMP HUD font: $name" }
+        }
+        val textures = hud.dir("textures/hud").asFile
+        listOf("guest", "red", "blue", "neutral", "dark").forEach { theme ->
+            val frame = textures.resolve("frame-hud-$theme.png")
+            val image = ImageIO.read(frame) ?: error("Unreadable HUD frame: $frame")
+            require(image.width == 260 && image.height == 160) { "Unexpected HUD frame size: $frame" }
+        }
+        val guestHash = MessageDigest.getInstance("SHA-256")
+            .digest(textures.resolve("frame-hud-guest.png").readBytes()).contentToString()
+        val blueHash = MessageDigest.getInstance("SHA-256")
+            .digest(textures.resolve("frame-hud-blue.png").readBytes()).contentToString()
+        require(guestHash != blueHash) {
+            "Guest and BLUE HUD frames must be visually distinct"
+        }
+        listOf("red", "blue", "neutral", "dark").forEach { currency ->
+            val file = textures.resolve("currency-$currency.png")
+            val image = ImageIO.read(file) ?: error("Unreadable HUD currency icon: $file")
+            require(image.width == 64 && image.height == 64) { "Currency icon must stay 64x64: $file" }
+        }
+        val shader = pack.file("assets/minecraft/shaders/core/rendertype_text.vsh").asFile
+        require(shader.isFile && shader.readText().contains("HEIGHT_BIT 13")) {
+            "Missing first-party 1.21.11 HUD positioning shader"
+        }
+        val renderer = rendererSource.asFile.readText()
+        require(renderer.contains("append(space(-x - width))")) {
+            "Every first-party HUD draw must return to its cursor origin"
+        }
+        require(!renderer.contains("primaryMetric()") && !renderer.contains("secondaryMetric()")) {
+            "The renderer must consume generic metric slots, not class-specific accessors"
+        }
+        logger.lifecycle("First-party IceSMP HUD package valid: fixed layout, 13 classes, 4 wallets, safe HP gates")
+    }
 }
 
 val validateBetterHudPackage by tasks.registering {
@@ -146,67 +208,28 @@ val validateBetterHudPackage by tasks.registering {
     }
 }
 
-val stageMergedResourcePackForR2 by tasks.registering {
+val stageMergedResourcePackForR2 by tasks.registering(Exec::class) {
     group = "distribution"
-    description = "Validates and stages the BetterHud-generated composite pack for immutable R2 publishing."
-    val generatedPack = layout.projectDirectory.file("run/plugins/BetterHud/build.zip")
+    description = "Deterministically merges the immutable external base with the first-party IceSMP pack for R2."
+    dependsOn(generateIceSmpHudAssets)
+    val externalPack = providers.gradleProperty("icesmpExternalPack")
+        .orElse("run/plugins/IceSMPExternalBase.zip")
     val stagedPack = layout.buildDirectory.file("resource-pack/icesmp.zip")
     val metadata = layout.buildDirectory.file("resource-pack/merged.properties")
-    inputs.file(generatedPack)
+    inputs.file(externalPack)
+    inputs.dir(layout.projectDirectory.dir("resource-pack"))
+    inputs.file(layout.projectDirectory.file("scripts/resource_pack.py"))
     outputs.files(stagedPack, metadata)
-    doLast {
-        val source = generatedPack.asFile
-        if (!source.isFile) {
-            throw GradleException("Missing BetterHud generated pack: $source. Run runFolia until BetterHud reports 'Zip packed' first.")
-        }
-        ZipFile(source).use { zip ->
-            val names = zip.entries().asSequence().map { it.name }.toSet()
-            val required = listOf(
-                "pack.mcmeta",
-                "assets/minecraft/textures/logo/logo.png"
-            )
-            required.forEach { entry ->
-                if (entry !in names) throw GradleException("Composite resource pack is missing $entry")
-            }
-            if (names.none { it.startsWith("assets/icesmp/") }) {
-                throw GradleException("Composite resource pack is missing the IceSMP namespace")
-            }
-            if (names.none { it.startsWith("assets/betterhud/") || it.startsWith("betterhud_") }) {
-                throw GradleException("Composite resource pack is missing the BetterHud layer")
-            }
-        }
-        val target = stagedPack.get().asFile
-        target.parentFile.mkdirs()
-        ZipInputStream(source.inputStream().buffered()).use { input ->
-            ZipOutputStream(target.outputStream().buffered()).use { output ->
-                var entry = input.nextEntry
-                while (entry != null) {
-                    val content = input.readBytes()
-                    output.putNextEntry(ZipEntry(entry.name).apply { time = 0L })
-                    if (entry.name == "pack.mcmeta") {
-                        @Suppress("UNCHECKED_CAST")
-                        val root = JsonSlurper().parseText(content.toString(Charsets.UTF_8))
-                                as MutableMap<String, Any?>
-                        @Suppress("UNCHECKED_CAST")
-                        val pack = root["pack"] as MutableMap<String, Any?>
-                        pack.remove("supported_formats")
-                        pack["pack_format"] = 75
-                        pack["min_format"] = 75
-                        pack["max_format"] = 75
-                        output.write(JsonOutput.toJson(root).toByteArray(Charsets.UTF_8))
-                    } else {
-                        output.write(content)
-                    }
-                    output.closeEntry()
-                    input.closeEntry()
-                    entry = input.nextEntry
-                }
-            }
-        }
-        val sha1 = MessageDigest.getInstance("SHA-1")
-            .digest(target.readBytes()).joinToString("") { "%02x".format(it) }
-        metadata.get().asFile.writeText("sha1=$sha1\nsize=${target.length()}\n", Charsets.UTF_8)
-        logger.lifecycle("Staged merged R2 pack: ${target.path} (${target.length()} bytes, SHA-1 $sha1)")
+    doFirst {
+        commandLine(
+            betterHudPython,
+            "scripts/resource_pack.py",
+            "merge",
+            "--base", externalPack.get(),
+            "--source", "resource-pack",
+            "--output", stagedPack.get().asFile.path,
+            "--metadata", metadata.get().asFile.path,
+        )
     }
 }
 
@@ -311,6 +334,10 @@ val betterHudIntegrationRegressionTest = registerRegression(
     "betterHudIntegrationRegressionTest",
     "Runs generic immutable class HUD, PAPI safety and BetterHud fallback regressions.",
     "hu.taliann.icesmp.classspec.integration.BetterHudIntegrationRegressionSuite")
+val iceSmpHudRegressionTest = registerRegression(
+    "iceSmpHudRegressionTest",
+    "Runs first-party HUD fixed-layout, wallet, readiness and authority regressions.",
+    "hu.taliann.icesmp.hud.IceSmpHudRegressionSuite")
 val classSpecApplicationRegressionTest = registerRegression(
     "classSpecApplicationRegressionTest",
     "Runs Profile v2 mutation, DARK gate and fail-closed application regressions.",
@@ -622,6 +649,7 @@ val warlockProfileRegressionTest = registerRegression(
 
 tasks.check {
     dependsOn(validateBetterHudPackage)
+    dependsOn(validateIceSmpHudPackage)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
@@ -631,7 +659,7 @@ tasks.check {
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
-        classSpecCompatibilityRegressionTest, betterHudIntegrationRegressionTest,
+        classSpecCompatibilityRegressionTest, betterHudIntegrationRegressionTest, iceSmpHudRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,

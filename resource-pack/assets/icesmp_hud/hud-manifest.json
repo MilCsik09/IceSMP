@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "space_first": "U+E400",
+  "space_min": -512,
+  "space_max": 512,
+  "text_advance": 9,
+  "themes": [
+    "guest",
+    "red",
+    "blue",
+    "neutral",
+    "dark"
+  ],
+  "classes": [
+    "warrior",
+    "evoker",
+    "archer",
+    "shaman",
+    "monk",
+    "paladin",
+    "demon_hunter",
+    "druid",
+    "priest",
+    "death_knight",
+    "assassin",
+    "warlock",
+    "wizard"
+  ],
+  "fixed_segment_count": 12,
+  "wallet_slots": 4,
+  "vanilla_health_hidden": false,
+  "vanilla_armor_hidden": false
+}

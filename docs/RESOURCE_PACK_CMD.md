@@ -2047,29 +2047,33 @@ reference to exist both in this manifest and in `resource-pack/assets/icesmp/ite
 When the resource pack is absent, GUI code keeps its declared vanilla Material (the explicit fallback); the server never emits
 an invented CustomModelData magic number. The profession recipe audit additionally requires every unique profession output to
 resolve through `profession-materials.*.item-model`.
-## BetterHud merge hook
+## First-party HUD és merge hook
 
-A `deploy/betterhud/` tartalmazza a négy frakció nagy felbontású keretét, a 64×64-es class-, rune-,
-pénz-, event- és szintikonokat, az öt témához tartozó 300×72-es proc-popup keretet, a BetterHud
-layoutot, a reprodukálható 156×10-es mechanic bart, a 100×10-es háromcsatornás mini bart, a
-32×32-es ready/spent charge-pipeket és a preview/contact sheet fájlokat. A futásidejű képek
-reprodukálhatók a `generateBetterHudPackage`, ellenőrizhetők a `validateBetterHudPackage` Gradle
-feladattal. A kereteknél kontrollált antialiasing engedett; a progress-maszkok alfája csak 0/255.
+A `resource-pack/assets/icesmp_hud/` a primary first-party HUD futásidejű rétege: öt frakciókeret,
+13 class-ikon, typed DK-rúnák, generic charge-pipek, négy pénznemikon, rögzített barcellák,
+BMP spacing/text fontok és a Minecraft 1.21.11 pozicionáló shader. A Menedék-vendég saját
+erőd/kapu külső héjat kap, de ugyanabból a kanonikus belső panelgeometriából készül, mint a
+frakciókeretek. A reprodukálható feladatok: `generateIceSmpHudAssets`,
+`validateIceSmpHudPackage`, `iceSmpHudRegressionTest`.
+
+A `deploy/betterhud/` megmarad opcionális migrációs csomagnak, és külön
+`generateBetterHudPackage` / `validateBetterHudPackage` feladattal ellenőrizhető. Nem része a
+production pack build authority-jának.
 
 A `prepareBetterHudForFolia` a kanonikus `resource-pack/` fát és a változtathatatlan külső packot
 (`4900b0a9bed8db710143393916db3687e01def54`) rendezett BetterHud inputként stage-eli. A külső
 letöltés kizárólag fejlesztői/CI lépés, SHA-1 eltérésnél fail-closed.
 
-Lokális `runFolia` alatt a BetterHud generál, az IceSMP pedig ugyanazon LAN-interfészen egyetlen
-normalizált composite packot szolgál ki. Production nem self-hostol és nem tölt le runtime packot.
-A `Publish resource pack to R2` workflow a lockolt Folia/BetterHud stacket indítja, megvárja a
-`Zip packed` és `Plugin enabled` állapotot, futtatja a `stageMergedResourcePackForR2` feladatot,
-majd SHA-1 néven tölti fel a `build/resource-pack/icesmp.zip` fájlt. A publikus URL végponttól végpontig
-ellenőrzése után az IceSMP lesz az egyetlen production pack-küldő. A live pack könyvtár sosem
-vak overwrite-célpont.
+Lokális `runFolia` alatt az IceSMP egyetlen normalizált composite packot szolgál ki. Production
+nem self-hostol és nem tölt le runtime plugin- vagy packfüggőséget. A `Publish resource pack to R2`
+workflow SHA-1-gyel ellenőrzi a lockolt külső alapcsomagot, majd Folia/BetterHud indítás nélkül futtatja
+a `stageMergedResourcePackForR2` feladatot. A merge csak a `pack.mcmeta`, `pack.png`, az
+`assets/icesmp/`, `assets/icesmp_hud/`, a first-party text shader és a fehér HUD-bossbar sprite-ok
+ütközését engedi; más közös útvonal fail-closed buildhiba. Az eredmény SHA-1 néven kerül R2-re.
 
-A HUD nem tart fenn kézi private-use codepoint táblát. A BetterHud a saját generált fontterében
-determinista glyph-kiosztást készít; az IceSMP inputok külön `icesmp/` textúraútvonalon élnek, a
-szöveg pedig vanilla/unifont fallbacket használ. Ez megszünteti a korábbi resource-pack nélkül
-kirajzolt felső missing-glyph négyzetet és elkerüli a CraftEngine fontütközést.
+A HUD a BMP private-use tartományban generált, repo-validált spacing- és glyph-kiosztást használ;
+nem támaszkodik BetterHud supplementary-plane sentinelre. Minden dinamikus sprite teljes 64×64-es
+logikai cellát kap, minden rajzparancs visszatér a kezdőpontra, így érték- vagy ikonváltás nem mozdítja
+el a panelt. A backend csak `SUCCESSFULLY_LOADED` pack után renderel, ezért pack nélkül nem jelenhet
+meg felső missing-glyph négyzet.
 

@@ -70,8 +70,9 @@ public final class ResourcePackRegressionSuite {
                 "IceSMP resource pack no longer uses Paper's additive API");
         check(!source.contains("player.setResourcePack("),
                 "IceSMP must not overwrite the native/server or another plugin's pack layer");
-        check(source.contains("icesmp.dev.mergedBetterHudPack"),
-                "runFolia merged BetterHud pack must suppress the conflicting standalone R2 request");
+        check(source.contains("icesmp.dev.firstPartyPack")
+                        && source.contains("icesmp.dev.packPath"),
+                "runFolia first-party composite pack must suppress the conflicting standalone R2 request");
         check(source.contains("UUID.fromString(\"7c847f1e-d942-3c8f-bd46-5c43bb1a3e67\")"),
                 "stable IceSMP pack UUID changed unexpectedly");
     }

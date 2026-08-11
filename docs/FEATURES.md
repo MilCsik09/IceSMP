@@ -341,10 +341,13 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
 - **Így találkozol vele:** `/hud`; a tablista automatikus.
 - **Kinek szól:** Játékos, Admin, Tesztelő.
 - **Mitől mozdul meg:** Csatlakozáskor, periodikus frissítéskor, státusz- és adatváltozáskor.
-- **BetterHud réteg:** opcionális, játékosonként detektált kijelzés a négy külön frakcióskinből,
-  13 class-ikonból, class/spec/resource/mechanika állapotból, újrahasznosítható mechanic barokból,
-  legfeljebb kilenc charge-pipből, DK-rúnákból és proc-toastból;
-  hiányában a natív compact HUD automatikusan marad.
+- **First-party IceSMP HUD:** a resource pack elfogadása után játékosonként aktiválódó,
+  rögzített geometriájú kijelzés öt teljesen külön skinből (a Menedék vendége saját erődkeretet kap),
+  13 class-ikonból, class/spec/resource/mechanika állapotból, legfeljebb öt generic metricből,
+  kilenc charge-pipből, DK-rúnákból és négy külön pénztárcahelyből. A fő frakcióvaluta mindig,
+  a többi banki valuta csak pozitív egyenlegnél jelenik meg a saját ikonjával.
+- **Fallback és migráció:** pack nélkül a natív compact Folia HUD marad. BetterHud kikapcsolt
+  alapértékű, opcionális display-only migrációs bridge; soha nem state authority és nem startup-fatal.
 - **Információs parity:** frakció, class, specializáció, class-szint, pénz, aktuális event,
   class resource és a játékhoz szükséges elsődleges/másodlagos, illetve összetett kiegészítő
   mechanikák ugyanabból az immutable HUD snapshotból készülnek. A Wizard három elemi

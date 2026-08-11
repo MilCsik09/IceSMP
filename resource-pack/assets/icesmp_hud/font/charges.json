@@ -1,0 +1,22 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/charge-ready.png",
+      "ascent": -8458373,
+      "height": 10,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/charge-spent.png",
+      "ascent": -8458373,
+      "height": 10,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

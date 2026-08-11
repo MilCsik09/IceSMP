@@ -64,9 +64,9 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
-    # Optional display-only class HUD over immutable IceSMP snapshots; never authority/fatal.
-    # Its direct bridge does not require PlaceholderAPI.
-    # When absent or disabled, IceSMP keeps its native compact class HUD automatically.
+    # Optional display-only migration bridge over immutable IceSMP snapshots; never authority/fatal.
+    # The first-party IceSMP HUD is the primary renderer and does not require BetterHud or PAPI.
+    # When the first-party resource pack is unavailable, the native compact Folia HUD remains.
     BetterHud:
       load: BEFORE
       required: false

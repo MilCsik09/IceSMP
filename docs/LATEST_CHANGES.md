@@ -35,10 +35,12 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   lista végén; a Menedék-polgár neve zöld (Smaragdkő-szín), így nem
   téveszthető össze a Kitaszítottal — a saját tablista, nametag, chat és a
   csak olvasó `%icesmp_faction_color%` kimenet egységesen.
-- **Adaptív BetterHud:** négy külön frakciógrafika, 64×64-es class/utility/rúna ikonok,
-  class/spec/szint/pénz/event parity, minden class strukturált mechanikaállapota, generic
-  primary/secondary barok, automatikus charge-pipek, Wizard háromcsatornás ráhangolódása,
-  DK slotonkénti rúnaregeneráció és automatikus proc-toast; kieséskor játékosonkénti natív fallback.
+- **First-party adaptív IceSMP HUD:** öt külön frakciógrafika (külön Menedék-vendég
+  erődkerettel), 64×64-es class/utility/rúna/pénznem ikonok, class/spec/szint/event parity,
+  minden class strukturált mechanikaállapota, legfeljebb öt generic metric, automatikus
+  charge-pipek, Wizard háromcsatornás ráhangolódása és DK slotonkénti rúnaregeneráció.
+  A fő frakcióvaluta mindig, a pozitív idegen banki valuták külön ikonnal jelennek meg;
+  packhiánynál játékosonkénti natív fallback marad. BetterHud csak opcionális migrációs bridge.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,

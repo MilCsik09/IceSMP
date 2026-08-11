@@ -82,6 +82,7 @@ allprojects { project ->
             inputs.property('externalPackSha1', externalPackSha1)
             outputs.dirs(betterHudRunDir, iceSmpPackMergeDir)
             outputs.file(externalPackFile)
+            dependsOn(project.tasks.named('generateIceSmpHudAssets'))
             // BetterHud may keep generated/runtime files next to the mirrored configuration and
             // Gradle cannot safely infer from that mutable directory that the IceSMP subset is
             // still current. Always re-mirror before a dev server start.
@@ -157,7 +158,7 @@ allprojects { project ->
                     java.nio.file.Files.move(temporary.toPath(), externalPackFile.toPath(),
                             java.nio.file.StandardCopyOption.REPLACE_EXISTING)
                 }
-                logger.lifecycle("Provisioned one merged IceSMP + external + BetterHud development resource pack for IceSMP delivery at ${devHost}:8164.")
+                logger.lifecycle("Provisioned the immutable external base and first-party IceSMP HUD inputs for local delivery at ${devHost}:8164; BetterHud remains optional.")
             }
         }
 
@@ -227,10 +228,12 @@ allprojects { project ->
         }
 
         def extension = project.extensions.getByName('runPaper')
+        def firstPartyPack = new File(invocationDir, 'build/resource-pack/icesmp.zip')
         extension.folia.registerTask {
             minecraftVersion(targetMinecraft)
             build(targetFoliaBuild)
-            jvmArgs('-Xms2G', '-Xmx2G', '-Dicesmp.dev.mergedBetterHudPack=true')
+            jvmArgs('-Xms2G', '-Xmx2G', '-Dicesmp.dev.firstPartyPack=true',
+                    "-Dicesmp.dev.packPath=${firstPartyPack.absolutePath}")
             downloadPlugins {
                 modrinthDeps.each { dep ->
                     def projectId = dep['dev-project']
@@ -242,11 +245,17 @@ allprojects { project ->
                 }
             }
         }
+        def firstPartyMergeTasks = project.tasks.matching {
+            it.name == 'stageMergedResourcePackForR2'
+        }
         project.tasks.named('runFolia').configure {
             group = 'icesmp development'
             description = 'Runs the canonical IceSMP Folia 1.21.11 dev server with lock-pinned plugins.'
-            dependsOn(prepareLocal, prepareBetterHud)
+            dependsOn(prepareLocal, prepareBetterHud, firstPartyMergeTasks)
             doFirst verifyBetterHudMirror
+        }
+        firstPartyMergeTasks.configureEach { mergeTask ->
+            mergeTask.dependsOn(prepareBetterHud)
         }
     }
 }

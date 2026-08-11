@@ -22,7 +22,8 @@ import java.util.Locale;
  * <p>Available placeholders: {@code faction}, {@code faction_id}, {@code class} / {@code class_name},
  * {@code class_level} / {@code level}, {@code balance}, {@code resource}, {@code resource_max},
  * {@code resource_percent}, {@code resource_name}, {@code resource_bar}, the five generic
- * {@code class_metric_*} channels and up to nine immutable {@code class_slot_*} channels.
+ * {@code class_metric_*} channels, up to nine immutable {@code class_slot_*} channels and four
+ * immutable {@code wallet_<n>_*} display slots.
  */
 public final class IceSMPPlaceholders extends PlaceholderExpansion {
 
@@ -141,6 +142,8 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
         final String key = params.toLowerCase(Locale.ROOT);
         final String genericHud = genericClassHud(snapshot.classHud(), key);
         if (genericHud != null) return genericHud;
+        final String wallet = genericWallet(snapshot.currencies(), key);
+        if (wallet != null) return wallet;
         return switch (key) {
             case "faction" -> snapshot.faction();
             case "faction_id" -> snapshot.factionId();
@@ -222,6 +225,23 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "state" -> slot == null ? "hidden" : slot.state();
             case "progress" -> slot == null ? "0" : Integer.toString(slot.progress());
             case "label" -> slot == null ? "" : slot.label();
+            default -> null;
+        };
+    }
+
+    private static String genericWallet(final java.util.List<HudManager.HudCurrency> currencies,
+                                        final String key) {
+        if ("wallet_count".equals(key)) return Integer.toString(currencies.size());
+        final java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("wallet_([1-4])_(id|name|amount|primary)").matcher(key);
+        if (!matcher.matches()) return null;
+        final int index = Integer.parseInt(matcher.group(1)) - 1;
+        final HudManager.HudCurrency currency = index < currencies.size() ? currencies.get(index) : null;
+        return switch (matcher.group(2)) {
+            case "id" -> currency == null ? "" : currency.id();
+            case "name" -> currency == null ? "" : currency.displayName();
+            case "amount" -> currency == null ? "" : currency.amount();
+            case "primary" -> Boolean.toString(currency != null && currency.primary());
             default -> null;
         };
     }

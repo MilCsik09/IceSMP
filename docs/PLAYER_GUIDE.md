@@ -95,8 +95,9 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
 
 - A **HUD** mutathatja a kasztod erőforrását, a class/spec mechanikád élő
   barjait, tölteteit vagy rúnáit, a frakciódat, pénzedet, szintedet és a fontos
-  világhelyzeteket. A `/hud` paranccsal személyre szabhatod; ha a BetterHud
-  nem érhető el, a kompakt natív kijelzés automatikusan visszatér.
+  világhelyzeteket. A bankod fő frakcióvalutája mindig látszik, más pénznem csak akkor,
+  ha van belőle egyenleged. A `/hud` paranccsal személyre szabhatod; amíg a first-party
+  resource pack nincs sikeresen betöltve, a kompakt natív kijelzés automatikusan marad.
 - A **tablista** frakció- és ranginformációt adhat, háborúban pedig segít
   felismerni a viszonyokat.
 - Harc közben **sebzésszámok**, célpontinformáció és halálösszegző segít

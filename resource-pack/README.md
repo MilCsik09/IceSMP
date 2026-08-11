@@ -82,6 +82,11 @@ kliensnek készülő ZIP-ből, és a módosítása önmagában nem változtatja 
 
 A `Publish resource pack to R2` workflow masterre kerülés után:
 
+- SHA-1 ellenőrzéssel letölti a rögzített külső alapcsomagot;
+- a `resource-pack/` IceSMP-réteget determinisztikusan ráilleszti, és csak a név szerint
+  IceSMP-tulajdonú namespace-eket, HUD-shadert és fehér HUD bossbar sprite-okat engedi felülírni;
+- a first-party `icesmp_hud` réteget BetterHud vagy futó Folia szerver nélkül is validálja;
+
 - `resource-packs/icesmp-<sha1>.zip` immutable kiadást tölt fel;
 - `resource-packs/latest.zip` emberi, rövid cache-es aliast frissít;
 - `resource-packs/manifest.json` géppel olvasható aktuális manifestet publikál;

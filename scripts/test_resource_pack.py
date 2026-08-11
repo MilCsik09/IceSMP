@@ -63,6 +63,14 @@ class ResourcePackToolingTest(unittest.TestCase):
         config_root.mkdir(parents=True, exist_ok=True)
         (config_root / name).write_text(content, encoding="utf-8")
 
+    def add_first_party_hud_layer(self, root: Path) -> None:
+        shader = root / "assets" / "minecraft" / "shaders" / "core" / "rendertype_text.vsh"
+        shader.parent.mkdir(parents=True, exist_ok=True)
+        shader.write_text("icesmp-owned-shader\n", encoding="utf-8")
+        manifest = root / "assets" / "icesmp_hud" / "hud-manifest.json"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text('{"schema":1}\n', encoding="utf-8")
+
     def test_deterministic_zip_ignores_mtime_and_source_only_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "source"
@@ -217,6 +225,54 @@ class ResourcePackToolingTest(unittest.TestCase):
             self.assertTrue(resource_pack.update_metadata(metadata, "https://example.invalid/pack.zip", sha1))
             self.assertFalse(resource_pack.update_metadata(metadata, "https://example.invalid/pack.zip", sha1))
             self.assertIn(f"sha1={sha1}", metadata.read_text(encoding="utf-8"))
+
+    def test_owned_layer_merge_is_deterministic_and_preserves_external_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_first_party_hud_layer(root)
+            base = Path(temp) / "external.zip"
+            with zipfile.ZipFile(base, "w") as archive:
+                archive.writestr("pack.mcmeta", '{"pack":{"description":"external","pack_format":1}}')
+                archive.writestr("assets/external/example.txt", "base")
+                archive.writestr(
+                    "assets/minecraft/shaders/core/rendertype_text.vsh", "external-shader")
+            first = Path(temp) / "first.zip"
+            second = Path(temp) / "second.zip"
+            metadata = Path(temp) / "merged.properties"
+
+            first_hash, first_size = resource_pack.merge_pack(base, root, first, metadata)
+            second_hash, second_size = resource_pack.merge_pack(base, root, second)
+
+            self.assertEqual((first_hash, first_size), (second_hash, second_size))
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            self.assertIn(f"sha1={first_hash}", metadata.read_text(encoding="utf-8"))
+            with zipfile.ZipFile(first) as archive:
+                self.assertEqual(archive.read("assets/external/example.txt"), b"base")
+                self.assertEqual(
+                    archive.read("assets/minecraft/shaders/core/rendertype_text.vsh")
+                    .decode("utf-8").strip(),
+                    "icesmp-owned-shader",
+                )
+                pack = json.loads(archive.read("pack.mcmeta"))
+                self.assertEqual(pack["pack"]["min_format"], 75)
+                self.assertEqual(pack["pack"]["max_format"], 75)
+
+    def test_unowned_merge_collision_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_first_party_hud_layer(root)
+            conflict = root / "assets" / "minecraft" / "models" / "conflict.json"
+            conflict.parent.mkdir(parents=True, exist_ok=True)
+            conflict.write_text('{"parent":"minecraft:item/generated"}', encoding="utf-8")
+            base = Path(temp) / "external.zip"
+            with zipfile.ZipFile(base, "w") as archive:
+                archive.writestr("pack.mcmeta", '{"pack":{"description":"external"}}')
+                archive.writestr("assets/minecraft/models/conflict.json", "{}")
+
+            with self.assertRaisesRegex(resource_pack.PackError, "Unowned resource-pack collision"):
+                resource_pack.merge_pack(base, root, Path(temp) / "merged.zip")
 
 
 if __name__ == "__main__":

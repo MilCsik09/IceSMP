@@ -33,8 +33,7 @@ public final class AdvancedConfigSchemaGuard {
                 require(merged.isSet(entry.key()),
                         "A szerver/világ menü kulcsa hiányzik a csomagolt configból: " + entry.key());
             }
-            require(merged.isSet("crates-settings.enabled")
-                            && merged.isSet("crates-settings.spin-animation"),
+            require(merged.isSet("crates-settings.enabled"),
                     "A globális crate-beállítások hiányoznak a csomagolt sémából.");
             final ConfigurationSection crates = merged.getConfigurationSection("crates");
             require(crates != null && !crates.getKeys(false).isEmpty(),

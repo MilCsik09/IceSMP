@@ -181,6 +181,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Core initialization and management for the IceSMP plugin.
@@ -191,6 +193,7 @@ public final class IceSMPCore {
 
     private final JavaPlugin plugin;
     private final Runnable resourcePackReloadHook;
+    private final Predicate<UUID> resourcePackReady;
     private final ConfigManager configManager;
     private final ClassSpecDependencyPreflight classSpecDependencyPreflight;
     private final MessageManager messageManager;
@@ -345,12 +348,18 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask moderationExpiryTask;
 
     public IceSMPCore(final JavaPlugin plugin) {
-        this(plugin, () -> { });
+        this(plugin, () -> { }, ignored -> true);
     }
 
     public IceSMPCore(final JavaPlugin plugin, final Runnable resourcePackReloadHook) {
+        this(plugin, resourcePackReloadHook, ignored -> true);
+    }
+
+    public IceSMPCore(final JavaPlugin plugin, final Runnable resourcePackReloadHook,
+                      final Predicate<UUID> resourcePackReady) {
         this.plugin = plugin;
         this.resourcePackReloadHook = resourcePackReloadHook == null ? () -> { } : resourcePackReloadHook;
+        this.resourcePackReady = resourcePackReady == null ? ignored -> false : resourcePackReady;
         this.configManager = new ConfigManager(plugin);
         // A config MÁR A KONSTRUKTOR-LÁNC ELŐTT betöltődik: több world-event manager a saját
         // konstruktorában számol első időablakot (nextAttemptAt) config-kulcsból — betöltés
@@ -677,7 +686,8 @@ public final class IceSMPCore {
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
                 caravanManager, escortManager, abundanceManager, serverChallengeManager,
-                meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager);
+                meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager,
+                resourcePackReady);
         this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
                 factionManager, textAnimator, afkManager);
         // Relációs háború-színek a tablistában (raid alatt az ellenség piros).
@@ -1071,7 +1081,9 @@ public final class IceSMPCore {
     }
 
     private void logClassHudCapability() {
-        if (hudManager.betterHudActive()) {
+        if (configManager.getBoolean("hud.icesmp-hud.enabled", true)) {
+            plugin.getLogger().info("First-party IceSMP HUD enabled: it activates per player after the IceSMP pack reports SUCCESSFULLY_LOADED; native HUD remains the readiness fallback.");
+        } else if (hudManager.betterHudActive()) {
             plugin.getLogger().info("BetterHud present+ready: BetterHud class HUD active; native class resource row suppressed.");
         } else {
             final boolean present = plugin.getServer().getPluginManager().isPluginEnabled("BetterHud");

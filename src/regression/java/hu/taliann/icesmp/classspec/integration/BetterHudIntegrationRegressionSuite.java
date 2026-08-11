@@ -105,9 +105,12 @@ public final class BetterHudIntegrationRegressionSuite {
         check(papi.contains("CLASS_HUD_METRIC_CHANNELS")
                         && papi.contains("tertiary") && papi.contains("quinary")
                         && papi.contains("class_metric_count")
-                        && papi.contains("class_slot_([1-9])_"),
-                "PAPI must expose typed generic metric and slot channels");
+                        && papi.contains("class_slot_([1-9])_")
+                        && papi.contains("wallet_count")
+                        && papi.contains("wallet_([1-4])_"),
+                "PAPI must expose typed generic metric, slot and wallet channels");
         check(hud.contains("!betterHudActive(player) && job != null")
+                        && hud.contains("!iceSmpHudActive(player)")
                         && hud.contains("betterHudReady.get()")
                         && hud.contains("betterHudPlayers.contains(player.getUniqueId())")
                         && bridge.contains("HUD_ID = \"icesmp_class_hud\"")
@@ -246,13 +249,14 @@ public final class BetterHudIntegrationRegressionSuite {
                         && bridge.contains("showProcPopup(final Player player")
                         && bridge.contains("callEvent((Event) customEvent)"),
                 "new immutable proc transitions must drive the optional BetterHud toast");
-        check(config.contains("- icesmp_class_hud") && !config.contains("- test_hud"),
-                "production BetterHud config must select only the IceSMP HUD");
+        check(config.contains("default-hud: []") && !config.contains("- test_hud"),
+                "BetterHud must not auto-render a duplicate HUD beside the first-party backend");
         check(config.contains("enable-self-host: false") && config.contains("merge-with-external-resources: true"),
                 "production pack must use the documented external merge pipeline");
         check(launcher.contains("prepareBetterHudForFolia")
                         && launcher.contains("betterhud-dev.config.yml")
-                        && launcher.contains("icesmp.dev.mergedBetterHudPack=true")
+                        && launcher.contains("icesmp.dev.firstPartyPack=true")
+                        && launcher.contains("stageMergedResourcePackForR2")
                         && launcher.contains("targetLayoutFiles.findAll")
                         && launcher.contains("outputs.upToDateWhen { false }")
                         && launcher.contains("verifyBetterHudMirror")

@@ -1155,7 +1155,16 @@ to primary/secondary and up to three additional typed metrics, state, proc, char
 discrete slots. `ClassHudMechanics.of` derives a bounded visual pip row from actual charge counts;
 the Death Knight replaces it with its typed ready/spent/regenerating/locked rune slots.
 `HudManager` captures that projection on the player's Folia region thread and embeds it in
-`HudSnapshot`; PlaceholderAPI and BetterHud only read the concurrent immutable cache. Neither
-integration can mutate Profile v2 or a class runtime. BetterHud capability detection controls
-rendering ownership per player only, with native fallback; a joining player's not-yet-created
-BetterHud cache cannot toggle other players.
+`HudSnapshot`; the first-party renderer, PlaceholderAPI and BetterHud only read the concurrent
+immutable projection/cache. None can mutate Profile v2 or a class runtime. `ResourcePackListener`
+publishes a thread-safe per-player `SUCCESSFULLY_LOADED` capability; only then does the first-party
+bossbar/font renderer suppress the native compact fallback. BetterHud remains a disabled-by-default
+display-only migration bridge. A joining player's missing pack or external HUD cache cannot toggle
+another player's renderer.
+
+The renderer uses BMP private-use spacing, fixed-width glyph cells and zero-net-width draw commands.
+Dynamic values (including `0`, `120`, class changes, rune states and wallet counts) therefore cannot
+move the panel. Faction frames share one canonical inner grid; only their decorative skin differs.
+The guest/Menedék frame is generated from that grid and may replace only the outer shell. Production
+R2 packaging deterministically merges the immutable external base with explicitly owned IceSMP
+paths; it does not start BetterHud and rejects unowned ZIP collisions.
