@@ -1,6 +1,5 @@
 import java.security.MessageDigest
 import groovy.json.JsonSlurper
-import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
 plugins {
@@ -8,39 +7,23 @@ plugins {
     alias(libs.plugins.run.paper)
 }
 
-val betterHudPython = if (System.getProperty("os.name").lowercase().contains("windows")) "python" else "python3"
+val pythonCommand = if (System.getProperty("os.name").lowercase().contains("windows")) "python" else "python3"
 val generateIceSmpHudAssets by tasks.registering(Exec::class) {
     group = "build"
     description = "Regenerates the first-party IceSMP HUD fonts, sprites and positioning shader."
-    commandLine(betterHudPython, "scripts/generate_icesmp_hud_assets.py")
-}
-val generateBetterHudAssets by tasks.registering(Exec::class) {
-    group = "build"
-    description = "Regenerates deterministic IceSMP BetterHud pixel assets."
-    commandLine(betterHudPython, "scripts/generate_betterhud_assets.py")
-}
-val generateBetterHudLayout by tasks.registering(Exec::class) {
-    group = "build"
-    description = "Regenerates the class-agnostic BetterHud layout."
-    commandLine(betterHudPython, "scripts/generate_betterhud_layout.py")
-}
-val generateBetterHudPackage by tasks.registering {
-    group = "build"
-    description = "Regenerates deterministic IceSMP BetterHud pixel assets and layout."
-    dependsOn(generateBetterHudAssets, generateBetterHudLayout, generateIceSmpHudAssets)
+    commandLine(pythonCommand, "scripts/generate_icesmp_hud_assets.py")
 }
 
 val auditIceSmpHudAssets by tasks.registering(Exec::class) {
     group = "verification"
-    description = "Audits every first-party and BetterHud PNG plus the 13-class mechanic matrix."
-    dependsOn(generateBetterHudPackage)
+    description = "Audits every first-party IceSMP HUD PNG plus the 13-class mechanic matrix."
+    dependsOn(generateIceSmpHudAssets)
     val report = layout.buildDirectory.file("reports/icesmp-hud/asset-audit.md")
     inputs.files("scripts/audit_icesmp_hud_assets.py")
     inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp_hud"))
-    inputs.dir(layout.projectDirectory.dir("deploy/betterhud"))
     outputs.file(report)
     commandLine(
-        betterHudPython,
+        pythonCommand,
         "scripts/audit_icesmp_hud_assets.py",
         "--report", report.get().asFile.relativeTo(layout.projectDirectory.asFile).path,
     )
@@ -127,132 +110,6 @@ val validateIceSmpHudPackage by tasks.registering {
     }
 }
 
-val validateBetterHudPackage by tasks.registering {
-    group = "verification"
-    description = "Validates BetterHud layout coverage, asset dimensions, progress-mask alpha and budget."
-    dependsOn(generateBetterHudPackage)
-    val deploy = layout.projectDirectory.dir("deploy/betterhud")
-    inputs.dir(deploy)
-    inputs.files("scripts/generate_betterhud_assets.py", "scripts/generate_betterhud_layout.py")
-    doLast {
-        val assets = deploy.dir("assets/icesmp").asFile
-        val layoutText = deploy.dir("layouts").asFile.listFiles { file -> file.extension == "yml" }
-            ?.sortedBy { it.name }?.joinToString("\n") { it.readText(Charsets.UTF_8) }.orEmpty()
-        val imageText = deploy.file("images/icesmp-class-images.yml").asFile.readText(Charsets.UTF_8)
-        val hudText = deploy.file("huds/icesmp-class-hud.yml").asFile.readText(Charsets.UTF_8)
-        listOf("red", "blue", "neutral", "dark").forEach { faction ->
-            require(layoutText.contains("frame_$faction:")) { "Missing graphical faction skin: $faction" }
-            require(assets.resolve("frame-hud-$faction.png").isFile) { "Missing render-safe faction frame: $faction" }
-        }
-        listOf("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
-            "druid", "priest", "death_knight", "assassin", "warlock", "wizard").forEach { job ->
-            require(layoutText.contains("class_$job:")) { "Missing class icon mapping: $job" }
-            require(assets.resolve("class-$job.png").isFile) { "Missing class icon asset: $job" }
-        }
-        require(hudText.contains("icesmp_hud_visible")) { "BetterHud must honour the IceSMP /hud visibility snapshot" }
-        require(hudText.contains("y: 0") && !hudText.contains("y: 100")) {
-            "The persistent HUD must use the upper-right anchor and stay clear of the hand/hotbar"
-        }
-        require((1..8).all { layoutText.contains("rune_progress_$it:") }) {
-            "Death Knight rune slots/progress are incomplete"
-        }
-        listOf("blood", "frost", "death").forEach { kind ->
-            listOf("ready", "spent", "regenerating", "locked").forEach { state ->
-                require(imageText.contains("icesmp_rune_${kind}_${state}:")) {
-                    "Death Knight rune artwork is missing: $kind/$state"
-                }
-                require(layoutText.contains("rune_1_${kind}_${state}:")) {
-                    "Death Knight rune state is not mapped into the generic slot layout: $kind/$state"
-                }
-            }
-        }
-        require(imageText.contains("number:icesmp_class_slot_8_progress")) {
-            "Death Knight slot listener mapping is incomplete"
-        }
-        require(!layoutText.contains("name: icesmp_charge_ready")
-                && !layoutText.contains("name: icesmp_charge_spent")) {
-            "BetterHud may not reuse generic charge artwork for distinct class mechanics"
-        }
-        require(layoutText.contains("icesmp_mechanic_demon_hunter_sigil_ready")
-                && layoutText.contains("icesmp_mechanic_priest_marrow_ready")
-                && layoutText.contains("icesmp_mechanic_wizard_court_spent")) {
-            "BetterHud typed mechanic-slot coverage is incomplete"
-        }
-        require(imageText.contains("icesmp_mechanic_warrior_battle_tempo_active")
-                && imageText.contains("icesmp_mechanic_warlock_soul_debt_alert")
-                && imageText.contains("icesmp_mechanic_wizard_court_spent")) {
-            "BetterHud mechanic image catalogue is incomplete"
-        }
-        require(hudText.contains("icesmp_main_layout")
-                && !hudText.contains("icesmp_identity_layout")
-                && layoutText.contains("icesmp_main_layout:")
-                && layoutText.contains("x: -218") && layoutText.contains("scale: 1.0")) {
-            "The faction frame must remain inside the upper-right HUD safe area"
-        }
-        require(layoutText.contains("outline: true")) {
-            "Persistent HUD text must retain its readability outline"
-        }
-        listOf("money", "event", "level").forEach { icon ->
-            require(assets.resolve("icon-$icon.png").isFile) { "Missing HUD utility icon: $icon" }
-        }
-        listOf("guest", "red", "blue", "neutral", "dark").forEach { theme ->
-            require(assets.resolve("popup-$theme.png").isFile) { "Missing proc popup skin: $theme" }
-            require(layoutText.contains("popup_$theme:")) { "Missing proc popup layout skin: $theme" }
-        }
-        val pngs = assets.listFiles { file -> file.extension.equals("png", true) }?.toList().orEmpty()
-        require(pngs.isNotEmpty()) { "No BetterHud PNG assets found" }
-        require(pngs.sumOf { it.length() } <= 2_500_000L) { "BetterHud runtime asset budget exceeded 2.5 MB" }
-        pngs.forEach { file ->
-            val image: BufferedImage = ImageIO.read(file) ?: error("Unreadable PNG: $file")
-            if (file.name.startsWith("class-") || file.name.startsWith("icon-")
-                    || file.name.startsWith("mechanic-")
-                    || file.name.startsWith("rune-") && file.name != "rune-progress.png") {
-                require(image.width == 64 && image.height == 64) {
-                    "HUD cutout icons must retain their 64x64 source resolution: $file (${image.width}x${image.height})"
-                }
-                val alpha = image.alphaRaster ?: error("HUD sprite requires alpha: $file")
-                val corners = listOf(0 to 0, 63 to 0, 0 to 63, 63 to 63)
-                require(corners.all { (x, y) -> alpha.getSample(x, y, 0) == 0 }) {
-                    "HUD sprite has an opaque square/backplate instead of a transparent cutout: $file"
-                }
-                var minX = image.width
-                var minY = image.height
-                var maxX = -1
-                var maxY = -1
-                for (y in 0 until image.height) for (x in 0 until image.width) {
-                    if (alpha.getSample(x, y, 0) > 0) {
-                        minX = minOf(minX, x); minY = minOf(minY, y)
-                        maxX = maxOf(maxX, x); maxY = maxOf(maxY, y)
-                    }
-                }
-                require(maxX >= 0 && minX >= 3 && minY >= 3
-                        && maxX <= image.width - 4 && maxY <= image.height - 4) {
-                    "HUD sprite is empty or clipped against its 64x64 cell: $file"
-                }
-            }
-            if (file.name.startsWith("frame-hud-")) {
-                require(image.width == 204 && image.height == 126) {
-                    "BetterHud runtime frames must stay inside bitmap-provider safe dimensions: $file"
-                }
-            }
-            if (file.name.startsWith("popup-")) {
-                require(image.width == 300 && image.height == 72) {
-                    "Proc popup skins must retain 300x72 resolution: $file"
-                }
-            }
-            for (y in 0 until image.height) for (x in 0 until image.width) {
-                val alpha = image.getRGB(x, y).ushr(24) and 0xff
-                if (file.name.startsWith("resource-") || file.name == "rune-progress.png") {
-                    require(alpha == 0 || alpha == 255) {
-                        "Progress masks require hard alpha: $file ($x,$y=$alpha)"
-                    }
-                }
-            }
-        }
-        logger.lifecycle("BetterHud package valid: ${pngs.size} assets, ${pngs.sumOf { it.length() }} bytes")
-    }
-}
-
 val stageMergedResourcePackForR2 by tasks.registering(Exec::class) {
     group = "distribution"
     description = "Deterministically merges the immutable external base with the first-party IceSMP pack for R2."
@@ -270,7 +127,7 @@ val stageMergedResourcePackForR2 by tasks.registering(Exec::class) {
     inputs.file(layout.projectDirectory.file("scripts/resource_pack.py"))
     outputs.files(stagedPack, metadata)
     commandLine(
-        betterHudPython,
+        pythonCommand,
         "scripts/resource_pack.py",
         "merge",
         "--base", externalPack.asFile.path,
@@ -377,10 +234,6 @@ val classSpecCompatibilityRegressionTest = registerRegression(
     "classSpecCompatibilityRegressionTest",
     "Runs class/spec dependency-lock and portability regressions.",
     "hu.taliann.icesmp.classspec.compat.ClassSpecCompatibilityRegressionSuite")
-val betterHudIntegrationRegressionTest = registerRegression(
-    "betterHudIntegrationRegressionTest",
-    "Runs generic immutable class HUD, PAPI safety and BetterHud fallback regressions.",
-    "hu.taliann.icesmp.classspec.integration.BetterHudIntegrationRegressionSuite")
 val iceSmpHudRegressionTest = registerRegression(
     "iceSmpHudRegressionTest",
     "Runs first-party HUD fixed-layout, wallet, readiness and authority regressions.",
@@ -704,7 +557,6 @@ val wizardProfileRegressionTest = registerRegression(
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
-    dependsOn(validateBetterHudPackage)
     dependsOn(validateIceSmpHudPackage)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
@@ -715,7 +567,7 @@ tasks.check {
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
-        classSpecCompatibilityRegressionTest, betterHudIntegrationRegressionTest, iceSmpHudRegressionTest,
+        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,

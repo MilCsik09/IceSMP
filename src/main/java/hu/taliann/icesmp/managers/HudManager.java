@@ -24,7 +24,6 @@ import org.bukkit.scoreboard.Team;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,8 +49,6 @@ public final class HudManager {
     private static final String OBJECTIVE = "icesmp_hud";
     /** Statikus elválasztó, ha nincs 'bar' animáció definiálva a tablist.yml-ben. */
     private static final String FALLBACK_SEPARATOR = "&8&m                       ";
-    private static final List<String> CLASS_HUD_METRIC_CHANNELS = List.of(
-            "primary", "secondary", "tertiary", "quaternary", "quinary");
 
     // /hud toggleable section keys (buildLines() rows). "mind" hides the whole sidebar.
     public static final String SECTION_FACTION = "frakcio";
@@ -132,11 +129,8 @@ public final class HudManager {
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
-    private final Set<UUID> betterHudPlayers = ConcurrentHashMap.newKeySet();
     private final Set<UUID> iceSmpHudPlayers = ConcurrentHashMap.newKeySet();
-    private final hu.taliann.icesmp.classspec.integration.BetterHudSnapshotBridge betterHudSnapshotBridge;
     private final IceSmpHudBackend iceSmpHudBackend;
-    private final AtomicBoolean betterHudReady = new AtomicBoolean();
     private final AtomicBoolean iceSmpHudReady = new AtomicBoolean();
     private final AtomicBoolean placeholderBridgeReady = new AtomicBoolean();
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
@@ -168,11 +162,10 @@ public final class HudManager {
         this.animator = animator;
         this.seasonManager = seasonManager;
         this.dailyQuestManager = dailyQuestManager;
-        this.betterHudSnapshotBridge = new hu.taliann.icesmp.classspec.integration.BetterHudSnapshotBridge(plugin);
         this.iceSmpHudBackend = new IceSmpHudBackend(plugin, resourcePackReady);
         if (!PlatformCapabilities.supportsBukkitScoreboards()) {
             plugin.getLogger().info("Folia detected: Bukkit scoreboard API unavailable; "
-                    + "IceSMP native class HUD will use the compact boss-bar fallback when BetterHud is inactive.");
+                    + "IceSMP native class HUD will use the compact boss-bar fallback when the first-party HUD is inactive.");
         }
     }
 
@@ -192,7 +185,6 @@ public final class HudManager {
     private boolean foliaCompactFallbackEnabled(final Player player) {
         return configManager.getBoolean("hud.sidebar-enabled", true)
                 && !PlatformCapabilities.supportsBukkitScoreboards()
-                && !betterHudActive(player)
                 && !iceSmpHudActive(player);
     }
 
@@ -208,17 +200,6 @@ public final class HudManager {
 
     public void setPlaceholderBridgeReady(final boolean ready) {
         placeholderBridgeReady.set(ready);
-    }
-
-    /** BetterHud is display-only and receives only the immutable IceSMP snapshot projection. */
-    public boolean betterHudActive() {
-        return configManager.getBoolean("hud.betterhud.enabled", false)
-                && betterHudReady.get();
-    }
-
-    private boolean betterHudActive(final Player player) {
-        return configManager.getBoolean("hud.betterhud.enabled", false)
-                && player != null && betterHudPlayers.contains(player.getUniqueId());
     }
 
     /** Whether IceSMP sets its faction-coloured native tab-list names. */
@@ -403,15 +384,8 @@ public final class HudManager {
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> {
                 final HudSnapshot snapshot = buildSnapshot(player);
-                final HudSnapshot previous = snapshots.put(player.getUniqueId(), snapshot);
-                final boolean customActive = renderIceSmpHud(player, snapshot);
-                if (customActive) {
-                    betterHudPlayers.remove(player.getUniqueId());
-                    updateBetterHudReadiness(!betterHudPlayers.isEmpty());
-                } else {
-                    publishBetterHudSnapshot(player, snapshot,
-                            previous == null ? null : previous.classHud().proc());
-                }
+                snapshots.put(player.getUniqueId(), snapshot);
+                renderIceSmpHud(player, snapshot);
                 update(player);
                 applyBossBars(player);
                 applyFoliaCompactHud(player, snapshot);
@@ -513,9 +487,6 @@ public final class HudManager {
         snapshots.remove(player.getUniqueId());
         iceSmpHudPlayers.remove(player.getUniqueId());
         iceSmpHudBackend.hide(player);
-        if (betterHudPlayers.remove(player.getUniqueId()) && betterHudPlayers.isEmpty()) {
-            betterHudReady.set(false);
-        }
         hiddenSectionsCache.remove(player.getUniqueId());
         player.hideBossBar(raidBar);
         player.hideBossBar(bloodMoonBar);
@@ -544,109 +515,9 @@ public final class HudManager {
         final boolean previous = iceSmpHudReady.getAndSet(ready);
         if (previous == ready) return;
         if (ready) {
-            plugin.getLogger().info("IceSMP HUD pack ready: first-party class HUD active; BetterHud/native class HUD suppressed.");
+            plugin.getLogger().info("IceSMP HUD pack ready: first-party class HUD active; native class HUD suppressed.");
         } else {
             plugin.getLogger().warning("IceSMP HUD pack unavailable after being active; native HUD fallback restored.");
-        }
-    }
-
-    private void publishBetterHudSnapshot(final Player player, final HudSnapshot snapshot,
-                                          final String previousProc) {
-        final UUID playerId = player.getUniqueId();
-        if (!configManager.getBoolean("hud.betterhud.enabled", false)
-                || !plugin.getServer().getPluginManager().isPluginEnabled("BetterHud")) {
-            betterHudPlayers.clear();
-            updateBetterHudReadiness(false);
-            return;
-        }
-        final hu.taliann.icesmp.classspec.integration.ClassHudState state = snapshot.classHud();
-        final Map<String, String> values = new LinkedHashMap<>();
-        values.put("icesmp_class_name", snapshot.className());
-        values.put("icesmp_class_id", state.classId());
-        values.put("icesmp_class_level", Integer.toString(snapshot.classLevel()));
-        values.put("icesmp_class_spec_id", state.specId());
-        values.put("icesmp_class_spec_name", state.specName());
-        values.put("icesmp_faction", snapshot.faction());
-        values.put("icesmp_faction_id", snapshot.factionId());
-        values.put("icesmp_faction_theme", snapshot.factionTheme());
-        values.put("icesmp_faction_accent", snapshot.factionAccent());
-        values.put("icesmp_faction_accent_soft", snapshot.factionAccentSoft());
-        values.put("icesmp_balance", snapshot.balance());
-        values.put("icesmp_wallet_count", Integer.toString(snapshot.currencies().size()));
-        for (int index = 0; index < 4; index++) {
-            final HudCurrency currency = index < snapshot.currencies().size()
-                    ? snapshot.currencies().get(index) : null;
-            final String prefix = "icesmp_wallet_" + (index + 1) + "_";
-            values.put(prefix + "id", currency == null ? "" : currency.id());
-            values.put(prefix + "name", currency == null ? "" : currency.displayName());
-            values.put(prefix + "amount", currency == null ? "" : currency.amount());
-            values.put(prefix + "primary", Boolean.toString(currency != null && currency.primary()));
-        }
-        values.put("icesmp_event", net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
-                .plainText().serialize(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-                        .legacySection().deserialize(snapshot.event())));
-        values.put("icesmp_resource_name", snapshot.resourceName());
-        values.put("icesmp_resource_bar", snapshot.resourceBar());
-        values.put("icesmp_resource_current", Integer.toString(snapshot.resource()));
-        values.put("icesmp_resource_max", Integer.toString(snapshot.resourceMax()));
-        values.put("icesmp_resource_percent", Integer.toString(snapshot.resourcePercent()));
-        values.put("icesmp_class_mechanic_primary", state.mechanicPrimary());
-        values.put("icesmp_class_mechanic_secondary", state.mechanicSecondary());
-        values.put("icesmp_class_state", state.state());
-        values.put("icesmp_class_proc", state.proc());
-        values.put("icesmp_class_charges", Integer.toString(state.charges()));
-        values.put("icesmp_class_charges_max", Integer.toString(state.chargesMax()));
-        values.put("icesmp_class_metric_count", Integer.toString(state.metricCount()));
-        values.put("icesmp_hud_visible", Boolean.toString(!hiddenSectionsCache
-                .getOrDefault(playerId, Set.of()).contains(SECTION_ALL)));
-        for (int index = 0; index < CLASS_HUD_METRIC_CHANNELS.size(); index++) {
-            putMetric(values, CLASS_HUD_METRIC_CHANNELS.get(index), state.metric(index));
-        }
-        values.put("icesmp_class_slot_count", Integer.toString(state.slots().size()));
-        for (int index = 0; index < 9; index++) {
-            final String prefix = "icesmp_class_slot_" + (index + 1) + "_";
-            final hu.taliann.icesmp.classspec.integration.ClassHudSlot slot =
-                    index < state.slots().size() ? state.slots().get(index) : null;
-            values.put(prefix + "id", slot == null ? "" : slot.id());
-            values.put(prefix + "kind", slot == null ? "" : slot.kind());
-            values.put(prefix + "state", slot == null ? "hidden" : slot.state());
-            values.put(prefix + "progress", slot == null ? "0" : Integer.toString(slot.progress()));
-            values.put(prefix + "label", slot == null ? "" : slot.label());
-        }
-        final boolean ready = betterHudSnapshotBridge.publish(playerId, Map.copyOf(values));
-        if (ready) {
-            betterHudPlayers.add(playerId);
-        } else {
-            betterHudPlayers.remove(playerId);
-        }
-        if (ready && !state.proc().isBlank() && previousProc != null
-                && !state.proc().equals(previousProc)) {
-            betterHudSnapshotBridge.showProcPopup(player, state.proc());
-        }
-        updateBetterHudReadiness(!betterHudPlayers.isEmpty());
-    }
-
-    private static void putMetric(final Map<String, String> values, final String channel,
-                                  final hu.taliann.icesmp.classspec.integration.ClassHudMetric metric) {
-        final String prefix = "icesmp_class_metric_" + channel + "_";
-        values.put(prefix + "id", metric == null ? "" : metric.id());
-        values.put(prefix + "label", metric == null ? "" : metric.label());
-        values.put(prefix + "text", metric == null ? "" : metric.text());
-        values.put(prefix + "value", metric == null ? "0" : Double.toString(metric.value()));
-        values.put(prefix + "max", metric == null ? "0" : Double.toString(metric.maximum()));
-        values.put(prefix + "percent", metric == null ? "0" : Integer.toString(metric.percent()));
-        values.put(prefix + "state", metric == null ? "" : metric.state());
-        values.put(prefix + "visual_state", hu.taliann.icesmp.hud.IceSmpHudRenderer.visualState(
-                metric == null ? "" : metric.state()));
-    }
-
-    private void updateBetterHudReadiness(final boolean ready) {
-        final boolean previous = betterHudReady.getAndSet(ready);
-        if (previous == ready) return;
-        if (ready) {
-            plugin.getLogger().info("BetterHud present+ready: IceSMP HUD active; native class HUD suppressed.");
-        } else {
-            plugin.getLogger().warning("BetterHud HUD unavailable after being active; native class HUD fallback restored.");
         }
     }
 
@@ -798,7 +669,7 @@ public final class HudManager {
                     }
                 }
                 case RESOURCE -> {
-                    if (!betterHudActive(player) && job != null && resourceManager.isEnabled()) {
+                    if (job != null && resourceManager.isEnabled()) {
                         rows.add(new HudSidebarLayout.Row<>(entry.section(),
                                 renderTemplate(entry.text(), tokens)));
                     }

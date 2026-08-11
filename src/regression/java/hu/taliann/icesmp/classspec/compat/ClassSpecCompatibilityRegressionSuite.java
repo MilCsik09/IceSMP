@@ -19,14 +19,14 @@ public final class ClassSpecCompatibilityRegressionSuite {
 
     private static void exactVersionsAcceptDecoratedRuntimeStrings() {
         final VersionRequirement requirement = new VersionRequirement(
-                "BetterHud", VersionRequirement.RuntimeRole.OPTIONAL_INTEGRATION,
-                List.of("1.14.1"), "official-release");
-        check(requirement.accepts("1.14.1"), "exact version rejected");
-        check(requirement.accepts("v1.14.1"), "v-prefixed version rejected");
-        check(requirement.accepts("1.14.1+build.7"), "build metadata rejected");
-        check(requirement.accepts("1.14.1-bukkit"), "platform suffix rejected");
-        check(!requirement.accepts("1.14.0"), "older version accepted");
-        check(!requirement.accepts("2.0.0"), "future major version accepted without review");
+                "PlaceholderAPI", VersionRequirement.RuntimeRole.OPTIONAL_INTEGRATION,
+                List.of("2.12.3"), "official-release");
+        check(requirement.accepts("2.12.3"), "exact version rejected");
+        check(requirement.accepts("v2.12.3"), "v-prefixed version rejected");
+        check(requirement.accepts("2.12.3+build.7"), "build metadata rejected");
+        check(requirement.accepts("2.12.3-bukkit"), "platform suffix rejected");
+        check(!requirement.accepts("2.12.2"), "older version accepted");
+        check(!requirement.accepts("3.0.0"), "future major version accepted without review");
     }
 
     private static void wildcardsStayWithinTheDeclaredMinorLine() {
@@ -41,11 +41,11 @@ public final class ClassSpecCompatibilityRegressionSuite {
 
     private static void invalidOrBlankVersionsAreRejected() {
         final VersionRequirement requirement = new VersionRequirement(
-                "CraftEngine", VersionRequirement.RuntimeRole.OPTIONAL_INTEGRATION,
-                List.of("26.7.4"), "official-beta-pin");
+                "WorldGuard", VersionRequirement.RuntimeRole.OPTIONAL_INTEGRATION,
+                List.of("7.0.16"), "java21-folia-1.21.11-smoke");
         check(!requirement.accepts(null), "null version accepted");
         check(!requirement.accepts(""), "blank version accepted");
-        check(!requirement.accepts("26.7"), "prefix-only version accepted");
+        check(!requirement.accepts("7.0"), "prefix-only version accepted");
     }
 
     private static void runtimeRolesSeparateStartupBlockingFromOptionalCapabilities() {
