@@ -46,6 +46,35 @@ CLASS_LABELS = {
     "warlock": "Warlock", "wizard": "Wizard",
 }
 
+EXPECTED_MECHANICS = {
+    "warrior": ("battle_tempo", "blood_frenzy", "guard"),
+    "evoker": ("empower", "resonance", "imprint"),
+    "archer": ("wind_read", "precision_chain", "bond"),
+    "shaman": ("totem_wheel", "resonance", "maelstrom", "tide"),
+    "monk": ("flow", "combo_chain", "stagger", "mist_threads"),
+    "paladin": ("conviction", "beacon", "judgement_marks", "shield_charge"),
+    "demon_hunter": ("load", "fragments", "pain", "sigil"),
+    "druid": ("harmony", "combo", "balance", "bark", "seeds"),
+    "priest": ("litany", "shield_web", "marrow", "madness"),
+    "death_knight": ("rune_wheel", "blood_memory", "frost_marks", "plague"),
+    "assassin": ("opening", "toxin", "detection", "infection"),
+    "warlock": ("soul_debt", "curses", "embers", "demons"),
+    "wizard": ("runewaving", "attunement", "court"),
+}
+
+CLASS_PACKAGES = {
+    "demon_hunter": "demonhunter",
+    "death_knight": "deathknight",
+}
+
+GRADLE_CLASS_PREFIXES = {
+    "warrior": "warrior", "evoker": "evoker", "archer": "archer",
+    "shaman": "shaman", "monk": "monk", "paladin": "paladin",
+    "demon_hunter": "demonHunter", "druid": "druid", "priest": "priest",
+    "death_knight": "deathKnight", "assassin": "assassin",
+    "warlock": "warlock", "wizard": "wizard",
+}
+
 
 def pixels(image: Image.Image):
     getter = getattr(image, "get_flattened_data", None)
@@ -169,11 +198,21 @@ def implementation_errors() -> tuple[list[str], list[str]]:
     manifest = json.loads((RUNTIME / "hud-manifest.json").read_text(encoding="utf-8"))
     mechanics = [str(item) for item in manifest.get("mechanics", [])]
     errors: list[str] = []
-    if len(mechanics) != 49 or len(set(mechanics)) != 49:
-        errors.append("the mechanic manifest must contain 49 unique class-qualified ids")
+    expected = [f"{class_id}:{mechanic_id}"
+                for class_id in CLASSES for mechanic_id in EXPECTED_MECHANICS[class_id]]
+    if len(mechanics) != 49 or len(set(mechanics)) != 49 or set(mechanics) != set(expected):
+        missing = sorted(set(expected) - set(mechanics))
+        unexpected = sorted(set(mechanics) - set(expected))
+        errors.append("the mechanic manifest must contain the audited 49 class-qualified ids"
+                      + (f"; missing={missing}" if missing else "")
+                      + (f"; unexpected={unexpected}" if unexpected else ""))
     renderer = (ROOT / "src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java").read_text(encoding="utf-8")
     layout = (ROOT / "deploy/betterhud/layouts/icesmp-main-layout.yml").read_text(encoding="utf-8")
     catalogue = (ROOT / "deploy/betterhud/images/icesmp-class-images.yml").read_text(encoding="utf-8")
+    runtime_adapter = (ROOT / "src/main/java/hu/taliann/icesmp/classspec/integration/"
+                       "BukkitClassSpecRuntimeAdapter.java").read_text(encoding="utf-8")
+    gradle = (ROOT / "build.gradle.kts").read_text(encoding="utf-8")
+    check_dependencies = gradle.split("tasks.check", 1)[-1]
     hashes: dict[str, list[str]] = {}
     for qualified in mechanics:
         class_id, mechanic_id = qualified.split(":", 1)
@@ -195,10 +234,22 @@ def implementation_errors() -> tuple[list[str], list[str]]:
         if len(duplicates) > 1:
             errors.append("generic/duplicate mechanic artwork: " + ", ".join(duplicates))
     for class_id in CLASSES:
-        package_id = class_id.replace("_", "")
+        package_id = CLASS_PACKAGES.get(class_id, class_id)
         service = list((ROOT / "src/main/java/hu/taliann/icesmp" / package_id).glob("*GameplayService.java"))
-        if len(service) != 1 or "hudState" not in service[0].read_text(encoding="utf-8"):
+        service_text = service[0].read_text(encoding="utf-8") if len(service) == 1 else ""
+        if len(service) != 1 or "hudState" not in service_text:
             errors.append(f"missing typed hudState source for {class_id}")
+        for mechanic_id in EXPECTED_MECHANICS[class_id]:
+            if f'"{mechanic_id}"' not in service_text:
+                errors.append(f"{class_id} hudState lacks audited mechanic {mechanic_id}")
+        job_id = class_id.upper()
+        if f"hudAdapters.put(JobType.{job_id}," not in runtime_adapter:
+            errors.append(f"runtime HUD adapter lacks {class_id}")
+        prefix = GRADLE_CLASS_PREFIXES[class_id]
+        for kind in ("Gameplay", "Profile"):
+            task = f"{prefix}{kind}RegressionTest"
+            if f"val {task} = registerRegression(" not in gradle or task not in check_dependencies:
+                errors.append(f"Gradle check lacks {class_id} {kind.lower()} regression task")
     return errors, mechanics
 
 

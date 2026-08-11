@@ -145,7 +145,7 @@ jobs:
           set -euo pipefail
           ./gradlew stageMergedResourcePackForR2 \
             -PicesmpExternalPack="$EXTERNAL_BASE_PATH" \
-            --no-daemon --console=plain
+            --configuration-cache --no-daemon --console=plain
           source build/resource-pack/merged.properties
           FILE_NAME="icesmp-${sha1}.zip"
           OBJECT_KEY="${OBJECT_PREFIX}/${FILE_NAME}"
