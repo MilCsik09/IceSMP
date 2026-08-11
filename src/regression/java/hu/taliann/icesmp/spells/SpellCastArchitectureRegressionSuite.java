@@ -139,7 +139,11 @@ public final class SpellCastArchitectureRegressionSuite {
                 "cast gate must use shared effective cooldown");
         require(listener.contains("effectiveCooldownMillis(player, spell) - comboRefundMs"),
                 "item overlay must use shared effective cooldown");
-        require(listener.contains("entry.getValue() + delayMs\n                    + effectiveCooldownMillis(online, spell) - now"),
+        final int activeCooldowns = listener.indexOf("public Map<String, Long> activeCooldowns(final UUID playerId)");
+        final int comboBoost = listener.indexOf("public boolean hasComboBoost", activeCooldowns);
+        require(activeCooldowns >= 0 && comboBoost > activeCooldowns
+                        && listener.substring(activeCooldowns, comboBoost)
+                        .contains("effectiveCooldownMillis(online, spell)"),
                 "active cooldown HUD snapshot must use shared effective cooldown");
         require(listener.contains("final long effectiveCooldownMs = effectiveCooldownMillis(player, spell);"),
                 "combo refund must use shared effective cooldown");
@@ -159,10 +163,12 @@ public final class SpellCastArchitectureRegressionSuite {
                 "src/regression/java/hu/taliann/icesmp/spells/ClassSpellAuditRegressionSuite.java");
         require(aggregate.contains("SpellRegistryRegressionSuite.main")
                         && aggregate.contains("SpellCastArchitectureRegressionSuite.main")
+                        && aggregate.contains("ActiveKitLifecycleRegressionSuite.main")
                         && aggregate.contains("DarkClassSpellLifecycleRegressionSuite.main")
+                        && aggregate.contains("MonkStaggerLifecycleRegressionSuite.main")
                         && aggregate.contains("WizardGameplayRegressionSuite.main")
                         && aggregate.contains("WizardProfileRegressionSuite.main"),
-                "hardening aggregate must execute registry, DARK, cast and Wizard regressions");
+                "hardening aggregate must execute registry, cast, active-kit, DARK, Monk and Wizard regressions");
         final String grantGate = read(root,
                 "src/regression/java/hu/taliann/icesmp/classspec/domain/SpellGrantLedgerRegressionSuite.java");
         require(grantGate.contains("ClassSpellAuditRegressionSuite.main"),
