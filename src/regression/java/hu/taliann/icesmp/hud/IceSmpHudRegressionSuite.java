@@ -39,7 +39,7 @@ public final class IceSmpHudRegressionSuite {
                         - IceSmpHudRenderer.SPACE_MIN <= 0xF8FF,
                 "spacing glyphs must stay in BMP PUA and avoid supplementary-plane sentinels");
         final String source = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
-        check(source.contains("append(space(-x - width))")
+        check(source.contains("append(space(-anchoredX - width))")
                         && !source.contains("primaryMetric()") && !source.contains("secondaryMetric()"),
                 "every draw must return to origin and metrics must remain class-agnostic");
         final String hud = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
@@ -129,6 +129,8 @@ public final class IceSmpHudRegressionSuite {
         final String config = read("src/main/resources/config/general.yml");
         check(manifest.contains("\"fixed_segment_count\": 12")
                         && manifest.contains("\"wallet_slots\": 4")
+                        && manifest.contains("\"layout_color_payload_bits\": 12")
+                        && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"vanilla_health_hidden\": false")
                         && manifest.contains("\"vanilla_armor_hidden\": false"),
                 "pack manifest must retain fixed bars, wallet capacity and safe HP-rework gates");
@@ -152,8 +154,10 @@ public final class IceSmpHudRegressionSuite {
                         && vertexShader.contains("<minecraft:projection.glsl>")
                         && vertexShader.contains("<minecraft:globals.glsl>")
                         && vertexShader.contains("vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize")
-                        && vertexShader.contains("clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x")
-                        && vertexShader.contains("clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y")
+                        && vertexShader.contains("const float HUD_LAYOUT_SCALES[8]")
+                        && vertexShader.contains("int layoutCode = (packedColor.r & 15)")
+                        && vertexShader.contains("vec2 selectedHudScale = hudScale * layoutScale")
+                        && vertexShader.contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")
                         && vertexShader.contains("fog_spherical_distance(pos)")
                         && !vertexShader.contains("uniform int FogShape"),
                 "HUD vertex shader must implement the Minecraft 1.21.11 UBO contract");
