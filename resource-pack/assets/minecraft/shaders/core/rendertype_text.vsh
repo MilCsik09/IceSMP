@@ -6,6 +6,7 @@
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
+#moj_import <minecraft:globals.glsl>
 in vec3 Position;
 in vec4 Color;
 in vec2 UV0;
@@ -18,6 +19,8 @@ out vec2 texCoord0;
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
+    float responsiveScale = clamp(min(ScreenSize.x / 1365.0, ScreenSize.y / 768.0), 1.0, 1.5);
+    vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;
     bool hudGlyph = false;
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
     if (pos.y >= ui.y && ProjMat[3].x == -1) {
@@ -45,6 +48,9 @@ void main() {
     cylindricalVertexDistance = fog_cylindrical_distance(pos);
     texCoord0 = UV0;
     vec4 clipPosition = ProjMat * ModelViewMat * vec4(pos, 1.0);
-    if (hudGlyph) clipPosition.x += clipPosition.w;
+    if (hudGlyph) {
+        clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x;
+        clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y;
+    }
     gl_Position = clipPosition;
 }

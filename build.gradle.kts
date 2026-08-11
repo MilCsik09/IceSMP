@@ -100,7 +100,10 @@ val validateIceSmpHudPackage by tasks.registering {
         }
         val shader = pack.file("assets/minecraft/shaders/core/rendertype_text.vsh").asFile
         require(shader.isFile && shader.readText().contains("HEIGHT_BIT 13")
-            && shader.readText().contains("clipPosition.x += clipPosition.w")) {
+            && shader.readText().contains("<minecraft:globals.glsl>")
+            && shader.readText().contains("vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize")
+            && shader.readText().contains("clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x")
+            && shader.readText().contains("clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y")) {
             "Missing first-party 1.21.11 HUD positioning shader"
         }
         val renderer = rendererSource.asFile.readText()

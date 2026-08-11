@@ -69,7 +69,12 @@ class ResourcePackToolingTest(unittest.TestCase):
         shader.write_text(
             "#version 330\n#moj_import <minecraft:dynamictransforms.glsl>\n"
             "#moj_import <minecraft:projection.glsl>\n"
-            "void main(){vec4 clipPosition=vec4(0);clipPosition.x += clipPosition.w;"
+            "#moj_import <minecraft:globals.glsl>\n"
+            "void main(){vec2 ui=vec2(1);float responsiveScale=1;"
+            "vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;"
+            "vec4 clipPosition=vec4(0);"
+            "clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x;"
+            "clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y;"
             "fog_spherical_distance(vec3(0));}\n",
             encoding="utf-8",
         )

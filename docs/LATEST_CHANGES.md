@@ -42,8 +42,10 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   A fő frakcióvaluta mindig, a pozitív idegen banki valuták külön ikonnal jelennek meg;
   packhiánynál játékosonkénti natív fallback marad; a kijelzés teljesen first-party, külső HUD plugin nélkül.
   A panelglyphök a kliens 256×256-os font-atlasz korlátján belül maradnak, a jobb oldali
-  horgony clip-space alapú, a magyar feliratok pedig négyszeresen túlmintavételezett,
-  élsimított DejaVu-forrásból készülnek; ablak- és GUI-scale váltás nem mozdíthatja el a HUD-ot.
+  horgony clip-space alapú, a teljes kompozíció fizikai méretét pedig a shader a kliens
+  `ScreenSize` értékéből normalizálja. A magyar feliratok négyszeresen túlmintavételezett,
+  élsimított DejaVu-forrásból készülnek; ablak- és GUI-scale váltás nem mozdíthatja vagy
+  többszörös méretűre nagyíthatja a HUD-ot.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,

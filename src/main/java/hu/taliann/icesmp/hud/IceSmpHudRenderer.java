@@ -79,14 +79,14 @@ public final class IceSmpHudRenderer {
         output.append(glyph(-254, WALLET_PANEL_FONT, '\uE105', 241, null));
         output.append(glyph(-254, DETAIL_PANEL_FONT, '\uE106', 241, null));
         output.append(glyph(-236, CLASS_FONT, classGlyph(model.classHud().classId()), 37, null));
-        output.append(glyph(-54, UTILITY_FONT, '\uE132', 16, null));
+        output.append(glyph(-88, UTILITY_FONT, '\uE132', 16, null));
         output.append(glyph(-234, UTILITY_FONT, '\uE131', 16, null));
 
         final TextColor accent = color(model.factionAccent(), 0x77DDF2);
         final String spec = model.classHud().specName().isBlank() ? "" : " " + model.classHud().specName();
         output.append(text(-190, HEADER_FONT, model.className() + spec, accent, 25));
         output.append(text(-190, SUBHEADER_FONT, model.faction(), color("A9B7C6", 0xA9B7C6), 22));
-        output.append(text(-32, HEADER_FONT, "Lv. " + model.classLevel(), color("EAF7FF", 0xEAF7FF), 8));
+        output.append(text(-70, HEADER_FONT, "Lv. " + model.classLevel(), color("EAF7FF", 0xEAF7FF), 8));
         drawCurrencies(output, model);
         if (model.hasClass()) {
             output.append(text(-202, RESOURCE_TEXT_FONT,
@@ -123,7 +123,10 @@ public final class IceSmpHudRenderer {
         drawMetricIcon(output, model.classHud().classId(), primary, -234);
         drawMetricIcon(output, model.classHud().classId(), secondary, -113);
         output.append(text(-217, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 20));
-        output.append(text(-96, MECHANIC_FONT, model.classHud().mechanicSecondary(),
+        final boolean specializationMissing = model.classHud().specName().isBlank();
+        final String secondaryText = model.classHud().mechanicSecondary().isBlank()
+                && specializationMissing ? "Spec: nincs" : model.classHud().mechanicSecondary();
+        output.append(text(-96, MECHANIC_FONT, secondaryText,
                 color("A9B7C6", 0xA9B7C6), 14));
         if (primary != null && primary.maximum() > 0.0D) {
             drawSegments(output, -234, METRIC_FONT, primary.percent(), SEGMENT_FILL);
@@ -132,7 +135,9 @@ public final class IceSmpHudRenderer {
             drawSegments(output, -113, METRIC_FONT, secondary.percent(), SEGMENT_GOLD);
         }
         drawCharges(output, model.classHud().classId(), model.classHud().slots());
-        output.append(text(-113, STATE_FONT, joinState(model.classHud().state(), model.classHud().proc()),
+        final String stateText = joinState(model.classHud().state(), model.classHud().proc());
+        output.append(text(-113, STATE_FONT, stateText.isBlank() && specializationMissing
+                        ? "Válassz profilt" : stateText,
                 color("A9B7C6", 0xA9B7C6), 16));
     }
 

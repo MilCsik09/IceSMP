@@ -19,6 +19,7 @@ public final class IceSmpHudRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         fixedLayoutIsIndependentOfDynamicValues();
+        specializationlessStateIsExplicit();
         walletAndClassContractIsGeneric();
         packReadinessAndFallbackAreSafe();
         removedExternalHudDependencyIsAbsent();
@@ -76,6 +77,24 @@ public final class IceSmpHudRegressionSuite {
                 "first-party HUD must suppress duplicate native rendering while preserving its native fallback");
     }
 
+    private static void specializationlessStateIsExplicit() {
+        final IceSmpHudModel baseline = model(100, 100, 100);
+        final ClassHudState noSpec = new ClassHudState("warrior", "", "",
+                "Tempó Rendezett 0", "", "", "", 0, 0,
+                List.of("Tempó Rendezett 0"),
+                List.of(ClassHudMetric.value("battle_tempo", "Tempó", "Rendezett 0",
+                        0, 100, "active")), List.of());
+        final IceSmpHudModel noSpecModel = new IceSmpHudModel(
+                baseline.faction(), baseline.factionTheme(), baseline.factionAccent(),
+                "Harcos", 1, baseline.balance(), true,
+                baseline.resource(), baseline.resourceMax(), baseline.resourcePercent(),
+                "Düh", baseline.event(), baseline.currencies(), noSpec);
+        final String rendered = PlainTextComponentSerializer.plainText().serialize(
+                new IceSmpHudRenderer().render(noSpecModel));
+        check(rendered.contains("Spec: nincs") && rendered.contains("Válassz profilt"),
+                "a class selected without a specialization must be an explicit HUD state");
+    }
+
     private static void removedExternalHudDependencyIsAbsent() throws Exception {
         final String removedPlugin = ("better" + "hud").toLowerCase(Locale.ROOT);
         final List<String> extensions = List.of(
@@ -131,7 +150,10 @@ public final class IceSmpHudRegressionSuite {
         check(vertexShader.startsWith("#version 330")
                         && vertexShader.contains("<minecraft:dynamictransforms.glsl>")
                         && vertexShader.contains("<minecraft:projection.glsl>")
-                        && vertexShader.contains("clipPosition.x += clipPosition.w")
+                        && vertexShader.contains("<minecraft:globals.glsl>")
+                        && vertexShader.contains("vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize")
+                        && vertexShader.contains("clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x")
+                        && vertexShader.contains("clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y")
                         && vertexShader.contains("fog_spherical_distance(pos)")
                         && !vertexShader.contains("uniform int FogShape"),
                 "HUD vertex shader must implement the Minecraft 1.21.11 UBO contract");

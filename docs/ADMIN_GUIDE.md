@@ -1703,8 +1703,10 @@ runtime asset budgetet. Az asset-audit minden PNG-n ellenőrzi a méretet, alfá
 középre igazítást, élességet, magenta fringe-et és a rögzített glyph-width markert.
 A generált layout jobb felső sarokhoz horgonyzott. A 64×64-es ikonokat a first-party font/shader
 réteg rögzített cellákban rajzolja, ezért GUI scale- és dinamikus értékváltáskor sem csúszhat el a panel.
-Az x-horgony a vetítés utáni clip-space jobb széléhez kötődik, ezért nem függ attól, hogy teljes
-képernyőn vagy kis ablakban fut a kliens. Egy bitmap glyph legfeljebb 256×256 lehet; a keretek és
+Az x-horgony a vetítés utáni clip-space jobb széléhez kötődik. A shader a Minecraft `Globals`
+`ScreenSize` mezőjéből visszaszámolja a GUI-skálát, majd a teljes HUD-réteget egységesen 1,0–1,5
+közötti fizikai skálára normalizálja. Emiatt teljes képernyőn és kis ablakban is ugyanott marad,
+nem lesz 2–3-szoros a panel, és az alsó sávok sem válnak le a keretről. Egy bitmap glyph legfeljebb 256×256 lehet; a keretek és
 alsó sávok 240 pixel szélesek, így a Minecraft font-stitcher nem cseréli őket hiányzó karakterre.
 A magyar HUD-atlasz a repo-ban licenccel tárolt DejaVu Sans forrás négyszeres túlmintavételezésével
 készül; az alacsony felbontású, pixeles runtime font nem elfogadható generátorkimenet.
