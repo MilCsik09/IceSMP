@@ -67,9 +67,10 @@ public final class IceSmpHudRegressionSuite {
                         && !backend.contains("PersistentDataContainer") && !backend.contains("PlayerProfile"),
                 "backend must be display-only and gated by the loaded pack");
         check(hud.contains("!iceSmpHudActive(player)")
-                        && hud.contains("final boolean customActive = renderIceSmpHud(player, snapshot)")
-                        && hud.contains("if (customActive)"),
-                "first-party HUD must suppress duplicate native rendering while preserving fallback");
+                        && hud.contains("renderIceSmpHud(player, snapshot);")
+                        && hud.contains("applyFoliaCompactHud(player, snapshot);")
+                        && !hud.contains("BetterHud"),
+                "first-party HUD must suppress duplicate native rendering while preserving its native fallback");
     }
 
     private static void visualPackageIsComplete() throws Exception {
