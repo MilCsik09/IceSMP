@@ -13,8 +13,8 @@ permissions:
 
 jobs:
   export:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: self-hosted
+    timeout-minutes: 10
     steps:
       - name: Checkout exact feature commit
         uses: actions/checkout@v4
@@ -24,7 +24,9 @@ jobs:
           persist-credentials: false
       - name: Archive exact checkout
         shell: bash
-        run: git archive --format=zip --output=icesmp-exact-source.zip HEAD
+        run: |
+          git rev-parse HEAD
+          git archive --format=zip --output=icesmp-exact-source.zip HEAD
       - name: Upload exact checkout
         uses: actions/upload-artifact@v4
         with:
