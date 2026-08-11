@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.spells.CastModifiers;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -103,8 +105,12 @@ public final class TotemManager implements org.bukkit.event.Listener {
                     ? TotemCategory.FO : TotemCategory.KISERO;
         }
 
-        /** Applies this totem's pulse to a single nearby entity (allies buff/heal, hostiles damage/debuff). */
-        private void affect(final Entity entity, final int durationTicks) {
+        /**
+         * Applies one pulse on the target's owning region thread. Generic cast power only scales
+         * the damage amount: regeneration/slowness duration and fire duration stay explicit.
+         */
+        private void affect(final Entity entity, final int durationTicks,
+                            final CastModifiers modifiers) {
             if (targetPlayers) {
                 if (entity instanceof Player player
                         && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)
@@ -118,7 +124,8 @@ public final class TotemManager implements org.bukkit.event.Listener {
                     monster.addPotionEffect(new PotionEffect(effect, durationTicks, amplifier, true, false, true));
                 }
                 if (damage > 0.0D) {
-                    monster.damage(damage);
+                    final double scaled = SpellDamageUtil.scaledDamage(damage, modifiers);
+                    if (scaled > 0.0D) monster.damage(scaled);
                 }
                 if (fireTicks > 0) {
                     monster.setFireTicks(Math.max(monster.getFireTicks(), fireTicks));
@@ -163,11 +170,15 @@ public final class TotemManager implements org.bukkit.event.Listener {
     /**
      * Places a totem of the given type at the caster's feet. Must be called on the caster's region
      * thread (the spell system already runs spell execution there), so the spawn is region-local.
+     * The immutable modifier snapshot survives every pulse scheduler hop.
      *
      * @param owner the casting shaman
      * @param type the totem type
+     * @param modifiers cast-time semantic modifiers
      */
-    public void placeTotem(final Player owner, final TotemType type) {
+    public void placeTotem(final Player owner, final TotemType type,
+                           final CastModifiers modifiers) {
+        final CastModifiers snapshot = modifiers == null ? CastModifiers.IDENTITY : modifiers;
         final Location loc = owner.getLocation().clone();
         if (loc.getWorld() == null) {
             return;
@@ -204,13 +215,14 @@ public final class TotemManager implements org.bukkit.event.Listener {
 
         activeTotems.add(totem.getUniqueId());
         owned.put(type.category(), new OwnedTotem(totem.getUniqueId(), type));
-        startPulse(totem, type);
+        startPulse(totem, type, snapshot);
 
         final int lifeSeconds = Math.max(3, configManager.getInt("spells.totem.lifetime-seconds", 12));
         totem.getScheduler().runDelayed(plugin, task -> removeTotem(totem), null, lifeSeconds * 20L);
     }
 
-    private void startPulse(final ArmorStand totem, final TotemType type) {
+    private void startPulse(final ArmorStand totem, final TotemType type,
+                            final CastModifiers modifiers) {
         final double radius = Math.max(2.0D, configManager.getDouble("spells.totem.radius", 6.0D));
         final int period = Math.max(10, configManager.getInt("spells.totem.pulse-ticks", 30));
         // Refresh effects for a little longer than the pulse interval so they never lapse between pulses.
@@ -225,9 +237,10 @@ public final class TotemManager implements org.bukkit.event.Listener {
             for (final Entity nearby : totem.getNearbyEntities(radius, radius, radius)) {
                 // A pulzus-sugár átnyúlhat régióhatáron — idegen entitást csak a saját szálán érintünk.
                 if (Bukkit.isOwnedByCurrentRegion(nearby)) {
-                    type.affect(nearby, durationTicks);
+                    type.affect(nearby, durationTicks, modifiers);
                 } else {
-                    nearby.getScheduler().run(plugin, hop -> type.affect(nearby, durationTicks), null);
+                    nearby.getScheduler().run(plugin,
+                            hop -> type.affect(nearby, durationTicks, modifiers), null);
                 }
             }
             totem.getWorld().spawnParticle(type.particle, totem.getLocation().add(0.0D, 1.0D, 0.0D),
