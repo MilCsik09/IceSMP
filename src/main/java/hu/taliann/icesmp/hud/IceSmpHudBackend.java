@@ -23,11 +23,16 @@ public final class IceSmpHudBackend {
     }
 
     public boolean render(final Player player, final IceSmpHudModel model, final boolean visible) {
+        return render(player, model, HudLayoutSnapshot.defaults(), visible);
+    }
+
+    public boolean render(final Player player, final IceSmpHudModel model,
+                          final HudLayoutSnapshot layout, final boolean visible) {
         if (player == null || model == null || !visible || !resourcePackReady.test(player.getUniqueId())) {
             hide(player);
             return false;
         }
-        final Component rendered = renderer.render(model);
+        final Component rendered = renderer.render(model, layout);
         final BossBar bar = bars.computeIfAbsent(player.getUniqueId(), ignored -> BossBar.bossBar(
                 rendered, 0.0F, BossBar.Color.WHITE, BossBar.Overlay.PROGRESS));
         bar.name(rendered);
