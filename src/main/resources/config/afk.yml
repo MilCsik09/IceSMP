@@ -1,8 +1,0 @@
-# IceSMP konfiguráció — globális AFK (a ConfigManager az összes config/*.yml-t betölti)
-afk:
-  # Ennyi másodperc valódi inaktivitás után számít a játékos automatikusan AFK-nak.
-  # Futásidőben 1 másodperc és 365 nap közé szorítva.
-  afk-after-seconds: 180
-
-  # Az AFK-állapotot figyelő jutalomrendszerek exploitvédelmi kapcsolója.
-  block-rewards: true

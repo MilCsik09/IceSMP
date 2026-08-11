@@ -1,5 +1,0 @@
-# IceSMP üzenetek — globális AFK
-messages:
-  afk-on: '&7⌚ Mostantól &fAFK&7 vagy — aktivitás vagy egy újabb /afk visszahoz.'
-  afk-off: '&aÜdv újra! Az AFK-jelölésed törölve.'
-  afk-reward-blocked: '<gray>⌚ AFK állapotban jutalom nem vehető át — mozogj vagy kapcsold ki a /afk jelölést.</gray>'
