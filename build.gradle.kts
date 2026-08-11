@@ -99,15 +99,24 @@ val validateIceSmpHudPackage by tasks.registering {
             }
         }
         val shader = pack.file("assets/minecraft/shaders/core/rendertype_text.vsh").asFile
+        require((manifest["layout_color_payload_bits"] as? Number)?.toInt() == 12
+            && (manifest["layout_y_offset_range"] as? List<*>)
+                ?.map { (it as Number).toInt() } == listOf(-256, 255)
+            && (manifest["layout_scale_variants"] as? List<*>)
+                ?.map { (it as Number).toDouble() } == listOf(0.75, 0.9, 1.0, 1.15, 1.25, 1.4, 1.6, 1.8)) {
+            "First-party HUD manifest lost the build-time layout/scale variant contract"
+        }
         require(shader.isFile && shader.readText().contains("HEIGHT_BIT 13")
             && shader.readText().contains("<minecraft:globals.glsl>")
             && shader.readText().contains("vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize")
-            && shader.readText().contains("clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x")
-            && shader.readText().contains("clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y")) {
+            && shader.readText().contains("const float HUD_LAYOUT_SCALES[8]")
+            && shader.readText().contains("int layoutCode = (packedColor.r & 15)")
+            && shader.readText().contains("vec2 selectedHudScale = hudScale * layoutScale")
+            && shader.readText().contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")) {
             "Missing first-party 1.21.11 HUD positioning shader"
         }
         val renderer = rendererSource.asFile.readText()
-        require(renderer.contains("append(space(-x - width))")) {
+        require(renderer.contains("append(space(-anchoredX - width))")) {
             "Every first-party HUD draw must return to its cursor origin"
         }
         require(!renderer.contains("primaryMetric()") && !renderer.contains("secondaryMetric()")) {
@@ -245,6 +254,10 @@ val iceSmpHudRegressionTest = registerRegression(
     "iceSmpHudRegressionTest",
     "Runs first-party HUD fixed-layout, wallet, readiness and authority regressions.",
     "hu.taliann.icesmp.hud.IceSmpHudRegressionSuite")
+val hudEditorRegressionTest = registerRegression(
+    "hudEditorRegressionTest",
+    "Runs first-party HUD editor gate, isolation, layout, shader and authority regressions.",
+    "hu.taliann.icesmp.hud.HudEditorRegressionSuite")
 val classSpecApplicationRegressionTest = registerRegression(
     "classSpecApplicationRegressionTest",
     "Runs Profile v2 mutation, DARK gate and fail-closed application regressions.",
@@ -574,7 +587,7 @@ tasks.check {
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
-        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest,
+        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, hudEditorRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
