@@ -17,11 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Cross-system DARK lifecycle regression. Domain transitions are exercised for
- * every gated specialization; source contracts pin the Bukkit projection cleanup
- * and active-kit/selected-spell reconciliation that follows the durable commit.
- */
+/** Cross-system DARK lifecycle regression for all five gated specializations. */
 public final class DarkClassSpellLifecycleRegressionSuite {
 
     private static final Map<String, String> DARK_SPELLS = Map.of(
@@ -46,6 +42,7 @@ public final class DarkClassSpellLifecycleRegressionSuite {
         for (final Map.Entry<String, String> entry : DARK_SPELLS.entrySet()) {
             final String spec = entry.getKey();
             final String spell = entry.getValue();
+            final String namespace = ClassSpecCatalog.companionNamespace(spec);
             final Map<UUID, CompanionProfile> roster = durableRoster(spec);
             final Map<String, String> mechanics = "necromancer".equals(spec)
                     ? Map.of("necromancer.soulforge.shards", "5")
@@ -57,6 +54,11 @@ public final class DarkClassSpellLifecycleRegressionSuite {
                     roster, mechanics, "");
 
             check(active.isActivatable(), spec + " starts ACTIVE");
+            if (namespace != null) {
+                check(ClassSpecCatalog.companionProjection(active, namespace).size() == roster.size(),
+                        spec + " ACTIVE projects exactly its durable companions");
+            }
+
             final SealReason reason = new SealReason(
                     SealCause.FACTION_MISSING, "dark", "audit gate closed");
             final ClassLoadout sealed = active.withStatus(LoadoutStatus.SEALED, reason);
@@ -64,21 +66,33 @@ public final class DarkClassSpellLifecycleRegressionSuite {
             check(sealed.favoriteSpells().equals(active.favoriteSpells()),
                     spec + " durable favorites survive sealing without becoming runtime grants");
             check(sealed.selectedSpell().equals(active.selectedSpell()),
-                    spec + " slot-local durable selected metadata is preserved for deterministic rebuild");
+                    spec + " slot-local durable selected metadata survives for deterministic rebuild");
             check(sealed.mechanicState().equals(active.mechanicState()),
                     spec + " durable mechanic state survives sealing");
             check(sealed.companionRoster().equals(active.companionRoster()),
                     spec + " durable companion roster survives sealing");
+            if (namespace != null) {
+                check(ClassSpecCatalog.companionProjection(sealed, namespace).isEmpty(),
+                        spec + " SEALED projects zero runtime companions");
+            }
 
             final ClassLoadout unsealed = sealed.withStatus(LoadoutStatus.INACTIVE, null);
             check(unsealed.isActivatable(), spec + " becomes activatable after gate recovery");
             check(unsealed.companionRoster().size() == roster.size(),
                     spec + " unseal does not duplicate durable companions");
+            if (namespace != null) {
+                check(ClassSpecCatalog.companionProjection(unsealed, namespace).isEmpty(),
+                        spec + " INACTIVE unsealed loadout still projects zero companions");
+            }
             final ClassLoadout rebuilt = unsealed.withStatus(LoadoutStatus.ACTIVE, null);
             check(rebuilt.companionRoster().equals(roster),
                     spec + " deterministic reactivation restores exactly the same roster");
             check(rebuilt.mechanicState().equals(mechanics),
                     spec + " deterministic reactivation restores mechanic state");
+            if (namespace != null) {
+                check(ClassSpecCatalog.companionProjection(rebuilt, namespace).size() == roster.size(),
+                        spec + " reactivation projects the roster exactly once");
+            }
         }
     }
 
@@ -106,7 +120,7 @@ public final class DarkClassSpellLifecycleRegressionSuite {
         check(baseRegrant > cleanup && specRegrant > baseRegrant && post > specRegrant,
                 "runtime cleanup precedes deterministic BASE/SPEC rebuild and post-reconcile");
         check(clearSelection > cleanup && clearSelection < baseRegrant,
-                "a sealed/fail-closed profile clears durable selected spell before any possible regrant");
+                "sealed/fail-closed profile clears durable selected spell before any possible regrant");
         check(adapter.contains("minions.removeAllOwned(id);"),
                 "seal/loadout reconciliation despawns transient minion entities");
         check(adapter.indexOf("minions.removeAllOwned(id);") < adapter.indexOf("for (final Spell spell : spells.getAll())"),
@@ -114,7 +128,7 @@ public final class DarkClassSpellLifecycleRegressionSuite {
         check(adapter.contains("catalyst.getSelectedSpellId(player);")
                         && adapter.indexOf("catalyst.getSelectedSpellId(player);")
                         < adapter.indexOf("catalyst.refreshSoulbond(player);"),
-                "successful rebuild eagerly reconciles selected spell before Soulbond presentation refresh");
+                "successful rebuild reconciles selected spell before Soulbond presentation refresh");
     }
 
     private static void activeKitFavoritesAndSelectedSpellAreFailClosed() throws Exception {
@@ -125,13 +139,13 @@ public final class DarkClassSpellLifecycleRegressionSuite {
         check(listener.contains("if (unlocked.contains(id) && spellRegistry.getById(id) != null) valid.add(id);"),
                 "favorite/default proposals cannot bypass current grants or registry existence");
         check(listener.contains("if (valid.size() >= limit) break;"),
-                "favorites/default/admin grants cannot exceed the active-kit maximum");
+                "favorites/default/admin grants cannot exceed active-kit maximum");
         check(listener.contains("if (!active.contains(selected))")
                         && listener.contains("selected = active.getFirst();")
                         && listener.contains("persistSelectedSpell(player, selected);"),
-                "stale selected spell deterministically moves to the first valid active-kit member");
+                "stale selected spell deterministically moves to first valid active-kit member");
         check(listener.contains("if (active.isEmpty()) return null;"),
-                "an empty/sealed kit exposes no selected spell to cast");
+                "empty/sealed kit exposes no selected spell to cast");
 
         final String adapter = normalized(
                 "src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java");
