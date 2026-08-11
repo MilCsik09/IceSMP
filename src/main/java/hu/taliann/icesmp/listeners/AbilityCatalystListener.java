@@ -2,7 +2,8 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.archer.ArcherGameplayService;
 import hu.taliann.icesmp.assassin.AssassinGameplayService;
-import hu.taliann.icesmp.classspec.GameplayV2ClassPolicy;
+import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
+import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.deathknight.DeathKnightGameplayService;
@@ -18,20 +19,19 @@ import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
-import hu.taliann.icesmp.managers.SpellbookStateStore;
 import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.monk.MonkGameplayService;
 import hu.taliann.icesmp.paladin.PaladinGameplayService;
 import hu.taliann.icesmp.priest.PriestGameplayService;
-import hu.taliann.icesmp.profile.PlayerProfileAuthority;
-import hu.taliann.icesmp.profile.PlayerProfileGateway;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellbookStateStore;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.shaman.ShamanGameplayService;
 import hu.taliann.icesmp.spells.CastModifiers;
 import hu.taliann.icesmp.spells.CastOutcome;
 import hu.taliann.icesmp.spells.Spell;
 import hu.taliann.icesmp.spells.SpellCostType;
 import hu.taliann.icesmp.utils.MessageManager;
-import hu.taliann.icesmp.utils.PlayerStateCleanup;
 import hu.taliann.icesmp.warlock.WarlockGameplayService;
 import hu.taliann.icesmp.warrior.WarriorGameplayService;
 import hu.taliann.icesmp.wizard.WizardGameplayService;
@@ -51,7 +51,6 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -109,13 +108,14 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final JobManager jobManager;
     private final SpecializationManager specializationManager;
     private final SpellMasteryManager masteryManager;
-    private final SpellbookStateStore spellbookStateStore;
+    private final PlayerProfileSpellbookStateStore spellbookStateStore =
+            new PlayerProfileSpellbookStateStore();
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final TalentManager talentManager;
     private final ResourceManager resourceManager;
     private final SpellFavoritesManager spellFavoritesManager;
-    private volatile PlayerProfileGateway profileGateway;
+    private volatile ClassSpecProfileGateway profileGateway;
     private final Map<JobType, ClassCastHook> classHooks = new ConcurrentHashMap<>();
     private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
     private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
@@ -132,32 +132,30 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final Map<UUID, Long> hintStartedAt = new ConcurrentHashMap<>();
 
     public AbilityCatalystListener(final JavaPlugin plugin,
-                                   final CatalystItemFactory catalystItemFactory,
-                                   final SpellRegistry spellRegistry,
                                    final JobManager jobManager,
-                                   final SpecializationManager specializationManager,
-                                   final SpellMasteryManager masteryManager,
-                                   final SpellbookStateStore spellbookStateStore,
+                                   final SpellRegistry spellRegistry,
+                                   final CatalystItemFactory catalystItemFactory,
                                    final ConfigManager configManager,
-                                   final MessageManager messageManager,
-                                   final TalentManager talentManager,
+                                   final SpellMasteryManager masteryManager,
+                                   final SpecializationManager specializationManager,
                                    final ResourceManager resourceManager,
+                                   final TalentManager talentManager,
+                                   final MessageManager messageManager,
                                    final SpellFavoritesManager spellFavoritesManager) {
         this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
-        this.catalystItemFactory = java.util.Objects.requireNonNull(catalystItemFactory, "catalystItemFactory");
-        this.spellRegistry = java.util.Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.jobManager = java.util.Objects.requireNonNull(jobManager, "jobManager");
-        this.specializationManager = java.util.Objects.requireNonNull(specializationManager, "specializationManager");
-        this.masteryManager = java.util.Objects.requireNonNull(masteryManager, "masteryManager");
-        this.spellbookStateStore = java.util.Objects.requireNonNull(spellbookStateStore, "spellbookStateStore");
+        this.spellRegistry = java.util.Objects.requireNonNull(spellRegistry, "spellRegistry");
+        this.catalystItemFactory = java.util.Objects.requireNonNull(catalystItemFactory, "catalystItemFactory");
         this.configManager = java.util.Objects.requireNonNull(configManager, "configManager");
-        this.messageManager = java.util.Objects.requireNonNull(messageManager, "messageManager");
-        this.talentManager = talentManager;
+        this.masteryManager = java.util.Objects.requireNonNull(masteryManager, "masteryManager");
+        this.specializationManager = java.util.Objects.requireNonNull(specializationManager, "specializationManager");
         this.resourceManager = java.util.Objects.requireNonNull(resourceManager, "resourceManager");
+        this.talentManager = talentManager;
+        this.messageManager = java.util.Objects.requireNonNull(messageManager, "messageManager");
         this.spellFavoritesManager = java.util.Objects.requireNonNull(spellFavoritesManager, "spellFavoritesManager");
     }
 
-    public void setProfileGateway(final PlayerProfileGateway gateway) {
+    public void setProfileGateway(final ClassSpecProfileGateway gateway) {
         profileGateway = java.util.Objects.requireNonNull(gateway, "gateway");
     }
 
@@ -305,8 +303,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (!configManager.getStringList("spells.melee-catalyst.classes").contains(job.getId())) {
             return false;
         }
-        // The held weapon is input only. Profile/class authorization remains the
-        // unique owner-bound personal Soulbond in this player's inventory.
         return !GameplayV2ClassPolicy.isEnabled(job.getId()) || authorizedByPersonalSoulbond(player);
     }
 
@@ -350,8 +346,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final Player player = event.getPlayer();
         final ItemStack held = player.getInventory().getItemInMainHand();
         if (!isUsableCatalyst(player, held)) return;
-        // Melee weapons must never suppress chests, doors, buttons or other block
-        // interactions. The physical Soulbond may intentionally consume block-clicks.
         if (action == Action.RIGHT_CLICK_BLOCK && !catalystItemFactory.isCatalyst(held)) return;
         if (!profileRuntimeReady(player)) return;
         event.setUseInteractedBlock(Event.Result.DENY);
@@ -510,8 +504,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 hook.commit().commit(player, selected, useResource,
                         useResource ? reservation.spentAmount() : 0);
             } catch (final RuntimeException failure) {
-                // The spell effect already committed. Fail closed by keeping cost and
-                // starting cooldown, while surfacing the class-runtime inconsistency.
                 plugin.getLogger().severe("Class cast-state commit failed for "
                         + player.getUniqueId() + '/' + selected.getId() + ": " + rootMessage(failure));
             }
