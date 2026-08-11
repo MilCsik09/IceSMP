@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.spells;
 
+import hu.taliann.icesmp.monk.MonkStaggerLifecycleRegressionSuite;
 import hu.taliann.icesmp.wizard.WizardGameplayRegressionSuite;
 import hu.taliann.icesmp.wizard.WizardProfileRegressionSuite;
 
@@ -17,6 +18,7 @@ public final class ClassSpellAuditRegressionSuite {
         SpellRegistryRegressionSuite.main(args);
         SpellCastArchitectureRegressionSuite.main(args);
         DarkClassSpellLifecycleRegressionSuite.main(args);
+        MonkStaggerLifecycleRegressionSuite.main(args);
         WizardGameplayRegressionSuite.main(args);
         WizardProfileRegressionSuite.main(args);
         System.out.println("Class/spell audit regression aggregate passed.");
