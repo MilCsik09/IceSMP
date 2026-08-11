@@ -34,6 +34,8 @@ public final class IceSmpHudRenderer {
     private static final Key CURRENCY_FONT = Key.key("icesmp_hud", "currency");
     private static final Key RUNE_FONT = Key.key("icesmp_hud", "runes");
     private static final Key CHARGE_FONT = Key.key("icesmp_hud", "charges");
+    private static final Key MECHANIC_ICON_FONT = Key.key("icesmp_hud", "mechanic_icons");
+    private static final Key MECHANIC_SLOT_FONT = Key.key("icesmp_hud", "mechanic_slots");
     private static final Key RESOURCE_FONT = Key.key("icesmp_hud", "resource_segments");
     private static final Key METRIC_FONT = Key.key("icesmp_hud", "metric_segments");
     private static final Key HEADER_FONT = Key.key("icesmp_hud", "text_header");
@@ -51,6 +53,20 @@ public final class IceSmpHudRenderer {
     private static final Map<String, Integer> RUNE_KIND = Map.of("blood", 0, "frost", 1, "death", 2);
     private static final Map<String, Integer> RUNE_STATE = Map.of(
             "ready", 0, "spent", 1, "regenerating", 2, "locked", 3);
+    private static final List<String> MECHANICS = List.of(
+            "warrior:battle_tempo", "evoker:empower", "archer:wind_read", "shaman:totem_wheel",
+            "monk:flow", "paladin:conviction", "demon_hunter:load", "druid:harmony",
+            "priest:litany", "death_knight:rune_wheel", "assassin:opening", "warlock:soul_debt",
+            "wizard:runewaving", "warrior:blood_frenzy", "warrior:guard", "evoker:resonance",
+            "evoker:imprint", "archer:precision_chain", "archer:bond", "shaman:resonance",
+            "shaman:maelstrom", "shaman:tide", "monk:combo_chain", "monk:stagger",
+            "monk:mist_threads", "paladin:beacon", "paladin:judgement_marks",
+            "paladin:shield_charge", "demon_hunter:fragments", "demon_hunter:pain",
+            "demon_hunter:sigil", "druid:combo", "druid:balance", "druid:bark", "druid:seeds",
+            "priest:shield_web", "priest:marrow", "priest:madness", "death_knight:blood_memory",
+            "death_knight:frost_marks", "death_knight:plague", "assassin:toxin",
+            "assassin:detection", "assassin:infection", "warlock:curses", "warlock:embers",
+            "warlock:demons", "wizard:attunement", "wizard:court");
 
     private static final char SEGMENT_TRACK = '\uE180';
     private static final char SEGMENT_FILL = '\uE181';
@@ -88,7 +104,8 @@ public final class IceSmpHudRenderer {
     private void drawMechanics(final TextComponent.Builder output, final IceSmpHudModel model,
                                final TextColor accent) {
         if ("death_knight".equals(model.classHud().classId())) {
-            output.append(text(-254, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 24));
+            drawMetricIcon(output, model.classHud().classId(), model.classHud().metric(0), -254);
+            output.append(text(-237, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 22));
             int index = 0;
             for (final ClassHudSlot slot : model.classHud().slots()) {
                 if (index >= 8) break;
@@ -101,30 +118,78 @@ public final class IceSmpHudRenderer {
             return;
         }
 
-        output.append(text(-254, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 22));
-        output.append(text(-133, MECHANIC_FONT, model.classHud().mechanicSecondary(),
-                color("A9B7C6", 0xA9B7C6), 16));
         final ClassHudMetric primary = model.classHud().metric(0);
         final ClassHudMetric secondary = model.classHud().metric(1);
+        drawMetricIcon(output, model.classHud().classId(), primary, -254);
+        drawMetricIcon(output, model.classHud().classId(), secondary, -133);
+        output.append(text(-237, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 20));
+        output.append(text(-116, MECHANIC_FONT, model.classHud().mechanicSecondary(),
+                color("A9B7C6", 0xA9B7C6), 14));
         if (primary != null && primary.maximum() > 0.0D) {
             drawSegments(output, -254, METRIC_FONT, primary.percent(), SEGMENT_FILL);
         }
         if (secondary != null && secondary.maximum() > 0.0D) {
             drawSegments(output, -133, METRIC_FONT, secondary.percent(), SEGMENT_GOLD);
         }
-        drawCharges(output, model.classHud().slots());
+        drawCharges(output, model.classHud().classId(), model.classHud().slots());
         output.append(text(-133, STATE_FONT, joinState(model.classHud().state(), model.classHud().proc()),
                 color("A9B7C6", 0xA9B7C6), 16));
     }
 
-    private static void drawCharges(final TextComponent.Builder output, final List<ClassHudSlot> slots) {
+    private static void drawCharges(final TextComponent.Builder output, final String classId,
+                                    final List<ClassHudSlot> slots) {
         int index = 0;
         for (final ClassHudSlot slot : slots) {
             if (index >= 9) break;
-            final char glyph = "ready".equals(slot.state()) ? '\uE170' : '\uE171';
-            output.append(glyph(-254 + index * 12, CHARGE_FONT, glyph, 11, null));
+            final Character mechanic = mechanicGlyph(classId, slotKind(classId, slot.kind()),
+                    "ready".equals(slot.state()) ? 1 : 3);
+            if (mechanic == null) {
+                final char fallback = "ready".equals(slot.state()) ? '\uE170' : '\uE171';
+                output.append(glyph(-254 + index * 12, CHARGE_FONT, fallback, 11, null));
+            } else {
+                output.append(glyph(-254 + index * 12, MECHANIC_SLOT_FONT, mechanic, 11, null));
+            }
             index++;
         }
+    }
+
+    private static void drawMetricIcon(final TextComponent.Builder output, final String classId,
+                                       final ClassHudMetric metric, final int x) {
+        if (metric == null || metric.id().isBlank()) return;
+        final Character glyph = mechanicGlyph(classId, metric.id(), metricVariant(metric.state()));
+        if (glyph != null) output.append(glyph(x, MECHANIC_ICON_FONT, glyph, 15, null));
+    }
+
+    private static int metricVariant(final String rawState) {
+        return switch (visualState(rawState)) {
+            case "ready" -> 1;
+            case "alert" -> 2;
+            case "spent" -> 3;
+            default -> 0;
+        };
+    }
+
+    /** Shared native/BetterHud state normalization for the four reviewed icon variants. */
+    public static String visualState(final String rawState) {
+        final String state = rawState == null ? "" : rawState.toLowerCase(Locale.ROOT);
+        if (List.of("ready", "full", "recited", "crowned", "ripe", "stored", "atonement",
+                "hidden", "high_tide", "roots", "scent").contains(state)) return "ready";
+        if (List.of("alert", "overheated", "overloaded", "tulterhelt", "beyond", "capped",
+                "exposed", "locked", "low_tide", "aftermath").contains(state)) return "alert";
+        if (List.of("spent", "empty", "idle").contains(state)) return "spent";
+        return "active";
+    }
+
+    private static Character mechanicGlyph(final String classId, final String mechanicId,
+                                            final int variant) {
+        final int index = MECHANICS.indexOf((classId == null ? "" : classId) + ":"
+                + (mechanicId == null ? "" : mechanicId));
+        return index < 0 ? null : (char) (0xE200 + index * 4 + Math.max(0, Math.min(3, variant)));
+    }
+
+    private static String slotKind(final String classId, final String kind) {
+        if ("priest".equals(classId) && "ossuary".equals(kind)) return "marrow";
+        return kind;
     }
 
     private static void drawSupplementaryMetrics(final TextComponent.Builder output,

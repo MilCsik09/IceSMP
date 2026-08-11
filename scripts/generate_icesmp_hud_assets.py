@@ -9,12 +9,15 @@ images: spacing lives in a small BMP private-use font and bars use fixed cells.
 import json
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "deploy" / "betterhud" / "assets" / "icesmp"
+FRAME_ATLAS_SOURCE = ROOT / "deploy" / "betterhud" / "previews" / "icesmp-hud-runtime-source.png"
 ITEM_SOURCE = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "item"
 GUEST_FRAME_SOURCE = ROOT / "deploy" / "betterhud" / "source" / "frame-guest-v2.png"
+MECHANIC_CORE_SOURCE = ROOT / "deploy" / "betterhud" / "source" / "mechanics-core-v1.png"
+MECHANIC_SPEC_SOURCE = ROOT / "deploy" / "betterhud" / "source" / "mechanics-spec-v1.png"
 ASSETS = ROOT / "resource-pack" / "assets" / "icesmp_hud"
 TEXTURES = ASSETS / "textures" / "hud"
 FONTS = ASSETS / "font"
@@ -33,6 +36,44 @@ CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin",
 CLASS_GLYPHS = CLASSES + ("none",)
 RUNE_KINDS = ("blood", "frost", "death")
 RUNE_STATES = ("ready", "spent", "regenerating", "locked")
+MECHANIC_VARIANTS = ("active", "ready", "alert", "spent")
+
+# Stable row-major order of the two reviewed AI source sheets. A mechanic is keyed
+# by class as well as id because e.g. Evoker and Shaman resonance are not the same
+# gameplay signal and must never silently share an icon.
+CORE_MECHANICS = (
+    ("warrior", "battle_tempo"), ("evoker", "empower"),
+    ("archer", "wind_read"), ("shaman", "totem_wheel"),
+    ("monk", "flow"), ("paladin", "conviction"),
+    ("demon_hunter", "load"), ("druid", "harmony"),
+    ("priest", "litany"), ("death_knight", "rune_wheel"),
+    ("assassin", "opening"), ("warlock", "soul_debt"),
+    ("wizard", "runewaving"),
+)
+SPEC_MECHANICS = (
+    ("warrior", "blood_frenzy"), ("warrior", "guard"),
+    ("evoker", "resonance"), ("evoker", "imprint"),
+    ("archer", "precision_chain"), ("archer", "bond"),
+    ("shaman", "resonance"), ("shaman", "maelstrom"), ("shaman", "tide"),
+    ("monk", "combo_chain"), ("monk", "stagger"), ("monk", "mist_threads"),
+    ("paladin", "beacon"), ("paladin", "judgement_marks"),
+    ("paladin", "shield_charge"), ("demon_hunter", "fragments"),
+    ("demon_hunter", "pain"), ("demon_hunter", "sigil"),
+    ("druid", "combo"), ("druid", "balance"), ("druid", "bark"),
+    ("druid", "seeds"), ("priest", "shield_web"), ("priest", "marrow"),
+    ("priest", "madness"), ("death_knight", "blood_memory"),
+    ("death_knight", "frost_marks"), ("death_knight", "plague"),
+    ("assassin", "toxin"), ("assassin", "detection"),
+    ("assassin", "infection"), ("warlock", "curses"),
+    ("warlock", "embers"), ("warlock", "demons"),
+    ("wizard", "attunement"), ("wizard", "court"),
+)
+MECHANICS = CORE_MECHANICS + SPEC_MECHANICS
+
+
+def pixels(image: Image.Image):
+    getter = getattr(image, "get_flattened_data", None)
+    return getter() if getter is not None else image.getdata()
 
 
 def encoded_ascent(shader_id: int, y: int) -> int:
@@ -113,9 +154,118 @@ def copy_texture(name: str, maximum: int | None = None,
     image.save(TEXTURES / name, optimize=True)
 
 
-def guest_frame_with_canonical_layout() -> Image.Image:
+def remove_magenta(image: Image.Image) -> Image.Image:
+    source = image.convert("RGBA")
+    cleaned = []
+    for red, green, blue, alpha in pixels(source):
+        if alpha == 0:
+            cleaned.append((0, 0, 0, 0))
+            continue
+        if min(red, blue) > 115 and min(red, blue) - green > 65 and abs(red - blue) < 90:
+            cleaned.append((0, 0, 0, 0))
+        else:
+            cleaned.append((red, green, blue, alpha))
+    source.putdata(cleaned)
+    return source
+
+
+def strip_magenta_resample_spill(image: Image.Image) -> Image.Image:
+    source = image.convert("RGBA")
+    cleaned = []
+    for red, green, blue, alpha in pixels(source):
+        spill = (16 <= alpha < 128 and red > 200 and blue > 200
+                 and green <= 8 and abs(red - blue) < 30)
+        cleaned.append((0, 0, 0, 0) if spill else (red, green, blue, alpha))
+    source.putdata(cleaned)
+    return source
+
+
+def canonical_frames() -> dict[str, Image.Image]:
+    if not FRAME_ATLAS_SOURCE.is_file():
+        raise FileNotFoundError(f"Missing high-resolution HUD frame atlas: {FRAME_ATLAS_SOURCE}")
+    atlas = Image.open(FRAME_ATLAS_SOURCE).convert("RGBA")
+    boxes = {
+        "red": (60, 40, 730, 475), "blue": (790, 40, 1490, 475),
+        "neutral": (60, 525, 730, 950), "dark": (790, 520, 1500, 960),
+    }
+    frames: dict[str, Image.Image] = {}
+    for theme, box in boxes.items():
+        keyed = remove_magenta(atlas.crop(box))
+        bbox = keyed.getchannel("A").getbbox()
+        sprite = keyed.crop(bbox) if bbox else keyed
+        sprite.thumbnail((670, 410), Image.Resampling.LANCZOS)
+        frame = Image.new("RGBA", (680, 420), (0, 0, 0, 0))
+        frame.alpha_composite(sprite, ((680 - sprite.width) // 2, (420 - sprite.height) // 2))
+        frames[theme] = frame
+    return frames
+
+
+def mechanic_variant(base: Image.Image, variant: str) -> Image.Image:
+    """Create deterministic runtime states from one reviewed high-resolution source."""
+    source = base.convert("RGBA")
+    alpha = source.getchannel("A")
+    if variant == "ready":
+        colored = ImageEnhance.Color(source).enhance(1.22)
+        colored = ImageEnhance.Brightness(colored).enhance(1.12)
+        glow = alpha.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(1.0))
+        halo = Image.new("RGBA", source.size, (112, 231, 255, 0))
+        halo.putalpha(glow.point(lambda value: value // 3))
+        output = Image.alpha_composite(halo, colored)
+    elif variant == "alert":
+        red = Image.new("RGBA", source.size, (231, 76, 63, 0))
+        red.putalpha(alpha.point(lambda value: value * 2 // 5))
+        output = Image.alpha_composite(source, red)
+        output = ImageEnhance.Contrast(output).enhance(1.08)
+    elif variant == "spent":
+        gray = source.convert("LA").convert("RGBA")
+        gray.putalpha(alpha.point(lambda value: value * 3 // 4))
+        output = ImageEnhance.Brightness(gray).enhance(0.48)
+    else:
+        output = source
+    output.putpixel((63, 63), (255, 255, 255, 1))
+    return output
+
+
+def generate_mechanic_icons() -> None:
+    """Crop the two reviewed source sheets into fixed, class-specific glyph cells."""
+    sheets = (
+        (MECHANIC_CORE_SOURCE, 4, 4, CORE_MECHANICS),
+        (MECHANIC_SPEC_SOURCE, 6, 6, SPEC_MECHANICS),
+    )
+    for source_path, columns, rows, keys in sheets:
+        if not source_path.is_file():
+            raise FileNotFoundError(f"Missing mechanic icon source sheet: {source_path}")
+        sheet = Image.open(source_path).convert("RGBA")
+        for index, (class_id, mechanic_id) in enumerate(keys):
+            column, row = index % columns, index // columns
+            box = (
+                round(column * sheet.width / columns),
+                round(row * sheet.height / rows),
+                round((column + 1) * sheet.width / columns),
+                round((row + 1) * sheet.height / rows),
+            )
+            base = centered_sprite(sheet.crop(box), 52, True)
+            for variant in MECHANIC_VARIANTS:
+                file_name = f"mechanic-{class_id}-{mechanic_id}-{variant}.png"
+                rendered = mechanic_variant(base, variant)
+                rendered.save(TEXTURES / file_name, optimize=True)
+                # BetterHud is an optional renderer of the same immutable snapshot.
+                # Keep its fallback package semantically equivalent, never generic.
+                betterhud = rendered.copy()
+                # BetterHud validates a three-pixel transparent safety gutter.
+                # The ready halo can otherwise leave sub-visible Lanczos/blur
+                # samples in that gutter even though the visible sprite fits.
+                for edge in range(3):
+                    for offset in range(64):
+                        betterhud.putpixel((edge, offset), (0, 0, 0, 0))
+                        betterhud.putpixel((63 - edge, offset), (0, 0, 0, 0))
+                        betterhud.putpixel((offset, edge), (0, 0, 0, 0))
+                        betterhud.putpixel((offset, 63 - edge), (0, 0, 0, 0))
+                betterhud.save(SOURCE / file_name, optimize=True)
+
+
+def guest_frame_with_canonical_layout(canonical: Image.Image) -> Image.Image:
     """Apply guest art without allowing generated panel geometry to drift."""
-    canonical = Image.open(SOURCE / "frame-neutral.png").convert("RGBA")
     donor = Image.open(GUEST_FRAME_SOURCE).convert("RGBA").resize(
         canonical.size, Image.Resampling.LANCZOS)
     donor_pixels = donor.load()
@@ -176,23 +326,24 @@ def guest_frame_with_canonical_layout() -> Image.Image:
 
 def generate_frames() -> None:
     TEXTURES.mkdir(parents=True, exist_ok=True)
+    frames = canonical_frames()
     for theme in THEMES:
         if theme == "guest":
             if not GUEST_FRAME_SOURCE.is_file():
                 raise FileNotFoundError(f"Missing original Menedék HUD source: {GUEST_FRAME_SOURCE}")
-            source = guest_frame_with_canonical_layout()
+            source = guest_frame_with_canonical_layout(frames["neutral"])
             # The guest uses the canonical crop transform as well. New outer
             # ornamentation cannot change glyph scale or screen anchors.
-            bbox = (Image.open(SOURCE / "frame-neutral.png").convert("RGBA")
-                    .getchannel("A").getbbox())
+            bbox = frames["neutral"].getchannel("A").getbbox()
         else:
-            source = Image.open(SOURCE / f"frame-{theme}.png").convert("RGBA")
+            source = frames[theme]
             bbox = source.getchannel("A").getbbox()
         sprite = source.crop(bbox) if bbox else source
         sprite.thumbnail((260, 160), Image.Resampling.LANCZOS)
         output = Image.new("RGBA", (260, 160), (0, 0, 0, 0))
         output.alpha_composite(sprite, ((260 - sprite.width) // 2, (160 - sprite.height) // 2))
-        output.save(TEXTURES / f"frame-hud-{theme}.png", optimize=True)
+        strip_magenta_resample_spill(output).save(
+            TEXTURES / f"frame-hud-{theme}.png", optimize=True)
 
 
 def generate_currency_icons() -> None:
@@ -393,7 +544,7 @@ void main() {
 def generate_contact_sheet() -> None:
     target = ROOT / "build" / "reports" / "icesmp-hud" / "contact-sheet.png"
     target.parent.mkdir(parents=True, exist_ok=True)
-    sheet = Image.new("RGBA", (960, 660), (12, 16, 22, 255))
+    sheet = Image.new("RGBA", (960, 1260), (12, 16, 22, 255))
     draw = ImageDraw.Draw(sheet)
     font = ImageFont.load_default(size=18)
     draw.text((24, 14), "IceSMP HUD asset QA", font=font, fill=(235, 247, 255, 255))
@@ -414,7 +565,20 @@ def generate_contact_sheet() -> None:
         sheet.alpha_composite(icon, (x + 12, y))
         draw.text((x, y + 68), name.replace("class-", "").replace(".png", "")[:12],
                   font=ImageFont.load_default(size=10), fill=(199, 212, 234, 255))
+    draw.text((24, 626), "49 class-qualified mechanic families (active source)",
+              font=font, fill=(235, 247, 255, 255))
+    label_font = ImageFont.load_default(size=9)
+    for index, (class_id, mechanic_id) in enumerate(MECHANICS):
+        icon = Image.open(TEXTURES / f"mechanic-{class_id}-{mechanic_id}-active.png").convert("RGBA")
+        x = 18 + (index % 8) * 118
+        y = 660 + (index // 8) * 82
+        sheet.alpha_composite(icon, (x + 25, y))
+        label = f"{class_id[:8]}:{mechanic_id[:10]}"
+        draw.text((x, y + 64), label, font=label_font, fill=(199, 212, 234, 255))
     sheet.save(target, optimize=True)
+    preview = ROOT / "deploy/betterhud/previews/icesmp-hud-full-audit.png"
+    preview.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(preview, optimize=True)
 
 
 def main() -> None:
@@ -427,6 +591,7 @@ def main() -> None:
     for kind in RUNE_KINDS:
         for state in RUNE_STATES:
             copy_texture(f"rune-{kind}-{state}.png", 52)
+    generate_mechanic_icons()
     copy_texture("charge-ready.png", 48)
     copy_texture("charge-spent.png", 48)
     generate_currency_icons()
@@ -476,6 +641,24 @@ def main() -> None:
         provider("charge-ready.png", chr(0xE170), 8, 134, 10),
         provider("charge-spent.png", chr(0xE171), 8, 134, 10),
     ])
+    mechanic_providers = [
+        provider(
+            f"mechanic-{class_id}-{mechanic_id}-{variant}.png",
+            chr(0xE200 + mechanic_index * len(MECHANIC_VARIANTS) + variant_index),
+            8, 96, 14,
+        )
+        for mechanic_index, (class_id, mechanic_id) in enumerate(MECHANICS)
+        for variant_index, variant in enumerate(MECHANIC_VARIANTS)
+    ]
+    write_font("mechanic_icons", mechanic_providers)
+    write_font("mechanic_slots", [
+        {
+            **entry,
+            "ascent": encoded_ascent(8, 134),
+            "height": 10,
+        }
+        for entry in mechanic_providers
+    ])
     write_font("resource_segments", [
         provider("segment-track.png", chr(0xE180), 5, 92, 5),
         provider("segment-fill.png", chr(0xE181), 6, 92, 5),
@@ -515,6 +698,8 @@ def main() -> None:
         "text_advance": 9,
         "themes": list(THEMES),
         "classes": list(CLASSES),
+        "mechanics": [f"{class_id}:{mechanic_id}" for class_id, mechanic_id in MECHANICS],
+        "mechanic_variants": list(MECHANIC_VARIANTS),
         "fixed_segment_count": 12,
         "wallet_slots": 4,
         "vanilla_health_hidden": False,

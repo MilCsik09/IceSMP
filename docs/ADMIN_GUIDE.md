@@ -1631,7 +1631,7 @@ A közös contract fő csatornái:
 - mechanika: `class_mechanic_primary`, `class_mechanic_secondary`, `class_state`, `class_proc`,
   `class_charges`, `class_charges_max`;
 - típusos csatornák: `class_metric_count`, valamint
-  `class_metric_<primary|secondary|tertiary|quaternary|quinary>_<id|label|text|value|max|percent|state>`;
+  `class_metric_<primary|secondary|tertiary|quaternary|quinary>_<id|label|text|value|max|percent|state|visual_state>`;
 - diszkrét slotok: `class_slot_count`, valamint
   `class_slot_<1..9>_<id|kind|state|progress|label>`.
 
@@ -1658,7 +1658,8 @@ Az aktuális class-runtime lefedettség:
 | Wizard | runewaving első iskola/reakció, három külön attunement/Korona és necromancer court |
 
 A két fő numerikus metric saját faction-színű fill bart kap. A tényleges diszkrét számlálók
-legfeljebb kilenc ready/spent pipként jelennek meg; ezek az adapter charge-értékéből származnak,
+legfeljebb kilenc ready/spent slotként jelennek meg; minden slot a classhoz és mechanikához kötött
+saját glyphet használ, nem közös generic charge ikont. Ezek az adapter charge-értékéből származnak,
 nem BetterHudban fenntartott állapotok. Az Elementalista három extra metricje három külön mini bar.
 
 ### Readiness és fallback
@@ -1681,7 +1682,10 @@ A HUD öt külön grafikai skint használ: RED kovácsolt vas/főnix, BLUE fagya
 NEUTRAL faragott tölgy/céhes réz, DARK obszidián/csont/lich-rúna, a Menedék vendége pedig
 önálló erőd/kapu-acél/patina külső héjat. Mind az öt ugyanazt a kanonikus belső panelrácsot használja,
 így a portré, a resource és a mechanikák koordinátái frakcióváltáskor sem mozdulhatnak el.
-Mind a 13 class, továbbá a pénz-, event- és szintjelölés saját 64×64-es ikont kap. A Death Knight rúnaköre slotonként adja át a Vér,
+Mind a 13 class, továbbá a pénz-, event- és szintjelölés saját 64×64-es ikont kap. A 49
+class-qualified mechanikacsalád egymástól eltérő, átlátszó glyph; mindegyikhez
+`active`, `ready`, `alert` és `spent` variáns tartozik a first-party és a BetterHud rendererben is.
+A Death Knight rúnaköre slotonként adja át a Vér,
 Fagy és Halál típust, valamint a `ready`, `spent`, `regenerating` állapotot és a regenerációs
 százalékot. A nagy keretek kontrollált antialiasingot és anyagárnyalást használhatnak; a progress
 maszkok kemény alfájúak. A proc-toast mind az öt megjelenítési témához külön 300×72-es keretet
@@ -1695,10 +1699,13 @@ A forrás- és ellenőrzőlapok a `deploy/betterhud/previews/` könyvtárban, a 
 ./gradlew validateBetterHudPackage
 ./gradlew generateIceSmpHudAssets
 ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest
+./gradlew auditIceSmpHudAssets
 ```
 
-A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, a kilenc generic charge- és
-nyolc DK slotcsatornát, a progress-maszkok alfáját és a 2,5 MB-os runtime asset budgetet.
+A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, 49 egyedi mechanikacsaládot,
+a kilenc typed charge/stack- és nyolc DK slotcsatornát, a progress-maszkok alfáját és a 2,5 MB-os
+runtime asset budgetet. Az asset-audit minden PNG-n ellenőrzi a méretet, alfát, cropot, margót,
+középre igazítást, élességet, magenta fringe-et és a rögzített glyph-width markert.
 A generált layout jobb felső
 sarokhoz horgonyzott; a forrásképeket a BetterHud rendereléskor skálázza, így a 64×64-es ikonok
 GUI scale-váltáskor is részletesek maradnak.
@@ -1740,4 +1747,3 @@ Kézi elfogadási minimum:
 - aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
 - BetterHud nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
 - a pack sikeres betöltéséig natív compact fallback, utána pontosan egy class HUD.
-

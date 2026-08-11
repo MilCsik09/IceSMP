@@ -636,6 +636,8 @@ public final class HudManager {
         values.put(prefix + "max", metric == null ? "0" : Double.toString(metric.maximum()));
         values.put(prefix + "percent", metric == null ? "0" : Integer.toString(metric.percent()));
         values.put(prefix + "state", metric == null ? "" : metric.state());
+        values.put(prefix + "visual_state", hu.taliann.icesmp.hud.IceSmpHudRenderer.visualState(
+                metric == null ? "" : metric.state()));
     }
 
     private void updateBetterHudReadiness(final boolean ready) {

@@ -465,8 +465,11 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
             }
             default -> { }
         }
+        final boolean ossuarySlots = "bone_priest".equals(activeSpec(id));
         return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
-                primary, secondary, stateText, proc, charges, maximum);
+                primary, secondary, stateText, proc, charges, maximum,
+                ossuarySlots ? "ossuary" : primary.id(),
+                ossuarySlots ? "Osszárium" : primary.label());
     }
 
     public void reconcileProfile(final Player player) {

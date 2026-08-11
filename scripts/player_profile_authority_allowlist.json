@@ -142,6 +142,11 @@
       "reason": "Duel invite handshake tokens; expire in seconds."
     },
     {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java|private final ConcurrentHashMap<UUID, BossBar> bars = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "First-party HUD presentation handles only; rebuilt from immutable HudSnapshot data and removed on player cleanup or backend close."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, List<Component>> lastLines = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."

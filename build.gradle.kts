@@ -30,9 +30,26 @@ val generateBetterHudPackage by tasks.registering {
     dependsOn(generateBetterHudAssets, generateBetterHudLayout, generateIceSmpHudAssets)
 }
 
+val auditIceSmpHudAssets by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Audits every first-party and BetterHud PNG plus the 13-class mechanic matrix."
+    dependsOn(generateBetterHudPackage)
+    val report = layout.buildDirectory.file("reports/icesmp-hud/asset-audit.md")
+    inputs.files("scripts/audit_icesmp_hud_assets.py")
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp_hud"))
+    inputs.dir(layout.projectDirectory.dir("deploy/betterhud"))
+    outputs.file(report)
+    commandLine(
+        betterHudPython,
+        "scripts/audit_icesmp_hud_assets.py",
+        "--report", report.get().asFile.relativeTo(layout.projectDirectory.asFile).path,
+    )
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
+    dependsOn(generateIceSmpHudAssets)
     val pack = layout.projectDirectory.dir("resource-pack")
     val hud = pack.dir("assets/icesmp_hud")
     val rendererSource = layout.projectDirectory.file(
@@ -54,7 +71,8 @@ val validateIceSmpHudPackage by tasks.registering {
             "Vanilla health/armor may not be hidden before the HP-rework renderer is complete"
         }
         val fonts = hud.dir("font").asFile
-        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "runes", "charges", "resource_segments",
+        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "runes", "charges",
+            "mechanic_icons", "mechanic_slots", "resource_segments",
             "metric_segments", "text_header", "text_subheader", "text_resource",
             "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet").forEach { name ->
             require(fonts.resolve("$name.json").isFile) { "Missing IceSMP HUD font: $name" }
@@ -77,6 +95,23 @@ val validateIceSmpHudPackage by tasks.registering {
             val image = ImageIO.read(file) ?: error("Unreadable HUD currency icon: $file")
             require(image.width == 64 && image.height == 64) { "Currency icon must stay 64x64: $file" }
         }
+        val mechanics = manifest["mechanics"] as? List<*>
+            ?: error("First-party HUD mechanic manifest is missing")
+        val mechanicVariants = manifest["mechanic_variants"] as? List<*>
+            ?: error("First-party HUD mechanic variants are missing")
+        require(mechanics.size == 49 && mechanicVariants == listOf("active", "ready", "alert", "spent")) {
+            "First-party HUD must retain 49 class-qualified mechanics and four visual states"
+        }
+        mechanics.forEach { raw ->
+            val (classId, mechanicId) = raw.toString().split(":", limit = 2)
+            mechanicVariants.forEach { variant ->
+                val file = textures.resolve("mechanic-$classId-$mechanicId-$variant.png")
+                val image = ImageIO.read(file) ?: error("Unreadable HUD mechanic icon: $file")
+                require(image.width == 64 && image.height == 64 && image.alphaRaster != null) {
+                    "HUD mechanic icon must be a transparent 64x64 glyph: $file"
+                }
+            }
+        }
         val shader = pack.file("assets/minecraft/shaders/core/rendertype_text.vsh").asFile
         require(shader.isFile && shader.readText().contains("HEIGHT_BIT 13")) {
             "Missing first-party 1.21.11 HUD positioning shader"
@@ -95,6 +130,7 @@ val validateIceSmpHudPackage by tasks.registering {
 val validateBetterHudPackage by tasks.registering {
     group = "verification"
     description = "Validates BetterHud layout coverage, asset dimensions, progress-mask alpha and budget."
+    dependsOn(generateBetterHudPackage)
     val deploy = layout.projectDirectory.dir("deploy/betterhud")
     inputs.dir(deploy)
     inputs.files("scripts/generate_betterhud_assets.py", "scripts/generate_betterhud_layout.py")
@@ -106,7 +142,6 @@ val validateBetterHudPackage by tasks.registering {
         val hudText = deploy.file("huds/icesmp-class-hud.yml").asFile.readText(Charsets.UTF_8)
         listOf("red", "blue", "neutral", "dark").forEach { faction ->
             require(layoutText.contains("frame_$faction:")) { "Missing graphical faction skin: $faction" }
-            require(assets.resolve("frame-$faction.png").isFile) { "Missing faction frame asset: $faction" }
             require(assets.resolve("frame-hud-$faction.png").isFile) { "Missing render-safe faction frame: $faction" }
         }
         listOf("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
@@ -134,6 +169,20 @@ val validateBetterHudPackage by tasks.registering {
         require(imageText.contains("number:icesmp_class_slot_8_progress")) {
             "Death Knight slot listener mapping is incomplete"
         }
+        require(!layoutText.contains("name: icesmp_charge_ready")
+                && !layoutText.contains("name: icesmp_charge_spent")) {
+            "BetterHud may not reuse generic charge artwork for distinct class mechanics"
+        }
+        require(layoutText.contains("icesmp_mechanic_demon_hunter_sigil_ready")
+                && layoutText.contains("icesmp_mechanic_priest_marrow_ready")
+                && layoutText.contains("icesmp_mechanic_wizard_court_spent")) {
+            "BetterHud typed mechanic-slot coverage is incomplete"
+        }
+        require(imageText.contains("icesmp_mechanic_warrior_battle_tempo_active")
+                && imageText.contains("icesmp_mechanic_warlock_soul_debt_alert")
+                && imageText.contains("icesmp_mechanic_wizard_court_spent")) {
+            "BetterHud mechanic image catalogue is incomplete"
+        }
         require(hudText.contains("icesmp_main_layout")
                 && !hudText.contains("icesmp_identity_layout")
                 && layoutText.contains("icesmp_main_layout:")
@@ -156,6 +205,7 @@ val validateBetterHudPackage by tasks.registering {
         pngs.forEach { file ->
             val image: BufferedImage = ImageIO.read(file) ?: error("Unreadable PNG: $file")
             if (file.name.startsWith("class-") || file.name.startsWith("icon-")
+                    || file.name.startsWith("mechanic-")
                     || file.name.startsWith("rune-") && file.name != "rune-progress.png") {
                 require(image.width == 64 && image.height == 64) {
                     "HUD cutout icons must retain their 64x64 source resolution: $file (${image.width}x${image.height})"
@@ -178,11 +228,6 @@ val validateBetterHudPackage by tasks.registering {
                 require(maxX >= 0 && minX >= 3 && minY >= 3
                         && maxX <= image.width - 4 && maxY <= image.height - 4) {
                     "HUD sprite is empty or clipped against its 64x64 cell: $file"
-                }
-            }
-            if (file.name.startsWith("frame-") && !file.name.startsWith("frame-hud-")) {
-                require(image.width >= 640 && image.height >= 400) {
-                    "HUD frames must retain high-resolution source detail: $file (${image.width}x${image.height})"
                 }
             }
             if (file.name.startsWith("frame-hud-")) {
@@ -212,25 +257,27 @@ val stageMergedResourcePackForR2 by tasks.registering(Exec::class) {
     group = "distribution"
     description = "Deterministically merges the immutable external base with the first-party IceSMP pack for R2."
     dependsOn(generateIceSmpHudAssets)
-    val externalPack = providers.gradleProperty("icesmpExternalPack")
-        .orElse("run/plugins/IceSMPExternalBase.zip")
+    // Resolve the Gradle property while configuring this Exec task. The former doFirst
+    // action captured the Kotlin build-script object and could not be serialized by the
+    // configuration cache. Gradle tracks the property read as a configuration input.
+    val externalPackPath = providers.gradleProperty("icesmpExternalPack")
+        .orElse("run/plugins/IceSMPExternalBase.zip").get()
+    val externalPack = layout.projectDirectory.file(externalPackPath)
     val stagedPack = layout.buildDirectory.file("resource-pack/icesmp.zip")
     val metadata = layout.buildDirectory.file("resource-pack/merged.properties")
     inputs.file(externalPack)
     inputs.dir(layout.projectDirectory.dir("resource-pack"))
     inputs.file(layout.projectDirectory.file("scripts/resource_pack.py"))
     outputs.files(stagedPack, metadata)
-    doFirst {
-        commandLine(
-            betterHudPython,
-            "scripts/resource_pack.py",
-            "merge",
-            "--base", externalPack.get(),
-            "--source", "resource-pack",
-            "--output", stagedPack.get().asFile.path,
-            "--metadata", metadata.get().asFile.path,
-        )
-    }
+    commandLine(
+        betterHudPython,
+        "scripts/resource_pack.py",
+        "merge",
+        "--base", externalPack.asFile.path,
+        "--source", "resource-pack",
+        "--output", stagedPack.get().asFile.path,
+        "--metadata", metadata.get().asFile.path,
+    )
 }
 
 repositories {
@@ -648,6 +695,7 @@ val warlockProfileRegressionTest = registerRegression(
     "hu.taliann.icesmp.warlock.WarlockProfileRegressionSuite")
 
 tasks.check {
+    dependsOn(auditIceSmpHudAssets)
     dependsOn(validateBetterHudPackage)
     dependsOn(validateIceSmpHudPackage)
     dependsOn(

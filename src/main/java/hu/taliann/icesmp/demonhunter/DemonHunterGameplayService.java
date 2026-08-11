@@ -365,8 +365,10 @@ public final class DemonHunterGameplayService implements Listener, PlayerStateCl
             charges = combat.armedSigils(now); maximum = 2;
             stateText = "Sigil " + charges + "/2";
         }
+        final String slotKind = "vengeance".equals(activeSpec(id)) ? "sigil" : secondary.id();
+        final String slotLabel = "vengeance".equals(activeSpec(id)) ? "Sigil" : secondary.label();
         return hu.taliann.icesmp.classspec.integration.ClassHudMechanics.of(
-                primary, secondary, stateText, proc, charges, maximum);
+                primary, secondary, stateText, proc, charges, maximum, slotKind, slotLabel);
     }
 
     public void reconcileProfile(final Player player) {

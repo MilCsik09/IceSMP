@@ -28,9 +28,22 @@ public record ClassHudMechanics(ClassHudMetric primary, ClassHudMetric secondary
                 safePrimary, safeSecondary, charges, chargesMax);
         final String slotId = chargeMetric == null ? "charge" : chargeMetric.id();
         final String slotLabel = chargeMetric == null ? "" : chargeMetric.label();
+        return of(safePrimary, safeSecondary, state, proc, charges, chargesMax, slotId, slotLabel);
+    }
+
+    /** Explicit typed slot projection for counters whose resource metric has a different id. */
+    public static ClassHudMechanics of(final ClassHudMetric primary, final ClassHudMetric secondary,
+                                       final String state, final String proc,
+                                       final int charges, final int chargesMax,
+                                       final String slotKind, final String slotLabel) {
+        final ClassHudMetric safePrimary = primary == null
+                ? ClassHudMetric.text("", "", "", "") : primary;
+        final ClassHudMetric safeSecondary = secondary == null
+                ? ClassHudMetric.text("", "", "", "") : secondary;
+        final String safeKind = slotKind == null || slotKind.isBlank() ? "charge" : slotKind;
         return new ClassHudMechanics(safePrimary, safeSecondary, state, proc, charges, chargesMax,
                 List.of(safePrimary, safeSecondary),
-                ClassHudSlot.charges(slotId, slotId, slotLabel, charges, chargesMax));
+                ClassHudSlot.charges(safeKind, safeKind, slotLabel, charges, chargesMax));
     }
 
     public static ClassHudMechanics empty() {

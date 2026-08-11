@@ -41,9 +41,9 @@ def pixels(image):
     return getter() if getter is not None else image.getdata()
 
 
-def save(image, name):
-    OUT.mkdir(parents=True, exist_ok=True)
-    image.save(OUT / name, optimize=True)
+def save(image, name, directory=OUT):
+    directory.mkdir(parents=True, exist_ok=True)
+    image.save(directory / name, optimize=True)
 
 
 def panel(theme):
@@ -94,7 +94,10 @@ def remove_magenta(image):
     """Chroma-key #FF00FF with edge decontamination while retaining controlled AA."""
     source = image.convert("RGBA")
     output_pixels = []
-    for red, green, blue, _ in pixels(source):
+    for red, green, blue, original_alpha in pixels(source):
+        if original_alpha == 0:
+            output_pixels.append((0, 0, 0, 0))
+            continue
         # The generator may preblend edge pixels with darker magenta; remove that spill too.
         if min(red, blue) > 115 and min(red, blue) - green > 65 and abs(red - blue) < 90:
             output_pixels.append((0, 0, 0, 0))
@@ -103,7 +106,8 @@ def remove_magenta(image):
         if distance <= 10:
             output_pixels.append((0, 0, 0, 0))
             continue
-        alpha = 255 if distance >= 80 else round((distance - 10) * 255 / 70)
+        alpha = (255 if distance >= 80 else round((distance - 10) * 255 / 70))
+        alpha = round(alpha * original_alpha / 255)
         fraction = alpha / 255.0
         if fraction < 1.0:
             red = round((red - 255 * (1.0 - fraction)) / fraction)
@@ -111,6 +115,17 @@ def remove_magenta(image):
             blue = round((blue - 255 * (1.0 - fraction)) / fraction)
         output_pixels.append((max(0, min(255, red)), max(0, min(255, green)),
                               max(0, min(255, blue)), alpha))
+    source.putdata(output_pixels)
+    return source
+
+
+def strip_magenta_resample_spill(image):
+    source = image.convert("RGBA")
+    output_pixels = []
+    for red, green, blue, alpha in pixels(source):
+        spill = (16 <= alpha < 128 and red > 200 and blue > 200
+                 and green <= 8 and abs(red - blue) < 30)
+        output_pixels.append((0, 0, 0, 0) if spill else (red, green, blue, alpha))
     source.putdata(output_pixels)
     return source
 
@@ -377,11 +392,14 @@ def main():
                       for state in ("ready", "spent", "regenerating", "locked")}
         utility_icons = {kind: utility_icon(kind) for kind in ("money", "event", "level")}
     for theme in THEMES:
-        assets[f"frame-{theme}"] = frames[theme]; save(assets[f"frame-{theme}"], f"frame-{theme}.png")
+        assets[f"frame-{theme}"] = frames[theme]
+        # High-resolution frames live in FRAME_SOURCE; only the render-sized copies ship.
+        (OUT / f"frame-{theme}.png").unlink(missing_ok=True)
         # Minecraft bitmap-font providers are more reliable with a render-sized texture below
         # 256 px on each axis. Keep the high-resolution source above for regeneration/contact
         # sheets, but feed BetterHud this antialiased 204x126 runtime copy at scale 1.0.
-        assets[f"frame-hud-{theme}"] = frames[theme].resize((204, 126), Image.Resampling.LANCZOS)
+        assets[f"frame-hud-{theme}"] = strip_magenta_resample_spill(
+            frames[theme].resize((204, 126), Image.Resampling.LANCZOS))
         save(assets[f"frame-hud-{theme}"], f"frame-hud-{theme}.png")
         assets[f"emblem-{theme}"] = emblem(theme); save(assets[f"emblem-{theme}"], f"emblem-{theme}.png")
     for name, glyph in CLASS_GLYPHS.items():

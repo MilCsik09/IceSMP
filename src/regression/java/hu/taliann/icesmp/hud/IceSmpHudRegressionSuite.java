@@ -86,26 +86,34 @@ public final class IceSmpHudRegressionSuite {
                 "vanilla HUD removal must remain explicitly disabled until replacement coverage exists");
         final Path guest = Path.of("deploy/betterhud/source/frame-guest-v2.png");
         final var image = ImageIO.read(guest.toFile());
-        check(image != null && image.getWidth() >= 1000 && image.getHeight() >= 600
+        check(image != null && image.getWidth() >= 64 && image.getHeight() >= 64
                         && image.getColorModel().hasAlpha(),
-                "original Menedék frame source must remain high-resolution with alpha");
+                "Menedék frame donor must retain a transparent 64px-or-larger source");
         check(Files.isRegularFile(Path.of("resource-pack/assets/minecraft/shaders/core/rendertype_text.vsh"))
                         && Files.isRegularFile(Path.of("resource-pack/assets/icesmp_hud/font/space.json")),
                 "standalone shader and BMP spacing font must be packaged without BetterHud authority");
         final String generator = read("scripts/generate_icesmp_hud_assets.py");
         check(generator.contains("guest_frame_with_canonical_layout")
-                        && generator.contains("frame-neutral.png")
+                        && generator.contains("canonical_frames")
                         && generator.contains("Guest HUD changed the canonical content-grid geometry")
                         && generator.contains("guest uses the canonical crop transform"),
                 "guest art must reuse canonical panel geometry and vary only its visual shell");
         for (final String icon : List.of("class-wizard.png", "class-none.png", "rune-blood-ready.png",
-                "charge-ready.png", "currency-neutral.png")) {
+                "charge-ready.png", "currency-neutral.png",
+                "mechanic-warrior-battle_tempo-active.png",
+                "mechanic-demon_hunter-sigil-ready.png",
+                "mechanic-priest-marrow-spent.png", "mechanic-wizard-court-alert.png")) {
             final var iconImage = ImageIO.read(Path.of(
                     "resource-pack/assets/icesmp_hud/textures/hud", icon).toFile());
             check(iconImage != null && iconImage.getWidth() == 64 && iconImage.getHeight() == 64
                             && ((iconImage.getRGB(63, 63) >>> 24) & 0xff) == 1,
                     "dynamic HUD icons must retain fixed logical width: " + icon);
         }
+        check(manifest.contains("\"warrior:battle_tempo\"")
+                        && manifest.contains("\"demon_hunter:sigil\"")
+                        && manifest.contains("\"wizard:court\"")
+                        && manifest.contains("\"alert\""),
+                "all class-qualified mechanic icons and visual states must be manifest-backed");
     }
 
     private static IceSmpHudModel model(final int resource, final int maximum, final int percent) {

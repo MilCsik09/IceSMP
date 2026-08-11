@@ -11,6 +11,40 @@ FACTION_COLORS = {"ice": "#77DDF2", "ember": "#E7683F", "frost": "#8BE9FD",
                   "guild": "#D6A74B", "lich": "#62D7CE"}
 CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin", "demon_hunter",
            "druid", "priest", "death_knight", "assassin", "warlock", "wizard")
+CORE_MECHANICS = (
+    ("warrior", "battle_tempo"), ("evoker", "empower"), ("archer", "wind_read"),
+    ("shaman", "totem_wheel"), ("monk", "flow"), ("paladin", "conviction"),
+    ("demon_hunter", "load"), ("druid", "harmony"), ("priest", "litany"),
+    ("death_knight", "rune_wheel"), ("assassin", "opening"), ("warlock", "soul_debt"),
+    ("wizard", "runewaving"),
+)
+SPEC_MECHANICS = (
+    ("warrior", "blood_frenzy"), ("warrior", "guard"), ("evoker", "resonance"),
+    ("evoker", "imprint"), ("archer", "precision_chain"), ("archer", "bond"),
+    ("shaman", "resonance"), ("shaman", "maelstrom"), ("shaman", "tide"),
+    ("monk", "combo_chain"), ("monk", "stagger"), ("monk", "mist_threads"),
+    ("paladin", "beacon"), ("paladin", "judgement_marks"), ("paladin", "shield_charge"),
+    ("demon_hunter", "fragments"), ("demon_hunter", "pain"), ("demon_hunter", "sigil"),
+    ("druid", "combo"), ("druid", "balance"), ("druid", "bark"), ("druid", "seeds"),
+    ("priest", "shield_web"), ("priest", "marrow"), ("priest", "madness"),
+    ("death_knight", "blood_memory"), ("death_knight", "frost_marks"),
+    ("death_knight", "plague"), ("assassin", "toxin"), ("assassin", "detection"),
+    ("assassin", "infection"), ("warlock", "curses"), ("warlock", "embers"),
+    ("warlock", "demons"), ("wizard", "attunement"), ("wizard", "court"),
+)
+MECHANICS = CORE_MECHANICS + SPEC_MECHANICS
+SLOT_MECHANICS = (
+    ("evoker", "empower", "empower"), ("archer", "precision_chain", "precision_chain"),
+    ("shaman", "resonance", "resonance"), ("monk", "combo_chain", "combo_chain"),
+    ("monk", "mist_threads", "mist_threads"),
+    ("paladin", "judgement_marks", "judgement_marks"),
+    ("demon_hunter", "fragments", "fragments"), ("demon_hunter", "sigil", "sigil"),
+    ("druid", "combo", "combo"), ("druid", "bark", "bark"), ("druid", "seeds", "seeds"),
+    ("priest", "litany", "litany"), ("priest", "ossuary", "marrow"),
+    ("assassin", "toxin", "toxin"), ("assassin", "infection", "infection"),
+    ("warlock", "curses", "curses"), ("warlock", "embers", "embers"),
+    ("warlock", "demons", "demons"), ("wizard", "court", "court"),
+)
 
 # BetterHud 1.14.1 renders dynamic text/listener rows from a separate action-bar
 # component origin than the static frame/header images when the HUD is anchored at
@@ -81,6 +115,15 @@ def main():
                            ("dark", "#62D7CE", "icesmp_faction_id", "DARK")), scale=0.45)
     image(main_layout, "event_icon", "icesmp_icon_event", panel_x(-198), 130, 5, scale=0.23)
 
+    for channel, x in (("primary", -198), ("secondary", -105)):
+        for class_id, mechanic_id in MECHANICS:
+            for variant in ("active", "ready", "alert", "spent"):
+                image(main_layout, f"mechanic_{channel}_{class_id}_{mechanic_id}_{variant}",
+                      f"icesmp_mechanic_{class_id}_{mechanic_id}_{variant}", panel_x(x), 84, 6,
+                      (("class", "icesmp_class_id", class_id),
+                       ("metric", f"icesmp_class_metric_{channel}_id", mechanic_id),
+                       ("visual", f"icesmp_class_metric_{channel}_visual_state", variant)), scale=0.20)
+
     not_death_knight = (("not_dk", "icesmp_class_id", "death_knight", "!="),)
     faction_colors = tuple((theme, color, "icesmp_faction_theme", theme)
                            for theme, color in FACTION_COLORS.items())
@@ -105,11 +148,13 @@ def main():
 
     for slot, x in enumerate(range(-198, -108, 10), start=1):
         state_key = f"icesmp_class_slot_{slot}_state"
-        image(main_layout, f"charge_{slot}_ready", "icesmp_charge_ready", panel_x(x), 109, 5,
-              not_death_knight + (("state", state_key, "ready"),),
-              color_overrides=faction_colors, scale=0.25)
-        image(main_layout, f"charge_{slot}_spent", "icesmp_charge_spent", panel_x(x), 109, 5,
-              not_death_knight + (("state", state_key, "spent"),), scale=0.25)
+        kind_key = f"icesmp_class_slot_{slot}_kind"
+        for class_id, slot_kind, asset_id in SLOT_MECHANICS:
+            for state in ("ready", "spent"):
+                image(main_layout, f"slot_{slot}_{class_id}_{slot_kind}_{state}",
+                      f"icesmp_mechanic_{class_id}_{asset_id}_{state}", panel_x(x), 109, 5,
+                      (("class", "icesmp_class_id", class_id),
+                       ("kind", kind_key, slot_kind), ("state", state_key, state)), scale=0.16)
 
     slot_x = [-198, -178, -158, -138, -118, -98, -78, -58]
     for slot, x in enumerate(slot_x, start=1):
@@ -137,9 +182,9 @@ def main():
          panel_x(-166), 68, 0.36)
     text(main_layout, 6, "<#71809A>ESEMENY <#F0D88D>[string:icesmp_event]", panel_x(-178), 133, 0.36)
     text(main_layout, 7, "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]",
-         panel_x(-198), 88, 0.30, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
+         panel_x(-183), 88, 0.30, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
     text(main_layout, 8, "<#[string:icesmp_faction_accent_soft]>[string:icesmp_class_mechanic_secondary]",
-         panel_x(-105), 88, 0.29, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
+         panel_x(-90), 88, 0.29, (("not_dk", "icesmp_class_id", "death_knight", "!="),))
     text(main_layout, 9, "<#A9B7C6>[string:icesmp_class_state] <#F4C96B>[string:icesmp_class_proc]",
          panel_x(-105), 111, 0.27,
          (("not_dk", "icesmp_class_id", "death_knight", "!="),
@@ -157,7 +202,7 @@ def main():
          (("not_dk", "icesmp_class_id", "death_knight", "!="),
           ("visible", "icesmp_class_metric_quinary_max", 0, ">", "number")))
     text(main_layout, 11, "<#[string:icesmp_faction_accent]>[string:icesmp_class_mechanic_primary]",
-         panel_x(-198), 82, 0.35, (("death_knight", "icesmp_class_id", "death_knight"),))
+         panel_x(-183), 82, 0.35, (("death_knight", "icesmp_class_id", "death_knight"),))
     text(main_layout, 12, "<#A9B7C6>[string:icesmp_class_state] <#586781>| <#F4C96B>[string:icesmp_class_proc]",
          panel_x(-198), 115, 0.32, (("death_knight", "icesmp_class_id", "death_knight"),))
 
@@ -189,6 +234,18 @@ def main():
         (LAYOUT_DIR / legacy_name).unlink(missing_ok=True)
     for file_name, content in outputs.items():
         (LAYOUT_DIR / file_name).write_text("\n".join(content) + "\n", encoding="utf-8")
+
+    catalogue = ROOT / "deploy" / "betterhud" / "images" / "icesmp-class-images.yml"
+    marker = "# BEGIN GENERATED MECHANIC IMAGES"
+    base = catalogue.read_text(encoding="utf-8").split(marker, 1)[0].rstrip()
+    generated = ["", marker]
+    for class_id, mechanic_id in MECHANICS:
+        for variant in ("active", "ready", "alert", "spent"):
+            generated.append(
+                f"icesmp_mechanic_{class_id}_{mechanic_id}_{variant}: "
+                f"{{ type: single, file: icesmp/mechanic-{class_id}-{mechanic_id}-{variant}.png }}")
+    generated.append("# END GENERATED MECHANIC IMAGES")
+    catalogue.write_text(base + "\n" + "\n".join(generated) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

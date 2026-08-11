@@ -190,17 +190,27 @@ public final class BetterHudIntegrationRegressionSuite {
                         && layout.contains("rune_progress_8:")
                         && layout.contains("metric_primary_track:")
                         && layout.contains("metric_quinary_fill:")
-                        && layout.contains("charge_9_ready:")
+                        && layout.contains("slot_9_wizard_court_ready:")
+                        && layout.contains("mechanic_primary_warlock_soul_debt_alert:")
+                        && layout.contains("icesmp_class_metric_primary_visual_state")
                         && layout.contains("string:icesmp_faction_id")
                         && images.contains("value: \"number:icesmp_resource_current\"")
                         && images.contains("number:icesmp_class_slot_8_progress")
                         && images.contains("number:icesmp_class_metric_quinary_value"),
-                "layout must include faction skins, generic metric/charge visuals and DK slots");
-        for (final String asset : List.of("frame-red.png", "frame-blue.png", "frame-neutral.png",
-                "frame-dark.png", "class-death_knight.png", "rune-blood-ready.png",
+                "layout must include faction skins, typed mechanic visuals and DK slots");
+        check(!layout.contains("name: icesmp_charge_ready")
+                        && !layout.contains("name: icesmp_charge_spent")
+                        && layout.contains("icesmp_mechanic_demon_hunter_sigil_ready")
+                        && layout.contains("icesmp_mechanic_priest_marrow_ready")
+                        && images.contains("icesmp_mechanic_warrior_battle_tempo_active")
+                        && images.contains("icesmp_mechanic_warlock_soul_debt_alert")
+                        && images.contains("icesmp_mechanic_wizard_court_spent"),
+                "BetterHud fallback must use class-qualified mechanic artwork instead of generic pips");
+        for (final String asset : List.of("class-death_knight.png", "rune-blood-ready.png",
                 "rune-frost-ready.png", "rune-death-ready.png", "resource-track.png", "resource-fill.png",
                 "metric-track.png", "metric-fill.png", "metric-mini-track.png", "metric-mini-fill.png",
-                "charge-ready.png", "charge-spent.png")) {
+                "mechanic-warrior-battle_tempo-active.png", "mechanic-warlock-soul_debt-alert.png",
+                "mechanic-wizard-court-spent.png")) {
             check(Files.isRegularFile(Path.of("deploy/betterhud/assets/icesmp", asset)),
                     "missing BetterHud visual asset: " + asset);
         }
