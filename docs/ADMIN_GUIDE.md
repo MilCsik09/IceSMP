@@ -1703,13 +1703,19 @@ runtime asset budgetet. Az asset-audit minden PNG-n ellenőrzi a méretet, alfá
 középre igazítást, élességet, magenta fringe-et és a rögzített glyph-width markert.
 A generált layout jobb felső sarokhoz horgonyzott. A 64×64-es ikonokat a first-party font/shader
 réteg rögzített cellákban rajzolja, ezért GUI scale- és dinamikus értékváltáskor sem csúszhat el a panel.
+Az x-horgony a vetítés utáni clip-space jobb széléhez kötődik, ezért nem függ attól, hogy teljes
+képernyőn vagy kis ablakban fut a kliens. Egy bitmap glyph legfeljebb 256×256 lehet; a keretek és
+alsó sávok 240 pixel szélesek, így a Minecraft font-stitcher nem cseréli őket hiányzó karakterre.
+A magyar HUD-atlasz a repo-ban licenccel tárolt DejaVu Sans forrás négyszeres túlmintavételezésével
+készül; az alacsony felbontású, pixeles runtime font nem elfogadható generátorkimenet.
 Az új proc-állapot is a régiószálon előállított snapshot része; a renderer kizárólag olvassa.
 
 ### A korábbi felső négyzet oka
 
-A képernyő tetején látható négyzet nem scoreboard-adat volt, hanem resource-pack nélkül kirajzolt
-HUD font-glyph. A first-party backend csak a kliens sikeres pack-visszajelzése után mutat panelt,
-ezért elutasított/hibás packnál ilyen glyph nem kerülhet képernyőre. A saját renderer BMP PUA
+A képernyő tetején látható négyzet nem scoreboard-adat volt, hanem be nem illeszthető vagy
+resource-pack nélkül kirajzolt HUD font-glyph. A first-party backend csak a kliens sikeres
+pack-visszajelzése után mutat panelt, a build pedig tiltja a 256 pixeles klienskorlátot túllépő
+panelglyphöt; ezért elutasított/hibás packnál ilyen glyph nem kerülhet képernyőre. A saját renderer BMP PUA
 spacinget, rögzített glyph-cellákat és zéró nettó szélességű rajzparancsokat használ; a dinamikus
 `0`/`120` érték vagy rúnaikon így nem tolhat el más HUD-elemet.
 

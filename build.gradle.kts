@@ -64,7 +64,10 @@ val validateIceSmpHudPackage by tasks.registering {
         listOf("guest", "red", "blue", "neutral", "dark").forEach { theme ->
             val frame = textures.resolve("frame-hud-$theme.png")
             val image = ImageIO.read(frame) ?: error("Unreadable HUD frame: $frame")
-            require(image.width == 260 && image.height == 160) { "Unexpected HUD frame size: $frame" }
+            require(image.width == 240 && image.height == 160) { "Unexpected HUD frame size: $frame" }
+            require(image.width <= 256 && image.height <= 256) {
+                "HUD frame exceeds Minecraft's 256x256 glyph stitcher: $frame"
+            }
         }
         val guestHash = MessageDigest.getInstance("SHA-256")
             .digest(textures.resolve("frame-hud-guest.png").readBytes()).contentToString()
@@ -96,7 +99,8 @@ val validateIceSmpHudPackage by tasks.registering {
             }
         }
         val shader = pack.file("assets/minecraft/shaders/core/rendertype_text.vsh").asFile
-        require(shader.isFile && shader.readText().contains("HEIGHT_BIT 13")) {
+        require(shader.isFile && shader.readText().contains("HEIGHT_BIT 13")
+            && shader.readText().contains("clipPosition.x += clipPosition.w")) {
             "Missing first-party 1.21.11 HUD positioning shader"
         }
         val renderer = rendererSource.asFile.readText()

@@ -22,7 +22,7 @@ public final class IceSmpHudRenderer {
     static final int SPACE_MIN = -512;
     static final int SPACE_MAX = 512;
     static final int SPACE_FIRST = 0xE400;
-    static final int TEXT_ADVANCE = 9;
+    static final int TEXT_ADVANCE = 7;
     static final int SEGMENTS = 12;
 
     private static final Key SPACE_FONT = Key.key("icesmp_hud", "space");
@@ -75,28 +75,28 @@ public final class IceSmpHudRenderer {
 
     public Component render(final IceSmpHudModel model) {
         final TextComponent.Builder output = Component.text();
-        output.append(glyph(-274, PANEL_FONT, themeGlyph(model.factionTheme()), 261, null));
-        output.append(glyph(-274, WALLET_PANEL_FONT, '\uE105', 261, null));
-        output.append(glyph(-274, DETAIL_PANEL_FONT, '\uE106', 261, null));
-        output.append(glyph(-256, CLASS_FONT, classGlyph(model.classHud().classId()), 37, null));
-        output.append(glyph(-74, UTILITY_FONT, '\uE132', 16, null));
-        output.append(glyph(-254, UTILITY_FONT, '\uE131', 16, null));
+        output.append(glyph(-254, PANEL_FONT, themeGlyph(model.factionTheme()), 241, null));
+        output.append(glyph(-254, WALLET_PANEL_FONT, '\uE105', 241, null));
+        output.append(glyph(-254, DETAIL_PANEL_FONT, '\uE106', 241, null));
+        output.append(glyph(-236, CLASS_FONT, classGlyph(model.classHud().classId()), 37, null));
+        output.append(glyph(-54, UTILITY_FONT, '\uE132', 16, null));
+        output.append(glyph(-234, UTILITY_FONT, '\uE131', 16, null));
 
         final TextColor accent = color(model.factionAccent(), 0x77DDF2);
         final String spec = model.classHud().specName().isBlank() ? "" : " " + model.classHud().specName();
-        output.append(text(-210, HEADER_FONT, model.className() + spec, accent, 25));
-        output.append(text(-210, SUBHEADER_FONT, model.faction(), color("A9B7C6", 0xA9B7C6), 22));
-        output.append(text(-52, HEADER_FONT, "Lv. " + model.classLevel(), color("EAF7FF", 0xEAF7FF), 8));
+        output.append(text(-190, HEADER_FONT, model.className() + spec, accent, 25));
+        output.append(text(-190, SUBHEADER_FONT, model.faction(), color("A9B7C6", 0xA9B7C6), 22));
+        output.append(text(-32, HEADER_FONT, "Lv. " + model.classLevel(), color("EAF7FF", 0xEAF7FF), 8));
         drawCurrencies(output, model);
         if (model.hasClass()) {
-            output.append(text(-222, RESOURCE_TEXT_FONT,
+            output.append(text(-202, RESOURCE_TEXT_FONT,
                     model.resourceName() + " " + model.resource() + "/" + model.resourceMax(),
                     color("C7D4EA", 0xC7D4EA), 25));
-            drawSegments(output, -222, RESOURCE_FONT, model.resourcePercent(), resourceFill(model.factionTheme()));
+            drawSegments(output, -202, RESOURCE_FONT, model.resourcePercent(), resourceFill(model.factionTheme()));
             drawMechanics(output, model, accent);
             drawSupplementaryMetrics(output, model);
         }
-        output.append(text(-234, EVENT_FONT, "ESEMÉNY " + stripLegacy(model.event()),
+        output.append(text(-214, EVENT_FONT, "ESEMÉNY " + stripLegacy(model.event()),
                 color("F0D88D", 0xF0D88D), 24));
         return output.build();
     }
@@ -104,15 +104,15 @@ public final class IceSmpHudRenderer {
     private void drawMechanics(final TextComponent.Builder output, final IceSmpHudModel model,
                                final TextColor accent) {
         if ("death_knight".equals(model.classHud().classId())) {
-            drawMetricIcon(output, model.classHud().classId(), model.classHud().metric(0), -254);
-            output.append(text(-237, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 22));
+            drawMetricIcon(output, model.classHud().classId(), model.classHud().metric(0), -234);
+            output.append(text(-217, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 22));
             int index = 0;
             for (final ClassHudSlot slot : model.classHud().slots()) {
                 if (index >= 8) break;
-                output.append(glyph(-254 + index * 27, RUNE_FONT, runeGlyph(slot), 19, null));
+                output.append(glyph(-234 + index * 27, RUNE_FONT, runeGlyph(slot), 19, null));
                 index++;
             }
-            output.append(text(-254, STATE_FONT,
+            output.append(text(-234, STATE_FONT,
                     joinState(model.classHud().state(), model.classHud().proc()),
                     color("A9B7C6", 0xA9B7C6), 25));
             return;
@@ -120,19 +120,19 @@ public final class IceSmpHudRenderer {
 
         final ClassHudMetric primary = model.classHud().metric(0);
         final ClassHudMetric secondary = model.classHud().metric(1);
-        drawMetricIcon(output, model.classHud().classId(), primary, -254);
-        drawMetricIcon(output, model.classHud().classId(), secondary, -133);
-        output.append(text(-237, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 20));
-        output.append(text(-116, MECHANIC_FONT, model.classHud().mechanicSecondary(),
+        drawMetricIcon(output, model.classHud().classId(), primary, -234);
+        drawMetricIcon(output, model.classHud().classId(), secondary, -113);
+        output.append(text(-217, MECHANIC_FONT, model.classHud().mechanicPrimary(), accent, 20));
+        output.append(text(-96, MECHANIC_FONT, model.classHud().mechanicSecondary(),
                 color("A9B7C6", 0xA9B7C6), 14));
         if (primary != null && primary.maximum() > 0.0D) {
-            drawSegments(output, -254, METRIC_FONT, primary.percent(), SEGMENT_FILL);
+            drawSegments(output, -234, METRIC_FONT, primary.percent(), SEGMENT_FILL);
         }
         if (secondary != null && secondary.maximum() > 0.0D) {
-            drawSegments(output, -133, METRIC_FONT, secondary.percent(), SEGMENT_GOLD);
+            drawSegments(output, -113, METRIC_FONT, secondary.percent(), SEGMENT_GOLD);
         }
         drawCharges(output, model.classHud().classId(), model.classHud().slots());
-        output.append(text(-133, STATE_FONT, joinState(model.classHud().state(), model.classHud().proc()),
+        output.append(text(-113, STATE_FONT, joinState(model.classHud().state(), model.classHud().proc()),
                 color("A9B7C6", 0xA9B7C6), 16));
     }
 
@@ -145,9 +145,9 @@ public final class IceSmpHudRenderer {
                     "ready".equals(slot.state()) ? 1 : 3);
             if (mechanic == null) {
                 final char fallback = "ready".equals(slot.state()) ? '\uE170' : '\uE171';
-                output.append(glyph(-254 + index * 12, CHARGE_FONT, fallback, 11, null));
+                output.append(glyph(-234 + index * 12, CHARGE_FONT, fallback, 11, null));
             } else {
-                output.append(glyph(-254 + index * 12, MECHANIC_SLOT_FONT, mechanic, 11, null));
+                output.append(glyph(-234 + index * 12, MECHANIC_SLOT_FONT, mechanic, 11, null));
             }
             index++;
         }
@@ -199,7 +199,7 @@ public final class IceSmpHudRenderer {
             if (metric == null || metric.id().isBlank()) continue;
             final String value = metric.label().isBlank() ? metric.text()
                     : metric.label() + " " + metric.text();
-            output.append(text(-254 + (index - 2) * 86, DETAIL_TEXT_FONT, value,
+            output.append(text(-234 + (index - 2) * 80, DETAIL_TEXT_FONT, value,
                     color("C7D4EA", 0xC7D4EA), 9));
         }
     }
@@ -208,7 +208,7 @@ public final class IceSmpHudRenderer {
         int index = 0;
         for (final hu.taliann.icesmp.managers.HudManager.HudCurrency currency : model.currencies()) {
             if (index >= 4) break;
-            final int x = -254 + index * 59;
+            final int x = -234 + index * 54;
             output.append(glyph(x, CURRENCY_FONT, currencyGlyph(currency.id()), 16, null));
             output.append(text(x + 17, WALLET_TEXT_FONT, currency.amount(),
                     currency.primary() ? color("F0D88D", 0xF0D88D) : color("C7D4EA", 0xC7D4EA), 5));

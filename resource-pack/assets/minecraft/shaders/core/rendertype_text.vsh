@@ -18,12 +18,13 @@ out vec2 texCoord0;
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
+    bool hudGlyph = false;
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
     if (pos.y >= ui.y && ProjMat[3].x == -1) {
         int bit = int(pos.y) >> HEIGHT_BIT;
         if (((bit >> MAX_BIT) & 1) == 1) {
             int id = bit - (1 << MAX_BIT);
-            pos.x -= 0.5 * ui.x;
+            hudGlyph = true;
             pos.y -= (bit << HEIGHT_BIT) + ADD_OFFSET + DEFAULT_OFFSET;
             float layer = 0;
             bool outline = false;
@@ -34,7 +35,6 @@ void main() {
             else if (id == 8) layer = 5;
             else if (id == 9) layer = 6;
             else if (id == 10) { layer = 7; outline = true; }
-            pos.x += ui.x;
             pos.z += layer;
             if (!outline && (pos.z == 0 || pos.z == 1000 || pos.z == -90 || pos.z == 2800)) {
                 vertexColor = vec4(0);
@@ -44,5 +44,7 @@ void main() {
     sphericalVertexDistance = fog_spherical_distance(pos);
     cylindricalVertexDistance = fog_cylindrical_distance(pos);
     texCoord0 = UV0;
-    gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
+    vec4 clipPosition = ProjMat * ModelViewMat * vec4(pos, 1.0);
+    if (hudGlyph) clipPosition.x += clipPosition.w;
+    gl_Position = clipPosition;
 }

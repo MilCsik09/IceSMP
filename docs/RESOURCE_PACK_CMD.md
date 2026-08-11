@@ -2070,6 +2070,8 @@ a `stageMergedResourcePackForR2` feladatot. A merge csak a `pack.mcmeta`, `pack.
 A HUD a BMP private-use tartományban generált, repo-validált spacing- és glyph-kiosztást használ;
 nem támaszkodik külső HUD motor supplementary-plane sentinelére. Minden dinamikus sprite teljes 64×64-es
 logikai cellát kap, minden rajzparancs visszatér a kezdőpontra, így érték- vagy ikonváltás nem mozdítja
-el a panelt. A backend csak `SUCCESSFULLY_LOADED` pack után renderel, ezért pack nélkül nem jelenhet
-meg felső missing-glyph négyzet.
+el a panelt. A 240×160-as keretek és 240×22-es sávok beleférnek a Minecraft 256×256-os font-stitcherébe;
+a jobb oldali horgony clip-space alapú, a magyar szöveg pedig a licencelt DejaVu Sans forrásból
+négyszeresen túlmintavételezett atlasz. A backend csak `SUCCESSFULLY_LOADED` pack után renderel,
+ezért pack nélkül nem jelenhet meg felső missing-glyph négyzet.
 

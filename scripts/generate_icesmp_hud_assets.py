@@ -21,6 +21,7 @@ ITEM_SOURCE = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "item"
 GUEST_FRAME_SOURCE = HUD_SOURCE / "frame-guest-v2.png"
 MECHANIC_CORE_SOURCE = HUD_SOURCE / "mechanics-core-v1.png"
 MECHANIC_SPEC_SOURCE = HUD_SOURCE / "mechanics-spec-v1.png"
+TEXT_FONT_SOURCE = HUD_SOURCE / "DejaVuSans.ttf"
 ASSETS = ROOT / "resource-pack" / "assets" / "icesmp_hud"
 TEXTURES = ASSETS / "textures" / "hud"
 FONTS = ASSETS / "font"
@@ -31,6 +32,11 @@ SPACE_MAX = 512
 HUD_BIT = 13
 HUD_MAX_BIT = 10
 HUD_ADD_HEIGHT = 4095
+HUD_FRAME_WIDTH = 240
+HUD_FRAME_HEIGHT = 160
+TEXT_LOGICAL_WIDTH = 6
+TEXT_LOGICAL_HEIGHT = 12
+TEXT_OVERSAMPLE = 4
 
 THEMES = ("guest", "red", "blue", "neutral", "dark")
 CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin",
@@ -342,10 +348,13 @@ def generate_frames() -> None:
             source = frames[theme]
             bbox = source.getchannel("A").getbbox()
         sprite = source.crop(bbox) if bbox else source
-        sprite.thumbnail((260, 160), Image.Resampling.LANCZOS)
-        output = Image.new("RGBA", (260, 160), (0, 0, 0, 0))
-        output.alpha_composite(sprite, ((260 - sprite.width) // 2, (160 - sprite.height) // 2))
-        save_png(strip_magenta_resample_spill(output),
+        sprite.thumbnail((HUD_FRAME_WIDTH, HUD_FRAME_HEIGHT), Image.Resampling.LANCZOS)
+        output = Image.new("RGBA", (HUD_FRAME_WIDTH, HUD_FRAME_HEIGHT), (0, 0, 0, 0))
+        output.alpha_composite(sprite, ((HUD_FRAME_WIDTH - sprite.width) // 2,
+                                        (HUD_FRAME_HEIGHT - sprite.height) // 2))
+        output = strip_magenta_resample_spill(output)
+        output.putpixel((HUD_FRAME_WIDTH - 1, HUD_FRAME_HEIGHT - 1), (255, 255, 255, 1))
+        save_png(output,
                  TEXTURES / f"frame-hud-{theme}.png")
 
 
@@ -394,22 +403,41 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
     padding_length = rows * columns - len(unique)
     padding = "".join(chr(0xE900 + index) for index in range(padding_length))
     padded = unique + padding
-    cell_width, cell_height = 8, 12
+    cell_width = TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE
+    cell_height = TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE
     atlas = Image.new("RGBA", (columns * cell_width, rows * cell_height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(atlas)
-    font = ImageFont.load_default(size=10)
+    if not TEXT_FONT_SOURCE.is_file():
+        raise FileNotFoundError(f"Missing reproducible IceSMP HUD text font: {TEXT_FONT_SOURCE}")
+    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=10 * TEXT_OVERSAMPLE)
     for index, char in enumerate(padded):
         if index < len(unique):
             x = (index % columns) * cell_width
             y = (index // columns) * cell_height
-            box = draw.textbbox((0, 0), char, font=font)
-            width = box[2] - box[0]
-            draw.text((x + max(0, (7 - width) // 2), y - 1), char, font=font,
-                      fill=(235, 247, 255, 255))
-            atlas.putpixel((x + 7, y + 11), (255, 255, 255, 1))
+            box = font.getbbox(char)
+            width = max(0, box[2] - box[0])
+            height = max(0, box[3] - box[1])
+            if width > 0 and height > 0:
+                glyph = Image.new("L", (width, height), 0)
+                glyph_draw = ImageDraw.Draw(glyph)
+                glyph_draw.text((-box[0], -box[1]), char, font=font, fill=255)
+                maximum_width = cell_width - 2
+                maximum_height = cell_height - 4
+                scale = min(1.0, maximum_width / width, maximum_height / height)
+                if scale < 1.0:
+                    glyph = glyph.resize((max(1, round(width * scale)),
+                                          max(1, round(height * scale))),
+                                         Image.Resampling.LANCZOS)
+                colored = Image.new("RGBA", glyph.size, (235, 247, 255, 255))
+                colored.putalpha(glyph)
+                atlas.alpha_composite(colored,
+                                      (x + (cell_width - glyph.width) // 2,
+                                       y + (cell_height - glyph.height) // 2))
+            atlas.putpixel((x + cell_width - 1, y + cell_height - 1), (255, 255, 255, 1))
     TEXTURES.mkdir(parents=True, exist_ok=True)
     save_png(atlas, TEXTURES / "text-atlas.png")
-    return [padded[row * columns:(row + 1) * columns] for row in range(rows)], cell_width, cell_height
+    return ([padded[row * columns:(row + 1) * columns] for row in range(rows)],
+            TEXT_LOGICAL_WIDTH, TEXT_LOGICAL_HEIGHT)
 
 
 def generate_segments() -> None:
@@ -430,28 +458,30 @@ def generate_segments() -> None:
 
 def generate_wallet_strip() -> None:
     scale = 4
-    image = Image.new("RGBA", (260 * scale, 22 * scale), (0, 0, 0, 0))
+    image = Image.new("RGBA", (HUD_FRAME_WIDTH * scale, 22 * scale), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((1 * scale, 1 * scale, 258 * scale, 20 * scale), radius=4 * scale,
+    draw.rounded_rectangle((1 * scale, 1 * scale, (HUD_FRAME_WIDTH - 2) * scale, 20 * scale), radius=4 * scale,
                            fill=(8, 12, 17, 238), outline=(91, 109, 123, 255), width=1 * scale)
     for index in range(1, 4):
-        x = (1 + index * 64) * scale
+        x = (1 + index * 59) * scale
         draw.line((x, 4 * scale, x, 18 * scale), fill=(53, 67, 85, 220), width=1 * scale)
-    draw.line((6 * scale, 2 * scale, 252 * scale, 2 * scale),
+    draw.line((6 * scale, 2 * scale, (HUD_FRAME_WIDTH - 8) * scale, 2 * scale),
               fill=(102, 181, 163, 150), width=1 * scale)
-    save_png(image.resize((260, 22), Image.Resampling.LANCZOS),
-             TEXTURES / "wallet-strip.png")
+    image = image.resize((HUD_FRAME_WIDTH, 22), Image.Resampling.LANCZOS)
+    image.putpixel((HUD_FRAME_WIDTH - 1, 21), (255, 255, 255, 1))
+    save_png(image, TEXTURES / "wallet-strip.png")
 
-    details = Image.new("RGBA", (260 * scale, 22 * scale), (0, 0, 0, 0))
+    details = Image.new("RGBA", (HUD_FRAME_WIDTH * scale, 22 * scale), (0, 0, 0, 0))
     detail_draw = ImageDraw.Draw(details)
-    detail_draw.rounded_rectangle((1 * scale, 1 * scale, 258 * scale, 20 * scale), radius=4 * scale,
+    detail_draw.rounded_rectangle((1 * scale, 1 * scale, (HUD_FRAME_WIDTH - 2) * scale, 20 * scale), radius=4 * scale,
                                   fill=(8, 12, 17, 232), outline=(53, 67, 85, 255), width=1 * scale)
     for index in range(1, 3):
-        x = round((1 + index * 85.7) * scale)
+        x = round((1 + index * 79.3) * scale)
         detail_draw.line((x, 4 * scale, x, 18 * scale),
                          fill=(53, 67, 85, 210), width=1 * scale)
-    save_png(details.resize((260, 22), Image.Resampling.LANCZOS),
-             TEXTURES / "detail-strip.png")
+    details = details.resize((HUD_FRAME_WIDTH, 22), Image.Resampling.LANCZOS)
+    details.putpixel((HUD_FRAME_WIDTH - 1, 21), (255, 255, 255, 1))
+    save_png(details, TEXTURES / "detail-strip.png")
 
 
 def generate_transparent_white_bossbar() -> None:
@@ -486,12 +516,13 @@ out vec2 texCoord0;
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
+    bool hudGlyph = false;
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
     if (pos.y >= ui.y && ProjMat[3].x == -1) {
         int bit = int(pos.y) >> HEIGHT_BIT;
         if (((bit >> MAX_BIT) & 1) == 1) {
             int id = bit - (1 << MAX_BIT);
-            pos.x -= 0.5 * ui.x;
+            hudGlyph = true;
             pos.y -= (bit << HEIGHT_BIT) + ADD_OFFSET + DEFAULT_OFFSET;
             float layer = 0;
             bool outline = false;
@@ -502,7 +533,6 @@ void main() {
             else if (id == 8) layer = 5;
             else if (id == 9) layer = 6;
             else if (id == 10) { layer = 7; outline = true; }
-            pos.x += ui.x;
             pos.z += layer;
             if (!outline && (pos.z == 0 || pos.z == 1000 || pos.z == -90 || pos.z == 2800)) {
                 vertexColor = vec4(0);
@@ -512,7 +542,9 @@ void main() {
     sphericalVertexDistance = fog_spherical_distance(pos);
     cylindricalVertexDistance = fog_cylindrical_distance(pos);
     texCoord0 = UV0;
-    gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
+    vec4 clipPosition = ProjMat * ModelViewMat * vec4(pos, 1.0);
+    if (hudGlyph) clipPosition.x += clipPosition.w;
+    gl_Position = clipPosition;
 }
 """
     fragment = """#version 330
@@ -594,7 +626,7 @@ def main() -> None:
     write_font("space", [{"type": "space", "advances": spaces}])
 
     write_font("panel", [
-        provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, 18, 160)
+        provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, 18, HUD_FRAME_HEIGHT)
         for index, theme in enumerate(THEMES)
     ])
     write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 22)])
@@ -672,7 +704,9 @@ def main() -> None:
         "space_first": f"U+{SPACE_FIRST:04X}",
         "space_min": SPACE_MIN,
         "space_max": SPACE_MAX,
-        "text_advance": 9,
+        "text_advance": TEXT_LOGICAL_WIDTH + 1,
+        "text_oversample": TEXT_OVERSAMPLE,
+        "maximum_bitmap_glyph_width": 256,
         "themes": list(THEMES),
         "classes": list(CLASSES),
         "mechanics": [f"{class_id}:{mechanic_id}" for class_id, mechanic_id in MECHANICS],

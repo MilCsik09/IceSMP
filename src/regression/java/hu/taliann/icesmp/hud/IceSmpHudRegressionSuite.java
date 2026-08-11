@@ -131,6 +131,7 @@ public final class IceSmpHudRegressionSuite {
         check(vertexShader.startsWith("#version 330")
                         && vertexShader.contains("<minecraft:dynamictransforms.glsl>")
                         && vertexShader.contains("<minecraft:projection.glsl>")
+                        && vertexShader.contains("clipPosition.x += clipPosition.w")
                         && vertexShader.contains("fog_spherical_distance(pos)")
                         && !vertexShader.contains("uniform int FogShape"),
                 "HUD vertex shader must implement the Minecraft 1.21.11 UBO contract");
@@ -144,8 +145,23 @@ public final class IceSmpHudRegressionSuite {
         check(generator.contains("guest_frame_with_canonical_layout")
                         && generator.contains("canonical_frames")
                         && generator.contains("Guest HUD changed the canonical content-grid geometry")
+                        && generator.contains("HUD_FRAME_WIDTH = 240")
+                        && generator.contains("TEXT_OVERSAMPLE = 4")
+                        && generator.contains("DejaVuSans.ttf")
                         && generator.contains("dev-assets") && generator.contains("icesmp-hud"),
                 "guest art must reuse canonical panel geometry from first-party source assets");
+        for (final String largeGlyph : List.of("frame-hud-guest.png", "frame-hud-red.png",
+                "frame-hud-blue.png", "frame-hud-neutral.png", "frame-hud-dark.png",
+                "wallet-strip.png", "detail-strip.png")) {
+            final var glyphImage = ImageIO.read(Path.of(
+                    "resource-pack/assets/icesmp_hud/textures/hud", largeGlyph).toFile());
+            check(glyphImage != null && glyphImage.getWidth() <= 256 && glyphImage.getHeight() <= 256,
+                    "bitmap glyph must fit Minecraft's 256x256 font stitcher: " + largeGlyph);
+        }
+        final var textAtlas = ImageIO.read(Path.of(
+                "resource-pack/assets/icesmp_hud/textures/hud/text-atlas.png").toFile());
+        check(textAtlas != null && textAtlas.getWidth() == 384 && textAtlas.getHeight() == 384,
+                "HUD text atlas must retain the 4x antialiased Hungarian glyph source");
         for (final String icon : List.of("class-wizard.png", "class-none.png", "rune-blood-ready.png",
                 "charge-ready.png", "currency-neutral.png",
                 "mechanic-warrior-battle_tempo-active.png",

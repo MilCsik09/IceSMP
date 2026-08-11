@@ -68,7 +68,9 @@ class ResourcePackToolingTest(unittest.TestCase):
         shader.parent.mkdir(parents=True, exist_ok=True)
         shader.write_text(
             "#version 330\n#moj_import <minecraft:dynamictransforms.glsl>\n"
-            "#moj_import <minecraft:projection.glsl>\nvoid main(){fog_spherical_distance(vec3(0));}\n",
+            "#moj_import <minecraft:projection.glsl>\n"
+            "void main(){vec4 clipPosition=vec4(0);clipPosition.x += clipPosition.w;"
+            "fog_spherical_distance(vec3(0));}\n",
             encoding="utf-8",
         )
         shader.with_suffix(".fsh").write_text(
