@@ -136,13 +136,27 @@ public final class ShamanGameplayRegressionSuite {
                 "placing a same-category totem replaces the previous one");
         check(totems.contains("activeTotemTypes"),
                 "the Totemkerék pair is exposed as a runtime projection");
+        check(totems.contains("final CastModifiers snapshot")
+                        && totems.contains("startPulse(totem, type, snapshot)"),
+                "totem creation captures immutable cast modifiers before scheduler hops");
+        check(totems.contains("SpellDamageUtil.scaledDamage(damage, modifiers)"),
+                "delayed totem damage applies the captured damage multiplier");
+        check(totems.contains("type.affect(nearby, durationTicks, modifiers)"),
+                "same-region and cross-region pulses both carry the same modifier snapshot");
+        check(!totems.contains("monster.damage(damage);"),
+                "fixed unscaled totem pulse damage cannot bypass shared power");
+
+        final String totemSpell = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/spells/ShamanTotemSpell.java"));
+        check(totemSpell.contains("SpellExecutionContext.capture()"),
+                "totem spell snapshots modifiers while the synchronous cast context is alive");
 
         final String service = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/shaman/ShamanGameplayService.java"));
         check(service.contains("pair.size() < required"),
                 "elemental resonance requires the live Totemkerék pair");
         check(!service.contains("getNearbyEntities") && !service.contains("runAtFixedRate"),
-                "no proximity scans or repeating tasks in the shaman runtime");
+                "no proximity scans or repeating tasks in the shaman class runtime itself");
         check(service.contains("max-power-bonus-percent"),
                 "shaman cast bonuses ride the capped shared power pipeline");
     }
