@@ -74,6 +74,8 @@ allprojects { project ->
             inputs.property('externalPackUrl', externalPackUrl)
             inputs.property('externalPackSha1', externalPackSha1)
             outputs.file(externalPackFile)
+            // Always verify the file hash. A stale/corrupt ZIP can still exist at the expected path.
+            outputs.upToDateWhen { false }
             doLast {
                 def digest = java.security.MessageDigest.getInstance('SHA-1')
                 def currentHash = externalPackFile.isFile()
