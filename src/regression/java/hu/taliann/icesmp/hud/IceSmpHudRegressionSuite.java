@@ -34,7 +34,7 @@ public final class IceSmpHudRegressionSuite {
         check(IceSmpHudRenderer.SPACE_FIRST >= 0xE000
                         && IceSmpHudRenderer.SPACE_FIRST + IceSmpHudRenderer.SPACE_MAX
                         - IceSmpHudRenderer.SPACE_MIN <= 0xF8FF,
-                "spacing glyphs must stay in BMP PUA and never use BetterHud's supplementary sentinel");
+                "spacing glyphs must stay in BMP PUA and avoid supplementary-plane sentinels");
         final String source = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
         check(source.contains("append(space(-x - width))")
                         && !source.contains("primaryMetric()") && !source.contains("secondaryMetric()"),
@@ -68,9 +68,8 @@ public final class IceSmpHudRegressionSuite {
                 "backend must be display-only and gated by the loaded pack");
         check(hud.contains("!iceSmpHudActive(player)")
                         && hud.contains("final boolean customActive = renderIceSmpHud(player, snapshot)")
-                        && hud.contains("if (customActive)")
-                        && hud.contains("publishBetterHudSnapshot(player, snapshot"),
-                "first-party HUD must suppress duplicates while preserving native/BetterHud fallback");
+                        && hud.contains("if (customActive)"),
+                "first-party HUD must suppress duplicate native rendering while preserving fallback");
     }
 
     private static void visualPackageIsComplete() throws Exception {
@@ -84,20 +83,20 @@ public final class IceSmpHudRegressionSuite {
         check(config.contains("icesmp-hud:") && config.contains("hide-vanilla-health: false")
                         && config.contains("hide-vanilla-armor: false"),
                 "vanilla HUD removal must remain explicitly disabled until replacement coverage exists");
-        final Path guest = Path.of("deploy/betterhud/source/frame-guest-v2.png");
+        final Path guest = Path.of("dev-assets/icesmp-hud/source/frame-guest-v2.png");
         final var image = ImageIO.read(guest.toFile());
         check(image != null && image.getWidth() >= 64 && image.getHeight() >= 64
                         && image.getColorModel().hasAlpha(),
                 "Menedék frame donor must retain a transparent 64px-or-larger source");
         check(Files.isRegularFile(Path.of("resource-pack/assets/minecraft/shaders/core/rendertype_text.vsh"))
                         && Files.isRegularFile(Path.of("resource-pack/assets/icesmp_hud/font/space.json")),
-                "standalone shader and BMP spacing font must be packaged without BetterHud authority");
+                "standalone shader and BMP spacing font must be packaged by the first-party HUD");
         final String generator = read("scripts/generate_icesmp_hud_assets.py");
         check(generator.contains("guest_frame_with_canonical_layout")
                         && generator.contains("canonical_frames")
                         && generator.contains("Guest HUD changed the canonical content-grid geometry")
-                        && generator.contains("guest uses the canonical crop transform"),
-                "guest art must reuse canonical panel geometry and vary only its visual shell");
+                        && generator.contains("dev-assets") && generator.contains("icesmp-hud"),
+                "guest art must reuse canonical panel geometry from first-party source assets");
         for (final String icon : List.of("class-wizard.png", "class-none.png", "rune-blood-ready.png",
                 "charge-ready.png", "currency-neutral.png",
                 "mechanic-warrior-battle_tempo-active.png",
