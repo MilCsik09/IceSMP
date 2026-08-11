@@ -1610,16 +1610,15 @@ world-location- vagy lifecycle-teszt hibás, a release döntése automatikusan
 **NO-GO**. A zöld build nem írja felül a hiányzó runtime bizonyítékot.
 ## First-party IceSMP class HUD
 
-A primary renderer az IceSMP része (`hud.icesmp-hud.enabled: true`), a BetterHud 1.14.1 csak
-kikapcsolt alapértékű, opcionális migrációs megjelenítési bridge
-(`hud.betterhud.enabled: true`). A tartós class/spec/frakció/profil authority továbbra is a
+A primary renderer az IceSMP része (`hud.icesmp-hud.enabled: true`); külső HUD plugin nem része
+a runtime- vagy dependency-stacknek. A tartós class/spec/frakció/profil authority továbbra is a
 Profile v2 / `PlayerProfileSnapshot`; a harci mechanikák authority-ja a class service-ek mulandó
 runtime state-je. Egyik HUD-renderer sem írhatja vissza az állapotot.
 
 Minden játékos saját Folia-régiószálán készül egy immutable `HudSnapshot`. A 13 class külön Java
 `hudState` adaptere közvetlenül típusos `ClassHudMetric` és `ClassHudSlot` adatot ad át; renderelt
-magyar szöveg visszaparzolása tilos. A BetterHud bridge csak ennek a másolatát írja a játékos
-BetterHud variable mapjébe. A PlaceholderAPI ugyanezt a cache-t olvassa, ezért az async kérés nem
+magyar szöveg visszaparzolása tilos. A first-party renderer és a PlaceholderAPI ugyanazt az
+immutable cache-t olvassa, ezért az async kérés nem
 érinti az élő `Player`, PDC vagy PlayerProfile objektumot.
 
 A közös contract fő csatornái:
@@ -1635,9 +1634,8 @@ A közös contract fő csatornái:
 - diszkrét slotok: `class_slot_count`, valamint
   `class_slot_<1..9>_<id|kind|state|progress|label>`.
 
-A PAPI-változat minden név elé `%icesmp_` prefixet és a végére `%` jelet kap. BetterHudban az
-IceSMP közvetlen `icesmp_...` snapshot-változókat használja, tehát a BetterHud megjelenítéséhez a
-PlaceholderAPI jelenléte nem kötelező.
+A PAPI-változat minden név elé `%icesmp_` prefixet és a végére `%` jelet kap. A PlaceholderAPI
+opcionális olvasási felület; a first-party renderer közvetlenül az immutable snapshotot használja.
 
 Az aktuális class-runtime lefedettség:
 
@@ -1660,19 +1658,18 @@ Az aktuális class-runtime lefedettség:
 A két fő numerikus metric saját faction-színű fill bart kap. A tényleges diszkrét számlálók
 legfeljebb kilenc ready/spent slotként jelennek meg; minden slot a classhoz és mechanikához kötött
 saját glyphet használ, nem közös generic charge ikont. Ezek az adapter charge-értékéből származnak,
-nem BetterHudban fenntartott állapotok. Az Elementalista három extra metricje három külön mini bar.
+nem kijelzési rétegben fenntartott állapotok. Az Elementalista három extra metricje három külön mini bar.
 
 ### Readiness és fallback
 
 Az IceSMP játékosonként csak `SUCCESSFULLY_LOADED` resource-pack státusz után aktiválja a saját
 HUD-ot. Addig — elutasítás, letöltési hiba vagy join-verseny esetén is — a natív compact
 Folia bossbar/scoreboard fallback marad. Sikeres readiness után a natív class/resource sor elnémul,
-így nincs duplikáció vagy villogás. A `/hud mind` a first-party panelt és az opcionális BetterHud
-migrációs nézetet is elrejti.
+így nincs duplikáció vagy villogás. A `/hud mind` a first-party panelt is elrejti.
 
 Várt diagnosztika:
 
-- `IceSMP HUD pack ready: first-party class HUD active; BetterHud/native class HUD suppressed.`
+- `IceSMP HUD pack ready: first-party class HUD active; native class HUD suppressed.`
 - hiányzó/elutasított pack esetén a natív fallback marad, a szerverindulás nem fatal;
 - egy korábban aktív HUD elvesztésekor: `native class HUD fallback restored`.
 
@@ -1684,19 +1681,17 @@ NEUTRAL faragott tölgy/céhes réz, DARK obszidián/csont/lich-rúna, a Menedé
 így a portré, a resource és a mechanikák koordinátái frakcióváltáskor sem mozdulhatnak el.
 Mind a 13 class, továbbá a pénz-, event- és szintjelölés saját 64×64-es ikont kap. A 49
 class-qualified mechanikacsalád egymástól eltérő, átlátszó glyph; mindegyikhez
-`active`, `ready`, `alert` és `spent` variáns tartozik a first-party és a BetterHud rendererben is.
+`active`, `ready`, `alert` és `spent` variáns tartozik a first-party rendererben.
 A Death Knight rúnaköre slotonként adja át a Vér,
 Fagy és Halál típust, valamint a `ready`, `spent`, `regenerating` állapotot és a regenerációs
 százalékot. A nagy keretek kontrollált antialiasingot és anyagárnyalást használhatnak; a progress
 maszkok kemény alfájúak. A proc-toast mind az öt megjelenítési témához külön 300×72-es keretet
 kap; a production layout ezt class-ikonnal és frakció-accenttel rétegezi.
 
-A forrás- és ellenőrzőlapok a `deploy/betterhud/previews/` könyvtárban, a futásidejű assetek a
-`deploy/betterhud/assets/icesmp/` alatt vannak. A reprodukálható generátorok:
+A szerkesztési források és ellenőrzőlapok a `dev-assets/icesmp-hud/` könyvtárban, a futásidejű
+assetek a `resource-pack/assets/icesmp_hud/` alatt vannak. A reprodukálható generátorok:
 
 ```text
-./gradlew generateBetterHudPackage
-./gradlew validateBetterHudPackage
 ./gradlew generateIceSmpHudAssets
 ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest
 ./gradlew auditIceSmpHudAssets
@@ -1706,13 +1701,9 @@ A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, 49 egyedi 
 a kilenc typed charge/stack- és nyolc DK slotcsatornát, a progress-maszkok alfáját és a 2,5 MB-os
 runtime asset budgetet. Az asset-audit minden PNG-n ellenőrzi a méretet, alfát, cropot, margót,
 középre igazítást, élességet, magenta fringe-et és a rögzített glyph-width markert.
-A generált layout jobb felső
-sarokhoz horgonyzott; a forrásképeket a BetterHud rendereléskor skálázza, így a 64×64-es ikonok
-GUI scale-váltáskor is részletesek maradnak.
-
-Az új, nem üres proc-állapot első megjelenésekor az IceSMP a játékos Folia-régiószáláról a
-BetterHud dokumentált `custom` eseményét küldi. Ez kizárólag egy rövid, class-ikonnal és
-frakciószínnel renderelt toastot indít; nem ad visszaírási vagy gameplay authority-t a BetterHudnak.
+A generált layout jobb felső sarokhoz horgonyzott. A 64×64-es ikonokat a first-party font/shader
+réteg rögzített cellákban rajzolja, ezért GUI scale- és dinamikus értékváltáskor sem csúszhat el a panel.
+Az új proc-állapot is a régiószálon előállított snapshot része; a renderer kizárólag olvassa.
 
 ### A korábbi felső négyzet oka
 
@@ -1725,7 +1716,7 @@ spacinget, rögzített glyph-cellákat és zéró nettó szélességű rajzparan
 ### Resource-pack útvonal
 
 A `runFolia` fejlesztésben továbbra is képes a lockolt külső alapcsomagot provisionálni. Productionben
-nincs plugin-auto-download és nincs BetterHud self-host. A `.github/workflows/resource-pack-r2.yml`
+nincs plugin-auto-download és nincs HUD-plugin self-host. A `.github/workflows/resource-pack-r2.yml`
 SHA-1-gyel ellenőrzi az immutable külső ZIP-et, majd `stageMergedResourcePackForR2` determinisztikusan
 illeszti rá a kanonikus `resource-pack/` fát. Csak az IceSMP namespace-ek, a first-party HUD shader
 és a fehér HUD-bossbar sprite-ok felülírása engedélyezett; minden más ütközés buildhiba. A publikálás
@@ -1736,7 +1727,7 @@ SHA-1 néven R2-re tölt, és csak a publikus URL ellenőrzése után frissíti 
 Jelenleg a helyes modell **first-party HUD + inventory GUI**: a persistent/contextual kijelzés az
 IceSMP saját renderere, a kattintható Profile v2 szerkesztőmenük inventory GUI-k maradnak. Egy későbbi
 menüvizuál-rework csak a meglévő tranzakciós parancsok és GUI callbackek fölötti megjelenítési réteg
-lehet; sem a HUD, sem BetterHud nem lehet mutációs authority.
+lehet; a HUD nem lehet mutációs authority.
 
 Kézi elfogadási minimum:
 
@@ -1745,5 +1736,5 @@ Kézi elfogadási minimum:
   üres, részleges és teljes charge-sor — egyik értékváltás sem mozdíthatja el a panelt;
 - default frakcióvaluta nulla egyenleggel is; minden pozitív idegen banki valuta saját ikonnal;
 - aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
-- BetterHud nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
+- külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
 - a pack sikeres betöltéséig natív compact fallback, utána pontosan egy class HUD.

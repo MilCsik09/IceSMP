@@ -169,7 +169,7 @@ public final class IceSmpHudRenderer {
         };
     }
 
-    /** Shared native/BetterHud state normalization for the four reviewed icon variants. */
+    /** Shared first-party/native-fallback state normalization for the four reviewed icon variants. */
     public static String visualState(final String rawState) {
         final String state = rawState == null ? "" : rawState.toLowerCase(Locale.ROOT);
         if (List.of("ready", "full", "recited", "crowned", "ripe", "stored", "atonement",

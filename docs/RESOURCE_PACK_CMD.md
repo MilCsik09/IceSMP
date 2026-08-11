@@ -102,10 +102,10 @@ A faction- vagy lore-kötött tárgyak (a nevükben szereplő hely/örökség al
 | DARK / Kitaszítottak (Thanaopolis, Eleftheria, Néma Királyné) | csont-törtfehér, éjfekete-lila, hideg türkiz lich-fény |
 | Mélység / tenger / prizmarin (Mélység Népe, tengeri ereklyék) | prizmarin-türkiz, gyöngyház, tengerkék |
 
-A BetterHud panel ugyanezt a palettát négy külön grafikai skinben viszi tovább: RED kovácsolt
-vas/főnix, BLUE fagyacél/jégkristály, NEUTRAL tölgy/céhes réz, DARK obszidián/csont/lich-rúna.
-Az IceSMP immutable `faction_theme`, `faction_accent` és `faction_accent_soft` display értéket
-publikál; a BetterHud csak renderel, nem válik frakció-authorityvá.
+A first-party IceSMP panel ugyanezt a palettát öt külön grafikai skinben viszi tovább: RED kovácsolt
+vas/főnix, BLUE fagyacél/jégkristály, NEUTRAL tölgy/céhes réz, DARK obszidián/csont/lich-rúna,
+a Menedék vendége pedig önálló erőd/kapu-acél/patina külső héjat kap. Az IceSMP immutable
+`faction_theme`, `faction_accent` és `faction_accent_soft` display értéket publikál a saját rendererének.
 
 ## AI-generálási prompt-sablon
 
@@ -2056,23 +2056,19 @@ erőd/kapu külső héjat kap, de ugyanabból a kanonikus belső panelgeometriá
 frakciókeretek. A reprodukálható feladatok: `generateIceSmpHudAssets`,
 `validateIceSmpHudPackage`, `iceSmpHudRegressionTest`.
 
-A `deploy/betterhud/` megmarad opcionális migrációs csomagnak, és külön
-`generateBetterHudPackage` / `validateBetterHudPackage` feladattal ellenőrizhető. Nem része a
-production pack build authority-jának.
-
-A `prepareBetterHudForFolia` a kanonikus `resource-pack/` fát és a változtathatatlan külső packot
-(`4900b0a9bed8db710143393916db3687e01def54`) rendezett BetterHud inputként stage-eli. A külső
-letöltés kizárólag fejlesztői/CI lépés, SHA-1 eltérésnél fail-closed.
+A `runFolia` fejlesztői provisioning a változtathatatlan külső packot
+(`4900b0a9bed8db710143393916db3687e01def54`) a first-party merge bemeneteként stage-eli. A külső
+letöltés kizárólag fejlesztői/CI lépés, SHA-1 eltérésnél fail-closed; nincs migrációs HUD-csomag.
 
 Lokális `runFolia` alatt az IceSMP egyetlen normalizált composite packot szolgál ki. Production
 nem self-hostol és nem tölt le runtime plugin- vagy packfüggőséget. A `Publish resource pack to R2`
-workflow SHA-1-gyel ellenőrzi a lockolt külső alapcsomagot, majd Folia/BetterHud indítás nélkül futtatja
+workflow SHA-1-gyel ellenőrzi a lockolt külső alapcsomagot, majd Folia vagy külső HUD plugin indítása nélkül futtatja
 a `stageMergedResourcePackForR2` feladatot. A merge csak a `pack.mcmeta`, `pack.png`, az
 `assets/icesmp/`, `assets/icesmp_hud/`, a first-party text shader és a fehér HUD-bossbar sprite-ok
 ütközését engedi; más közös útvonal fail-closed buildhiba. Az eredmény SHA-1 néven kerül R2-re.
 
 A HUD a BMP private-use tartományban generált, repo-validált spacing- és glyph-kiosztást használ;
-nem támaszkodik BetterHud supplementary-plane sentinelre. Minden dinamikus sprite teljes 64×64-es
+nem támaszkodik külső HUD motor supplementary-plane sentinelére. Minden dinamikus sprite teljes 64×64-es
 logikai cellát kap, minden rajzparancs visszatér a kezdőpontra, így érték- vagy ikonváltás nem mozdítja
 el a panelt. A backend csak `SUCCESSFULLY_LOADED` pack után renderel, ezért pack nélkül nem jelenhet
 meg felső missing-glyph négyzet.

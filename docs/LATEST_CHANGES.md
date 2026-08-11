@@ -40,7 +40,7 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   minden class strukturált mechanikaállapota, legfeljebb öt generic metric, automatikus
   charge-pipek, Wizard háromcsatornás ráhangolódása és DK slotonkénti rúnaregeneráció.
   A fő frakcióvaluta mindig, a pozitív idegen banki valuták külön ikonnal jelennek meg;
-  packhiánynál játékosonkénti natív fallback marad. BetterHud csak opcionális migrációs bridge.
+  packhiánynál játékosonkénti natív fallback marad; a kijelzés teljesen first-party, külső HUD plugin nélkül.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,

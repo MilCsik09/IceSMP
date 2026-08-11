@@ -27,8 +27,6 @@ on:
       - "scripts/resource_pack.py"
       - "scripts/test_resource_pack.py"
       - "scripts/generate_icesmp_hud_assets.py"
-      - "deploy/betterhud/**"
-      - "gradle/betterhud-dev.config.yml"
       - "gradle/run-folia.init.gradle"
       - "build.gradle.kts"
       - ".github/workflows/resource-pack-r2.yml"
@@ -41,8 +39,6 @@ on:
       - "scripts/resource_pack.py"
       - "scripts/test_resource_pack.py"
       - "scripts/generate_icesmp_hud_assets.py"
-      - "deploy/betterhud/**"
-      - "gradle/betterhud-dev.config.yml"
       - "gradle/run-folia.init.gradle"
       - "build.gradle.kts"
       - ".github/workflows/resource-pack-r2.yml"
@@ -126,8 +122,8 @@ jobs:
       - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Validate first-party IceSMP HUD and optional BetterHud migration package
-        run: ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest validateBetterHudPackage betterHudIntegrationRegressionTest --no-daemon --console=plain
+      - name: Validate first-party IceSMP HUD
+        run: ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest auditIceSmpHudAssets --no-daemon --console=plain
 
       - name: Fetch and verify immutable external base pack
         shell: bash

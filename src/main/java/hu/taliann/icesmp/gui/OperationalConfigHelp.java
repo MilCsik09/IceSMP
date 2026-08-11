@@ -14,7 +14,7 @@ public final class OperationalConfigHelp {
 
             // HUD és tablista
             case "hud.enabled" -> "A teljes IceSMP játékos-HUD főkapcsolója: az oldalsávot, esemény-bossbarokat és kapcsolódó élő kijelzéseket kapuzza. Kikapcsoláskor a meglévő HUD-elemek a következő frissítésben eltűnnek.";
-            case "hud.sidebar-enabled" -> "Paperen az IceSMP scoreboard-oldalsávját, Folián a compact class bossbar fallbacket kapcsolja. Aktív BetterHud mellett a fallback automatikusan rejtett.";
+            case "hud.sidebar-enabled" -> "Paperen az IceSMP scoreboard-oldalsávját, Folián a compact class bossbar fallbacket kapcsolja. A sikeresen betöltött first-party HUD automatikusan elrejti a fallbacket.";
             case "hud.tablist-enabled" -> "Az egyszerű, régi frakciószínű tabnév-fallback kapcsolója. Csak akkor van hatása, ha a natív tablist.enabled ki van kapcsolva.";
             case "hud.low-hp-vignette.enabled" -> "Engedélyezi az alacsony életerőnél megjelenő vörös képernyőszéli vészjelzést. Csak vizuális, nem módosít sebzést vagy maximális HP-t.";
             case "hud.low-hp-vignette.threshold-percent" -> "E HP-százalék alatt jelenik meg a vörös alacsony-életerő vignetta. Nagyobb érték korábban, kisebb érték csak kritikus állapotban figyelmeztet.";

@@ -346,8 +346,8 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
   13 class-ikonból, class/spec/resource/mechanika állapotból, legfeljebb öt generic metricből,
   kilenc charge-pipből, DK-rúnákból és négy külön pénztárcahelyből. A fő frakcióvaluta mindig,
   a többi banki valuta csak pozitív egyenlegnél jelenik meg a saját ikonjával.
-- **Fallback és migráció:** pack nélkül a natív compact Folia HUD marad. BetterHud kikapcsolt
-  alapértékű, opcionális display-only migrációs bridge; soha nem state authority és nem startup-fatal.
+- **Fallback:** pack nélkül a natív compact Folia HUD marad. A resource-packes megjelenítés az
+  IceSMP first-party része; külső HUD plugin nincs a runtime- vagy dependency-stackben.
 - **Információs parity:** frakció, class, specializáció, class-szint, pénz, aktuális event,
   class resource és a játékhoz szükséges elsődleges/másodlagos, illetve összetett kiegészítő
   mechanikák ugyanabból az immutable HUD snapshotból készülnek. A Wizard három elemi

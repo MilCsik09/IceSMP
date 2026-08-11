@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 
 /** First-party HUD rendering, pack-readiness and authority-boundary regressions. */
 public final class IceSmpHudRegressionSuite {
@@ -20,6 +21,7 @@ public final class IceSmpHudRegressionSuite {
         fixedLayoutIsIndependentOfDynamicValues();
         walletAndClassContractIsGeneric();
         packReadinessAndFallbackAreSafe();
+        removedExternalHudDependencyIsAbsent();
         visualPackageIsComplete();
         System.out.println("First-party IceSMP HUD regression suite passed.");
     }
@@ -70,9 +72,37 @@ public final class IceSmpHudRegressionSuite {
                 "backend must be display-only and gated by the loaded pack");
         check(hud.contains("!iceSmpHudActive(player)")
                         && hud.contains("renderIceSmpHud(player, snapshot);")
-                        && hud.contains("applyFoliaCompactHud(player, snapshot);")
-                        && !hud.contains("BetterHud"),
+                        && hud.contains("applyFoliaCompactHud(player, snapshot);"),
                 "first-party HUD must suppress duplicate native rendering while preserving its native fallback");
+    }
+
+    private static void removedExternalHudDependencyIsAbsent() throws Exception {
+        final String removedPlugin = ("better" + "hud").toLowerCase(Locale.ROOT);
+        final List<String> extensions = List.of(
+                ".java", ".kt", ".kts", ".gradle", ".yml", ".yaml", ".json",
+                ".md", ".py", ".properties", ".toml", ".txt");
+        final List<Path> roots = List.of(
+                Path.of(".github"), Path.of("gradle"), Path.of("src"), Path.of("docs"),
+                Path.of("resource-pack"), Path.of("deploy"), Path.of("scripts"));
+        for (final Path root : roots) {
+            if (!Files.exists(root)) continue;
+            try (var paths = Files.walk(root)) {
+                for (final Path path : paths.filter(Files::isRegularFile).toList()) {
+                    final String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
+                    if (extensions.stream().noneMatch(name::endsWith)) continue;
+                    check(!Files.readString(path).toLowerCase(Locale.ROOT).contains(removedPlugin),
+                            "removed external HUD dependency reference remains in " + path);
+                }
+            }
+        }
+        for (final Path path : List.of(Path.of("AGENTS.md"), Path.of("CLAUDE.md"),
+                Path.of("build.gradle.kts"), Path.of("settings.gradle.kts"))) {
+            check(!Files.readString(path).toLowerCase(Locale.ROOT).contains(removedPlugin),
+                    "removed external HUD dependency reference remains in " + path);
+        }
+        check(!Files.exists(Path.of("deploy", removedPlugin))
+                        && !Files.exists(Path.of("gradle", removedPlugin + "-dev.config.yml")),
+                "removed external HUD package/config must not remain in the repository");
     }
 
     private static void visualPackageIsComplete() throws Exception {

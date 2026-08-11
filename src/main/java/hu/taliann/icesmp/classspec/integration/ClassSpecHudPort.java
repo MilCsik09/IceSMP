@@ -8,7 +8,7 @@ import java.util.UUID;
  * Version-independent presentation boundary for class/spec HUD state.
  *
  * <p>The class/spec domain publishes already-computed values through this port. Implementations may
- * render them with the native IceSMP HUD or BetterHud, but they must never derive gameplay values or
+ * render them with the first-party IceSMP HUD or its native compact fallback, but they must never derive gameplay values or
  * own progression.</p>
  */
 public interface ClassSpecHudPort {
