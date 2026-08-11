@@ -24,6 +24,7 @@ import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellbookStateStore;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.spells.Spell;
@@ -56,6 +57,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     private final BloodMoonManager bloodMoon;
     private final MinionManager minions;
     private final SoulforgeManager soulforge;
+    private final PlayerProfileSpellbookStateStore spellbookStateStore = new PlayerProfileSpellbookStateStore();
     private final List<PlayerStateCleanup> transientOwners = new CopyOnWriteArrayList<>();
     private final ProfileSessionRegistry sessions;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
@@ -230,6 +232,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             assassin.reconcileProfile(player);
             warlock.reconcileProfile(player);
             wizard.reconcileProfile(player);
+            // Eagerly reconcile a stale selection after a spec/loadout transition.
+            catalyst.getSelectedSpellId(player);
             catalyst.refreshSoulbond(player);
         });
     }
@@ -284,7 +288,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                     throw new ProfileSessionRegistry.StaleSessionException(id, token);
                 }
                 clearUuidOnly(id, kind);
-                return CompletableFuture.completedFuture(null);
+                return !regrant ? spellbookStateStore.select(id, "").thenApply(ignored -> null)
+                        : CompletableFuture.completedFuture(null);
             } catch (final Throwable failure) {
                 return CompletableFuture.failedFuture(failure);
             }
@@ -298,6 +303,9 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         return jobs.revokeGrantsFromV2(player, revoke)
                 .thenCompose(ignored -> runOnOwner(id, token, player,
                         () -> clearUuidOnly(id, kind)))
+                .thenCompose(ignored -> !regrant
+                        ? spellbookStateStore.select(id, "").thenApply(selected -> null)
+                        : CompletableFuture.completedFuture(null))
                 .thenCompose(ignored -> regrant
                         ? jobs.applyAutoUnlocksV2(player, durable)
                         : CompletableFuture.completedFuture(null))
@@ -364,6 +372,10 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             owner.clearPlayerState(id);
         }
         if (switching) loadoutSwitchCleanup.accept(id);
+        // MinionManager is a transient entity projection, not durable companion authority.
+        // Any full reconcile/seal/loadout switch must remove the old runtime entities before
+        // the new active profile can rebuild them, otherwise DARK unseal can duplicate summons.
+        minions.removeAllOwned(id);
         for (final Spell spell : spells.getAll()) spell.clearPlayerState(id);
     }
 

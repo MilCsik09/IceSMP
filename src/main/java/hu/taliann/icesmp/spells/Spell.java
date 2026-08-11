@@ -75,9 +75,9 @@ public interface Spell {
     }
 
     /**
-     * Refunds a previously consumed cost. Called only when {@link #executeSpell}
-     * reports a no-op (no effect was applied), restoring the caster's resource —
-     * the inverse of {@link #consumeCost(Player)} for the standard cost types.
+     * Refunds a previously consumed cost. Called only when execution reports a
+     * transaction-neutral outcome, restoring the caster's resource — the inverse
+     * of {@link #consumeCost(Player)} for the standard cost types.
      */
     default void refundCost(final Player player) {
         switch (getCostType()) {
@@ -111,17 +111,34 @@ public interface Spell {
     }
 
     /**
-     * Casts the spell with a spell-mastery power multiplier (1.0 = base). The
-     * default ignores the multiplier and delegates to {@link #executeSpell(Player)},
-     * so only spells that support scaling (the configured spells) override it —
-     * every hand-written stateful spell keeps working unchanged.
-     *
-     * @param player the caster
-     * @param powerMultiplier the mastery power multiplier (>= 1.0)
-     * @return true if the spell's effect was applied
+     * Typed execution hook. Existing boolean spells remain source-compatible and
+     * map a false result to {@link CastOutcome#NO_EFFECT}; spells that need to
+     * distinguish no-target, preparation or interruption can override this method.
+     */
+    default CastOutcome executeCast(final Player player) {
+        return executeSpell(player) ? CastOutcome.SUCCESS : CastOutcome.NO_EFFECT;
+    }
+
+    /**
+     * Executes one cast in an immutable modifier scope. Shared damage/healing
+     * primitives read this context automatically, so bespoke spells cannot silently
+     * lose the standard scaling merely because they did not implement a scalar
+     * overload. Delayed behavior must explicitly capture the immutable modifiers.
+     */
+    default CastOutcome cast(final Player player, final CastModifiers modifiers) {
+        try (SpellExecutionContext.Scope ignored = SpellExecutionContext.open(modifiers)) {
+            final CastOutcome outcome = executeCast(player);
+            return outcome == null ? CastOutcome.FAILED : outcome;
+        }
+    }
+
+    /**
+     * Compatibility overload for legacy callers. New cast pipelines should call
+     * {@link #cast(Player, CastModifiers)} so output categories remain explicit.
+     * Standard power scales magnitude only and never hard-CC duration.
      */
     default boolean executeSpell(final Player player, final double powerMultiplier) {
-        return executeSpell(player);
+        return cast(player, CastModifiers.standardPower(powerMultiplier)).effectApplied();
     }
 
     /**
@@ -144,4 +161,3 @@ public interface Spell {
     default void clearPlayerState(final UUID playerId) {
     }
 }
-

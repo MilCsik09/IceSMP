@@ -44,12 +44,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Concrete Druida vertical-slice runtime.
  *
- * <p>The class core is Természeti Erő and Évszak: nature casts build harmony, and a shapeshift
- * on the existing form system (no new form engine) releases it as the season bound to that form.
- * Vadőr follows one prey trail for combo points, Holdjós swings the Nap↔Hold balance into an
- * Eclipse window, Védelmező stacks self-only bark layers with a root retaliation window (never a
- * target-bound guardian index), and Helyreállító plants seeds that must ripen before a bloom can
- * harvest them. Durable state remains Profile v2.</p>
+ * <p>The class mechanic is Harmónia and Évszak: nature casts build Harmónia, while the separate
+ * primary ResourceManager pool remains Természeti Erő. A shapeshift on the existing form system
+ * (no new form engine) releases Harmónia as the season bound to that form. Vadőr follows one prey
+ * trail for combo points, Holdjós swings the Nap↔Hold balance into an Eclipse window, Védelmező
+ * stacks self-only bark layers with a root retaliation window (never a target-bound guardian index),
+ * and Helyreállító plants seeds that must ripen before a bloom can harvest them. Durable state
+ * remains Profile v2.</p>
  */
 public final class DruidGameplayService implements Listener, PlayerStateCleanup {
 
@@ -238,7 +239,7 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
                     config.getInt("classes.druid.mastery.season-xp", 5));
         }
         player.sendActionBar(messages.getMessage("druid.season.released",
-                "<green>🍃 {season}: {amount} Természeti Erő szabadult fel.</green>",
+                "<green>🍃 {season}: {amount} Harmónia szabadult fel.</green>",
                 Map.of("season", seasonName(season), "amount", Integer.toString(released))));
     }
 
@@ -294,7 +295,6 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
                     "classes.druid.lunar.long-alignment-extra-millis", 2000L));
         }
         state.armEclipse(now, window);
-        // The sweep starts over: an Eclipse is earned by swinging the balance, never by camping it.
         state.resetBalance("orok_egyuttallas".equals(doctrine(playerId, 50))
                 ? -Integer.signum(balance) * config.getInt(
                         "classes.druid.lunar.eternal-restart-value", 20)
@@ -407,7 +407,6 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
                     "classes.druid.ironbark.deep-roots-extra-ticks", 20));
         }
         final int duration = ticks;
-        // Folia: the attacker lives on its own region thread — never touch it inline.
         attacker.getScheduler().run(plugin, task -> attacker.addPotionEffect(
                 new PotionEffect(PotionEffectType.SLOWNESS, duration, 0,
                         false, true, true)), null);
@@ -448,7 +447,7 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         final DruidCombatState state = state(playerId);
         final long now = System.currentTimeMillis();
         final Season season = currentSeason(playerId);
-        Component suffix = Component.text("  • Természeti Erő "
+        Component suffix = Component.text("  • Harmónia "
                         + state.harmony(now, harmonyDecayDelayMillis(), harmonyDecayPerSecond())
                         + (season == null ? "" : " • " + seasonName(season))
                         + (state.isAutumnWindowArmed(now) ? " ➤" : ""),
@@ -482,7 +481,7 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         final Season season = currentSeason(id);
         final int harmony = combat.harmony(now, harmonyDecayDelayMillis(), harmonyDecayPerSecond());
         final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
-                "harmony", "Természeti Erő", "Természeti Erő " + harmony,
+                "harmony", "Harmónia", "Harmónia " + harmony,
                 harmony, 100, season == null ? "natural" : season.name().toLowerCase(Locale.ROOT));
         var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
         String stateText = season == null ? "" : seasonName(season);
