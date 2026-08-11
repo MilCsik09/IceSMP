@@ -364,6 +364,10 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             owner.clearPlayerState(id);
         }
         if (switching) loadoutSwitchCleanup.accept(id);
+        // MinionManager is a transient entity projection, not durable companion authority.
+        // Any full reconcile/seal/loadout switch must remove the old runtime entities before
+        // the new active profile can rebuild them, otherwise DARK unseal can duplicate summons.
+        minions.removeAllOwned(id);
         for (final Spell spell : spells.getAll()) spell.clearPlayerState(id);
     }
 
