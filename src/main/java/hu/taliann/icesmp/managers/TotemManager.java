@@ -171,20 +171,13 @@ public final class TotemManager implements org.bukkit.event.Listener {
      * Places a totem of the given type at the caster's feet. Must be called on the caster's region
      * thread (the spell system already runs spell execution there), so the spawn is region-local.
      * The immutable modifier snapshot survives every pulse scheduler hop.
-     *
-     * @param owner the casting shaman
-     * @param type the totem type
-     * @param modifiers cast-time semantic modifiers
      */
     public void placeTotem(final Player owner, final TotemType type,
                            final CastModifiers modifiers) {
         final CastModifiers snapshot = modifiers == null ? CastModifiers.IDENTITY : modifiers;
         final Location loc = owner.getLocation().clone();
-        if (loc.getWorld() == null) {
-            return;
-        }
+        if (loc.getWorld() == null) return;
 
-        // Totemkerék: az azonos kategóriájú korábbi totemet az új leváltja (nem halmozódik).
         final java.util.Map<TotemCategory, OwnedTotem> owned = totemsByOwner
                 .computeIfAbsent(owner.getUniqueId(), ignored -> new ConcurrentHashMap<>());
         final OwnedTotem previous = owned.get(type.category());
@@ -208,9 +201,7 @@ public final class TotemManager implements org.bukkit.event.Listener {
         totem.customName(Component.text(type.displayName, type.color));
         totem.setCustomNameVisible(true);
         final EntityEquipment equipment = totem.getEquipment();
-        if (equipment != null) {
-            equipment.setHelmet(new ItemStack(type.head));
-        }
+        if (equipment != null) equipment.setHelmet(new ItemStack(type.head));
         totem.getPersistentDataContainer().set(totemKey, PersistentDataType.BYTE, (byte) 1);
 
         activeTotems.add(totem.getUniqueId());
@@ -225,17 +216,14 @@ public final class TotemManager implements org.bukkit.event.Listener {
                             final CastModifiers modifiers) {
         final double radius = Math.max(2.0D, configManager.getDouble("spells.totem.radius", 6.0D));
         final int period = Math.max(10, configManager.getInt("spells.totem.pulse-ticks", 30));
-        // Refresh effects for a little longer than the pulse interval so they never lapse between pulses.
         final int durationTicks = period + 20;
         totem.getScheduler().runAtFixedRate(plugin, task -> {
             if (!totem.isValid()) {
-                // Removed externally before the lifetime timer — prune the tracking set so it can't leak.
                 activeTotems.remove(totem.getUniqueId());
                 task.cancel();
                 return;
             }
             for (final Entity nearby : totem.getNearbyEntities(radius, radius, radius)) {
-                // A pulzus-sugár átnyúlhat régióhatáron — idegen entitást csak a saját szálán érintünk.
                 if (Bukkit.isOwnedByCurrentRegion(nearby)) {
                     type.affect(nearby, durationTicks, modifiers);
                 } else {
@@ -251,9 +239,7 @@ public final class TotemManager implements org.bukkit.event.Listener {
     private void removeTotem(final ArmorStand totem) {
         activeTotems.remove(totem.getUniqueId());
         pruneOwnedTotem(totem.getUniqueId());
-        if (totem.isValid()) {
-            totem.remove();
-        }
+        if (totem.isValid()) totem.remove();
     }
 
     private void pruneOwnedTotem(final UUID totemId) {
@@ -271,15 +257,28 @@ public final class TotemManager implements org.bukkit.event.Listener {
         final java.util.Map<TotemCategory, TotemType> result =
                 new java.util.EnumMap<>(TotemCategory.class);
         for (final var entry : owned.entrySet()) {
-            if (activeTotems.contains(entry.getValue().totemId())) {
-                result.put(entry.getKey(), entry.getValue().type());
-            }
+            if (activeTotems.contains(entry.getValue().totemId())) result.put(entry.getKey(), entry.getValue().type());
         }
         return result;
     }
 
+    /**
+     * Full transient cleanup for death/logout/class teardown. Removing only the owner map would
+     * leave the ArmorStand and repeating pulse alive until its timeout.
+     */
     public void clearOwnerProjection(final UUID ownerId) {
-        totemsByOwner.remove(ownerId);
+        final java.util.Map<TotemCategory, OwnedTotem> owned = totemsByOwner.remove(ownerId);
+        if (owned == null || owned.isEmpty()) return;
+        for (final OwnedTotem value : java.util.Set.copyOf(owned.values())) {
+            final UUID totemId = value.totemId();
+            final Entity entity = Bukkit.getEntity(totemId);
+            if (entity instanceof ArmorStand stand && stand.isValid()) {
+                stand.getScheduler().run(plugin, task -> removeTotem(stand),
+                        () -> activeTotems.remove(totemId));
+            } else {
+                activeTotems.remove(totemId);
+            }
+        }
     }
 
     public boolean isTotem(final Entity entity) {
@@ -295,7 +294,7 @@ public final class TotemManager implements org.bukkit.event.Listener {
                 try {
                     entity.remove();
                 } catch (final Exception ignored) {
-                    // Region/thread unavailable during shutdown — leave it; at worst a stray armor stand.
+                    // Region/thread unavailable during shutdown — leave it; onEntitiesLoad prunes crash orphans.
                 }
             }
         }
