@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -33,6 +34,7 @@ public final class ShadowburnSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final UUID casterId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final Vector direction = player.getEyeLocation().getDirection().setY(0.0D).normalize();
         final double spawnDistance = balance("spawn-distance", 2.0D);
         final Location spawnLocation = player.getLocation().add(direction.multiply(spawnDistance));
@@ -58,17 +60,12 @@ public final class ShadowburnSpell extends BaseSpell {
             }
 
             for (final Entity nearby : rabbit.getNearbyEntities(triggerRadius, triggerRadius, triggerRadius)) {
-                if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)) {
-                    continue;
-                }
-                // Baráti tűz: párttag/frakciótárs ne élesítse az aknát.
-                final Player owner = Bukkit.getPlayer(casterId);
-                if (owner != null && Bukkit.isOwnedByCurrentRegion(owner)
-                        && SpellTargetingUtil.isAlly(owner, living)) {
+                if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)
+                        || SpellTargetingUtil.isAlly(casterId, living)) {
                     continue;
                 }
 
-                detonate(rabbit, casterId, explodeRadius, damage);
+                detonate(rabbit, casterId, explodeRadius, damage, modifiers);
                 task.cancel();
                 return;
             }
@@ -85,7 +82,8 @@ public final class ShadowburnSpell extends BaseSpell {
         player.playSound(player.getLocation(), Sound.ENTITY_RABBIT_AMBIENT, 0.8F, 0.6F);
     }
 
-    private void detonate(final Rabbit rabbit, final UUID casterId, final double explodeRadius, final double damage) {
+    private void detonate(final Rabbit rabbit, final UUID casterId, final double explodeRadius,
+                          final double damage, final CastModifiers modifiers) {
         final Location center = rabbit.getLocation();
         final World world = center.getWorld();
         rabbit.remove();
@@ -97,18 +95,15 @@ public final class ShadowburnSpell extends BaseSpell {
         final boolean casterInRegion = caster != null && Bukkit.isOwnedByCurrentRegion(caster);
 
         for (final Entity nearby : world.getNearbyEntities(center, explodeRadius, explodeRadius, explodeRadius)) {
-            if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)) {
-                continue;
-            }
-            // Baráti tűz: a robbanás ne sebezze a párttagot/frakciótársat.
-            if (casterInRegion && SpellTargetingUtil.isAlly(caster, living)) {
+            if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)
+                    || SpellTargetingUtil.isAlly(casterId, living)) {
                 continue;
             }
 
             if (casterInRegion) {
-                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());
+                SpellDamageUtil.damageBySpell(caster, living, damage, getId(), modifiers);
             } else {
-                living.damage(damage);
+                living.damage(SpellDamageUtil.scaledDamage(damage, modifiers));
             }
         }
     }

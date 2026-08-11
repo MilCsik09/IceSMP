@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
@@ -14,7 +15,9 @@ import org.bukkit.util.Vector;
 
 /**
  * Generic projectile volley spell: launches one or more projectiles of the
- * configured kind in a horizontal spread. Arrows are flagged non-pickup.
+ * configured kind in a horizontal spread. Arrows are flagged non-pickup. Every
+ * projectile carries the immutable cast damage multiplier to its later hit
+ * event, so mastery/gear/combo scaling survives the scheduler boundary.
  */
 public final class ProjectileBurstSpell extends BaseSpell {
 
@@ -71,6 +74,7 @@ public final class ProjectileBurstSpell extends BaseSpell {
         final int projectileCount = Math.max(1, balanceInt("count", count));
         final double spread = balance("spread", spreadDegrees);
         final double projectileSpeed = balance("speed", speed);
+        final CastModifiers modifiers = SpellExecutionContext.capture();
 
         for (int index = 0; index < projectileCount; index++) {
             final double angle = spread * (index - ((projectileCount - 1) / 2.0D));
@@ -78,6 +82,7 @@ public final class ProjectileBurstSpell extends BaseSpell {
                     .rotateAroundY(Math.toRadians(angle))
                     .multiply(projectileSpeed);
             final Projectile projectile = player.launchProjectile(kind.projectileClass, velocity);
+            SpellDamageUtil.markProjectile(projectile, getId(), modifiers);
             if (projectile instanceof AbstractArrow arrow) {
                 arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
                 arrow.setCritical(true);
