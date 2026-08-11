@@ -1,5 +1,5 @@
 schema-version: 2
-verified-on: "2026-08-10"
+verified-on: "2026-08-11"
 target:
   minecraft: "1.21.11"
   platform: "Folia 1.21.11"
@@ -56,35 +56,6 @@ plugins:
     dev-provision: modrinth
     dev-project: "placeholderapi"
     dev-version-id: "pIvQcXW8"
-  CraftEngine:
-    server-name: CraftEngine
-    runtime-role: optional-integration
-    accepted-versions: ["26.7.4"]
-    verification: official-beta-pin
-    source-page: "https://modrinth.com/plugin/craftengine/version/aINSQrXC"
-    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
-    dev-provision: modrinth
-    dev-project: "craftengine"
-    dev-version-id: "aINSQrXC"
-  ModelEngine:
-    server-name: ModelEngine
-    runtime-role: optional-integration
-    accepted-versions: ["4.1.0"]
-    verification: licensed-artifact-staging-required
-    source-page: "https://mythiccraft.io/index.php?resources/model-engine%E2%80%94ultimate-entity-model-manager-1-19-4-26-2.1213/"
-    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
-    dev-provision: local
-    dev-local-file: "ModelEngine-4.1.0.jar"
-  BetterHud:
-    server-name: BetterHud
-    runtime-role: optional-integration
-    accepted-versions: ["1.14.1"]
-    verification: official-release
-    source-page: "https://modrinth.com/plugin/betterhud2/version/CkhnPS1i"
-    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
-    dev-provision: modrinth
-    dev-project: "betterhud2"
-    dev-version-id: "CkhnPS1i"
   MythicMobs:
     server-name: MythicMobs
     runtime-role: optional-integration
@@ -134,12 +105,3 @@ plugins:
     artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
     dev-provision: local
     dev-local-file: "LibsDisguises-11.0.18.jar"
-  MythicArmors:
-    server-name: MythicArmors
-    runtime-role: validation-only
-    accepted-versions: ["5.13.1"]
-    verification: licensed-artifact-staging-required
-    source-page: "https://mythiccraft.io/index.php?resources/mythicarmors.1575/"
-    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
-    dev-provision: local
-    dev-local-file: "MythicArmors-5.13.1.jar"
