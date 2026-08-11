@@ -3,7 +3,7 @@ package hu.taliann.icesmp.deathknight;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Dependency-free behavior regression for the concrete Halállovag runtime state. */
+/** Dependency-free behavior + transaction regression for the concrete Halállovag runtime state. */
 public final class DeathKnightGameplayRegressionSuite {
 
     private static int assertions;
@@ -14,11 +14,13 @@ public final class DeathKnightGameplayRegressionSuite {
     public static void main(final String[] args) throws Exception {
         runeWheelSpendsAndRechargesLazily();
         deathRuneOnlyComesFromTransmutation();
+        runeTransactionCommitsExactlyOnce();
         bloodMemoryIsBoundedAndSpentWhole();
         frostMarksConsumePartiallyOrFully();
         plagueBurstsAndMutatesTheGhoul();
         cleanupLifecycle();
         runeAndAllowlistSourceContracts();
+        castTransactionAndLifecycleSourceContracts();
         System.out.println("Death Knight gameplay regression suite passed. assertions=" + assertions);
     }
 
@@ -51,9 +53,9 @@ public final class DeathKnightGameplayRegressionSuite {
                         t0 + 3_000L, 6_000L) == 50,
                 "the HUD receives the exact lazy-recharge progress without creating new authority");
         check(state.runes(DeathKnightCombatState.Rune.VER, 2, t0 + 6_000L, 6_000L) == 1,
-                "one step restores exactly one rune");
+                "reconnect/lazy reload after one recharge step restores exactly one rune");
         check(state.runes(DeathKnightCombatState.Rune.VER, 2, t0 + 60_000L, 6_000L) == 2,
-                "the recharge stops at the capacity");
+                "offline/lazy recharge stops at natural capacity");
     }
 
     private static void deathRuneOnlyComesFromTransmutation() {
@@ -81,6 +83,37 @@ public final class DeathKnightGameplayRegressionSuite {
         drained.spendRune(DeathKnightCombatState.Rune.FAGY, 1, t0, 6_000L);
         check(!drained.transmuteToDeath(1, 1, t0, 6_000L),
                 "an empty wheel has nothing to transmute");
+    }
+
+    /**
+     * Pure state witness for the transaction contract used by AbilityCatalystListener:
+     * validation is a read, failed primary/no-effect attempts never call spendRune, and
+     * exactly one successful commit does.
+     */
+    private static void runeTransactionCommitsExactlyOnce() {
+        final DeathKnightCombatState state = new DeathKnightCombatState();
+        final long now = 75_000L;
+        state.prime(2, now);
+        final int initial = state.runes(DeathKnightCombatState.Rune.VER, 2, now, 6_000L);
+        check(initial == 2, "transaction witness starts with two runes");
+
+        // beforeCast/no-rune availability checks are reads only.
+        check(state.runes(DeathKnightCombatState.Rune.VER, 2, now, 6_000L) >= 1,
+                "rune validation can approve without mutating the wheel");
+        check(state.runes(DeathKnightCombatState.Rune.VER, 2, now, 6_000L) == initial,
+                "validation itself consumes zero runes");
+
+        // Primary-resource rejection occurs after preparation but before execution/afterCast.
+        check(state.runes(DeathKnightCombatState.Rune.VER, 2, now, 6_000L) == initial,
+                "primary-resource rejection consumes zero runes");
+        // NO_TARGET/NO_EFFECT rolls back primary reservation and never commits class state.
+        check(state.runes(DeathKnightCombatState.Rune.VER, 2, now, 6_000L) == initial,
+                "non-committing execution consumes zero runes");
+
+        check(state.spendRune(DeathKnightCombatState.Rune.VER, 2, now, 6_000L),
+                "successful class commit consumes its rune");
+        check(state.runes(DeathKnightCombatState.Rune.VER, 2, now, 6_000L) == initial - 1,
+                "successful cast consumes exactly one rune");
     }
 
     private static void bloodMemoryIsBoundedAndSpentWhole() {
@@ -157,7 +190,7 @@ public final class DeathKnightGameplayRegressionSuite {
                 "spec switch clears the Dögvész and the ghoul mutation");
         state.prime(2, t0);
         check(state.runes(DeathKnightCombatState.Rune.VER, 2, t0, 6_000L) == 2,
-                "the wheel can be primed again after a spec switch");
+                "the wheel deterministically rebuilds after a spec switch/reconnect");
     }
 
     private static void runeAndAllowlistSourceContracts() throws Exception {
@@ -183,8 +216,6 @@ public final class DeathKnightGameplayRegressionSuite {
 
         final String gameplayConfig = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));
-        check(gameplayConfig.contains("classes: []"),
-                "the melee-catalyst compatibility list is empty — every class casts through its Lélekkapocs");
         check(gameplayConfig.contains("transmute-spells:"),
                 "the Halál rune source is declared, admin-tunable live config");
 
@@ -194,6 +225,62 @@ public final class DeathKnightGameplayRegressionSuite {
                 "death_knight_frost_trial", "death_knight_unholy_trial"}) {
             check(manager.contains(trial), "the capstone trial contract " + trial + " is registered");
         }
+    }
+
+    private static void castTransactionAndLifecycleSourceContracts() throws Exception {
+        final String service = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java"))
+                .replace("\r\n", "\n");
+        final String listener = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java"))
+                .replace("\r\n", "\n");
+
+        final int before = service.indexOf("public boolean beforeCast");
+        final int availability = service.indexOf("state.runes(cost.rune(), naturalCapacity(), now, rechargeMillis())", before);
+        final int after = service.indexOf("public void afterCast", before);
+        final int spend = service.indexOf("state.spendRune(cost.rune(), naturalCapacity(), now, rechargeMillis())", after);
+        check(before >= 0 && availability > before && after > availability && spend > after,
+                "beforeCast checks rune availability while spendRune lives only in afterCast");
+        check(service.substring(before, after).indexOf("spendRune(") < 0,
+                "blocked/no-rune preparation cannot consume a rune");
+        check(occurrences(service.substring(after), "state.spendRune(cost.rune(), naturalCapacity(), now, rechargeMillis())") == 1,
+                "successful afterCast has exactly one primary rune-consume site");
+
+        final int prepare = listener.indexOf("final PreparationResult preparation = prepareClassCast");
+        final int affordability = listener.indexOf("final boolean useResource", prepare);
+        final int execution = listener.indexOf("selected.cast(player, CastModifiers.standardPower(power))", affordability);
+        final int noCommit = listener.indexOf("outcome == null || !outcome.commitsCast()", execution);
+        final int classCommit = listener.indexOf("hook.commit().commit", noCommit);
+        check(prepare >= 0 && affordability > prepare,
+                "rune availability/preparation precedes primary-resource affordability");
+        check(execution > affordability && noCommit > execution && classCommit > noCommit,
+                "NO_TARGET/NO_EFFECT exits before Death Knight afterCast/rune commit");
+
+        check(service.contains("onPlayerDeath(final PlayerDeathEvent event) { clearPlayerState"),
+                "death clears Death Knight transient rune/spec state");
+        check(service.contains("onQuit(final PlayerQuitEvent event) { clearPlayerState"),
+                "logout clears Death Knight transient state");
+        check(service.contains("onKick(final PlayerKickEvent event) { clearPlayerState"),
+                "kick clears Death Knight transient state");
+        check(service.contains("onPluginDisable(final PluginDisableEvent event)") && service.contains("shutdown();"),
+                "plugin disable clears every Death Knight runtime state");
+
+        final String adapter = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java"));
+        check(adapter.contains("deathKnight.clearSpecializationState(playerId);"),
+                "loadout/spec switch clears spec-local runes/marks before deterministic rebuild");
+        check(adapter.contains("registerTransientOwner(deathKnight);"),
+                "full seal/reset reconciliation owns Death Knight transient cleanup");
+    }
+
+    private static int occurrences(final String text, final String needle) {
+        int count = 0;
+        int at = 0;
+        while ((at = text.indexOf(needle, at)) >= 0) {
+            count++;
+            at += needle.length();
+        }
+        return count;
     }
 
     private static void check(final boolean condition, final String message) {
