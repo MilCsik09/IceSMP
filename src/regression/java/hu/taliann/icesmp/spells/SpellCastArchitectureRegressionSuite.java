@@ -91,7 +91,8 @@ public final class SpellCastArchitectureRegressionSuite {
                 "executeCast is the canonical typed execution path");
         require(spell.contains("return cast(player, CastModifiers.standardPower(powerMultiplier)).effectApplied();"),
                 "legacy scalar compatibility must delegate one-way into typed cast");
-        require(!spell.contains("cast(player, modifiers) ?"), "typed cast may not recurse through a boolean compatibility path");
+        require(!spell.contains("cast(player, modifiers) ?"),
+                "typed cast may not recurse through a boolean compatibility path");
 
         final String configured = read(root, "src/main/java/hu/taliann/icesmp/spells/ConfiguredSpell.java");
         require(configured.contains("return cast(player, CastModifiers.standardPower(power)).effectApplied();"),
@@ -125,6 +126,25 @@ public final class SpellCastArchitectureRegressionSuite {
                         && projectile.contains("SpellDamageUtil.markProjectile"),
                 "projectile volleys must capture and carry modifiers to hit time");
 
+        assertDelayedDamageSnapshot(root, "DeepBreathSpell.java");
+        assertDelayedDamageSnapshot(root, "WhirlwindSpell.java");
+        assertDelayedDamageSnapshot(root, "FlyingSerpentKickSpell.java");
+        assertDelayedDamageSnapshot(root, "GlaiveThrowSpell.java");
+
+        final String shamanTotem = read(root,
+                "src/main/java/hu/taliann/icesmp/spells/ShamanTotemSpell.java");
+        final String totemManager = read(root,
+                "src/main/java/hu/taliann/icesmp/managers/TotemManager.java");
+        require(shamanTotem.contains("SpellExecutionContext.capture()"),
+                "totem creation must snapshot modifiers inside the synchronous cast scope");
+        require(totemManager.contains("final CastModifiers snapshot")
+                        && totemManager.contains("SpellDamageUtil.scaledDamage(damage, modifiers)"),
+                "totem pulse damage must retain the immutable cast multiplier");
+        require(totemManager.contains("type.affect(nearby, durationTicks, modifiers)"),
+                "cross-region totem pulse must carry the same snapshot");
+        require(!totemManager.contains("monster.damage(damage);"),
+                "totem delayed damage may not bypass shared scaling");
+
         final String listener = read(root, "src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java");
         require(listener.contains("CastOutcome") && listener.contains("!outcome.commitsCast()"),
                 "non-committing typed outcomes must stop state/cooldown bookkeeping");
@@ -151,13 +171,19 @@ public final class SpellCastArchitectureRegressionSuite {
                 "persistent cooldown stores the same cast timestamp consumed by the shared formula");
 
         final String combos = read(root, "src/main/resources/config/spells.yml");
-        require(!combos.contains("soul-collapse:"), "cross-spec Affliction/Destruction chain must stay removed");
-        require(!combos.contains("way-of-hundred-fists:"), "Monk native rotation must not be double-rewarded globally");
+        require(!combos.contains("soul-collapse:"),
+                "cross-spec Affliction/Destruction chain must stay removed");
+        require(!combos.contains("way-of-hundred-fists:"),
+                "Monk native rotation must not be double-rewarded globally");
 
         final String druid = read(root, "src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java");
         require(druid.contains("\"harmony\", \"Harmónia\"")
                         && !druid.contains("\"harmony\", \"Természeti Erő\""),
                 "Druid secondary Harmony must be distinct from primary Nature Power");
+
+        final String core = read(root, "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
+        require(!core.contains("spellRegistry.register(overridden)"),
+                "live ConfiguredSpell balance reporting must not depend on duplicate re-registration");
 
         final String aggregate = read(root,
                 "src/regression/java/hu/taliann/icesmp/spells/ClassSpellAuditRegressionSuite.java");
@@ -181,6 +207,17 @@ public final class SpellCastArchitectureRegressionSuite {
         require(check >= 0 && build.indexOf("wizardGameplayRegressionTest", check) > check
                         && build.indexOf("wizardProfileRegressionTest", check) > check,
                 "Wizard regression tasks must be dependencies of check");
+    }
+
+    private static void assertDelayedDamageSnapshot(final Path root, final String file) throws IOException {
+        final String source = read(root, "src/main/java/hu/taliann/icesmp/spells/" + file);
+        require(source.contains("SpellExecutionContext.capture()"),
+                file + " must snapshot modifiers before scheduler hops");
+        require(source.contains("CastModifiers modifiers"),
+                file + " must explicitly carry the immutable snapshot");
+        require(source.contains("SpellDamageUtil.damageBySpell")
+                        || source.contains("SpellDamageUtil.scaledDamage"),
+                file + " delayed output must use the shared damage scaling primitive");
     }
 
     private static int occurrences(final String text, final String needle) {
