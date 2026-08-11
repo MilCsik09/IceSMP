@@ -72,9 +72,11 @@ class ResourcePackToolingTest(unittest.TestCase):
             "#moj_import <minecraft:globals.glsl>\n"
             "void main(){vec2 ui=vec2(1);float responsiveScale=1;"
             "vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;"
-            "vec4 clipPosition=vec4(0);"
-            "clipPosition.x = clipPosition.w + clipPosition.x * hudScale.x;"
-            "clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * hudScale.y;"
+            "const float HUD_LAYOUT_SCALES[8]=float[8](.75,.9,1,1.15,1.25,1.4,1.6,1.8);"
+            "ivec3 packedColor=ivec3(0);int layoutCode = (packedColor.r & 15);"
+            "float layoutScale=1;float layoutYOffset=0;vec4 clipPosition=vec4(0);"
+            "vec2 selectedHudScale = hudScale * layoutScale;"
+            "clipPosition.y-=layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;"
             "fog_spherical_distance(vec3(0));}\n",
             encoding="utf-8",
         )
