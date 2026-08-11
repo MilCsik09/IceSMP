@@ -4,11 +4,7 @@ import hu.taliann.icesmp.monk.MonkStaggerLifecycleRegressionSuite;
 import hu.taliann.icesmp.wizard.WizardGameplayRegressionSuite;
 import hu.taliann.icesmp.wizard.WizardProfileRegressionSuite;
 
-/**
- * Check-wired cross-system class/spell aggregate. It runs from the mandatory
- * SpellGrantLedger gate and owns the hardening-specific behavior/contracts that
- * span more than one class package.
- */
+/** Check-wired aggregate for the cross-system class/spell hardening contracts. */
 public final class ClassSpellAuditRegressionSuite {
 
     private ClassSpellAuditRegressionSuite() {
@@ -17,6 +13,7 @@ public final class ClassSpellAuditRegressionSuite {
     public static void main(final String[] args) throws Exception {
         SpellRegistryRegressionSuite.main(args);
         SpellCastArchitectureRegressionSuite.main(args);
+        ActiveKitLifecycleRegressionSuite.main(args);
         DarkClassSpellLifecycleRegressionSuite.main(args);
         MonkStaggerLifecycleRegressionSuite.main(args);
         WizardGameplayRegressionSuite.main(args);
