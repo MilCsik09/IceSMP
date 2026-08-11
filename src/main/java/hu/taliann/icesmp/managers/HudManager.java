@@ -4,6 +4,12 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.hud.HudEditorStateMachine;
+import hu.taliann.icesmp.hud.HudLayoutPreset;
+import hu.taliann.icesmp.hud.HudLayoutSnapshot;
+import hu.taliann.icesmp.hud.HudPreviewCatalog;
+import hu.taliann.icesmp.hud.IceSmpHudBackend;
+import hu.taliann.icesmp.hud.IceSmpHudModel;
 import hu.taliann.icesmp.utils.PlatformCapabilities;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -31,8 +37,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
-import hu.taliann.icesmp.hud.IceSmpHudBackend;
-import hu.taliann.icesmp.hud.IceSmpHudModel;
 
 /**
  * Live player HUD: a sidebar scoreboard (faction, currency,
@@ -130,6 +134,7 @@ public final class HudManager {
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
     private final Set<UUID> iceSmpHudPlayers = ConcurrentHashMap.newKeySet();
+    private final HudEditorStateMachine hudEditor = new HudEditorStateMachine();
     private final IceSmpHudBackend iceSmpHudBackend;
     private final AtomicBoolean iceSmpHudReady = new AtomicBoolean();
     private final AtomicBoolean placeholderBridgeReady = new AtomicBoolean();
@@ -191,6 +196,102 @@ public final class HudManager {
     /** First-party HUD is display-only and consumes the same immutable snapshot as PAPI. */
     public boolean iceSmpHudActive() {
         return configManager.getBoolean("hud.icesmp-hud.enabled", true) && iceSmpHudReady.get();
+    }
+
+    public boolean hudEditorEnabled() {
+        return configManager.getBoolean("hud.icesmp-hud.editor.enabled", false);
+    }
+
+    public HudLayoutSnapshot configuredHudLayout() {
+        final FileConfiguration configuration = configManager.getConfiguration();
+        if (configuration == null) return HudLayoutSnapshot.defaults();
+        return HudLayoutSnapshot.fromConfigValues(
+                configuration.get("hud.icesmp-hud.layout.x-offset-pixels"),
+                configuration.get("hud.icesmp-hud.layout.y-offset-pixels"),
+                configuration.get("hud.icesmp-hud.layout.safe-margin-pixels"),
+                configuration.get("hud.icesmp-hud.layout.scale"));
+    }
+
+    public HudEditorStateMachine.Session beginHudEditor(final Player player) {
+        return hudEditor.session(player.getUniqueId()).orElseGet(() -> {
+            final ConfigManager.ConfigSnapshot snapshot = configManager.snapshot();
+            return hudEditor.start(player.getUniqueId(), configuredHudLayout(), snapshot.generation(),
+                    snapshot.sourceFingerprint());
+        });
+    }
+
+    public java.util.Optional<HudEditorStateMachine.Session> hudEditorSession(final Player player) {
+        return hudEditor.session(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session moveHudEditor(final Player player, final int x, final int y) {
+        return hudEditor.move(player.getUniqueId(), x, y);
+    }
+
+    public HudEditorStateMachine.Session changeHudEditorMargin(final Player player, final int direction) {
+        return hudEditor.margin(player.getUniqueId(), direction);
+    }
+
+    public HudEditorStateMachine.Session changeHudEditorScale(final Player player, final int variants) {
+        return hudEditor.scale(player.getUniqueId(), variants);
+    }
+
+    public HudEditorStateMachine.Session setHudEditorStep(final Player player, final int step) {
+        return hudEditor.step(player.getUniqueId(), step);
+    }
+
+    public HudEditorStateMachine.Session useHudEditorPreset(final Player player, final HudLayoutPreset preset) {
+        return hudEditor.preset(player.getUniqueId(), preset);
+    }
+
+    public HudEditorStateMachine.Session resetHudEditor(final Player player) {
+        return hudEditor.reset(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session undoHudEditor(final Player player) {
+        return hudEditor.undo(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session previewHudFaction(final Player player, final String faction) {
+        return hudEditor.previewFaction(player.getUniqueId(), faction);
+    }
+
+    public HudEditorStateMachine.Session previewHudClass(final Player player, final String playerClass) {
+        return hudEditor.previewClass(player.getUniqueId(), playerClass);
+    }
+
+    public HudEditorStateMachine.Session previewHudState(final Player player, final String state) {
+        return hudEditor.previewState(player.getUniqueId(), state);
+    }
+
+    public boolean refreshHudEditorPreview(final Player player) {
+        final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
+        if (session == null || !hudEditorEnabled()) return false;
+        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                HudPreviewCatalog.model(session.preview()), session.working(), true));
+    }
+
+    public ConfigManager.BatchApplyResult saveHudEditor(final Player player) {
+        final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
+        if (session == null) return ConfigManager.BatchApplyResult.NO_CHANGES;
+        final HudLayoutSnapshot layout = session.working();
+        final ConfigManager.BatchApplyResult result = configManager.applyOverridesIfUnchanged(
+                session.configGeneration(), session.configFingerprint(), Map.of(
+                        "hud.icesmp-hud.layout.x-offset-pixels", layout.xOffsetPixels(),
+                        "hud.icesmp-hud.layout.y-offset-pixels", layout.yOffsetPixels(),
+                        "hud.icesmp-hud.layout.safe-margin-pixels", layout.safeMarginPixels(),
+                        "hud.icesmp-hud.layout.scale", layout.scale()));
+        if (result != ConfigManager.BatchApplyResult.STALE) {
+            hudEditor.apply(player.getUniqueId());
+            restoreLiveHud(player);
+        }
+        return result;
+    }
+
+    public boolean cancelHudEditor(final Player player) {
+        final boolean removed = hudEditor.cancel(player.getUniqueId()).isPresent();
+        if (removed) restoreLiveHud(player);
+        return removed;
     }
 
     private boolean iceSmpHudActive(final Player player) {
@@ -486,6 +587,7 @@ public final class HudManager {
         lastLines.remove(player.getUniqueId());
         snapshots.remove(player.getUniqueId());
         iceSmpHudPlayers.remove(player.getUniqueId());
+        hudEditor.cancel(player.getUniqueId());
         iceSmpHudBackend.hide(player);
         hiddenSectionsCache.remove(player.getUniqueId());
         player.hideBossBar(raidBar);
@@ -498,10 +600,20 @@ public final class HudManager {
     }
 
     private boolean renderIceSmpHud(final Player player, final HudSnapshot snapshot) {
+        final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
+        if (editorSession != null && hudEditorEnabled()) {
+            return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                    HudPreviewCatalog.model(editorSession.preview()), editorSession.working(), true));
+        }
+        if (editorSession != null) hudEditor.cancel(player.getUniqueId());
         final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
         final boolean visible = configured && !isSectionHidden(player, SECTION_ALL)
                 && snapshot.classHud() != null;
-        final boolean active = iceSmpHudBackend.render(player, IceSmpHudModel.from(snapshot), visible);
+        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                IceSmpHudModel.from(snapshot), configuredHudLayout(), visible));
+    }
+
+    private boolean recordIceSmpHudState(final Player player, final boolean active) {
         if (active) {
             iceSmpHudPlayers.add(player.getUniqueId());
         } else {
@@ -509,6 +621,16 @@ public final class HudManager {
         }
         updateIceSmpHudReadiness(!iceSmpHudPlayers.isEmpty());
         return active;
+    }
+
+    private void restoreLiveHud(final Player player) {
+        final HudSnapshot live = snapshots.get(player.getUniqueId());
+        if (live == null) {
+            iceSmpHudBackend.hide(player);
+            recordIceSmpHudState(player, false);
+        } else {
+            renderIceSmpHud(player, live);
+        }
     }
 
     private void updateIceSmpHudReadiness(final boolean ready) {
