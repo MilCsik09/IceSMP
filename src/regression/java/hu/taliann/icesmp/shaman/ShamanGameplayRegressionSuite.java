@@ -30,11 +30,9 @@ public final class ShamanGameplayRegressionSuite {
         state.chargeOverload(1, 4);
         check(state.isOverloadArmed(4), "the threshold arms the overload");
         check(state.chargeOverload(5, 4) == 4, "the charge is bounded at the threshold");
-
         state.consumeOverload(0);
         check(state.overload() == 0, "spent overload vents fully");
         check(!state.isOverloadArmed(4), "spent overload cannot double-fire");
-
         state.chargeOverload(4, 4);
         state.consumeOverload(2);
         check(state.overload() == 2, "retention doctrine keeps partial charge");
@@ -70,7 +68,6 @@ public final class ShamanGameplayRegressionSuite {
         check(state.spendMaelstrom(30), "the Maelstrom funds spec spells");
         check(state.maelstrom() == 70, "the spend is exact");
         check(!state.spendMaelstrom(71), "the Maelstrom cannot overspend");
-
         check(state.ventMaelstrom(0) == 70, "the capstone vents everything");
         check(state.maelstrom() == 0, "the vent leaves nothing by default");
         state.recordMeleeHit(t0 + 60_000L, 600L, 1_600L, 4, 0);
@@ -91,10 +88,8 @@ public final class ShamanGameplayRegressionSuite {
         state.pushTide(20);
         check(state.isHighTide(60), "the threshold reaches Dagály");
         check(state.pushTide(1000) == 100, "the tide is bounded at +100");
-
         state.consumeTide(0);
         check(state.tide() == 0, "a consumed tide flows back to the middle");
-
         state.pushTide(-80);
         check(state.isLowTide(60), "chain heals reach Apály on the other side");
         check(state.pushTide(-1000) == -100, "the tide is bounded at -100");
@@ -115,7 +110,6 @@ public final class ShamanGameplayRegressionSuite {
         check(state.tide() == 0, "spec switch clears the tide");
         check(state.blessingSide() == ShamanCombatState.BlessingSide.VIHAR,
                 "spec switch resets the blessing side");
-
         state.pushTide(30);
         state.clearAll();
         check(state.tide() == 0, "death/logout cleanup clears everything");
@@ -145,6 +139,9 @@ public final class ShamanGameplayRegressionSuite {
                 "same-region and cross-region pulses both carry the same modifier snapshot");
         check(!totems.contains("monster.damage(damage);"),
                 "fixed unscaled totem pulse damage cannot bypass shared power");
+        check(totems.contains("totemsByOwner.remove(ownerId)")
+                        && totems.contains("stand.getScheduler().run(plugin, task -> removeTotem(stand)"),
+                "owner cleanup despawns the live totem on its own entity scheduler");
 
         final String totemSpell = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/spells/ShamanTotemSpell.java"));
@@ -159,6 +156,8 @@ public final class ShamanGameplayRegressionSuite {
                 "no proximity scans or repeating tasks in the shaman class runtime itself");
         check(service.contains("max-power-bonus-percent"),
                 "shaman cast bonuses ride the capped shared power pipeline");
+        check(service.contains("totemManager.clearOwnerProjection(playerId);"),
+                "death/logout/kick class cleanup tears down live totems through TotemManager");
     }
 
     private static void check(final boolean condition, final String message) {
