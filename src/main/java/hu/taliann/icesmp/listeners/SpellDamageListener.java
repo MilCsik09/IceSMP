@@ -8,7 +8,9 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
@@ -16,8 +18,10 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Map;
 
 /**
- * A mágia damage-type (icesmp:magia) kiszolgálása:
+ * A mágia damage-type (icesmp:magia) és a spell-projectile snapshotok kiszolgálása:
  * <ul>
+ *   <li><b>Projectile scaling:</b> a volley lövedék PDC-jében tárolt immutable
+ *       damage multiplier a becsapódáskor pontosan egyszer skálázza az eventet.</li>
  *   <li><b>Rúnavért ellenállás:</b> a viselt páncélon lévő Rúnavért-szintek összege
  *       szintenként {@code spells.magic-resist.per-level} arányban csökkenti a bejövő
  *       SPELL-sebzést (plafon: {@code max-reduction}) — vanília sebzésre nem hat.</li>
@@ -35,6 +39,15 @@ public final class SpellDamageListener implements Listener {
     public SpellDamageListener(final ConfigManager configManager, final MessageManager messageManager) {
         this.configManager = configManager;
         this.messageManager = messageManager;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onSpellProjectileDamage(final EntityDamageByEntityEvent event) {
+        final double multiplier = SpellDamageUtil.projectileDamageMultiplier(event.getDamager());
+        if (multiplier == 1.0D) {
+            return;
+        }
+        event.setDamage(Math.max(0.0D, event.getDamage() * multiplier));
     }
 
     @EventHandler(ignoreCancelled = true)

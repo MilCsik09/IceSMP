@@ -1,10 +1,9 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellHealingUtil;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
@@ -23,6 +22,11 @@ public final class LifeDrainSpell extends BaseSpell {
     }
 
     @Override
+    public CastOutcome executeCast(final Player player) {
+        return executeSpell(player) ? CastOutcome.SUCCESS : CastOutcome.NO_TARGET;
+    }
+
+    @Override
     public boolean executeSpell(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, balance("range", RANGE));
         if (target == null) {
@@ -34,10 +38,7 @@ public final class LifeDrainSpell extends BaseSpell {
         hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, target, damage, getId());
 
         final double heal = balance("heal", DRAIN_AMOUNT);
-        final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth != null) {
-            player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + heal));
-        }
+        SpellHealingUtil.heal(player, heal);
 
         player.getWorld().spawnParticle(Particle.SOUL, target.getLocation().add(0.0D, 1.0D, 0.0D), 20, 0.3D, 0.5D, 0.3D, 0.05D);
         player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0.0D, 2.0D, 0.0D), 3, 0.2D, 0.2D, 0.2D);

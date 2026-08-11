@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -46,6 +47,7 @@ public final class HolyWrathSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final UUID shooterId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final Vector direction = player.getEyeLocation().getDirection().normalize();
         final ArmorStand projectile = player.getWorld().spawn(
                 player.getEyeLocation().add(direction.clone().multiply(0.8D)), ArmorStand.class, as -> {
@@ -91,9 +93,9 @@ public final class HolyWrathSpell extends BaseSpell {
                 } else {
                     final double damage = living.getHealth() * damagePercent;
                     if (shooterInCurrentRegion) {
-                        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, damage, getId());
+                        SpellDamageUtil.damageBySpell(shooter, living, damage, getId(), modifiers);
                     } else {
-                        living.damage(damage);
+                        living.damage(SpellDamageUtil.scaledDamage(damage, modifiers));
                     }
                 }
 

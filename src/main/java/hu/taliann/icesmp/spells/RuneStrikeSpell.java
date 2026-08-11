@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -40,8 +41,9 @@ public final class RuneStrikeSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final UUID casterId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final Vector direction = player.getEyeLocation().getDirection().normalize();
-        final Location spawnLocation = player.getEyeLocation().add(direction.multiply(0.6D));
+        final Location spawnLocation = player.getEyeLocation().add(direction.clone().multiply(0.6D));
 
         final Item item = player.getWorld().dropItem(spawnLocation, taggedStone());
         item.setPickupDelay(Integer.MAX_VALUE);
@@ -54,7 +56,8 @@ public final class RuneStrikeSpell extends BaseSpell {
 
         final double hitRadius = balance("hit-radius", 1.2D);
         final double damage = balance("damage", 7.0D);
-        final int slowDurationTicks = balanceInt("slow-duration-ticks", 4 * 20);
+        final int slowDurationTicks = Math.max(1, (int) Math.round(
+                balanceInt("slow-duration-ticks", 4 * 20) * modifiers.harmfulDurationMultiplier()));
 
         // Folia: driven on the item's own entity scheduler, mirroring the AngryChickenSpell
         // proximity-projectile pattern.
@@ -72,9 +75,9 @@ public final class RuneStrikeSpell extends BaseSpell {
 
                 final Player caster = Bukkit.getPlayer(casterId);
                 if (caster != null && Bukkit.isOwnedByCurrentRegion(caster)) {
-                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());
+                    SpellDamageUtil.damageBySpell(caster, living, damage, getId(), modifiers);
                 } else {
-                    living.damage(damage);
+                    living.damage(SpellDamageUtil.scaledDamage(damage, modifiers));
                 }
                 living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slowDurationTicks, 0, false, true, true));
 

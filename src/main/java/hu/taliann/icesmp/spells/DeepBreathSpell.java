@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -22,9 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * "Mely Lelegzet" — 3.5s flamethrower channel. Ticks 7 times (every 10 ticks) on the
  * caster's own entity scheduler, each step re-reading the current look direction so the
- * player can sweep the cone while channeling. Two points along the current sightline
- * (a "near" and a "far" point) each gather nearby living entities in a small sphere —
- * a cheap stand-in for a widening cone.
+ * player can sweep the cone while channeling. The cast-time modifier snapshot is immutable
+ * and is carried through every later channel/target scheduler hop.
  */
 public final class DeepBreathSpell extends BaseSpell {
 
@@ -39,13 +39,13 @@ public final class DeepBreathSpell extends BaseSpell {
 
     @Override
     public boolean canCast(final Player player) {
-        // Recast guard: a running channel must finish (or be cleared on logout) before it can restart.
         return !ACTIVE_CHANNELS.containsKey(player.getUniqueId());
     }
 
     @Override
     public void execute(final Player player) {
         final UUID playerId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final int totalSteps = balanceInt("steps", 7);
         final int stepIntervalTicks = balanceInt("step-interval-ticks", 10);
         final double damage = balance("damage", 2.0D);
@@ -79,34 +79,32 @@ public final class DeepBreathSpell extends BaseSpell {
                             || SpellTargetingUtil.isAlly(online, living) || !hitThisStep.add(living.getUniqueId())) {
                         continue;
                     }
-                    scorch(living, online, damage, burnTicks);
+                    scorch(living, online, damage, burnTicks, modifiers);
                 }
             }
             online.getWorld().playSound(eye, Sound.ITEM_FIRECHARGE_USE, 0.5F, 1.1F);
         }, () -> ACTIVE_CHANNELS.remove(playerId), stepIntervalTicks, stepIntervalTicks);
 
-        if (task != null) {
-            ACTIVE_CHANNELS.put(playerId, task);
-        }
+        if (task != null) ACTIVE_CHANNELS.put(playerId, task);
     }
 
-    /**
-     * Folia: a later tick of this channel can land on a different region than the cast, so
-     * re-check ownership before touching a target found nearby — hop to its own scheduler if needed.
-     */
-    private void scorch(final LivingEntity living, final Player caster, final double damage, final int burnTicks) {
+    private void scorch(final LivingEntity living, final Player caster, final double damage,
+                        final int burnTicks, final CastModifiers modifiers) {
         if (Bukkit.isOwnedByCurrentRegion(living)) {
-            applyScorch(living, caster, damage, burnTicks);
+            applyScorch(living, caster, damage, burnTicks, modifiers);
         } else {
-            living.getScheduler().run(plugin, task -> applyScorch(living, caster, damage, burnTicks), null);
+            living.getScheduler().run(plugin,
+                    task -> applyScorch(living, caster, damage, burnTicks, modifiers), null);
         }
     }
 
-    private void applyScorch(final LivingEntity living, final Player caster, final double damage, final int burnTicks) {
+    private void applyScorch(final LivingEntity living, final Player caster, final double damage,
+                             final int burnTicks, final CastModifiers modifiers) {
         if (Bukkit.isOwnedByCurrentRegion(caster)) {
-            hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());
+            SpellDamageUtil.damageBySpell(caster, living, damage, getId(), modifiers);
         } else {
-            living.damage(damage);
+            final double scaled = SpellDamageUtil.scaledDamage(damage, modifiers);
+            if (scaled > 0.0D) living.damage(scaled);
         }
         living.setFireTicks(Math.max(living.getFireTicks(), burnTicks));
     }
@@ -114,8 +112,6 @@ public final class DeepBreathSpell extends BaseSpell {
     @Override
     public void clearPlayerState(final UUID playerId) {
         final ScheduledTask task = ACTIVE_CHANNELS.remove(playerId);
-        if (task != null) {
-            task.cancel();
-        }
+        if (task != null) task.cancel();
     }
 }
