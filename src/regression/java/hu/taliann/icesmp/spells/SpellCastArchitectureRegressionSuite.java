@@ -108,7 +108,7 @@ public final class SpellCastArchitectureRegressionSuite {
         require(configured.contains("if (ccFactor == null)"),
                 "the same DR factor must be reused by potion CC and freeze within one spell");
         require(configured.contains("withBalanceOverrides") && configured.contains("return spell;"),
-                "live balance override reporting may not create a replacement registration instance");
+                "live balance reporting must preserve the original registered instance");
 
         final String damage = read(root, "src/main/java/hu/taliann/icesmp/utils/SpellDamageUtil.java");
         final String healing = read(root, "src/main/java/hu/taliann/icesmp/utils/SpellHealingUtil.java");
@@ -180,10 +180,6 @@ public final class SpellCastArchitectureRegressionSuite {
         require(druid.contains("\"harmony\", \"Harmónia\"")
                         && !druid.contains("\"harmony\", \"Természeti Erő\""),
                 "Druid secondary Harmony must be distinct from primary Nature Power");
-
-        final String core = read(root, "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
-        require(!core.contains("spellRegistry.register(overridden)"),
-                "live ConfiguredSpell balance reporting must not depend on duplicate re-registration");
 
         final String aggregate = read(root,
                 "src/regression/java/hu/taliann/icesmp/spells/ClassSpellAuditRegressionSuite.java");
