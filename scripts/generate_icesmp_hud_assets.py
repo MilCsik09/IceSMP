@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate the first-party IceSMP HUD font and texture layer.
 
-The runtime uses fixed-position, zero-net-width draw commands.  It deliberately
-avoids BetterHud's supplementary-plane spacing sentinel and listener-cropped
-images: spacing lives in a small BMP private-use font and bars use fixed cells.
+The runtime uses fixed-position, zero-net-width draw commands. Source artwork that is
+not derivable from the live resource pack lives under ``dev-assets/icesmp-hud``; no
+external HUD plugin is involved in generation or delivery.
 """
 
 import json
@@ -12,12 +12,12 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "deploy" / "betterhud" / "assets" / "icesmp"
-FRAME_ATLAS_SOURCE = ROOT / "deploy" / "betterhud" / "previews" / "icesmp-hud-runtime-source.png"
+HUD_SOURCE = ROOT / "dev-assets" / "icesmp-hud" / "source"
+FRAME_ATLAS_SOURCE = HUD_SOURCE / "icesmp-hud-runtime-source.png"
 ITEM_SOURCE = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "item"
-GUEST_FRAME_SOURCE = ROOT / "deploy" / "betterhud" / "source" / "frame-guest-v2.png"
-MECHANIC_CORE_SOURCE = ROOT / "deploy" / "betterhud" / "source" / "mechanics-core-v1.png"
-MECHANIC_SPEC_SOURCE = ROOT / "deploy" / "betterhud" / "source" / "mechanics-spec-v1.png"
+GUEST_FRAME_SOURCE = HUD_SOURCE / "frame-guest-v2.png"
+MECHANIC_CORE_SOURCE = HUD_SOURCE / "mechanics-core-v1.png"
+MECHANIC_SPEC_SOURCE = HUD_SOURCE / "mechanics-spec-v1.png"
 ASSETS = ROOT / "resource-pack" / "assets" / "icesmp_hud"
 TEXTURES = ASSETS / "textures" / "hud"
 FONTS = ASSETS / "font"
@@ -38,7 +38,7 @@ RUNE_KINDS = ("blood", "frost", "death")
 RUNE_STATES = ("ready", "spent", "regenerating", "locked")
 MECHANIC_VARIANTS = ("active", "ready", "alert", "spent")
 
-# Stable row-major order of the two reviewed AI source sheets. A mechanic is keyed
+# Stable row-major order of the two reviewed IceSMP source sheets. A mechanic is keyed
 # by class as well as id because e.g. Evoker and Shaman resonance are not the same
 # gameplay signal and must never silently share an icon.
 CORE_MECHANICS = (
@@ -135,23 +135,27 @@ def centered_sprite(image: Image.Image, maximum: int = 54,
     sprite.thumbnail((maximum, maximum), Image.Resampling.LANCZOS)
     output = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     output.alpha_composite(sprite, ((64 - sprite.width) // 2, (64 - sprite.height) // 2))
-    # Minecraft derives bitmap-glyph advance from the last non-transparent
-    # column. Keep every dynamic icon on the same 64px logical cell so changing
-    # class, rune state, charge state or currency can never move later layers.
+    # Minecraft derives bitmap-glyph advance from the last non-transparent column.
+    # Keep every dynamic icon on the same 64px logical cell.
     output.putpixel((63, 63), (255, 255, 255, 1))
     return output
 
 
-def copy_texture(name: str, maximum: int | None = None,
-                 largest_component: bool = False) -> None:
-    source = SOURCE / name
-    if not source.is_file():
-        raise FileNotFoundError(f"Missing canonical HUD source: {source}")
-    TEXTURES.mkdir(parents=True, exist_ok=True)
-    image = Image.open(source).convert("RGBA")
-    if maximum is not None:
-        image = centered_sprite(image, maximum, largest_component)
-    image.save(TEXTURES / name, optimize=True)
+def validate_static_icon_sources() -> None:
+    """Validate reviewed first-party icons that are versioned directly in the resource pack."""
+    expected = [f"class-{class_id}.png" for class_id in CLASSES]
+    expected += [f"icon-{name}.png" for name in ("money", "event", "level")]
+    expected += [f"rune-{kind}-{state}.png" for kind in RUNE_KINDS for state in RUNE_STATES]
+    expected += ["charge-ready.png", "charge-spent.png"]
+    for name in expected:
+        path = TEXTURES / name
+        if not path.is_file():
+            raise FileNotFoundError(f"Missing first-party HUD icon: {path}")
+        image = Image.open(path).convert("RGBA")
+        if image.size != (64, 64):
+            raise RuntimeError(f"First-party HUD icon must stay 64x64: {path} ({image.size})")
+        if image.getpixel((63, 63))[3] != 1:
+            raise RuntimeError(f"First-party HUD icon lost its fixed-width alpha marker: {path}")
 
 
 def remove_magenta(image: Image.Image) -> Image.Image:
@@ -232,6 +236,7 @@ def generate_mechanic_icons() -> None:
         (MECHANIC_CORE_SOURCE, 4, 4, CORE_MECHANICS),
         (MECHANIC_SPEC_SOURCE, 6, 6, SPEC_MECHANICS),
     )
+    TEXTURES.mkdir(parents=True, exist_ok=True)
     for source_path, columns, rows, keys in sheets:
         if not source_path.is_file():
             raise FileNotFoundError(f"Missing mechanic icon source sheet: {source_path}")
@@ -247,21 +252,7 @@ def generate_mechanic_icons() -> None:
             base = centered_sprite(sheet.crop(box), 52, True)
             for variant in MECHANIC_VARIANTS:
                 file_name = f"mechanic-{class_id}-{mechanic_id}-{variant}.png"
-                rendered = mechanic_variant(base, variant)
-                rendered.save(TEXTURES / file_name, optimize=True)
-                # BetterHud is an optional renderer of the same immutable snapshot.
-                # Keep its fallback package semantically equivalent, never generic.
-                betterhud = rendered.copy()
-                # BetterHud validates a three-pixel transparent safety gutter.
-                # The ready halo can otherwise leave sub-visible Lanczos/blur
-                # samples in that gutter even though the visible sprite fits.
-                for edge in range(3):
-                    for offset in range(64):
-                        betterhud.putpixel((edge, offset), (0, 0, 0, 0))
-                        betterhud.putpixel((63 - edge, offset), (0, 0, 0, 0))
-                        betterhud.putpixel((offset, edge), (0, 0, 0, 0))
-                        betterhud.putpixel((offset, 63 - edge), (0, 0, 0, 0))
-                betterhud.save(SOURCE / file_name, optimize=True)
+                mechanic_variant(base, variant).save(TEXTURES / file_name, optimize=True)
 
 
 def guest_frame_with_canonical_layout(canonical: Image.Image) -> Image.Image:
@@ -272,11 +263,9 @@ def guest_frame_with_canonical_layout(canonical: Image.Image) -> Image.Image:
     for y in range(donor.height):
         for x in range(donor.width):
             red, green, blue, alpha = donor_pixels[x, y]
-            # Remove the flat magenta key fringe from the generated cutout.
             if red > 95 and blue > 95 and green * 3 < red * 2 and green * 3 < blue * 2:
                 donor_pixels[x, y] = (red, green, blue, 0)
 
-    # Exact neutral-frame geometry, restyled as weathered sanctuary steel.
     styled = Image.new("RGBA", canonical.size)
     source_pixels = canonical.load()
     styled_pixels = styled.load()
@@ -292,11 +281,6 @@ def guest_frame_with_canonical_layout(canonical: Image.Image) -> Image.Image:
             )
     canonical_styled = styled.copy()
 
-    # Generated ornamentation is restricted to the *narrow* outer armour and
-    # the two crest points.  Earlier versions let the donor reach 47-58 pixels
-    # into the image, which visually redrew the portrait/title/mechanic grid
-    # even though the neutral frame was used as the base.  The shared content
-    # grid must remain pixel-identical for every faction, including guests.
     mask = Image.new("L", canonical.size, 0)
     draw = ImageDraw.Draw(mask)
     width, height = canonical.size
@@ -306,16 +290,11 @@ def guest_frame_with_canonical_layout(canonical: Image.Image) -> Image.Image:
     draw.rectangle((0, 0, rim, height - 1), fill=255)
     draw.rectangle((width - rim - 1, 0, width - 1, height - 1), fill=255)
     draw.rectangle((width // 2 - 40, 0, width // 2 + 40, 39), fill=255)
-    draw.rectangle((width // 2 - 34, height - 40,
-                    width // 2 + 34, height - 1), fill=255)
-    mask = Image.composite(mask, Image.new("L", canonical.size, 0),
-                           donor.getchannel("A"))
+    draw.rectangle((width // 2 - 34, height - 40, width // 2 + 34, height - 1), fill=255)
+    mask = Image.composite(mask, Image.new("L", canonical.size, 0), donor.getchannel("A"))
     ornament = Image.composite(donor, Image.new("RGBA", canonical.size), mask)
     styled.alpha_composite(ornament)
 
-    # Restore the complete shared content grid after compositing.  This is a
-    # deliberate hard boundary: guest art may change the silhouette/material,
-    # never the coordinates players learn across faction changes.
     protected = (rim + 1, 40, width - rim - 1, height - 40)
     styled.paste(canonical_styled.crop(protected), protected)
     if (styled.getchannel("A").crop(protected).tobytes()
@@ -332,8 +311,6 @@ def generate_frames() -> None:
             if not GUEST_FRAME_SOURCE.is_file():
                 raise FileNotFoundError(f"Missing original Menedék HUD source: {GUEST_FRAME_SOURCE}")
             source = guest_frame_with_canonical_layout(frames["neutral"])
-            # The guest uses the canonical crop transform as well. New outer
-            # ornamentation cannot change glyph scale or screen anchors.
             bbox = frames["neutral"].getchannel("A").getbbox()
         else:
             source = frames[theme]
@@ -379,8 +356,6 @@ def generate_none_class_icon() -> None:
 
 
 def generate_text_atlas() -> tuple[list[str], int, int]:
-    # 128 deterministic glyphs: the visible IceSMP UI alphabet, Hungarian accents,
-    # punctuation used by class mechanics, and a replacement glyph.
     characters = (
         " !\"#$%&'()*+,-./0123456789:;<=>?@"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
@@ -405,8 +380,6 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
             width = box[2] - box[0]
             draw.text((x + max(0, (7 - width) // 2), y - 1), char, font=font,
                       fill=(235, 247, 255, 255))
-            # Uniform logical advance. Alpha=1 is visually imperceptible but makes
-            # Minecraft retain the full cell width for every bitmap glyph.
             atlas.putpixel((x + 7, y + 11), (255, 255, 255, 1))
     TEXTURES.mkdir(parents=True, exist_ok=True)
     atlas.save(TEXTURES / "text-atlas.png", optimize=True)
@@ -464,7 +437,7 @@ def generate_transparent_white_bossbar() -> None:
 
 
 def generate_hud_shader() -> None:
-    """Install the small IceSMP positioning shader; it has no BetterHud runtime dependency."""
+    """Install the first-party IceSMP positioning shader."""
     target = ROOT / "resource-pack" / "assets" / "minecraft" / "shaders" / "core"
     target.mkdir(parents=True, exist_ok=True)
     vertex = """#version 150
@@ -576,26 +549,14 @@ def generate_contact_sheet() -> None:
         label = f"{class_id[:8]}:{mechanic_id[:10]}"
         draw.text((x, y + 64), label, font=label_font, fill=(199, 212, 234, 255))
     sheet.save(target, optimize=True)
-    preview = ROOT / "deploy/betterhud/previews/icesmp-hud-full-audit.png"
-    preview.parent.mkdir(parents=True, exist_ok=True)
-    sheet.save(preview, optimize=True)
 
 
 def main() -> None:
+    validate_static_icon_sources()
     generate_frames()
-    for class_id in CLASSES:
-        copy_texture(f"class-{class_id}.png", 54, True)
     generate_none_class_icon()
-    for utility in ("money", "event", "level"):
-        copy_texture(f"icon-{utility}.png", 52)
-    for kind in RUNE_KINDS:
-        for state in RUNE_STATES:
-            copy_texture(f"rune-{kind}-{state}.png", 52)
     generate_mechanic_icons()
-    copy_texture("charge-ready.png", 48)
-    copy_texture("charge-spent.png", 48)
     generate_currency_icons()
-
     generate_segments()
     generate_wallet_strip()
     generate_transparent_white_bossbar()
@@ -612,12 +573,8 @@ def main() -> None:
         provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, 18, 160)
         for index, theme in enumerate(THEMES)
     ])
-    write_font("wallet_panel", [
-        provider("wallet-strip.png", chr(0xE105), 4, 201, 22)
-    ])
-    write_font("detail_panel", [
-        provider("detail-strip.png", chr(0xE106), 4, 178, 22)
-    ])
+    write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 22)])
+    write_font("detail_panel", [provider("detail-strip.png", chr(0xE106), 4, 178, 22)])
     write_font("class_icon", [
         provider(f"class-{class_id}.png", chr(0xE110 + index), 8, 38, 36)
         for index, class_id in enumerate(CLASS_GLYPHS)
@@ -652,11 +609,7 @@ def main() -> None:
     ]
     write_font("mechanic_icons", mechanic_providers)
     write_font("mechanic_slots", [
-        {
-            **entry,
-            "ascent": encoded_ascent(8, 134),
-            "height": 10,
-        }
+        {**entry, "ascent": encoded_ascent(8, 134), "height": 10}
         for entry in mechanic_providers
     ])
     write_font("resource_segments", [
