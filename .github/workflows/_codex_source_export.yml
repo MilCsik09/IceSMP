@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - audit/class-spell-cast-hardening
+  pull_request:
+    branches:
+      - staging
 
 permissions:
   contents: read
@@ -13,9 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout exact pushed commit
+      - name: Checkout exact feature commit
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Archive exact checkout
@@ -24,7 +28,7 @@ jobs:
       - name: Upload exact checkout
         uses: actions/upload-artifact@v4
         with:
-          name: icesmp-exact-source-${{ github.sha }}
+          name: icesmp-exact-source-${{ github.event.pull_request.head.sha || github.sha }}
           path: icesmp-exact-source.zip
           if-no-files-found: error
           retention-days: 1
