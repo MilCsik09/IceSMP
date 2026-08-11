@@ -48,10 +48,6 @@ hud:
     # HP/armor kijelzés és a pack-készültségi védelem teljes körűen elkészült.
     hide-vanilla-health: false
     hide-vanilla-armor: false
-  betterhud:
-    # Átmeneti, opcionális megjelenítési fallback. Nem state-authority és nem startup-fatal.
-    # A saját IceSMP HUD aktív játékosainál automatikusan elnémul.
-    enabled: false
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
   # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
   # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.
@@ -68,7 +64,7 @@ hud:
   # IceSMP-adatok akkor a %icesmp_...% placeholderekkel jeleníthetők meg
   # (docs/SERVER_INTEGRATION.md).
   # Folia alatt a Bukkit scoreboard API tiltott; ugyanez a kapcsoló a játékosonkénti
-  # compact bossbar fallbacket vezérli. BetterHud aktív állapotban a fallback automatikusan rejtett.
+  # compact bossbar fallbacket vezérli, amikor a first-party HUD nem aktív.
   sidebar-enabled: true
   sidebar:
     # Az oldalsáv címe (legacy &-kódokkal; a ㍐ a resource pack glyph-je — RP nélkül
