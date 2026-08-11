@@ -74,6 +74,7 @@ pluginoktól. Az első teszt előtt:
 | `icesmp.moderation.gui` | `/moderation` és `/mod` megnyitása | OP | Moderátor |
 | `icesmp.message` | `/msg`, `/tell`, `/w`, `/reply`, `/r` | TRUE | Játékosok |
 | `icesmp.admin.reload` | `/icesmp reload` és az `/icesmp` admin gyökér | OP | Üzemeltető vagy admin |
+| `icesmp.admin.hud-editor` | `/hud edit`; kizárólag megjelenítési layout és szintetikus preview | OP, plusz külön configkapu | Csak HUD/resource-pack staginget végző admin |
 
 Az `icesmp.admin.all` minden kanonikus IceSMP admin-domain parentje,
 beleértve az `icesmp.admin.moderation` csomagot. Ezt csak vezető
@@ -1615,6 +1616,39 @@ a runtime- vagy dependency-stacknek. A tartós class/spec/frakció/profil author
 Profile v2 / `PlayerProfileSnapshot`; a harci mechanikák authority-ja a class service-ek mulandó
 runtime state-je. Egyik HUD-renderer sem írhatja vissza az állapotot.
 
+### Admin-only layout editor
+
+Az editor productionben két feltétellel nyitható: a játékos rendelkezik az
+`icesmp.admin.hud-editor` permissionnel, és az üzemeltető explicit bekapcsolta a
+`hud.icesmp-hud.editor.enabled` kulcsot. A bundled alapérték `false`. Konzolból nem nyitható,
+mert a preview játékosonkénti bossbar-kimenetet használ.
+
+`/hud edit` megnyit egy izolált, élő munkamenetet. A kattintható panel és a tab completion mellett
+az alábbi parancsok használhatók:
+
+- `move left|right|up|down`, `step 1|5|10`, `margin +|-`;
+- `scale fine up|down` és `scale coarse up|down`;
+- `preset <720p-gui2|1080p-gui2|2048x1152-gui3|1440p-gui3|4k-gui4|large-accessible>`;
+- `preview faction <guest|red|blue|neutral|dark>`;
+- `preview class <class-id>` mind a 13 classhoz;
+- `preview state <representative|resource|wallet|event|spec|proc|charges|dk-runes|wizard-attunement>`;
+- `undo`, `reset`, `save`, `cancel`.
+
+Az előnézet kizárólag újonnan létrehozott immutable `IceSmpHudModel` fixture-t renderel. Nem olvas
+és nem ír `PlayerProfile`-t, class runtime-ot, PDC-t vagy valutát. Másik játékos preview-ja és az
+élő gameplay snapshot nem változik. A `save` optimista config-generáció/fingerprint ellenőrzéssel
+írja a `hud.icesmp-hud.layout.*` override-okat; közben módosult config esetén fail-closed `STALE`
+eredménnyel elutasít. A `cancel` azonnal visszaállítja az élő HUD-snapshotot.
+
+Mentés után az X/Y eltolás, a jobb oldali biztonsági margó és a kiválasztott méret az éles
+rendererben is ugyanazon az útvonalon érvényesül. A támogatott méretek: `0.75`, `0.90`, `1.00`,
+`1.15`, `1.25`, `1.40`, `1.60`, `1.80`; más érvényes köztes érték a legközelebbi buildkor generált
+variánsra kerekül, hibás/tartományon kívüli mező pedig külön-külön biztonságos alapértékre esik vissza.
+Pack-readiness hiányában az editor nem küld font-glyphet, és a natív/Folia fallback marad aktív.
+
+Staging ellenőrzés után kapcsold vissza az `editor.enabled` kulcsot `false` értékre. Az editor
+megjelenítési authority; gameplay javítására vagy profiladat módosítására soha ne használd.
+
 Minden játékos saját Folia-régiószálán készül egy immutable `HudSnapshot`. A 13 class külön Java
 `hudState` adaptere közvetlenül típusos `ClassHudMetric` és `ClassHudSlot` adatot ad át; renderelt
 magyar szöveg visszaparzolása tilos. A first-party renderer és a PlaceholderAPI ugyanazt az
@@ -1693,7 +1727,7 @@ assetek a `resource-pack/assets/icesmp_hud/` alatt vannak. A reprodukálható ge
 
 ```text
 ./gradlew generateIceSmpHudAssets
-./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest
+./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest hudEditorRegressionTest
 ./gradlew auditIceSmpHudAssets
 ```
 
@@ -1704,8 +1738,10 @@ középre igazítást, élességet, magenta fringe-et és a rögzített glyph-wi
 A generált layout jobb felső sarokhoz horgonyzott. A 64×64-es ikonokat a first-party font/shader
 réteg rögzített cellákban rajzolja, ezért GUI scale- és dinamikus értékváltáskor sem csúszhat el a panel.
 Az x-horgony a vetítés utáni clip-space jobb széléhez kötődik. A shader a Minecraft `Globals`
-`ScreenSize` mezőjéből visszaszámolja a GUI-skálát, majd a teljes HUD-réteget egységesen 1,0–1,5
-közötti fizikai skálára normalizálja. Emiatt teljes képernyőn és kis ablakban is ugyanott marad,
+`ScreenSize` mezőjéből visszaszámolja a GUI-skálát, majd a teljes HUD-réteget a config által
+kiválasztott nyolc buildkori scale-variáns egyikével egységesen méretezi. A renderer a 12 bites
+layout-azonosítót csak a saját HUD-glyphök RGB alsó nibble-jeiben továbbítja; a shader ebből a
+függőleges pixeleltolást és a scale-indexet alkalmazza. Emiatt teljes képernyőn és kis ablakban is ugyanott marad,
 nem lesz 2–3-szoros a panel, és az alsó sávok sem válnak le a keretről. Egy bitmap glyph legfeljebb 256×256 lehet; a keretek és
 alsó sávok 240 pixel szélesek, így a Minecraft font-stitcher nem cseréli őket hiányzó karakterre.
 A magyar HUD-atlasz a repo-ban licenccel tárolt DejaVu Sans forrás négyszeres túlmintavételezésével
