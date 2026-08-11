@@ -31,10 +31,10 @@ public final class OperationalConfigMenuRegressionSuite {
     @SuppressWarnings("unchecked")
     private static void verifiesCatalogAndPackagedKeys() throws Exception {
         check(OperationalConfigMenuGUI.categoryCount() == 5, "source catalog category count changed");
-        check(OperationalConfigMenuGUI.entryCount() == 98, "source catalog entry count changed");
+        check(OperationalConfigMenuGUI.entryCount() == 104, "source catalog entry count changed");
         check(TransactionalOperationalConfigMenuGUI.categoryCount() == 4,
                 "canonical operational view must hide duplicate moderation category");
-        check(TransactionalOperationalConfigMenuGUI.entryCount() == 87,
+        check(TransactionalOperationalConfigMenuGUI.entryCount() == 93,
                 "canonical operational entry count changed unexpectedly");
 
         final YamlConfiguration merged = new YamlConfiguration();
