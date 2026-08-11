@@ -792,7 +792,7 @@ Játékospiac, NPC/frakció shop, vevőszolgáltatás, kézbesítés, adományl�
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Nyolc permission nélküli alapláda, fizikai crate-helyek, kulcsvásárlás/-felhasználás, browser/preview GUI, világban futó ItemDisplay-reveal, több jutalomtípus, audit, settlement és recovery.
+Nyolc permission nélküli alapláda, fizikai crate-helyek, kulcsvásárlás/-felhasználás, valós itemmodelleket mutató browser/preview GUI, világban futó ItemDisplay-reveal, tematikus unique/craftolt/affixes és szűrt random-tervrajz jutalmak, audit, settlement és recovery. A crate parser közvetlen itemként, profession-receptként és tervrajz-poolon keresztül is kizárja az Elytrát; repülőszárny kizárólag a relikviarendszerből létezhet.
 
 - **Így találkozol vele:** `/crate`; crate blokk, browser/preview GUI és a láda felett futó ItemDisplay-reveal. Parancs: /crate (alias: /crates, /ladak). A nyitás nem nyit inventory-rulettet.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Fejlesztő/üzemeltető.

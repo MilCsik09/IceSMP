@@ -225,7 +225,12 @@ nyílik; a jutalom side effectje csak a reveal lezárása után indul. A release
 nyolc, permission nélküli definíciót bizonyít: `koznapi`, `ritka`, `hosi`,
 `mitikus`, `mesterseg`, `expedicio`, `hadizsakmany` és `arkanum`.
 Ezek az alsó nyolc fizikai állomást töltik ki; a felső nyolc hely különleges
-ládáknak marad. Éles megnyitás előtt a helyeket, rewardokat,
+ládáknak marad. A lapos vanilla táblák helyét tematikus unique alapanyagok,
+valódi craft- és affix-láncon át készülő tárgyak, valamint szint/szakma szerint
+szűrt random tervrajzok vették át. A Mitikus láda külön boss-only
+tervrajz-poolt kaphat; Elytra minden crate item-, recept- és tervrajzútvonalon
+tiltott. A browser és a világ-reveal a jutalom valódi itemmodelljét mutatja.
+Éles megnyitás előtt a helyeket, rewardokat,
 inventory-overflow-t, settlementet és recoveryt kötelező stagingen tesztelni.
 
 ### Privát üzenetek és report

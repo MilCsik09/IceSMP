@@ -1,6 +1,10 @@
 # IceSMP natív ládarendszer. Ez a végleges saját séma; CrazyCrates-config és legacy kulcs nem támogatott.
 # A világban 16 fizikai ládaállomás fér el. Az alapcsomag az alsó szint 8
 # állomását használja; a felső 8 hely szezonális, frakciós és eventládáknak marad.
+# A random-blueprint pool szakma (`profession`), szinttartomány és opcionális
+# `include-loot-only` alapján a betöltött profession-receptekből sorsol.
+# ELYTRA sem itemként, sem recept/tervrajz eredményeként nem engedélyezett;
+# repülőszárnyat kizárólag a relikviarendszer kezelhet.
 crates-settings:
   enabled: true
 
@@ -22,10 +26,14 @@ crates:
     opening-sound: { sound: "minecraft:entity.player.levelup", volume: 1.0, pitch: 1.2 }
     broadcast: { enabled: false, message: "&6[Láda] &f{player} &ekinyitotta: &f{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 35.0, material: IRON_INGOT, amount: 16, description: "&f16× Vasrúd" }
-      - { type: item, weight: 20.0, material: COAL, amount: 32, description: "&832× Szén" }
-      - { type: currency, weight: 25.0, currency: NEUTRAL, amount: 225, description: "&e225 Creutzér" }
-      - { type: unique-item, weight: 12.0, id: emlekszilank, amount: 3, description: "&b3× Emlékszilánk" }
+      - { type: item, weight: 14.0, material: IRON_INGOT, amount: 12, description: "&f12× Vasrúd" }
+      - { type: item, weight: 12.0, material: COOKED_BEEF, amount: 16, description: "&616× Sült marhahús" }
+      - { type: unique-item, weight: 16.0, id: emlekszilank, amount: 2, description: "&d2× Opálos Emlékszilánk" }
+      - { type: unique-item, weight: 12.0, id: runapor, amount: 3, description: "&b3× Rúnapor" }
+      - { type: unique-item, weight: 12.0, id: tiszta_vasesszencia, amount: 4, description: "&f4× Tiszta Vasesszencia" }
+      - { type: recipe-item, weight: 10.0, id: finomitott_vas, amount: 1, description: "&fFinomított Vasrúd-csomag" }
+      - { type: random-blueprint, weight: 8.0, min-level: 1, max-level: 36, description: "&bVéletlen kezdő tervrajz" }
+      - { type: currency, weight: 8.0, currency: NEUTRAL, amount: 225, description: "&e225 Creutzér" }
       - { type: crate-key, weight: 8.0, id: ritka, amount: 1, description: "&dRitka ládakulcs" }
 
   ritka:
@@ -43,12 +51,15 @@ crates:
     opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 0.8, pitch: 1.1 }
     broadcast: { enabled: false, message: "&d[Láda] &f{player} &7kinyitotta: &d{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 28.0, material: DIAMOND, amount: 5, description: "&b5× Gyémánt" }
-      - { type: item, weight: 18.0, material: GOLD_BLOCK, amount: 4, description: "&64× Aranyblokk" }
-      - { type: item, weight: 12.0, material: NETHERITE_SCRAP, amount: 2, description: "&82× Netherit törmelék" }
-      - { type: recipe-item, weight: 12.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&6Netherit ötvözet" }
-      - { type: currency, weight: 20.0, currency: NEUTRAL, amount: 850, description: "&e850 Creutzér" }
-      - { type: crate-key, weight: 10.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
+      - { type: unique-item, weight: 14.0, id: emlekszilank, amount: 6, description: "&d6× Opálos Emlékszilánk" }
+      - { type: unique-item, weight: 10.0, id: vad_esszencia, amount: 3, description: "&23× Vad Esszencia" }
+      - { type: unique-item, weight: 8.0, id: arnyekpor, amount: 3, description: "&83× Árnyékpor" }
+      - { type: recipe-item, weight: 12.0, id: tarnasz_csakany_recept, amount: 1, description: "&bAffixes Tárnász Csákány" }
+      - { type: recipe-item, weight: 10.0, id: gyemant_kard, amount: 1, description: "&bAffixes Szilánkfény Penge" }
+      - { type: random-blueprint, weight: 16.0, min-level: 35, max-level: 44, description: "&bVéletlen haladó tervrajz" }
+      - { type: item, weight: 6.0, material: ENCHANTED_GOLDEN_APPLE, amount: 1, description: "&6Bűvös aranyalma" }
+      - { type: currency, weight: 16.0, currency: NEUTRAL, amount: 900, description: "&e900 Creutzér" }
+      - { type: crate-key, weight: 8.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
 
   hosi:
     enabled: true
@@ -65,12 +76,14 @@ crates:
     opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 1.0, pitch: 0.95 }
     broadcast: { enabled: false, message: "&6[Láda] &f{player} &ekinyitotta: &6{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 22.0, material: DIAMOND, amount: 12, description: "&b12× Gyémánt" }
-      - { type: item, weight: 15.0, material: NETHERITE_INGOT, amount: 1, description: "&81× Netherit rúd" }
-      - { type: item, weight: 10.0, material: TOTEM_OF_UNDYING, amount: 1, description: "&eHalhatatlanság toteme" }
-      - { type: recipe-item, weight: 15.0, id: netherit_torzsalek_otvozet, amount: 2, description: "&62× Netherit ötvözet" }
-      - { type: blueprint, weight: 12.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&bNetherit Ötvözés tervrajz" }
-      - { type: currency, weight: 18.0, currency: NEUTRAL, amount: 3000, description: "&e3000 Creutzér" }
+      - { type: recipe-item, weight: 12.0, id: gyemant_mellvert, amount: 1, description: "&bAffixes Prizmavért" }
+      - { type: recipe-item, weight: 10.0, id: haromagu_szigony, amount: 1, description: "&bAffixes Hullámtörő Szigony" }
+      - { type: recipe-item, weight: 8.0, id: runakovacsolt_penge, amount: 1, description: "&dAffixes Rúnakovácsolt Penge" }
+      - { type: unique-item, weight: 10.0, id: osi_ereklyeszilank, amount: 1, description: "&cFekete Villám Szilánk" }
+      - { type: unique-item, weight: 12.0, id: szorny_mag, amount: 5, description: "&55× Szörny Mag" }
+      - { type: random-blueprint, weight: 18.0, min-level: 40, max-level: 48, description: "&bVéletlen mester tervrajz" }
+      - { type: random-blueprint, weight: 10.0, profession: armorer, min-level: 40, max-level: 48, description: "&6Véletlen kovács tervrajz" }
+      - { type: currency, weight: 12.0, currency: NEUTRAL, amount: 3200, description: "&e3200 Creutzér" }
       - { type: crate-key, weight: 8.0, id: mitikus, amount: 1, description: "&5Mitikus ládakulcs" }
 
   mitikus:
@@ -88,14 +101,15 @@ crates:
     opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 1.0, pitch: 0.75 }
     broadcast: { enabled: true, message: "&5[Láda] &f{player} &dkinyitotta: &5{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 22.0, material: NETHERITE_INGOT, amount: 3, description: "&83× Netherit rúd" }
-      - { type: item, weight: 8.0, material: ELYTRA, amount: 1, description: "&dElytra" }
-      - { type: item, weight: 12.0, material: TOTEM_OF_UNDYING, amount: 2, description: "&e2× Halhatatlanság toteme" }
-      - { type: item, weight: 12.0, material: ENCHANTED_GOLDEN_APPLE, amount: 3, description: "&63× Bűvös aranyalma" }
-      - { type: recipe-item, weight: 14.0, id: netherit_torzsalek_otvozet, amount: 3, description: "&63× Netherit ötvözet" }
-      - { type: blueprint, weight: 10.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&bNetherit Ötvözés tervrajz" }
-      - { type: currency, weight: 17.0, currency: NEUTRAL, amount: 9000, description: "&e9000 Creutzér" }
-      - { type: crate-key, weight: 5.0, id: hosi, amount: 2, description: "&62× Hősi ládakulcs" }
+      - { type: recipe-item, weight: 12.0, id: ereklye_penge, amount: 1, description: "&5Affixes Villámszilánk Pengéje" }
+      - { type: recipe-item, weight: 10.0, id: melytengeri_ereklyeszigony, amount: 1, description: "&3Affixes Mélytengeri Villámszigony" }
+      - { type: recipe-item, weight: 10.0, id: szornyvert_mellveny, amount: 1, description: "&5Affixes Szörnyvért Mellvény" }
+      - { type: random-blueprint, weight: 22.0, min-level: 45, max-level: 50, include-loot-only: true, description: "&5Véletlen ősi/boss tervrajz" }
+      - { type: random-blueprint, weight: 10.0, min-level: 40, max-level: 50, description: "&bVéletlen nagymester tervrajz" }
+      - { type: unique-item, weight: 12.0, id: osi_ereklyeszilank, amount: 2, description: "&c2× Fekete Villám Szilánk" }
+      - { type: unique-item, weight: 8.0, id: elso_csend_szilankja, amount: 1, description: "&0Az Első Csend Szilánkja" }
+      - { type: currency, weight: 10.0, currency: NEUTRAL, amount: 9500, description: "&e9500 Creutzér" }
+      - { type: crate-key, weight: 6.0, id: hosi, amount: 2, description: "&62× Hősi ládakulcs" }
 
   mesterseg:
     enabled: true
@@ -112,13 +126,16 @@ crates:
     opening-sound: { sound: "minecraft:block.anvil.use", volume: 0.8, pitch: 1.05 }
     broadcast: { enabled: false, message: "&6[Láda] &f{player} &ekinyitotta: &6{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 24.0, material: IRON_BLOCK, amount: 8, description: "&f8× Vasblokk" }
-      - { type: item, weight: 18.0, material: GOLD_INGOT, amount: 24, description: "&624× Aranyrúd" }
-      - { type: item, weight: 14.0, material: DIAMOND, amount: 5, description: "&b5× Gyémánt" }
-      - { type: unique-item, weight: 14.0, id: emlekszilank, amount: 8, description: "&b8× Emlékszilánk" }
-      - { type: recipe-item, weight: 12.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&6Netherit ötvözet" }
-      - { type: blueprint, weight: 8.0, id: netherit_torzsalek_otvozet, amount: 1, description: "&bNetherit Ötvözés tervrajz" }
-      - { type: currency, weight: 10.0, currency: NEUTRAL, amount: 1400, description: "&e1400 Creutzér" }
+      - { type: unique-item, weight: 12.0, id: tiszta_vasesszencia, amount: 10, description: "&f10× Tiszta Vasesszencia" }
+      - { type: unique-item, weight: 10.0, id: rezgo_rez_otvozet, amount: 8, description: "&68× Rezgő Rézötvözet" }
+      - { type: unique-item, weight: 10.0, id: kemenyfa_gerenda, amount: 8, description: "&e8× Keményfa Gerenda" }
+      - { type: unique-item, weight: 10.0, id: runapor, amount: 8, description: "&b8× Rúnapor" }
+      - { type: unique-item, weight: 8.0, id: gyogy_kivonat, amount: 8, description: "&a8× Gyógy-kivonat" }
+      - { type: recipe-item, weight: 10.0, id: tarnasz_csakany_recept, amount: 1, description: "&bAffixes Tárnász Csákány" }
+      - { type: recipe-item, weight: 10.0, id: gyemant_fejsze, amount: 1, description: "&bAffixes Prizmaél Fejsze" }
+      - { type: recipe-item, weight: 8.0, id: bastya_pajzs_recept, amount: 1, description: "&6Affixes Bástya Pajzs" }
+      - { type: random-blueprint, weight: 14.0, min-level: 30, max-level: 48, description: "&bVéletlen mesterség-tervrajz" }
+      - { type: currency, weight: 8.0, currency: NEUTRAL, amount: 1400, description: "&e1400 Creutzér" }
 
   expedicio:
     enabled: true
@@ -135,12 +152,15 @@ crates:
     opening-sound: { sound: "minecraft:item.goat_horn.sound.1", volume: 0.75, pitch: 1.0 }
     broadcast: { enabled: false, message: "&b[Láda] &f{player} &7kinyitotta: &b{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 22.0, material: ENDER_PEARL, amount: 16, description: "&516× Endergyöngy" }
-      - { type: item, weight: 18.0, material: BLAZE_ROD, amount: 12, description: "&612× Lángrúd" }
-      - { type: item, weight: 14.0, material: SHULKER_SHELL, amount: 4, description: "&d4× Shulkerhéj" }
-      - { type: item, weight: 10.0, material: TOTEM_OF_UNDYING, amount: 1, description: "&eHalhatatlanság toteme" }
-      - { type: item, weight: 14.0, material: EMERALD, amount: 32, description: "&a32× Smaragd" }
-      - { type: currency, weight: 14.0, currency: NEUTRAL, amount: 2000, description: "&e2000 Creutzér" }
+      - { type: recipe-item, weight: 10.0, id: melyseg_kulcsa, amount: 1, description: "&3A Mélység Kulcsa" }
+      - { type: recipe-item, weight: 8.0, id: oceanjaro_terkep, amount: 1, description: "&bÓceánjáró Térképe" }
+      - { type: unique-item, weight: 12.0, id: melysegi_borostyan, amount: 4, description: "&64× Mélységi Borostyán" }
+      - { type: unique-item, weight: 12.0, id: sarkanycsont_szilank, amount: 4, description: "&f4× Sárkánycsont-szilánk" }
+      - { type: unique-item, weight: 10.0, id: gyongyhaz_pikkely, amount: 5, description: "&b5× Gyöngyház-pikkely" }
+      - { type: unique-item, weight: 10.0, id: viharkvarc, amount: 5, description: "&e5× Viharkvarc" }
+      - { type: unique-item, weight: 10.0, id: emlekszilank, amount: 8, description: "&d8× Opálos Emlékszilánk" }
+      - { type: random-blueprint, weight: 12.0, profession: fisherman, min-level: 35, max-level: 50, description: "&bVéletlen expedíciós tervrajz" }
+      - { type: currency, weight: 8.0, currency: NEUTRAL, amount: 2200, description: "&e2200 Creutzér" }
       - { type: crate-key, weight: 8.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
 
   hadizsakmany:
@@ -158,13 +178,16 @@ crates:
     opening-sound: { sound: "minecraft:entity.iron_golem.attack", volume: 0.75, pitch: 0.85 }
     broadcast: { enabled: false, message: "&c[Láda] &f{player} &7kinyitotta: &c{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 22.0, material: SPECTRAL_ARROW, amount: 64, description: "&e64× Spektrálnyíl" }
-      - { type: item, weight: 18.0, material: GOLDEN_APPLE, amount: 8, description: "&68× Aranyalma" }
-      - { type: item, weight: 14.0, material: END_CRYSTAL, amount: 4, description: "&d4× End-kristály" }
-      - { type: item, weight: 10.0, material: TOTEM_OF_UNDYING, amount: 1, description: "&eHalhatatlanság toteme" }
-      - { type: item, weight: 14.0, material: NETHERITE_SCRAP, amount: 3, description: "&83× Netherit törmelék" }
-      - { type: currency, weight: 16.0, currency: NEUTRAL, amount: 1700, description: "&e1700 Creutzér" }
-      - { type: crate-key, weight: 6.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
+      - { type: recipe-item, weight: 12.0, id: gyemant_kard, amount: 1, description: "&bAffixes Szilánkfény Penge" }
+      - { type: recipe-item, weight: 10.0, id: bastya_pajzs_recept, amount: 1, description: "&6Affixes Bástya Pajzs" }
+      - { type: recipe-item, weight: 8.0, id: vaskard, amount: 1, description: "&fAffixes Vasököl Pengéje" }
+      - { type: recipe-item, weight: 10.0, id: sarkanycsont_pajzs, amount: 1, description: "&fSárkánycsont Pajzs" }
+      - { type: recipe-item, weight: 8.0, id: runakovacsolt_penge, amount: 1, description: "&dAffixes Rúnakovácsolt Penge" }
+      - { type: unique-item, weight: 10.0, id: fonixpihe, amount: 2, description: "&c2× Főnixpihe" }
+      - { type: unique-item, weight: 10.0, id: sarkanycsont_szilank, amount: 4, description: "&f4× Sárkánycsont-szilánk" }
+      - { type: random-blueprint, weight: 18.0, profession: armorer, min-level: 35, max-level: 48, description: "&6Véletlen hadi tervrajz" }
+      - { type: item, weight: 6.0, material: GOLDEN_APPLE, amount: 4, description: "&64× Aranyalma" }
+      - { type: crate-key, weight: 8.0, id: hosi, amount: 1, description: "&6Hősi ládakulcs" }
 
   arkanum:
     enabled: true
@@ -181,11 +204,13 @@ crates:
     opening-sound: { sound: "minecraft:block.enchantment_table.use", volume: 0.85, pitch: 1.15 }
     broadcast: { enabled: false, message: "&5[Láda] &f{player} &dkinyitotta: &5{crate} &7({amount}×)" }
     rewards:
-      - { type: item, weight: 18.0, material: LAPIS_LAZULI, amount: 64, description: "&964× Lazurit" }
-      - { type: item, weight: 20.0, material: EXPERIENCE_BOTTLE, amount: 64, description: "&a64× Varázslat palackja" }
-      - { type: item, weight: 10.0, material: ENCHANTED_GOLDEN_APPLE, amount: 2, description: "&62× Bűvös aranyalma" }
-      - { type: item, weight: 14.0, material: AMETHYST_BLOCK, amount: 16, description: "&d16× Ametisztblokk" }
-      - { type: item, weight: 12.0, material: ECHO_SHARD, amount: 8, description: "&38× Visszhangszilánk" }
-      - { type: unique-item, weight: 12.0, id: emlekszilank, amount: 12, description: "&b12× Emlékszilánk" }
-      - { type: currency, weight: 10.0, currency: NEUTRAL, amount: 2400, description: "&e2400 Creutzér" }
-      - { type: crate-key, weight: 4.0, id: mitikus, amount: 1, description: "&5Mitikus ládakulcs" }
+      - { type: unique-item, weight: 12.0, id: runapor, amount: 10, description: "&b10× Rúnapor" }
+      - { type: recipe-item, weight: 10.0, id: runavert_tekercs, amount: 1, description: "&bRúnavért-tekercs" }
+      - { type: recipe-item, weight: 8.0, id: javitas_tomus, amount: 1, description: "&aJavítás Tomus" }
+      - { type: recipe-item, weight: 8.0, id: orvenylo_pusztitas_tomus, amount: 1, description: "&5Örvénylő Pusztítás Tomus" }
+      - { type: recipe-item, weight: 8.0, id: szornymag_talizman, amount: 1, description: "&5Szörnymag Talizmán" }
+      - { type: random-blueprint, weight: 20.0, profession: enchanter, min-level: 35, max-level: 50, description: "&bVéletlen rúnaműves tervrajz" }
+      - { type: random-blueprint, weight: 10.0, min-level: 40, max-level: 50, description: "&dVéletlen arkán tervrajz" }
+      - { type: unique-item, weight: 10.0, id: emlekszilank, amount: 10, description: "&d10× Opálos Emlékszilánk" }
+      - { type: currency, weight: 8.0, currency: NEUTRAL, amount: 2600, description: "&e2600 Creutzér" }
+      - { type: crate-key, weight: 6.0, id: mitikus, amount: 1, description: "&5Mitikus ládakulcs" }

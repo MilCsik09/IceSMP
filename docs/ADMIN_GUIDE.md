@@ -1459,6 +1459,9 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-21 Nincs inventory-rulett | Tesztelő | mind a 8 bundled láda, egyes nyitás | nem nyílik spin GUI; csak a világban pörög ItemDisplay | crate rollout stop | `crate/CRATE-21/` |
 | [ ] | CRATE-22 Reveal → reward sorrend | Tesztelő/admin | determinisztikus item-, currency- és command reward | jutalom-side-effect csak a 36 tickes reveal után indul; quit közben kulcs refund/recovery | opening id + audit megőrzése | `crate/CRATE-22/` |
 | [ ] | CRATE-23 Nyolc alsó állomás | Builder | `koznapi`, `ritka`, `hosi`, `mitikus`, `mesterseg`, `expedicio`, `hadizsakmany`, `arkanum` | mind a 8 hely külön ID-val, saját kulcsmodellel és permission nélkül nyitható | hibás placement eltávolítása | `crate/CRATE-23/` |
+| [ ] | CRATE-24 Valós preview-modellek | Tesztelő | unique-, recipe-, blueprint- és key reward mind browserben, mind fizikai nyitással | a GUI és a végső ItemDisplay ugyanazt az itemmodellt mutatja, mint a kiosztott stack | crate rollout stop, pack/model manifest vizsgálata | `crate/CRATE-24/` |
+| [ ] | CRATE-25 Random tervrajz policy | Admin/tesztelő | szakma- és szintszűrt normál pool, majd Mitikus `include-loot-only` pool | minden sorsolt recept a tartományban van; boss-only csak engedélyezett poolból jön | érintett pool tiltása | `crate/CRATE-25/` |
+| [ ] | CRATE-26 Elytra-tiltás | Admin | közvetlen `item: ELYTRA`, Elytra-recept és ilyen tervrajz tesztdefiníciója | mindhárom config betöltéskor elutasított; bundled lootban nincs Elytra | crate config rollback | `crate/CRATE-26/` |
 
 ### Globális AFK
 
