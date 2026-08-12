@@ -10,6 +10,10 @@ import java.util.List;
  * Casts a persistent Shaman totem: a placed entity that pulses its effect to nearby entities for a
  * few seconds (see {@link TotemManager}). Bespoke (needs the manager), so it is registered from
  * {@code IceSMPCore.registerSpells()} rather than the data-driven {@code SpellCatalog} pools.
+ *
+ * <p>The totem outlives the synchronous cast scope, therefore its pulse receives an immutable
+ * {@link CastModifiers} snapshot. Damage magnitude keeps standard spell scaling after scheduler
+ * hops; effect/CC duration remains explicit and is never lengthened by generic power.</p>
  */
 public final class ShamanTotemSpell extends BaseSpell {
 
@@ -26,7 +30,7 @@ public final class ShamanTotemSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        totemManager.placeTotem(player, type);
+        totemManager.placeTotem(player, type, SpellExecutionContext.capture());
     }
 
     @Override

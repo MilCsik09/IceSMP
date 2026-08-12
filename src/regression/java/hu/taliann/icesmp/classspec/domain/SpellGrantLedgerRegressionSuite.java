@@ -1,12 +1,15 @@
 package hu.taliann.icesmp.classspec.domain;
 
+import hu.taliann.icesmp.spells.SpellCastArchitectureRegressionSuite;
+import hu.taliann.icesmp.spells.SpellRegistryRegressionSuite;
+
 import java.util.*;
 
 /** Explicit BASE/SPEC/TALENT/QUEST/ADMIN provenance regressions. */
 public final class SpellGrantLedgerRegressionSuite {
     private static int assertions;
     private SpellGrantLedgerRegressionSuite(){}
-    public static void main(String[] args){mixedSourcesSurviveScopedRevocation();deterministicSerialization();invalidOrLegacySourcesFailClosed();duplicateAndMalformedPayloadsFail();System.out.println("Spell grant ledger regression suite passed. assertions="+assertions);}
+    public static void main(String[] args) throws Exception {mixedSourcesSurviveScopedRevocation();deterministicSerialization();invalidOrLegacySourcesFailClosed();duplicateAndMalformedPayloadsFail();SpellRegistryRegressionSuite.main(args);SpellCastArchitectureRegressionSuite.main(args);System.out.println("Spell grant ledger regression suite passed. assertions="+assertions);}
     private static void mixedSourcesSurviveScopedRevocation(){SpellGrantLedger l=SpellGrantLedger.empty();l=l.add("frost_bolt","BASE:wizard").ledger();l=l.add("frost_bolt","SPEC:elementalist").ledger();l=l.add("shadow_bolt","SPEC:necromancer").ledger();l=l.add("divine_shield","ADMIN").ledger();l=l.add("quest_spell","QUEST:trial").ledger();l=l.add("talent_spell","TALENT:row_2").ledger();check(l.sources("frost_bolt").size()==2,"mixed source");var revoked=l.revokeSources(s->s.startsWith("SPEC:"));check(revoked.changed(),"spec revoked");check(revoked.ledger().contains("frost_bolt"),"base retained");check(!revoked.ledger().contains("shadow_bolt"),"spec-only locked");check(revoked.ledger().contains("divine_shield"),"admin retained");check(revoked.ledger().contains("quest_spell"),"quest retained");check(revoked.ledger().contains("talent_spell"),"talent retained");check(revoked.lockedSpellIds().equals(List.of("shadow_bolt")),"locked exact");}
     private static void deterministicSerialization(){SpellGrantLedger a=SpellGrantLedger.empty().add("b","ADMIN").ledger().add("a","SPEC:x").ledger().add("a","BASE:y").ledger();SpellGrantLedger b=SpellGrantLedger.empty().add("a","BASE:y").ledger().add("a","SPEC:x").ledger().add("b","ADMIN").ledger();check(a.serialize().equals(b.serialize()),"deterministic");check(SpellGrantLedger.parse(a.serialize()).serialize().equals(a.serialize()),"roundtrip");check(a.serialize().equals("a=BASE:y|SPEC:x;b=ADMIN"),"sorted");}
     private static void invalidOrLegacySourcesFailClosed(){expect(IllegalArgumentException.class,()->SpellGrantLedger.empty().add("spell","LEGACY"));expect(IllegalArgumentException.class,()->SpellGrantLedger.empty().add("spell",""));expect(IllegalArgumentException.class,()->SpellGrantLedger.empty().add("bad spell","ADMIN"));expect(IllegalArgumentException.class,()->SpellGrantLedger.empty().add("spell","SPEC:"));check(SpellGrantLedger.normalizeSource("admin").equals("ADMIN"),"admin normalized");check(SpellGrantLedger.normalizeSource("spec:NeCro").equals("SPEC:necro"),"identity normalized");}
