@@ -1332,26 +1332,40 @@ public final class IceSMPCore {
 
         // Stateful consumers must finish rollback and final-save writes while Profile v2 remains
         // installed; only their completed durable boundary permits the authority teardown.
+        final long profileDeadline = System.nanoTime()
+                + java.util.concurrent.TimeUnit.SECONDS.toNanos(10L);
         try {
-            profileSessionBridge.prepareDisable().toCompletableFuture().get(10,
-                    java.util.concurrent.TimeUnit.SECONDS);
-            profileSessionBridge.stopRuntime();
-            final var shutdown = playerProfilePlatform.shutdown(java.time.Duration.ofSeconds(10))
-                    .toCompletableFuture().get(11, java.util.concurrent.TimeUnit.SECONDS);
-            if (!shutdown.drained()) {
-                plugin.getLogger().severe("PlayerProfile disable drain incomplete: "
-                        + shutdown.detail());
-                return;
-            }
-            playerProfileAuthority.uninstall();
+            profileSessionBridge.prepareDisable().toCompletableFuture().get(
+                    remainingProfileShutdownNanos(profileDeadline),
+                    java.util.concurrent.TimeUnit.NANOSECONDS);
         } catch (final InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             plugin.getLogger().severe("PlayerProfile disable interrupted: " + interrupted);
-            return;
         } catch (final java.util.concurrent.ExecutionException
                        | java.util.concurrent.TimeoutException failure) {
-            plugin.getLogger().severe("PlayerProfile disable flush/drain hiba: " + failure);
-            return;
+            plugin.getLogger().severe("PlayerProfile session drain incomplete: " + failure);
+        }
+        profileSessionBridge.stopRuntime();
+        try {
+            final long remaining = remainingProfileShutdownNanos(profileDeadline);
+            final var shutdown = playerProfilePlatform.shutdown(
+                            java.time.Duration.ofNanos(remaining))
+                    .toCompletableFuture().get(remaining,
+                            java.util.concurrent.TimeUnit.NANOSECONDS);
+            if (!shutdown.drained()) {
+                plugin.getLogger().severe("PlayerProfile disable drain incomplete ("
+                        + shutdown.pendingOperations() + " pending): " + shutdown.detail());
+            }
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            plugin.getLogger().severe("PlayerProfile platform shutdown interrupted: " + interrupted);
+        } catch (final java.util.concurrent.ExecutionException
+                       | java.util.concurrent.TimeoutException failure) {
+            plugin.getLogger().severe("PlayerProfile platform shutdown deadline exceeded: " + failure);
+        }
+        if (hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed()
+                .filter(installed -> installed == playerProfileAuthority).isPresent()) {
+            playerProfileAuthority.uninstall();
         }
         shutdownStep("ProfileGUI.closeAll", ProfileGUI::closeAll);
 
@@ -1365,6 +1379,10 @@ public final class IceSMPCore {
         }
 
         plugin.getLogger().info("IceSMP core disabled.");
+    }
+
+    private static long remainingProfileShutdownNanos(final long deadline) {
+        return Math.max(1L, deadline - System.nanoTime());
     }
 
     /**

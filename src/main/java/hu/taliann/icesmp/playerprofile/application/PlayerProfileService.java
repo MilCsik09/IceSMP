@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -294,9 +295,42 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     public void invalidate(final UUID id) { repository.invalidate(id); }
 
     public CompletionStage<PlayerProfileRepository.ShutdownResult> shutdown(final Duration timeout) {
+        Objects.requireNonNull(timeout, "timeout");
+        if (timeout.isNegative()) throw new IllegalArgumentException("negative shutdown timeout");
         accepting.set(false);
+        final long budgetNanos = Math.max(1L, timeout.toNanos());
+        final long startedAt = System.nanoTime();
         final CompletableFuture<?>[] sessions = sessionTails.values().toArray(CompletableFuture[]::new);
-        return CompletableFuture.allOf(sessions).thenCompose(ignored -> repository.shutdown(timeout));
+        final CompletableFuture<Boolean> sessionDrain = CompletableFuture.allOf(sessions)
+                .handle((ignored, failure) -> failure == null)
+                .completeOnTimeout(false, budgetNanos, TimeUnit.NANOSECONDS);
+        return sessionDrain.thenCompose(sessionsDrained -> {
+            final long remaining = remainingNanos(startedAt, budgetNanos);
+            final int pendingSessions = (int) java.util.Arrays.stream(sessions)
+                    .filter(session -> !session.isDone()).count();
+            final PlayerProfileRepository.ShutdownResult timeoutResult =
+                    new PlayerProfileRepository.ShutdownResult(false, pendingSessions,
+                            "repository shutdown deadline exceeded");
+            return repository.shutdown(Duration.ofNanos(Math.max(1L, remaining)))
+                    .handle((result, failure) -> failure == null ? result
+                            : new PlayerProfileRepository.ShutdownResult(false, pendingSessions,
+                            "repository shutdown failed: " + failure.getClass().getSimpleName()))
+                    .toCompletableFuture()
+                    .completeOnTimeout(timeoutResult, Math.max(1L, remaining), TimeUnit.NANOSECONDS)
+                    .thenApply(repositoryResult -> {
+                        if (sessionsDrained && repositoryResult.drained()) return repositoryResult;
+                        final int pending = Math.max(pendingSessions,
+                                repositoryResult.pendingOperations());
+                        final String detail = !sessionsDrained
+                                ? "session drain deadline exceeded; " + repositoryResult.detail()
+                                : repositoryResult.detail();
+                        return new PlayerProfileRepository.ShutdownResult(false, pending, detail);
+                    });
+        });
+    }
+
+    private static long remainingNanos(final long startedAt, final long budgetNanos) {
+        return Math.max(0L, budgetNanos - Math.max(0L, System.nanoTime() - startedAt));
     }
 
     private <T> CompletionStage<T> enqueue(final UUID playerId,

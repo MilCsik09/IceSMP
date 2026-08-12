@@ -1,5 +1,8 @@
 package hu.taliann.icesmp.playerprofile.persistence;
 
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileService;
+import hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -8,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
@@ -26,12 +30,36 @@ public final class PlayerProfileLifecycleTeardownRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         repositoryShutdownIsIdempotentAndFencesNewWork();
+        stuckSessionTailCannotExceedTheSharedShutdownDeadline();
         coreDisableAlwaysClosesProfileResources();
         profileAuthorityOutlivesStatefulConsumers();
         acceptedConsumerFlushesCompleteBeforeAuthorityTeardown();
         platformTeardownIsUnconditional();
         httpAuthPrecedesLookupInSource();
         System.out.println("PlayerProfile lifecycle teardown regression suite passed. assertions=" + assertions);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void stuckSessionTailCannotExceedTheSharedShutdownDeadline() throws Exception {
+        final Path root = Files.createTempDirectory("pp-bounded-shutdown");
+        final YamlPlayerProfileRepository repository = new YamlPlayerProfileRepository(root);
+        final PlayerProfileService service = new PlayerProfileService(repository,
+                new YamlPlayerProfileTransactionManager(repository));
+        final var field = PlayerProfileService.class.getDeclaredField("sessionTails");
+        field.setAccessible(true);
+        final Map<UUID, CompletableFuture<Void>> tails =
+                (Map<UUID, CompletableFuture<Void>>) field.get(service);
+        tails.put(PLAYER, new CompletableFuture<>());
+
+        final long started = System.nanoTime();
+        final PlayerProfileRepository.ShutdownResult result = service.shutdown(
+                        Duration.ofMillis(100)).toCompletableFuture().get(2, TimeUnit.SECONDS);
+        final long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+        check(elapsedMillis < 1_000L,
+                "a stuck session tail cannot turn plugin disable into an unbounded wait");
+        check(!result.drained() && result.pendingOperations() > 0
+                        && result.detail().contains("session drain deadline exceeded"),
+                "bounded timeout remains visible in the shutdown result");
     }
 
     private static void repositoryShutdownIsIdempotentAndFencesNewWork() throws Exception {
@@ -97,8 +125,9 @@ public final class PlayerProfileLifecycleTeardownRegressionSuite {
         final int shutdownIndex = platform.indexOf("shutdown(Duration timeout)");
         check(shutdownIndex > 0, "platform shutdown exists");
         final String shutdownBody = platform.substring(shutdownIndex);
-        check(shutdownBody.contains("service.shutdown(timeout)"),
-                "platform shutdown always reaches the repository teardown");
+        check(shutdownBody.contains("service.shutdown(Duration.ofNanos(remaining))")
+                        && shutdownBody.contains("platform shutdown deadline exceeded"),
+                "platform shutdown always reaches service teardown with the remaining budget");
     }
 
     private static void profileAuthorityOutlivesStatefulConsumers() throws Exception {
