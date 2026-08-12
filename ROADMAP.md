@@ -40,6 +40,34 @@ megszakított folyamat is bizonyítottan ugyanarra az eredményre áll helyre;
 nincs dupla kifizetés, elveszett tárgy vagy kifizetett, de létre nem jött
 claim.
 
+- 🚧 **H-PROF-001 — PlayerProfile határérték-cliffek és leállási sorrend.**
+  Üzemidővel garantáltan bekövetkező, adatvesztés-osztályú rések:
+  - a credit- és adó-út ugyanazon a 256-os `operationReceipts` halmazon
+    osztozik, ellentmondó túlcsordulás-politikával — az adó-settle némán
+    kilakoltatja a legrégebbi (akár credit-) receiptet, replay esetén dupla
+    jóváírást engedve, tele halmaznál pedig a `creditOnceDurably` minden
+    jóváírásra hibát dob (`PlayerProfileEconomyStore` 214, unhealthy wallet);
+  - a questfelvétel questenként 3 soha nem törlődő extension-kulcsot ír
+    (`source.`/`accepted-at.`/`discovered.`, `PlayerProfileQuestStore`
+    107–129), a 160 questes katalógus így átlépheti az extension-map 512-es
+    kemény plafonját — a CAS-mutáció ettől kezdve hibázik, de az in-memory
+    tükör miatt csak restartkor látszik, teljes quest-előrehaladás veszhet;
+  - a `disableStateful()` a PlayerProfile-t a manager-shutdownok ELŐTT
+    állítja le (`IceSMPCore` 1261 vs. 1340/1348), így a crate-manager
+    halasztott valuta-rollbackjei és a `CurrencyManager.save()` flush-a
+    már leszerelt authorityba fut — a kompenzáló írás elveszik;
+  - a profil-fájl JVM-lock cache törlési feltétele versenyhelyzetes
+    (`YamlPlayerProfileRepository.withLock`): a nem-queued állapotra
+    alapozott `JVM_LOCKS.remove` után új lock-objektum születhet élő
+    FileLock mellett → `OverlappingFileLockException`, elveszett
+    szekció-mutáció.
+
+**Kilépési feltétel:** receipt-névtér típusonként particionálva vagy
+GC-zett plafonnal; quest-extensionök questenként egy kulcsba vonva vagy
+lezáráskor takarítva; a PlayerProfile-teardown a fogyasztó manager-ök
+után fut; a lock-cache törlés versenymentes; mindhárom cliffre regressziós
+teszt.
+
 ### 1.2. Megerősített technikai adósság
 
 Ezek nem mind kiadásblokkolók, de a forrásban még létező rések. Az
@@ -69,6 +97,38 @@ implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
   elérhető rejtvényeket tartalom- és időkapu-tervvel kell rendezni.
 - ⏸ A Mételytépő és a Sárkánytojás-töredék tényleges megszerzési forrása
   tulajdonosi döntést igényel.
+- ⬜ A Paladin/Evoker/Monk keresztjátékos cél-registryje (beacon/mark/link)
+  erős `Player`+scheduler referenciát tárol fordított index és cél-oldali
+  takarítás nélkül — a cél kilépésekor a bejegyzés bennragad (memória +
+  nyugdíjazott scheduler). A `WarriorGameplayService` `guardiansByTarget`
+  + `onEntityDeath` mintáját kell általánosítani mindhárom osztályra.
+- ⬜ A `BukkitClassSpecRuntimeAdapter.reconcile` offline ága a
+  `clearUuidOnly`-t a durable-commit completion-szálán futtatja hop nélkül;
+  loadout-váltásnál ez a Monk `applyStaggerConsequence` → `setHealth`
+  hívásáig ér, ami visszalépő játékosnál idegen szálról üthet élő entitást.
+  Generáció-fence vagy owner-hop kell erre az ágra is.
+- ⬜ A `QuestChoiceRegistry.issue` kapuja csak lejárt tokeneket purge-öl és
+  a put feltétel nélkül lefut, a `PlayerProfileService.generationCounters`
+  és a profil-HTTP rate-limit map pedig sosem ürül — mindhárom korlátos
+  vagy takarított szerkezetet igényel.
+- ⬜ A `PlayerProfileService.transact` minden szekciót változottnak jelent
+  a feliratkozóknak; a tényleges changed-halmazt kell propagálni.
+- ⬜ A tartós halál-escrow (`PlayerProfileDeathEscrowStore`) hívó nélkül
+  áll, miközben a relikvia-átadás (`RelicPvpTransferListener.keptRelics`)
+  memóriában él — crashnél a keep-módú relikvia elveszhet; a kész store-t
+  be kell kötni vagy el kell távolítani.
+- ⬜ Staging-propagációs hiányok: `/hud` nem kap `/menu` csempét és a
+  HUD-üzenetkulcsok nincsenek a `messages/*.yml` rétegben; a `/quest
+  choose` hiányzik a tab-complete-ből és a PLAYER_GUIDE-ból; a `/spec
+  switch|doctrine` nincs a játékoskézikönyvben és ~18 spec-üzenetkulcs
+  hiányzik a `messages/spec.yml`-ből; a `block-regen.yml`,
+  `class-gameplay.yml`, `event-spawn-safety.yml` kimaradt az ADMIN_GUIDE
+  configfájl-listájából; a `class-gameplay.yml` balansz-kulcsainak nincs
+  ConfigMenuGUI-tükre; a `player-profile.http.*` kulcsokhoz nincs
+  operátor-útmutató.
+- ⏸ Doksi-ellentmondás: `docs/ARCHITECTURE.md` (rollout-kapu + legacy mód)
+  vs. `docs/ADMIN_GUIDE.md` (Profile v2 mindig aktív, nincs kill switch) —
+  az elavult oldal kijelölése tulajdonosi tisztázást igényel.
 
 ## 2. Builderkapuk
 
