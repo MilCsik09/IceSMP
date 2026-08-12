@@ -3,7 +3,7 @@ import hu.taliann.icesmp.playerprofile.domain.*;
 import java.util.*;
 
 public record EconomySection(Map<String,Long> wallets, long bankBalance, Map<String,Long> debts, Map<String,String> pendingRewards, Set<String> operationReceipts, Map<String,Object> extensions) implements PlayerProfileSection {
-    public EconomySection{wallets=longMap(wallets,64);bankBalance=ImmutableValues.nonNegative(bankBalance,"bankBalance");debts=longMap(debts,64);pendingRewards=ImmutableValues.strings(pendingRewards,128);operationReceipts=ImmutableValues.stringSet(operationReceipts,256);extensions=ImmutableValues.map(extensions);}
+    public EconomySection{wallets=longMap(wallets,64);bankBalance=ImmutableValues.nonNegative(bankBalance,"bankBalance");debts=longMap(debts,64);pendingRewards=ImmutableValues.strings(pendingRewards,128);operationReceipts=ImmutableValues.stringSet(operationReceipts,384);extensions=ImmutableValues.map(extensions);}
     @Override public ProfileSectionId sectionId(){return ProfileSectionId.ECONOMY;}
     public static EconomySection empty(long now){return new EconomySection(Map.of(),0,Map.of(),Map.of(),Set.of(),Map.of());}
 
