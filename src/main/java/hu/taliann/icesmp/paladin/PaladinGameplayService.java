@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.paladin;
 
+import hu.taliann.icesmp.classspec.application.TargetRegistry;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.JobType;
@@ -15,6 +16,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -51,14 +53,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * pipeline. Szentlélek plays one Fényjelző beacon whose echo is a single bounded heal;
  * Megtorló lights the three Ítélet-jelek toward a Verdict; Oltalmazó spends Pajzstöltet on
  * area protection — a different tank identity from the Warrior Guardian (charge-funded,
- * ground-anchored, no oath-target reverse index). Durable state remains Profile v2.</p>
+ * ground-anchored). Durable state remains Profile v2.</p>
  */
 public final class PaladinGameplayService implements Listener, PlayerStateCleanup {
 
-    private record BeaconTarget(UUID id, Player entity, EntityScheduler scheduler, String label) {
+    private record BeaconTarget(UUID id, EntityScheduler scheduler, String label) {
         BeaconTarget {
             Objects.requireNonNull(id);
-            Objects.requireNonNull(entity);
             Objects.requireNonNull(scheduler);
             label = label == null || label.isBlank() ? id.toString() : label;
         }
@@ -73,6 +74,7 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
 
     private final Map<UUID, PaladinCombatState> states = new ConcurrentHashMap<>();
     private final Map<UUID, BeaconTarget> beaconTargets = new ConcurrentHashMap<>();
+    private final TargetRegistry beaconLinks = new TargetRegistry();
 
     private volatile ResourceManager combatTracker;
 
@@ -220,8 +222,8 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
         final boolean regen = "orzo_fenye".equals(doctrine(playerId, 40));
         final boolean selfEcho = "megvalto".equals(doctrine(playerId, 50));
         beacon.scheduler().run(plugin, task -> {
-            final Player ally = beacon.entity();
-            if (!ally.isOnline() || ally.isDead()) {
+            final Player ally = Bukkit.getPlayer(beacon.id());
+            if (ally == null || !ally.isOnline() || ally.isDead()) {
                 clearBeacon(playerId);
                 return;
             }
@@ -369,8 +371,7 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
         }
         event.setCancelled(true);
         final UUID paladinId = paladin.getUniqueId();
-        beaconTargets.put(paladinId, new BeaconTarget(target.getUniqueId(), target,
-                target.getScheduler(), target.getName()));
+        assignBeacon(paladinId, target);
         paladin.sendActionBar(messages.getMessage("paladin.beacon.set",
                 "<yellow>✦ Fényjelző: <white>{target}</white> — a gyógyításaid visszhangja rá is hull.</yellow>",
                 Map.of("target", target.getName())));
@@ -453,7 +454,7 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
 
     public void clearSpecializationState(final UUID playerId) {
         if (playerId == null) return;
-        beaconTargets.remove(playerId);
+        clearBeacon(playerId);
         final PaladinCombatState state = states.get(playerId);
         if (state != null) state.clearSpecializationState();
     }
@@ -461,7 +462,8 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
     @Override
     public void clearPlayerState(final UUID playerId) {
         if (playerId == null) return;
-        beaconTargets.remove(playerId);
+        clearBeacon(playerId);
+        clearBeaconTarget(playerId);
         final PaladinCombatState state = states.remove(playerId);
         if (state != null) state.clearAll();
     }
@@ -470,6 +472,7 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
         for (final UUID id : List.copyOf(states.keySet())) clearPlayerState(id);
         states.clear();
         beaconTargets.clear();
+        beaconLinks.clear();
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -486,8 +489,25 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
         if (event.getPlugin() == plugin) shutdown();
     }
 
+    private void assignBeacon(final UUID paladinId, final Player target) {
+        clearBeacon(paladinId);
+        final BeaconTarget beacon = new BeaconTarget(target.getUniqueId(),
+                target.getScheduler(), target.getName());
+        beaconTargets.put(paladinId, beacon);
+        beaconLinks.link(paladinId, beacon.id());
+    }
+
     private void clearBeacon(final UUID paladinId) {
-        beaconTargets.remove(paladinId);
+        final BeaconTarget beacon = beaconTargets.remove(paladinId);
+        if (beacon != null) beaconLinks.unlink(paladinId, beacon.id());
+        else beaconLinks.unlinkOwner(paladinId);
+    }
+
+    private void clearBeaconTarget(final UUID targetId) {
+        for (final UUID paladinId : beaconLinks.unlinkTarget(targetId)) {
+            beaconTargets.computeIfPresent(paladinId,
+                    (ignored, beacon) -> beacon.id().equals(targetId) ? null : beacon);
+        }
     }
 
     private static void healPlayer(final Player target, final double amount, final boolean regen) {

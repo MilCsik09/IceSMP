@@ -61,6 +61,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     private final AtomicBoolean accepting = new AtomicBoolean(true);
     private final AtomicBoolean runtimesWired = new AtomicBoolean(false);
     private volatile Consumer<UUID> loadoutSwitchCleanup = ignored -> { };
+    private volatile Consumer<UUID> offlineLoadoutSwitchCleanup = ignored -> { };
     private volatile Consumer<Player> postReconcile = ignored -> { };
 
     public BukkitClassSpecRuntimeAdapter(final JavaPlugin plugin,
@@ -216,6 +217,21 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             warlock.clearSpecializationState(playerId);
             wizard.clearSpecializationState(playerId);
         });
+        offlineLoadoutSwitchCleanup = playerId -> {
+            warrior.clearSpecializationState(playerId);
+            evoker.clearSpecializationState(playerId);
+            archer.clearSpecializationState(playerId);
+            shaman.clearSpecializationState(playerId);
+            monk.clearSpecializationStateOffline(playerId);
+            paladin.clearSpecializationState(playerId);
+            demonHunter.clearSpecializationState(playerId);
+            druid.clearSpecializationState(playerId);
+            priest.clearSpecializationState(playerId);
+            deathKnight.clearSpecializationState(playerId);
+            assassin.clearSpecializationState(playerId);
+            warlock.clearSpecializationState(playerId);
+            wizard.clearSpecializationState(playerId);
+        };
         setPostReconcile(player -> {
             warrior.reconcileProfile(player);
             evoker.reconcileProfile(player);
@@ -280,10 +296,22 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         final Player player = Bukkit.getPlayer(id);
         if (player == null) {
             try {
-                if (!current(id, token)) {
+                final boolean cleared = sessions.runIfCurrent(id, token, () -> {
+                    if (Bukkit.getPlayer(id) != null) {
+                        throw new ProfileSessionRegistry.StaleSessionException(id, token);
+                    }
+                    clearUuidOnly(id, kind, false);
+                });
+                if (!cleared) {
                     throw new ProfileSessionRegistry.StaleSessionException(id, token);
                 }
-                clearUuidOnly(id, kind);
+                if (!regrant) {
+                    return spellbookStateStore.selectWhile(id, "", () -> current(id, token))
+                            .thenCompose(ignored -> current(id, token)
+                                    ? CompletableFuture.completedFuture(null)
+                                    : CompletableFuture.failedFuture(
+                                            new ProfileSessionRegistry.StaleSessionException(id, token)));
+                }
                 return CompletableFuture.completedFuture(null);
             } catch (final Throwable failure) {
                 return CompletableFuture.failedFuture(failure);
@@ -297,7 +325,11 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
                 || source.startsWith(JobManager.SOURCE_SPEC_PREFIX);
         return jobs.revokeGrantsFromV2(player, revoke)
                 .thenCompose(ignored -> runOnOwner(id, token, player,
-                        () -> clearUuidOnly(id, kind)))
+                        () -> clearUuidOnly(id, kind, true)))
+                .thenCompose(ignored -> !regrant
+                        ? spellbookStateStore.selectWhile(id, "", () -> current(id, token))
+                                .thenApply(selected -> null)
+                        : CompletableFuture.completedFuture(null))
                 .thenCompose(ignored -> regrant
                         ? jobs.applyAutoUnlocksV2(player, durable)
                         : CompletableFuture.completedFuture(null))
@@ -342,7 +374,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         return accepting.get() && sessions.isCurrent(id, token);
     }
 
-    private void clearUuidOnly(final UUID id, final MutationKind kind) {
+    private void clearUuidOnly(final UUID id, final MutationKind kind,
+                               final boolean playerOwnerThread) {
         final boolean switching = kind == MutationKind.LOADOUT_SWITCH;
         for (final PlayerStateCleanup owner : transientOwners) {
             if (switching && (owner == resources || owner == catalyst
@@ -363,7 +396,9 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             }
             owner.clearPlayerState(id);
         }
-        if (switching) loadoutSwitchCleanup.accept(id);
+        if (switching) {
+            (playerOwnerThread ? loadoutSwitchCleanup : offlineLoadoutSwitchCleanup).accept(id);
+        }
         for (final Spell spell : spells.getAll()) spell.clearPlayerState(id);
     }
 

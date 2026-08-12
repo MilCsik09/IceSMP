@@ -262,6 +262,10 @@ val classSpecApplicationRegressionTest = registerRegression(
     "classSpecApplicationRegressionTest",
     "Runs Profile v2 mutation, DARK gate and fail-closed application regressions.",
     "hu.taliann.icesmp.classspec.application.ClassSpecApplicationRegressionSuite")
+val targetRegistryRegressionTest = registerRegression(
+    "targetRegistryRegressionTest",
+    "Runs UUID-only class target-link death, quit and concurrency regressions.",
+    "hu.taliann.icesmp.classspec.application.TargetRegistryRegressionSuite")
 val classSpecSectionRegressionTest = registerRegression(
     "classSpecSectionRegressionTest",
     "Runs ClassSpec section invariants without opaque binary persistence.",
@@ -588,7 +592,7 @@ tasks.check {
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
         classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, hudEditorRegressionTest,
-        classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
+        classSpecSectionRegressionTest, classSpecApplicationRegressionTest, targetRegistryRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
         playerProfileDailyQuestRegressionTest, playerProfileEconomyRegressionTest, playerProfileFactionAuthorityRegressionTest,

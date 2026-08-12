@@ -192,6 +192,12 @@ public final class EvokerGameplayRegressionSuite {
                 "Időlenyomat rolls back health only — no position/inventory/xp rollback path");
         check(service.contains("consumeImprintRestore"),
                 "imprint restore goes through the bounded heal-only state contract");
+        check(service.contains("evokersByMarkTarget")
+                        && service.contains("clearMarkTarget(playerId)"),
+                "marked ally departure clears the evoker-side handle");
+        check(service.contains("record MarkTarget(UUID id, EntityScheduler scheduler")
+                        && !service.contains("record MarkTarget(UUID id, Player"),
+                "mark handles do not retain strong Player references");
 
         final String catalyst = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java"));

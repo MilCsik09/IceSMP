@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BooleanSupplier;
 
 /** Typed authority for selected spell and restart-durable spell cooldown timestamps. */
 public final class PlayerProfileSpellbookStateStore {
@@ -22,10 +23,19 @@ public final class PlayerProfileSpellbookStateStore {
     }
 
     public CompletionStage<String> select(final UUID playerId, final String spellId) {
+        return selectWhile(playerId, spellId, () -> true);
+    }
+
+    public CompletionStage<String> selectWhile(final UUID playerId, final String spellId,
+                                                final BooleanSupplier currentSession) {
         final String selected = spellId == null || spellId.isBlank() ? "" : spellId(spellId);
+        Objects.requireNonNull(currentSession, "currentSession");
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 Objects.requireNonNull(playerId, "playerId"),
                 ProfileSectionId.SPELLBOOK, SpellbookSection.class, current -> {
+                    if (!currentSession.getAsBoolean()) {
+                        throw new IllegalStateException("stale spellbook session mutation");
+                    }
                     if (current.selectedSpell().equals(selected)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(selected);
                     }
