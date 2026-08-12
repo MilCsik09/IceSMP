@@ -126,10 +126,6 @@ implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
   configfájl-listájából; a `class-gameplay.yml` balansz-kulcsainak nincs
   ConfigMenuGUI-tükre; a `player-profile.http.*` kulcsokhoz nincs
   operátor-útmutató.
-- ⏸ Doksi-ellentmondás: `docs/ARCHITECTURE.md` (rollout-kapu + legacy mód)
-  vs. `docs/ADMIN_GUIDE.md` (Profile v2 mindig aktív, nincs kill switch) —
-  az elavult oldal kijelölése tulajdonosi tisztázást igényel.
-
 ## 2. Builderkapuk
 
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
