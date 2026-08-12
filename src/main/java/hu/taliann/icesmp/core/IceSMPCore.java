@@ -1255,25 +1255,6 @@ public final class IceSMPCore {
             plugin.getLogger().severe("A Profile v2 respec tranzakciók nem álltak le; a shutdown-save megtagadva.");
             return;
         }
-        try {
-            profileSessionBridge.prepareDisable().toCompletableFuture().get(10, java.util.concurrent.TimeUnit.SECONDS);
-            profileSessionBridge.stopRuntime();
-            final var shutdown = playerProfilePlatform.shutdown(java.time.Duration.ofSeconds(10))
-                    .toCompletableFuture().get(11, java.util.concurrent.TimeUnit.SECONDS);
-            if (!shutdown.drained()) {
-                plugin.getLogger().severe("PlayerProfile disable drain incomplete: " + shutdown.detail());
-                return;
-            }
-            playerProfileAuthority.uninstall();
-        } catch (final InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            plugin.getLogger().severe("PlayerProfile disable interrupted: " + interrupted);
-            return;
-        } catch (final java.util.concurrent.ExecutionException
-                       | java.util.concurrent.TimeoutException failure) {
-            plugin.getLogger().severe("PlayerProfile disable flush/drain hiba: " + failure);
-            return;
-        }
         // Atomically wait for any running common autosave and close its gate before shutdown hooks
         // start mutating manager state.
         if (!storeCoordinator.beginShutdown()) {
@@ -1348,6 +1329,30 @@ public final class IceSMPCore {
         shutdownStep("storeCoordinator.saveForShutdown", () ->
                 storeCoordinator.saveForShutdown(failure -> plugin.getLogger().severe("Store save() hiba ("
                         + failure.store().getClass().getSimpleName() + "): " + failure.cause())));
+
+        // Stateful consumers must finish rollback and final-save writes while Profile v2 remains
+        // installed; only their completed durable boundary permits the authority teardown.
+        try {
+            profileSessionBridge.prepareDisable().toCompletableFuture().get(10,
+                    java.util.concurrent.TimeUnit.SECONDS);
+            profileSessionBridge.stopRuntime();
+            final var shutdown = playerProfilePlatform.shutdown(java.time.Duration.ofSeconds(10))
+                    .toCompletableFuture().get(11, java.util.concurrent.TimeUnit.SECONDS);
+            if (!shutdown.drained()) {
+                plugin.getLogger().severe("PlayerProfile disable drain incomplete: "
+                        + shutdown.detail());
+                return;
+            }
+            playerProfileAuthority.uninstall();
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            plugin.getLogger().severe("PlayerProfile disable interrupted: " + interrupted);
+            return;
+        } catch (final java.util.concurrent.ExecutionException
+                       | java.util.concurrent.TimeoutException failure) {
+            plugin.getLogger().severe("PlayerProfile disable flush/drain hiba: " + failure);
+            return;
+        }
         shutdownStep("ProfileGUI.closeAll", ProfileGUI::closeAll);
 
         // Then clean up live player session state (HUD teams, restored armor, caches).
