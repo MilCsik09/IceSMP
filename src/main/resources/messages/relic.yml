@@ -24,6 +24,9 @@ messages:
     restricted-any: '&cEhhez a tárgyhoz legalább &f{level}&c. szintű kaszt szükséges.'
     restricted-profession: '&cEhhez a tárgyhoz &f{profession} &cszakma szükséges (min. &f{level}&c. szint).'
   relic:
+    death-escrow-full: <yellow>A megőrzött relikviád kézbesítéséhez üríts helyet a tárgytáradban, majd lépj vissza.</yellow>
+    death-kept: <gold>✦ A relikviád hű maradt hozzád — a halál sem választott el tőle.</gold>
+    death-lost: '<dark_purple>✦ A(z) <white>{relic}</white> köddé vált a halálodban — a kötés él: idézd újra az oltárnál, mielőtt végleg elhagyna ({days} nap).</dark_purple>'
     pvp-claimed: '<gold>⚔ A(z) <white>{relic}</white> új gazdát választott: mostantól téged szolgál!</gold>'
     pvp-lost: <red>A(z) <white>{relic}</white> elhagyott — legyőződ kezébe került.</red>
     wing-rejected: <red>A szárny nem ismer el gazdájának — csak a(z) {faction} frakció hű tagját szolgálja.</red>
