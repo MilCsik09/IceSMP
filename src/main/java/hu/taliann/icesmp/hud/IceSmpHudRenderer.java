@@ -5,6 +5,7 @@ import hu.taliann.icesmp.classspec.integration.ClassHudMetric;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.format.TextColor;
 
 import java.util.List;
@@ -79,7 +80,7 @@ public final class IceSmpHudRenderer {
 
     public Component render(final IceSmpHudModel model, final HudLayoutSnapshot layout) {
         final HudLayoutSnapshot safeLayout = layout == null ? HudLayoutSnapshot.defaults() : layout;
-        final TextComponent.Builder output = Component.text();
+        final TextComponent.Builder output = Component.text().shadowColor(ShadowColor.none());
         output.append(glyph(HudComponent.FRAME, -254, PANEL_FONT,
                 themeGlyph(model.factionTheme()), 241, null, safeLayout));
         output.append(glyph(HudComponent.WALLET_FRAME, -254, WALLET_PANEL_FONT,
