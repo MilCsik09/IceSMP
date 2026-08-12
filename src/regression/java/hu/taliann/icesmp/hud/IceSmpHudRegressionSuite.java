@@ -5,6 +5,7 @@ import hu.taliann.icesmp.classspec.integration.ClassHudSlot;
 import hu.taliann.icesmp.classspec.integration.ClassHudState;
 import hu.taliann.icesmp.managers.HudManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import javax.imageio.ImageIO;
@@ -34,6 +35,9 @@ public final class IceSmpHudRegressionSuite {
         check(!PlainTextComponentSerializer.plainText().serialize(empty).isBlank()
                         && !PlainTextComponentSerializer.plainText().serialize(full).isBlank(),
                 "both empty and full resources must produce a HUD frame");
+        check(ShadowColor.none().equals(empty.shadowColor())
+                        && ShadowColor.none().equals(full.shadowColor()),
+                "the root HUD style must disable Minecraft's bossbar text-shadow pass");
         check(IceSmpHudRenderer.SPACE_FIRST >= 0xE000
                         && IceSmpHudRenderer.SPACE_FIRST + IceSmpHudRenderer.SPACE_MAX
                         - IceSmpHudRenderer.SPACE_MIN <= 0xF8FF,
