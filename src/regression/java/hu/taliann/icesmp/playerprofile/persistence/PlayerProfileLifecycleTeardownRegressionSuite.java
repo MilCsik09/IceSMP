@@ -23,6 +23,7 @@ public final class PlayerProfileLifecycleTeardownRegressionSuite {
     public static void main(final String[] args) throws Exception {
         repositoryShutdownIsIdempotentAndFencesNewWork();
         coreDisableAlwaysClosesProfileResources();
+        profileAuthorityOutlivesStatefulConsumers();
         platformTeardownIsUnconditional();
         httpAuthPrecedesLookupInSource();
         System.out.println("PlayerProfile lifecycle teardown regression suite passed. assertions=" + assertions);
@@ -93,6 +94,47 @@ public final class PlayerProfileLifecycleTeardownRegressionSuite {
         final String shutdownBody = platform.substring(shutdownIndex);
         check(shutdownBody.contains("service.shutdown(timeout)"),
                 "platform shutdown always reaches the repository teardown");
+    }
+
+    private static void profileAuthorityOutlivesStatefulConsumers() throws Exception {
+        final String core = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
+        final int methodStart = core.indexOf("private void disableStateful()");
+        final int methodEnd = core.indexOf("private void closePlayerProfileResources()",
+                methodStart);
+        check(methodStart > 0 && methodEnd > methodStart,
+                "stateful shutdown source section exists");
+        final String shutdown = core.substring(methodStart, methodEnd);
+        final int respecGuard = shutdown.indexOf("respecService.prepareShutdown");
+        final int crateShutdown = shutdown.indexOf(
+                "shutdownStep(\"crateManager\", crateManager::shutdown)");
+        final int finalSave = shutdown.indexOf("storeCoordinator.saveForShutdown");
+        final int profileDrain = shutdown.indexOf("profileSessionBridge.prepareDisable");
+        final int platformShutdown = shutdown.indexOf("playerProfilePlatform.shutdown");
+        final int authorityUninstall = shutdown.indexOf("playerProfileAuthority.uninstall");
+        check(respecGuard > 0 && crateShutdown > respecGuard,
+                "respec admission guard remains ahead of consumer shutdown");
+        check(finalSave > crateShutdown && profileDrain > finalSave,
+                "crate rollback and final store save run before profile drain");
+        check(platformShutdown > profileDrain && authorityUninstall > platformShutdown,
+                "platform drain completes before authority uninstall");
+
+        final String crate = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/CrateManager.java"));
+        final int crateMethod = crate.indexOf("public void shutdown()");
+        final int crateMethodEnd = crate.indexOf("public void clearPlayerState", crateMethod);
+        check(crateMethod > 0 && crateMethodEnd > crateMethod
+                        && crate.substring(crateMethod, crateMethodEnd)
+                        .contains("drainDeferredCurrencyRollbacks()"),
+                "crate shutdown still drains durable currency rollbacks");
+        final String currency = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java"));
+        final int save = currency.indexOf("public void save()");
+        final int saveEnd = currency.indexOf("public void requestSave()", save);
+        check(save > 0 && saveEnd > save
+                        && currency.substring(save, saveEnd)
+                        .contains("PlayerProfileAuthority.installed()"),
+                "currency final save still flushes through the live profile authority");
     }
 
     private static void httpAuthPrecedesLookupInSource() throws Exception {
