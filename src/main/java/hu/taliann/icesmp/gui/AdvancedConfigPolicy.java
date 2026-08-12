@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -27,6 +28,19 @@ public final class AdvancedConfigPolicy {
     /** @return null when accepted, otherwise a Hungarian player-facing error. */
     public static String validate(final AdvancedConfigEntry entry, final Object value,
                                   final ConfigManager configManager) {
+        return validate(entry, value, configManager, ignored -> null);
+    }
+
+    public static String validate(final AdvancedConfigEntry entry, final Object value,
+                                  final ConfigManager configManager,
+                                  final ConfigEditSession.Snapshot snapshot) {
+        return validate(entry, value, configManager,
+                snapshot == null ? ignored -> null : snapshot::resolvedValue);
+    }
+
+    private static String validate(final AdvancedConfigEntry entry, final Object value,
+                                   final ConfigManager configManager,
+                                   final Function<String, Object> stagedValue) {
         if (entry == null || value == null) {
             return "A szerkesztett érték hiányzik.";
         }
@@ -42,11 +56,13 @@ public final class AdvancedConfigPolicy {
                 return "Az értéknek véges számnak kell lennie.";
             }
             if (key.equals("world-tweaks.warden-death-xp.min")
-                    && proposed > configManager.getDouble("world-tweaks.warden-death-xp.max", 125.0D)) {
+                    && proposed > stagedDouble("world-tweaks.warden-death-xp.max", 125.0D,
+                    configManager, stagedValue)) {
                 return "A Warden minimum XP-je nem lehet nagyobb a maximum XP-nél.";
             }
             if (key.equals("world-tweaks.warden-death-xp.max")
-                    && proposed < configManager.getDouble("world-tweaks.warden-death-xp.min", 80.0D)) {
+                    && proposed < stagedDouble("world-tweaks.warden-death-xp.min", 80.0D,
+                    configManager, stagedValue)) {
                 return "A Warden maximum XP-je nem lehet kisebb a minimum XP-nél.";
             }
         }
@@ -105,6 +121,14 @@ public final class AdvancedConfigPolicy {
             }
         }
         return null;
+    }
+
+    private static double stagedDouble(final String key, final double fallback,
+                                       final ConfigManager configManager,
+                                       final Function<String, Object> stagedValue) {
+        final Object staged = stagedValue.apply(key);
+        return staged instanceof Number number ? number.doubleValue()
+                : configManager.getDouble(key, fallback);
     }
 
     private static String validateGeneric(final AdvancedConfigEntry entry, final Object value) {
