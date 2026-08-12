@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-/** CAS-backed death-to-respawn item escrow. */
 public final class PlayerProfileDeathEscrowStore {
     private static final String BATCHES_KEY = "death-escrow.batches";
     private static final String SETTLED_KEY = "death-escrow.settled";

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-/** Pure idempotency projection for Profile v2 escrow delivery. */
 public final class DeathEscrowDeliveryPlan {
     private DeathEscrowDeliveryPlan() { }
 

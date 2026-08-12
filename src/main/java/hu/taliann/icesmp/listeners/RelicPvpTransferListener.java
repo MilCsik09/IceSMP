@@ -33,7 +33,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** PvP weapon-relic transfer and Profile v2-backed passive-relic death escrow. */
 public final class RelicPvpTransferListener implements Listener {
 
     private final JavaPlugin plugin;
@@ -187,39 +186,43 @@ public final class RelicPvpTransferListener implements Listener {
             final Player player, final PlayerProfileDeathEscrowStore.Batch batch) {
         final CompletableFuture<Boolean> result = new CompletableFuture<>();
         player.getScheduler().run(plugin, task -> {
-            if (!player.isOnline()) {
-                result.complete(false);
-                return;
-            }
-            final Set<String> present = deliveryMarkers(player);
-            final List<DeathEscrowDeliveryPlan.Item> missing =
-                    DeathEscrowDeliveryPlan.missing(batch, present);
-            if (freeStorageSlots(player) < missing.size()) {
-                player.sendMessage(messageManager.getMessage("relic.death-escrow-full",
-                        "<yellow>A megőrzött relikviád kézbesítéséhez üríts helyet a tárgytáradban, majd lépj vissza.</yellow>"));
-                result.complete(false);
-                return;
-            }
-            for (final DeathEscrowDeliveryPlan.Item delivery : missing) {
-                final ItemStack item = decode(delivery.encodedItem());
-                final var meta = item.getItemMeta();
-                meta.getPersistentDataContainer().set(
-                        escrowDeliveryKey, PersistentDataType.STRING, delivery.deliveryId());
-                item.setItemMeta(meta);
-                if (!player.getInventory().addItem(item).isEmpty()) {
-                    result.completeExceptionally(
-                            new IllegalStateException("Escrow inventory capacity changed during delivery"));
+            try {
+                if (!player.isOnline()) {
+                    result.complete(false);
                     return;
                 }
+                final Set<String> present = deliveryMarkers(player);
+                final List<DeathEscrowDeliveryPlan.Item> missing =
+                        DeathEscrowDeliveryPlan.missing(batch, present);
+                if (freeStorageSlots(player) < missing.size()) {
+                    player.sendMessage(messageManager.getMessage("relic.death-escrow-full",
+                            "<yellow>A megőrzött relikviád kézbesítéséhez üríts helyet a tárgytáradban, majd lépj vissza.</yellow>"));
+                    result.complete(false);
+                    return;
+                }
+                for (final DeathEscrowDeliveryPlan.Item delivery : missing) {
+                    final ItemStack item = decode(delivery.encodedItem());
+                    final var meta = item.getItemMeta();
+                    meta.getPersistentDataContainer().set(
+                            escrowDeliveryKey, PersistentDataType.STRING, delivery.deliveryId());
+                    item.setItemMeta(meta);
+                    if (!player.getInventory().addItem(item).isEmpty()) {
+                        result.completeExceptionally(new IllegalStateException(
+                                "Escrow inventory capacity changed during delivery"));
+                        return;
+                    }
+                }
+                escrowStore.settle(player.getUniqueId(), batch.receiptId(), System.currentTimeMillis())
+                        .whenComplete((status, failure) -> {
+                            if (failure != null) result.completeExceptionally(failure);
+                            else {
+                                clearDeliveryMarkers(player, batch.receiptId());
+                                result.complete(true);
+                            }
+                        });
+            } catch (final Throwable failure) {
+                result.completeExceptionally(failure);
             }
-            escrowStore.settle(player.getUniqueId(), batch.receiptId(), System.currentTimeMillis())
-                    .whenComplete((status, failure) -> {
-                        if (failure != null) result.completeExceptionally(failure);
-                        else {
-                            clearDeliveryMarkers(player, batch.receiptId());
-                            result.complete(true);
-                        }
-                    });
         }, () -> result.complete(false));
         return result;
     }

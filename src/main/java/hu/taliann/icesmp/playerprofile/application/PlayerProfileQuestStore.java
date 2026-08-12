@@ -92,7 +92,6 @@ public final class PlayerProfileQuestStore {
         return accept(playerId, questId, "");
     }
 
-    /** A felvétel a start-forrás auditjával EGY commitban rögzül. */
     public CompletionStage<Boolean> accept(final UUID playerId, final String questId,
                                            final String startSource) {
         final String id = questId(questId);

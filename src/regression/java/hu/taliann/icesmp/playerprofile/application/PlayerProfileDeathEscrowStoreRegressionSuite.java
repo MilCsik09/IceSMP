@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
 
-/** Restart-safe death escrow deposit, delivery and settlement regressions. */
 public final class PlayerProfileDeathEscrowStoreRegressionSuite {
     private static int assertions;
     private PlayerProfileDeathEscrowStoreRegressionSuite() { }

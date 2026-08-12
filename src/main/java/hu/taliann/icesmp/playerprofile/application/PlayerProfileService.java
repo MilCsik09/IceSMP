@@ -45,6 +45,7 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     private final PlayerProfileQueryService queries;
     private final Clock clock;
     private final List<PlayerProfileListener> listeners = new CopyOnWriteArrayList<>();
+    // Generations must remain monotonic across rejoins so a delayed callback can never match a new session.
     private final ConcurrentMap<UUID, AtomicLong> generationCounters = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> currentGenerations = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> sessionTails = new ConcurrentHashMap<>();
@@ -154,7 +155,6 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             }).thenCompose(ignored -> repository.flush(playerId)).thenRun(() -> {
                 repository.invalidate(playerId);
                 currentGenerations.remove(playerId, sessionGeneration);
-                generationCounters.remove(playerId);
             });
         });
     }
@@ -265,12 +265,21 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     public <T> CompletionStage<T> transact(final UUID id,
                                             final PlayerProfileTransactionManager.ProfileTransactionWork<T> work) {
         final AtomicReference<PlayerProfileSnapshot> before = new AtomicReference<>();
+        final AtomicReference<Set<ProfileSectionId>> candidates =
+                new AtomicReference<>(Set.of());
         return transactions.execute(id, snapshot -> {
             before.set(snapshot);
-            return work.prepare(snapshot);
+            final PlayerProfileTransactionManager.TransactionPlan<T> plan =
+                    work.prepare(snapshot);
+            final java.util.EnumSet<ProfileSectionId> sections =
+                    java.util.EnumSet.of(ProfileSectionId.OPERATIONS);
+            plan.updates().forEach(update -> sections.add(update.section()));
+            candidates.set(Set.copyOf(sections));
+            return plan;
         }).thenApply(result -> {
             repository.cached(id).ifPresent(profile -> {
-                final Set<ProfileSectionId> changed = changedSections(before.get(), profile);
+                final Set<ProfileSectionId> changed = changedSections(
+                        before.get(), profile, candidates.get());
                 if (!changed.isEmpty()) notifyChanged(id, profile.profileRevision(), changed);
             });
             return result;
@@ -317,11 +326,12 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     }
 
     private static Set<ProfileSectionId> changedSections(final PlayerProfileSnapshot before,
-                                                         final PlayerProfileSnapshot after) {
+                                                         final PlayerProfileSnapshot after,
+                                                         final Set<ProfileSectionId> candidates) {
         if (before == null) return Set.of();
         final java.util.EnumSet<ProfileSectionId> changed =
                 java.util.EnumSet.noneOf(ProfileSectionId.class);
-        for (final ProfileSectionId section : ProfileSectionId.values()) {
+        for (final ProfileSectionId section : candidates) {
             if (before.section(section).orElseThrow().revision()
                     != after.section(section).orElseThrow().revision()) changed.add(section);
         }
