@@ -272,8 +272,10 @@ Az adományláda nem piac:
 A GUI felső, 0–8. sora egyirányú beadási zóna: bal kattintás a teljes
 kurzorstackot, jobb kattintás egy darabot ad be; a shift-kattintás, a
 hotbar-szám, az offhand-gomb és a drag is működik. Egy közös adományt
-egyszerre csak egy játékos vehet el; ha a fogadó inventoryd megtelik, a
-maradék a lábadnál esik le.
+egyszerre csak egy játékos vehet el; átvétel előtt legyen üres a kurzorod.
+Az adomány csak a tartós mentés után kerül a közös kínálatba. Ha közben
+leáll a szerver vagy megszakad a kapcsolat, a beadás vagy az átvétel a
+következő belépéskor veszteség és dupla kézbesítés nélkül lezáródik.
 
 Nincs vételár; amit elviszel, azt egy másik játékos neked szánta.
 
@@ -973,4 +975,3 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
-

@@ -462,6 +462,10 @@ val inventoryReadWriteRegressionTest = registerRegression(
     "inventoryReadWriteRegressionTest",
     "Runs invsee single-writer, donation gesture and rollback regressions.",
     "hu.taliann.icesmp.inventory.InventoryReadWriteRegressionSuite")
+val donationChestDurabilityRegressionTest = registerRegression(
+    "donationChestDurabilityRegressionTest",
+    "Runs donation write-ahead, restart recovery and exactly-once regressions.",
+    "hu.taliann.icesmp.managers.DonationChestDurabilityRegressionSuite")
 val operationalConfigMenuRegressionTest = registerRegression(
     "operationalConfigMenuRegressionTest",
     "Runs operational config menu schema, help, reset and live-apply regressions.",
@@ -606,6 +610,7 @@ tasks.check {
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
         professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,
+        donationChestDurabilityRegressionTest,
         operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest,
         warriorGameplayRegressionTest, warriorProfileRegressionTest,
         evokerGameplayRegressionTest, evokerProfileRegressionTest,

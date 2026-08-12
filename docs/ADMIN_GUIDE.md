@@ -485,9 +485,9 @@ Támogatott beadási módok:
 
 A felső inventory minden vanilla mutációja törölve van. A plugin a műveletet a játékos következő entity-tickjén hajtja végre, és csak akkor vesz el itemet, ha a forrás slot/cursor/offhand teljes stackje még pontosan megegyezik a kattintáskor rögzített snapshotpal.
 
-Egy közös adományt egyszerre csak egy játékos vehet el. Ha a fogadó inventory megtelik, a maradék a játékos helyén esik le.
+Egy közös adományt egyszerre csak egy játékos vehet el. Az átvétel üres kurzort igényel; a tartós claim után a tárgy markerrel a kurzorra kerül, majd a marker csak a lezáró durable snapshot után tűnik el.
 
-A runtime védi a párhuzamos kattintást, stale inventory-snapshotot, cursor/slot versenyt és a normál GUI-duplikációs útvonalakat. A `donations.yml` a meglévő debounced, atomikus YAML-mentést használja; graceful shutdown flusholja a store-t. Az operációs rendszer vagy JVM azonnali összeomlása a legutolsó, még ki nem írt debounce-ablakban nem tekinthető cross-store tranzakciónak.
+A `donations.yml` minden műveletnél atomikus prepare/available/claim állapotot ír az async IO-úton. A forrás- és célitem ideiglenes markerét csak a játékos region-szála mozgatja. Restartkor a megmaradt marker visszagörgeti a még el nem vett beadást, a hiányzó deposit-marker befejezi a ládába helyezést, a claim-marker pedig kizárja a második kézbesítést. A periodikus és shutdown-save csak kiegészítő snapshot, nem az exactly-once tranzakció alapja.
 
 ## 9. Offline teleport
 
@@ -1552,7 +1552,9 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 7. Az adományozó zárja be vagy váltsa le azonnal a GUI-t; ne nyíljon vissza automatikusan.
 8. Töltsd meg a ládát és érd el a per-player limitet; a forrásitem maradjon érintetlen.
 9. Két játékos egyszerre kattintson ugyanarra az adományra; csak egyik kapja meg.
-10. Teszteld a megtelt fogadó inventoryt és a leftover dropot.
+10. A fogadó kurzorán legyen item: az átvétel tartós claim nélkül utasítódjon el.
+11. Állítsd le a folyamatot durable deposit prepare után, egyszer markerrel, egyszer a region-szálas levonás után: előbbi görgessen vissza, utóbbi pontosan egy adományt publikáljon.
+12. Állítsd le claim prepare előtt és a markerrel végzett kézbesítés után is: joinkor a tárgy mindkét esetben pontosan egyszer legyen meg.
 
 #### World-event spawn-védelem
 

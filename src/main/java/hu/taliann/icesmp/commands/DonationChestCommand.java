@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
@@ -49,7 +50,17 @@ public final class DonationChestCommand implements BasicCommand {
     }
 
     private void handleAdd(final Player player) {
-        final String errorKey = donationChestManager.donateHeldItem(player);
+        donationChestManager.donateHeldItem(player).whenComplete((errorKey, failure) -> {
+            try {
+                player.getScheduler().run(JavaPlugin.getProvidingPlugin(DonationChestCommand.class),
+                        task -> handleAddResult(player,
+                                failure == null ? errorKey : "donation-transaction-failed"), null);
+            } catch (final RuntimeException ignored) {
+            }
+        });
+    }
+
+    private void handleAddResult(final Player player, final String errorKey) {
         if (errorKey != null) {
             player.sendMessage(messageManager.get(errorKey, hu.taliann.icesmp.managers.DonationChestManager.defaultErrorFor(errorKey),
                     Map.of("limit", String.valueOf(donationChestManager.getMaxPerPlayer()))));

@@ -777,14 +777,14 @@ Játékospiac, NPC/frakció shop, vevőszolgáltatás, kézbesítés, adományl�
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Listing/vásárlás/kézbesítés, NPC-interakció, adomány és board művelet.
 - **Ami még kellhet hozzá:** Shop NPC-k, adományláda-hely és esetleges board-helyszínek kötése szükséges.
-- **Fontos határ:** Full inventory, disconnect és tárolási hiba esetén runtime recovery teszt szükséges.
+- **Fontos határ:** Az adomány csak tartós előkészítés és region-szálas forráslevonás után jelenik meg; félbeszakított beadás vagy átvétel belépéskor automatikusan folytatódik vagy visszagörög.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.exchangeboard`
 - Config: `economy.*`, market-, shop-, donation- és exchange-board definíciók.
-- Tartós állapot: Listingek, journal, kézbesítés és gazdasági állapot tartós.
+- Tartós állapot: Listingek, journal, kézbesítés és gazdasági állapot tartós; az adományláda prepare/available/claim fázisai atomikus YAML-snapshotban élnek.
 - Reload: Árak/listák részben reloadolhatók; nyitott tranzakciónál settlement kell.
 
 </details>

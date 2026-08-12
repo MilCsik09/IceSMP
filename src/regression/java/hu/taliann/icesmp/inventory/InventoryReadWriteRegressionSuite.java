@@ -170,8 +170,10 @@ public final class InventoryReadWriteRegressionSuite {
                         && source.contains("donateOffHand")
                         && source.contains("sameItem(current, expected)")
                         && source.contains("requestedAmount > current.getAmount()")
-                        && source.contains("entries.remove(id, entry)")
-                        && source.contains("source.writer().write(current)"),
+                        && source.contains("DonationTransferLifecycle.State.DEPOSIT_PREPARED")
+                        && source.contains("source.writer().write(remaining.getAmount() <= 0 ? null : remaining)")
+                        && source.contains("persistAsync()")
+                        && !source.contains("requestSave()"),
                 "donation manager lost exact source ownership or rollback");
     }
 

@@ -13,11 +13,16 @@ import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 /**
@@ -43,6 +48,12 @@ public final class DonationChestListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClick(final InventoryClickEvent event) {
+        if (event.getWhoClicked() instanceof Player
+                && (manager.isTransferMarked(event.getCurrentItem())
+                || manager.isTransferMarked(event.getCursor()))) {
+            event.setCancelled(true);
+            return;
+        }
         if (!(event.getView().getTopInventory().getHolder()
                 instanceof DonationChestHolder holder)
                 || !(event.getWhoClicked() instanceof Player player)) {
@@ -144,18 +155,23 @@ public final class DonationChestListener implements Listener {
     /** Runs after the cancelled inventory event, on the player's owning entity thread. */
     private void submitDonation(final Player player,
                                 final DonationChestHolder holder,
-                                final Supplier<String> transaction) {
+                                final Supplier<CompletionStage<String>> transaction) {
         runPlayerTask(player, () -> {
-            final String errorKey;
             try {
-                errorKey = transaction.get();
+                transaction.get().whenComplete((errorKey, failure) -> runPlayerTask(player, () -> {
+                    if (failure != null) {
+                        plugin.getLogger().warning("Donation deposit transaction failed for "
+                                + player.getUniqueId() + ": " + failure);
+                        handleResult(player, holder, "donation-transaction-failed");
+                    } else {
+                        handleResult(player, holder, errorKey);
+                    }
+                }));
             } catch (final RuntimeException failure) {
                 plugin.getLogger().warning("Donation deposit transaction failed for "
                         + player.getUniqueId() + ": " + failure);
                 handleResult(player, holder, "donation-transaction-failed");
-                return;
             }
-            handleResult(player, holder, errorKey);
         });
     }
 
@@ -199,33 +215,31 @@ public final class DonationChestListener implements Listener {
             return;
         }
 
-        final ItemStack item;
         try {
-            item = manager.takeEntry(entryId);
+            manager.takeEntry(player, entryId).whenComplete((errorKey, failure) ->
+                    runPlayerTask(player, () -> handleTakeResult(player, holder, errorKey, failure)));
         } catch (final RuntimeException failure) {
-            player.playSound(player.getLocation(),
-                    Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
-            player.sendMessage(messages.get(
-                    "donation-take-failed",
-                    "&cAz adomány most nem vehető ki; próbáld újra."));
-            return;
+            handleTakeResult(player, holder, "donation-take-failed", failure);
         }
-        if (item == null) {
+    }
+
+    private void handleTakeResult(final Player player,
+                                  final DonationChestHolder holder,
+                                  final String errorKey,
+                                  final Throwable failure) {
+        if (failure != null || errorKey != null) {
             player.playSound(player.getLocation(),
                     Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
-            player.sendMessage(messages.get(
-                    "donation-take-gone",
-                    "&cEzt a tárgyat már elvitte valaki más."));
+            final String key = failure == null ? errorKey : "donation-take-failed";
+            player.sendMessage(messages.get(key, switch (key) {
+                case "donation-take-cursor" -> "&eElőbb tedd le a kurzoron lévő tárgyat.";
+                case "donation-take-gone" -> "&cEzt a tárgyat már elvitte valaki más.";
+                case "donation-pending-recovery" -> "&eAz adomány átvétele belépéskor folytatódik.";
+                default -> "&cAz adomány most nem vehető ki; próbáld újra.";
+            }));
             refreshIfViewing(player, holder);
             return;
         }
-
-        final Map<Integer, ItemStack> leftovers =
-                player.getInventory().addItem(item);
-        leftovers.values().forEach(left ->
-                player.getWorld().dropItemNaturally(
-                        player.getLocation(), left));
-
         player.playSound(player.getLocation(),
                 Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
                 1.0F, 1.2F);
@@ -262,6 +276,10 @@ public final class DonationChestListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryDrag(final InventoryDragEvent event) {
+        if (manager.isTransferMarked(event.getOldCursor())) {
+            event.setCancelled(true);
+            return;
+        }
         if (!(event.getView().getTopInventory().getHolder()
                 instanceof DonationChestHolder holder)
                 || !(event.getWhoClicked() instanceof Player player)) {
@@ -308,6 +326,43 @@ public final class DonationChestListener implements Listener {
         if (event.getInventory().getHolder()
                 instanceof DonationChestHolder holder) {
             holder.setInventory(null);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onDrop(final PlayerDropItemEvent event) {
+        if (manager.isTransferMarked(event.getItemDrop().getItemStack())) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onJoin(final PlayerJoinEvent event) {
+        recover(event.getPlayer(), 0);
+    }
+
+    @EventHandler
+    public void onRespawn(final PlayerRespawnEvent event) {
+        recover(event.getPlayer(), 0);
+    }
+
+    private void recover(final Player player, final int attempt) {
+        try {
+            player.getScheduler().runDelayed(plugin, task -> {
+                if (!player.isOnline()) return;
+                if (!manager.recover(player) && attempt < 20) recover(player, attempt + 1);
+            }, null, attempt == 0 ? 1L : 10L);
+        } catch (final RuntimeException ignored) {
+        }
+    }
+
+    @EventHandler
+    public void onDeath(final PlayerDeathEvent event) {
+        final var iterator = event.getDrops().iterator();
+        while (iterator.hasNext()) {
+            final ItemStack item = iterator.next();
+            if (manager.isTransferMarked(item)) {
+                iterator.remove();
+                event.getItemsToKeep().add(item);
+            }
         }
     }
 
