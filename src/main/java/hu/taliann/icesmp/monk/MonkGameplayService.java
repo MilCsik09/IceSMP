@@ -55,10 +55,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class MonkGameplayService implements Listener, PlayerStateCleanup {
 
-    private record LinkTarget(UUID id, Player entity, EntityScheduler scheduler) {
+    private record LinkTarget(UUID id, EntityScheduler scheduler) {
         LinkTarget {
             Objects.requireNonNull(id);
-            Objects.requireNonNull(entity);
             Objects.requireNonNull(scheduler);
         }
     }
@@ -72,6 +71,7 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
 
     private final Map<UUID, MonkCombatState> states = new ConcurrentHashMap<>();
     private final Map<UUID, List<LinkTarget>> linkTargets = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<UUID>> monksByLinkTarget = new ConcurrentHashMap<>();
     private final Set<UUID> drainActive = ConcurrentHashMap.newKeySet();
 
     private volatile ResourceManager combatTracker;
@@ -251,10 +251,10 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         final boolean selfRipple = "szellemkod".equals(doctrine(playerId, 50));
         boolean anyScheduled = false;
         for (final LinkTarget link : List.copyOf(links)) {
-            final Player ally = link.entity();
             anyScheduled = true;
             link.scheduler().run(plugin, task -> {
-                if (!ally.isOnline() || ally.isDead()) {
+                final Player ally = Bukkit.getPlayer(link.id());
+                if (ally == null || !ally.isOnline() || ally.isDead()) {
                     removeLink(playerId, link.id());
                     return;
                 }
@@ -401,8 +401,15 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         }
         final List<LinkTarget> links = linkTargets.computeIfAbsent(monkId,
                 ignored -> new java.util.concurrent.CopyOnWriteArrayList<>());
-        links.removeIf(link -> !state.linkIds().contains(link.id()));
-        links.add(new LinkTarget(target.getUniqueId(), target, target.getScheduler()));
+        final Set<UUID> retained = Set.copyOf(state.linkIds());
+        links.removeIf(link -> {
+            if (retained.contains(link.id())) return false;
+            unlinkReverseIndex(monkId, link.id());
+            return true;
+        });
+        links.add(new LinkTarget(target.getUniqueId(), target.getScheduler()));
+        monksByLinkTarget.computeIfAbsent(target.getUniqueId(),
+                ignored -> ConcurrentHashMap.newKeySet()).add(monkId);
         if ("gyors_szoves".equals(doctrine(monkId, 30))) {
             target.getScheduler().run(plugin, task -> healPlayer(target, config.getDouble(
                     "classes.monk.mist.weave-heal", 2.0D), false, false), null);
@@ -500,8 +507,16 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
      */
     public void clearSpecializationState(final UUID playerId) {
         if (playerId == null) return;
-        applyStaggerConsequence(playerId);
-        linkTargets.remove(playerId);
+        final Player player = Bukkit.getPlayer(playerId);
+        if (player != null) applyStaggerConsequence(player);
+        clearLinks(playerId);
+        final MonkCombatState state = states.get(playerId);
+        if (state != null) state.clearSpecializationState();
+    }
+
+    public void clearSpecializationStateOffline(final UUID playerId) {
+        if (playerId == null) return;
+        clearLinks(playerId);
         final MonkCombatState state = states.get(playerId);
         if (state != null) state.clearSpecializationState();
     }
@@ -509,19 +524,19 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
     @Override
     public void clearPlayerState(final UUID playerId) {
         if (playerId == null) return;
-        linkTargets.remove(playerId);
+        clearLinks(playerId);
+        clearLinkTarget(playerId);
         drainActive.remove(playerId);
         final MonkCombatState state = states.remove(playerId);
         if (state != null) state.clearAll();
     }
 
-    private void applyStaggerConsequence(final UUID playerId) {
-        final MonkCombatState state = states.get(playerId);
+    private void applyStaggerConsequence(final Player player) {
+        final MonkCombatState state = states.get(player.getUniqueId());
         if (state == null) return;
         final double pool = state.collapseStagger();
         if (pool <= 0.0D) return;
-        final Player player = Bukkit.getPlayer(playerId);
-        if (player != null && player.isOnline() && !player.isDead()) {
+        if (player.isOnline() && !player.isDead()) {
             player.setHealth(Math.max(1.0D, player.getHealth() - pool));
         }
     }
@@ -530,6 +545,7 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         for (final UUID id : List.copyOf(states.keySet())) clearPlayerState(id);
         states.clear();
         linkTargets.clear();
+        monksByLinkTarget.clear();
         drainActive.clear();
     }
 
@@ -538,13 +554,13 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
 
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
-        applyStaggerConsequence(event.getPlayer().getUniqueId());
+        applyStaggerConsequence(event.getPlayer());
         clearPlayerState(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onKick(final PlayerKickEvent event) {
-        applyStaggerConsequence(event.getPlayer().getUniqueId());
+        applyStaggerConsequence(event.getPlayer());
         clearPlayerState(event.getPlayer().getUniqueId());
     }
 
@@ -558,6 +574,31 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         if (state != null) state.removeLink(allyId);
         final List<LinkTarget> links = linkTargets.get(monkId);
         if (links != null) links.removeIf(link -> link.id().equals(allyId));
+        unlinkReverseIndex(monkId, allyId);
+    }
+
+    private void clearLinks(final UUID monkId) {
+        final List<LinkTarget> links = linkTargets.remove(monkId);
+        if (links == null) return;
+        for (final LinkTarget link : List.copyOf(links)) unlinkReverseIndex(monkId, link.id());
+    }
+
+    private void clearLinkTarget(final UUID targetId) {
+        final Set<UUID> monks = monksByLinkTarget.remove(targetId);
+        if (monks == null) return;
+        for (final UUID monkId : List.copyOf(monks)) {
+            final MonkCombatState state = states.get(monkId);
+            if (state != null) state.removeLink(targetId);
+            final List<LinkTarget> links = linkTargets.get(monkId);
+            if (links != null) links.removeIf(link -> link.id().equals(targetId));
+        }
+    }
+
+    private void unlinkReverseIndex(final UUID monkId, final UUID targetId) {
+        monksByLinkTarget.computeIfPresent(targetId, (ignored, monks) -> {
+            monks.remove(monkId);
+            return monks.isEmpty() ? null : monks;
+        });
     }
 
     private MonkCombatState state(final UUID id) {

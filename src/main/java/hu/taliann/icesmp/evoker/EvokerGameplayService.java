@@ -15,6 +15,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -54,10 +55,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class EvokerGameplayService implements Listener, PlayerStateCleanup {
 
-    private record MarkTarget(UUID id, Player entity, EntityScheduler scheduler, String label) {
+    private record MarkTarget(UUID id, EntityScheduler scheduler, String label) {
         MarkTarget {
             Objects.requireNonNull(id);
-            Objects.requireNonNull(entity);
             Objects.requireNonNull(scheduler);
             label = label == null || label.isBlank() ? id.toString() : label;
         }
@@ -72,6 +72,7 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
 
     private final Map<UUID, EvokerCombatState> states = new ConcurrentHashMap<>();
     private final Map<UUID, MarkTarget> markTargets = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<UUID>> evokersByMarkTarget = new ConcurrentHashMap<>();
 
     private volatile ResourceManager combatTracker;
 
@@ -313,8 +314,8 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
             final MarkTarget mark = markTargets.get(playerId);
             if (mark != null) {
                 mark.scheduler().run(plugin, allyTask -> {
-                    final Player ally = mark.entity();
-                    if (!ally.isOnline() || ally.isDead()) {
+                    final Player ally = Bukkit.getPlayer(mark.id());
+                    if (ally == null || !ally.isOnline() || ally.isDead()) {
                         clearMark(playerId);
                         return;
                     }
@@ -434,6 +435,7 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
     public void clearPlayerState(final UUID playerId) {
         if (playerId == null) return;
         clearMark(playerId);
+        clearMarkTarget(playerId);
         final EvokerCombatState state = states.remove(playerId);
         if (state != null) state.clearAll();
     }
@@ -442,6 +444,7 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
         for (final UUID id : List.copyOf(states.keySet())) clearPlayerState(id);
         states.clear();
         markTargets.clear();
+        evokersByMarkTarget.clear();
     }
 
     /** A meaningful hit interrupts a held Felerősítés charge — the commitment risk of the class core. */
@@ -496,15 +499,36 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
     }
 
     private void assignMark(final UUID evokerId, final Player target) {
-        markTargets.put(evokerId, new MarkTarget(target.getUniqueId(), target,
-                target.getScheduler(), target.getName()));
+        clearMark(evokerId);
+        final MarkTarget mark = new MarkTarget(target.getUniqueId(),
+                target.getScheduler(), target.getName());
+        markTargets.put(evokerId, mark);
+        evokersByMarkTarget.computeIfAbsent(mark.id(),
+                ignored -> ConcurrentHashMap.newKeySet()).add(evokerId);
         state(evokerId).setMarkedAlly(target.getUniqueId(), target.getName());
     }
 
     private void clearMark(final UUID evokerId) {
-        markTargets.remove(evokerId);
+        final MarkTarget mark = markTargets.remove(evokerId);
+        if (mark != null) {
+            evokersByMarkTarget.computeIfPresent(mark.id(), (ignored, evokers) -> {
+                evokers.remove(evokerId);
+                return evokers.isEmpty() ? null : evokers;
+            });
+        }
         final EvokerCombatState state = states.get(evokerId);
         if (state != null) state.clearMarkedAlly();
+    }
+
+    private void clearMarkTarget(final UUID targetId) {
+        final Set<UUID> evokers = evokersByMarkTarget.remove(targetId);
+        if (evokers == null) return;
+        for (final UUID evokerId : List.copyOf(evokers)) {
+            markTargets.computeIfPresent(evokerId,
+                    (ignored, mark) -> mark.id().equals(targetId) ? null : mark);
+            final EvokerCombatState state = states.get(evokerId);
+            if (state != null) state.clearMarkedAlly();
+        }
     }
 
     private EvokerCombatState state(final UUID id) {
