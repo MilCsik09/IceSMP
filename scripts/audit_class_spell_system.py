@@ -182,7 +182,7 @@ def reachable_catalog(text:str):
 def resolve_registration(expr,class_to_id,dynamic):
     m=re.search(r'ConfiguredSpell\.builder\([^,]+,\s*"([^"]+)"',expr)
     if m: return m.group(1)
-    m=re.search(r'new\s+(\w+)\s*\(',expr)
+    m=re.search(r'new\s+(?:[\w$]+\.)*(\w+)\s*\(',expr)
     if not m: return None
     impl=m.group(1)
     if impl in class_to_id: return class_to_id[impl]
@@ -285,8 +285,30 @@ def configured_review(d):
 def impl_traits(root,d):
     p=root/('src/main/java/hu/taliann/icesmp/managers/TotemManager.java' if d.impl=='ShamanTotemSpell' else (d.impl_source or d.source)); t=read(p) if p.is_file() else ''
     delayed='runDelayed' in t or 'runAtFixedRate' in t; projectile=d.category=='projectile' or 'launchProjectile' in t or 'teleportAsync' in t
-    scaled=delayed and any(x in t for x in ('SpellDamageUtil','SpellHealingUtil','.damage(','setHealth(','scaledDamage(','scaledHealing(')); snapshot=any(x in t for x in ('SpellExecutionContext.capture()','SpellDamageUtil.markProjectile','CastModifiers modifiers','SpellDamageUtil.scaledDamage','SpellHealingUtil.scaledHealing'))
+    cleanup_only_delayed=(d.category=='summon' and 'runAtFixedRate' not in t
+                          and bool(re.search(r'runDelayed\s*\([^;]*?->\s*minion\.remove\(\)',t,re.S)))
+    scaled=delayed and not cleanup_only_delayed and any(x in t for x in ('SpellDamageUtil','SpellHealingUtil','.damage(','setHealth(','scaledDamage(','scaledHealing(')); snapshot=any(x in t for x in ('SpellExecutionContext.capture()','SpellDamageUtil.markProjectile','CastModifiers modifiers','SpellDamageUtil.scaledDamage','SpellHealingUtil.scaledHealing'))
     return p,t,delayed,projectile,scaled,snapshot
+
+def auditor_contracts(root,class_to_id,dynamic,defs):
+    errs=[]
+    fq='spellRegistry.register(new hu.taliann.icesmp.spells.WhirlwindSpell(plugin, messageManager))'
+    if resolve_registration(fq,class_to_id,dynamic)!='whirlwind':
+        errs.append('auditor cannot resolve fully-qualified dedicated registration')
+    druid='spellRegistry.register(new hu.taliann.icesmp.spells.DruidFormSpell(messageManager, DruidFormSpell.Form.BEAR))'
+    if resolve_registration(druid,class_to_id,dynamic)!='druid_bear_form':
+        errs.append('auditor cannot resolve enum-based Druid form registration')
+    totem='spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager, hu.taliann.icesmp.managers.TotemManager.TotemType.WINDFURY, 90, SpellCostType.HUNGER, 5))'
+    if resolve_registration(totem,class_to_id,dynamic)!='windfury_totem':
+        errs.append('auditor cannot resolve enum-based Shaman totem registration')
+    summon=next(iter(defs.get('wild_pack',[])),None)
+    if summon:
+        _,_,delayed,_,scaled,_=impl_traits(root,summon)
+        if not delayed or scaled:
+            errs.append('auditor confuses summon cleanup scheduling with delayed scaled output')
+    else:
+        errs.append('auditor self-check summon definition missing: wild_pack')
+    return errs
 
 def regression_graph(root):
     build=read(root/'build.gradle.kts'); regs={}
@@ -411,7 +433,7 @@ def main():
     required=[root/'src/main/java/hu/taliann/icesmp/spells/SpellCatalog.java',root/'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java',root/'src/main/resources/config/classes.yml',root/'src/main/resources/config/class-gameplay.yml',root/'src/main/resources/config/spells.yml',root/'src/main/resources/config/spells-balance.yml',root/'build.gradle.kts',root/'src/regression/java']
     miss=[str(p) for p in required if not p.exists()]
     if miss: print('Missing audit inputs: '+', '.join(miss),file=sys.stderr); return 2
-    defs,cids,dyn=discover_definitions(root); regs,unresolved=discover_registrations(root,cids,dyn); unlocks=parse_unlocks(root/'src/main/resources/config/classes.yml'); active=parse_active(root/'src/main/resources/config/class-gameplay.yml'); balance=parse_balance(root/'src/main/resources/config/spells-balance.yml'); schools,chains,pairs=parse_spell_config(root/'src/main/resources/config/spells.yml'); rows=build_rows(defs,regs,unlocks,active,balance,schools,chains,pairs); regrows,regerrs=regression_graph(root); errs=validate(root,rows,regs,unresolved,balance,chains,pairs,regerrs)
+    defs,cids,dyn=discover_definitions(root); regs,unresolved=discover_registrations(root,cids,dyn); unlocks=parse_unlocks(root/'src/main/resources/config/classes.yml'); active=parse_active(root/'src/main/resources/config/class-gameplay.yml'); balance=parse_balance(root/'src/main/resources/config/spells-balance.yml'); schools,chains,pairs=parse_spell_config(root/'src/main/resources/config/spells.yml'); rows=build_rows(defs,regs,unlocks,active,balance,schools,chains,pairs); regrows,regerrs=regression_graph(root); regerrs += auditor_contracts(root,cids,dyn,defs); errs=validate(root,rows,regs,unresolved,balance,chains,pairs,regerrs)
     cp=a.csv if a.csv.is_absolute() else root/a.csv; rp=a.report if a.report.is_absolute() else root/a.report; cp.parent.mkdir(parents=True,exist_ok=True); rp.parent.mkdir(parents=True,exist_ok=True)
     with cp.open('w',encoding='utf-8',newline='') as h:
         w=csv.DictWriter(h,fieldnames=CSV_FIELDS); w.writeheader(); [w.writerow(csv_record(root,rows[i])) for i in sorted(rows)]

@@ -158,6 +158,19 @@ public final class ShamanGameplayRegressionSuite {
                 "shaman cast bonuses ride the capped shared power pipeline");
         check(service.contains("totemManager.clearOwnerProjection(playerId);"),
                 "death/logout/kick class cleanup tears down live totems through TotemManager");
+
+        final String gameplay = Files.readString(Path.of(
+                "src/main/resources/config/class-gameplay.yml"));
+        final String enhancementKit = gameplay.substring(
+                gameplay.indexOf("      enhancement:", gameplay.indexOf("  shaman:")),
+                gameplay.indexOf("      tidal:", gameplay.indexOf("  shaman:")));
+        final String tidalKit = gameplay.substring(
+                gameplay.indexOf("      tidal:", gameplay.indexOf("  shaman:")),
+                gameplay.indexOf("\n\n    # 50+", gameplay.indexOf("  shaman:")));
+        check(!enhancementKit.contains("earthbind_totem"),
+                "Enhancement defaults cannot reference the Elemental-only Earthbind Totem grant");
+        check(!tidalKit.contains("windfury_totem"),
+                "Tidal defaults cannot reference the Enhancement-only Windfury Totem grant");
     }
 
     private static void check(final boolean condition, final String message) {
