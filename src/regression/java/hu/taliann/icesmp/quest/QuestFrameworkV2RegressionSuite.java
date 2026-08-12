@@ -360,6 +360,20 @@ public final class QuestFrameworkV2RegressionSuite {
         registry.invalidate(PLAYER);
         check(registry.consume(PLAYER, invalidated, 2_000_100L).isEmpty(),
                 "player-state cleanup invalidates pending tokens");
+
+        final QuestChoiceRegistry bounded = new QuestChoiceRegistry();
+        for (int index = 0; index < 1024; index++) {
+            bounded.issue(PLAYER, "live-" + index, source, 3_000_000L);
+        }
+        boolean fullRejected = false;
+        try {
+            bounded.issue(PLAYER, "overflow", source, 3_000_000L);
+        } catch (final IllegalStateException expected) {
+            fullRejected = true;
+        }
+        check(fullRejected, "a full live-token registry rejects overflow atomically");
+        check(!bounded.issue(PLAYER, "after-expiry", source, 3_061_000L).isBlank(),
+                "issue purges expired tokens before applying the capacity gate");
     }
 
     // ---------- szótárak és paletta ----------

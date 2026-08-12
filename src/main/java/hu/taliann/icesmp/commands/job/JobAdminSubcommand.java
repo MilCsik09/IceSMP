@@ -148,7 +148,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
                             if (failure != null || result == null || !result.durableMutationApplied()) {
                                 sender.sendMessage(messageManager.get(
                                         "admin.job.reset-class.persistence-failed",
-                                        "&cA Profile v2 commit meghiúsult; a kaszt-PDC érintetlen maradt: &f%s",
+                                        "&cA Profile v2 kaszt-reset meghiúsult: &f%s",
                                         target.getName()));
                                 return;
                             }
@@ -162,7 +162,6 @@ public final class JobAdminSubcommand implements JobSubcommand {
                                 return;
                             }
                             try {
-                                jobManager.resetClass(target);
                                 specializationManager.resetProfessionSpecialization(target);
                                 abilityCatalystListener.resetAllSpellState(target);
                                 sender.sendMessage(messageManager.get(
@@ -173,7 +172,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
                                         "&eEgy adminisztrátor alaphelyzetbe állította a kasztodat — válassz újat a /profile menüből."));
                             } catch (final Throwable mirrorFailure) {
                                 specializationManager.profileGateway().blockSession(target.getUniqueId(),
-                                        "Admin class-reset PDC mirror failed after Profile v2 commit");
+                                        "Admin class-reset runtime cleanup failed after Profile v2 commit");
                                 sender.sendMessage(messageManager.get(
                                         "admin.job.reset-class.mirror-failed",
                                         "&cA profil commit sikerült, de a runtime/XP cleanup hibázott; a session blokkolva: &f%s",
@@ -181,7 +180,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
                             }
                         }, () -> specializationManager.profileGateway().blockSession(
                                 target.getUniqueId(),
-                                "Admin class-reset PDC mirror scheduler rejected after Profile v2 commit")));
+                                "Admin class-reset runtime scheduler rejected after Profile v2 commit")));
                 return;
         }, null);
         return true;

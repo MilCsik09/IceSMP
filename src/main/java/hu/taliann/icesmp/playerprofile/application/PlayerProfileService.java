@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -153,6 +154,7 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             }).thenCompose(ignored -> repository.flush(playerId)).thenRun(() -> {
                 repository.invalidate(playerId);
                 currentGenerations.remove(playerId, sessionGeneration);
+                generationCounters.remove(playerId);
             });
         });
     }
@@ -262,9 +264,15 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
 
     public <T> CompletionStage<T> transact(final UUID id,
                                             final PlayerProfileTransactionManager.ProfileTransactionWork<T> work) {
-        return transactions.execute(id, work).thenApply(result -> {
-            repository.cached(id).ifPresent(profile -> notifyChanged(id, profile.profileRevision(),
-                    profile.sectionMap().keySet()));
+        final AtomicReference<PlayerProfileSnapshot> before = new AtomicReference<>();
+        return transactions.execute(id, snapshot -> {
+            before.set(snapshot);
+            return work.prepare(snapshot);
+        }).thenApply(result -> {
+            repository.cached(id).ifPresent(profile -> {
+                final Set<ProfileSectionId> changed = changedSections(before.get(), profile);
+                if (!changed.isEmpty()) notifyChanged(id, profile.profileRevision(), changed);
+            });
             return result;
         });
     }
@@ -306,6 +314,18 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             try { listener.changed(id, revision, Set.copyOf(changed)); }
             catch (RuntimeException ignored) { }
         }
+    }
+
+    private static Set<ProfileSectionId> changedSections(final PlayerProfileSnapshot before,
+                                                         final PlayerProfileSnapshot after) {
+        if (before == null) return Set.of();
+        final java.util.EnumSet<ProfileSectionId> changed =
+                java.util.EnumSet.noneOf(ProfileSectionId.class);
+        for (final ProfileSectionId section : ProfileSectionId.values()) {
+            if (before.section(section).orElseThrow().revision()
+                    != after.section(section).orElseThrow().revision()) changed.add(section);
+        }
+        return Set.copyOf(changed);
     }
 
     private static boolean isStale(final Throwable failure) {
