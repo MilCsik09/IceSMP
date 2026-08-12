@@ -8,12 +8,12 @@ import hu.taliann.icesmp.playerprofile.domain.section.EconomySection;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,7 +28,15 @@ public final class PlayerProfileTaxStore {
     private static final String OUTBOX_PREFIX = "tax.outbox.";
     private static final String CODEC = "v1";
     private static final int MAX_OUTBOX = 64;
-    private static final int MAX_RECEIPTS = 256;
+    private final Clock clock;
+
+    public PlayerProfileTaxStore() {
+        this(Clock.systemUTC());
+    }
+
+    PlayerProfileTaxStore(final Clock clock) {
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
 
     public record Debt(FactionType origin, long amountMilli, int evasionStrikes) {
         public Debt {
@@ -133,7 +141,8 @@ public final class PlayerProfileTaxStore {
                         return PlayerProfileService.ConditionalMutation.unchanged(
                                 new Collection(false, existing.paidMilli(), owed, owed, existing));
                     }
-                    if (current.operationReceipts().contains(operation)) {
+                    if (EconomyReceiptLedger.taxSettled(
+                            current.operationReceipts(), operation)) {
                         final long owed = current.debts().getOrDefault(amountKey(origin), 0L);
                         return PlayerProfileService.ConditionalMutation.unchanged(
                                 new Collection(false, 0L, owed, owed, null));
@@ -202,7 +211,8 @@ public final class PlayerProfileTaxStore {
         final String key = outboxKey(operation);
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.ECONOMY, EconomySection.class, current -> {
-                    if (current.operationReceipts().contains(operation)) {
+                    if (EconomyReceiptLedger.taxSettled(
+                            current.operationReceipts(), operation)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
                     if (!current.pendingRewards().containsKey(key)) {
@@ -211,13 +221,12 @@ public final class PlayerProfileTaxStore {
                     final LinkedHashMap<String, String> pending =
                             new LinkedHashMap<>(current.pendingRewards());
                     pending.remove(key);
-                    final LinkedHashSet<String> receipts =
-                            new LinkedHashSet<>(current.operationReceipts());
-                    while (receipts.size() >= MAX_RECEIPTS) receipts.remove(receipts.iterator().next());
-                    receipts.add(operation);
+                    final EconomyReceiptLedger.Update ledger = EconomyReceiptLedger.addTax(
+                            current, operation, clock.millis());
                     return PlayerProfileService.ConditionalMutation.changed(
                             new EconomySection(current.wallets(), current.bankBalance(),
-                                    current.debts(), pending, receipts, current.extensions()), true);
+                                    current.debts(), pending, ledger.receipts(),
+                                    ledger.extensions()), true);
                 });
     }
 

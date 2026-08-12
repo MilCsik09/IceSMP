@@ -1,12 +1,19 @@
 package hu.taliann.icesmp.playerprofile.application;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.EconomySection;
 import hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository;
 import hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.UUID;
@@ -28,7 +35,9 @@ public final class PlayerProfileEconomyStoreRegressionSuite {
         try {
             final UUID player = UUID.fromString("00000000-0000-0000-0000-000000001090");
             repository.loadSnapshot(player).toCompletableFuture().join();
-            final PlayerProfileEconomyStore store = new PlayerProfileEconomyStore();
+            final MutableClock clock = new MutableClock(
+                    Instant.parse("2026-08-12T00:00:00Z"));
+            final PlayerProfileEconomyStore store = new PlayerProfileEconomyStore(clock);
 
             check(PlayerProfileEconomyStore.toMilli(12.345D) == 12_345L,
                     "milli-unit conversion exact");
@@ -171,6 +180,71 @@ public final class PlayerProfileEconomyStoreRegressionSuite {
             check(store.operationsByPrefixCached(player, "crate:").size() == 1,
                     "prefix enumeration deterministic");
 
+            final UUID cliff = UUID.fromString("00000000-0000-0000-0000-000000001099");
+            repository.loadSnapshot(cliff).toCompletableFuture().join();
+            store.mutate(cliff, before -> PlayerProfileEconomyStore.Decision.changed(
+                    before.add(CurrencyType.RED, 1_000_000L), true))
+                    .toCompletableFuture().join();
+            EconomySection seeded = repository.cached(cliff).orElseThrow().economy().value();
+            for (int index = 0; index < EconomyReceiptLedger.MAX_CREDIT_RECEIPTS; index++) {
+                final EconomyReceiptLedger.Update update = EconomyReceiptLedger.addCredit(
+                        seeded, "cliff-credit-" + index, CurrencyType.RED, 1_000L,
+                        clock.millis());
+                seeded = new EconomySection(seeded.wallets(), seeded.bankBalance(),
+                        seeded.debts(), seeded.pendingRewards(), update.receipts(),
+                        update.extensions());
+            }
+            final EconomySection fullLedger = seeded;
+            service.mutateSectionConditional(cliff, ProfileSectionId.ECONOMY,
+                            EconomySection.class, current ->
+                                    PlayerProfileService.ConditionalMutation.changed(
+                                            new EconomySection(current.wallets(),
+                                                    current.bankBalance(), current.debts(),
+                                                    current.pendingRewards(),
+                                                    fullLedger.operationReceipts(),
+                                                    fullLedger.extensions()), true))
+                    .toCompletableFuture().join();
+
+            final long beforeReplay = store.readCached(cliff).milli(CurrencyType.RED);
+            check(!store.creditOnce(cliff, CurrencyType.RED, 1_000L,
+                            "cliff-credit-0").toCompletableFuture().join().applied(),
+                    "full credit ledger replay is idempotent");
+            check(store.readCached(cliff).milli(CurrencyType.RED) == beforeReplay,
+                    "full credit ledger replay does not duplicate money");
+            expect(IllegalStateException.class, () -> store.creditOnce(cliff,
+                    CurrencyType.RED, 1_000L, "cliff-credit-blocked")
+                    .toCompletableFuture().join());
+
+            final PlayerProfileTaxStore taxStore = new PlayerProfileTaxStore(clock);
+            taxStore.collect(cliff, FactionType.RED, 1.0D, 10.0D, 2,
+                            "tax:receipt-cliff")
+                    .toCompletableFuture().join();
+            check(taxStore.settle(cliff, "tax:receipt-cliff")
+                            .toCompletableFuture().join(),
+                    "tax settlement has an independent receipt partition");
+            check(!store.creditOnce(cliff, CurrencyType.RED, 1_000L,
+                            "cliff-credit-0").toCompletableFuture().join().applied(),
+                    "tax settlement never evicts a credit receipt");
+
+            clock.advance(EconomyReceiptLedger.REPLAY_WINDOW.plusDays(1));
+            final var afterExpiry = store.creditOnce(cliff, CurrencyType.RED, 1_000L,
+                            "cliff-credit-after-expiry")
+                    .toCompletableFuture().join();
+            check(afterExpiry.applied(), "expired oldest credit receipt is replaceable");
+            check(repository.cached(cliff).orElseThrow().economy().value()
+                            .operationReceipts().size()
+                            == EconomyReceiptLedger.MAX_CREDIT_RECEIPTS + 1,
+                    "credit and tax quotas remain independently bounded");
+            final long afterCredit = afterExpiry.wallet().milli(CurrencyType.RED);
+            repository.invalidate(cliff);
+            repository.loadSnapshot(cliff).toCompletableFuture().join();
+            check(!store.creditOnce(cliff, CurrencyType.RED, 1_000L,
+                            "cliff-credit-after-expiry")
+                            .toCompletableFuture().join().applied(),
+                    "replacement receipt replay survives restart");
+            check(store.readCached(cliff).milli(CurrencyType.RED) == afterCredit,
+                    "replacement receipt restart replay does not duplicate money");
+
             check(service.shutdown(Duration.ofSeconds(5)).toCompletableFuture().join().drained(),
                     "repository drained");
         } finally {
@@ -222,4 +296,18 @@ public final class PlayerProfileEconomyStoreRegressionSuite {
     }
 
     @FunctionalInterface private interface Throwing { void run() throws Exception; }
+
+    private static final class MutableClock extends Clock {
+        private Instant instant;
+
+        private MutableClock(final Instant instant) { this.instant = instant; }
+
+        private void advance(final Duration duration) { instant = instant.plus(duration); }
+
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+
+        @Override public Clock withZone(final ZoneId zone) { return this; }
+
+        @Override public Instant instant() { return instant; }
+    }
 }

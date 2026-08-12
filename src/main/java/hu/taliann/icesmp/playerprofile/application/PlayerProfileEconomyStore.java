@@ -9,12 +9,12 @@ import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,10 +38,17 @@ public final class PlayerProfileEconomyStore {
 
     public static final long SCALE = 1_000L;
     private static final String OPERATION_PREFIX = "wallet.op.";
-    private static final String CREDIT_RECEIPT_PREFIX = "credit.";
     private static final String CODEC_VERSION = "v1";
     private static final int MAX_OPERATIONS = 128;
-    private static final int MAX_CREDIT_RECEIPTS = 256;
+    private final Clock clock;
+
+    public PlayerProfileEconomyStore() {
+        this(Clock.systemUTC());
+    }
+
+    PlayerProfileEconomyStore(final Clock clock) {
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
 
     public enum OperationStatus { DEBITED, COMMITTED, ROLLED_BACK }
 
@@ -196,32 +203,25 @@ public final class PlayerProfileEconomyStore {
         Objects.requireNonNull(currency, "currency");
         if (amountMilli <= 0L) throw new IllegalArgumentException("credit must be positive");
         final String id = requireOperationId(operationId);
-        final String prefix = creditReceiptPrefix(id);
-        final String receipt = prefix + currency.name().toLowerCase(Locale.ROOT)
-                + '.' + amountMilli;
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.ECONOMY, EconomySection.class, current -> {
-                    final Optional<String> existing = current.operationReceipts().stream()
-                            .filter(candidate -> candidate.startsWith(prefix)).findFirst();
+                    final Optional<String> existing = EconomyReceiptLedger.credit(
+                            current.operationReceipts(), id);
                     if (existing.isPresent()) {
-                        if (!existing.orElseThrow().equals(receipt)) {
+                        if (!EconomyReceiptLedger.sameCredit(existing.orElseThrow(), id,
+                                currency, amountMilli)) {
                             throw new IllegalStateException(
                                     "wallet credit operation id reused with different parameters");
                         }
                         return PlayerProfileService.ConditionalMutation.unchanged(
                                 new CreditResult(false, decodeWallet(current)));
                     }
-                    if (current.operationReceipts().size() >= MAX_CREDIT_RECEIPTS) {
-                        throw new IllegalStateException(
-                                "PlayerProfile wallet credit receipt ledger is full");
-                    }
                     final WalletState after = decodeWallet(current).add(currency, amountMilli);
-                    final LinkedHashSet<String> receipts =
-                            new LinkedHashSet<>(current.operationReceipts());
-                    receipts.add(receipt);
+                    final EconomyReceiptLedger.Update ledger = EconomyReceiptLedger.addCredit(
+                            current, id, currency, amountMilli, clock.millis());
                     final EconomySection next = new EconomySection(
                             encodeWallet(after), current.bankBalance(), current.debts(),
-                            current.pendingRewards(), receipts, current.extensions());
+                            current.pendingRewards(), ledger.receipts(), ledger.extensions());
                     return PlayerProfileService.ConditionalMutation.changed(next,
                             new CreditResult(true, after));
                 });
@@ -390,16 +390,8 @@ public final class PlayerProfileEconomyStore {
         return map;
     }
 
-    private static String creditReceiptPrefix(final String operationId) {
-        return CREDIT_RECEIPT_PREFIX + digestId(operationId) + '.';
-    }
-
     private static String operationKey(final String operationId) {
         return OPERATION_PREFIX + digestHex(operationId);
-    }
-
-    private static String digestId(final String value) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest(value));
     }
 
     private static String digestHex(final String value) {
