@@ -28,6 +28,21 @@ Jelölések:
 
 ### 1.1. Kiadásblokkoló
 
+- 🚧 **H-PROF-001 — Profile v2 tartóssági és lifecycle-kapuk.**
+  A kizárólagos tartós authority körül még bizonyítandó a típusérzékeny
+  economy receipt-életciklus, a korlátos questmetadata, a fogyasztók utáni
+  és teljes időkeretre bounded shutdown, a JVM-en belüli per-profile lock
+  azonossága, valamint a relikvia-halál-escrow pontosan egyszeri recoveryje.
+
+**Kilépési feltétel:** (1) credit és tax receipt nem lakoltatja ki egymást,
+az aktív replay idempotens és a legacy forma íráskor migrál; (2) 160-nál
+több quest sem éri el az extension-limitet, complete/abandon után nincs
+felesleges metadata; (3) minden elfogadott fogyasztói flush élő authority
+mellett drainel, majd a teljes Profile shutdown egy közös deadline-on belül
+visszatér; (4) egy UUID-hoz a JVM élettartama alatt egy lockobjektum tartozik;
+(5) a keep-módú relikvia durable escrowból, restart után is pontosan egyszer
+kézbesül.
+
 - 🚧 **H-ECON-001 — több tartományt érintő gazdasági crash-ablak.**
   A bank-, claim- és adományfolyamatok egy része memóriát, inventoryt és
   több külön állományt módosít, de ezekhez nincs közös, tartós commitpont.
@@ -44,6 +59,32 @@ claim.
 
 Ezek nem mind kiadásblokkolók, de a forrásban még létező rések. Az
 implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
+
+- 🚧 A Paladin/Evoker/Monk/Warrior célkapcsolatok fordított indexe, valamint
+  az offline class/spec reconcile session-fence és owner-hop nélkül stale
+  állapotot vagy régiószálon kívüli entityműveletet hagyhat.
+- ⬜ A quest-choice kapacitás, a profile generation-counterek, a HTTP
+  rate-map és a tranzakciók changed-section jelentése korlátos, atomikus és
+  tényleges változás-alapú lifecycle-t igényel; a deprecated `JobManager`
+  Profile v2-hívások sem maradhatnak használatban.
+- 🚧 A ConfigMenu staged mezőit a teljes staged snapshot ellen kell
+  validálni, és Save előtt az érvénytelen batch publikálását atomikusan meg
+  kell akadályozni.
+- 🚧 A DonationChest tárgymozgatása csak durable commit után lehet sikeres;
+  crash/restart és mentési hiba esetén sem item loss, sem duplikáció nem
+  maradhat.
+- 🚧 A cast foundationnek no-effect kimenetnél mellékhatásmentesnek kell
+  maradnia, a hard CC-t külön modifier contractnak kell védenie, a spell ID
+  legyen egyedi, a késleltetett végrehajtás pedig immutable cast snapshotot
+  használjon.
+- 🚧 A kasztok transiens lifecycle-ja quit, death, transition, reconcile és
+  disable esetén idempotensen takarítsa a totemet és taskját, miniont,
+  target-indexet, procot, reserved state-et és stale spellválasztást.
+- ⬜ A Druida másodlagos mechanika minden játékosfelületen `Harmónia`, az
+  elsődleges resource pedig kizárólag `Természeti Erő` néven szerepeljen.
+- ⬜ A Definition of Done hiányai: HUD-adminmenü és message group,
+  quest/spec parancsdokumentáció és completion, class-gameplay configtükör,
+  HTTP-operátori útmutató, pontos forrásleltár és érthető Pillow buildhiba.
 
 - 🚧 A `claims.yml` hibás szemantikai rekordját a loader jelenleg
   kihagyhatja, egy későbbi mentés pedig véglegesítheti az adatvesztést.
