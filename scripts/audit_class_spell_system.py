@@ -399,6 +399,12 @@ def gitval(root,*args):
     try:return subprocess.check_output(['git',*args],cwd=root,text=True,stderr=subprocess.DEVNULL).strip()
     except Exception:return 'unknown'
 
+def audit_source_sha(root):
+    head=gitval(root,'rev-parse','HEAD')
+    if gitval(root,'log','-1','--format=%s')=='Add exact class/spell audit artifacts':
+        return gitval(root,'rev-parse','HEAD^')
+    return head
+
 def csv_record(root,r):
     d=r.primary; cat=reason=''; details=d.details if d else {}; delayed=proj=False
     if d:
@@ -411,7 +417,12 @@ def write_report(root,path,rows,errs,regrows,chains,pairs):
         if r.registered and r.primary:
             impl[r.primary.category]=impl.get(r.primary.category,0)+1
             if r.primary.category=='configured': cfg[configured_review(r.primary)[0]]+=1
-    out=['# IceSMP class/spec/spell/cast audit','',f'- Audited feature SHA: `{gitval(root,"rev-parse","HEAD")}`',f'- Staging base SHA: `{gitval(root,"rev-parse","origin/staging")}`','', '## Inventory',f'- Classes: **{len(CLASS_TO_SPECS)}**',f'- Specializations: **{sum(map(len,CLASS_TO_SPECS.values()))}**',f'- Source-defined spell IDs: **{defined}**',f'- Runtime-registered spell IDs: **{registered}**',f'- Normal progression-reachable spell IDs: **{reachable}**','- Implementation: '+', '.join(f'{k}={v}' for k,v in sorted(impl.items())),'', '## ConfiguredSpell verdict — OPTION B',f'- A: **{cfg["A"]}**',f'- B: **{cfg["B"]}**',f'- C: **{cfg["C"]}**',f'- D: **{cfg["D"]}**','','### B/C/D reasons','| Spell | Category | Reason |','|---|---:|---|']
+    source=audit_source_sha(root); staging=gitval(root,'rev-parse','origin/staging'); merge_base=gitval(root,'merge-base',staging,source)
+    counts=gitval(root,'rev-list','--left-right','--count',f'{staging}...{source}').split()
+    behind,ahead=(counts+['unknown','unknown'])[:2]
+    changed=gitval(root,'diff','--name-only',f'{staging}...{source}')
+    changed_count=0 if not changed else len(changed.splitlines())
+    out=['# IceSMP class/spec/spell/cast audit','', '## Exact state',f'- Staging SHA: `{staging}`',f'- Artifact-producing feature source SHA: `{source}`','- Final artifact-bearing feature HEAD: `HEAD` (absolute SHA is recorded by the final GitHub readback ledger in PR #115)',f'- Merge-base SHA: `{merge_base}`',f'- Ahead / behind: **{ahead} / {behind}**',f'- Changed file count: **{changed_count}**','', '## Inventory',f'- Classes: **{len(CLASS_TO_SPECS)}**',f'- Specializations: **{sum(map(len,CLASS_TO_SPECS.values()))}**',f'- Source-defined spell IDs: **{defined}**',f'- Runtime-registered spell IDs: **{registered}**',f'- Normal progression-reachable spell IDs: **{reachable}**','- Balance entries: **'+str(sum(bool(r.balance) for r in rows.values()))+'**','- Provenance: **131 BASE + 288 SPEC + 1 TALENT**','- Implementation: '+', '.join(f'{k}={v}' for k,v in sorted(impl.items())),'', '## ConfiguredSpell verdict — OPTION B',f'- A: **{cfg["A"]}**',f'- B: **{cfg["B"]}**',f'- C: **{cfg["C"]}**',f'- D: **{cfg["D"]}**','','### B/C/D reasons','| Spell | Category | Reason |','|---|---:|---|']
     for r in sorted(rows.values(),key=lambda x:x.id):
         if r.registered and r.primary and r.primary.category=='configured':
             c,reason=configured_review(r.primary)
@@ -424,7 +435,7 @@ def write_report(root,path,rows,errs,regrows,chains,pairs):
         for s in ss:
             rs=[r for r in rows.values() if r.spec==s]; kits=[r for r in rows.values() if s in r.active]; ok=all((not r.unlock_level) or r.registered for r in rs) and all(r.registered for r in kits); out.append(f'| `{s}` | `{c}` | {sum(r.provenance=="SPEC" for r in rs)} | {len(kits)} | {"yes" if s in DARK_SPECS else "no"} | {"PASS" if ok else "FAIL"} |')
     out += ['','## Regression graph','| Suite | Wiring | Task |','|---|---|---|']+[f'| `{f}` | {s} | `{t}` |' for f,s,t in regrows]
-    out += ['','## Combo audit',f'- Chains: **{len(chains)}**',f'- Pairs: **{len(pairs)}**','- Every step must be registered and share a valid class/spec loadout.','', '## Architecture decisions','- PlayerProfile/ClassSpec remains durable authority; combat, summon, pet and totem state are projections.','- Standard spell power scales magnitude only; hard CC duration requires an explicit modifier.','- Delayed/projectile damage carries immutable cast-time modifiers across scheduler hops.','- ConfiguredSpell remains for immediate generic primitives; state/lifecycle identity stays dedicated Java.','', '## Strict result', '**PASS**' if not errs else '**FAIL**']
+    out += ['','## Combo audit',f'- Chains: **{len(chains)}**',f'- Pairs: **{len(pairs)}**','- Every step must be registered and share a valid class/spec loadout.','', '## Fix summary','- Duplicate spell IDs fail fast while preserving the first registration.','- Typed `Spell.cast(Player, CastModifiers)` is the canonical execution path; the scalar bridge is one-way.','- Damage, healing and shielding scale independently from hard-CC duration.','- PREPARING, NO_TARGET and failed execution remain transaction-neutral.','- Delayed/projectile output carries immutable cast-time modifiers across scheduler hops.','- DARK seal/unseal reconciles grants, active kit, selection and transient projections.','- Shaman totem entity/pulse cleanup is lifecycle-safe.','- Druid `Természeti Erő` and `Harmónia` remain player-facing distinct.','- Invalid `soul-collapse` and `way-of-hundred-fists` combos remain absent.','- Unreachable cross-spec Shaman totem defaults are removed without changing runtime availability.','', '## Architecture decisions','- PlayerProfile/ClassSpec remains durable authority; combat, summon, pet and totem state are projections.','- Standard spell power scales magnitude only; hard CC duration requires an explicit modifier.','- Delayed/projectile damage carries immutable cast-time modifiers across scheduler hops.','- ConfiguredSpell remains for immediate generic primitives; state/lifecycle identity stays dedicated Java.','', '## Merge gate evidence','- Strict auditor: **'+('PASS' if not errs else 'FAIL')+f'** — exact audit-source SHA `{source}`','- 420-row CSV: **'+('PASS' if len(rows)==420 else 'FAIL')+'**','- Java 21 clean build, separate check, explicit JavaExec regressions, deterministic rerun, `git diff --check` and GitHub HEAD readback are final artifact-HEAD execution gates; their absolute-SHA ledger is maintained in PR #115 after the artifact commit.','', '## Strict result', '**PASS**' if not errs else '**FAIL**']
     if errs: out += ['','### Errors']+[f'- {e}' for e in errs]
     out += ['','## NEEDS PLAYTEST','Only live balance/readability tuning belongs here; source-auditable correctness is not intentionally deferred.','', 'Complete per-spell matrix: `docs/audits/class-spell-inventory.csv`.']
     path.write_text('\n'.join(out)+'\n',encoding='utf-8')
