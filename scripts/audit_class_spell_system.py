@@ -447,7 +447,7 @@ def main():
     defs,cids,dyn=discover_definitions(root); regs,unresolved=discover_registrations(root,cids,dyn); unlocks=parse_unlocks(root/'src/main/resources/config/classes.yml'); active=parse_active(root/'src/main/resources/config/class-gameplay.yml'); balance=parse_balance(root/'src/main/resources/config/spells-balance.yml'); schools,chains,pairs=parse_spell_config(root/'src/main/resources/config/spells.yml'); rows=build_rows(defs,regs,unlocks,active,balance,schools,chains,pairs); regrows,regerrs=regression_graph(root); regerrs += auditor_contracts(root,cids,dyn,defs); errs=validate(root,rows,regs,unresolved,balance,chains,pairs,regerrs)
     cp=a.csv if a.csv.is_absolute() else root/a.csv; rp=a.report if a.report.is_absolute() else root/a.report; cp.parent.mkdir(parents=True,exist_ok=True); rp.parent.mkdir(parents=True,exist_ok=True)
     with cp.open('w',encoding='utf-8',newline='') as h:
-        w=csv.DictWriter(h,fieldnames=CSV_FIELDS); w.writeheader(); [w.writerow(csv_record(root,rows[i])) for i in sorted(rows)]
+        w=csv.DictWriter(h,fieldnames=CSV_FIELDS,lineterminator='\n'); w.writeheader(); [w.writerow(csv_record(root,rows[i])) for i in sorted(rows)]
     write_report(root,rp,rows,errs,regrows,chains,pairs)
     defined=sum(bool(r.definitions) for r in rows.values()); registered=sum(r.registered for r in rows.values()); progression=sum(r.registered and r.provenance in NORMAL_PROVENANCE for r in rows.values()); configured=sum(r.registered and r.primary and r.primary.category=='configured' for r in rows.values()); print(f'IceSMP strict spell audit: defined={defined} registered={registered} progression={progression} configured={configured}')
     for e in errs: print('ERROR: '+e,file=sys.stderr)
