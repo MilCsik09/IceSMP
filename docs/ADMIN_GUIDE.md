@@ -1530,6 +1530,7 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 - [ ] profession XP, level and specialization
 - [ ] quest progress, reward claim and economy credit
 - [ ] wallet, bank, tax debt and refund recovery
+- [ ] `relics.passive-death.mode: keep`: passzív relikviával halál, respawn előtt teljes restart, majd join; a tárgy pontosan egyszer érkezik meg, megtelt inventorynál függőben marad, escrow-íráshibánál pedig a death drop-listában marad
 - [ ] pet/minion spawn, logout, restart and region transfer
 - [ ] Soulforge upgrade, duplicate operation and crash recovery
 - [ ] respec crash points and restart recovery

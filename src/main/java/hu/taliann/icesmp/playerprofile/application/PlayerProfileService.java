@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -159,6 +160,11 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
 
     public boolean isCurrentSession(final UUID playerId, final long generation) {
         return Objects.equals(currentGenerations.get(playerId), generation);
+    }
+
+    public OptionalLong currentSessionGeneration(final UUID playerId) {
+        final Long generation = currentGenerations.get(Objects.requireNonNull(playerId, "playerId"));
+        return generation == null ? OptionalLong.empty() : OptionalLong.of(generation);
     }
 
     public CompletionStage<PlayerProfileSnapshot> load(final UUID id) { return repository.loadSnapshot(id); }
