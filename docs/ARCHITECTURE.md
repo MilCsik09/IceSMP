@@ -274,12 +274,16 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
 
-### 3.8.1 Kaszt/spec rework — verziózárt kapu és adapterhatárok
+### 3.8.1 Kaszt/spec rework — verziózárt preflight és adapterhatárok
 
-A 13 kaszt / 35 specializáció reworkje külön, alapból tiltott rollout-kapu mögött épül. Az
+A 13 kaszt / 35 specializáció reworkje és a Profile v2 a kaszt/spec állapot egyetlen
+autoritatív rendszere: mindig aktív, legacy mód, fallback és kill switch nélkül. Az
 `IceSMPCore.enable()` a gameplay store-ok betöltése előtt futtatja a
-`ClassSpecDependencyPreflight` ellenőrzést. A kapu csak akkor blokkol, ha a rework és az enforcement
-is aktív; legacy módban a jelenlegi production változatlanul elindul.
+`ClassSpecDependencyPreflight` ellenőrzést; az egyetlen kapcsoló a
+`class-spec-rework.dependencies.enforce` (alapból igaz), amely kizárólag azt dönti el,
+hogy a hiányzó vagy nem zárolt required-runtime capability fail-fast blokkolja-e az
+indulást. Az opcionális integrációk inkompatibilitása enforce mellett is csak
+figyelmeztetés.
 
 A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
 megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil

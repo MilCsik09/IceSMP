@@ -13,9 +13,10 @@ világbejárásos vagy hibaszimulációs próba hiányzik, azt ezen az oldalon k
 jelezzük.
 
 A 13 kaszt / 35 specializáció teljes reworkjének 1.21.11-es kompatibilitási
-alapja külön, alapból kikapcsolt rollout-kapu mögé került. Ez még nem játékosnak
-kiadható rework: verziózárt dependency-manifestet, fail-fast preflightot,
-Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződéseit adja.
+alapja a Profile v2-vel együtt a kaszt/spec állapot egyetlen autoritatív
+rendszere — mindig aktív, legacy fallback nélkül. A kiadhatóság kapuja nem
+kapcsoló, hanem a verziózárt dependency-manifest, a fail-fast preflight, a
+Folia-/26.2-portolási határok és a későbbi adapterek stabil szerződései.
 
 > **Összehasonlítási alap:** az üzemeltető által futóként átadott
 > `IceSMP-1.0-TESTING.jar`. A tartalma nagy bizonyossággal a
@@ -393,4 +394,3 @@ a JAR-ban. Emiatt több rendszerről csak képességszintű következtetés adha
 A teljes 68 root parancs, 286 route, 79 root alias, 93 routing alias,
 44 permission, 13 550 configútvonal és 545 production komponens gépi
 referenciáját a `Repository Docs Inventory` workflow artifactja tartalmazza.
-
