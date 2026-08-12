@@ -780,8 +780,9 @@ classes:
 
     max-power-bonus-percent: 40.0
 
-    # Class core: Természeti Erő — a természet-castok harmóniát gyűjtenek, az alakváltás (a MEGLÉVŐ
-    # formarendszer, nem új form engine) pedig egy összegben szabadítja fel a formához kötött Évszakként.
+    # Másodlagos mechanika: Harmónia — a természet-castok ezt gyűjtik, az alakváltás (a MEGLÉVŐ
+    # formarendszer) pedig egy összegben szabadítja fel a formához kötött Évszakként.
+    # A külön elsődleges class resource neve Természeti Erő.
     harmony:
       nature-spells:
         - regrowth
@@ -801,7 +802,7 @@ classes:
       decay-per-second: 4.0
 
     # Évszakok: Tavasz=Holdforma, Nyár=Párducforma, Ősz=Utazóforma, Tél=Medveforma.
-    # A hatás erőssége a felszabadított Természeti Erővel skálázódik.
+    # A hatás erőssége a felszabadított Harmóniával skálázódik.
     seasons:
       base-duration-ticks: 100
       spring-heal: 6.0

@@ -56,7 +56,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `monk/` | 2 | Szerzetes gameplay vertical slice: transiens állapot + konkrét runtime (Áramlás, Harcművészeti Lánc, Stagger, Ködszál). |
 | `paladin/` | 2 | Paplovag gameplay vertical slice: transiens állapot + konkrét runtime (Meggyőződés/Eskü, Fényjelző, Ítélet-jelek, Pajzstöltet). |
 | `demonhunter/` | 2 | Démonvadász gameplay vertical slice: transiens állapot + konkrét runtime (Kárhozat-terhelés, Lélektöredék/Momentum, Fájdalom/Sigil). |
-| `druid/` | 2 | Druida gameplay vertical slice: transiens állapot + konkrét runtime (Természeti Erő/Évszak, kombó+Szagnyom, Nap–Hold mérleg/Eclipse, Kéregrétegek/Gyökérháló, Mag→érés→Virágzás). |
+| `druid/` | 2 | Druida gameplay vertical slice: transiens állapot + konkrét runtime (Harmónia/Évszak másodlagos mechanika, Természeti Erő primary resource, kombó+Szagnyom, Nap–Hold mérleg/Eclipse, Kéregrétegek/Gyökérháló, Mag→érés→Virágzás). |
 | `priest/` | 2 | Pap gameplay vertical slice: transiens állapot + konkrét runtime (Litánia-versek, Engesztelés rekurzió-őrrel + pajzsháló, Velő/Osszárium, Őrület-Küszöb). |
 | `deathknight/` | 2 | Halállovag gameplay vertical slice: transiens állapot + konkrét runtime (Rúnakör Vér/Fagy/Halál, fix méretű Vér Emlékezete, Fagyjelek, Dögvész + ghúl-mutáció). |
 | `assassin/` | 2 | Orgyilkos gameplay vertical slice: transiens állapot + konkrét runtime (Lehetőség négy nyitányból, háromhelyes Toxinkészlet + Dózis, Észleltség/időkorlátos rejtőzés, korlátos Járvány-nyilvántartás). |

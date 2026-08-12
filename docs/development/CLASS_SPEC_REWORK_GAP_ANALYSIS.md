@@ -98,7 +98,7 @@
 ## Gameplay closed by the Druida vertical slice
 
 - the eighth complete class gameplay implementation is `druid` with `feral` (Vadőr), `lunar` (Holdjós), `ironbark` (Védelmező) and `restoration` (Helyreállító) — the first four-specialization slice;
-- the class core is Természeti Erő és Évszak: nature casts build harmony and a shapeshift on the **existing** form system releases it as that form's season (Tavasz/Nyár/Ősz/Tél); no new form engine was written;
+- the secondary mechanic is Harmónia és Évszak: nature casts build Harmónia and a shapeshift on the **existing** form system releases it as that form's season (Tavasz/Nyár/Ősz/Tél); the separate primary resource remains Természeti Erő, and no new form engine was written;
 - Vadőr plays combo points plus the Szagnyom trail: staying on one prey pays, switching prey restarts the trail, and the finisher spends every point at once through the capped shared power pipeline;
 - Holdjós plays the Nap↔Hold balance into an Eclipse window and restarts the sweep afterwards, so the payoff is earned by swinging the balance rather than camping one school;
 - Védelmező plays self-only Kéregrétegek with a damage floor against chip stripping plus a Gyökérháló window that slows attackers on their own region thread — no ally binding and no target-bound reverse index, deliberately different from both earlier tank identities;

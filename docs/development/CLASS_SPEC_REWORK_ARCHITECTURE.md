@@ -63,7 +63,7 @@ There is no repeating task and no proximity scan in the archer runtime; everythi
 
 ## Druida vertical slice
 
-`DruidGameplayService` is the eighth concrete gameplay consumer and the first four-specialization slice. `DruidCombatState` contains only the Druida mechanics: the Természeti Erő meter with lazy decay plus the season window, the combo counter with a single live prey trail, the Nap↔Hold balance with its Eclipse window, the bark-layer counter with the root retaliation window, and a fixed five-slot seed timestamp array whose entries must ripen before a bloom can harvest them. The Évszak layer reads the **existing** `DruidFormSpell` form state instead of introducing a second form engine. No repeating task, no proximity scan and no persistent world plant entity lives here; the only cross-entity effect (the Gyökérháló slow) hops to the attacker's own region scheduler.
+`DruidGameplayService` is the eighth concrete gameplay consumer and the first four-specialization slice. `DruidCombatState` contains only the Druida mechanics: the secondary Harmónia meter with lazy decay plus the season window, the combo counter with a single live prey trail, the Nap↔Hold balance with its Eclipse window, the bark-layer counter with the root retaliation window, and a fixed five-slot seed timestamp array whose entries must ripen before a bloom can harvest them. The primary class resource remains Természeti Erő. The Évszak layer reads the **existing** `DruidFormSpell` form state instead of introducing a second form engine. No repeating task, no proximity scan and no persistent world plant entity lives here; the only cross-entity effect (the Gyökérháló slow) hops to the attacker's own region scheduler.
 
 ## Pap vertical slice
 

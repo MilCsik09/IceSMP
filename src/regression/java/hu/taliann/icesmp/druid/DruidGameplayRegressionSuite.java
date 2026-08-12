@@ -23,6 +23,7 @@ public final class DruidGameplayRegressionSuite {
         restorationSeedsMustRipen();
         cleanupLifecycle();
         seasonAndAllowlistSourceContracts();
+        terminologyContracts();
         System.out.println("Druid gameplay regression suite passed. assertions=" + assertions);
     }
 
@@ -188,6 +189,31 @@ public final class DruidGameplayRegressionSuite {
                 "druid_ironbark_trial", "druid_restoration_trial"}) {
             check(manager.contains(trial), "the capstone trial contract " + trial + " is registered");
         }
+    }
+
+    private static void terminologyContracts() throws Exception {
+        final String service = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java"));
+        check(service.contains("druid.hud.harmony-label")
+                        && service.contains("\"harmony\", harmonyLabel"),
+                "the secondary HUD metric must be labelled Harmónia through the message layer");
+        check(!service.contains("\"harmony\", \"Természeti Erő\""),
+                "the secondary meter must never reuse the primary resource name");
+
+        final String resources = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/ResourceManager.java"));
+        check(resources.contains("case DRUID -> \"Természeti Erő\";"),
+                "the primary Druida resource remains Természeti Erő");
+
+        final String messages = Files.readString(Path.of("src/main/resources/messages/spell.yml"));
+        check(messages.contains("harmony-label: Harmónia")
+                        && messages.contains("{amount} Harmónia szabadult fel"),
+                "HUD and actionbar terminology must share the canonical Harmónia wording");
+
+        final String preview = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/hud/HudPreviewCatalog.java"));
+        check(preview.contains("\"druid\", \"Druida\", \"Vad\", \"Természeti Erő\""),
+                "the HUD preview must retain the primary resource name");
     }
 
     private static void check(final boolean condition, final String message) {

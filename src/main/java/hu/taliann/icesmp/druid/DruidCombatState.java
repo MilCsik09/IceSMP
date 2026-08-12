@@ -5,7 +5,7 @@ import java.util.UUID;
 /**
  * Per-player transient Druida combat state.
  *
- * <p>Természeti Erő is the class layer: nature casts build harmony that a shapeshift
+ * <p>Harmónia is the secondary class layer: nature casts build it so a shapeshift
  * (the existing form system) releases as a season blessing. Vadőr tracks combo points
  * and the Szagnyom prey mark; Holdjós tracks the Nap↔Hold balance and the Eclipse
  * window; Védelmező tracks bark layers and the Gyökérháló window; Helyreállító tracks
@@ -30,7 +30,7 @@ public final class DruidCombatState {
 
     private final long[] seedPlantedAt = new long[5];
 
-    // ===== Természeti Erő + Évszak (class core) =====
+    // ===== Harmónia + Évszak =====
 
     public synchronized int addHarmony(final int amount, final long now,
                                        final long decayDelayMillis,
