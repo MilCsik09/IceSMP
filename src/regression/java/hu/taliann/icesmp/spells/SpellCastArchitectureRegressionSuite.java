@@ -174,6 +174,34 @@ public final class SpellCastArchitectureRegressionSuite {
         require(!listener.contains("secondary.current()"),
                 "Assassin detection gating must not call a non-existent HUD metric accessor");
 
+        final String combos = read(root, "src/main/resources/config/spells.yml");
+        require(!combos.contains("soul-collapse:"),
+                "cross-spec Affliction/Destruction chain must stay removed");
+        require(!combos.contains("way-of-hundred-fists:"),
+                "Monk native rotation must not be double-rewarded globally");
+
+        final String aggregate = read(root,
+                "src/regression/java/hu/taliann/icesmp/spells/ClassSpellAuditRegressionSuite.java");
+        require(aggregate.contains("SpellRegistryRegressionSuite.main")
+                        && aggregate.contains("SpellCastArchitectureRegressionSuite.main")
+                        && aggregate.contains("ActiveKitLifecycleRegressionSuite.main")
+                        && aggregate.contains("DarkClassSpellLifecycleRegressionSuite.main")
+                        && aggregate.contains("MonkStaggerLifecycleRegressionSuite.main")
+                        && aggregate.contains("WizardGameplayRegressionSuite.main")
+                        && aggregate.contains("WizardProfileRegressionSuite.main"),
+                "hardening aggregate must execute registry, cast, active-kit, DARK, Monk and Wizard regressions");
+        final String grantGate = read(root,
+                "src/regression/java/hu/taliann/icesmp/classspec/domain/SpellGrantLedgerRegressionSuite.java");
+        require(grantGate.contains("ClassSpellAuditRegressionSuite.main"),
+                "hardening aggregate must execute through the check-wired grant ledger gate");
+        final String build = read(root, "build.gradle.kts");
+        require(build.contains("val wizardGameplayRegressionTest = registerRegression(")
+                        && build.contains("val wizardProfileRegressionTest = registerRegression("),
+                "Wizard suites must be explicit Gradle tasks");
+        final int check = build.indexOf("tasks.check");
+        require(check >= 0 && build.indexOf("wizardGameplayRegressionTest", check) > check
+                        && build.indexOf("wizardProfileRegressionTest", check) > check,
+                "Wizard regression tasks must be dependencies of check");
     }
 
     private static void assertDelayedDamageSnapshot(final Path root, final String file) throws IOException {

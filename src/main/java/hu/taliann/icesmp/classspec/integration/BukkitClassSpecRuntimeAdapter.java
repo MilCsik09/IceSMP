@@ -24,6 +24,7 @@ import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellbookStateStore;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.spells.Spell;
@@ -56,6 +57,8 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
     private final BloodMoonManager bloodMoon;
     private final MinionManager minions;
     private final SoulforgeManager soulforge;
+    private final PlayerProfileSpellbookStateStore spellbookStateStore =
+            new PlayerProfileSpellbookStateStore();
     private final List<PlayerStateCleanup> transientOwners = new CopyOnWriteArrayList<>();
     private final ProfileSessionRegistry sessions;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
@@ -246,6 +249,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             assassin.reconcileProfile(player);
             warlock.reconcileProfile(player);
             wizard.reconcileProfile(player);
+            catalyst.getSelectedSpellId(player);
             catalyst.refreshSoulbond(player);
         });
     }
@@ -399,6 +403,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
         if (switching) {
             (playerOwnerThread ? loadoutSwitchCleanup : offlineLoadoutSwitchCleanup).accept(id);
         }
+        minions.removeAllOwned(id);
         for (final Spell spell : spells.getAll()) spell.clearPlayerState(id);
     }
 

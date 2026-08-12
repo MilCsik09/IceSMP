@@ -314,7 +314,6 @@ classes:
         - stormstrike
         - lava_lash
         - windfury_totem
-        - earthbind_totem
         - crash_lightning
         - feral_spirit
         - doom_winds
@@ -322,7 +321,6 @@ classes:
         - healing_surge
         - riptide
         - healing_stream_totem
-        - windfury_totem
         - chain_heal
         - healing_rain
         - spirit_tide
