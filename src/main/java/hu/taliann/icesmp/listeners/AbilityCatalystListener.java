@@ -279,7 +279,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         final var secondary = service.hudState(player).secondary();
         if (!"detection".equals(secondary.id()) || secondary.maximum() <= 0
-                || secondary.current() < secondary.maximum()) {
+                || secondary.value() < secondary.maximum()) {
             return false;
         }
         player.sendActionBar(messageManager.getMessage("assassin.stealth.detected",

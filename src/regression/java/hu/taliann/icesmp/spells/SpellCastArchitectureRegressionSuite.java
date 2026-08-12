@@ -169,6 +169,10 @@ public final class SpellCastArchitectureRegressionSuite {
                 "combo refund must use shared effective cooldown");
         require(listener.contains("spellbookStateStore.recordLastCast(playerId, spell.getId(), timestamp)"),
                 "persistent cooldown stores the same cast timestamp consumed by the shared formula");
+        require(listener.contains("secondary.value() < secondary.maximum()"),
+                "Assassin detection gating must use the canonical ClassHudMetric value accessor");
+        require(!listener.contains("secondary.current()"),
+                "Assassin detection gating must not call a non-existent HUD metric accessor");
 
         final String combos = read(root, "src/main/resources/config/spells.yml");
         require(!combos.contains("soul-collapse:"),
