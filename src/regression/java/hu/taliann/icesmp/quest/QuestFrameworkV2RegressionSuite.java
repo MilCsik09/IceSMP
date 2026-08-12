@@ -594,6 +594,9 @@ public final class QuestFrameworkV2RegressionSuite {
         check(command.split("private void handleTalk")[1]
                         .substring(0, 400).contains("ADMIN_PERMISSION"),
                 "/quest talk is admin-gated (NPC spoof closed)");
+        check(command.contains("List.of(\"log\", \"list\", \"info\", \"track\", \"abandon\", \"choose\")")
+                        && command.contains("if (\"choose\".equals(subcommand)) return List.of();"),
+                "/quest choose is discoverable without leaking single-use tokens");
 
         final String bridge = java.nio.file.Files.readString(java.nio.file.Path.of(
                 "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"));

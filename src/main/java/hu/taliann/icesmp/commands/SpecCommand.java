@@ -266,7 +266,7 @@ public final class SpecCommand implements BasicCommand {
                     outcome.refundedTalentPoints()));
             case PERSISTENCE_FAILED -> sender.sendMessage(messageManager.get(
                     "spec-respec-persistence-failed",
-                    "&cA Profile v2 mentése meghiúsult; az esetleges költséget visszatérítettük."));
+                    "&cA Profile v2 tranzakció meghiúsult; a költség nem veszett el."));
             case RUNTIME_FAILED -> sender.sendMessage(messageManager.get(
                     "spec-respec-runtime-failed",
                     "&4A profil commitolt, de a runtime-befejezés hibázott; a session blokkolva."));
@@ -461,7 +461,7 @@ public final class SpecCommand implements BasicCommand {
                         }
                     }, () -> specializationManager.profileGateway().blockSession(target.getUniqueId(),
                             "Admin spec-reset completion scheduler rejected")));
-        }, () -> sendToSender(sender, messageManager.getComponent("spec-reset-failed",
+        }, () -> sendToSender(sender, messageManager.getComponent("spec-reset-scheduler-failed",
                 "&cA célpont scheduler elutasította a resetet: &f%s", target.getName())));
     }
 

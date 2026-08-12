@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.config;
 
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
+import hu.taliann.icesmp.gui.ClassGameplayConfigMenuGUI;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -31,7 +32,9 @@ public final class ConfigGuiCoverageRegressionSuite {
         }
         final Map<String, ConfigMenuGUI.Entry> entries = new HashMap<>();
         final Set<String> duplicates = new HashSet<>();
-        for (final ConfigMenuGUI.Entry entry : ConfigMenuGUI.allEntries()) {
+        final List<ConfigMenuGUI.Entry> menuEntries = new java.util.ArrayList<>(ConfigMenuGUI.allEntries());
+        menuEntries.addAll(ClassGameplayConfigMenuGUI.entries());
+        for (final ConfigMenuGUI.Entry entry : menuEntries) {
             if (entries.put(entry.key(), entry) != null) duplicates.add(entry.key());
             final Object value = scalar.get(entry.key());
             check(value != null, "unknown GUI path: " + entry.key());
@@ -49,7 +52,9 @@ public final class ConfigGuiCoverageRegressionSuite {
         }
         check(duplicates.isEmpty(), "duplicate GUI entries: " + duplicates);
         final List<String> missingRequired = scalar.keySet().stream()
-                .filter(key -> MUST_EXPOSE_PREFIXES.stream().anyMatch(key::startsWith))
+                .filter(key -> MUST_EXPOSE_PREFIXES.stream().anyMatch(key::startsWith)
+                        || (key.startsWith("classes.")
+                        && (scalar.get(key) instanceof Boolean || scalar.get(key) instanceof Number)))
                 .filter(key -> !entries.containsKey(key)).sorted().toList();
         check(missingRequired.isEmpty(), "required schema entries missing from GUI: " + missingRequired);
         final int displayed = entries.size();

@@ -505,6 +505,7 @@ public final class QuestCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("quest-help-info", "&e/quest info &7- Aktív küldetéseid és haladásod."));
         sender.sendMessage(messageManager.get("quest-help-track", "&e/quest track <küldetés|off> &7- Küldetés követése."));
         sender.sendMessage(messageManager.get("quest-help-abandon", "&e/quest abandon <küldetés> &7- Küldetés eldobása."));
+        sender.sendMessage(messageManager.get("quest-help-choose", "&e/quest choose <token> &7- Kattintható dialógusválasztás beváltása."));
         if (sender.hasPermission(ADMIN_PERMISSION)) {
             sender.sendMessage(messageManager.get("quest-help-accept", "&e/quest accept <küldetés> &7- Forrás-kerülő felvétel (Admin)."));
             sender.sendMessage(messageManager.get("quest-help-talk", "&e/quest talk <npc> &7- NPC-interakció szimulálása (Admin)."));
@@ -517,8 +518,8 @@ public final class QuestCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> subcommands = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("log", "list", "info", "track", "abandon", "accept", "talk", "complete", "admin")
-                : List.of("log", "list", "info", "track", "abandon");
+                ? List.of("log", "list", "info", "track", "abandon", "choose", "accept", "talk", "complete", "admin")
+                : List.of("log", "list", "info", "track", "abandon", "choose");
 
         // A Paper a lezáró szóköz utáni ÜRES szót nem adja át (args rövidebb), ezért minden
         // szintet két hosszal kezelünk: N+1 = szó közben (prefix az utolsó arg), N = szóköz
@@ -549,6 +550,7 @@ public final class QuestCommand implements BasicCommand {
             }
             return List.of();
         }
+        if ("choose".equals(subcommand)) return List.of();
         if (args.length <= 2 && "accept".equals(subcommand)) {
             // Admin-eszköz: a teljes id-lista csak admin előtt látszik (HIDDEN-szivárgás ellen).
             if (!sender.hasPermission(ADMIN_PERMISSION)) {

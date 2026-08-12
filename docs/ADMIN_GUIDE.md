@@ -1102,11 +1102,14 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 ### Konfigurációs fájlok
 
 - `afk.yml`
+- `block-regen.yml`
+- `class-gameplay.yml`
 - `classes.yml`
 - `crafting.yml`
 - `crates.yml`
 - `dev-items.yml`
 - `economy.yml`
+- `event-spawn-safety.yml`
 - `factions.yml`
 - `general.yml`
 - `item-rarity.yml`
@@ -1132,6 +1135,7 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `messages/currency.yml`
 - `messages/devitem.yml`
 - `messages/faction.yml`
+- `messages/hud.yml`
 - `messages/job.yml`
 - `messages/market.yml`
 - `messages/moderation.yml`
@@ -1146,6 +1150,45 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `messages/system.yml`
 - `messages/territory.yml`
 - `messages/world.yml`
+
+### Kaszt-játékmenet live hangolása
+
+A `class-gameplay.yml` numerikus és boolean balance-kulcsai a
+`/icesmp config menu` **Kaszt-játékmenet** almenüjében, kasztonként és
+legfeljebb 45 kulcsos lapokon állíthatók. A staged munkamenet csak Mentéskor
+írja egyetlen optimistic-concurrency tranzakcióval a `config.yml` override-okat;
+görgőkatt az adott kulcsot visszaállítja a csomagolt alapértékre. Az
+`active-kit`, spell-unlock, capstone- és entity-azonosító listák gameplay-definíciók,
+ezért nem kattintásos balance-vezérlők; ezeket ellenőrzött YAML-módosítással
+kezeld. Mentés után ellenőrizd a config-validáció konzolüzeneteit.
+
+### PlayerProfile read-only HTTP API
+
+A `player-profile.http.*` adapter alapból ki van kapcsolva. Engedélyezéshez a
+`general.yml`-ben állítsd a `player-profile.http.enabled` kulcsot `true`-ra, add meg
+a `bind` és `port` értéket, majd indítsd újra a plugint. Az alapértelmezett
+`127.0.0.1:8765` csak a helyi gépről érhető el. Külső hozzáférésnél tartsd
+loopbacken, és TLS-t lezáró reverse proxy mögött publikáld; a beépített adapter
+nem biztosít TLS-t.
+
+Tokenformátumok:
+
+- `self-tokens`: `"<játékos-uuid>:<token>"`; a token csak a hozzárendelt profil
+  SELF nézetét és nem védett szekcióit olvashatja;
+- `admin-tokens`: `"<token>"`; az ADMIN nézetet, valamint a moderációs és
+  operations szekciókat is olvashatja;
+- minden token legalább 24 karakteres, véletlenszerű secret legyen (például
+  `openssl rand -hex 32`), és kizárólag secret-managed deployment configba kerüljön.
+
+A védett kérések fejében `Authorization: Bearer <token>` kell. A
+`GET /api/v1/health` és a látható public profil
+`GET /api/v1/players/<uuid>/public` token nélkül olvasható; a teljes saját profil,
+a `by-name`, a `sections/<section>` és az `admin` route scope-ellenőrzött. Az API
+read-only, de a profiladat személyes és moderációs információt tartalmazhat:
+admin tokent ne adj kliensalkalmazásnak, ne naplózz, ne commitolj, és szivárgás
+esetén azonnal cserélj. A `requests-per-minute`, `max-request-bytes`,
+`max-response-bytes` és `timeout-ms` korlátokat a proxy limitjeivel együtt állítsd;
+a limiter IP-címenként, perces ablakban számol.
 
 ### Release acceptance checklist
 

@@ -65,6 +65,7 @@ messages:
   quest-complete-success: '&aKüldetés lezárva: &f%s &7-> &e%s'
   quest-complete-usage: '&cHasználat: /quest complete <játékos> <küldetés>'
   quest-help-abandon: '&e/quest abandon <küldetés> &7- Küldetés eldobása.'
+  quest-help-choose: '&e/quest choose <token> &7- Kattintható dialógusválasztás beváltása.'
   quest-help-accept: '&e/quest accept <küldetés> &7- Forrás-kerülő felvétel (Admin).'
   quest-help-complete: '&e/quest complete <játékos> <küldetés> &7- Lezárás (Admin).'
   quest-help-header: '&6/quest &7- Elérhető parancsok:'

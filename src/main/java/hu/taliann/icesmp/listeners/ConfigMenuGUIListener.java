@@ -7,6 +7,7 @@ import hu.taliann.icesmp.gui.AdvancedConfigEntry;
 import hu.taliann.icesmp.gui.AdvancedConfigEntryRenderer;
 import hu.taliann.icesmp.gui.AdvancedConfigPolicy;
 import hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI;
+import hu.taliann.icesmp.gui.ClassGameplayConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigChatInputGate;
 import hu.taliann.icesmp.gui.ConfigEditSession;
 import hu.taliann.icesmp.gui.ConfigMenuEntryRenderer;
@@ -97,6 +98,7 @@ public final class ConfigMenuGUIListener implements Listener {
         ConfigMenuGUI.CATEGORIES.values().forEach(category ->
                 category.entries().forEach(entry -> keys.add(entry.key())));
         BlockRegenConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
+        ClassGameplayConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
         TransactionalOperationalConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
         ServerWorldConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
         TransactionalCrateConfigMenuGUI.globalEntries().forEach(entry -> keys.add(entry.key()));
@@ -150,6 +152,9 @@ public final class ConfigMenuGUIListener implements Listener {
         if (OperationalConfigMenuGUI.ROOT_ACTION.equals(action)) {
             TransactionalOperationalConfigMenuGUI.openRoot(player, session); return;
         }
+        if (ClassGameplayConfigMenuGUI.ROOT_ACTION.equals(action)) {
+            ClassGameplayConfigMenuGUI.openRoot(player, session); return;
+        }
         if (ServerWorldConfigMenuGUI.ROOT_ACTION.equals(action)) {
             ServerWorldConfigMenuGUI.open(player, configManager, session); return;
         }
@@ -159,6 +164,11 @@ public final class ConfigMenuGUIListener implements Listener {
         if (action.startsWith(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX)) {
             TransactionalOperationalConfigMenuGUI.openCategory(player,
                     action.substring(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX.length()),
+                    configManager, session); return;
+        }
+        if (action.startsWith(ClassGameplayConfigMenuGUI.CATEGORY_ACTION_PREFIX)) {
+            ClassGameplayConfigMenuGUI.openCategory(player,
+                    action.substring(ClassGameplayConfigMenuGUI.CATEGORY_ACTION_PREFIX.length()),
                     configManager, session); return;
         }
         if (action.startsWith("CAT:")) {
@@ -174,6 +184,7 @@ public final class ConfigMenuGUIListener implements Listener {
         final String key = action.substring(action.indexOf(':') + 1);
         ConfigMenuGUI.Entry entry = ConfigMenuGUI.findEntry(key);
         if (entry == null) entry = BlockRegenConfigMenuGUI.findEntry(key);
+        if (entry == null) entry = ClassGameplayConfigMenuGUI.findEntry(key);
         if (entry == null) entry = TransactionalOperationalConfigMenuGUI.findEntry(key);
         if (entry == null) return;
         if (event.getClick() == ClickType.MIDDLE || event.getClick() == ClickType.DROP) {
@@ -489,6 +500,10 @@ public final class ConfigMenuGUIListener implements Listener {
             TransactionalCrateConfigMenuGUI.openBack(player, configManager, session, category);
         } else if (ServerWorldConfigMenuGUI.CATEGORY_ID.equals(category)) {
             ConfigMenuRootGUI.openRoot(player, session);
+        } else if (ClassGameplayConfigMenuGUI.ROOT_CATEGORY_ID.equals(category)) {
+            ConfigMenuRootGUI.openRoot(player, session);
+        } else if (ClassGameplayConfigMenuGUI.isCategory(category)) {
+            ClassGameplayConfigMenuGUI.openRoot(player, session);
         } else if (OperationalConfigMenuGUI.isOperationalCategory(category)) {
             TransactionalOperationalConfigMenuGUI.openRoot(player, session);
         } else ConfigMenuRootGUI.openRoot(player, session);
@@ -499,6 +514,7 @@ public final class ConfigMenuGUIListener implements Listener {
         if (category == null) ConfigMenuRootGUI.openRoot(player, session);
         else if (BlockRegenConfigMenuGUI.CATEGORY_ID.equals(category)) BlockRegenConfigMenuGUI.open(player, configManager, session);
         else if (ServerWorldConfigMenuGUI.CATEGORY_ID.equals(category)) ServerWorldConfigMenuGUI.open(player, configManager, session);
+        else if (ClassGameplayConfigMenuGUI.isCategory(category)) ClassGameplayConfigMenuGUI.reopen(player, category, configManager, session);
         else if (CrateConfigMenuGUI.isCrateCategory(category)) TransactionalCrateConfigMenuGUI.reopen(player, configManager, session, category);
         else if (OperationalConfigMenuGUI.isOperationalCategory(category)) TransactionalOperationalConfigMenuGUI.openCategory(player,
                 OperationalConfigMenuGUI.categoryIdFromHolder(category), configManager, session);

@@ -80,7 +80,7 @@ public final class OperationalConfigMenuRegressionSuite {
                         && root.contains("AdvancedConfigSchemaGuard.validate")
                         && root.contains("ServerWorldConfigMenuGUI.ROOT_ACTION")
                         && root.contains("CrateConfigMenuGUI.ROOT_ACTION")
-                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 4"),
+                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 5"),
                 "expanded staged config root wiring is missing");
 
         final String listener = Files.readString(Path.of(

@@ -1,7 +1,7 @@
 # AGENTS Guide for IceSMP
 
 ## Project snapshot
-- Folia-based plugin for Minecraft `1.21.11`, Java `21`, Gradle wrapper build (`build.gradle.kts`, `gradle/libs.versions.toml`).
+- Folia-based plugin for Minecraft `1.21.11`, Java `21`, Gradle wrapper build (`build.gradle.kts`, `gradle/libs.versions.toml`); 794 Java source files.
 - **Folia-compatible:** `folia-supported: true` in `paper-plugin.yml`; every task runs on region/entity schedulers (never `Bukkit.getScheduler()`, never async entity access).
 - Entry points: `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader` (declared in `paper-plugin.yml`); runtime orchestration in `core/IceSMPCore.java` (manager construction → `load()` → listeners → commands → schedulers; `save()`/cleanup in `disable()`).
 - Core soft-integration bridges covered here are runtime-optional; the plugin runs without them (declared in `paper-plugin.yml` under `dependencies.server`, `required: false`): **PlaceholderAPI** (`IceSMPPlaceholders`, `compileOnly`, registered reflectively from `IceSMPCore.registerPlaceholders()`; exposes `%icesmp_...%`), **LibsDisguises** (`DruidDisguise`, `compileOnly` with `isTransitive = false`, for Druid form visuals), **FancyNpcs** (`FancyNpcsQuestBridge`, pure reflection — no build dependency — feeding TALK_TO_NPC quest objectives), **WorldGuard** (`ProtectionBridge`, pure reflection — meteor/treasure block-placing events skip WG regions) and **LuckPerms** (`LuckPermsBridge`, pure reflection — the native chat formatter shows LP prefix/suffix). Only PlaceholderAPI and LibsDisguises are build-time (`compileOnly`) dependencies; the others are reached purely via reflection + `join-classpath` where required. The class/spec dependency lock remains the authority for the wider optional integration stack.
@@ -26,6 +26,7 @@
 
 ## Build & verify
 ```bash
+python3 -m pip install Pillow  # required by HUD asset generation/audit
 ./gradlew build      # plugin jar -> build/libs
 ./gradlew runServer  # local test server (run/ directory)
 ```

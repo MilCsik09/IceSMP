@@ -9,10 +9,16 @@ external HUD plugin is involved in generation or delivery.
 import io
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+try:
+    from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+except ModuleNotFoundError:
+    print("A generateIceSmpHudAssets futtatásához a Pillow csomag szükséges; "
+          "telepítés: python3 -m pip install Pillow", file=sys.stderr)
+    raise SystemExit(2)
 
 ROOT = Path(__file__).resolve().parents[1]
 HUD_SOURCE = ROOT / "dev-assets" / "icesmp-hud" / "source"

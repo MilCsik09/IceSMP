@@ -77,7 +77,7 @@ public final class AdvancedConfigMenuRegressionSuite {
 
     private static void verifiesSafeInputAndLiveApplyWiring() throws Exception {
         final String root = read("src/main/java/hu/taliann/icesmp/gui/ConfigMenuRootGUI.java");
-        check(root.contains("ConfigMenuGUI.CATEGORIES.size() + 4")
+        check(root.contains("ConfigMenuGUI.CATEGORIES.size() + 5")
                         && root.contains("ServerWorldConfigMenuGUI.ROOT_ACTION")
                         && root.contains("CrateConfigMenuGUI.ROOT_ACTION")
                         && root.contains("AdvancedConfigSchemaGuard.validate"),
