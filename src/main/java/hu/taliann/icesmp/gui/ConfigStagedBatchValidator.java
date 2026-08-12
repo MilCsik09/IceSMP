@@ -19,6 +19,7 @@ public final class ConfigStagedBatchValidator {
             final Object value = snapshot.resolvedValue(key);
             ConfigMenuGUI.Entry scalar = ConfigMenuGUI.findEntry(key);
             if (scalar == null) scalar = BlockRegenConfigMenuGUI.findEntry(key);
+            if (scalar == null) scalar = ClassGameplayConfigMenuGUI.findEntry(key);
             if (scalar == null) scalar = TransactionalOperationalConfigMenuGUI.findEntry(key);
             if (scalar != null) {
                 final String scalarProblem = validateScalar(scalar, value);

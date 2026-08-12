@@ -36,6 +36,9 @@ public final class OperationalConfigPolicy {
         if (!(proposed instanceof Number number)) return null;
         final double value = number.doubleValue();
         if (!Double.isFinite(value)) return "Az értéknek véges számnak kell lennie.";
+        final String namedBoundsProblem = validateNamedBounds(
+                key, value, configManager, stagedValue);
+        if (namedBoundsProblem != null) return namedBoundsProblem;
 
         return switch (key) {
             case "currency.exchange-rate" -> value > 0.0D ? null
@@ -91,6 +94,48 @@ public final class OperationalConfigPolicy {
                     "A célpont elengedési távja nem lehet kisebb az automatikus aggro-távnál.");
             default -> null;
         };
+    }
+
+    private static String validateNamedBounds(final String key, final double value,
+                                              final ConfigManager configManager,
+                                              final Function<String, Object> stagedValue) {
+        final String upper = pairedKey(key, true);
+        if (upper != null) {
+            final double upperValue = stagedDouble(upper, Double.NaN, configManager, stagedValue);
+            if (Double.isFinite(upperValue) && value > upperValue) {
+                return "Az alsó korlát nem lehet nagyobb a hozzá tartozó felső korlátnál ("
+                        + upper + ").";
+            }
+        }
+        final String lower = pairedKey(key, false);
+        if (lower != null) {
+            final double lowerValue = stagedDouble(lower, Double.NaN, configManager, stagedValue);
+            if (Double.isFinite(lowerValue) && value < lowerValue) {
+                return "A felső korlát nem lehet kisebb a hozzá tartozó alsó korlátnál ("
+                        + lower + ").";
+            }
+        }
+        return null;
+    }
+
+    private static String pairedKey(final String key, final boolean upper) {
+        final String[][] pairs = {
+                {".min-", ".max-"}, {"-min-", "-max-"},
+                {".minimum-", ".maximum-"}, {"-minimum-", "-maximum-"},
+                {".lower-", ".upper-"}, {"-lower-", "-upper-"}
+        };
+        final int source = upper ? 0 : 1;
+        final int target = upper ? 1 : 0;
+        for (final String[] pair : pairs) {
+            if (key.contains(pair[source])) return key.replace(pair[source], pair[target]);
+        }
+        if (upper && key.endsWith(".minimum")) {
+            return key.substring(0, key.length() - ".minimum".length()) + ".maximum";
+        }
+        if (!upper && key.endsWith(".maximum")) {
+            return key.substring(0, key.length() - ".maximum".length()) + ".minimum";
+        }
+        return null;
     }
 
     private static double stagedDouble(final String key, final double fallback,

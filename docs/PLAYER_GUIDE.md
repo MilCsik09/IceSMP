@@ -707,6 +707,7 @@ Minden küldetésnek saját forrása van, és csak ott vehető fel:
 - `/quest info` — aktív küldetéseid és haladásod.
 - `/quest track <id|off>` — követett küldetés kijelölése (a naplóban ★).
 - `/quest abandon <id>` — feladás.
+- `/quest choose <token>` — a párbeszédben megjelenő kattintható választás egyszer használatos beváltása; a tokent nem kell és nem érdemes kézzel beírni, lejárat után beszélj újra az NPC-vel.
 
 Az első belépéskor egy rövid kezdő lánc automatikusan vezet végig az alapokon.
 Kövesd a képernyő jelzéseit; ez az útmutató nem sorolja fel előre a
@@ -831,6 +832,8 @@ legtöbb művelet a `/menu` felületéről is elérhető.
 | `/spell upgrade <id>` | spell-mesterség |
 | `/spec list` | választható specializációk |
 | `/spec choose <id>` | specializáció választása |
+| `/spec switch <first|second|spec-id>` | megtanult kasztspecializáció aktív slotjának váltása biztonságos helyen |
+| `/spec doctrine <30|40|50> <választás>` | a megadott szint végleges doctrine-választásának rögzítése |
 | `/spec respec <class|profession>` | specializáció visszaváltása |
 | `/spec esku <irgalom|itelet|oltalmazas>` | Paplovag-irány (Eskü) választása az ülésre |
 | `/spec ima <vigasz|ostor|csend>` | Pap-litánia (ima) felvétele az ülésre |

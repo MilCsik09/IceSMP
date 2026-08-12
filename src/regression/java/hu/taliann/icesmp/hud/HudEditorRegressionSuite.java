@@ -45,6 +45,16 @@ public final class HudEditorRegressionSuite {
         check(permissions.contains("HUD_EDITOR = \"icesmp.admin.hud-editor\"")
                         && permissions.contains("canonical.put(HUD_EDITOR"),
                 "the editor permission must use the registered canonical scheme");
+        final String menus = read("src/main/java/hu/taliann/icesmp/gui/CommandMenus.java");
+        check(menus.contains("player.hasPermission(Permissions.HUD_EDITOR)")
+                        && menus.contains("\"OPEN:hud edit\""),
+                "the admin command menu exposes the HUD editor on its canonical permission");
+        final String messageManager = read(
+                "src/main/java/hu/taliann/icesmp/utils/MessageManager.java");
+        check(messageManager.contains("\"hud\"")
+                        && java.nio.file.Files.isRegularFile(java.nio.file.Path.of(
+                                "src/main/resources/messages/hud.yml")),
+                "HUD messages are a bundled message group");
     }
 
     private static void sessionsAndPreviewsArePlayerIsolated() {
@@ -203,6 +213,7 @@ public final class HudEditorRegressionSuite {
         final String scales = "0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80";
         check(shader.contains("HUD_LAYOUT_SCALES[8]") && shader.contains(scales)
                         && generator.contains("HUD_LAYOUT_SCALES = (" + scales + ")")
+                        && generator.contains("python3 -m pip install Pillow")
                         && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"layout_color_payload_bits\": 12"),
                 "runtime, build generator and manifest must share the limited scale variants");

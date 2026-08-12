@@ -103,6 +103,22 @@ public final class OperationalConfigMenuRegressionSuite {
                 "invalid staged min/max batch could reach publication");
         check(session.pendingChanges().size() == 2,
                 "failed batch validation discarded the staged transaction");
+
+        final String rhythmMinimum = "classes.shaman.maelstrom.rhythm-min-millis";
+        final String rhythmMaximum = "classes.shaman.maelstrom.rhythm-max-millis";
+        final Map<String, Object> classOpening = Map.of(rhythmMinimum, 600, rhythmMaximum, 1600);
+        final ConfigEditSession classSession = new ConfigEditSession(
+                2L, "class-fingerprint", classOpening, classOpening);
+        classSession.stage(rhythmMinimum, 1800);
+        final String classImmediateProblem = OperationalConfigPolicy.validate(
+                rhythmMaximum, 1700, configManager, classSession.candidate(rhythmMaximum, 1700));
+        check(classImmediateProblem != null && classImmediateProblem.contains("alsó korlátnál"),
+                "class-gameplay field validation ignored the staged paired bound");
+        classSession.stage(rhythmMaximum, 1700);
+        final String classBatchProblem = ConfigStagedBatchValidator.validate(
+                classSession.snapshot(), configManager);
+        check(classBatchProblem != null && classBatchProblem.contains(rhythmMinimum),
+                "invalid class-gameplay min/max batch could reach publication");
     }
 
     private static void verifiesMenuWiringAndLiveApply() throws Exception {
@@ -111,7 +127,7 @@ public final class OperationalConfigMenuRegressionSuite {
                         && root.contains("AdvancedConfigSchemaGuard.validate")
                         && root.contains("ServerWorldConfigMenuGUI.ROOT_ACTION")
                         && root.contains("CrateConfigMenuGUI.ROOT_ACTION")
-                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 4"),
+                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 5"),
                 "expanded staged config root wiring is missing");
 
         final String listener = Files.readString(Path.of(

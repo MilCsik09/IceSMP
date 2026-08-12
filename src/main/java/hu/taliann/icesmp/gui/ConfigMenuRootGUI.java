@@ -36,7 +36,7 @@ public final class ConfigMenuRootGUI {
     public static void openRoot(final Player player, final ConfigEditSession session) {
         OperationalConfigSchemaGuard.validate();
         AdvancedConfigSchemaGuard.validate();
-        final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 4;
+        final int categoryCount = ConfigMenuGUI.CATEGORIES.size() + 5;
         if (categoryCount > CATEGORY_SLOTS.length) {
             throw new IllegalStateException("Az admin config-főmenü kategóriakapacitása elfogyott: "
                     + categoryCount + "/" + CATEGORY_SLOTS.length);
@@ -64,6 +64,13 @@ public final class ConfigMenuRootGUI {
                         "&7" + TransactionalOperationalConfigMenuGUI.entryCount() + " élő kulcs",
                         "&7HUD, AFK, petek és piac", "&eKattints a staged szerkesztéshez")));
         holder.bind(slot, OperationalConfigMenuGUI.ROOT_ACTION);
+
+        slot = CATEGORY_SLOTS[index++];
+        inventory.setItem(slot, tile(Material.IRON_SWORD, "&bKaszt-játékmenet",
+                List.of("&7" + ClassGameplayConfigMenuGUI.categoryCount() + " kasztkategória",
+                        "&7" + ClassGameplayConfigMenuGUI.entryCount() + " live balance-kulcs",
+                        "&eKattints a staged szerkesztéshez")));
+        holder.bind(slot, ClassGameplayConfigMenuGUI.ROOT_ACTION);
 
         slot = CATEGORY_SLOTS[index++];
         inventory.setItem(slot, tile(Material.COMMAND_BLOCK, "&bSzerver, világ és szöveges értékek",

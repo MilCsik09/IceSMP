@@ -1,0 +1,13 @@
+# IceSMP üzenetek — HUD
+messages:
+  hud-editor-denied: '%s'
+  hud-list-all: '&7- &fTeljes HUD &8(mind)&7: %s'
+  hud-list-entry: '&7- &f%s &8(%s)&7: %s'
+  hud-list-header: '&b[HUD] &7Szekciók (/hud toggle <szekció>):'
+  hud-toggle-storage-failed: '&cA HUD-beállítás PlayerProfile mentése meghiúsult.'
+  hud-toggled-all-off: '&b[HUD] &7Teljes HUD &ckikapcsolva&7.'
+  hud-toggled-all-on: '&b[HUD] &7Teljes HUD &abekapcsolva&7.'
+  hud-toggled-off: '&b[HUD] &7%s &ckikapcsolva&7.'
+  hud-toggled-on: '&b[HUD] &7%s &abekapcsolva&7.'
+  hud-unknown-section: '&cIsmeretlen HUD-szekció: &f%s&c. Lehetséges értékek: &f%s&c, mind'
+  hud-usage-toggle: '&cHasználat: /hud toggle <szekció|mind>'

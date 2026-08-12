@@ -6,11 +6,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageFilter, ImageStat
+try:
+    from PIL import Image, ImageFilter, ImageStat
+except ModuleNotFoundError:
+    print("Az IceSMP HUD asset-audithoz a Pillow csomag szükséges; "
+          "telepítés: python3 -m pip install Pillow", file=sys.stderr)
+    raise SystemExit(2)
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "resource-pack" / "assets" / "icesmp_hud"

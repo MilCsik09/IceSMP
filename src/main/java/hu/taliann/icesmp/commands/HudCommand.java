@@ -76,7 +76,7 @@ public final class HudCommand implements BasicCommand {
                         + "hud.icesmp-hud.editor.enabled";
                 case ALLOWED -> throw new IllegalStateException("unreachable");
             };
-            sender.sendMessage(messageManager.get("hud-editor-denied", message));
+            sender.sendMessage(messageManager.get("hud-editor-denied", "%s", message));
             return;
         }
         final Player player = (Player) sender;
