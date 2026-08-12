@@ -23,6 +23,10 @@ public final class PlayerProfileQuestStore {
     private static final String DISCOVERED_PREFIX = "discovered.";
     private static final String SOURCE_PREFIX = "source.";
     private static final String ACCEPTED_AT_PREFIX = "accepted-at.";
+    private static final String QUEST_METADATA_EXTENSION = "quest-metadata";
+    private static final String SOURCE_FIELD = "source";
+    private static final String ACCEPTED_AT_FIELD = "accepted-at";
+    private static final String DISCOVERED_FIELD = "discovered";
     private static final String TRACKED_KEY = "tracked";
     private static final String REWARD_DELIVERY_EXTENSION = "reward-delivery-ledger";
     private static final int MAX_REWARD_RECEIPTS = 2048;
@@ -88,7 +92,7 @@ public final class PlayerProfileQuestStore {
         return accept(playerId, questId, "");
     }
 
-    /** A felvétel a start-forrás auditjával EGY commitban rögzül (extensions: `source.<id>`). */
+    /** A felvétel a start-forrás auditjával EGY commitban rögzül. */
     public CompletionStage<Boolean> accept(final UUID playerId, final String questId,
                                            final String startSource) {
         final String id = questId(questId);
@@ -102,11 +106,17 @@ public final class PlayerProfileQuestStore {
                             new LinkedHashMap<>(current.active());
                     active.put(id, Map.of());
                     final LinkedHashMap<String, Object> extensions =
-                            new LinkedHashMap<>(current.extensions());
+                            migratedExtensions(current.extensions());
+                    final LinkedHashMap<String, Map<String, Object>> metadata =
+                            mutableMetadata(extensions);
+                    final LinkedHashMap<String, Object> quest =
+                            new LinkedHashMap<>(metadata.getOrDefault(id, Map.of()));
                     if (!source.isBlank()) {
-                        extensions.put(SOURCE_PREFIX + id, source);
+                        quest.put(SOURCE_FIELD, source);
                     }
-                    extensions.put(ACCEPTED_AT_PREFIX + id, System.currentTimeMillis());
+                    quest.put(ACCEPTED_AT_FIELD, System.currentTimeMillis());
+                    metadata.put(id, Map.copyOf(quest));
+                    putMetadata(extensions, metadata);
                     return PlayerProfileService.ConditionalMutation.changed(
                             copyWithExtensions(current, active, current.completed(),
                                     current.rewardReceipts(), current.cooldowns(),
@@ -121,12 +131,19 @@ public final class PlayerProfileQuestStore {
         final String from = source == null ? "" : source.trim().toLowerCase(Locale.ROOT);
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
-                    if (current.extensions().containsKey(DISCOVERED_PREFIX + id)) {
+                    if (metadata(current.extensions()).getOrDefault(id, Map.of())
+                            .containsKey(DISCOVERED_FIELD)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
                     final LinkedHashMap<String, Object> extensions =
-                            new LinkedHashMap<>(current.extensions());
-                    extensions.put(DISCOVERED_PREFIX + id, from.isBlank() ? "unknown" : from);
+                            migratedExtensions(current.extensions());
+                    final LinkedHashMap<String, Map<String, Object>> metadata =
+                            mutableMetadata(extensions);
+                    final LinkedHashMap<String, Object> quest =
+                            new LinkedHashMap<>(metadata.getOrDefault(id, Map.of()));
+                    quest.put(DISCOVERED_FIELD, from.isBlank() ? "unknown" : from);
+                    metadata.put(id, Map.copyOf(quest));
+                    putMetadata(extensions, metadata);
                     return PlayerProfileService.ConditionalMutation.changed(
                             copyWithExtensions(current, current.active(), current.completed(),
                                     current.rewardReceipts(), current.cooldowns(),
@@ -135,9 +152,10 @@ public final class PlayerProfileQuestStore {
     }
 
     public boolean isDiscovered(final UUID playerId, final String questId) {
-        return PlayerProfileAuthority.current().requireSection(playerId,
-                        ProfileSectionId.QUESTS, QuestSection.class)
-                .extensions().containsKey(DISCOVERED_PREFIX + questId(questId));
+        final QuestSection section = PlayerProfileAuthority.current().requireSection(playerId,
+                ProfileSectionId.QUESTS, QuestSection.class);
+        return metadata(section.extensions()).getOrDefault(questId(questId), Map.of())
+                .containsKey(DISCOVERED_FIELD);
     }
 
     /** Trackelt quest kijelölése ({@code null} = törlés); HUD/waypoint rendszerek alapja. */
@@ -150,7 +168,7 @@ public final class PlayerProfileQuestStore {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
                     final LinkedHashMap<String, Object> extensions =
-                            new LinkedHashMap<>(current.extensions());
+                            migratedExtensions(current.extensions());
                     if (id.isEmpty()) {
                         extensions.remove(TRACKED_KEY);
                     } else {
@@ -171,9 +189,10 @@ public final class PlayerProfileQuestStore {
 
     /** A rögzített start-forrás auditja (diagnosztika); {@code null}, ha nincs. */
     public String startSource(final UUID playerId, final String questId) {
-        final Object value = PlayerProfileAuthority.current().requireSection(playerId,
-                        ProfileSectionId.QUESTS, QuestSection.class)
-                .extensions().get(SOURCE_PREFIX + questId(questId));
+        final QuestSection section = PlayerProfileAuthority.current().requireSection(playerId,
+                ProfileSectionId.QUESTS, QuestSection.class);
+        final Object value = metadata(section.extensions())
+                .getOrDefault(questId(questId), Map.of()).get(SOURCE_FIELD);
         return value instanceof String source && !source.isBlank() ? source : null;
     }
 
@@ -187,9 +206,12 @@ public final class PlayerProfileQuestStore {
                     final LinkedHashMap<String, Map<String, Long>> active =
                             new LinkedHashMap<>(current.active());
                     active.remove(id);
+                    final LinkedHashMap<String, Object> extensions =
+                            withoutActiveMetadata(current.extensions(), id);
                     return PlayerProfileService.ConditionalMutation.changed(
-                            copy(current, active, current.completed(), current.rewardReceipts(),
-                                    current.cooldowns(), current.claimableRewards()), true);
+                            copyWithExtensions(current, active, current.completed(),
+                                    current.rewardReceipts(), current.cooldowns(),
+                                    current.claimableRewards(), extensions), true);
                 });
     }
 
@@ -284,8 +306,9 @@ public final class PlayerProfileQuestStore {
                     final LinkedHashSet<String> claimable =
                             new LinkedHashSet<>(current.claimableRewards());
                     claimable.add(receipt);
-                    final QuestSection next = copy(current, active, completed,
-                            current.rewardReceipts(), cooldowns, claimable);
+                    final QuestSection next = copyWithExtensions(current, active, completed,
+                            current.rewardReceipts(), cooldowns, claimable,
+                            withoutActiveMetadata(current.extensions(), id));
                     return PlayerProfileService.ConditionalMutation.changed(next,
                             new CompletionReceipt(true, receipt, id, completedAt, seasonId));
                 });
@@ -453,8 +476,87 @@ public final class PlayerProfileQuestStore {
                                                    final Set<String> claimable,
                                                    final Map<String, Object> extensions) {
         return new QuestSection(active, completed, rewardReceipts, cooldowns,
-                current.communityContributions(), claimable, extensions);
+                current.communityContributions(), claimable, migratedExtensions(extensions));
     }
+
+    private static LinkedHashMap<String, Object> withoutActiveMetadata(
+            final Map<String, Object> source, final String questId) {
+        final LinkedHashMap<String, Object> extensions = migratedExtensions(source);
+        final LinkedHashMap<String, Map<String, Object>> metadata = mutableMetadata(extensions);
+        final LinkedHashMap<String, Object> quest =
+                new LinkedHashMap<>(metadata.getOrDefault(questId, Map.of()));
+        quest.remove(SOURCE_FIELD);
+        quest.remove(ACCEPTED_AT_FIELD);
+        if (quest.isEmpty()) metadata.remove(questId);
+        else metadata.put(questId, Map.copyOf(quest));
+        putMetadata(extensions, metadata);
+        return extensions;
+    }
+
+    private static LinkedHashMap<String, Object> migratedExtensions(
+            final Map<String, Object> source) {
+        final LinkedHashMap<String, Object> extensions = new LinkedHashMap<>(source);
+        final LinkedHashMap<String, Map<String, Object>> metadata = mutableMetadata(extensions);
+        for (final Map.Entry<String, Object> entry : source.entrySet()) {
+            final LegacyField legacy = legacyField(entry.getKey());
+            if (legacy == null) continue;
+            final LinkedHashMap<String, Object> quest = new LinkedHashMap<>(
+                    metadata.getOrDefault(legacy.questId(), Map.of()));
+            quest.putIfAbsent(legacy.field(), entry.getValue());
+            metadata.put(legacy.questId(), Map.copyOf(quest));
+            extensions.remove(entry.getKey());
+        }
+        putMetadata(extensions, metadata);
+        return extensions;
+    }
+
+    private static Map<String, Map<String, Object>> metadata(
+            final Map<String, Object> extensions) {
+        return Map.copyOf(mutableMetadata(migratedExtensions(extensions)));
+    }
+
+    private static LinkedHashMap<String, Map<String, Object>> mutableMetadata(
+            final Map<String, Object> extensions) {
+        final Object raw = extensions.get(QUEST_METADATA_EXTENSION);
+        final LinkedHashMap<String, Map<String, Object>> result = new LinkedHashMap<>();
+        if (raw == null) return result;
+        if (!(raw instanceof Map<?, ?> quests)) {
+            throw new IllegalStateException("invalid quest metadata extension");
+        }
+        for (final Map.Entry<?, ?> entry : quests.entrySet()) {
+            final String id = questId(String.valueOf(entry.getKey()));
+            if (!(entry.getValue() instanceof Map<?, ?> fields)) {
+                throw new IllegalStateException("invalid quest metadata entry: " + id);
+            }
+            final LinkedHashMap<String, Object> decoded = new LinkedHashMap<>();
+            fields.forEach((key, value) -> decoded.put(String.valueOf(key), value));
+            result.put(id, Map.copyOf(decoded));
+        }
+        return result;
+    }
+
+    private static void putMetadata(final LinkedHashMap<String, Object> extensions,
+                                    final Map<String, Map<String, Object>> metadata) {
+        if (metadata.isEmpty()) extensions.remove(QUEST_METADATA_EXTENSION);
+        else extensions.put(QUEST_METADATA_EXTENSION, Map.copyOf(metadata));
+    }
+
+    private static LegacyField legacyField(final String key) {
+        if (key.startsWith(SOURCE_PREFIX)) {
+            return new LegacyField(questId(key.substring(SOURCE_PREFIX.length())), SOURCE_FIELD);
+        }
+        if (key.startsWith(ACCEPTED_AT_PREFIX)) {
+            return new LegacyField(questId(key.substring(ACCEPTED_AT_PREFIX.length())),
+                    ACCEPTED_AT_FIELD);
+        }
+        if (key.startsWith(DISCOVERED_PREFIX)) {
+            return new LegacyField(questId(key.substring(DISCOVERED_PREFIX.length())),
+                    DISCOVERED_FIELD);
+        }
+        return null;
+    }
+
+    private record LegacyField(String questId, String field) { }
 
     private static QuestSection copyWithDeliveryLedger(
             final QuestSection current,

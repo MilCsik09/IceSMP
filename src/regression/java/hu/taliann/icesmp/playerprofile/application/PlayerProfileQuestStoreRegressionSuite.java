@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.playerprofile.application;
 
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.QuestSection;
 import hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository;
 import hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager;
 
@@ -7,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -214,6 +217,64 @@ public final class PlayerProfileQuestStoreRegressionSuite {
                     "abandon replay rejected");
             check(!store.active(player).contains("abandon_me"),
                     "abandoned progress removed");
+
+            final UUID cliff = UUID.fromString("00000000-0000-0000-0000-000000001098");
+            repository.loadSnapshot(cliff).toCompletableFuture().join();
+            for (int index = 0; index < 160; index++) {
+                final String quest = "cliff_" + index;
+                check(store.discover(cliff, quest, "npc:test")
+                                .toCompletableFuture().join(),
+                        "quest cliff discovery " + index);
+                check(store.accept(cliff, quest, "npc:test")
+                                .toCompletableFuture().join(),
+                        "quest cliff acceptance " + index);
+            }
+            final QuestSection compact = repository.cached(cliff).orElseThrow().quests().value();
+            check(compact.extensions().size() == 1
+                            && compact.extensions().containsKey("quest-metadata"),
+                    "160 quests use one structured extension key");
+            check(compact.active().size() == 160,
+                    "quest cliff remains below the active quest capacity");
+            repository.invalidate(cliff);
+            repository.loadSnapshot(cliff).toCompletableFuture().join();
+            check(store.active(cliff).size() == 160 && store.isDiscovered(cliff, "cliff_159"),
+                    "compact quest metadata survives restart beyond the former 512-key cliff");
+            final var cliffCompletion = store.complete(cliff, "cliff_0",
+                    1_800_000_000_000L, 1L).toCompletableFuture().join();
+            check(cliffCompletion.committed() && store.startSource(cliff, "cliff_0") == null,
+                    "completion removes active-lifetime quest metadata");
+            check(store.isDiscovered(cliff, "cliff_0"),
+                    "completion retains durable quest discovery");
+
+            final UUID legacy = UUID.fromString("00000000-0000-0000-0000-000000001097");
+            repository.loadSnapshot(legacy).toCompletableFuture().join();
+            service.mutateSectionConditional(legacy, ProfileSectionId.QUESTS,
+                            QuestSection.class, current -> {
+                                final LinkedHashMap<String, Map<String, Long>> active =
+                                        new LinkedHashMap<>(current.active());
+                                active.put("legacy_one", Map.of());
+                                final LinkedHashMap<String, Object> extensions =
+                                        new LinkedHashMap<>(current.extensions());
+                                extensions.put("source.legacy_one", "npc:legacy");
+                                extensions.put("accepted-at.legacy_one", 1_700_000_000_000L);
+                                extensions.put("discovered.legacy_one", "npc:legacy");
+                                return PlayerProfileService.ConditionalMutation.changed(
+                                        new QuestSection(active, current.completed(),
+                                                current.rewardReceipts(), current.cooldowns(),
+                                                current.communityContributions(),
+                                                current.claimableRewards(), extensions), true);
+                            }).toCompletableFuture().join();
+            check("npc:legacy".equals(store.startSource(legacy, "legacy_one"))
+                            && store.isDiscovered(legacy, "legacy_one"),
+                    "legacy quest metadata remains readable");
+            store.setProgress(legacy, "legacy_one", 0, 1).toCompletableFuture().join();
+            final Map<String, Object> migrated = repository.cached(legacy).orElseThrow()
+                    .quests().value().extensions();
+            check(migrated.containsKey("quest-metadata")
+                            && !migrated.containsKey("source.legacy_one")
+                            && !migrated.containsKey("accepted-at.legacy_one")
+                            && !migrated.containsKey("discovered.legacy_one"),
+                    "legacy quest keys migrate on the next write");
 
             check(service.shutdown(Duration.ofSeconds(5)).toCompletableFuture().join().drained(),
                     "repository drained");
