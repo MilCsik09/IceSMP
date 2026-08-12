@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -44,7 +45,8 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     private final PlayerProfileQueryService queries;
     private final Clock clock;
     private final List<PlayerProfileListener> listeners = new CopyOnWriteArrayList<>();
-    private final ConcurrentMap<UUID, AtomicLong> generationCounters = new ConcurrentHashMap<>();
+    // A process-wide monotonic token avoids both stale-session reuse and per-UUID retention.
+    private final AtomicLong nextGeneration = new AtomicLong();
     private final ConcurrentMap<UUID, Long> currentGenerations = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> sessionTails = new ConcurrentHashMap<>();
     private final AtomicBoolean accepting = new AtomicBoolean(true);
@@ -90,9 +92,7 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             if (!accepting.get()) return CompletableFuture.failedFuture(
                     new IllegalStateException("PlayerProfile lifecycle stopped"));
             final long durableGeneration = snapshot.lifecycle().value().sessionGeneration();
-            final AtomicLong counter = generationCounters.computeIfAbsent(playerId,
-                    ignored -> new AtomicLong(durableGeneration));
-            final long generation = counter.updateAndGet(current ->
+            final long generation = nextGeneration.updateAndGet(current ->
                     Math.addExact(Math.max(current, durableGeneration), 1L));
             currentGenerations.put(playerId, generation);
             final Instant now = clock.instant();
@@ -262,9 +262,24 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
 
     public <T> CompletionStage<T> transact(final UUID id,
                                             final PlayerProfileTransactionManager.ProfileTransactionWork<T> work) {
-        return transactions.execute(id, work).thenApply(result -> {
-            repository.cached(id).ifPresent(profile -> notifyChanged(id, profile.profileRevision(),
-                    profile.sectionMap().keySet()));
+        final AtomicReference<PlayerProfileSnapshot> before = new AtomicReference<>();
+        final AtomicReference<Set<ProfileSectionId>> candidates =
+                new AtomicReference<>(Set.of());
+        return transactions.execute(id, snapshot -> {
+            before.set(snapshot);
+            final PlayerProfileTransactionManager.TransactionPlan<T> plan =
+                    work.prepare(snapshot);
+            final java.util.EnumSet<ProfileSectionId> sections =
+                    java.util.EnumSet.of(ProfileSectionId.OPERATIONS);
+            plan.updates().forEach(update -> sections.add(update.section()));
+            candidates.set(Set.copyOf(sections));
+            return plan;
+        }).thenApply(result -> {
+            repository.cached(id).ifPresent(profile -> {
+                final Set<ProfileSectionId> changed = changedSections(
+                        before.get(), profile, candidates.get());
+                if (!changed.isEmpty()) notifyChanged(id, profile.profileRevision(), changed);
+            });
             return result;
         });
     }
@@ -306,6 +321,19 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             try { listener.changed(id, revision, Set.copyOf(changed)); }
             catch (RuntimeException ignored) { }
         }
+    }
+
+    private static Set<ProfileSectionId> changedSections(final PlayerProfileSnapshot before,
+                                                         final PlayerProfileSnapshot after,
+                                                         final Set<ProfileSectionId> candidates) {
+        if (before == null) return Set.of();
+        final java.util.EnumSet<ProfileSectionId> changed =
+                java.util.EnumSet.noneOf(ProfileSectionId.class);
+        for (final ProfileSectionId section : candidates) {
+            if (before.section(section).orElseThrow().revision()
+                    != after.section(section).orElseThrow().revision()) changed.add(section);
+        }
+        return Set.copyOf(changed);
     }
 
     private static boolean isStale(final Throwable failure) {

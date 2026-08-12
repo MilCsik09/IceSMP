@@ -99,10 +99,6 @@ public final class JobManager implements PlayerStateCleanup {
         return required == null || factionManager.isMember(player.getUniqueId(), required);
     }
 
-    /** Legacy synchronous mutation is intentionally unsupported. */
-    @Deprecated(forRemoval = true)
-    public boolean setPrimaryJob(final Player player, final JobType job) { return false; }
-
     public CompletionStage<Boolean> setPrimaryJobV2(final Player player, final JobType job) {
         Objects.requireNonNull(player, "player");
         if (!canSelectPrimary(player, job)) return CompletableFuture.completedFuture(false);
@@ -137,12 +133,6 @@ public final class JobManager implements PlayerStateCleanup {
         return CompletableFuture.completedFuture(profileGateway != null
                 && profileGateway.isSessionReady(player.getUniqueId()));
     }
-
-    /** Legacy synchronous mutations are intentionally unsupported. */
-    @Deprecated(forRemoval = true)
-    public boolean addXpToJob(final Player player, final int amount) { return false; }
-    @Deprecated(forRemoval = true)
-    public boolean setXp(final Player player, final int xp) { return false; }
 
     /** Compatibility boolean: durable STALE_SESSION/RUNTIME_EFFECT_FAILED are not “not committed”. */
     public CompletionStage<Boolean> addXpToJobV2(final Player player, final int amount,
@@ -326,10 +316,6 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     public void backfillSpellGrants(final Player player) { readLedger(player); }
-
-    /** Durable admin reset already removed class state; no PDC cleanup remains. */
-    @Deprecated(forRemoval = true)
-    public void resetClass(final Player player) { }
 
     private SpellGrantLedger readLedger(final Player player) {
         return spellGrantStore.read(player.getUniqueId());
