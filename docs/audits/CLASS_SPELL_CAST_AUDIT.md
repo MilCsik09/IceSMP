@@ -2,11 +2,11 @@
 
 ## Exact state
 - Staging SHA: `1bf68ea2bddeae757042481c0fb7a00caa5f46b9`
-- Artifact-producing feature source SHA: `5e2a01ab7933f5dd7287b47c50dc8c67ac8c3b57`
+- Artifact-producing feature source SHA: `0d7e11a5a4859515cc4e69e6c88f90a09ae474c6`
 - Final artifact-bearing feature HEAD: `HEAD` (absolute SHA is recorded by the final GitHub readback ledger in PR #115)
 - Merge-base SHA: `1bf68ea2bddeae757042481c0fb7a00caa5f46b9`
-- Ahead / behind: **7 / 0**
-- Changed file count: **41**
+- Ahead / behind: **9 / 0**
+- Changed file count: **44**
 
 ## Inventory
 - Classes: **13**
@@ -240,7 +240,7 @@
 - ConfiguredSpell remains for immediate generic primitives; state/lifecycle identity stays dedicated Java.
 
 ## Merge gate evidence
-- Strict auditor: **PASS** — exact audit-source SHA `5e2a01ab7933f5dd7287b47c50dc8c67ac8c3b57`
+- Strict auditor: **PASS** — exact audit-source SHA `0d7e11a5a4859515cc4e69e6c88f90a09ae474c6`
 - 420-row CSV: **PASS**
 - Java 21 clean build, separate check, explicit JavaExec regressions, deterministic rerun, `git diff --check` and GitHub HEAD readback are final artifact-HEAD execution gates; their absolute-SHA ledger is maintained in PR #115 after the artifact commit.
 
