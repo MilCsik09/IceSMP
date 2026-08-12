@@ -16,6 +16,7 @@ public final class HudEditorRegressionSuite {
         sessionsAndPreviewsArePlayerIsolated();
         resetUndoApplyAndCancelAreExact();
         invalidConfigFallsBackFieldByField();
+        everyRenderedComponentHasIndependentLayout();
         layoutAndPreviewSnapshotsAreImmutable();
         rendererAppliesOffsetAndScalePayload();
         generatedShaderVariantsMatchRuntimeContract();
@@ -56,9 +57,13 @@ public final class HudEditorRegressionSuite {
         editor.move(first, 1, -1);
         editor.previewClass(first, "wizard");
         editor.previewState(first, "wizard-attunement");
+        editor.select(first, HudComponent.EVENT_TEXT);
+        editor.move(first, 1, 1);
         check(editor.session(first).orElseThrow().working().xOffsetPixels() == 10
-                        && editor.session(first).orElseThrow().working().yOffsetPixels() == 6,
-                "the selected player's preview layout must update live");
+                        && editor.session(first).orElseThrow().working().yOffsetPixels() == 6
+                        && editor.session(first).orElseThrow().working()
+                        .componentLayout(HudComponent.EVENT_TEXT).xOffsetPixels() == 10,
+                "the selected player's global and component preview layouts must update live");
         check(editor.session(second).orElseThrow().working().equals(HudLayoutSnapshot.defaults())
                         && editor.session(second).orElseThrow().preview().equals(HudPreviewSelection.defaults()),
                 "one player's editor operations must not leak into another session");
@@ -90,6 +95,7 @@ public final class HudEditorRegressionSuite {
         check(editor.apply(player).orElseThrow().equals(moved) && editor.session(player).isEmpty(),
                 "apply must return working values and close the isolated session");
         editor.start(player, original, 8, "fingerprint");
+        editor.select(player, HudComponent.WALLET);
         editor.move(player, 1, 0);
         check(editor.cancel(player).orElseThrow().equals(original) && editor.session(player).isEmpty(),
                 "cancel must discard edits and return the opening layout");
@@ -106,12 +112,57 @@ public final class HudEditorRegressionSuite {
                         && partial.safeMarginPixels() == 24
                         && partial.scalePermille() == 1400,
                 "config validation must preserve valid fields and normalize supported scale variants");
+        final HudComponentLayout invalidComponent = HudComponentLayout.fromConfigValues(
+                "bad", 999, Double.POSITIVE_INFINITY, "true");
+        check(invalidComponent.equals(HudComponentLayout.defaults()),
+                "malformed component fields must fail back independently to safe defaults");
+    }
+
+    private static void everyRenderedComponentHasIndependentLayout() throws Exception {
+        HudLayoutSnapshot layout = HudLayoutSnapshot.defaults();
+        for (final HudComponent component : HudComponent.editableValues()) {
+            layout = layout.withComponent(component, new HudComponentLayout(
+                    component.ordinal(), -component.ordinal(), 3, true));
+            check(layout.componentLayout(component).xOffsetPixels() == component.ordinal(),
+                    "component transform must remain independently addressable: " + component.id());
+        }
+        final HudLayoutSnapshot before = layout;
+        final HudLayoutSnapshot moved = layout.move(HudComponent.EVENT_TEXT, 5, -10)
+                .changeScale(HudComponent.EVENT_TEXT, 1)
+                .toggleVisibility(HudComponent.EVENT_TEXT);
+        check(moved.componentLayout(HudComponent.EVENT_TEXT).xOffsetPixels()
+                        == before.componentLayout(HudComponent.EVENT_TEXT).xOffsetPixels() + 5
+                        && moved.componentLayout(HudComponent.EVENT_TEXT).yOffsetPixels()
+                        == before.componentLayout(HudComponent.EVENT_TEXT).yOffsetPixels() - 10
+                        && !moved.componentLayout(HudComponent.EVENT_TEXT).visible()
+                        && moved.componentLayout(HudComponent.WALLET)
+                        .equals(before.componentLayout(HudComponent.WALLET)),
+                "editing one component may not move, scale or hide another component");
+
+        final String config = read("src/main/resources/config/general.yml");
+        final String renderer = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
+        final String manager = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
+        for (final HudComponent component : HudComponent.editableValues()) {
+            check(config.contains("        " + component.id() + ":")
+                            && renderer.contains("HudComponent." + component.name()),
+                    "every editable component needs config defaults and a renderer consumer: "
+                            + component.id());
+        }
+        check(manager.contains("layout.components.\" + component.id()")
+                        && manager.contains("overrides.put(path + \".visible\"")
+                        && manager.contains("IceSmpHudModel.from(snapshot), configuredHudLayout(), visible"),
+                "component transforms and visibility must round-trip through validated config");
     }
 
     private static void layoutAndPreviewSnapshotsAreImmutable() {
-        check(HudLayoutSnapshot.class.isRecord() && HudPreviewSelection.class.isRecord()
+        check(HudLayoutSnapshot.class.isRecord() && HudComponentLayout.class.isRecord()
+                        && HudPreviewSelection.class.isRecord()
                         && HudEditorStateMachine.Session.class.isRecord(),
-                "layout, selection and session must remain immutable records");
+                "global/component layout, selection and session must remain immutable records");
+        try {
+            HudLayoutSnapshot.defaults().components().clear();
+            throw new AssertionError("component layout map must be immutable");
+        } catch (final UnsupportedOperationException expected) { }
         final var model = HudPreviewCatalog.model(HudPreviewSelection.defaults());
         try {
             model.currencies().add(model.currencies().getFirst());
@@ -133,6 +184,16 @@ public final class HudEditorRegressionSuite {
                 "renderer color transport must preserve visual high nibbles and exact layout payload");
         check(layout.shaderCode() == (7 << 9) + 219,
                 "shader payload must contain signed 9-bit Y and 3-bit scale index");
+        final HudLayoutSnapshot componentLayout = layout.withComponent(HudComponent.EVENT_TEXT,
+                new HudComponentLayout(9, 12, 2, true));
+        check(componentLayout.anchoredX(HudComponent.EVENT_TEXT, -214) == -197
+                        && componentLayout.shaderCode(HudComponent.EVENT_TEXT) == (7 << 9) + 231,
+                "component X/Y/scale must be composed into its own renderer payload");
+        final TextColor componentEncoded = IceSmpHudRenderer.encodeLayoutColor(
+                TextColor.color(0xF0D88D), componentLayout, HudComponent.EVENT_TEXT);
+        check(IceSmpHudRenderer.decodeLayoutCode(componentEncoded)
+                        == componentLayout.shaderCode(HudComponent.EVENT_TEXT),
+                "each component must transport its own exact layout payload to the shader");
     }
 
     private static void generatedShaderVariantsMatchRuntimeContract() throws Exception {

@@ -57,6 +57,28 @@ hud:
       # Buildkor generált shader-variánsra illeszkedik: 0.75, 0.90, 1.00, 1.15,
       # 1.25, 1.40, 1.60 vagy 1.80. Más érvényes érték a legközelebbire kerekül.
       scale: 1.25
+      # Minden első-party rajzcsoport külön, a fenti globális layouthoz képest állítható.
+      # A scale relatív szorzó; a runtime a globális×relatív eredményt a támogatott
+      # shader-variánsok egyikére illeszti. A teljes blokkot a /hud edit save atomikusan írja.
+      components:
+        frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        class-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        class-name: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        faction: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        level-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        level-text: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        wallet-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        wallet: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        resource-label: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        resource-bar: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        primary-mechanic: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        secondary-mechanic: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        charges: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        state-proc: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        detail-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        detail-metrics: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        event-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        event-text: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
     # Előkészített HP-rework kapuk. Csak akkor lesznek bekapcsolhatók, amikor az egyedi
     # HP/armor kijelzés és a pack-készültségi védelem teljes körűen elkészült.
     hide-vanilla-health: false
