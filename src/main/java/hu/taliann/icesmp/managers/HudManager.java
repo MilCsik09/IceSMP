@@ -4,6 +4,8 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.hud.HudComponent;
+import hu.taliann.icesmp.hud.HudComponentLayout;
 import hu.taliann.icesmp.hud.HudEditorStateMachine;
 import hu.taliann.icesmp.hud.HudLayoutPreset;
 import hu.taliann.icesmp.hud.HudLayoutSnapshot;
@@ -29,6 +31,7 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -205,11 +208,20 @@ public final class HudManager {
     public HudLayoutSnapshot configuredHudLayout() {
         final FileConfiguration configuration = configManager.getConfiguration();
         if (configuration == null) return HudLayoutSnapshot.defaults();
-        return HudLayoutSnapshot.fromConfigValues(
+        HudLayoutSnapshot layout = HudLayoutSnapshot.fromConfigValues(
                 configuration.get("hud.icesmp-hud.layout.x-offset-pixels"),
                 configuration.get("hud.icesmp-hud.layout.y-offset-pixels"),
                 configuration.get("hud.icesmp-hud.layout.safe-margin-pixels"),
                 configuration.get("hud.icesmp-hud.layout.scale"));
+        for (final HudComponent component : HudComponent.editableValues()) {
+            final String path = "hud.icesmp-hud.layout.components." + component.id();
+            layout = layout.withComponent(component, HudComponentLayout.fromConfigValues(
+                    configuration.get(path + ".x-offset-pixels"),
+                    configuration.get(path + ".y-offset-pixels"),
+                    configuration.get(path + ".scale"),
+                    configuration.get(path + ".visible")));
+        }
+        return layout;
     }
 
     public HudEditorStateMachine.Session beginHudEditor(final Player player) {
@@ -236,6 +248,20 @@ public final class HudManager {
         return hudEditor.scale(player.getUniqueId(), variants);
     }
 
+    public HudEditorStateMachine.Session selectHudEditorComponent(final Player player,
+                                                                  final HudComponent component) {
+        return hudEditor.select(player.getUniqueId(), component);
+    }
+
+    public HudEditorStateMachine.Session cycleHudEditorComponent(final Player player,
+                                                                 final int direction) {
+        return hudEditor.cycleSelection(player.getUniqueId(), direction);
+    }
+
+    public HudEditorStateMachine.Session toggleHudEditorComponent(final Player player) {
+        return hudEditor.toggleVisibility(player.getUniqueId());
+    }
+
     public HudEditorStateMachine.Session setHudEditorStep(final Player player, final int step) {
         return hudEditor.step(player.getUniqueId(), step);
     }
@@ -246,6 +272,10 @@ public final class HudManager {
 
     public HudEditorStateMachine.Session resetHudEditor(final Player player) {
         return hudEditor.reset(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session resetAllHudEditor(final Player player) {
+        return hudEditor.resetAll(player.getUniqueId());
     }
 
     public HudEditorStateMachine.Session undoHudEditor(final Player player) {
@@ -275,12 +305,21 @@ public final class HudManager {
         final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
         if (session == null) return ConfigManager.BatchApplyResult.NO_CHANGES;
         final HudLayoutSnapshot layout = session.working();
+        final Map<String, Object> overrides = new LinkedHashMap<>();
+        overrides.put("hud.icesmp-hud.layout.x-offset-pixels", layout.xOffsetPixels());
+        overrides.put("hud.icesmp-hud.layout.y-offset-pixels", layout.yOffsetPixels());
+        overrides.put("hud.icesmp-hud.layout.safe-margin-pixels", layout.safeMarginPixels());
+        overrides.put("hud.icesmp-hud.layout.scale", layout.scale());
+        for (final HudComponent component : HudComponent.editableValues()) {
+            final HudComponentLayout element = layout.componentLayout(component);
+            final String path = "hud.icesmp-hud.layout.components." + component.id();
+            overrides.put(path + ".x-offset-pixels", element.xOffsetPixels());
+            overrides.put(path + ".y-offset-pixels", element.yOffsetPixels());
+            overrides.put(path + ".scale", element.scale());
+            overrides.put(path + ".visible", element.visible());
+        }
         final ConfigManager.BatchApplyResult result = configManager.applyOverridesIfUnchanged(
-                session.configGeneration(), session.configFingerprint(), Map.of(
-                        "hud.icesmp-hud.layout.x-offset-pixels", layout.xOffsetPixels(),
-                        "hud.icesmp-hud.layout.y-offset-pixels", layout.yOffsetPixels(),
-                        "hud.icesmp-hud.layout.safe-margin-pixels", layout.safeMarginPixels(),
-                        "hud.icesmp-hud.layout.scale", layout.scale()));
+                session.configGeneration(), session.configFingerprint(), overrides);
         if (result != ConfigManager.BatchApplyResult.STALE) {
             hudEditor.apply(player.getUniqueId());
             restoreLiveHud(player);

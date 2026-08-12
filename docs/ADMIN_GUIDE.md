@@ -1626,24 +1626,40 @@ mert a preview játékosonkénti bossbar-kimenetet használ.
 `/hud edit` megnyit egy izolált, élő munkamenetet. A kattintható panel és a tab completion mellett
 az alábbi parancsok használhatók:
 
-- `move left|right|up|down`, `step 1|5|10`, `margin +|-`;
+- `select <komponens-id>`, illetve `previous` / `next` a szerkesztési célpont váltásához;
+- `move left|right|up|down` és `step 1|5|10` a kiválasztott célpontra;
+- `margin +|-` a `global` célponton;
 - `scale fine up|down` és `scale coarse up|down`;
+- `visibility` a kiválasztott komponens globális megjelenítéséhez/elrejtéséhez;
 - `preset <720p-gui2|1080p-gui2|2048x1152-gui3|1440p-gui3|4k-gui4|large-accessible>`;
 - `preview faction <guest|red|blue|neutral|dark>`;
 - `preview class <class-id>` mind a 13 classhoz;
 - `preview state <representative|resource|wallet|event|spec|proc|charges|dk-runes|wizard-attunement>`;
-- `undo`, `reset`, `save`, `cancel`.
+- `undo`, `reset` (kiválasztott célpont), `reset all`, `save`, `cancel`.
 
-Az előnézet kizárólag újonnan létrehozott immutable `IceSmpHudModel` fixture-t renderel. Nem olvas
+A `global` a teljes, jobb felső sarokhoz horgonyzott HUD-blokkot mozgatja és méretezi. A külön
+szerkeszthető komponensek: `frame`, `class-icon`, `class-name`, `faction`, `level-icon`,
+`level-text`, `wallet-frame`, `wallet`, `resource-label`, `resource-bar`, `primary-mechanic`,
+`secondary-mechanic`, `charges`, `state-proc`, `detail-frame`, `detail-metrics`, `event-icon` és
+`event-text`. A keretek is önálló célpontok, ezért az adminnak a hozzájuk tartozó tartalommal együtt
+kell mozgatnia őket. Ez vanilla kliensen kattintásos, nyilas editor; közvetlen fogd-és-húzd
+drag-and-drop csak kliensmoddal lenne megvalósítható.
+
+Az előnézet kizárólag újonnan létrehozott immutable `IceSmpHudModel` fixture-t és immutable
+globális/komponens-layout snapshotot renderel. Nem olvas
 és nem ír `PlayerProfile`-t, class runtime-ot, PDC-t vagy valutát. Másik játékos preview-ja és az
 élő gameplay snapshot nem változik. A `save` optimista config-generáció/fingerprint ellenőrzéssel
-írja a `hud.icesmp-hud.layout.*` override-okat; közben módosult config esetén fail-closed `STALE`
-eredménnyel elutasít. A `cancel` azonnal visszaállítja az élő HUD-snapshotot.
+egy atomikus batchben írja a globális `hud.icesmp-hud.layout.*` és a
+`hud.icesmp-hud.layout.components.<id>.*` override-okat; közben módosult config esetén fail-closed
+`STALE` eredménnyel elutasít. A `cancel` azonnal visszaállítja az élő HUD-snapshotot.
 
-Mentés után az X/Y eltolás, a jobb oldali biztonsági margó és a kiválasztott méret az éles
-rendererben is ugyanazon az útvonalon érvényesül. A támogatott méretek: `0.75`, `0.90`, `1.00`,
-`1.15`, `1.25`, `1.40`, `1.60`, `1.80`; más érvényes köztes érték a legközelebbi buildkor generált
-variánsra kerekül, hibás/tartományon kívüli mező pedig külön-külön biztonságos alapértékre esik vissza.
+Mentés után a teljes layout lesz az éles, globális alap minden játékosnak. A globális X/Y eltolás,
+jobb oldali biztonsági margó és méret után minden komponens saját relatív X/Y eltolása, mérete és
+láthatósága ugyanazon a production rendererútvonalon érvényesül. A támogatott méretek: `0.75`,
+`0.90`, `1.00`, `1.15`, `1.25`, `1.40`, `1.60`, `1.80`; a komponens relatív mérete a globális
+mérettel szorzódik, majd a legközelebbi buildkor generált variánsra kerekül. Hibás vagy tartományon
+kívüli mező komponensenként és mezőnként biztonságos alapértékre esik vissza. A játékos saját
+`/hud toggle` preferenciája ettől különálló PlayerProfile-beállítás marad.
 Pack-readiness hiányában az editor nem küld font-glyphet, és a natív/Folia fallback marad aktív.
 
 Staging ellenőrzés után kapcsold vissza az `editor.enabled` kulcsot `false` értékre. Az editor

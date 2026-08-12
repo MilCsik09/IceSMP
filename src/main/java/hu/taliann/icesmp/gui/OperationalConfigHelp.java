@@ -16,10 +16,10 @@ public final class OperationalConfigHelp {
             case "hud.enabled" -> "A teljes IceSMP játékos-HUD főkapcsolója: az oldalsávot, esemény-bossbarokat és kapcsolódó élő kijelzéseket kapuzza. Kikapcsoláskor a meglévő HUD-elemek a következő frissítésben eltűnnek.";
             case "hud.icesmp-hud.enabled" -> "A saját resource-packes IceSMP HUD főkapcsolója. Csak sikeresen betöltött packnál aktív; különben a natív fallback marad meg.";
             case "hud.icesmp-hud.editor.enabled" -> "Productionben alapból kikapcsolt admin-kapu a /hud edit élő, játékosonként izolált előnézetéhez. A permissiont nem helyettesíti.";
-            case "hud.icesmp-hud.layout.x-offset-pixels" -> "A first-party HUD vízszintes eltolása pixelben. Pozitív érték jobbra, negatív balra mozgat; a renderer élőben alkalmazza.";
-            case "hud.icesmp-hud.layout.y-offset-pixels" -> "A first-party HUD shaderes függőleges eltolása pixelben. Pozitív érték lefelé mozgat; tartományon kívül biztonságos alapérték lép életbe.";
+            case "hud.icesmp-hud.layout.x-offset-pixels" -> "A teljes first-party HUD globális vízszintes eltolása pixelben. A komponensek saját relatív eltolását a /hud edit kezeli.";
+            case "hud.icesmp-hud.layout.y-offset-pixels" -> "A teljes first-party HUD globális shaderes függőleges eltolása pixelben. Pozitív érték lefelé mozgat; tartományon kívül biztonságos alapérték lép életbe.";
             case "hud.icesmp-hud.layout.safe-margin-pixels" -> "Biztonsági távolság a képernyő jobb szélétől pixelben. Nagyobb érték balra húzza a teljes first-party HUD-ot.";
-            case "hud.icesmp-hud.layout.scale" -> "A first-party HUD méretét választja a buildkor generált, korlátozott shader-variánsok közül. Köztes érték a legközelebbi támogatott méretre kerekül.";
+            case "hud.icesmp-hud.layout.scale" -> "A teljes first-party HUD globális mérete a buildkor generált shader-variánsok egyikén. A /hud edit komponensméretei ehhez képest relatívak.";
             case "hud.sidebar-enabled" -> "Paperen az IceSMP scoreboard-oldalsávját, Folián a compact class bossbar fallbacket kapcsolja. A sikeresen betöltött first-party HUD automatikusan elrejti a fallbacket.";
             case "hud.tablist-enabled" -> "Az egyszerű, régi frakciószínű tabnév-fallback kapcsolója. Csak akkor van hatása, ha a natív tablist.enabled ki van kapcsolva.";
             case "hud.low-hp-vignette.enabled" -> "Engedélyezi az alacsony életerőnél megjelenő vörös képernyőszéli vészjelzést. Csak vizuális, nem módosít sebzést vagy maximális HP-t.";

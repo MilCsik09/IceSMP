@@ -13,12 +13,14 @@ public final class HudEditorStateMachine {
     private static final List<Integer> STEPS = List.of(1, 5, 10);
 
     public record Session(HudLayoutSnapshot original, HudLayoutSnapshot working, int step,
-                          HudPreviewSelection preview, List<HudLayoutSnapshot> undo,
+                          HudComponent selected, HudPreviewSelection preview,
+                          List<HudLayoutSnapshot> undo,
                           long configGeneration, String configFingerprint) {
         public Session {
             original = original == null ? HudLayoutSnapshot.defaults() : original;
             working = working == null ? original : working;
             step = STEPS.contains(step) ? step : 1;
+            selected = selected == null ? HudComponent.GLOBAL : selected;
             preview = preview == null ? HudPreviewSelection.defaults() : preview;
             undo = undo == null ? List.of() : List.copyOf(undo);
             configFingerprint = configFingerprint == null ? "" : configFingerprint;
@@ -30,7 +32,8 @@ public final class HudEditorStateMachine {
     public Session start(final UUID playerId, final HudLayoutSnapshot initial,
                          final long generation, final String fingerprint) {
         final HudLayoutSnapshot layout = initial == null ? HudLayoutSnapshot.defaults() : initial;
-        final Session session = new Session(layout, layout, 1, HudPreviewSelection.defaults(),
+        final Session session = new Session(layout, layout, 1, HudComponent.GLOBAL,
+                HudPreviewSelection.defaults(),
                 List.of(), generation, fingerprint);
         sessions.put(playerId, session);
         return session;
@@ -42,23 +45,53 @@ public final class HudEditorStateMachine {
 
     public Session move(final UUID playerId, final int horizontalSteps, final int verticalSteps) {
         return updateLayout(playerId, session -> session.working.move(
-                horizontalSteps * session.step, verticalSteps * session.step));
+                session.selected, horizontalSteps * session.step, verticalSteps * session.step));
     }
 
     public Session margin(final UUID playerId, final int direction) {
-        return updateLayout(playerId, session -> session.working.changeMargin(direction * session.step));
+        return updateLayout(playerId, session -> {
+            if (session.selected != HudComponent.GLOBAL) {
+                throw new IllegalArgumentException("Safe margin belongs to the global HUD layout");
+            }
+            return session.working.changeMargin(direction * session.step);
+        });
     }
 
     public Session scale(final UUID playerId, final int variants) {
-        return updateLayout(playerId, session -> session.working.changeScale(variants));
+        return updateLayout(playerId, session -> session.working.changeScale(session.selected, variants));
     }
 
     public Session preset(final UUID playerId, final HudLayoutPreset preset) {
-        return updateLayout(playerId, ignored -> preset.layout());
+        return updateLayout(playerId, session -> session.working.withGlobal(preset.layout()));
     }
 
     public Session reset(final UUID playerId) {
+        return updateLayout(playerId, session -> session.working.reset(session.selected));
+    }
+
+    public Session resetAll(final UUID playerId) {
         return updateLayout(playerId, ignored -> HudLayoutSnapshot.defaults());
+    }
+
+    public Session toggleVisibility(final UUID playerId) {
+        return updateLayout(playerId, session -> session.working.toggleVisibility(session.selected));
+    }
+
+    public Session select(final UUID playerId, final HudComponent component) {
+        if (component == null) throw new IllegalArgumentException("Unknown HUD component");
+        return sessions.compute(playerId, (ignored, session) -> {
+            if (session == null) throw new IllegalStateException("HUD editor session is not active");
+            return copy(session, session.working, session.step, component,
+                    session.preview, session.undo);
+        });
+    }
+
+    public Session cycleSelection(final UUID playerId, final int direction) {
+        return sessions.compute(playerId, (ignored, session) -> {
+            if (session == null) throw new IllegalStateException("HUD editor session is not active");
+            return copy(session, session.working, session.step, session.selected.cycle(direction),
+                    session.preview, session.undo);
+        });
     }
 
     public Session undo(final UUID playerId) {
@@ -67,7 +100,7 @@ public final class HudEditorStateMachine {
             if (session.undo.isEmpty()) return session;
             final ArrayList<HudLayoutSnapshot> history = new ArrayList<>(session.undo);
             final HudLayoutSnapshot previous = history.removeLast();
-            return copy(session, previous, session.step, session.preview, history);
+            return copy(session, previous, session.step, session.selected, session.preview, history);
         });
     }
 
@@ -75,7 +108,7 @@ public final class HudEditorStateMachine {
         if (!STEPS.contains(step)) throw new IllegalArgumentException("Unsupported HUD editor step: " + step);
         return sessions.compute(playerId, (ignored, session) -> {
             if (session == null) throw new IllegalStateException("HUD editor session is not active");
-            return copy(session, session.working, step, session.preview, session.undo);
+            return copy(session, session.working, step, session.selected, session.preview, session.undo);
         });
     }
 
@@ -117,7 +150,7 @@ public final class HudEditorStateMachine {
             final ArrayList<HudLayoutSnapshot> history = new ArrayList<>(session.undo);
             history.add(session.working);
             if (history.size() > HISTORY_LIMIT) history.removeFirst();
-            return copy(session, next, session.step, session.preview, history);
+            return copy(session, next, session.step, session.selected, session.preview, history);
         });
     }
 
@@ -125,13 +158,15 @@ public final class HudEditorStateMachine {
                                   final java.util.function.Function<Session, HudPreviewSelection> change) {
         return sessions.compute(playerId, (ignored, session) -> {
             if (session == null) throw new IllegalStateException("HUD editor session is not active");
-            return copy(session, session.working, session.step, change.apply(session), session.undo);
+            return copy(session, session.working, session.step, session.selected,
+                    change.apply(session), session.undo);
         });
     }
 
     private static Session copy(final Session session, final HudLayoutSnapshot working, final int step,
-                                final HudPreviewSelection preview, final List<HudLayoutSnapshot> undo) {
-        return new Session(session.original, working, step, preview, undo,
+                                final HudComponent selected, final HudPreviewSelection preview,
+                                final List<HudLayoutSnapshot> undo) {
+        return new Session(session.original, working, step, selected, preview, undo,
                 session.configGeneration, session.configFingerprint);
     }
 }

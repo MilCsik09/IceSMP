@@ -3,6 +3,8 @@ package hu.taliann.icesmp.commands;
 import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 
 import hu.taliann.icesmp.core.Permissions;
+import hu.taliann.icesmp.hud.HudComponent;
+import hu.taliann.icesmp.hud.HudComponentLayout;
 import hu.taliann.icesmp.hud.HudEditorAccessPolicy;
 import hu.taliann.icesmp.hud.HudEditorStateMachine;
 import hu.taliann.icesmp.hud.HudLayoutPreset;
@@ -115,9 +117,13 @@ public final class HudCommand implements BasicCommand {
                 case "margin" -> margin(player, args);
                 case "step" -> hudManager.setHudEditorStep(player, requireStep(args));
                 case "scale" -> scale(player, args);
+                case "select" -> select(player, args);
+                case "previous" -> hudManager.cycleHudEditorComponent(player, -1);
+                case "next" -> hudManager.cycleHudEditorComponent(player, 1);
+                case "visibility" -> visibility(player);
                 case "preset" -> preset(player, args);
                 case "preview" -> preview(player, args);
-                case "reset" -> hudManager.resetHudEditor(player);
+                case "reset" -> reset(player, args);
                 case "undo" -> hudManager.undoHudEditor(player);
                 default -> throw new IllegalArgumentException("Ismeretlen editor-művelet: " + action);
             }
@@ -140,6 +146,9 @@ public final class HudCommand implements BasicCommand {
     }
 
     private void margin(final Player player, final String[] args) {
+        if (hudManager.hudEditorSession(player).orElseThrow().selected() != HudComponent.GLOBAL) {
+            throw new IllegalArgumentException("A biztonsági margó a teljes HUD célponton állítható.");
+        }
         if (args.length < 3 || !("+".equals(args[2]) || "-".equals(args[2]))) {
             throw new IllegalArgumentException("Használat: /hud edit margin <+|->");
         }
@@ -172,6 +181,27 @@ public final class HudCommand implements BasicCommand {
         hudManager.changeHudEditorScale(player, amount * direction);
     }
 
+    private void select(final Player player, final String[] args) {
+        if (args.length < 3) throw new IllegalArgumentException("Hiányzó HUD-komponens azonosító.");
+        hudManager.selectHudEditorComponent(player, HudComponent.find(args[2])
+                .orElseThrow(() -> new IllegalArgumentException("Ismeretlen HUD-komponens: " + args[2])));
+    }
+
+    private void visibility(final Player player) {
+        if (hudManager.hudEditorSession(player).orElseThrow().selected() == HudComponent.GLOBAL) {
+            throw new IllegalArgumentException("A teljes HUD láthatóságát a /hud toggle mind kezeli.");
+        }
+        hudManager.toggleHudEditorComponent(player);
+    }
+
+    private void reset(final Player player, final String[] args) {
+        if (args.length >= 3 && "all".equalsIgnoreCase(args[2])) {
+            hudManager.resetAllHudEditor(player);
+        } else {
+            hudManager.resetHudEditor(player);
+        }
+    }
+
     private void preset(final Player player, final String[] args) {
         if (args.length < 3) throw new IllegalArgumentException("Hiányzó felbontás/GUI-scale preset.");
         hudManager.useHudEditorPreset(player, HudLayoutPreset.find(args[2])
@@ -193,17 +223,37 @@ public final class HudCommand implements BasicCommand {
     private void sendEditorPanel(final Player player, final boolean visible) {
         final HudEditorStateMachine.Session session = hudManager.hudEditorSession(player).orElseThrow();
         final HudLayoutSnapshot layout = session.working();
+        final HudComponent selected = session.selected();
+        final String values;
+        if (selected == HudComponent.GLOBAL) {
+            values = "X " + layout.xOffsetPixels() + "  Y " + layout.yOffsetPixels()
+                    + "  margó " + layout.safeMarginPixels() + "  méret "
+                    + String.format(Locale.ROOT, "%.2f", layout.scale()) + "x";
+        } else {
+            final HudComponentLayout element = layout.componentLayout(selected);
+            values = "relatív X " + element.xOffsetPixels() + "  Y " + element.yOffsetPixels()
+                    + "  méret " + String.format(Locale.ROOT, "%.2f", element.scale()) + "x  "
+                    + (element.visible() ? "látható" : "rejtett");
+        }
         player.sendMessage(Component.text("[HUD editor] ", NamedTextColor.AQUA)
-                .append(Component.text("X " + layout.xOffsetPixels() + "  Y " + layout.yOffsetPixels()
-                        + "  margó " + layout.safeMarginPixels() + "  méret "
-                        + String.format(Locale.ROOT, "%.2f", layout.scale()) + "x  lépés " + session.step(),
-                        NamedTextColor.WHITE)));
+                .append(Component.text(selected.displayName() + " (" + selected.id() + ") • "
+                        + values + " • lépés " + session.step(), NamedTextColor.WHITE)));
+        Component targetControls = button("◀ elem", "/hud edit previous").append(Component.space())
+                .append(button("elem ▶", "/hud edit next"));
+        if (selected != HudComponent.GLOBAL) {
+            targetControls = targetControls.append(Component.space())
+                    .append(button(layout.componentLayout(selected).visible() ? "elrejt" : "megjelenít",
+                            "/hud edit visibility"));
+        }
+        player.sendMessage(targetControls);
         player.sendMessage(button("←", "/hud edit move left").append(Component.space())
                 .append(button("→", "/hud edit move right")).append(Component.space())
                 .append(button("↑", "/hud edit move up")).append(Component.space())
-                .append(button("↓", "/hud edit move down")).append(Component.space())
-                .append(button("margó −", "/hud edit margin -")).append(Component.space())
-                .append(button("margó +", "/hud edit margin +")));
+                .append(button("↓", "/hud edit move down")));
+        if (selected == HudComponent.GLOBAL) {
+            player.sendMessage(button("margó −", "/hud edit margin -").append(Component.space())
+                    .append(button("margó +", "/hud edit margin +")));
+        }
         player.sendMessage(button("1px", "/hud edit step 1").append(Component.space())
                 .append(button("5px", "/hud edit step 5")).append(Component.space())
                 .append(button("10px", "/hud edit step 10")).append(Component.space())
@@ -214,7 +264,8 @@ public final class HudCommand implements BasicCommand {
         player.sendMessage(Component.text("Preview: " + session.preview().faction() + " / "
                 + session.preview().playerClass() + " / " + session.preview().state(), NamedTextColor.GRAY));
         player.sendMessage(button("visszavonás", "/hud edit undo").append(Component.space())
-                .append(button("reset", "/hud edit reset")).append(Component.space())
+                .append(button("elem reset", "/hud edit reset")).append(Component.space())
+                .append(button("minden reset", "/hud edit reset all")).append(Component.space())
                 .append(button("MENTÉS", "/hud edit save")).append(Component.space())
                 .append(button("ELVETÉS", "/hud edit cancel")));
         if (!visible) {
@@ -300,8 +351,11 @@ public final class HudCommand implements BasicCommand {
     }
 
     private static void editorSuggestions(final String[] args, final List<String> options) {
-        if (args.length == 2) options.addAll(List.of("status", "move", "margin", "step", "scale", "preset",
-                "preview", "undo", "reset", "save", "cancel"));
+        if (args.length == 2) options.addAll(List.of("status", "select", "previous", "next", "move",
+                "margin", "step", "scale", "visibility", "preset", "preview", "undo", "reset",
+                "save", "cancel"));
+        else if (args.length == 3 && "select".equalsIgnoreCase(args[1]))
+            options.addAll(HudComponent.editorTargets().stream().map(HudComponent::id).toList());
         else if (args.length == 3 && "move".equalsIgnoreCase(args[1]))
             options.addAll(List.of("left", "right", "up", "down"));
         else if (args.length == 3 && "margin".equalsIgnoreCase(args[1])) options.addAll(List.of("+", "-"));
@@ -310,6 +364,7 @@ public final class HudCommand implements BasicCommand {
         else if (args.length == 4 && "scale".equalsIgnoreCase(args[1])) options.addAll(List.of("up", "down"));
         else if (args.length == 3 && "preset".equalsIgnoreCase(args[1]))
             options.addAll(HudLayoutPreset.VALUES.stream().map(HudLayoutPreset::id).toList());
+        else if (args.length == 3 && "reset".equalsIgnoreCase(args[1])) options.add("all");
         else if (args.length == 3 && "preview".equalsIgnoreCase(args[1]))
             options.addAll(List.of("faction", "class", "state"));
         else if (args.length == 4 && "preview".equalsIgnoreCase(args[1])) {
