@@ -278,10 +278,13 @@ fázisonként, a terv szerinti sorrendben:
   REJECTED) és SELECT_PROFESSION_SPEC (canSelect-kapus use-case; respec
   szándékosan nem protokoll-action) — mindkét oldalon. Recept-katalógus
   tétel-szinten nem utazik: a recept-böngésző a product spec külön modulja.
-- ⬜ Recept-böngésző natív modul (product spec Modul 10): tétel-szintű
-  katalógus lapozó/query protokollt igényel (437 recept a 64-es limit
-  fölött), craft-action nélkül indul.
-- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..13), relic
+- ✅ Natív recept-böngésző (product spec Modul 10): BROWSE_RECIPES →
+  requestId-korrelált RECIPE_PAGE pull-modellben (a 437 elemes katalógus
+  nem fér a push-limitbe), a vanilla recept-könyv csempe-logikájával bitre
+  azonos tartalommal; lap-méret élő configból
+  (`client.limits.recipe-page-size`). Craft-action szándékosan nincs a
+  protokollban — a craft a vanilla recept-könyv tranzakciós útján marad.
+- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..14), relic
   attachment-broadcast, Phase 7-8 (party/boss/territory, FX/animáció).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,

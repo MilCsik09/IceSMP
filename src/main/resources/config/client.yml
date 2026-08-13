@@ -29,6 +29,8 @@ client:
     cast-messages-per-second: 8
     # UI-action kérések (SELECT_SPELL, TOGGLE_FAVORITE) másodpercenkénti plafonja.
     ui-actions-per-second: 10
+    # A RECIPE_PAGE válasz laponkénti recept-száma (a protokoll-limit 64 fölé nem engedi).
+    recipe-page-size: 16
   # Kézfogásban engedélyezhető presentation-capability-k. Minden érték alapból false:
   # egy capability csak akkor kapcsolható be, amikor a hozzá tartozó szerveroldali
   # projection/action fázis ténylegesen elkészült. A kliens hiába hirdet többet,
@@ -42,6 +44,7 @@ client:
     native-talents: false
     quest-journal: false
     native-professions: false
+    recipe-browser: false
     relic-render-v1: false
     advanced-fx-v1: false
     player-animation-v1: false

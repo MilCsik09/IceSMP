@@ -3,9 +3,10 @@ package hu.taliann.icesmp.client;
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
 import hu.taliann.icesmp.client.projection.ClientProfessionProjector;
 import hu.taliann.icesmp.client.projection.ClientQuestProjector;
-import hu.taliann.icesmp.client.projection.ClientTalentProjector;
+import hu.taliann.icesmp.client.projection.ClientRecipeProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
 import hu.taliann.icesmp.client.protocol.ActionResultPayload;
+import hu.taliann.icesmp.client.protocol.BrowseRecipesPayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
@@ -23,9 +24,11 @@ import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
 import hu.taliann.icesmp.client.protocol.TalentActionPayload;
 import hu.taliann.icesmp.client.protocol.TalentStatePayload;
+import hu.taliann.icesmp.client.projection.ClientTalentProjector;
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.gui.SpellbookGUI;
+import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -118,6 +121,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private volatile SpecializationManager specializationManager;
     private volatile ProfessionRecipeCatalog professionRecipeCatalog;
     private volatile ProfessionWeeklyGoalManager professionWeeklyGoal;
+    private volatile UniqueMaterialFactory uniqueMaterialFactory;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -207,6 +211,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             case ClientProtocol.MSG_TRACK_QUEST -> handleTrackQuest(player, envelope, now);
             case ClientProtocol.MSG_SELECT_PROFESSION -> handleSelectProfession(player, envelope, now);
             case ClientProtocol.MSG_SELECT_PROFESSION_SPEC -> handleSelectProfessionSpec(player, envelope, now);
+            case ClientProtocol.MSG_BROWSE_RECIPES -> handleBrowseRecipes(player, envelope, now);
             default -> {
                 droppedMalformed.incrementAndGet();
                 debug(() -> "unknown message type 0x" + Integer.toHexString(envelope.messageType())
@@ -549,6 +554,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 && session.capabilities().contains(ClientCapability.NATIVE_PROFESSIONS);
     }
 
+    private boolean recipeBrowserActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.recipe-browser", false)
+                && session.capabilities().contains(ClientCapability.RECIPE_BROWSER);
+    }
+
     /**
      * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja minden
      * online játékosra; a session/capability kapuzás itt történik, a HudManager a híd
@@ -856,11 +866,71 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     public void connectProfessions(final ProfessionManager professions,
                                    final SpecializationManager specializations,
                                    final ProfessionRecipeCatalog catalog,
-                                   final ProfessionWeeklyGoalManager weeklyGoal) {
+                                   final ProfessionWeeklyGoalManager weeklyGoal,
+                                   final UniqueMaterialFactory uniqueMaterials) {
         this.professionManager = professions;
         this.specializationManager = specializations;
         this.professionRecipeCatalog = catalog;
         this.professionWeeklyGoal = weeklyGoal;
+        this.uniqueMaterialFactory = uniqueMaterials;
+    }
+
+    /**
+     * BROWSE_RECIPES: pull-modellű query — a katalógus nem fér a push-protokoll
+     * lista-limitjébe, ezért a kliens lapot kér, a válasz requestId-korrelált
+     * RECIPE_PAGE. A lap a játékos régió-szálán épül (inventory-olvasás a have/need
+     * értékekhez), a lap-méret és a lap-index szerveroldalon clampelt.
+     */
+    private void handleBrowseRecipes(final Player player, final MessageEnvelope envelope, final long now) {
+        final ClientSession session = liveSession(player.getUniqueId(), envelope, now);
+        if (session == null) {
+            return;
+        }
+        if (!recipeBrowserActive(session)) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_BROWSE_RECIPES,
+                    ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
+            return;
+        }
+        if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.UI,
+                configManager.getInt("client.limits.ui-actions-per-second", 10), 1000L, now)) {
+            droppedRateLimited.incrementAndGet();
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_BROWSE_RECIPES,
+                    ClientProtocol.RESULT_RATE_LIMITED, "");
+            return;
+        }
+        final BrowseRecipesPayload request;
+        try {
+            request = BrowseRecipesPayload.decode(envelope.payload());
+        } catch (final ClientProtocolException malformed) {
+            droppedMalformed.incrementAndGet();
+            debug(() -> "malformed BROWSE_RECIPES from " + player.getName() + ": " + malformed.getMessage());
+            return;
+        }
+        final ProfessionManager professions = professionManager;
+        final ProfessionRecipeCatalog catalog = professionRecipeCatalog;
+        final UniqueMaterialFactory uniqueMaterials = uniqueMaterialFactory;
+        if (professions == null || catalog == null || uniqueMaterials == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_BROWSE_RECIPES,
+                    ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
+            return;
+        }
+        final ProfessionType profession = ProfessionType.fromId(request.professionId());
+        if (profession == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_BROWSE_RECIPES,
+                    ClientProtocol.RESULT_REJECTED, "UNKNOWN_PROFESSION");
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            final byte[] payload = ClientRecipeProjector.page(player, profession, request.page(),
+                    configManager.getInt("client.limits.recipe-page-size", 16),
+                    professions, catalog, uniqueMaterials).encode();
+            sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RECIPE_PAGE,
+                    session.generation(), session.nextOutboundSequence(), envelope.requestId(), payload));
+            debug(() -> "RECIPE_PAGE sent to " + player.getName() + " (" + payload.length + " bytes)");
+        }, null);
     }
 
     /**

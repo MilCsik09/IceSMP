@@ -8,8 +8,10 @@ import hu.taliann.icesmp.client.projection.ClientHudProjector;
 import hu.taliann.icesmp.client.projection.ClientRelicProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
 import hu.taliann.icesmp.client.protocol.ActionResultPayload;
+import hu.taliann.icesmp.client.protocol.BrowseRecipesPayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
+import hu.taliann.icesmp.client.protocol.RecipePagePayload;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
 import hu.taliann.icesmp.client.protocol.HudStatePayload;
 import hu.taliann.icesmp.managers.HudManager;
@@ -59,6 +61,7 @@ public final class ClientProtocolRegressionSuite {
         talentPayloads();
         questPayloads();
         professionPayloads();
+        recipePayloads();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -403,6 +406,35 @@ public final class ClientProtocolRegressionSuite {
             throw new AssertionError("oversized spec-option list accepted");
         } catch (final IllegalArgumentException expected) {
             // fail closed a kódolás előtt — a projektor aktív szakmákra szűr
+        }
+    }
+
+    private static void recipePayloads() throws Exception {
+        final BrowseRecipesPayload browse = new BrowseRecipesPayload("cook", 3);
+        check(browse.equals(BrowseRecipesPayload.decode(browse.encode())),
+                "BrowseRecipesPayload roundtrip");
+
+        final RecipePagePayload page = new RecipePagePayload("cook", 3, 5, 72,
+                List.of(new RecipePagePayload.Entry("gulyas", "Gulyás", "Étel",
+                        12, true, false, true, false, "", false, 2, false,
+                        List.of(new RecipePagePayload.Ingredient("Marhahús", 3, 1, false),
+                                new RecipePagePayload.Ingredient("Jégfűszer", 1, 0, true))),
+                        new RecipePagePayload.Entry("legendas_lakoma", "Legendás lakoma", "Étel",
+                                45, false, true, false, true, "RED (Perinfernicitas)", true, 1, false,
+                                List.of())));
+        check(page.equals(RecipePagePayload.decode(page.encode())), "RecipePagePayload roundtrip");
+        check(page.totalRecipes() == 72 && page.pageCount() == 5, "paging metadata preserved");
+
+        final List<RecipePagePayload.Entry> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new RecipePagePayload.Entry("r" + i, "", "", 0, true, false, true,
+                    false, "", false, 1, false, List.of()));
+        }
+        try {
+            new RecipePagePayload("cook", 0, 1, tooMany.size(), tooMany).encode();
+            throw new AssertionError("oversized recipe page accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt — a lap-méret szerveroldalon clampelt
         }
     }
 

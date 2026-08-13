@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 834 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 837 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1383,6 +1383,21 @@ szakmaváltás kliensről sem lehetséges, a slot felszabadítása admin-út mar
 use-case-en (szakma-, szint- és egyszeri-választás-kapu); respec kliens-actionként
 szándékosan nincs (fizetős SpecGUI-döntés). Mindkét action UI-rate-limit mögött fut,
 gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
+
+### Natív recept-böngésző (BROWSE_RECIPES → RECIPE_PAGE)
+
+A recept-katalógus (437 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
+ez az egyetlen pull-modellű domain: a kliens `BROWSE_RECIPES`-szel egy szakma egy
+lapját kéri, a válasz requestId-korrelált `RECIPE_PAGE` a `RECIPE_BROWSER` capability
++ `client.features.recipe-browser` kapu mögött. A lap a játékos régió-szálán épül
+(inventory-olvasás a have/need értékekhez), a lap-méret
+(`client.limits.recipe-page-size`, clamp 1..64) és a lap-index szerveroldalon clampelt,
+a kérés UI-rate-limit alatt fut. A csempe-tartalom a vanilla recept-könyv
+(`ProfessionRecipeGUI.buildTile`) logikájával bitre azonos feltételekből épül — a
+have-számlálás a megosztott GUI-helpereket használja (unique-anyag kizárással), a
+craftolhatóság a vanilla csempével egyezően szint + tervrajz + hozzávalók. Craft-action
+szándékosan NINCS a protokollban (a product spec szerint is későbbi külön döntés):
+a tényleges craft a vanilla recept-könyv tranzakciós útján marad.
 
 ### Session-életciklus és védelem
 

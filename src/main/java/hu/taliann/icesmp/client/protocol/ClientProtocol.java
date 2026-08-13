@@ -53,6 +53,7 @@ public final class ClientProtocol {
     public static final int MSG_TALENT_STATE = 0x28;
     public static final int MSG_QUEST_STATE = 0x29;
     public static final int MSG_PROFESSION_STATE = 0x2A;
+    public static final int MSG_RECIPE_PAGE = 0x2B;
 
     // Action-sáv (0x40-0x4F): kliens → szerver intent-kérések (a szerver mindent újravalidál).
     public static final int MSG_CAST_SLOT = 0x40;
@@ -62,6 +63,7 @@ public final class ClientProtocol {
     public static final int MSG_TRACK_QUEST = 0x44;
     public static final int MSG_SELECT_PROFESSION = 0x45;
     public static final int MSG_SELECT_PROFESSION_SPEC = 0x46;
+    public static final int MSG_BROWSE_RECIPES = 0x47;
 
     // Result-sáv (0x50-0x5F): szerver → kliens gépi action-válaszok (requestId-korrelációval).
     public static final int MSG_ACTION_RESULT = 0x50;
