@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 816 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 819 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1195,7 +1195,7 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
 | Projection | `client/projection/ClientHudProjector` (HudSnapshot → HudStatePayload, tiszta függvény) | nincs |
 | Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute) | igen |
@@ -1223,8 +1223,11 @@ ismeretlen üzenettípus, hamis hosszmező és trailing bájt egyaránt csendes 
 
 Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCOL_REJECT`,
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
-State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`. Action- és
-presentation-sávok a későbbi fázisokban nyílnak.
+State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
+`0x21 ABILITY_KIT_STATE`. Action-sáv (0x40–0x4F, kliens → szerver intent): `0x40 CAST_SLOT`.
+Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
+`0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
+RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv később nyílik.
 
 ### Kézfogás és capability-k
 
@@ -1262,6 +1265,29 @@ Routing (a `hud.refresh-ticks` kadenciájú HUD-tickből, a játékos régió-sz
   a híd típusát nem ismeri; a bekötés a core-ban történik). A világesemény-bossbarok és a
   tablist maradnak. Resync a BEGIN/END közé teljes friss HUD-state-et küld.
 
+### Ability bar és CAST_SLOT
+
+A kliens SOSEM küld spell-id-t: a `CAST_SLOT` a futásidőben számolt aktív kit 1-alapú
+pozíciójára mutat, a spell-feloldás és minden validáció a szerveré. A kérés a
+`KEYBIND_CAST` capability + `client.features.keybind-cast` élő kapu + saját rate limit
+(`client.limits.cast-messages-per-second`) mögött, a játékos régió-szálán fut be az
+`AbilityCatalystListener.castActiveKitSlot` belépőn — ez UGYANAZT a tranzakciós
+cast-magot futtatja (cooldown → canCast → class-gate → költség-rezerválás → végrehajtás
+→ commit), mint a katalizátor-input, azonos játékos-üzenetekkel; második cast-útvonal
+nem létezik. Vanilla parity kapuk a kliens-útvonalon is: használható Lélekkapocs a
+főkézben, PlayerProfile-session-készenlét és a közös 120 ms-os cast-debounce — a
+kliensmod nem kaphat item-követelmény nélküli castolást. A válasz gépi `ACTION_RESULT`
+(requestId-korrelációval), sikeres cast után azonnali friss kit-state-tel.
+
+Az `ABILITY_KIT_STATE` a kit display-projekciója (spellId, név, költség-szöveg, teljes
+és maradék cooldown, kiválasztott-jelölés) az `ABILITY_BAR` capability +
+`client.features.ability-bar` kapu mögött. A push change-signature alapú: a
+másodpercenként fogyó maradék-cooldown NEM generál forgalmat (a kliens érkezéskor
+readyAt-ra számolja át és lokálisan interpolál — a vizuális timer nem authority);
+összetétel-, kiválasztás- és cooldown-állapotváltás (indul/lejár) küld új state-et.
+
+### Session-életciklus és védelem
+
 - A registry (`UUID → ClientSession`) nem durable; quit/kick a központi
   `PlayerSessionCleanupListener` úton takarít (a híd `PlayerStateCleanup`), disable a
   `ClientBridge.unregister` lépésben (a bent hagyott channel-listener a régi core-példányt
@@ -1270,7 +1296,8 @@ Routing (a `hud.refresh-ticks` kadenciájú HUD-tickből, a játékos régió-sz
   + szigorúan monoton sequence mellett dolgozódik fel; minden más stale-drop. Reconnect után
   a régi generation üzenetei így tartalmi validáció nélkül kiesnek.
 - Rate limit játékosonként és kategóriánként (`client.limits.control-messages-per-second`,
-  resync-hez `client.limits.resync-cooldown-ms`); túllépés csendes drop + számláló,
+  resync-hez `client.limits.resync-cooldown-ms`, CAST_SLOT-hoz
+  `client.limits.cast-messages-per-second`); túllépés csendes drop + számláló,
   automatikus büntetés nélkül.
 - Folia: a plugin-message callback szál-kontextusa nem garantált, ezért a híd a Playert csak
   a saját ütemezőjén érinti (`player.getScheduler().run` a kimenő küldésnél); a registry és a

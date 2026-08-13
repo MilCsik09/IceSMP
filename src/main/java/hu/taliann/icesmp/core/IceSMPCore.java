@@ -1619,6 +1619,7 @@ public final class IceSMPCore {
         // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
         hudManager.setClientHudRoute(clientBridge);
         clientBridge.connectHudSnapshots(hudManager::snapshot);
+        clientBridge.connectAbilityKit(abilityCatalystListener, spellRegistry);
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();

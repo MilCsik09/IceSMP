@@ -247,9 +247,12 @@ fázisonként, a terv szerinti sorrendben:
   `ClientHudRoute` seamen át — lásd „Native HUD routing” az
   ARCHITECTURE-ben. ⬜ Fabric-oldali natív HUD-renderer; a
   `client.features.native-hud` kapu éles nyitása csak a kliens-release-szel.
-- ⬜ Ability bar + `CAST_SLOT` keybind casting — ELŐFELTÉTEL: a
-  class/spell/cast hardening (PR #115) integrálva, közös canonical cast
-  entrypointtal; addig a `keybind-cast` kapu zárva.
+- ✅ Ability bar + `CAST_SLOT` szerveroldal: publikus slot-cast belépő a
+  canonical cast-magon (`castActiveKitSlot` — vanilla parity kapukkal:
+  katalizátor a főkézben, profil-készenlét, közös debounce),
+  `ABILITY_KIT_STATE` change-signature push, gépi `ACTION_RESULT`,
+  CAST-rate-limit — lásd „Ability bar és CAST_SLOT” az ARCHITECTURE-ben.
+  A `keybind-cast`/`ability-bar` kapuk élés nyitása a kliens-release-szel.
 - ⬜ Spellbook/Profile natív screenek (query + action service extraction),
   majd relic renderer és a további modulok a product spec sorrendjében.
 

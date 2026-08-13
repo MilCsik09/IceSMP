@@ -1,6 +1,9 @@
 package hu.taliann.icesmp.client;
 
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
+import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
+import hu.taliann.icesmp.client.protocol.ActionResultPayload;
+import hu.taliann.icesmp.client.protocol.CastSlotPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
@@ -8,15 +11,19 @@ import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.ServerHello;
+import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
+import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
+import hu.taliann.icesmp.spells.Spell;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -54,11 +61,17 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private volatile Function<UUID, HudManager.HudSnapshot> hudSnapshotSource;
 
     /**
-     * Az utoljára kiküldött HUD-payload játékosonként: a HUD-tick másodpercenként fut,
-     * de a vezetékre csak tényleges változás megy ki (event-driven budget, terv §39).
-     * Új kézfogás/resync törli, így a friss session mindig teljes state-tel indul.
+     * Az utoljára kiküldött HUD-payload és kit-signature játékosonként: a HUD-tick
+     * másodpercenként fut, de a vezetékre csak tényleges változás megy ki (event-driven
+     * budget, terv §39). Új kézfogás/resync törli, így a friss session mindig teljes
+     * state-tel indul.
      */
     private final ConcurrentHashMap<UUID, byte[]> lastHudState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastKitSignature = new ConcurrentHashMap<>();
+
+    /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
+    private volatile AbilityCatalystListener abilityCatalyst;
+    private volatile SpellRegistry spellRegistry;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -96,6 +109,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         sessions.clear();
         rateLimiter.clear();
         lastHudState.clear();
+        lastKitSignature.clear();
     }
 
     @Override
@@ -134,6 +148,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             case ClientProtocol.MSG_CLIENT_HELLO -> handleHello(player, envelope, now);
             case ClientProtocol.MSG_PING -> handlePing(player, envelope, now);
             case ClientProtocol.MSG_RESYNC_REQUEST -> handleResyncRequest(player, envelope, now);
+            case ClientProtocol.MSG_CAST_SLOT -> handleCastSlot(player, envelope, now);
             default -> {
                 droppedMalformed.incrementAndGet();
                 debug(() -> "unknown message type 0x" + Integer.toHexString(envelope.messageType())
@@ -176,10 +191,18 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 session.generation(), session.nextOutboundSequence(), envelope.requestId(), serverHello.encode()));
         debug(() -> "handshake accepted for " + player.getName() + " (client " + hello.clientVersion()
                 + ", protocol " + accepted.selectedProtocol() + ", capabilities " + accepted.capabilities() + ")");
-        // Az új session teljes kezdő state-et kap; a következő HUD-tickre nem várunk,
-        // ha már van kész snapshot.
+        // Az új session teljes kezdő state-et kap; a következő HUD-tickre nem várunk.
+        // A state-építés player-állapotot olvas, ezért a játékos régió-szálán fut; a
+        // generation-ellenőrzés védi ki a közben történt re-handshake-et.
         lastHudState.remove(player.getUniqueId());
-        pushHudStateIfAvailable(player);
+        lastKitSignature.remove(player.getUniqueId());
+        final long acceptedGeneration = session.generation();
+        player.getScheduler().run(plugin, task -> {
+            final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
+            if (live != null && live.generation() == acceptedGeneration && player.isOnline()) {
+                pushFullState(player, live);
+            }
+        }, null);
     }
 
     private void handlePing(final Player player, final MessageEnvelope envelope, final long now) {
@@ -204,6 +227,80 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         sendResync(player, session, envelope.requestId());
     }
 
+    /**
+     * CAST_SLOT: a kliens csak pozíciót kér; a spell-feloldást és a teljes tranzakciós
+     * validációt a canonical cast-koordinátor ({@code castActiveKitSlot}) végzi a
+     * játékos régió-szálán — pontosan az az útvonal, amin a katalizátor-input is fut.
+     * A kliens minden kérésre gépi ACTION_RESULT választ kap (requestId-korrelációval),
+     * sikeres cast után azonnali friss kit-state-tel (cooldown-start).
+     */
+    private void handleCastSlot(final Player player, final MessageEnvelope envelope, final long now) {
+        final ClientSession session = liveSession(player.getUniqueId(), envelope, now);
+        if (session == null) {
+            return;
+        }
+        if (!configManager.getBoolean("client.features.keybind-cast", false)
+                || !session.capabilities().contains(ClientCapability.KEYBIND_CAST)) {
+            sendActionResult(player, session, envelope.requestId(),
+                    ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
+            return;
+        }
+        if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.CAST,
+                configManager.getInt("client.limits.cast-messages-per-second", 8), 1000L, now)) {
+            droppedRateLimited.incrementAndGet();
+            sendActionResult(player, session, envelope.requestId(),
+                    ClientProtocol.RESULT_RATE_LIMITED, "");
+            return;
+        }
+        final CastSlotPayload request;
+        try {
+            request = CastSlotPayload.decode(envelope.payload());
+        } catch (final ClientProtocolException malformed) {
+            droppedMalformed.incrementAndGet();
+            debug(() -> "malformed CAST_SLOT from " + player.getName() + ": " + malformed.getMessage());
+            return;
+        }
+        final AbilityCatalystListener catalyst = abilityCatalyst;
+        if (catalyst == null) {
+            sendActionResult(player, session, envelope.requestId(),
+                    ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            final AbilityCatalystListener.SlotCastOutcome outcome =
+                    catalyst.castActiveKitSlot(player, request.slot());
+            sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ACTION_RESULT,
+                    session.generation(), session.nextOutboundSequence(), envelope.requestId(),
+                    new ActionResultPayload(ClientProtocol.MSG_CAST_SLOT,
+                            mapCastResult(outcome.status()), outcome.status().name()).encode()));
+            if (abilityBarActive(session)) {
+                pushKitNow(player, session, true);
+            }
+        }, null);
+    }
+
+    private static String mapCastResult(final AbilityCatalystListener.SlotCastStatus status) {
+        return switch (status) {
+            case SUCCESS -> ClientProtocol.RESULT_SUCCESS;
+            case NO_CATALYST -> ClientProtocol.RESULT_NOT_ALLOWED;
+            case PROFILE_NOT_READY, EMPTY_KIT, INVALID_SLOT -> ClientProtocol.RESULT_INVALID_STATE;
+            case DEBOUNCED -> ClientProtocol.RESULT_RATE_LIMITED;
+            case ON_COOLDOWN, NOT_READY, CLASS_GATE_BLOCKED -> ClientProtocol.RESULT_NOT_READY;
+            case INSUFFICIENT_COST, NOT_COMMITTED -> ClientProtocol.RESULT_REJECTED;
+            case EXECUTION_FAILED -> ClientProtocol.RESULT_SERVER_ERROR;
+        };
+    }
+
+    private void sendActionResult(final Player player, final ClientSession session, final UUID requestId,
+                                  final String result, final String reason) {
+        send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ACTION_RESULT,
+                session.generation(), session.nextOutboundSequence(), requestId,
+                new ActionResultPayload(ClientProtocol.MSG_CAST_SLOT, result, reason).encode()));
+    }
+
     /** Admin-oldali kényszerített resync (/icesmp client resync). */
     public boolean requestResync(final Player target) {
         if (!enabled()) {
@@ -219,16 +316,24 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     /**
      * Resync-szerződés: a BEGIN minden kliensoldali cache eldobását jelenti, a két
-     * jelzés között a bekötött state-domainek teljes friss state-et küldenek (jelenleg
-     * a HUD), az END zárja a kört.
+     * jelzés között a bekötött state-domainek teljes friss state-et küldenek (HUD +
+     * ability kit), az END zárja a kört. A teljes sor a játékos régió-szálán, egyetlen
+     * taskban megy ki, mert a state-építés player-állapotot olvas, és a BEGIN/state/END
+     * sorrend nem eshet szét külön ütemezett küldésekre.
      */
     private void sendResync(final Player player, final ClientSession session, final UUID requestId) {
-        send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_BEGIN,
-                session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
-        lastHudState.remove(player.getUniqueId());
-        pushHudStateIfAvailable(player);
-        send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
-                session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_BEGIN,
+                    session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
+            lastHudState.remove(player.getUniqueId());
+            lastKitSignature.remove(player.getUniqueId());
+            pushFullState(player, session);
+            sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
+                    session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
+        }, null);
     }
 
     /** {@link HudManager.ClientHudRoute}: a HUD-tick és a vanilla-suppression kapuja. */
@@ -242,41 +347,101 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 .orElse(false);
     }
 
+    private boolean abilityBarActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.ability-bar", false)
+                && session.capabilities().contains(ClientCapability.ABILITY_BAR);
+    }
+
     /**
-     * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja, a
-     * kiküldés a meglévő scheduler-biztos {@code send} úton megy. A capability-kaput a
-     * hívó {@code nativeHudActive} már ellenőrizte; itt csak a session-t és a dedupe-ot
-     * kezeljük.
+     * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja minden
+     * online játékosra; a session/capability kapuzás itt történik, a HudManager a híd
+     * belső szabályait nem ismeri.
      */
     @Override
-    public void pushHudState(final Player player, final HudManager.HudSnapshot snapshot) {
+    public void pushClientState(final Player player, final HudManager.HudSnapshot snapshot) {
         final ClientSession session = sessions.find(player.getUniqueId()).orElse(null);
-        if (session == null || snapshot == null) {
+        if (session == null) {
             return;
         }
+        if (snapshot != null && nativeHudActive(player.getUniqueId())) {
+            pushHudNow(player, session, snapshot);
+        }
+        if (abilityBarActive(session)) {
+            pushKitNow(player, session, false);
+        }
+    }
+
+    /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
+    private void pushFullState(final Player player, final ClientSession session) {
+        final Function<UUID, HudManager.HudSnapshot> source = hudSnapshotSource;
+        if (source != null && nativeHudActive(player.getUniqueId())) {
+            final HudManager.HudSnapshot snapshot = source.apply(player.getUniqueId());
+            if (snapshot != null) {
+                pushHudNow(player, session, snapshot);
+            }
+        }
+        if (abilityBarActive(session)) {
+            pushKitNow(player, session, true);
+        }
+    }
+
+    private void pushHudNow(final Player player, final ClientSession session,
+                            final HudManager.HudSnapshot snapshot) {
         final byte[] payload = ClientHudProjector.project(snapshot).encode();
         final byte[] previous = lastHudState.put(player.getUniqueId(), payload);
         if (previous != null && Arrays.equals(previous, payload)) {
             return;
         }
-        send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_HUD_STATE,
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_HUD_STATE,
                 session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
         debug(() -> "HUD_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
     }
 
-    private void pushHudStateIfAvailable(final Player player) {
-        final Function<UUID, HudManager.HudSnapshot> source = hudSnapshotSource;
-        if (source == null || !nativeHudActive(player.getUniqueId())) {
+    /**
+     * Ability-kit state a bar-hoz; player-szálon hívandó (a kit-feloldás élő
+     * player-állapotot olvas). A dedupe a normalizált change-signature-ön fut: a
+     * másodpercenként fogyó maradék-cooldown nem generál forgalmat, csak összetétel-,
+     * kiválasztás- és cooldown-állapotváltás (a kliens interpolál).
+     */
+    private void pushKitNow(final Player player, final ClientSession session, final boolean force) {
+        final AbilityCatalystListener catalyst = abilityCatalyst;
+        final SpellRegistry registry = spellRegistry;
+        if (catalyst == null || registry == null) {
             return;
         }
-        final HudManager.HudSnapshot snapshot = source.apply(player.getUniqueId());
-        if (snapshot != null) {
-            pushHudState(player, snapshot);
+        final List<String> active = catalyst.getActiveSpellIds(player);
+        final String selectedId = catalyst.getSelectedSpellId(player);
+        final List<AbilityKitPayload.Entry> entries = new ArrayList<>(active.size());
+        for (final String spellId : active) {
+            final Spell spell = registry.getById(spellId);
+            if (spell == null) {
+                continue;
+            }
+            entries.add(new AbilityKitPayload.Entry(spellId, spell.getName(),
+                    catalyst.getDisplayedCostText(player, spell),
+                    catalyst.getEffectiveCooldownMs(player, spell),
+                    Math.max(0L, catalyst.getRemainingCooldownMs(player, spell)),
+                    spellId.equals(selectedId)));
         }
+        final AbilityKitPayload payload = new AbilityKitPayload(entries);
+        final byte[] signature = payload.changeSignature().encode();
+        final byte[] previous = lastKitSignature.put(player.getUniqueId(), signature);
+        if (!force && previous != null && Arrays.equals(previous, signature)) {
+            return;
+        }
+        final byte[] wirePayload = payload.encode();
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ABILITY_KIT_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wirePayload));
+        debug(() -> "ABILITY_KIT_STATE sent to " + player.getName() + " (" + entries.size() + " slots)");
     }
 
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
         this.hudSnapshotSource = source;
+    }
+
+    public void connectAbilityKit(final AbilityCatalystListener catalyst, final SpellRegistry registry) {
+        this.abilityCatalyst = catalyst;
+        this.spellRegistry = registry;
     }
 
     /** Session-, generation- és sequence-kapu minden kézfogás utáni üzenetre. */
@@ -330,6 +495,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }, null);
     }
 
+    /** Küldés a játékos régió-szálán belülről — a hívó felelőssége a szál-kontextus. */
+    private void sendNow(final Player player, final MessageEnvelope envelope) {
+        player.sendPluginMessage(plugin, ClientProtocol.CHANNEL, ClientMessageCodec.encodeEnvelope(envelope));
+    }
+
     private void debug(final java.util.function.Supplier<String> message) {
         if (configManager.getBoolean("client.debug", false)) {
             plugin.getLogger().info("[ClientBridge] " + message.get());
@@ -358,5 +528,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         sessions.invalidate(playerId);
         rateLimiter.clearPlayer(playerId);
         lastHudState.remove(playerId);
+        lastKitSignature.remove(playerId);
     }
 }

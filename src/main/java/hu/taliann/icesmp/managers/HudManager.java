@@ -147,7 +147,8 @@ public final class HudManager {
     public interface ClientHudRoute {
         boolean nativeHudActive(UUID playerId);
 
-        void pushHudState(Player player, HudSnapshot snapshot);
+        /** Tickenkénti state-publikálási lehetőség; a kapuzás (session/capability) a route dolga. */
+        void pushClientState(Player player, HudSnapshot snapshot);
     }
 
     private volatile ClientHudRoute clientHudRoute;
@@ -657,8 +658,8 @@ public final class HudManager {
                 final HudSnapshot snapshot = buildSnapshot(player);
                 snapshots.put(player.getUniqueId(), snapshot);
                 final ClientHudRoute route = clientHudRoute;
-                if (route != null && route.nativeHudActive(player.getUniqueId())) {
-                    route.pushHudState(player, snapshot);
+                if (route != null) {
+                    route.pushClientState(player, snapshot);
                 }
                 renderIceSmpHud(player, snapshot);
                 update(player);

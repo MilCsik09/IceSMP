@@ -44,6 +44,22 @@ public final class ClientProtocol {
 
     // State-sáv (0x20-0x3F): szerver → kliens read-only projekciók.
     public static final int MSG_HUD_STATE = 0x20;
+    public static final int MSG_ABILITY_KIT_STATE = 0x21;
+
+    // Action-sáv (0x40-0x4F): kliens → szerver intent-kérések (a szerver mindent újravalidál).
+    public static final int MSG_CAST_SLOT = 0x40;
+
+    // Result-sáv (0x50-0x5F): szerver → kliens gépi action-válaszok (requestId-korrelációval).
+    public static final int MSG_ACTION_RESULT = 0x50;
+
+    // Gépi action-eredménykódok; a lokalizált szöveg kliensoldali felelősség.
+    public static final String RESULT_SUCCESS = "SUCCESS";
+    public static final String RESULT_REJECTED = "REJECTED";
+    public static final String RESULT_NOT_READY = "NOT_READY";
+    public static final String RESULT_INVALID_STATE = "INVALID_STATE";
+    public static final String RESULT_NOT_ALLOWED = "NOT_ALLOWED";
+    public static final String RESULT_RATE_LIMITED = "RATE_LIMITED";
+    public static final String RESULT_SERVER_ERROR = "SERVER_ERROR";
 
     public static final String REJECT_INVALID_HELLO = "INVALID_HELLO";
     public static final String REJECT_PROTOCOL_INCOMPATIBLE = "PROTOCOL_INCOMPATIBLE";

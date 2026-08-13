@@ -1249,9 +1249,10 @@ Jogosultságvédett dev-itemek, itemadás, debug/inspect és a fejlesztői tárg
 
 Az opcionális Fabric kliensmod (IceSMP Client) szerveroldali alapja: plugin messaging transport
 (`icesmp:client`), verzió- és capability-kézfogás, session-kezelés, rate limit, admin-diagnosztika,
-és az első state-projekció: a natív HUD routing (HUD_STATE — a meglévő HUD-snapshot sorosítása,
-change-driven push, vanilla-HUD-elhallgatás a routolt játékosnál). A kliens sosem authority, a
-vanilla kliens + kötelező resource pack teljes értékű marad.
+state-projekciók (HUD_STATE natív HUD routinggal és vanilla-HUD-elhallgatással;
+ABILITY_KIT_STATE az ability barhoz) és az első action-út: CAST_SLOT keybind-cast, ami a
+katalizátorral közös canonical cast-magon fut, azonos parity-kapukkal. A kliens sosem authority,
+a vanilla kliens + kötelező resource pack teljes értékű marad.
 
 - **Így találkozol vele:** `/icesmp client <stats|név>`, `/icesmp client resync <név>`; a játékos
   számára láthatatlan, amíg nincs IceSMP Client modja.

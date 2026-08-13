@@ -4,6 +4,9 @@ import hu.taliann.icesmp.classspec.integration.ClassHudMetric;
 import hu.taliann.icesmp.classspec.integration.ClassHudSlot;
 import hu.taliann.icesmp.classspec.integration.ClassHudState;
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
+import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
+import hu.taliann.icesmp.client.protocol.ActionResultPayload;
+import hu.taliann.icesmp.client.protocol.CastSlotPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
 import hu.taliann.icesmp.client.protocol.HudStatePayload;
@@ -37,6 +40,7 @@ public final class ClientProtocolRegressionSuite {
         hudStateRoundtrip();
         hudStateLimits();
         hudProjectorMapping();
+        abilityKitAndActionPayloads();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -171,6 +175,47 @@ public final class ClientProtocolRegressionSuite {
             throw new AssertionError("projected HUD state must decode", unexpected);
         }
         check(projected.equals(roundtripped), "projected HUD state roundtrip");
+    }
+
+    private static void abilityKitAndActionPayloads() throws Exception {
+        final CastSlotPayload castSlot = new CastSlotPayload(3);
+        check(castSlot.equals(CastSlotPayload.decode(castSlot.encode())), "CastSlotPayload roundtrip");
+
+        final ActionResultPayload result = new ActionResultPayload(
+                ClientProtocol.MSG_CAST_SLOT, ClientProtocol.RESULT_NOT_READY, "ON_COOLDOWN");
+        check(result.equals(ActionResultPayload.decode(result.encode())), "ActionResultPayload roundtrip");
+
+        final AbilityKitPayload kit = new AbilityKitPayload(List.of(
+                new AbilityKitPayload.Entry("frost_strike", "Fagycsapás", "30 Rúnaerő",
+                        8000L, 4000L, true),
+                new AbilityKitPayload.Entry("obliterate", "Eltörlés", "", 12000L, 0L, false)));
+        check(kit.equals(AbilityKitPayload.decode(kit.encode())), "AbilityKitPayload roundtrip");
+
+        // A change-signature a fogyó maradékra invariáns, a cooldown-állapotváltásra nem:
+        // így a vezetékre nem megy másodpercenkénti timer-frissítés, de az indulás/lejárás igen.
+        final AbilityKitPayload sameButTicking = new AbilityKitPayload(List.of(
+                new AbilityKitPayload.Entry("frost_strike", "Fagycsapás", "30 Rúnaerő",
+                        8000L, 900L, true),
+                new AbilityKitPayload.Entry("obliterate", "Eltörlés", "", 12000L, 0L, false)));
+        check(java.util.Arrays.equals(kit.changeSignature().encode(),
+                sameButTicking.changeSignature().encode()), "ticking cooldown does not change signature");
+        final AbilityKitPayload expired = new AbilityKitPayload(List.of(
+                new AbilityKitPayload.Entry("frost_strike", "Fagycsapás", "30 Rúnaerő",
+                        8000L, 0L, true),
+                new AbilityKitPayload.Entry("obliterate", "Eltörlés", "", 12000L, 0L, false)));
+        check(!java.util.Arrays.equals(kit.changeSignature().encode(),
+                expired.changeSignature().encode()), "cooldown expiry changes signature");
+
+        final List<AbilityKitPayload.Entry> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new AbilityKitPayload.Entry("s" + i, "", "", 0L, 0L, false));
+        }
+        try {
+            new AbilityKitPayload(tooMany).encode();
+            throw new AssertionError("oversized kit accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt
+        }
     }
 
     private static void malformedEnvelopeRejected() {

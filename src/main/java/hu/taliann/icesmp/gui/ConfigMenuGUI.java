@@ -342,7 +342,8 @@ public final class ConfigMenuGUI {
                 Entry.toggle("client.enabled", "Kliens-bridge (rollback-kapcsoló)"),
                 Entry.toggle("client.debug", "Bridge debug-napló"),
                 Entry.integer("client.limits.control-messages-per-second", "Control-üzenet plafon (db/mp)", 5, 1, 200),
-                Entry.integer("client.limits.resync-cooldown-ms", "Resync-szünet (ms)", 500, 500, 60000))));
+                Entry.integer("client.limits.resync-cooldown-ms", "Resync-szünet (ms)", 500, 500, 60000),
+                Entry.integer("client.limits.cast-messages-per-second", "CAST_SLOT plafon (db/mp)", 1, 1, 40))));
         return categories;
     }
 

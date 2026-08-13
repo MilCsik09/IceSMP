@@ -428,6 +428,53 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return hook == null ? PreparationResult.READY : hook.preparation().prepare(player, spell);
     }
 
+    /** A kliens-eredetű slot-cast gépi kimenete; a játékos-üzeneteket a közös mag küldi. */
+    public enum SlotCastStatus {
+        SUCCESS, NO_CATALYST, PROFILE_NOT_READY, EMPTY_KIT, INVALID_SLOT, DEBOUNCED,
+        ON_COOLDOWN, NOT_READY, CLASS_GATE_BLOCKED, INSUFFICIENT_COST, EXECUTION_FAILED,
+        NOT_COMMITTED
+    }
+
+    public record SlotCastOutcome(SlotCastStatus status, String spellId) {
+    }
+
+    /**
+     * A Client Bridge CAST_SLOT belépője: UGYANAZT a tranzakciós magot futtatja, mint a
+     * katalizátor-input — nem keletkezik második cast-útvonal. A vanilla parity kapui
+     * (használható katalizátor a főkézben, profil-session-készenlét, közös debounce) itt
+     * is kötelezőek, különben a kliensmod item-követelmény nélküli castolást kapna. A
+     * slot a futásidőben számolt aktív kit 1-alapú indexe; a hívás NEM módosítja a
+     * katalizátorral kiválasztott spellt. A hívó felelőssége a játékos régió-szálán futni.
+     */
+    public SlotCastOutcome castActiveKitSlot(final Player player, final int slotIndex) {
+        if (!isUsableCatalyst(player, player.getInventory().getItemInMainHand())) {
+            return new SlotCastOutcome(SlotCastStatus.NO_CATALYST, "");
+        }
+        if (!profileRuntimeReady(player)) {
+            return new SlotCastOutcome(SlotCastStatus.PROFILE_NOT_READY, "");
+        }
+        final List<String> active = resolveActiveSpellIds(player);
+        if (active.isEmpty()) {
+            player.sendActionBar(messageManager.getMessage(
+                    "catalyst.no-unlocked", "<red>Még nincs használható aktív képességed.</red>"));
+            return new SlotCastOutcome(SlotCastStatus.EMPTY_KIT, "");
+        }
+        if (slotIndex < 1 || slotIndex > active.size()) {
+            return new SlotCastOutcome(SlotCastStatus.INVALID_SLOT, "");
+        }
+        final Spell spell = spellRegistry.getById(active.get(slotIndex - 1));
+        if (spell == null) {
+            return new SlotCastOutcome(SlotCastStatus.INVALID_SLOT, "");
+        }
+        final long now = System.currentTimeMillis();
+        final long previous = castDebounce.getOrDefault(player.getUniqueId(), 0L);
+        if (now - previous < 120L) {
+            return new SlotCastOutcome(SlotCastStatus.DEBOUNCED, spell.getId());
+        }
+        castDebounce.put(player.getUniqueId(), now);
+        return new SlotCastOutcome(castResolvedSpell(player, spell), spell.getId());
+    }
+
     private void castSelectedSpell(final Player player) {
         final List<String> active = resolveActiveSpellIds(player);
         if (active.isEmpty()) {
@@ -442,23 +489,33 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                     "<red>A kiválasztott képesség nem érhető el az aktív specializationben.</red>"));
             return;
         }
+        castResolvedSpell(player, selected);
+    }
+
+    /**
+     * A megosztott tranzakciós cast-mag (validáció → költség-rezerválás → végrehajtás →
+     * commit); a katalizátor-út és a kliens-eredetű slot-cast is ide fut be. A
+     * visszatérési státusz csak gépi jelentés a kliens-útnak — minden játékos-üzenet
+     * itt, mindkét útvonalra azonosan megy ki.
+     */
+    private SlotCastStatus castResolvedSpell(final Player player, final Spell selected) {
         final long now = System.currentTimeMillis();
         final long remainingMs = getRemainingCooldown(player, selected, now);
         if (remainingMs > 0L) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.cooldown", "<red>Várj még {seconds} mp-et!</red>",
                     Map.of("seconds", String.valueOf((long) Math.ceil(remainingMs / 1000.0D)))));
-            return;
+            return SlotCastStatus.ON_COOLDOWN;
         }
         if (!selected.canCast(player)) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.not-ready", "<red>Most nem tudod használni ezt a képességet.</red>"));
-            return;
+            return SlotCastStatus.NOT_READY;
         }
 
         final ClassCastHook hook = classHook(player);
         final PreparationResult preparation = prepareClassCast(player, selected, hook);
-        if (preparation != PreparationResult.READY) return;
+        if (preparation != PreparationResult.READY) return SlotCastStatus.CLASS_GATE_BLOCKED;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
@@ -468,7 +525,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                     "catalyst.no-cost", "<red>Nincs elég {resource}! Szükséges: {amount}</red>",
                     Map.of("resource", resolveResourceName(player, selected),
                             "amount", String.valueOf(displayedCost(selected)))));
-            return;
+            return SlotCastStatus.INSUFFICIENT_COST;
         }
 
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
@@ -491,11 +548,11 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                     + selected.getId() + ": " + rootMessage(failure));
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.execution-failed", "<red>A képesség végrehajtása meghiúsult; a költség visszajárt.</red>"));
-            return;
+            return SlotCastStatus.EXECUTION_FAILED;
         }
         if (outcome == null || !outcome.commitsCast()) {
             reservation.rollback();
-            return;
+            return SlotCastStatus.NOT_COMMITTED;
         }
         reservation.commit();
 
@@ -544,6 +601,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         lastCastTime.put(playerId, now);
         final hu.taliann.icesmp.managers.StatsManager stats = statsManager;
         if (stats != null) stats.recordSpellCast(playerId);
+        return SlotCastStatus.SUCCESS;
     }
 
     private final class CostReservation {
@@ -881,6 +939,17 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public long getRemainingCooldownMs(final Player player, final Spell spell) {
         return getRemainingCooldown(player, spell, System.currentTimeMillis());
+    }
+
+    /** Mastery-vel skálázott teljes cooldown-hossz — kit-projekcióhoz (sáv-arányhoz). */
+    public long getEffectiveCooldownMs(final Player player, final Spell spell) {
+        return effectiveCooldownMillis(player, spell);
+    }
+
+    /** Megjelenítési költség-szöveg a resource-rendszer figyelembevételével; üres, ha ingyenes. */
+    public String getDisplayedCostText(final Player player, final Spell spell) {
+        final int cost = displayedCost(spell);
+        return cost <= 0 ? "" : cost + " " + resolveResourceName(player, spell);
     }
 
     public int getMasteryRank(final Player player, final String spellId) {

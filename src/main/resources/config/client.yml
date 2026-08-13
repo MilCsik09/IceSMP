@@ -24,6 +24,9 @@ client:
     control-messages-per-second: 20
     # Két kliens-kezdeményezésű resync közti kötelező szünet.
     resync-cooldown-ms: 2000
+    # CAST_SLOT kérések másodpercenkénti plafonja játékosonként; fölötte gépi
+    # RATE_LIMITED válasz megy vissza (a gameplay-debounce ettől független).
+    cast-messages-per-second: 8
   # Kézfogásban engedélyezhető presentation-capability-k. Minden érték alapból false:
   # egy capability csak akkor kapcsolható be, amikor a hozzá tartozó szerveroldali
   # projection/action fázis ténylegesen elkészült. A kliens hiába hirdet többet,
