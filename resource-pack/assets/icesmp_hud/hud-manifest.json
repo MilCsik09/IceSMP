@@ -87,7 +87,7 @@
   ],
   "fixed_segment_count": 12,
   "wallet_slots": 4,
-  "layout_color_payload_bits": 12,
+  "layout_color_payload_bits": 13,
   "layout_y_offset_range": [
     -256,
     255
@@ -100,7 +100,15 @@
     1.25,
     1.4,
     1.6,
-    1.8
+    1.8,
+    2.0,
+    2.2,
+    2.4,
+    2.6,
+    2.8,
+    3.0,
+    3.25,
+    3.5
   ],
   "vanilla_health_hidden": false,
   "vanilla_armor_hidden": false

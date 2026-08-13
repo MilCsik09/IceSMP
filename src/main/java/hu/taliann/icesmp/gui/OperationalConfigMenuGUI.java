@@ -51,7 +51,9 @@ public final class OperationalConfigMenuGUI {
                 Material.COMPASS, List.of(
                 ConfigMenuGUI.Entry.toggle("hud.enabled", "IceSMP HUD"),
                 ConfigMenuGUI.Entry.toggle("hud.icesmp-hud.enabled", "First-party HUD"),
-                ConfigMenuGUI.Entry.toggle("hud.icesmp-hud.editor.enabled", "Admin HUD-editor"),
+                ConfigMenuGUI.Entry.toggle("hud.icesmp-hud.editor.enabled", "HUD-editor"),
+                ConfigMenuGUI.Entry.toggle("hud.icesmp-hud.editor.personal-layouts-enabled",
+                        "Játékosonkénti HUD-layout"),
                 ConfigMenuGUI.Entry.integer("hud.icesmp-hud.layout.x-offset-pixels",
                         "Globális HUD X-eltolás", 1, -512, 512),
                 ConfigMenuGUI.Entry.integer("hud.icesmp-hud.layout.y-offset-pixels",
@@ -59,7 +61,7 @@ public final class OperationalConfigMenuGUI {
                 ConfigMenuGUI.Entry.integer("hud.icesmp-hud.layout.safe-margin-pixels",
                         "Globális HUD jobb margó", 1, 0, 128),
                 ConfigMenuGUI.Entry.number("hud.icesmp-hud.layout.scale",
-                        "Globális HUD méret", 0.05D, 0.75D, 1.80D),
+                        "Globális HUD méret", 0.05D, 0.75D, 3.50D),
                 ConfigMenuGUI.Entry.toggle("hud.sidebar-enabled", "Scoreboard-oldalsáv"),
                 ConfigMenuGUI.Entry.toggle("hud.tablist-enabled", "Egyszerű tabnév fallback"),
                 ConfigMenuGUI.Entry.toggle("hud.low-hp-vignette.enabled", "Alacsony HP-vignetta"),
@@ -403,3 +405,5 @@ public final class OperationalConfigMenuGUI {
         return item;
     }
 }
+
+

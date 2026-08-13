@@ -258,6 +258,10 @@ val hudEditorRegressionTest = registerRegression(
     "hudEditorRegressionTest",
     "Runs first-party HUD editor gate, isolation, layout, shader and authority regressions.",
     "hu.taliann.icesmp.hud.HudEditorRegressionSuite")
+val playerProfileHudLayoutRegressionTest = registerRegression(
+    "playerProfileHudLayoutRegressionTest",
+    "Runs sparse Profile v2 HUD-layout inheritance, reset and malformed-data regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileHudLayoutRegressionSuite")
 val classSpecApplicationRegressionTest = registerRegression(
     "classSpecApplicationRegressionTest",
     "Runs Profile v2 mutation, DARK gate and fail-closed application regressions.",
@@ -596,6 +600,7 @@ tasks.check {
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
         classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, hudEditorRegressionTest,
+        playerProfileHudLayoutRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest, targetRegistryRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
@@ -627,3 +632,4 @@ tasks.check {
         wizardGameplayRegressionTest, wizardProfileRegressionTest
     )
 }
+

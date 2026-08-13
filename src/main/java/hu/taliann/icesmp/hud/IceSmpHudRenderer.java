@@ -5,6 +5,7 @@ import hu.taliann.icesmp.classspec.integration.ClassHudMetric;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.format.TextColor;
 
 import java.util.List;
@@ -72,102 +73,110 @@ public final class IceSmpHudRenderer {
     private static final char SEGMENT_FILL = '\uE181';
     private static final char SEGMENT_WARM = '\uE182';
     private static final char SEGMENT_GOLD = '\uE183';
+    private static final TextColor EDITOR_HIGHLIGHT = TextColor.color(0xFFD740);
 
     public Component render(final IceSmpHudModel model) {
-        return render(model, HudLayoutSnapshot.defaults());
+        return render(model, HudLayoutSnapshot.defaults(), null);
     }
 
     public Component render(final IceSmpHudModel model, final HudLayoutSnapshot layout) {
+        return render(model, layout, null);
+    }
+
+    public Component render(final IceSmpHudModel model, final HudLayoutSnapshot layout,
+                            final HudComponent highlighted) {
         final HudLayoutSnapshot safeLayout = layout == null ? HudLayoutSnapshot.defaults() : layout;
-        final TextComponent.Builder output = Component.text();
+        final TextComponent.Builder output = Component.text().shadowColor(ShadowColor.none());
         output.append(glyph(HudComponent.FRAME, -254, PANEL_FONT,
-                themeGlyph(model.factionTheme()), 241, null, safeLayout));
+                themeGlyph(model.factionTheme()), 241, null, safeLayout, highlighted));
         output.append(glyph(HudComponent.WALLET_FRAME, -254, WALLET_PANEL_FONT,
-                '\uE105', 241, null, safeLayout));
+                '\uE105', 241, null, safeLayout, highlighted));
         output.append(glyph(HudComponent.DETAIL_FRAME, -254, DETAIL_PANEL_FONT,
-                '\uE106', 241, null, safeLayout));
+                '\uE106', 241, null, safeLayout, highlighted));
         output.append(glyph(HudComponent.CLASS_ICON, -236, CLASS_FONT,
-                classGlyph(model.classHud().classId()), 37, null, safeLayout));
+                classGlyph(model.classHud().classId()), 37, null, safeLayout, highlighted));
         output.append(glyph(HudComponent.LEVEL_ICON, -88, UTILITY_FONT,
-                '\uE132', 16, null, safeLayout));
+                '\uE132', 16, null, safeLayout, highlighted));
         output.append(glyph(HudComponent.EVENT_ICON, -234, UTILITY_FONT,
-                '\uE131', 16, null, safeLayout));
+                '\uE131', 16, null, safeLayout, highlighted));
 
         final TextColor accent = color(model.factionAccent(), 0x77DDF2);
         final String spec = model.classHud().specName().isBlank() ? "" : " " + model.classHud().specName();
         output.append(text(HudComponent.CLASS_NAME, -190, HEADER_FONT,
-                model.className() + spec, accent, 25, safeLayout));
+                model.className() + spec, accent, 25, safeLayout, highlighted));
         output.append(text(HudComponent.FACTION, -190, SUBHEADER_FONT, model.faction(),
-                color("A9B7C6", 0xA9B7C6), 22, safeLayout));
+                color("A9B7C6", 0xA9B7C6), 22, safeLayout, highlighted));
         output.append(text(HudComponent.LEVEL_TEXT, -70, HEADER_FONT, "Lv. " + model.classLevel(),
-                color("EAF7FF", 0xEAF7FF), 8, safeLayout));
-        drawCurrencies(output, model, safeLayout);
+                color("EAF7FF", 0xEAF7FF), 8, safeLayout, highlighted));
+        drawCurrencies(output, model, safeLayout, highlighted);
         if (model.hasClass()) {
             output.append(text(HudComponent.RESOURCE_LABEL, -202, RESOURCE_TEXT_FONT,
                     model.resourceName() + " " + model.resource() + "/" + model.resourceMax(),
-                    color("C7D4EA", 0xC7D4EA), 25, safeLayout));
+                    color("C7D4EA", 0xC7D4EA), 25, safeLayout, highlighted));
             drawSegments(output, HudComponent.RESOURCE_BAR, -202, RESOURCE_FONT,
-                    model.resourcePercent(), resourceFill(model.factionTheme()), safeLayout);
-            drawMechanics(output, model, accent, safeLayout);
-            drawSupplementaryMetrics(output, model, safeLayout);
+                    model.resourcePercent(), resourceFill(model.factionTheme()), safeLayout, highlighted);
+            drawMechanics(output, model, accent, safeLayout, highlighted);
+            drawSupplementaryMetrics(output, model, safeLayout, highlighted);
         }
         output.append(text(HudComponent.EVENT_TEXT, -214, EVENT_FONT,
                 "ESEMÉNY " + stripLegacy(model.event()),
-                color("F0D88D", 0xF0D88D), 24, safeLayout));
+                color("F0D88D", 0xF0D88D), 24, safeLayout, highlighted));
         return output.build();
     }
 
     private void drawMechanics(final TextComponent.Builder output, final IceSmpHudModel model,
-                               final TextColor accent, final HudLayoutSnapshot layout) {
+                               final TextColor accent, final HudLayoutSnapshot layout,
+                               final HudComponent highlighted) {
         if ("death_knight".equals(model.classHud().classId())) {
             drawMetricIcon(output, HudComponent.PRIMARY_MECHANIC, model.classHud().classId(),
-                    model.classHud().metric(0), -234, layout);
+                    model.classHud().metric(0), -234, layout, highlighted);
             output.append(text(HudComponent.PRIMARY_MECHANIC, -217, MECHANIC_FONT,
-                    model.classHud().mechanicPrimary(), accent, 22, layout));
+                    model.classHud().mechanicPrimary(), accent, 22, layout, highlighted));
             int index = 0;
             for (final ClassHudSlot slot : model.classHud().slots()) {
                 if (index >= 8) break;
                 output.append(glyph(HudComponent.CHARGES, -234 + index * 27, RUNE_FONT,
-                        runeGlyph(slot), 19, null, layout));
+                        runeGlyph(slot), 19, null, layout, highlighted));
                 index++;
             }
             output.append(text(HudComponent.STATE_PROC, -234, STATE_FONT,
                     joinState(model.classHud().state(), model.classHud().proc()),
-                    color("A9B7C6", 0xA9B7C6), 25, layout));
+                    color("A9B7C6", 0xA9B7C6), 25, layout, highlighted));
             return;
         }
 
         final ClassHudMetric primary = model.classHud().metric(0);
         final ClassHudMetric secondary = model.classHud().metric(1);
         drawMetricIcon(output, HudComponent.PRIMARY_MECHANIC, model.classHud().classId(),
-                primary, -234, layout);
+                primary, -234, layout, highlighted);
         drawMetricIcon(output, HudComponent.SECONDARY_MECHANIC, model.classHud().classId(),
-                secondary, -113, layout);
+                secondary, -113, layout, highlighted);
         output.append(text(HudComponent.PRIMARY_MECHANIC, -217, MECHANIC_FONT,
-                model.classHud().mechanicPrimary(), accent, 20, layout));
+                model.classHud().mechanicPrimary(), accent, 20, layout, highlighted));
         final boolean specializationMissing = model.classHud().specName().isBlank();
         final String secondaryText = model.classHud().mechanicSecondary().isBlank()
                 && specializationMissing ? "Spec: nincs" : model.classHud().mechanicSecondary();
         output.append(text(HudComponent.SECONDARY_MECHANIC, -96, MECHANIC_FONT, secondaryText,
-                color("A9B7C6", 0xA9B7C6), 14, layout));
+                color("A9B7C6", 0xA9B7C6), 14, layout, highlighted));
         if (primary != null && primary.maximum() > 0.0D) {
             drawSegments(output, HudComponent.PRIMARY_MECHANIC, -234, METRIC_FONT,
-                    primary.percent(), SEGMENT_FILL, layout);
+                    primary.percent(), SEGMENT_FILL, layout, highlighted);
         }
         if (secondary != null && secondary.maximum() > 0.0D) {
             drawSegments(output, HudComponent.SECONDARY_MECHANIC, -113, METRIC_FONT,
-                    secondary.percent(), SEGMENT_GOLD, layout);
+                    secondary.percent(), SEGMENT_GOLD, layout, highlighted);
         }
-        drawCharges(output, model.classHud().classId(), model.classHud().slots(), layout);
+        drawCharges(output, model.classHud().classId(), model.classHud().slots(), layout, highlighted);
         final String stateText = joinState(model.classHud().state(), model.classHud().proc());
         output.append(text(HudComponent.STATE_PROC, -113, STATE_FONT,
                 stateText.isBlank() && specializationMissing
                         ? "Válassz profilt" : stateText,
-                color("A9B7C6", 0xA9B7C6), 16, layout));
+                color("A9B7C6", 0xA9B7C6), 16, layout, highlighted));
     }
 
     private static void drawCharges(final TextComponent.Builder output, final String classId,
-                                    final List<ClassHudSlot> slots, final HudLayoutSnapshot layout) {
+                                    final List<ClassHudSlot> slots, final HudLayoutSnapshot layout,
+                                    final HudComponent highlighted) {
         int index = 0;
         for (final ClassHudSlot slot : slots) {
             if (index >= 9) break;
@@ -176,10 +185,10 @@ public final class IceSmpHudRenderer {
             if (mechanic == null) {
                 final char fallback = "ready".equals(slot.state()) ? '\uE170' : '\uE171';
                 output.append(glyph(HudComponent.CHARGES, -234 + index * 12, CHARGE_FONT,
-                        fallback, 11, null, layout));
+                        fallback, 11, null, layout, highlighted));
             } else {
                 output.append(glyph(HudComponent.CHARGES, -234 + index * 12,
-                        MECHANIC_SLOT_FONT, mechanic, 11, null, layout));
+                        MECHANIC_SLOT_FONT, mechanic, 11, null, layout, highlighted));
             }
             index++;
         }
@@ -188,11 +197,12 @@ public final class IceSmpHudRenderer {
     private static void drawMetricIcon(final TextComponent.Builder output,
                                        final HudComponent component, final String classId,
                                        final ClassHudMetric metric, final int x,
-                                       final HudLayoutSnapshot layout) {
+                                       final HudLayoutSnapshot layout,
+                                       final HudComponent highlighted) {
         if (metric == null || metric.id().isBlank()) return;
         final Character glyph = mechanicGlyph(classId, metric.id(), metricVariant(metric.state()));
         if (glyph != null) output.append(glyph(component, x, MECHANIC_ICON_FONT,
-                glyph, 15, null, layout));
+                glyph, 15, null, layout, highlighted));
     }
 
     private static int metricVariant(final String rawState) {
@@ -229,7 +239,8 @@ public final class IceSmpHudRenderer {
 
     private static void drawSupplementaryMetrics(final TextComponent.Builder output,
                                                   final IceSmpHudModel model,
-                                                  final HudLayoutSnapshot layout) {
+                                                  final HudLayoutSnapshot layout,
+                                                  final HudComponent highlighted) {
         for (int index = 2; index < 5; index++) {
             final ClassHudMetric metric = model.classHud().metric(index);
             if (metric == null || metric.id().isBlank()) continue;
@@ -237,21 +248,22 @@ public final class IceSmpHudRenderer {
                     : metric.label() + " " + metric.text();
             output.append(text(HudComponent.DETAIL_METRICS, -234 + (index - 2) * 80,
                     DETAIL_TEXT_FONT, value,
-                    color("C7D4EA", 0xC7D4EA), 9, layout));
+                    color("C7D4EA", 0xC7D4EA), 9, layout, highlighted));
         }
     }
 
     private static void drawCurrencies(final TextComponent.Builder output, final IceSmpHudModel model,
-                                       final HudLayoutSnapshot layout) {
+                                       final HudLayoutSnapshot layout,
+                                       final HudComponent highlighted) {
         int index = 0;
         for (final hu.taliann.icesmp.managers.HudManager.HudCurrency currency : model.currencies()) {
             if (index >= 4) break;
             final int x = -234 + index * 54;
             output.append(glyph(HudComponent.WALLET, x, CURRENCY_FONT,
-                    currencyGlyph(currency.id()), 16, null, layout));
+                    currencyGlyph(currency.id()), 16, null, layout, highlighted));
             output.append(text(HudComponent.WALLET, x + 17, WALLET_TEXT_FONT, currency.amount(),
                     currency.primary() ? color("F0D88D", 0xF0D88D) : color("C7D4EA", 0xC7D4EA), 5,
-                    layout));
+                    layout, highlighted));
             index++;
         }
     }
@@ -259,25 +271,28 @@ public final class IceSmpHudRenderer {
     private static void drawSegments(final TextComponent.Builder output, final HudComponent component,
                                      final int x, final Key font,
                                      final int percent, final char fill,
-                                     final HudLayoutSnapshot layout) {
+                                     final HudLayoutSnapshot layout,
+                                     final HudComponent highlighted) {
         final int active = Math.max(0, Math.min(SEGMENTS,
                 (int) Math.round(percent * SEGMENTS / 100.0D)));
         for (int index = 0; index < SEGMENTS; index++) {
             output.append(glyph(component, x + index * 13, font,
-                    SEGMENT_TRACK, 13, null, layout));
+                    SEGMENT_TRACK, 13, null, layout, highlighted));
             if (index < active) output.append(glyph(component, x + index * 13, font,
-                    fill, 13, null, layout));
+                    fill, 13, null, layout, highlighted));
         }
     }
 
     private static Component glyph(final HudComponent component, final int x,
                                    final Key font, final char glyph,
                                    final int width, final TextColor color,
-                                   final HudLayoutSnapshot layout) {
+                                   final HudLayoutSnapshot layout,
+                                   final HudComponent highlighted) {
         if (!layout.visible(component)) return Component.empty();
         final int anchoredX = layout.anchoredX(component, x);
         final TextColor encoded = encodeLayoutColor(
-                color == null ? TextColor.color(0xFFFFFF) : color, layout, component);
+                editorColor(color == null ? TextColor.color(0xFFFFFF) : color,
+                        component, highlighted), layout, component);
         final Component value = Component.text(glyph).font(font).color(encoded);
         return Component.text().append(space(anchoredX)).append(value)
                 .append(space(-anchoredX - width)).build();
@@ -286,15 +301,23 @@ public final class IceSmpHudRenderer {
     private static Component text(final HudComponent component, final int x,
                                   final Key font, final String raw,
                                   final TextColor color, final int maximumCharacters,
-                                  final HudLayoutSnapshot layout) {
+                                  final HudLayoutSnapshot layout,
+                                  final HudComponent highlighted) {
         if (!layout.visible(component)) return Component.empty();
         final String value = sanitize(raw, maximumCharacters);
         if (value.isBlank()) return Component.empty();
         final int width = value.codePointCount(0, value.length()) * TEXT_ADVANCE;
         final int anchoredX = layout.anchoredX(component, x);
         return Component.text().append(space(anchoredX)).append(Component.text(value).font(font)
-                        .color(encodeLayoutColor(color, layout, component)))
+                        .color(encodeLayoutColor(editorColor(color, component, highlighted),
+                                layout, component)))
                 .append(space(-anchoredX - width)).build();
+    }
+
+    private static TextColor editorColor(final TextColor desired, final HudComponent component,
+                                         final HudComponent highlighted) {
+        return highlighted == HudComponent.GLOBAL || highlighted == component
+                ? EDITOR_HIGHLIGHT : desired;
     }
 
     static TextColor encodeLayoutColor(final TextColor desired, final HudLayoutSnapshot layout) {
@@ -308,12 +331,14 @@ public final class IceSmpHudRenderer {
                 ? layout.shaderCode() : layout.shaderCode(component);
         return TextColor.color((source & 0xF00000) | ((code & 0xF) << 16)
                 | (source & 0x00F000) | (((code >> 4) & 0xF) << 8)
-                | (source & 0x0000F0) | ((code >> 8) & 0xF));
+                | (source & 0x0000E0) | (((code >> 12) & 0x1) << 4)
+                | ((code >> 8) & 0xF));
     }
 
     static int decodeLayoutCode(final TextColor encoded) {
         final int value = encoded.value();
-        return ((value >> 16) & 0xF) | (((value >> 8) & 0xF) << 4) | ((value & 0xF) << 8);
+        return ((value >> 16) & 0xF) | (((value >> 8) & 0xF) << 4)
+                | ((value & 0xF) << 8) | (((value >> 4) & 0x1) << 12);
     }
 
     private static Component space(final int requested) {

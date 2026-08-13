@@ -16,34 +16,59 @@ public final class HudEditorRegressionSuite {
         permissionAndProductionGateAreFailClosed();
         editorCopyLivesInTheMessageLayer();
         sessionsAndPreviewsArePlayerIsolated();
+        completedSaveCannotCloseReplacementSession();
         resetUndoApplyAndCancelAreExact();
         invalidConfigFallsBackFieldByField();
         everyRenderedComponentHasIndependentLayout();
         layoutAndPreviewSnapshotsAreImmutable();
+        directValuesAndExpandedControlsAreBounded();
         rendererAppliesOffsetAndScalePayload();
         generatedShaderVariantsMatchRuntimeContract();
+        editorControlsAreClickableAndQuiet();
         previewCannotReachGameplayAuthority();
         fallbackAndReadinessRemainIntact();
         System.out.println("First-party HUD editor regression suite passed.");
     }
 
+    private static void completedSaveCannotCloseReplacementSession() {
+        final HudEditorStateMachine machine = new HudEditorStateMachine();
+        final UUID player = UUID.randomUUID();
+        final HudEditorStateMachine.Session saving = machine.start(player,
+                HudEditorStateMachine.Scope.PERSONAL, HudLayoutSnapshot.defaults(),
+                HudLayoutSnapshot.defaults(), 1L, "one");
+        final HudEditorStateMachine.Session replacement = machine.start(player,
+                HudEditorStateMachine.Scope.GLOBAL, HudLayoutSnapshot.defaults(),
+                HudLayoutSnapshot.defaults(), 2L, "two");
+        check(machine.apply(player, saving).isEmpty(),
+                "a régi aszinkron mentés nem zárhatja le az új editor-munkamenetet");
+        check(machine.session(player).orElseThrow() == replacement,
+                "az új editor-munkamenetnek aktívnak kell maradnia");
+    }
+
     private static void permissionAndProductionGateAreFailClosed() throws Exception {
-        check(HudEditorAccessPolicy.decide(false, true, true)
+        check(HudEditorAccessPolicy.decide(false, false, false, true, true)
                         == HudEditorAccessPolicy.Decision.PLAYER_ONLY,
                 "console may not create an editor preview");
-        check(HudEditorAccessPolicy.decide(true, false, true)
+        check(HudEditorAccessPolicy.decide(true, true, false, true, true)
                         == HudEditorAccessPolicy.Decision.NO_PERMISSION,
-                "permission is mandatory");
-        check(HudEditorAccessPolicy.decide(true, true, false)
+                "global editing permission is mandatory");
+        check(HudEditorAccessPolicy.decide(true, false, false, false, true)
                         == HudEditorAccessPolicy.Decision.CONFIG_DISABLED,
                 "production config gate is mandatory");
-        check(HudEditorAccessPolicy.decide(true, true, true)
+        check(HudEditorAccessPolicy.decide(true, false, false, true, false)
+                        == HudEditorAccessPolicy.Decision.CONFIG_DISABLED,
+                "personal layouts need their independent config gate");
+        check(HudEditorAccessPolicy.decide(true, false, false, true, true)
                         == HudEditorAccessPolicy.Decision.ALLOWED,
-                "player, permission and config gate should allow the editor");
+                "players may edit their own layout without an admin permission");
+        check(HudEditorAccessPolicy.decide(true, true, true, true, true)
+                        == HudEditorAccessPolicy.Decision.ALLOWED,
+                "an authorized player may edit the global base");
         final String config = read("src/main/resources/config/general.yml");
         final String permissions = read("src/main/java/hu/taliann/icesmp/core/Permissions.java");
-        check(config.contains("editor:\n      enabled: false"),
-                "the production editor gate must default to false");
+        check(config.contains("editor:\n      enabled: true\n      # Kikapcsolva")
+                        && config.contains("personal-layouts-enabled: true"),
+                "personal HUD editing must be enabled by default behind its own live gate");
         check(permissions.contains("HUD_EDITOR = \"icesmp.admin.hud-editor\"")
                         && permissions.contains("canonical.put(HUD_EDITOR"),
                 "the editor permission must use the registered canonical scheme");
@@ -142,6 +167,18 @@ public final class HudEditorRegressionSuite {
         editor.move(player, 1, 0);
         check(editor.cancel(player).orElseThrow().equals(original) && editor.session(player).isEmpty(),
                 "cancel must discard edits and return the opening layout");
+
+        final HudLayoutSnapshot global = new HudLayoutSnapshot(23, 9, 28, 5)
+                .withComponent(HudComponent.WALLET, new HudComponentLayout(6, -4, 2, false));
+        final HudLayoutSnapshot personal = global.move(HudComponent.WALLET, 7, 3);
+        editor.start(player, HudEditorStateMachine.Scope.PERSONAL, personal, global, 9, "profile");
+        editor.select(player, HudComponent.WALLET);
+        check(editor.reset(player).working().componentLayout(HudComponent.WALLET)
+                        .equals(global.componentLayout(HudComponent.WALLET)),
+                "personal selected reset must inherit the current global component base");
+        editor.move(player, 1, 1);
+        check(editor.resetAll(player).working().equals(global),
+                "personal reset-all must return to the current global base, not factory defaults");
     }
 
     private static void invalidConfigFallsBackFieldByField() {
@@ -193,7 +230,7 @@ public final class HudEditorRegressionSuite {
         }
         check(manager.contains("layout.components.\" + component.id()")
                         && manager.contains("overrides.put(path + \".visible\"")
-                        && manager.contains("IceSmpHudModel.from(snapshot), configuredHudLayout(), visible"),
+                        && manager.contains("IceSmpHudModel.from(snapshot), effectiveHudLayout(player), visible"),
                 "component transforms and visibility must round-trip through validated config");
     }
 
@@ -217,6 +254,28 @@ public final class HudEditorRegressionSuite {
         } catch (final UnsupportedOperationException expected) { }
     }
 
+    private static void directValuesAndExpandedControlsAreBounded() {
+        final HudEditorStateMachine editor = new HudEditorStateMachine();
+        final UUID player = UUID.randomUUID();
+        editor.start(player, HudLayoutSnapshot.defaults(), 1, "fingerprint");
+        editor.step(player, 15);
+        editor.move(player, 1, -1);
+        editor.select(player, HudComponent.EVENT_TEXT);
+        editor.setX(player, 42);
+        editor.setY(player, -31);
+        editor.setScale(player, 3.50D);
+        final HudEditorStateMachine.Session session = editor.session(player).orElseThrow();
+        final HudComponentLayout component = session.working().componentLayout(HudComponent.EVENT_TEXT);
+        check(session.working().xOffsetPixels() == 15 && session.working().yOffsetPixels() == 1
+                        && component.xOffsetPixels() == 42 && component.yOffsetPixels() == -31
+                        && component.scaleIndex() == 15 && component.scale() == 3.50D,
+                "15-pixel movement and direct X/Y/scale entry must update only the selected target");
+        try {
+            editor.setScale(player, 3.51D);
+            throw new AssertionError("scale above the expanded maximum must be rejected");
+        } catch (final IllegalArgumentException expected) { }
+    }
+
     private static void rendererAppliesOffsetAndScalePayload() {
         final HudLayoutSnapshot layout = new HudLayoutSnapshot(21, -37, 13, 7);
         check(layout.anchoredX(-254) == -246,
@@ -226,7 +285,7 @@ public final class HudEditorRegressionSuite {
                         && ((encoded.value() >> 20) & 0xF) == 0x7,
                 "renderer color transport must preserve visual high nibbles and exact layout payload");
         check(layout.shaderCode() == (7 << 9) + 219,
-                "shader payload must contain signed 9-bit Y and 3-bit scale index");
+                "shader payload must contain signed 9-bit Y and a scale index");
         final HudLayoutSnapshot componentLayout = layout.withComponent(HudComponent.EVENT_TEXT,
                 new HudComponentLayout(9, 12, 2, true));
         check(componentLayout.anchoredX(HudComponent.EVENT_TEXT, -214) == -197
@@ -237,22 +296,58 @@ public final class HudEditorRegressionSuite {
         check(IceSmpHudRenderer.decodeLayoutCode(componentEncoded)
                         == componentLayout.shaderCode(HudComponent.EVENT_TEXT),
                 "each component must transport its own exact layout payload to the shader");
+        final HudLayoutSnapshot maximumScale = new HudLayoutSnapshot(0, -256, 0, 15);
+        final TextColor maximumEncoded = IceSmpHudRenderer.encodeLayoutColor(
+                TextColor.color(0x77DDF2), maximumScale);
+        check(maximumScale.scalePermille() == 3500
+                        && IceSmpHudRenderer.decodeLayoutCode(maximumEncoded) == maximumScale.shaderCode(),
+                "the thirteenth color bit must transport all sixteen scale variants exactly");
     }
 
     private static void generatedShaderVariantsMatchRuntimeContract() throws Exception {
         final String shader = read("resource-pack/assets/minecraft/shaders/core/rendertype_text.vsh");
         final String generator = read("scripts/generate_icesmp_hud_assets.py");
         final String manifest = read("resource-pack/assets/icesmp_hud/hud-manifest.json");
-        final String scales = "0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80";
-        check(shader.contains("HUD_LAYOUT_SCALES[8]") && shader.contains(scales)
-                        && generator.contains("HUD_LAYOUT_SCALES = (" + scales + ")")
+        final String legacyScales = "0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80";
+        check(shader.contains("HUD_LAYOUT_SCALES[16]") && shader.contains(legacyScales)
+                        && shader.contains("3.00, 3.25, 3.50")
+                        && generator.contains("HUD_LAYOUT_SCALES = (" + legacyScales)
+                        && generator.contains("3.00, 3.25, 3.50")
                         && generator.contains("python3 -m pip install Pillow")
                         && manifest.contains("\"layout_scale_variants\"")
-                        && manifest.contains("\"layout_color_payload_bits\": 12"),
-                "runtime, build generator and manifest must share the limited scale variants");
+                        && manifest.contains("\"layout_color_payload_bits\": 13")
+                        && manifest.contains("3.5"),
+                "runtime, build generator and manifest must share all expanded scale variants");
         check(shader.contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")
-                        && shader.contains("vec2 selectedHudScale = hudScale * layoutScale"),
+                        && shader.contains("vec2 selectedHudScale = hudScale * layoutScale")
+                        && shader.contains("(packedColor.b & 16) << 8"),
                 "shader must actually apply selected Y and scale values");
+    }
+
+    private static void editorControlsAreClickableAndQuiet() throws Exception {
+        final String command = read("src/main/java/hu/taliann/icesmp/commands/HudCommand.java");
+        final String manager = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
+        final String renderer = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
+        final String messages = read("src/main/resources/messages/hud.yml");
+        check(command.contains("ClickEvent.suggestCommand(commandPrefix)")
+                        && command.contains("/hud edit personal")
+                        && command.contains("\"/hud edit page \" + page.id")
+                        && command.contains("/hud edit step 15")
+                        && command.contains("\"/hud edit preview \" + axis + \" previous\"")
+                        && command.contains("/hud edit preset \" + preset.id()")
+                        && command.contains("sendEditorActionBar(player, visible)")
+                        && !command.contains("sendEditorPanel(player, visible);\n        } catch"),
+                "direct input, 15-pixel movement, preview/preset buttons and quiet feedback must stay wired");
+        check(manager.contains("preferenceStore.saveLayout")
+                        && manager.contains("layout, session.resetBase()")
+                        && manager.contains("effectiveHudLayout(player)")
+                        && command.contains("hud-editor-header-global")
+                        && messages.contains("SZERVERALAP • ADMIN"),
+                "personal Profile v2 persistence and explicit global editing must stay wired");
+        check(manager.contains("session.working(), session.selected(), true")
+                        && renderer.contains("EDITOR_HIGHLIGHT")
+                        && renderer.contains("highlighted == HudComponent.GLOBAL || highlighted == component"),
+                "the selected editor component must receive a distinct live-preview tint");
     }
 
     private static void previewCannotReachGameplayAuthority() throws Exception {

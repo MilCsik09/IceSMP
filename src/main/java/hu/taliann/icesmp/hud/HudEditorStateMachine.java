@@ -10,15 +10,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class HudEditorStateMachine {
 
     private static final int HISTORY_LIMIT = 32;
-    private static final List<Integer> STEPS = List.of(1, 5, 10);
+    private static final List<Integer> STEPS = List.of(1, 5, 10, 15);
 
-    public record Session(HudLayoutSnapshot original, HudLayoutSnapshot working, int step,
+    public enum Scope { PERSONAL, GLOBAL }
+
+    public record Session(Scope scope, HudLayoutSnapshot original, HudLayoutSnapshot working,
+                          HudLayoutSnapshot resetBase, int step,
                           HudComponent selected, HudPreviewSelection preview,
                           List<HudLayoutSnapshot> undo,
                           long configGeneration, String configFingerprint) {
         public Session {
+            scope = scope == null ? Scope.PERSONAL : scope;
             original = original == null ? HudLayoutSnapshot.defaults() : original;
             working = working == null ? original : working;
+            resetBase = resetBase == null ? HudLayoutSnapshot.defaults() : resetBase;
             step = STEPS.contains(step) ? step : 1;
             selected = selected == null ? HudComponent.GLOBAL : selected;
             preview = preview == null ? HudPreviewSelection.defaults() : preview;
@@ -31,8 +36,15 @@ public final class HudEditorStateMachine {
 
     public Session start(final UUID playerId, final HudLayoutSnapshot initial,
                          final long generation, final String fingerprint) {
+        return start(playerId, Scope.GLOBAL, initial, HudLayoutSnapshot.defaults(),
+                generation, fingerprint);
+    }
+
+    public Session start(final UUID playerId, final Scope scope,
+                         final HudLayoutSnapshot initial, final HudLayoutSnapshot resetBase,
+                         final long generation, final String fingerprint) {
         final HudLayoutSnapshot layout = initial == null ? HudLayoutSnapshot.defaults() : initial;
-        final Session session = new Session(layout, layout, 1, HudComponent.GLOBAL,
+        final Session session = new Session(scope, layout, layout, resetBase, 1, HudComponent.GLOBAL,
                 HudPreviewSelection.defaults(),
                 List.of(), generation, fingerprint);
         sessions.put(playerId, session);
@@ -61,16 +73,39 @@ public final class HudEditorStateMachine {
         return updateLayout(playerId, session -> session.working.changeScale(session.selected, variants));
     }
 
+    public Session setX(final UUID playerId, final int value) {
+        requireRange(value, HudLayoutSnapshot.MIN_X_OFFSET, HudLayoutSnapshot.MAX_X_OFFSET, "X");
+        return updateLayout(playerId, session -> session.working.setX(session.selected, value));
+    }
+
+    public Session setY(final UUID playerId, final int value) {
+        requireRange(value, HudLayoutSnapshot.MIN_Y_OFFSET, HudLayoutSnapshot.MAX_Y_OFFSET, "Y");
+        return updateLayout(playerId, session -> session.working.setY(session.selected, value));
+    }
+
+    public Session setScale(final UUID playerId, final double value) {
+        if (!Double.isFinite(value) || value < 0.75D || value > 3.50D) {
+            throw new IllegalArgumentException("A HUD mérete 0.75 és 3.50 között lehet");
+        }
+        return updateLayout(playerId, session -> session.working.setScale(session.selected, value));
+    }
+
     public Session preset(final UUID playerId, final HudLayoutPreset preset) {
         return updateLayout(playerId, session -> session.working.withGlobal(preset.layout()));
     }
 
     public Session reset(final UUID playerId) {
-        return updateLayout(playerId, session -> session.working.reset(session.selected));
+        return updateLayout(playerId, session -> {
+            if (session.selected == HudComponent.GLOBAL) {
+                return session.working.withGlobal(session.resetBase);
+            }
+            return session.working.withComponent(session.selected,
+                    session.resetBase.componentLayout(session.selected));
+        });
     }
 
     public Session resetAll(final UUID playerId) {
-        return updateLayout(playerId, ignored -> HudLayoutSnapshot.defaults());
+        return updateLayout(playerId, session -> session.resetBase);
     }
 
     public Session toggleVisibility(final UUID playerId) {
@@ -137,6 +172,17 @@ public final class HudEditorStateMachine {
         return removed == null ? Optional.empty() : Optional.of(removed.working);
     }
 
+    /**
+     * Csak azt a munkamenetet zárja le, amelyikhez az aszinkron mentés indult.
+     * Egy közben megnyitott új editor-sessiont a régi mentés befejezése nem törölhet.
+     */
+    public Optional<HudLayoutSnapshot> apply(final UUID playerId, final Session expected) {
+        if (expected == null || !sessions.remove(playerId, expected)) {
+            return Optional.empty();
+        }
+        return Optional.of(expected.working);
+    }
+
     public void clear() {
         sessions.clear();
     }
@@ -166,7 +212,16 @@ public final class HudEditorStateMachine {
     private static Session copy(final Session session, final HudLayoutSnapshot working, final int step,
                                 final HudComponent selected, final HudPreviewSelection preview,
                                 final List<HudLayoutSnapshot> undo) {
-        return new Session(session.original, working, step, selected, preview, undo,
+        return new Session(session.scope, session.original, working, session.resetBase,
+                step, selected, preview, undo,
                 session.configGeneration, session.configFingerprint);
+    }
+
+    private static void requireRange(final int value, final int minimum, final int maximum,
+                                     final String field) {
+        if (value < minimum || value > maximum) {
+            throw new IllegalArgumentException(field + " értéke " + minimum + " és " + maximum
+                    + " között lehet");
+        }
     }
 }

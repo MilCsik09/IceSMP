@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 801 Java-fájl, ~141 000 sor; 92 `*Manager` osztály (a `managers/` csomag 124 fájl).
+- **Méret:** 802 Java-fájl, ~141 000 sor; 92 `*Manager` osztály (a `managers/` csomag 124 fájl).
   Csomag-megoszlás: listeners 121, managers 124, commands 94, spells 59, gui 69, crates 14, utils 28, data 15, classrelic 14,
   items 13, relics 12, quest 8, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1158,9 +1158,17 @@ publishes a thread-safe per-player `SUCCESSFULLY_LOADED` capability; only then d
 bossbar/font renderer suppress the native compact fallback. No external HUD plugin participates in
 rendering or state ownership. A joining player's missing pack cannot toggle another player's renderer.
 
+The configured `hud.icesmp-hud.layout` is the global presentation base. Personal editor saves use
+`PlayerProfileHudPreferenceStore` and the existing Profile v2 `preferences.values` map as the sole
+durable player authority. Keys below `hud.layout.*` are sparse field-level overrides, not a copied
+snapshot: effective layout is rebuilt as `global base + valid personal differences`, so untouched
+fields inherit later global changes. Reset-to-global removes those keys through the same CAS-backed
+section mutation. Editor sessions and synthetic previews remain isolated, immutable runtime state.
+
 The renderer uses BMP private-use spacing, fixed-width glyph cells and zero-net-width draw commands.
 Dynamic values (including `0`, `120`, class changes, rune states and wallet counts) therefore cannot
 move the panel. Faction frames share one canonical inner grid; only their decorative skin differs.
 The guest/Menedék frame is generated from that grid and may replace only the outer shell. Production
 R2 packaging deterministically merges the immutable external base with explicitly owned IceSMP
 paths; it does not start Folia or any external HUD plugin and rejects unowned ZIP collisions.
+

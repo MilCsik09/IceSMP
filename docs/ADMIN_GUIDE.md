@@ -74,7 +74,7 @@ pluginoktól. Az első teszt előtt:
 | `icesmp.moderation.gui` | `/moderation` és `/mod` megnyitása | OP | Moderátor |
 | `icesmp.message` | `/msg`, `/tell`, `/w`, `/reply`, `/r` | TRUE | Játékosok |
 | `icesmp.admin.reload` | `/icesmp reload` és az `/icesmp` admin gyökér | OP | Üzemeltető vagy admin |
-| `icesmp.admin.hud-editor` | `/hud edit`; kizárólag megjelenítési layout és szintetikus preview | OP, plusz külön configkapu | Csak HUD/resource-pack staginget végző admin |
+| `icesmp.admin.hud-editor` | `/hud edit global`; a szerver globális HUD-alapja és szintetikus preview | OP, plusz külön configkapu | Csak HUD/resource-pack staginget végző admin |
 
 Az `icesmp.admin.all` minden kanonikus IceSMP admin-domain parentje,
 beleértve az `icesmp.admin.moderation` csomagot. Ezt csak vezető
@@ -1662,25 +1662,31 @@ a runtime- vagy dependency-stacknek. A tartós class/spec/frakció/profil author
 Profile v2 / `PlayerProfileSnapshot`; a harci mechanikák authority-ja a class service-ek mulandó
 runtime state-je. Egyik HUD-renderer sem írhatja vissza az állapotot.
 
-### Admin-only layout editor
+### Személyes és globális layout-editor
 
-Az editor productionben két feltétellel nyitható: a játékos rendelkezik az
-`icesmp.admin.hud-editor` permissionnel, és az üzemeltető explicit bekapcsolta a
-`hud.icesmp-hud.editor.enabled` kulcsot. A bundled alapérték `false`. Konzolból nem nyitható,
-mert a preview játékosonkénti bossbar-kimenetet használ.
+Az editor fő kapuja a `hud.icesmp-hud.editor.enabled` (bundled alapérték: `true`). A
+`hud.icesmp-hud.editor.personal-layouts-enabled` külön, élőben állítható kapu dönti el, hogy a
+játékosok szerkeszthetik-e a saját layoutjukat. Konzolból egyik mód sem nyitható, mert az előnézet
+játékosonkénti bossbar-kimenetet használ.
 
-`/hud edit` megnyit egy izolált, élő munkamenetet. A kattintható panel és a tab completion mellett
-az alábbi parancsok használhatók:
+- `/hud edit` vagy `/hud edit personal`: saját layout; nem kér admin permissiont, Profile v2-be ment.
+- `/hud edit global`: szerveralap; `icesmp.admin.hud-editor` permissiont kér, configba ment.
+
+Mindkét mód izolált, élő munkamenetet nyit. A kijelölt célpont borostyán kiemelést kap. A kompakt
+felület hat kattintható lapra oszlik: Áttekintés, Pozíció, Méret, Előnézet, Presetek és Elemek. A
+gyakori mozgatási és méretezési műveletek csak az actionbaron adnak tömör visszajelzést; a chatbe
+csak lapváltáskor kerül panel. A kattintható vezérlés és a tab completion mellett használható:
 
 - `select <komponens-id>`, illetve `previous` / `next` a szerkesztési célpont váltásához;
-- `move left|right|up|down` és `step 1|5|10` a kiválasztott célpontra;
+- `move left|right|up|down` és `step 1|5|10|15` a kiválasztott célpontra;
+- `set x <érték>`, `set y <érték>` és `set scale <érték>` közvetlen értékbevitelhez;
 - `margin +|-` a `global` célponton;
 - `scale fine up|down` és `scale coarse up|down`;
 - `visibility` a kiválasztott komponens globális megjelenítéséhez/elrejtéséhez;
 - `preset <720p-gui2|1080p-gui2|2048x1152-gui3|1440p-gui3|4k-gui4|large-accessible>`;
-- `preview faction <guest|red|blue|neutral|dark>`;
-- `preview class <class-id>` mind a 13 classhoz;
-- `preview state <representative|resource|wallet|event|spec|proc|charges|dk-runes|wizard-attunement>`;
+- `preview faction <previous|next|guest|red|blue|neutral|dark>`;
+- `preview class <previous|next|class-id>` mind a 13 classhoz;
+- `preview state <previous|next|representative|resource|wallet|event|spec|proc|charges|dk-runes|wizard-attunement>`;
 - `undo`, `reset` (kiválasztott célpont), `reset all`, `save`, `cancel`.
 
 A `global` a teljes, jobb felső sarokhoz horgonyzott HUD-blokkot mozgatja és méretezi. A külön
@@ -1692,24 +1698,32 @@ kell mozgatnia őket. Ez vanilla kliensen kattintásos, nyilas editor; közvetle
 drag-and-drop csak kliensmoddal lenne megvalósítható.
 
 Az előnézet kizárólag újonnan létrehozott immutable `IceSmpHudModel` fixture-t és immutable
-globális/komponens-layout snapshotot renderel. Nem olvas
-és nem ír `PlayerProfile`-t, class runtime-ot, PDC-t vagy valutát. Másik játékos preview-ja és az
-élő gameplay snapshot nem változik. A `save` optimista config-generáció/fingerprint ellenőrzéssel
-egy atomikus batchben írja a globális `hud.icesmp-hud.layout.*` és a
-`hud.icesmp-hud.layout.components.<id>.*` override-okat; közben módosult config esetén fail-closed
-`STALE` eredménnyel elutasít. A `cancel` azonnal visszaállítja az élő HUD-snapshotot.
+globális/komponens-layout snapshotot renderel. Nem ír class runtime-ot, PDC-t vagy valutát; másik
+játékos preview-ja és az élő gameplay snapshot nem változik. A személyes `save` a Profile v2
+`preferences` szekciójába csak a pillanatnyi globális alaptól eltérő mezőket írja CAS-mutatációval.
+Ezért egy nem módosított komponens követi a későbbi globális változást, a személyesen beállított mező
+viszont stabil marad restart és globális átállítás után is. Személyes módban a `reset` a kijelölt mezőt,
+a `reset all` a teljes layoutot visszaköti az aktuális globális alaphoz, és mentéskor törli a felesleges
+felülírásokat.
 
-Mentés után a teljes layout lesz az éles, globális alap minden játékosnak. A globális X/Y eltolás,
+A globális `save` optimista config-generáció/fingerprint ellenőrzéssel egy atomikus batchben írja a
+`hud.icesmp-hud.layout.*` és `hud.icesmp-hud.layout.components.<id>.*` override-okat; közben módosult
+config esetén fail-closed `STALE` eredménnyel elutasít. Siker után minden online játékos effektív HUD-ja
+a saját Folia entity schedulerén frissül. A `cancel` azonnal visszaállítja az élő HUD-snapshotot.
+
+A globális X/Y eltolás,
 jobb oldali biztonsági margó és méret után minden komponens saját relatív X/Y eltolása, mérete és
 láthatósága ugyanazon a production rendererútvonalon érvényesül. A támogatott méretek: `0.75`,
-`0.90`, `1.00`, `1.15`, `1.25`, `1.40`, `1.60`, `1.80`; a komponens relatív mérete a globális
+`0.90`, `1.00`, `1.15`, `1.25`, `1.40`, `1.60`, `1.80`, `2.00`, `2.20`, `2.40`, `2.60`,
+`2.80`, `3.00`, `3.25`, `3.50`; a komponens relatív mérete a globális
 mérettel szorzódik, majd a legközelebbi buildkor generált variánsra kerekül. Hibás vagy tartományon
 kívüli mező komponensenként és mezőnként biztonságos alapértékre esik vissza. A játékos saját
-`/hud toggle` preferenciája ettől különálló PlayerProfile-beállítás marad.
+`/hud toggle` szekciópreferenciája ugyanebben a Profile v2 preferences-authorityban, de külön kulcson marad.
 Pack-readiness hiányában az editor nem küld font-glyphet, és a natív/Folia fallback marad aktív.
 
-Staging ellenőrzés után kapcsold vissza az `editor.enabled` kulcsot `false` értékre. Az editor
-megjelenítési authority; gameplay javítására vagy profiladat módosítására soha ne használd.
+Ha a személyes szerkesztést ideiglenesen le kell állítani, a `personal-layouts-enabled` kaput kapcsold
+ki. A már mentett layoutok ettől továbbra is érvényesülnek. Az editor megjelenítési authority;
+gameplay javítására vagy profiladat módosítására soha ne használd.
 
 Minden játékos saját Folia-régiószálán készül egy immutable `HudSnapshot`. A 13 class külön Java
 `hudState` adaptere közvetlenül típusos `ClassHudMetric` és `ClassHudSlot` adatot ad át; renderelt
@@ -1801,8 +1815,8 @@ A generált layout jobb felső sarokhoz horgonyzott. A 64×64-es ikonokat a firs
 réteg rögzített cellákban rajzolja, ezért GUI scale- és dinamikus értékváltáskor sem csúszhat el a panel.
 Az x-horgony a vetítés utáni clip-space jobb széléhez kötődik. A shader a Minecraft `Globals`
 `ScreenSize` mezőjéből visszaszámolja a GUI-skálát, majd a teljes HUD-réteget a config által
-kiválasztott nyolc buildkori scale-variáns egyikével egységesen méretezi. A renderer a 12 bites
-layout-azonosítót csak a saját HUD-glyphök RGB alsó nibble-jeiben továbbítja; a shader ebből a
+kiválasztott tizenhat buildkori scale-variáns egyikével egységesen méretezi. A renderer a 13 bites
+layout-azonosítót csak a saját HUD-glyphök RGB layoutbitjeiben továbbítja; a shader ebből a
 függőleges pixeleltolást és a scale-indexet alkalmazza. Emiatt teljes képernyőn és kis ablakban is ugyanott marad,
 nem lesz 2–3-szoros a panel, és az alsó sávok sem válnak le a keretről. Egy bitmap glyph legfeljebb 256×256 lehet; a keretek és
 alsó sávok 240 pixel szélesek, így a Minecraft font-stitcher nem cseréli őket hiányzó karakterre.
@@ -1844,3 +1858,5 @@ Kézi elfogadási minimum:
 - aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
 - külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
 - a pack sikeres betöltéséig natív compact fallback, utána pontosan egy class HUD.
+
+

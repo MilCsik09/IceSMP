@@ -3,7 +3,8 @@
 #define MAX_BIT 10
 #define ADD_OFFSET 4095
 #define DEFAULT_OFFSET 10
-const float HUD_LAYOUT_SCALES[8] = float[8](0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80);
+const float HUD_LAYOUT_SCALES[16] = float[16](0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80,
+        2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25, 3.50);
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:projection.glsl>
@@ -33,10 +34,11 @@ void main() {
             hudGlyph = true;
             ivec3 packedColor = ivec3(round(Color.rgb * 255.0));
             int layoutCode = (packedColor.r & 15) | ((packedColor.g & 15) << 4)
-                    | ((packedColor.b & 15) << 8);
+                    | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8);
             layoutYOffset = float((layoutCode & 511) - 256);
-            layoutScale = HUD_LAYOUT_SCALES[(layoutCode >> 9) & 7];
-            vec3 visualColor = vec3((packedColor & ivec3(240)) + ivec3(8)) / 255.0;
+            layoutScale = HUD_LAYOUT_SCALES[(layoutCode >> 9) & 15];
+            vec3 visualColor = vec3((packedColor & ivec3(240, 240, 224))
+                    + ivec3(8, 8, 16)) / 255.0;
             vertexColor = vec4(min(visualColor, vec3(1.0)), Color.a)
                     * texelFetch(Sampler2, UV2 / 16, 0);
             pos.y -= (bit << HEIGHT_BIT) + ADD_OFFSET + DEFAULT_OFFSET;

@@ -352,6 +352,10 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
   class resource és a játékhoz szükséges elsődleges/másodlagos, illetve összetett kiegészítő
   mechanikák ugyanabból az immutable HUD snapshotból készülnek. A Wizard három elemi
   ráhangolódása külön mini bar, a diszkrét combo/stack/charge értékek pedig vizuális pipsort kapnak.
+- **Személyes layout-editor:** a `/hud edit` lapozott, kattintható nézete kijelölt-elem kiemelést,
+  1/5/10/15 pixeles mozgatást, közvetlen X/Y/méret bevitelt, preset- és szintetikus preview-váltást,
+  láthatóságot, undo/reset/save/cancel műveleteket ad. A Profile v2 csak a globális alaptól eltérő
+  mezőket tárolja, ezért a többi elem a későbbi globális változásokat is örökli.
 - **Ami még kellhet hozzá:** Nincs builderfeladat; a saját tablista és HUD production megjelenését deployment előtt ellenőrizni kell.
 - **Fontos határ:** A natív tablista az IceSMP-hez szükséges funkciókat biztosítja, nem általános külső tablista-motor.
 
@@ -360,7 +364,8 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.vanish`; `icesmp.moderation.vanish.see`
 - Config: `hud.*`, `tablist.*`.
-- Tartós állapot: A HUD-beállítás játékoshoz kötötten tárolható; a tablista runtime nézet.
+- Tartós állapot: A HUD-szekciók és a ritka személyes layout-felülírások a Profile v2
+  `preferences` szekciójában maradnak meg; a globális alap config, a tablista runtime nézet.
 - Reload: Szövegek és megjelenési opciók reloadolhatók; futó frissítési periódus restartot igényelhet.
 
 </details>
@@ -1285,3 +1290,5 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 <sub>Dokumentációs snapshot: 2026-07-30 · release `4643ab535…` · deployed mapping:
 `775d9e247…` (`HIGH_CONFIDENCE`, nem `EXACT`).</sub>
+
+

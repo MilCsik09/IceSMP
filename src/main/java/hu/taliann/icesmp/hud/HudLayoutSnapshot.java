@@ -14,7 +14,9 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     public static final int MAX_Y_OFFSET = 255;
     public static final int MIN_SAFE_MARGIN = 0;
     public static final int MAX_SAFE_MARGIN = 128;
-    public static final List<Integer> SCALE_PERMILLE = List.of(750, 900, 1000, 1150, 1250, 1400, 1600, 1800);
+    public static final List<Integer> SCALE_PERMILLE = List.of(
+            750, 900, 1000, 1150, 1250, 1400, 1600, 1800,
+            2000, 2200, 2400, 2600, 2800, 3000, 3250, 3500);
     public static final int DEFAULT_X_OFFSET = 0;
     public static final int DEFAULT_Y_OFFSET = 16;
     public static final int DEFAULT_SAFE_MARGIN = 16;
@@ -74,7 +76,7 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         return anchoredX(sourceX) + element.xOffsetPixels();
     }
 
-    /** 12-bit shader payload: 9-bit signed Y plus a 3-bit scale variant. */
+    /** 13-bit shader payload: 9-bit signed Y plus a 4-bit scale variant. */
     public int shaderCode() {
         return (scaleIndex << 9) | (yOffsetPixels + 256);
     }
@@ -120,6 +122,38 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         return withComponent(target, componentLayout(target).changeScale(variants));
     }
 
+    public HudLayoutSnapshot setX(final HudComponent target, final int value) {
+        if (target == null || target == HudComponent.GLOBAL) {
+            return new HudLayoutSnapshot(value, yOffsetPixels, safeMarginPixels,
+                    scaleIndex, components);
+        }
+        final HudComponentLayout element = componentLayout(target);
+        return withComponent(target, new HudComponentLayout(value, element.yOffsetPixels(),
+                element.scaleIndex(), element.visible()));
+    }
+
+    public HudLayoutSnapshot setY(final HudComponent target, final int value) {
+        if (target == null || target == HudComponent.GLOBAL) {
+            return new HudLayoutSnapshot(xOffsetPixels, value, safeMarginPixels,
+                    scaleIndex, components);
+        }
+        final HudComponentLayout element = componentLayout(target);
+        return withComponent(target, new HudComponentLayout(element.xOffsetPixels(), value,
+                element.scaleIndex(), element.visible()));
+    }
+
+    public HudLayoutSnapshot setScale(final HudComponent target, final double value) {
+        final int index = scaleIndex(value, -1);
+        if (index < 0) throw new IllegalArgumentException("Unsupported HUD scale: " + value);
+        if (target == null || target == HudComponent.GLOBAL) {
+            return new HudLayoutSnapshot(xOffsetPixels, yOffsetPixels, safeMarginPixels,
+                    index, components);
+        }
+        final HudComponentLayout element = componentLayout(target);
+        return withComponent(target, new HudComponentLayout(element.xOffsetPixels(),
+                element.yOffsetPixels(), index, element.visible()));
+    }
+
     public HudLayoutSnapshot toggleVisibility(final HudComponent target) {
         if (target == null || target == HudComponent.GLOBAL) return this;
         return withComponent(target, componentLayout(target).toggleVisibility());
@@ -151,7 +185,7 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     static int scaleIndex(final Object raw, final int fallback) {
         if (!(raw instanceof Number number)) return fallback;
         final double value = number.doubleValue();
-        if (!Double.isFinite(value) || value < 0.75D || value > 1.80D) return fallback;
+        if (!Double.isFinite(value) || value < 0.75D || value > 3.50D) return fallback;
         final int target = (int) Math.round(value * 1000.0D);
         return closestScaleIndex(target / 1000.0D);
     }
