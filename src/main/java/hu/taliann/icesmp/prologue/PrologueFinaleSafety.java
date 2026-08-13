@@ -16,7 +16,8 @@ final class PrologueFinaleSafety {
     private final AtomicBoolean victoryObserved=new AtomicBoolean();
     private final AtomicBoolean victoryCommitInFlight=new AtomicBoolean();
 
-    PrologueFinaleSafety(JavaPlugin plugin,PrologueManager state,PrologueFinaleRunState runState,PrologueEncounterEngine encounters){
+    PrologueFinaleSafety(JavaPlugin plugin,PrologueManager state,PrologueFinaleRunState runState,
+                         PrologueEncounterEngine encounters){
         this.plugin=plugin;this.state=state;this.runState=runState;this.encounters=encounters;
         victoryObserved.set(state.bossDefeated()||state.bossVictoryPending());
         if(state.bossVictoryPending()&&!state.bossDefeated())state.save();
@@ -26,8 +27,10 @@ final class PrologueFinaleSafety {
 
     void pause(String actor){
         long remaining=encounters.pauseActive();
-        try{state.pause(true,actor);UUID id=state.finaleId();if(id!=null)runState.recordPausedEncounter(id,state.finalePhase(),remaining);}
+        try{state.pause(true,actor);}
         catch(RuntimeException x){encounters.resumeActive();throw x;}
+        UUID id=state.finaleId();
+        if(id!=null)runState.recordPausedEncounter(id,state.finalePhase(),remaining);
     }
     void resume(String actor,Consumer<RuntimeException> failure){
         if(state.bossVictoryPending()&&!state.bossDefeated()){retryVictory(actor,failure);return;}
@@ -35,8 +38,9 @@ final class PrologueFinaleSafety {
     }
 
     void observeVictory(Consumer<RuntimeException> failure){
-        if(!victoryObserved.compareAndSet(false,true))return;UUID id=state.finaleId();
-        if(id==null){RuntimeException x=new IllegalStateException("Hiányzó Prologue finale-id");failure.accept(x);return;}
+        if(!victoryObserved.compareAndSet(false,true))return;
+        UUID id=state.finaleId();
+        if(id==null){failure.accept(new IllegalStateException("Hiányzó Prologue finale-id"));return;}
         try{state.markBossVictoryPending(id,"boss-death:pending");}
         catch(RuntimeException x){encounters.pauseActive();failClosed(id,x);failure.accept(x);return;}
         commit(id,"boss-death",false,failure);
@@ -48,7 +52,9 @@ final class PrologueFinaleSafety {
     private void commit(UUID id,String actor,boolean resumeAfter,Consumer<RuntimeException> failure){
         if(!victoryCommitInFlight.compareAndSet(false,true))return;
         Bukkit.getAsyncScheduler().runNow(plugin,t->{
-            RuntimeException problem=null;try{state.recordBossVictory(id,actor);}catch(RuntimeException x){problem=x;failClosed(id,x);}
+            RuntimeException problem=null;
+            try{state.recordBossVictory(id,actor);}
+            catch(RuntimeException x){problem=x;failClosed(id,x);}
             RuntimeException result=problem;victoryCommitInFlight.set(false);
             Bukkit.getGlobalRegionScheduler().run(plugin,g->{
                 if(result!=null){failure.accept(result);return;}
@@ -58,8 +64,10 @@ final class PrologueFinaleSafety {
     }
     private void failClosed(UUID id,RuntimeException problem){
         try{state.markBossVictoryPersistenceFailure(id,detail(problem),"boss-victory:persistence-failure");}
-        catch(RuntimeException secondary){try{state.pause(true,"boss-victory:fail-closed");}catch(RuntimeException ignored){}
-            plugin.getLogger().severe("Prologue finale victory failure receipt also failed: "+secondary);}
+        catch(RuntimeException secondary){
+            try{state.pause(true,"boss-victory:fail-closed");}catch(RuntimeException ignored){}
+            plugin.getLogger().severe("Prologue finale victory failure receipt also failed: "+secondary);
+        }
     }
     private static String detail(Throwable x){String v=x.getMessage();return v==null||v.isBlank()?x.getClass().getSimpleName():v;}
 }
