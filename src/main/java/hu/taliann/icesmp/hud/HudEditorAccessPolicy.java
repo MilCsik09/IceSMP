@@ -8,11 +8,13 @@ public final class HudEditorAccessPolicy {
     private HudEditorAccessPolicy() {
     }
 
-    public static Decision decide(final boolean player, final boolean permission,
-                                  final boolean configEnabled) {
+    public static Decision decide(final boolean player, final boolean globalScope,
+                                  final boolean permission, final boolean configEnabled,
+                                  final boolean personalEnabled) {
         if (!player) return Decision.PLAYER_ONLY;
-        if (!permission) return Decision.NO_PERMISSION;
         if (!configEnabled) return Decision.CONFIG_DISABLED;
+        if (globalScope && !permission) return Decision.NO_PERMISSION;
+        if (!globalScope && !personalEnabled) return Decision.CONFIG_DISABLED;
         return Decision.ALLOWED;
     }
 }

@@ -2076,9 +2076,10 @@ globális keret mellett minden rajzcsoportnak — paneleknek, ikonoknak, felirat
 resource-csíknak, mechanikáknak, charge/rúna-sornak, proc/state-nek, részletmetrikáknak és eventnek —
 külön relatív X/Y, méret és láthatóság transzformot ad. Az X-eltolást és biztonsági margót a
 szerveroldali zéró-nettó-szélességű komponenspozíció alkalmazza. Minden kirajzolt komponens saját
-effektív Y-eltolását és méretét egy 12 bites, HUD-glyph színébe kódolt layout-azonosító viszi a
-shaderhez. A nyolc támogatott buildkori
-scale-variáns `0.75/0.90/1.00/1.15/1.25/1.40/1.60/1.80`; productionben nincs Gradle-, Python-
+effektív Y-eltolását és méretét egy 13 bites, HUD-glyph színébe kódolt layout-azonosító viszi a
+shaderhez. A tizenhat támogatott buildkori scale-variáns
+`0.75/0.90/1.00/1.15/1.25/1.40/1.60/1.80/2.00/2.20/2.40/2.60/2.80/3.00/3.25/3.50`;
+productionben nincs Gradle-, Python-
 vagy assetgenerálás, a runtime csak variánst választ. A scale-tábla és az Y `-256..255` tartománya
 a `hud-manifest.json`, a generátor, az immutable Java globális/komponens snapshot és a shader közös
 validált contractja. A komponens relatív scale a globális scale-lel szorzódik, majd erre a táblára

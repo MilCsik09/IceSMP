@@ -96,7 +96,9 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
 - A **HUD** mutathatja a kasztod erőforrását, a class/spec mechanikád élő
   barjait, tölteteit vagy rúnáit, a frakciódat, pénzedet, szintedet és a fontos
   világhelyzeteket. A bankod fő frakcióvalutája mindig látszik, más pénznem csak akkor,
-  ha van belőle egyenleged. A `/hud` paranccsal személyre szabhatod; amíg a first-party
+  ha van belőle egyenleged. A `/hud edit` kattintható szerkesztőjében külön mozgathatod,
+  méretezheted vagy elrejtheted az elemeket; a mentésed restart után is megmarad. A nem
+  módosított elemek automatikusan követik a szerver globális HUD-alapját. Amíg a first-party
   resource pack nincs sikeresen betöltve, a kompakt natív kijelzés automatikusan marad.
 - A **tablista** frakció- és ranginformációt adhat, háborúban pedig segít
   felismerni a viszonyokat.
@@ -884,7 +886,8 @@ legtöbb művelet a `/menu` felületéről is elérhető.
 | `/reply <üzenet>` | válasz |
 | `/report <játékos> <ok>` | bejelentés |
 | `/afk` | önkéntes AFK |
-| `/hud <szekció>` | HUD testreszabása |
+| `/hud` / `/hud toggle <szekció>` | HUD-állapot és szekciók ki-/bekapcsolása |
+| `/hud edit` | saját, restartálló HUD-layout kattintható szerkesztése |
 | `/sit` | leülés/felállás |
 
 Az admin-, builder- és fejlesztői parancsok nem tartoznak a játékoskézikönyvbe.
@@ -973,4 +976,3 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
-

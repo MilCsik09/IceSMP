@@ -37,7 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -138,6 +140,7 @@ public final class HudManager {
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
     private final Set<UUID> iceSmpHudPlayers = ConcurrentHashMap.newKeySet();
     private final HudEditorStateMachine hudEditor = new HudEditorStateMachine();
+    private final Set<UUID> hudEditorSaves = ConcurrentHashMap.newKeySet();
     private final IceSmpHudBackend iceSmpHudBackend;
     private final AtomicBoolean iceSmpHudReady = new AtomicBoolean();
     private final AtomicBoolean placeholderBridgeReady = new AtomicBoolean();
@@ -202,7 +205,12 @@ public final class HudManager {
     }
 
     public boolean hudEditorEnabled() {
-        return configManager.getBoolean("hud.icesmp-hud.editor.enabled", false);
+        return configManager.getBoolean("hud.icesmp-hud.editor.enabled", true);
+    }
+
+    public boolean personalHudEditorEnabled() {
+        return hudEditorEnabled()
+                && configManager.getBoolean("hud.icesmp-hud.editor.personal-layouts-enabled", true);
     }
 
     public HudLayoutSnapshot configuredHudLayout() {
@@ -224,12 +232,49 @@ public final class HudManager {
         return layout;
     }
 
-    public HudEditorStateMachine.Session beginHudEditor(final Player player) {
-        return hudEditor.session(player.getUniqueId()).orElseGet(() -> {
-            final ConfigManager.ConfigSnapshot snapshot = configManager.snapshot();
-            return hudEditor.start(player.getUniqueId(), configuredHudLayout(), snapshot.generation(),
-                    snapshot.sourceFingerprint());
-        });
+    public HudLayoutSnapshot effectiveHudLayout(final Player player) {
+        final HudLayoutSnapshot global = configuredHudLayout();
+        if (player == null
+                || hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed().isEmpty()) {
+            return global;
+        }
+        try {
+            return preferenceStore.layout(player.getUniqueId(), global);
+        } catch (final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.ProfileNotReadyException
+                       unavailable) {
+            return global;
+        }
+    }
+
+    public boolean hasPersonalHudLayout(final Player player) {
+        if (player == null
+                || hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed().isEmpty()) {
+            return false;
+        }
+        try {
+            return preferenceStore.hasLayoutOverrides(player.getUniqueId());
+        } catch (final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.ProfileNotReadyException
+                       unavailable) {
+            return false;
+        }
+    }
+
+    public HudEditorStateMachine.Session beginHudEditor(final Player player,
+                                                         final HudEditorStateMachine.Scope scope) {
+        final UUID playerId = player.getUniqueId();
+        final HudEditorStateMachine.Scope requested = scope == null
+                ? HudEditorStateMachine.Scope.PERSONAL : scope;
+        final var existing = hudEditor.session(playerId);
+        if (existing.isPresent() && existing.get().scope() == requested) return existing.get();
+        existing.ifPresent(ignored -> hudEditor.cancel(playerId));
+        final ConfigManager.ConfigSnapshot snapshot = configManager.snapshot();
+        final HudLayoutSnapshot global = configuredHudLayout();
+        final HudLayoutSnapshot initial = requested == HudEditorStateMachine.Scope.PERSONAL
+                ? effectiveHudLayout(player) : global;
+        final HudLayoutSnapshot resetBase = requested == HudEditorStateMachine.Scope.PERSONAL
+                ? global : HudLayoutSnapshot.defaults();
+        return hudEditor.start(playerId, requested, initial, resetBase, snapshot.generation(),
+                snapshot.sourceFingerprint());
     }
 
     public java.util.Optional<HudEditorStateMachine.Session> hudEditorSession(final Player player) {
@@ -246,6 +291,18 @@ public final class HudManager {
 
     public HudEditorStateMachine.Session changeHudEditorScale(final Player player, final int variants) {
         return hudEditor.scale(player.getUniqueId(), variants);
+    }
+
+    public HudEditorStateMachine.Session setHudEditorX(final Player player, final int value) {
+        return hudEditor.setX(player.getUniqueId(), value);
+    }
+
+    public HudEditorStateMachine.Session setHudEditorY(final Player player, final int value) {
+        return hudEditor.setY(player.getUniqueId(), value);
+    }
+
+    public HudEditorStateMachine.Session setHudEditorScale(final Player player, final double value) {
+        return hudEditor.setScale(player.getUniqueId(), value);
     }
 
     public HudEditorStateMachine.Session selectHudEditorComponent(final Player player,
@@ -296,15 +353,40 @@ public final class HudManager {
 
     public boolean refreshHudEditorPreview(final Player player) {
         final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
-        if (session == null || !hudEditorEnabled()) return false;
+        if (session == null || !editorSessionEnabled(session)) return false;
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                HudPreviewCatalog.model(session.preview()), session.working(), true));
+                HudPreviewCatalog.model(session.preview()), session.working(), session.selected(), true));
     }
 
-    public ConfigManager.BatchApplyResult saveHudEditor(final Player player) {
+    private boolean editorSessionEnabled(final HudEditorStateMachine.Session session) {
+        return session != null && hudEditorEnabled()
+                && (session.scope() == HudEditorStateMachine.Scope.GLOBAL || personalHudEditorEnabled());
+    }
+
+    public CompletionStage<HudEditorSaveResult> saveHudEditor(final Player player) {
         final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
-        if (session == null) return ConfigManager.BatchApplyResult.NO_CHANGES;
+        if (session == null) return CompletableFuture.completedFuture(
+                new HudEditorSaveResult(HudEditorSaveStatus.NO_SESSION,
+                        HudEditorStateMachine.Scope.PERSONAL, 0));
+        if (!hudEditorSaves.add(player.getUniqueId())) return CompletableFuture.completedFuture(
+                new HudEditorSaveResult(HudEditorSaveStatus.IN_PROGRESS, session.scope(), 0));
         final HudLayoutSnapshot layout = session.working();
+        if (session.scope() == HudEditorStateMachine.Scope.PERSONAL) {
+            try {
+                final CompletionStage<HudEditorSaveResult> save = preferenceStore.saveLayout(
+                                player.getUniqueId(), layout, session.resetBase())
+                        .thenApply(result -> {
+                            hudEditor.apply(player.getUniqueId());
+                            return new HudEditorSaveResult(result.changed()
+                                    ? HudEditorSaveStatus.SAVED : HudEditorSaveStatus.NO_CHANGES,
+                                    session.scope(), result.overrideCount());
+                        });
+                return save.whenComplete((ignored, failure) -> hudEditorSaves.remove(player.getUniqueId()));
+            } catch (final RuntimeException failure) {
+                hudEditorSaves.remove(player.getUniqueId());
+                return CompletableFuture.failedFuture(failure);
+            }
+        }
         final Map<String, Object> overrides = new LinkedHashMap<>();
         overrides.put("hud.icesmp-hud.layout.x-offset-pixels", layout.xOffsetPixels());
         overrides.put("hud.icesmp-hud.layout.y-offset-pixels", layout.yOffsetPixels());
@@ -318,13 +400,36 @@ public final class HudManager {
             overrides.put(path + ".scale", element.scale());
             overrides.put(path + ".visible", element.visible());
         }
-        final ConfigManager.BatchApplyResult result = configManager.applyOverridesIfUnchanged(
-                session.configGeneration(), session.configFingerprint(), overrides);
-        if (result != ConfigManager.BatchApplyResult.STALE) {
-            hudEditor.apply(player.getUniqueId());
+        try {
+            final ConfigManager.BatchApplyResult result = configManager.applyOverridesIfUnchanged(
+                    session.configGeneration(), session.configFingerprint(), overrides);
+            final HudEditorSaveStatus status;
+            if (result == ConfigManager.BatchApplyResult.STALE) {
+                status = HudEditorSaveStatus.STALE;
+            } else {
+                hudEditor.apply(player.getUniqueId());
+                status = result == ConfigManager.BatchApplyResult.NO_CHANGES
+                        ? HudEditorSaveStatus.NO_CHANGES : HudEditorSaveStatus.SAVED;
+            }
+            return CompletableFuture.completedFuture(new HudEditorSaveResult(status, session.scope(), 0));
+        } catch (final RuntimeException failure) {
+            return CompletableFuture.failedFuture(failure);
+        } finally {
+            hudEditorSaves.remove(player.getUniqueId());
+        }
+    }
+
+    public void finishHudEditorSave(final Player player, final HudEditorSaveResult result) {
+        if (player == null || result == null) return;
+        if (result.status() != HudEditorSaveStatus.SAVED
+                && result.status() != HudEditorSaveStatus.NO_CHANGES) return;
+        if (result.scope() == HudEditorStateMachine.Scope.GLOBAL) {
+            for (final Player online : plugin.getServer().getOnlinePlayers()) {
+                online.getScheduler().run(plugin, task -> restoreLiveHud(online), null);
+            }
+        } else {
             restoreLiveHud(player);
         }
-        return result;
     }
 
     public boolean cancelHudEditor(final Player player) {
@@ -629,6 +734,7 @@ public final class HudManager {
         hudEditor.cancel(player.getUniqueId());
         iceSmpHudBackend.hide(player);
         hiddenSectionsCache.remove(player.getUniqueId());
+        hudEditorSaves.remove(player.getUniqueId());
         player.hideBossBar(raidBar);
         player.hideBossBar(bloodMoonBar);
         player.hideBossBar(worldBossBar);
@@ -640,17 +746,24 @@ public final class HudManager {
 
     private boolean renderIceSmpHud(final Player player, final HudSnapshot snapshot) {
         final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
-        if (editorSession != null && hudEditorEnabled()) {
+        if (editorSessionEnabled(editorSession)) {
             return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                    HudPreviewCatalog.model(editorSession.preview()), editorSession.working(), true));
+                    HudPreviewCatalog.model(editorSession.preview()), editorSession.working(),
+                    editorSession.selected(), true));
         }
         if (editorSession != null) hudEditor.cancel(player.getUniqueId());
         final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
         final boolean visible = configured && !isSectionHidden(player, SECTION_ALL)
                 && snapshot.classHud() != null;
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                IceSmpHudModel.from(snapshot), configuredHudLayout(), visible));
+                IceSmpHudModel.from(snapshot), effectiveHudLayout(player), visible));
     }
+
+    public enum HudEditorSaveStatus { SAVED, NO_CHANGES, STALE, NO_SESSION, IN_PROGRESS }
+
+    public record HudEditorSaveResult(HudEditorSaveStatus status,
+                                      HudEditorStateMachine.Scope scope,
+                                      int personalOverrideCount) { }
 
     private boolean recordIceSmpHudState(final Player player, final boolean active) {
         if (active) {

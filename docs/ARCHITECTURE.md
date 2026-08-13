@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 769 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 793 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1157,6 +1157,13 @@ projection/cache. Neither can mutate Profile v2 or a class runtime. `ResourcePac
 publishes a thread-safe per-player `SUCCESSFULLY_LOADED` capability; only then does the first-party
 bossbar/font renderer suppress the native compact fallback. No external HUD plugin participates in
 rendering or state ownership. A joining player's missing pack cannot toggle another player's renderer.
+
+The configured `hud.icesmp-hud.layout` is the global presentation base. Personal editor saves use
+`PlayerProfileHudPreferenceStore` and the existing Profile v2 `preferences.values` map as the sole
+durable player authority. Keys below `hud.layout.*` are sparse field-level overrides, not a copied
+snapshot: effective layout is rebuilt as `global base + valid personal differences`, so untouched
+fields inherit later global changes. Reset-to-global removes those keys through the same CAS-backed
+section mutation. Editor sessions and synthetic previews remain isolated, immutable runtime state.
 
 The renderer uses BMP private-use spacing, fixed-width glyph cells and zero-net-width draw commands.
 Dynamic values (including `0`, `120`, class changes, rune states and wallet counts) therefore cannot

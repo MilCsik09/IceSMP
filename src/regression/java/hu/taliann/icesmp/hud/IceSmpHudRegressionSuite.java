@@ -37,7 +37,7 @@ public final class IceSmpHudRegressionSuite {
                 "both empty and full resources must produce a HUD frame");
         check(ShadowColor.none().equals(empty.shadowColor())
                         && ShadowColor.none().equals(full.shadowColor()),
-                "the root HUD style must disable Minecraft's bossbar text-shadow pass");
+                "HUD roots must disable the vanilla text shadow pass to prevent duplicate shader glyphs");
         check(IceSmpHudRenderer.SPACE_FIRST >= 0xE000
                         && IceSmpHudRenderer.SPACE_FIRST + IceSmpHudRenderer.SPACE_MAX
                         - IceSmpHudRenderer.SPACE_MIN <= 0xF8FF,
@@ -133,7 +133,7 @@ public final class IceSmpHudRegressionSuite {
         final String config = read("src/main/resources/config/general.yml");
         check(manifest.contains("\"fixed_segment_count\": 12")
                         && manifest.contains("\"wallet_slots\": 4")
-                        && manifest.contains("\"layout_color_payload_bits\": 12")
+                        && manifest.contains("\"layout_color_payload_bits\": 13")
                         && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"vanilla_health_hidden\": false")
                         && manifest.contains("\"vanilla_armor_hidden\": false"),
@@ -158,7 +158,7 @@ public final class IceSmpHudRegressionSuite {
                         && vertexShader.contains("<minecraft:projection.glsl>")
                         && vertexShader.contains("<minecraft:globals.glsl>")
                         && vertexShader.contains("vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize")
-                        && vertexShader.contains("const float HUD_LAYOUT_SCALES[8]")
+                        && vertexShader.contains("const float HUD_LAYOUT_SCALES[16]")
                         && vertexShader.contains("int layoutCode = (packedColor.r & 15)")
                         && vertexShader.contains("vec2 selectedHudScale = hudScale * layoutScale")
                         && vertexShader.contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")
