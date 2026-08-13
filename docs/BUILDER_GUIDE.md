@@ -1045,3 +1045,45 @@ rituáléstruktúrákat és rejtett helyeket.
 A teljes pipálható csapatfolyamat:
 [release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).
 
+## 18. Season 0 / Prologue — Olethropyla runtime hookok
+
+A Prologue **nem használ beégetett világkoordinátákat**. A végleges staging
+világon négy konfigurált runtime hookot kell feloldani és ellenőrizni:
+
+| Hook | Szerep | Builderfeltétel |
+|---|---|---|
+| `prologue-gate` | Olethropyla / Kárhozat Kapuja központi kapu-anchor | a tényleges ősi Kapu helye; védett, jól megközelíthető, a Nether-travel policyvel együtt tesztelve |
+| `prologue-gathering` | a production finale gyülekezőpontja | nagyobb játékoscsoport számára szabad, biztonságos tér, ne essen spawn- vagy combatveszélybe |
+| `prologue-breach` | a breach- és finale-hullámok encounter anchorja | moboknak/addoknak elegendő mozgástér, tiszta spawnmag, nincs claim/WG/territory ütközés |
+| `prologue-boss` | a finale boss arena anchorja | boss + addok + telegraphok számára szabad aréna, menekülési és játékosforgalmi útvonallal |
+
+A dokumentációba **ne írj kitalált koordinátát**. A hookok tényleges értéke a
+végleges world buildből jön; módosítás előtt készíts world/config backupot,
+és minden kötést a végleges release-builddel olvass vissza.
+
+### Builder acceptance
+
+A Prologue helyszínt csak akkor add át, ha mind a négy hook ténylegesen
+feloldódik, nincs idegen claim/WorldGuard/protection konfliktus, és a normál
+játékosos hozzáférés megfelel a Season 0 policynek. Külön próbáld ki:
+
+1. a `prologue-gate` elérhetőségét Season 0 alatt úgy, hogy a Kapu még nem
+   átjárható;
+2. a rehearsal teljes gathering → breach → boss útját tartós Gate/reward
+   side effect nélkül;
+3. production finale startot, pause-t, resume-ot és az irreverzibilis
+   szakasz előtti abortot;
+4. aktív wave és boss közbeni pause-t: a mobok nem harcolhatnak tovább, új
+   spawn/mechanika nem indulhat, a játékos sem ütheti büntetlenül a
+   befagyasztott event mobot;
+5. `BOSS_FIGHT` + pause alatti kontrollált restartot, majd resume-ot;
+6. abort, timeout és kontrollált shutdown után az event entityk teljes
+   cleanupját, árva Prologue mob nélkül;
+7. Gate-unlock után az egyetlen legitim Nether-átjárást Olethropylán; más
+   Nether-portál létrehozása továbbra is tiltott;
+8. az End policy változatlanságát — a Prologue buildermunka nem nyitja meg a
+   Véget és nem hoz létre alternatív portálrendszert.
+
+A world-hook acceptance kézi stagingkapu. A source-level Folia és regression
+tesztek nem helyettesítik a tényleges aréna-, collision-, spawn- és
+játékosforgalmi próbát.
