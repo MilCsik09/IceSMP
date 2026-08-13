@@ -89,9 +89,11 @@ public final class PrologueRegressionSuite {
 
         String safety=source("src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleSafety.java");
         int latch=safety.indexOf("victoryObserved.compareAndSet(false,true)");
-        int pending=safety.indexOf("markBossVictoryPending",latch);
-        int async=safety.indexOf("getAsyncScheduler().runNow",pending);
-        check(latch>=0&&pending>latch&&async>pending,"victory latch/pending receipt is ordered after async persistence");
+        int async=safety.indexOf("getAsyncScheduler().runNow",latch);
+        int pending=safety.indexOf("markBossVictoryPending",async);
+        int durable=safety.indexOf("recordBossVictory",pending);
+        check(latch>=0&&async>latch&&pending>async&&durable>pending,
+                "victory latch must fence spawn before off-region durable pending/victory writes");
         check(safety.contains("blocksBossSpawn()")&&safety.contains("markBossVictoryPersistenceFailure")
                         &&safety.contains("retryVictory"),"victory latency/failure is not fail-closed and recoverable");
 
