@@ -3,6 +3,7 @@ package hu.taliann.icesmp;
 import hu.taliann.icesmp.core.IceSMPCore;
 import hu.taliann.icesmp.integration.ProtectionBridge;
 import hu.taliann.icesmp.listeners.ResourcePackListener;
+import hu.taliann.icesmp.prologue.PrologueRuntime;
 import hu.taliann.icesmp.utils.TransientEntities;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,6 +23,7 @@ public final class IceSMP extends JavaPlugin {
         TransientEntities.install(this);
         core = new IceSMPCore(this, resourcePackListener::reloadAndResend, resourcePackListener::isLoaded);
         core.enable();
+        PrologueRuntime.install(this);
 
         if (getServer().getPluginManager().getPlugin("WorldGuard") != null
                 && !ProtectionBridge.isHealthy()) {
@@ -31,21 +33,16 @@ public final class IceSMP extends JavaPlugin {
                     + "WorldGuard-híd stack trace-ben látható.");
         }
 
-        // Hot plugin reloads may enable while players are already online. Every actual call is
-        // scheduled onto the player's owning region thread by the listener.
         resourcePackListener.resendCurrent();
     }
 
     @Override
     public void onDisable() {
         try {
-            if (core != null) {
-                core.disable();
-            }
+            PrologueRuntime.shutdown();
+            if (core != null) core.disable();
         } finally {
-            if (resourcePackListener != null) {
-                resourcePackListener.close();
-            }
+            if (resourcePackListener != null) resourcePackListener.close();
             TransientEntities.shutdown();
         }
     }
