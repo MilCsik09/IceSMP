@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.prologue;
 
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
@@ -41,32 +42,46 @@ final class PrologueFinaleSafety {
         if(!victoryObserved.compareAndSet(false,true))return;
         UUID id=state.finaleId();
         if(id==null){failure.accept(new IllegalStateException("Hiányzó Prologue finale-id"));return;}
-        try{state.markBossVictoryPending(id,"boss-death:pending");}
-        catch(RuntimeException x){encounters.pauseActive();failClosed(id,x);failure.accept(x);return;}
-        commit(id,"boss-death",false,failure);
+        commit(id,"boss-death",false,true,failure);
     }
     private void retryVictory(String actor,Consumer<RuntimeException> failure){
         UUID id=state.finaleId();if(id==null)throw new IllegalStateException("Nincs aktív Prologue finale-id");
-        victoryObserved.set(true);commit(id,actor+":retry",true,failure);
+        victoryObserved.set(true);commit(id,actor+":retry",true,false,failure);
     }
-    private void commit(UUID id,String actor,boolean resumeAfter,Consumer<RuntimeException> failure){
+    private void commit(UUID id,String actor,boolean resumeAfter,boolean reservePending,
+                        Consumer<RuntimeException> failure){
         if(!victoryCommitInFlight.compareAndSet(false,true))return;
-        Bukkit.getAsyncScheduler().runNow(plugin,t->{
-            RuntimeException problem=null;
-            try{state.recordBossVictory(id,actor);}
-            catch(RuntimeException x){problem=x;failClosed(id,x);}
-            RuntimeException result=problem;victoryCommitInFlight.set(false);
+        try{
+            Bukkit.getAsyncScheduler().runNow(plugin,t->{
+                RuntimeException problem=null;
+                try{
+                    if(reservePending)state.markBossVictoryPending(id,"boss-death:pending");
+                    state.recordBossVictory(id,actor);
+                }catch(RuntimeException x){problem=x;failClosed(id,x);}
+                RuntimeException result=problem;victoryCommitInFlight.set(false);
+                scheduleResult(result,resumeAfter,actor,failure);
+            });
+        }catch(IllegalPluginAccessException unavailable){
+            victoryCommitInFlight.set(false);
+            RuntimeException problem=new IllegalStateException("A Prologue persistence schedulere nem elérhető",unavailable);
+            failClosed(id,problem);failure.accept(problem);
+        }
+    }
+    private void scheduleResult(RuntimeException result,boolean resumeAfter,String actor,
+                                Consumer<RuntimeException> failure){
+        if(!plugin.isEnabled())return;
+        try{
             Bukkit.getGlobalRegionScheduler().run(plugin,g->{
                 if(result!=null){failure.accept(result);return;}
                 if(resumeAfter)try{state.pause(false,actor+":resume");}catch(RuntimeException x){failure.accept(x);}
             });
-        });
+        }catch(IllegalPluginAccessException ignored){ }
     }
     private void failClosed(UUID id,RuntimeException problem){
         try{state.markBossVictoryPersistenceFailure(id,detail(problem),"boss-victory:persistence-failure");}
         catch(RuntimeException secondary){
             try{state.pause(true,"boss-victory:fail-closed");}catch(RuntimeException ignored){}
-            plugin.getLogger().severe("Prologue finale victory failure receipt also failed: "+secondary);
+            plugin.getLogger().severe("Prologue finale completion receipt also failed: "+secondary);
         }
     }
     private static String detail(Throwable x){String v=x.getMessage();return v==null||v.isBlank()?x.getClass().getSimpleName():v;}
