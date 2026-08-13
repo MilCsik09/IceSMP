@@ -68,6 +68,7 @@ public final class Permissions {
     /** Player permission for /sit and click-to-sit. */
     public static final String SIT = "icesmp.sit";
     public static final String INSPECT = "icesmp.admin.inspect";
+    public static final String CLIENT = "icesmp.admin.client";
     public static final String ITEM = "icesmp.admin.item";
     public static final String TERRITORY_BUILDER = "icesmp.territory.builder";
 
@@ -103,6 +104,7 @@ public final class Permissions {
         canonical.put(WAR, "Hadi-ablak admin (/faction war start|stop)");
         canonical.put(CRATE, "Láda-admin (/crate set/remove/give)");
         canonical.put(INSPECT, "Játékos-inspektor (/icesmp inspect)");
+        canonical.put(CLIENT, "Kliens-bridge diagnosztika és resync (/icesmp client)");
         canonical.put(ITEM, "Admin item-adás (/iceitem)");
         canonical.put(TERRITORY_BUILDER, "Építés a védett zónákban (szerver-építő szerep)");
 

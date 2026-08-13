@@ -825,7 +825,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 
 | Terület | Legfontosabb parancsok | Mire használd? |
 |---|---|---|
-| Alaprendszer | `/icesmp`, `/menu`, `/profile`, `/stats`, `/hud` | állapot, reload, config, játékosnézet |
+| Alaprendszer | `/icesmp`, `/menu`, `/profile`, `/stats`, `/hud` | állapot, reload, config, játékosnézet, kliens-bridge diagnosztika (`/icesmp client`) |
 | Moderáció | `/warn`, `/kick`, `/mute`, `/tempban`, `/ban`, `/unmute`, `/unban`, `/history`, `/punishments`, `/reports` | dokumentált staffintézkedés |
 | Láthatóság és kommunikáció | `/msg`, `/tell`, `/w`, `/reply`, `/socialspy`, `/vanish`, `/moderation` | PM, megfigyelés, staffjelenlét |
 | Inventory és hely | `/invsee`, `/offlinetp` | online inventory read/edit és utolsó ismert hely |
@@ -866,7 +866,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 - A legacy node-ok működnek, de új kiosztásnál a kanonikus `icesmp.admin.*` neveket használd.
 - A crate-definíciók tetszőleges, `icesmp.` prefixű plusz node-ot regisztrálhatnak default `FALSE` értékkel.
 
-### Teljes node-lista (44)
+### Teljes node-lista (45)
 
 | Node | Leírás | Célközönség | Command | GUI | Listener/service | Parent | Default | Érzékenység | Javasolt kiosztás | Deployed változás |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -890,6 +890,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `icesmp.admin.war` | Hadiablak kézi vezérlése. | Eventes/Admin | /faction war start/stop | — | — | icesmp.admin.all | OP | magas | Eventes/vezető admin | Új |
 | `icesmp.admin.crate` | Crate hely, kulcs, stat és recovery admin. | Vezető admin | /crate set/remove/give/list/stats/resetstats/status | — | CrateListener | icesmp.admin.all | OP | kritikus | Crate-admin | Új |
 | `icesmp.admin.inspect` | Összesített játékosinspektor. | Admin | /icesmp inspect | — | — | icesmp.admin.all | OP | magas | Admin | Új |
+| `icesmp.admin.client` | Kliens-bridge diagnosztika és kényszerített resync. | Fejlesztő/üzemeltető | /icesmp client | — | IceSmpClientBridge | icesmp.admin.all | OP | közepes | Üzemeltető/fejlesztő | Új |
 | `icesmp.admin.item` | Bármely natív/plugin item kiadása. | Fejlesztő/vezető admin | /iceitem | Admin menü | — | icesmp.admin.all | OP | kritikus | Csak fejlesztő/vezető admin | Új |
 | `icesmp.territory.builder` | Építés a védett zónákban teljes admin-bypass nélkül. | Builder | — | — | TerritoryProtectionService | icesmp.admin.all | OP | magas | Megbízható builder | Megváltozott |
 | `icesmp.admin.moderation` | Moderációs csomag szülőnode; a report admin is közvetlenül használja. | Moderátor/Admin | /reports | Moderációs GUI reports gomb | Moderation/Report listenerek | icesmp.admin.all | OP | kritikus | Moderátori szerepcsomag | Új |
@@ -1477,6 +1478,16 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | AFK-06B Feltétlen reward gate | Tesztelő | mindkét AFK-kulcs false; fishing windfall és ambient pénzjutalom | AFK játékos e két jutalmat továbbra sem kapja meg | forráseltérés hibajegy, termékdöntés | `afk/AFK-06B/` |
 | [ ] | AFK-07 Nincs zónás jutalom | Admin | live Ax fájlok eltávolítva | nincs zone, bossbar, timer vagy payout | deployment leállítása | `afk/AFK-07/` |
 
+### Kliens-bridge (protokoll-alap)
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | CLIENT-01 Vanilla parity | Tesztelő | kliensmod NÉLKÜLI join, resource packkal | join, gameplay, HUD és minden rendszer változatlan; `/icesmp client <név>` „vanilla kliens” választ ad | client rollout stop | `client/CLIENT-01/` |
+| [ ] | CLIENT-02 Kézfogás | Fejlesztő | IceSMP Client teszt-build (Phase 0 spike) | CLIENT_HELLO→SERVER_HELLO lefut; `/icesmp client <név>` mutatja a verziót, protokollt, generationt; capability-lista üres, amíg minden `client.features.*` false | `client.enabled: false` és hibajegy | `client/CLIENT-02/` |
+| [ ] | CLIENT-03 Inkompatibilis kliens | Fejlesztő | protokoll-tartományon kívüli teszt-HELLO | PROTOCOL_REJECT megy ki, nincs kick, a játékos vanilla módban játszik | `client.enabled: false` | `client/CLIENT-03/` |
+| [ ] | CLIENT-04 Reconnect és stale csomag | Fejlesztő | gyors reconnect + régi generation-nel küldött csomag | új session nagyobb generationt kap; a régi generation/sequence csomagja stale-dropra megy (`/icesmp client stats`) | hibajegy, rollout stop | `client/CLIENT-04/` |
+| [ ] | CLIENT-05 Rollback-kapcsoló | Admin | élő session mellett `/icesmp config set client.enabled false` | a híd restart nélkül minden üzenetet eldob, gameplay és vanilla kliens érintetlen | restart + hibajegy | `client/CLIENT-05/` |
+
 ### Mini-plugin megfelelői
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
@@ -1505,7 +1516,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | DEP-01 Artifact azonosítás | Üzemeltető | release JAR | SHA rögzítve, nem a deployed baseline JAR | ismeretlen JAR nem telepíthető | `deployment/DEP-01/` |
 | [ ] | DEP-02 Teljes backup | Üzemeltető | világ, plugins, config, state, remap cache | visszaállítható backup és restore próba | deployment törlése | `deployment/DEP-02/` |
 | [ ] | DEP-03 Config merge | Admin | live config + referencia | ismeretlen/legacy AFK kulcsok külön kezelve | stagingben javítás | `deployment/DEP-03/` |
-| [ ] | DEP-04 Permissionkiosztás | Vezető admin | LuckPerms export | 44 final statikus/dinamikus node áttekintve | ne nyisd ki a szervert | `deployment/DEP-04/` |
+| [ ] | DEP-04 Permissionkiosztás | Vezető admin | LuckPerms export | 45 final statikus/dinamikus node áttekintve | ne nyisd ki a szervert | `deployment/DEP-04/` |
 | [ ] | DEP-05 Ax cleanup | Üzemeltető | backup | AxAFKZone/AxAPI jar, adat és remap-cache nincs a célban | vissza backupból, vizsgálat | `deployment/DEP-05/` |
 | [ ] | DEP-06 Feltételes pluginok | Szervervezető | kitöltött acceptance | GSit/CrazyCrates/SModeration/InvSee++/MiniMOTD csak saját kapu után kerül ki | külső plugin marad | `deployment/DEP-06/` |
 | [ ] | DEP-07 Első staging start | Üzemeltető | tiszta log és másolt state | nincs kritikus persistence/config hiba | azonnali stop, logmentés | `deployment/DEP-07/` |

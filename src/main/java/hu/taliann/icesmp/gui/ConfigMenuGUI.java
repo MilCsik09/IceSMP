@@ -338,6 +338,11 @@ public final class ConfigMenuGUI {
                 Entry.toggle("donation-chest.enabled", "Adományláda"),
                 Entry.integer("donation-chest.max-items", "Teljes tételkapacitás", 45, 45, 2700),
                 Entry.integer("donation-chest.max-per-player", "Tételek játékosonként", 1, 0, 2700))));
+        categories.put("kliens", new Category("kliens", "Kliens-bridge", Material.SPYGLASS, List.of(
+                Entry.toggle("client.enabled", "Kliens-bridge (rollback-kapcsoló)"),
+                Entry.toggle("client.debug", "Bridge debug-napló"),
+                Entry.integer("client.limits.control-messages-per-second", "Control-üzenet plafon (db/mp)", 5, 1, 200),
+                Entry.integer("client.limits.resync-cooldown-ms", "Resync-szünet (ms)", 500, 500, 60000))));
         return categories;
     }
 

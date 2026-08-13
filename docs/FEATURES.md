@@ -1236,6 +1236,37 @@ Jogosultságvédett dev-itemek, itemadás, debug/inspect és a fejlesztői tárg
 
 </details>
 
+### IceSMP Client Bridge (protokoll-alap)
+
+<!-- icesmp-doc-id: feature.developer.client_bridge -->
+
+> **Aktív, adminisztratív** · A futó JAR-hoz képest: **Új rendszer**
+
+Az opcionális Fabric kliensmod (IceSMP Client) szerveroldali alapja: plugin messaging transport
+(`icesmp:client`), verzió- és capability-kézfogás, session-kezelés, rate limit és admin-diagnosztika.
+Gameplay-integrációt még nem tartalmaz; a kliens sosem authority, a vanilla kliens + kötelező
+resource pack teljes értékű marad.
+
+- **Így találkozol vele:** `/icesmp client <stats|név>`, `/icesmp client resync <név>`; a játékos
+  számára láthatatlan, amíg nincs IceSMP Client modja.
+- **Kinek szól:** Fejlesztő/üzemeltető, Admin.
+- **Mitől mozdul meg:** A kliensmod kézfogás-üzenete; admin-diagnosztikai parancs.
+- **Ami még kellhet hozzá:** A Fabric kliensmod (külön `IceSMP-Client` repo) — addig minden
+  `client.features.*` kapcsoló maradjon `false`.
+- **Fontos határ:** A `client.required` termék-elv szerint `false`: az Enhanced kliens nem lehet
+  gameplay-előny feltétele.
+
+<details>
+<summary>Admin- és technikai jegyzet</summary>
+
+- Permission: `icesmp.admin.client`
+- Config: `client.*` (`client.yml`): `enabled` (rollback-kapcsoló), `protocol.min/max`,
+  `resource-pack-schema`, `limits.*`, `features.*` (mind alapból false), `debug`.
+- Tartós állapot: Nincs — a session-registry in-memory, quit/reconnect/disable eldobja.
+- Reload: Minden kulcs élő (use-site olvasás); `client.enabled: false` restart nélkül állítja le a hidat.
+
+</details>
+
 ## Tervezett, de nem aktív tartalom
 
 A lore több ajtót mutat, mint amennyi ma kinyitható. Ez a rész választja el a kánont és a kommunikációs ötleteket a ténylegesen elérhető játékrendszerektől.
