@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -37,8 +38,10 @@ final class PrologueFinaleSettlement {
         long silence=Math.max(1L,config.getLong("world-events.prologue.finale.false-end-seconds",7L))*1000L;
         if(phaseAgeMillis<silence||!transitionInFlight.compareAndSet(false,true))return;
         Bukkit.getAsyncScheduler().runNow(plugin,t->{
-            try{state.unlockGateAfterVictory("finale-victory");Bukkit.getGlobalRegionScheduler().run(plugin,g->visualAwakening());}
-            catch(RuntimeException x){plugin.getLogger().severe("Gate activation commit failed; Prologue remains fail-closed: "+x);}
+            try{
+                state.unlockGateAfterVictory("finale-victory");
+                scheduleGlobal(this::visualAwakening);
+            }catch(RuntimeException x){plugin.getLogger().severe("Gate activation commit failed; Prologue remains fail-closed: "+x);}
             finally{transitionInFlight.set(false);}
         });
     }
@@ -50,12 +53,17 @@ final class PrologueFinaleSettlement {
             if(!state.rewardsCommitted()){
                 if(rewardFuture==null){
                     rewardFuture=rewards.commitFinaleParticipants(state.finaleParticipants()).toCompletableFuture();
-                    rewardFuture.whenComplete((ignored,failure)->Bukkit.getGlobalRegionScheduler().run(plugin,t->{
-                        if(failure==null){try{state.markRewardsCommitted("profile-v2-rewards");}
-                            catch(RuntimeException x){plugin.getLogger().severe("Prologue reward completion commit failed: "+x);}}
-                        else plugin.getLogger().severe("Prologue Profile v2 reward delivery failed: "+failure);
-                        rewardFuture=null;
-                    }));
+                    rewardFuture.whenComplete((ignored,failure)->{
+                        if(!scheduleGlobal(()->{
+                            if(failure==null){
+                                try{state.markRewardsCommitted("profile-v2-rewards");}
+                                catch(RuntimeException x){plugin.getLogger().severe("Prologue reward completion commit failed: "+x);}
+                            }else plugin.getLogger().severe("Prologue Profile v2 reward delivery failed: "+failure);
+                            rewardFuture=null;
+                        })){
+                            rewardFuture=null;
+                        }
+                    });
                 }
                 return;
             }
@@ -76,7 +84,8 @@ final class PrologueFinaleSettlement {
                     throw new IllegalStateException("Prologue monument commit unavailable");
                 state.markMonumentCommitted("monument:first-expedition");
             }
-            if(state.finalePhase()!=PrologueFinalePhase.EPILOGUE)state.checkpoint(PrologueFinalePhase.EPILOGUE,"finale:epilogue");
+            if(state.finalePhase()!=PrologueFinalePhase.EPILOGUE)
+                state.checkpoint(PrologueFinalePhase.EPILOGUE,"finale:epilogue");
         }catch(RuntimeException x){plugin.getLogger().severe("Prologue settlement blocked: "+x);}
         finally{transitionInFlight.set(false);}
     }
@@ -89,18 +98,36 @@ final class PrologueFinaleSettlement {
                 seasonTransition.prepareSeasonOne(state.finalePhaseChangedAt());
                 state.markSeasonOneStarted("season-one-prepared");
             }
-            UUID id=state.finaleId();state.complete("season-one-transition");seasonTransition.activateSeasonOne();
-            runState.clear(id);participants.stop();
+            UUID id=state.finaleId();
+            state.complete("season-one-transition");
+            seasonTransition.activateSeasonOne();
+            runState.clear(id);
+            participants.stop();
             Bukkit.broadcast(Component.text("A Prologue véget ért. Megkezdődött az első szezon.",NamedTextColor.GOLD));
         }catch(RuntimeException x){plugin.getLogger().severe("Season 1 transition blocked; Prologue remains fail-closed: "+x);}
         finally{transitionInFlight.set(false);}
     }
 
     void visualAwakening(){
-        for(Player player:Bukkit.getOnlinePlayers())player.getScheduler().run(plugin,t->player.showTitle(
-                net.kyori.adventure.title.Title.title(Component.text("OLETHROPYLA",NamedTextColor.DARK_PURPLE),
-                        Component.text("A Kárhozat Kapuja megnyílt.",NamedTextColor.GOLD))),null);
+        if(!plugin.isEnabled())return;
+        for(Player player:Bukkit.getOnlinePlayers()){
+            try{
+                player.getScheduler().run(plugin,t->player.showTitle(
+                        net.kyori.adventure.title.Title.title(Component.text("OLETHROPYLA",NamedTextColor.DARK_PURPLE),
+                                Component.text("A Kárhozat Kapuja megnyílt.",NamedTextColor.GOLD))),null);
+            }catch(IllegalPluginAccessException ignored){return;}
+        }
         Bukkit.broadcast(Component.text("Olethropyla stabil átjáróvá vált.",NamedTextColor.LIGHT_PURPLE));
+    }
+
+    private boolean scheduleGlobal(Runnable work){
+        if(!plugin.isEnabled())return false;
+        try{
+            Bukkit.getGlobalRegionScheduler().run(plugin,t->work.run());
+            return true;
+        }catch(IllegalPluginAccessException ignored){
+            return false;
+        }
     }
 
     void resetTransient(){rewardFuture=null;transitionInFlight.set(false);}
