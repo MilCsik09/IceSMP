@@ -12,19 +12,27 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
-/** Prepares a clean Season 1 generation; admission stays runtime-gated until Prologue COMPLETED. */
+/** Prepares a clean Season 1 generation; admission stays gated until Prologue COMPLETED. */
 public final class PrologueSeasonTransition {
     private final JavaPlugin plugin;
     private final ConfigManager config;
+    private final File receiptFile;
 
     public PrologueSeasonTransition(final JavaPlugin plugin, final ConfigManager config) {
         this.plugin = plugin;
         this.config = config;
+        this.receiptFile = new File(plugin.getDataFolder(), "prologue-season-transition.yml");
+        YamlStore.registerCriticalWrite(receiptFile);
     }
 
-    public void prepareSeasonOne(final long startTimestamp) {
-        if (startTimestamp <= 0L) throw new IllegalArgumentException("Season 1 start timestamp is required");
+    /**
+     * The actual Season 1 start timestamp is reserved exactly once immediately before the clean
+     * generation write. Replays reuse that receipt instead of drifting to plugin/prologue startup.
+     */
+    public synchronized void prepareSeasonOne(final long ignoredLegacyTimestamp) {
+        final long startTimestamp = seasonOneStartTimestamp();
         final SeasonManager season = resolveSeasonManager();
         final CommunityGoalManager community = resolveCommunityGoalManager();
         final File communityFile = new File(plugin.getDataFolder(), "community-goals.yml");
@@ -38,7 +46,7 @@ public final class PrologueSeasonTransition {
             YamlStore.saveAtomic(communityFile, cleanCommunity);
             YamlStore.saveAtomic(seasonFile, cleanSeason);
         } catch (final IOException failure) {
-            throw new java.io.UncheckedIOException("Season 1 transition state write failed", failure);
+            throw new UncheckedIOException("Season 1 transition state write failed", failure);
         }
         season.load();
         community.load();
@@ -48,6 +56,28 @@ public final class PrologueSeasonTransition {
         config.clearRuntimeOverride("world-events.season.enabled");
         config.clearRuntimeOverride("world-events.season-finale.enabled");
         config.clearRuntimeOverride("community-goals.enabled");
+    }
+
+    public synchronized long seasonOneStartTimestamp() {
+        if (receiptFile.exists()) {
+            final YamlConfiguration yaml = YamlStore.loadTracked(receiptFile, plugin.getLogger());
+            final long existing = yaml.getLong("season-one-start", -1L);
+            if (existing <= 0L) {
+                YamlStore.failCorrupt(receiptFile, plugin.getLogger(),
+                        "Érvénytelen Season 1 start receipt");
+                throw new IllegalStateException("Invalid Season 1 start receipt");
+            }
+            return existing;
+        }
+        final long reserved = System.currentTimeMillis();
+        final YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("season-one-start", reserved);
+        try {
+            YamlStore.saveAtomic(receiptFile, yaml);
+        } catch (final IOException failure) {
+            throw new UncheckedIOException("Season 1 start receipt write failed", failure);
+        }
+        return reserved;
     }
 
     private SeasonManager resolveSeasonManager() {

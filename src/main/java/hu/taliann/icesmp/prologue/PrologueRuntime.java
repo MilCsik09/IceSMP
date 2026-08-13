@@ -77,7 +77,7 @@ public final class PrologueRuntime implements Listener {
         runtime.tickTask = Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin,
                 task -> runtime.tick(), 20L, 20L);
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            runtime.rewards.grantFounderWhenProfileReady(player, 0);
+            runtime.rewards.grantEligibleWhenProfileReady(player, 0);
         }
         return runtime;
     }
@@ -212,6 +212,6 @@ public final class PrologueRuntime implements Listener {
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
-        rewards.grantFounderWhenProfileReady(event.getPlayer(), 0);
+        rewards.grantEligibleWhenProfileReady(event.getPlayer(), 0);
     }
 }
