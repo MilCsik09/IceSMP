@@ -7,46 +7,40 @@ import java.util.Optional;
 
 /** Stable ids for every independently editable first-party HUD draw group. */
 public enum HudComponent {
-    GLOBAL("global", "Teljes HUD", false),
-    FRAME("frame", "Fő keret", true),
-    CLASS_ICON("class-icon", "Kaszt ikon", true),
-    CLASS_NAME("class-name", "Kaszt és specializáció", true),
-    FACTION("faction", "Frakció", true),
-    LEVEL_ICON("level-icon", "Szint ikon", true),
-    LEVEL_TEXT("level-text", "Szint érték", true),
-    WALLET_FRAME("wallet-frame", "Valuta keret", true),
-    WALLET("wallet", "Valuták", true),
-    RESOURCE_LABEL("resource-label", "Erőforrás felirat", true),
-    RESOURCE_BAR("resource-bar", "Erőforrás csík", true),
-    PRIMARY_MECHANIC("primary-mechanic", "Elsődleges mechanika", true),
-    SECONDARY_MECHANIC("secondary-mechanic", "Másodlagos mechanika", true),
-    CHARGES("charges", "Töltetek és rúnák", true),
-    STATE_PROC("state-proc", "Állapot és proc", true),
-    DETAIL_FRAME("detail-frame", "Részlet keret", true),
-    DETAIL_METRICS("detail-metrics", "Részlet metrikák", true),
-    EVENT_ICON("event-icon", "Esemény ikon", true),
-    EVENT_TEXT("event-text", "Esemény szöveg", true);
+    GLOBAL("global", false),
+    FRAME("frame", true),
+    CLASS_ICON("class-icon", true),
+    CLASS_NAME("class-name", true),
+    FACTION("faction", true),
+    LEVEL_ICON("level-icon", true),
+    LEVEL_TEXT("level-text", true),
+    WALLET_FRAME("wallet-frame", true),
+    WALLET("wallet", true),
+    RESOURCE_LABEL("resource-label", true),
+    RESOURCE_BAR("resource-bar", true),
+    PRIMARY_MECHANIC("primary-mechanic", true),
+    SECONDARY_MECHANIC("secondary-mechanic", true),
+    CHARGES("charges", true),
+    STATE_PROC("state-proc", true),
+    DETAIL_FRAME("detail-frame", true),
+    DETAIL_METRICS("detail-metrics", true),
+    EVENT_ICON("event-icon", true),
+    EVENT_TEXT("event-text", true);
 
     private static final List<HudComponent> EDITABLE = Arrays.stream(values())
             .filter(HudComponent::rendered).toList();
     private static final List<HudComponent> TARGETS = List.copyOf(Arrays.asList(values()));
 
     private final String id;
-    private final String displayName;
     private final boolean rendered;
 
-    HudComponent(final String id, final String displayName, final boolean rendered) {
+    HudComponent(final String id, final boolean rendered) {
         this.id = id;
-        this.displayName = displayName;
         this.rendered = rendered;
     }
 
     public String id() {
         return id;
-    }
-
-    public String displayName() {
-        return displayName;
     }
 
     public boolean rendered() {
