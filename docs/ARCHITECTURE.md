@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 823 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 825 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1195,7 +1195,7 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `RelicStatePayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
 | Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector` (display-only leképezések) | ClientProfileProjector: igen (élő managerekből olvas) |
 | Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute) | igen |
@@ -1224,7 +1224,8 @@ ismeretlen üzenettípus, hamis hosszmező és trailing bájt egyaránt csendes 
 Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCOL_REJECT`,
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
 State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
-`0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`. Action-sáv
+`0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
+`0x25 RELIC_STATE` (0x24 a FACTION_STATE-nek fenntartva). Action-sáv
 (0x40–0x4F, kliens → szerver intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`,
 `0x42 TOGGLE_FAVORITE`.
 Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
@@ -1314,6 +1315,20 @@ manager-hívásokból építi, mint a vanilla GUI. `NATIVE_PROFILE` capability +
 `client.features.native-profile` kapu; push a HUD-mintájú bájt-dedupe-pal (tick-enként
 épül, de csak változásra megy ki). PlayerProfile authority-szabály: revision/CAS,
 operation-receipt, moderációs mező és rejtett quest-state SOHA nem kerülhet a payloadba.
+
+### Relic-state (RELIC_STATE, v1)
+
+A `RELIC_STATE` a SAJÁT játékos class-relic aktivációjának display-projekciója
+(`ClassRelicActivation` tükre + display-név a `relics.definitions` katalógusból) a
+`RELIC_RENDER_V1` capability + `client.features.relic-render-v1` kapu mögött. A
+`ClassRelicService.resolve` UUID-only, lock-mentes és cache-only, ezért a tick-cadence
+olcsón elbírja; bájt-dedupe-pal csak változásra megy ki. Szándékos v1-korlátok: (1)
+csak saját-játékos state — más viselők attachment-broadcastja külön kézbesítési
+infrastruktúrát igényel (későbbi fázis); (2) nincs awakening-readyAt mező, mert a
+szervernek ma nincs erre query-API-ja (a store csak tryArm-ot ismer) — az Awakening
+élesítésekor pótolandó; (3) szerveroldali vanilla-suppression e fázisban nem kellett,
+mert a class-relic rétegnek jelenleg nincs szerveroldali vizuálja — amikor lesz, a
+hídbeli `relicRenderActive` kapu a kész suppression-predikátum hozzá.
 
 ### Session-életciklus és védelem
 

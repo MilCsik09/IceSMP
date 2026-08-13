@@ -1622,6 +1622,11 @@ public final class IceSMPCore {
         clientBridge.connectAbilityKit(abilityCatalystListener, spellRegistry);
         clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
                 .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
+        clientBridge.connectRelicState(relicPlayerId -> hu.taliann.icesmp.client.projection.ClientRelicProjector
+                .project(classRelicService.resolve(relicPlayerId), relicId -> {
+                    final hu.taliann.icesmp.relics.RelicDefinition definition = relicManager.getDefinition(relicId);
+                    return definition == null ? relicId : definition.displayName();
+                }));
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();

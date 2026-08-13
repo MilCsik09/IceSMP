@@ -11,6 +11,7 @@ import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
+import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
@@ -75,6 +76,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, byte[]> lastKitSignature = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, String> lastSpellbookSignature = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastProfileState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastRelicState = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -82,6 +84,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     /** A core köti be: a /profile GUI-val azonos tartalmú PROFILE_STATE forrása. */
     private volatile Function<Player, ProfileStatePayload> profileStateSource;
+
+    /** A core köti be: a saját class-relic aktiváció RELIC_STATE forrása (UUID-only, olcsó). */
+    private volatile Function<UUID, RelicStatePayload> relicStateSource;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -122,6 +127,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastKitSignature.clear();
         lastSpellbookSignature.clear();
         lastProfileState.clear();
+        lastRelicState.clear();
     }
 
     @Override
@@ -212,6 +218,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastKitSignature.remove(player.getUniqueId());
         lastSpellbookSignature.remove(player.getUniqueId());
         lastProfileState.remove(player.getUniqueId());
+        lastRelicState.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -445,6 +452,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastKitSignature.remove(player.getUniqueId());
             lastSpellbookSignature.remove(player.getUniqueId());
             lastProfileState.remove(player.getUniqueId());
+            lastRelicState.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -477,6 +485,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 && session.capabilities().contains(ClientCapability.NATIVE_PROFILE);
     }
 
+    private boolean relicRenderActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.relic-render-v1", false)
+                && session.capabilities().contains(ClientCapability.RELIC_RENDER_V1);
+    }
+
     /**
      * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja minden
      * online játékosra; a session/capability kapuzás itt történik, a HudManager a híd
@@ -500,6 +513,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (nativeProfileActive(session)) {
             pushProfileNow(player, session);
         }
+        if (relicRenderActive(session)) {
+            pushRelicNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -519,6 +535,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (nativeProfileActive(session)) {
             pushProfileNow(player, session);
+        }
+        if (relicRenderActive(session)) {
+            pushRelicNow(player, session);
         }
     }
 
@@ -653,6 +672,26 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         this.profileStateSource = source;
     }
 
+    /** RELIC_STATE: a resolve UUID-only és lock-mentes, a tick-cadence olcsón elbírja. */
+    private void pushRelicNow(final Player player, final ClientSession session) {
+        final Function<UUID, RelicStatePayload> source = relicStateSource;
+        if (source == null) {
+            return;
+        }
+        final byte[] payload = source.apply(player.getUniqueId()).encode();
+        final byte[] previous = lastRelicState.put(player.getUniqueId(), payload);
+        if (previous != null && Arrays.equals(previous, payload)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RELIC_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "RELIC_STATE sent to " + player.getName());
+    }
+
+    public void connectRelicState(final Function<UUID, RelicStatePayload> source) {
+        this.relicStateSource = source;
+    }
+
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
         this.hudSnapshotSource = source;
     }
@@ -749,5 +788,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastKitSignature.remove(playerId);
         lastSpellbookSignature.remove(playerId);
         lastProfileState.remove(playerId);
+        lastRelicState.remove(playerId);
     }
 }

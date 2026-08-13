@@ -1,9 +1,11 @@
 package hu.taliann.icesmp.client;
 
+import hu.taliann.icesmp.classrelic.ClassRelicActivation;
 import hu.taliann.icesmp.classspec.integration.ClassHudMetric;
 import hu.taliann.icesmp.classspec.integration.ClassHudSlot;
 import hu.taliann.icesmp.classspec.integration.ClassHudState;
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
+import hu.taliann.icesmp.client.projection.ClientRelicProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
 import hu.taliann.icesmp.client.protocol.ActionResultPayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
@@ -16,6 +18,7 @@ import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
+import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
@@ -46,6 +49,7 @@ public final class ClientProtocolRegressionSuite {
         abilityKitAndActionPayloads();
         spellbookPayloads();
         profilePayload();
+        relicPayload();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -268,6 +272,31 @@ public final class ClientProtocolRegressionSuite {
                 false, 0, 0, List.of(), new ProfileStatePayload.Stats(0, 0, 0, 0, 0, 0), 0, 40);
         check(fresh.equals(ProfileStatePayload.decode(fresh.encode())),
                 "fresh ProfileStatePayload roundtrip");
+    }
+
+    private static void relicPayload() throws Exception {
+        final RelicStatePayload relic = new RelicStatePayload("sarkany_tojas", "Sárkánytojás",
+                "evoker", "devastation", true, "devastation_resonance", false, false, "NONE");
+        check(relic.equals(RelicStatePayload.decode(relic.encode())), "RelicStatePayload roundtrip");
+
+        // Projektor: kötés nélküli aktiváció kanonikus üres state-re képződik.
+        final RelicStatePayload none = ClientRelicProjector.project(null, id -> id);
+        check(none.relicId().isEmpty() && "NO_BINDING".equals(none.dormantReason()),
+                "missing binding projects to empty relic state");
+
+        final ClassRelicActivation activation = new ClassRelicActivation(
+                new UUID(1L, 2L), "sarkany_tojas", "evoker",
+                java.util.Optional.of("devastation"), true,
+                java.util.Optional.empty(), false, false,
+                ClassRelicActivation.DormantReason.NONE);
+        final RelicStatePayload projected = ClientRelicProjector.project(activation,
+                id -> "Sárkánytojás");
+        check("sarkany_tojas".equals(projected.relicId())
+                && "Sárkánytojás".equals(projected.displayName())
+                && projected.basePowerActive()
+                && "NONE".equals(projected.dormantReason()), "relic projector mapping");
+        check(projected.equals(RelicStatePayload.decode(projected.encode())),
+                "projected relic state roundtrip");
     }
 
     private static void malformedEnvelopeRejected() {

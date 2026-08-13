@@ -259,7 +259,12 @@ fázisonként, a terv szerinti sorrendben:
 - ✅ Natív Profile/Character screen: PROFILE_STATE a /profile GUI-val
   azonos tartalommal (ClientProfileProjector, PlayerProfile
   authority-szabály szerint internals nélkül) — mindkét oldalon.
-- ⬜ Relic renderer és a további modulok a product spec sorrendjében.
+- ✅ Relic-state v1: saját-játékos RELIC_STATE projekció (ClassRelicActivation
+  tükre, RELIC_RENDER_V1 kapu) + kliensoldali relic-sor a natív HUD-ban.
+  ⬜ Attachment-renderer más viselőkön: broadcast-kézbesítési infrastruktúrát
+  és awakening-readyAt query-API-t igényel (a store ma csak tryArm-ot ismer) —
+  a resonance/awakening tartalmi élesítésével együtt ütemezendő.
+- ⬜ Talent/Quest/Profession natív modulok a product spec sorrendjében.
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature
