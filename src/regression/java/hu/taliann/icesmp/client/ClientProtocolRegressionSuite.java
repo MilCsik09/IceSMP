@@ -14,6 +14,7 @@ import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
 import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
+import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
@@ -44,6 +45,7 @@ public final class ClientProtocolRegressionSuite {
         hudProjectorMapping();
         abilityKitAndActionPayloads();
         spellbookPayloads();
+        profilePayload();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -245,6 +247,27 @@ public final class ClientProtocolRegressionSuite {
         } catch (final IllegalArgumentException expected) {
             // fail closed a kódolás előtt
         }
+    }
+
+    private static void profilePayload() throws Exception {
+        final ProfileStatePayload profile = new ProfileStatePayload(
+                "Alva", "Perinfernicitas (A Vörös Láng)", "RED",
+                "Halállovag", 42, 60, "Fagy",
+                "Bányász", 17, "Kovács", 9, "Fegyverkovács",
+                false, 3, 1,
+                List.of(new ProfileStatePayload.Balance("Parázs", "1 234,5"),
+                        new ProfileStatePayload.Balance("Csepp", "0")),
+                new ProfileStatePayload.Stats(12, 4, 3456, 789, 21, 5),
+                14, 40);
+        check(profile.equals(ProfileStatePayload.decode(profile.encode())),
+                "ProfileStatePayload roundtrip");
+
+        // Kaszt/frakció nélküli friss játékos: üres stringek utaznak, a kliens "nincs"-et renderel.
+        final ProfileStatePayload fresh = new ProfileStatePayload(
+                "Uj_Jatekos", "Menedék vendége", "", "", 0, 60, "", "", 0, "", 0, "",
+                false, 0, 0, List.of(), new ProfileStatePayload.Stats(0, 0, 0, 0, 0, 0), 0, 40);
+        check(fresh.equals(ProfileStatePayload.decode(fresh.encode())),
+                "fresh ProfileStatePayload roundtrip");
     }
 
     private static void malformedEnvelopeRejected() {

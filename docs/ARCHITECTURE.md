@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 821 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 823 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1195,9 +1195,9 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
-| Projection | `client/projection/ClientHudProjector` (HudSnapshot → HudStatePayload, tiszta függvény) | nincs |
+| Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector` (display-only leképezések) | ClientProfileProjector: igen (élő managerekből olvas) |
 | Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute) | igen |
 
 ### Wire-formátum (protokoll v1)
@@ -1224,8 +1224,9 @@ ismeretlen üzenettípus, hamis hosszmező és trailing bájt egyaránt csendes 
 Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCOL_REJECT`,
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
 State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
-`0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`. Action-sáv (0x40–0x4F, kliens → szerver
-intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`.
+`0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`. Action-sáv
+(0x40–0x4F, kliens → szerver intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`,
+`0x42 TOGGLE_FAVORITE`.
 Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
 `0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
 RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv később nyílik.
@@ -1302,6 +1303,17 @@ a katalizátor-ciklázás párja (csak aktív-kit-tag választható, azonos ját
 commit után válaszol — a kliens nem commitol optimistán). Mindkettő a `client.limits.ui-actions-per-second`
 rate limit mögött; a válasz gépi `ACTION_RESULT`, sikeres action után friss spellbook- és
 kit-state (a kedvenc/kiválasztás a kit-összetételt is érintheti).
+
+### Natív Profile (PROFILE_STATE)
+
+A `PROFILE_STATE` a /profile GUI fejlécével és egyenleg-nézetével tartalmilag azonos,
+read-only karakter-projekció (frakció, kaszt+szint, kaszt-spec, gyűjtő/készítő szakma,
+szakma-spec, Bűnös/Tiszta, talentpontok, formázott egyenlegek, életre szóló publikus
+számlálók, achievement-összegzés) — a `ClientProfileProjector` UGYANAZOKBÓL a
+manager-hívásokból építi, mint a vanilla GUI. `NATIVE_PROFILE` capability +
+`client.features.native-profile` kapu; push a HUD-mintájú bájt-dedupe-pal (tick-enként
+épül, de csak változásra megy ki). PlayerProfile authority-szabály: revision/CAS,
+operation-receipt, moderációs mező és rejtett quest-state SOHA nem kerülhet a payloadba.
 
 ### Session-életciklus és védelem
 

@@ -256,8 +256,10 @@ fázisonként, a terv szerinti sorrendben:
 - ✅ Natív Spellbook: SPELLBOOK_STATE projekció (a vanilla GUI-val azonos
   katalógus, olcsó változás-jellel), SELECT_SPELL/TOGGLE_FAVORITE actionök
   a meglévő validált use-case-eken, UI-rate-limit — mindkét oldalon.
-- ⬜ Natív Profile/Character screen (query-projekció), majd relic renderer
-  és a további modulok a product spec sorrendjében.
+- ✅ Natív Profile/Character screen: PROFILE_STATE a /profile GUI-val
+  azonos tartalommal (ClientProfileProjector, PlayerProfile
+  authority-szabály szerint internals nélkül) — mindkét oldalon.
+- ⬜ Relic renderer és a további modulok a product spec sorrendjében.
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

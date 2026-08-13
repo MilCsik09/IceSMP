@@ -1620,6 +1620,8 @@ public final class IceSMPCore {
         hudManager.setClientHudRoute(clientBridge);
         clientBridge.connectHudSnapshots(hudManager::snapshot);
         clientBridge.connectAbilityKit(abilityCatalystListener, spellRegistry);
+        clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
+                .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();
