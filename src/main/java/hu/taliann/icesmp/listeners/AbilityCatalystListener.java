@@ -946,6 +946,22 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return effectiveCooldownMillis(player, spell);
     }
 
+    /** A vanilla spellbook-GUI-val azonos, rendezett kaszt+spec spell-lista — projekcióhoz. */
+    public List<SpellbookGUI.Entry> spellbookEntries(final Player player) {
+        return SpellbookGUI.collectEntries(player, jobManager, specializationManager,
+                spellRegistry, configManager);
+    }
+
+    public Set<String> getFavoriteSpellIds(final Player player) {
+        return spellFavoritesManager.favorites(player);
+    }
+
+    /** Kedvenc-váltás az aktív-kit limitre cappelve — a vanilla spellbook shift-katt párja. */
+    public java.util.concurrent.CompletionStage<SpellFavoritesManager.ToggleResult> toggleFavorite(
+            final Player player, final String spellId) {
+        return spellFavoritesManager.toggleCapped(player, spellId, activeKitLimit(player));
+    }
+
     /** Megjelenítési költség-szöveg a resource-rendszer figyelembevételével; üres, ha ingyenes. */
     public String getDisplayedCostText(final Player player, final Spell spell) {
         final int cost = displayedCost(spell);

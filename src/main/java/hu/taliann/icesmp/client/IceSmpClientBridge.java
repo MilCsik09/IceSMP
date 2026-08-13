@@ -11,6 +11,10 @@ import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.ServerHello;
+import hu.taliann.icesmp.client.protocol.SpellActionPayload;
+import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
+import hu.taliann.icesmp.gui.SpellbookGUI;
+import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
@@ -68,6 +72,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
      */
     private final ConcurrentHashMap<UUID, byte[]> lastHudState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastKitSignature = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, String> lastSpellbookSignature = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -110,6 +115,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         rateLimiter.clear();
         lastHudState.clear();
         lastKitSignature.clear();
+        lastSpellbookSignature.clear();
     }
 
     @Override
@@ -149,6 +155,8 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             case ClientProtocol.MSG_PING -> handlePing(player, envelope, now);
             case ClientProtocol.MSG_RESYNC_REQUEST -> handleResyncRequest(player, envelope, now);
             case ClientProtocol.MSG_CAST_SLOT -> handleCastSlot(player, envelope, now);
+            case ClientProtocol.MSG_SELECT_SPELL -> handleSelectSpell(player, envelope, now);
+            case ClientProtocol.MSG_TOGGLE_FAVORITE -> handleToggleFavorite(player, envelope, now);
             default -> {
                 droppedMalformed.incrementAndGet();
                 debug(() -> "unknown message type 0x" + Integer.toHexString(envelope.messageType())
@@ -196,6 +204,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         // generation-ellenőrzés védi ki a közben történt re-handshake-et.
         lastHudState.remove(player.getUniqueId());
         lastKitSignature.remove(player.getUniqueId());
+        lastSpellbookSignature.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -241,14 +250,14 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (!configManager.getBoolean("client.features.keybind-cast", false)
                 || !session.capabilities().contains(ClientCapability.KEYBIND_CAST)) {
-            sendActionResult(player, session, envelope.requestId(),
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_CAST_SLOT,
                     ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
             return;
         }
         if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.CAST,
                 configManager.getInt("client.limits.cast-messages-per-second", 8), 1000L, now)) {
             droppedRateLimited.incrementAndGet();
-            sendActionResult(player, session, envelope.requestId(),
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_CAST_SLOT,
                     ClientProtocol.RESULT_RATE_LIMITED, "");
             return;
         }
@@ -262,7 +271,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         final AbilityCatalystListener catalyst = abilityCatalyst;
         if (catalyst == null) {
-            sendActionResult(player, session, envelope.requestId(),
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_CAST_SLOT,
                     ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
             return;
         }
@@ -295,10 +304,107 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     }
 
     private void sendActionResult(final Player player, final ClientSession session, final UUID requestId,
-                                  final String result, final String reason) {
+                                  final int actionType, final String result, final String reason) {
         send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ACTION_RESULT,
                 session.generation(), session.nextOutboundSequence(), requestId,
-                new ActionResultPayload(ClientProtocol.MSG_CAST_SLOT, result, reason).encode()));
+                new ActionResultPayload(actionType, result, reason).encode()));
+    }
+
+    /**
+     * SELECT_SPELL: a katalizátor-ciklázás párja — a meglévő validált use-case fut
+     * (csak aktív-kit-tag választható, azonos játékos-üzenettel), a kliens gépi
+     * választ és friss state-et kap.
+     */
+    private void handleSelectSpell(final Player player, final MessageEnvelope envelope, final long now) {
+        handleSpellAction(player, envelope, now, ClientProtocol.MSG_SELECT_SPELL);
+    }
+
+    /** TOGGLE_FAVORITE: a vanilla spellbook shift-katt párja (cappelt, durable commit). */
+    private void handleToggleFavorite(final Player player, final MessageEnvelope envelope, final long now) {
+        handleSpellAction(player, envelope, now, ClientProtocol.MSG_TOGGLE_FAVORITE);
+    }
+
+    private void handleSpellAction(final Player player, final MessageEnvelope envelope, final long now,
+                                   final int actionType) {
+        final ClientSession session = liveSession(player.getUniqueId(), envelope, now);
+        if (session == null) {
+            return;
+        }
+        if (!configManager.getBoolean("client.features.native-spellbook", false)
+                || !session.capabilities().contains(ClientCapability.NATIVE_SPELLBOOK)) {
+            sendActionResult(player, session, envelope.requestId(), actionType,
+                    ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
+            return;
+        }
+        if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.UI,
+                configManager.getInt("client.limits.ui-actions-per-second", 10), 1000L, now)) {
+            droppedRateLimited.incrementAndGet();
+            sendActionResult(player, session, envelope.requestId(), actionType,
+                    ClientProtocol.RESULT_RATE_LIMITED, "");
+            return;
+        }
+        final SpellActionPayload request;
+        try {
+            request = SpellActionPayload.decode(envelope.payload());
+        } catch (final ClientProtocolException malformed) {
+            droppedMalformed.incrementAndGet();
+            debug(() -> "malformed spell action from " + player.getName() + ": " + malformed.getMessage());
+            return;
+        }
+        final AbilityCatalystListener catalyst = abilityCatalyst;
+        if (catalyst == null) {
+            sendActionResult(player, session, envelope.requestId(), actionType,
+                    ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            if (actionType == ClientProtocol.MSG_SELECT_SPELL) {
+                final boolean selected = catalyst.selectSpell(player, request.spellId());
+                sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ACTION_RESULT,
+                        session.generation(), session.nextOutboundSequence(), envelope.requestId(),
+                        new ActionResultPayload(actionType,
+                                selected ? ClientProtocol.RESULT_SUCCESS : ClientProtocol.RESULT_REJECTED,
+                                selected ? "" : "NOT_IN_ACTIVE_KIT").encode()));
+                pushSpellbookAndKit(player, session);
+            } else {
+                catalyst.toggleFavorite(player, request.spellId()).whenComplete((result, failure) ->
+                        player.getScheduler().run(plugin, done -> {
+                            if (!player.isOnline()) {
+                                return;
+                            }
+                            final String code;
+                            final String reason;
+                            if (failure != null) {
+                                code = ClientProtocol.RESULT_SERVER_ERROR;
+                                reason = "PERSISTENCE";
+                            } else if (result == SpellFavoritesManager.ToggleResult.LIMIT_REACHED) {
+                                code = ClientProtocol.RESULT_REJECTED;
+                                reason = "LIMIT_REACHED";
+                            } else {
+                                code = ClientProtocol.RESULT_SUCCESS;
+                                reason = result.name();
+                            }
+                            sendNow(player, new MessageEnvelope(session.protocolVersion(),
+                                    ClientProtocol.MSG_ACTION_RESULT, session.generation(),
+                                    session.nextOutboundSequence(), envelope.requestId(),
+                                    new ActionResultPayload(actionType, code, reason).encode()));
+                            pushSpellbookAndKit(player, session);
+                        }, null));
+            }
+        }, null);
+    }
+
+    /** Action után a kedvenc/kiválasztás a kit-összetételt is érintheti — mindkét state frissül. */
+    private void pushSpellbookAndKit(final Player player, final ClientSession session) {
+        if (nativeSpellbookActive(session)) {
+            pushSpellbookNow(player, session);
+        }
+        if (abilityBarActive(session)) {
+            pushKitNow(player, session, true);
+        }
     }
 
     /** Admin-oldali kényszerített resync (/icesmp client resync). */
@@ -330,6 +436,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
             lastHudState.remove(player.getUniqueId());
             lastKitSignature.remove(player.getUniqueId());
+            lastSpellbookSignature.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -352,6 +459,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 && session.capabilities().contains(ClientCapability.ABILITY_BAR);
     }
 
+    private boolean nativeSpellbookActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.native-spellbook", false)
+                && session.capabilities().contains(ClientCapability.NATIVE_SPELLBOOK);
+    }
+
     /**
      * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja minden
      * online játékosra; a session/capability kapuzás itt történik, a HudManager a híd
@@ -369,6 +481,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (abilityBarActive(session)) {
             pushKitNow(player, session, false);
         }
+        if (nativeSpellbookActive(session)) {
+            pushSpellbookIfChanged(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -382,6 +497,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (abilityBarActive(session)) {
             pushKitNow(player, session, true);
+        }
+        if (nativeSpellbookActive(session)) {
+            pushSpellbookNow(player, session);
         }
     }
 
@@ -433,6 +551,64 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ABILITY_KIT_STATE,
                 session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wirePayload));
         debug(() -> "ABILITY_KIT_STATE sent to " + player.getName() + " (" + entries.size() + " slots)");
+    }
+
+    /**
+     * Olcsó változás-jel: a teljes (describe-nehéz) spellbook-payload csak akkor épül
+     * fel, ha az unlock/kedvenc/kiválasztás/kit-összetétel ténylegesen változott —
+     * a tick-cadence így a spellbookra is event-driven marad.
+     */
+    private void pushSpellbookIfChanged(final Player player, final ClientSession session) {
+        final AbilityCatalystListener catalyst = abilityCatalyst;
+        if (catalyst == null) {
+            return;
+        }
+        final String signature = String.join("|",
+                String.valueOf(catalyst.getSelectedSpellId(player)),
+                String.join(",", catalyst.getActiveSpellIds(player)),
+                String.join(",", new java.util.TreeSet<>(catalyst.getFavoriteSpellIds(player))),
+                String.join(",", catalyst.getUnlockedSpellIds(player)));
+        if (signature.equals(lastSpellbookSignature.put(player.getUniqueId(), signature))) {
+            return;
+        }
+        pushSpellbookNow(player, session);
+    }
+
+    /** Teljes spellbook-state; player-szálon hívandó (élő player-állapotot olvas). */
+    private void pushSpellbookNow(final Player player, final ClientSession session) {
+        final AbilityCatalystListener catalyst = abilityCatalyst;
+        if (catalyst == null) {
+            return;
+        }
+        final List<SpellbookGUI.Entry> entries = catalyst.spellbookEntries(player);
+        final Set<String> favorites = catalyst.getFavoriteSpellIds(player);
+        final List<String> active = catalyst.getActiveSpellIds(player);
+        final String selectedId = catalyst.getSelectedSpellId(player);
+        final List<SpellbookStatePayload.Entry> wire = new ArrayList<>(entries.size());
+        for (final SpellbookGUI.Entry entry : entries) {
+            if (wire.size() >= ClientProtocol.MAX_LIST_ELEMENTS) {
+                // Protokoll-limit: a lista rendezett (feloldottak elöl), a levágott farok
+                // a legmagasabb szint-követelményű zárolt spelleket érinti.
+                break;
+            }
+            final Spell spell = entry.spell();
+            final String id = spell.getId();
+            final List<String> description = spell.describe();
+            wire.add(new SpellbookStatePayload.Entry(id, spell.getName(),
+                    description.size() <= ClientProtocol.MAX_LIST_ELEMENTS
+                            ? description : description.subList(0, ClientProtocol.MAX_LIST_ELEMENTS),
+                    entry.requiredLevel(), entry.unlocked(),
+                    favorites.contains(id),
+                    entry.unlocked() && id.equalsIgnoreCase(selectedId),
+                    entry.unlocked() && active.contains(id),
+                    catalyst.getMasteryRank(player, id),
+                    catalyst.getDisplayedCostText(player, spell),
+                    spell.getCooldown()));
+        }
+        final byte[] payload = new SpellbookStatePayload(wire).encode();
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_SPELLBOOK_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "SPELLBOOK_STATE sent to " + player.getName() + " (" + wire.size() + " entries)");
     }
 
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
@@ -529,5 +705,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         rateLimiter.clearPlayer(playerId);
         lastHudState.remove(playerId);
         lastKitSignature.remove(playerId);
+        lastSpellbookSignature.remove(playerId);
     }
 }

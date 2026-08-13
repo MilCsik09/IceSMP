@@ -27,6 +27,8 @@ client:
     # CAST_SLOT kérések másodpercenkénti plafonja játékosonként; fölötte gépi
     # RATE_LIMITED válasz megy vissza (a gameplay-debounce ettől független).
     cast-messages-per-second: 8
+    # UI-action kérések (SELECT_SPELL, TOGGLE_FAVORITE) másodpercenkénti plafonja.
+    ui-actions-per-second: 10
   # Kézfogásban engedélyezhető presentation-capability-k. Minden érték alapból false:
   # egy capability csak akkor kapcsolható be, amikor a hozzá tartozó szerveroldali
   # projection/action fázis ténylegesen elkészült. A kliens hiába hirdet többet,

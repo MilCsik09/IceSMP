@@ -45,9 +45,12 @@ public final class ClientProtocol {
     // State-sáv (0x20-0x3F): szerver → kliens read-only projekciók.
     public static final int MSG_HUD_STATE = 0x20;
     public static final int MSG_ABILITY_KIT_STATE = 0x21;
+    public static final int MSG_SPELLBOOK_STATE = 0x22;
 
     // Action-sáv (0x40-0x4F): kliens → szerver intent-kérések (a szerver mindent újravalidál).
     public static final int MSG_CAST_SLOT = 0x40;
+    public static final int MSG_SELECT_SPELL = 0x41;
+    public static final int MSG_TOGGLE_FAVORITE = 0x42;
 
     // Result-sáv (0x50-0x5F): szerver → kliens gépi action-válaszok (requestId-korrelációval).
     public static final int MSG_ACTION_RESULT = 0x50;

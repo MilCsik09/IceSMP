@@ -253,8 +253,11 @@ fázisonként, a terv szerinti sorrendben:
   `ABILITY_KIT_STATE` change-signature push, gépi `ACTION_RESULT`,
   CAST-rate-limit — lásd „Ability bar és CAST_SLOT” az ARCHITECTURE-ben.
   A `keybind-cast`/`ability-bar` kapuk élés nyitása a kliens-release-szel.
-- ⬜ Spellbook/Profile natív screenek (query + action service extraction),
-  majd relic renderer és a további modulok a product spec sorrendjében.
+- ✅ Natív Spellbook: SPELLBOOK_STATE projekció (a vanilla GUI-val azonos
+  katalógus, olcsó változás-jellel), SELECT_SPELL/TOGGLE_FAVORITE actionök
+  a meglévő validált use-case-eken, UI-rate-limit — mindkét oldalon.
+- ⬜ Natív Profile/Character screen (query-projekció), majd relic renderer
+  és a további modulok a product spec sorrendjében.
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

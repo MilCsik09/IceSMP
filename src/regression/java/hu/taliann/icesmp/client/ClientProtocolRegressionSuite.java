@@ -16,6 +16,8 @@ import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.ServerHello;
+import hu.taliann.icesmp.client.protocol.SpellActionPayload;
+import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -41,6 +43,7 @@ public final class ClientProtocolRegressionSuite {
         hudStateLimits();
         hudProjectorMapping();
         abilityKitAndActionPayloads();
+        spellbookPayloads();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -213,6 +216,32 @@ public final class ClientProtocolRegressionSuite {
         try {
             new AbilityKitPayload(tooMany).encode();
             throw new AssertionError("oversized kit accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt
+        }
+    }
+
+    private static void spellbookPayloads() throws Exception {
+        final SpellActionPayload action = new SpellActionPayload("frost_strike");
+        check(action.equals(SpellActionPayload.decode(action.encode())), "SpellActionPayload roundtrip");
+
+        final SpellbookStatePayload spellbook = new SpellbookStatePayload(List.of(
+                new SpellbookStatePayload.Entry("frost_strike", "Fagycsapás",
+                        List.of("Cél: célzott lény (hatótáv 12)", "Sebzés: 6"),
+                        5, true, true, true, true, 2, "30 Rúnaerő", 8),
+                new SpellbookStatePayload.Entry("army_of_the_dead", "Holtak serege",
+                        List.of("Cél: önmagad"), 40, false, false, false, false, 0, "", 300)));
+        check(spellbook.equals(SpellbookStatePayload.decode(spellbook.encode())),
+                "SpellbookStatePayload roundtrip");
+
+        final List<SpellbookStatePayload.Entry> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new SpellbookStatePayload.Entry("s" + i, "", List.of(),
+                    0, false, false, false, false, 0, "", 0));
+        }
+        try {
+            new SpellbookStatePayload(tooMany).encode();
+            throw new AssertionError("oversized spellbook accepted");
         } catch (final IllegalArgumentException expected) {
             // fail closed a kódolás előtt
         }
