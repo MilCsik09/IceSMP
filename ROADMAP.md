@@ -264,7 +264,11 @@ fázisonként, a terv szerinti sorrendben:
   ⬜ Attachment-renderer más viselőkön: broadcast-kézbesítési infrastruktúrát
   és awakening-readyAt query-API-t igényel (a store ma csak tryArm-ot ismer) —
   a resonance/awakening tartalmi élesítésével együtt ütemezendő.
-- ⬜ Talent/Quest/Profession natív modulok a product spec sorrendjében.
+- ✅ Natív talentek: TALENT_STATE (isAvailable-szűrt, a 64-es
+  protokoll-limitet és a más-kaszt-privacy-t egyszerre tartva) +
+  PURCHASE_TALENT a CAS-védett spendPoint use-case-en — mindkét oldalon.
+  Respec-action szándékosan nem része a protokollnak (SpecGUI-döntés).
+- ⬜ Quest Journal és Professions natív modulok a product spec sorrendjében.
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

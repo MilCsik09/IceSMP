@@ -22,6 +22,8 @@ import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
+import hu.taliann.icesmp.client.protocol.TalentActionPayload;
+import hu.taliann.icesmp.client.protocol.TalentStatePayload;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -50,6 +52,7 @@ public final class ClientProtocolRegressionSuite {
         spellbookPayloads();
         profilePayload();
         relicPayload();
+        talentPayloads();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -297,6 +300,36 @@ public final class ClientProtocolRegressionSuite {
                 && "NONE".equals(projected.dormantReason()), "relic projector mapping");
         check(projected.equals(RelicStatePayload.decode(projected.encode())),
                 "projected relic state roundtrip");
+    }
+
+    private static void talentPayloads() throws Exception {
+        final TalentActionPayload purchase = new TalentActionPayload(true, "battle_hardened");
+        check(purchase.equals(TalentActionPayload.decode(purchase.encode())),
+                "TalentActionPayload roundtrip");
+
+        final TalentStatePayload talents = new TalentStatePayload(3, 9, 1, 0,
+                List.of(new TalentStatePayload.Entry("battle_hardened", "Csataedzett", 1, 2, 3,
+                                "max-health", 2.0D, true, "", List.of(), 0, false),
+                        new TalentStatePayload.Entry("ascendant", "Felemelkedett", 3, 0, 1,
+                                "spell-power", 5.0D, false, "battle_hardened",
+                                List.of("iron_will"), 9, true)),
+                List.of(new TalentStatePayload.Entry("diligence", "Szorgalom", 1, 1, 2,
+                        "profession-xp-bonus", 10.0D, true, "", List.of(), 0, false)));
+        check(talents.equals(TalentStatePayload.decode(talents.encode())),
+                "TalentStatePayload roundtrip");
+
+        final List<TalentStatePayload.Entry> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new TalentStatePayload.Entry("t" + i, "", 1, 0, 1, "", 0.0D,
+                    false, "", List.of(), 0, false));
+        }
+        try {
+            new TalentStatePayload(0, 0, 0, 0, tooMany, List.of()).encode();
+            throw new AssertionError("oversized talent list accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt — a projektor isAvailable-szűrése és
+            // csonkolása tartja a listát a limiten
+        }
     }
 
     private static void malformedEnvelopeRejected() {

@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.client;
 
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
+import hu.taliann.icesmp.client.projection.ClientTalentProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
 import hu.taliann.icesmp.client.protocol.ActionResultPayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
@@ -15,12 +16,15 @@ import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
+import hu.taliann.icesmp.client.protocol.TalentActionPayload;
+import hu.taliann.icesmp.client.protocol.TalentStatePayload;
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
+import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.spells.Spell;
 import org.bukkit.entity.Player;
@@ -77,6 +81,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, String> lastSpellbookSignature = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastProfileState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastRelicState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastTalentState = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -87,6 +92,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     /** A core köti be: a saját class-relic aktiváció RELIC_STATE forrása (UUID-only, olcsó). */
     private volatile Function<UUID, RelicStatePayload> relicStateSource;
+
+    /** A core köti be; a vásárlás a CAS-védett spendPoint use-case-en fut. */
+    private volatile TalentManager talentManager;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -128,6 +136,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastSpellbookSignature.clear();
         lastProfileState.clear();
         lastRelicState.clear();
+        lastTalentState.clear();
     }
 
     @Override
@@ -169,6 +178,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             case ClientProtocol.MSG_CAST_SLOT -> handleCastSlot(player, envelope, now);
             case ClientProtocol.MSG_SELECT_SPELL -> handleSelectSpell(player, envelope, now);
             case ClientProtocol.MSG_TOGGLE_FAVORITE -> handleToggleFavorite(player, envelope, now);
+            case ClientProtocol.MSG_PURCHASE_TALENT -> handlePurchaseTalent(player, envelope, now);
             default -> {
                 droppedMalformed.incrementAndGet();
                 debug(() -> "unknown message type 0x" + Integer.toHexString(envelope.messageType())
@@ -219,6 +229,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastSpellbookSignature.remove(player.getUniqueId());
         lastProfileState.remove(player.getUniqueId());
         lastRelicState.remove(player.getUniqueId());
+        lastTalentState.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -453,6 +464,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastSpellbookSignature.remove(player.getUniqueId());
             lastProfileState.remove(player.getUniqueId());
             lastRelicState.remove(player.getUniqueId());
+            lastTalentState.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -490,6 +502,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 && session.capabilities().contains(ClientCapability.RELIC_RENDER_V1);
     }
 
+    private boolean nativeTalentsActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.native-talents", false)
+                && session.capabilities().contains(ClientCapability.NATIVE_TALENTS);
+    }
+
     /**
      * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja minden
      * online játékosra; a session/capability kapuzás itt történik, a HudManager a híd
@@ -516,6 +533,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (relicRenderActive(session)) {
             pushRelicNow(player, session);
         }
+        if (nativeTalentsActive(session)) {
+            pushTalentNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -538,6 +558,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (relicRenderActive(session)) {
             pushRelicNow(player, session);
+        }
+        if (nativeTalentsActive(session)) {
+            pushTalentNow(player, session);
         }
     }
 
@@ -692,6 +715,99 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         this.relicStateSource = source;
     }
 
+    /** TALENT_STATE a vanilla GUI-val azonos szűréssel; player-szálon hívandó. */
+    private void pushTalentNow(final Player player, final ClientSession session) {
+        final TalentManager talents = talentManager;
+        if (talents == null) {
+            return;
+        }
+        final byte[] payload = ClientTalentProjector.project(player, talents).encode();
+        final byte[] previous = lastTalentState.put(player.getUniqueId(), payload);
+        if (previous != null && Arrays.equals(previous, payload)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_TALENT_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "TALENT_STATE sent to " + player.getName());
+    }
+
+    public void connectTalents(final TalentManager manager) {
+        this.talentManager = manager;
+    }
+
+    /**
+     * PURCHASE_TALENT: a meglévő CAS-védett spendPoint use-case-en fut — minden
+     * requirement/fa-gate/pont-fedezet a tranzakción belül validálódik, a kliens
+     * csak kér. A durable commit aszinkron; a válasz és a friss state a játékos
+     * régió-szálára visszahoppolva megy ki.
+     */
+    private void handlePurchaseTalent(final Player player, final MessageEnvelope envelope, final long now) {
+        final ClientSession session = liveSession(player.getUniqueId(), envelope, now);
+        if (session == null) {
+            return;
+        }
+        if (!nativeTalentsActive(session)) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_PURCHASE_TALENT,
+                    ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
+            return;
+        }
+        if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.UI,
+                configManager.getInt("client.limits.ui-actions-per-second", 10), 1000L, now)) {
+            droppedRateLimited.incrementAndGet();
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_PURCHASE_TALENT,
+                    ClientProtocol.RESULT_RATE_LIMITED, "");
+            return;
+        }
+        final TalentActionPayload request;
+        try {
+            request = TalentActionPayload.decode(envelope.payload());
+        } catch (final ClientProtocolException malformed) {
+            droppedMalformed.incrementAndGet();
+            debug(() -> "malformed PURCHASE_TALENT from " + player.getName() + ": " + malformed.getMessage());
+            return;
+        }
+        final TalentManager talents = talentManager;
+        if (talents == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_PURCHASE_TALENT,
+                    ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            talents.spendPoint(player, request.classPool(), request.talentId())
+                    .whenComplete((spent, failure) -> player.getScheduler().run(plugin, done -> {
+                        if (!player.isOnline()) {
+                            return;
+                        }
+                        final String code;
+                        final String reason;
+                        if (failure != null) {
+                            code = ClientProtocol.RESULT_SERVER_ERROR;
+                            reason = "PERSISTENCE";
+                        } else if (Boolean.TRUE.equals(spent)) {
+                            code = ClientProtocol.RESULT_SUCCESS;
+                            reason = "";
+                        } else {
+                            code = ClientProtocol.RESULT_REJECTED;
+                            reason = "REQUIREMENTS";
+                        }
+                        sendNow(player, new MessageEnvelope(session.protocolVersion(),
+                                ClientProtocol.MSG_ACTION_RESULT, session.generation(),
+                                session.nextOutboundSequence(), envelope.requestId(),
+                                new ActionResultPayload(ClientProtocol.MSG_PURCHASE_TALENT,
+                                        code, reason).encode()));
+                        if (nativeTalentsActive(session)) {
+                            pushTalentNow(player, session);
+                        }
+                        if (nativeProfileActive(session)) {
+                            pushProfileNow(player, session);
+                        }
+                    }, null));
+        }, null);
+    }
+
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
         this.hudSnapshotSource = source;
     }
@@ -789,5 +905,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastSpellbookSignature.remove(playerId);
         lastProfileState.remove(playerId);
         lastRelicState.remove(playerId);
+        lastTalentState.remove(playerId);
     }
 }

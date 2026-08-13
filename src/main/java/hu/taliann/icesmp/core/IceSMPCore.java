@@ -1620,6 +1620,7 @@ public final class IceSMPCore {
         hudManager.setClientHudRoute(clientBridge);
         clientBridge.connectHudSnapshots(hudManager::snapshot);
         clientBridge.connectAbilityKit(abilityCatalystListener, spellRegistry);
+        clientBridge.connectTalents(talentManager);
         clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
                 .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
         clientBridge.connectRelicState(relicPlayerId -> hu.taliann.icesmp.client.projection.ClientRelicProjector

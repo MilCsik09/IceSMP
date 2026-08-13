@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 825 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 828 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1195,7 +1195,7 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `RelicStatePayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `RelicStatePayload`, `TalentStatePayload`, `TalentActionPayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
 | Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector` (display-only leképezések) | ClientProfileProjector: igen (élő managerekből olvas) |
 | Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute) | igen |
@@ -1225,9 +1225,9 @@ Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCO
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
 State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
 `0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
-`0x25 RELIC_STATE` (0x24 a FACTION_STATE-nek fenntartva). Action-sáv
-(0x40–0x4F, kliens → szerver intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`,
-`0x42 TOGGLE_FAVORITE`.
+`0x25 RELIC_STATE`, `0x28 TALENT_STATE` (0x24/0x26/0x27 a FACTION/PARTY/EVENT_STATE-nek
+fenntartva). Action-sáv (0x40–0x4F, kliens → szerver intent): `0x40 CAST_SLOT`,
+`0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`, `0x43 PURCHASE_TALENT`.
 Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
 `0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
 RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv később nyílik.
@@ -1329,6 +1329,19 @@ szervernek ma nincs erre query-API-ja (a store csak tryArm-ot ismer) — az Awak
 élesítésekor pótolandó; (3) szerveroldali vanilla-suppression e fázisban nem kellett,
 mert a class-relic rétegnek jelenleg nincs szerveroldali vizuálja — amikor lesz, a
 hídbeli `relicRenderActive` kapu a kész suppression-predikátum hozzá.
+
+### Natív talentek (TALENT_STATE, PURCHASE_TALENT)
+
+A `TALENT_STATE` a két talent-pool display-projekciója a `NATIVE_TALENTS` capability +
+`client.features.native-talents` kapu mögött. A vanilla talent-GUI-val egyezően
+KIZÁRÓLAG az isAvailable-szűrt (a játékos aktuális kasztjához/szakmájához tartozó)
+talentek utaznak — a teljes 75-elemes katalógus a 64-es protokoll-limitet is sértené,
+és más kasztok fáját is felfedné. A `PURCHASE_TALENT` a meglévő CAS-védett
+`TalentManager.spendPoint` use-case-en fut (minden requirement/fa-gate/pont-fedezet a
+tranzakción belül validálódik, a durable commit aszinkron), UI-rate-limit mögött;
+gépi `ACTION_RESULT` után friss talent- és profil-state megy ki. Respec-action
+szándékosan nincs a kliens-protokollban: a respec a SpecGUI-ban él, megerősítési
+folyamata a vanilla úton is egy-kattintásos — natívvá tétele külön döntés.
 
 ### Session-életciklus és védelem
 
