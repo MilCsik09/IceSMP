@@ -18,6 +18,7 @@ import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.QuestStatePayload;
 import hu.taliann.icesmp.client.protocol.QuestTrackPayload;
+import hu.taliann.icesmp.client.protocol.RelicAttachmentPayload;
 import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
@@ -99,6 +100,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, byte[]> lastTalentState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, String> lastQuestSignature = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastProfessionState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastRelicAttachment = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -166,6 +168,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastTalentState.clear();
         lastQuestSignature.clear();
         lastProfessionState.clear();
+        lastRelicAttachment.clear();
     }
 
     @Override
@@ -265,6 +268,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastTalentState.remove(player.getUniqueId());
         lastQuestSignature.remove(player.getUniqueId());
         lastProfessionState.remove(player.getUniqueId());
+        lastRelicAttachment.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -502,6 +506,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastTalentState.remove(player.getUniqueId());
             lastQuestSignature.remove(player.getUniqueId());
             lastProfessionState.remove(player.getUniqueId());
+            lastRelicAttachment.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -537,6 +542,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private boolean relicRenderActive(final ClientSession session) {
         return configManager.getBoolean("client.features.relic-render-v1", false)
                 && session.capabilities().contains(ClientCapability.RELIC_RENDER_V1);
+    }
+
+    private boolean relicAttachmentActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.relic-attachment-v1", false)
+                && session.capabilities().contains(ClientCapability.RELIC_ATTACHMENT_V1);
     }
 
     private boolean nativeTalentsActive(final ClientSession session) {
@@ -594,6 +604,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (nativeProfessionsActive(session)) {
             pushProfessionNow(player, session);
         }
+        if (relicAttachmentActive(session)) {
+            pushRelicAttachmentsNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -625,6 +638,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (nativeProfessionsActive(session)) {
             pushProfessionNow(player, session);
+        }
+        if (relicAttachmentActive(session)) {
+            pushRelicAttachmentsNow(player, session);
         }
     }
 
@@ -759,24 +775,70 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         this.profileStateSource = source;
     }
 
-    /** RELIC_STATE: a resolve UUID-only és lock-mentes, a tick-cadence olcsón elbírja. */
+    /**
+     * RELIC_STATE: a resolve UUID-only és lock-mentes, a tick-cadence olcsón elbírja.
+     * A dedupe a normalizált change-signature-ön fut: a fogyó awakening-maradék nem
+     * generál forgalmat, csak tényleges állapotváltás (a kliens interpolál).
+     */
     private void pushRelicNow(final Player player, final ClientSession session) {
         final Function<UUID, RelicStatePayload> source = relicStateSource;
         if (source == null) {
             return;
         }
-        final byte[] payload = source.apply(player.getUniqueId()).encode();
-        final byte[] previous = lastRelicState.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
+        final RelicStatePayload payload = source.apply(player.getUniqueId());
+        final byte[] signature = payload.changeSignature().encode();
+        final byte[] previous = lastRelicState.put(player.getUniqueId(), signature);
+        if (previous != null && Arrays.equals(previous, signature)) {
             return;
         }
         sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RELIC_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST,
+                payload.encode()));
         debug(() -> "RELIC_STATE sent to " + player.getName());
     }
 
     public void connectRelicState(final Function<UUID, RelicStatePayload> source) {
         this.relicStateSource = source;
+    }
+
+    /**
+     * RELIC_ATTACHMENT_STATE: a néző közelében lévő aktív viselők listája. Folia-safe
+     * kereszt-régiós út: a pozíciók az owner-thread-frissített PositionCache tükréből,
+     * az aktiváció a lock-mentes relic-resolve-ból jön — idegen Player-objektumot a
+     * néző szála nem érint. A lista determinisztikusan rendezett, hogy a bájt-dedupe
+     * ne churn-öljön a konkurens map iterációs sorrendjén.
+     */
+    private void pushRelicAttachmentsNow(final Player player, final ClientSession session) {
+        final Function<UUID, RelicStatePayload> source = relicStateSource;
+        if (source == null) {
+            return;
+        }
+        final double radius = Math.max(0,
+                configManager.getInt("client.limits.relic-attachment-radius", 32));
+        final List<UUID> nearby = hu.taliann.icesmp.utils.PositionCache
+                .nearbyPlayerIds(player.getUniqueId(), radius);
+        nearby.sort(java.util.Comparator.naturalOrder());
+        final List<RelicAttachmentPayload.Wearer> wearers = new ArrayList<>();
+        for (final UUID wearerId : nearby) {
+            if (wearers.size() >= ClientProtocol.MAX_LIST_ELEMENTS) {
+                break;
+            }
+            final RelicStatePayload state = source.apply(wearerId);
+            if (state.basePowerActive()) {
+                wearers.add(new RelicAttachmentPayload.Wearer(wearerId, state.relicId(),
+                        state.displayName(), state.resonanceActive()));
+            }
+        }
+        final byte[] payload = new RelicAttachmentPayload(wearers).encode();
+        final byte[] previous = lastRelicAttachment.put(player.getUniqueId(), payload);
+        if (previous != null && Arrays.equals(previous, payload)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(),
+                ClientProtocol.MSG_RELIC_ATTACHMENT_STATE, session.generation(),
+                session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "RELIC_ATTACHMENT_STATE sent to " + player.getName()
+                + " (" + wearers.size() + " wearers)");
     }
 
     /** TALENT_STATE a vanilla GUI-val azonos szűréssel; player-szálon hívandó. */
@@ -1299,5 +1361,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastTalentState.remove(playerId);
         lastQuestSignature.remove(playerId);
         lastProfessionState.remove(playerId);
+        lastRelicAttachment.remove(playerId);
     }
 }

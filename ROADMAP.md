@@ -261,9 +261,13 @@ fázisonként, a terv szerinti sorrendben:
   authority-szabály szerint internals nélkül) — mindkét oldalon.
 - ✅ Relic-state v1: saját-játékos RELIC_STATE projekció (ClassRelicActivation
   tükre, RELIC_RENDER_V1 kapu) + kliensoldali relic-sor a natív HUD-ban.
-  ⬜ Attachment-renderer más viselőkön: broadcast-kézbesítési infrastruktúrát
-  és awakening-readyAt query-API-t igényel (a store ma csak tryArm-ot ismer) —
-  a resonance/awakening tartalmi élesítésével együtt ütemezendő.
+- ✅ Relic attachment-broadcast infra: RELIC_ATTACHMENT_STATE (közeli aktív
+  viselők, Folia-safe PositionCache + lock-mentes resolve úton,
+  RELIC_ATTACHMENT_V1 kapu) + awakening-readyAt query
+  (ClassRelicService.awakeningReadyAt, a RELIC_STATE
+  awakeningRemainingMillis mezője, normalizált change-signature dedupe).
+  ⬜ A tényleges attachment-renderer/FX a Phase 8 dolga, a
+  resonance/awakening tartalmi élesítésével együtt.
 - ✅ Natív talentek: TALENT_STATE (isAvailable-szűrt, a 64-es
   protokoll-limitet és a más-kaszt-privacy-t egyszerre tartva) +
   PURCHASE_TALENT a CAS-védett spendPoint use-case-en — mindkét oldalon.
@@ -284,8 +288,8 @@ fázisonként, a terv szerinti sorrendben:
   azonos tartalommal; lap-méret élő configból
   (`client.limits.recipe-page-size`). Craft-action szándékosan nincs a
   protokollban — a craft a vanilla recept-könyv tranzakciós útján marad.
-- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..14), relic
-  attachment-broadcast, Phase 7-8 (party/boss/territory, FX/animáció).
+- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..15),
+  Phase 7-8 (party/boss/territory, FX/animáció + attachment-renderer).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

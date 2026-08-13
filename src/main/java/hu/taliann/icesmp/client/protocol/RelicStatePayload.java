@@ -5,14 +5,27 @@ package hu.taliann.icesmp.client.protocol;
  * (a {@code ClassRelicActivation} döntési rekord tükre + megjelenítési név).
  * Üres {@code relicId} = a kaszthoz nincs kötött class-relic. A {@code dormantReason}
  * gépi kód (NONE = aktív); a kliens lokalizálja. Szándékosan csak saját-játékos
- * state: más viselők attachment-broadcastja külön kézbesítési infrastruktúrát
- * igényelne, az egy későbbi fázis. Nyers katalógus-konfiguráció (award-számok,
- * resonance-lista) nem utazik — csak a feloldott aktiváció-eredmény.
+ * state: más viselők a külön RELIC_ATTACHMENT_STATE csatornán utaznak. Nyers
+ * katalógus-konfiguráció (award-számok, resonance-lista) nem utazik — csak a
+ * feloldott aktiváció-eredmény. Az {@code awakeningRemainingMillis} a küldés
+ * pillanatában hátralévő Awakening-cooldown (0 = kész vagy nincs konfigurálva);
+ * a kliens a fogadás idejétől interpolál, órák szinkronjára nem támaszkodunk.
  */
 public record RelicStatePayload(
         String relicId, String displayName, String classId, String activeSpecializationId,
         boolean basePowerActive, String resonanceId, boolean resonanceActive,
-        boolean awakeningConfigured, String dormantReason) {
+        boolean awakeningConfigured, String dormantReason, long awakeningRemainingMillis) {
+
+    /**
+     * Dedupe-szignatúra a push-hoz: a tick-enként fogyó awakening-maradék 0/1-re
+     * normalizálva — futó cooldown alatt nem generál forgalmat, a kliens a fogadás
+     * idejétől interpolál (az ability-kit mintája).
+     */
+    public RelicStatePayload changeSignature() {
+        return new RelicStatePayload(relicId, displayName, classId, activeSpecializationId,
+                basePowerActive, resonanceId, resonanceActive, awakeningConfigured, dormantReason,
+                awakeningRemainingMillis > 0L ? 1L : 0L);
+    }
 
     public byte[] encode() {
         return ClientMessageCodec.encodePayload(out -> {
@@ -25,6 +38,7 @@ public record RelicStatePayload(
             out.writeBoolean(resonanceActive);
             out.writeBoolean(awakeningConfigured);
             ClientMessageCodec.writeString(out, dormantReason);
+            out.writeLong(awakeningRemainingMillis);
         });
     }
 
@@ -38,6 +52,7 @@ public record RelicStatePayload(
                 ClientMessageCodec.readString(in),
                 in.readBoolean(),
                 in.readBoolean(),
-                ClientMessageCodec.readString(in)));
+                ClientMessageCodec.readString(in),
+                in.readLong()));
     }
 }

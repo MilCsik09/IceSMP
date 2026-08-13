@@ -24,6 +24,7 @@ import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.QuestStatePayload;
 import hu.taliann.icesmp.client.protocol.QuestTrackPayload;
+import hu.taliann.icesmp.client.protocol.RelicAttachmentPayload;
 import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
@@ -288,11 +289,15 @@ public final class ClientProtocolRegressionSuite {
 
     private static void relicPayload() throws Exception {
         final RelicStatePayload relic = new RelicStatePayload("sarkany_tojas", "Sárkánytojás",
-                "evoker", "devastation", true, "devastation_resonance", false, false, "NONE");
+                "evoker", "devastation", true, "devastation_resonance", false, true, "NONE", 45_000L);
         check(relic.equals(RelicStatePayload.decode(relic.encode())), "RelicStatePayload roundtrip");
+        // A fogyó maradék nem lehet forgalom-generáló: a szignatúra 0/1-re normalizál.
+        check(relic.changeSignature().equals(new RelicStatePayload("sarkany_tojas", "Sárkánytojás",
+                        "evoker", "devastation", true, "devastation_resonance", false, true, "NONE", 1L)),
+                "relic change signature normalizes countdown");
 
         // Projektor: kötés nélküli aktiváció kanonikus üres state-re képződik.
-        final RelicStatePayload none = ClientRelicProjector.project(null, id -> id);
+        final RelicStatePayload none = ClientRelicProjector.project(null, id -> id, 0L);
         check(none.relicId().isEmpty() && "NO_BINDING".equals(none.dormantReason()),
                 "missing binding projects to empty relic state");
 
@@ -302,13 +307,30 @@ public final class ClientProtocolRegressionSuite {
                 java.util.Optional.empty(), false, false,
                 ClassRelicActivation.DormantReason.NONE);
         final RelicStatePayload projected = ClientRelicProjector.project(activation,
-                id -> "Sárkánytojás");
+                id -> "Sárkánytojás", -100L);
         check("sarkany_tojas".equals(projected.relicId())
                 && "Sárkánytojás".equals(projected.displayName())
                 && projected.basePowerActive()
+                && projected.awakeningRemainingMillis() == 0L
                 && "NONE".equals(projected.dormantReason()), "relic projector mapping");
         check(projected.equals(RelicStatePayload.decode(projected.encode())),
                 "projected relic state roundtrip");
+
+        final RelicAttachmentPayload attachments = new RelicAttachmentPayload(List.of(
+                new RelicAttachmentPayload.Wearer(new UUID(3L, 4L), "sarkany_tojas",
+                        "Sárkánytojás", true)));
+        check(attachments.equals(RelicAttachmentPayload.decode(attachments.encode())),
+                "RelicAttachmentPayload roundtrip");
+        final List<RelicAttachmentPayload.Wearer> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new RelicAttachmentPayload.Wearer(new UUID(0L, i), "", "", false));
+        }
+        try {
+            new RelicAttachmentPayload(tooMany).encode();
+            throw new AssertionError("oversized wearer list accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt — a bridge a listát cap-eli
+        }
     }
 
     private static void talentPayloads() throws Exception {

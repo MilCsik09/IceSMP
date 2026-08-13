@@ -54,6 +54,7 @@ public final class ClientProtocol {
     public static final int MSG_QUEST_STATE = 0x29;
     public static final int MSG_PROFESSION_STATE = 0x2A;
     public static final int MSG_RECIPE_PAGE = 0x2B;
+    public static final int MSG_RELIC_ATTACHMENT_STATE = 0x2C;
 
     // Action-sáv (0x40-0x4F): kliens → szerver intent-kérések (a szerver mindent újravalidál).
     public static final int MSG_CAST_SLOT = 0x40;

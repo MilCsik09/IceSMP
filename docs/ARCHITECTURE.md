@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 837 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 838 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1225,10 +1225,12 @@ Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCO
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
 State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
 `0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
-`0x25 RELIC_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE` (0x24/0x26/0x27 a
+`0x25 RELIC_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE`, `0x2A PROFESSION_STATE`,
+`0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE` (0x24/0x26/0x27 a
 FACTION/PARTY/EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
 intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
-`0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`.
+`0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`, `0x45 SELECT_PROFESSION`,
+`0x46 SELECT_PROFESSION_SPEC`, `0x47 BROWSE_RECIPES`.
 Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
 `0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
 RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv később nyílik.
@@ -1323,13 +1325,30 @@ A `RELIC_STATE` a SAJÁT játékos class-relic aktivációjának display-projekc
 (`ClassRelicActivation` tükre + display-név a `relics.definitions` katalógusból) a
 `RELIC_RENDER_V1` capability + `client.features.relic-render-v1` kapu mögött. A
 `ClassRelicService.resolve` UUID-only, lock-mentes és cache-only, ezért a tick-cadence
-olcsón elbírja; bájt-dedupe-pal csak változásra megy ki. Szándékos v1-korlátok: (1)
-csak saját-játékos state — más viselők attachment-broadcastja külön kézbesítési
-infrastruktúrát igényel (későbbi fázis); (2) nincs awakening-readyAt mező, mert a
-szervernek ma nincs erre query-API-ja (a store csak tryArm-ot ismer) — az Awakening
-élesítésekor pótolandó; (3) szerveroldali vanilla-suppression e fázisban nem kellett,
-mert a class-relic rétegnek jelenleg nincs szerveroldali vizuálja — amikor lesz, a
-hídbeli `relicRenderActive` kapu a kész suppression-predikátum hozzá.
+olcsón elbírja; a dedupe a normalizált change-signature-ön fut (a fogyó
+awakening-maradék 0/1-re normalizálva — futó cooldown nem generál forgalmat, a kliens
+a fogadás idejétől interpolál). A payload az `awakeningRemainingMillis` mezőt is
+hordozza, forrása a `ClassRelicService.awakeningReadyAt(UUID)` query (katalógus-kötés
+→ relic-id → lock-mentes store-pillanatkép; 0 = kész vagy nincs konfigurálva).
+Szerveroldali vanilla-suppression e fázisban nem kellett, mert a class-relic rétegnek
+jelenleg nincs szerveroldali vizuálja — amikor lesz, a hídbeli `relicRenderActive`
+kapu a kész suppression-predikátum hozzá.
+
+### Relic attachment-broadcast (RELIC_ATTACHMENT_STATE)
+
+A `RELIC_ATTACHMENT_STATE` a néző közelében tartózkodó, AKTÍV class-relicet viselő
+játékosok listája a `RELIC_ATTACHMENT_V1` capability +
+`client.features.relic-attachment-v1` kapu mögött. Folia-safe kereszt-régiós út: a
+pozíciók az owner-thread-frissített `PositionCache` tükréből
+(`nearbyPlayerIds(viewer, radius)` — rádiusz: `client.limits.relic-attachment-radius`),
+az aktiváció a lock-mentes relic-resolve-ból jön — a néző szála idegen
+Player-objektumot nem érint. Csak megjelenítési tények utaznak (viselő-UUID, relic-id
++ név, rezonancia-jelzés); nevet a szerver nem küld, a kliens a saját világában a
+UUID-ból oldja fel az entitást; alvó viselő nem kerül a vezetékre. A lista
+determinisztikusan rendezett és a protokoll-limiten cap-elt, bájt-dedupe-pal csak
+változásra megy ki. Ez a kézbesítési infrastruktúra — a tényleges
+attachment-renderer/FX a Phase 8 dolga, a resonance/awakening tartalmi élesítésével
+együtt.
 
 ### Natív talentek (TALENT_STATE, PURCHASE_TALENT)
 

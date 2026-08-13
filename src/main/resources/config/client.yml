@@ -31,6 +31,9 @@ client:
     ui-actions-per-second: 10
     # A RECIPE_PAGE válasz laponkénti recept-száma (a protokoll-limit 64 fölé nem engedi).
     recipe-page-size: 16
+    # A relic attachment-broadcast rádiusza blokkban: ekkora körzetben lévő aktív
+    # viselők kerülnek a néző RELIC_ATTACHMENT_STATE listájába.
+    relic-attachment-radius: 32
   # Kézfogásban engedélyezhető presentation-capability-k. Minden érték alapból false:
   # egy capability csak akkor kapcsolható be, amikor a hozzá tartozó szerveroldali
   # projection/action fázis ténylegesen elkészült. A kliens hiába hirdet többet,
@@ -46,6 +49,7 @@ client:
     native-professions: false
     recipe-browser: false
     relic-render-v1: false
+    relic-attachment-v1: false
     advanced-fx-v1: false
     player-animation-v1: false
     party-frame: false

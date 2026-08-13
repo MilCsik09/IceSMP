@@ -39,6 +39,27 @@ public final class PositionCache {
         return location == null ? null : location.clone();
     }
 
+    /** Cross-region-safe nearby-player list using only owner-thread-maintained mirrors. */
+    public static java.util.List<UUID> nearbyPlayerIds(final UUID sourceId, final double radius) {
+        final Location source = get(sourceId);
+        if (source == null || source.getWorld() == null || radius < 0.0D) {
+            return java.util.List.of();
+        }
+        final double radiusSquared = radius * radius;
+        final java.util.List<UUID> nearby = new java.util.ArrayList<>();
+        for (final Map.Entry<UUID, Location> entry : POSITIONS.entrySet()) {
+            if (entry.getKey().equals(sourceId)) {
+                continue;
+            }
+            final Location candidate = entry.getValue();
+            if (candidate.getWorld() != null && candidate.getWorld().getUID().equals(source.getWorld().getUID())
+                    && candidate.distanceSquared(source) <= radiusSquared) {
+                nearby.add(entry.getKey());
+            }
+        }
+        return nearby;
+    }
+
     /** Cross-region-safe nearby-player query using only owner-thread-maintained mirrors. */
     public static boolean hasNearbyPlayer(final UUID sourceId, final double radius,
                                           final Predicate<UUID> filter) {

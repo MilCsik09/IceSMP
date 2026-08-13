@@ -1626,11 +1626,14 @@ public final class IceSMPCore {
                 professionRecipeCatalog, professionWeeklyGoalManager, uniqueMaterialFactory);
         clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
                 .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
-        clientBridge.connectRelicState(relicPlayerId -> hu.taliann.icesmp.client.projection.ClientRelicProjector
-                .project(classRelicService.resolve(relicPlayerId), relicId -> {
-                    final hu.taliann.icesmp.relics.RelicDefinition definition = relicManager.getDefinition(relicId);
-                    return definition == null ? relicId : definition.displayName();
-                }));
+        clientBridge.connectRelicState(relicPlayerId -> {
+            final long readyAt = classRelicService.awakeningReadyAt(relicPlayerId);
+            return hu.taliann.icesmp.client.projection.ClientRelicProjector
+                    .project(classRelicService.resolve(relicPlayerId), relicId -> {
+                        final hu.taliann.icesmp.relics.RelicDefinition definition = relicManager.getDefinition(relicId);
+                        return definition == null ? relicId : definition.displayName();
+                    }, readyAt == 0L ? 0L : readyAt - System.currentTimeMillis());
+        });
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();

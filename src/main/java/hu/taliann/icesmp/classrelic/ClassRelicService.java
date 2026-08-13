@@ -204,6 +204,23 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
      * két konkurens hívásból pontosan egy ARMED, sikertelen lemez-írásnál az eredmény
      * PERSISTENCE_FAILED és az állapot változatlan — ARMED siker csak megtörtént commit után.
      */
+    /**
+     * A játékos relikvia-Awakeningjének ready-at időpontja epoch-millisben; 0, ha nincs
+     * kötött relic vagy az awakening nincs konfigurálva. UUID-only read path (katalógus +
+     * lock-mentes store-pillanatkép), idegen régió-szálról is hívható.
+     */
+    public long awakeningReadyAt(final UUID playerId) {
+        if (playerId == null) {
+            return 0L;
+        }
+        final ClassRelicActivation activation = resolver.resolveForClass(catalog, playerId);
+        if (!activation.awakeningConfigured() || activation.relicId() == null
+                || activation.relicId().isBlank()) {
+            return 0L;
+        }
+        return relicManager.getAwakeningReadyAt(activation.relicId());
+    }
+
     public AwakeningResult tryArmAwakening(final Player player) {
         if (player == null) {
             return AwakeningResult.NOT_AVAILABLE;

@@ -16,10 +16,11 @@ public final class ClientRelicProjector {
     }
 
     public static RelicStatePayload project(final ClassRelicActivation activation,
-                                            final Function<String, String> displayNameResolver) {
+                                            final Function<String, String> displayNameResolver,
+                                            final long awakeningRemainingMillis) {
         if (activation == null || activation.relicId() == null || activation.relicId().isBlank()) {
             return new RelicStatePayload("", "", "", "", false, "", false, false,
-                    ClassRelicActivation.DormantReason.NO_BINDING.name());
+                    ClassRelicActivation.DormantReason.NO_BINDING.name(), 0L);
         }
         final String displayName = displayNameResolver.apply(activation.relicId());
         return new RelicStatePayload(
@@ -31,6 +32,7 @@ public final class ClientRelicProjector {
                 activation.resolvedResonanceId().orElse(""),
                 activation.resonanceActive(),
                 activation.awakeningConfigured(),
-                activation.dormantReason().name());
+                activation.dormantReason().name(),
+                Math.max(0L, awakeningRemainingMillis));
     }
 }
