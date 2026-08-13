@@ -1,0 +1,46 @@
+# IceSMP Client Bridge — az opcionális Fabric kliensmod (IceSMP Client) szerveroldali alapja.
+# A kliensmod NEM kötelező: a szerver vanilla klienssel + kötelező resource packkal teljes
+# értékűen játszható. A híd csak transportot, kézfogást és session-kezelést ad; minden
+# gameplay-döntés a pluginban marad (a kliens sosem authority).
+client:
+  # Fő rollback-kapcsoló: false esetén a híd minden beérkező üzenetet eldob és semmit
+  # nem küld — restart nélkül él (/icesmp reload vagy /icesmp config set client.enabled false).
+  enabled: true
+  # Ha true lenne, a szerver megkövetelné a kliensmodot. A termék-elv szerint false marad:
+  # az Enhanced kliens ajánlott, de nem lehet gameplay-előny feltétele.
+  required: false
+  protocol:
+    # A kézfogásban felkínált protokoll-tartomány. A kód a saját támogatott tartományára
+    # szűkíti (jelenleg 1..1), tehát itt csak SZŰKÍTENI lehet, bővíteni nem.
+    min: 1
+    max: 1
+  # A resource pack sémaverziója a kézfogás-válaszban: a kliens ehhez köti az
+  # asset-függő funkciói aktiválását (RP readiness gate).
+  resource-pack-schema: 1
+  limits:
+    # Beérkező csomag maximális mérete bájtban (a kód 65536 fölé nem engedi).
+    max-payload-bytes: 65536
+    # Control-üzenetek másodpercenkénti plafonja játékosonként; fölötte csendes drop.
+    control-messages-per-second: 20
+    # Két kliens-kezdeményezésű resync közti kötelező szünet.
+    resync-cooldown-ms: 2000
+  # Kézfogásban engedélyezhető presentation-capability-k. Minden érték alapból false:
+  # egy capability csak akkor kapcsolható be, amikor a hozzá tartozó szerveroldali
+  # projection/action fázis ténylegesen elkészült. A kliens hiába hirdet többet,
+  # csak az itt engedélyezett ÉS általa támogatott metszetet kapja vissza.
+  features:
+    native-hud: false
+    ability-bar: false
+    keybind-cast: false
+    native-profile: false
+    native-spellbook: false
+    native-talents: false
+    quest-journal: false
+    relic-render-v1: false
+    advanced-fx-v1: false
+    player-animation-v1: false
+    party-frame: false
+    boss-frame: false
+    territory-overlay: false
+  # Debug-napló a hídhoz (drop-okok, kézfogások). Productionben maradjon false.
+  debug: false

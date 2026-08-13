@@ -623,9 +623,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 802 Java-fájl, ~141 000 sor; 92 `*Manager` osztály (a `managers/` csomag 124 fájl).
-  Csomag-megoszlás: listeners 121, managers 124, commands 94, spells 59, gui 69, crates 14, utils 28, data 15, classrelic 14,
-  items 13, relics 12, quest 8, integration 6.
+- **Méret:** 804 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
+  items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -1171,4 +1171,100 @@ move the panel. Faction frames share one canonical inner grid; only their decora
 The guest/Menedék frame is generated from that grid and may replace only the outer shell. Production
 R2 packaging deterministically merges the immutable external base with explicitly owned IceSMP
 paths; it does not start Folia or any external HUD plugin and rejects unowned ZIP collisions.
+
+## Client Bridge — az IceSMP Client protokoll-alapja
+
+Az opcionális Fabric kliensmod (IceSMP Client) szerveroldali hídja a `client/` csomagban él.
+A foundation fázis KIZÁRÓLAG transportot, kézfogást és session-életciklust ad — gameplay-,
+HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
+
+- **A kliens sosem authority.** Minden beérkező üzenet kérés vagy ajánlat; gameplay-állítást
+  (cooldown kész, quest kész, resource-érték) a szerver nem fogad el kliensről.
+- **A domain nem tud a hídról.** Gameplay service-ben tilos a kliens-detektálás
+  (`if (hasFabricClient(player))` architektúra-smell); a későbbi fázisok is csak
+  projection/action adapteren át érik el a domain-t.
+- **Vanilla parity.** A mod hiánya nem csökkenthet gameplay-funkcionalitást; a kötelező
+  resource pack minden kliensnél megmarad.
+- **Fail closed.** Hibás/csonka/limitsértő payload — a hibás UTF-8-at is beleértve — válasz
+  nélkül eldobódik; minden hosszmező allokáció előtt limitellenőrzött.
+- **Rollback egyetlen kapcsolóval:** `client.enabled: false` (élő config, restart nélkül) —
+  a híd ettől kezdve minden üzenetet eldob, semmit nem küld és üríti az élő sessionöket;
+  visszakapcsolás után új kézfogás szükséges.
+
+### Rétegek
+
+| Réteg | Osztályok | Bukkit-függés |
+|---|---|---|
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
+| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup) | igen |
+
+### Wire-formátum (protokoll v1)
+
+Csatorna: `icesmp:client` (plugin messaging / custom payload). Envelope, fix szélességű
+big-endian mezőkkel:
+
+```text
+short  MAGIC (0x1CE5)
+byte   protocolVersion
+byte   messageType
+long   sessionGeneration
+long   sequence
+long   requestId (UUID msb)
+long   requestId (UUID lsb)
+int    payloadLength
+byte[] payload
+```
+
+Limitek: a teljes csomag max 64 KiB (ebből 40 bájt a fix fejléc; configgal csak szűkíthető),
+string max 8 KiB (szigorú UTF-8, nem modified-UTF-8), lista max 64 elem. Sérült envelope,
+ismeretlen üzenettípus, hamis hosszmező és trailing bájt egyaránt csendes drop + számláló.
+
+Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCOL_REJECT`,
+`0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
+State/action/presentation sávok a későbbi fázisokban nyílnak.
+
+### Kézfogás és capability-k
+
+`CLIENT_HELLO` (kliens verzió + protokoll-tartomány + hirdetett capability-nevek) →
+`ClientHandshake.negotiate`: a közös protokoll a kliens- és szerver-tartomány metszetének
+maximuma; a config-ablak (`client.protocol.min/max`) a kód által beszélt tartományra (jelenleg
+1..1) záródik. Üres metszet nem kick, hanem `PROTOCOL_REJECT` — az inkompatibilis kliens
+vanilla fallbackra esik. Elfogadáskor a session új, szigorúan növekvő generation-t kap, és a
+`SERVER_HELLO` a plugin-verziót, a kiválasztott protokollt, a resource-pack sémát
+(`client.resource-pack-schema`) és az engedélyezett capability-ket viszi.
+
+Egy capability csak akkor aktív, ha a kliens hirdette ÉS `client.features.<kulcs>: true` ÉS a
+protokoll támogatja. Minden feature-kapcsoló alapból `false`, és csak akkor kapcsolható be,
+amikor a hozzá tartozó szerveroldali projection/action fázis elkészült. Ismeretlen
+capability-név nem hiba (forward compat).
+
+### Session-életciklus és védelem
+
+- A registry (`UUID → ClientSession`) nem durable; quit/kick a központi
+  `PlayerSessionCleanupListener` úton takarít (a híd `PlayerStateCleanup`), disable a
+  `ClientBridge.unregister` lépésben (a bent hagyott channel-listener a régi core-példányt
+  tartaná életben hot reloadnál).
+- Kézfogás utáni üzenet csak élő session + egyező, kialkudott protokoll + egyező generation
+  + szigorúan monoton sequence mellett dolgozódik fel; minden más stale-drop. Reconnect után
+  a régi generation üzenetei így tartalmi validáció nélkül kiesnek.
+- Rate limit játékosonként és kategóriánként (`client.limits.control-messages-per-second`,
+  resync-hez `client.limits.resync-cooldown-ms`); túllépés csendes drop + számláló,
+  automatikus büntetés nélkül.
+- Folia: a plugin-message callback szál-kontextusa nem garantált, ezért a híd a Playert csak
+  a saját ütemezőjén érinti (`player.getScheduler().run` a kimenő küldésnél); a registry és a
+  számlálók lock-mentes konkurens szerkezetek.
+
+### Diagnosztika és tesztek
+
+`/icesmp client <név>` (session-részletek), `/icesmp client stats` (híd-számlálók),
+`/icesmp client resync <név>` (kényszerített, üres BEGIN/END resync) — jog:
+`icesmp.admin.client`. Debug-napló: `client.debug: true`.
+
+A `clientProtocolRegressionTest` (a `check` része) dependency-free fedi a codec-roundtripet,
+a fail-closed hibautakat, a negotiációt, a registry-életciklust, a sequence-monotonitást és a
+rate limitert. A Fabric-oldali ellenpárt (valódi 1.21.11 transport spike) a külön
+`IceSMP-Client` repo Phase 0 feladata bizonyítja; addig a protokoll-tartomány szándékosan
+1..1 és minden feature-kapu zárva.
+
 

@@ -19,7 +19,7 @@ világban elvégzett bekötést.
 Jelölések:
 
 - 🚧 **kiadási kapu** — rollout előtt kötelező;
-- ⬜ **elkötelezett fejlesztés** — része az A–G tervnek;
+- ⬜ **elkötelezett fejlesztés** — része az A–H tervnek;
 - ◇ **builder- vagy runtime-kapu** — kézi előkészítést, illetve próbát igényel;
 - 💡 **ötlet** — értékes irány, de még nincs ütemezve;
 - ⏸ **döntésre vár** — tulajdonosi vagy design-döntés nélkül nem indul.
@@ -226,6 +226,31 @@ visszatérési összefoglalójában.
 - ⬜ Moderációs workflow 2.0 a meglévő reportmodell migrálásával, új
   párhuzamos case-rendszer nélkül.
 
+### H — IceSMP Client Platform (opcionális Fabric kliensmod)
+
+A szerveroldali protokoll-alap (Client Bridge: transport, kézfogás,
+session-registry, rate limit, `/icesmp client` diagnosztika) elkészült —
+lásd `docs/ARCHITECTURE.md` „Client Bridge” szekció. A folytatás
+fázisonként, a terv szerinti sorrendben:
+
+- ⬜ Külön `IceSMP-Client` Fabric repo létrehozása (client-only skeleton,
+  `fabric.mod.json`, inert other-server mód).
+- ⬜ Phase 0 transport spike: valódi Paper↔Fabric HELLO/ACK roundtrip
+  exact 1.21.11-en, reconnect + proxy-hatás bizonyítással (CLIENT-02
+  acceptance-sor).
+- ⬜ Native HUD fázis: `HudSnapshot`/`ClassHudState` szerializáció +
+  presentation routing (nem új state-modell); `client.features.native-hud`
+  kapu csak ezután nyitható.
+- ⬜ Ability bar + `CAST_SLOT` keybind casting — ELŐFELTÉTEL: a
+  class/spell/cast hardening (PR #115) integrálva, közös canonical cast
+  entrypointtal; addig a `keybind-cast` kapu zárva.
+- ⬜ Spellbook/Profile natív screenek (query + action service extraction),
+  majd relic renderer és a további modulok a product spec sorrendjében.
+
+**Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
+nincs dupla presentation, a kliens semmiben nem authority, és a feature
+egyetlen `client.features.*` kapcsolóval visszakapcsolható.
+
 ## 5. Közös alapok és függőségek
 
 | Alap | Első fázis | További használók |
@@ -240,7 +265,7 @@ visszatérési összefoglalójában.
 
 ## 6. Ötletbank — még nincs ütemezve
 
-Az alábbiak értékes irányok, de nem részei az A–G vállalásnak. Csak
+Az alábbiak értékes irányok, de nem részei az A–H vállalásnak. Csak
 külön scope-, exploit-, Folia- és gazdasági review után kerülhetnek fel
 elkötelezett fázisba.
 
@@ -314,3 +339,5 @@ Egy roadmap-tétel csak akkor zárható le, ha:
 7. a build, consistency, inventory és Markdown-linkellenőrzés zöld;
 8. a szükséges staging/runtime pontot nem CI alapján, hanem ténylegesen
    kipipálták az admin acceptance checklistben.
+
+

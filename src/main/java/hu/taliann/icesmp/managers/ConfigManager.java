@@ -60,7 +60,7 @@ public final class ConfigManager {
             "general", "economy", "factions", "block-regen", "classes", "class-gameplay", "spells", "spells-balance",
             "professions", "quests", "world", "event-spawn-safety", "relics", "pets", "crafting", "crates",
             "afk", "moderation", "item-rarity", "loot", "motd", "profession-materials",
-            "profession-recipes", "sit", "tablist", "dev-items"
+            "profession-recipes", "sit", "tablist", "dev-items", "client"
     };
 
     private final JavaPlugin plugin;

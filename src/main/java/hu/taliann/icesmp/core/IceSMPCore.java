@@ -213,6 +213,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.listeners.QuestBuilderListener questBuilderListener;
     private final SpellMasteryManager spellMasteryManager;
     private final PlayerSessionCleanupListener playerSessionCleanupListener;
+    private final hu.taliann.icesmp.client.IceSmpClientBridge clientBridge;
     private final RelicManager relicManager;
     private final MetelytepoManager metelytepoManager;
     private final SinManager sinManager;
@@ -718,6 +719,7 @@ public final class IceSMPCore {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
         });
+        this.clientBridge = new hu.taliann.icesmp.client.IceSmpClientBridge(plugin, configManager);
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
                 abilityCatalystListener,
                 jobManager,
@@ -749,7 +751,8 @@ public final class IceSMPCore {
                 lowHealthBorderListener,
                 soulforgeManager,
                 spellRegistry,
-                profileSessionBridge
+                profileSessionBridge,
+                clientBridge
         );
 
         registerSpells();
@@ -1224,6 +1227,9 @@ public final class IceSMPCore {
             // A per-player birtoklás-frissítő taskok és a pillanatkép-cache plugin-életciklushoz
             // kötöttek; részleges enable után is takarítandók.
             shutdownStep("ClassRelicService.shutdown", classRelicService::shutdown);
+            // Bent hagyott plugin-message listener a régi core-példányt tartaná életben a
+            // következő enable-ig; részleges enable után is takarítandó (idempotens no-op).
+            shutdownStep("ClientBridge.unregister", clientBridge::unregister);
             // A root-loggerre akasztott szűrő plugin-életciklushoz kötött: bent hagyva egy
             // eldobott ConfigManager-példányt tartana életben a következő enable-ig.
             shutdownStep("NamedEntityDeathLogFilter.uninstall",
@@ -1608,6 +1614,7 @@ public final class IceSMPCore {
         final IceSMPCommand iceSMPCommand = new IceSMPCommand(plugin, configManager, messageManager,
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
                 statsManager, claimManager, questManager, abilityCatalystListener, sinManager);
+        iceSMPCommand.setClientBridge(clientBridge);
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();
@@ -1833,6 +1840,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);
+        // Plugin messaging csatorna az opcionális kliensmodhoz — a client.enabled kapcsolót
+        // a híd üzenetenként, élő configból olvassa, ezért a regisztráció feltétel nélküli.
+        clientBridge.register();
         pluginManager.registerEvents(totemManager, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
@@ -1995,3 +2005,5 @@ public final class IceSMPCore {
         }
     }
 }
+
+

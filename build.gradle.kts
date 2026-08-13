@@ -458,6 +458,10 @@ val eventSpawnSafetyRegressionTest = registerRegression(
     "eventSpawnSafetyRegressionTest",
     "Runs deterministic event distance/search policy regressions.",
     "hu.taliann.icesmp.runtime.EventSpawnSafetyRegressionSuite")
+val clientProtocolRegressionTest = registerRegression(
+    "clientProtocolRegressionTest",
+    "Runs dependency-free IceSMP Client bridge protocol foundation regressions.",
+    "hu.taliann.icesmp.client.ClientProtocolRegressionSuite")
 val factionDisplayColorRegressionTest = registerRegression(
     "factionDisplayColorRegressionTest",
     "Runs central faction display palette and consumer-contract regressions.",
@@ -614,6 +618,7 @@ tasks.check {
         bestiaryRegressionTest, classRelicRegressionTest, relicTransferOwnershipRegressionTest,
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
+        clientProtocolRegressionTest,
         professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,
         donationChestDurabilityRegressionTest,
         operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest,
@@ -632,4 +637,6 @@ tasks.check {
         wizardGameplayRegressionTest, wizardProfileRegressionTest
     )
 }
+
+
 
