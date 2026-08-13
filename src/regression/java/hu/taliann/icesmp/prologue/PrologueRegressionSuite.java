@@ -165,7 +165,8 @@ public final class PrologueRegressionSuite {
         }
         String encounter=source("src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java");
         check(encounter.contains("getRegionScheduler().run")&&encounter.contains("getScheduler().runAtFixedRate")
-                        &&encounter.contains("player.getScheduler().run")&&encounter.contains("EventSpawnGuard.prepare"),
+                        &&encounter.contains("Bukkit.isOwnedByCurrentRegion(p)")
+                        &&encounter.contains("p.getScheduler().run")&&encounter.contains("EventSpawnGuard.prepare"),
                 "encounter world/entity/player mutations lost Folia scheduler ownership");
         String runtime=source("src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java");
         check(runtime.contains("player.getScheduler().run")&&runtime.contains("getGlobalRegionScheduler().run"),
