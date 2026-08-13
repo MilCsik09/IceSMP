@@ -8,11 +8,13 @@ import java.util.Locale;
 /** Egyetlen content/progression authority a Prologue kapuihoz. */
 public final class PrologueContentPolicy {
     private static final String ROOT = "world-events.prologue.";
+    private static final List<String> DEFAULT_PROLOGUE_RARITIES =
+            List.of("ocska", "kozonseges", "nem_mindennapi", "ritka");
 
     private PrologueContentPolicy() { }
 
     public static boolean enabled(final ConfigManager config) {
-        return config.getBoolean(ROOT + "enabled", true);
+        return config != null && config.getBoolean(ROOT + "enabled", true);
     }
 
     public static boolean active(final ConfigManager config) {
@@ -50,9 +52,10 @@ public final class PrologueContentPolicy {
 
     public static boolean rarityAvailable(final ConfigManager config, final String rarityId) {
         if (!active(config) || rarityId == null || rarityId.isBlank()) return true;
-        final List<String> allowed = config.getStringList(ROOT + "progression.allowed-rarities").stream()
+        List<String> allowed = config.getStringList(ROOT + "progression.allowed-rarities").stream()
                 .map(value -> value.toLowerCase(Locale.ROOT)).toList();
-        return allowed.isEmpty() || allowed.contains(rarityId.toLowerCase(Locale.ROOT));
+        if (allowed.isEmpty()) allowed = DEFAULT_PROLOGUE_RARITIES;
+        return allowed.contains(rarityId.toLowerCase(Locale.ROOT));
     }
 
     public static boolean uniqueMaterialAvailable(final ConfigManager config, final String materialId) {

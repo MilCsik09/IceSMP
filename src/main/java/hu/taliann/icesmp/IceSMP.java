@@ -4,6 +4,7 @@ import hu.taliann.icesmp.core.IceSMPCore;
 import hu.taliann.icesmp.integration.ProtectionBridge;
 import hu.taliann.icesmp.listeners.ResourcePackListener;
 import hu.taliann.icesmp.prologue.PrologueRuntime;
+import hu.taliann.icesmp.prologue.PrologueRuntimeConfigOverlay;
 import hu.taliann.icesmp.utils.TransientEntities;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -24,6 +25,7 @@ public final class IceSMP extends JavaPlugin {
         core = new IceSMPCore(this, resourcePackListener::reloadAndResend, resourcePackListener::isLoaded);
         core.enable();
         PrologueRuntime.install(this);
+        PrologueRuntimeConfigOverlay.install(this);
 
         if (getServer().getPluginManager().getPlugin("WorldGuard") != null
                 && !ProtectionBridge.isHealthy()) {
@@ -39,6 +41,7 @@ public final class IceSMP extends JavaPlugin {
     @Override
     public void onDisable() {
         try {
+            PrologueRuntimeConfigOverlay.shutdown();
             PrologueRuntime.shutdown();
             if (core != null) core.disable();
         } finally {
