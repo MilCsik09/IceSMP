@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.client;
 
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
+import hu.taliann.icesmp.client.projection.ClientPartyProjector;
 import hu.taliann.icesmp.client.projection.ClientProfessionProjector;
 import hu.taliann.icesmp.client.projection.ClientQuestProjector;
 import hu.taliann.icesmp.client.projection.ClientRecipeProjector;
@@ -34,6 +35,7 @@ import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
+import hu.taliann.icesmp.managers.PartyManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager;
@@ -101,6 +103,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, String> lastQuestSignature = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastProfessionState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastRelicAttachment = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastPartyState = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -124,6 +127,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private volatile ProfessionRecipeCatalog professionRecipeCatalog;
     private volatile ProfessionWeeklyGoalManager professionWeeklyGoal;
     private volatile UniqueMaterialFactory uniqueMaterialFactory;
+
+    /** A core köti be; a party-frame read-only, mutáció a /party parancson marad. */
+    private volatile PartyManager partyManager;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -169,6 +175,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastQuestSignature.clear();
         lastProfessionState.clear();
         lastRelicAttachment.clear();
+        lastPartyState.clear();
     }
 
     @Override
@@ -269,6 +276,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastQuestSignature.remove(player.getUniqueId());
         lastProfessionState.remove(player.getUniqueId());
         lastRelicAttachment.remove(player.getUniqueId());
+        lastPartyState.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -507,6 +515,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastQuestSignature.remove(player.getUniqueId());
             lastProfessionState.remove(player.getUniqueId());
             lastRelicAttachment.remove(player.getUniqueId());
+            lastPartyState.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -547,6 +556,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private boolean relicAttachmentActive(final ClientSession session) {
         return configManager.getBoolean("client.features.relic-attachment-v1", false)
                 && session.capabilities().contains(ClientCapability.RELIC_ATTACHMENT_V1);
+    }
+
+    private boolean partyFrameActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.party-frame", false)
+                && session.capabilities().contains(ClientCapability.PARTY_FRAME);
     }
 
     private boolean nativeTalentsActive(final ClientSession session) {
@@ -607,6 +621,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (relicAttachmentActive(session)) {
             pushRelicAttachmentsNow(player, session);
         }
+        if (partyFrameActive(session)) {
+            pushPartyNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -641,6 +658,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (relicAttachmentActive(session)) {
             pushRelicAttachmentsNow(player, session);
+        }
+        if (partyFrameActive(session)) {
+            pushPartyNow(player, session);
         }
     }
 
@@ -1261,6 +1281,29 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }, null);
     }
 
+    /**
+     * PARTY_STATE a vanilla HUD party-soraival azonos adatforrásból; player-szálon
+     * hívandó. A fél-szív kvantálás miatt a bájt-dedupe regen alatt nem churn-öl.
+     */
+    private void pushPartyNow(final Player player, final ClientSession session) {
+        final PartyManager parties = partyManager;
+        if (parties == null) {
+            return;
+        }
+        final byte[] payload = ClientPartyProjector.project(player, parties).encode();
+        final byte[] previous = lastPartyState.put(player.getUniqueId(), payload);
+        if (previous != null && Arrays.equals(previous, payload)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_PARTY_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "PARTY_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
+    }
+
+    public void connectParty(final PartyManager manager) {
+        this.partyManager = manager;
+    }
+
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
         this.hudSnapshotSource = source;
     }
@@ -1362,5 +1405,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastQuestSignature.remove(playerId);
         lastProfessionState.remove(playerId);
         lastRelicAttachment.remove(playerId);
+        lastPartyState.remove(playerId);
     }
 }

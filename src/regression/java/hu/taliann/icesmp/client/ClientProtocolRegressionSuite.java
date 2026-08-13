@@ -18,6 +18,7 @@ import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
 import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
+import hu.taliann.icesmp.client.protocol.PartyStatePayload;
 import hu.taliann.icesmp.client.protocol.ProfessionActionPayload;
 import hu.taliann.icesmp.client.protocol.ProfessionStatePayload;
 import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
@@ -63,6 +64,7 @@ public final class ClientProtocolRegressionSuite {
         questPayloads();
         professionPayloads();
         recipePayloads();
+        partyPayload();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -457,6 +459,31 @@ public final class ClientProtocolRegressionSuite {
             throw new AssertionError("oversized recipe page accepted");
         } catch (final IllegalArgumentException expected) {
             // fail closed a kódolás előtt — a lap-méret szerveroldalon clampelt
+        }
+    }
+
+    private static void partyPayload() throws Exception {
+        final PartyStatePayload solo = new PartyStatePayload(5, List.of());
+        check(solo.equals(PartyStatePayload.decode(solo.encode())), "empty party roundtrip");
+
+        final PartyStatePayload party = new PartyStatePayload(5, List.of(
+                new PartyStatePayload.Member(new UUID(1L, 2L), "Alva", true, true, true, 9, 10),
+                new PartyStatePayload.Member(new UUID(3L, 4L), "", false, false, false, 0, 0),
+                new PartyStatePayload.Member(new UUID(5L, 6L), "Borzas", false, true, false, 0, 0)));
+        check(party.equals(PartyStatePayload.decode(party.encode())), "PartyStatePayload roundtrip");
+        check(party.members().get(0).leader() && !party.members().get(1).online()
+                        && party.members().get(2).online() && !party.members().get(2).healthKnown(),
+                "member flags preserved");
+
+        final List<PartyStatePayload.Member> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new PartyStatePayload.Member(new UUID(0L, i), "", false, false, false, 0, 0));
+        }
+        try {
+            new PartyStatePayload(5, tooMany).encode();
+            throw new AssertionError("oversized member list accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt — a projektor cap-el
         }
     }
 

@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 838 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 840 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1225,9 +1225,9 @@ Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCO
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
 State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
 `0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
-`0x25 RELIC_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE`, `0x2A PROFESSION_STATE`,
-`0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE` (0x24/0x26/0x27 a
-FACTION/PARTY/EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
+`0x25 RELIC_STATE`, `0x26 PARTY_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE`,
+`0x2A PROFESSION_STATE`, `0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE`
+(0x24/0x27 a FACTION/EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
 intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
 `0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`, `0x45 SELECT_PROFESSION`,
 `0x46 SELECT_PROFESSION_SPEC`, `0x47 BROWSE_RECIPES`.
@@ -1417,6 +1417,22 @@ have-számlálás a megosztott GUI-helpereket használja (unique-anyag kizárás
 craftolhatóság a vanilla csempével egyezően szint + tervrajz + hozzávalók. Craft-action
 szándékosan NINCS a protokollban (a product spec szerint is későbbi külön döntés):
 a tényleges craft a vanilla recept-könyv tranzakciós útján marad.
+
+### Party frame (PARTY_STATE)
+
+A `PARTY_STATE` a party-frame strukturált display-projekciója a `PARTY_FRAME`
+capability + `client.features.party-frame` kapu mögött — ugyanaz az adatkör, amit a
+vanilla HUD party-sorai mutatnak (👑/tag-jelölés, név, életerő), mezőkben. A tag-adat
+olvasása szándékosan a vanilla sor útján fut (`Bukkit.getPlayer` + élő mező-olvasás
+védőhálóval, a néző region-szálán — a HudManager dokumentált kereszt-régiós
+kivétele); régió-átmenetkor a tag egy tickre `healthKnown=false`-szal utazik, ahogy a
+vanilla sor „…”-t mutat. Az életerő fél-szívekre kvantált (`ceil(hp/2)` — a vanilla
+kijelzéssel azonos felbontás), így a regen-tickek nem generálnak forgalmat a
+bájt-dedupe alatt. Üres taglista = nincs party. Party-mutáció (invite/kick/promote/
+leave) szándékosan NEM része a protokollnak — a `/party` parancs validált útja marad
+az egyetlen. A natív kliens a strukturált frame aktív állapotában a HUD-panel
+szöveges party-sorait nem rendereli (nincs dupla presentation); a HUD_STATE
+partyLines mezője változatlanul utazik a vanilla-paritás miatt.
 
 ### Session-életciklus és védelem
 

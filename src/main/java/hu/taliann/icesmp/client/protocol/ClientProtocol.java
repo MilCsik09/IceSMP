@@ -49,7 +49,8 @@ public final class ClientProtocol {
     public static final int MSG_PROFILE_STATE = 0x23;
     // 0x24 a terv szerint a FACTION_STATE-nek fenntartva.
     public static final int MSG_RELIC_STATE = 0x25;
-    // 0x26/0x27 a terv szerint a PARTY/EVENT_STATE-nek fenntartva.
+    public static final int MSG_PARTY_STATE = 0x26;
+    // 0x27 a terv szerint az EVENT_STATE-nek fenntartva.
     public static final int MSG_TALENT_STATE = 0x28;
     public static final int MSG_QUEST_STATE = 0x29;
     public static final int MSG_PROFESSION_STATE = 0x2A;

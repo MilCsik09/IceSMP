@@ -288,8 +288,13 @@ fázisonként, a terv szerinti sorrendben:
   azonos tartalommal; lap-méret élő configból
   (`client.limits.recipe-page-size`). Craft-action szándékosan nincs a
   protokollban — a craft a vanilla recept-könyv tranzakciós útján marad.
-- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..15),
-  Phase 7-8 (party/boss/territory, FX/animáció + attachment-renderer).
+- ✅ Party frame (Phase 7 első modul): strukturált PARTY_STATE a vanilla
+  HUD party-soraival azonos adatforrásból (fél-szív kvantálás, régió-átmenet
+  fallback), read-only — a party-mutáció a /party parancson marad; a natív
+  kliens a frame aktív állapotában nem duplázza a HUD-panel party-sorait.
+- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..16),
+  Phase 7 folytatás (boss/encounter frame, territory overlay, faction
+  screen), Phase 8 (FX/animáció + attachment-renderer).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature
