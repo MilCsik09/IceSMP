@@ -29,7 +29,7 @@ Jelölések:
 ### 1.1. Kiadásblokkoló
 
 - 🚧 **H-ECON-001 — több tartományt érintő gazdasági crash-ablak.**
-  A bank-, claim- és adományfolyamatok egy része memóriát, inventoryt és
+  A bank- és claimfolyamatok egy része memóriát, inventoryt és
   több külön állományt módosít, de ezekhez nincs közös, tartós commitpont.
   A megoldási irány szűk WAL/pending rekord: az irreverzibilis lépés előtt
   tartós műveleti rekord, majd idempotens induláskori recovery. Teljes

@@ -272,8 +272,10 @@ Az adományláda nem piac:
 A GUI felső, 0–8. sora egyirányú beadási zóna: bal kattintás a teljes
 kurzorstackot, jobb kattintás egy darabot ad be; a shift-kattintás, a
 hotbar-szám, az offhand-gomb és a drag is működik. Egy közös adományt
-egyszerre csak egy játékos vehet el; ha a fogadó inventoryd megtelik, a
-maradék a lábadnál esik le.
+egyszerre csak egy játékos vehet el; átvétel előtt legyen üres a kurzorod.
+Az adomány csak a tartós mentés után kerül a közös kínálatba. Ha közben
+leáll a szerver vagy megszakad a kapcsolat, a beadás vagy az átvétel a
+következő belépéskor veszteség és dupla kézbesítés nélkül lezáródik.
 
 Nincs vételár; amit elviszel, azt egy másik játékos neked szánta.
 
@@ -705,6 +707,7 @@ Minden küldetésnek saját forrása van, és csak ott vehető fel:
 - `/quest info` — aktív küldetéseid és haladásod.
 - `/quest track <id|off>` — követett küldetés kijelölése (a naplóban ★).
 - `/quest abandon <id>` — feladás.
+- `/quest choose <token>` — a párbeszédben megjelenő kattintható választás egyszer használatos beváltása; a tokent nem kell és nem érdemes kézzel beírni, lejárat után beszélj újra az NPC-vel.
 
 Az első belépéskor egy rövid kezdő lánc automatikusan vezet végig az alapokon.
 Kövesd a képernyő jelzéseit; ez az útmutató nem sorolja fel előre a
@@ -829,6 +832,8 @@ legtöbb művelet a `/menu` felületéről is elérhető.
 | `/spell upgrade <id>` | spell-mesterség |
 | `/spec list` | választható specializációk |
 | `/spec choose <id>` | specializáció választása |
+| `/spec switch <first|second|spec-id>` | megtanult kasztspecializáció aktív slotjának váltása biztonságos helyen |
+| `/spec doctrine <30|40|50> <választás>` | a megadott szint végleges doctrine-választásának rögzítése |
 | `/spec respec <class|profession>` | specializáció visszaváltása |
 | `/spec esku <irgalom|itelet|oltalmazas>` | Paplovag-irány (Eskü) választása az ülésre |
 | `/spec ima <vigasz|ostor|csend>` | Pap-litánia (ima) felvétele az ülésre |
@@ -973,4 +978,3 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
-

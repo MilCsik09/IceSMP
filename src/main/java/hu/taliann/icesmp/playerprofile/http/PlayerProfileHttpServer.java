@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Optional read-only v1 HTTP adapter. It never calls Bukkit/entity APIs. */
 public final class PlayerProfileHttpServer implements AutoCloseable {
@@ -83,6 +84,7 @@ public final class PlayerProfileHttpServer implements AutoCloseable {
     private final Config config;
     private final Map<String, TokenGrant> tokenDigests;
     private final ConcurrentMap<String, Window> rate = new ConcurrentHashMap<>();
+    private final AtomicLong purgedRateMinute = new AtomicLong(Long.MIN_VALUE);
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final AtomicBoolean accepting = new AtomicBoolean();
     private HttpServer server;
@@ -285,6 +287,10 @@ public final class PlayerProfileHttpServer implements AutoCloseable {
     private boolean allow(final HttpExchange exchange) {
         final String key = exchange.getRemoteAddress().getAddress().getHostAddress();
         final long minute = System.currentTimeMillis() / 60_000L;
+        final long lastPurge = purgedRateMinute.get();
+        if (lastPurge != minute && purgedRateMinute.compareAndSet(lastPurge, minute)) {
+            rate.entrySet().removeIf(entry -> entry.getValue().minute() < minute);
+        }
         final Window window = rate.compute(key, (ignored, old) ->
                 old == null || old.minute() != minute
                         ? new Window(minute, new AtomicInteger()) : old);

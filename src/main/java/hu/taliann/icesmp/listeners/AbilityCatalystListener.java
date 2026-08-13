@@ -1,34 +1,40 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.archer.ArcherGameplayService;
+import hu.taliann.icesmp.assassin.AssassinGameplayService;
+import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
 import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.data.JobType;
-import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
-import hu.taliann.icesmp.assassin.AssassinGameplayService;
-import hu.taliann.icesmp.warlock.WarlockGameplayService;
-import hu.taliann.icesmp.wizard.WizardGameplayService;
 import hu.taliann.icesmp.deathknight.DeathKnightGameplayService;
+import hu.taliann.icesmp.demonhunter.DemonHunterGameplayService;
 import hu.taliann.icesmp.druid.DruidGameplayService;
-import hu.taliann.icesmp.priest.PriestGameplayService;
 import hu.taliann.icesmp.evoker.EvokerGameplayService;
-import hu.taliann.icesmp.monk.MonkGameplayService;
-import hu.taliann.icesmp.paladin.PaladinGameplayService;
-import hu.taliann.icesmp.shaman.ShamanGameplayService;
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
+import hu.taliann.icesmp.managers.TalentManager;
+import hu.taliann.icesmp.monk.MonkGameplayService;
+import hu.taliann.icesmp.paladin.PaladinGameplayService;
+import hu.taliann.icesmp.priest.PriestGameplayService;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellbookStateStore;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
+import hu.taliann.icesmp.shaman.ShamanGameplayService;
+import hu.taliann.icesmp.spells.CastModifiers;
+import hu.taliann.icesmp.spells.CastOutcome;
 import hu.taliann.icesmp.spells.Spell;
+import hu.taliann.icesmp.spells.SpellCostType;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.warlock.WarlockGameplayService;
 import hu.taliann.icesmp.warrior.WarriorGameplayService;
+import hu.taliann.icesmp.wizard.WizardGameplayService;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -45,6 +51,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -53,23 +60,65 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Lélekkapocs/catalyst spellcasting pipeline.
- * Selected spell and durable long cooldowns remain PlayerProfile-backed; runtime maps are projections.
+ * Input adapter and transactional cast coordinator for the personal Lélekkapocs.
+ *
+ * <p>The listener owns input/debounce/feedback only. Per-class behavior is
+ * registered as one lifecycle hook for the player's authoritative class, so a
+ * cast does not walk thirteen independent if-blocks. Validation/preparation is
+ * state-separated from execution; only a successful typed {@link CastOutcome}
+ * commits class state, cost, cooldown, combo history and statistics.</p>
  */
 public final class AbilityCatalystListener implements Listener, PlayerStateCleanup {
 
-    private final JobManager jobManager;
-    private final SpellRegistry spellRegistry;
+    private enum PreparationResult { READY, PREPARING, REJECTED }
+
+    @FunctionalInterface
+    private interface PreparationHook {
+        PreparationResult prepare(Player player, Spell spell);
+    }
+
+    @FunctionalInterface
+    private interface PowerHook {
+        double bonusPercent(Player player, Spell spell);
+    }
+
+    @FunctionalInterface
+    private interface CommitHook {
+        void commit(Player player, Spell spell, boolean resourceSpent, int spentAmount);
+    }
+
+    @FunctionalInterface
+    private interface ActiveKitHook {
+        List<String> resolve(Player player, List<String> unlocked, Set<String> favorites);
+    }
+
+    private record ClassCastHook(
+            PreparationHook preparation,
+            PowerHook power,
+            CommitHook commit,
+            ActiveKitHook activeKit
+    ) {
+    }
+
+    private static final PowerHook NO_POWER = (player, spell) -> 0.0D;
+
+    private final JavaPlugin plugin;
     private final CatalystItemFactory catalystItemFactory;
-    private final ConfigManager configManager;
-    private final SpellMasteryManager masteryManager;
+    private final SpellRegistry spellRegistry;
+    private final JobManager jobManager;
     private final SpecializationManager specializationManager;
-    private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
-    private final hu.taliann.icesmp.managers.TalentManager talentManager;
-    private final MessageManager messageManager;
-    private final SpellFavoritesManager spellFavoritesManager;
+    private final SpellMasteryManager masteryManager;
     private final PlayerProfileSpellbookStateStore spellbookStateStore =
             new PlayerProfileSpellbookStateStore();
+    private final ConfigManager configManager;
+    private final MessageManager messageManager;
+    private final TalentManager talentManager;
+    private final ResourceManager resourceManager;
+    private final SpellFavoritesManager spellFavoritesManager;
+    private volatile ClassSpecProfileGateway profileGateway;
+    private final Map<JobType, ClassCastHook> classHooks = new ConcurrentHashMap<>();
+    private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
+    private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
 
     private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, String> selectedSpellProjection = new ConcurrentHashMap<>();
@@ -82,24 +131,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final Map<UUID, Long> comboBoostUntil = new ConcurrentHashMap<>();
     private final Map<UUID, Long> hintStartedAt = new ConcurrentHashMap<>();
 
-    private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
-    private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
-    private volatile hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway;
-    private volatile WarriorGameplayService warriorGameplayService;
-    private volatile EvokerGameplayService evokerGameplayService;
-    private volatile ArcherGameplayService archerGameplayService;
-    private volatile ShamanGameplayService shamanGameplayService;
-    private volatile MonkGameplayService monkGameplayService;
-    private volatile PaladinGameplayService paladinGameplayService;
-    private volatile DemonHunterGameplayService demonHunterGameplayService;
-    private volatile DruidGameplayService druidGameplayService;
-    private volatile PriestGameplayService priestGameplayService;
-    private volatile DeathKnightGameplayService deathKnightGameplayService;
-    private volatile AssassinGameplayService assassinGameplayService;
-    private volatile WarlockGameplayService warlockGameplayService;
-    private volatile WizardGameplayService wizardGameplayService;
-    private final JavaPlugin plugin;
-
     public AbilityCatalystListener(final JavaPlugin plugin,
                                    final JobManager jobManager,
                                    final SpellRegistry spellRegistry,
@@ -107,87 +138,153 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                                    final ConfigManager configManager,
                                    final SpellMasteryManager masteryManager,
                                    final SpecializationManager specializationManager,
-                                   final hu.taliann.icesmp.managers.ResourceManager resourceManager,
-                                   final hu.taliann.icesmp.managers.TalentManager talentManager,
+                                   final ResourceManager resourceManager,
+                                   final TalentManager talentManager,
                                    final MessageManager messageManager,
                                    final SpellFavoritesManager spellFavoritesManager) {
-        this.plugin = plugin;
-        this.jobManager = jobManager;
-        this.spellRegistry = spellRegistry;
-        this.catalystItemFactory = catalystItemFactory;
-        this.configManager = configManager;
-        this.masteryManager = masteryManager;
-        this.specializationManager = specializationManager;
-        this.resourceManager = resourceManager;
+        this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
+        this.jobManager = java.util.Objects.requireNonNull(jobManager, "jobManager");
+        this.spellRegistry = java.util.Objects.requireNonNull(spellRegistry, "spellRegistry");
+        this.catalystItemFactory = java.util.Objects.requireNonNull(catalystItemFactory, "catalystItemFactory");
+        this.configManager = java.util.Objects.requireNonNull(configManager, "configManager");
+        this.masteryManager = java.util.Objects.requireNonNull(masteryManager, "masteryManager");
+        this.specializationManager = java.util.Objects.requireNonNull(specializationManager, "specializationManager");
+        this.resourceManager = java.util.Objects.requireNonNull(resourceManager, "resourceManager");
         this.talentManager = talentManager;
-        this.messageManager = messageManager;
-        this.spellFavoritesManager = spellFavoritesManager;
+        this.messageManager = java.util.Objects.requireNonNull(messageManager, "messageManager");
+        this.spellFavoritesManager = java.util.Objects.requireNonNull(spellFavoritesManager, "spellFavoritesManager");
     }
 
-    public void setProfileGateway(
-            final hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway profileGateway) {
-        this.profileGateway = java.util.Objects.requireNonNull(profileGateway, "profileGateway");
+    public void setProfileGateway(final ClassSpecProfileGateway gateway) {
+        profileGateway = java.util.Objects.requireNonNull(gateway, "gateway");
+    }
+
+    private static ClassCastHook standardHook(final java.util.function.BiPredicate<Player, Spell> gate,
+                                              final PowerHook power,
+                                              final CommitHook commit,
+                                              final ActiveKitHook activeKit) {
+        return new ClassCastHook(
+                (player, spell) -> gate.test(player, spell)
+                        ? PreparationResult.READY : PreparationResult.REJECTED,
+                power, commit, activeKit);
     }
 
     public void setWarriorGameplayService(final WarriorGameplayService service) {
-        warriorGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.WARRIOR, standardHook(
+                service::beforeCast, NO_POWER, service::afterCast, service::activeSpellIds));
     }
 
     public void setEvokerGameplayService(final EvokerGameplayService service) {
-        evokerGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.EVOKER, new ClassCastHook(
+                (player, spell) -> service.beforeCast(player, spell)
+                        ? PreparationResult.READY : PreparationResult.PREPARING,
+                service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setArcherGameplayService(final ArcherGameplayService service) {
-        archerGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.ARCHER, standardHook(
+                service::beforeCast, NO_POWER, service::afterCast, service::activeSpellIds));
     }
 
     public void setShamanGameplayService(final ShamanGameplayService service) {
-        shamanGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.SHAMAN, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setMonkGameplayService(final MonkGameplayService service) {
-        monkGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.MONK, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setPaladinGameplayService(final PaladinGameplayService service) {
-        paladinGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.PALADIN, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setWizardGameplayService(final WizardGameplayService service) {
-        wizardGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.WIZARD, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setWarlockGameplayService(final WarlockGameplayService service) {
-        warlockGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.WARLOCK, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setAssassinGameplayService(final AssassinGameplayService service) {
-        assassinGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.ASSASSIN, new ClassCastHook(
+                (player, spell) -> {
+                    if (assassinStealthBlocked(service, player, spell)) {
+                        return PreparationResult.REJECTED;
+                    }
+                    return service.beforeCast(player, spell)
+                            ? PreparationResult.READY : PreparationResult.REJECTED;
+                },
+                service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setDeathKnightGameplayService(final DeathKnightGameplayService service) {
-        deathKnightGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.DEATH_KNIGHT, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setPriestGameplayService(final PriestGameplayService service) {
-        priestGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.PRIEST, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setDruidGameplayService(final DruidGameplayService service) {
-        druidGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.DRUID, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
     public void setDemonHunterGameplayService(final DemonHunterGameplayService service) {
-        demonHunterGameplayService = java.util.Objects.requireNonNull(service, "service");
+        java.util.Objects.requireNonNull(service, "service");
+        classHooks.put(JobType.DEMON_HUNTER, standardHook(
+                service::beforeCast, service::castPowerBonusPercent, service::afterCast, service::activeSpellIds));
     }
 
-    public void setItemRarityService(
-            final hu.taliann.icesmp.managers.ItemRarityService itemRarityService) {
-        this.itemRarityServiceRef = itemRarityService;
+    public void setItemRarityService(final hu.taliann.icesmp.managers.ItemRarityService itemRarityService) {
+        itemRarityServiceRef = itemRarityService;
     }
 
     public void setStatsManager(final hu.taliann.icesmp.managers.StatsManager statsManager) {
         this.statsManager = statsManager;
+    }
+
+    private ClassCastHook classHook(final Player player) {
+        final JobType job = player == null ? null : jobManager.getPrimaryJob(player);
+        return job == null ? null : classHooks.get(job);
+    }
+
+    private boolean assassinStealthBlocked(final AssassinGameplayService service,
+                                           final Player player,
+                                           final Spell spell) {
+        final String id = spell.getId().toLowerCase(Locale.ROOT);
+        if (!configManager.getStringList("classes.assassin.phantom.stealth-spells").stream()
+                .map(value -> value.toLowerCase(Locale.ROOT)).toList().contains(id)) {
+            return false;
+        }
+        final var secondary = service.hudState(player).secondary();
+        if (!"detection".equals(secondary.id()) || secondary.maximum() <= 0
+                || secondary.value() < secondary.maximum()) {
+            return false;
+        }
+        player.sendActionBar(messageManager.getMessage("assassin.stealth.detected",
+                "<red>Túl feltűnő vagy — az Észleltség nem enged az árnyékba.</red>"));
+        return true;
     }
 
     private boolean isUsableCatalyst(final Player player, final ItemStack item) {
@@ -195,18 +292,28 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (catalystItemFactory.isCatalyst(item)) {
             return catalystItemFactory.isUsableBy(item, player.getUniqueId(), job);
         }
-        // Gameplay-v2 classnál a személyes Lélekkapocs a kötelező spellbook/fókusz:
-        // se fegyver, se generikus melee-catalyst nem kerülheti meg.
-        if (job != null && GameplayV2ClassPolicy.isEnabled(job.getId())) return false;
-        if (item == null || !configManager.getBoolean("spells.melee-catalyst.enabled", true)) {
+        if (job == null || item == null
+                || !configManager.getBoolean("spells.melee-catalyst.enabled", true)) {
             return false;
         }
         if (!configManager.getStringList("spells.melee-catalyst.materials")
                 .contains(item.getType().name())) {
             return false;
         }
-        return job != null && configManager.getStringList("spells.melee-catalyst.classes")
-                .contains(job.getId());
+        if (!configManager.getStringList("spells.melee-catalyst.classes").contains(job.getId())) {
+            return false;
+        }
+        return !GameplayV2ClassPolicy.isEnabled(job.getId()) || authorizedByPersonalSoulbond(player);
+    }
+
+    private boolean authorizedByPersonalSoulbond(final Player player) {
+        if (player == null) return false;
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (job == null) return false;
+        for (final ItemStack stack : player.getInventory().getContents()) {
+            if (catalystItemFactory.isPersonalCopyFor(stack, player.getUniqueId(), job)) return true;
+        }
+        return false;
     }
 
     private double dynamicPowerMultiplier(final Player player) {
@@ -234,13 +341,15 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
-        final Player player = event.getPlayer();
-        if (!isUsableCatalyst(player, player.getInventory().getItemInMainHand())) return;
         final Action action = event.getAction();
         if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
+        final Player player = event.getPlayer();
+        final ItemStack held = player.getInventory().getItemInMainHand();
+        if (!isUsableCatalyst(player, held)) return;
+        if (action == Action.RIGHT_CLICK_BLOCK && !catalystItemFactory.isCatalyst(held)) return;
+        if (!profileRuntimeReady(player)) return;
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
-        if (!profileRuntimeReady(player)) return;
         if (player.isSneaking()) {
             openSpellbook(player);
             return;
@@ -288,8 +397,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
         final Set<String> favorites = spellFavoritesManager.favorites(player);
-        final boolean favoritesOnly = !favorites.isEmpty()
-                && cycle.stream().allMatch(favorites::contains);
+        final boolean favoritesOnly = !favorites.isEmpty() && cycle.stream().allMatch(favorites::contains);
         final String currentId = selectedSpellId(player.getUniqueId());
         final int cyclePos = currentId.isBlank() ? -1 : cycle.indexOf(currentId);
         final int nextCyclePos = Math.floorMod(cyclePos + step, cycle.size());
@@ -299,8 +407,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final Spell selected = spellRegistry.getById(selectedId);
         if (selected == null) {
             player.sendActionBar(messageManager.getMessage(
-                    "catalyst.current-spell-unknown",
-                    "<gray>Aktuális képesség: Ismeretlen</gray>"));
+                    "catalyst.current-spell-unknown", "<gray>Aktuális képesség: Ismeretlen</gray>"));
             return;
         }
         final int rank = masteryManager.getRank(player, selected.getId());
@@ -308,22 +415,24 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         player.sendActionBar(messageManager.getMessage(
                 "catalyst.current-spell",
                 "<gray>[{position}] <gold>{spell}</gold>{mastery} <dark_gray>({cost} {resource})</dark_gray> <dark_gray>— Shift+jobb katt: spellbook</dark_gray></gray>",
-                Map.of(
-                        "spell", selected.getName(),
-                        "mastery", mastery,
+                Map.of("spell", selected.getName(), "mastery", mastery,
                         "cost", String.valueOf(displayedCost(selected)),
                         "resource", resolveResourceName(player, selected),
-                        "position", (favoritesOnly ? "★" : "")
-                                + (nextCyclePos + 1) + "/" + cycle.size())));
+                        "position", (favoritesOnly ? "★" : "") + (nextCyclePos + 1) + "/" + cycle.size())));
         catalystItemFactory.playCycleSound(player, jobManager.getPrimaryJob(player));
+    }
+
+    private PreparationResult prepareClassCast(final Player player,
+                                               final Spell spell,
+                                               final ClassCastHook hook) {
+        return hook == null ? PreparationResult.READY : hook.preparation().prepare(player, spell);
     }
 
     private void castSelectedSpell(final Player player) {
         final List<String> active = resolveActiveSpellIds(player);
         if (active.isEmpty()) {
             player.sendActionBar(messageManager.getMessage(
-                    "catalyst.no-unlocked",
-                    "<red>Még nincs használható aktív képességed.</red>"));
+                    "catalyst.no-unlocked", "<red>Még nincs használható aktív képességed.</red>"));
             return;
         }
         final Spell selected = resolveSelectedSpell(player, active);
@@ -337,8 +446,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final long remainingMs = getRemainingCooldown(player, selected, now);
         if (remainingMs > 0L) {
             player.sendActionBar(messageManager.getMessage(
-                    "catalyst.cooldown",
-                    "<red>Várj még {seconds} mp-et!</red>",
+                    "catalyst.cooldown", "<red>Várj még {seconds} mp-et!</red>",
                     Map.of("seconds", String.valueOf((long) Math.ceil(remainingMs / 1000.0D)))));
             return;
         }
@@ -347,64 +455,24 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                     "catalyst.not-ready", "<red>Most nem tudod használni ezt a képességet.</red>"));
             return;
         }
-        final WarriorGameplayService warrior = warriorGameplayService;
-        if (warrior != null && !warrior.beforeCast(player, selected)) return;
-        final EvokerGameplayService evoker = evokerGameplayService;
-        if (evoker != null && !evoker.beforeCast(player, selected)) return;
-        final ArcherGameplayService archer = archerGameplayService;
-        if (archer != null && !archer.beforeCast(player, selected)) return;
-        final ShamanGameplayService shaman = shamanGameplayService;
-        if (shaman != null && !shaman.beforeCast(player, selected)) return;
-        final MonkGameplayService monk = monkGameplayService;
-        if (monk != null && !monk.beforeCast(player, selected)) return;
-        final PaladinGameplayService paladin = paladinGameplayService;
-        if (paladin != null && !paladin.beforeCast(player, selected)) return;
-        final DemonHunterGameplayService demonHunter = demonHunterGameplayService;
-        if (demonHunter != null && !demonHunter.beforeCast(player, selected)) return;
-        final DruidGameplayService druid = druidGameplayService;
-        if (druid != null && !druid.beforeCast(player, selected)) return;
-        final PriestGameplayService priest = priestGameplayService;
-        if (priest != null && !priest.beforeCast(player, selected)) return;
-        final DeathKnightGameplayService deathKnight = deathKnightGameplayService;
-        if (deathKnight != null && !deathKnight.beforeCast(player, selected)) return;
-        final AssassinGameplayService assassin = assassinGameplayService;
-        if (assassin != null && !assassin.beforeCast(player, selected)) return;
-        final WarlockGameplayService warlock = warlockGameplayService;
-        if (warlock != null && !warlock.beforeCast(player, selected)) return;
-        final WizardGameplayService wizard = wizardGameplayService;
-        if (wizard != null && !wizard.beforeCast(player, selected)) return;
+
+        final ClassCastHook hook = classHook(player);
+        final PreparationResult preparation = prepareClassCast(player, selected, hook);
+        if (preparation != PreparationResult.READY) return;
 
         final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource
-                ? resourceManager.canAfford(player, selected)
-                : selected.hasRequiredCost(player);
+                ? resourceManager.canAfford(player, selected) : selected.hasRequiredCost(player);
         if (!canAfford) {
             player.sendActionBar(messageManager.getMessage(
-                    "catalyst.no-cost",
-                    "<red>Nincs elég {resource}! Szükséges: {amount}</red>",
+                    "catalyst.no-cost", "<red>Nincs elég {resource}! Szükséges: {amount}</red>",
                     Map.of("resource", resolveResourceName(player, selected),
                             "amount", String.valueOf(displayedCost(selected)))));
             return;
         }
 
-        final double preCastHealth = player.getHealth();
-        final int spentAmount = displayedCost(selected);
-        if (useResource) resourceManager.consume(player, selected);
-        else selected.consumeCost(player);
-
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
-        final double classBonusPercent = (evoker == null
-                ? 0.0D : evoker.castPowerBonusPercent(player, selected))
-                + (shaman == null ? 0.0D : shaman.castPowerBonusPercent(player, selected))
-                + (monk == null ? 0.0D : monk.castPowerBonusPercent(player, selected))
-                + (paladin == null ? 0.0D : paladin.castPowerBonusPercent(player, selected))
-                + (demonHunter == null ? 0.0D : demonHunter.castPowerBonusPercent(player, selected))
-                + (druid == null ? 0.0D : druid.castPowerBonusPercent(player, selected))
-                + (priest == null ? 0.0D : priest.castPowerBonusPercent(player, selected))
-                + (deathKnight == null ? 0.0D : deathKnight.castPowerBonusPercent(player, selected))
-                + (assassin == null ? 0.0D : assassin.castPowerBonusPercent(player, selected))
-                + (warlock == null ? 0.0D : warlock.castPowerBonusPercent(player, selected))
-                + (wizard == null ? 0.0D : wizard.castPowerBonusPercent(player, selected));
+        final double classBonusPercent = hook == null ? 0.0D : hook.power().bonusPercent(player, selected);
         final double powerCap = Math.max(1.0D,
                 configManager.getDouble("spells.total-power-cap", 1.75D));
         final double power = Math.min(powerCap,
@@ -412,52 +480,33 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                         * dynamicPowerMultiplier(player)
                         * (1.0D + chainBonusPercent / 100.0D)
                         * (1.0D + classBonusPercent / 100.0D));
-        if (!selected.executeSpell(player, power)) {
-            if (useResource) resourceManager.refund(player, selected);
-            else if (selected.getCostType() == hu.taliann.icesmp.spells.SpellCostType.HEALTH) {
-                player.setHealth(preCastHealth);
-            } else selected.refundCost(player);
+
+        final CostReservation reservation = reserveCost(player, selected, useResource);
+        final CastOutcome outcome;
+        try {
+            outcome = selected.cast(player, CastModifiers.standardPower(power));
+        } catch (final RuntimeException failure) {
+            reservation.rollback();
+            plugin.getLogger().severe("Spell execution failed for " + player.getUniqueId() + '/'
+                    + selected.getId() + ": " + rootMessage(failure));
+            player.sendActionBar(messageManager.getMessage(
+                    "catalyst.execution-failed", "<red>A képesség végrehajtása meghiúsult; a költség visszajárt.</red>"));
             return;
         }
+        if (outcome == null || !outcome.commitsCast()) {
+            reservation.rollback();
+            return;
+        }
+        reservation.commit();
 
-        if (warrior != null) {
-            warrior.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (evoker != null) {
-            evoker.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (archer != null) {
-            archer.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (shaman != null) {
-            shaman.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (monk != null) {
-            monk.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (paladin != null) {
-            paladin.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (demonHunter != null) {
-            demonHunter.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (druid != null) {
-            druid.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (priest != null) {
-            priest.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (deathKnight != null) {
-            deathKnight.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (assassin != null) {
-            assassin.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (warlock != null) {
-            warlock.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
-        }
-        if (wizard != null) {
-            wizard.afterCast(player, selected, useResource, useResource ? spentAmount : 0);
+        if (hook != null) {
+            try {
+                hook.commit().commit(player, selected, useResource,
+                        useResource ? reservation.spentAmount() : 0);
+            } catch (final RuntimeException failure) {
+                plugin.getLogger().severe("Class cast-state commit failed for "
+                        + player.getUniqueId() + '/' + selected.getId() + ": " + rootMessage(failure));
+            }
         }
 
         final boolean chainFinisher = chainBonusPercent > 0.0D;
@@ -478,8 +527,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             final Spell nextSpell = nextInChain == null ? null : spellRegistry.getById(nextInChain);
             if (nextSpell != null) {
                 player.sendActionBar(messageManager.getMessage(
-                        "catalyst.combo-next",
-                        "<gold>⚡ Kombó! Köv. a láncban: {next}</gold>",
+                        "catalyst.combo-next", "<gold>⚡ Kombó! Köv. a láncban: {next}</gold>",
                         Map.of("next", nextSpell.getName())));
             } else {
                 player.sendActionBar(messageManager.getMessage(
@@ -498,6 +546,39 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (stats != null) stats.recordSpellCast(playerId);
     }
 
+    private final class CostReservation {
+        private final Player player;
+        private final Spell spell;
+        private final boolean resource;
+        private final double preCastHealth;
+        private final int spentAmount;
+        private boolean open = true;
+
+        private CostReservation(final Player player, final Spell spell, final boolean resource) {
+            this.player = player;
+            this.spell = spell;
+            this.resource = resource;
+            this.preCastHealth = player.getHealth();
+            this.spentAmount = displayedCost(spell);
+            if (resource) resourceManager.consume(player, spell);
+            else spell.consumeCost(player);
+        }
+
+        private int spentAmount() { return spentAmount; }
+        private void commit() { open = false; }
+        private void rollback() {
+            if (!open) return;
+            open = false;
+            if (resource) resourceManager.refund(player, spell);
+            else if (spell.getCostType() == SpellCostType.HEALTH) player.setHealth(preCastHealth);
+            else spell.refundCost(player);
+        }
+    }
+
+    private CostReservation reserveCost(final Player player, final Spell spell, final boolean useResource) {
+        return new CostReservation(player, spell, useResource);
+    }
+
     private boolean profileRuntimeReady(final Player player) {
         final var gateway = profileGateway;
         if (gateway != null && gateway.isSessionReady(player.getUniqueId())) return true;
@@ -507,10 +588,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return false;
     }
 
-    /**
-     * Rebuilds/refreshes the one physical personal Lélekkapocs mirror. Duplicate copies are removed;
-     * missing artifact is regenerated only into a free inventory slot, never dropped to the world.
-     */
     public boolean refreshSoulbond(final Player player) {
         if (player == null || !profileRuntimeReady(player)) return false;
         final JobType job = jobManager.getPrimaryJob(player);
@@ -547,29 +624,29 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     public boolean hasPersonalSoulbond(final Player player) {
-        if (player == null) return false;
-        final JobType job = jobManager.getPrimaryJob(player);
-        if (job == null) return false;
-        for (final ItemStack stack : player.getInventory().getContents()) {
-            if (catalystItemFactory.isPersonalCopyFor(stack, player.getUniqueId(), job)) return true;
-        }
-        return false;
+        return authorizedByPersonalSoulbond(player);
+    }
+
+    private long effectiveCooldownMillis(final Player player, final Spell spell) {
+        final long base = Math.max(0L, spell.getCooldown()) * 1000L;
+        if (player == null) return base;
+        return Math.max(0L, (long) (base
+                * masteryManager.getCooldownMultiplier(player, spell.getId())));
     }
 
     private void applyCooldownOverlay(final Player player,
                                       final Spell spell,
                                       final long comboRefundMs) {
         if (!configManager.getBoolean("spells.cooldown-overlay.enabled", true)) return;
-        final long cooldownTicks = spell.getCooldown() * 20L - comboRefundMs / 50L;
+        final long cooldownTicks = Math.max(0L,
+                (effectiveCooldownMillis(player, spell) - comboRefundMs) / 50L);
         if (cooldownTicks <= 0L) return;
         final ItemStack held = player.getInventory().getItemInMainHand();
         if (held == null || held.getType().isAir()) return;
         player.setCooldown(held, (int) Math.min(Integer.MAX_VALUE, cooldownTicks));
     }
 
-    private boolean isComboMatch(final Player player,
-                                 final String currentSpellId,
-                                 final long now) {
+    private boolean isComboMatch(final Player player, final String currentSpellId, final long now) {
         if (!configManager.getBoolean("spells.combos.enabled", true)) return false;
         final String previous = lastCastSpell.get(player.getUniqueId());
         if (previous == null) return false;
@@ -581,18 +658,13 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (combos == null) return false;
         for (final String key : combos.getKeys(false)) {
             final ConfigurationSection pair = combos.getConfigurationSection(key);
-            if (pair != null
-                    && previous.equalsIgnoreCase(pair.getString("first"))
-                    && currentSpellId.equalsIgnoreCase(pair.getString("second"))) {
-                return true;
-            }
+            if (pair != null && previous.equalsIgnoreCase(pair.getString("first"))
+                    && currentSpellId.equalsIgnoreCase(pair.getString("second"))) return true;
         }
         return false;
     }
 
-    private double chainFinisherPercent(final Player player,
-                                        final String currentSpellId,
-                                        final long now) {
+    private double chainFinisherPercent(final Player player, final String currentSpellId, final long now) {
         if (!configManager.getBoolean("spells.combos.enabled", true)) return 0.0D;
         final UUID id = player.getUniqueId();
         final String prev1 = lastCastSpell.get(id);
@@ -610,14 +682,11 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             final ConfigurationSection chain = chains.getConfigurationSection(key);
             if (chain == null) continue;
             final List<String> steps = chain.getStringList("steps");
-            if (steps.size() == 3
-                    && prev2.equalsIgnoreCase(steps.get(0))
+            if (steps.size() == 3 && prev2.equalsIgnoreCase(steps.get(0))
                     && prev1.equalsIgnoreCase(steps.get(1))
                     && currentSpellId.equalsIgnoreCase(steps.get(2))) {
-                return Math.max(0.0D, chain.getDouble(
-                        "finisher-power-bonus-percent",
-                        configManager.getDouble(
-                                "spells.combos.finisher-power-bonus-percent", 25.0D)));
+                return Math.max(0.0D, chain.getDouble("finisher-power-bonus-percent",
+                        configManager.getDouble("spells.combos.finisher-power-bonus-percent", 25.0D)));
             }
         }
         return 0.0D;
@@ -647,14 +716,11 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
         final int segments = 8;
-        final int filled = segments
-                - (int) Math.min(segments, elapsed * segments / windowMillis);
+        final int filled = segments - (int) Math.min(segments, elapsed * segments / windowMillis);
         player.sendActionBar(messageManager.getMessage(
                 "catalyst.combo-window",
                 "<gray>⏳ <gold>{bar}</gold><dark_gray>{empty}</dark_gray> Kombó: <gold>{next}</gold></gray>",
-                Map.of("bar", "▰".repeat(filled),
-                        "empty", "▱".repeat(segments - filled),
-                        "next", nextName)));
+                Map.of("bar", "▰".repeat(filled), "empty", "▱".repeat(segments - filled), "next", nextName)));
         player.getScheduler().runDelayed(plugin,
                 task -> renderComboHint(player, nextName, startedAt, windowMillis), null, 10L);
     }
@@ -662,8 +728,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private String nextComboStep(final Player player, final String justCastId) {
         final var configuration = configManager.getConfiguration();
         if (configuration == null) return null;
-        final ConfigurationSection chains =
-                configuration.getConfigurationSection("spells.combos.chains");
+        final ConfigurationSection chains = configuration.getConfigurationSection("spells.combos.chains");
         if (chains != null) {
             final String previous = lastCastSpell.get(player.getUniqueId());
             for (final String key : chains.getKeys(false)) {
@@ -671,16 +736,12 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 if (chain == null) continue;
                 final List<String> steps = chain.getStringList("steps");
                 if (steps.size() != 3) continue;
-                if (previous != null
-                        && previous.equalsIgnoreCase(steps.get(0))
-                        && justCastId.equalsIgnoreCase(steps.get(1))) {
-                    return steps.get(2);
-                }
+                if (previous != null && previous.equalsIgnoreCase(steps.get(0))
+                        && justCastId.equalsIgnoreCase(steps.get(1))) return steps.get(2);
                 if (justCastId.equalsIgnoreCase(steps.get(0))) return steps.get(1);
             }
         }
-        final ConfigurationSection pairs =
-                configuration.getConfigurationSection("spells.combos.pairs");
+        final ConfigurationSection pairs = configuration.getConfigurationSection("spells.combos.pairs");
         if (pairs != null) {
             for (final String key : pairs.getKeys(false)) {
                 final ConfigurationSection pair = pairs.getConfigurationSection(key);
@@ -694,29 +755,23 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     private long comboRefundMillis(final Player player, final Spell spell) {
         final double percent = Math.max(0.0D, Math.min(80.0D,
-                configManager.getDouble(
-                        "spells.combos.bonus-cooldown-refund-percent", 40.0D)));
-        final long baseCooldownMs = Math.max(0L, spell.getCooldown()) * 1000L;
-        final long refund = (long) (baseCooldownMs * percent / 100.0D);
-        final long effectiveCooldownMs = (long) (baseCooldownMs
-                * masteryManager.getCooldownMultiplier(player, spell.getId()));
-        final long floorMs = Math.max(1000L, (long) (baseCooldownMs * 0.15D));
+                configManager.getDouble("spells.combos.bonus-cooldown-refund-percent", 40.0D)));
+        final long effectiveCooldownMs = effectiveCooldownMillis(player, spell);
+        final long refund = (long) (effectiveCooldownMs * percent / 100.0D);
+        final long floorMs = Math.max(1000L, (long) (effectiveCooldownMs * 0.15D));
         return Math.min(refund, Math.max(0L, effectiveCooldownMs - floorMs));
     }
 
     private void playCastFlourish(final Player player, final boolean combo) {
-        player.getWorld().spawnParticle(
-                combo ? Particle.TOTEM_OF_UNDYING : Particle.ENCHANT,
-                player.getLocation().add(0.0D, 1.1D, 0.0D),
-                combo ? 14 : 10, 0.4D, 0.5D, 0.4D,
-                combo ? 0.3D : 0.15D);
+        player.getWorld().spawnParticle(combo ? Particle.TOTEM_OF_UNDYING : Particle.ENCHANT,
+                player.getLocation().add(0.0D, 1.1D, 0.0D), combo ? 14 : 10,
+                0.4D, 0.5D, 0.4D, combo ? 0.3D : 0.15D);
         player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME,
                 0.5F, combo ? 1.6F : 1.2F);
     }
 
     private int displayedCost(final Spell spell) {
-        return resourceManager.usesResource(spell)
-                ? resourceManager.costOf(spell) : spell.getCostAmount();
+        return resourceManager.usesResource(spell) ? resourceManager.costOf(spell) : spell.getCostAmount();
     }
 
     private String resolveResourceName(final Player player, final Spell spell) {
@@ -737,15 +792,11 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return spellRegistry.getById(selected);
     }
 
-    private long getRemainingCooldown(final Player player,
-                                      final Spell spell,
-                                      final long now) {
+    private long getRemainingCooldown(final Player player, final Spell spell, final long now) {
         final Long lastCast = getLastCast(player, spell);
         if (lastCast == null) return 0L;
-        final long cooldownMs = (long) (Math.max(0, spell.getCooldown()) * 1000L
-                * masteryManager.getCooldownMultiplier(player, spell.getId()));
         final long delayMs = Math.max(0, spell.getCooldownDelay()) * 1000L;
-        return Math.max(0L, lastCast + delayMs + cooldownMs - now);
+        return Math.max(0L, lastCast + delayMs + effectiveCooldownMillis(player, spell) - now);
     }
 
     private void putCooldown(final Player player, final Spell spell, final long timestamp) {
@@ -762,7 +813,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 });
     }
 
-    /** Full currently-authorized library (base + ACTIVE spec provenance). */
     private List<String> resolveUnlockedSpellIds(final Player player) {
         return jobManager.getUnlockedSpellIds(player).stream()
                 .map(id -> id.toLowerCase(Locale.ROOT))
@@ -770,96 +820,40 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 .toList();
     }
 
-    /** Actual fast-combat cycle/cast set; gameplay-v2 classes cap it via favorites/default kit. */
     private List<String> resolveActiveSpellIds(final Player player) {
-        List<String> active = resolveUnlockedSpellIds(player);
-        final WarriorGameplayService warrior = warriorGameplayService;
-        if (warrior != null) {
-            active = warrior.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
+        final List<String> unlocked = resolveUnlockedSpellIds(player);
+        final ClassCastHook hook = classHook(player);
+        if (hook == null) return unlocked;
+        final List<String> active = hook.activeKit().resolve(
+                player, unlocked, spellFavoritesManager.favorites(player));
+        if (active == null || active.isEmpty()) return List.of();
+        final int limit = activeKitLimit(player);
+        final LinkedHashSet<String> valid = new LinkedHashSet<>();
+        for (final String raw : active) {
+            if (raw == null) continue;
+            final String id = raw.toLowerCase(Locale.ROOT);
+            if (unlocked.contains(id) && spellRegistry.getById(id) != null) valid.add(id);
+            if (valid.size() >= limit) break;
         }
-        final EvokerGameplayService evoker = evokerGameplayService;
-        if (evoker != null) {
-            active = evoker.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final ArcherGameplayService archer = archerGameplayService;
-        if (archer != null) {
-            active = archer.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final ShamanGameplayService shaman = shamanGameplayService;
-        if (shaman != null) {
-            active = shaman.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final MonkGameplayService monk = monkGameplayService;
-        if (monk != null) {
-            active = monk.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final PaladinGameplayService paladin = paladinGameplayService;
-        if (paladin != null) {
-            active = paladin.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final WizardGameplayService wizardKit = wizardGameplayService;
-        if (wizardKit != null) {
-            active = wizardKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final WarlockGameplayService warlockKit = warlockGameplayService;
-        if (warlockKit != null) {
-            active = warlockKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final AssassinGameplayService assassinKit = assassinGameplayService;
-        if (assassinKit != null) {
-            active = assassinKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final DeathKnightGameplayService deathKnightKit = deathKnightGameplayService;
-        if (deathKnightKit != null) {
-            active = deathKnightKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final PriestGameplayService priestKit = priestGameplayService;
-        if (priestKit != null) {
-            active = priestKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final DruidGameplayService druidKit = druidGameplayService;
-        if (druidKit != null) {
-            active = druidKit.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        final DemonHunterGameplayService demonHunter = demonHunterGameplayService;
-        if (demonHunter != null) {
-            active = demonHunter.activeSpellIds(player, active, spellFavoritesManager.favorites(player));
-        }
-        return active;
+        return List.copyOf(valid);
     }
 
-    public void openSpellbook(final Player player) {
-        openSpellbook(player, 0, false);
-    }
-
-    public void openSpellbook(final Player player, final int page) {
-        openSpellbook(player, page, false);
-    }
-
-    public void openSpellbook(final Player player,
-                              final int page,
-                              final boolean onlyUnlocked) {
+    public void openSpellbook(final Player player) { openSpellbook(player, 0, false); }
+    public void openSpellbook(final Player player, final int page) { openSpellbook(player, page, false); }
+    public void openSpellbook(final Player player, final int page, final boolean onlyUnlocked) {
         SpellbookGUI.open(player, this, jobManager, specializationManager, spellRegistry,
                 masteryManager, configManager, messageManager, resourceManager,
                 spellFavoritesManager, page, onlyUnlocked);
     }
 
-    public List<String> getUnlockedSpellIds(final Player player) {
-        return resolveUnlockedSpellIds(player);
-    }
+    public List<String> getUnlockedSpellIds(final Player player) { return resolveUnlockedSpellIds(player); }
+    public List<String> getActiveSpellIds(final Player player) { return resolveActiveSpellIds(player); }
 
-    public List<String> getActiveSpellIds(final Player player) {
-        return resolveActiveSpellIds(player);
-    }
-
-    /** Favorite/active-kit cap for gameplay-v2 classes; other classes stay uncapped. */
     public int activeKitLimit(final Player player) {
         final JobType job = player == null ? null : jobManager.getPrimaryJob(player);
-        if (job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) {
-            return Integer.MAX_VALUE;
-        }
-        return Math.max(1, Math.min(7, configManager.getInt(
-                "classes." + job.getId() + ".active-kit.maximum", 7)));
+        if (job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) return Integer.MAX_VALUE;
+        return Math.max(1, Math.min(7,
+                configManager.getInt("classes." + job.getId() + ".active-kit.maximum", 7)));
     }
 
     public String getSelectedSpellId(final Player player) {
@@ -897,13 +891,14 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final Map<String, Long> bySpell = spellCooldowns.get(playerId);
         if (bySpell == null || bySpell.isEmpty()) return Map.of();
         final long now = System.currentTimeMillis();
+        final Player online = plugin.getServer().getPlayer(playerId);
         final Map<String, Long> result = new java.util.LinkedHashMap<>();
         for (final Map.Entry<String, Long> entry : bySpell.entrySet()) {
             final Spell spell = spellRegistry.getById(entry.getKey());
             if (spell == null) continue;
-            final long cooldownMs = Math.max(0, spell.getCooldown()) * 1000L;
             final long delayMs = Math.max(0, spell.getCooldownDelay()) * 1000L;
-            final long remaining = entry.getValue() + delayMs + cooldownMs - now;
+            final long remaining = entry.getValue() + delayMs
+                    + effectiveCooldownMillis(online, spell) - now;
             if (remaining > 0L) result.put(entry.getKey(), remaining);
         }
         return Map.copyOf(result);
@@ -935,20 +930,17 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         hintStartedAt.remove(playerId);
     }
 
-    public void clearPlayerState(final UUID playerId) {
-        cleanup(playerId);
-    }
+    public void clearPlayerState(final UUID playerId) { cleanup(playerId); }
 
     public void resetCooldowns(final Player player) {
         if (player == null) return;
         final UUID playerId = player.getUniqueId();
         spellCooldowns.remove(playerId);
-        spellbookStateStore.clearCooldowns(playerId)
-                .exceptionally(failure -> {
-                    plugin.getLogger().severe("PlayerProfile spell cooldown reset failed for "
-                            + playerId + ": " + rootMessage(failure));
-                    return null;
-                });
+        spellbookStateStore.clearCooldowns(playerId).exceptionally(failure -> {
+            plugin.getLogger().severe("PlayerProfile spell cooldown reset failed for "
+                    + playerId + ": " + rootMessage(failure));
+            return null;
+        });
     }
 
     public void resetAllSpellState(final Player player) {
@@ -956,26 +948,21 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final UUID playerId = player.getUniqueId();
         spellCooldowns.remove(playerId);
         selectedSpellProjection.remove(playerId);
-        spellbookStateStore.reset(playerId)
-                .exceptionally(failure -> {
-                    plugin.getLogger().severe("PlayerProfile spell state reset failed for "
-                            + playerId + ": " + rootMessage(failure));
-                    return null;
-                });
+        spellbookStateStore.reset(playerId).exceptionally(failure -> {
+            plugin.getLogger().severe("PlayerProfile spell state reset failed for "
+                    + playerId + ": " + rootMessage(failure));
+            return null;
+        });
     }
 
     private Long getLastCast(final Player player, final Spell spell) {
         final Map<String, Long> runtime = spellCooldowns.get(player.getUniqueId());
-        if (runtime != null && runtime.containsKey(spell.getId())) {
-            return runtime.get(spell.getId());
-        }
+        if (runtime != null && runtime.containsKey(spell.getId())) return runtime.get(spell.getId());
         if (!isPersistentCooldown(spell)) return null;
         try {
-            final long persisted = spellbookStateStore.lastCast(
-                    player.getUniqueId(), spell.getId());
+            final long persisted = spellbookStateStore.lastCast(player.getUniqueId(), spell.getId());
             if (persisted <= 0L) return null;
-            spellCooldowns.computeIfAbsent(player.getUniqueId(),
-                            ignored -> new ConcurrentHashMap<>())
+            spellCooldowns.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>())
                     .put(spell.getId(), persisted);
             return persisted;
         } catch (final PlayerProfileAuthority.ProfileNotReadyException notReady) {
@@ -983,9 +970,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
     }
 
-    private boolean isPersistentCooldown(final Spell spell) {
-        return spell.getCooldown() >= 60;
-    }
+    private boolean isPersistentCooldown(final Spell spell) { return spell.getCooldown() >= 60; }
 
     private String selectedSpellId(final UUID playerId) {
         final String projected = selectedSpellProjection.get(playerId);
@@ -1002,27 +987,22 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private void persistSelectedSpell(final Player player, final String spellId) {
         final UUID playerId = player.getUniqueId();
         selectedSpellProjection.put(playerId, spellId);
-        spellbookStateStore.select(playerId, spellId)
-                .whenComplete((selected, failure) -> {
-                    if (failure == null) return;
-                    selectedSpellProjection.remove(playerId, spellId);
-                    plugin.getLogger().severe("PlayerProfile selected-spell commit failed for "
-                            + playerId + '/' + spellId + ": " + rootMessage(failure));
-                    player.getScheduler().run(plugin, task -> player.sendActionBar(
-                            messageManager.getMessage(
-                                    "catalyst.selection-persistence-failed",
-                                    "<red>A spellválasztás mentése meghiúsult; válassz újra.</red>")), null);
-                });
+        spellbookStateStore.select(playerId, spellId).whenComplete((selected, failure) -> {
+            if (failure == null) return;
+            selectedSpellProjection.remove(playerId, spellId);
+            plugin.getLogger().severe("PlayerProfile selected-spell commit failed for "
+                    + playerId + '/' + spellId + ": " + rootMessage(failure));
+            player.getScheduler().run(plugin, task -> player.sendActionBar(
+                    messageManager.getMessage("catalyst.selection-persistence-failed",
+                            "<red>A spellválasztás mentése meghiúsult; válassz újra.</red>")), null);
+        });
     }
 
     private static String rootMessage(final Throwable failure) {
         Throwable current = failure;
         while ((current instanceof java.util.concurrent.CompletionException
                 || current instanceof java.util.concurrent.ExecutionException)
-                && current.getCause() != null) {
-            current = current.getCause();
-        }
-        return current.getMessage() == null
-                ? current.getClass().getSimpleName() : current.getMessage();
+                && current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
     }
 }

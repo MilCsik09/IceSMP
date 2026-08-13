@@ -485,9 +485,9 @@ Támogatott beadási módok:
 
 A felső inventory minden vanilla mutációja törölve van. A plugin a műveletet a játékos következő entity-tickjén hajtja végre, és csak akkor vesz el itemet, ha a forrás slot/cursor/offhand teljes stackje még pontosan megegyezik a kattintáskor rögzített snapshotpal.
 
-Egy közös adományt egyszerre csak egy játékos vehet el. Ha a fogadó inventory megtelik, a maradék a játékos helyén esik le.
+Egy közös adományt egyszerre csak egy játékos vehet el. Az átvétel üres kurzort igényel; a tartós claim után a tárgy markerrel a kurzorra kerül, majd a marker csak a lezáró durable snapshot után tűnik el.
 
-A runtime védi a párhuzamos kattintást, stale inventory-snapshotot, cursor/slot versenyt és a normál GUI-duplikációs útvonalakat. A `donations.yml` a meglévő debounced, atomikus YAML-mentést használja; graceful shutdown flusholja a store-t. Az operációs rendszer vagy JVM azonnali összeomlása a legutolsó, még ki nem írt debounce-ablakban nem tekinthető cross-store tranzakciónak.
+A `donations.yml` minden műveletnél atomikus prepare/available/claim állapotot ír az async IO-úton. A forrás- és célitem ideiglenes markerét csak a játékos region-szála mozgatja. Restartkor a megmaradt marker visszagörgeti a még el nem vett beadást, a hiányzó deposit-marker befejezi a ládába helyezést, a claim-marker pedig kizárja a második kézbesítést. A periodikus és shutdown-save csak kiegészítő snapshot, nem az exactly-once tranzakció alapja.
 
 ## 9. Offline teleport
 
@@ -1102,11 +1102,14 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 ### Konfigurációs fájlok
 
 - `afk.yml`
+- `block-regen.yml`
+- `class-gameplay.yml`
 - `classes.yml`
 - `crafting.yml`
 - `crates.yml`
 - `dev-items.yml`
 - `economy.yml`
+- `event-spawn-safety.yml`
 - `factions.yml`
 - `general.yml`
 - `item-rarity.yml`
@@ -1132,6 +1135,7 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `messages/currency.yml`
 - `messages/devitem.yml`
 - `messages/faction.yml`
+- `messages/hud.yml`
 - `messages/job.yml`
 - `messages/market.yml`
 - `messages/moderation.yml`
@@ -1146,6 +1150,45 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `messages/system.yml`
 - `messages/territory.yml`
 - `messages/world.yml`
+
+### Kaszt-játékmenet live hangolása
+
+A `class-gameplay.yml` numerikus és boolean balance-kulcsai a
+`/icesmp config menu` **Kaszt-játékmenet** almenüjében, kasztonként és
+legfeljebb 45 kulcsos lapokon állíthatók. A staged munkamenet csak Mentéskor
+írja egyetlen optimistic-concurrency tranzakcióval a `config.yml` override-okat;
+görgőkatt az adott kulcsot visszaállítja a csomagolt alapértékre. Az
+`active-kit`, spell-unlock, capstone- és entity-azonosító listák gameplay-definíciók,
+ezért nem kattintásos balance-vezérlők; ezeket ellenőrzött YAML-módosítással
+kezeld. Mentés után ellenőrizd a config-validáció konzolüzeneteit.
+
+### PlayerProfile read-only HTTP API
+
+A `player-profile.http.*` adapter alapból ki van kapcsolva. Engedélyezéshez a
+`general.yml`-ben állítsd a `player-profile.http.enabled` kulcsot `true`-ra, add meg
+a `bind` és `port` értéket, majd indítsd újra a plugint. Az alapértelmezett
+`127.0.0.1:8765` csak a helyi gépről érhető el. Külső hozzáférésnél tartsd
+loopbacken, és TLS-t lezáró reverse proxy mögött publikáld; a beépített adapter
+nem biztosít TLS-t.
+
+Tokenformátumok:
+
+- `self-tokens`: `"<játékos-uuid>:<token>"`; a token csak a hozzárendelt profil
+  SELF nézetét és nem védett szekcióit olvashatja;
+- `admin-tokens`: `"<token>"`; az ADMIN nézetet, valamint a moderációs és
+  operations szekciókat is olvashatja;
+- minden token legalább 24 karakteres, véletlenszerű secret legyen (például
+  `openssl rand -hex 32`), és kizárólag secret-managed deployment configba kerüljön.
+
+A védett kérések fejében `Authorization: Bearer <token>` kell. A
+`GET /api/v1/health` és a látható public profil
+`GET /api/v1/players/<uuid>/public` token nélkül olvasható; a teljes saját profil,
+a `by-name`, a `sections/<section>` és az `admin` route scope-ellenőrzött. Az API
+read-only, de a profiladat személyes és moderációs információt tartalmazhat:
+admin tokent ne adj kliensalkalmazásnak, ne naplózz, ne commitolj, és szivárgás
+esetén azonnal cserélj. A `requests-per-minute`, `max-request-bytes`,
+`max-response-bytes` és `timeout-ms` korlátokat a proxy limitjeivel együtt állítsd;
+a limiter IP-címenként, perces ablakban számol.
 
 ### Release acceptance checklist
 
@@ -1530,6 +1573,7 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 - [ ] profession XP, level and specialization
 - [ ] quest progress, reward claim and economy credit
 - [ ] wallet, bank, tax debt and refund recovery
+- [ ] `relics.passive-death.mode: keep`: passzív relikviával halál, respawn előtt teljes restart, majd join; a tárgy pontosan egyszer érkezik meg, megtelt inventorynál függőben marad, escrow-íráshibánál pedig a death drop-listában marad
 - [ ] pet/minion spawn, logout, restart and region transfer
 - [ ] Soulforge upgrade, duplicate operation and crash recovery
 - [ ] respec crash points and restart recovery
@@ -1551,7 +1595,9 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 7. Az adományozó zárja be vagy váltsa le azonnal a GUI-t; ne nyíljon vissza automatikusan.
 8. Töltsd meg a ládát és érd el a per-player limitet; a forrásitem maradjon érintetlen.
 9. Két játékos egyszerre kattintson ugyanarra az adományra; csak egyik kapja meg.
-10. Teszteld a megtelt fogadó inventoryt és a leftover dropot.
+10. A fogadó kurzorán legyen item: az átvétel tartós claim nélkül utasítódjon el.
+11. Állítsd le a folyamatot durable deposit prepare után, egyszer markerrel, egyszer a region-szálas levonás után: előbbi görgessen vissza, utóbbi pontosan egy adományt publikáljon.
+12. Állítsd le claim prepare előtt és a markerrel végzett kézbesítés után is: joinkor a tárgy mindkét esetben pontosan egyszer legyen meg.
 
 #### World-event spawn-védelem
 

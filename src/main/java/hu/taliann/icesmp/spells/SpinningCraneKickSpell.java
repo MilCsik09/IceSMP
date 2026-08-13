@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -29,8 +30,9 @@ public final class SpinningCraneKickSpell extends BaseSpell {
     public void execute(final Player player) {
         final double radius = balance("radius", 4.0D);
         final double damage = balance("damage", 4.0D);
+        final CastModifiers modifiers = SpellExecutionContext.capture();
 
-        strike(player, radius, damage);
+        strike(player, radius, damage, modifiers);
 
         final UUID playerId = player.getUniqueId();
         player.getScheduler().runDelayed(plugin, task -> {
@@ -38,17 +40,19 @@ public final class SpinningCraneKickSpell extends BaseSpell {
             if (online == null || !online.isValid() || online.isDead()) {
                 return;
             }
-            strike(online, radius, damage);
+            strike(online, radius, damage, modifiers);
         }, null, balanceInt("second-wave-delay-ticks", 10));
     }
 
-    private void strike(final Player caster, final double radius, final double damage) {
+    private void strike(final Player caster, final double radius, final double damage,
+                        final CastModifiers modifiers) {
         final Location center = caster.getLocation();
         for (final Entity nearby : caster.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-            if (!(nearby instanceof LivingEntity living) || living == caster || SpellTargetingUtil.isAlly(caster, living)) {
+            if (!(nearby instanceof LivingEntity living) || living == caster
+                    || SpellTargetingUtil.isAlly(caster.getUniqueId(), living)) {
                 continue;
             }
-            kick(living, caster, damage);
+            kick(living, caster, damage, modifiers);
         }
         caster.getWorld().spawnParticle(Particle.SWEEP_ATTACK, center.clone().add(0.0D, 1.0D, 0.0D),
                 12, radius / 2.0D, 0.3D, radius / 2.0D, 0.0D);
@@ -60,19 +64,21 @@ public final class SpinningCraneKickSpell extends BaseSpell {
      * spells in this package); the delayed wave may land on a different region, so both funnel
      * through the same ownership check for consistency and safety.
      */
-    private void kick(final LivingEntity living, final Player caster, final double damage) {
+    private void kick(final LivingEntity living, final Player caster, final double damage,
+                      final CastModifiers modifiers) {
         if (Bukkit.isOwnedByCurrentRegion(living)) {
-            applyKick(living, caster, damage);
+            applyKick(living, caster, damage, modifiers);
         } else {
-            living.getScheduler().run(plugin, task -> applyKick(living, caster, damage), null);
+            living.getScheduler().run(plugin, task -> applyKick(living, caster, damage, modifiers), null);
         }
     }
 
-    private void applyKick(final LivingEntity living, final Player caster, final double damage) {
+    private void applyKick(final LivingEntity living, final Player caster, final double damage,
+                           final CastModifiers modifiers) {
         if (Bukkit.isOwnedByCurrentRegion(caster)) {
-            hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());
+            SpellDamageUtil.damageBySpell(caster, living, damage, getId(), modifiers);
         } else {
-            living.damage(damage);
+            living.damage(SpellDamageUtil.scaledDamage(damage, modifiers));
         }
     }
 }

@@ -92,6 +92,36 @@
       "reason": "Rebuildable session projection of SpellbookSection cooldowns; cleared on quit."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java|List<String> resolve(Player player, List<String> unlocked, Set<String> favorites);",
+      "category": "RUNTIME",
+      "reason": "Pure active-kit callback signature; resolve receives transient Bukkit/session inputs and does not read or write YAML."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/gui/ClassGameplayConfigMenuGUI.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "RUNTIME",
+      "reason": "Read-only packaged class-gameplay schema plus an inventory holder owner UUID; staged edits publish through ConfigManager and no player-owned YAML state is stored here."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/classspec/application/TargetRegistry.java|private final Map<UUID, Set<UUID>> targetsByOwner = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "UUID-only transient caster-to-target index; cleared on target/caster lifecycle transitions and plugin disable, never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/classspec/application/TargetRegistry.java|private final Map<UUID, Set<UUID>> ownersByTarget = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "UUID-only transient reverse target index; cleared symmetrically on target/caster lifecycle transitions and plugin disable, never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/RelicPvpTransferListener.java|private final Map<UUID, CompletionStage<?>> deposits = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-flight durable escrow completion fence only; Profile v2 DeathEscrowSection remains the sole persisted authority and the entry is removed when preparation completes."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/RelicPvpTransferListener.java|private final Map<UUID, PreparedDeath> preparedDeaths = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Session-generation and receipt coordination for the current death event; the durable escrow lives solely in Profile v2 and this marker is consumed by death cleanup."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Combat UI throttle/last-target display state; session only."
@@ -265,11 +295,6 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, OathTarget> oathTargets = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Live Guardian oath-target handles (entity + scheduler). Runtime-only projection cleared on death/quit/kick/disable, target death and spec switch; never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, Set<UUID>> guardiansByTarget = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Reverse index of live oath guardians per target for event-driven Guard gain. Runtime-only, cleared with the oath lifecycle; never persisted."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, EvokerCombatState> states = new ConcurrentHashMap<>();",

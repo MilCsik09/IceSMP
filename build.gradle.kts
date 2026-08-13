@@ -262,6 +262,10 @@ val classSpecApplicationRegressionTest = registerRegression(
     "classSpecApplicationRegressionTest",
     "Runs Profile v2 mutation, DARK gate and fail-closed application regressions.",
     "hu.taliann.icesmp.classspec.application.ClassSpecApplicationRegressionSuite")
+val targetRegistryRegressionTest = registerRegression(
+    "targetRegistryRegressionTest",
+    "Runs UUID-only class target-link death, quit and concurrency regressions.",
+    "hu.taliann.icesmp.classspec.application.TargetRegistryRegressionSuite")
 val classSpecSectionRegressionTest = registerRegression(
     "classSpecSectionRegressionTest",
     "Runs ClassSpec section invariants without opaque binary persistence.",
@@ -458,6 +462,10 @@ val inventoryReadWriteRegressionTest = registerRegression(
     "inventoryReadWriteRegressionTest",
     "Runs invsee single-writer, donation gesture and rollback regressions.",
     "hu.taliann.icesmp.inventory.InventoryReadWriteRegressionSuite")
+val donationChestDurabilityRegressionTest = registerRegression(
+    "donationChestDurabilityRegressionTest",
+    "Runs donation write-ahead, restart recovery and exactly-once regressions.",
+    "hu.taliann.icesmp.managers.DonationChestDurabilityRegressionSuite")
 val operationalConfigMenuRegressionTest = registerRegression(
     "operationalConfigMenuRegressionTest",
     "Runs operational config menu schema, help, reset and live-apply regressions.",
@@ -588,7 +596,7 @@ tasks.check {
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
         classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, hudEditorRegressionTest,
-        classSpecSectionRegressionTest, classSpecApplicationRegressionTest,
+        classSpecSectionRegressionTest, classSpecApplicationRegressionTest, targetRegistryRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
         playerProfileDailyQuestRegressionTest, playerProfileEconomyRegressionTest, playerProfileFactionAuthorityRegressionTest,
@@ -602,6 +610,7 @@ tasks.check {
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
         professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,
+        donationChestDurabilityRegressionTest,
         operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest,
         warriorGameplayRegressionTest, warriorProfileRegressionTest,
         evokerGameplayRegressionTest, evokerProfileRegressionTest,

@@ -79,8 +79,7 @@ public final class SpecCommand implements BasicCommand {
             case "reset" -> handleReset(sender, args);
             case "recover" -> handleRecover(sender, args);
             default -> {
-                sender.sendMessage(messageManager.get("spec-unknown-subcommand",
-                        "&cIsmeretlen alparancs: &f%s", args[0]));
+                sender.sendMessage(messageManager.required("spec-unknown-subcommand", args[0]));
                 sendHelp(sender);
             }
         }
@@ -93,20 +92,17 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
         if (!isGameplayV2Class(player)) {
-            player.sendMessage(messageManager.get("spec-switch-class-gated",
-                    "&cA két-slot gameplay váltás egyelőre csak a kész reworkölt classoknál aktív (%s).",
+            player.sendMessage(messageManager.required("spec-switch-class-gated",
                     GameplayV2ClassPolicy.enabledList()));
             return;
         }
         if (args.length < 2) {
-            player.sendMessage(messageManager.get("spec-switch-usage",
-                    "&cHasználat: /spec switch <first|second|spec-id>"));
+            player.sendMessage(messageManager.required("spec-switch-usage"));
             return;
         }
         final LoadoutSlot target = resolveTargetSlot(player, args[1]);
         if (target == null) {
-            player.sendMessage(messageManager.get("spec-switch-unknown",
-                    "&cNincs ilyen megtanult specializáció vagy slot: &f%s", args[1]));
+            player.sendMessage(messageManager.required("spec-switch-unknown", args[1]));
             return;
         }
         specializationManager.switchClassSpecializationV2(player, target)
@@ -115,13 +111,10 @@ public final class SpecCommand implements BasicCommand {
                         final String active = specializationManager.getClassSpecialization(player) == null
                                 ? target.name().toLowerCase(Locale.ROOT)
                                 : specializationManager.getClassSpecialization(player).getId();
-                        player.sendMessage(messageManager.get("spec-switch-success",
-                                "&aAktív specialization: &f%s&a. A Düh/cooldown közös következményei megmaradtak.",
+                        player.sendMessage(messageManager.required("spec-switch-success",
                                 active));
                     } else {
-                        player.sendMessage(messageManager.get("spec-switch-failed",
-                                "&cNem válthatsz most: a cél-slot nem használható, harcban vagy, "
-                                        + "vagy ellenség van a biztonsági körzetben."));
+                        player.sendMessage(messageManager.required("spec-switch-failed"));
                     }
                 }, () -> specializationManager.profileGateway().blockSession(
                         player.getUniqueId(), "Spec switch completion scheduler rejected")));
@@ -134,8 +127,7 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
         if (args.length < 2 || !specializationManager.choosePaladinOath(player, args[1])) {
-            player.sendMessage(messageManager.get("spec-oath-usage",
-                    "&cHasználat (csak Paplovag): /spec esku <irgalom|itelet|oltalmazas>"));
+            player.sendMessage(messageManager.required("spec-oath-usage"));
         }
     }
 
@@ -146,8 +138,7 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
         if (args.length < 2 || !specializationManager.choosePriestLitany(player, args[1])) {
-            player.sendMessage(messageManager.get("spec-litany-usage",
-                    "&cHasználat (csak Pap): /spec ima <vigasz|ostor|csend>"));
+            player.sendMessage(messageManager.required("spec-litany-usage"));
         }
     }
 
@@ -176,19 +167,16 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
         if (!isGameplayV2Class(player)) {
-            player.sendMessage(messageManager.get("spec-doctrine-class-gated",
-                    "&cA doctrine-rendszer egyelőre csak a kész reworkölt classoknál aktív (%s).",
+            player.sendMessage(messageManager.required("spec-doctrine-class-gated",
                     GameplayV2ClassPolicy.enabledList()));
             return;
         }
         if (args.length < 3) {
             final SpecializationType spec = specializationManager.getClassSpecialization(player);
-            player.sendMessage(messageManager.get("spec-doctrine-usage",
-                    "&e/spec doctrine <30|40|50> <választás>"));
+            player.sendMessage(messageManager.required("spec-doctrine-usage"));
             if (spec != null) {
                 for (final int level : List.of(30, 40, 50)) {
-                    player.sendMessage(messageManager.get("spec-doctrine-options",
-                            "&7Szint %s: &f%s", level,
+                    player.sendMessage(messageManager.required("spec-doctrine-options", level,
                             String.join(" | ", specializationManager.doctrineChoices(spec, level))));
                 }
             }
@@ -198,19 +186,15 @@ public final class SpecCommand implements BasicCommand {
         try {
             level = Integer.parseInt(args[1]);
         } catch (final NumberFormatException invalid) {
-            player.sendMessage(messageManager.get("spec-doctrine-level",
-                    "&cDoctrine-szint csak 30, 40 vagy 50 lehet."));
+            player.sendMessage(messageManager.required("spec-doctrine-level"));
             return;
         }
         specializationManager.chooseDoctrineV2(player, level, args[2])
                 .whenComplete((success, failure) -> player.getScheduler().run(plugin, task -> {
                     if (failure == null && Boolean.TRUE.equals(success)) {
-                        player.sendMessage(messageManager.get("spec-doctrine-success",
-                                "&aDoctrine rögzítve: &f%s &7(szint %s)", args[2], level));
+                        player.sendMessage(messageManager.required("spec-doctrine-success", args[2], level));
                     } else {
-                        player.sendMessage(messageManager.get("spec-doctrine-failed",
-                                "&cA doctrine nem választható: rossz spec/szint, ismeretlen választás, "
-                                        + "vagy a tier már véglegesen rögzített."));
+                        player.sendMessage(messageManager.required("spec-doctrine-failed"));
                     }
                 }, () -> specializationManager.profileGateway().blockSession(
                         player.getUniqueId(), "Doctrine completion scheduler rejected")));
@@ -224,8 +208,7 @@ public final class SpecCommand implements BasicCommand {
         }
         if (args.length < 2 || (!"class".equalsIgnoreCase(args[1])
                 && !"profession".equalsIgnoreCase(args[1]))) {
-            sender.sendMessage(messageManager.get("spec-respec-usage",
-                    "&cHasználat: /spec respec <class|profession>"));
+            sender.sendMessage(messageManager.required("spec-respec-usage"));
             return;
         }
         if ("class".equalsIgnoreCase(args[1])) {
@@ -235,8 +218,7 @@ public final class SpecCommand implements BasicCommand {
                             "player-respec:" + player.getUniqueId() + ":" + revision)
                     .whenComplete((outcome, failure) -> player.getScheduler().run(plugin, task -> {
                         if (failure != null || outcome == null) {
-                            player.sendMessage(messageManager.get("spec-respec-persistence-failed",
-                                    "&cA Profile v2 tranzakció meghiúsult; a költség nem veszett el."));
+                            player.sendMessage(messageManager.required("spec-respec-persistence-failed"));
                         } else {
                             sendRespecOutcome(player, player, outcome);
                         }
@@ -250,29 +232,24 @@ public final class SpecCommand implements BasicCommand {
     private void sendRespecOutcome(final CommandSender sender, final Player player,
                                    final RespecService.Outcome outcome) {
         switch (outcome.status()) {
-            case NOTHING_TO_RESPEC -> sender.sendMessage(messageManager.get(
-                    "spec-respec-nothing", "&cNincs mit visszaváltani: nincs ilyen specializációd."));
-            case INSUFFICIENT_FUNDS -> sender.sendMessage(messageManager.get(
+            case NOTHING_TO_RESPEC -> sender.sendMessage(messageManager.required(
+                    "spec-respec-nothing"));
+            case INSUFFICIENT_FUNDS -> sender.sendMessage(messageManager.required(
                     "spec-respec-insufficient",
-                    "&cA respec ára &f%s %s&c, de csak &f%s&c van a bankodban.",
                     currencyManager.formatBalance(outcome.cost()),
                     outcome.currency().getDisplayName(),
                     currencyManager.formatBalance(currencyManager.getBalance(player, outcome.currency()))));
-            case OK -> sender.sendMessage(messageManager.get(
+            case OK -> sender.sendMessage(messageManager.required(
                     "spec-respec-success",
-                    "&aSpecializáció visszaváltva &7(ár: &f%s %s&7, visszakapott talentpont: &f%s&7)&a.",
                     currencyManager.formatBalance(outcome.cost()),
                     outcome.currency().getDisplayName(),
                     outcome.refundedTalentPoints()));
-            case PERSISTENCE_FAILED -> sender.sendMessage(messageManager.get(
-                    "spec-respec-persistence-failed",
-                    "&cA Profile v2 mentése meghiúsult; az esetleges költséget visszatérítettük."));
-            case RUNTIME_FAILED -> sender.sendMessage(messageManager.get(
-                    "spec-respec-runtime-failed",
-                    "&4A profil commitolt, de a runtime-befejezés hibázott; a session blokkolva."));
-            case REFUND_FAILED -> sender.sendMessage(messageManager.get(
-                    "spec-respec-refund-failed",
-                    "&4A profil- és valuta-visszaállítás kézi admin auditot igényel."));
+            case PERSISTENCE_FAILED -> sender.sendMessage(messageManager.required(
+                    "spec-respec-persistence-failed"));
+            case RUNTIME_FAILED -> sender.sendMessage(messageManager.required(
+                    "spec-respec-runtime-failed"));
+            case REFUND_FAILED -> sender.sendMessage(messageManager.required(
+                    "spec-respec-refund-failed"));
         }
     }
 
@@ -283,12 +260,10 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
         final JobType primaryJob = jobManager.getPrimaryJob(player);
-        sender.sendMessage(messageManager.get("spec-list-class-header",
-                "&6Kaszt specializációk (szint %s-tól):",
+        sender.sendMessage(messageManager.required("spec-list-class-header",
                 specializationManager.getRequiredClassLevel()));
         if (primaryJob == null) {
-            sender.sendMessage(messageManager.get("spec-list-no-class",
-                    "&7Nincs elsődleges kasztod."));
+            sender.sendMessage(messageManager.required("spec-list-no-class"));
         } else {
             for (final SpecializationType specialization : SpecializationType.values()) {
                 if (specialization.getParentJob() != primaryJob) continue;
@@ -298,39 +273,37 @@ public final class SpecCommand implements BasicCommand {
                         .anyMatch(loadout -> specialization.getId()
                                 .equals(loadout.specializationId()));
                 final String availability = learned
-                        ? messageManager.get("spec-learned", "&bMegtanult")
+                        ? messageManager.required("spec-learned")
                         : specializationManager.canSelectClassSpecialization(player, specialization)
-                        ? messageManager.get("spec-available", "&aVálasztható")
-                        : messageManager.get("spec-unavailable", "&cNem elérhető");
+                        ? messageManager.required("spec-available")
+                        : messageManager.required("spec-unavailable");
                 player.sendMessage(Component.text(" - ")
                         .append(specialization.getDisplayName())
                         .append(Component.text(" (" + specialization.getId() + ") "))
-                        .append(messageManager.getMessage("spec-availability", "{state}",
+                        .append(messageManager.requiredMessage("spec-availability",
                                 Map.of("state", availability))));
             }
-            player.sendMessage(messageManager.get("spec-second-slot-info",
-                    "&7Második specialization slot: &f%s. szinttől&7.",
+            player.sendMessage(messageManager.required("spec-second-slot-info",
                     specializationManager.getSecondSpecUnlockLevel()));
         }
 
-        sender.sendMessage(messageManager.get("spec-list-profession-header",
-                "&6Szakma specializációk (szint %s-tól):",
+        sender.sendMessage(messageManager.required("spec-list-profession-header",
                 specializationManager.getRequiredProfessionLevel()));
         boolean anyProfessionSpec = false;
         for (final ProfessionSpecializationType specialization : ProfessionSpecializationType.values()) {
             if (!professionManager.hasProfession(player, specialization.getParentProfession())) continue;
             anyProfessionSpec = true;
             final String availability = specializationManager.canSelectProfessionSpecialization(player, specialization)
-                    ? messageManager.get("spec-available", "&aVálasztható")
-                    : messageManager.get("spec-unavailable", "&cNem elérhető");
+                    ? messageManager.required("spec-available")
+                    : messageManager.required("spec-unavailable");
             player.sendMessage(Component.text(" - ")
                     .append(specialization.getDisplayName())
                     .append(Component.text(" (" + specialization.getId() + ") "))
-                    .append(messageManager.getMessage("spec-availability", "{state}",
+                    .append(messageManager.requiredMessage("spec-availability",
                             Map.of("state", availability))));
         }
         if (!anyProfessionSpec) {
-            sender.sendMessage(messageManager.get("spec-list-no-profession", "&7Nincs szakmád."));
+            sender.sendMessage(messageManager.required("spec-list-no-profession"));
         }
     }
 
@@ -341,8 +314,7 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
         if (args.length < 2) {
-            sender.sendMessage(messageManager.get("spec-choose-usage",
-                    "&cHasználat: /spec choose <specializáció>"));
+            sender.sendMessage(messageManager.required("spec-choose-usage"));
             return;
         }
         final SpecializationType classSpec = SpecializationType.fromId(args[1]);
@@ -350,12 +322,11 @@ public final class SpecCommand implements BasicCommand {
             specializationManager.selectClassSpecializationV2(player, classSpec)
                     .whenComplete((success, failure) -> player.getScheduler().run(plugin, task -> {
                         if (failure == null && Boolean.TRUE.equals(success)) {
-                            player.sendMessage(messageManager.getMessage(
-                                            "spec-choose-success", "&aSpecializáció megtanulva:")
+                            player.sendMessage(messageManager.requiredMessage(
+                                            "spec-choose-success")
                                     .append(Component.space()).append(classSpec.getDisplayName()));
                         } else {
-                            player.sendMessage(messageManager.get("spec-choose-failed",
-                                    "&cA Profile v2 mentés vagy valamelyik kasztkapu miatt a választás meghiúsult."));
+                            player.sendMessage(messageManager.required("spec-choose-failed"));
                         }
                     }, () -> specializationManager.profileGateway().blockSession(
                             player.getUniqueId(), "Spec selection completion scheduler rejected")));
@@ -364,17 +335,14 @@ public final class SpecCommand implements BasicCommand {
         final ProfessionSpecializationType professionSpec = ProfessionSpecializationType.fromId(args[1]);
         if (professionSpec != null) {
             if (specializationManager.selectProfessionSpecialization(player, professionSpec)) {
-                player.sendMessage(messageManager.getMessage("spec-choose-success",
-                                "&aSpecializáció kiválasztva:")
+                player.sendMessage(messageManager.requiredMessage("spec-choose-success")
                         .append(Component.space()).append(professionSpec.getDisplayName()));
             } else {
-                player.sendMessage(messageManager.get("spec-choose-failed-profession",
-                        "&cNem választhatod ezt a specializációt."));
+                player.sendMessage(messageManager.required("spec-choose-failed-profession"));
             }
             return;
         }
-        sender.sendMessage(messageManager.get("spec-unknown",
-                "&cIsmeretlen specializáció: &f%s", args[1]));
+        sender.sendMessage(messageManager.required("spec-unknown", args[1]));
     }
 
     private void handleInfo(final CommandSender sender) {
@@ -428,8 +396,7 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
         if (args.length < 2) {
-            sender.sendMessage(messageManager.get("spec-reset-usage",
-                    "&cHasználat: /spec reset <játékos>"));
+            sender.sendMessage(messageManager.required("spec-reset-usage"));
             return;
         }
         final Player target = Bukkit.getPlayerExact(args[1]);
@@ -446,23 +413,19 @@ public final class SpecCommand implements BasicCommand {
                     .whenComplete((result, failure) -> target.getScheduler().run(plugin, followup -> {
                         if (failure == null && result != null && result.committed()) {
                             specializationManager.resetProfessionSpecialization(target);
-                            sendToSender(sender, messageManager.getComponent("spec-reset-success",
-                                    "&aSpecializációk törölve: &f%s", target.getName()));
+                            sendToSender(sender, messageManager.requiredComponent("spec-reset-success", target.getName()));
                         } else if (failure == null && result != null && result.durableMutationApplied()) {
                             specializationManager.profileGateway().blockSession(target.getUniqueId(),
                                     "Admin spec-reset committed, but runtime reconciliation failed");
-                            sendToSender(sender, messageManager.getComponent("spec-reset-runtime-failed",
-                                    "&cA profil commitolt, de a runtime-befejezés hibázott: &f%s",
+                            sendToSender(sender, messageManager.requiredComponent("spec-reset-runtime-failed",
                                     target.getName()));
                         } else {
-                            sendToSender(sender, messageManager.getComponent("spec-reset-failed",
-                                    "&cA Profile v2 mentése meghiúsult; semmi nem lett törölve: &f%s",
+                            sendToSender(sender, messageManager.requiredComponent("spec-reset-failed",
                                     target.getName()));
                         }
                     }, () -> specializationManager.profileGateway().blockSession(target.getUniqueId(),
                             "Admin spec-reset completion scheduler rejected")));
-        }, () -> sendToSender(sender, messageManager.getComponent("spec-reset-failed",
-                "&cA célpont scheduler elutasította a resetet: &f%s", target.getName())));
+        }, () -> sendToSender(sender, messageManager.requiredComponent("spec-reset-scheduler-failed", target.getName())));
     }
 
     private void handleRecover(final CommandSender sender, final String[] args) {
@@ -522,23 +485,15 @@ public final class SpecCommand implements BasicCommand {
     }
 
     private void sendHelp(final CommandSender sender) {
-        sender.sendMessage(messageManager.get("spec-help-header",
-                "&6/spec &7- Elérhető parancsok:"));
-        sender.sendMessage(messageManager.get("spec-help-list",
-                "&e/spec list &7- Választható/megtanult specializációk."));
-        sender.sendMessage(messageManager.get("spec-help-choose",
-                "&e/spec choose <specializáció> &7- Specializáció megtanulása."));
-        sender.sendMessage(messageManager.get("spec-help-switch",
-                "&e/spec switch <slot|spec> &7- Harcos aktív specialization váltása biztonságos helyen."));
-        sender.sendMessage(messageManager.get("spec-help-doctrine",
-                "&e/spec doctrine <30|40|50> <választás> &7- Harcos doctrine rögzítése."));
-        sender.sendMessage(messageManager.get("spec-help-info",
-                "&e/spec info &7- Profile v2/loadout/mastery/doctrine állapot."));
-        sender.sendMessage(messageManager.get("spec-help-respec",
-                "&e/spec respec <class|profession> &7- Specializáció visszaváltása."));
+        sender.sendMessage(messageManager.required("spec-help-header"));
+        sender.sendMessage(messageManager.required("spec-help-list"));
+        sender.sendMessage(messageManager.required("spec-help-choose"));
+        sender.sendMessage(messageManager.required("spec-help-switch"));
+        sender.sendMessage(messageManager.required("spec-help-doctrine"));
+        sender.sendMessage(messageManager.required("spec-help-info"));
+        sender.sendMessage(messageManager.required("spec-help-respec"));
         if (sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("spec-help-reset",
-                    "&e/spec reset <játékos> &7- Specializációk törlése (Admin)."));
+            sender.sendMessage(messageManager.required("spec-help-reset"));
         }
         if (sender.hasPermission(RECOVERY_PERMISSION)) {
             sender.sendMessage(Component.text(

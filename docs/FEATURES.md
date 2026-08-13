@@ -599,13 +599,13 @@ Adatvezérelt ritkaság, egyedi anyag, item-provenance, rúnázás, signature en
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul shard/soulstone és soulforge. A generikus réteg fölött külön **Class Relic Framework** él (`relics.class-relics.*`): kaszthoz kötött, világ-egyedi relikviák Class Power / Spec Resonance / Awakening rétegekkel — a bónusz csak akkor jár, ha a Profile v2 szerinti kaszt egyezik ÉS a használható fizikai tárgy a játékosnál van (az ownership önmagában nem elég); SEALED specializáció nem rezonál; az Awakening nagy cooldownja a relickel utazik (gazdacsere/restart nem nullázza), az aktiválása atomikus és csak megtörtént lemez-commit után számít sikeresnek; a `relics.enabled: false` explicit kapu — ilyenkor Class Power, Resonance és Awakening egyaránt inaktív. Pilot: a Sárkánytojás-töredék (Evoker, +10% max Essence a `CLASS_RESOURCE_MAX` csatornán).
+Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul shard/soulstone és soulforge. A `relics.passive-death.mode: keep` útvonal a passzív relikviát csak a Profile v2 halál-escrow tartós commitja után veszi ki a drop-listából; respawnkor vagy a következő belépéskor idempotens receipt alapján pontosan egyszer kézbesíti, ezért a halál és respawn közötti restart sem veszíti el. Sikertelen escrow-írásnál a tárgy a dropban marad. A generikus réteg fölött külön **Class Relic Framework** él (`relics.class-relics.*`): kaszthoz kötött, világ-egyedi relikviák Class Power / Spec Resonance / Awakening rétegekkel — a bónusz csak akkor jár, ha a Profile v2 szerinti kaszt egyezik ÉS a használható fizikai tárgy a játékosnál van (az ownership önmagában nem elég); SEALED specializáció nem rezonál; az Awakening nagy cooldownja a relickel utazik (gazdacsere/restart nem nullázza), az aktiválása atomikus és csak megtörtént lemez-commit után számít sikeresnek; a `relics.enabled: false` explicit kapu — ilyenkor Class Power, Resonance és Awakening egyaránt inaktív. Pilot: a Sárkánytojás-töredék (Evoker, +10% max Essence a `CLASS_RESOURCE_MAX` csatornán).
 
 - **Így találkozol vele:** `/relic`, `/souls`, `/soulforge`; itemhasználat és craft. Parancs: /relic (alias: /relics, /relikvia); /soulforge (alias: /lelekkovacs); /souls (alias: /lelek, /soul).
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Relikvia-trigger, PVP transfer, inactivity, craft és soul esemény.
 - **Ami még kellhet hozzá:** Soulforge/rituálé helyszín és resource-pack itemek ellenőrzendők, ha a config fizikai helyet kér.
-- **Fontos határ:** PVP transfer, full inventory és disconnect közbeni átadás runtime tesztet igényel.
+- **Fontos határ:** PVP transfer, megtelt inventory, escrow-íráshiba és halál–restart–join közbeni átadás runtime tesztet igényel.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
@@ -777,14 +777,14 @@ Játékospiac, NPC/frakció shop, vevőszolgáltatás, kézbesítés, adományl�
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Listing/vásárlás/kézbesítés, NPC-interakció, adomány és board művelet.
 - **Ami még kellhet hozzá:** Shop NPC-k, adományláda-hely és esetleges board-helyszínek kötése szükséges.
-- **Fontos határ:** Full inventory, disconnect és tárolási hiba esetén runtime recovery teszt szükséges.
+- **Fontos határ:** Az adomány csak tartós előkészítés és region-szálas forráslevonás után jelenik meg; félbeszakított beadás vagy átvétel belépéskor automatikusan folytatódik vagy visszagörög.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.exchangeboard`
 - Config: `economy.*`, market-, shop-, donation- és exchange-board definíciók.
-- Tartós állapot: Listingek, journal, kézbesítés és gazdasági állapot tartós.
+- Tartós állapot: Listingek, journal, kézbesítés és gazdasági állapot tartós; az adományláda prepare/available/claim fázisai atomikus YAML-snapshotban élnek.
 - Reload: Árak/listák részben reloadolhatók; nyitott tranzakciónál settlement kell.
 
 </details>
@@ -1285,4 +1285,3 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 <sub>Dokumentációs snapshot: 2026-07-30 · release `4643ab535…` · deployed mapping:
 `775d9e247…` (`HIGH_CONFIDENCE`, nem `EXACT`).</sub>
-

@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.config;
 
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
+import hu.taliann.icesmp.gui.ClassGameplayConfigMenuGUI;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -31,7 +32,9 @@ public final class ConfigGuiCoverageRegressionSuite {
         }
         final Map<String, ConfigMenuGUI.Entry> entries = new HashMap<>();
         final Set<String> duplicates = new HashSet<>();
-        for (final ConfigMenuGUI.Entry entry : ConfigMenuGUI.allEntries()) {
+        final List<ConfigMenuGUI.Entry> menuEntries = new java.util.ArrayList<>(ConfigMenuGUI.allEntries());
+        menuEntries.addAll(ClassGameplayConfigMenuGUI.entries());
+        for (final ConfigMenuGUI.Entry entry : menuEntries) {
             if (entries.put(entry.key(), entry) != null) duplicates.add(entry.key());
             final Object value = scalar.get(entry.key());
             check(value != null, "unknown GUI path: " + entry.key());
@@ -48,8 +51,16 @@ public final class ConfigGuiCoverageRegressionSuite {
             }
         }
         check(duplicates.isEmpty(), "duplicate GUI entries: " + duplicates);
+        final YamlConfiguration classGameplay = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/class-gameplay.yml").toFile());
+        final Set<String> classGameplayKeys = classGameplay.getKeys(true).stream()
+                .filter(key -> !classGameplay.isConfigurationSection(key))
+                .filter(key -> classGameplay.get(key) instanceof Boolean
+                        || classGameplay.get(key) instanceof Number)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
         final List<String> missingRequired = scalar.keySet().stream()
-                .filter(key -> MUST_EXPOSE_PREFIXES.stream().anyMatch(key::startsWith))
+                .filter(key -> MUST_EXPOSE_PREFIXES.stream().anyMatch(key::startsWith)
+                        || classGameplayKeys.contains(key))
                 .filter(key -> !entries.containsKey(key)).sorted().toList();
         check(missingRequired.isEmpty(), "required schema entries missing from GUI: " + missingRequired);
         final int displayed = entries.size();

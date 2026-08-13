@@ -11,6 +11,15 @@ import java.util.Set;
  * chat commit, GUI reset and SAVE snapshot from racing each other.
  */
 public final class ConfigEditSession {
+    public record Snapshot(Map<String, Object> values, Map<String, Object> changes) {
+        public Snapshot {
+            values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
+            changes = Collections.unmodifiableMap(new LinkedHashMap<>(changes));
+        }
+
+        public Object resolvedValue(final String key) { return values.get(key); }
+    }
+
     private final long expectedGeneration;
     private final String expectedFingerprint;
     private final Map<String, Object> openingValues;
@@ -53,5 +62,23 @@ public final class ConfigEditSession {
 
     public synchronized Map<String, Object> pendingChanges() {
         return Collections.unmodifiableMap(new LinkedHashMap<>(pending));
+    }
+
+    public synchronized Snapshot snapshot() {
+        return snapshotWith(null, null, false);
+    }
+
+    public synchronized Snapshot candidate(final String key, final Object value) {
+        return snapshotWith(key, value, true);
+    }
+
+    private Snapshot snapshotWith(final String candidateKey, final Object candidateValue,
+                                  final boolean includeCandidate) {
+        final LinkedHashMap<String, Object> changes = new LinkedHashMap<>(pending);
+        if (includeCandidate) changes.put(candidateKey, candidateValue);
+        final LinkedHashMap<String, Object> values = new LinkedHashMap<>(openingValues);
+        changes.forEach((key, value) -> values.put(key,
+                value == null ? defaults.get(key) : value));
+        return new Snapshot(values, changes);
     }
 }

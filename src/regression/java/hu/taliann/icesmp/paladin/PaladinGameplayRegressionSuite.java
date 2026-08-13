@@ -101,15 +101,19 @@ public final class PaladinGameplayRegressionSuite {
 
         final String service = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java"));
-        check(service.contains("beaconTargets.put(paladinId,")
+        check(service.contains("beaconTargets.put(paladinId, beacon)")
                         && !service.contains("List<BeaconTarget>"),
                 "the Fényjelző is a single beacon target — no raid-wide passive heal");
         check(!service.contains("runAtFixedRate"),
                 "no repeating tasks in the paladin runtime");
         check(service.contains("member.getScheduler().run(plugin,"),
                 "Megszentelt Föld ally protection hops to each ally's scheduler");
-        check(!service.contains("guardiansByTarget"),
-                "no Warrior-Guardian-style target-bound reverse index");
+        check(service.contains("TargetRegistry") && service.contains("beaconLinks")
+                        && service.contains("clearBeaconTarget(playerId)"),
+                "beacon targets clear their paladin-side handles on target departure");
+        check(service.contains("record BeaconTarget(UUID id, EntityScheduler scheduler")
+                        && !service.contains("record BeaconTarget(UUID id, Player"),
+                "beacon handles do not retain strong Player references");
 
         final String command = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java"));

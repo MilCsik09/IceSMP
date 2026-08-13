@@ -7,12 +7,14 @@ import hu.taliann.icesmp.gui.AdvancedConfigEntry;
 import hu.taliann.icesmp.gui.AdvancedConfigEntryRenderer;
 import hu.taliann.icesmp.gui.AdvancedConfigPolicy;
 import hu.taliann.icesmp.gui.BlockRegenConfigMenuGUI;
+import hu.taliann.icesmp.gui.ClassGameplayConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigChatInputGate;
 import hu.taliann.icesmp.gui.ConfigEditSession;
 import hu.taliann.icesmp.gui.ConfigMenuEntryRenderer;
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
 import hu.taliann.icesmp.gui.ConfigMenuHolder;
 import hu.taliann.icesmp.gui.ConfigMenuRootGUI;
+import hu.taliann.icesmp.gui.ConfigStagedBatchValidator;
 import hu.taliann.icesmp.gui.CrateConfigMenuGUI;
 import hu.taliann.icesmp.gui.CrateRewardEditor;
 import hu.taliann.icesmp.gui.GuiUtil;
@@ -61,7 +63,7 @@ public final class ConfigMenuGUIListener implements Listener {
     }
 
     private record InputSession(AdvancedConfigEntry entry, String returnCategory,
-                                InputCommit commit, Runnable defaultAction, long expiresAt) { }
+                                InputCommit commit, InputCommit defaultAction, long expiresAt) { }
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -97,6 +99,7 @@ public final class ConfigMenuGUIListener implements Listener {
         ConfigMenuGUI.CATEGORIES.values().forEach(category ->
                 category.entries().forEach(entry -> keys.add(entry.key())));
         BlockRegenConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
+        ClassGameplayConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
         TransactionalOperationalConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
         ServerWorldConfigMenuGUI.entries().forEach(entry -> keys.add(entry.key()));
         TransactionalCrateConfigMenuGUI.globalEntries().forEach(entry -> keys.add(entry.key()));
@@ -150,6 +153,9 @@ public final class ConfigMenuGUIListener implements Listener {
         if (OperationalConfigMenuGUI.ROOT_ACTION.equals(action)) {
             TransactionalOperationalConfigMenuGUI.openRoot(player, session); return;
         }
+        if (ClassGameplayConfigMenuGUI.ROOT_ACTION.equals(action)) {
+            ClassGameplayConfigMenuGUI.openRoot(player, session); return;
+        }
         if (ServerWorldConfigMenuGUI.ROOT_ACTION.equals(action)) {
             ServerWorldConfigMenuGUI.open(player, configManager, session); return;
         }
@@ -159,6 +165,11 @@ public final class ConfigMenuGUIListener implements Listener {
         if (action.startsWith(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX)) {
             TransactionalOperationalConfigMenuGUI.openCategory(player,
                     action.substring(OperationalConfigMenuGUI.CATEGORY_ACTION_PREFIX.length()),
+                    configManager, session); return;
+        }
+        if (action.startsWith(ClassGameplayConfigMenuGUI.CATEGORY_ACTION_PREFIX)) {
+            ClassGameplayConfigMenuGUI.openCategory(player,
+                    action.substring(ClassGameplayConfigMenuGUI.CATEGORY_ACTION_PREFIX.length()),
                     configManager, session); return;
         }
         if (action.startsWith("CAT:")) {
@@ -174,13 +185,19 @@ public final class ConfigMenuGUIListener implements Listener {
         final String key = action.substring(action.indexOf(':') + 1);
         ConfigMenuGUI.Entry entry = ConfigMenuGUI.findEntry(key);
         if (entry == null) entry = BlockRegenConfigMenuGUI.findEntry(key);
+        if (entry == null) entry = ClassGameplayConfigMenuGUI.findEntry(key);
         if (entry == null) entry = TransactionalOperationalConfigMenuGUI.findEntry(key);
         if (entry == null) return;
         if (event.getClick() == ClickType.MIDDLE || event.getClick() == ClickType.DROP) {
+            final ConfigEditSession.Snapshot candidate = session.candidate(key, null);
+            final String problem = OperationalConfigPolicy.validate(
+                    key, candidate.resolvedValue(key), configManager, candidate);
+            if (problem != null) { reject(player, problem); return; }
             session.reset(key);
         } else {
             final Object next = nextScalar(entry, session.value(key), event.isShiftClick(), event.isRightClick());
-            final String problem = OperationalConfigPolicy.validate(key, next, configManager);
+            final String problem = OperationalConfigPolicy.validate(
+                    key, next, configManager, session.candidate(key, next));
             if (problem != null) { reject(player, problem); return; }
             session.stage(key, next);
         }
@@ -217,6 +234,10 @@ public final class ConfigMenuGUIListener implements Listener {
         if (entry == null) entry = TransactionalCrateConfigMenuGUI.findEntry(key, configManager);
         if (entry == null) return;
         if (event.getClick() == ClickType.MIDDLE || event.getClick() == ClickType.DROP) {
+            final ConfigEditSession.Snapshot candidate = session.candidate(key, null);
+            final String problem = AdvancedConfigPolicy.validate(
+                    entry, candidate.resolvedValue(key), configManager, candidate);
+            if (problem != null) { reject(player, problem); return; }
             session.reset(key);
             reopenView(player, holder.getCategory(), session);
             return;
@@ -242,7 +263,8 @@ public final class ConfigMenuGUIListener implements Listener {
             }
             default -> throw new IllegalStateException("Text input reached scalar branch");
         };
-        final String problem = AdvancedConfigPolicy.validate(entry, next, configManager);
+        final String problem = AdvancedConfigPolicy.validate(
+                entry, next, configManager, session.candidate(key, next));
         if (problem != null) { reject(player, problem); return; }
         session.stage(key, next);
         reopenView(player, holder.getCategory(), session);
@@ -252,11 +274,19 @@ public final class ConfigMenuGUIListener implements Listener {
                                     final AdvancedConfigEntry entry, final String returnCategory) {
         beginInput(player, entry, returnCategory,
                 value -> {
-                    final String problem = AdvancedConfigPolicy.validate(entry, value, configManager);
+                    final String problem = AdvancedConfigPolicy.validate(entry, value, configManager,
+                            session.candidate(entry.key(), value));
                     if (problem != null) return problem;
                     session.stage(entry.key(), value);
                     return null;
-                }, () -> session.reset(entry.key()));
+                }, ignored -> {
+                    final ConfigEditSession.Snapshot candidate = session.candidate(entry.key(), null);
+                    final String problem = AdvancedConfigPolicy.validate(
+                            entry, candidate.resolvedValue(entry.key()), configManager, candidate);
+                    if (problem != null) return problem;
+                    session.reset(entry.key());
+                    return null;
+                });
         player.sendMessage(messageManager.get("admin.icesmp.config.input-current",
                 "&7Jelenlegi staged érték: &f%s", String.valueOf(session.value(entry.key()))));
     }
@@ -362,7 +392,7 @@ public final class ConfigMenuGUIListener implements Listener {
 
     private void beginInput(final Player player, final AdvancedConfigEntry entry,
                             final String returnCategory, final InputCommit commit,
-                            final Runnable defaultAction) {
+                            final InputCommit defaultAction) {
         inputSessions.put(player.getUniqueId(), new InputSession(entry, returnCategory, commit,
                 defaultAction, System.currentTimeMillis() + INPUT_TIMEOUT_MILLIS));
         ConfigChatInputGate.open(player.getUniqueId());
@@ -393,7 +423,9 @@ public final class ConfigMenuGUIListener implements Listener {
         }
         if (raw.equalsIgnoreCase("!default")) {
             if (input.defaultAction() == null) { inputError(player, "Ehhez a strukturált mezőhöz nincs külön reset."); return; }
-            input.defaultAction().run(); closeInput(player.getUniqueId(), input);
+            final String error = input.defaultAction().commit(null);
+            if (error != null) { inputError(player, error); return; }
+            closeInput(player.getUniqueId(), input);
             schedulePlayer(player, () -> reopenView(player, input.returnCategory(), sessions.get(player.getUniqueId())));
             return;
         }
@@ -433,7 +465,13 @@ public final class ConfigMenuGUIListener implements Listener {
             player.sendMessage(messageManager.get("admin.icesmp.config.no-changes", "&7Nincs mentendő config módosítás."));
             return;
         }
-        final Map<String, Object> changes = session.pendingChanges();
+        final ConfigEditSession.Snapshot snapshot = session.snapshot();
+        final String problem = ConfigStagedBatchValidator.validate(snapshot, configManager);
+        if (problem != null) {
+            reject(player, "A teljes staged konfiguráció érvénytelen: " + problem);
+            return;
+        }
+        final Map<String, Object> changes = snapshot.changes();
         sessions.remove(player.getUniqueId(), session);
         ConfigChatInputGate.close(player.getUniqueId());
         player.closeInventory();
@@ -489,6 +527,10 @@ public final class ConfigMenuGUIListener implements Listener {
             TransactionalCrateConfigMenuGUI.openBack(player, configManager, session, category);
         } else if (ServerWorldConfigMenuGUI.CATEGORY_ID.equals(category)) {
             ConfigMenuRootGUI.openRoot(player, session);
+        } else if (ClassGameplayConfigMenuGUI.ROOT_CATEGORY_ID.equals(category)) {
+            ConfigMenuRootGUI.openRoot(player, session);
+        } else if (ClassGameplayConfigMenuGUI.isCategory(category)) {
+            ClassGameplayConfigMenuGUI.openRoot(player, session);
         } else if (OperationalConfigMenuGUI.isOperationalCategory(category)) {
             TransactionalOperationalConfigMenuGUI.openRoot(player, session);
         } else ConfigMenuRootGUI.openRoot(player, session);
@@ -499,6 +541,7 @@ public final class ConfigMenuGUIListener implements Listener {
         if (category == null) ConfigMenuRootGUI.openRoot(player, session);
         else if (BlockRegenConfigMenuGUI.CATEGORY_ID.equals(category)) BlockRegenConfigMenuGUI.open(player, configManager, session);
         else if (ServerWorldConfigMenuGUI.CATEGORY_ID.equals(category)) ServerWorldConfigMenuGUI.open(player, configManager, session);
+        else if (ClassGameplayConfigMenuGUI.isCategory(category)) ClassGameplayConfigMenuGUI.reopen(player, category, configManager, session);
         else if (CrateConfigMenuGUI.isCrateCategory(category)) TransactionalCrateConfigMenuGUI.reopen(player, configManager, session, category);
         else if (OperationalConfigMenuGUI.isOperationalCategory(category)) TransactionalOperationalConfigMenuGUI.openCategory(player,
                 OperationalConfigMenuGUI.categoryIdFromHolder(category), configManager, session);

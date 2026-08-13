@@ -1,9 +1,17 @@
 package hu.taliann.icesmp.playerprofile.persistence;
 
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileService;
+import hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
@@ -22,10 +30,36 @@ public final class PlayerProfileLifecycleTeardownRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         repositoryShutdownIsIdempotentAndFencesNewWork();
+        stuckSessionTailCannotExceedTheSharedShutdownDeadline();
         coreDisableAlwaysClosesProfileResources();
+        profileAuthorityOutlivesStatefulConsumers();
+        acceptedConsumerFlushesCompleteBeforeAuthorityTeardown();
         platformTeardownIsUnconditional();
         httpAuthPrecedesLookupInSource();
         System.out.println("PlayerProfile lifecycle teardown regression suite passed. assertions=" + assertions);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void stuckSessionTailCannotExceedTheSharedShutdownDeadline() throws Exception {
+        final Path root = Files.createTempDirectory("pp-bounded-shutdown");
+        final YamlPlayerProfileRepository repository = new YamlPlayerProfileRepository(root);
+        final PlayerProfileService service = new PlayerProfileService(repository,
+                new YamlPlayerProfileTransactionManager(repository));
+        final var field = PlayerProfileService.class.getDeclaredField("sessionTails");
+        field.setAccessible(true);
+        final Map<UUID, CompletableFuture<Void>> tails =
+                (Map<UUID, CompletableFuture<Void>>) field.get(service);
+        tails.put(PLAYER, new CompletableFuture<>());
+
+        final long started = System.nanoTime();
+        final PlayerProfileRepository.ShutdownResult result = service.shutdown(
+                        Duration.ofMillis(100)).toCompletableFuture().get(2, TimeUnit.SECONDS);
+        final long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+        check(elapsedMillis < 1_000L,
+                "a stuck session tail cannot turn plugin disable into an unbounded wait");
+        check(!result.drained() && result.pendingOperations() > 0
+                        && result.detail().contains("session drain deadline exceeded"),
+                "bounded timeout remains visible in the shutdown result");
     }
 
     private static void repositoryShutdownIsIdempotentAndFencesNewWork() throws Exception {
@@ -91,9 +125,97 @@ public final class PlayerProfileLifecycleTeardownRegressionSuite {
         final int shutdownIndex = platform.indexOf("shutdown(Duration timeout)");
         check(shutdownIndex > 0, "platform shutdown exists");
         final String shutdownBody = platform.substring(shutdownIndex);
-        check(shutdownBody.contains("service.shutdown(timeout)"),
-                "platform shutdown always reaches the repository teardown");
+        check(shutdownBody.contains("service.shutdown(Duration.ofNanos(remaining))")
+                        && shutdownBody.contains("platform shutdown deadline exceeded"),
+                "platform shutdown always reaches service teardown with the remaining budget");
     }
+
+    private static void profileAuthorityOutlivesStatefulConsumers() throws Exception {
+        final String core = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
+        final int methodStart = core.indexOf("private void disableStateful()");
+        final int methodEnd = core.indexOf("private void closePlayerProfileResources()",
+                methodStart);
+        check(methodStart > 0 && methodEnd > methodStart,
+                "stateful shutdown source section exists");
+        final String shutdown = core.substring(methodStart, methodEnd);
+        final int respecGuard = shutdown.indexOf("respecService.prepareShutdown");
+        final int crateShutdown = shutdown.indexOf(
+                "shutdownStep(\"crateManager\", crateManager::shutdown)");
+        final int finalSave = shutdown.indexOf("storeCoordinator.saveForShutdown");
+        final int profileDrain = shutdown.indexOf("profileSessionBridge.prepareDisable");
+        final int platformShutdown = shutdown.indexOf("playerProfilePlatform.shutdown");
+        final int authorityUninstall = shutdown.indexOf("playerProfileAuthority.uninstall");
+        check(respecGuard > 0 && crateShutdown > respecGuard,
+                "respec admission guard remains ahead of consumer shutdown");
+        check(finalSave > crateShutdown && profileDrain > finalSave,
+                "crate rollback and final store save run before profile drain");
+        check(platformShutdown > profileDrain && authorityUninstall > platformShutdown,
+                "platform drain completes before authority uninstall");
+
+        final String crate = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/CrateManager.java"));
+        final int crateMethod = crate.indexOf("public void shutdown()");
+        final int crateMethodEnd = crate.indexOf("public void clearPlayerState", crateMethod);
+        check(crateMethod > 0 && crateMethodEnd > crateMethod
+                        && crate.substring(crateMethod, crateMethodEnd)
+                        .contains("drainDeferredCurrencyRollbacks()"),
+                "crate shutdown still drains durable currency rollbacks");
+        final String currency = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java"));
+        final int save = currency.indexOf("public void save()");
+        final int saveEnd = currency.indexOf("public void requestSave()", save);
+        check(save > 0 && saveEnd > save
+                        && currency.substring(save, saveEnd)
+                        .contains("PlayerProfileAuthority.installed()"),
+                "currency final save still flushes through the live profile authority");
+    }
+
+    private static void acceptedConsumerFlushesCompleteBeforeAuthorityTeardown() throws Exception {
+        final String core = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
+        final int methodStart = core.indexOf("private void disableStateful()");
+        final int methodEnd = core.indexOf("private void closePlayerProfileResources()", methodStart);
+        final String shutdown = core.substring(methodStart, methodEnd);
+        final boolean[] accepting = {true};
+        final boolean[] authorityLive = {true};
+        final List<String> effects = new ArrayList<>();
+        final List<OrderedStep> steps = List.of(
+                new OrderedStep(shutdown.indexOf("respecService.prepareShutdown"), () -> {
+                    accepting[0] = false;
+                    effects.add("admission-closed");
+                }),
+                new OrderedStep(shutdown.indexOf("shutdownStep(\"crateManager\""), () -> {
+                    check(!accepting[0] && authorityLive[0],
+                            "accepted crate rollback must drain after admission closes but before teardown");
+                    effects.add("crate-rollback");
+                }),
+                new OrderedStep(shutdown.indexOf("storeCoordinator.saveForShutdown"), () -> {
+                    check(authorityLive[0],
+                            "currency flush must see the live Profile authority");
+                    effects.add("currency-flush");
+                }),
+                new OrderedStep(shutdown.indexOf("profileSessionBridge.prepareDisable"), () -> {
+                    check(effects.containsAll(List.of("crate-rollback", "currency-flush")),
+                            "Profile drain started before accepted consumer writes completed");
+                    effects.add("profile-drain");
+                }),
+                new OrderedStep(shutdown.indexOf("playerProfileAuthority.uninstall"), () -> {
+                    check(effects.contains("profile-drain"),
+                            "authority uninstall started before Profile drain");
+                    authorityLive[0] = false;
+                    effects.add("authority-uninstalled");
+                }));
+        check(steps.stream().allMatch(step -> step.sourceIndex() >= 0),
+                "shutdown dependency step missing from the production sequence");
+        steps.stream().sorted(Comparator.comparingInt(OrderedStep::sourceIndex))
+                .forEach(step -> step.action().run());
+        check(effects.equals(List.of("admission-closed", "crate-rollback", "currency-flush",
+                        "profile-drain", "authority-uninstalled")),
+                "production shutdown order does not preserve the consumer dependency chain");
+    }
+
+    private record OrderedStep(int sourceIndex, Runnable action) { }
 
     private static void httpAuthPrecedesLookupInSource() throws Exception {
         final String http = Files.readString(Path.of(

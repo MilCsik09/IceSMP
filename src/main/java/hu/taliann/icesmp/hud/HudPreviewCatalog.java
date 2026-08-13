@@ -30,7 +30,7 @@ public final class HudPreviewCatalog {
             entry("monk", "Szerzetes", "Széljáró", "Csi", "flow", "combo_chain"),
             entry("paladin", "Paladin", "Védelem", "Szent Erő", "conviction", "shield_charge"),
             entry("demon_hunter", "Démonvadász", "Pusztítás", "Fájdalom", "load", "pain"),
-            entry("druid", "Druida", "Vad", "Asztrális Erő", "harmony", "combo"),
+            entry("druid", "Druida", "Vad", "Természeti Erő", "harmony", "combo"),
             entry("priest", "Pap", "Fegyelem", "Hit", "litany", "shield_web"),
             entry("death_knight", "Halállovag", "Fagyhozó", "Runikus Erő", "rune_wheel", "frost_marks"),
             entry("assassin", "Orgyilkos", "Méregkeverő", "Energia", "opening", "toxin"),

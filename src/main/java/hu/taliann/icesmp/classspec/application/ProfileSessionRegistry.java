@@ -18,6 +18,7 @@ public final class ProfileSessionRegistry {
     public void markClosing(UUID playerId,UUID token){replace(playerId,token,State.CLOSING,"");}
     public boolean close(UUID playerId,UUID token){return sessions.computeIfPresent(playerId,(id,current)->current.token().equals(token)?null:current)==null&&!sessions.containsKey(playerId);}
     public boolean isCurrent(UUID playerId,UUID token){Session current=sessions.get(playerId);return accepting.get()&&current!=null&&current.token().equals(token)&&current.state()!=State.CLOSING;}
+    public boolean runIfCurrent(UUID playerId,UUID token,Runnable action){Objects.requireNonNull(playerId);Objects.requireNonNull(token);Objects.requireNonNull(action);AtomicBoolean ran=new AtomicBoolean();sessions.computeIfPresent(playerId,(id,current)->{if(!accepting.get()||!current.token().equals(token)||current.state()==State.CLOSING)return current;action.run();ran.set(true);return current;});return ran.get();}
     public boolean isReady(UUID playerId){Session current=sessions.get(playerId);return accepting.get()&&current!=null&&current.state()==State.READY;}
     public Optional<UUID> currentToken(UUID playerId){Session current=sessions.get(playerId);return current==null?Optional.empty():Optional.of(current.token());}
     public Optional<Session> session(UUID playerId){return Optional.ofNullable(sessions.get(playerId));}

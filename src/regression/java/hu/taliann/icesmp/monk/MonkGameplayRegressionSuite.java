@@ -160,13 +160,28 @@ public final class MonkGameplayRegressionSuite {
         check(service.contains("player.setHealth(Math.max(1.0D,")
                         && !service.contains("player.damage("),
                 "the Stagger drain steps health directly — never a duplicated damage event");
-        check(service.contains("applyStaggerConsequence(event.getPlayer().getUniqueId());")
-                        && service.contains("applyStaggerConsequence(playerId);"),
+        check(service.contains("applyStaggerConsequence(event.getPlayer());")
+                        && service.contains("applyStaggerConsequence(player);"),
                 "logout/kick/spec-switch applies the remaining pool — no consequence-free escape");
         check(service.contains("link.scheduler().run(plugin,"),
                 "Ködszál ripple heals always run on the linked ally's scheduler");
+        check(service.contains("TargetRegistry") && service.contains("mistLinks")
+                        && service.contains("clearLinkTarget(playerId)"),
+                "linked ally departure clears every monk-side link");
+        check(service.contains("record LinkTarget(UUID id, EntityScheduler scheduler")
+                        && !service.contains("record LinkTarget(UUID id, Player"),
+                "link handles do not retain strong Player references");
         check(!service.contains("getNearbyEntities") && !service.contains("runAtFixedRate"),
                 "no proximity scans or repeating tasks in the monk runtime");
+
+        final String adapter = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java"));
+        check(adapter.contains("clearUuidOnly(id, kind, false)")
+                        && adapter.contains("monk.clearSpecializationStateOffline(playerId)")
+                        && adapter.contains("sessions.runIfCurrent(id, token")
+                        && adapter.contains("selectWhile(id, \"\", () -> current(id, token))")
+                        && adapter.contains("if (Bukkit.getPlayer(id) != null)"),
+                "offline reconciliation is generation-fenced and cannot touch player health");
     }
 
     /**

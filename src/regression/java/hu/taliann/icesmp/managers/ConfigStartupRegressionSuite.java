@@ -229,7 +229,7 @@ public final class ConfigStartupRegressionSuite {
     }
 
     private static void verifiesConfigMenuCatalog() {
-        check(ConfigMenuRootGUI.categoryCapacity() >= ConfigMenuGUI.CATEGORIES.size() + 1,
+        check(ConfigMenuRootGUI.categoryCapacity() >= ConfigMenuGUI.CATEGORIES.size() + 5,
                 "config root menu capacity is smaller than the current category catalog");
         check(ConfigMenuGUI.CATEGORIES.size() >= 25,
                 "expanded admin config catalog lost categories");

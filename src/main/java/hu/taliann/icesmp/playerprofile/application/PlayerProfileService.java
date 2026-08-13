@@ -24,15 +24,18 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -44,7 +47,8 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     private final PlayerProfileQueryService queries;
     private final Clock clock;
     private final List<PlayerProfileListener> listeners = new CopyOnWriteArrayList<>();
-    private final ConcurrentMap<UUID, AtomicLong> generationCounters = new ConcurrentHashMap<>();
+    // A process-wide monotonic token avoids both stale-session reuse and per-UUID retention.
+    private final AtomicLong nextGeneration = new AtomicLong();
     private final ConcurrentMap<UUID, Long> currentGenerations = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> sessionTails = new ConcurrentHashMap<>();
     private final AtomicBoolean accepting = new AtomicBoolean(true);
@@ -90,9 +94,7 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             if (!accepting.get()) return CompletableFuture.failedFuture(
                     new IllegalStateException("PlayerProfile lifecycle stopped"));
             final long durableGeneration = snapshot.lifecycle().value().sessionGeneration();
-            final AtomicLong counter = generationCounters.computeIfAbsent(playerId,
-                    ignored -> new AtomicLong(durableGeneration));
-            final long generation = counter.updateAndGet(current ->
+            final long generation = nextGeneration.updateAndGet(current ->
                     Math.addExact(Math.max(current, durableGeneration), 1L));
             currentGenerations.put(playerId, generation);
             final Instant now = clock.instant();
@@ -159,6 +161,11 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
 
     public boolean isCurrentSession(final UUID playerId, final long generation) {
         return Objects.equals(currentGenerations.get(playerId), generation);
+    }
+
+    public OptionalLong currentSessionGeneration(final UUID playerId) {
+        final Long generation = currentGenerations.get(Objects.requireNonNull(playerId, "playerId"));
+        return generation == null ? OptionalLong.empty() : OptionalLong.of(generation);
     }
 
     public CompletionStage<PlayerProfileSnapshot> load(final UUID id) { return repository.loadSnapshot(id); }
@@ -262,9 +269,24 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
 
     public <T> CompletionStage<T> transact(final UUID id,
                                             final PlayerProfileTransactionManager.ProfileTransactionWork<T> work) {
-        return transactions.execute(id, work).thenApply(result -> {
-            repository.cached(id).ifPresent(profile -> notifyChanged(id, profile.profileRevision(),
-                    profile.sectionMap().keySet()));
+        final AtomicReference<PlayerProfileSnapshot> before = new AtomicReference<>();
+        final AtomicReference<Set<ProfileSectionId>> candidates =
+                new AtomicReference<>(Set.of());
+        return transactions.execute(id, snapshot -> {
+            before.set(snapshot);
+            final PlayerProfileTransactionManager.TransactionPlan<T> plan =
+                    work.prepare(snapshot);
+            final java.util.EnumSet<ProfileSectionId> sections =
+                    java.util.EnumSet.of(ProfileSectionId.OPERATIONS);
+            plan.updates().forEach(update -> sections.add(update.section()));
+            candidates.set(Set.copyOf(sections));
+            return plan;
+        }).thenApply(result -> {
+            repository.cached(id).ifPresent(profile -> {
+                final Set<ProfileSectionId> changed = changedSections(
+                        before.get(), profile, candidates.get());
+                if (!changed.isEmpty()) notifyChanged(id, profile.profileRevision(), changed);
+            });
             return result;
         });
     }
@@ -273,9 +295,42 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     public void invalidate(final UUID id) { repository.invalidate(id); }
 
     public CompletionStage<PlayerProfileRepository.ShutdownResult> shutdown(final Duration timeout) {
+        Objects.requireNonNull(timeout, "timeout");
+        if (timeout.isNegative()) throw new IllegalArgumentException("negative shutdown timeout");
         accepting.set(false);
+        final long budgetNanos = Math.max(1L, timeout.toNanos());
+        final long startedAt = System.nanoTime();
         final CompletableFuture<?>[] sessions = sessionTails.values().toArray(CompletableFuture[]::new);
-        return CompletableFuture.allOf(sessions).thenCompose(ignored -> repository.shutdown(timeout));
+        final CompletableFuture<Boolean> sessionDrain = CompletableFuture.allOf(sessions)
+                .handle((ignored, failure) -> failure == null)
+                .completeOnTimeout(false, budgetNanos, TimeUnit.NANOSECONDS);
+        return sessionDrain.thenCompose(sessionsDrained -> {
+            final long remaining = remainingNanos(startedAt, budgetNanos);
+            final int pendingSessions = (int) java.util.Arrays.stream(sessions)
+                    .filter(session -> !session.isDone()).count();
+            final PlayerProfileRepository.ShutdownResult timeoutResult =
+                    new PlayerProfileRepository.ShutdownResult(false, pendingSessions,
+                            "repository shutdown deadline exceeded");
+            return repository.shutdown(Duration.ofNanos(Math.max(1L, remaining)))
+                    .handle((result, failure) -> failure == null ? result
+                            : new PlayerProfileRepository.ShutdownResult(false, pendingSessions,
+                            "repository shutdown failed: " + failure.getClass().getSimpleName()))
+                    .toCompletableFuture()
+                    .completeOnTimeout(timeoutResult, Math.max(1L, remaining), TimeUnit.NANOSECONDS)
+                    .thenApply(repositoryResult -> {
+                        if (sessionsDrained && repositoryResult.drained()) return repositoryResult;
+                        final int pending = Math.max(pendingSessions,
+                                repositoryResult.pendingOperations());
+                        final String detail = !sessionsDrained
+                                ? "session drain deadline exceeded; " + repositoryResult.detail()
+                                : repositoryResult.detail();
+                        return new PlayerProfileRepository.ShutdownResult(false, pending, detail);
+                    });
+        });
+    }
+
+    private static long remainingNanos(final long startedAt, final long budgetNanos) {
+        return Math.max(0L, budgetNanos - Math.max(0L, System.nanoTime() - startedAt));
     }
 
     private <T> CompletionStage<T> enqueue(final UUID playerId,
@@ -306,6 +361,19 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             try { listener.changed(id, revision, Set.copyOf(changed)); }
             catch (RuntimeException ignored) { }
         }
+    }
+
+    private static Set<ProfileSectionId> changedSections(final PlayerProfileSnapshot before,
+                                                         final PlayerProfileSnapshot after,
+                                                         final Set<ProfileSectionId> candidates) {
+        if (before == null) return Set.of();
+        final java.util.EnumSet<ProfileSectionId> changed =
+                java.util.EnumSet.noneOf(ProfileSectionId.class);
+        for (final ProfileSectionId section : candidates) {
+            if (before.section(section).orElseThrow().revision()
+                    != after.section(section).orElseThrow().revision()) changed.add(section);
+        }
+        return Set.copyOf(changed);
     }
 
     private static boolean isStale(final Throwable failure) {

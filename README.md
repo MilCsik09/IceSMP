@@ -54,7 +54,9 @@ olvasható.
 
 ## Build és ellenőrzés
 
-Követelmény: Java 21 és elérhető Gradle-dependency repositoryk.
+Követelmény: Java 21, Python 3 + Pillow (`python3 -m pip install Pillow`)
+és elérhető Gradle-dependency repositoryk. A Pillow a HUD-assetek build alatti
+generálásához és auditjához kell.
 
 ```bash
 ./gradlew clean build --no-daemon --stacktrace

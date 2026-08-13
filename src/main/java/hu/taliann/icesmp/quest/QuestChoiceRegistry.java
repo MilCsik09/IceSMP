@@ -26,18 +26,22 @@ public final class QuestChoiceRegistry {
     private final SecureRandom random = new SecureRandom();
     private final Map<String, Choice> pending = new ConcurrentHashMap<>();
 
-    public String issue(final UUID playerId, final String questId,
-                        final QuestSourceContext source, final long nowMillis) {
+    public synchronized String issue(final UUID playerId, final String questId,
+                                     final QuestSourceContext source, final long nowMillis) {
         Objects.requireNonNull(playerId, "playerId");
         Objects.requireNonNull(questId, "questId");
         Objects.requireNonNull(source, "source");
+        pending.entrySet().removeIf(entry -> entry.getValue().expiresAtMillis() <= nowMillis);
         if (pending.size() >= MAX_PENDING) {
-            pending.entrySet().removeIf(entry -> entry.getValue().expiresAtMillis() <= nowMillis);
+            throw new IllegalStateException("Quest choice registry is full");
         }
-        final String token = Long.toHexString(random.nextLong()) + Long.toHexString(random.nextLong());
-        pending.put(token, new Choice(playerId, questId, source,
-                nowMillis + DEFAULT_TTL_MILLIS));
-        return token;
+        final Choice choice = new Choice(playerId, questId, source,
+                nowMillis + DEFAULT_TTL_MILLIS);
+        while (true) {
+            final String token = Long.toHexString(random.nextLong())
+                    + Long.toHexString(random.nextLong());
+            if (pending.putIfAbsent(token, choice) == null) return token;
+        }
     }
 
     /**

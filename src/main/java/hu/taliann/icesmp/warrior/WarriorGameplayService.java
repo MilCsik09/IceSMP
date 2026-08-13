@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.warrior;
 
+import hu.taliann.icesmp.classspec.application.TargetRegistry;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
 import hu.taliann.icesmp.data.JobType;
@@ -81,7 +82,7 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
 
     private volatile ResourceManager combatTracker;
     private final Map<UUID, OathTarget> oathTargets = new ConcurrentHashMap<>();
-    private final Map<UUID, Set<UUID>> guardiansByTarget = new ConcurrentHashMap<>();
+    private final TargetRegistry oathLinks = new TargetRegistry();
     private final Set<UUID> defiantPending = ConcurrentHashMap.newKeySet();
 
     public WarriorGameplayService(final JavaPlugin plugin,
@@ -317,13 +318,10 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
         final WarriorCombatState state = states.remove(playerId);
         if (state != null) state.clearAll();
         defiantPending.remove(playerId);
-        final Set<UUID> guardians = guardiansByTarget.remove(playerId);
-        if (guardians != null) {
-            for (final UUID guardian : guardians) {
-                final WarriorCombatState guardianState = states.get(guardian);
-                if (guardianState != null) guardianState.clearOathTarget();
-                oathTargets.remove(guardian);
-            }
+        for (final UUID guardian : oathLinks.unlinkTarget(playerId)) {
+            final WarriorCombatState guardianState = states.get(guardian);
+            if (guardianState != null) guardianState.clearOathTarget();
+            oathTargets.remove(guardian);
         }
     }
 
@@ -331,7 +329,7 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
         for (final UUID id : List.copyOf(states.keySet())) clearPlayerState(id);
         states.clear();
         oathTargets.clear();
-        guardiansByTarget.clear();
+        oathLinks.clear();
         defiantPending.clear();
     }
 
@@ -403,9 +401,9 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
                 victimState.addGuard(gain);
             }
         }
-        final Set<UUID> oathGuardians = guardiansByTarget.get(event.getEntity().getUniqueId());
-        if (oathGuardians != null) {
-            for (final UUID guardianId : List.copyOf(oathGuardians)) {
+        final Set<UUID> oathGuardians = oathLinks.ownersOf(event.getEntity().getUniqueId());
+        if (!oathGuardians.isEmpty()) {
+            for (final UUID guardianId : oathGuardians) {
                 if (!"guardian".equals(activeSpec(guardianId))) continue;
                 final int gain = Math.max(1, (int) Math.ceil(event.getFinalDamage()
                         * config.getDouble("classes.warrior.guardian.guard.oath-damage-gain-per-damage", 1.2D)));
@@ -799,26 +797,20 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
         clearOath(guardianId);
         final OathTarget handle = new OathTarget(target.getUniqueId(), target, target.getScheduler(), label);
         oathTargets.put(guardianId, handle);
-        guardiansByTarget.computeIfAbsent(handle.id(), ignored -> ConcurrentHashMap.newKeySet()).add(guardianId);
+        oathLinks.link(guardianId, handle.id());
         state(guardianId).setOathTarget(handle.id(), label);
     }
 
     private void clearOath(final UUID guardianId) {
         final OathTarget old = oathTargets.remove(guardianId);
-        if (old != null) {
-            guardiansByTarget.computeIfPresent(old.id(), (ignored, guardians) -> {
-                guardians.remove(guardianId);
-                return guardians.isEmpty() ? null : guardians;
-            });
-        }
+        if (old != null) oathLinks.unlink(guardianId, old.id());
+        else oathLinks.unlinkOwner(guardianId);
         final WarriorCombatState state = states.get(guardianId);
         if (state != null) state.clearOathTarget();
     }
 
     private void clearOathTarget(final UUID targetId) {
-        final Set<UUID> guardians = guardiansByTarget.remove(targetId);
-        if (guardians == null) return;
-        for (final UUID guardian : List.copyOf(guardians)) {
+        for (final UUID guardian : oathLinks.unlinkTarget(targetId)) {
             oathTargets.remove(guardian);
             final WarriorCombatState state = states.get(guardian);
             if (state != null) state.clearOathTarget();

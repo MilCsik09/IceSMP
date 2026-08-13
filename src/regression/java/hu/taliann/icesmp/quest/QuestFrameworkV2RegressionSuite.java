@@ -360,6 +360,20 @@ public final class QuestFrameworkV2RegressionSuite {
         registry.invalidate(PLAYER);
         check(registry.consume(PLAYER, invalidated, 2_000_100L).isEmpty(),
                 "player-state cleanup invalidates pending tokens");
+
+        final QuestChoiceRegistry bounded = new QuestChoiceRegistry();
+        for (int index = 0; index < 1024; index++) {
+            bounded.issue(PLAYER, "live-" + index, source, 3_000_000L);
+        }
+        boolean fullRejected = false;
+        try {
+            bounded.issue(PLAYER, "overflow", source, 3_000_000L);
+        } catch (final IllegalStateException expected) {
+            fullRejected = true;
+        }
+        check(fullRejected, "a full live-token registry rejects overflow atomically");
+        check(!bounded.issue(PLAYER, "after-expiry", source, 3_061_000L).isBlank(),
+                "issue purges expired tokens before applying the capacity gate");
     }
 
     // ---------- szótárak és paletta ----------
@@ -580,6 +594,9 @@ public final class QuestFrameworkV2RegressionSuite {
         check(command.split("private void handleTalk")[1]
                         .substring(0, 400).contains("ADMIN_PERMISSION"),
                 "/quest talk is admin-gated (NPC spoof closed)");
+        check(command.contains("List.of(\"log\", \"list\", \"info\", \"track\", \"abandon\", \"choose\")")
+                        && command.contains("if (\"choose\".equals(subcommand)) return List.of();"),
+                "/quest choose is discoverable without leaking single-use tokens");
 
         final String bridge = java.nio.file.Files.readString(java.nio.file.Path.of(
                 "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"));

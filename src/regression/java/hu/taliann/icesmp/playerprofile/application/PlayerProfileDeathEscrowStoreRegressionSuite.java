@@ -10,10 +10,14 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 
-/** Death escrow deposit accumulation, exact-once claim and restart durability regressions. */
+/** Restart-safe death escrow deposit, delivery and settlement regressions. */
 public final class PlayerProfileDeathEscrowStoreRegressionSuite {
     private static int assertions;
     private PlayerProfileDeathEscrowStoreRegressionSuite() { }
@@ -31,54 +35,123 @@ public final class PlayerProfileDeathEscrowStoreRegressionSuite {
             repository.loadSnapshot(player).toCompletableFuture().join();
             final PlayerProfileDeathEscrowStore store = new PlayerProfileDeathEscrowStore();
 
-            check(store.claim(player).toCompletableFuture().join().isEmpty(),
+            check(store.pending(player).toCompletableFuture().join().isEmpty(),
                     "greenfield escrow is empty");
-            check(store.deposit(player, List.of("cGF5bG9hZC1B"), 1_000L)
-                    .toCompletableFuture().join() == 1, "first deposit stored");
-            check(store.deposit(player, List.of("cGF5bG9hZC1C"), 2_000L)
-                    .toCompletableFuture().join() == 2, "second deposit accumulates");
+            final var deposited = store.deposit(player, "death:1000", List.of("item-A"), 1_000L)
+                    .toCompletableFuture().join();
+            check(deposited.applied() && deposited.pendingItems() == 1,
+                    "death deposit is durable before drop removal");
+            check(!store.deposit(player, "death:1000", List.of("item-A"), 1_000L)
+                    .toCompletableFuture().join().applied(), "deposit replay is idempotent");
+            expect(IllegalStateException.class, () -> store.deposit(
+                    player, "death:1000", List.of("different"), 1_000L)
+                    .toCompletableFuture().join());
 
             repository.invalidate(player);
             repository.loadSnapshot(player).toCompletableFuture().join();
-            final LifecycleSection durable = (LifecycleSection) repository.cached(player)
-                    .orElseThrow().section(ProfileSectionId.LIFECYCLE).orElseThrow().value();
-            check(PlayerProfileDeathEscrowStore.readItems(durable)
-                    .equals(List.of("cGF5bG9hZC1B", "cGF5bG9hZC1C")),
-                    "escrow payloads restart durable and ordered");
+            final PlayerProfileDeathEscrowStore.Batch afterDeath = store.pending(player)
+                    .toCompletableFuture().join().getFirst();
+            check(afterDeath.encodedItems().equals(List.of("item-A")),
+                    "escrow survives the death-to-respawn restart");
 
-            final List<String> claimed = store.claim(player).toCompletableFuture().join();
-            check(claimed.equals(List.of("cGF5bG9hZC1B", "cGF5bG9hZC1C")), "claim returns all payloads");
-            check(store.claim(player).toCompletableFuture().join().isEmpty(),
-                    "second claim is empty (exact-once)");
+            final Set<String> simulatedInventory = new HashSet<>();
+            final List<DeathEscrowDeliveryPlan.Item> firstDelivery =
+                    DeathEscrowDeliveryPlan.missing(afterDeath, simulatedInventory);
+            check(firstDelivery.size() == 1, "first join plans one physical relic delivery");
+            simulatedInventory.add(firstDelivery.getFirst().deliveryId());
 
             repository.invalidate(player);
             repository.loadSnapshot(player).toCompletableFuture().join();
-            final LifecycleSection cleared = (LifecycleSection) repository.cached(player)
-                    .orElseThrow().section(ProfileSectionId.LIFECYCLE).orElseThrow().value();
-            check(PlayerProfileDeathEscrowStore.readItems(cleared).isEmpty(),
-                    "claim clears the escrow durably");
+            final PlayerProfileDeathEscrowStore.Batch recovery = store.pending(player)
+                    .toCompletableFuture().join().getFirst();
+            check(DeathEscrowDeliveryPlan.missing(recovery, simulatedInventory).isEmpty(),
+                    "restart after inventory write detects the delivery marker");
+            check(store.settle(player, recovery.receiptId(), 2_000L)
+                            .toCompletableFuture().join()
+                            == PlayerProfileDeathEscrowStore.SettleStatus.SETTLED,
+                    "join recovery settles the durable receipt");
+            check(store.settle(player, recovery.receiptId(), 2_001L)
+                            .toCompletableFuture().join()
+                            == PlayerProfileDeathEscrowStore.SettleStatus.ALREADY_SETTLED,
+                    "settlement replay cannot deliver twice");
+            check(store.pending(player).toCompletableFuture().join().isEmpty()
+                            && simulatedInventory.size() == 1,
+                    "death, restart and join leave exactly one kept relic");
+
+            authority.mutateSection(player, ProfileSectionId.LIFECYCLE,
+                    LifecycleSection.class, current -> {
+                        final var extensions = new LinkedHashMap<>(current.extensions());
+                        extensions.put("death-escrow.items", List.of("legacy-item"));
+                        extensions.put("death-escrow.created-at", 2_500L);
+                        return new LifecycleSection(current.status(), current.profileCreatedAt(),
+                                current.updatedAt(), current.lastJoinAt(), current.lastQuitAt(),
+                                current.sessionGeneration(), extensions);
+                    }).toCompletableFuture().join();
+            final var legacy = store.pending(player).toCompletableFuture().join().getFirst();
+            check(legacy.receiptId().equals("legacy-2500")
+                            && legacy.encodedItems().equals(List.of("legacy-item")),
+                    "legacy escrow keys remain readable");
+            check(store.settle(player, legacy.receiptId(), 2_600L)
+                            .toCompletableFuture().join()
+                            == PlayerProfileDeathEscrowStore.SettleStatus.SETTLED,
+                    "legacy escrow migrates through normal settlement");
 
             final List<String> flood = new ArrayList<>();
-            for (int index = 0; index < 33; index++) {
-                flood.add("cGF5bG9hZA" + index);
-            }
-            expect(IllegalStateException.class,
-                    () -> store.deposit(player, flood, 3_000L).toCompletableFuture().join());
-            expect(IllegalArgumentException.class,
-                    () -> store.deposit(player, List.of(), 3_000L));
-            expect(IllegalArgumentException.class,
-                    () -> store.deposit(player, List.of(" "), 3_000L));
+            for (int index = 0; index < 33; index++) flood.add("item-" + index);
+            expect(IllegalStateException.class, () -> store.deposit(
+                    player, "death:flood", flood, 3_000L).toCompletableFuture().join());
+
+            final LifecycleSection lifecycle = repository.cached(player).orElseThrow()
+                    .lifecycle().value();
+            check(PlayerProfileDeathEscrowStore.readBatches(lifecycle).isEmpty(),
+                    "settled escrow has no pending payload");
+            final UUID sessionPlayer = UUID.fromString(
+                    "00000000-0000-0000-0000-000000005045");
+            final long oldSession = service.join(sessionPlayer, "EscrowSession")
+                    .toCompletableFuture().join().sessionGeneration();
+            check(store.depositForSession(sessionPlayer, oldSession, "death:session",
+                            List.of("session-item"), 4_000L).toCompletableFuture().join().applied(),
+                    "current session may create a death escrow");
+            service.quit(sessionPlayer, oldSession).toCompletableFuture().join();
+            final long newSession = service.join(sessionPlayer, "EscrowSession")
+                    .toCompletableFuture().join().sessionGeneration();
+            check(newSession > oldSession, "rejoin receives a distinct monotonic session token");
+            expect(IllegalStateException.class, () -> store.depositForSession(
+                    sessionPlayer, oldSession, "death:stale", List.of("stale-item"), 4_100L)
+                    .toCompletableFuture().join());
+            check(store.pending(sessionPlayer).toCompletableFuture().join().size() == 1,
+                    "stale death completion cannot mutate the new session escrow");
+
+            final String listener = Files.readString(Path.of(
+                    "src/main/java/hu/taliann/icesmp/listeners/RelicPvpTransferListener.java"));
+            final int lethal = listener.indexOf("public void onLethalDamage");
+            final int barrier = listener.indexOf("event.setCancelled(true);", lethal);
+            final int durableWrite = listener.indexOf("escrowStore.depositForSession", lethal);
+            final int replayDeath = listener.indexOf("replayFatalDamage(victim, damageSource)", lethal);
+            check(lethal > 0 && barrier > lethal && durableWrite > barrier && replayDeath > durableWrite,
+                    "fatal damage must cross the durable write barrier before death is replayed");
+            final int deathHandler = listener.indexOf("public void onPlayerDeath");
+            final int durableRemoval = listener.indexOf("removeDurablyEscrowedDrops", deathHandler);
+            check(durableRemoval > deathHandler
+                            && listener.contains("event.getDrops().removeIf(drop -> hasDeliveryMarker")
+                            && !listener.contains("event.getItemsToKeep().add(drop)"),
+                    "drop removal must only consume a previously committed escrow marker");
+            check(listener.contains("a normál dropút folytatódik")
+                            && listener.contains("clearDeliveryMarkersNow(victim, receiptId)"),
+                    "durable write failure must leave the normal death-drop path authoritative");
             check(service.shutdown(Duration.ofSeconds(5)).toCompletableFuture().join().drained(),
                     "repository drained");
         } finally {
             authority.uninstall();
             try (var paths = Files.walk(root)) {
                 paths.sorted(Comparator.reverseOrder()).forEach(path -> {
-                    try { Files.deleteIfExists(path); } catch (final Exception ignored) { }
+                    try { Files.deleteIfExists(path); }
+                    catch (final Exception ignored) { }
                 });
             }
         }
-        System.out.println("PlayerProfile death escrow regression suite passed. assertions=" + assertions);
+        System.out.println("PlayerProfile death escrow regression suite passed. assertions="
+                + assertions);
     }
 
     private static void check(final boolean condition, final String message) {
@@ -86,22 +159,24 @@ public final class PlayerProfileDeathEscrowStoreRegressionSuite {
         if (!condition) throw new AssertionError(message);
     }
 
-    private static void expect(final Class<? extends Throwable> expected, final Throwing action) {
+    private static void expect(final Class<? extends Throwable> expected,
+                               final Throwing action) {
         assertions++;
         try {
             action.run();
             throw new AssertionError("Expected " + expected.getSimpleName());
         } catch (final Throwable failure) {
-            if (!expected.isInstance(failure)) {
-                if (failure instanceof RuntimeException runtime && runtime.getCause() != null
-                        && expected.isInstance(runtime.getCause())) {
-                    return;
-                }
+            Throwable cause = failure;
+            while (cause instanceof CompletionException && cause.getCause() != null) {
+                cause = cause.getCause();
+            }
+            if (!expected.isInstance(cause)) {
                 throw new AssertionError("Expected " + expected.getSimpleName()
                         + " but got " + failure, failure);
             }
         }
     }
 
-    @FunctionalInterface private interface Throwing { void run() throws Exception; }
+    @FunctionalInterface
+    private interface Throwing { void run() throws Exception; }
 }

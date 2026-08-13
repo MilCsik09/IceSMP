@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.hud;
 
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ public final class HudEditorRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         permissionAndProductionGateAreFailClosed();
+        editorCopyLivesInTheMessageLayer();
         sessionsAndPreviewsArePlayerIsolated();
         resetUndoApplyAndCancelAreExact();
         invalidConfigFallsBackFieldByField();
@@ -45,6 +47,47 @@ public final class HudEditorRegressionSuite {
         check(permissions.contains("HUD_EDITOR = \"icesmp.admin.hud-editor\"")
                         && permissions.contains("canonical.put(HUD_EDITOR"),
                 "the editor permission must use the registered canonical scheme");
+        final String menus = read("src/main/java/hu/taliann/icesmp/gui/CommandMenus.java");
+        check(menus.contains("player.hasPermission(Permissions.HUD_EDITOR)")
+                        && menus.contains("\"OPEN:hud edit\""),
+                "the admin command menu exposes the HUD editor on its canonical permission");
+        final String messageManager = read(
+                "src/main/java/hu/taliann/icesmp/utils/MessageManager.java");
+        check(messageManager.contains("\"hud\"")
+                        && java.nio.file.Files.isRegularFile(java.nio.file.Path.of(
+                                "src/main/resources/messages/hud.yml")),
+                "HUD messages are a bundled message group");
+    }
+
+    private static void editorCopyLivesInTheMessageLayer() throws Exception {
+        final YamlConfiguration messages = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/messages/hud.yml").toFile());
+        for (final HudComponent component : HudComponent.editorTargets()) {
+            check(!messages.getString("messages.hud-component-" + component.id(), "").isBlank(),
+                    "HUD component label is missing from messages/hud.yml: " + component.id());
+        }
+        for (final String key : List.of(
+                "hud-editor-player-only", "hud-editor-no-permission", "hud-editor-config-disabled",
+                "hud-editor-cancelled", "hud-editor-no-session", "hud-editor-save-stale",
+                "hud-editor-save-success", "hud-editor-error-unknown-action",
+                "hud-editor-error-usage-move", "hud-editor-error-direction",
+                "hud-editor-error-margin-global", "hud-editor-error-usage-margin",
+                "hud-editor-error-usage-step", "hud-editor-error-step",
+                "hud-editor-error-usage-scale", "hud-editor-error-scale-mode",
+                "hud-editor-error-scale-direction", "hud-editor-error-missing-component",
+                "hud-editor-error-unknown-component", "hud-editor-error-global-visibility",
+                "hud-editor-error-missing-preset", "hud-editor-error-unknown-preset",
+                "hud-editor-error-usage-preview", "hud-editor-error-preview-axis",
+                "hud-editor-error-preview-value", "hud-editor-error-invalid-change",
+                "hud-editor-values-global", "hud-editor-values-component", "hud-editor-panel",
+                "hud-editor-preview", "hud-editor-pack-required")) {
+            check(!messages.getString("messages." + key, "").isBlank(),
+                    "HUD editor copy is missing from messages/hud.yml: " + key);
+        }
+        final String command = read("src/main/java/hu/taliann/icesmp/commands/HudCommand.java");
+        check(!command.contains("Component.text(\"")
+                        && !command.contains("new IllegalArgumentException(\""),
+                "HUD command reintroduced player-visible inline copy");
     }
 
     private static void sessionsAndPreviewsArePlayerIsolated() {
@@ -203,6 +246,7 @@ public final class HudEditorRegressionSuite {
         final String scales = "0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80";
         check(shader.contains("HUD_LAYOUT_SCALES[8]") && shader.contains(scales)
                         && generator.contains("HUD_LAYOUT_SCALES = (" + scales + ")")
+                        && generator.contains("python3 -m pip install Pillow")
                         && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"layout_color_payload_bits\": 12"),
                 "runtime, build generator and manifest must share the limited scale variants");

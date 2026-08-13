@@ -2,6 +2,7 @@ package hu.taliann.icesmp.playerprofile.persistence;
 
 import hu.taliann.icesmp.playerprofile.domain.*;
 import hu.taliann.icesmp.playerprofile.domain.section.*;
+import java.lang.reflect.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.*;
@@ -23,6 +24,7 @@ public final class PlayerProfileYamlRegressionSuite {
         manifestDeclaredMissingSectionFailsClosed();
         invalidUtf8OversizeOwnerAndTempRecovery();
         strictStructuredCodecPolicies();
+        concurrentJvmLockIdentityRemainsStable();
         System.out.println("PlayerProfile YAML regression suite passed. assertions=" + assertions);
     }
 
@@ -276,6 +278,50 @@ public final class PlayerProfileYamlRegressionSuite {
         invalidType.put("data", badData);
         expect(IllegalArgumentException.class, () -> StructuredPlayerProfileYaml.decodeSection(
                 ProfileSectionId.PREFERENCES, invalidType));
+    }
+
+    private static void concurrentJvmLockIdentityRemainsStable() throws Exception {
+        Path root = Files.createTempDirectory("pp-yaml-lock-race-");
+        YamlPlayerProfileRepository first = repository(root);
+        YamlPlayerProfileRepository second = repository(root);
+        ExecutorService callers = Executors.newFixedThreadPool(8);
+        UUID player = UUID.fromString("00000000-0000-0000-0000-000000001103");
+        Method withLock = YamlPlayerProfileRepository.class.getDeclaredMethod(
+                "withLock", UUID.class, Callable.class);
+        withLock.setAccessible(true);
+        try {
+            List<Future<?>> attempts = new ArrayList<>();
+            for (int worker = 0; worker < 8; worker++) {
+                YamlPlayerProfileRepository repository = worker % 2 == 0 ? first : second;
+                attempts.add(callers.submit(() -> {
+                    for (int iteration = 0; iteration < 500; iteration++) {
+                        invokeWithLock(withLock, repository, player);
+                    }
+                    return null;
+                }));
+            }
+            for (Future<?> attempt : attempts) attempt.get(30, TimeUnit.SECONDS);
+            check(true, "concurrent lock cycles retain a single JVM lock identity");
+        } finally {
+            callers.shutdownNow();
+            shutdown(first);
+            shutdown(second);
+        }
+    }
+
+    private static void invokeWithLock(Method withLock, YamlPlayerProfileRepository repository,
+                                       UUID player) throws Exception {
+        try {
+            withLock.invoke(repository, player, (Callable<Void>) () -> {
+                Thread.yield();
+                return null;
+            });
+        } catch (InvocationTargetException failure) {
+            Throwable cause = failure.getCause();
+            if (cause instanceof Exception exception) throw exception;
+            if (cause instanceof Error error) throw error;
+            throw new AssertionError(cause);
+        }
     }
 
     private static YamlPlayerProfileRepository repository(Path root) {

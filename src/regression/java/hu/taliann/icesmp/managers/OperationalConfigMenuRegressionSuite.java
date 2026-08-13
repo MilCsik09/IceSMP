@@ -1,8 +1,11 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.gui.ConfigEditSession;
 import hu.taliann.icesmp.gui.ConfigMenuGUI;
+import hu.taliann.icesmp.gui.ConfigStagedBatchValidator;
 import hu.taliann.icesmp.gui.OperationalConfigHelp;
 import hu.taliann.icesmp.gui.OperationalConfigMenuGUI;
+import hu.taliann.icesmp.gui.OperationalConfigPolicy;
 import hu.taliann.icesmp.gui.TransactionalOperationalConfigMenuGUI;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -24,6 +27,7 @@ public final class OperationalConfigMenuRegressionSuite {
     public static void main(final String[] args) throws Exception {
         verifiesCatalogAndPackagedKeys();
         verifiesRuntimeAlignedRanges();
+        verifiesStagedBatchValidation();
         verifiesMenuWiringAndLiveApply();
         System.out.println("Operational config menu regression suite passed.");
     }
@@ -74,13 +78,56 @@ public final class OperationalConfigMenuRegressionSuite {
         return entry.min();
     }
 
+    private static void verifiesStagedBatchValidation() {
+        final String minimumKey = "currency.dynamic-exchange.min-multiplier";
+        final String maximumKey = "currency.dynamic-exchange.max-multiplier";
+        final Map<String, Object> opening = Map.of(minimumKey, 0.25D, maximumKey, 4.0D);
+        final ConfigEditSession session = new ConfigEditSession(1L, "fingerprint", opening, opening);
+        final ConfigManager configManager = new ConfigManager(null);
+
+        final Object stagedMinimum = 0.8D;
+        check(OperationalConfigPolicy.validate(minimumKey, stagedMinimum, configManager,
+                        session.candidate(minimumKey, stagedMinimum)) == null,
+                "individually valid staged minimum was rejected");
+        session.stage(minimumKey, stagedMinimum);
+
+        final Object invalidMaximum = 0.5D;
+        final String immediateProblem = OperationalConfigPolicy.validate(maximumKey, invalidMaximum,
+                configManager, session.candidate(maximumKey, invalidMaximum));
+        check(immediateProblem != null && immediateProblem.contains("alsó korlátnál"),
+                "second field was not validated against the staged minimum");
+
+        session.stage(maximumKey, invalidMaximum);
+        final String batchProblem = ConfigStagedBatchValidator.validate(session.snapshot(), configManager);
+        check(batchProblem != null && batchProblem.contains(maximumKey),
+                "invalid staged min/max batch could reach publication");
+        check(session.pendingChanges().size() == 2,
+                "failed batch validation discarded the staged transaction");
+
+        final String rhythmMinimum = "classes.shaman.maelstrom.rhythm-min-millis";
+        final String rhythmMaximum = "classes.shaman.maelstrom.rhythm-max-millis";
+        final Map<String, Object> classOpening = Map.of(rhythmMinimum, 600, rhythmMaximum, 1600);
+        final ConfigEditSession classSession = new ConfigEditSession(
+                2L, "class-fingerprint", classOpening, classOpening);
+        classSession.stage(rhythmMinimum, 1800);
+        final String classImmediateProblem = OperationalConfigPolicy.validate(
+                rhythmMaximum, 1700, configManager, classSession.candidate(rhythmMaximum, 1700));
+        check(classImmediateProblem != null && classImmediateProblem.contains("alsó korlátnál"),
+                "class-gameplay field validation ignored the staged paired bound");
+        classSession.stage(rhythmMaximum, 1700);
+        final String classBatchProblem = ConfigStagedBatchValidator.validate(
+                classSession.snapshot(), configManager);
+        check(classBatchProblem != null && classBatchProblem.contains(rhythmMinimum),
+                "invalid class-gameplay min/max batch could reach publication");
+    }
+
     private static void verifiesMenuWiringAndLiveApply() throws Exception {
         final String root = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/gui/ConfigMenuRootGUI.java"));
         check(root.contains("TransactionalOperationalConfigMenuGUI.categoryCount")
                         && root.contains("AdvancedConfigSchemaGuard.validate")
                         && root.contains("ServerWorldConfigMenuGUI.ROOT_ACTION")
                         && root.contains("CrateConfigMenuGUI.ROOT_ACTION")
-                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 4"),
+                        && root.contains("ConfigMenuGUI.CATEGORIES.size() + 5"),
                 "expanded staged config root wiring is missing");
 
         final String listener = Files.readString(Path.of(
@@ -88,6 +135,8 @@ public final class OperationalConfigMenuRegressionSuite {
         check(listener.contains("ConfigEditSession")
                         && listener.contains("TransactionalOperationalConfigMenuGUI.openCategory")
                         && listener.contains("OperationalConfigPolicy.validate")
+                        && listener.contains("ConfigStagedBatchValidator.validate")
+                        && listener.contains("session.candidate")
                         && listener.contains("session.stage")
                         && listener.contains("session.reset")
                         && listener.contains("applyOverridesIfUnchanged"),
