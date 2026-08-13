@@ -18,6 +18,8 @@ import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
+import hu.taliann.icesmp.client.protocol.QuestStatePayload;
+import hu.taliann.icesmp.client.protocol.QuestTrackPayload;
 import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
@@ -53,6 +55,7 @@ public final class ClientProtocolRegressionSuite {
         profilePayload();
         relicPayload();
         talentPayloads();
+        questPayloads();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -329,6 +332,43 @@ public final class ClientProtocolRegressionSuite {
         } catch (final IllegalArgumentException expected) {
             // fail closed a kódolás előtt — a projektor isAvailable-szűrése és
             // csonkolása tartja a listát a limiten
+        }
+    }
+
+    private static void questPayloads() throws Exception {
+        final QuestTrackPayload track = new QuestTrackPayload("fagyott_szurdok");
+        check(track.equals(QuestTrackPayload.decode(track.encode())), "QuestTrackPayload roundtrip");
+        final QuestTrackPayload untrack = new QuestTrackPayload("");
+        check(untrack.equals(QuestTrackPayload.decode(untrack.encode())), "empty track roundtrip");
+
+        final QuestStatePayload quests = new QuestStatePayload("fagyott_szurdok",
+                List.of(new QuestStatePayload.ActiveEntry("fagyott_szurdok", "A fagyott szurdok",
+                        "MAIN", "Járd be a szurdokot.", "Farkasok: 3/5", false),
+                        new QuestStatePayload.ActiveEntry("rejtvenyes", "Suttogó kövek",
+                                "SECRET", "A nyomot a leírás rejti.", "??? — a nyomot a leírás rejti", true)),
+                List.of(new QuestStatePayload.HintEntry("rejtvenyes", "Suttogó kövek", "SECRET",
+                        "A nyomot a leírás rejti.", "Add le: Vén Kövek Őre")), 1,
+                List.of(new QuestStatePayload.HintEntry("napi_vadaszat", "Napi vadászat", "DAILY",
+                        "Ejts el vadakat.", "")), 17,
+                List.of(new QuestStatePayload.HintEntry("uj_kaland", "Új kaland", "SIDE",
+                        "Indulj útnak.", "keresd fel: Kalandmester")), 90,
+                List.of(new QuestStatePayload.HintEntry("kesz_quest", "Régi dicsőség", "MAIN",
+                        "", "")), 12);
+        check(quests.equals(QuestStatePayload.decode(quests.encode())), "QuestStatePayload roundtrip");
+        // A total a csonkolt listánál nagyobb lehet — a kliens ebből jelzi a levágást.
+        check(quests.availableTotal() == 90 && quests.available().size() == 1,
+                "truncation totals preserved");
+
+        final List<QuestStatePayload.HintEntry> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new QuestStatePayload.HintEntry("q" + i, "", "", "", ""));
+        }
+        try {
+            new QuestStatePayload("", List.of(), List.of(), 0, tooMany, tooMany.size(),
+                    List.of(), 0, List.of(), 0).encode();
+            throw new AssertionError("oversized quest list accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt — a projektor fülönként cap-el
         }
     }
 

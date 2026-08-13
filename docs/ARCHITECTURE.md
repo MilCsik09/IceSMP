@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 828 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 831 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1195,7 +1195,7 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `RelicStatePayload`, `TalentStatePayload`, `TalentActionPayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `RelicStatePayload`, `TalentStatePayload`, `TalentActionPayload`, `QuestStatePayload`, `QuestTrackPayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
 | Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector` (display-only leképezések) | ClientProfileProjector: igen (élő managerekből olvas) |
 | Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute) | igen |
@@ -1225,9 +1225,10 @@ Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCO
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
 State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
 `0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
-`0x25 RELIC_STATE`, `0x28 TALENT_STATE` (0x24/0x26/0x27 a FACTION/PARTY/EVENT_STATE-nek
-fenntartva). Action-sáv (0x40–0x4F, kliens → szerver intent): `0x40 CAST_SLOT`,
-`0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`, `0x43 PURCHASE_TALENT`.
+`0x25 RELIC_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE` (0x24/0x26/0x27 a
+FACTION/PARTY/EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
+intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
+`0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`.
 Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
 `0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
 RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv később nyílik.
@@ -1342,6 +1343,25 @@ tranzakción belül validálódik, a durable commit aszinkron), UI-rate-limit m�
 gépi `ACTION_RESULT` után friss talent- és profil-state megy ki. Respec-action
 szándékosan nincs a kliens-protokollban: a respec a SpecGUI-ban él, megerősítési
 folyamata a vanilla úton is egy-kattintásos — natívvá tétele külön döntés.
+
+### Natív Quest Journal (QUEST_STATE, TRACK_QUEST)
+
+A `QUEST_STATE` a vanilla questlog öt fülének (Aktív/Kész/Megbízások/Elérhető/
+Teljesített) display-projekciója a `QUEST_JOURNAL` capability +
+`client.features.quest-journal` kapu mögött, azonos fül-besorolással és forrás-API-kkal.
+Biztonsági invariánsok: a láthatóság egyetlen forrása az isVisible-szűrt
+`getVisibleQuestIds` (HIDDEN quest sosem szivárog); a riddle-questek progressze a
+szerveroldali describeProgress „???” placeholderével utazik; reward-előnézet nincs
+(a vanilla felület sem mutat). A fülönkénti listák a 64-es protokoll-limiten
+csonkolódnak, a total-mezők a valós darabszámot viszik (a teljes lista a /quest log
+felületen mindig elérhető). A push olcsó változás-jellel megy (aktív progressz +
+fül-összetétel + követés), a katalógus-bejárós teljes payload csak változásra épül.
+
+A `TRACK_QUEST` az EGYETLEN kliensről engedett quest-mutáció: nincs forrás-kötése, a
+szerver csak aktív questre engedi (üres id = követés törlése). Accept/turn-in
+kliens-actionként TILOS — azok forrás-authorityját (NPC-kattintás, territórium-belépés,
+hitelesített esemény, item-használat) csak a valódi játék-esemény adaptere válthatja
+ki, egy kliens-csomag remote-accept bypass lenne.
 
 ### Session-életciklus és védelem
 

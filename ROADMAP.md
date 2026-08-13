@@ -268,7 +268,13 @@ fázisonként, a terv szerinti sorrendben:
   protokoll-limitet és a más-kaszt-privacy-t egyszerre tartva) +
   PURCHASE_TALENT a CAS-védett spendPoint use-case-en — mindkét oldalon.
   Respec-action szándékosan nem része a protokollnak (SpecGUI-döntés).
-- ⬜ Quest Journal és Professions natív modulok a product spec sorrendjében.
+- ✅ Natív Quest Journal: QUEST_STATE (öt fül, isVisible-szűrve — HIDDEN
+  sosem szivárog, riddle „???”-ként utazik, fülönkénti cap + total) +
+  TRACK_QUEST mint egyetlen engedett quest-mutáció; accept/turn-in
+  kliens-actionként tiltva (forrás-authority) — mindkét oldalon.
+- ⬜ Professions natív modul a product spec sorrendjében; utána a H fázis
+  hátralévő nagyjai: élő staging-teszt (CLIENT-02..12), relic
+  attachment-broadcast, Phase 7-8 (party/boss/territory, FX/animáció).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

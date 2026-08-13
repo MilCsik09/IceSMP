@@ -1621,6 +1621,7 @@ public final class IceSMPCore {
         clientBridge.connectHudSnapshots(hudManager::snapshot);
         clientBridge.connectAbilityKit(abilityCatalystListener, spellRegistry);
         clientBridge.connectTalents(talentManager);
+        clientBridge.connectQuests(questManager);
         clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
                 .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
         clientBridge.connectRelicState(relicPlayerId -> hu.taliann.icesmp.client.projection.ClientRelicProjector

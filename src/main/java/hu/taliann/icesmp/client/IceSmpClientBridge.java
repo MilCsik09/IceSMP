@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.client;
 
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
+import hu.taliann.icesmp.client.projection.ClientQuestProjector;
 import hu.taliann.icesmp.client.projection.ClientTalentProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
 import hu.taliann.icesmp.client.protocol.ActionResultPayload;
@@ -12,6 +13,8 @@ import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
+import hu.taliann.icesmp.client.protocol.QuestStatePayload;
+import hu.taliann.icesmp.client.protocol.QuestTrackPayload;
 import hu.taliann.icesmp.client.protocol.RelicStatePayload;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
@@ -24,6 +27,7 @@ import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
+import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.spells.Spell;
@@ -82,6 +86,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, byte[]> lastProfileState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastRelicState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastTalentState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, String> lastQuestSignature = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -95,6 +100,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     /** A core köti be; a vásárlás a CAS-védett spendPoint use-case-en fut. */
     private volatile TalentManager talentManager;
+
+    /** A core köti be; a láthatóság egyetlen forrása az isVisible-szűrt read-API. */
+    private volatile QuestManager questManager;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -137,6 +145,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastProfileState.clear();
         lastRelicState.clear();
         lastTalentState.clear();
+        lastQuestSignature.clear();
     }
 
     @Override
@@ -179,6 +188,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             case ClientProtocol.MSG_SELECT_SPELL -> handleSelectSpell(player, envelope, now);
             case ClientProtocol.MSG_TOGGLE_FAVORITE -> handleToggleFavorite(player, envelope, now);
             case ClientProtocol.MSG_PURCHASE_TALENT -> handlePurchaseTalent(player, envelope, now);
+            case ClientProtocol.MSG_TRACK_QUEST -> handleTrackQuest(player, envelope, now);
             default -> {
                 droppedMalformed.incrementAndGet();
                 debug(() -> "unknown message type 0x" + Integer.toHexString(envelope.messageType())
@@ -230,6 +240,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastProfileState.remove(player.getUniqueId());
         lastRelicState.remove(player.getUniqueId());
         lastTalentState.remove(player.getUniqueId());
+        lastQuestSignature.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -465,6 +476,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastProfileState.remove(player.getUniqueId());
             lastRelicState.remove(player.getUniqueId());
             lastTalentState.remove(player.getUniqueId());
+            lastQuestSignature.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -507,6 +519,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 && session.capabilities().contains(ClientCapability.NATIVE_TALENTS);
     }
 
+    private boolean questJournalActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.quest-journal", false)
+                && session.capabilities().contains(ClientCapability.QUEST_JOURNAL);
+    }
+
     /**
      * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja minden
      * online játékosra; a session/capability kapuzás itt történik, a HudManager a híd
@@ -536,6 +553,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (nativeTalentsActive(session)) {
             pushTalentNow(player, session);
         }
+        if (questJournalActive(session)) {
+            pushQuestIfChanged(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -561,6 +581,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (nativeTalentsActive(session)) {
             pushTalentNow(player, session);
+        }
+        if (questJournalActive(session)) {
+            pushQuestNow(player, session);
         }
     }
 
@@ -736,6 +759,100 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     }
 
     /**
+     * Olcsó quest-változásjel: a teljes (katalógus-bejárós) payload csak akkor épül
+     * fel, ha az aktív progressz, a fül-összetétel vagy a követés ténylegesen változott.
+     */
+    private void pushQuestIfChanged(final Player player, final ClientSession session) {
+        final QuestManager quests = questManager;
+        if (quests == null) {
+            return;
+        }
+        final StringBuilder signature = new StringBuilder();
+        signature.append(quests.getTracked(player)).append('|');
+        for (final String questId : quests.getActiveQuests(player)) {
+            signature.append(questId).append('=').append(quests.describeProgress(player, questId)).append(';');
+        }
+        signature.append('|').append(String.join(",", quests.getReadyQuests(player)));
+        signature.append('|').append(quests.getCompletedQuests(player).size());
+        signature.append('|').append(String.join(",", quests.getVisibleQuestIds(player)));
+        final String value = signature.toString();
+        if (value.equals(lastQuestSignature.put(player.getUniqueId(), value))) {
+            return;
+        }
+        pushQuestNow(player, session);
+    }
+
+    /** Teljes quest-journal state; player-szálon hívandó. */
+    private void pushQuestNow(final Player player, final ClientSession session) {
+        final QuestManager quests = questManager;
+        if (quests == null) {
+            return;
+        }
+        final byte[] payload = ClientQuestProjector.project(player, quests).encode();
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_QUEST_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "QUEST_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
+    }
+
+    public void connectQuests(final QuestManager manager) {
+        this.questManager = manager;
+    }
+
+    /**
+     * TRACK_QUEST: az egyetlen kliensről engedett quest-mutáció — nincs forrás-kötése,
+     * a szerver csak aktív questre engedi (üres id = követés törlése). Accept/turn-in
+     * kliens-actionként tilos: azok forrás-authorityját (NPC/hely/esemény) csak a
+     * hitelesített játék-esemény válthatja ki.
+     */
+    private void handleTrackQuest(final Player player, final MessageEnvelope envelope, final long now) {
+        final ClientSession session = liveSession(player.getUniqueId(), envelope, now);
+        if (session == null) {
+            return;
+        }
+        if (!questJournalActive(session)) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_TRACK_QUEST,
+                    ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
+            return;
+        }
+        if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.UI,
+                configManager.getInt("client.limits.ui-actions-per-second", 10), 1000L, now)) {
+            droppedRateLimited.incrementAndGet();
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_TRACK_QUEST,
+                    ClientProtocol.RESULT_RATE_LIMITED, "");
+            return;
+        }
+        final QuestTrackPayload request;
+        try {
+            request = QuestTrackPayload.decode(envelope.payload());
+        } catch (final ClientProtocolException malformed) {
+            droppedMalformed.incrementAndGet();
+            debug(() -> "malformed TRACK_QUEST from " + player.getName() + ": " + malformed.getMessage());
+            return;
+        }
+        final QuestManager quests = questManager;
+        if (quests == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_TRACK_QUEST,
+                    ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            final boolean accepted = quests.setTracked(player,
+                    request.questId().isEmpty() ? null : request.questId());
+            sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ACTION_RESULT,
+                    session.generation(), session.nextOutboundSequence(), envelope.requestId(),
+                    new ActionResultPayload(ClientProtocol.MSG_TRACK_QUEST,
+                            accepted ? ClientProtocol.RESULT_SUCCESS : ClientProtocol.RESULT_REJECTED,
+                            accepted ? "" : "NOT_ACTIVE").encode()));
+            if (questJournalActive(session)) {
+                pushQuestNow(player, session);
+            }
+        }, null);
+    }
+
+    /**
      * PURCHASE_TALENT: a meglévő CAS-védett spendPoint use-case-en fut — minden
      * requirement/fa-gate/pont-fedezet a tranzakción belül validálódik, a kliens
      * csak kér. A durable commit aszinkron; a válasz és a friss state a játékos
@@ -906,5 +1023,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastProfileState.remove(playerId);
         lastRelicState.remove(playerId);
         lastTalentState.remove(playerId);
+        lastQuestSignature.remove(playerId);
     }
 }
