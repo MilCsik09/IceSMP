@@ -272,8 +272,16 @@ fázisonként, a terv szerinti sorrendben:
   sosem szivárog, riddle „???”-ként utazik, fülönkénti cap + total) +
   TRACK_QUEST mint egyetlen engedett quest-mutáció; accept/turn-in
   kliens-actionként tiltva (forrás-authority) — mindkét oldalon.
-- ⬜ Professions natív modul a product spec sorrendjében; utána a H fázis
-  hátralévő nagyjai: élő staging-teszt (CLIENT-02..12), relic
+- ✅ Natív Professions: PROFESSION_STATE (nyolc-szakmás roster szinttel,
+  XP-bontással, recept-/tervrajz-számokkal és heti céh-céllal; spec-opció
+  csak aktív szakmákra) + SELECT_PROFESSION (CAS-mutáció dönt, foglalt slot
+  REJECTED) és SELECT_PROFESSION_SPEC (canSelect-kapus use-case; respec
+  szándékosan nem protokoll-action) — mindkét oldalon. Recept-katalógus
+  tétel-szinten nem utazik: a recept-böngésző a product spec külön modulja.
+- ⬜ Recept-böngésző natív modul (product spec Modul 10): tétel-szintű
+  katalógus lapozó/query protokollt igényel (437 recept a 64-es limit
+  fölött), craft-action nélkül indul.
+- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..13), relic
   attachment-broadcast, Phase 7-8 (party/boss/territory, FX/animáció).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,

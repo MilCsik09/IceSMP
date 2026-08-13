@@ -41,6 +41,7 @@ client:
     native-spellbook: false
     native-talents: false
     quest-journal: false
+    native-professions: false
     relic-render-v1: false
     advanced-fx-v1: false
     player-animation-v1: false

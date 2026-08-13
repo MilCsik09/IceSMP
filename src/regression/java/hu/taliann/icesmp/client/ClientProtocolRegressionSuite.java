@@ -16,6 +16,8 @@ import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
 import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
+import hu.taliann.icesmp.client.protocol.ProfessionActionPayload;
+import hu.taliann.icesmp.client.protocol.ProfessionStatePayload;
 import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.QuestStatePayload;
@@ -56,6 +58,7 @@ public final class ClientProtocolRegressionSuite {
         relicPayload();
         talentPayloads();
         questPayloads();
+        professionPayloads();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -369,6 +372,37 @@ public final class ClientProtocolRegressionSuite {
             throw new AssertionError("oversized quest list accepted");
         } catch (final IllegalArgumentException expected) {
             // fail closed a kódolás előtt — a projektor fülönként cap-el
+        }
+    }
+
+    private static void professionPayloads() throws Exception {
+        final ProfessionActionPayload select = new ProfessionActionPayload("miner");
+        check(select.equals(ProfessionActionPayload.decode(select.encode())),
+                "ProfessionActionPayload roundtrip");
+
+        final ProfessionStatePayload professions = new ProfessionStatePayload(
+                "master_miner", "Mesterbányász",
+                List.of(new ProfessionStatePayload.Entry("miner", "Bányász", "GATHERING",
+                                "Gyűjtögető", true, false, 27, 50, "Legény",
+                                340L, 490L, 42L, 5000L, 50, 3, 7),
+                        new ProfessionStatePayload.Entry("armorer", "Kovács", "CRAFTING",
+                                "Készítő", false, true, 1, 50, "Inas",
+                                0L, 100L, 0L, 5000L, 54, 0, 9)),
+                List.of(new ProfessionStatePayload.SpecOption("master_miner", "Mesterbányász",
+                        "miner", 25, false)));
+        check(professions.equals(ProfessionStatePayload.decode(professions.encode())),
+                "ProfessionStatePayload roundtrip");
+        check(professions.professions().get(1).slotTaken(), "slot-taken flag preserved");
+
+        final List<ProfessionStatePayload.SpecOption> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new ProfessionStatePayload.SpecOption("s" + i, "", "", 0, false));
+        }
+        try {
+            new ProfessionStatePayload("", "", List.of(), tooMany).encode();
+            throw new AssertionError("oversized spec-option list accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt — a projektor aktív szakmákra szűr
         }
     }
 

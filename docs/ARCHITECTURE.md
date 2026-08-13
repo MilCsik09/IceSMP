@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 831 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 834 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1362,6 +1362,27 @@ szerver csak aktív questre engedi (üres id = követés törlése). Accept/turn
 kliens-actionként TILOS — azok forrás-authorityját (NPC-kattintás, territórium-belépés,
 hitelesített esemény, item-használat) csak a valódi játék-esemény adaptere válthatja
 ki, egy kliens-csomag remote-accept bypass lenne.
+
+### Natív Professions (PROFESSION_STATE, SELECT_PROFESSION, SELECT_PROFESSION_SPEC)
+
+A `PROFESSION_STATE` a szakma-áttekintő vanilla felületeivel (ProfessionGUI,
+`/profession info`, `/szakmacel`) azonos manager-hívásokból épülő display-projekció a
+`NATIVE_PROFESSIONS` capability + `client.features.native-professions` kapu mögött.
+A teljes nyolc-szakmás roster utazik (a tanulható, még nem aktív főszakmák is — a
+vanilla GUI is mutatja őket) szinttel, XP-bontással (`ProfessionManager.xpBreakdown`,
+amely bitre a `levelForExperience` szint-formuláját követi), rang-névvel,
+recept-/tervrajz-darabszámokkal és a céh heti közös céljával. Spec-opció csak a
+játékos aktívan gyakorolt szakmáira megy ki (más szakmák spec-fája nem kerül a
+vezetékre); recept tétel-szinten nem utazik, csak darabszám — a recept-böngésző a
+product spec külön modulja marad. Push a profile-mintájú bájt-dedupe-pal.
+
+A `SELECT_PROFESSION` a ProfessionGUI-kattintás párja: a döntést kizárólag a
+CAS-mutáció hozza (foglalt kategória-slot = unchanged = `REJECTED`/SLOT_TAKEN) —
+szakmaváltás kliensről sem lehetséges, a slot felszabadítása admin-út marad. A
+`SELECT_PROFESSION_SPEC` a SpecGUI-kattintás párja a meglévő canSelect/select
+use-case-en (szakma-, szint- és egyszeri-választás-kapu); respec kliens-actionként
+szándékosan nincs (fizetős SpecGUI-döntés). Mindkét action UI-rate-limit mögött fut,
+gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
 
 ### Session-életciklus és védelem
 

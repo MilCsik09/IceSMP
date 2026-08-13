@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.client;
 
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
+import hu.taliann.icesmp.client.projection.ClientProfessionProjector;
 import hu.taliann.icesmp.client.projection.ClientQuestProjector;
 import hu.taliann.icesmp.client.projection.ClientTalentProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
@@ -11,6 +12,7 @@ import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
 import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
+import hu.taliann.icesmp.client.protocol.ProfessionActionPayload;
 import hu.taliann.icesmp.client.protocol.ProfileStatePayload;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.QuestStatePayload;
@@ -21,11 +23,17 @@ import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
 import hu.taliann.icesmp.client.protocol.TalentActionPayload;
 import hu.taliann.icesmp.client.protocol.TalentStatePayload;
+import hu.taliann.icesmp.data.ProfessionSpecializationType;
+import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
+import hu.taliann.icesmp.managers.ProfessionManager;
+import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
+import hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager;
+import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.TalentManager;
@@ -87,6 +95,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, byte[]> lastRelicState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastTalentState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, String> lastQuestSignature = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastProfessionState = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -103,6 +112,12 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     /** A core köti be; a láthatóság egyetlen forrása az isVisible-szűrt read-API. */
     private volatile QuestManager questManager;
+
+    /** A core köti be; a szakma-akciók a meglévő CAS-/kapu-védett use-case-eken futnak. */
+    private volatile ProfessionManager professionManager;
+    private volatile SpecializationManager specializationManager;
+    private volatile ProfessionRecipeCatalog professionRecipeCatalog;
+    private volatile ProfessionWeeklyGoalManager professionWeeklyGoal;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -146,6 +161,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastRelicState.clear();
         lastTalentState.clear();
         lastQuestSignature.clear();
+        lastProfessionState.clear();
     }
 
     @Override
@@ -189,6 +205,8 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             case ClientProtocol.MSG_TOGGLE_FAVORITE -> handleToggleFavorite(player, envelope, now);
             case ClientProtocol.MSG_PURCHASE_TALENT -> handlePurchaseTalent(player, envelope, now);
             case ClientProtocol.MSG_TRACK_QUEST -> handleTrackQuest(player, envelope, now);
+            case ClientProtocol.MSG_SELECT_PROFESSION -> handleSelectProfession(player, envelope, now);
+            case ClientProtocol.MSG_SELECT_PROFESSION_SPEC -> handleSelectProfessionSpec(player, envelope, now);
             default -> {
                 droppedMalformed.incrementAndGet();
                 debug(() -> "unknown message type 0x" + Integer.toHexString(envelope.messageType())
@@ -241,6 +259,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastRelicState.remove(player.getUniqueId());
         lastTalentState.remove(player.getUniqueId());
         lastQuestSignature.remove(player.getUniqueId());
+        lastProfessionState.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -477,6 +496,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastRelicState.remove(player.getUniqueId());
             lastTalentState.remove(player.getUniqueId());
             lastQuestSignature.remove(player.getUniqueId());
+            lastProfessionState.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -524,6 +544,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 && session.capabilities().contains(ClientCapability.QUEST_JOURNAL);
     }
 
+    private boolean nativeProfessionsActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.native-professions", false)
+                && session.capabilities().contains(ClientCapability.NATIVE_PROFESSIONS);
+    }
+
     /**
      * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja minden
      * online játékosra; a session/capability kapuzás itt történik, a HudManager a híd
@@ -556,6 +581,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (questJournalActive(session)) {
             pushQuestIfChanged(player, session);
         }
+        if (nativeProfessionsActive(session)) {
+            pushProfessionNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -584,6 +612,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (questJournalActive(session)) {
             pushQuestNow(player, session);
+        }
+        if (nativeProfessionsActive(session)) {
+            pushProfessionNow(player, session);
         }
     }
 
@@ -796,6 +827,179 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     public void connectQuests(final QuestManager manager) {
         this.questManager = manager;
+    }
+
+    /**
+     * PROFESSION_STATE a szakma-áttekintő vanilla felületeivel azonos tartalommal;
+     * player-szálon hívandó. Bájt-dedupe a profile mintájára: a tick-enként felépülő
+     * payload csak tényleges változásnál megy ki a vezetékre.
+     */
+    private void pushProfessionNow(final Player player, final ClientSession session) {
+        final ProfessionManager professions = professionManager;
+        final SpecializationManager specializations = specializationManager;
+        final ProfessionRecipeCatalog catalog = professionRecipeCatalog;
+        final ProfessionWeeklyGoalManager weeklyGoal = professionWeeklyGoal;
+        if (professions == null || specializations == null || catalog == null || weeklyGoal == null) {
+            return;
+        }
+        final byte[] payload = ClientProfessionProjector.project(player, professions,
+                specializations, catalog, weeklyGoal).encode();
+        final byte[] previous = lastProfessionState.put(player.getUniqueId(), payload);
+        if (previous != null && Arrays.equals(previous, payload)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_PROFESSION_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "PROFESSION_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
+    }
+
+    public void connectProfessions(final ProfessionManager professions,
+                                   final SpecializationManager specializations,
+                                   final ProfessionRecipeCatalog catalog,
+                                   final ProfessionWeeklyGoalManager weeklyGoal) {
+        this.professionManager = professions;
+        this.specializationManager = specializations;
+        this.professionRecipeCatalog = catalog;
+        this.professionWeeklyGoal = weeklyGoal;
+    }
+
+    /**
+     * SELECT_PROFESSION: a ProfessionGUI-kattintás párja — a döntést kizárólag a
+     * CAS-mutáció hozza (foglalt kategória-slot = unchanged = REJECTED), a kliens csak
+     * kér. Szakmaváltás kliensről sem lehetséges: a slot felszabadítása admin-út marad.
+     */
+    private void handleSelectProfession(final Player player, final MessageEnvelope envelope, final long now) {
+        final ClientSession session = liveSession(player.getUniqueId(), envelope, now);
+        if (session == null) {
+            return;
+        }
+        if (!nativeProfessionsActive(session)) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION,
+                    ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
+            return;
+        }
+        if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.UI,
+                configManager.getInt("client.limits.ui-actions-per-second", 10), 1000L, now)) {
+            droppedRateLimited.incrementAndGet();
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION,
+                    ClientProtocol.RESULT_RATE_LIMITED, "");
+            return;
+        }
+        final ProfessionActionPayload request;
+        try {
+            request = ProfessionActionPayload.decode(envelope.payload());
+        } catch (final ClientProtocolException malformed) {
+            droppedMalformed.incrementAndGet();
+            debug(() -> "malformed SELECT_PROFESSION from " + player.getName() + ": " + malformed.getMessage());
+            return;
+        }
+        final ProfessionManager professions = professionManager;
+        if (professions == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION,
+                    ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
+            return;
+        }
+        final ProfessionType profession = ProfessionType.fromId(request.id());
+        if (profession == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION,
+                    ClientProtocol.RESULT_REJECTED, "UNKNOWN_PROFESSION");
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            professions.selectProfession(player, profession)
+                    .whenComplete((selected, failure) -> player.getScheduler().run(plugin, done -> {
+                        if (!player.isOnline()) {
+                            return;
+                        }
+                        final String code;
+                        final String reason;
+                        if (failure != null) {
+                            code = ClientProtocol.RESULT_SERVER_ERROR;
+                            reason = "PERSISTENCE";
+                        } else if (Boolean.TRUE.equals(selected)) {
+                            code = ClientProtocol.RESULT_SUCCESS;
+                            reason = "";
+                        } else {
+                            code = ClientProtocol.RESULT_REJECTED;
+                            reason = "SLOT_TAKEN";
+                        }
+                        sendNow(player, new MessageEnvelope(session.protocolVersion(),
+                                ClientProtocol.MSG_ACTION_RESULT, session.generation(),
+                                session.nextOutboundSequence(), envelope.requestId(),
+                                new ActionResultPayload(ClientProtocol.MSG_SELECT_PROFESSION,
+                                        code, reason).encode()));
+                        if (nativeProfessionsActive(session)) {
+                            pushProfessionNow(player, session);
+                        }
+                        if (nativeProfileActive(session)) {
+                            pushProfileNow(player, session);
+                        }
+                    }, null));
+        }, null);
+    }
+
+    /**
+     * SELECT_PROFESSION_SPEC: a SpecGUI-kattintás párja — a szakma-, szint- és
+     * egyszeri-választás-kapu a meglévő canSelect/select use-case-ben fut. Respec
+     * kliens-actionként szándékosan nincs (fizetős SpecGUI-döntés marad).
+     */
+    private void handleSelectProfessionSpec(final Player player, final MessageEnvelope envelope, final long now) {
+        final ClientSession session = liveSession(player.getUniqueId(), envelope, now);
+        if (session == null) {
+            return;
+        }
+        if (!nativeProfessionsActive(session)) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION_SPEC,
+                    ClientProtocol.RESULT_NOT_ALLOWED, "CAPABILITY");
+            return;
+        }
+        if (!rateLimiter.tryAcquire(player.getUniqueId(), ClientRateLimiter.Category.UI,
+                configManager.getInt("client.limits.ui-actions-per-second", 10), 1000L, now)) {
+            droppedRateLimited.incrementAndGet();
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION_SPEC,
+                    ClientProtocol.RESULT_RATE_LIMITED, "");
+            return;
+        }
+        final ProfessionActionPayload request;
+        try {
+            request = ProfessionActionPayload.decode(envelope.payload());
+        } catch (final ClientProtocolException malformed) {
+            droppedMalformed.incrementAndGet();
+            debug(() -> "malformed SELECT_PROFESSION_SPEC from " + player.getName() + ": " + malformed.getMessage());
+            return;
+        }
+        final SpecializationManager specializations = specializationManager;
+        if (specializations == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION_SPEC,
+                    ClientProtocol.RESULT_SERVER_ERROR, "UNAVAILABLE");
+            return;
+        }
+        final ProfessionSpecializationType spec = ProfessionSpecializationType.fromId(request.id());
+        if (spec == null) {
+            sendActionResult(player, session, envelope.requestId(), ClientProtocol.MSG_SELECT_PROFESSION_SPEC,
+                    ClientProtocol.RESULT_REJECTED, "UNKNOWN_SPECIALIZATION");
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            final boolean selected = specializations.selectProfessionSpecialization(player, spec);
+            sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ACTION_RESULT,
+                    session.generation(), session.nextOutboundSequence(), envelope.requestId(),
+                    new ActionResultPayload(ClientProtocol.MSG_SELECT_PROFESSION_SPEC,
+                            selected ? ClientProtocol.RESULT_SUCCESS : ClientProtocol.RESULT_REJECTED,
+                            selected ? "" : "REQUIREMENTS").encode()));
+            if (nativeProfessionsActive(session)) {
+                pushProfessionNow(player, session);
+            }
+            if (nativeProfileActive(session)) {
+                pushProfileNow(player, session);
+            }
+        }, null);
     }
 
     /**
@@ -1024,5 +1228,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastRelicState.remove(playerId);
         lastTalentState.remove(playerId);
         lastQuestSignature.remove(playerId);
+        lastProfessionState.remove(playerId);
     }
 }

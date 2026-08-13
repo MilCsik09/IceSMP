@@ -203,6 +203,32 @@ public final class ProfessionManager implements PlayerStateCleanup {
                 baseXp(), incrementPerLevel(), MAX_PROFESSION_LEVEL);
     }
 
+    /**
+     * XP-bontás a progressz-kijelzéshez: az aktuális szintbe már beleölt XP és a
+     * szintlépés teljes költsége (0 = max szint). A bejárásnak bitre egyeznie kell a
+     * {@link ProfessionProfileState#levelForExperience} szint-formulájával, különben a
+     * kijelzett progressz elcsúszna a tényleges szintléptetéstől.
+     */
+    public XpBreakdown xpBreakdown(final Player player, final ProfessionType professionType) {
+        if (professionType == null) {
+            return new XpBreakdown(0L, 0L);
+        }
+        final long base = Math.max(1L, baseXp());
+        final long increment = Math.max(0L, incrementPerLevel());
+        long remaining = ProfessionProfileState.experience(
+                section(player.getUniqueId()), professionType);
+        int level = 1;
+        while (level < MAX_PROFESSION_LEVEL) {
+            final long levelCost = base + (level - 1L) * increment;
+            if (remaining < levelCost) {
+                return new XpBreakdown(remaining, levelCost);
+            }
+            remaining -= levelCost;
+            level++;
+        }
+        return new XpBreakdown(remaining, 0L);
+    }
+
     public boolean hasLearnedRecipe(final Player player, final String recipeId) {
         if (recipeId == null || recipeId.isBlank()) {
             return false;
@@ -310,5 +336,9 @@ public final class ProfessionManager implements PlayerStateCleanup {
         public static XpChange rejected() {
             return new XpChange(false, 0L, 0L, 1, 1);
         }
+    }
+
+    /** Progressz-nézet: az aktuális szintbe beleölt XP + a szintlépés teljes költsége. */
+    public record XpBreakdown(long intoLevel, long forNextLevel) {
     }
 }
