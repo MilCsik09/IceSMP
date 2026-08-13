@@ -22,7 +22,7 @@ Jelölések:
 - ⬜ **elkötelezett fejlesztés** — része az A–H tervnek;
 - ◇ **builder- vagy runtime-kapu** — kézi előkészítést, illetve próbát igényel;
 - 💡 **ötlet** — értékes irány, de még nincs ütemezve;
-- ⏸ **döntésre vár** — tulajdonosi vagy design-döntés nélkül nem indul.
+- ⏸ **döntésre vár** — tulajdonosi vagy design-döntés nélkül indul.
 
 ## 1. Következő kiadási kapuk
 
@@ -340,4 +340,30 @@ Egy roadmap-tétel csak akkor zárható le, ha:
 8. a szükséges staging/runtime pontot nem CI alapján, hanem ténylegesen
    kipipálták az admin acceptance checklistben.
 
+## 8. Season 0 / Prologue — PR #121 kiadási állapot
 
+A `feat/prologue-doom-gate` branch a külön Prologue lifecycle-t, a Season 0
+content/progression gate-eket, Olethropyla egyetlen legitim Nether-átjáró
+policyjét, a Gate Breach/finale útvonalat, Profile v2 prestige státuszokat és a
+Season 1 átmenetet tartalmazza. A completion pass a finale pause, transient
+entity cleanup és boss-victory persistence race hardeningjét is lezárta.
+
+- ✅ **Forrásoldali completion:** Folia-safe transient cleanup, valódi encounter
+  pause, pause-időt kizáró timeout, paused restart recovery, finaleId-kötött
+  boss-victory pending receipt, fail-closed persistence failure és idempotens
+  Gate/reward/Season 1 settlement elkészült.
+- ✅ **Dokumentációs szinkron:** lore mapping, player-facing Prologue policy,
+  admin live-ops és builder hookok a meglévő kanonikus guide-okban szerepelnek.
+- ◇ **World-builder acceptance:** a `prologue-gate`, `prologue-gathering`,
+  `prologue-breach`, `prologue-boss` hookok tényleges élő térképes pontjai,
+  arena/perem és Nether-oldali érkezés továbbra is kézi world-build feladat.
+- ◇ **Staging runtime acceptance:** rehearsal, production pause/resume,
+  pause→restart→resume és a victory crash-windowk productionközeli Folia
+  szerveren még kézi próbát igényelnek; az automatizált regresszió nem helyettesíti ezt.
+- 🚧 **Build/CI gate:** csak az exact PR HEAD-en futott Java 21 `check`,
+  consistency/docs inventory és CI bizonyíték után tekinthető a PR kiadásra
+  késznek. Ha a GitHub runner billing/spending-limit miatt el sem indul, az
+  platform-blocker, nem zöld validáció.
+
+A Prologue scope-on kívül marad a Season 2 End-nyitás, az Első Csend
+magyarázata és a Néma Királynő végjátéka; ezek nem #121 hiányosságok.
