@@ -8,6 +8,7 @@ import hu.taliann.icesmp.client.projection.ClientRecipeProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
 import hu.taliann.icesmp.client.protocol.ActionResultPayload;
 import hu.taliann.icesmp.client.protocol.BrowseRecipesPayload;
+import hu.taliann.icesmp.client.protocol.BossStatePayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
@@ -36,6 +37,7 @@ import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.managers.PartyManager;
+import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager;
@@ -104,6 +106,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, byte[]> lastProfessionState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastRelicAttachment = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastPartyState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastBossState = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -130,6 +133,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     /** A core köti be; a party-frame read-only, mutáció a /party parancson marad. */
     private volatile PartyManager partyManager;
+
+    /** A core köti be; a boss-frame a világboss lock-mentes display-tükreit olvassa. */
+    private volatile WorldBossManager worldBossManager;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -176,6 +182,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastProfessionState.clear();
         lastRelicAttachment.clear();
         lastPartyState.clear();
+        lastBossState.clear();
     }
 
     @Override
@@ -277,6 +284,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastProfessionState.remove(player.getUniqueId());
         lastRelicAttachment.remove(player.getUniqueId());
         lastPartyState.remove(player.getUniqueId());
+        lastBossState.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -516,6 +524,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastProfessionState.remove(player.getUniqueId());
             lastRelicAttachment.remove(player.getUniqueId());
             lastPartyState.remove(player.getUniqueId());
+            lastBossState.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -561,6 +570,22 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private boolean partyFrameActive(final ClientSession session) {
         return configManager.getBoolean("client.features.party-frame", false)
                 && session.capabilities().contains(ClientCapability.PARTY_FRAME);
+    }
+
+    private boolean bossFrameActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.boss-frame", false)
+                && session.capabilities().contains(ClientCapability.BOSS_FRAME);
+    }
+
+    /** {@link HudManager.ClientHudRoute}: a vanilla világboss-bar suppression-kapuja. */
+    @Override
+    public boolean bossFrameActive(final UUID playerId) {
+        if (!enabled() || !configManager.getBoolean("client.features.boss-frame", false)) {
+            return false;
+        }
+        return sessions.find(playerId)
+                .map(session -> session.capabilities().contains(ClientCapability.BOSS_FRAME))
+                .orElse(false);
     }
 
     private boolean nativeTalentsActive(final ClientSession session) {
@@ -624,6 +649,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (partyFrameActive(session)) {
             pushPartyNow(player, session);
         }
+        if (bossFrameActive(session)) {
+            pushBossNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -661,6 +689,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (partyFrameActive(session)) {
             pushPartyNow(player, session);
+        }
+        if (bossFrameActive(session)) {
+            pushBossNow(player, session);
         }
     }
 
@@ -1304,6 +1335,37 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         this.partyManager = manager;
     }
 
+    /**
+     * BOSS_STATE a vanilla világboss-bar adatkörével (+ név/archetípus/dühöngés, amit
+     * a szerver szövegként eddig is broadcastolt). Minden mező lock-mentes volatile
+     * tükörből jön, a HP egész százalékra kvantált — a dedupe sebzés-tickek alatt
+     * nem churn-öl. A kör a vanilla barral egyezően globális.
+     */
+    private void pushBossNow(final Player player, final ClientSession session) {
+        final WorldBossManager bosses = worldBossManager;
+        if (bosses == null) {
+            return;
+        }
+        final boolean active = bosses.isBossActive();
+        final BossStatePayload payload = new BossStatePayload(active,
+                active ? bosses.getActiveBossArchetypeId() : "",
+                active ? bosses.getActiveBossName() : "",
+                active ? Math.round(Math.max(0.0F, Math.min(1.0F, bosses.getBossHealthFraction())) * 100.0F) : 0,
+                bosses.isBossEnraged());
+        final byte[] wire = payload.encode();
+        final byte[] previous = lastBossState.put(player.getUniqueId(), wire);
+        if (previous != null && Arrays.equals(previous, wire)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_BOSS_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wire));
+        debug(() -> "BOSS_STATE sent to " + player.getName());
+    }
+
+    public void connectWorldBoss(final WorldBossManager manager) {
+        this.worldBossManager = manager;
+    }
+
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
         this.hudSnapshotSource = source;
     }
@@ -1406,5 +1468,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastProfessionState.remove(playerId);
         lastRelicAttachment.remove(playerId);
         lastPartyState.remove(playerId);
+        lastBossState.remove(playerId);
     }
 }

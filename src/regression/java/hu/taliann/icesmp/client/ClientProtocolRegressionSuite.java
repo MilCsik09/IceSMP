@@ -8,6 +8,7 @@ import hu.taliann.icesmp.client.projection.ClientHudProjector;
 import hu.taliann.icesmp.client.projection.ClientRelicProjector;
 import hu.taliann.icesmp.client.protocol.AbilityKitPayload;
 import hu.taliann.icesmp.client.protocol.ActionResultPayload;
+import hu.taliann.icesmp.client.protocol.BossStatePayload;
 import hu.taliann.icesmp.client.protocol.BrowseRecipesPayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
@@ -65,6 +66,7 @@ public final class ClientProtocolRegressionSuite {
         professionPayloads();
         recipePayloads();
         partyPayload();
+        bossPayload();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -485,6 +487,16 @@ public final class ClientProtocolRegressionSuite {
         } catch (final IllegalArgumentException expected) {
             // fail closed a kódolás előtt — a projektor cap-el
         }
+    }
+
+    private static void bossPayload() throws Exception {
+        final BossStatePayload idle = new BossStatePayload(false, "", "", 0, false);
+        check(idle.equals(BossStatePayload.decode(idle.encode())), "idle boss roundtrip");
+
+        final BossStatePayload boss = new BossStatePayload(true, "FROST_KING",
+                "❄ Fagyott Trón Királya [Világboss]", 42, true);
+        check(boss.equals(BossStatePayload.decode(boss.encode())), "BossStatePayload roundtrip");
+        check(boss.enraged() && boss.healthPercent() == 42, "boss fields preserved");
     }
 
     private static void malformedEnvelopeRejected() {

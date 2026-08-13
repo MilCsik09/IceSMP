@@ -292,9 +292,16 @@ fázisonként, a terv szerinti sorrendben:
   HUD party-soraival azonos adatforrásból (fél-szív kvantálás, régió-átmenet
   fallback), read-only — a party-mutáció a /party parancson marad; a natív
   kliens a frame aktív állapotában nem duplázza a HUD-panel party-sorait.
-- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..16),
-  Phase 7 folytatás (boss/encounter frame, territory overlay, faction
-  screen), Phase 8 (FX/animáció + attachment-renderer).
+- ✅ Boss/encounter frame: BOSS_STATE a vanilla világboss-bar adatkörével
+  + név/archetípus/dühöngés (WorldBossManager lock-mentes display-tükrei),
+  HP egész százalékra kvantálva; a natív frame-et kapó játékosnál a
+  vanilla bar elhallgat (ClientHudRoute.bossFrameActive suppression).
+  Kazamata mini-bossnak nincs vanilla felülete — display-paritás okán a
+  frame-ben sem szerepel; encounter-scope/contribution külön rendszer
+  híján nincs.
+- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..17),
+  Phase 7 folytatás (territory overlay, faction screen), Phase 8
+  (FX/animáció + attachment-renderer).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

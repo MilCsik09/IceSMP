@@ -119,6 +119,10 @@ public final class WorldBossManager {
     private volatile SeasonFinaleManager seasonFinale;
     /** Current health fraction (0–1) of the active boss, driving the shared HUD boss-bar. */
     private volatile float bossHealthFraction = 1.0F;
+    /** Display-tükör a kliens boss-frame-hez; a getterek isBossActive() mögé kapuzva. */
+    private volatile String activeBossName = "";
+    private volatile String activeBossArchetype = "";
+    private volatile boolean bossEnraged;
 
 
     /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
@@ -203,6 +207,21 @@ public final class WorldBossManager {
     /** The active boss's current health fraction (0–1) for the shared HUD boss-bar. */
     public float getBossHealthFraction() {
         return bossHealthFraction;
+    }
+
+    /** Az aktív világboss plain display-neve a kliens boss-frame-hez; üres, ha nincs boss. */
+    public String getActiveBossName() {
+        return isBossActive() ? activeBossName : "";
+    }
+
+    /** Az aktív világboss archetípus-kulcsa; üres, ha nincs boss. */
+    public String getActiveBossArchetypeId() {
+        return isBossActive() ? activeBossArchetype : "";
+    }
+
+    /** Második fázis (50% alatti dühöngés) jelzése a kliens boss-frame-hez. */
+    public boolean isBossEnraged() {
+        return isBossActive() && bossEnraged;
     }
 
     /** Milliseconds left before the active world boss despawns, or -1 when none is active. */
@@ -442,6 +461,11 @@ public final class WorldBossManager {
         EventSpawnGuard.prepare(boss);
         activeBossId = boss.getUniqueId();
         activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
+        activeBossName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+                        .legacyAmpersand().deserialize(archetype.displayName));
+        activeBossArchetype = archetype.name();
+        bossEnraged = false;
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
         boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());
         if (finale) {
@@ -529,6 +553,7 @@ public final class WorldBossManager {
                     ? (float) Math.max(0.0D, Math.min(1.0D, boss.getHealth() / maxHp)) : 0.0F;
             if (!enraged.get() && boss.getHealth() < maxHp * 0.5D) {
                 enraged.set(true);
+                bossEnraged = true;
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false, true));
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 1);

@@ -147,6 +147,9 @@ public final class HudManager {
     public interface ClientHudRoute {
         boolean nativeHudActive(UUID playerId);
 
+        /** A natív boss-frame-et kapó játékosnál a megosztott világboss-bar elhallgat. */
+        boolean bossFrameActive(UUID playerId);
+
         /** Tickenkénti state-publikálási lehetőség; a kapuzás (session/capability) a route dolga. */
         void pushClientState(Player player, HudSnapshot snapshot);
     }
@@ -908,7 +911,13 @@ public final class HudManager {
     private void applyBossBars(final Player player) {
         toggle(player, raidBar, raidManager.isRaidActive());
         toggle(player, bloodMoonBar, bloodMoonManager.isActive());
-        toggle(player, worldBossBar, worldBossManager.isBossActive());
+        toggle(player, worldBossBar, worldBossManager.isBossActive()
+                && !bossFrameRouted(player.getUniqueId()));
+    }
+
+    private boolean bossFrameRouted(final UUID playerId) {
+        final ClientHudRoute route = clientHudRoute;
+        return route != null && route.bossFrameActive(playerId);
     }
 
     private void toggle(final Player player, final BossBar bar, final boolean show) {

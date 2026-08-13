@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 840 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 841 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1226,8 +1226,8 @@ Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCO
 State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
 `0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
 `0x25 RELIC_STATE`, `0x26 PARTY_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE`,
-`0x2A PROFESSION_STATE`, `0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE`
-(0x24/0x27 a FACTION/EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
+`0x2A PROFESSION_STATE`, `0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE`,
+`0x2D BOSS_STATE` (0x24/0x27 a FACTION/EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
 intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
 `0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`, `0x45 SELECT_PROFESSION`,
 `0x46 SELECT_PROFESSION_SPEC`, `0x47 BROWSE_RECIPES`.
@@ -1433,6 +1433,21 @@ leave) szándékosan NEM része a protokollnak — a `/party` parancs validált 
 az egyetlen. A natív kliens a strukturált frame aktív állapotában a HUD-panel
 szöveges party-sorait nem rendereli (nincs dupla presentation); a HUD_STATE
 partyLines mezője változatlanul utazik a vanilla-paritás miatt.
+
+### Boss/encounter frame (BOSS_STATE)
+
+A `BOSS_STATE` a világboss-encounter strukturált display-projekciója a `BOSS_FRAME`
+capability + `client.features.boss-frame` kapu mögött. Adatköre a vanilla megosztott
+boss-bar (☠ + HP%) plusz a boss plain neve, archetípus-kulcsa és a második-fázis
+(dühöngés) jelzés — utóbbiakat a szerver eddig is broadcastolta szövegként; a
+WorldBossManager ehhez kapott lock-mentes display-tükröket (activeBossName/
+archetype/enraged, az isBossActive() mögé kapuzott getterekkel). A HP egész
+százalékra kvantált (a vanilla bar felbontása), a push bájt-dedupe-os; a kör a
+vanilla barral egyezően globális. A natív boss-frame-et kapó játékosnál a megosztott
+vanilla világboss-bar elhallgat (`ClientHudRoute.bossFrameActive` suppression —
+nincs dupla presentation); vanilla kliens változatlanul a bart kapja. Kazamata
+mini-bossnak nincs vanilla felülete, ezért a frame-ben sem szerepel
+(display-paritás); encounter-scope/contribution-kör külön rendszer híján nincs.
 
 ### Session-életciklus és védelem
 
