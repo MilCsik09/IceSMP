@@ -42,6 +42,9 @@ public final class ClientProtocol {
     public static final int MSG_PING = 0x07;
     public static final int MSG_PONG = 0x08;
 
+    // State-sáv (0x20-0x3F): szerver → kliens read-only projekciók.
+    public static final int MSG_HUD_STATE = 0x20;
+
     public static final String REJECT_INVALID_HELLO = "INVALID_HELLO";
     public static final String REJECT_PROTOCOL_INCOMPATIBLE = "PROTOCOL_INCOMPATIBLE";
     public static final String REJECT_CLIENT_DISABLED = "CLIENT_DISABLED";

@@ -99,17 +99,18 @@ val validateIceSmpHudPackage by tasks.registering {
             }
         }
         val shader = pack.file("assets/minecraft/shaders/core/rendertype_text.vsh").asFile
-        require((manifest["layout_color_payload_bits"] as? Number)?.toInt() == 12
+        require((manifest["layout_color_payload_bits"] as? Number)?.toInt() == 13
             && (manifest["layout_y_offset_range"] as? List<*>)
                 ?.map { (it as Number).toInt() } == listOf(-256, 255)
             && (manifest["layout_scale_variants"] as? List<*>)
-                ?.map { (it as Number).toDouble() } == listOf(0.75, 0.9, 1.0, 1.15, 1.25, 1.4, 1.6, 1.8)) {
+                ?.map { (it as Number).toDouble() } == listOf(0.75, 0.9, 1.0, 1.15, 1.25, 1.4, 1.6, 1.8,
+                    2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.25, 3.5)) {
             "First-party HUD manifest lost the build-time layout/scale variant contract"
         }
         require(shader.isFile && shader.readText().contains("HEIGHT_BIT 13")
             && shader.readText().contains("<minecraft:globals.glsl>")
             && shader.readText().contains("vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize")
-            && shader.readText().contains("const float HUD_LAYOUT_SCALES[8]")
+            && shader.readText().contains("const float HUD_LAYOUT_SCALES[16]")
             && shader.readText().contains("int layoutCode = (packedColor.r & 15)")
             && shader.readText().contains("vec2 selectedHudScale = hudScale * layoutScale")
             && shader.readText().contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")) {

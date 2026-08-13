@@ -1615,6 +1615,10 @@ public final class IceSMPCore {
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
                 statsManager, claimManager, questManager, abilityCatalystListener, sinManager);
         iceSMPCommand.setClientBridge(clientBridge);
+        // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
+        // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
+        hudManager.setClientHudRoute(clientBridge);
+        clientBridge.connectHudSnapshots(hudManager::snapshot);
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();

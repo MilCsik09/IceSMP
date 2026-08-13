@@ -1248,16 +1248,17 @@ Jogosultságvédett dev-itemek, itemadás, debug/inspect és a fejlesztői tárg
 > **Aktív, adminisztratív** · A futó JAR-hoz képest: **Új rendszer**
 
 Az opcionális Fabric kliensmod (IceSMP Client) szerveroldali alapja: plugin messaging transport
-(`icesmp:client`), verzió- és capability-kézfogás, session-kezelés, rate limit és admin-diagnosztika.
-Gameplay-integrációt még nem tartalmaz; a kliens sosem authority, a vanilla kliens + kötelező
-resource pack teljes értékű marad.
+(`icesmp:client`), verzió- és capability-kézfogás, session-kezelés, rate limit, admin-diagnosztika,
+és az első state-projekció: a natív HUD routing (HUD_STATE — a meglévő HUD-snapshot sorosítása,
+change-driven push, vanilla-HUD-elhallgatás a routolt játékosnál). A kliens sosem authority, a
+vanilla kliens + kötelező resource pack teljes értékű marad.
 
 - **Így találkozol vele:** `/icesmp client <stats|név>`, `/icesmp client resync <név>`; a játékos
   számára láthatatlan, amíg nincs IceSMP Client modja.
 - **Kinek szól:** Fejlesztő/üzemeltető, Admin.
 - **Mitől mozdul meg:** A kliensmod kézfogás-üzenete; admin-diagnosztikai parancs.
-- **Ami még kellhet hozzá:** A Fabric kliensmod (külön `IceSMP-Client` repo) — addig minden
-  `client.features.*` kapcsoló maradjon `false`.
+- **Ami még kellhet hozzá:** A Fabric kliensmod (külön `MilCsik09/IceSMP-Fabric` repo) — a
+  `client.features.*` kapcsolók a kliens-release-ig maradjanak `false`.
 - **Fontos határ:** A `client.required` termék-elv szerint `false`: az Enhanced kliens nem lehet
   gameplay-előny feltétele.
 

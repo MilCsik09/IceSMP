@@ -137,6 +137,30 @@ public final class HudManager {
     public record HudCurrency(String id, String displayName, String amount, boolean primary) {
     }
 
+    /**
+     * Seam az opcionális Client Bridge felé: a HudManager nem ismerheti a híd típusát
+     * (a domain/presentation réteg kliensmod-függetlensége architektúra-invariáns), a
+     * core köti be. Ha a route szerint a játékos natív HUD-ot kap, a vanilla
+     * IceSMP-felületek (sidebar, first-party HUD, compact fallback) elhallgatnak —
+     * ugyanaz a játékos sosem kaphatja mindkét megjelenítést.
+     */
+    public interface ClientHudRoute {
+        boolean nativeHudActive(UUID playerId);
+
+        void pushHudState(Player player, HudSnapshot snapshot);
+    }
+
+    private volatile ClientHudRoute clientHudRoute;
+
+    public void setClientHudRoute(final ClientHudRoute route) {
+        this.clientHudRoute = route;
+    }
+
+    private boolean nativeHudRouted(final UUID playerId) {
+        final ClientHudRoute route = clientHudRoute;
+        return route != null && route.nativeHudActive(playerId);
+    }
+
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
     private final Set<UUID> iceSmpHudPlayers = ConcurrentHashMap.newKeySet();
     private final HudEditorStateMachine hudEditor = new HudEditorStateMachine();
@@ -196,7 +220,8 @@ public final class HudManager {
     private boolean foliaCompactFallbackEnabled(final Player player) {
         return configManager.getBoolean("hud.sidebar-enabled", true)
                 && !PlatformCapabilities.supportsBukkitScoreboards()
-                && !iceSmpHudActive(player);
+                && !iceSmpHudActive(player)
+                && !nativeHudRouted(player.getUniqueId());
     }
 
     /** First-party HUD is display-only and consumes the same immutable snapshot as PAPI. */
@@ -477,7 +502,8 @@ public final class HudManager {
 
     /** Whether the sidebar should render at all for this player (config gate + their own "mind" toggle). */
     private boolean sidebarVisibleFor(final Player player) {
-        return sidebarEnabled() && !isSectionHidden(player, SECTION_ALL);
+        return sidebarEnabled() && !isSectionHidden(player, SECTION_ALL)
+                && !nativeHudRouted(player.getUniqueId());
     }
 
     /** Builds the player's HUD (called on join, on that player's region thread). */
@@ -630,6 +656,10 @@ public final class HudManager {
             player.getScheduler().run(plugin, task -> {
                 final HudSnapshot snapshot = buildSnapshot(player);
                 snapshots.put(player.getUniqueId(), snapshot);
+                final ClientHudRoute route = clientHudRoute;
+                if (route != null && route.nativeHudActive(player.getUniqueId())) {
+                    route.pushHudState(player, snapshot);
+                }
                 renderIceSmpHud(player, snapshot);
                 update(player);
                 applyBossBars(player);
@@ -754,7 +784,8 @@ public final class HudManager {
         if (editorSession != null) hudEditor.cancel(player.getUniqueId());
         final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
         final boolean visible = configured && !isSectionHidden(player, SECTION_ALL)
-                && snapshot.classHud() != null;
+                && snapshot.classHud() != null
+                && !nativeHudRouted(player.getUniqueId());
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
                 IceSmpHudModel.from(snapshot), effectiveHudLayout(player), visible));
     }

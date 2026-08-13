@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.client;
 
+import hu.taliann.icesmp.client.projection.ClientHudProjector;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
@@ -8,6 +9,7 @@ import hu.taliann.icesmp.client.protocol.MessageEnvelope;
 import hu.taliann.icesmp.client.protocol.ProtocolReject;
 import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,12 +17,15 @@ import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 /**
  * Az opcionális IceSMP Client (Fabric kliensmod) szerveroldali hídja — a foundation
@@ -31,7 +36,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * későbbi fázisokban, adapteren át); hibás payload válasz nélkül eldobódik (fail closed);
  * a teljes réteg a {@code client.enabled} élő config-kapcsolóval üzem közben lekapcsolható.</p>
  */
-public final class IceSmpClientBridge implements PluginMessageListener, PlayerStateCleanup {
+public final class IceSmpClientBridge implements PluginMessageListener, PlayerStateCleanup,
+        HudManager.ClientHudRoute {
 
     /** Aggregált híd-diagnosztika a /icesmp client stats felülethez. */
     public record BridgeStats(long received, long droppedDisabled, long droppedOversized,
@@ -43,6 +49,16 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConfigManager configManager;
     private final ClientSessionRegistry sessions = new ClientSessionRegistry();
     private final ClientRateLimiter rateLimiter = new ClientRateLimiter();
+
+    /** A core köti be (setter-injektálás), mert a HudManager a bridge után épül. */
+    private volatile Function<UUID, HudManager.HudSnapshot> hudSnapshotSource;
+
+    /**
+     * Az utoljára kiküldött HUD-payload játékosonként: a HUD-tick másodpercenként fut,
+     * de a vezetékre csak tényleges változás megy ki (event-driven budget, terv §39).
+     * Új kézfogás/resync törli, így a friss session mindig teljes state-tel indul.
+     */
+    private final ConcurrentHashMap<UUID, byte[]> lastHudState = new ConcurrentHashMap<>();
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -79,6 +95,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         messenger.unregisterOutgoingPluginChannel(plugin, ClientProtocol.CHANNEL);
         sessions.clear();
         rateLimiter.clear();
+        lastHudState.clear();
     }
 
     @Override
@@ -159,6 +176,10 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 session.generation(), session.nextOutboundSequence(), envelope.requestId(), serverHello.encode()));
         debug(() -> "handshake accepted for " + player.getName() + " (client " + hello.clientVersion()
                 + ", protocol " + accepted.selectedProtocol() + ", capabilities " + accepted.capabilities() + ")");
+        // Az új session teljes kezdő state-et kap; a következő HUD-tickre nem várunk,
+        // ha már van kész snapshot.
+        lastHudState.remove(player.getUniqueId());
+        pushHudStateIfAvailable(player);
     }
 
     private void handlePing(final Player player, final MessageEnvelope envelope, final long now) {
@@ -197,15 +218,65 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     }
 
     /**
-     * A foundation fázisban nincs még state-domain, ezért a resync egy üres
-     * BEGIN/END pár: a kliensnek minden cache-elt state-et el kell dobnia, és a
-     * későbbi fázisok state-üzenetei töltik majd fel a két jelzés között.
+     * Resync-szerződés: a BEGIN minden kliensoldali cache eldobását jelenti, a két
+     * jelzés között a bekötött state-domainek teljes friss state-et küldenek (jelenleg
+     * a HUD), az END zárja a kört.
      */
     private void sendResync(final Player player, final ClientSession session, final UUID requestId) {
         send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_BEGIN,
                 session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
+        lastHudState.remove(player.getUniqueId());
+        pushHudStateIfAvailable(player);
         send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                 session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
+    }
+
+    /** {@link HudManager.ClientHudRoute}: a HUD-tick és a vanilla-suppression kapuja. */
+    @Override
+    public boolean nativeHudActive(final UUID playerId) {
+        if (!enabled() || !configManager.getBoolean("client.features.native-hud", false)) {
+            return false;
+        }
+        return sessions.find(playerId)
+                .map(session -> session.capabilities().contains(ClientCapability.NATIVE_HUD))
+                .orElse(false);
+    }
+
+    /**
+     * {@link HudManager.ClientHudRoute}: a HUD-tick a játékos régió-szálán hívja, a
+     * kiküldés a meglévő scheduler-biztos {@code send} úton megy. A capability-kaput a
+     * hívó {@code nativeHudActive} már ellenőrizte; itt csak a session-t és a dedupe-ot
+     * kezeljük.
+     */
+    @Override
+    public void pushHudState(final Player player, final HudManager.HudSnapshot snapshot) {
+        final ClientSession session = sessions.find(player.getUniqueId()).orElse(null);
+        if (session == null || snapshot == null) {
+            return;
+        }
+        final byte[] payload = ClientHudProjector.project(snapshot).encode();
+        final byte[] previous = lastHudState.put(player.getUniqueId(), payload);
+        if (previous != null && Arrays.equals(previous, payload)) {
+            return;
+        }
+        send(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_HUD_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "HUD_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
+    }
+
+    private void pushHudStateIfAvailable(final Player player) {
+        final Function<UUID, HudManager.HudSnapshot> source = hudSnapshotSource;
+        if (source == null || !nativeHudActive(player.getUniqueId())) {
+            return;
+        }
+        final HudManager.HudSnapshot snapshot = source.apply(player.getUniqueId());
+        if (snapshot != null) {
+            pushHudState(player, snapshot);
+        }
+    }
+
+    public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
+        this.hudSnapshotSource = source;
     }
 
     /** Session-, generation- és sequence-kapu minden kézfogás utáni üzenetre. */
@@ -286,5 +357,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     public void clearPlayerState(final UUID playerId) {
         sessions.invalidate(playerId);
         rateLimiter.clearPlayer(playerId);
+        lastHudState.remove(playerId);
     }
 }

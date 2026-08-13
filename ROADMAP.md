@@ -233,14 +233,20 @@ session-registry, rate limit, `/icesmp client` diagnosztika) elkészült —
 lásd `docs/ARCHITECTURE.md` „Client Bridge” szekció. A folytatás
 fázisonként, a terv szerinti sorrendben:
 
-- ⬜ Külön `IceSMP-Client` Fabric repo létrehozása (client-only skeleton,
-  `fabric.mod.json`, inert other-server mód).
-- ⬜ Phase 0 transport spike: valódi Paper↔Fabric HELLO/ACK roundtrip
-  exact 1.21.11-en, reconnect + proxy-hatás bizonyítással (CLIENT-02
-  acceptance-sor).
-- ⬜ Native HUD fázis: `HudSnapshot`/`ClassHudState` szerializáció +
-  presentation routing (nem új state-modell); `client.features.native-hud`
-  kapu csak ezután nyitható.
+- ✅ Külön Fabric repo (`MilCsik09/IceSMP-Fabric`): client-only skeleton
+  exact 1.21.11-re, bájtazonos protokoll-port golden-vector suite-tal,
+  kézfogás-állapotgép szimulált szerveres flow-regresszióval, kliens-config
+  és kézfogás-státusz debug overlay, inert other-server mód.
+- ⬜ Phase 0 transport spike ÉLŐ bizonyítása: valódi Paper↔Fabric HELLO/ACK
+  roundtrip exact 1.21.11-en, reconnect + proxy-hatás (CLIENT-02
+  acceptance-sor). A sandbox-oldali fele (codec + kézfogás-kör szimulált
+  szerverrel) a Fabric-repo suite-jaiban kész; az élő út staging-teszt.
+- ✅ Native HUD szerveroldal: `HudStatePayload` (0x20) sorosítás a meglévő
+  `HudSnapshot`/`ClassHudState` projekcióból, change-driven push +
+  resync-teljes-state, vanilla suppression (sidebar/first-party/compact) a
+  `ClientHudRoute` seamen át — lásd „Native HUD routing” az
+  ARCHITECTURE-ben. ⬜ Fabric-oldali natív HUD-renderer; a
+  `client.features.native-hud` kapu éles nyitása csak a kliens-release-szel.
 - ⬜ Ability bar + `CAST_SLOT` keybind casting — ELŐFELTÉTEL: a
   class/spell/cast hardening (PR #115) integrálva, közös canonical cast
   entrypointtal; addig a `keybind-cast` kapu zárva.

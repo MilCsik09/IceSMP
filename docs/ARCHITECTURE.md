@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 804 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 816 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1195,9 +1195,10 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
-| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup) | igen |
+| Projection | `client/projection/ClientHudProjector` (HudSnapshot → HudStatePayload, tiszta függvény) | nincs |
+| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute) | igen |
 
 ### Wire-formátum (protokoll v1)
 
@@ -1222,7 +1223,8 @@ ismeretlen üzenettípus, hamis hosszmező és trailing bájt egyaránt csendes 
 
 Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCOL_REJECT`,
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
-State/action/presentation sávok a későbbi fázisokban nyílnak.
+State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`. Action- és
+presentation-sávok a későbbi fázisokban nyílnak.
 
 ### Kézfogás és capability-k
 
@@ -1239,7 +1241,26 @@ protokoll támogatja. Minden feature-kapcsoló alapból `false`, és csak akkor 
 amikor a hozzá tartozó szerveroldali projection/action fázis elkészült. Ismeretlen
 capability-név nem hiba (forward compat).
 
-### Session-életciklus és védelem
+### Native HUD routing (HUD_STATE)
+
+A `HUD_STATE` (0x20) a meglévő `HudManager.HudSnapshot` + `ClassHudState` display-only
+projekciók sorosítása (`HudStatePayload`) — NEM új state-modell: pontosan azt viszi, amit a
+first-party HUD és a PlaceholderAPI-bridge is olvas, a `resourceBar` szöveges
+render-műtermék nélkül. A leképezés a tiszta `ClientHudProjector` függvény; a lista-mezők a
+protokoll-limiten (64 elem) csonkolódnak.
+
+Routing (a `hud.refresh-ticks` kadenciájú HUD-tickből, a játékos régió-szálán):
+
+- Egy játékos akkor kap natív HUD-ot, ha él a sessionje ÉS a kézfogásban NATIVE_HUD
+  capability-t kapott ÉS `client.features.native-hud: true` (élő config — kikapcsolása
+  restart nélkül visszaadja a vanilla HUD-ot).
+- A vezetékre csak tényleges változás megy ki: a híd az utoljára küldött payloadot
+  játékosonként cache-eli, azonos bájtsor nem küldődik újra. Új kézfogás és resync a
+  cache-t üríti, így a friss session mindig teljes state-tel indul.
+- **Nincs dupla HUD:** a natív HUD-ra routolt játékosnál a sidebar, a first-party IceSMP HUD
+  és a Folia compact fallback elhallgat (a `HudManager` a `ClientHudRoute` seam-en kérdez rá,
+  a híd típusát nem ismeri; a bekötés a core-ban történik). A világesemény-bossbarok és a
+  tablist maradnak. Resync a BEGIN/END közé teljes friss HUD-state-et küld.
 
 - A registry (`UUID → ClientSession`) nem durable; quit/kick a központi
   `PlayerSessionCleanupListener` úton takarít (a híd `PlayerStateCleanup`), disable a
@@ -1258,13 +1279,15 @@ capability-név nem hiba (forward compat).
 ### Diagnosztika és tesztek
 
 `/icesmp client <név>` (session-részletek), `/icesmp client stats` (híd-számlálók),
-`/icesmp client resync <név>` (kényszerített, üres BEGIN/END resync) — jog:
+`/icesmp client resync <név>` (kényszerített resync: BEGIN + teljes state + END) — jog:
 `icesmp.admin.client`. Debug-napló: `client.debug: true`.
 
 A `clientProtocolRegressionTest` (a `check` része) dependency-free fedi a codec-roundtripet,
-a fail-closed hibautakat, a negotiációt, a registry-életciklust, a sequence-monotonitást és a
-rate limitert. A Fabric-oldali ellenpárt (valódi 1.21.11 transport spike) a külön
-`IceSMP-Client` repo Phase 0 feladata bizonyítja; addig a protokoll-tartomány szándékosan
-1..1 és minden feature-kapu zárva.
+a fail-closed hibautakat, a HUD-state sorosítást és projekciót, a negotiációt, a
+registry-életciklust, a sequence-monotonitást és a rate limitert. A kliensoldali ellenpár a
+`MilCsik09/IceSMP-Fabric` repo: a protokoll-csomag ott bájtazonos port, golden-vector és
+szimulált szerveres kézfogás-suite-okkal (lásd az AGENTS.md kliensprotokoll-DoD szabályát);
+az élő Paper↔Fabric roundtrip-bizonyítás (CLIENT-02) staging-teszt. A protokoll-tartomány
+szándékosan 1..1, és a feature-kapuk alapból zárva maradnak.
 
 

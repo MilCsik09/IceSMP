@@ -1,7 +1,13 @@
 package hu.taliann.icesmp.client;
 
+import hu.taliann.icesmp.classspec.integration.ClassHudMetric;
+import hu.taliann.icesmp.classspec.integration.ClassHudSlot;
+import hu.taliann.icesmp.classspec.integration.ClassHudState;
+import hu.taliann.icesmp.client.projection.ClientHudProjector;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
+import hu.taliann.icesmp.client.protocol.HudStatePayload;
+import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
 import hu.taliann.icesmp.client.protocol.ClientProtocolException;
 import hu.taliann.icesmp.client.protocol.MessageEnvelope;
@@ -28,6 +34,9 @@ public final class ClientProtocolRegressionSuite {
         envelopeRoundtrip();
         envelopesAreImmutable();
         payloadRoundtrips();
+        hudStateRoundtrip();
+        hudStateLimits();
+        hudProjectorMapping();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -78,6 +87,90 @@ public final class ClientProtocolRegressionSuite {
 
         final ProtocolReject reject = new ProtocolReject(ClientProtocol.REJECT_PROTOCOL_INCOMPATIBLE, 1, 1);
         check(reject.equals(ProtocolReject.decode(reject.encode())), "ProtocolReject roundtrip");
+    }
+
+    private static HudStatePayload sampleHudState() {
+        return new HudStatePayload(
+                "Perinfernicitas", "RED", "vörös", "#FF5544", "#803322",
+                "Halállovag", 42, "1 234,5", true, 87, 120, 72, "Rúnaerő",
+                "Vérhold", List.of("Társ: Alva (92%)"),
+                List.of(new HudStatePayload.Currency("ember", "Parázs", "12", true),
+                        new HudStatePayload.Currency("shard", "Szilánk", "3", false)),
+                new HudStatePayload.ClassHud("death_knight", "frost", "Fagy",
+                        "Rúnakör", "Fagyjegyek", "harcban", "Fagyproc!", 2, 3,
+                        List.of("rune_circle"),
+                        List.of(new HudStatePayload.Metric("runic_power", "Rúnaerő", "87",
+                                87.0D, 120.0D, "ok"),
+                                new HudStatePayload.Metric("frost_marks", "Jegyek", "2/5",
+                                        2.0D, 5.0D, "building")),
+                        List.of(new HudStatePayload.Slot("rune_1", "rune", "ready", 100, "Vér"),
+                                new HudStatePayload.Slot("rune_2", "rune", "recharge", 40, "Fagy"))));
+    }
+
+    private static void hudStateRoundtrip() throws Exception {
+        final HudStatePayload state = sampleHudState();
+        check(state.equals(HudStatePayload.decode(state.encode())), "HudStatePayload roundtrip");
+
+        // Üres/kaszt nélküli állapot: a null classHud kanonikus üres ClassHud-dá normalizálódik.
+        final HudStatePayload empty = new HudStatePayload("Menedék vendége", "", "", "", "",
+                "nincs", 0, "0", false, 0, 0, 0, "", "", List.of(), List.of(), null);
+        final HudStatePayload emptyBack = HudStatePayload.decode(empty.encode());
+        check(empty.equals(emptyBack), "empty HudStatePayload roundtrip");
+        check(emptyBack.classHud().classId().isEmpty(), "null classHud normalized to empty");
+    }
+
+    private static void hudStateLimits() {
+        final List<HudStatePayload.Metric> tooMany = new java.util.ArrayList<>();
+        for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
+            tooMany.add(new HudStatePayload.Metric("m" + i, "", "", 0.0D, 0.0D, ""));
+        }
+        final HudStatePayload oversized = new HudStatePayload("f", "", "", "", "", "c", 1, "0",
+                true, 0, 0, 0, "", "", List.of(), List.of(),
+                new HudStatePayload.ClassHud("id", "", "", "", "", "", "", 0, 0,
+                        List.of(), tooMany, List.of()));
+        try {
+            oversized.encode();
+            throw new AssertionError("oversized metric list accepted");
+        } catch (final IllegalArgumentException expected) {
+            // fail closed a kódolás előtt
+        }
+    }
+
+    private static void hudProjectorMapping() {
+        final ClassHudState classHud = new ClassHudState("death_knight", "frost", "Fagy",
+                "Rúnakör", "Fagyjegyek", "harcban", "Fagyproc!", 2, 3,
+                List.of("rune_circle"),
+                List.of(ClassHudMetric.value("runic_power", "Rúnaerő", "87", 87.0D, 120.0D, "ok")),
+                ClassHudSlot.charges("rune", "rune", "Rúna", 2, 3));
+        final HudManager.HudSnapshot snapshot = new HudManager.HudSnapshot(
+                "Perinfernicitas", "RED", "vörös", "#FF5544", "#803322",
+                "Halállovag", 42, "1 234,5", true, 87, 120, 72, "Rúnaerő", "|||||",
+                "Vérhold", List.of("Társ: Alva (92%)"),
+                List.of(new HudManager.HudCurrency("ember", "Parázs", "12", true)),
+                classHud);
+        final HudStatePayload projected = ClientHudProjector.project(snapshot);
+        check("Perinfernicitas".equals(projected.faction()) && "RED".equals(projected.factionId()),
+                "projector faction mapping");
+        check(projected.classLevel() == 42 && projected.resource() == 87
+                && projected.resourceMax() == 120 && projected.resourcePercent() == 72,
+                "projector numeric mapping");
+        check("death_knight".equals(projected.classHud().classId())
+                && projected.classHud().metrics().size() == 1
+                && projected.classHud().metrics().get(0).maximum() == 120.0D
+                && projected.classHud().slots().size() == 3,
+                "projector class HUD mapping");
+        check(projected.currencies().size() == 1
+                && projected.currencies().get(0).primary(), "projector currency mapping");
+
+        // A vanilla-only render-műtermék (resourceBar) nem utazik: a natív kliens a
+        // resource/resourceMax párból rajzol.
+        final HudStatePayload roundtripped;
+        try {
+            roundtripped = HudStatePayload.decode(projected.encode());
+        } catch (final ClientProtocolException unexpected) {
+            throw new AssertionError("projected HUD state must decode", unexpected);
+        }
+        check(projected.equals(roundtripped), "projected HUD state roundtrip");
     }
 
     private static void malformedEnvelopeRejected() {

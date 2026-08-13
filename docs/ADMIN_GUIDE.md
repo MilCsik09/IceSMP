@@ -1530,6 +1530,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CLIENT-03 Inkompatibilis kliens | Fejlesztő | protokoll-tartományon kívüli teszt-HELLO | PROTOCOL_REJECT megy ki, nincs kick, a játékos vanilla módban játszik | `client.enabled: false` | `client/CLIENT-03/` |
 | [ ] | CLIENT-04 Reconnect és stale csomag | Fejlesztő | gyors reconnect + régi generation-nel küldött csomag | új session nagyobb generationt kap; a régi generation/sequence csomagja stale-dropra megy (`/icesmp client stats`) | hibajegy, rollout stop | `client/CLIENT-04/` |
 | [ ] | CLIENT-05 Rollback-kapcsoló | Admin | élő session mellett `/icesmp config set client.enabled false` | a híd restart nélkül minden üzenetet eldob, gameplay és vanilla kliens érintetlen | restart + hibajegy | `client/CLIENT-05/` |
+| [ ] | CLIENT-06 Natív HUD routing | Fejlesztő | NATIVE_HUD-ot hirdető kliens + `/icesmp config set client.features.native-hud true` | a kliens HUD_STATE-et kap (join után azonnal, majd csak változáskor); a routolt játékosnál sidebar/first-party HUD/compact fallback eltűnik, vanilla társánál változatlan; `/icesmp client resync` teljes state-et küld BEGIN/END között; a kapu false-ra állítva a vanilla HUD restart nélkül visszatér | `client.features.native-hud: false` | `client/CLIENT-06/` |
 
 ### Mini-plugin megfelelői
 
