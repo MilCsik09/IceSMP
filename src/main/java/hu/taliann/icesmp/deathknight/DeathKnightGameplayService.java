@@ -360,7 +360,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
         final int total = blood + frost + death;
         final int totalMax = naturalMax * 2 + deathMax;
         final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
-                "rune_wheel", "Rúnakör", "Rúnák V" + blood + " F" + frost + " H" + death,
+                "rune_wheel", "Rúnakör", "Rúnák",
                 total, totalMax, total == totalMax ? "ready" : "active");
         var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
         String stateText = "";

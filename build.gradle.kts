@@ -78,11 +78,12 @@ val validateIceSmpHudPackage by tasks.registering {
         val layoutX = manifest["layout_x"] as? Map<*, *>
             ?: error("First-party HUD horizontal anchors are missing")
         mapOf(
+            "resource_text" to 68,
             "resource_bar" to 60,
             "primary_metric_bar" to 12,
             "secondary_metric_bar" to 125,
             "event_center" to 120,
-            "level_center" to 224
+            "level_center" to 216
         ).forEach { (name, value) ->
             require((layoutX[name] as? Number)?.toInt() == value) {
                 "HUD horizontal anchor drifted outside its reviewed panel: $name"
@@ -95,11 +96,15 @@ val validateIceSmpHudPackage by tasks.registering {
             && (manifest["wallet_rows"] as Number).toInt() == 2) {
             "First-party HUD wallet must retain its fixed 2x2 currency grid"
         }
+        require(manifest["detail_metrics_conditional"] == true
+            && (manifest["compact_wallet_y_shift"] as Number).toInt() == -22) {
+            "Empty supplementary detail rows must collapse before the wallet"
+        }
         require(manifest["vanilla_health_hidden"] == false && manifest["vanilla_armor_hidden"] == false) {
             "Vanilla health/armor may not be hidden before the HP-rework renderer is complete"
         }
         val fonts = hud.dir("font").asFile
-        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "currency_lower", "runes", "charges",
+        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "currency_lower", "runes", "runes_compact", "charges",
             "mechanic_icons", "mechanic_slots", "resource_segments",
             "metric_segments", "text_header", "text_subheader", "text_resource",
             "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet", "text_wallet_lower").forEach { name ->

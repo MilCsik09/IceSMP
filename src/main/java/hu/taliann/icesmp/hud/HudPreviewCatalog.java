@@ -47,25 +47,31 @@ public final class HudPreviewCatalog {
         final String state = safe.state();
         final int resource = "resource".equals(state) ? 38 : 82;
         final String event = "event".equals(state) ? "Vérhold • RAID • Világboss" : "Vérhold 04:12";
-        final List<HudManager.HudCurrency> wallets = "wallet".equals(state)
-                ? List.of(
-                        new HudManager.HudCurrency(faction.currency, "Elsődleges", "12.8k", true),
-                        new HudManager.HudCurrency("red", "Parázsló Parals", "840", false),
-                        new HudManager.HudCurrency("blue", "Hópihér-veret", "315", false),
-                        new HudManager.HudCurrency("dark", "Csontveret", "64", false))
-                : List.of(new HudManager.HudCurrency(faction.currency, "Elsődleges", "12.8k", true));
+        final List<HudManager.HudCurrency> wallets = List.of(
+                currency("red", "Parázsló Parals", "840", faction.currency),
+                currency("blue", "Hópihér-veret", "315", faction.currency),
+                currency("neutral", "Creutzér", "12.8k", faction.currency),
+                currency("dark", "Csontveret", "64", faction.currency));
         return new IceSmpHudModel(faction.name, faction.theme, faction.accent,
                 playerClass.name, 42, "12.8k", true, resource, 100, resource,
                 playerClass.resource, event, wallets, classState(safe, playerClass));
     }
 
+    private static HudManager.HudCurrency currency(final String id, final String name,
+                                                   final String amount, final String primaryId) {
+        return new HudManager.HudCurrency(id, name, amount, id.equals(primaryId));
+    }
+
     private static ClassHudState classState(final HudPreviewSelection selection,
                                             final ClassFixture playerClass) {
         if ("dk-runes".equals(selection.state()) || "death_knight".equals(selection.playerClass())) {
-            return new ClassHudState("death_knight", "frost", "Fagyhozó", "Rúnák V2 F2 H2",
+            final ClassHudMetric runes = ClassHudMetric.value(
+                    "rune_wheel", "Rúnakör", "Rúnák", 4, 6, "active");
+            final ClassHudMetric frostMarks = ClassHudMetric.value(
+                    "frost_marks", "Fagyjel", "Fagyjel 3/5", 3, 5, "ready");
+            return new ClassHudState("death_knight", "frost", "Fagyhozó", "Rúnák",
                     "Fagyjel 3/5", "harc", "Dérrobbanás kész", 4, 6,
-                    List.of("Rúnák", "Fagyjel"),
-                    List.of(ClassHudMetric.value("frost_marks", "Fagyjel", "3/5", 3, 5, "ready")),
+                    List.of("Rúnák", "Fagyjel"), List.of(runes, frostMarks),
                     List.of(new ClassHudSlot("r1", "blood", "ready", 100, "Vér"),
                             new ClassHudSlot("r2", "blood", "spent", 0, "Vér"),
                             new ClassHudSlot("r3", "frost", "regenerating", 55, "Fagy"),
@@ -74,12 +80,17 @@ public final class HudPreviewCatalog {
                             new ClassHudSlot("r6", "death", "ready", 100, "Halál")));
         }
         if ("wizard-attunement".equals(selection.state()) || "wizard".equals(selection.playerClass())) {
+            final ClassHudMetric runewaving = ClassHudMetric.value(
+                    "runewaving", "Rúnaszövés", "Rúnaszövés 4", 4, 5, "active");
+            final ClassHudMetric attunement = ClassHudMetric.value(
+                    "attunement", "Hangolás", "Tűz hangolás", 72, 100, "ready");
             return new ClassHudState("wizard", "elementalist", "Elementalista", "Rúnaszövés 4",
                     "Tűz hangolás", "Tűz > Fagy > Vihar", "Elemi túltöltés", 3, 5,
                     List.of("Rúnaszövés", "Hangolás"),
-                    List.of(ClassHudMetric.value("attunement", "Hangolás", "TŰZ 72%", 72, 100, "ready"),
-                            ClassHudMetric.value("runewaving", "Rúnák", "4/5", 4, 5, "active"),
-                            ClassHudMetric.text("court", "Udvar", "3 aktív", "active")),
+                    List.of(runewaving, attunement,
+                            ClassHudMetric.value("attunement_fire", "Tűz", "72", 72, 100, "fire"),
+                            ClassHudMetric.value("attunement_frost", "Fagy", "48", 48, 100, "frost"),
+                            ClassHudMetric.value("attunement_arcane", "Arkán", "31", 31, 100, "arcane")),
                     ClassHudSlot.charges("rune", "runewaving", "Rúna", 3, 5));
         }
         final boolean noSpec = "spec".equals(selection.state());

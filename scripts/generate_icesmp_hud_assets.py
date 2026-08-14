@@ -45,6 +45,7 @@ TEXT_LOGICAL_HEIGHT = 12
 # source. Minecraft scales the 8x atlas into the configured 5x12 logical cell; we
 # never collapse the outline to a five-pixel binary mask during generation.
 TEXT_OVERSAMPLE = 8
+COMPACT_WALLET_Y_SHIFT = -22
 HUD_LAYOUT_SCALES = (0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80,
                      2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25, 3.50)
 
@@ -72,11 +73,12 @@ HUD_Y = {
     "wallet_lower_text": 237,
 }
 HUD_X = {
+    "resource_text": 68,
     "resource_bar": 60,
     "primary_metric_bar": 12,
     "secondary_metric_bar": 125,
     "event_center": 120,
-    "level_center": 224,
+    "level_center": 216,
 }
 
 THEMES = ("guest", "red", "blue", "neutral", "dark")
@@ -623,10 +625,13 @@ def generate_layout_preview(text_rows: list[str]) -> None:
     level = "48"
     paste_text(level, HUD_X["level_center"] - len(level) * (TEXT_LOGICAL_WIDTH + 1) // 2,
                HUD_Y["header"], (234, 247, 255))
-    paste_text("Düh 82/100", 52, HUD_Y["resource_text"], (199, 212, 234))
+    paste_text("Düh 82/100", HUD_X["resource_text"], HUD_Y["resource_text"], (199, 212, 234))
     paste_text("Fő 72", 37, HUD_Y["mechanic_text"], (119, 221, 242))
     paste_text("Spec 43", 158, HUD_Y["mechanic_text"], (199, 212, 234))
     paste_text("Harc • Aktív", 141, HUD_Y["state"], (199, 212, 234))
+    paste_text("Tűz 72", 20, HUD_Y["detail_text"], (199, 212, 234))
+    paste_text("Fagy 48", 86, HUD_Y["detail_text"], (199, 212, 234))
+    paste_text("Arkán 31", 152, HUD_Y["detail_text"], (199, 212, 234))
     event = "ESEMÉNY Vérhold 04:12"
     paste_text(event, HUD_X["event_center"] - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
                HUD_Y["event_text"], (240, 216, 141))
@@ -650,6 +655,16 @@ def generate_layout_preview(text_rows: list[str]) -> None:
     target = ROOT / "build" / "reports" / "icesmp-hud" / "layout-preview.png"
     target.parent.mkdir(parents=True, exist_ok=True)
     save_png(canvas, target)
+
+    compact_wallet_top = (201 - frame_y + COMPACT_WALLET_Y_SHIFT) * preview_scale
+    detailed_wallet_top = (201 - frame_y) * preview_scale
+    compact = Image.new("RGBA", (HUD_FRAME_WIDTH * preview_scale,
+                                  (160 + 42 + 1) * preview_scale), (8, 11, 16, 255))
+    compact.alpha_composite(canvas.crop((0, 0, canvas.width, 160 * preview_scale)), (0, 0))
+    compact.alpha_composite(canvas.crop((0, detailed_wallet_top, canvas.width,
+                                         detailed_wallet_top + 42 * preview_scale)),
+                            (0, compact_wallet_top))
+    save_png(compact, target.with_name("layout-preview-compact.png"))
 
 
 def main() -> None:
@@ -687,6 +702,12 @@ def main() -> None:
     write_font("runes", [
         provider(f"rune-{kind}-{state}.png", chr(0xE140 + kind_index * 4 + state_index),
                  8, HUD_Y["runes"], 18)
+        for kind_index, kind in enumerate(RUNE_KINDS)
+        for state_index, state in enumerate(RUNE_STATES)
+    ])
+    write_font("runes_compact", [
+        provider(f"rune-{kind}-{state}.png", chr(0xE140 + kind_index * 4 + state_index),
+                 8, HUD_Y["metric_bar"], 12)
         for kind_index, kind in enumerate(RUNE_KINDS)
         for state_index, state in enumerate(RUNE_STATES)
     ])
@@ -771,6 +792,8 @@ def main() -> None:
         "wallet_slots": 4,
         "wallet_columns": 2,
         "wallet_rows": 2,
+        "detail_metrics_conditional": True,
+        "compact_wallet_y_shift": COMPACT_WALLET_Y_SHIFT,
         "layout_color_payload_bits": 13,
         "layout_y_offset_range": [-256, 255],
         "layout_scale_variants": list(HUD_LAYOUT_SCALES),
