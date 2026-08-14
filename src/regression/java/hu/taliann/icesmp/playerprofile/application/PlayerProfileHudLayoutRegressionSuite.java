@@ -15,6 +15,7 @@ public final class PlayerProfileHudLayoutRegressionSuite {
         unchangedFieldsFollowTheGlobalBase();
         onlyPersonalDifferencesArePersisted();
         malformedFieldsFallBackIndependently();
+        legacyLevelTextAnchorMigratesToTheCenteredBaseline();
         System.out.println("PlayerProfile HUD-layout regression suite passed.");
     }
 
@@ -83,6 +84,17 @@ public final class PlayerProfileHudLayoutRegressionSuite {
         check(wallet.xOffsetPixels() == 3 && wallet.yOffsetPixels() == 11
                         && wallet.scaleIndex() == 15 && wallet.visible(),
                 "hibás komponensmező csak önmagában eshet vissza az alapra");
+    }
+
+    private static void legacyLevelTextAnchorMigratesToTheCenteredBaseline() {
+        final HudLayoutSnapshot global = HudLayoutSnapshot.defaults()
+                .withComponent(HudComponent.LEVEL_TEXT,
+                        new HudComponentLayout(0, 0, 2, true));
+        final Map<String, String> legacy = Map.of("hud.layout.level-text.x", "-16");
+        final HudLayoutSnapshot merged = PlayerProfileHudPreferenceStore.applyLayoutOverrides(
+                global, legacy);
+        check(merged.componentLayout(HudComponent.LEVEL_TEXT).xOffsetPixels() == 0,
+                "a régi -16-os szintpozíciót az új középre igazított alapra kell migrálni");
     }
 
     private static void check(final boolean condition, final String message) {

@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 try:
-    from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+    from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 except ModuleNotFoundError:
     print("A generateIceSmpHudAssets futtatásához a Pillow csomag szükséges; "
           "telepítés: python3 -m pip install Pillow", file=sys.stderr)
@@ -22,12 +22,11 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 HUD_SOURCE = ROOT / "dev-assets" / "icesmp-hud" / "source"
-FRAME_ATLAS_SOURCE = HUD_SOURCE / "icesmp-hud-runtime-source.png"
+FRAME_ATLAS_SOURCE = HUD_SOURCE / "frames-v3.png"
 ITEM_SOURCE = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "item"
-GUEST_FRAME_SOURCE = HUD_SOURCE / "frame-guest-v2.png"
-MECHANIC_CORE_SOURCE = HUD_SOURCE / "mechanics-core-v1.png"
-MECHANIC_SPEC_SOURCE = HUD_SOURCE / "mechanics-spec-v1.png"
-TEXT_FONT_SOURCE = HUD_SOURCE / "DejaVuSans.ttf"
+MECHANIC_CORE_SOURCE = HUD_SOURCE / "mechanics-core-v3.png"
+MECHANIC_SPEC_SOURCE = HUD_SOURCE / "mechanics-spec-v3.png"
+TEXT_FONT_SOURCE = HUD_SOURCE / "Inter-SemiBold.ttf"
 ASSETS = ROOT / "resource-pack" / "assets" / "icesmp_hud"
 TEXTURES = ASSETS / "textures" / "hud"
 FONTS = ASSETS / "font"
@@ -40,11 +39,48 @@ HUD_MAX_BIT = 10
 HUD_ADD_HEIGHT = 4095
 HUD_FRAME_WIDTH = 240
 HUD_FRAME_HEIGHT = 160
-TEXT_LOGICAL_WIDTH = 6
+TEXT_LOGICAL_WIDTH = 5
 TEXT_LOGICAL_HEIGHT = 12
-TEXT_OVERSAMPLE = 4
+# Keep the compact six-pixel layout advance, but retain a real high-density glyph
+# source. Minecraft scales the 8x atlas into the configured 5x12 logical cell; we
+# never collapse the outline to a five-pixel binary mask during generation.
+TEXT_OVERSAMPLE = 8
+COMPACT_WALLET_ANCHOR_Y = 178
+COMPACT_WALLET_ANCHOR_DELTA = COMPACT_WALLET_ANCHOR_Y - 201
 HUD_LAYOUT_SCALES = (0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80,
                      2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25, 3.50)
+
+# Reviewed baseline anchors in the same HUD shader coordinate system as bitmap ascent.
+# Keeping them together prevents independent providers from drifting into adjacent panels.
+HUD_Y = {
+    "frame": 18,
+    "class_icon": 38,
+    "header": 42,
+    "subheader": 55,
+    "resource_text": 67,
+    "resource_bar": 70,
+    "mechanic_icon": 86,
+    "mechanic_text": 94,
+    "metric_bar": 108,
+    "runes": 130,
+    "charge": 137,
+    "state": 143,
+    "event_icon": 155,
+    "event_text": 165,
+    "detail_text": 190,
+    "wallet_icon": 210,
+    "wallet_text": 217,
+    "wallet_lower_icon": 230,
+    "wallet_lower_text": 237,
+}
+HUD_X = {
+    "resource_text": 68,
+    "resource_bar": 60,
+    "primary_metric_bar": 12,
+    "secondary_metric_bar": 125,
+    "event_center": 120,
+    "level_center": 218,
+}
 
 THEMES = ("guest", "red", "blue", "neutral", "dark")
 CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin",
@@ -172,7 +208,10 @@ def centered_sprite(image: Image.Image, maximum: int = 54,
     source = image.convert("RGBA")
     bbox = largest_component_bbox(source) if largest_component else source.getchannel("A").getbbox()
     sprite = source.crop(bbox) if bbox else source
-    sprite.thumbnail((maximum, maximum), Image.Resampling.LANCZOS)
+    sprite.thumbnail((maximum, maximum), Image.Resampling.NEAREST)
+    scaled_bbox = sprite.getchannel("A").getbbox()
+    if scaled_bbox:
+        sprite = sprite.crop(scaled_bbox)
     output = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     output.alpha_composite(sprite, ((64 - sprite.width) // 2, (64 - sprite.height) // 2))
     # Minecraft derives bitmap-glyph advance from the last non-transparent column.
@@ -183,7 +222,7 @@ def centered_sprite(image: Image.Image, maximum: int = 54,
 
 def validate_static_icon_sources() -> None:
     """Validate reviewed first-party icons that are versioned directly in the resource pack."""
-    expected = [f"class-{class_id}.png" for class_id in CLASSES]
+    expected = [f"class-{class_id}.png" for class_id in CLASS_GLYPHS]
     expected += [f"icon-{name}.png" for name in ("money", "event", "level")]
     expected += [f"rune-{kind}-{state}.png" for kind in RUNE_KINDS for state in RUNE_STATES]
     expected += ["charge-ready.png", "charge-spent.png"]
@@ -198,74 +237,31 @@ def validate_static_icon_sources() -> None:
             raise RuntimeError(f"First-party HUD icon lost its fixed-width alpha marker: {path}")
 
 
-def remove_magenta(image: Image.Image) -> Image.Image:
-    source = image.convert("RGBA")
-    cleaned = []
-    for red, green, blue, alpha in pixels(source):
-        if alpha == 0:
-            cleaned.append((0, 0, 0, 0))
-            continue
-        if min(red, blue) > 115 and min(red, blue) - green > 65 and abs(red - blue) < 90:
-            cleaned.append((0, 0, 0, 0))
-        else:
-            cleaned.append((red, green, blue, alpha))
-    source.putdata(cleaned)
-    return source
-
-
-def strip_magenta_resample_spill(image: Image.Image) -> Image.Image:
-    source = image.convert("RGBA")
-    cleaned = []
-    for red, green, blue, alpha in pixels(source):
-        spill = (16 <= alpha < 128 and red > 200 and blue > 200
-                 and green <= 8 and abs(red - blue) < 30)
-        cleaned.append((0, 0, 0, 0) if spill else (red, green, blue, alpha))
-    source.putdata(cleaned)
-    return source
-
-
-def canonical_frames() -> dict[str, Image.Image]:
-    if not FRAME_ATLAS_SOURCE.is_file():
-        raise FileNotFoundError(f"Missing high-resolution HUD frame atlas: {FRAME_ATLAS_SOURCE}")
-    atlas = Image.open(FRAME_ATLAS_SOURCE).convert("RGBA")
-    boxes = {
-        "red": (60, 40, 730, 475), "blue": (790, 40, 1490, 475),
-        "neutral": (60, 525, 730, 950), "dark": (790, 520, 1500, 960),
-    }
-    frames: dict[str, Image.Image] = {}
-    for theme, box in boxes.items():
-        keyed = remove_magenta(atlas.crop(box))
-        bbox = keyed.getchannel("A").getbbox()
-        sprite = keyed.crop(bbox) if bbox else keyed
-        sprite.thumbnail((670, 410), Image.Resampling.LANCZOS)
-        frame = Image.new("RGBA", (680, 420), (0, 0, 0, 0))
-        frame.alpha_composite(sprite, ((680 - sprite.width) // 2, (420 - sprite.height) // 2))
-        frames[theme] = frame
-    return frames
-
-
 def mechanic_variant(base: Image.Image, variant: str) -> Image.Image:
     """Create deterministic runtime states from one reviewed high-resolution source."""
     source = base.convert("RGBA")
     alpha = source.getchannel("A")
-    if variant == "ready":
-        colored = ImageEnhance.Color(source).enhance(1.22)
-        colored = ImageEnhance.Brightness(colored).enhance(1.12)
+    if variant == "active":
+        output = source.copy()
+    elif variant == "ready":
+        colored = ImageEnhance.Brightness(ImageEnhance.Color(source).enhance(1.18)).enhance(1.10)
         glow = alpha.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(1.0))
-        halo = Image.new("RGBA", source.size, (112, 231, 255, 0))
-        halo.putalpha(glow.point(lambda value: value // 3))
+        halo = Image.new("RGBA", source.size, (100, 225, 255, 0))
+        halo.putalpha(glow.point(lambda value: value // 4))
         output = Image.alpha_composite(halo, colored)
     elif variant == "alert":
-        red = Image.new("RGBA", source.size, (231, 76, 63, 0))
+        red = Image.new("RGBA", source.size, (235, 55, 45, 0))
         red.putalpha(alpha.point(lambda value: value * 2 // 5))
         output = Image.alpha_composite(source, red)
-        output = ImageEnhance.Contrast(output).enhance(1.08)
     elif variant == "spent":
-        gray = source.convert("LA").convert("RGBA")
-        gray.putalpha(alpha.point(lambda value: value * 3 // 4))
+        gray = ImageEnhance.Color(source).enhance(0.10)
         output = ImageEnhance.Brightness(gray).enhance(0.48)
+        output.putalpha(alpha.point(lambda value: value * 3 // 4))
     else:
-        output = source
+        raise ValueError(variant)
+    safe_mask = Image.new("L", (64, 64), 0)
+    ImageDraw.Draw(safe_mask).rectangle((8, 8, 55, 55), fill=255)
+    output.putalpha(ImageChops.multiply(output.getchannel("A"), safe_mask))
     output.putpixel((63, 63), (255, 255, 255, 1))
     return output
 
@@ -289,81 +285,26 @@ def generate_mechanic_icons() -> None:
                 round((column + 1) * sheet.width / columns),
                 round((row + 1) * sheet.height / rows),
             )
-            base = centered_sprite(sheet.crop(box), 52, True)
+            base = sheet.crop(box).convert("RGBA")
+            if base.size != (64, 64):
+                raise RuntimeError(f"Mechanic source cell must stay 64x64: {source_path}")
             for variant in MECHANIC_VARIANTS:
                 file_name = f"mechanic-{class_id}-{mechanic_id}-{variant}.png"
                 save_png(mechanic_variant(base, variant), TEXTURES / file_name)
 
 
-def guest_frame_with_canonical_layout(canonical: Image.Image) -> Image.Image:
-    """Apply guest art without allowing generated panel geometry to drift."""
-    donor = Image.open(GUEST_FRAME_SOURCE).convert("RGBA").resize(
-        canonical.size, Image.Resampling.LANCZOS)
-    donor_pixels = donor.load()
-    for y in range(donor.height):
-        for x in range(donor.width):
-            red, green, blue, alpha = donor_pixels[x, y]
-            if red > 95 and blue > 95 and green * 3 < red * 2 and green * 3 < blue * 2:
-                donor_pixels[x, y] = (red, green, blue, 0)
-
-    styled = Image.new("RGBA", canonical.size)
-    source_pixels = canonical.load()
-    styled_pixels = styled.load()
-    for y in range(canonical.height):
-        for x in range(canonical.width):
-            red, green, blue, alpha = source_pixels[x, y]
-            luminance = (red * 30 + green * 59 + blue * 11) // 100
-            styled_pixels[x, y] = (
-                min(255, int(luminance * 0.78 + 25)),
-                min(255, int(luminance * 0.86 + 34)),
-                min(255, int(luminance * 0.90 + 39)),
-                alpha,
-            )
-    canonical_styled = styled.copy()
-
-    mask = Image.new("L", canonical.size, 0)
-    draw = ImageDraw.Draw(mask)
-    width, height = canonical.size
-    rim = max(12, width // 34)
-    draw.rectangle((0, 0, width - 1, rim), fill=255)
-    draw.rectangle((0, height - rim - 1, width - 1, height - 1), fill=255)
-    draw.rectangle((0, 0, rim, height - 1), fill=255)
-    draw.rectangle((width - rim - 1, 0, width - 1, height - 1), fill=255)
-    draw.rectangle((width // 2 - 40, 0, width // 2 + 40, 39), fill=255)
-    draw.rectangle((width // 2 - 34, height - 40, width // 2 + 34, height - 1), fill=255)
-    mask = Image.composite(mask, Image.new("L", canonical.size, 0), donor.getchannel("A"))
-    ornament = Image.composite(donor, Image.new("RGBA", canonical.size), mask)
-    styled.alpha_composite(ornament)
-
-    protected = (rim + 1, 40, width - rim - 1, height - 40)
-    styled.paste(canonical_styled.crop(protected), protected)
-    if (styled.getchannel("A").crop(protected).tobytes()
-            != canonical.getchannel("A").crop(protected).tobytes()):
-        raise RuntimeError("Guest HUD changed the canonical content-grid geometry")
-    return styled
-
-
 def generate_frames() -> None:
     TEXTURES.mkdir(parents=True, exist_ok=True)
-    frames = canonical_frames()
-    for theme in THEMES:
-        if theme == "guest":
-            if not GUEST_FRAME_SOURCE.is_file():
-                raise FileNotFoundError(f"Missing original Menedék HUD source: {GUEST_FRAME_SOURCE}")
-            source = guest_frame_with_canonical_layout(frames["neutral"])
-            bbox = frames["neutral"].getchannel("A").getbbox()
-        else:
-            source = frames[theme]
-            bbox = source.getchannel("A").getbbox()
-        sprite = source.crop(bbox) if bbox else source
-        sprite.thumbnail((HUD_FRAME_WIDTH, HUD_FRAME_HEIGHT), Image.Resampling.LANCZOS)
-        output = Image.new("RGBA", (HUD_FRAME_WIDTH, HUD_FRAME_HEIGHT), (0, 0, 0, 0))
-        output.alpha_composite(sprite, ((HUD_FRAME_WIDTH - sprite.width) // 2,
-                                        (HUD_FRAME_HEIGHT - sprite.height) // 2))
-        output = strip_magenta_resample_spill(output)
+    if not FRAME_ATLAS_SOURCE.is_file():
+        raise FileNotFoundError(f"Missing normalized HUD frame atlas: {FRAME_ATLAS_SOURCE}")
+    atlas = Image.open(FRAME_ATLAS_SOURCE).convert("RGBA")
+    if atlas.size != (HUD_FRAME_WIDTH * len(THEMES), HUD_FRAME_HEIGHT):
+        raise RuntimeError(f"Unexpected normalized HUD frame atlas size: {atlas.size}")
+    for index, theme in enumerate(THEMES):
+        output = atlas.crop((index * HUD_FRAME_WIDTH, 0,
+                             (index + 1) * HUD_FRAME_WIDTH, HUD_FRAME_HEIGHT))
         output.putpixel((HUD_FRAME_WIDTH - 1, HUD_FRAME_HEIGHT - 1), (255, 255, 255, 1))
-        save_png(output,
-                 TEXTURES / f"frame-hud-{theme}.png")
+        save_png(output, TEXTURES / f"frame-hud-{theme}.png")
 
 
 def generate_currency_icons() -> None:
@@ -371,31 +312,8 @@ def generate_currency_icons() -> None:
         source = ITEM_SOURCE / f"currency_{currency}.png"
         if not source.is_file():
             raise FileNotFoundError(f"Missing canonical currency icon: {source}")
-        save_png(centered_sprite(Image.open(source), 52),
+        save_png(centered_sprite(Image.open(source), 46),
                  TEXTURES / f"currency-{currency}.png")
-
-
-def generate_none_class_icon() -> None:
-    """Neutral sanctuary compass for players who have not chosen a class yet."""
-    scale = 4
-    image = Image.new("RGBA", (64 * scale, 64 * scale), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-    center = 32 * scale
-    draw.ellipse((8 * scale, 8 * scale, 56 * scale, 56 * scale),
-                 fill=(15, 22, 29, 245), outline=(151, 171, 178, 255), width=3 * scale)
-    draw.ellipse((14 * scale, 14 * scale, 50 * scale, 50 * scale),
-                 outline=(48, 113, 117, 255), width=2 * scale)
-    draw.polygon(((center, 11 * scale), (38 * scale, center),
-                  (center, 53 * scale), (26 * scale, center)),
-                 fill=(71, 143, 145, 255), outline=(218, 231, 225, 255))
-    draw.polygon(((center, 18 * scale), (35 * scale, center),
-                  (center, 46 * scale), (29 * scale, center)),
-                 fill=(200, 211, 202, 255))
-    draw.ellipse((28 * scale, 28 * scale, 36 * scale, 36 * scale),
-                 fill=(11, 20, 27, 255), outline=(230, 239, 232, 255), width=scale)
-    image = image.resize((64, 64), Image.Resampling.LANCZOS)
-    image.putpixel((63, 63), (255, 255, 255, 1))
-    save_png(image, TEXTURES / "class-none.png")
 
 
 def generate_text_atlas() -> tuple[list[str], int, int]:
@@ -413,35 +331,42 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
     padded = unique + padding
     cell_width = TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE
     cell_height = TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE
-    atlas = Image.new("RGBA", (columns * cell_width, rows * cell_height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(atlas)
+    atlas = Image.new(
+        "RGBA", (columns * cell_width, rows * cell_height), (0, 0, 0, 0))
     if not TEXT_FONT_SOURCE.is_file():
         raise FileNotFoundError(f"Missing reproducible IceSMP HUD text font: {TEXT_FONT_SOURCE}")
-    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=10 * TEXT_OVERSAMPLE)
+    # Inter SemiBold is rasterized directly into the high-density atlas. Preserving
+    # subpixel alpha is essential here: shrinking first to a 5px binary glyph is what
+    # made the previous typeface look broken after Minecraft's GUI scaling.
+    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=9 * TEXT_OVERSAMPLE)
+    _, font_descent = font.getmetrics()
+    baseline_y = cell_height - font_descent - TEXT_OVERSAMPLE // 2
     for index, char in enumerate(padded):
         if index < len(unique):
             x = (index % columns) * cell_width
             y = (index // columns) * cell_height
-            box = font.getbbox(char)
+            box = font.getbbox(char, anchor="ls")
             width = max(0, box[2] - box[0])
             height = max(0, box[3] - box[1])
             if width > 0 and height > 0:
                 glyph = Image.new("L", (width, height), 0)
                 glyph_draw = ImageDraw.Draw(glyph)
-                glyph_draw.text((-box[0], -box[1]), char, font=font, fill=255)
-                maximum_width = cell_width - 2
-                maximum_height = cell_height - 4
-                scale = min(1.0, maximum_width / width, maximum_height / height)
-                if scale < 1.0:
-                    glyph = glyph.resize((max(1, round(width * scale)),
-                                          max(1, round(height * scale))),
-                                         Image.Resampling.LANCZOS)
-                colored = Image.new("RGBA", glyph.size, (235, 247, 255, 255))
+                glyph_draw.text((-box[0], -box[1]), char, font=font, fill=255, anchor="ls")
+                maximum_width = cell_width - TEXT_OVERSAMPLE // 2
+                if width > maximum_width:
+                    # Wide glyphs (M/W/Ő) may be condensed horizontally, but their
+                    # vertical metrics must never shrink relative to E/N/H.
+                    glyph = glyph.resize((maximum_width, height), Image.Resampling.LANCZOS)
+                glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.18)))
+                colored = Image.new("RGBA", glyph.size, (239, 247, 252, 255))
                 colored.putalpha(glyph)
-                atlas.alpha_composite(colored,
-                                      (x + (cell_width - glyph.width) // 2,
-                                       y + (cell_height - glyph.height) // 2))
-            atlas.putpixel((x + cell_width - 1, y + cell_height - 1), (255, 255, 255, 1))
+                atlas.alpha_composite(
+                    colored,
+                    (x + (cell_width - glyph.width) // 2,
+                     y + baseline_y + box[1]))
+            atlas.putpixel(
+                (x + cell_width - 1, y + cell_height - 1),
+                (255, 255, 255, 1))
     TEXTURES.mkdir(parents=True, exist_ok=True)
     save_png(atlas, TEXTURES / "text-atlas.png")
     return ([padded[row * columns:(row + 1) * columns] for row in range(rows)],
@@ -451,45 +376,47 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
 def generate_segments() -> None:
     TEXTURES.mkdir(parents=True, exist_ok=True)
     colors = {
-        "segment-track.png": ((8, 12, 17, 255), (53, 67, 85, 255)),
-        "segment-fill.png": ((70, 190, 213, 255), (234, 247, 255, 255)),
-        "segment-fill-warm.png": ((183, 58, 50, 255), (240, 160, 91, 255)),
-        "segment-fill-gold.png": ((113, 89, 35, 255), (240, 216, 141, 255)),
+        "segment-track.png": ((8, 12, 17, 255), (52, 65, 80, 255)),
+        "segment-fill.png": ((45, 162, 190, 255), (210, 244, 255, 255)),
+        "segment-fill-warm.png": ((176, 48, 36, 255), (255, 168, 76, 255)),
+        "segment-fill-gold.png": ((126, 88, 28, 255), (250, 219, 119, 255)),
     }
     for name, (base, highlight) in colors.items():
-        image = Image.new("RGBA", (12, 5), (0, 0, 0, 0))
+        image = Image.new("RGBA", (12, 3), base)
         draw = ImageDraw.Draw(image)
-        draw.rounded_rectangle((0, 0, 11, 4), radius=1, fill=base)
         draw.line((1, 0, 10, 0), fill=highlight)
+        draw.point((0, 0), fill=(0, 0, 0, 0))
         save_png(image, TEXTURES / name)
+
+        metric_name = name.replace("segment-", "metric-")
+        metric = Image.new("RGBA", (7, 5), base)
+        metric_draw = ImageDraw.Draw(metric)
+        metric_draw.line((1, 0, 5, 0), fill=highlight)
+        metric_draw.point((0, 0), fill=(0, 0, 0, 0))
+        save_png(metric, TEXTURES / metric_name)
 
 
 def generate_wallet_strip() -> None:
-    scale = 4
-    image = Image.new("RGBA", (HUD_FRAME_WIDTH * scale, 22 * scale), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((1 * scale, 1 * scale, (HUD_FRAME_WIDTH - 2) * scale, 20 * scale), radius=4 * scale,
-                           fill=(8, 12, 17, 238), outline=(91, 109, 123, 255), width=1 * scale)
-    for index in range(1, 4):
-        x = (1 + index * 59) * scale
-        draw.line((x, 4 * scale, x, 18 * scale), fill=(53, 67, 85, 220), width=1 * scale)
-    draw.line((6 * scale, 2 * scale, (HUD_FRAME_WIDTH - 8) * scale, 2 * scale),
-              fill=(102, 181, 163, 150), width=1 * scale)
-    image = image.resize((HUD_FRAME_WIDTH, 22), Image.Resampling.LANCZOS)
-    image.putpixel((HUD_FRAME_WIDTH - 1, 21), (255, 255, 255, 1))
-    save_png(image, TEXTURES / "wallet-strip.png")
-
-    details = Image.new("RGBA", (HUD_FRAME_WIDTH * scale, 22 * scale), (0, 0, 0, 0))
-    detail_draw = ImageDraw.Draw(details)
-    detail_draw.rounded_rectangle((1 * scale, 1 * scale, (HUD_FRAME_WIDTH - 2) * scale, 20 * scale), radius=4 * scale,
-                                  fill=(8, 12, 17, 232), outline=(53, 67, 85, 255), width=1 * scale)
-    for index in range(1, 3):
-        x = round((1 + index * 79.3) * scale)
-        detail_draw.line((x, 4 * scale, x, 18 * scale),
-                         fill=(53, 67, 85, 210), width=1 * scale)
-    details = details.resize((HUD_FRAME_WIDTH, 22), Image.Resampling.LANCZOS)
-    details.putpixel((HUD_FRAME_WIDTH - 1, 21), (255, 255, 255, 1))
-    save_png(details, TEXTURES / "detail-strip.png")
+    for name, outline, height, fill_alpha in (
+            ("wallet-strip.png", (95, 201, 180, 155), 42, 158),
+            ("detail-strip.png", (115, 142, 178, 150), 22, 148)):
+        image = Image.new("RGBA", (HUD_FRAME_WIDTH, height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        draw.rounded_rectangle((2, 2, 237, height - 3), radius=5,
+                               fill=(6, 10, 15, fill_alpha), outline=outline, width=1)
+        draw.line((8, 3, 231, 3),
+                  fill=(outline[0], outline[1], outline[2], 70))
+        if name == "wallet-strip.png":
+            draw.line((119, 3, 119, height - 4), fill=(outline[0], outline[1], outline[2], 80))
+            draw.line((3, 21, 236, 21), fill=(outline[0], outline[1], outline[2], 80))
+        else:
+            middle = height // 2
+            draw.polygon(((4, middle), (7, middle - 3), (10, middle), (7, middle + 3)),
+                         outline=(outline[0], outline[1], outline[2], 120))
+            draw.polygon(((235, middle), (232, middle - 3), (229, middle), (232, middle + 3)),
+                         outline=(outline[0], outline[1], outline[2], 120))
+        image.putpixel((HUD_FRAME_WIDTH - 1, height - 1), (255, 255, 255, 1))
+        save_png(image, TEXTURES / name)
 
 
 def generate_transparent_white_bossbar() -> None:
@@ -636,10 +563,123 @@ def generate_contact_sheet() -> None:
     save_png(sheet, target)
 
 
+def generate_layout_preview(text_rows: list[str]) -> None:
+    """Render the reviewed logical grid without requiring a Minecraft client."""
+    frame_y = HUD_Y["frame"]
+    preview_scale = 3
+    canvas = Image.new(
+        "RGBA", (HUD_FRAME_WIDTH * preview_scale, 225 * preview_scale), (8, 11, 16, 255))
+
+    def scaled(image: Image.Image, width: int, height: int,
+               resampling: Image.Resampling = Image.Resampling.NEAREST) -> Image.Image:
+        return image.resize((width * preview_scale, height * preview_scale), resampling)
+
+    canvas.alpha_composite(
+        scaled(Image.open(TEXTURES / "frame-hud-red.png").convert("RGBA"), 240, 160), (0, 0))
+    canvas.alpha_composite(
+        scaled(Image.open(TEXTURES / "detail-strip.png").convert("RGBA"), 240, 22),
+        (0, (178 - frame_y) * preview_scale))
+    canvas.alpha_composite(
+        scaled(Image.open(TEXTURES / "wallet-strip.png").convert("RGBA"), 240, 42),
+        (0, (201 - frame_y) * preview_scale))
+
+    atlas = Image.open(TEXTURES / "text-atlas.png").convert("RGBA")
+    glyphs: dict[str, Image.Image] = {}
+    for row, characters in enumerate(text_rows):
+        for column, char in enumerate(characters):
+            glyphs[char] = atlas.crop((
+                column * TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
+                row * TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE,
+                (column + 1) * TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
+                (row + 1) * TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE,
+            )).resize((TEXT_LOGICAL_WIDTH * preview_scale,
+                       TEXT_LOGICAL_HEIGHT * preview_scale), Image.Resampling.LANCZOS)
+
+    def paste_text(value: str, x: int, anchor_y: int, color: tuple[int, int, int]) -> None:
+        for index, char in enumerate(value):
+            glyph = glyphs.get(char, glyphs.get("?"))
+            if glyph is None:
+                continue
+            colored = Image.new("RGBA", glyph.size, (*color, 255))
+            colored.putalpha(glyph.getchannel("A"))
+            canvas.alpha_composite(
+                colored,
+                ((x + index * (TEXT_LOGICAL_WIDTH + 1)) * preview_scale,
+                 (anchor_y - 9 - frame_y) * preview_scale))
+
+    def paste_sprite(name: str, x: int, anchor_y: int, size: int) -> None:
+        sprite = scaled(Image.open(TEXTURES / name).convert("RGBA"), size, size,
+                        Image.Resampling.LANCZOS)
+        canvas.alpha_composite(sprite, (x * preview_scale, (anchor_y - frame_y) * preview_scale))
+
+    def paste_bar(prefix: str, x: int, anchor_y: int, advance: int,
+                  active: int, fill_suffix: str = "fill") -> None:
+        track_source = Image.open(TEXTURES / f"{prefix}-track.png").convert("RGBA")
+        fill_source = Image.open(TEXTURES / f"{prefix}-{fill_suffix}.png").convert("RGBA")
+        track = scaled(track_source, track_source.width, track_source.height)
+        fill = scaled(fill_source, fill_source.width, fill_source.height)
+        for index in range(12):
+            position = ((x + index * advance) * preview_scale,
+                        (anchor_y - frame_y) * preview_scale)
+            canvas.alpha_composite(track, position)
+            if index < active:
+                canvas.alpha_composite(fill, position)
+
+    paste_sprite("class-warrior.png", 18, HUD_Y["class_icon"], 36)
+    paste_sprite("mechanic-warrior-battle_tempo-active.png", 20, HUD_Y["mechanic_icon"], 14)
+    paste_sprite("mechanic-warrior-guard-active.png", 141, HUD_Y["mechanic_icon"], 14)
+    for index in range(5):
+        paste_sprite("charge-ready.png", 20 + index * 12, HUD_Y["charge"], 10)
+    paste_text("Harcos", 64, HUD_Y["header"], (119, 221, 242))
+    paste_text("Berserker • Vörös Rend", 64, HUD_Y["subheader"], (199, 212, 234))
+    level = "48"
+    paste_text(level, HUD_X["level_center"] - len(level) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+               HUD_Y["header"], (234, 247, 255))
+    paste_text("Düh 82/100", HUD_X["resource_text"], HUD_Y["resource_text"], (199, 212, 234))
+    paste_text("Fő 72", 37, HUD_Y["mechanic_text"], (119, 221, 242))
+    paste_text("Spec 43", 158, HUD_Y["mechanic_text"], (199, 212, 234))
+    paste_text("Harc • Aktív", 141, HUD_Y["state"], (199, 212, 234))
+    paste_text("Tűz 72", 20, HUD_Y["detail_text"], (199, 212, 234))
+    paste_text("Fagy 48", 86, HUD_Y["detail_text"], (199, 212, 234))
+    paste_text("Arkán 31", 152, HUD_Y["detail_text"], (199, 212, 234))
+    event = "ESEMÉNY Vérhold 04:12"
+    paste_text(event, HUD_X["event_center"] - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+               HUD_Y["event_text"], (240, 216, 141))
+    paste_bar("segment", HUD_X["resource_bar"], HUD_Y["resource_bar"], 13, 10)
+    paste_bar("metric", HUD_X["primary_metric_bar"], HUD_Y["metric_bar"], 8, 9)
+    paste_bar("metric", HUD_X["secondary_metric_bar"], HUD_Y["metric_bar"],
+              8, 5, "fill-gold")
+
+    wallet = (("currency-neutral.png", "Creutzér 12.8k", 8, HUD_Y["wallet_icon"],
+               HUD_Y["wallet_text"], (240, 216, 141)),
+              ("currency-red.png", "Parals 840", 128, HUD_Y["wallet_icon"],
+               HUD_Y["wallet_text"], (199, 212, 234)),
+              ("currency-blue.png", "Hópihér 319", 8, HUD_Y["wallet_lower_icon"],
+               HUD_Y["wallet_lower_text"], (199, 212, 234)),
+              ("currency-dark.png", "Csontveret 64", 128, HUD_Y["wallet_lower_icon"],
+               HUD_Y["wallet_lower_text"], (199, 212, 234)))
+    for icon, label, x, icon_y, text_y, color in wallet:
+        paste_sprite(icon, x, icon_y, 15)
+        paste_text(label, x + 17, text_y, color)
+
+    target = ROOT / "build" / "reports" / "icesmp-hud" / "layout-preview.png"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    save_png(canvas, target)
+
+    compact_wallet_top = (COMPACT_WALLET_ANCHOR_Y - frame_y) * preview_scale
+    detailed_wallet_top = (201 - frame_y) * preview_scale
+    compact = Image.new("RGBA", (HUD_FRAME_WIDTH * preview_scale,
+                                  (160 + 42 + 1) * preview_scale), (8, 11, 16, 255))
+    compact.alpha_composite(canvas.crop((0, 0, canvas.width, 160 * preview_scale)), (0, 0))
+    compact.alpha_composite(canvas.crop((0, detailed_wallet_top, canvas.width,
+                                         detailed_wallet_top + 42 * preview_scale)),
+                            (0, compact_wallet_top))
+    save_png(compact, target.with_name("layout-preview-compact.png"))
+
+
 def main() -> None:
     validate_static_icon_sources()
     generate_frames()
-    generate_none_class_icon()
     generate_mechanic_icons()
     generate_currency_icons()
     generate_segments()
@@ -655,70 +695,102 @@ def main() -> None:
     write_font("space", [{"type": "space", "advances": spaces}])
 
     write_font("panel", [
-        provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, 18, HUD_FRAME_HEIGHT)
+        provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, HUD_Y["frame"], HUD_FRAME_HEIGHT)
         for index, theme in enumerate(THEMES)
     ])
-    write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 22)])
+    write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 42)])
+    write_font("wallet_panel_compact", [
+        provider("wallet-strip.png", chr(0xE105), 4, COMPACT_WALLET_ANCHOR_Y, 42)
+    ])
     write_font("detail_panel", [provider("detail-strip.png", chr(0xE106), 4, 178, 22)])
     write_font("class_icon", [
-        provider(f"class-{class_id}.png", chr(0xE110 + index), 8, 38, 36)
+        provider(f"class-{class_id}.png", chr(0xE110 + index), 8, HUD_Y["class_icon"], 36)
         for index, class_id in enumerate(CLASS_GLYPHS)
     ])
     write_font("utility", [
         provider("icon-money.png", chr(0xE130), 8, 55, 15),
-        provider("icon-event.png", chr(0xE131), 8, 155, 15),
-        provider("icon-level.png", chr(0xE132), 8, 42, 15),
+        provider("icon-event.png", chr(0xE131), 8, HUD_Y["event_icon"], 15),
+        provider("icon-level.png", chr(0xE132), 8, HUD_Y["header"], 15),
     ])
     write_font("runes", [
         provider(f"rune-{kind}-{state}.png", chr(0xE140 + kind_index * 4 + state_index),
-                 8, 112, 18)
+                 8, HUD_Y["runes"], 18)
+        for kind_index, kind in enumerate(RUNE_KINDS)
+        for state_index, state in enumerate(RUNE_STATES)
+    ])
+    write_font("runes_compact", [
+        provider(f"rune-{kind}-{state}.png", chr(0xE140 + kind_index * 4 + state_index),
+                 8, HUD_Y["metric_bar"], 12)
+        for kind_index, kind in enumerate(RUNE_KINDS)
+        for state_index, state in enumerate(RUNE_STATES)
+    ])
+    write_font("runes_panel", [
+        provider(f"rune-{kind}-{state}.png", chr(0xE140 + kind_index * 4 + state_index),
+                 8, 91, 18)
         for kind_index, kind in enumerate(RUNE_KINDS)
         for state_index, state in enumerate(RUNE_STATES)
     ])
     write_font("currency", [
-        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, 210, 15)
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, HUD_Y["wallet_icon"], 15)
+        for index, currency in enumerate(("red", "blue", "neutral", "dark"))
+    ])
+    write_font("currency_lower", [
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, HUD_Y["wallet_lower_icon"], 15)
+        for index, currency in enumerate(("red", "blue", "neutral", "dark"))
+    ])
+    write_font("currency_compact", [
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8,
+                 HUD_Y["wallet_icon"] + COMPACT_WALLET_ANCHOR_DELTA, 15)
+        for index, currency in enumerate(("red", "blue", "neutral", "dark"))
+    ])
+    write_font("currency_compact_lower", [
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8,
+                 HUD_Y["wallet_lower_icon"] + COMPACT_WALLET_ANCHOR_DELTA, 15)
         for index, currency in enumerate(("red", "blue", "neutral", "dark"))
     ])
     write_font("charges", [
-        provider("charge-ready.png", chr(0xE170), 8, 134, 10),
-        provider("charge-spent.png", chr(0xE171), 8, 134, 10),
+        provider("charge-ready.png", chr(0xE170), 8, HUD_Y["charge"], 10),
+        provider("charge-spent.png", chr(0xE171), 8, HUD_Y["charge"], 10),
     ])
     mechanic_providers = [
         provider(
             f"mechanic-{class_id}-{mechanic_id}-{variant}.png",
             chr(0xE200 + mechanic_index * len(MECHANIC_VARIANTS) + variant_index),
-            8, 96, 14,
+            8, HUD_Y["mechanic_icon"], 14,
         )
         for mechanic_index, (class_id, mechanic_id) in enumerate(MECHANICS)
         for variant_index, variant in enumerate(MECHANIC_VARIANTS)
     ]
     write_font("mechanic_icons", mechanic_providers)
     write_font("mechanic_slots", [
-        {**entry, "ascent": encoded_ascent(8, 134), "height": 10}
+        {**entry, "ascent": encoded_ascent(8, HUD_Y["charge"]), "height": 10}
         for entry in mechanic_providers
     ])
     write_font("resource_segments", [
-        provider("segment-track.png", chr(0xE180), 5, 92, 5),
-        provider("segment-fill.png", chr(0xE181), 6, 92, 5),
-        provider("segment-fill-warm.png", chr(0xE182), 6, 92, 5),
-        provider("segment-fill-gold.png", chr(0xE183), 6, 92, 5),
+        provider("segment-track.png", chr(0xE180), 5, HUD_Y["resource_bar"], 3),
+        provider("segment-fill.png", chr(0xE181), 6, HUD_Y["resource_bar"], 3),
+        provider("segment-fill-warm.png", chr(0xE182), 6, HUD_Y["resource_bar"], 3),
+        provider("segment-fill-gold.png", chr(0xE183), 6, HUD_Y["resource_bar"], 3),
     ])
     write_font("metric_segments", [
-        provider("segment-track.png", chr(0xE180), 5, 123, 5),
-        provider("segment-fill.png", chr(0xE181), 6, 123, 5),
-        provider("segment-fill-warm.png", chr(0xE182), 6, 123, 5),
-        provider("segment-fill-gold.png", chr(0xE183), 6, 123, 5),
+        provider("metric-track.png", chr(0xE180), 5, HUD_Y["metric_bar"], 5),
+        provider("metric-fill.png", chr(0xE181), 6, HUD_Y["metric_bar"], 5),
+        provider("metric-fill-warm.png", chr(0xE182), 6, HUD_Y["metric_bar"], 5),
+        provider("metric-fill-gold.png", chr(0xE183), 6, HUD_Y["metric_bar"], 5),
     ])
 
     for name, y in {
-        "text_header": 42,
-        "text_subheader": 59,
-        "text_resource": 84,
-        "text_mechanic": 108,
-        "text_state": 134,
-        "text_event": 155,
-        "text_detail": 190,
-        "text_wallet": 213,
+        "text_header": HUD_Y["header"],
+        "text_subheader": HUD_Y["subheader"],
+        "text_resource": HUD_Y["resource_text"],
+        "text_mechanic": HUD_Y["mechanic_text"],
+        "text_state": HUD_Y["state"],
+        "text_event": HUD_Y["event_text"],
+        "text_detail": HUD_Y["detail_text"],
+        "text_wallet": HUD_Y["wallet_text"],
+        "text_wallet_lower": HUD_Y["wallet_lower_text"],
+        "text_wallet_compact": HUD_Y["wallet_text"] + COMPACT_WALLET_ANCHOR_DELTA,
+        "text_wallet_compact_lower": HUD_Y["wallet_lower_text"] + COMPACT_WALLET_ANCHOR_DELTA,
     }.items():
         write_font(name, [{
             "type": "bitmap",
@@ -735,13 +807,26 @@ def main() -> None:
         "space_max": SPACE_MAX,
         "text_advance": TEXT_LOGICAL_WIDTH + 1,
         "text_oversample": TEXT_OVERSAMPLE,
+        "text_font": "Inter SemiBold",
+        "text_source_resolution": [TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
+                                   TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE],
+        "layout_y": HUD_Y,
+        "layout_x": HUD_X,
         "maximum_bitmap_glyph_width": 256,
         "themes": list(THEMES),
         "classes": list(CLASSES),
         "mechanics": [f"{class_id}:{mechanic_id}" for class_id, mechanic_id in MECHANICS],
         "mechanic_variants": list(MECHANIC_VARIANTS),
         "fixed_segment_count": 12,
+        "resource_segment_advance": 13,
+        "metric_segment_advance": 8,
         "wallet_slots": 4,
+        "wallet_columns": 2,
+        "wallet_rows": 2,
+        "detail_metrics_conditional": True,
+        "compact_wallet_anchor_y": COMPACT_WALLET_ANCHOR_Y,
+        "compact_wallet_anchor_delta": COMPACT_WALLET_ANCHOR_DELTA,
+        "rune_panel_size": 18,
         "layout_color_payload_bits": 13,
         "layout_y_offset_range": [-256, 255],
         "layout_scale_variants": list(HUD_LAYOUT_SCALES),
@@ -751,9 +836,8 @@ def main() -> None:
     (ASSETS / "hud-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     generate_contact_sheet()
+    generate_layout_preview(text_rows)
 
 
 if __name__ == "__main__":
     main()
-
-

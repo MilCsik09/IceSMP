@@ -217,14 +217,17 @@ public final class DonationChestListener implements Listener {
 
         try {
             manager.takeEntry(player, entryId).whenComplete((errorKey, failure) ->
-                    runPlayerTask(player, () -> handleTakeResult(player, holder, errorKey, failure)));
+                    runPlayerTask(player, () -> handleTakeResult(
+                            player, holder, entryId, errorKey, failure)));
         } catch (final RuntimeException failure) {
-            handleTakeResult(player, holder, "donation-take-failed", failure);
+            handleTakeResult(player, holder, entryId,
+                    "donation-take-failed", failure);
         }
     }
 
     private void handleTakeResult(final Player player,
                                   final DonationChestHolder holder,
+                                  final UUID entryId,
                                   final String errorKey,
                                   final Throwable failure) {
         if (failure != null || errorKey != null) {
@@ -246,7 +249,15 @@ public final class DonationChestListener implements Listener {
         player.sendMessage(messages.get(
                 "donation-take-success",
                 "&aElvettél egy adományt az adomány-ládából."));
-        refreshIfViewing(player, holder);
+        removeClaimedEntryIfViewing(player, holder, entryId);
+    }
+
+    private void removeClaimedEntryIfViewing(final Player player,
+                                             final DonationChestHolder holder,
+                                             final UUID entryId) {
+        if (player.getOpenInventory().getTopInventory().getHolder() == holder) {
+            DonationChestGUI.removeClaimedEntry(holder, entryId);
+        }
     }
 
     private void refreshIfViewing(final Player player,

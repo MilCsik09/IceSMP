@@ -10,6 +10,7 @@ public final class DonationChestDurabilityRegressionSuite {
         preparedDepositRollsBackWhenSourceMarkerSurvivesRestart();
         removedSourceCommitsExactlyOneDonationAfterRestart();
         preparedClaimDeliversOrFinalizesExactlyOnce();
+        successfulClaimDoesNotReopenInventoryWithMarkedCursor();
         verifiesRuntimeUsesDurablePhasesAndOwnerHops();
         System.out.println("Donation chest durability regression suite passed.");
     }
@@ -54,6 +55,22 @@ public final class DonationChestDurabilityRegressionSuite {
                 "delivered claim replay duplicated the donation");
     }
 
+    private static void successfulClaimDoesNotReopenInventoryWithMarkedCursor() throws Exception {
+        final String listener = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/DonationChestListener.java"));
+        final String gui = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/gui/DonationChestGUI.java"));
+        final int success = listener.indexOf("\"donation-take-success\"");
+        final int boundary = listener.indexOf("private void removeClaimedEntryIfViewing", success);
+        check(success >= 0 && boundary > success, "donation success handler is missing");
+        final String successHandler = listener.substring(success, boundary);
+        check(successHandler.contains("removeClaimedEntryIfViewing")
+                        && !successHandler.contains("refreshIfViewing"),
+                "successful claim reopens the GUI while the durable item is still on the cursor");
+        check(gui.contains("removeClaimedEntry") && gui.contains("GuiUtil.filler()"),
+                "claimed donation is not removed from the current view in place");
+    }
+
     private static void verifiesRuntimeUsesDurablePhasesAndOwnerHops() throws Exception {
         final String manager = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/DonationChestManager.java"));
@@ -71,7 +88,9 @@ public final class DonationChestDurabilityRegressionSuite {
                         && listener.contains("PlayerRespawnEvent")
                         && listener.contains("isTransferMarked")
                         && listener.contains("PlayerDropItemEvent")
-                        && listener.contains("attempt < 20"),
+                        && listener.contains("attempt < 20")
+                        && listener.contains("removeClaimedEntryIfViewing")
+                        && listener.contains("DonationChestGUI.removeClaimedEntry(holder, entryId)"),
                 "transfer marker lifecycle is not protected across restart/player events");
     }
 

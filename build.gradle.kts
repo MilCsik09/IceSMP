@@ -47,17 +47,71 @@ val validateIceSmpHudPackage by tasks.registering {
         require((manifest["fixed_segment_count"] as Number).toInt() == 12) {
             "First-party HUD bars must use 12 fixed cells"
         }
+        require((manifest["text_advance"] as Number).toInt() == 6) {
+            "First-party HUD must retain the compact six-pixel text grid"
+        }
+        require(manifest["text_font"] == "Inter SemiBold"
+            && (manifest["text_oversample"] as Number).toInt() == 8
+            && manifest["text_source_resolution"] == listOf(40, 96)) {
+            "First-party HUD must retain the reviewed high-resolution UI typeface"
+        }
+        require((manifest["resource_segment_advance"] as Number).toInt() == 13
+            && (manifest["metric_segment_advance"] as Number).toInt() == 8) {
+            "HUD bars must retain their full-width and half-panel modular pitches"
+        }
+        val layoutY = manifest["layout_y"] as? Map<*, *>
+            ?: error("First-party HUD layout anchors are missing")
+        val expectedLayoutY = mapOf(
+            "header" to 42, "subheader" to 55,
+            "resource_text" to 67, "resource_bar" to 70,
+            "mechanic_icon" to 86, "mechanic_text" to 94,
+            "metric_bar" to 108, "runes" to 130,
+            "charge" to 137, "state" to 143,
+            "event_text" to 165, "wallet_text" to 217,
+            "wallet_lower_text" to 237
+        )
+        expectedLayoutY.forEach { (name, value) ->
+            require((layoutY[name] as? Number)?.toInt() == value) {
+                "HUD layout anchor drifted from its reviewed panel: $name"
+            }
+        }
+        val layoutX = manifest["layout_x"] as? Map<*, *>
+            ?: error("First-party HUD horizontal anchors are missing")
+        mapOf(
+            "resource_text" to 68,
+            "resource_bar" to 60,
+            "primary_metric_bar" to 12,
+            "secondary_metric_bar" to 125,
+            "event_center" to 120,
+            "level_center" to 218
+        ).forEach { (name, value) ->
+            require((layoutX[name] as? Number)?.toInt() == value) {
+                "HUD horizontal anchor drifted outside its reviewed panel: $name"
+            }
+        }
         require((manifest["wallet_slots"] as Number).toInt() == 4) {
             "First-party HUD must expose four fixed wallet slots"
+        }
+        require((manifest["wallet_columns"] as Number).toInt() == 2
+            && (manifest["wallet_rows"] as Number).toInt() == 2) {
+            "First-party HUD wallet must retain its fixed 2x2 currency grid"
+        }
+        require(manifest["detail_metrics_conditional"] == true
+            && (manifest["compact_wallet_anchor_y"] as Number).toInt() == 178
+            && (manifest["compact_wallet_anchor_delta"] as Number).toInt() == -23) {
+            "Empty supplementary detail rows must collapse before the wallet"
         }
         require(manifest["vanilla_health_hidden"] == false && manifest["vanilla_armor_hidden"] == false) {
             "Vanilla health/armor may not be hidden before the HP-rework renderer is complete"
         }
         val fonts = hud.dir("font").asFile
-        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "runes", "charges",
+        listOf("space", "panel", "wallet_panel", "wallet_panel_compact", "detail_panel", "class_icon",
+            "currency", "currency_lower", "currency_compact", "currency_compact_lower",
+            "runes", "runes_compact", "runes_panel", "charges",
             "mechanic_icons", "mechanic_slots", "resource_segments",
             "metric_segments", "text_header", "text_subheader", "text_resource",
-            "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet").forEach { name ->
+            "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet", "text_wallet_lower",
+            "text_wallet_compact", "text_wallet_compact_lower").forEach { name ->
             require(fonts.resolve("$name.json").isFile) { "Missing IceSMP HUD font: $name" }
         }
         val textures = hud.dir("textures/hud").asFile
@@ -81,6 +135,27 @@ val validateIceSmpHudPackage by tasks.registering {
             val image = ImageIO.read(file) ?: error("Unreadable HUD currency icon: $file")
             require(image.width == 64 && image.height == 64) { "Currency icon must stay 64x64: $file" }
         }
+        val walletStrip = ImageIO.read(textures.resolve("wallet-strip.png"))
+            ?: error("Unreadable HUD wallet strip")
+        require(walletStrip.width == 240 && walletStrip.height == 42) {
+            "HUD wallet must retain its fixed 2x2 panel geometry"
+        }
+        listOf("metric-track.png", "metric-fill.png", "metric-fill-warm.png",
+            "metric-fill-gold.png").forEach { name ->
+            val image = ImageIO.read(textures.resolve(name))
+                ?: error("Unreadable HUD metric segment: $name")
+            require(image.width == 7 && image.height == 5) {
+                "HUD half-panel metric segments must stay 7x5: $name"
+            }
+        }
+        listOf("segment-track.png", "segment-fill.png", "segment-fill-warm.png",
+            "segment-fill-gold.png").forEach { name ->
+            val image = ImageIO.read(textures.resolve(name))
+                ?: error("Unreadable HUD resource segment: $name")
+            require(image.width == 12 && image.height == 3) {
+                "HUD resource segments must stay 12x3 to share the thin channel with text: $name"
+            }
+        }
         val mechanics = manifest["mechanics"] as? List<*>
             ?: error("First-party HUD mechanic manifest is missing")
         val mechanicVariants = manifest["mechanic_variants"] as? List<*>
@@ -103,7 +178,8 @@ val validateIceSmpHudPackage by tasks.registering {
             && (manifest["layout_y_offset_range"] as? List<*>)
                 ?.map { (it as Number).toInt() } == listOf(-256, 255)
             && (manifest["layout_scale_variants"] as? List<*>)
-                ?.map { (it as Number).toDouble() } == listOf(0.75, 0.9, 1.0, 1.15, 1.25, 1.4, 1.6, 1.8,
+                ?.map { (it as Number).toDouble() } == listOf(
+                    0.75, 0.9, 1.0, 1.15, 1.25, 1.4, 1.6, 1.8,
                     2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.25, 3.5)) {
             "First-party HUD manifest lost the build-time layout/scale variant contract"
         }
@@ -638,6 +714,3 @@ tasks.check {
         wizardGameplayRegressionTest, wizardProfileRegressionTest
     )
 }
-
-
-
