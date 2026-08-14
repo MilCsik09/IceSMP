@@ -37,7 +37,7 @@ public final class PrologueManager {
     public static PrologueManager current(){return active;}
 
     public void load(){synchronized(lock){
-        if(!file.exists()){long now=System.currentTimeMillis();state=parseState(config.getString("world-events.prologue.initial-state","UNSTABLE"));
+        if(!file.exists()){long now=System.currentTimeMillis();state=parseState(config.getString("world-events.prologue.initial-state","DORMANT"));
             stage=parseStage(config.getString("world-events.prologue.initial-stage","SILENCE"));stability=configuredStageStability(stage);
             stateChangedAt=stageChangedAt=finalePhaseChangedAt=now;write();return;}
         YamlConfiguration y=YamlStore.loadTracked(file,plugin.getLogger());
@@ -116,6 +116,27 @@ public final class PrologueManager {
     public void unlockGateAfterVictory(String actor){mutate(actor,"gate-unlocked",()->{if(!finaleVictory||!bossDefeated)throw new IllegalStateException("A Kapu csak tartós finálégyőzelem után nyitható");
         gateUnlocked=true;state=PrologueState.GATE_OPEN;stateChangedAt=System.currentTimeMillis();if(finalePhase.ordinal()<PrologueFinalePhase.GATE_AWAKENING.ordinal()){finalePhase=PrologueFinalePhase.GATE_AWAKENING;finalePhaseChangedAt=stateChangedAt;pauseAccumulatedMillis=0;if(paused)pauseStartedAt=stateChangedAt;}});}
     public void forceGateOpen(String actor){mutate(actor,"gate-force-open",()->{gateUnlocked=true;state=PrologueState.GATE_OPEN;stateChangedAt=System.currentTimeMillis();});}
+    /** Élesíti a korszakot: DORMANT állapotban a timeline nem léptet, így a Prologue a plugin telepítésétől függetlenül áll. */
+    public boolean arm(String actor){synchronized(lock){if(state!=PrologueState.DORMANT)return false;}
+        mutate(actor,"prologue-armed",()->{
+            // A timeline a stageChangedAt-től méri a stage hosszát; élesítéskor nullázni kell,
+            // különben a telepítés óta eltelt idő azonnal továbblépteti az eszkalációt.
+            long now=System.currentTimeMillis();state=PrologueState.UNSTABLE;stateChangedAt=stageChangedAt=finalePhaseChangedAt=now;});
+        return true;}
+    /** Csak admin override-dal nyitott Kaput zár vissza; kiérdemelt győzelmet nem von vissza. */
+    public void closeGate(String actor){mutate(actor,"gate-force-close",()->{
+        if(finaleVictory||rewardsCommitted||seasonOneStarted||state==PrologueState.COMPLETED)
+            throw new IllegalStateException("Csak admin override-dal nyitott Kapu zárható vissza");
+        if(!gateUnlocked)throw new IllegalStateException("A Kapu jelenleg is zárva van");
+        gateUnlocked=false;state=PrologueState.UNSTABLE;stateChangedAt=System.currentTimeMillis();});}
+    /** Teszt-visszatekerés a tartós állapotgépen; a szezon-oldali visszaállítást a hívó végzi el előtte. */
+    public void rewind(String actor){mutate(actor,"prologue-rewind",()->{
+        long now=System.currentTimeMillis();state=PrologueState.DORMANT;
+        stage=parseStage(config.getString("world-events.prologue.initial-stage","SILENCE"));stability=configuredStageStability(stage);
+        finalePhase=PrologueFinalePhase.IDLE;finaleId=null;paused=false;pauseStartedAt=pauseAccumulatedMillis=0;
+        bossDefeated=finaleVictory=bossVictoryPending=false;bossVictoryFailure="";
+        gateUnlocked=rewardPlanCreated=rewardsCommitted=chronicleCommitted=monumentCommitted=false;
+        participants.clear();stateChangedAt=stageChangedAt=finalePhaseChangedAt=now;});}
     public void markRewardPlanCreated(String actor){mutate(actor,"reward-plan-created",()->{if(!finaleVictory)throw new IllegalStateException("Nincs finálégyőzelem");rewardPlanCreated=true;});}
     public void markRewardsCommitted(String actor){mutate(actor,"rewards-committed",()->{if(!rewardPlanCreated)throw new IllegalStateException("Nincs tartós reward plan");rewardsCommitted=true;});}
     public void markChronicleCommitted(String actor){mutate(actor,"chronicle-committed",()->chronicleCommitted=true);}
@@ -149,7 +170,8 @@ public final class PrologueManager {
         bossDefeated=m.bossDefeated;finaleVictory=m.victory;bossVictoryPending=m.pending;bossVictoryFailure=m.failure;gateUnlocked=m.gate;rewardPlanCreated=m.plan;rewardsCommitted=m.rewards;chronicleCommitted=m.chronicle;monumentCommitted=m.monument;seasonOneStarted=m.seasonOne;
         participants.clear();participants.addAll(m.participants);audit.clear();audit.addAll(m.audit);}
     private static String cleanFailure(String value){String v=value==null?"unknown persistence failure":value.trim();return v.length()>256?v.substring(0,256):v;}
-    private static PrologueState parseState(String raw){try{return PrologueState.valueOf(raw.trim().toUpperCase(Locale.ROOT));}catch(RuntimeException x){return PrologueState.UNSTABLE;}}
+    // Olvashatatlan érték inert állapotra esik: egy elgépelt config nem indíthatja el magától a korszakot.
+    private static PrologueState parseState(String raw){try{return PrologueState.valueOf(raw.trim().toUpperCase(Locale.ROOT));}catch(RuntimeException x){return PrologueState.DORMANT;}}
     private static PrologueStage parseStage(String raw){try{return PrologueStage.valueOf(raw.trim().toUpperCase(Locale.ROOT));}catch(RuntimeException x){return PrologueStage.SILENCE;}}
     private record Memory(PrologueState state,PrologueStage stage,PrologueFinalePhase phase,UUID id,int stability,long stateAt,long stageAt,long phaseAt,
                           boolean paused,long pauseAt,long pauseAccum,boolean bossDefeated,boolean victory,boolean pending,String failure,boolean gate,boolean plan,

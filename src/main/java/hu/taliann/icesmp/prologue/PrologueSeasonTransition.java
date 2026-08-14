@@ -52,6 +52,28 @@ public final class PrologueSeasonTransition {
         community.load();
     }
 
+    /**
+     * Teszt-visszaállítás Season 1-ből: a nyugta törlésével a következő valódi átmenet ismét
+     * friss indulási timestampet ír, a tiszta season/community állapotot pedig a Season 0
+     * content overlay másodperces reconcile-ja kapcsolja vissza inaktívra.
+     */
+    public synchronized void rollbackSeasonOne() {
+        final YamlConfiguration cleanCommunity = new YamlConfiguration();
+        cleanCommunity.set("season.number", 1);
+        final YamlConfiguration cleanSeason = new YamlConfiguration();
+        cleanSeason.set("season.start", System.currentTimeMillis());
+        cleanSeason.set("season.number", 1);
+        try {
+            java.nio.file.Files.deleteIfExists(receiptFile.toPath());
+            YamlStore.saveAtomic(new File(plugin.getDataFolder(), "community-goals.yml"), cleanCommunity);
+            YamlStore.saveAtomic(new File(plugin.getDataFolder(), "season.yml"), cleanSeason);
+        } catch (final IOException failure) {
+            throw new UncheckedIOException("Season 1 rollback state write failed", failure);
+        }
+        resolveSeasonManager().load();
+        resolveCommunityGoalManager().load();
+    }
+
     public void activateSeasonOne() {
         config.clearRuntimeOverride("world-events.season.enabled");
         config.clearRuntimeOverride("world-events.season-finale.enabled");
