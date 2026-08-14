@@ -12,7 +12,7 @@ public enum HudComponent {
     CLASS_ICON("class-icon", true),
     CLASS_NAME("class-name", true),
     FACTION("faction", true),
-    LEVEL_ICON("level-icon", true),
+    LEVEL_ICON("level-icon", false),
     LEVEL_TEXT("level-text", true),
     WALLET_FRAME("wallet-frame", true),
     WALLET("wallet", true),
@@ -24,12 +24,12 @@ public enum HudComponent {
     STATE_PROC("state-proc", true),
     DETAIL_FRAME("detail-frame", true),
     DETAIL_METRICS("detail-metrics", true),
-    EVENT_ICON("event-icon", true),
+    EVENT_ICON("event-icon", false),
     EVENT_TEXT("event-text", true);
 
     private static final List<HudComponent> EDITABLE = Arrays.stream(values())
             .filter(HudComponent::rendered).toList();
-    private static final List<HudComponent> TARGETS = List.copyOf(Arrays.asList(values()));
+    private static final List<HudComponent> TARGETS = Arrays.stream(values())\n            .filter(component -> component == GLOBAL || component.rendered()).toList();
 
     private final String id;
     private final boolean rendered;
