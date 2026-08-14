@@ -71,6 +71,13 @@ HUD_Y = {
     "wallet_lower_icon": 230,
     "wallet_lower_text": 237,
 }
+HUD_X = {
+    "resource_bar": 60,
+    "primary_metric_bar": 12,
+    "secondary_metric_bar": 125,
+    "event_center": 120,
+    "level_center": 224,
+}
 
 THEMES = ("guest", "red", "blue", "neutral", "dark")
 CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin",
@@ -328,32 +335,32 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
     # Inter SemiBold is rasterized directly into the high-density atlas. Preserving
     # subpixel alpha is essential here: shrinking first to a 5px binary glyph is what
     # made the previous typeface look broken after Minecraft's GUI scaling.
-    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=10 * TEXT_OVERSAMPLE)
+    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=9 * TEXT_OVERSAMPLE)
+    _, font_descent = font.getmetrics()
+    baseline_y = cell_height - font_descent - TEXT_OVERSAMPLE // 2
     for index, char in enumerate(padded):
         if index < len(unique):
             x = (index % columns) * cell_width
             y = (index // columns) * cell_height
-            box = font.getbbox(char)
+            box = font.getbbox(char, anchor="ls")
             width = max(0, box[2] - box[0])
             height = max(0, box[3] - box[1])
             if width > 0 and height > 0:
                 glyph = Image.new("L", (width, height), 0)
                 glyph_draw = ImageDraw.Draw(glyph)
-                glyph_draw.text((-box[0], -box[1]), char, font=font, fill=255)
+                glyph_draw.text((-box[0], -box[1]), char, font=font, fill=255, anchor="ls")
                 maximum_width = cell_width - TEXT_OVERSAMPLE // 2
-                maximum_height = (TEXT_LOGICAL_HEIGHT - 2) * TEXT_OVERSAMPLE
-                scale = min(1.0, maximum_width / width, maximum_height / height)
-                if scale < 1.0:
-                    glyph = glyph.resize((max(1, round(width * scale)),
-                                          max(1, round(height * scale))),
-                                         Image.Resampling.LANCZOS)
+                if width > maximum_width:
+                    # Wide glyphs (M/W/Ő) may be condensed horizontally, but their
+                    # vertical metrics must never shrink relative to E/N/H.
+                    glyph = glyph.resize((maximum_width, height), Image.Resampling.LANCZOS)
                 glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.18)))
                 colored = Image.new("RGBA", glyph.size, (239, 247, 252, 255))
                 colored.putalpha(glyph)
                 atlas.alpha_composite(
                     colored,
                     (x + (cell_width - glyph.width) // 2,
-                     y + (cell_height - glyph.height) // 2))
+                     y + baseline_y + box[1]))
             atlas.putpixel(
                 (x + cell_width - 1, y + cell_height - 1),
                 (255, 255, 255, 1))
@@ -607,23 +614,26 @@ def generate_layout_preview(text_rows: list[str]) -> None:
                 canvas.alpha_composite(fill, position)
 
     paste_sprite("class-warrior.png", 18, HUD_Y["class_icon"], 36)
-    paste_sprite("icon-level.png", 166, HUD_Y["header"], 15)
-    paste_sprite("icon-event.png", 20, HUD_Y["event_icon"], 15)
     paste_sprite("mechanic-warrior-battle_tempo-active.png", 20, HUD_Y["mechanic_icon"], 14)
     paste_sprite("mechanic-warrior-guard-active.png", 141, HUD_Y["mechanic_icon"], 14)
     for index in range(5):
         paste_sprite("charge-ready.png", 20 + index * 12, HUD_Y["charge"], 10)
     paste_text("Harcos", 64, HUD_Y["header"], (119, 221, 242))
     paste_text("Berserker • Vörös Rend", 64, HUD_Y["subheader"], (199, 212, 234))
-    paste_text("48", 218, HUD_Y["header"], (234, 247, 255))
+    level = "48"
+    paste_text(level, HUD_X["level_center"] - len(level) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+               HUD_Y["header"], (234, 247, 255))
     paste_text("Düh 82/100", 52, HUD_Y["resource_text"], (199, 212, 234))
     paste_text("Fő 72", 37, HUD_Y["mechanic_text"], (119, 221, 242))
     paste_text("Spec 43", 158, HUD_Y["mechanic_text"], (199, 212, 234))
     paste_text("Harc • Aktív", 141, HUD_Y["state"], (199, 212, 234))
-    paste_text("ESEMÉNY Vérhold 04:12", 40, HUD_Y["event_text"], (240, 216, 141))
-    paste_bar("segment", 52, HUD_Y["resource_bar"], 13, 10)
-    paste_bar("metric", 20, HUD_Y["metric_bar"], 8, 9)
-    paste_bar("metric", 141, HUD_Y["metric_bar"], 8, 5, "fill-gold")
+    event = "ESEMÉNY Vérhold 04:12"
+    paste_text(event, HUD_X["event_center"] - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+               HUD_Y["event_text"], (240, 216, 141))
+    paste_bar("segment", HUD_X["resource_bar"], HUD_Y["resource_bar"], 13, 10)
+    paste_bar("metric", HUD_X["primary_metric_bar"], HUD_Y["metric_bar"], 8, 9)
+    paste_bar("metric", HUD_X["secondary_metric_bar"], HUD_Y["metric_bar"],
+              8, 5, "fill-gold")
 
     wallet = (("currency-neutral.png", "Creutzér 12.8k", 8, HUD_Y["wallet_icon"],
                HUD_Y["wallet_text"], (240, 216, 141)),
@@ -749,6 +759,7 @@ def main() -> None:
         "text_source_resolution": [TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
                                    TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE],
         "layout_y": HUD_Y,
+        "layout_x": HUD_X,
         "maximum_bitmap_glyph_width": 256,
         "themes": list(THEMES),
         "classes": list(CLASSES),

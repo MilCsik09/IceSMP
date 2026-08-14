@@ -49,6 +49,9 @@ public final class IceSmpHudRegressionSuite {
                         && source.contains("List.of(\"ice\", \"ember\", \"frost\", \"guild\", \"lich\")")
                         && source.contains("final String levelText = Integer.toString(model.classLevel())")
                         && !source.contains("\"Lv. \"")
+                        && source.contains("centeredText(HudComponent.EVENT_TEXT")
+                        && !source.contains("glyph(HudComponent.LEVEL_ICON")
+                        && !source.contains("glyph(HudComponent.EVENT_ICON")
                         && !source.contains("primaryMetric()") && !source.contains("secondaryMetric()"),
                 "draws must return to origin, level must stay numeric-only and metrics generic");
         final String hud = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
@@ -107,6 +110,18 @@ public final class IceSmpHudRegressionSuite {
                 "resource bar must stay inside the full-width channel");
         check(IceSmpHudRenderer.METRIC_SEGMENT_ADVANCE * IceSmpHudRenderer.SEGMENTS == 96,
                 "metric bars must exactly fill one modular half-panel");
+        check(IceSmpHudRenderer.RESOURCE_BAR_X == -194
+                        && IceSmpHudRenderer.RESOURCE_BAR_X
+                        + IceSmpHudRenderer.RESOURCE_SEGMENT_ADVANCE * IceSmpHudRenderer.SEGMENTS <= -31,
+                "resource bar must stay inside the reviewed full-width trough");
+        check(IceSmpHudRenderer.PRIMARY_METRIC_BAR_X == -242
+                        && IceSmpHudRenderer.PRIMARY_METRIC_BAR_X
+                        + IceSmpHudRenderer.METRIC_SEGMENT_ADVANCE * IceSmpHudRenderer.SEGMENTS <= -146,
+                "primary metric bar must stay inside the left panel");
+        check(IceSmpHudRenderer.SECONDARY_METRIC_BAR_X == -129
+                        && IceSmpHudRenderer.SECONDARY_METRIC_BAR_X
+                        + IceSmpHudRenderer.METRIC_SEGMENT_ADVANCE * IceSmpHudRenderer.SEGMENTS <= -31,
+                "secondary metric bar must stay inside the right panel");
         check(IceSmpHudRenderer.TEXT_ADVANCE == 6,
                 "HUD text must retain the fixed six-pixel modular advance");
         check(IceSmpHudRenderer.WALLET_LEFT_X + IceSmpHudRenderer.WALLET_TEXT_OFFSET
@@ -194,6 +209,7 @@ public final class IceSmpHudRegressionSuite {
                         && manifest.contains("\"resource_segment_advance\": 13")
                         && manifest.contains("\"metric_segment_advance\": 8")
                         && manifest.contains("\"layout_y\"")
+                        && manifest.contains("\"layout_x\"")
                         && manifest.contains("\"wallet_slots\": 4")
                         && manifest.contains("\"wallet_columns\": 2")
                         && manifest.contains("\"wallet_rows\": 2")

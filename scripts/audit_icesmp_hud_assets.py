@@ -209,6 +209,27 @@ def font_errors() -> list[str]:
             target = RUNTIME / "textures" / "hud" / reference.split("/", 1)[1]
             if not target.is_file():
                 errors.append(f"{font.relative_to(ROOT)} -> {reference}")
+    header = json.loads((RUNTIME / "font/text_header.json").read_text(encoding="utf-8"))
+    rows = header.get("providers", [{}])[0].get("chars", [])
+    characters = "".join(rows)
+    atlas = Image.open(RUNTIME / "textures/hud/text-atlas.png").convert("RGBA")
+
+    def glyph_box(char: str):
+        index = characters.index(char)
+        cell_width, cell_height = 40, 96
+        x = index % 16 * cell_width
+        y = index // 16 * cell_height
+        alpha = atlas.crop((x, y, x + cell_width, y + cell_height)).getchannel("A")
+        return alpha.point(lambda value: 255 if value >= 16 else 0).getbbox()
+
+    uppercase_boxes = [glyph_box(char) for char in "EHMNW"]
+    if any(box is None for box in uppercase_boxes):
+        errors.append("high-resolution text atlas has an empty uppercase QA glyph")
+    else:
+        heights = [box[3] - box[1] for box in uppercase_boxes]
+        baselines = [box[3] for box in uppercase_boxes]
+        if max(heights) - min(heights) > 1 or max(baselines) - min(baselines) > 1:
+            errors.append("wide uppercase glyphs lost the shared height/baseline contract")
     return errors
 
 

@@ -31,6 +31,13 @@
     "wallet_lower_icon": 230,
     "wallet_lower_text": 237
   },
+  "layout_x": {
+    "resource_bar": 60,
+    "primary_metric_bar": 12,
+    "secondary_metric_bar": 125,
+    "event_center": 120,
+    "level_center": 224
+  },
   "maximum_bitmap_glyph_width": 256,
   "themes": [
     "guest",

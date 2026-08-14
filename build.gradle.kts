@@ -75,6 +75,19 @@ val validateIceSmpHudPackage by tasks.registering {
                 "HUD layout anchor drifted from its reviewed panel: $name"
             }
         }
+        val layoutX = manifest["layout_x"] as? Map<*, *>
+            ?: error("First-party HUD horizontal anchors are missing")
+        mapOf(
+            "resource_bar" to 60,
+            "primary_metric_bar" to 12,
+            "secondary_metric_bar" to 125,
+            "event_center" to 120,
+            "level_center" to 224
+        ).forEach { (name, value) ->
+            require((layoutX[name] as? Number)?.toInt() == value) {
+                "HUD horizontal anchor drifted outside its reviewed panel: $name"
+            }
+        }
         require((manifest["wallet_slots"] as Number).toInt() == 4) {
             "First-party HUD must expose four fixed wallet slots"
         }
