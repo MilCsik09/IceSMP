@@ -435,6 +435,76 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Integer> presenceSeconds = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Current finale-run presence evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|.project(classRelicService.resolve(relicPlayerId), relicId -> {",
+      "category": "RUNTIME",
+      "reason": "Pure client projection wiring: resolve reads the canonical class-relic service and maps definitions to display names; this callback owns no YAML or player progression."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastBossState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged boss-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastFactionState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged faction-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastHudState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged HUD-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastKitSignature = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload signature used only to suppress unchanged ability-kit messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastPartyState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged party-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastProfessionState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged profession-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastProfileState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged profile-state messages; canonical player authority remains Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastRelicAttachment = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged relic-attachment messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastRelicState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged relic-state messages; canonical relic authority remains in the existing services."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastTalentState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged talent-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastTerritoryState = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload cache used only to suppress unchanged territory-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, String> lastQuestSignature = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload signature used only to suppress unchanged quest-state messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, String> lastSpellbookSignature = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-session client payload signature used only to suppress unchanged spellbook messages; cleared on resync, disconnect and bridge shutdown."
     }
   ]
 }

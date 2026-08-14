@@ -165,7 +165,7 @@ public final class ProfessionRecipeGUI {
         return true;
     }
 
-    private static int countUnique(final Player player, final String uniqueId,
+    public static int countUnique(final Player player, final String uniqueId,
                                    final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         int count = 0;
         for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
@@ -177,7 +177,7 @@ public final class ProfessionRecipeGUI {
     }
 
     /** Counts plain items of the given material — EXCLUDING unique materials that share the base type. */
-    private static int countMaterial(final Player player, final Material material,
+    public static int countMaterial(final Player player, final Material material,
                                      final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         int count = 0;
         for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
@@ -188,7 +188,7 @@ public final class ProfessionRecipeGUI {
         return count;
     }
 
-    private static String prettyName(final Material material) {
+    public static String prettyName(final Material material) {
         final String text = material.name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
         return text.isEmpty() ? text : Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }

@@ -51,6 +51,7 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
     private final Map<UUID, PossessionSnapshot> possessionCache = new ConcurrentHashMap<>();
     private final Map<UUID, ScheduledTask> refreshTasks = new ConcurrentHashMap<>();
     private final Map<String, ClassRelicResonanceHook> resonanceHooks = new ConcurrentHashMap<>();
+    private volatile hu.taliann.icesmp.managers.ClientFxRoute fxRoute;
     private volatile ClassRelicCatalog catalog = ClassRelicCatalog.empty();
 
     public ClassRelicService(final JavaPlugin plugin, final ConfigManager configManager,
@@ -204,6 +205,23 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
      * két konkurens hívásból pontosan egy ARMED, sikertelen lemez-írásnál az eredmény
      * PERSISTENCE_FAILED és az állapot változatlan — ARMED siker csak megtörtént commit után.
      */
+    /**
+     * A játékos relikvia-Awakeningjének ready-at időpontja epoch-millisben; 0, ha nincs
+     * kötött relic vagy az awakening nincs konfigurálva. UUID-only read path (katalógus +
+     * lock-mentes store-pillanatkép), idegen régió-szálról is hívható.
+     */
+    public long awakeningReadyAt(final UUID playerId) {
+        if (playerId == null) {
+            return 0L;
+        }
+        final ClassRelicActivation activation = resolver.resolveForClass(catalog, playerId);
+        if (!activation.awakeningConfigured() || activation.relicId() == null
+                || activation.relicId().isBlank()) {
+            return 0L;
+        }
+        return relicManager.getAwakeningReadyAt(activation.relicId());
+    }
+
     public AwakeningResult tryArmAwakening(final Player player) {
         if (player == null) {
             return AwakeningResult.NOT_AVAILABLE;
@@ -217,12 +235,24 @@ public final class ClassRelicService implements org.bukkit.event.Listener {
         if (binding == null || !binding.awakening().enabled()) {
             return AwakeningResult.DISABLED;
         }
-        return switch (relicManager.tryArmAwakening(activation.relicId(),
+        final AwakeningResult result = switch (relicManager.tryArmAwakening(activation.relicId(),
                 System.currentTimeMillis(), binding.awakening().cooldownSeconds())) {
             case ARMED -> AwakeningResult.ARMED;
             case ON_COOLDOWN -> AwakeningResult.ON_COOLDOWN;
             case PERSISTENCE_FAILED -> AwakeningResult.PERSISTENCE_FAILED;
         };
+        if (result == AwakeningResult.ARMED) {
+            final hu.taliann.icesmp.managers.ClientFxRoute route = fxRoute;
+            if (route != null) {
+                route.emitFxFor(player.getUniqueId(), "awakening-armed");
+            }
+        }
+        return result;
+    }
+
+    /** Setter-injektált FX-route (null = nincs kliens-FX; sikeres arming ettől független). */
+    public void setFxRoute(final hu.taliann.icesmp.managers.ClientFxRoute fxRoute) {
+        this.fxRoute = fxRoute;
     }
 
     // ---------- authority-nézetek ----------

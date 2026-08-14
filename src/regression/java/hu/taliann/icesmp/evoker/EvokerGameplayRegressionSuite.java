@@ -111,7 +111,8 @@ public final class EvokerGameplayRegressionSuite {
         check(listener.contains("? PreparationResult.READY : PreparationResult.PREPARING"),
                 "first empower input maps to PREPARING instead of a fake failed cast");
         final int prepare = listener.indexOf("final PreparationResult preparation = prepareClassCast");
-        final int preparingReturn = listener.indexOf("if (preparation != PreparationResult.READY) return;", prepare);
+        final int preparingReturn = listener.indexOf(
+                "if (preparation != PreparationResult.READY) return SlotCastStatus.CLASS_GATE_BLOCKED;", prepare);
         final int affordability = listener.indexOf("final boolean useResource", preparingReturn);
         final int reservation = listener.indexOf("final CostReservation reservation", affordability);
         final int execution = listener.indexOf("selected.cast(player, CastModifiers.standardPower(power))", reservation);

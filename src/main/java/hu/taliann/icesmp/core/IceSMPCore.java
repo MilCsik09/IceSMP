@@ -1615,6 +1615,32 @@ public final class IceSMPCore {
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
                 statsManager, claimManager, questManager, abilityCatalystListener, sinManager);
         iceSMPCommand.setClientBridge(clientBridge);
+        // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
+        // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
+        hudManager.setClientHudRoute(clientBridge);
+        clientBridge.connectHudSnapshots(hudManager::snapshot);
+        clientBridge.connectAbilityKit(abilityCatalystListener, spellRegistry);
+        clientBridge.connectTalents(talentManager);
+        clientBridge.connectQuests(questManager);
+        clientBridge.connectProfessions(professionManager, specializationManager,
+                professionRecipeCatalog, professionWeeklyGoalManager, uniqueMaterialFactory);
+        clientBridge.connectParty(partyManager);
+        clientBridge.connectWorldBoss(worldBossManager);
+        clientBridge.connectTerritory(territoryManager, raidManager);
+        clientBridge.connectFaction(factionManager, factionTreasuryManager, currencyManager,
+                kingManager, seasonManager, warWindowManager);
+        worldBossManager.setFxRoute(clientBridge);
+        classRelicService.setFxRoute(clientBridge);
+        clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
+                .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
+        clientBridge.connectRelicState(relicPlayerId -> {
+            final long readyAt = classRelicService.awakeningReadyAt(relicPlayerId);
+            return hu.taliann.icesmp.client.projection.ClientRelicProjector
+                    .project(classRelicService.resolve(relicPlayerId), relicId -> {
+                        final hu.taliann.icesmp.relics.RelicDefinition definition = relicManager.getDefinition(relicId);
+                        return definition == null ? relicId : definition.displayName();
+                    }, readyAt == 0L ? 0L : readyAt - System.currentTimeMillis());
+        });
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();

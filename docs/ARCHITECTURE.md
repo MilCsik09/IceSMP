@@ -37,7 +37,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
-| `managers/` | 124 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 59 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
@@ -623,9 +623,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 838 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 124 fájl).
-  Csomag-megoszlás: listeners 121, managers 124, commands 95, spells 59, gui 69, crates 14, utils 26, data 15, classrelic 14,
-  items 12, relics 11, quest 7, integration 6.
+- **Méret:** 870 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
+  Csomag-megoszlás: listeners 121, managers 125, commands 95, spells 59, gui 69, crates 14, utils 26, data 15, classrelic 14,
+  items 12, relics 11, quest 8, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -1195,9 +1195,10 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `ClientProtocolException` + a payload-osztályok: `HudState`, `AbilityKit`, `CastSlot`, `Spellbook`, `SpellAction`, `Profile`, `RelicState`, `RelicAttachment`, `Talent`, `TalentAction`, `Quest`, `QuestTrack`, `Profession`, `ProfessionAction`, `BrowseRecipes`, `RecipePage`, `Party`, `Boss`, `Territory`, `Faction`, `FxEvent`, `ActionResult` (`*Payload`) | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
-| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup) | igen |
+| Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector`, `ClientRelicProjector`, `ClientTalentProjector`, `ClientQuestProjector`, `ClientProfessionProjector`, `ClientRecipeProjector`, `ClientPartyProjector`, `ClientFactionProjector` (display-only leképezések) | vegyes: a Hud/Relic/Talent projektor tiszta, a többi élő managerekből olvas a néző szálán |
+| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute + ClientFxRoute) | igen |
 
 ### Wire-formátum (protokoll v1)
 
@@ -1222,7 +1223,19 @@ ismeretlen üzenettípus, hamis hosszmező és trailing bájt egyaránt csendes 
 
 Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCOL_REJECT`,
 `0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
-State/action/presentation sávok a későbbi fázisokban nyílnak.
+State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
+`0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
+`0x25 RELIC_STATE`, `0x26 PARTY_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE`,
+`0x2A PROFESSION_STATE`, `0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE`,
+`0x24 FACTION_STATE`, `0x2D BOSS_STATE`, `0x2E TERRITORY_STATE` (0x27 az
+EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
+intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
+`0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`, `0x45 SELECT_PROFESSION`,
+`0x46 SELECT_PROFESSION_SPEC`, `0x47 BROWSE_RECIPES`.
+Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
+`0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
+RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv (0x60–0x6F, tranziens
+fire-and-forget FX-események): `0x60 FX_EVENT`.
 
 ### Kézfogás és capability-k
 
@@ -1239,6 +1252,251 @@ protokoll támogatja. Minden feature-kapcsoló alapból `false`, és csak akkor 
 amikor a hozzá tartozó szerveroldali projection/action fázis elkészült. Ismeretlen
 capability-név nem hiba (forward compat).
 
+### Native HUD routing (HUD_STATE)
+
+A `HUD_STATE` (0x20) a meglévő `HudManager.HudSnapshot` + `ClassHudState` display-only
+projekciók sorosítása (`HudStatePayload`) — NEM új state-modell: pontosan azt viszi, amit a
+first-party HUD és a PlaceholderAPI-bridge is olvas, a `resourceBar` szöveges
+render-műtermék nélkül. A leképezés a tiszta `ClientHudProjector` függvény; a lista-mezők a
+protokoll-limiten (64 elem) csonkolódnak.
+
+Routing (a `hud.refresh-ticks` kadenciájú HUD-tickből, a játékos régió-szálán):
+
+- Egy játékos akkor kap natív HUD-ot, ha él a sessionje ÉS a kézfogásban NATIVE_HUD
+  capability-t kapott ÉS `client.features.native-hud: true` (élő config — kikapcsolása
+  restart nélkül visszaadja a vanilla HUD-ot).
+- A vezetékre csak tényleges változás megy ki: a híd az utoljára küldött payloadot
+  játékosonként cache-eli, azonos bájtsor nem küldődik újra. Új kézfogás és resync a
+  cache-t üríti, így a friss session mindig teljes state-tel indul.
+- **Nincs dupla HUD:** a natív HUD-ra routolt játékosnál a sidebar, a first-party IceSMP HUD
+  és a Folia compact fallback elhallgat (a `HudManager` a `ClientHudRoute` seam-en kérdez rá,
+  a híd típusát nem ismeri; a bekötés a core-ban történik). A világesemény-bossbarok és a
+  tablist maradnak. Resync a BEGIN/END közé teljes friss HUD-state-et küld.
+
+### Ability bar és CAST_SLOT
+
+A kliens SOSEM küld spell-id-t: a `CAST_SLOT` a futásidőben számolt aktív kit 1-alapú
+pozíciójára mutat, a spell-feloldás és minden validáció a szerveré. A kérés a
+`KEYBIND_CAST` capability + `client.features.keybind-cast` élő kapu + saját rate limit
+(`client.limits.cast-messages-per-second`) mögött, a játékos régió-szálán fut be az
+`AbilityCatalystListener.castActiveKitSlot` belépőn — ez UGYANAZT a tranzakciós
+cast-magot futtatja (cooldown → canCast → class-gate → költség-rezerválás → végrehajtás
+→ commit), mint a katalizátor-input, azonos játékos-üzenetekkel; második cast-útvonal
+nem létezik. Vanilla parity kapuk a kliens-útvonalon is: használható Lélekkapocs a
+főkézben, PlayerProfile-session-készenlét és a közös 120 ms-os cast-debounce — a
+kliensmod nem kaphat item-követelmény nélküli castolást. A válasz gépi `ACTION_RESULT`
+(requestId-korrelációval), sikeres cast után azonnali friss kit-state-tel.
+
+Az `ABILITY_KIT_STATE` a kit display-projekciója (spellId, név, költség-szöveg, teljes
+és maradék cooldown, kiválasztott-jelölés) az `ABILITY_BAR` capability +
+`client.features.ability-bar` kapu mögött. A push change-signature alapú: a
+másodpercenként fogyó maradék-cooldown NEM generál forgalmat (a kliens érkezéskor
+readyAt-ra számolja át és lokálisan interpolál — a vizuális timer nem authority);
+összetétel-, kiválasztás- és cooldown-állapotváltás (indul/lejár) küld új state-et.
+
+### Natív Spellbook (SPELLBOOK_STATE, SELECT_SPELL, TOGGLE_FAVORITE)
+
+A `SPELLBOOK_STATE` a vanilla spellbook-GUI-val azonos, rendezett kaszt+spec katalógus
+display-projekciója (név, kész magyar leírás-sorok, szint-követelmény, unlocked/kedvenc/
+kiválasztott/kit-tag jelölők, mastery-rang, költség, cooldown) a `NATIVE_SPELLBOOK`
+capability + `client.features.native-spellbook` kapu mögött. Nem tick-cadence: kézfogáskor,
+resynckor és releváns változáskor megy ki — a tick csak egy olcsó változás-jelet számol
+(unlock/kedvenc/kiválasztás/kit), a describe-nehéz payload csak tényleges változásra épül fel.
+
+A két action a meglévő validált use-case-eken fut, a kliens itt is csak kér: `SELECT_SPELL`
+a katalizátor-ciklázás párja (csak aktív-kit-tag választható, azonos játékos-üzenettel),
+`TOGGLE_FAVORITE` a vanilla spellbook shift-katt párja (aktív-kit-limitre cappelve, durable
+commit után válaszol — a kliens nem commitol optimistán). Mindkettő a `client.limits.ui-actions-per-second`
+rate limit mögött; a válasz gépi `ACTION_RESULT`, sikeres action után friss spellbook- és
+kit-state (a kedvenc/kiválasztás a kit-összetételt is érintheti).
+
+### Natív Profile (PROFILE_STATE)
+
+A `PROFILE_STATE` a /profile GUI fejlécével és egyenleg-nézetével tartalmilag azonos,
+read-only karakter-projekció (frakció, kaszt+szint, kaszt-spec, gyűjtő/készítő szakma,
+szakma-spec, Bűnös/Tiszta, talentpontok, formázott egyenlegek, életre szóló publikus
+számlálók, achievement-összegzés) — a `ClientProfileProjector` UGYANAZOKBÓL a
+manager-hívásokból építi, mint a vanilla GUI. `NATIVE_PROFILE` capability +
+`client.features.native-profile` kapu; push a HUD-mintájú bájt-dedupe-pal (tick-enként
+épül, de csak változásra megy ki). PlayerProfile authority-szabály: revision/CAS,
+operation-receipt, moderációs mező és rejtett quest-state SOHA nem kerülhet a payloadba.
+
+### Relic-state (RELIC_STATE, v1)
+
+A `RELIC_STATE` a SAJÁT játékos class-relic aktivációjának display-projekciója
+(`ClassRelicActivation` tükre + display-név a `relics.definitions` katalógusból) a
+`RELIC_RENDER_V1` capability + `client.features.relic-render-v1` kapu mögött. A
+`ClassRelicService.resolve` UUID-only, lock-mentes és cache-only, ezért a tick-cadence
+olcsón elbírja; a dedupe a normalizált change-signature-ön fut (a fogyó
+awakening-maradék 0/1-re normalizálva — futó cooldown nem generál forgalmat, a kliens
+a fogadás idejétől interpolál). A payload az `awakeningRemainingMillis` mezőt is
+hordozza, forrása a `ClassRelicService.awakeningReadyAt(UUID)` query (katalógus-kötés
+→ relic-id → lock-mentes store-pillanatkép; 0 = kész vagy nincs konfigurálva).
+Szerveroldali vanilla-suppression e fázisban nem kellett, mert a class-relic rétegnek
+jelenleg nincs szerveroldali vizuálja — amikor lesz, a hídbeli `relicRenderActive`
+kapu a kész suppression-predikátum hozzá.
+
+### Relic attachment-broadcast (RELIC_ATTACHMENT_STATE)
+
+A `RELIC_ATTACHMENT_STATE` a néző közelében tartózkodó, AKTÍV class-relicet viselő
+játékosok listája a `RELIC_ATTACHMENT_V1` capability +
+`client.features.relic-attachment-v1` kapu mögött. Folia-safe kereszt-régiós út: a
+pozíciók az owner-thread-frissített `PositionCache` tükréből
+(`nearbyPlayerIds(viewer, radius)` — rádiusz: `client.limits.relic-attachment-radius`),
+az aktiváció a lock-mentes relic-resolve-ból jön — a néző szála idegen
+Player-objektumot nem érint. Csak megjelenítési tények utaznak (viselő-UUID, relic-id
++ név, rezonancia-jelzés); nevet a szerver nem küld, a kliens a saját világában a
+UUID-ból oldja fel az entitást; alvó viselő nem kerül a vezetékre. A lista
+determinisztikusan rendezett és a protokoll-limiten cap-elt, bájt-dedupe-pal csak
+változásra megy ki. A kliensoldali renderer (Phase 8a) a viselők fölé világtérbeli,
+kamera felé forduló relikvia-jelvényt rajzol (rezonáló viselőnél lüktető
+kiemeléssel); láthatatlan/lopakodó viselőre nem rajzol. A resonance/awakening
+tartalmi FX-e a 8b FX-esemény csatornával együtt élesedik.
+
+### Natív talentek (TALENT_STATE, PURCHASE_TALENT)
+
+A `TALENT_STATE` a két talent-pool display-projekciója a `NATIVE_TALENTS` capability +
+`client.features.native-talents` kapu mögött. A vanilla talent-GUI-val egyezően
+KIZÁRÓLAG az isAvailable-szűrt (a játékos aktuális kasztjához/szakmájához tartozó)
+talentek utaznak — a teljes 75-elemes katalógus a 64-es protokoll-limitet is sértené,
+és más kasztok fáját is felfedné. A `PURCHASE_TALENT` a meglévő CAS-védett
+`TalentManager.spendPoint` use-case-en fut (minden requirement/fa-gate/pont-fedezet a
+tranzakción belül validálódik, a durable commit aszinkron), UI-rate-limit mögött;
+gépi `ACTION_RESULT` után friss talent- és profil-state megy ki. Respec-action
+szándékosan nincs a kliens-protokollban: a respec a SpecGUI-ban él, megerősítési
+folyamata a vanilla úton is egy-kattintásos — natívvá tétele külön döntés.
+
+### Natív Quest Journal (QUEST_STATE, TRACK_QUEST)
+
+A `QUEST_STATE` a vanilla questlog öt fülének (Aktív/Kész/Megbízások/Elérhető/
+Teljesített) display-projekciója a `QUEST_JOURNAL` capability +
+`client.features.quest-journal` kapu mögött, azonos fül-besorolással és forrás-API-kkal.
+Biztonsági invariánsok: a láthatóság egyetlen forrása az isVisible-szűrt
+`getVisibleQuestIds` (HIDDEN quest sosem szivárog); a riddle-questek progressze a
+szerveroldali describeProgress „???” placeholderével utazik; reward-előnézet nincs
+(a vanilla felület sem mutat). A fülönkénti listák a 64-es protokoll-limiten
+csonkolódnak, a total-mezők a valós darabszámot viszik (a teljes lista a /quest log
+felületen mindig elérhető). A push olcsó változás-jellel megy (aktív progressz +
+fül-összetétel + követés), a katalógus-bejárós teljes payload csak változásra épül.
+
+A `TRACK_QUEST` az EGYETLEN kliensről engedett quest-mutáció: nincs forrás-kötése, a
+szerver csak aktív questre engedi (üres id = követés törlése). Accept/turn-in
+kliens-actionként TILOS — azok forrás-authorityját (NPC-kattintás, territórium-belépés,
+hitelesített esemény, item-használat) csak a valódi játék-esemény adaptere válthatja
+ki, egy kliens-csomag remote-accept bypass lenne.
+
+### Natív Professions (PROFESSION_STATE, SELECT_PROFESSION, SELECT_PROFESSION_SPEC)
+
+A `PROFESSION_STATE` a szakma-áttekintő vanilla felületeivel (ProfessionGUI,
+`/profession info`, `/szakmacel`) azonos manager-hívásokból épülő display-projekció a
+`NATIVE_PROFESSIONS` capability + `client.features.native-professions` kapu mögött.
+A teljes nyolc-szakmás roster utazik (a tanulható, még nem aktív főszakmák is — a
+vanilla GUI is mutatja őket) szinttel, XP-bontással (`ProfessionManager.xpBreakdown`,
+amely bitre a `levelForExperience` szint-formuláját követi), rang-névvel,
+recept-/tervrajz-darabszámokkal és a céh heti közös céljával. Spec-opció csak a
+játékos aktívan gyakorolt szakmáira megy ki (más szakmák spec-fája nem kerül a
+vezetékre); recept tétel-szinten nem utazik, csak darabszám — a recept-böngésző a
+product spec külön modulja marad. Push a profile-mintájú bájt-dedupe-pal.
+
+A `SELECT_PROFESSION` a ProfessionGUI-kattintás párja: a döntést kizárólag a
+CAS-mutáció hozza (foglalt kategória-slot = unchanged = `REJECTED`/SLOT_TAKEN) —
+szakmaváltás kliensről sem lehetséges, a slot felszabadítása admin-út marad. A
+`SELECT_PROFESSION_SPEC` a SpecGUI-kattintás párja a meglévő canSelect/select
+use-case-en (szakma-, szint- és egyszeri-választás-kapu); respec kliens-actionként
+szándékosan nincs (fizetős SpecGUI-döntés). Mindkét action UI-rate-limit mögött fut,
+gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
+
+### Natív recept-böngésző (BROWSE_RECIPES → RECIPE_PAGE)
+
+A recept-katalógus (437 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
+ez az egyetlen pull-modellű domain: a kliens `BROWSE_RECIPES`-szel egy szakma egy
+lapját kéri, a válasz requestId-korrelált `RECIPE_PAGE` a `RECIPE_BROWSER` capability
++ `client.features.recipe-browser` kapu mögött. A lap a játékos régió-szálán épül
+(inventory-olvasás a have/need értékekhez), a lap-méret
+(`client.limits.recipe-page-size`, clamp 1..64) és a lap-index szerveroldalon clampelt,
+a kérés UI-rate-limit alatt fut. A csempe-tartalom a vanilla recept-könyv
+(`ProfessionRecipeGUI.buildTile`) logikájával bitre azonos feltételekből épül — a
+have-számlálás a megosztott GUI-helpereket használja (unique-anyag kizárással), a
+craftolhatóság a vanilla csempével egyezően szint + tervrajz + hozzávalók. Craft-action
+szándékosan NINCS a protokollban (a product spec szerint is későbbi külön döntés):
+a tényleges craft a vanilla recept-könyv tranzakciós útján marad.
+
+### Party frame (PARTY_STATE)
+
+A `PARTY_STATE` a party-frame strukturált display-projekciója a `PARTY_FRAME`
+capability + `client.features.party-frame` kapu mögött — ugyanaz az adatkör, amit a
+vanilla HUD party-sorai mutatnak (👑/tag-jelölés, név, életerő), mezőkben. A tag-adat
+olvasása szándékosan a vanilla sor útján fut (`Bukkit.getPlayer` + élő mező-olvasás
+védőhálóval, a néző region-szálán — a HudManager dokumentált kereszt-régiós
+kivétele); régió-átmenetkor a tag egy tickre `healthKnown=false`-szal utazik, ahogy a
+vanilla sor „…”-t mutat. Az életerő fél-szívekre kvantált (`ceil(hp/2)` — a vanilla
+kijelzéssel azonos felbontás), így a regen-tickek nem generálnak forgalmat a
+bájt-dedupe alatt. Üres taglista = nincs party. Party-mutáció (invite/kick/promote/
+leave) szándékosan NEM része a protokollnak — a `/party` parancs validált útja marad
+az egyetlen. A natív kliens a strukturált frame aktív állapotában a HUD-panel
+szöveges party-sorait nem rendereli (nincs dupla presentation); a HUD_STATE
+partyLines mezője változatlanul utazik a vanilla-paritás miatt.
+
+### Boss/encounter frame (BOSS_STATE)
+
+A `BOSS_STATE` a világboss-encounter strukturált display-projekciója a `BOSS_FRAME`
+capability + `client.features.boss-frame` kapu mögött. Adatköre a vanilla megosztott
+boss-bar (☠ + HP%) plusz a boss plain neve, archetípus-kulcsa és a második-fázis
+(dühöngés) jelzés — utóbbiakat a szerver eddig is broadcastolta szövegként; a
+WorldBossManager ehhez kapott lock-mentes display-tükröket (activeBossName/
+archetype/enraged, az isBossActive() mögé kapuzott getterekkel). A HP egész
+százalékra kvantált (a vanilla bar felbontása), a push bájt-dedupe-os; a kör a
+vanilla barral egyezően globális. A natív boss-frame-et kapó játékosnál a megosztott
+vanilla világboss-bar elhallgat (`ClientHudRoute.bossFrameActive` suppression —
+nincs dupla presentation); vanilla kliens változatlanul a bart kapja. Kazamata
+mini-bossnak nincs vanilla felülete, ezért a frame-ben sem szerepel
+(display-paritás); encounter-scope/contribution-kör külön rendszer híján nincs.
+
+### Territory overlay (TERRITORY_STATE)
+
+A `TERRITORY_STATE` a néző aktuális territórium-zónájának display-projekciója a
+`TERRITORY_OVERLAY` capability + `client.features.territory-overlay` kapu mögött —
+az az adatkör, amit a vanilla határátlépés-actionbar és a `/territory info` mutat
+(zóna-név, típus, tulajdonos frakció), tartós overlay-ként, plusz az AKTUÁLIS zónán
+futó raid állása (támadó/védő + pontok — a megosztott raid-bar adatköre a zónára
+szűkítve). A zóna-lookup a néző saját region-szálán fut a lock-mentes chunk-indexen
+(tick-enként olcsó); a raid-pontok a capture-tick ütemében változnak, a bájt-dedupe
+nem churn-öl. Zóna-geometria (poligon) szándékosan nem utazik — térkép-overlay külön
+fázis lenne, geometria-lapozó protokollal. A határátlépés-actionbar vanilla úton
+marad: múló értesítés, nem azonos felület a tartós overlay-jel (nincs dupla
+presentation).
+
+### Faction screen (FACTION_STATE)
+
+A `FACTION_STATE` a saját frakció display-projekciója a `FACTION_SCREEN` capability +
+`client.features.faction-screen` kapu mögött — az az adatkör, amit a /menu
+frakció-fejléce, a /faction king|treasury|raid status|war és az /events szezon-állása
+mutat: tagság (Menedék-vendégnél üres frakció-blokk), kincstár-egyenleg formázva +
+adókulcs, király + szavazat-tally (a menü-úttal azonos névfeloldással), szezon-állás
+mind a négy frakcióra (publikus broadcast-adat — vendégnek is utazik), az élő raid
+teljes státusza és a hadi-ablak. A PlayerProfile-internals (membership-history,
+receipts, váltás-számlálók) nem kerülnek a vezetékre. Frakció-mutáció (join/leave)
+szándékosan NEM protokoll-action: a csatlakozás forrás-kötött (a FactionSwitchRules
+csak a Menedék fővárosában validálja), egy kliens-csomag hely-authority bypass lenne
+— a váltás-folyamat a /faction és /menu validált útján marad. A perc-felbontású
+visszaszámlálók miatt a bájt-dedupe percenként legfeljebb egyszer enged ki friss
+state-et.
+
+### FX-esemény csatorna (FX_EVENT, Phase 8b)
+
+Az `FX_EVENT` a presentation-sáv első üzenete az `ADVANCED_FX_V1` capability +
+`client.features.advanced-fx-v1` kapu mögött: tranziens, fire-and-forget esemény —
+nem state (resync nem ismétli, dedupe nincs), és az elveszett/kihagyott esemény
+gameplay-t nem érinthet, mert a vanilla telegráf-partikula/hang minden kliensnek
+változatlanul megy (az FX kiegészítő réteg, nem helyettesítés). A domain-emitterek a
+`ClientFxRoute` seam-en át szólnak (a ClientHudRoute mintája — a domain a hidat nem
+ismeri): v1-ben a világboss-specialok telegráfjai (`boss-slam-telegraph`,
+`boss-zone-telegraph`, `boss-summon` — hely + rádiusz + telegráf-hossz) és a sikeres
+awakening-arming (`awakening-armed`, cél-játékosnak). Kézbesítés: pozicionált
+eseménynél a rádiusz-szűrés (`client.limits.fx-radius`) az owner-thread-frissített
+PositionCache tükrén fut, a küldés a címzett saját ütemezőjén — az emitter bármely
+régió-szálról hívható, idegen Player-állapotot nem érint.
+
 ### Session-életciklus és védelem
 
 - A registry (`UUID → ClientSession`) nem durable; quit/kick a központi
@@ -1249,7 +1507,9 @@ capability-név nem hiba (forward compat).
   + szigorúan monoton sequence mellett dolgozódik fel; minden más stale-drop. Reconnect után
   a régi generation üzenetei így tartalmi validáció nélkül kiesnek.
 - Rate limit játékosonként és kategóriánként (`client.limits.control-messages-per-second`,
-  resync-hez `client.limits.resync-cooldown-ms`); túllépés csendes drop + számláló,
+  resync-hez `client.limits.resync-cooldown-ms`, CAST_SLOT-hoz
+  `client.limits.cast-messages-per-second`, UI-actionökhöz
+  `client.limits.ui-actions-per-second`); túllépés csendes drop + számláló,
   automatikus büntetés nélkül.
 - Folia: a plugin-message callback szál-kontextusa nem garantált, ezért a híd a Playert csak
   a saját ütemezőjén érinti (`player.getScheduler().run` a kimenő küldésnél); a registry és a
@@ -1258,11 +1518,13 @@ capability-név nem hiba (forward compat).
 ### Diagnosztika és tesztek
 
 `/icesmp client <név>` (session-részletek), `/icesmp client stats` (híd-számlálók),
-`/icesmp client resync <név>` (kényszerített, üres BEGIN/END resync) — jog:
+`/icesmp client resync <név>` (kényszerített resync: BEGIN + teljes state + END) — jog:
 `icesmp.admin.client`. Debug-napló: `client.debug: true`.
 
 A `clientProtocolRegressionTest` (a `check` része) dependency-free fedi a codec-roundtripet,
-a fail-closed hibautakat, a negotiációt, a registry-életciklust, a sequence-monotonitást és a
-rate limitert. A Fabric-oldali ellenpárt (valódi 1.21.11 transport spike) a külön
-`IceSMP-Client` repo Phase 0 feladata bizonyítja; addig a protokoll-tartomány szándékosan
-1..1 és minden feature-kapu zárva.
+a fail-closed hibautakat, a HUD-state sorosítást és projekciót, a negotiációt, a
+registry-életciklust, a sequence-monotonitást és a rate limitert. A kliensoldali ellenpár a
+`MilCsik09/IceSMP-Fabric` repo: a protokoll-csomag ott bájtazonos port, golden-vector és
+szimulált szerveres kézfogás-suite-okkal (lásd az AGENTS.md kliensprotokoll-DoD szabályát);
+az élő Paper↔Fabric roundtrip-bizonyítás (CLIENT-02) staging-teszt. A protokoll-tartomány
+szándékosan 1..1, és a feature-kapuk alapból zárva maradnak.

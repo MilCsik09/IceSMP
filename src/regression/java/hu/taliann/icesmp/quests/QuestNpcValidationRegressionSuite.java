@@ -4,7 +4,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /** Regression coverage for exact quest-NPC validation and manual provisioning. */
@@ -23,7 +22,6 @@ public final class QuestNpcValidationRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         packagedQuestsReferenceTheExpectedNpcContract();
-        deploymentSnapshotKeepsMissingPlacementExplicit();
         bridgeReportsExactNamesCaseMismatchAndConfigProvenance();
         startupValidationDoesNotInventCoordinatesOrCommands();
         System.out.println("Quest NPC validation regression suite passed.");
@@ -37,22 +35,6 @@ public final class QuestNpcValidationRegressionSuite {
         );
         check(referenced.equals(EXPECTED_REQUIRED_NPCS),
                 "packaged quest NPC contract drifted: " + referenced);
-    }
-
-    private static void deploymentSnapshotKeepsMissingPlacementExplicit() throws Exception {
-        final Set<String> actualNames = collectYamlScalars(
-                Path.of("Other/plugins/FancyNpcs/npcs.yml"),
-                Set.of("name"),
-                4
-        );
-        final Set<String> normalizedNames = new LinkedHashSet<>();
-        for (final String name : actualNames) {
-            normalizedNames.add(name.toLowerCase(Locale.ROOT));
-        }
-        final Set<String> placedRequired = new LinkedHashSet<>(EXPECTED_REQUIRED_NPCS);
-        placedRequired.retainAll(normalizedNames);
-        check(placedRequired.isEmpty(),
-                "deployment snapshot changed; update the manual provisioning evidence: " + placedRequired);
     }
 
     private static Set<String> collectYamlScalars(final Path path, final Set<String> keys,

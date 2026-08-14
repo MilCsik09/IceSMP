@@ -24,6 +24,18 @@ client:
     control-messages-per-second: 20
     # Két kliens-kezdeményezésű resync közti kötelező szünet.
     resync-cooldown-ms: 2000
+    # CAST_SLOT kérések másodpercenkénti plafonja játékosonként; fölötte gépi
+    # RATE_LIMITED válasz megy vissza (a gameplay-debounce ettől független).
+    cast-messages-per-second: 8
+    # UI-action kérések (SELECT_SPELL, TOGGLE_FAVORITE) másodpercenkénti plafonja.
+    ui-actions-per-second: 10
+    # A RECIPE_PAGE válasz laponkénti recept-száma (a protokoll-limit 64 fölé nem engedi).
+    recipe-page-size: 16
+    # A relic attachment-broadcast rádiusza blokkban: ekkora körzetben lévő aktív
+    # viselők kerülnek a néző RELIC_ATTACHMENT_STATE listájába.
+    relic-attachment-radius: 32
+    # Pozicionált FX-esemény kézbesítési rádiusza blokkban (advanced-fx-v1 kliensek).
+    fx-radius: 64
   # Kézfogásban engedélyezhető presentation-capability-k. Minden érték alapból false:
   # egy capability csak akkor kapcsolható be, amikor a hozzá tartozó szerveroldali
   # projection/action fázis ténylegesen elkészült. A kliens hiába hirdet többet,
@@ -36,11 +48,15 @@ client:
     native-spellbook: false
     native-talents: false
     quest-journal: false
+    native-professions: false
+    recipe-browser: false
     relic-render-v1: false
+    relic-attachment-v1: false
     advanced-fx-v1: false
     player-animation-v1: false
     party-frame: false
     boss-frame: false
     territory-overlay: false
+    faction-screen: false
   # Debug-napló a hídhoz (drop-okok, kézfogások). Productionben maradjon false.
   debug: false

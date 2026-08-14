@@ -69,7 +69,7 @@ python3 -m pip install Pillow  # required by HUD asset generation/audit
   `MilCsik09/IceSMPGuides` repóba; ne maradjon külön gyökérszintű guide-másolat.
 
 ## Mi ez a projekt
-Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 838 Java-fájl / 94 manager. Minden játékos-szöveg **magyar**.
+Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 870 Java-fájl / 94 manager. Minden játékos-szöveg **magyar**.
 
 ## Architektúra (nagy kép)
 - **Belépési pontok** (`paper-plugin.yml`): `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader`. A tényleges élet a `core/IceSMPCore`-ban van: konstruktorban épül fel az ÖSSZES manager (kézi DI, sorrend számít), majd `enable()`: `load()` a `persistentStores` listán → listener-regisztráció → parancs-regisztráció (kódból, nem manifestből!) → schedulerek; `disable()`: `save()` + cleanup.
@@ -118,6 +118,12 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   - új rendszer/mechanika → `docs/FEATURES.md` + érintett szerepköri kézikönyv +
     acceptance-eset a `docs/ADMIN_GUIDE.md`-ban + `LORE_REFERENCE.md` sor, ha lore-kötött
   - minden doksi-szám a configból származik, nem fejből
+  - kliensprotokoll-változás (bármi a `client/protocol/` alatt, `ClientCapability`,
+    kézfogás/session-kapu szemantika) → bájtazonos re-port a `MilCsik09/IceSMP-Fabric`
+    repóba (`src/main/java/hu/taliann/icesmp/client/protocol/`) + a golden-vectorok és
+    flow-tesztek frissítése az ottani suite-okban, UGYANABBAN a munkaegységben — a két
+    repo a vezetéken sosem csúszhat szét; a kanonikus protokoll-doksi a
+    `docs/ARCHITECTURE.md` „Client Bridge” szekciója
   - záráskor: fordítás-ellenőrzés + `scripts/check_consistency.py` + tükör-push
 - Játékos-szöveg magyarul, `MessageManager` + `messages.yml` kulccsal és inline defaulttal.
 - **Item-megjelenés szabálya (ITEM_MODEL migráció KÉSZ, 2026-07-23):** MINDEN custom/unique

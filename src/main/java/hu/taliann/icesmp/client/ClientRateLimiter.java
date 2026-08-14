@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ClientRateLimiter {
 
-    public enum Category { CONTROL, RESYNC }
+    public enum Category { CONTROL, RESYNC, CAST, UI }
 
     private record Key(UUID playerId, Category category) {
     }

@@ -48,7 +48,7 @@ public final class SpellbookGUI {
     }
 
     /** A single spellbook row: the spell, its unlock level, and whether it is unlocked. */
-    private record Entry(Spell spell, int requiredLevel, boolean unlocked) {
+    public record Entry(Spell spell, int requiredLevel, boolean unlocked) {
     }
 
     public static void open(final Player viewer, final AbilityCatalystListener catalyst,
@@ -101,7 +101,7 @@ public final class SpellbookGUI {
     }
 
     /** Builds the ordered class-then-spec spell list (each by unlock level) for the player. */
-    private static List<Entry> collectEntries(final Player viewer, final JobManager jobManager,
+    public static List<Entry> collectEntries(final Player viewer, final JobManager jobManager,
                                               final SpecializationManager specializationManager,
                                               final SpellRegistry spellRegistry, final ConfigManager configManager) {
         final List<Entry> entries = new ArrayList<>();
