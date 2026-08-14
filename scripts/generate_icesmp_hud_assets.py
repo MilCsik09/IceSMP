@@ -39,7 +39,7 @@ HUD_MAX_BIT = 10
 HUD_ADD_HEIGHT = 4095
 HUD_FRAME_WIDTH = 240
 HUD_FRAME_HEIGHT = 160
-TEXT_LOGICAL_WIDTH = 6
+TEXT_LOGICAL_WIDTH = 5
 TEXT_LOGICAL_HEIGHT = 12
 TEXT_OVERSAMPLE = 4
 HUD_LAYOUT_SCALES = (0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80,
@@ -317,7 +317,10 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
                     glyph = glyph.resize((max(1, round(width * scale)),
                                           max(1, round(height * scale))),
                                          Image.Resampling.LANCZOS)
-                colored = Image.new("RGBA", glyph.size, (229, 240, 249, 255))
+                # Strengthen antialias coverage without widening stems; the compact cell already
+                # removes the old airy letter spacing and must keep Hungarian accents distinct.
+                glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.45)))
+                colored = Image.new("RGBA", glyph.size, (239, 247, 252, 255))
                 colored.putalpha(glyph)
                 atlas.alpha_composite(colored,
                                       (x + (cell_width - glyph.width) // 2,
@@ -346,13 +349,16 @@ def generate_segments() -> None:
 
 
 def generate_wallet_strip() -> None:
-    for name, outline in (("wallet-strip.png", (95, 201, 180, 110)),
-                          ("detail-strip.png", (115, 142, 178, 100))):
-        image = Image.new("RGBA", (HUD_FRAME_WIDTH, 22), (0, 0, 0, 0))
+    for name, outline, height in (("wallet-strip.png", (95, 201, 180, 110), 42),
+                                  ("detail-strip.png", (115, 142, 178, 100), 22)):
+        image = Image.new("RGBA", (HUD_FRAME_WIDTH, height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
-        draw.rounded_rectangle((2, 2, 237, 19), radius=5,
+        draw.rounded_rectangle((2, 2, 237, height - 3), radius=5,
                                fill=(6, 10, 15, 120), outline=outline, width=1)
-        image.putpixel((HUD_FRAME_WIDTH - 1, 21), (255, 255, 255, 1))
+        if name == "wallet-strip.png":
+            draw.line((119, 3, 119, height - 4), fill=(outline[0], outline[1], outline[2], 55))
+            draw.line((3, 21, 236, 21), fill=(outline[0], outline[1], outline[2], 55))
+        image.putpixel((HUD_FRAME_WIDTH - 1, height - 1), (255, 255, 255, 1))
         save_png(image, TEXTURES / name)
 
 
@@ -521,7 +527,7 @@ def main() -> None:
         provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, 18, HUD_FRAME_HEIGHT)
         for index, theme in enumerate(THEMES)
     ])
-    write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 22)])
+    write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 42)])
     write_font("detail_panel", [provider("detail-strip.png", chr(0xE106), 4, 178, 22)])
     write_font("class_icon", [
         provider(f"class-{class_id}.png", chr(0xE110 + index), 8, 38, 36)
@@ -540,6 +546,10 @@ def main() -> None:
     ])
     write_font("currency", [
         provider(f"currency-{currency}.png", chr(0xE160 + index), 8, 210, 15)
+        for index, currency in enumerate(("red", "blue", "neutral", "dark"))
+    ])
+    write_font("currency_lower", [
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, 230, 15)
         for index, currency in enumerate(("red", "blue", "neutral", "dark"))
     ])
     write_font("charges", [
@@ -582,6 +592,7 @@ def main() -> None:
         "text_event": 155,
         "text_detail": 190,
         "text_wallet": 213,
+        "text_wallet_lower": 233,
     }.items():
         write_font(name, [{
             "type": "bitmap",
@@ -605,6 +616,8 @@ def main() -> None:
         "mechanic_variants": list(MECHANIC_VARIANTS),
         "fixed_segment_count": 12,
         "wallet_slots": 4,
+        "wallet_columns": 2,
+        "wallet_rows": 2,
         "layout_color_payload_bits": 13,
         "layout_y_offset_range": [-256, 255],
         "layout_scale_variants": list(HUD_LAYOUT_SCALES),

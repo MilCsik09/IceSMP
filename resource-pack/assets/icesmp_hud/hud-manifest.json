@@ -3,7 +3,7 @@
   "space_first": "U+E400",
   "space_min": -512,
   "space_max": 512,
-  "text_advance": 7,
+  "text_advance": 6,
   "text_oversample": 4,
   "maximum_bitmap_glyph_width": 256,
   "themes": [
@@ -87,6 +87,8 @@
   ],
   "fixed_segment_count": 12,
   "wallet_slots": 4,
+  "wallet_columns": 2,
+  "wallet_rows": 2,
   "layout_color_payload_bits": 13,
   "layout_y_offset_range": [
     -256,

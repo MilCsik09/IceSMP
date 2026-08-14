@@ -672,10 +672,9 @@ public final class HudManager {
     private List<HudCurrency> walletCurrencies(final Player player) {
         final CurrencyType primary = CurrencyType.fromFactionType(
                 factionManager.getEconomyFaction(player.getUniqueId()));
-        final List<HudCurrency> result = new ArrayList<>();
-        addWalletCurrency(result, player, primary, true);
+        final List<HudCurrency> result = new ArrayList<>(CurrencyType.values().length);
         for (final CurrencyType type : CurrencyType.values()) {
-            if (type != primary) addWalletCurrency(result, player, type, false);
+            addWalletCurrency(result, player, type, type == primary);
         }
         return List.copyOf(result);
     }
@@ -683,10 +682,8 @@ public final class HudManager {
     private void addWalletCurrency(final List<HudCurrency> target, final Player player,
                                    final CurrencyType type, final boolean primary) {
         final double amount = currencyManager.getBalance(player, type);
-        if (primary || amount > 0.0D) {
-            target.add(new HudCurrency(type.name().toLowerCase(java.util.Locale.ROOT),
-                    type.getDisplayName(), compactBalance(amount), primary));
-        }
+        target.add(new HudCurrency(type.name().toLowerCase(java.util.Locale.ROOT),
+                type.getDisplayName(), compactBalance(amount), primary));
     }
 
     private static String compactBalance(final double amount) {
@@ -1245,3 +1242,4 @@ public final class HudManager {
         return "§" + "0123456789abcdef".charAt(index % 16) + "§r";
     }
 }
+

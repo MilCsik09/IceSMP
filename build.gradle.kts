@@ -47,17 +47,24 @@ val validateIceSmpHudPackage by tasks.registering {
         require((manifest["fixed_segment_count"] as Number).toInt() == 12) {
             "First-party HUD bars must use 12 fixed cells"
         }
+        require((manifest["text_advance"] as Number).toInt() == 6) {
+            "First-party HUD must retain the compact six-pixel text grid"
+        }
         require((manifest["wallet_slots"] as Number).toInt() == 4) {
             "First-party HUD must expose four fixed wallet slots"
+        }
+        require((manifest["wallet_columns"] as Number).toInt() == 2
+            && (manifest["wallet_rows"] as Number).toInt() == 2) {
+            "First-party HUD wallet must retain its fixed 2x2 currency grid"
         }
         require(manifest["vanilla_health_hidden"] == false && manifest["vanilla_armor_hidden"] == false) {
             "Vanilla health/armor may not be hidden before the HP-rework renderer is complete"
         }
         val fonts = hud.dir("font").asFile
-        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "runes", "charges",
+        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "currency_lower", "runes", "charges",
             "mechanic_icons", "mechanic_slots", "resource_segments",
             "metric_segments", "text_header", "text_subheader", "text_resource",
-            "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet").forEach { name ->
+            "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet", "text_wallet_lower").forEach { name ->
             require(fonts.resolve("$name.json").isFile) { "Missing IceSMP HUD font: $name" }
         }
         val textures = hud.dir("textures/hud").asFile
@@ -80,6 +87,11 @@ val validateIceSmpHudPackage by tasks.registering {
             val file = textures.resolve("currency-$currency.png")
             val image = ImageIO.read(file) ?: error("Unreadable HUD currency icon: $file")
             require(image.width == 64 && image.height == 64) { "Currency icon must stay 64x64: $file" }
+        }
+        val walletStrip = ImageIO.read(textures.resolve("wallet-strip.png"))
+            ?: error("Unreadable HUD wallet strip")
+        require(walletStrip.width == 240 && walletStrip.height == 42) {
+            "HUD wallet must retain its fixed 2x2 panel geometry"
         }
         val mechanics = manifest["mechanics"] as? List<*>
             ?: error("First-party HUD mechanic manifest is missing")
@@ -639,6 +651,3 @@ tasks.check {
         wizardGameplayRegressionTest, wizardProfileRegressionTest
     )
 }
-
-
-

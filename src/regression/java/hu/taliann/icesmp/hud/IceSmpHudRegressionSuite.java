@@ -44,17 +44,29 @@ public final class IceSmpHudRegressionSuite {
                 "spacing glyphs must stay in BMP PUA and avoid supplementary-plane sentinels");
         final String source = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
         check(source.contains("append(space(-anchoredX - width))")
+                        && source.contains("List.of(\"guest\", \"red\", \"blue\", \"neutral\", \"dark\")")
                         && !source.contains("primaryMetric()") && !source.contains("secondaryMetric()"),
                 "every draw must return to origin and metrics must remain class-agnostic");
         final String hud = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
         check(!hud.contains("snapshot.classHud().classId().isBlank()"),
                 "guest/profile/event HUD must remain visible before class selection");
+        check(hud.contains("new ArrayList<>(CurrencyType.values().length)")
+                        && !hud.contains("primary || amount > 0.0D"),
+                "wallet snapshot must retain all four canonical currencies, including zero balances");
     }
 
     private static void walletAndClassContractIsGeneric() {
         final IceSmpHudModel model = model(56, 100, 56);
-        check(model.currencies().size() == 3 && model.currencies().getFirst().primary(),
-                "primary currency must remain first while positive foreign wallets follow");
+        check(model.currencies().size() == 4
+                        && model.currencies().stream().map(HudManager.HudCurrency::id)
+                        .toList().equals(List.of("red", "blue", "neutral", "dark"))
+                        && model.currencies().get(2).primary(),
+                "all four currencies must retain canonical fixed wallet slots");
+        final String rendered = PlainTextComponentSerializer.plainText().serialize(
+                new IceSmpHudRenderer().render(model));
+        check(rendered.contains("Parals 2.4k") && rendered.contains("Hópihér 8")
+                        && rendered.contains("Creutzér 120") && rendered.contains("Csontveret 0"),
+                "wallet must label and render every currency, including zero balances");
         check(model.classHud().metrics().size() == 2 && model.classHud().slots().size() == 2,
                 "typed generic metrics and slots must survive into the display model");
         try {
@@ -132,7 +144,10 @@ public final class IceSmpHudRegressionSuite {
         final String manifest = read("resource-pack/assets/icesmp_hud/hud-manifest.json");
         final String config = read("src/main/resources/config/general.yml");
         check(manifest.contains("\"fixed_segment_count\": 12")
+                        && manifest.contains("\"text_advance\": 6")
                         && manifest.contains("\"wallet_slots\": 4")
+                        && manifest.contains("\"wallet_columns\": 2")
+                        && manifest.contains("\"wallet_rows\": 2")
                         && manifest.contains("\"layout_color_payload_bits\": 13")
                         && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"vanilla_health_hidden\": false")
@@ -141,11 +156,11 @@ public final class IceSmpHudRegressionSuite {
         check(config.contains("icesmp-hud:") && config.contains("hide-vanilla-health: false")
                         && config.contains("hide-vanilla-armor: false"),
                 "vanilla HUD removal must remain explicitly disabled until replacement coverage exists");
-        final Path guest = Path.of("dev-assets/icesmp-hud/source/frame-guest-v2.png");
-        final var image = ImageIO.read(guest.toFile());
-        check(image != null && image.getWidth() >= 64 && image.getHeight() >= 64
+        final Path frames = Path.of("dev-assets/icesmp-hud/source/frames-v3.png");
+        final var image = ImageIO.read(frames.toFile());
+        check(image != null && image.getWidth() == 1200 && image.getHeight() == 160
                         && image.getColorModel().hasAlpha(),
-                "Menedék frame donor must retain a transparent 64px-or-larger source");
+                "normalized v3 frame atlas must retain all five fixed HUD themes");
         check(Files.isRegularFile(Path.of("resource-pack/assets/minecraft/shaders/core/rendertype_text.vsh"))
                         && Files.isRegularFile(Path.of("resource-pack/assets/icesmp_hud/font/space.json")),
                 "standalone shader and BMP spacing font must be packaged by the first-party HUD");
@@ -172,14 +187,16 @@ public final class IceSmpHudRegressionSuite {
                         && !fragmentShader.contains("linear_fog("),
                 "HUD fragment shader must not redeclare 1.21.11 Fog UBO members or call legacy fog");
         final String generator = read("scripts/generate_icesmp_hud_assets.py");
-        check(generator.contains("guest_frame_with_canonical_layout")
-                        && generator.contains("canonical_frames")
-                        && generator.contains("Guest HUD changed the canonical content-grid geometry")
+        check(generator.contains("frames-v3.png")
+                        && generator.contains("mechanics-core-v3.png")
+                        && generator.contains("mechanics-spec-v3.png")
                         && generator.contains("HUD_FRAME_WIDTH = 240")
+                        && generator.contains("TEXT_LOGICAL_WIDTH = 5")
                         && generator.contains("TEXT_OVERSAMPLE = 4")
                         && generator.contains("DejaVuSans.ttf")
-                        && generator.contains("dev-assets") && generator.contains("icesmp-hud"),
-                "guest art must reuse canonical panel geometry from first-party source assets");
+                        && generator.contains("currency_lower")
+                        && generator.contains("text_wallet_lower"),
+                "v3 art, compact typography and the two-row wallet must remain generator-backed");
         for (final String largeGlyph : List.of("frame-hud-guest.png", "frame-hud-red.png",
                 "frame-hud-blue.png", "frame-hud-neutral.png", "frame-hud-dark.png",
                 "wallet-strip.png", "detail-strip.png")) {
@@ -190,7 +207,7 @@ public final class IceSmpHudRegressionSuite {
         }
         final var textAtlas = ImageIO.read(Path.of(
                 "resource-pack/assets/icesmp_hud/textures/hud/text-atlas.png").toFile());
-        check(textAtlas != null && textAtlas.getWidth() == 384 && textAtlas.getHeight() == 384,
+        check(textAtlas != null && textAtlas.getWidth() == 320 && textAtlas.getHeight() == 384,
                 "HUD text atlas must retain the 4x antialiased Hungarian glyph source");
         for (final String icon : List.of("class-wizard.png", "class-none.png", "rune-blood-ready.png",
                 "charge-ready.png", "currency-neutral.png",
@@ -220,12 +237,13 @@ public final class IceSmpHudRegressionSuite {
                 List.of(
                         new ClassHudSlot("rune_1", "blood", "ready", 100, "Vér"),
                         new ClassHudSlot("rune_2", "frost", "regenerating", 40, "Fagy")));
-        return new IceSmpHudModel("Menedék vendége", "ice", "66B5A3", "Halállovag", 12, "120", true,
+        return new IceSmpHudModel("Menedék vendége", "guest", "66B5A3", "Halállovag", 12, "120", true,
                 resource, maximum, percent, "Runikus Erő", "nyugalom",
                 List.of(
-                        new HudManager.HudCurrency("neutral", "Creutzér", "120", true),
                         new HudManager.HudCurrency("red", "Parázsló Parals", "2.4k", false),
-                        new HudManager.HudCurrency("blue", "Hópihér-veret", "8", false)), state);
+                        new HudManager.HudCurrency("blue", "Hópihér-veret", "8", false),
+                        new HudManager.HudCurrency("neutral", "Creutzér", "120", true),
+                        new HudManager.HudCurrency("dark", "Csontveret", "0", false)), state);
     }
 
     private static String read(final String path) throws Exception {

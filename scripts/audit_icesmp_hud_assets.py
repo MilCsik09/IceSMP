@@ -106,9 +106,9 @@ def expected_size(path: Path) -> tuple[int, int] | None:
     if name.startswith(("class-", "currency-", "rune-", "icon-", "mechanic-", "charge-")):
         return (64, 64)
     fixed = {
-        "wallet-strip.png": (240, 22),
+        "wallet-strip.png": (240, 42),
         "detail-strip.png": (240, 22),
-        "text-atlas.png": (384, 384),
+        "text-atlas.png": (320, 384),
         "segment-track.png": (12, 5),
         "segment-fill.png": (12, 5),
         "segment-fill-warm.png": (12, 5),
