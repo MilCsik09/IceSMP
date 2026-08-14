@@ -1195,10 +1195,10 @@ HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
 
 | Réteg | Osztályok | Bukkit-függés |
 |---|---|---|
-| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `HudStatePayload`, `AbilityKitPayload`, `CastSlotPayload`, `SpellbookStatePayload`, `SpellActionPayload`, `ProfileStatePayload`, `RelicStatePayload`, `TalentStatePayload`, `TalentActionPayload`, `QuestStatePayload`, `QuestTrackPayload`, `ActionResultPayload`, `ClientProtocolException` | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `ClientProtocolException` + a payload-osztályok: `HudState`, `AbilityKit`, `CastSlot`, `Spellbook`, `SpellAction`, `Profile`, `RelicState`, `RelicAttachment`, `Talent`, `TalentAction`, `Quest`, `QuestTrack`, `Profession`, `ProfessionAction`, `BrowseRecipes`, `RecipePage`, `Party`, `Boss`, `Territory`, `Faction`, `FxEvent`, `ActionResult` (`*Payload`) | nincs (pure Java, a Fabric kliensbe átemelhető) |
 | Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
-| Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector` (display-only leképezések) | ClientProfileProjector: igen (élő managerekből olvas) |
-| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute) | igen |
+| Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector`, `ClientRelicProjector`, `ClientTalentProjector`, `ClientQuestProjector`, `ClientProfessionProjector`, `ClientRecipeProjector`, `ClientPartyProjector`, `ClientFactionProjector` (display-only leképezések) | vegyes: a Hud/Relic/Talent projektor tiszta, a többi élő managerekből olvas a néző szálán |
+| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute + ClientFxRoute) | igen |
 
 ### Wire-formátum (protokoll v1)
 

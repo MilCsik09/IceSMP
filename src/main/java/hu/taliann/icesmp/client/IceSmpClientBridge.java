@@ -300,25 +300,15 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         debug(() -> "handshake accepted for " + player.getName() + " (client " + hello.clientVersion()
                 + ", protocol " + accepted.selectedProtocol() + ", capabilities " + accepted.capabilities() + ")");
         // Az új session teljes kezdő state-et kap; a következő HUD-tickre nem várunk.
-        // A state-építés player-állapotot olvas, ezért a játékos régió-szálán fut; a
-        // generation-ellenőrzés védi ki a közben történt re-handshake-et.
-        lastHudState.remove(player.getUniqueId());
-        lastKitSignature.remove(player.getUniqueId());
-        lastSpellbookSignature.remove(player.getUniqueId());
-        lastProfileState.remove(player.getUniqueId());
-        lastRelicState.remove(player.getUniqueId());
-        lastTalentState.remove(player.getUniqueId());
-        lastQuestSignature.remove(player.getUniqueId());
-        lastProfessionState.remove(player.getUniqueId());
-        lastRelicAttachment.remove(player.getUniqueId());
-        lastPartyState.remove(player.getUniqueId());
-        lastBossState.remove(player.getUniqueId());
-        lastTerritoryState.remove(player.getUniqueId());
-        lastFactionState.remove(player.getUniqueId());
+        // A state-építés player-állapotot olvas, ezért a játékos régió-szálán fut. A
+        // cache-törlés a taskon BELÜL történik (a sendResync mintája): a messaging-szálon
+        // törölve egy már sorban álló HUD-tick a törlés után visszaírhatná a cache-t, és
+        // a pushFullState dedupe-ja elnyelné a kezdő state-et.
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
             if (live != null && live.generation() == acceptedGeneration && player.isOnline()) {
+                clearPushCaches(player.getUniqueId());
                 pushFullState(player, live);
             }
         }, null);
@@ -544,22 +534,14 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             }
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_BEGIN,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
-            lastHudState.remove(player.getUniqueId());
-            lastKitSignature.remove(player.getUniqueId());
-            lastSpellbookSignature.remove(player.getUniqueId());
-            lastProfileState.remove(player.getUniqueId());
-            lastRelicState.remove(player.getUniqueId());
-            lastTalentState.remove(player.getUniqueId());
-            lastQuestSignature.remove(player.getUniqueId());
-            lastProfessionState.remove(player.getUniqueId());
-            lastRelicAttachment.remove(player.getUniqueId());
-            lastPartyState.remove(player.getUniqueId());
-            lastBossState.remove(player.getUniqueId());
-            lastTerritoryState.remove(player.getUniqueId());
-            lastFactionState.remove(player.getUniqueId());
-            pushFullState(player, session);
-            sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
-                    session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
+            clearPushCaches(player.getUniqueId());
+            try {
+                pushFullState(player, session);
+            } finally {
+                // Projektor-hiba sem hagyhatja a klienst lezáratlan resync-ablakban.
+                sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
+                        session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
+            }
         }, null);
     }
 
@@ -643,9 +625,15 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             }
             final org.bukkit.Location viewerPos =
                     hu.taliann.icesmp.utils.PositionCache.get(session.playerId());
-            if (viewerPos == null || viewerPos.getWorld() == null
-                    || !viewerPos.getWorld().getUID().equals(center.getWorld().getUID())
-                    || viewerPos.distanceSquared(center) > reach * reach) {
+            try {
+                // Kiürült world-referencia getWorld()-je kivételt dob, nem null-t ad —
+                // egyetlen néző hibája nem szakíthatja meg a többi kézbesítését.
+                if (viewerPos == null || viewerPos.getWorld() == null
+                        || !viewerPos.getWorld().getUID().equals(center.getWorld().getUID())
+                        || viewerPos.distanceSquared(center) > reach * reach) {
+                    continue;
+                }
+            } catch (final Exception unloadedWorld) {
                 continue;
             }
             final Player target = plugin.getServer().getPlayer(session.playerId());
@@ -808,13 +796,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private void pushHudNow(final Player player, final ClientSession session,
                             final HudManager.HudSnapshot snapshot) {
         final byte[] payload = ClientHudProjector.project(snapshot).encode();
-        final byte[] previous = lastHudState.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_HUD_STATE, lastHudState, payload, payload)) {
+            debug(() -> "HUD_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_HUD_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
-        debug(() -> "HUD_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
     }
 
     /**
@@ -844,15 +828,13 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                     spellId.equals(selectedId)));
         }
         final AbilityKitPayload payload = new AbilityKitPayload(entries);
-        final byte[] signature = payload.changeSignature().encode();
-        final byte[] previous = lastKitSignature.put(player.getUniqueId(), signature);
-        if (!force && previous != null && Arrays.equals(previous, signature)) {
-            return;
+        if (force) {
+            lastKitSignature.remove(player.getUniqueId());
         }
-        final byte[] wirePayload = payload.encode();
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ABILITY_KIT_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wirePayload));
-        debug(() -> "ABILITY_KIT_STATE sent to " + player.getName() + " (" + entries.size() + " slots)");
+        if (sendIfChanged(player, session, ClientProtocol.MSG_ABILITY_KIT_STATE, lastKitSignature,
+                payload.changeSignature().encode(), payload.encode())) {
+            debug(() -> "ABILITY_KIT_STATE sent to " + player.getName() + " (" + entries.size() + " slots)");
+        }
     }
 
     /**
@@ -870,16 +852,17 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 String.join(",", catalyst.getActiveSpellIds(player)),
                 String.join(",", new java.util.TreeSet<>(catalyst.getFavoriteSpellIds(player))),
                 String.join(",", catalyst.getUnlockedSpellIds(player)));
-        if (signature.equals(lastSpellbookSignature.put(player.getUniqueId(), signature))) {
+        if (signature.equals(lastSpellbookSignature.get(player.getUniqueId()))) {
             return;
         }
         pushSpellbookNow(player, session);
+        lastSpellbookSignature.put(player.getUniqueId(), signature);
     }
 
     /** Teljes spellbook-state; player-szálon hívandó (élő player-állapotot olvas). */
     private void pushSpellbookNow(final Player player, final ClientSession session) {
         final AbilityCatalystListener catalyst = abilityCatalyst;
-        if (catalyst == null) {
+        if (catalyst == null || sessions.find(player.getUniqueId()).orElse(null) != session) {
             return;
         }
         final List<SpellbookGUI.Entry> entries = catalyst.spellbookEntries(player);
@@ -923,13 +906,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             return;
         }
         final byte[] payload = source.apply(player).encode();
-        final byte[] previous = lastProfileState.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_PROFILE_STATE, lastProfileState, payload, payload)) {
+            debug(() -> "PROFILE_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_PROFILE_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
-        debug(() -> "PROFILE_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
     }
 
     public void connectProfile(final Function<Player, ProfileStatePayload> source) {
@@ -947,15 +926,10 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             return;
         }
         final RelicStatePayload payload = source.apply(player.getUniqueId());
-        final byte[] signature = payload.changeSignature().encode();
-        final byte[] previous = lastRelicState.put(player.getUniqueId(), signature);
-        if (previous != null && Arrays.equals(previous, signature)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_RELIC_STATE, lastRelicState,
+                payload.changeSignature().encode(), payload.encode())) {
+            debug(() -> "RELIC_STATE sent to " + player.getName());
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RELIC_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST,
-                payload.encode()));
-        debug(() -> "RELIC_STATE sent to " + player.getName());
     }
 
     public void connectRelicState(final Function<UUID, RelicStatePayload> source) {
@@ -991,15 +965,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             }
         }
         final byte[] payload = new RelicAttachmentPayload(wearers).encode();
-        final byte[] previous = lastRelicAttachment.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_RELIC_ATTACHMENT_STATE,
+                lastRelicAttachment, payload, payload)) {
+            debug(() -> "RELIC_ATTACHMENT_STATE sent to " + player.getName()
+                    + " (" + wearers.size() + " wearers)");
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(),
-                ClientProtocol.MSG_RELIC_ATTACHMENT_STATE, session.generation(),
-                session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
-        debug(() -> "RELIC_ATTACHMENT_STATE sent to " + player.getName()
-                + " (" + wearers.size() + " wearers)");
     }
 
     /** TALENT_STATE a vanilla GUI-val azonos szűréssel; player-szálon hívandó. */
@@ -1009,13 +979,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             return;
         }
         final byte[] payload = ClientTalentProjector.project(player, talents).encode();
-        final byte[] previous = lastTalentState.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_TALENT_STATE, lastTalentState, payload, payload)) {
+            debug(() -> "TALENT_STATE sent to " + player.getName());
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_TALENT_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
-        debug(() -> "TALENT_STATE sent to " + player.getName());
     }
 
     public void connectTalents(final TalentManager manager) {
@@ -1040,16 +1006,17 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         signature.append('|').append(quests.getCompletedQuests(player).size());
         signature.append('|').append(String.join(",", quests.getVisibleQuestIds(player)));
         final String value = signature.toString();
-        if (value.equals(lastQuestSignature.put(player.getUniqueId(), value))) {
+        if (value.equals(lastQuestSignature.get(player.getUniqueId()))) {
             return;
         }
         pushQuestNow(player, session);
+        lastQuestSignature.put(player.getUniqueId(), value);
     }
 
     /** Teljes quest-journal state; player-szálon hívandó. */
     private void pushQuestNow(final Player player, final ClientSession session) {
         final QuestManager quests = questManager;
-        if (quests == null) {
+        if (quests == null || sessions.find(player.getUniqueId()).orElse(null) != session) {
             return;
         }
         final byte[] payload = ClientQuestProjector.project(player, quests).encode();
@@ -1077,13 +1044,10 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         final byte[] payload = ClientProfessionProjector.project(player, professions,
                 specializations, catalog, weeklyGoal).encode();
-        final byte[] previous = lastProfessionState.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_PROFESSION_STATE,
+                lastProfessionState, payload, payload)) {
+            debug(() -> "PROFESSION_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_PROFESSION_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
-        debug(() -> "PROFESSION_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
     }
 
     public void connectProfessions(final ProfessionManager professions,
@@ -1145,6 +1109,15 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         player.getScheduler().run(plugin, task -> {
             if (!player.isOnline()) {
+                return;
+            }
+            // Vanilla recept-könyv paritás: csak a játékos által gyakorolt szakma lapja
+            // kérhető — idegen szakma teljes katalógusa nem tárul fel.
+            if (!professions.hasProfession(player, profession)) {
+                sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_ACTION_RESULT,
+                        session.generation(), session.nextOutboundSequence(), envelope.requestId(),
+                        new ActionResultPayload(ClientProtocol.MSG_BROWSE_RECIPES,
+                                ClientProtocol.RESULT_REJECTED, "NOT_ACTIVE_PROFESSION").encode()));
                 return;
             }
             final byte[] payload = ClientRecipeProjector.page(player, profession, request.page(),
@@ -1432,13 +1405,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             return;
         }
         final byte[] payload = ClientPartyProjector.project(player, parties).encode();
-        final byte[] previous = lastPartyState.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_PARTY_STATE, lastPartyState, payload, payload)) {
+            debug(() -> "PARTY_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_PARTY_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
-        debug(() -> "PARTY_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
     }
 
     public void connectParty(final PartyManager manager) {
@@ -1463,13 +1432,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                 active ? Math.round(Math.max(0.0F, Math.min(1.0F, bosses.getBossHealthFraction())) * 100.0F) : 0,
                 bosses.isBossEnraged());
         final byte[] wire = payload.encode();
-        final byte[] previous = lastBossState.put(player.getUniqueId(), wire);
-        if (previous != null && Arrays.equals(previous, wire)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_BOSS_STATE, lastBossState, wire, wire)) {
+            debug(() -> "BOSS_STATE sent to " + player.getName());
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_BOSS_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wire));
-        debug(() -> "BOSS_STATE sent to " + player.getName());
     }
 
     public void connectWorldBoss(final WorldBossManager manager) {
@@ -1515,13 +1480,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
                         raidActive, raidAttackerLabel, raidDefenderLabel,
                         raidAttackerPoints, raidDefenderPoints);
         final byte[] wire = payload.encode();
-        final byte[] previous = lastTerritoryState.put(player.getUniqueId(), wire);
-        if (previous != null && Arrays.equals(previous, wire)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_TERRITORY_STATE, lastTerritoryState, wire, wire)) {
+            debug(() -> "TERRITORY_STATE sent to " + player.getName());
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_TERRITORY_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wire));
-        debug(() -> "TERRITORY_STATE sent to " + player.getName());
     }
 
     public void connectTerritory(final TerritoryManager territories, final RaidManager raids) {
@@ -1549,13 +1510,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         final byte[] payload = ClientFactionProjector.project(player, factions, treasury,
                 currency, kings, seasons, raids, warWindows, territories).encode();
-        final byte[] previous = lastFactionState.put(player.getUniqueId(), payload);
-        if (previous != null && Arrays.equals(previous, payload)) {
-            return;
+        if (sendIfChanged(player, session, ClientProtocol.MSG_FACTION_STATE, lastFactionState, payload, payload)) {
+            debug(() -> "FACTION_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
         }
-        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_FACTION_STATE,
-                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
-        debug(() -> "FACTION_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
     }
 
     public void connectFaction(final FactionManager factions, final FactionTreasuryManager treasury,
@@ -1576,6 +1533,44 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     public void connectAbilityKit(final AbilityCatalystListener catalyst, final SpellRegistry registry) {
         this.abilityCatalyst = catalyst;
         this.spellRegistry = registry;
+    }
+
+    private void clearPushCaches(final UUID playerId) {
+        lastHudState.remove(playerId);
+        lastKitSignature.remove(playerId);
+        lastSpellbookSignature.remove(playerId);
+        lastProfileState.remove(playerId);
+        lastRelicState.remove(playerId);
+        lastTalentState.remove(playerId);
+        lastQuestSignature.remove(playerId);
+        lastProfessionState.remove(playerId);
+        lastRelicAttachment.remove(playerId);
+        lastPartyState.remove(playerId);
+        lastBossState.remove(playerId);
+        lastTerritoryState.remove(playerId);
+        lastFactionState.remove(playerId);
+    }
+
+    /**
+     * A push-utak közös kapuja: a session még a registry élő példánya-e (re-handshake
+     * után a befogott régi session küldése csak a dedupe-cache-t mérgezné), majd
+     * szignatúra-dedupe. A cache CSAK a sikeres küldés UTÁN frissül — ha a küldés
+     * kivétellel elbukik, a következő tick újrapróbálja.
+     */
+    private boolean sendIfChanged(final Player player, final ClientSession session, final int messageType,
+                                  final ConcurrentHashMap<UUID, byte[]> cache, final byte[] signature,
+                                  final byte[] wirePayload) {
+        if (sessions.find(player.getUniqueId()).orElse(null) != session) {
+            return false;
+        }
+        final byte[] previous = cache.get(player.getUniqueId());
+        if (previous != null && Arrays.equals(previous, signature)) {
+            return false;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), messageType,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wirePayload));
+        cache.put(player.getUniqueId(), signature);
+        return true;
     }
 
     /** Session-, generation- és sequence-kapu minden kézfogás utáni üzenetre. */

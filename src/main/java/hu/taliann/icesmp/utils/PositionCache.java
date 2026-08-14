@@ -52,9 +52,15 @@ public final class PositionCache {
                 continue;
             }
             final Location candidate = entry.getValue();
-            if (candidate.getWorld() != null && candidate.getWorld().getUID().equals(source.getWorld().getUID())
-                    && candidate.distanceSquared(source) <= radiusSquared) {
-                nearby.add(entry.getKey());
+            try {
+                // Kiürült world-referencia getWorld()-je kivételt dob, nem null-t ad —
+                // egyetlen elavult bejegyzés nem viheti el a teljes lekérdezést.
+                if (candidate.getWorld() != null && candidate.getWorld().getUID().equals(source.getWorld().getUID())
+                        && candidate.distanceSquared(source) <= radiusSquared) {
+                    nearby.add(entry.getKey());
+                }
+            } catch (final Exception unloadedWorld) {
+                // fail-open: a hibás bejegyzés kimarad, a többi jelölt feldolgozása folytatódik
             }
         }
         return nearby;

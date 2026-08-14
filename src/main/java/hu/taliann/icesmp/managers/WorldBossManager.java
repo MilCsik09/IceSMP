@@ -474,13 +474,16 @@ public final class WorldBossManager {
         final Mob boss = (Mob) spawnLocation.getWorld().spawn(spawnLocation, entityClass.asSubclass(Mob.class));
         // No overworld zombification (would orphan the PDC-tag) / no daylight burn.
         EventSpawnGuard.prepare(boss);
-        activeBossId = boss.getUniqueId();
-        activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
+        // A display-tükrök az isBossActive()-kapu (activeBossUntil) ELŐTT íródnak: másik
+        // régió-szál olvasója így nem láthat friss kaput az előző boss nevével/fázisával.
         activeBossName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
                 .serialize(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
                         .legacyAmpersand().deserialize(archetype.displayName));
         activeBossArchetype = archetype.name();
         bossEnraged = false;
+        bossHealthFraction = 1.0F;
+        activeBossId = boss.getUniqueId();
+        activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
         boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());
         if (finale) {

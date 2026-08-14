@@ -318,6 +318,22 @@ fázisonként, a terv szerinti sorrendben:
   ClientFxRoute domain-seamen át; v1-emitterek: világboss SLAM/ZONE/SUMMON
   telegráf + awakening-arming; kézbesítés PositionCache-rádiusszal, a
   vanilla telegráf minden kliensnek változatlan (az FX kiegészítő réteg).
+- ✅ Teljes review-kör (tulaj-kérésre, 5 szempont-audit): a megerősített
+  leletek javítva — világboss-tükör publikálási sorrend, kézfogás-kori
+  cache-race, dedupe-cache csak sikeres küldés után, resync-END
+  try/finally, HUD-tick védőháló a kliensréteg hibái ellen,
+  BROWSE_RECIPES saját-szakma kapu (vanilla paritás), PositionCache/emitFx
+  unloaded-world védelem; kliensen resync-ürítés teljessé téve,
+  recept-fülek saját szakmára szűrve.
+- ⬜ Review-ből nyitva hagyott kis tételek: (1) a protokollnak nincs
+  aggregát (beágyazott listás) payload-méret garanciája — a jelenlegi
+  tartalom-skálán elméleti, a hibaút a HUD-tick védőhálóval lefedve; ha a
+  katalógus-tartalom nagyságrendet nő, encode-oldali aggregát-cap kell.
+  (2) A Fabric golden-vector suite csak a foundation-payloadokat fedi
+  hexával — az újabb payloadok szerződését a bájtazonos port + a
+  flow-suite roundtripjei őrzik; hex-vektor bővítés opcionális erősítés.
+  (3) PLAYER_ANIMATION_V1: fenntartott, nem implementált capability
+  (Phase 8 folytatás) — a kliens nem hirdeti, kapu zárva.
 - ⬜ A H fázis lezárása: élő staging-teszt (CLIENT-02..21) — minden
   további bővítés (új FX-emitterek, spell-animációk, Phase 9
   admin-eszközök) ez után ütemezendő.

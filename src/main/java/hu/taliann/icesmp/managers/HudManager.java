@@ -662,7 +662,14 @@ public final class HudManager {
                 snapshots.put(player.getUniqueId(), snapshot);
                 final ClientHudRoute route = clientHudRoute;
                 if (route != null) {
-                    route.pushClientState(player, snapshot);
+                    try {
+                        route.pushClientState(player, snapshot);
+                    } catch (final Exception clientLayerFailure) {
+                        // Az opcionális kliensréteg hibája nem viheti el a vanilla HUD tickjét.
+                        if (configManager.getBoolean("client.debug", false)) {
+                            plugin.getLogger().warning("Client HUD route hiba: " + clientLayerFailure);
+                        }
+                    }
                 }
                 renderIceSmpHud(player, snapshot);
                 update(player);
