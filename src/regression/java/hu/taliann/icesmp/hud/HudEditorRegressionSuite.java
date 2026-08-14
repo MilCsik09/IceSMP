@@ -25,6 +25,7 @@ public final class HudEditorRegressionSuite {
         rendererAppliesOffsetAndScalePayload();
         generatedShaderVariantsMatchRuntimeContract();
         editorControlsAreClickableAndQuiet();
+        toggleSectionIdsResolveToPackagedMessageKeys();
         previewCannotReachGameplayAuthority();
         fallbackAndReadinessRemainIntact();
         System.out.println("First-party HUD editor regression suite passed.");
@@ -348,6 +349,18 @@ public final class HudEditorRegressionSuite {
                         && renderer.contains("EDITOR_HIGHLIGHT")
                         && renderer.contains("highlighted == HudComponent.GLOBAL || highlighted == component"),
                 "the selected editor component must receive a distinct live-preview tint");
+    }
+
+    private static void toggleSectionIdsResolveToPackagedMessageKeys() throws Exception {
+        final String command = read("src/main/java/hu/taliann/icesmp/commands/HudCommand.java");
+        check(command.contains("case HudManager.SECTION_FACTION -> messageManager.get(\"hud-section-faction\"")
+                        && command.contains("case HudManager.SECTION_CURRENCY -> messageManager.get(\"hud-section-currency\"")
+                        && command.contains("case HudManager.SECTION_CLASS -> messageManager.get(\"hud-section-class\"")
+                        && command.contains("case HudManager.SECTION_RESOURCE -> messageManager.get(\"hud-section-resource\"")
+                        && command.contains("case HudManager.SECTION_EVENT -> messageManager.get(\"hud-section-event\"")
+                        && command.contains("case HudManager.SECTION_PARTY -> messageManager.get(\"hud-section-party\"")
+                        && command.contains("case HudManager.SECTION_ALL -> messageManager.get(\"hud-section-all\""),
+                "Hungarian HUD toggle ids must resolve to the packaged English message-key suffixes");
     }
 
     private static void previewCannotReachGameplayAuthority() throws Exception {

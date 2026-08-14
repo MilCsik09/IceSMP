@@ -563,7 +563,16 @@ public final class HudCommand implements BasicCommand {
     }
 
     private String displayName(final String section) {
-        return messageManager.required("hud-section-" + section);
+        return switch (section) {
+            case HudManager.SECTION_FACTION -> messageManager.get("hud-section-faction", "Frakció");
+            case HudManager.SECTION_CURRENCY -> messageManager.get("hud-section-currency", "Valuta");
+            case HudManager.SECTION_CLASS -> messageManager.get("hud-section-class", "Kaszt");
+            case HudManager.SECTION_RESOURCE -> messageManager.get("hud-section-resource", "Erőforrás-csík");
+            case HudManager.SECTION_EVENT -> messageManager.get("hud-section-event", "Esemény sor");
+            case HudManager.SECTION_PARTY -> messageManager.get("hud-section-party", "Csapat (party) keret");
+            case HudManager.SECTION_ALL -> messageManager.get("hud-section-all", "Teljes HUD");
+            default -> section;
+        };
     }
 
     private static HudCommandException error(final String key, final Object... args) {
