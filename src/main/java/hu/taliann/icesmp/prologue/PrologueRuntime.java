@@ -1,10 +1,12 @@
 package hu.taliann.icesmp.prologue;
 
 import hu.taliann.icesmp.commands.PrologueCommand;
+import hu.taliann.icesmp.managers.ChronicleManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.EventSpawnGuard;
 import hu.taliann.icesmp.managers.EventSpawnPointManager;
 import hu.taliann.icesmp.managers.MajorEventGate;
+import hu.taliann.icesmp.managers.SeasonMonumentManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -35,6 +37,7 @@ public final class PrologueRuntime implements Listener {
     private final PrologueHudController hud;
     private final PrologueRewardService rewards;
     private final PrologueFinaleManager finale;
+    private final PrologueSeasonTransition seasonTransition;
     private final MajorEventGate eventGate;
     private ScheduledTask tickTask;
     private volatile long nextNaturalBreachAt;
@@ -55,9 +58,10 @@ public final class PrologueRuntime implements Listener {
         this.timeline = new PrologueTimelineController(config, manager);
         this.hud = new PrologueHudController(plugin, config, manager, worldAccess);
         this.rewards = new PrologueRewardService(plugin, manager);
+        this.seasonTransition = new PrologueSeasonTransition(plugin, config);
         this.finale = new PrologueFinaleManager(plugin, config, manager,
                 new PrologueFinaleRunState(plugin), participants, encounters, rewards,
-                new PrologueSeasonTransition(plugin, config), eventGate);
+                seasonTransition, eventGate);
         reconcileSeasonGates();
     }
 
@@ -96,6 +100,31 @@ public final class PrologueRuntime implements Listener {
 
     public PrologueManager manager() { return manager; }
     public PrologueFinaleManager finale() { return finale; }
+
+    /**
+     * Teszt-visszaállítás: leállítja a futó finálét, visszavonja a Season 1 átbillenést, majd a
+     * tartós Prologue-állapotot DORMANT-ra tekeri. A sorrend kötött — a szezon-oldalnak a
+     * Prologue-rewind ELŐTT kell rendeződnie, különben a content overlay Season 1 alatt kapcsolna
+     * vissza Season 0 tartalomkorlátra.
+     */
+    public void resetForTesting(final String actor) {
+        try {
+            finale.abort(actor);
+        } catch (final IllegalArgumentException | IllegalStateException noRunningFinale) {
+            // nincs leállítandó futó finálé
+        }
+        if (manager.seasonOneStarted()) seasonTransition.rollbackSeasonOne();
+        if (manager.chronicleCommitted()) {
+            final ChronicleManager chronicle = ChronicleManager.current();
+            if (chronicle != null) chronicle.forgetExtraordinary("prologue-gate-open");
+        }
+        if (manager.monumentCommitted()) {
+            final SeasonMonumentManager monument = SeasonMonumentManager.current();
+            if (monument != null) monument.forgetPrologue("prologue-first-expedition");
+        }
+        manager.rewind(actor);
+        reconcileSeasonGates();
+    }
     public PrologueWorldAccess worldAccess() { return worldAccess; }
     public PrologueEncounterEngine encounters() { return encounters; }
 
@@ -208,6 +237,23 @@ public final class PrologueRuntime implements Listener {
                 + (manager.paused() ? " §c[PAUSED]" : "")
                 + (finale.isRehearsal() ? " §e[REHEARSAL]" : "")
                 + " §7gate=§f" + (manager.gateUnlocked() ? "OPEN" : "CLOSED");
+    }
+
+    /** Az egyszeri transition commit-lánca: éles helyzetben ez mondja meg, hol tart a folyamat. */
+    public String commitChainLine() {
+        final String chain = flag("boss", manager.bossDefeated()) + flag("victory", manager.finaleVictory())
+                + flag("gate", manager.gateUnlocked()) + flag("reward-plan", manager.rewardPlanCreated())
+                + flag("rewards", manager.rewardsCommitted()) + flag("chronicle", manager.chronicleCommitted())
+                + flag("monument", manager.monumentCommitted()) + flag("season1", manager.seasonOneStarted());
+        return "§5Prologue §7commit:" + chain
+                + " §7participants=§f" + manager.finaleParticipants().size()
+                + " §7timeline=§f" + (manager.state() == PrologueState.DORMANT ? "§8INERT" : "§aÉLES")
+                + (manager.bossVictoryPending()
+                        ? " §c[VICTORY-PENDING: " + manager.bossVictoryFailure() + "]" : "");
+    }
+
+    private static String flag(final String label, final boolean value) {
+        return (value ? " §a✔" : " §8✘") + label;
     }
 
     @EventHandler

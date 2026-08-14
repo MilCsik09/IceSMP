@@ -830,6 +830,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | Láthatóság és kommunikáció | `/msg`, `/tell`, `/w`, `/reply`, `/socialspy`, `/vanish`, `/moderation` | PM, megfigyelés, staffjelenlét |
 | Inventory és hely | `/invsee`, `/offlinetp` | online inventory read/edit és utolsó ismert hely |
 | Tartalomadmin | `/events`, `/quest`, `/npcbind`, `/territory`, `/parkour`, `/crate`, `/iceitem` | esemény-, világ-, crate- és itemkezelés |
+| Season 0 / Prologue | `/prologue` (`status`, `start`, `advance`, `stage`, `stability`, `breach`, `finale`, `gate`, `reset`) | az egyszeri Prologue korszak live-ops vezérlése — a teljes referencia és a kockázati besorolás: [docs/PROLOGUE.md](PROLOGUE.md#14-admin-parancsok) |
 | Karakter és gazdaság | `/class`, `/spec`, `/profession`, `/currency`, `/faction`, `/relic`, `/sinner` | ritka, naplózandó játékosmutáció |
 | Játékosrendszerek | `/afk`, `/sit`, `/party`, `/claim`, `/market`, `/bank`, `/spellbook`, `/talent` és a többi publikus root | a játékoskézikönyv szerinti használat |
 
@@ -843,6 +844,10 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `/crate set <id>` / `/crate remove` | csak stagingen ellenőrzött blokk- és világkötéshez |
 | `/territory setcapital <frakció> selection [név...]` | a `/claim pos1` + `/claim pos2` pontos X/Y/Z dobozát teszi védett fővárossá; előbb ellenőrizd a személyes claim-konfliktust és utána a `/territory show` rajzot |
 | `/icesmp reload` | configmentés és validáció után; strukturális változásnál restart kellhet |
+| `/prologue start` | az éles Prologue-indítás a nyitás pillanatában; enélkül a korszak `DORMANT` marad és a stage-óra nem indul |
+| `/prologue gate open --force` | veszélyes override: megnyitja a Kaput valódi finálégyőzelem nélkül |
+| `/prologue gate close --force` | csak override-dal nyitott Kaput zár vissza; kiérdemelt győzelem után elutasít |
+| `/prologue reset --force` | **staging teszt-eszköz**: visszavonja a Season 1 átmenetet, a krónikát, az emlékművet és a teljes Prologue-állapotot; production világon ne használd |
 | `/faction set`, `/currency set`, `/relic give`, `/iceitem` | gazdasági vagy progressionmutáció; mindig jegyezd fel |
 
 ### Bizonyított eltérések a régi leírásoktól

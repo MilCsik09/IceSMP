@@ -130,6 +130,22 @@ public final class ChronicleManager implements PersistentStore {
     }
 
     /** Durable one-shot issue used by history-defining world events such as Olethropyla opening. */
+    /**
+     * Teszt-visszaállítás: a nyugta törlésével ugyanaz a rendkívüli szám ismét publikálható.
+     * A kiadás szövegét nem vonja vissza — az újrapublikálás felülírja.
+     */
+    public synchronized boolean forgetExtraordinary(final String receiptId) {
+        if (receiptId == null || receiptId.isBlank()) return false;
+        if (!extraordinaryReceipts.remove(receiptId)) return true;
+        try {
+            save();
+        } catch (final RuntimeException failure) {
+            extraordinaryReceipts.add(receiptId);
+            throw failure;
+        }
+        return true;
+    }
+
     public synchronized boolean publishExtraordinaryOnce(final String receiptId, final List<String> issueLines) {
         if (receiptId == null || receiptId.isBlank() || issueLines == null || issueLines.isEmpty()) return false;
         if (extraordinaryReceipts.contains(receiptId)) return true;
