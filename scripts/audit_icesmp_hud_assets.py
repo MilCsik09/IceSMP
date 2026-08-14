@@ -108,7 +108,7 @@ def expected_size(path: Path) -> tuple[int, int] | None:
     fixed = {
         "wallet-strip.png": (240, 42),
         "detail-strip.png": (240, 22),
-        "text-atlas.png": (320, 384),
+        "text-atlas.png": (640, 768),
         "segment-track.png": (12, 3),
         "segment-fill.png": (12, 3),
         "segment-fill-warm.png": (12, 3),
@@ -185,9 +185,11 @@ def inspect(path: Path) -> Finding:
     if hard_alpha and not alpha_values.issubset({0, 255}):
         verdict = "FAIL"
         notes.append("progress mask has soft alpha")
-    if path.name == "text-atlas.png" and not alpha_values.issubset({0, 1, 255}):
-        verdict = "FAIL"
-        notes.append("text atlas must use crisp logical pixels plus the width marker")
+    if path.name == "text-atlas.png":
+        soft_alpha = alpha_values - {0, 1, 255}
+        if len(soft_alpha) < 32:
+            verdict = "FAIL"
+            notes.append("high-resolution text atlas lost its antialiased edge coverage")
     alpha_text = ("none" if len(alpha_values) == 1 and 255 in alpha_values
                   else f"{min(alpha_values)}..{max(alpha_values)}/{len(alpha_values)}")
     return Finding(relative, f"{image.width}x{image.height}", image.mode, alpha_text,

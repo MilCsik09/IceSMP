@@ -50,8 +50,10 @@ val validateIceSmpHudPackage by tasks.registering {
         require((manifest["text_advance"] as Number).toInt() == 6) {
             "First-party HUD must retain the compact six-pixel text grid"
         }
-        require(manifest["text_font"] == "Monocraft") {
-            "First-party HUD must retain the reviewed pixel-display typeface"
+        require(manifest["text_font"] == "Inter SemiBold"
+            && (manifest["text_oversample"] as Number).toInt() == 8
+            && manifest["text_source_resolution"] == listOf(40, 96)) {
+            "First-party HUD must retain the reviewed high-resolution UI typeface"
         }
         require((manifest["resource_segment_advance"] as Number).toInt() == 13
             && (manifest["metric_segment_advance"] as Number).toInt() == 8) {

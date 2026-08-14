@@ -114,8 +114,10 @@ public final class IceSmpHudRenderer {
         output.append(text(HudComponent.FACTION, -190, SUBHEADER_FONT,
                 identityLine(model), color("A9B7C6", 0xA9B7C6), 126,
                 safeLayout, highlighted));
-        output.append(text(HudComponent.LEVEL_TEXT, -70, HEADER_FONT, "Lv. " + model.classLevel(),
-                color("EAF7FF", 0xEAF7FF), 42, safeLayout, highlighted));
+        final String levelText = Integer.toString(model.classLevel());
+        final int levelX = -30 - levelText.codePointCount(0, levelText.length()) * TEXT_ADVANCE / 2;
+        output.append(text(HudComponent.LEVEL_TEXT, levelX, HEADER_FONT, levelText,
+                color("EAF7FF", 0xEAF7FF), 21, safeLayout, highlighted));
         drawCurrencies(output, model, safeLayout, highlighted);
         if (model.hasClass()) {
             output.append(text(HudComponent.RESOURCE_LABEL, -202, RESOURCE_TEXT_FONT,

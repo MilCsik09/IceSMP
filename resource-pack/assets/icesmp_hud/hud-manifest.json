@@ -4,8 +4,12 @@
   "space_min": -512,
   "space_max": 512,
   "text_advance": 6,
-  "text_oversample": 4,
-  "text_font": "Monocraft",
+  "text_oversample": 8,
+  "text_font": "Inter SemiBold",
+  "text_source_resolution": [
+    40,
+    96
+  ],
   "layout_y": {
     "frame": 18,
     "class_icon": 38,

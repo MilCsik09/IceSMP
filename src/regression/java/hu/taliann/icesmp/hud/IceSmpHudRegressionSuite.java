@@ -47,8 +47,10 @@ public final class IceSmpHudRegressionSuite {
         final String source = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
         check(source.contains("append(space(-anchoredX - width))")
                         && source.contains("List.of(\"ice\", \"ember\", \"frost\", \"guild\", \"lich\")")
+                        && source.contains("final String levelText = Integer.toString(model.classLevel())")
+                        && !source.contains("\"Lv. \"")
                         && !source.contains("primaryMetric()") && !source.contains("secondaryMetric()"),
-                "every draw must return to origin and metrics must remain class-agnostic");
+                "draws must return to origin, level must stay numeric-only and metrics generic");
         final String hud = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
         check(!hud.contains("snapshot.classHud().classId().isBlank()"),
                 "guest/profile/event HUD must remain visible before class selection");
@@ -186,7 +188,9 @@ public final class IceSmpHudRegressionSuite {
         final String config = read("src/main/resources/config/general.yml");
         check(manifest.contains("\"fixed_segment_count\": 12")
                         && manifest.contains("\"text_advance\": 6")
-                        && manifest.contains("\"text_font\": \"Monocraft\"")
+                        && manifest.contains("\"text_font\": \"Inter SemiBold\"")
+                        && manifest.contains("\"text_oversample\": 8")
+                        && manifest.contains("\"text_source_resolution\": [")
                         && manifest.contains("\"resource_segment_advance\": 13")
                         && manifest.contains("\"metric_segment_advance\": 8")
                         && manifest.contains("\"layout_y\"")
@@ -237,14 +241,14 @@ public final class IceSmpHudRegressionSuite {
                         && generator.contains("mechanics-spec-v3.png")
                         && generator.contains("HUD_FRAME_WIDTH = 240")
                         && generator.contains("TEXT_LOGICAL_WIDTH = 5")
-                        && generator.contains("TEXT_OVERSAMPLE = 4")
-                        && generator.contains("Monocraft.otf")
+                        && generator.contains("TEXT_OVERSAMPLE = 8")
+                        && generator.contains("Inter-SemiBold.ttf")
                         && generator.contains("currency_lower")
                         && generator.contains("text_wallet_lower"),
                 "v3 art, compact typography and the two-row wallet must remain generator-backed");
         check(Files.isRegularFile(Path.of(
-                        "dev-assets/icesmp-hud/source/LICENSE_MONOCRAFT")),
-                "Monocraft must retain its bundled OFL license");
+                        "dev-assets/icesmp-hud/source/LICENSE_INTER")),
+                "Inter must retain its bundled OFL license");
         for (final String largeGlyph : List.of("frame-hud-guest.png", "frame-hud-red.png",
                 "frame-hud-blue.png", "frame-hud-neutral.png", "frame-hud-dark.png",
                 "wallet-strip.png", "detail-strip.png")) {
@@ -255,8 +259,8 @@ public final class IceSmpHudRegressionSuite {
         }
         final var textAtlas = ImageIO.read(Path.of(
                 "resource-pack/assets/icesmp_hud/textures/hud/text-atlas.png").toFile());
-        check(textAtlas != null && textAtlas.getWidth() == 320 && textAtlas.getHeight() == 384,
-                "HUD text atlas must retain the 4x crisp Hungarian glyph source");
+        check(textAtlas != null && textAtlas.getWidth() == 640 && textAtlas.getHeight() == 768,
+                "HUD text atlas must retain the 8x antialiased Hungarian glyph source");
         for (final String icon : List.of("class-wizard.png", "class-none.png", "rune-blood-ready.png",
                 "charge-ready.png", "currency-neutral.png",
                 "mechanic-warrior-battle_tempo-active.png",

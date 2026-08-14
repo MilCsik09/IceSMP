@@ -26,7 +26,7 @@ FRAME_ATLAS_SOURCE = HUD_SOURCE / "frames-v3.png"
 ITEM_SOURCE = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "item"
 MECHANIC_CORE_SOURCE = HUD_SOURCE / "mechanics-core-v3.png"
 MECHANIC_SPEC_SOURCE = HUD_SOURCE / "mechanics-spec-v3.png"
-TEXT_FONT_SOURCE = HUD_SOURCE / "Monocraft.otf"
+TEXT_FONT_SOURCE = HUD_SOURCE / "Inter-SemiBold.ttf"
 ASSETS = ROOT / "resource-pack" / "assets" / "icesmp_hud"
 TEXTURES = ASSETS / "textures" / "hud"
 FONTS = ASSETS / "font"
@@ -41,7 +41,10 @@ HUD_FRAME_WIDTH = 240
 HUD_FRAME_HEIGHT = 160
 TEXT_LOGICAL_WIDTH = 5
 TEXT_LOGICAL_HEIGHT = 12
-TEXT_OVERSAMPLE = 4
+# Keep the compact six-pixel layout advance, but retain a real high-density glyph
+# source. Minecraft scales the 8x atlas into the configured 5x12 logical cell; we
+# never collapse the outline to a five-pixel binary mask during generation.
+TEXT_OVERSAMPLE = 8
 HUD_LAYOUT_SCALES = (0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80,
                      2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25, 3.50)
 
@@ -318,18 +321,18 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
     padded = unique + padding
     cell_width = TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE
     cell_height = TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE
-    logical_atlas = Image.new(
-        "RGBA", (columns * TEXT_LOGICAL_WIDTH, rows * TEXT_LOGICAL_HEIGHT), (0, 0, 0, 0))
+    atlas = Image.new(
+        "RGBA", (columns * cell_width, rows * cell_height), (0, 0, 0, 0))
     if not TEXT_FONT_SOURCE.is_file():
         raise FileNotFoundError(f"Missing reproducible IceSMP HUD text font: {TEXT_FONT_SOURCE}")
-    # Monocraft is first rasterized at 4x, collapsed to a hard logical pixel mask,
-    # then enlarged with nearest-neighbour sampling. Minecraft therefore receives
-    # stable 1px stems instead of the faint subpixel coverage seen in the former atlas.
-    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=9 * TEXT_OVERSAMPLE)
+    # Inter SemiBold is rasterized directly into the high-density atlas. Preserving
+    # subpixel alpha is essential here: shrinking first to a 5px binary glyph is what
+    # made the previous typeface look broken after Minecraft's GUI scaling.
+    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=10 * TEXT_OVERSAMPLE)
     for index, char in enumerate(padded):
         if index < len(unique):
-            x = (index % columns) * TEXT_LOGICAL_WIDTH
-            y = (index // columns) * TEXT_LOGICAL_HEIGHT
+            x = (index % columns) * cell_width
+            y = (index // columns) * cell_height
             box = font.getbbox(char)
             width = max(0, box[2] - box[0])
             height = max(0, box[3] - box[1])
@@ -337,30 +340,23 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
                 glyph = Image.new("L", (width, height), 0)
                 glyph_draw = ImageDraw.Draw(glyph)
                 glyph_draw.text((-box[0], -box[1]), char, font=font, fill=255)
-                maximum_width = cell_width
+                maximum_width = cell_width - TEXT_OVERSAMPLE // 2
                 maximum_height = (TEXT_LOGICAL_HEIGHT - 2) * TEXT_OVERSAMPLE
                 scale = min(1.0, maximum_width / width, maximum_height / height)
                 if scale < 1.0:
                     glyph = glyph.resize((max(1, round(width * scale)),
                                           max(1, round(height * scale))),
                                          Image.Resampling.LANCZOS)
-                logical_width = min(TEXT_LOGICAL_WIDTH,
-                                    max(1, round(glyph.width / TEXT_OVERSAMPLE)))
-                logical_height = min(TEXT_LOGICAL_HEIGHT - 2,
-                                     max(1, round(glyph.height / TEXT_OVERSAMPLE)))
-                glyph = glyph.resize((logical_width, logical_height), Image.Resampling.LANCZOS)
-                glyph = glyph.point(lambda alpha: 255 if alpha >= 72 else 0)
+                glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.18)))
                 colored = Image.new("RGBA", glyph.size, (239, 247, 252, 255))
                 colored.putalpha(glyph)
-                logical_atlas.alpha_composite(
+                atlas.alpha_composite(
                     colored,
-                    (x + (TEXT_LOGICAL_WIDTH - glyph.width) // 2,
-                     y + (TEXT_LOGICAL_HEIGHT - glyph.height) // 2))
-            logical_atlas.putpixel(
-                (x + TEXT_LOGICAL_WIDTH - 1, y + TEXT_LOGICAL_HEIGHT - 1),
+                    (x + (cell_width - glyph.width) // 2,
+                     y + (cell_height - glyph.height) // 2))
+            atlas.putpixel(
+                (x + cell_width - 1, y + cell_height - 1),
                 (255, 255, 255, 1))
-    atlas = logical_atlas.resize(
-        (columns * cell_width, rows * cell_height), Image.Resampling.NEAREST)
     TEXTURES.mkdir(parents=True, exist_ok=True)
     save_png(atlas, TEXTURES / "text-atlas.png")
     return ([padded[row * columns:(row + 1) * columns] for row in range(rows)],
@@ -551,12 +547,22 @@ def generate_contact_sheet() -> None:
 def generate_layout_preview(text_rows: list[str]) -> None:
     """Render the reviewed logical grid without requiring a Minecraft client."""
     frame_y = HUD_Y["frame"]
-    canvas = Image.new("RGBA", (HUD_FRAME_WIDTH, 225), (8, 11, 16, 255))
-    canvas.alpha_composite(Image.open(TEXTURES / "frame-hud-red.png").convert("RGBA"), (0, 0))
-    canvas.alpha_composite(Image.open(TEXTURES / "detail-strip.png").convert("RGBA"),
-                           (0, 178 - frame_y))
-    canvas.alpha_composite(Image.open(TEXTURES / "wallet-strip.png").convert("RGBA"),
-                           (0, 201 - frame_y))
+    preview_scale = 3
+    canvas = Image.new(
+        "RGBA", (HUD_FRAME_WIDTH * preview_scale, 225 * preview_scale), (8, 11, 16, 255))
+
+    def scaled(image: Image.Image, width: int, height: int,
+               resampling: Image.Resampling = Image.Resampling.NEAREST) -> Image.Image:
+        return image.resize((width * preview_scale, height * preview_scale), resampling)
+
+    canvas.alpha_composite(
+        scaled(Image.open(TEXTURES / "frame-hud-red.png").convert("RGBA"), 240, 160), (0, 0))
+    canvas.alpha_composite(
+        scaled(Image.open(TEXTURES / "detail-strip.png").convert("RGBA"), 240, 22),
+        (0, (178 - frame_y) * preview_scale))
+    canvas.alpha_composite(
+        scaled(Image.open(TEXTURES / "wallet-strip.png").convert("RGBA"), 240, 42),
+        (0, (201 - frame_y) * preview_scale))
 
     atlas = Image.open(TEXTURES / "text-atlas.png").convert("RGBA")
     glyphs: dict[str, Image.Image] = {}
@@ -567,7 +573,8 @@ def generate_layout_preview(text_rows: list[str]) -> None:
                 row * TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE,
                 (column + 1) * TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
                 (row + 1) * TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE,
-            )).resize((TEXT_LOGICAL_WIDTH, TEXT_LOGICAL_HEIGHT), Image.Resampling.NEAREST)
+            )).resize((TEXT_LOGICAL_WIDTH * preview_scale,
+                       TEXT_LOGICAL_HEIGHT * preview_scale), Image.Resampling.LANCZOS)
 
     def paste_text(value: str, x: int, anchor_y: int, color: tuple[int, int, int]) -> None:
         for index, char in enumerate(value):
@@ -577,21 +584,27 @@ def generate_layout_preview(text_rows: list[str]) -> None:
             colored = Image.new("RGBA", glyph.size, (*color, 255))
             colored.putalpha(glyph.getchannel("A"))
             canvas.alpha_composite(
-                colored, (x + index * (TEXT_LOGICAL_WIDTH + 1), anchor_y - 9 - frame_y))
+                colored,
+                ((x + index * (TEXT_LOGICAL_WIDTH + 1)) * preview_scale,
+                 (anchor_y - 9 - frame_y) * preview_scale))
 
     def paste_sprite(name: str, x: int, anchor_y: int, size: int) -> None:
-        sprite = Image.open(TEXTURES / name).convert("RGBA").resize(
-            (size, size), Image.Resampling.LANCZOS)
-        canvas.alpha_composite(sprite, (x, anchor_y - frame_y))
+        sprite = scaled(Image.open(TEXTURES / name).convert("RGBA"), size, size,
+                        Image.Resampling.LANCZOS)
+        canvas.alpha_composite(sprite, (x * preview_scale, (anchor_y - frame_y) * preview_scale))
 
     def paste_bar(prefix: str, x: int, anchor_y: int, advance: int,
                   active: int, fill_suffix: str = "fill") -> None:
-        track = Image.open(TEXTURES / f"{prefix}-track.png").convert("RGBA")
-        fill = Image.open(TEXTURES / f"{prefix}-{fill_suffix}.png").convert("RGBA")
+        track_source = Image.open(TEXTURES / f"{prefix}-track.png").convert("RGBA")
+        fill_source = Image.open(TEXTURES / f"{prefix}-{fill_suffix}.png").convert("RGBA")
+        track = scaled(track_source, track_source.width, track_source.height)
+        fill = scaled(fill_source, fill_source.width, fill_source.height)
         for index in range(12):
-            canvas.alpha_composite(track, (x + index * advance, anchor_y - frame_y))
+            position = ((x + index * advance) * preview_scale,
+                        (anchor_y - frame_y) * preview_scale)
+            canvas.alpha_composite(track, position)
             if index < active:
-                canvas.alpha_composite(fill, (x + index * advance, anchor_y - frame_y))
+                canvas.alpha_composite(fill, position)
 
     paste_sprite("class-warrior.png", 18, HUD_Y["class_icon"], 36)
     paste_sprite("icon-level.png", 166, HUD_Y["header"], 15)
@@ -602,7 +615,7 @@ def generate_layout_preview(text_rows: list[str]) -> None:
         paste_sprite("charge-ready.png", 20 + index * 12, HUD_Y["charge"], 10)
     paste_text("Harcos", 64, HUD_Y["header"], (119, 221, 242))
     paste_text("Berserker • Vörös Rend", 64, HUD_Y["subheader"], (199, 212, 234))
-    paste_text("Lv. 48", 184, HUD_Y["header"], (234, 247, 255))
+    paste_text("48", 218, HUD_Y["header"], (234, 247, 255))
     paste_text("Düh 82/100", 52, HUD_Y["resource_text"], (199, 212, 234))
     paste_text("Fő 72", 37, HUD_Y["mechanic_text"], (119, 221, 242))
     paste_text("Spec 43", 158, HUD_Y["mechanic_text"], (199, 212, 234))
@@ -626,7 +639,7 @@ def generate_layout_preview(text_rows: list[str]) -> None:
 
     target = ROOT / "build" / "reports" / "icesmp-hud" / "layout-preview.png"
     target.parent.mkdir(parents=True, exist_ok=True)
-    save_png(canvas.resize((720, 675), Image.Resampling.NEAREST), target)
+    save_png(canvas, target)
 
 
 def main() -> None:
@@ -732,7 +745,9 @@ def main() -> None:
         "space_max": SPACE_MAX,
         "text_advance": TEXT_LOGICAL_WIDTH + 1,
         "text_oversample": TEXT_OVERSAMPLE,
-        "text_font": "Monocraft",
+        "text_font": "Inter SemiBold",
+        "text_source_resolution": [TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
+                                   TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE],
         "layout_y": HUD_Y,
         "maximum_bitmap_glyph_width": 256,
         "themes": list(THEMES),
