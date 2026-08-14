@@ -20,6 +20,8 @@ public final class IceSmpHudRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         fixedLayoutIsIndependentOfDynamicValues();
+        factionThemeProjectionSelectsEveryFrame();
+        layoutGeometryStaysInsideArtCompartments();
         specializationlessStateIsExplicit();
         walletAndClassContractIsGeneric();
         packReadinessAndFallbackAreSafe();
@@ -44,7 +46,7 @@ public final class IceSmpHudRegressionSuite {
                 "spacing glyphs must stay in BMP PUA and avoid supplementary-plane sentinels");
         final String source = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
         check(source.contains("append(space(-anchoredX - width))")
-                        && source.contains("List.of(\"guest\", \"red\", \"blue\", \"neutral\", \"dark\")")
+                        && source.contains("List.of(\"ice\", \"ember\", \"frost\", \"guild\", \"lich\")")
                         && !source.contains("primaryMetric()") && !source.contains("secondaryMetric()"),
                 "every draw must return to origin and metrics must remain class-agnostic");
         final String hud = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
@@ -53,6 +55,12 @@ public final class IceSmpHudRegressionSuite {
         check(hud.contains("new ArrayList<>(CurrencyType.values().length)")
                         && !hud.contains("primary || amount > 0.0D"),
                 "wallet snapshot must retain all four canonical currencies, including zero balances");
+        check(hud.contains("faction == null ? \"ice\"")
+                        && hud.contains("case RED -> \"ember\"")
+                        && hud.contains("case BLUE -> \"frost\"")
+                        && hud.contains("case NEUTRAL -> \"guild\"")
+                        && hud.contains("case DARK -> \"lich\""),
+                "HUD snapshot and renderer theme ids must retain their five-frame ordering contract");
     }
 
     private static void walletAndClassContractIsGeneric() {
@@ -73,6 +81,32 @@ public final class IceSmpHudRegressionSuite {
             model.currencies().add(new HudManager.HudCurrency("dark", "Csontveret", "1", false));
             throw new AssertionError("wallet snapshot must be immutable");
         } catch (final UnsupportedOperationException expected) { }
+    }
+
+    private static void factionThemeProjectionSelectsEveryFrame() {
+        final IceSmpHudModel baseline = model(56, 100, 56);
+        final List<String> themes = List.of("ice", "ember", "frost", "guild", "lich");
+        for (int index = 0; index < themes.size(); index++) {
+            final IceSmpHudModel themed = new IceSmpHudModel(
+                    baseline.faction(), themes.get(index), baseline.factionAccent(),
+                    baseline.className(), baseline.classLevel(), baseline.balance(),
+                    baseline.hasClass(), baseline.resource(), baseline.resourceMax(),
+                    baseline.resourcePercent(), baseline.resourceName(), baseline.event(),
+                    baseline.currencies(), baseline.classHud());
+            final String rendered = PlainTextComponentSerializer.plainText().serialize(
+                    new IceSmpHudRenderer().render(themed));
+            check(rendered.indexOf(0xE100 + index) >= 0,
+                    "HUD theme did not select frame index " + index + " for " + themes.get(index));
+        }
+    }
+
+    private static void layoutGeometryStaysInsideArtCompartments() {
+        check(IceSmpHudRenderer.RESOURCE_SEGMENT_ADVANCE * IceSmpHudRenderer.SEGMENTS <= 184,
+                "resource bar must stay inside the full-width channel");
+        check(IceSmpHudRenderer.METRIC_SEGMENT_ADVANCE * IceSmpHudRenderer.SEGMENTS == 96,
+                "metric bars must exactly fill one modular half-panel");
+        check(IceSmpHudRenderer.TEXT_ADVANCE == 6,
+                "HUD text must retain the fixed six-pixel modular advance");
     }
 
     private static void packReadinessAndFallbackAreSafe() throws Exception {
@@ -145,6 +179,9 @@ public final class IceSmpHudRegressionSuite {
         final String config = read("src/main/resources/config/general.yml");
         check(manifest.contains("\"fixed_segment_count\": 12")
                         && manifest.contains("\"text_advance\": 6")
+                        && manifest.contains("\"text_font\": \"Pixelify Sans\"")
+                        && manifest.contains("\"resource_segment_advance\": 13")
+                        && manifest.contains("\"metric_segment_advance\": 8")
                         && manifest.contains("\"wallet_slots\": 4")
                         && manifest.contains("\"wallet_columns\": 2")
                         && manifest.contains("\"wallet_rows\": 2")
@@ -193,10 +230,13 @@ public final class IceSmpHudRegressionSuite {
                         && generator.contains("HUD_FRAME_WIDTH = 240")
                         && generator.contains("TEXT_LOGICAL_WIDTH = 5")
                         && generator.contains("TEXT_OVERSAMPLE = 4")
-                        && generator.contains("DejaVuSans.ttf")
+                        && generator.contains("PixelifySans.ttf")
                         && generator.contains("currency_lower")
                         && generator.contains("text_wallet_lower"),
                 "v3 art, compact typography and the two-row wallet must remain generator-backed");
+        check(Files.isRegularFile(Path.of(
+                        "dev-assets/icesmp-hud/source/LICENSE_PIXELIFY_SANS")),
+                "Pixelify Sans must retain its bundled OFL license");
         for (final String largeGlyph : List.of("frame-hud-guest.png", "frame-hud-red.png",
                 "frame-hud-blue.png", "frame-hud-neutral.png", "frame-hud-dark.png",
                 "wallet-strip.png", "detail-strip.png")) {
@@ -237,7 +277,7 @@ public final class IceSmpHudRegressionSuite {
                 List.of(
                         new ClassHudSlot("rune_1", "blood", "ready", 100, "Vér"),
                         new ClassHudSlot("rune_2", "frost", "regenerating", 40, "Fagy")));
-        return new IceSmpHudModel("Menedék vendége", "guest", "66B5A3", "Halállovag", 12, "120", true,
+        return new IceSmpHudModel("Menedék vendége", "ice", "66B5A3", "Halállovag", 12, "120", true,
                 resource, maximum, percent, "Runikus Erő", "nyugalom",
                 List.of(
                         new HudManager.HudCurrency("red", "Parázsló Parals", "2.4k", false),

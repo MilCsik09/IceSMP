@@ -50,6 +50,13 @@ val validateIceSmpHudPackage by tasks.registering {
         require((manifest["text_advance"] as Number).toInt() == 6) {
             "First-party HUD must retain the compact six-pixel text grid"
         }
+        require(manifest["text_font"] == "Pixelify Sans") {
+            "First-party HUD must retain the reviewed pixel-display typeface"
+        }
+        require((manifest["resource_segment_advance"] as Number).toInt() == 13
+            && (manifest["metric_segment_advance"] as Number).toInt() == 8) {
+            "HUD bars must retain their full-width and half-panel modular pitches"
+        }
         require((manifest["wallet_slots"] as Number).toInt() == 4) {
             "First-party HUD must expose four fixed wallet slots"
         }
@@ -92,6 +99,14 @@ val validateIceSmpHudPackage by tasks.registering {
             ?: error("Unreadable HUD wallet strip")
         require(walletStrip.width == 240 && walletStrip.height == 42) {
             "HUD wallet must retain its fixed 2x2 panel geometry"
+        }
+        listOf("metric-track.png", "metric-fill.png", "metric-fill-warm.png",
+            "metric-fill-gold.png").forEach { name ->
+            val image = ImageIO.read(textures.resolve(name))
+                ?: error("Unreadable HUD metric segment: $name")
+            require(image.width == 7 && image.height == 5) {
+                "HUD half-panel metric segments must stay 7x5: $name"
+            }
         }
         val mechanics = manifest["mechanics"] as? List<*>
             ?: error("First-party HUD mechanic manifest is missing")

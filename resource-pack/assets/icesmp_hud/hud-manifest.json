@@ -5,6 +5,7 @@
   "space_max": 512,
   "text_advance": 6,
   "text_oversample": 4,
+  "text_font": "Pixelify Sans",
   "maximum_bitmap_glyph_width": 256,
   "themes": [
     "guest",
@@ -86,6 +87,8 @@
     "spent"
   ],
   "fixed_segment_count": 12,
+  "resource_segment_advance": 13,
+  "metric_segment_advance": 8,
   "wallet_slots": 4,
   "wallet_columns": 2,
   "wallet_rows": 2,

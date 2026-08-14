@@ -26,7 +26,7 @@ FRAME_ATLAS_SOURCE = HUD_SOURCE / "frames-v3.png"
 ITEM_SOURCE = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "item"
 MECHANIC_CORE_SOURCE = HUD_SOURCE / "mechanics-core-v3.png"
 MECHANIC_SPEC_SOURCE = HUD_SOURCE / "mechanics-spec-v3.png"
-TEXT_FONT_SOURCE = HUD_SOURCE / "DejaVuSans.ttf"
+TEXT_FONT_SOURCE = HUD_SOURCE / "PixelifySans.ttf"
 ASSETS = ROOT / "resource-pack" / "assets" / "icesmp_hud"
 TEXTURES = ASSETS / "textures" / "hud"
 FONTS = ASSETS / "font"
@@ -298,7 +298,10 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
     draw = ImageDraw.Draw(atlas)
     if not TEXT_FONT_SOURCE.is_file():
         raise FileNotFoundError(f"Missing reproducible IceSMP HUD text font: {TEXT_FONT_SOURCE}")
-    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=10 * TEXT_OVERSAMPLE)
+    # Pixelify Sans keeps the HUD legible at Minecraft scale without making the
+    # typography look like a generic desktop UI. The fixed atlas cell remains the
+    # authoritative advance, so every localized glyph stays perfectly modular.
+    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=8 * TEXT_OVERSAMPLE)
     for index, char in enumerate(padded):
         if index < len(unique):
             x = (index % columns) * cell_width
@@ -317,9 +320,9 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
                     glyph = glyph.resize((max(1, round(width * scale)),
                                           max(1, round(height * scale))),
                                          Image.Resampling.LANCZOS)
-                # Strengthen antialias coverage without widening stems; the compact cell already
-                # removes the old airy letter spacing and must keep Hungarian accents distinct.
-                glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.45)))
+                # Preserve the square pixel-font silhouette while strengthening faint edge
+                # coverage. Hungarian double accents remain inside the same fixed cell.
+                glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.30)))
                 colored = Image.new("RGBA", glyph.size, (239, 247, 252, 255))
                 colored.putalpha(glyph)
                 atlas.alpha_composite(colored,
@@ -346,6 +349,13 @@ def generate_segments() -> None:
         draw.line((1, 0, 10, 0), fill=highlight)
         draw.point((0, 0), fill=(0, 0, 0, 0))
         save_png(image, TEXTURES / name)
+
+        metric_name = name.replace("segment-", "metric-")
+        metric = Image.new("RGBA", (7, 5), base)
+        metric_draw = ImageDraw.Draw(metric)
+        metric_draw.line((1, 0, 5, 0), fill=highlight)
+        metric_draw.point((0, 0), fill=(0, 0, 0, 0))
+        save_png(metric, TEXTURES / metric_name)
 
 
 def generate_wallet_strip() -> None:
@@ -553,43 +563,43 @@ def main() -> None:
         for index, currency in enumerate(("red", "blue", "neutral", "dark"))
     ])
     write_font("charges", [
-        provider("charge-ready.png", chr(0xE170), 8, 134, 10),
-        provider("charge-spent.png", chr(0xE171), 8, 134, 10),
+        provider("charge-ready.png", chr(0xE170), 8, 128, 10),
+        provider("charge-spent.png", chr(0xE171), 8, 128, 10),
     ])
     mechanic_providers = [
         provider(
             f"mechanic-{class_id}-{mechanic_id}-{variant}.png",
             chr(0xE200 + mechanic_index * len(MECHANIC_VARIANTS) + variant_index),
-            8, 96, 14,
+            8, 79, 14,
         )
         for mechanic_index, (class_id, mechanic_id) in enumerate(MECHANICS)
         for variant_index, variant in enumerate(MECHANIC_VARIANTS)
     ]
     write_font("mechanic_icons", mechanic_providers)
     write_font("mechanic_slots", [
-        {**entry, "ascent": encoded_ascent(8, 134), "height": 10}
+        {**entry, "ascent": encoded_ascent(8, 128), "height": 10}
         for entry in mechanic_providers
     ])
     write_font("resource_segments", [
-        provider("segment-track.png", chr(0xE180), 5, 92, 5),
-        provider("segment-fill.png", chr(0xE181), 6, 92, 5),
-        provider("segment-fill-warm.png", chr(0xE182), 6, 92, 5),
-        provider("segment-fill-gold.png", chr(0xE183), 6, 92, 5),
+        provider("segment-track.png", chr(0xE180), 5, 70, 5),
+        provider("segment-fill.png", chr(0xE181), 6, 70, 5),
+        provider("segment-fill-warm.png", chr(0xE182), 6, 70, 5),
+        provider("segment-fill-gold.png", chr(0xE183), 6, 70, 5),
     ])
     write_font("metric_segments", [
-        provider("segment-track.png", chr(0xE180), 5, 123, 5),
-        provider("segment-fill.png", chr(0xE181), 6, 123, 5),
-        provider("segment-fill-warm.png", chr(0xE182), 6, 123, 5),
-        provider("segment-fill-gold.png", chr(0xE183), 6, 123, 5),
+        provider("metric-track.png", chr(0xE180), 5, 108, 5),
+        provider("metric-fill.png", chr(0xE181), 6, 108, 5),
+        provider("metric-fill-warm.png", chr(0xE182), 6, 108, 5),
+        provider("metric-fill-gold.png", chr(0xE183), 6, 108, 5),
     ])
 
     for name, y in {
         "text_header": 42,
         "text_subheader": 59,
-        "text_resource": 84,
-        "text_mechanic": 108,
+        "text_resource": 72,
+        "text_mechanic": 88,
         "text_state": 134,
-        "text_event": 155,
+        "text_event": 165,
         "text_detail": 190,
         "text_wallet": 213,
         "text_wallet_lower": 233,
@@ -609,12 +619,15 @@ def main() -> None:
         "space_max": SPACE_MAX,
         "text_advance": TEXT_LOGICAL_WIDTH + 1,
         "text_oversample": TEXT_OVERSAMPLE,
+        "text_font": "Pixelify Sans",
         "maximum_bitmap_glyph_width": 256,
         "themes": list(THEMES),
         "classes": list(CLASSES),
         "mechanics": [f"{class_id}:{mechanic_id}" for class_id, mechanic_id in MECHANICS],
         "mechanic_variants": list(MECHANIC_VARIANTS),
         "fixed_segment_count": 12,
+        "resource_segment_advance": 13,
+        "metric_segment_advance": 8,
         "wallet_slots": 4,
         "wallet_columns": 2,
         "wallet_rows": 2,

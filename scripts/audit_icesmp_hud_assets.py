@@ -113,6 +113,10 @@ def expected_size(path: Path) -> tuple[int, int] | None:
         "segment-fill.png": (12, 5),
         "segment-fill-warm.png": (12, 5),
         "segment-fill-gold.png": (12, 5),
+        "metric-track.png": (7, 5),
+        "metric-fill.png": (7, 5),
+        "metric-fill-warm.png": (7, 5),
+        "metric-fill-gold.png": (7, 5),
     }
     if name.startswith("frame-hud-"):
         return (240, 160)
@@ -177,7 +181,7 @@ def inspect(path: Path) -> Finding:
         if verdict == "PASS":
             verdict = "WARN"
         notes.append("low edge contrast")
-    hard_alpha = path.name.startswith("segment-")
+    hard_alpha = path.name.startswith(("segment-", "metric-"))
     if hard_alpha and not alpha_values.issubset({0, 255}):
         verdict = "FAIL"
         notes.append("progress mask has soft alpha")
