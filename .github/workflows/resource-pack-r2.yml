@@ -1,6 +1,9 @@
 name: Publish resource pack to R2
 run-name: >-
-  Resource pack ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event_name == 'pull_request' && 'validate-only' || 'publish') }}
+  Resource pack ${{ github.event_name == 'workflow_dispatch' && inputs.mode
+  || (github.event_name == 'pull_request' && 'validate-only')
+  || (github.ref == 'refs/heads/staging' && 'r2-preflight')
+  || 'publish' }}
   @ ${{ github.ref_name }}
 
 on:
@@ -33,6 +36,7 @@ on:
   push:
     branches:
       - master
+      - staging
     paths:
       - "resource-pack/**"
       - "!resource-pack/README.md"
@@ -57,7 +61,9 @@ jobs:
     env:
       EXECUTION_MODE: >-
         ${{ github.event_name == 'workflow_dispatch' && inputs.mode
-        || (github.event_name == 'pull_request' && 'validate-only' || 'publish') }}
+        || (github.event_name == 'pull_request' && 'validate-only')
+        || (github.ref == 'refs/heads/staging' && 'r2-preflight')
+        || 'publish' }}
       PACK_DIR: resource-pack
       PACK_OUTPUT: build/resource-pack/icesmp.zip
       METADATA_FILE: src/main/resources/resource-pack.properties
@@ -279,7 +285,9 @@ jobs:
             --only-show-errors
 
       - name: Update bundled plugin fallback metadata
-        if: env.EXECUTION_MODE == 'publish'
+        if: >-
+          (env.EXECUTION_MODE == 'publish' && github.ref == 'refs/heads/master')
+          || (env.EXECUTION_MODE == 'r2-preflight' && github.ref == 'refs/heads/staging')
         env:
           PACK_URL: ${{ steps.pack.outputs.url }}
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
@@ -290,7 +298,9 @@ jobs:
             --sha1 "$PACK_SHA1"
 
       - name: Commit generated fallback metadata
-        if: env.EXECUTION_MODE == 'publish' && github.ref == 'refs/heads/master'
+        if: >-
+          (env.EXECUTION_MODE == 'publish' && github.ref == 'refs/heads/master')
+          || (env.EXECUTION_MODE == 'r2-preflight' && github.ref == 'refs/heads/staging')
         env:
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
         shell: bash
@@ -306,9 +316,9 @@ jobs:
           git add "$METADATA_FILE"
           git commit -m "Update resource pack to ${PACK_SHA1}"
 
-          git fetch origin master
-          git rebase origin/master
-          git push origin HEAD:master
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
 
       - name: Write result summary
         if: always()
