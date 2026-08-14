@@ -39,6 +39,18 @@ public final class DonationChestHolder implements InventoryHolder {
         return slotEntries.get(slot);
     }
 
+    public Integer removeEntry(final UUID entryId) {
+        final var iterator = slotEntries.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<Integer, UUID> entry = iterator.next();
+            if (entry.getValue().equals(entryId)) {
+                iterator.remove();
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
     public void setInventory(final Inventory inventory) {
         this.inventory = inventory;
     }

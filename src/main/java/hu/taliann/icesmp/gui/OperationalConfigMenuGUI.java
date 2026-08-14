@@ -405,5 +405,3 @@ public final class OperationalConfigMenuGUI {
         return item;
     }
 }
-
-

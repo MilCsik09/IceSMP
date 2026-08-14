@@ -3,8 +3,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/segment-track.png",
-      "ascent": -8433755,
-      "height": 5,
+      "ascent": -8433733,
+      "height": 3,
       "chars": [
         ""
       ]
@@ -12,8 +12,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/segment-fill.png",
-      "ascent": -8441947,
-      "height": 5,
+      "ascent": -8441925,
+      "height": 3,
       "chars": [
         ""
       ]
@@ -21,8 +21,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/segment-fill-warm.png",
-      "ascent": -8441947,
-      "height": 5,
+      "ascent": -8441925,
+      "height": 3,
       "chars": [
         ""
       ]
@@ -30,8 +30,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/segment-fill-gold.png",
-      "ascent": -8441947,
-      "height": 5,
+      "ascent": -8441925,
+      "height": 3,
       "chars": [
         ""
       ]

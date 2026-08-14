@@ -106,13 +106,17 @@ def expected_size(path: Path) -> tuple[int, int] | None:
     if name.startswith(("class-", "currency-", "rune-", "icon-", "mechanic-", "charge-")):
         return (64, 64)
     fixed = {
-        "wallet-strip.png": (240, 22),
+        "wallet-strip.png": (240, 42),
         "detail-strip.png": (240, 22),
-        "text-atlas.png": (384, 384),
-        "segment-track.png": (12, 5),
-        "segment-fill.png": (12, 5),
-        "segment-fill-warm.png": (12, 5),
-        "segment-fill-gold.png": (12, 5),
+        "text-atlas.png": (640, 768),
+        "segment-track.png": (12, 3),
+        "segment-fill.png": (12, 3),
+        "segment-fill-warm.png": (12, 3),
+        "segment-fill-gold.png": (12, 3),
+        "metric-track.png": (7, 5),
+        "metric-fill.png": (7, 5),
+        "metric-fill-warm.png": (7, 5),
+        "metric-fill-gold.png": (7, 5),
     }
     if name.startswith("frame-hud-"):
         return (240, 160)
@@ -177,10 +181,15 @@ def inspect(path: Path) -> Finding:
         if verdict == "PASS":
             verdict = "WARN"
         notes.append("low edge contrast")
-    hard_alpha = path.name.startswith("segment-")
+    hard_alpha = path.name.startswith(("segment-", "metric-"))
     if hard_alpha and not alpha_values.issubset({0, 255}):
         verdict = "FAIL"
         notes.append("progress mask has soft alpha")
+    if path.name == "text-atlas.png":
+        soft_alpha = alpha_values - {0, 1, 255}
+        if len(soft_alpha) < 32:
+            verdict = "FAIL"
+            notes.append("high-resolution text atlas lost its antialiased edge coverage")
     alpha_text = ("none" if len(alpha_values) == 1 and 255 in alpha_values
                   else f"{min(alpha_values)}..{max(alpha_values)}/{len(alpha_values)}")
     return Finding(relative, f"{image.width}x{image.height}", image.mode, alpha_text,
@@ -200,6 +209,27 @@ def font_errors() -> list[str]:
             target = RUNTIME / "textures" / "hud" / reference.split("/", 1)[1]
             if not target.is_file():
                 errors.append(f"{font.relative_to(ROOT)} -> {reference}")
+    header = json.loads((RUNTIME / "font/text_header.json").read_text(encoding="utf-8"))
+    rows = header.get("providers", [{}])[0].get("chars", [])
+    characters = "".join(rows)
+    atlas = Image.open(RUNTIME / "textures/hud/text-atlas.png").convert("RGBA")
+
+    def glyph_box(char: str):
+        index = characters.index(char)
+        cell_width, cell_height = 40, 96
+        x = index % 16 * cell_width
+        y = index // 16 * cell_height
+        alpha = atlas.crop((x, y, x + cell_width, y + cell_height)).getchannel("A")
+        return alpha.point(lambda value: 255 if value >= 16 else 0).getbbox()
+
+    uppercase_boxes = [glyph_box(char) for char in "EHMNW"]
+    if any(box is None for box in uppercase_boxes):
+        errors.append("high-resolution text atlas has an empty uppercase QA glyph")
+    else:
+        heights = [box[3] - box[1] for box in uppercase_boxes]
+        baselines = [box[3] for box in uppercase_boxes]
+        if max(heights) - min(heights) > 1 or max(baselines) - min(baselines) > 1:
+            errors.append("wide uppercase glyphs lost the shared height/baseline contract")
     return errors
 
 
@@ -295,7 +325,7 @@ def render_report(findings: list[Finding], mechanics: list[str], report: Path) -
     lines += ["", "## Statikus runtime-audit", "",
               "| Terület | Ellenőrzött invariáns | Eredmény |",
               "|---|---|---:|",
-              "| Wallet | A primary valuta nulla egyenleggel is megjelenik; a többi csak pozitív egyenleggel; immutable snapshot, négy fix slot. | PASS |",
+              "| Wallet | Mind a négy kanonikus valuta fix 2×2 slotban, nulla egyenleggel is megjelenik; immutable snapshot. | PASS |",
               "| Class-/specváltás | A render minden tickben az új Profile v2 + transient class runtime snapshotból épül; nincs külön tartós HUD/class authority. | PASS |",
               "| Vendégkeret | Külön külső Menedék-héj, a kanonikus frakciókerettel azonos belső alpha-geometria és rögzített glyph-cella. | PASS |",
               "| HUD/fallback | First-party pack-ready HUD → Paper sidebar / Folia compact bossbar fallback; egyszerre csak egy class HUD. | PASS |",

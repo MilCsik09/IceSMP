@@ -360,7 +360,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
         final int total = blood + frost + death;
         final int totalMax = naturalMax * 2 + deathMax;
         final var primary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
-                "rune_wheel", "Rúnakör", "Rúnák V" + blood + " F" + frost + " H" + death,
+                "rune_wheel", "Rúnakör", "Rúnák",
                 total, totalMax, total == totalMax ? "ready" : "active");
         var secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.text("", "", "", "");
         String stateText = "";
@@ -376,7 +376,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
                 final int marks = combat.frostMarks();
                 final int maximum = markMaximum(id);
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
-                        "frost_marks", "Fagyjel", "Fagyjel " + marks + "/" + maximum,
+                        "frost_marks", "Fagyjel", "Fagyjel " + marks,
                         marks, maximum, marks >= maximum ? "ready" : "building");
                 if (marks >= maximum) proc = "Zúzás kész";
             }

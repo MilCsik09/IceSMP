@@ -109,12 +109,16 @@ public final class PlayerProfileHudPreferenceStore {
                         HudLayoutSnapshot.MAX_SAFE_MARGIN, global.safeMarginPixels()),
                 scaleIndex(values, LAYOUT_PREFIX + "scale", global.scaleIndex()),
                 global.components());
+        final boolean legacyLevelTextAnchor =
+                "-16".equals(values.get(LAYOUT_PREFIX + "level-text.x"));
         for (final HudComponent component : HudComponent.editableValues()) {
             final HudComponentLayout base = global.componentLayout(component);
             final String prefix = LAYOUT_PREFIX + component.id() + ".";
             result = result.withComponent(component, new HudComponentLayout(
-                    integer(values, prefix + "x", HudLayoutSnapshot.MIN_X_OFFSET,
-                            HudLayoutSnapshot.MAX_X_OFFSET, base.xOffsetPixels()),
+                    component == HudComponent.LEVEL_TEXT && legacyLevelTextAnchor
+                            ? base.xOffsetPixels()
+                            : integer(values, prefix + "x", HudLayoutSnapshot.MIN_X_OFFSET,
+                                    HudLayoutSnapshot.MAX_X_OFFSET, base.xOffsetPixels()),
                     integer(values, prefix + "y", HudLayoutSnapshot.MIN_Y_OFFSET,
                             HudLayoutSnapshot.MAX_Y_OFFSET, base.yOffsetPixels()),
                     scaleIndex(values, prefix + "scale", base.scaleIndex()),

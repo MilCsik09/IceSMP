@@ -54,35 +54,35 @@ hud:
     # A renderer által ténylegesen alkalmazott, validált alap-layout. Hibás vagy
     # tartományon kívüli mező külön-külön a biztonságos alapértékre esik vissza.
     layout:
-      x-offset-pixels: 0       # -512..512; pozitív érték jobbra
-      y-offset-pixels: 16      # -256..255; pozitív érték lefelé
-      safe-margin-pixels: 16   # 0..128; távolság a jobb képernyőszéltől
+      x-offset-pixels: 0
+      y-offset-pixels: 24
+      safe-margin-pixels: 24
       # Buildkor generált shader-variánsra illeszkedik: 0.75..1.80 között a régi
       # lépcsők, fölötte 2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25 vagy 3.50.
       # Más érvényes érték a legközelebbire kerekül.
-      scale: 1.25
+      scale: 1.6
       # Minden első-party rajzcsoport külön, a fenti globális layouthoz képest állítható.
       # A scale relatív szorzó; a runtime a globális×relatív eredményt a támogatott
       # shader-variánsok egyikére illeszti. A teljes blokkot a /hud edit save atomikusan írja.
       components:
-        frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        class-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        class-name: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        faction: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        level-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        level-text: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        wallet-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        wallet: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        resource-label: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        resource-bar: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        primary-mechanic: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        secondary-mechanic: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        charges: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        state-proc: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        detail-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        detail-metrics: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        event-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
-        event-text: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.00, visible: true}
+        frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        class-icon: {x-offset-pixels: -7, y-offset-pixels: -12, scale: 1.0, visible: true}
+        class-name: {x-offset-pixels: 3, y-offset-pixels: 15, scale: 1.0, visible: true}
+        faction: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: false}
+        level-icon: {x-offset-pixels: -19, y-offset-pixels: -5, scale: 1.0, visible: true}
+        level-text: {x-offset-pixels: -3, y-offset-pixels: 15, scale: 1.0, visible: true}
+        wallet-frame: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
+        wallet: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        resource-label: {x-offset-pixels: 6, y-offset-pixels: 5, scale: 0.9, visible: true}
+        resource-bar: {x-offset-pixels: 5, y-offset-pixels: -12, scale: 1.0, visible: true}
+        primary-mechanic: {x-offset-pixels: 2, y-offset-pixels: -1, scale: 1.0, visible: true}
+        secondary-mechanic: {x-offset-pixels: 2, y-offset-pixels: 0, scale: 1.0, visible: true}
+        charges: {x-offset-pixels: -38, y-offset-pixels: 32, scale: 0.9, visible: true}
+        state-proc: {x-offset-pixels: -14, y-offset-pixels: -1, scale: 1.0, visible: true}
+        detail-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        detail-metrics: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        event-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        event-text: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
     # Előkészített HP-rework kapuk. Csak akkor lesznek bekapcsolhatók, amikor az egyedi
     # HP/armor kijelzés és a pack-készültségi védelem teljes körűen elkészült.
     hide-vanilla-health: false

@@ -1,0 +1,20 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/text-atlas.png",
+      "ascent": -8474851,
+      "height": 12,
+      "chars": [
+        " !\"#$%&'()*+,-./",
+        "0123456789:;<=>?",
+        "@ABCDEFGHIJKLMNO",
+        "PQRSTUVWXYZ[\\]^_",
+        "`abcdefghijklmno",
+        "pqrstuvwxyz{|}~Á",
+        "ÉÍÓÖŐÚÜŰáéíóöőúü",
+        "ű•—…"
+      ]
+    }
+  ]
+}

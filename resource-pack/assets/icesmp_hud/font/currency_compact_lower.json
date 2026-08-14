@@ -1,0 +1,40 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/currency-red.png",
+      "ascent": -8458446,
+      "height": 15,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/currency-blue.png",
+      "ascent": -8458446,
+      "height": 15,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/currency-neutral.png",
+      "ascent": -8458446,
+      "height": 15,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/currency-dark.png",
+      "ascent": -8458446,
+      "height": 15,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

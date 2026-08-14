@@ -114,6 +114,14 @@ public final class DonationChestGUI {
         return rawSlot >= CONTENT_START && rawSlot <= CONTENT_END;
     }
 
+    public static void removeClaimedEntry(final DonationChestHolder holder,
+                                          final java.util.UUID entryId) {
+        final Integer slot = holder.removeEntry(entryId);
+        if (slot != null && holder.getInventory().getSize() == SIZE) {
+            holder.getInventory().setItem(slot, GuiUtil.filler());
+        }
+    }
+
     private static ItemStack depositHelp(
             final MessageManager messages) {
         final ItemStack item = new ItemStack(Material.HOPPER);
