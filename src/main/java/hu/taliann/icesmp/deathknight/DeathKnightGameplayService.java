@@ -376,7 +376,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
                 final int marks = combat.frostMarks();
                 final int maximum = markMaximum(id);
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
-                        "frost_marks", "Fagyjel", "Fagyjel " + marks + "/" + maximum,
+                        "frost_marks", "Fagyjel", "Fagyjel " + marks,
                         marks, maximum, marks >= maximum ? "ready" : "building");
                 if (marks >= maximum) proc = "Zúzás kész";
             }

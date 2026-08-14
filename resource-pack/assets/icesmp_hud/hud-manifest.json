@@ -37,7 +37,7 @@
     "primary_metric_bar": 12,
     "secondary_metric_bar": 125,
     "event_center": 120,
-    "level_center": 216
+    "level_center": 218
   },
   "maximum_bitmap_glyph_width": 256,
   "themes": [
@@ -126,7 +126,9 @@
   "wallet_columns": 2,
   "wallet_rows": 2,
   "detail_metrics_conditional": true,
-  "compact_wallet_y_shift": -22,
+  "compact_wallet_anchor_y": 178,
+  "compact_wallet_anchor_delta": -23,
+  "rune_panel_size": 18,
   "layout_color_payload_bits": 13,
   "layout_y_offset_range": [
     -256,

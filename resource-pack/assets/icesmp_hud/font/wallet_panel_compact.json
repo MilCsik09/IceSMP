@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/wallet-strip.png",
+      "ascent": -8425649,
+      "height": 42,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

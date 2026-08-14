@@ -45,7 +45,8 @@ TEXT_LOGICAL_HEIGHT = 12
 # source. Minecraft scales the 8x atlas into the configured 5x12 logical cell; we
 # never collapse the outline to a five-pixel binary mask during generation.
 TEXT_OVERSAMPLE = 8
-COMPACT_WALLET_Y_SHIFT = -22
+COMPACT_WALLET_ANCHOR_Y = 178
+COMPACT_WALLET_ANCHOR_DELTA = COMPACT_WALLET_ANCHOR_Y - 201
 HUD_LAYOUT_SCALES = (0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80,
                      2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25, 3.50)
 
@@ -78,7 +79,7 @@ HUD_X = {
     "primary_metric_bar": 12,
     "secondary_metric_bar": 125,
     "event_center": 120,
-    "level_center": 216,
+    "level_center": 218,
 }
 
 THEMES = ("guest", "red", "blue", "neutral", "dark")
@@ -396,15 +397,24 @@ def generate_segments() -> None:
 
 
 def generate_wallet_strip() -> None:
-    for name, outline, height in (("wallet-strip.png", (95, 201, 180, 110), 42),
-                                  ("detail-strip.png", (115, 142, 178, 100), 22)):
+    for name, outline, height, fill_alpha in (
+            ("wallet-strip.png", (95, 201, 180, 155), 42, 158),
+            ("detail-strip.png", (115, 142, 178, 150), 22, 148)):
         image = Image.new("RGBA", (HUD_FRAME_WIDTH, height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
         draw.rounded_rectangle((2, 2, 237, height - 3), radius=5,
-                               fill=(6, 10, 15, 120), outline=outline, width=1)
+                               fill=(6, 10, 15, fill_alpha), outline=outline, width=1)
+        draw.line((8, 3, 231, 3),
+                  fill=(outline[0], outline[1], outline[2], 70))
         if name == "wallet-strip.png":
-            draw.line((119, 3, 119, height - 4), fill=(outline[0], outline[1], outline[2], 55))
-            draw.line((3, 21, 236, 21), fill=(outline[0], outline[1], outline[2], 55))
+            draw.line((119, 3, 119, height - 4), fill=(outline[0], outline[1], outline[2], 80))
+            draw.line((3, 21, 236, 21), fill=(outline[0], outline[1], outline[2], 80))
+        else:
+            middle = height // 2
+            draw.polygon(((4, middle), (7, middle - 3), (10, middle), (7, middle + 3)),
+                         outline=(outline[0], outline[1], outline[2], 120))
+            draw.polygon(((235, middle), (232, middle - 3), (229, middle), (232, middle + 3)),
+                         outline=(outline[0], outline[1], outline[2], 120))
         image.putpixel((HUD_FRAME_WIDTH - 1, height - 1), (255, 255, 255, 1))
         save_png(image, TEXTURES / name)
 
@@ -656,7 +666,7 @@ def generate_layout_preview(text_rows: list[str]) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     save_png(canvas, target)
 
-    compact_wallet_top = (201 - frame_y + COMPACT_WALLET_Y_SHIFT) * preview_scale
+    compact_wallet_top = (COMPACT_WALLET_ANCHOR_Y - frame_y) * preview_scale
     detailed_wallet_top = (201 - frame_y) * preview_scale
     compact = Image.new("RGBA", (HUD_FRAME_WIDTH * preview_scale,
                                   (160 + 42 + 1) * preview_scale), (8, 11, 16, 255))
@@ -689,6 +699,9 @@ def main() -> None:
         for index, theme in enumerate(THEMES)
     ])
     write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 42)])
+    write_font("wallet_panel_compact", [
+        provider("wallet-strip.png", chr(0xE105), 4, COMPACT_WALLET_ANCHOR_Y, 42)
+    ])
     write_font("detail_panel", [provider("detail-strip.png", chr(0xE106), 4, 178, 22)])
     write_font("class_icon", [
         provider(f"class-{class_id}.png", chr(0xE110 + index), 8, HUD_Y["class_icon"], 36)
@@ -711,12 +724,28 @@ def main() -> None:
         for kind_index, kind in enumerate(RUNE_KINDS)
         for state_index, state in enumerate(RUNE_STATES)
     ])
+    write_font("runes_panel", [
+        provider(f"rune-{kind}-{state}.png", chr(0xE140 + kind_index * 4 + state_index),
+                 8, 91, 18)
+        for kind_index, kind in enumerate(RUNE_KINDS)
+        for state_index, state in enumerate(RUNE_STATES)
+    ])
     write_font("currency", [
         provider(f"currency-{currency}.png", chr(0xE160 + index), 8, HUD_Y["wallet_icon"], 15)
         for index, currency in enumerate(("red", "blue", "neutral", "dark"))
     ])
     write_font("currency_lower", [
         provider(f"currency-{currency}.png", chr(0xE160 + index), 8, HUD_Y["wallet_lower_icon"], 15)
+        for index, currency in enumerate(("red", "blue", "neutral", "dark"))
+    ])
+    write_font("currency_compact", [
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8,
+                 HUD_Y["wallet_icon"] + COMPACT_WALLET_ANCHOR_DELTA, 15)
+        for index, currency in enumerate(("red", "blue", "neutral", "dark"))
+    ])
+    write_font("currency_compact_lower", [
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8,
+                 HUD_Y["wallet_lower_icon"] + COMPACT_WALLET_ANCHOR_DELTA, 15)
         for index, currency in enumerate(("red", "blue", "neutral", "dark"))
     ])
     write_font("charges", [
@@ -760,6 +789,8 @@ def main() -> None:
         "text_detail": HUD_Y["detail_text"],
         "text_wallet": HUD_Y["wallet_text"],
         "text_wallet_lower": HUD_Y["wallet_lower_text"],
+        "text_wallet_compact": HUD_Y["wallet_text"] + COMPACT_WALLET_ANCHOR_DELTA,
+        "text_wallet_compact_lower": HUD_Y["wallet_lower_text"] + COMPACT_WALLET_ANCHOR_DELTA,
     }.items():
         write_font(name, [{
             "type": "bitmap",
@@ -793,7 +824,9 @@ def main() -> None:
         "wallet_columns": 2,
         "wallet_rows": 2,
         "detail_metrics_conditional": True,
-        "compact_wallet_y_shift": COMPACT_WALLET_Y_SHIFT,
+        "compact_wallet_anchor_y": COMPACT_WALLET_ANCHOR_Y,
+        "compact_wallet_anchor_delta": COMPACT_WALLET_ANCHOR_DELTA,
+        "rune_panel_size": 18,
         "layout_color_payload_bits": 13,
         "layout_y_offset_range": [-256, 255],
         "layout_scale_variants": list(HUD_LAYOUT_SCALES),

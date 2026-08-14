@@ -83,7 +83,7 @@ val validateIceSmpHudPackage by tasks.registering {
             "primary_metric_bar" to 12,
             "secondary_metric_bar" to 125,
             "event_center" to 120,
-            "level_center" to 216
+            "level_center" to 218
         ).forEach { (name, value) ->
             require((layoutX[name] as? Number)?.toInt() == value) {
                 "HUD horizontal anchor drifted outside its reviewed panel: $name"
@@ -97,17 +97,21 @@ val validateIceSmpHudPackage by tasks.registering {
             "First-party HUD wallet must retain its fixed 2x2 currency grid"
         }
         require(manifest["detail_metrics_conditional"] == true
-            && (manifest["compact_wallet_y_shift"] as Number).toInt() == -22) {
+            && (manifest["compact_wallet_anchor_y"] as Number).toInt() == 178
+            && (manifest["compact_wallet_anchor_delta"] as Number).toInt() == -23) {
             "Empty supplementary detail rows must collapse before the wallet"
         }
         require(manifest["vanilla_health_hidden"] == false && manifest["vanilla_armor_hidden"] == false) {
             "Vanilla health/armor may not be hidden before the HP-rework renderer is complete"
         }
         val fonts = hud.dir("font").asFile
-        listOf("space", "panel", "wallet_panel", "detail_panel", "class_icon", "currency", "currency_lower", "runes", "runes_compact", "charges",
+        listOf("space", "panel", "wallet_panel", "wallet_panel_compact", "detail_panel", "class_icon",
+            "currency", "currency_lower", "currency_compact", "currency_compact_lower",
+            "runes", "runes_compact", "runes_panel", "charges",
             "mechanic_icons", "mechanic_slots", "resource_segments",
             "metric_segments", "text_header", "text_subheader", "text_resource",
-            "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet", "text_wallet_lower").forEach { name ->
+            "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet", "text_wallet_lower",
+            "text_wallet_compact", "text_wallet_compact_lower").forEach { name ->
             require(fonts.resolve("$name.json").isFile) { "Missing IceSMP HUD font: $name" }
         }
         val textures = hud.dir("textures/hud").asFile

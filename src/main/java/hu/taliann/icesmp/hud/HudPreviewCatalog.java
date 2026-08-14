@@ -68,9 +68,9 @@ public final class HudPreviewCatalog {
             final ClassHudMetric runes = ClassHudMetric.value(
                     "rune_wheel", "Rúnakör", "Rúnák", 4, 6, "active");
             final ClassHudMetric frostMarks = ClassHudMetric.value(
-                    "frost_marks", "Fagyjel", "Fagyjel 3/5", 3, 5, "ready");
+                    "frost_marks", "Fagyjel", "Fagyjel 3", 3, 5, "ready");
             return new ClassHudState("death_knight", "frost", "Fagyhozó", "Rúnák",
-                    "Fagyjel 3/5", "harc", "Dérrobbanás kész", 4, 6,
+                    "Fagyjel 3", "harc", "Dérrobbanás kész", 4, 6,
                     List.of("Rúnák", "Fagyjel"), List.of(runes, frostMarks),
                     List.of(new ClassHudSlot("r1", "blood", "ready", 100, "Vér"),
                             new ClassHudSlot("r2", "blood", "spent", 0, "Vér"),
@@ -83,9 +83,9 @@ public final class HudPreviewCatalog {
             final ClassHudMetric runewaving = ClassHudMetric.value(
                     "runewaving", "Rúnaszövés", "Rúnaszövés 4", 4, 5, "active");
             final ClassHudMetric attunement = ClassHudMetric.value(
-                    "attunement", "Hangolás", "Tűz hangolás", 72, 100, "ready");
+                    "attunement", "Hangolás", "Tűz 72", 72, 100, "ready");
             return new ClassHudState("wizard", "elementalist", "Elementalista", "Rúnaszövés 4",
-                    "Tűz hangolás", "Tűz > Fagy > Vihar", "Elemi túltöltés", 3, 5,
+                    "Tűz 72", "Tűz > Fagy > Vihar", "Elemi túltöltés", 3, 5,
                     List.of("Rúnaszövés", "Hangolás"),
                     List.of(runewaving, attunement,
                             ClassHudMetric.value("attunement_fire", "Tűz", "72", 72, 100, "fire"),
@@ -94,7 +94,7 @@ public final class HudPreviewCatalog {
                     ClassHudSlot.charges("rune", "runewaving", "Rúna", 3, 5));
         }
         final boolean noSpec = "spec".equals(selection.state());
-        final String proc = "proc".equals(selection.state()) ? "PROC: tökéletes időzítés" : "Aktív";
+        final String proc = "proc".equals(selection.state()) ? "PROC: tökéletes" : "Aktív";
         final int charges = "charges".equals(selection.state()) ? 2 : 4;
         final ArrayList<ClassHudMetric> metrics = new ArrayList<>();
         metrics.add(ClassHudMetric.value(playerClass.primary, "Fő mechanika", "72/100", 72, 100, "ready"));

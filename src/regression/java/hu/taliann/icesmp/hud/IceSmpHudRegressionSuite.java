@@ -49,9 +49,11 @@ public final class IceSmpHudRegressionSuite {
         check(source.contains("append(space(-anchoredX - width))")
                         && source.contains("List.of(\"ice\", \"ember\", \"frost\", \"guild\", \"lich\")")
                         && source.contains("final String levelText = Integer.toString(model.classLevel())")
-                        && source.contains("LEVEL_CENTER_X = -38")
+                        && source.contains("LEVEL_CENTER_X = -36")
                         && source.contains("RESOURCE_TEXT_X = -186")
                         && source.contains("EVENT_TEXT_WIDTH = 186")
+                        && source.contains("eventLine(model.event())")
+                        && source.contains("compactStateLine(model.classHud().state(), model.classHud().proc())")
                         && !source.contains("\"Lv. \"")
                         && source.contains("centeredText(HudComponent.EVENT_TEXT")
                         && !source.contains("glyph(HudComponent.LEVEL_ICON")
@@ -152,14 +154,19 @@ public final class IceSmpHudRegressionSuite {
                 "supplementary detail frame must render only with a third metric");
 
         final String rendererSource = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
-        check(rendererSource.contains("RUNE_COMPACT_FONT")
-                        && rendererSource.contains("COMPACT_WALLET_Y_SHIFT = -22")
-                        && rendererSource.contains("compactWalletLayout")
+        check(rendererSource.contains("RUNE_PANEL_FONT")
+                        && rendererSource.contains("WALLET_PANEL_COMPACT_FONT")
+                        && rendererSource.contains("CURRENCY_COMPACT_FONT")
+                        && !rendererSource.contains("compactWalletLayout")
+                        && rendererSource.contains("if (index >= 6) break")
+                        && rendererSource.contains("-244 + index * 18")
                         && !rendererSource.contains("model.classHud().mechanicPrimary(), accent, 132"),
-                "DK rune icons must replace redundant counters and empty detail space must collapse");
+                "large DK rune icons must replace counters and compact wallet fonts must collapse empty detail space");
         final String deathKnight = read(
                 "src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java");
         check(deathKnight.contains("\"rune_wheel\", \"Rúnakör\", \"Rúnák\"")
+                        && deathKnight.contains("\"Fagyjel \" + marks")
+                        && !deathKnight.contains("\"Fagyjel \" + marks + \"/\" + maximum")
                         && !deathKnight.contains("\"rune_wheel\", \"Rúnakör\", \"Rúnák V\" + blood"),
                 "structured DK HUD must not duplicate per-rune counts as text");
     }
@@ -183,7 +190,7 @@ public final class IceSmpHudRegressionSuite {
                 "secondary metric bar must stay inside the right panel");
         check(IceSmpHudRenderer.TEXT_ADVANCE == 6,
                 "HUD text must retain the fixed six-pixel modular advance");
-        check(IceSmpHudRenderer.LEVEL_CENTER_X == -38
+        check(IceSmpHudRenderer.LEVEL_CENTER_X == -36
                         && IceSmpHudRenderer.RESOURCE_TEXT_X == IceSmpHudRenderer.RESOURCE_BAR_X + 8
                         && IceSmpHudRenderer.EVENT_TEXT_WIDTH == 186,
                 "level, resource label and event text must stay inside their art compartments");
@@ -277,7 +284,9 @@ public final class IceSmpHudRegressionSuite {
                         && manifest.contains("\"wallet_columns\": 2")
                         && manifest.contains("\"wallet_rows\": 2")
                         && manifest.contains("\"detail_metrics_conditional\": true")
-                        && manifest.contains("\"compact_wallet_y_shift\": -22")
+                        && manifest.contains("\"compact_wallet_anchor_y\": 178")
+                        && manifest.contains("\"compact_wallet_anchor_delta\": -23")
+                        && manifest.contains("\"rune_panel_size\": 18")
                         && manifest.contains("\"layout_color_payload_bits\": 13")
                         && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"vanilla_health_hidden\": false")
@@ -326,7 +335,9 @@ public final class IceSmpHudRegressionSuite {
                         && generator.contains("Inter-SemiBold.ttf")
                         && generator.contains("currency_lower")
                         && generator.contains("text_wallet_lower")
-                        && generator.contains("runes_compact"),
+                        && generator.contains("runes_panel")
+                        && generator.contains("wallet_panel_compact")
+                        && generator.contains("currency_compact"),
                 "v3 art, compact typography, conditional details and compact DK runes must remain generator-backed");
         check(Files.isRegularFile(Path.of(
                         "dev-assets/icesmp-hud/source/LICENSE_INTER")),
