@@ -15,6 +15,7 @@ public final class PrologueRegressionSuite {
         victoryRaceContracts();
         transactionAndAuthorityContracts();
         worldGateAndRehearsalContracts();
+        liveOpsControlContracts();
         foliaPackageContracts();
         System.out.println("Prologue regression suite passed.");
     }
@@ -171,6 +172,66 @@ public final class PrologueRegressionSuite {
         String runtime=source("src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java");
         check(runtime.contains("player.getScheduler().run")&&runtime.contains("getGlobalRegionScheduler().run"),
                 "runtime player aggregation is not region scheduled");
+    }
+
+    private static void liveOpsControlContracts() throws Exception {
+        String manager=source("src/main/java/hu/taliann/icesmp/prologue/PrologueManager.java");
+        // A telepítés pillanatában induló óra volt az eredeti hiba: inert alapállapot nélkül a
+        // timeline üres szerveren végigfuttatja az eszkalációt a nyitás előtt.
+        check(manager.contains("\"world-events.prologue.initial-state\",\"DORMANT\""),
+                "a Prologue alapállapota nem inert: a timeline a telepítéstől számolna");
+        check(between(manager,"private static PrologueState parseState","private static PrologueStage parseStage")
+                        .contains("return PrologueState.DORMANT"),
+                "olvashatatlan initial-state nem inert állapotra esik");
+
+        String timeline=source("src/main/java/hu/taliann/icesmp/prologue/PrologueTimelineController.java");
+        check(timeline.contains("state!=PrologueState.UNSTABLE&&state!=PrologueState.BREACHING")
+                        ||timeline.contains("state != PrologueState.UNSTABLE && state != PrologueState.BREACHING"),
+                "a timeline DORMANT állapotban is léptetne");
+
+        String arm=between(manager,"public boolean arm(","public void closeGate");
+        check(arm.contains("state!=PrologueState.DORMANT")&&arm.contains("return false"),
+                "az élesítés nem idempotens DORMANT-on kívül");
+        check(arm.contains("stateChangedAt=stageChangedAt=finalePhaseChangedAt=now"),
+                "az élesítés nem nullázza a stage-órát: a telepítés óta eltelt idő azonnal léptetne");
+
+        String close=between(manager,"public void closeGate(","public void rewind(");
+        check(close.contains("finaleVictory")&&close.contains("rewardsCommitted")
+                        &&close.contains("seasonOneStarted")&&close.contains("PrologueState.COMPLETED"),
+                "a gate close kiérdemelt győzelmet is visszavonhatna");
+
+        String rewind=between(manager,"public void rewind(","private void requireFinale");
+        for(String cleared:new String[]{"state=PrologueState.DORMANT","finaleId=null","participants.clear()",
+                "bossDefeated=finaleVictory=bossVictoryPending=false",
+                "gateUnlocked=rewardPlanCreated=rewardsCommitted=chronicleCommitted=monumentCommitted=false"}) {
+            check(rewind.contains(cleared),"a visszatekerés nem törli: "+cleared);
+        }
+
+        String runtime=source("src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java");
+        String reset=between(runtime,"public void resetForTesting(","public void");
+        int season=reset.indexOf("rollbackSeasonOne()");
+        int wind=reset.indexOf("manager.rewind(");
+        check(season>=0&&wind>season,
+                "a szezon-visszaállításnak a Prologue-rewind ELŐTT kell futnia, különben az overlay "
+                        +"Season 1 alatt kapcsolna vissza Season 0 tartalomkorlátra");
+        check(reset.indexOf("forgetExtraordinary(\"prologue-gate-open\")")>=0
+                        &&reset.indexOf("forgetPrologue(\"prologue-first-expedition\")")>=0,
+                "a reset nem törli a krónika/emlékmű egyszeri kulcsait");
+        String settlement=source("src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleSettlement.java");
+        check(settlement.contains("\"prologue-gate-open\"")&&settlement.contains("\"prologue-first-expedition\""),
+                "a reset és a settlement kulcsai elcsúsztak");
+
+        // Az advance a tartós checkpointon megy át, így győzelmet nem hamisíthat.
+        String command=source("src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java");
+        String advance=between(command,"private void advance(","private static PrologueFinalePhase nextPhase");
+        check(advance.contains("runtime.manager().checkpoint(")&&advance.contains("runtime.manager().setStage("),
+                "az advance megkerüli a tartós checkpoint/stage utat");
+        check(advance.contains("PrologueFinalePhase.COMPLETED")&&advance.contains("PrologueFinalePhase.ABORTED"),
+                "az advance kézzel zárhatná le vagy szakíthatná meg a finálét");
+        check(between(manager,"public void checkpoint(","public void recordParticipants")
+                        .contains("phase.ordinal()<finalePhase.ordinal()"),
+                "a checkpoint visszafelé is léptethető");
+        check(command.contains("reset")&&command.contains("--force"),"a reset nincs force flag mögé zárva");
     }
 
     private static String between(String source,String start,String end){

@@ -36,6 +36,7 @@ public final class SeasonMonumentManager implements PersistentStore {
     private final ConfigManager configManager;
     private final StatsManager statsManager;
     private final File storageFile;
+    private static final String PROLOGUE_LINE_PREFIX = "Prologue — Az Első Expedíció — Kárhozat Éjszakája — ";
     private final List<String> lines = new ArrayList<>();
     private final Map<String, Long> appliedGrants = new LinkedHashMap<>();
     private volatile int seasonIndex;
@@ -163,6 +164,25 @@ public final class SeasonMonumentManager implements PersistentStore {
         return true;
     }
 
+    /**
+     * Teszt-visszaállítás: a Prologue-sor és a hozzá tartozó grant törlése, hogy egy ismételt
+     * próba friss résztvevőszámmal rögzülhessen újra.
+     */
+    public synchronized boolean forgetPrologue(final String grantId) {
+        if (grantId == null || grantId.isBlank()) return false;
+        final Snapshot before = snapshot();
+        final boolean hadGrant = appliedGrants.remove(grantId) != null;
+        final boolean hadLine = lines.removeIf(line -> line.startsWith(PROLOGUE_LINE_PREFIX));
+        if (!hadGrant && !hadLine) return true;
+        lastProjectionPrologue = false;
+        if (!writeStateLocked()) {
+            restore(before);
+            return false;
+        }
+        refreshMonument(lastChampion == null ? Material.PURPLE_BANNER : bannerOf(lastChampion));
+        return true;
+    }
+
     /** Prologue is a historical pre-season entry, not a fake Season 0 league winner. */
     public synchronized boolean recordPrologueOnce(final String grantId, final int participantCount,
                                                     final long completedAt) {
@@ -172,7 +192,7 @@ public final class SeasonMonumentManager implements PersistentStore {
         final Snapshot before = snapshot();
         lastProjectionPrologue = true;
         lastChampion = null;
-        appendLine("Prologue — Az Első Expedíció — Kárhozat Éjszakája — "
+        appendLine(PROLOGUE_LINE_PREFIX
                 + participantCount + " résztvevő — " + DATE.format(Instant.ofEpochMilli(completedAt)));
         appliedGrants.put(grantId, System.currentTimeMillis());
         if (!writeStateLocked()) {

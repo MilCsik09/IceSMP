@@ -1,10 +1,12 @@
 package hu.taliann.icesmp.prologue;
 
 import hu.taliann.icesmp.commands.PrologueCommand;
+import hu.taliann.icesmp.managers.ChronicleManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.EventSpawnGuard;
 import hu.taliann.icesmp.managers.EventSpawnPointManager;
 import hu.taliann.icesmp.managers.MajorEventGate;
+import hu.taliann.icesmp.managers.SeasonMonumentManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -112,6 +114,14 @@ public final class PrologueRuntime implements Listener {
             // nincs leállítandó futó finálé
         }
         if (manager.seasonOneStarted()) seasonTransition.rollbackSeasonOne();
+        if (manager.chronicleCommitted()) {
+            final ChronicleManager chronicle = ChronicleManager.current();
+            if (chronicle != null) chronicle.forgetExtraordinary("prologue-gate-open");
+        }
+        if (manager.monumentCommitted()) {
+            final SeasonMonumentManager monument = SeasonMonumentManager.current();
+            if (monument != null) monument.forgetPrologue("prologue-first-expedition");
+        }
         manager.rewind(actor);
         reconcileSeasonGates();
     }

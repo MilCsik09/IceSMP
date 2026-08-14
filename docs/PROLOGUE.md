@@ -43,6 +43,14 @@ Az automatikus stage-advance configból kikapcsolható. Live módosításkor a
 persistált state és a config nem keverendő össze: a config default/policy, a
 `prologue.yml` pedig az aktuális világállapot.
 
+**A korszak alapból inert.** Friss telepítéskor az állapot `DORMANT`, amelyben a
+timeline nem léptet — így a plugin tetszőleges idővel a nyitás előtt felkerülhet
+a szerverre. Az órát a `/prologue start` indítja el, és a stage-időzítés attól a
+pillanattól számol. Enélkül az eszkaláció a telepítéstől ketyegne, és egy 8+ napos
+előkészítés után az első belépő játékost már `COLLAPSE` állapotú Kapu fogadná.
+Ugyanez az elv, mint a Season 1 indulási timestampjénél: nem a plugin indulása a
+korszak kezdete.
+
 ## 3. Season 0 progression- és content-policy
 
 A bundled Season 0 alapértékek:
@@ -274,6 +282,8 @@ Permission: `icesmp.admin.prologue`.
 
 ```text
 /prologue status
+/prologue start
+/prologue advance [fázis|stage]
 /prologue stage <SILENCE|CRACKS|LEAK|COLLAPSE>
 /prologue stability <0-100>
 /prologue breach start [MINOR|MAJOR|CRITICAL]
@@ -282,11 +292,50 @@ Permission: `icesmp.admin.prologue`.
 /prologue finale resume
 /prologue finale abort
 /prologue gate open --force
+/prologue gate close --force
+/prologue reset --force
 ```
+
+A `status` két sort ad: az első az állapot/stage/stabilitás/fázis, a második a
+transition commit-lánca (boss, victory, gate, reward-plan, rewards, chronicle,
+monument, season1), a résztvevőszám, a timeline élesítettsége és a
+`bossVictoryPending` hibaállapot.
+
+A `start` az éles indítás: `DORMANT` állapotból `UNSTABLE`-be lép, és **ekkor**
+nullázza a stage-órát. Ez a parancs teszi lehetővé, hogy a plugin jóval a nyitás
+előtt felkerüljön a szerverre anélkül, hogy az eszkaláció üres világon lefutna.
+Idempotens: már futó vagy lezárt Prologue-on nem csinál semmit.
+
+Az `advance` futó tartós finálé alatt fázist, egyébként eszkalációs stage-et
+léptet, kizárólag előre. Cél nélkül a következő lépésre megy. A tartós
+`checkpoint` úton halad, ezért **győzelmet nem hamisít**: a Kapu továbbra is csak
+tényleges `finaleVictory && bossDefeated` esetén nyílik meg. A lezárás és a
+megszakítás nem érhető el rajta — arra a `finale abort` való.
 
 A stage/stability parancs live-ops mutáció, ezért production használatnál
 rögzítsd az okot és az előtte/utána státuszt. A force-open különösen magas
 kockázatú override.
+
+### 14.1. Teszt-visszaállítás
+
+A `reset --force` a staging tesztkörhöz készült: leállítja a futó finálét,
+visszavonja a Season 1 átbillenést (nyugta, `season.yml`, `community-goals.yml`,
+majd manager-újratöltés), törli a krónika és az emlékmű egyszeri kulcsait, végül
+a tartós Prologue-állapotot `DORMANT`-ra tekeri. A sorrend kötött: a szezon-oldal
+a Prologue-rewind **előtt** rendeződik, különben a Season 0 content overlay
+Season 1 alatt kapcsolna vissza tartalomkorlátra.
+
+Utána a `start` indítja újra a kört, tehát a teljes életciklus világ-újragenerálás
+nélkül ismételhető.
+
+**Amit nem állít vissza:** a már kiosztott Founder- és finálé-achievementeket. A
+Founder-jogosultság a founder-korszakból ered, azaz bárki megkapja, aki Season 0
+alatt belép — nincs zárt lista, a visszavonás teljes profil-szkennelést kérne. A
+parancs ezt a hívónak is kiírja.
+
+A `gate close --force` csak az admin override-dal nyitott Kaput zárja vissza:
+elutasít, ha volt valódi győzelem, kiosztott jutalom, elindult Season 1, vagy a
+Prologue már lezárt.
 
 ## 15. Staging acceptance
 
@@ -305,7 +354,19 @@ A Prologue release előtt legalább az alábbi kézi próbák szükségesek:
 - [ ] PRO-11 — Nether portal policy a gate-en belül/kívül, admin bypass és Netherből visszaút;
 - [ ] PRO-12 — End továbbra is zárt;
 - [ ] PRO-13 — offline eligible participant következő joinkor pontosan egyszer kap prestige státuszt;
-- [ ] PRO-14 — 50 körüli online játékossal participant tracking/HUD/encounter terhelési próba.
+- [ ] PRO-14 — 50 körüli online játékossal participant tracking/HUD/encounter terhelési próba;
+- [ ] PRO-15 — friss telepítés után az állapot `DORMANT`, és a stage a konfigurált
+      SILENCE-időtartamot bőven meghaladó várakozás alatt sem lép tovább;
+- [ ] PRO-16 — `/prologue start` élesít, a stage-óra a parancs pillanatától számol,
+      ismételt hívás nem csinál semmit;
+- [ ] PRO-17 — `/prologue advance` finálé alatt fázist, egyébként stage-et léptet,
+      visszafelé nem enged, és `GATE_AWAKENING`-be lépve sem nyílik meg a Kapu
+      tényleges boss-győzelem nélkül;
+- [ ] PRO-18 — `/prologue gate open --force` után `gate close --force` visszazár, és
+      a stage/finálé újra indítható; valódi győzelem után a close elutasít;
+- [ ] PRO-19 — teljes production futás után `/prologue reset --force`, majd `start`:
+      a Season 1 visszaáll, a krónika és az emlékmű újra rögzíthető, a teljes kör
+      megismételhető világ-újragenerálás nélkül.
 
 Minden futásnál rögzítsd a pontos commit SHA-t, JAR SHA-256-ot, config snapshotot,
 konzollogot és a várt/kapott eredményt.
