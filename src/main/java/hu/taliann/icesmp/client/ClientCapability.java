@@ -27,7 +27,8 @@ public enum ClientCapability {
     PLAYER_ANIMATION_V1,
     PARTY_FRAME,
     BOSS_FRAME,
-    TERRITORY_OVERLAY;
+    TERRITORY_OVERLAY,
+    FACTION_SCREEN;
 
     /** A {@code client.features.} alatti kebab-case config-kulcs. */
     public String configKey() {

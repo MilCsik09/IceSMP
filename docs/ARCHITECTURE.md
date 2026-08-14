@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 842 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 844 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1227,8 +1227,8 @@ State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_ST
 `0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
 `0x25 RELIC_STATE`, `0x26 PARTY_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE`,
 `0x2A PROFESSION_STATE`, `0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE`,
-`0x2D BOSS_STATE`, `0x2E TERRITORY_STATE` (0x24/0x27 a FACTION/EVENT_STATE-nek
-fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
+`0x24 FACTION_STATE`, `0x2D BOSS_STATE`, `0x2E TERRITORY_STATE` (0x27 az
+EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
 intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
 `0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`, `0x45 SELECT_PROFESSION`,
 `0x46 SELECT_PROFESSION_SPEC`, `0x47 BROWSE_RECIPES`.
@@ -1463,6 +1463,22 @@ nem churn-öl. Zóna-geometria (poligon) szándékosan nem utazik — térkép-o
 fázis lenne, geometria-lapozó protokollal. A határátlépés-actionbar vanilla úton
 marad: múló értesítés, nem azonos felület a tartós overlay-jel (nincs dupla
 presentation).
+
+### Faction screen (FACTION_STATE)
+
+A `FACTION_STATE` a saját frakció display-projekciója a `FACTION_SCREEN` capability +
+`client.features.faction-screen` kapu mögött — az az adatkör, amit a /menu
+frakció-fejléce, a /faction king|treasury|raid status|war és az /events szezon-állása
+mutat: tagság (Menedék-vendégnél üres frakció-blokk), kincstár-egyenleg formázva +
+adókulcs, király + szavazat-tally (a menü-úttal azonos névfeloldással), szezon-állás
+mind a négy frakcióra (publikus broadcast-adat — vendégnek is utazik), az élő raid
+teljes státusza és a hadi-ablak. A PlayerProfile-internals (membership-history,
+receipts, váltás-számlálók) nem kerülnek a vezetékre. Frakció-mutáció (join/leave)
+szándékosan NEM protokoll-action: a csatlakozás forrás-kötött (a FactionSwitchRules
+csak a Menedék fővárosában validálja), egy kliens-csomag hely-authority bypass lenne
+— a váltás-folyamat a /faction és /menu validált útján marad. A perc-felbontású
+visszaszámlálók miatt a bájt-dedupe percenként legfeljebb egyszer enged ki friss
+state-et.
 
 ### Session-életciklus és védelem
 

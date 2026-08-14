@@ -11,6 +11,7 @@ import hu.taliann.icesmp.client.protocol.ActionResultPayload;
 import hu.taliann.icesmp.client.protocol.BossStatePayload;
 import hu.taliann.icesmp.client.protocol.BrowseRecipesPayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
+import hu.taliann.icesmp.client.protocol.FactionStatePayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.RecipePagePayload;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
@@ -69,6 +70,7 @@ public final class ClientProtocolRegressionSuite {
         partyPayload();
         bossPayload();
         territoryPayload();
+        factionPayload();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -514,6 +516,31 @@ public final class ClientProtocolRegressionSuite {
                 "TerritoryStatePayload roundtrip");
         check(zone.raidActive() && zone.raidDefenderPoints() == 30
                         && "CAPITAL".equals(zone.typeId()), "territory fields preserved");
+    }
+
+    private static void factionPayload() throws Exception {
+        final FactionStatePayload guest = new FactionStatePayload(false, "", "", "",
+                "", 0.0D, false, "", List.of(),
+                3, 12, 18, false,
+                List.of(new FactionStatePayload.SeasonRow("RED", "Perinfernicitas", 120),
+                        new FactionStatePayload.SeasonRow("BLUE", "Cryghaliris", 210)),
+                false, false, "", "", "", 0, 0, 0, 0, 0, 0, false, 45);
+        check(guest.equals(FactionStatePayload.decode(guest.encode())), "guest faction roundtrip");
+        check(!guest.hasFaction() && guest.seasonRows().size() == 2,
+                "guest still carries public season rows");
+
+        final FactionStatePayload member = new FactionStatePayload(true, "BLUE",
+                "Cryghaliris", "A Kék Jég Szövetsége",
+                "1 234,5 Zúzmara", 5.0D,
+                false, "Alva", List.of(new FactionStatePayload.Tally("Borzas", 3)),
+                3, 12, 18, true,
+                List.of(new FactionStatePayload.SeasonRow("BLUE", "Cryghaliris", 210)),
+                true, false, "Jéghatár", "Perinfernicitas", "Cryghaliris",
+                12, 30, 4, 5, 8, 9, true, 0);
+        check(member.equals(FactionStatePayload.decode(member.encode())),
+                "FactionStatePayload roundtrip");
+        check(member.raidActive() && member.raidRemainingMinutes() == 9
+                        && member.kingTally().get(0).votes() == 3, "faction fields preserved");
     }
 
     private static void malformedEnvelopeRejected() {

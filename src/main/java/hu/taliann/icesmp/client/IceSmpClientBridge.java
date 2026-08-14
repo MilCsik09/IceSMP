@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.client;
 
+import hu.taliann.icesmp.client.projection.ClientFactionProjector;
 import hu.taliann.icesmp.client.projection.ClientHudProjector;
 import hu.taliann.icesmp.client.projection.ClientPartyProjector;
 import hu.taliann.icesmp.client.projection.ClientProfessionProjector;
@@ -37,7 +38,13 @@ import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
+import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.FactionTreasuryManager;
+import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.managers.PartyManager;
+import hu.taliann.icesmp.managers.SeasonManager;
+import hu.taliann.icesmp.managers.WarWindowManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
@@ -111,6 +118,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, byte[]> lastPartyState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastBossState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastTerritoryState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastFactionState = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -144,6 +152,14 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     /** A core köti be; a zóna-lookup lock-mentes chunk-indexből fut a néző szálán. */
     private volatile TerritoryManager territoryManager;
     private volatile RaidManager raidManager;
+
+    /** A core köti be; a faction screen read-only, a join/leave a parancs-úton marad. */
+    private volatile FactionManager factionManager;
+    private volatile FactionTreasuryManager factionTreasuryManager;
+    private volatile CurrencyManager currencyManager;
+    private volatile KingManager kingManager;
+    private volatile SeasonManager seasonManager;
+    private volatile WarWindowManager warWindowManager;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -192,6 +208,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastPartyState.clear();
         lastBossState.clear();
         lastTerritoryState.clear();
+        lastFactionState.clear();
     }
 
     @Override
@@ -295,6 +312,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastPartyState.remove(player.getUniqueId());
         lastBossState.remove(player.getUniqueId());
         lastTerritoryState.remove(player.getUniqueId());
+        lastFactionState.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -536,6 +554,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastPartyState.remove(player.getUniqueId());
             lastBossState.remove(player.getUniqueId());
             lastTerritoryState.remove(player.getUniqueId());
+            lastFactionState.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -591,6 +610,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private boolean territoryOverlayActive(final ClientSession session) {
         return configManager.getBoolean("client.features.territory-overlay", false)
                 && session.capabilities().contains(ClientCapability.TERRITORY_OVERLAY);
+    }
+
+    private boolean factionScreenActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.faction-screen", false)
+                && session.capabilities().contains(ClientCapability.FACTION_SCREEN);
     }
 
     /** {@link HudManager.ClientHudRoute}: a vanilla világboss-bar suppression-kapuja. */
@@ -671,6 +695,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (territoryOverlayActive(session)) {
             pushTerritoryNow(player, session);
         }
+        if (factionScreenActive(session)) {
+            pushFactionNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -714,6 +741,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (territoryOverlayActive(session)) {
             pushTerritoryNow(player, session);
+        }
+        if (factionScreenActive(session)) {
+            pushFactionNow(player, session);
         }
     }
 
@@ -1441,6 +1471,46 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         this.raidManager = raids;
     }
 
+    /**
+     * FACTION_STATE a vanilla frakció-felületek adatkörével; player-szálon hívandó.
+     * A percben mért visszaszámlálók (raid/hadi-ablak) perc-felbontásúak, a
+     * bájt-dedupe így percenként legfeljebb egyszer enged ki friss state-et.
+     */
+    private void pushFactionNow(final Player player, final ClientSession session) {
+        final FactionManager factions = factionManager;
+        final FactionTreasuryManager treasury = factionTreasuryManager;
+        final CurrencyManager currency = currencyManager;
+        final KingManager kings = kingManager;
+        final SeasonManager seasons = seasonManager;
+        final RaidManager raids = raidManager;
+        final WarWindowManager warWindows = warWindowManager;
+        final TerritoryManager territories = territoryManager;
+        if (factions == null || treasury == null || currency == null || kings == null
+                || seasons == null || raids == null || warWindows == null || territories == null) {
+            return;
+        }
+        final byte[] payload = ClientFactionProjector.project(player, factions, treasury,
+                currency, kings, seasons, raids, warWindows, territories).encode();
+        final byte[] previous = lastFactionState.put(player.getUniqueId(), payload);
+        if (previous != null && Arrays.equals(previous, payload)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_FACTION_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, payload));
+        debug(() -> "FACTION_STATE sent to " + player.getName() + " (" + payload.length + " bytes)");
+    }
+
+    public void connectFaction(final FactionManager factions, final FactionTreasuryManager treasury,
+                               final CurrencyManager currency, final KingManager kings,
+                               final SeasonManager seasons, final WarWindowManager warWindows) {
+        this.factionManager = factions;
+        this.factionTreasuryManager = treasury;
+        this.currencyManager = currency;
+        this.kingManager = kings;
+        this.seasonManager = seasons;
+        this.warWindowManager = warWindows;
+    }
+
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
         this.hudSnapshotSource = source;
     }
@@ -1545,5 +1615,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastPartyState.remove(playerId);
         lastBossState.remove(playerId);
         lastTerritoryState.remove(playerId);
+        lastFactionState.remove(playerId);
     }
 }

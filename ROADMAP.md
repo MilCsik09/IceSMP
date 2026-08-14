@@ -304,9 +304,13 @@ fázisonként, a terv szerinti sorrendben:
   overlay-ként, az aktuális zónán futó raid állásával; a zóna-lookup a
   lock-mentes chunk-indexen fut a néző szálán. Zóna-geometria szándékosan
   nem utazik (térkép-overlay külön fázis lenne).
-- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..18),
-  Phase 7 zárás (faction screen), Phase 8 (FX/animáció +
-  attachment-renderer).
+- ✅ Faction screen (Phase 7 zárás): FACTION_STATE — tagság, kincstár +
+  adókulcs, király + tally, szezon-állás (vendégnek is, publikus adat),
+  élő raid-státusz, hadi-ablak; PlayerProfile-internals nélkül. Join/leave
+  szándékosan nem protokoll-action (a csatlakozás Menedék-főváros
+  forrás-kötött — hely-authority bypass lenne).
+- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..19),
+  Phase 8 (FX/animáció + attachment-renderer).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

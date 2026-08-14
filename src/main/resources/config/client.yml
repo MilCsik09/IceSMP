@@ -55,5 +55,6 @@ client:
     party-frame: false
     boss-frame: false
     territory-overlay: false
+    faction-screen: false
   # Debug-napló a hídhoz (drop-okok, kézfogások). Productionben maradjon false.
   debug: false
