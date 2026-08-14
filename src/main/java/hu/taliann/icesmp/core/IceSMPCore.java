@@ -2005,5 +2005,3 @@ public final class IceSMPCore {
         }
     }
 }
-
-

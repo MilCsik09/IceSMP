@@ -140,5 +140,3 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 ## PlayerProfile authority rule
 
 Do not add new persistent player PDC/YAML/map authorities. Add or extend a PlayerProfile section and update the authority matrix/guard. PlayerProfile HTTP remains read-only and disabled by default.
-
-

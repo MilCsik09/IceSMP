@@ -116,4 +116,3 @@ world-events:
       footprint-radius-blocks: 4
       max-height-delta-blocks: 4
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
-

@@ -339,5 +339,3 @@ Egy roadmap-tétel csak akkor zárható le, ha:
 7. a build, consistency, inventory és Markdown-linkellenőrzés zöld;
 8. a szükséges staging/runtime pontot nem CI alapján, hanem ténylegesen
    kipipálták az admin acceptance checklistben.
-
-

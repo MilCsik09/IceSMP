@@ -981,5 +981,3 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
-
-

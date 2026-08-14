@@ -393,4 +393,3 @@ a JAR-ban. Emiatt több rendszerről csak képességszintű következtetés adha
 A teljes 68 root parancs, 286 route, 79 root alias, 93 routing alias,
 44 permission, 13 550 configútvonal és 545 production komponens gépi
 referenciáját a `Repository Docs Inventory` workflow artifactja tartalmazza.
-

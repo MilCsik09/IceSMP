@@ -1266,5 +1266,3 @@ a fail-closed hibautakat, a negotiációt, a registry-életciklust, a sequence-m
 rate limitert. A Fabric-oldali ellenpárt (valódi 1.21.11 transport spike) a külön
 `IceSMP-Client` repo Phase 0 feladata bizonyítja; addig a protokoll-tartomány szándékosan
 1..1 és minden feature-kapu zárva.
-
-

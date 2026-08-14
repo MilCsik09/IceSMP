@@ -1044,4 +1044,3 @@ rituáléstruktúrákat és rejtett helyeket.
 
 A teljes pipálható csapatfolyamat:
 [release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).
-
