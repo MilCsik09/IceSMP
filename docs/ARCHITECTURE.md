@@ -1347,9 +1347,10 @@ Player-objektumot nem érint. Csak megjelenítési tények utaznak (viselő-UUID
 + név, rezonancia-jelzés); nevet a szerver nem küld, a kliens a saját világában a
 UUID-ból oldja fel az entitást; alvó viselő nem kerül a vezetékre. A lista
 determinisztikusan rendezett és a protokoll-limiten cap-elt, bájt-dedupe-pal csak
-változásra megy ki. Ez a kézbesítési infrastruktúra — a tényleges
-attachment-renderer/FX a Phase 8 dolga, a resonance/awakening tartalmi élesítésével
-együtt.
+változásra megy ki. A kliensoldali renderer (Phase 8a) a viselők fölé világtérbeli,
+kamera felé forduló relikvia-jelvényt rajzol (rezonáló viselőnél lüktető
+kiemeléssel); láthatatlan/lopakodó viselőre nem rajzol. A resonance/awakening
+tartalmi FX-e a 8b FX-esemény csatornával együtt élesedik.
 
 ### Natív talentek (TALENT_STATE, PURCHASE_TALENT)
 
