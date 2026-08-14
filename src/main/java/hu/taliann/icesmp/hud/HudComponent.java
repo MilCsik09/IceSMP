@@ -29,7 +29,8 @@ public enum HudComponent {
 
     private static final List<HudComponent> EDITABLE = Arrays.stream(values())
             .filter(HudComponent::rendered).toList();
-    private static final List<HudComponent> TARGETS = Arrays.stream(values())\n            .filter(component -> component == GLOBAL || component.rendered()).toList();
+    private static final List<HudComponent> TARGETS = Arrays.stream(values())
+            .filter(component -> component == GLOBAL || component.rendered()).toList();
 
     private final String id;
     private final boolean rendered;
