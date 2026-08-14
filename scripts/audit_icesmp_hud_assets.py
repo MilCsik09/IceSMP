@@ -109,10 +109,10 @@ def expected_size(path: Path) -> tuple[int, int] | None:
         "wallet-strip.png": (240, 42),
         "detail-strip.png": (240, 22),
         "text-atlas.png": (320, 384),
-        "segment-track.png": (12, 5),
-        "segment-fill.png": (12, 5),
-        "segment-fill-warm.png": (12, 5),
-        "segment-fill-gold.png": (12, 5),
+        "segment-track.png": (12, 3),
+        "segment-fill.png": (12, 3),
+        "segment-fill-warm.png": (12, 3),
+        "segment-fill-gold.png": (12, 3),
         "metric-track.png": (7, 5),
         "metric-fill.png": (7, 5),
         "metric-fill-warm.png": (7, 5),
@@ -185,6 +185,9 @@ def inspect(path: Path) -> Finding:
     if hard_alpha and not alpha_values.issubset({0, 255}):
         verdict = "FAIL"
         notes.append("progress mask has soft alpha")
+    if path.name == "text-atlas.png" and not alpha_values.issubset({0, 1, 255}):
+        verdict = "FAIL"
+        notes.append("text atlas must use crisp logical pixels plus the width marker")
     alpha_text = ("none" if len(alpha_values) == 1 and 255 in alpha_values
                   else f"{min(alpha_values)}..{max(alpha_values)}/{len(alpha_values)}")
     return Finding(relative, f"{image.width}x{image.height}", image.mode, alpha_text,
@@ -299,7 +302,7 @@ def render_report(findings: list[Finding], mechanics: list[str], report: Path) -
     lines += ["", "## Statikus runtime-audit", "",
               "| Terület | Ellenőrzött invariáns | Eredmény |",
               "|---|---|---:|",
-              "| Wallet | A primary valuta nulla egyenleggel is megjelenik; a többi csak pozitív egyenleggel; immutable snapshot, négy fix slot. | PASS |",
+              "| Wallet | Mind a négy kanonikus valuta fix 2×2 slotban, nulla egyenleggel is megjelenik; immutable snapshot. | PASS |",
               "| Class-/specváltás | A render minden tickben az új Profile v2 + transient class runtime snapshotból épül; nincs külön tartós HUD/class authority. | PASS |",
               "| Vendégkeret | Külön külső Menedék-héj, a kanonikus frakciókerettel azonos belső alpha-geometria és rögzített glyph-cella. | PASS |",
               "| HUD/fallback | First-party pack-ready HUD → Paper sidebar / Folia compact bossbar fallback; egyszerre csak egy class HUD. | PASS |",

@@ -50,12 +50,28 @@ val validateIceSmpHudPackage by tasks.registering {
         require((manifest["text_advance"] as Number).toInt() == 6) {
             "First-party HUD must retain the compact six-pixel text grid"
         }
-        require(manifest["text_font"] == "Pixelify Sans") {
+        require(manifest["text_font"] == "Monocraft") {
             "First-party HUD must retain the reviewed pixel-display typeface"
         }
         require((manifest["resource_segment_advance"] as Number).toInt() == 13
             && (manifest["metric_segment_advance"] as Number).toInt() == 8) {
             "HUD bars must retain their full-width and half-panel modular pitches"
+        }
+        val layoutY = manifest["layout_y"] as? Map<*, *>
+            ?: error("First-party HUD layout anchors are missing")
+        val expectedLayoutY = mapOf(
+            "header" to 42, "subheader" to 55,
+            "resource_text" to 67, "resource_bar" to 70,
+            "mechanic_icon" to 86, "mechanic_text" to 94,
+            "metric_bar" to 108, "runes" to 130,
+            "charge" to 137, "state" to 143,
+            "event_text" to 165, "wallet_text" to 217,
+            "wallet_lower_text" to 237
+        )
+        expectedLayoutY.forEach { (name, value) ->
+            require((layoutY[name] as? Number)?.toInt() == value) {
+                "HUD layout anchor drifted from its reviewed panel: $name"
+            }
         }
         require((manifest["wallet_slots"] as Number).toInt() == 4) {
             "First-party HUD must expose four fixed wallet slots"
@@ -106,6 +122,14 @@ val validateIceSmpHudPackage by tasks.registering {
                 ?: error("Unreadable HUD metric segment: $name")
             require(image.width == 7 && image.height == 5) {
                 "HUD half-panel metric segments must stay 7x5: $name"
+            }
+        }
+        listOf("segment-track.png", "segment-fill.png", "segment-fill-warm.png",
+            "segment-fill-gold.png").forEach { name ->
+            val image = ImageIO.read(textures.resolve(name))
+                ?: error("Unreadable HUD resource segment: $name")
+            require(image.width == 12 && image.height == 3) {
+                "HUD resource segments must stay 12x3 to share the thin channel with text: $name"
             }
         }
         val mechanics = manifest["mechanics"] as? List<*>

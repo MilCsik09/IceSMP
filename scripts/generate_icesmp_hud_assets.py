@@ -26,7 +26,7 @@ FRAME_ATLAS_SOURCE = HUD_SOURCE / "frames-v3.png"
 ITEM_SOURCE = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "item"
 MECHANIC_CORE_SOURCE = HUD_SOURCE / "mechanics-core-v3.png"
 MECHANIC_SPEC_SOURCE = HUD_SOURCE / "mechanics-spec-v3.png"
-TEXT_FONT_SOURCE = HUD_SOURCE / "PixelifySans.ttf"
+TEXT_FONT_SOURCE = HUD_SOURCE / "Monocraft.otf"
 ASSETS = ROOT / "resource-pack" / "assets" / "icesmp_hud"
 TEXTURES = ASSETS / "textures" / "hud"
 FONTS = ASSETS / "font"
@@ -44,6 +44,30 @@ TEXT_LOGICAL_HEIGHT = 12
 TEXT_OVERSAMPLE = 4
 HUD_LAYOUT_SCALES = (0.75, 0.90, 1.00, 1.15, 1.25, 1.40, 1.60, 1.80,
                      2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25, 3.50)
+
+# Reviewed baseline anchors in the same HUD shader coordinate system as bitmap ascent.
+# Keeping them together prevents independent providers from drifting into adjacent panels.
+HUD_Y = {
+    "frame": 18,
+    "class_icon": 38,
+    "header": 42,
+    "subheader": 55,
+    "resource_text": 67,
+    "resource_bar": 70,
+    "mechanic_icon": 86,
+    "mechanic_text": 94,
+    "metric_bar": 108,
+    "runes": 130,
+    "charge": 137,
+    "state": 143,
+    "event_icon": 155,
+    "event_text": 165,
+    "detail_text": 190,
+    "wallet_icon": 210,
+    "wallet_text": 217,
+    "wallet_lower_icon": 230,
+    "wallet_lower_text": 237,
+}
 
 THEMES = ("guest", "red", "blue", "neutral", "dark")
 CLASSES = ("warrior", "evoker", "archer", "shaman", "monk", "paladin",
@@ -294,18 +318,18 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
     padded = unique + padding
     cell_width = TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE
     cell_height = TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE
-    atlas = Image.new("RGBA", (columns * cell_width, rows * cell_height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(atlas)
+    logical_atlas = Image.new(
+        "RGBA", (columns * TEXT_LOGICAL_WIDTH, rows * TEXT_LOGICAL_HEIGHT), (0, 0, 0, 0))
     if not TEXT_FONT_SOURCE.is_file():
         raise FileNotFoundError(f"Missing reproducible IceSMP HUD text font: {TEXT_FONT_SOURCE}")
-    # Pixelify Sans keeps the HUD legible at Minecraft scale without making the
-    # typography look like a generic desktop UI. The fixed atlas cell remains the
-    # authoritative advance, so every localized glyph stays perfectly modular.
-    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=8 * TEXT_OVERSAMPLE)
+    # Monocraft is first rasterized at 4x, collapsed to a hard logical pixel mask,
+    # then enlarged with nearest-neighbour sampling. Minecraft therefore receives
+    # stable 1px stems instead of the faint subpixel coverage seen in the former atlas.
+    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=9 * TEXT_OVERSAMPLE)
     for index, char in enumerate(padded):
         if index < len(unique):
-            x = (index % columns) * cell_width
-            y = (index // columns) * cell_height
+            x = (index % columns) * TEXT_LOGICAL_WIDTH
+            y = (index // columns) * TEXT_LOGICAL_HEIGHT
             box = font.getbbox(char)
             width = max(0, box[2] - box[0])
             height = max(0, box[3] - box[1])
@@ -313,22 +337,30 @@ def generate_text_atlas() -> tuple[list[str], int, int]:
                 glyph = Image.new("L", (width, height), 0)
                 glyph_draw = ImageDraw.Draw(glyph)
                 glyph_draw.text((-box[0], -box[1]), char, font=font, fill=255)
-                maximum_width = cell_width - 2
-                maximum_height = cell_height - 4
+                maximum_width = cell_width
+                maximum_height = (TEXT_LOGICAL_HEIGHT - 2) * TEXT_OVERSAMPLE
                 scale = min(1.0, maximum_width / width, maximum_height / height)
                 if scale < 1.0:
                     glyph = glyph.resize((max(1, round(width * scale)),
                                           max(1, round(height * scale))),
                                          Image.Resampling.LANCZOS)
-                # Preserve the square pixel-font silhouette while strengthening faint edge
-                # coverage. Hungarian double accents remain inside the same fixed cell.
-                glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.30)))
+                logical_width = min(TEXT_LOGICAL_WIDTH,
+                                    max(1, round(glyph.width / TEXT_OVERSAMPLE)))
+                logical_height = min(TEXT_LOGICAL_HEIGHT - 2,
+                                     max(1, round(glyph.height / TEXT_OVERSAMPLE)))
+                glyph = glyph.resize((logical_width, logical_height), Image.Resampling.LANCZOS)
+                glyph = glyph.point(lambda alpha: 255 if alpha >= 72 else 0)
                 colored = Image.new("RGBA", glyph.size, (239, 247, 252, 255))
                 colored.putalpha(glyph)
-                atlas.alpha_composite(colored,
-                                      (x + (cell_width - glyph.width) // 2,
-                                       y + (cell_height - glyph.height) // 2))
-            atlas.putpixel((x + cell_width - 1, y + cell_height - 1), (255, 255, 255, 1))
+                logical_atlas.alpha_composite(
+                    colored,
+                    (x + (TEXT_LOGICAL_WIDTH - glyph.width) // 2,
+                     y + (TEXT_LOGICAL_HEIGHT - glyph.height) // 2))
+            logical_atlas.putpixel(
+                (x + TEXT_LOGICAL_WIDTH - 1, y + TEXT_LOGICAL_HEIGHT - 1),
+                (255, 255, 255, 1))
+    atlas = logical_atlas.resize(
+        (columns * cell_width, rows * cell_height), Image.Resampling.NEAREST)
     TEXTURES.mkdir(parents=True, exist_ok=True)
     save_png(atlas, TEXTURES / "text-atlas.png")
     return ([padded[row * columns:(row + 1) * columns] for row in range(rows)],
@@ -344,7 +376,7 @@ def generate_segments() -> None:
         "segment-fill-gold.png": ((126, 88, 28, 255), (250, 219, 119, 255)),
     }
     for name, (base, highlight) in colors.items():
-        image = Image.new("RGBA", (12, 5), base)
+        image = Image.new("RGBA", (12, 3), base)
         draw = ImageDraw.Draw(image)
         draw.line((1, 0, 10, 0), fill=highlight)
         draw.point((0, 0), fill=(0, 0, 0, 0))
@@ -516,6 +548,87 @@ def generate_contact_sheet() -> None:
     save_png(sheet, target)
 
 
+def generate_layout_preview(text_rows: list[str]) -> None:
+    """Render the reviewed logical grid without requiring a Minecraft client."""
+    frame_y = HUD_Y["frame"]
+    canvas = Image.new("RGBA", (HUD_FRAME_WIDTH, 225), (8, 11, 16, 255))
+    canvas.alpha_composite(Image.open(TEXTURES / "frame-hud-red.png").convert("RGBA"), (0, 0))
+    canvas.alpha_composite(Image.open(TEXTURES / "detail-strip.png").convert("RGBA"),
+                           (0, 178 - frame_y))
+    canvas.alpha_composite(Image.open(TEXTURES / "wallet-strip.png").convert("RGBA"),
+                           (0, 201 - frame_y))
+
+    atlas = Image.open(TEXTURES / "text-atlas.png").convert("RGBA")
+    glyphs: dict[str, Image.Image] = {}
+    for row, characters in enumerate(text_rows):
+        for column, char in enumerate(characters):
+            glyphs[char] = atlas.crop((
+                column * TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
+                row * TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE,
+                (column + 1) * TEXT_LOGICAL_WIDTH * TEXT_OVERSAMPLE,
+                (row + 1) * TEXT_LOGICAL_HEIGHT * TEXT_OVERSAMPLE,
+            )).resize((TEXT_LOGICAL_WIDTH, TEXT_LOGICAL_HEIGHT), Image.Resampling.NEAREST)
+
+    def paste_text(value: str, x: int, anchor_y: int, color: tuple[int, int, int]) -> None:
+        for index, char in enumerate(value):
+            glyph = glyphs.get(char, glyphs.get("?"))
+            if glyph is None:
+                continue
+            colored = Image.new("RGBA", glyph.size, (*color, 255))
+            colored.putalpha(glyph.getchannel("A"))
+            canvas.alpha_composite(
+                colored, (x + index * (TEXT_LOGICAL_WIDTH + 1), anchor_y - 9 - frame_y))
+
+    def paste_sprite(name: str, x: int, anchor_y: int, size: int) -> None:
+        sprite = Image.open(TEXTURES / name).convert("RGBA").resize(
+            (size, size), Image.Resampling.LANCZOS)
+        canvas.alpha_composite(sprite, (x, anchor_y - frame_y))
+
+    def paste_bar(prefix: str, x: int, anchor_y: int, advance: int,
+                  active: int, fill_suffix: str = "fill") -> None:
+        track = Image.open(TEXTURES / f"{prefix}-track.png").convert("RGBA")
+        fill = Image.open(TEXTURES / f"{prefix}-{fill_suffix}.png").convert("RGBA")
+        for index in range(12):
+            canvas.alpha_composite(track, (x + index * advance, anchor_y - frame_y))
+            if index < active:
+                canvas.alpha_composite(fill, (x + index * advance, anchor_y - frame_y))
+
+    paste_sprite("class-warrior.png", 18, HUD_Y["class_icon"], 36)
+    paste_sprite("icon-level.png", 166, HUD_Y["header"], 15)
+    paste_sprite("icon-event.png", 20, HUD_Y["event_icon"], 15)
+    paste_sprite("mechanic-warrior-battle_tempo-active.png", 20, HUD_Y["mechanic_icon"], 14)
+    paste_sprite("mechanic-warrior-guard-active.png", 141, HUD_Y["mechanic_icon"], 14)
+    for index in range(5):
+        paste_sprite("charge-ready.png", 20 + index * 12, HUD_Y["charge"], 10)
+    paste_text("Harcos", 64, HUD_Y["header"], (119, 221, 242))
+    paste_text("Berserker • Vörös Rend", 64, HUD_Y["subheader"], (199, 212, 234))
+    paste_text("Lv. 48", 184, HUD_Y["header"], (234, 247, 255))
+    paste_text("Düh 82/100", 52, HUD_Y["resource_text"], (199, 212, 234))
+    paste_text("Fő 72", 37, HUD_Y["mechanic_text"], (119, 221, 242))
+    paste_text("Spec 43", 158, HUD_Y["mechanic_text"], (199, 212, 234))
+    paste_text("Harc • Aktív", 141, HUD_Y["state"], (199, 212, 234))
+    paste_text("ESEMÉNY Vérhold 04:12", 40, HUD_Y["event_text"], (240, 216, 141))
+    paste_bar("segment", 52, HUD_Y["resource_bar"], 13, 10)
+    paste_bar("metric", 20, HUD_Y["metric_bar"], 8, 9)
+    paste_bar("metric", 141, HUD_Y["metric_bar"], 8, 5, "fill-gold")
+
+    wallet = (("currency-neutral.png", "Creutzér 12.8k", 8, HUD_Y["wallet_icon"],
+               HUD_Y["wallet_text"], (240, 216, 141)),
+              ("currency-red.png", "Parals 840", 128, HUD_Y["wallet_icon"],
+               HUD_Y["wallet_text"], (199, 212, 234)),
+              ("currency-blue.png", "Hópihér 319", 8, HUD_Y["wallet_lower_icon"],
+               HUD_Y["wallet_lower_text"], (199, 212, 234)),
+              ("currency-dark.png", "Csontveret 64", 128, HUD_Y["wallet_lower_icon"],
+               HUD_Y["wallet_lower_text"], (199, 212, 234)))
+    for icon, label, x, icon_y, text_y, color in wallet:
+        paste_sprite(icon, x, icon_y, 15)
+        paste_text(label, x + 17, text_y, color)
+
+    target = ROOT / "build" / "reports" / "icesmp-hud" / "layout-preview.png"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    save_png(canvas.resize((720, 675), Image.Resampling.NEAREST), target)
+
+
 def main() -> None:
     validate_static_icon_sources()
     generate_frames()
@@ -534,75 +647,75 @@ def main() -> None:
     write_font("space", [{"type": "space", "advances": spaces}])
 
     write_font("panel", [
-        provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, 18, HUD_FRAME_HEIGHT)
+        provider(f"frame-hud-{theme}.png", chr(0xE100 + index), 4, HUD_Y["frame"], HUD_FRAME_HEIGHT)
         for index, theme in enumerate(THEMES)
     ])
     write_font("wallet_panel", [provider("wallet-strip.png", chr(0xE105), 4, 201, 42)])
     write_font("detail_panel", [provider("detail-strip.png", chr(0xE106), 4, 178, 22)])
     write_font("class_icon", [
-        provider(f"class-{class_id}.png", chr(0xE110 + index), 8, 38, 36)
+        provider(f"class-{class_id}.png", chr(0xE110 + index), 8, HUD_Y["class_icon"], 36)
         for index, class_id in enumerate(CLASS_GLYPHS)
     ])
     write_font("utility", [
         provider("icon-money.png", chr(0xE130), 8, 55, 15),
-        provider("icon-event.png", chr(0xE131), 8, 155, 15),
-        provider("icon-level.png", chr(0xE132), 8, 42, 15),
+        provider("icon-event.png", chr(0xE131), 8, HUD_Y["event_icon"], 15),
+        provider("icon-level.png", chr(0xE132), 8, HUD_Y["header"], 15),
     ])
     write_font("runes", [
         provider(f"rune-{kind}-{state}.png", chr(0xE140 + kind_index * 4 + state_index),
-                 8, 112, 18)
+                 8, HUD_Y["runes"], 18)
         for kind_index, kind in enumerate(RUNE_KINDS)
         for state_index, state in enumerate(RUNE_STATES)
     ])
     write_font("currency", [
-        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, 210, 15)
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, HUD_Y["wallet_icon"], 15)
         for index, currency in enumerate(("red", "blue", "neutral", "dark"))
     ])
     write_font("currency_lower", [
-        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, 230, 15)
+        provider(f"currency-{currency}.png", chr(0xE160 + index), 8, HUD_Y["wallet_lower_icon"], 15)
         for index, currency in enumerate(("red", "blue", "neutral", "dark"))
     ])
     write_font("charges", [
-        provider("charge-ready.png", chr(0xE170), 8, 128, 10),
-        provider("charge-spent.png", chr(0xE171), 8, 128, 10),
+        provider("charge-ready.png", chr(0xE170), 8, HUD_Y["charge"], 10),
+        provider("charge-spent.png", chr(0xE171), 8, HUD_Y["charge"], 10),
     ])
     mechanic_providers = [
         provider(
             f"mechanic-{class_id}-{mechanic_id}-{variant}.png",
             chr(0xE200 + mechanic_index * len(MECHANIC_VARIANTS) + variant_index),
-            8, 79, 14,
+            8, HUD_Y["mechanic_icon"], 14,
         )
         for mechanic_index, (class_id, mechanic_id) in enumerate(MECHANICS)
         for variant_index, variant in enumerate(MECHANIC_VARIANTS)
     ]
     write_font("mechanic_icons", mechanic_providers)
     write_font("mechanic_slots", [
-        {**entry, "ascent": encoded_ascent(8, 128), "height": 10}
+        {**entry, "ascent": encoded_ascent(8, HUD_Y["charge"]), "height": 10}
         for entry in mechanic_providers
     ])
     write_font("resource_segments", [
-        provider("segment-track.png", chr(0xE180), 5, 70, 5),
-        provider("segment-fill.png", chr(0xE181), 6, 70, 5),
-        provider("segment-fill-warm.png", chr(0xE182), 6, 70, 5),
-        provider("segment-fill-gold.png", chr(0xE183), 6, 70, 5),
+        provider("segment-track.png", chr(0xE180), 5, HUD_Y["resource_bar"], 3),
+        provider("segment-fill.png", chr(0xE181), 6, HUD_Y["resource_bar"], 3),
+        provider("segment-fill-warm.png", chr(0xE182), 6, HUD_Y["resource_bar"], 3),
+        provider("segment-fill-gold.png", chr(0xE183), 6, HUD_Y["resource_bar"], 3),
     ])
     write_font("metric_segments", [
-        provider("metric-track.png", chr(0xE180), 5, 108, 5),
-        provider("metric-fill.png", chr(0xE181), 6, 108, 5),
-        provider("metric-fill-warm.png", chr(0xE182), 6, 108, 5),
-        provider("metric-fill-gold.png", chr(0xE183), 6, 108, 5),
+        provider("metric-track.png", chr(0xE180), 5, HUD_Y["metric_bar"], 5),
+        provider("metric-fill.png", chr(0xE181), 6, HUD_Y["metric_bar"], 5),
+        provider("metric-fill-warm.png", chr(0xE182), 6, HUD_Y["metric_bar"], 5),
+        provider("metric-fill-gold.png", chr(0xE183), 6, HUD_Y["metric_bar"], 5),
     ])
 
     for name, y in {
-        "text_header": 42,
-        "text_subheader": 59,
-        "text_resource": 72,
-        "text_mechanic": 88,
-        "text_state": 134,
-        "text_event": 165,
-        "text_detail": 190,
-        "text_wallet": 213,
-        "text_wallet_lower": 233,
+        "text_header": HUD_Y["header"],
+        "text_subheader": HUD_Y["subheader"],
+        "text_resource": HUD_Y["resource_text"],
+        "text_mechanic": HUD_Y["mechanic_text"],
+        "text_state": HUD_Y["state"],
+        "text_event": HUD_Y["event_text"],
+        "text_detail": HUD_Y["detail_text"],
+        "text_wallet": HUD_Y["wallet_text"],
+        "text_wallet_lower": HUD_Y["wallet_lower_text"],
     }.items():
         write_font(name, [{
             "type": "bitmap",
@@ -619,7 +732,8 @@ def main() -> None:
         "space_max": SPACE_MAX,
         "text_advance": TEXT_LOGICAL_WIDTH + 1,
         "text_oversample": TEXT_OVERSAMPLE,
-        "text_font": "Pixelify Sans",
+        "text_font": "Monocraft",
+        "layout_y": HUD_Y,
         "maximum_bitmap_glyph_width": 256,
         "themes": list(THEMES),
         "classes": list(CLASSES),
@@ -640,6 +754,7 @@ def main() -> None:
     (ASSETS / "hud-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     generate_contact_sheet()
+    generate_layout_preview(text_rows)
 
 
 if __name__ == "__main__":

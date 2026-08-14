@@ -27,6 +27,10 @@ public final class IceSmpHudRenderer {
     static final int SEGMENTS = 12;
     static final int RESOURCE_SEGMENT_ADVANCE = 13;
     static final int METRIC_SEGMENT_ADVANCE = 8;
+    static final int WALLET_LEFT_X = -246;
+    static final int WALLET_COLUMN_ADVANCE = 120;
+    static final int WALLET_TEXT_OFFSET = 17;
+    static final int WALLET_TEXT_WIDTH = 90;
 
     private static final Key SPACE_FONT = Key.key("icesmp_hud", "space");
     private static final Key PANEL_FONT = Key.key("icesmp_hud", "panel");
@@ -266,15 +270,15 @@ public final class IceSmpHudRenderer {
             final hu.taliann.icesmp.managers.HudManager.HudCurrency currency =
                     model.currencies().get(index);
             final boolean lower = index >= 2;
-            final int x = -234 + (index % 2) * 116;
+            final int x = WALLET_LEFT_X + (index % 2) * WALLET_COLUMN_ADVANCE;
             output.append(glyph(HudComponent.WALLET, x,
                     lower ? CURRENCY_LOWER_FONT : CURRENCY_FONT,
                     currencyGlyph(currency.id()), 16, null, layout, highlighted));
-            output.append(text(HudComponent.WALLET, x + 17,
+            output.append(text(HudComponent.WALLET, x + WALLET_TEXT_OFFSET,
                     lower ? WALLET_TEXT_LOWER_FONT : WALLET_TEXT_FONT,
                     walletLabel(currency) + " " + currency.amount(),
                     currency.primary() ? color("F0D88D", 0xF0D88D) : color("C7D4EA", 0xC7D4EA),
-                    index % 2 == 0 ? 82 : 84,
+                    WALLET_TEXT_WIDTH,
                     layout, highlighted));
         }
     }

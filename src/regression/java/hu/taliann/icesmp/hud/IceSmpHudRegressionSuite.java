@@ -107,6 +107,13 @@ public final class IceSmpHudRegressionSuite {
                 "metric bars must exactly fill one modular half-panel");
         check(IceSmpHudRenderer.TEXT_ADVANCE == 6,
                 "HUD text must retain the fixed six-pixel modular advance");
+        check(IceSmpHudRenderer.WALLET_LEFT_X + IceSmpHudRenderer.WALLET_TEXT_OFFSET
+                        + IceSmpHudRenderer.WALLET_TEXT_WIDTH <= -139,
+                "left wallet label must stop before the centre divider");
+        check(IceSmpHudRenderer.WALLET_LEFT_X + IceSmpHudRenderer.WALLET_COLUMN_ADVANCE
+                        + IceSmpHudRenderer.WALLET_TEXT_OFFSET
+                        + IceSmpHudRenderer.WALLET_TEXT_WIDTH <= -19,
+                "right wallet label must retain the frame-edge margin");
     }
 
     private static void packReadinessAndFallbackAreSafe() throws Exception {
@@ -179,9 +186,10 @@ public final class IceSmpHudRegressionSuite {
         final String config = read("src/main/resources/config/general.yml");
         check(manifest.contains("\"fixed_segment_count\": 12")
                         && manifest.contains("\"text_advance\": 6")
-                        && manifest.contains("\"text_font\": \"Pixelify Sans\"")
+                        && manifest.contains("\"text_font\": \"Monocraft\"")
                         && manifest.contains("\"resource_segment_advance\": 13")
                         && manifest.contains("\"metric_segment_advance\": 8")
+                        && manifest.contains("\"layout_y\"")
                         && manifest.contains("\"wallet_slots\": 4")
                         && manifest.contains("\"wallet_columns\": 2")
                         && manifest.contains("\"wallet_rows\": 2")
@@ -230,13 +238,13 @@ public final class IceSmpHudRegressionSuite {
                         && generator.contains("HUD_FRAME_WIDTH = 240")
                         && generator.contains("TEXT_LOGICAL_WIDTH = 5")
                         && generator.contains("TEXT_OVERSAMPLE = 4")
-                        && generator.contains("PixelifySans.ttf")
+                        && generator.contains("Monocraft.otf")
                         && generator.contains("currency_lower")
                         && generator.contains("text_wallet_lower"),
                 "v3 art, compact typography and the two-row wallet must remain generator-backed");
         check(Files.isRegularFile(Path.of(
-                        "dev-assets/icesmp-hud/source/LICENSE_PIXELIFY_SANS")),
-                "Pixelify Sans must retain its bundled OFL license");
+                        "dev-assets/icesmp-hud/source/LICENSE_MONOCRAFT")),
+                "Monocraft must retain its bundled OFL license");
         for (final String largeGlyph : List.of("frame-hud-guest.png", "frame-hud-red.png",
                 "frame-hud-blue.png", "frame-hud-neutral.png", "frame-hud-dark.png",
                 "wallet-strip.png", "detail-strip.png")) {
@@ -248,7 +256,7 @@ public final class IceSmpHudRegressionSuite {
         final var textAtlas = ImageIO.read(Path.of(
                 "resource-pack/assets/icesmp_hud/textures/hud/text-atlas.png").toFile());
         check(textAtlas != null && textAtlas.getWidth() == 320 && textAtlas.getHeight() == 384,
-                "HUD text atlas must retain the 4x antialiased Hungarian glyph source");
+                "HUD text atlas must retain the 4x crisp Hungarian glyph source");
         for (final String icon : List.of("class-wizard.png", "class-none.png", "rune-blood-ready.png",
                 "charge-ready.png", "currency-neutral.png",
                 "mechanic-warrior-battle_tempo-active.png",
