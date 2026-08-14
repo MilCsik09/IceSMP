@@ -127,7 +127,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Validate first-party resource-pack contract
-        run: ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest resourcePackRegressionTest --no-daemon --console=plain
+        run: ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest playerProfileHudLayoutRegressionTest resourcePackRegressionTest --no-daemon --console=plain
 
       - name: Clean build
         shell: bash
