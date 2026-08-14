@@ -89,8 +89,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install repository consistency dependency
-        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+      - name: Install repository build dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          'PyYAML>=6.0,<7.0'
+          'Pillow==11.3.0'
 
       - name: Validate PlayerProfile authority contract
         shell: bash
