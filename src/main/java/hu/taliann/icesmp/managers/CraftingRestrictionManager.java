@@ -53,7 +53,7 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
         notifyCooldownMillis = Math.max(0L, configManager.getLong("crafting-restrictions.notify-cooldown-seconds", 3L)) * 1000L;
 
         if (!enabled) {
-            plugin.getLogger().info("Crafting restrictions are disabled in config.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Crafting restrictions are disabled in config.");
             return;
         }
 
@@ -126,7 +126,7 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
             ));
         }
 
-        plugin.getLogger().info("Loaded " + rules.size() + " crafting restriction rule(s).");
+        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded " + rules.size() + " crafting restriction rule(s).");
     }
 
     public boolean isEnabled() {

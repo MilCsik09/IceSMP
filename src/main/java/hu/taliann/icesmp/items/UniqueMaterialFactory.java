@@ -25,10 +25,12 @@ import java.util.Locale;
  */
 public final class UniqueMaterialFactory {
 
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final NamespacedKey idKey;
 
     public UniqueMaterialFactory(final JavaPlugin plugin, final ConfigManager configManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.idKey = new NamespacedKey(plugin, "unique_material");
     }
@@ -64,11 +66,31 @@ public final class UniqueMaterialFactory {
         meta.lore(lore);
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
-        final String model = section.getString("item-model", null);
-        if (model != null && !model.isBlank()) {
-            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, model);
+        if (!applyPresentation(item, uniqueId)) {
+            return null;
         }
         return item;
+    }
+
+    /**
+     * Reapplies a unique item's data-component presentation after a caller performed ItemMeta
+     * round-trips (for example the profession crafted-by/affix pipeline).
+     */
+    public boolean applyPresentation(final ItemStack item, final String uniqueId) {
+        final ConfigurationSection section = configOf(uniqueId);
+        if (section == null || item == null) {
+            return false;
+        }
+        final String itemModel = section.getString("item-model", null);
+        final String equipmentAsset = section.getString("equipment-asset", null);
+        final WearablePresentation.Result presentation = WearablePresentation.applyWearablePresentation(
+                item, itemModel, equipmentAsset);
+        if (equipmentAsset != null && !equipmentAsset.isBlank() && !presentation.equipmentApplied()) {
+            plugin.getLogger().warning("profession-materials." + uniqueId + ".equipment-asset: '"
+                    + equipmentAsset + "' cannot be applied (" + presentation.equipmentStatus() + ")");
+            return false;
+        }
+        return true;
     }
 
     /** The unique-material id of an item, or null if it is not a unique material. */

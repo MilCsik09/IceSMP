@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 /**
  * WoW-style mob loot: slain mobs have a chance to drop a unique, random-attribute gear item
@@ -30,6 +31,7 @@ public final class MobLootListener implements Listener {
 
     private static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY =
             net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand();
+    private static final Logger LOGGER = Logger.getLogger(MobLootListener.class.getName());
 
     private final ConfigManager configManager;
     private final ItemRarityService affixService;
@@ -239,8 +241,16 @@ public final class MobLootListener implements Listener {
                 final ItemStack rolledNamed = affixService.roll(item, tier, false);
                 // Data components must stay after the rarity roll because the roll rewrites item meta.
                 final Object namedModel = chosen.get("item-model");
-                if (namedModel != null && !String.valueOf(namedModel).isBlank()) {
-                    hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(rolledNamed, String.valueOf(namedModel));
+                final Object namedEquipmentAsset = chosen.get("equipment-asset");
+                final String itemModel = namedModel == null ? null : String.valueOf(namedModel);
+                final String equipmentAsset = namedEquipmentAsset == null ? null : String.valueOf(namedEquipmentAsset);
+                final hu.taliann.icesmp.items.WearablePresentation.Result presentation =
+                        hu.taliann.icesmp.items.WearablePresentation.applyWearablePresentation(
+                                rolledNamed, itemModel, equipmentAsset);
+                if (equipmentAsset != null && !equipmentAsset.isBlank() && !presentation.equipmentApplied()) {
+                    LOGGER.warning(path + ".table named equipment-asset '" + equipmentAsset
+                            + "' cannot be applied (" + presentation.equipmentStatus() + ")");
+                    return null;
                 }
                 return rolledNamed;
             }

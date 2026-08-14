@@ -1,18 +1,26 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.factions.FactionDisplayPalette;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.hud.HudComponent;
+import hu.taliann.icesmp.hud.HudComponentLayout;
+import hu.taliann.icesmp.hud.HudEditorStateMachine;
+import hu.taliann.icesmp.hud.HudLayoutPreset;
+import hu.taliann.icesmp.hud.HudLayoutSnapshot;
+import hu.taliann.icesmp.hud.HudPreviewCatalog;
+import hu.taliann.icesmp.hud.IceSmpHudBackend;
+import hu.taliann.icesmp.hud.IceSmpHudModel;
+import hu.taliann.icesmp.utils.PlatformCapabilities;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -22,14 +30,18 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 /**
  * Live player HUD: a sidebar scoreboard (faction, currency,
@@ -87,6 +99,8 @@ public final class HudManager {
     private final BossBar raidBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
     private final BossBar bloodMoonBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
     private final BossBar worldBossBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.PURPLE, BossBar.Overlay.NOTCHED_6);
+    /** Per-player, packet-backed compact HUD used because Folia disables all Bukkit scoreboard API. */
+    private final ConcurrentHashMap<UUID, BossBar> foliaCompactBars = new ConcurrentHashMap<>();
 
     private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();
     /** játékos → az utoljára kiküldött oldalsáv-sorok (diff-cache: azonos sor nem megy ki újra). */
@@ -95,23 +109,69 @@ public final class HudManager {
     private volatile FileConfiguration cachedLayoutSource;
     private volatile List<HudSidebarLayout.Entry> cachedLayout = HudSidebarLayout.defaults();
 
-    private final NamespacedKey hiddenSectionsKey;
-    /** Per-player /hud toggle state, cached in memory (PDC is only touched on load/save, never per tick). */
+    /** Per-player /hud toggle state; rebuildable mirror of PlayerProfile preferences. */
     private final ConcurrentHashMap<UUID, Set<String>> hiddenSectionsCache = new ConcurrentHashMap<>();
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileHudPreferenceStore
+            preferenceStore = new hu.taliann.icesmp.playerprofile.application.PlayerProfileHudPreferenceStore();
 
     /**
      * A thread-safe snapshot of a player's HUD data, refreshed on the player's region thread each
-     * tick. Read by the PlaceholderAPI bridge from arbitrary threads (e.g. TAB's async refresh), so it
+     * tick. Read by the PlaceholderAPI bridge from arbitrary threads, so it
      * must NOT touch the live player/PDC off-thread — only this immutable record.
      */
-    public record HudSnapshot(String faction, String factionId, String className, int classLevel,
+    public record HudSnapshot(String faction, String factionId, String factionTheme,
+                              String factionAccent, String factionAccentSoft,
+                              String className, int classLevel,
                               String balance, boolean hasClass, int resource, int resourceMax,
                               int resourcePercent, String resourceName, String resourceBar,
-                              String event, List<String> partyLines) {
+                              String event, List<String> partyLines,
+                              List<HudCurrency> currencies,
+                              hu.taliann.icesmp.classspec.integration.ClassHudState classHud) {
+        public HudSnapshot {
+            partyLines = partyLines == null ? List.of() : List.copyOf(partyLines);
+            currencies = currencies == null ? List.of() : List.copyOf(currencies);
+        }
+    }
+
+    /** Immutable wallet projection used by every display backend. */
+    public record HudCurrency(String id, String displayName, String amount, boolean primary) {
+    }
+
+    /**
+     * Seam az opcionális Client Bridge felé: a HudManager nem ismerheti a híd típusát
+     * (a domain/presentation réteg kliensmod-függetlensége architektúra-invariáns), a
+     * core köti be. Ha a route szerint a játékos natív HUD-ot kap, a vanilla
+     * IceSMP-felületek (sidebar, first-party HUD, compact fallback) elhallgatnak —
+     * ugyanaz a játékos sosem kaphatja mindkét megjelenítést.
+     */
+    public interface ClientHudRoute {
+        boolean nativeHudActive(UUID playerId);
+
+        /** A natív boss-frame-et kapó játékosnál a megosztott világboss-bar elhallgat. */
+        boolean bossFrameActive(UUID playerId);
+
+        /** Tickenkénti state-publikálási lehetőség; a kapuzás (session/capability) a route dolga. */
+        void pushClientState(Player player, HudSnapshot snapshot);
+    }
+
+    private volatile ClientHudRoute clientHudRoute;
+
+    public void setClientHudRoute(final ClientHudRoute route) {
+        this.clientHudRoute = route;
+    }
+
+    private boolean nativeHudRouted(final UUID playerId) {
+        final ClientHudRoute route = clientHudRoute;
+        return route != null && route.nativeHudActive(playerId);
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
-
+    private final Set<UUID> iceSmpHudPlayers = ConcurrentHashMap.newKeySet();
+    private final HudEditorStateMachine hudEditor = new HudEditorStateMachine();
+    private final Set<UUID> hudEditorSaves = ConcurrentHashMap.newKeySet();
+    private final IceSmpHudBackend iceSmpHudBackend;
+    private final AtomicBoolean iceSmpHudReady = new AtomicBoolean();
+    private final AtomicBoolean placeholderBridgeReady = new AtomicBoolean();
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
                       final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
@@ -120,7 +180,8 @@ public final class HudManager {
                       final AbundanceManager abundanceManager, final ServerChallengeManager serverChallengeManager,
                       final MeteorEventManager meteorEventManager, final GatheringBuffManager gatheringBuffManager,
                       final hu.taliann.icesmp.utils.TextAnimator animator,
-                      final SeasonManager seasonManager, final DailyQuestManager dailyQuestManager) {
+                      final SeasonManager seasonManager, final DailyQuestManager dailyQuestManager,
+                      final Predicate<UUID> resourcePackReady) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.factionManager = factionManager;
@@ -140,7 +201,11 @@ public final class HudManager {
         this.animator = animator;
         this.seasonManager = seasonManager;
         this.dailyQuestManager = dailyQuestManager;
-        this.hiddenSectionsKey = new NamespacedKey(plugin, "hud_hidden_sections");
+        this.iceSmpHudBackend = new IceSmpHudBackend(plugin, resourcePackReady);
+        if (!PlatformCapabilities.supportsBukkitScoreboards()) {
+            plugin.getLogger().info("Folia detected: Bukkit scoreboard API unavailable; "
+                    + "IceSMP native class HUD will use the compact boss-bar fallback when the first-party HUD is inactive.");
+        }
     }
 
     public boolean isEnabled() {
@@ -148,14 +213,270 @@ public final class HudManager {
     }
 
     /**
-     * Whether IceSMP draws its own scoreboard sidebar. Set false when another plugin (e.g. TAB) owns
+     * Whether IceSMP draws its own scoreboard sidebar. Set false when another plugin owns
      * the scoreboard — IceSMP then won't fight it (use the %icesmp_...% PlaceholderAPI placeholders).
      */
     private boolean sidebarEnabled() {
-        return configManager.getBoolean("hud.sidebar-enabled", true);
+        return configManager.getBoolean("hud.sidebar-enabled", true)
+                && PlatformCapabilities.supportsBukkitScoreboards();
     }
 
-    /** Whether IceSMP sets faction-coloured tab-list names. Set false when TAB owns the tab list. */
+    private boolean foliaCompactFallbackEnabled(final Player player) {
+        return configManager.getBoolean("hud.sidebar-enabled", true)
+                && !PlatformCapabilities.supportsBukkitScoreboards()
+                && !iceSmpHudActive(player)
+                && !nativeHudRouted(player.getUniqueId());
+    }
+
+    /** First-party HUD is display-only and consumes the same immutable snapshot as PAPI. */
+    public boolean iceSmpHudActive() {
+        return configManager.getBoolean("hud.icesmp-hud.enabled", true) && iceSmpHudReady.get();
+    }
+
+    public boolean hudEditorEnabled() {
+        return configManager.getBoolean("hud.icesmp-hud.editor.enabled", true);
+    }
+
+    public boolean personalHudEditorEnabled() {
+        return hudEditorEnabled()
+                && configManager.getBoolean("hud.icesmp-hud.editor.personal-layouts-enabled", true);
+    }
+
+    public HudLayoutSnapshot configuredHudLayout() {
+        final FileConfiguration configuration = configManager.getConfiguration();
+        if (configuration == null) return HudLayoutSnapshot.defaults();
+        HudLayoutSnapshot layout = HudLayoutSnapshot.fromConfigValues(
+                configuration.get("hud.icesmp-hud.layout.x-offset-pixels"),
+                configuration.get("hud.icesmp-hud.layout.y-offset-pixels"),
+                configuration.get("hud.icesmp-hud.layout.safe-margin-pixels"),
+                configuration.get("hud.icesmp-hud.layout.scale"));
+        for (final HudComponent component : HudComponent.editableValues()) {
+            final String path = "hud.icesmp-hud.layout.components." + component.id();
+            layout = layout.withComponent(component, HudComponentLayout.fromConfigValues(
+                    configuration.get(path + ".x-offset-pixels"),
+                    configuration.get(path + ".y-offset-pixels"),
+                    configuration.get(path + ".scale"),
+                    configuration.get(path + ".visible")));
+        }
+        return layout;
+    }
+
+    public HudLayoutSnapshot effectiveHudLayout(final Player player) {
+        final HudLayoutSnapshot global = configuredHudLayout();
+        if (player == null
+                || hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed().isEmpty()) {
+            return global;
+        }
+        try {
+            return preferenceStore.layout(player.getUniqueId(), global);
+        } catch (final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.ProfileNotReadyException
+                       unavailable) {
+            return global;
+        }
+    }
+
+    public boolean hasPersonalHudLayout(final Player player) {
+        if (player == null
+                || hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed().isEmpty()) {
+            return false;
+        }
+        try {
+            return preferenceStore.hasLayoutOverrides(player.getUniqueId());
+        } catch (final hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.ProfileNotReadyException
+                       unavailable) {
+            return false;
+        }
+    }
+
+    public HudEditorStateMachine.Session beginHudEditor(final Player player,
+                                                         final HudEditorStateMachine.Scope scope) {
+        final UUID playerId = player.getUniqueId();
+        final HudEditorStateMachine.Scope requested = scope == null
+                ? HudEditorStateMachine.Scope.PERSONAL : scope;
+        final var existing = hudEditor.session(playerId);
+        if (existing.isPresent() && existing.get().scope() == requested) return existing.get();
+        existing.ifPresent(ignored -> hudEditor.cancel(playerId));
+        final ConfigManager.ConfigSnapshot snapshot = configManager.snapshot();
+        final HudLayoutSnapshot global = configuredHudLayout();
+        final HudLayoutSnapshot initial = requested == HudEditorStateMachine.Scope.PERSONAL
+                ? effectiveHudLayout(player) : global;
+        final HudLayoutSnapshot resetBase = requested == HudEditorStateMachine.Scope.PERSONAL
+                ? global : HudLayoutSnapshot.defaults();
+        return hudEditor.start(playerId, requested, initial, resetBase, snapshot.generation(),
+                snapshot.sourceFingerprint());
+    }
+
+    public java.util.Optional<HudEditorStateMachine.Session> hudEditorSession(final Player player) {
+        return hudEditor.session(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session moveHudEditor(final Player player, final int x, final int y) {
+        return hudEditor.move(player.getUniqueId(), x, y);
+    }
+
+    public HudEditorStateMachine.Session changeHudEditorMargin(final Player player, final int direction) {
+        return hudEditor.margin(player.getUniqueId(), direction);
+    }
+
+    public HudEditorStateMachine.Session changeHudEditorScale(final Player player, final int variants) {
+        return hudEditor.scale(player.getUniqueId(), variants);
+    }
+
+    public HudEditorStateMachine.Session setHudEditorX(final Player player, final int value) {
+        return hudEditor.setX(player.getUniqueId(), value);
+    }
+
+    public HudEditorStateMachine.Session setHudEditorY(final Player player, final int value) {
+        return hudEditor.setY(player.getUniqueId(), value);
+    }
+
+    public HudEditorStateMachine.Session setHudEditorScale(final Player player, final double value) {
+        return hudEditor.setScale(player.getUniqueId(), value);
+    }
+
+    public HudEditorStateMachine.Session selectHudEditorComponent(final Player player,
+                                                                  final HudComponent component) {
+        return hudEditor.select(player.getUniqueId(), component);
+    }
+
+    public HudEditorStateMachine.Session cycleHudEditorComponent(final Player player,
+                                                                 final int direction) {
+        return hudEditor.cycleSelection(player.getUniqueId(), direction);
+    }
+
+    public HudEditorStateMachine.Session toggleHudEditorComponent(final Player player) {
+        return hudEditor.toggleVisibility(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session setHudEditorStep(final Player player, final int step) {
+        return hudEditor.step(player.getUniqueId(), step);
+    }
+
+    public HudEditorStateMachine.Session useHudEditorPreset(final Player player, final HudLayoutPreset preset) {
+        return hudEditor.preset(player.getUniqueId(), preset);
+    }
+
+    public HudEditorStateMachine.Session resetHudEditor(final Player player) {
+        return hudEditor.reset(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session resetAllHudEditor(final Player player) {
+        return hudEditor.resetAll(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session undoHudEditor(final Player player) {
+        return hudEditor.undo(player.getUniqueId());
+    }
+
+    public HudEditorStateMachine.Session previewHudFaction(final Player player, final String faction) {
+        return hudEditor.previewFaction(player.getUniqueId(), faction);
+    }
+
+    public HudEditorStateMachine.Session previewHudClass(final Player player, final String playerClass) {
+        return hudEditor.previewClass(player.getUniqueId(), playerClass);
+    }
+
+    public HudEditorStateMachine.Session previewHudState(final Player player, final String state) {
+        return hudEditor.previewState(player.getUniqueId(), state);
+    }
+
+    public boolean refreshHudEditorPreview(final Player player) {
+        final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
+        if (session == null || !editorSessionEnabled(session)) return false;
+        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                HudPreviewCatalog.model(session.preview()), session.working(), session.selected(), true));
+    }
+
+    private boolean editorSessionEnabled(final HudEditorStateMachine.Session session) {
+        return session != null && hudEditorEnabled()
+                && (session.scope() == HudEditorStateMachine.Scope.GLOBAL || personalHudEditorEnabled());
+    }
+
+    public CompletionStage<HudEditorSaveResult> saveHudEditor(final Player player) {
+        final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
+        if (session == null) return CompletableFuture.completedFuture(
+                new HudEditorSaveResult(HudEditorSaveStatus.NO_SESSION,
+                        HudEditorStateMachine.Scope.PERSONAL, 0));
+        if (!hudEditorSaves.add(player.getUniqueId())) return CompletableFuture.completedFuture(
+                new HudEditorSaveResult(HudEditorSaveStatus.IN_PROGRESS, session.scope(), 0));
+        final HudLayoutSnapshot layout = session.working();
+        if (session.scope() == HudEditorStateMachine.Scope.PERSONAL) {
+            try {
+                final CompletionStage<HudEditorSaveResult> save = preferenceStore.saveLayout(
+                                player.getUniqueId(), layout, session.resetBase())
+                        .thenApply(result -> {
+                            hudEditor.apply(player.getUniqueId(), session);
+                            return new HudEditorSaveResult(result.changed()
+                                    ? HudEditorSaveStatus.SAVED : HudEditorSaveStatus.NO_CHANGES,
+                                    session.scope(), result.overrideCount());
+                        });
+                return save.whenComplete((ignored, failure) -> hudEditorSaves.remove(player.getUniqueId()));
+            } catch (final RuntimeException failure) {
+                hudEditorSaves.remove(player.getUniqueId());
+                return CompletableFuture.failedFuture(failure);
+            }
+        }
+        final Map<String, Object> overrides = new LinkedHashMap<>();
+        overrides.put("hud.icesmp-hud.layout.x-offset-pixels", layout.xOffsetPixels());
+        overrides.put("hud.icesmp-hud.layout.y-offset-pixels", layout.yOffsetPixels());
+        overrides.put("hud.icesmp-hud.layout.safe-margin-pixels", layout.safeMarginPixels());
+        overrides.put("hud.icesmp-hud.layout.scale", layout.scale());
+        for (final HudComponent component : HudComponent.editableValues()) {
+            final HudComponentLayout element = layout.componentLayout(component);
+            final String path = "hud.icesmp-hud.layout.components." + component.id();
+            overrides.put(path + ".x-offset-pixels", element.xOffsetPixels());
+            overrides.put(path + ".y-offset-pixels", element.yOffsetPixels());
+            overrides.put(path + ".scale", element.scale());
+            overrides.put(path + ".visible", element.visible());
+        }
+        try {
+            final ConfigManager.BatchApplyResult result = configManager.applyOverridesIfUnchanged(
+                    session.configGeneration(), session.configFingerprint(), overrides);
+            final HudEditorSaveStatus status;
+            if (result == ConfigManager.BatchApplyResult.STALE) {
+                status = HudEditorSaveStatus.STALE;
+            } else {
+                hudEditor.apply(player.getUniqueId(), session);
+                status = result == ConfigManager.BatchApplyResult.NO_CHANGES
+                        ? HudEditorSaveStatus.NO_CHANGES : HudEditorSaveStatus.SAVED;
+            }
+            return CompletableFuture.completedFuture(new HudEditorSaveResult(status, session.scope(), 0));
+        } catch (final RuntimeException failure) {
+            return CompletableFuture.failedFuture(failure);
+        } finally {
+            hudEditorSaves.remove(player.getUniqueId());
+        }
+    }
+
+    public void finishHudEditorSave(final Player player, final HudEditorSaveResult result) {
+        if (player == null || result == null) return;
+        if (result.status() != HudEditorSaveStatus.SAVED
+                && result.status() != HudEditorSaveStatus.NO_CHANGES) return;
+        if (result.scope() == HudEditorStateMachine.Scope.GLOBAL) {
+            for (final Player online : plugin.getServer().getOnlinePlayers()) {
+                online.getScheduler().run(plugin, task -> restoreLiveHud(online), null);
+            }
+        } else {
+            restoreLiveHud(player);
+        }
+    }
+
+    public boolean cancelHudEditor(final Player player) {
+        final boolean removed = hudEditor.cancel(player.getUniqueId()).isPresent();
+        if (removed) restoreLiveHud(player);
+        return removed;
+    }
+
+    private boolean iceSmpHudActive(final Player player) {
+        return configManager.getBoolean("hud.icesmp-hud.enabled", true)
+                && player != null && iceSmpHudPlayers.contains(player.getUniqueId());
+    }
+
+    public void setPlaceholderBridgeReady(final boolean ready) {
+        placeholderBridgeReady.set(ready);
+    }
+
+    /** Whether IceSMP sets its faction-coloured native tab-list names. */
     private boolean tablistEnabled() {
         return configManager.getBoolean("hud.tablist-enabled", true);
     }
@@ -166,16 +487,7 @@ public final class HudManager {
      * never re-read from PDC on the per-second HUD tick.
      */
     public Set<String> hiddenSections(final Player player) {
-        return hiddenSectionsCache.computeIfAbsent(player.getUniqueId(), id -> loadHiddenSections(player));
-    }
-
-    private Set<String> loadHiddenSections(final Player player) {
-        final String raw = player.getPersistentDataContainer().get(hiddenSectionsKey, PersistentDataType.STRING);
-        final Set<String> hidden = new LinkedHashSet<>();
-        if (raw != null && !raw.isBlank()) {
-            hidden.addAll(Arrays.asList(raw.split(",")));
-        }
-        return hidden;
+        return hiddenSectionsCache.computeIfAbsent(player.getUniqueId(), preferenceStore::hidden);
     }
 
     /** Whether the given section (or {@link #SECTION_ALL}) is currently hidden for the player. */
@@ -183,32 +495,19 @@ public final class HudManager {
         return hiddenSections(player).contains(section);
     }
 
-    /**
-     * Toggles a HUD section (or "mind" for the whole sidebar) on/off for the player, persists the
-     * result to their PDC (restart-proof) and refreshes the in-memory cache. Called from /hud, i.e.
-     * on the player's own region thread, so touching their own PDC directly is Folia-safe.
-     *
-     * @return true if the section is hidden after the toggle, false if it is now shown
-     */
-    public boolean toggleSection(final Player player, final String section) {
-        final Set<String> hidden = new LinkedHashSet<>(hiddenSections(player));
-        final boolean nowHidden = hidden.add(section);
-        if (!nowHidden) {
-            hidden.remove(section);
-        }
-        hiddenSectionsCache.put(player.getUniqueId(), hidden);
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        if (hidden.isEmpty()) {
-            pdc.remove(hiddenSectionsKey);
-        } else {
-            pdc.set(hiddenSectionsKey, PersistentDataType.STRING, String.join(",", hidden));
-        }
-        return nowHidden;
+    /** Persists the toggle through PlayerProfile CAS before updating the runtime mirror. */
+    public java.util.concurrent.CompletionStage<Boolean> toggleSection(
+            final Player player, final String section) {
+        return preferenceStore.toggle(player.getUniqueId(), section).thenApply(result -> {
+            hiddenSectionsCache.put(player.getUniqueId(), result.hidden());
+            return result.nowHidden();
+        });
     }
 
     /** Whether the sidebar should render at all for this player (config gate + their own "mind" toggle). */
     private boolean sidebarVisibleFor(final Player player) {
-        return sidebarEnabled() && !isSectionHidden(player, SECTION_ALL);
+        return sidebarEnabled() && !isSectionHidden(player, SECTION_ALL)
+                && !nativeHudRouted(player.getUniqueId());
     }
 
     /** Builds the player's HUD (called on join, on that player's region thread). */
@@ -359,10 +658,23 @@ public final class HudManager {
         refreshBossBarState();
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> {
+                final HudSnapshot snapshot = buildSnapshot(player);
+                snapshots.put(player.getUniqueId(), snapshot);
+                final ClientHudRoute route = clientHudRoute;
+                if (route != null) {
+                    try {
+                        route.pushClientState(player, snapshot);
+                    } catch (final Exception clientLayerFailure) {
+                        // Az opcionális kliensréteg hibája nem viheti el a vanilla HUD tickjét.
+                        if (configManager.getBoolean("client.debug", false)) {
+                            plugin.getLogger().warning("Client HUD route hiba: " + clientLayerFailure);
+                        }
+                    }
+                }
+                renderIceSmpHud(player, snapshot);
                 update(player);
                 applyBossBars(player);
-                // Refresh the thread-safe snapshot on the player's own region thread (for PlaceholderAPI).
-                snapshots.put(player.getUniqueId(), buildSnapshot(player));
+                applyFoliaCompactHud(player, snapshot);
             }, null);
         }
     }
@@ -384,6 +696,7 @@ public final class HudManager {
         return new HudSnapshot(
                 faction == null ? "Menedék vendége" : faction.getDisplayName(),
                 faction == null ? "" : faction.name(),
+                factionTheme(faction), factionAccent(faction), factionAccentSoft(faction),
                 hasClass ? PlainTextComponentSerializer.plainText().serialize(job.getDisplayName()) : "nincs",
                 hasClass ? jobManager.getPrimaryLevel(player) : 0,
                 currencyManager.formatBalance(balance),
@@ -394,12 +707,43 @@ public final class HudManager {
                 resourceManager.resourceName(player),
                 showResource ? resourceManager.resourceBarPlain(player) : "",
                 net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(eventLabel()),
-                partyLinesPlain(player));
+                partyLinesPlain(player), walletCurrencies(player), resourceManager.classHudState(player));
+    }
+
+    private List<HudCurrency> walletCurrencies(final Player player) {
+        final CurrencyType primary = CurrencyType.fromFactionType(
+                factionManager.getEconomyFaction(player.getUniqueId()));
+        final List<HudCurrency> result = new ArrayList<>(CurrencyType.values().length);
+        for (final CurrencyType type : CurrencyType.values()) {
+            addWalletCurrency(result, player, type, type == primary);
+        }
+        return List.copyOf(result);
+    }
+
+    private void addWalletCurrency(final List<HudCurrency> target, final Player player,
+                                   final CurrencyType type, final boolean primary) {
+        final double amount = currencyManager.getBalance(player, type);
+        target.add(new HudCurrency(type.name().toLowerCase(java.util.Locale.ROOT),
+                type.getDisplayName(), compactBalance(amount), primary));
+    }
+
+    private static String compactBalance(final double amount) {
+        final double safe = Math.max(0.0D, amount);
+        if (safe >= 1_000_000.0D) return compactUnit(safe / 1_000_000.0D, "m");
+        if (safe >= 1_000.0D) return compactUnit(safe / 1_000.0D, "k");
+        return Long.toString(Math.round(safe));
+    }
+
+    private static String compactUnit(final double value, final String suffix) {
+        final String formatted = value >= 100.0D || value == Math.rint(value)
+                ? Long.toString(Math.round(value))
+                : String.format(java.util.Locale.ROOT, "%.1f", value);
+        return formatted + suffix;
     }
 
     /**
      * Plain-text party-frame lines for the PlaceholderAPI bridge (%icesmp_party_N%),
-     * so scoreboard plugins like TAB can render the party HUD when the IceSMP
+     * so an external scoreboard renderer can render the party HUD when the IceSMP
      * sidebar is disabled. Empty when the player is not in a party.
      */
     private List<String> partyLinesPlain(final Player player) {
@@ -409,7 +753,7 @@ public final class HudManager {
         }
         final List<String> lines = new ArrayList<>();
         for (final UUID memberId : party.getMembers()) {
-            // Legacy (§) serialization keeps the colour-coded health bar readable in TAB;
+            // Legacy (§) serialization keeps the colour-coded health bar readable externally;
             // plain text stripped the colours and every bar segment looked identical.
             lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
                     .serialize(partyMemberLine(party, memberId)));
@@ -424,10 +768,128 @@ public final class HudManager {
         playerTeams.remove(player.getUniqueId());
         lastLines.remove(player.getUniqueId());
         snapshots.remove(player.getUniqueId());
+        iceSmpHudPlayers.remove(player.getUniqueId());
+        hudEditor.cancel(player.getUniqueId());
+        iceSmpHudBackend.hide(player);
         hiddenSectionsCache.remove(player.getUniqueId());
+        hudEditorSaves.remove(player.getUniqueId());
         player.hideBossBar(raidBar);
         player.hideBossBar(bloodMoonBar);
         player.hideBossBar(worldBossBar);
+        final BossBar compact = foliaCompactBars.remove(player.getUniqueId());
+        if (compact != null) {
+            player.hideBossBar(compact);
+        }
+    }
+
+    private boolean renderIceSmpHud(final Player player, final HudSnapshot snapshot) {
+        final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
+        if (editorSessionEnabled(editorSession)) {
+            return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                    HudPreviewCatalog.model(editorSession.preview()), editorSession.working(),
+                    editorSession.selected(), true));
+        }
+        if (editorSession != null) hudEditor.cancel(player.getUniqueId());
+        final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
+        final boolean visible = configured && !isSectionHidden(player, SECTION_ALL)
+                && snapshot.classHud() != null
+                && !nativeHudRouted(player.getUniqueId());
+        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                IceSmpHudModel.from(snapshot), effectiveHudLayout(player), visible));
+    }
+
+    public enum HudEditorSaveStatus { SAVED, NO_CHANGES, STALE, NO_SESSION, IN_PROGRESS }
+
+    public record HudEditorSaveResult(HudEditorSaveStatus status,
+                                      HudEditorStateMachine.Scope scope,
+                                      int personalOverrideCount) { }
+
+    private boolean recordIceSmpHudState(final Player player, final boolean active) {
+        if (active) {
+            iceSmpHudPlayers.add(player.getUniqueId());
+        } else {
+            iceSmpHudPlayers.remove(player.getUniqueId());
+        }
+        updateIceSmpHudReadiness(!iceSmpHudPlayers.isEmpty());
+        return active;
+    }
+
+    private void restoreLiveHud(final Player player) {
+        final HudSnapshot live = snapshots.get(player.getUniqueId());
+        if (live == null) {
+            iceSmpHudBackend.hide(player);
+            recordIceSmpHudState(player, false);
+        } else {
+            renderIceSmpHud(player, live);
+        }
+    }
+
+    private void updateIceSmpHudReadiness(final boolean ready) {
+        final boolean previous = iceSmpHudReady.getAndSet(ready);
+        if (previous == ready) return;
+        if (ready) {
+            plugin.getLogger().info("IceSMP HUD pack ready: first-party class HUD active; native class HUD suppressed.");
+        } else {
+            plugin.getLogger().warning("IceSMP HUD pack unavailable after being active; native HUD fallback restored.");
+        }
+    }
+
+    /** HUD-only projection of the documented resource-pack faction palette. */
+    private static String factionTheme(final FactionType faction) {
+        return faction == null ? "ice" : switch (faction) {
+            case RED -> "ember";
+            case BLUE -> "frost";
+            case NEUTRAL -> "guild";
+            case DARK -> "lich";
+        };
+    }
+
+    private static String factionAccent(final FactionType faction) {
+        return faction == null ? "8BE9FD" : switch (faction) {
+            case RED -> "E7683F";
+            case BLUE -> "8BE9FD";
+            case NEUTRAL -> "D6A74B";
+            case DARK -> "62D7CE";
+        };
+    }
+
+    private static String factionAccentSoft(final FactionType faction) {
+        return faction == null ? "77DDF2" : switch (faction) {
+            case RED -> "B73A32";
+            case BLUE -> "A9DDF2";
+            case NEUTRAL -> "9CAB59";
+            case DARK -> "7566A8";
+        };
+    }
+
+    private void applyFoliaCompactHud(final Player player, final HudSnapshot snapshot) {
+        final BossBar existing = foliaCompactBars.get(player.getUniqueId());
+        if (!foliaCompactFallbackEnabled(player) || isSectionHidden(player, SECTION_ALL) || !snapshot.hasClass()) {
+            if (existing != null) {
+                player.hideBossBar(existing);
+                foliaCompactBars.remove(player.getUniqueId(), existing);
+            }
+            return;
+        }
+
+        final BossBar bar = foliaCompactBars.computeIfAbsent(player.getUniqueId(), ignored ->
+                BossBar.bossBar(Component.empty(), 0.0F, BossBar.Color.BLUE, BossBar.Overlay.NOTCHED_10));
+        final hu.taliann.icesmp.classspec.integration.ClassHudState state = snapshot.classHud();
+        Component label = Component.text(snapshot.className(), NamedTextColor.AQUA);
+        if (state != null && !state.specName().isBlank()) {
+            label = label.append(Component.text(" • " + state.specName(), NamedTextColor.GRAY));
+        }
+        label = label.append(Component.text(" • " + snapshot.resourceName() + " "
+                + snapshot.resource() + "/" + snapshot.resourceMax(), NamedTextColor.WHITE));
+        if (state != null && !state.mechanicPrimary().isBlank()) {
+            label = label.append(Component.text(" • " + state.mechanicPrimary(), NamedTextColor.YELLOW));
+        }
+        if (state != null && !state.proc().isBlank()) {
+            label = label.append(Component.text(" • " + state.proc(), NamedTextColor.GREEN));
+        }
+        bar.name(label);
+        bar.progress(clamp(snapshot.resourcePercent() / 100.0F));
+        player.showBossBar(bar);
     }
 
     private void refreshBossBarState() {
@@ -443,7 +905,7 @@ public final class HudManager {
             raidBar.name(Component.text(label, NamedTextColor.RED));
             raidBar.progress(clamp((float) remaining / (float) totalMs));
         }
-        bloodMoonBar.name(Component.text("🌕 VÉRHOLD — a szörnyek erősebbek", NamedTextColor.DARK_RED));
+        bloodMoonBar.name(Component.text("VÉRHOLD — a szörnyek erősebbek", NamedTextColor.DARK_RED));
         final float bossFraction = clamp(worldBossManager.getBossHealthFraction());
         worldBossBar.name(Component.text("☠ Világboss — " + Math.round(bossFraction * 100.0F) + "% HP",
                 NamedTextColor.LIGHT_PURPLE));
@@ -453,7 +915,13 @@ public final class HudManager {
     private void applyBossBars(final Player player) {
         toggle(player, raidBar, raidManager.isRaidActive());
         toggle(player, bloodMoonBar, bloodMoonManager.isActive());
-        toggle(player, worldBossBar, worldBossManager.isBossActive());
+        toggle(player, worldBossBar, worldBossManager.isBossActive()
+                && !bossFrameRouted(player.getUniqueId()));
+    }
+
+    private boolean bossFrameRouted(final UUID playerId) {
+        final ClientHudRoute route = clientHudRoute;
+        return route != null && route.bossFrameActive(playerId);
     }
 
     private void toggle(final Player player, final BossBar bar, final boolean show) {
@@ -598,7 +1066,8 @@ public final class HudManager {
         final Map<String, String> tokens = new HashMap<>();
         final Component factionValue = faction == null
                 ? Component.text("Menedék vendége", NamedTextColor.GRAY)
-                : Component.text(faction.getDisplayName(), factionColor(faction));
+                : Component.text(faction.getDisplayName(),
+                        TablistManager.factionColor(configManager, faction));
         final Component classValue = job == null
                 ? Component.text("nincs", NamedTextColor.GRAY)
                 : job.getDisplayName();
@@ -809,16 +1278,7 @@ public final class HudManager {
     private Component tabName(final Player player) {
         // A név MAGA kapja a frakció színét — külön [Frakció] tag nélkül (rövidebb tab-lista).
         final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-        return Component.text(player.getName(), faction == null ? NamedTextColor.WHITE : factionColor(faction));
-    }
-
-    private NamedTextColor factionColor(final FactionType faction) {
-        return switch (faction) {
-            case RED -> NamedTextColor.RED;
-            case BLUE -> NamedTextColor.BLUE;
-            case NEUTRAL -> NamedTextColor.GRAY;
-            case DARK -> NamedTextColor.DARK_GRAY;
-        };
+        return Component.text(player.getName(), TablistManager.factionColor(configManager, faction));
     }
 
 

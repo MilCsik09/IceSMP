@@ -69,25 +69,30 @@ public final class JobSetXpSubcommand implements JobSubcommand {
             return true;
         }
 
-        // Folia: setXp writes the target's PDC, so it must run on the target's own region thread (the
-        // target may be in a different region than the admin). sender.sendMessage is safe from there.
-        target.getScheduler().run(plugin, task -> {
-            if (!jobManager.setXp(target, amount)) {
-                sender.sendMessage(messageManager.get("messages.job-slot-not-set", "&cA célpontnak nincs kasztja."));
-                return;
-            }
-
-            final int currentXp = jobManager.getXp(target);
-            final int currentLevel = jobManager.getPrimaryLevel(target);
-            sender.sendMessage(messageManager.get(
+        final String operationId = "job-setxp:" + target.getUniqueId() + ":" + java.util.UUID.randomUUID();
+        jobManager.setXpV2(target, amount, operationId).whenComplete((changed, failure) -> {
+            if (failure != null) {
+                send(sender, messageManager.getComponent("messages.profile-persistence-failed",
+                        "&cA Profile v2 mentése meghiúsult: %s", failure.getMessage()));
+            } else if (!Boolean.TRUE.equals(changed)) {
+                send(sender, messageManager.getComponent("messages.job-slot-not-set", "&cA célpontnak nincs kasztja."));
+            } else {
+                send(sender, messageManager.getComponent(
                     "messages.job-setxp-success",
                     "&aXP beállítva: &f%s &7| XP: &f%s &7| Szint: &f%s",
-                    target.getName(),
-                    currentXp,
-                    currentLevel
-            ));
-        }, null);
+                    target.getName(), jobManager.getXp(target), jobManager.getPrimaryLevel(target)));
+            }
+        });
         return true;
+    }
+
+
+    private void send(final CommandSender sender, final net.kyori.adventure.text.Component message) {
+        if (sender instanceof Player player) {
+            player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
+        } else {
+            sender.sendMessage(message);
+        }
     }
 
     @Override

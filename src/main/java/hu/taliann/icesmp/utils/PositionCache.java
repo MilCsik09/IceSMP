@@ -39,6 +39,33 @@ public final class PositionCache {
         return location == null ? null : location.clone();
     }
 
+    /** Cross-region-safe nearby-player list using only owner-thread-maintained mirrors. */
+    public static java.util.List<UUID> nearbyPlayerIds(final UUID sourceId, final double radius) {
+        final Location source = get(sourceId);
+        if (source == null || source.getWorld() == null || radius < 0.0D) {
+            return java.util.List.of();
+        }
+        final double radiusSquared = radius * radius;
+        final java.util.List<UUID> nearby = new java.util.ArrayList<>();
+        for (final Map.Entry<UUID, Location> entry : POSITIONS.entrySet()) {
+            if (entry.getKey().equals(sourceId)) {
+                continue;
+            }
+            final Location candidate = entry.getValue();
+            try {
+                // Kiürült world-referencia getWorld()-je kivételt dob, nem null-t ad —
+                // egyetlen elavult bejegyzés nem viheti el a teljes lekérdezést.
+                if (candidate.getWorld() != null && candidate.getWorld().getUID().equals(source.getWorld().getUID())
+                        && candidate.distanceSquared(source) <= radiusSquared) {
+                    nearby.add(entry.getKey());
+                }
+            } catch (final Exception unloadedWorld) {
+                // fail-open: a hibás bejegyzés kimarad, a többi jelölt feldolgozása folytatódik
+            }
+        }
+        return nearby;
+    }
+
     /** Cross-region-safe nearby-player query using only owner-thread-maintained mirrors. */
     public static boolean hasNearbyPlayer(final UUID sourceId, final double radius,
                                           final Predicate<UUID> filter) {

@@ -128,6 +128,16 @@ public final class RuntimeHardeningRegressionSuite {
                         && claim.contains("shape.overlaps(")
                         && claim.contains("ClaimFootprint.between(oMinX"),
                 "polygon point input is capped and footprint conflict checks avoid rectangle materialization");
+        check(claim.contains("private static int inclusiveWorldMaxY")
+                        && claim.contains("hasStoredYBounds")
+                        && claim.contains("hasMinY != hasMaxY")
+                        && claim.contains("Claim Y bounds are incomplete")
+                        && claim.contains("Y-határ nélküli claim teljes világmagasságra migrálva")
+                        && claim.contains("parts.length != 3"),
+                "claim persistence keeps inclusive world bounds, rejects partial Y data and upgrades X-Z-only data");
+        check(claim.contains("catch (final IllegalArgumentException malformedTrusted)")
+                        && claim.contains("catch (final RuntimeException exception)"),
+                "one malformed trust or claim entry cannot abort the full claim load");
         final String shapeSource = source("src/main/java/hu/taliann/icesmp/data/ClaimShape.java");
         check(shapeSource.contains("scanlineIntersections")
                         && shapeSource.contains("perimeterColumns > budget")
@@ -177,6 +187,18 @@ public final class RuntimeHardeningRegressionSuite {
                         && display.contains("clampedMaxY - clampedMinY + 1.0F")
                         && claim.contains("claim.minY, claim.maxY"),
                 "BlockDisplay wall is clipped exactly to the actually claimed Y range");
+        check(display.contains("entity.setVisibleByDefault(false);")
+                        && display.contains("spawnBlockDisplayForViewer")
+                        && display.contains("viewer.showEntity(plugin, fx);")
+                        && display.contains("Bukkit.isOwnedByCurrentRegion(fx)")
+                        && display.contains("fx.getScheduler().run(plugin")
+                        && display.contains("spawnBlockDisplay(plugin, corner, block, despawnTicks, viewer")
+                        && !display.contains("if (viewer != null) showOnlyTo(plugin, display, viewer);"),
+                "private displays establish pre-tracking privacy and mutate only on owned Folia entity regions");
+        final String ambient = source("src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java");
+        check(ambient.contains("DisplayFxUtil.spawnBlockDisplayForViewer")
+                        && !ambient.contains("DisplayFxUtil.showOnlyTo(plugin, display, player)"),
+                "aurora veil uses pre-tracking viewer-private display spawning");
         check(!claim.contains("baseY = location.getY()"),
                 "claim display wall is never anchored to viewer Y");
         final String generalConfig = source("src/main/resources/config/general.yml");
@@ -197,7 +219,7 @@ public final class RuntimeHardeningRegressionSuite {
     }
 
     private static String source(final String relative) throws Exception {
-        return Files.readString(Path.of(relative));
+        return Files.readString(Path.of(relative)).replace("\r\n", "\n");
     }
 
     private static void check(final boolean condition, final String message) {

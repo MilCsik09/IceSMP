@@ -1,0 +1,49 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/frame-hud-guest.png",
+      "ascent": -8425489,
+      "height": 160,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/frame-hud-red.png",
+      "ascent": -8425489,
+      "height": 160,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/frame-hud-blue.png",
+      "ascent": -8425489,
+      "height": 160,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/frame-hud-neutral.png",
+      "ascent": -8425489,
+      "height": 160,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/frame-hud-dark.png",
+      "ascent": -8425489,
+      "height": 160,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.listeners;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.sun.net.httpserver.HttpServer;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -8,18 +12,32 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Sends the IceSMP pack through Paper/Folia's additive resource-pack API.
@@ -39,10 +57,19 @@ public final class ResourcePackListener implements Listener {
 
     private final JavaPlugin plugin;
     private volatile PackRequest request;
+    private volatile HttpServer developmentServer;
+    private volatile DevelopmentPayload developmentPayload;
+    private volatile ScheduledTask developmentPollTask;
+    private volatile long developmentSourceStamp = Long.MIN_VALUE;
+    private final Set<UUID> loadedPlayers = ConcurrentHashMap.newKeySet();
 
     public ResourcePackListener(final JavaPlugin plugin) {
         this.plugin = plugin;
         reload();
+        if (developmentFirstPartyPackMode()) {
+            developmentPollTask = Bukkit.getAsyncScheduler().runAtFixedRate(plugin,
+                    ignored -> refreshDevelopmentFirstPartyPack(), 1L, 2L, TimeUnit.SECONDS);
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -50,16 +77,66 @@ public final class ResourcePackListener implements Listener {
         send(event.getPlayer());
     }
 
-    /** Reloads config/metadata and safely re-sends the current layer to every online player. */
-    public void reloadAndResend() {
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPackStatus(final PlayerResourcePackStatusEvent event) {
+        plugin.getLogger().info("Resource-pack status [" + event.getPlayer().getName() + "]: "
+                + event.getStatus() + " (id=" + event.getID() + ")");
+        final PackRequest current = request;
+        if (current == null || !current.id().equals(event.getID())) {
+            return;
+        }
+        if (event.getStatus() == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) {
+            loadedPlayers.add(event.getPlayer().getUniqueId());
+        } else if (Set.of("DECLINED", "FAILED_DOWNLOAD", "FAILED_RELOAD", "INVALID_URL", "DISCARDED")
+                .contains(event.getStatus().name())) {
+            loadedPlayers.remove(event.getPlayer().getUniqueId());
+            plugin.getLogger().warning("Az IceSMP resource pack nem aktiválódott ["
+                    + event.getPlayer().getName() + "]: " + event.getStatus()
+                    + "; a natív Folia HUD fallback marad aktív.");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(final PlayerQuitEvent event) {
+        loadedPlayers.remove(event.getPlayer().getUniqueId());
+    }
+
+    /** Thread-safe capability snapshot; HUD consumers never inspect a live Player off-thread. */
+    public boolean isLoaded(final UUID playerId) {
+        return playerId != null && loadedPlayers.contains(playerId);
+    }
+
+    /** Reloads config/metadata and updates online players only when the effective request changed. */
+    public synchronized void reloadAndResend() {
+        final PackRequest previous = request;
         reload();
+        final PackRequest current = request;
+        if (sameRequest(previous, current)) {
+            return;
+        }
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            player.getScheduler().run(plugin, task -> send(player), null);
+            player.getScheduler().run(plugin, task -> applyTransition(player, previous, current), null);
+        }
+    }
+
+    /** Force-sends the current layer when the plugin enables with players already online. */
+    public void resendCurrent() {
+        final PackRequest current = request;
+        if (current == null) {
+            return;
+        }
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            player.getScheduler().run(plugin, task -> send(player, current), null);
         }
     }
 
     /** Reloads only the immutable request snapshot; invalid configuration disables delivery. */
     public void reload() {
+        if (developmentFirstPartyPackMode()) {
+            plugin.getLogger().info("Fejlesztői first-party IceSMP pack aktív: a külön R2 réteg nincs kiküldve; "
+                    + "az IceSMP a determinisztikusan egyesített 1.21.11-es ZIP-et szolgálja ki.");
+            return;
+        }
         this.request = loadRequest();
     }
 
@@ -69,7 +146,22 @@ public final class ResourcePackListener implements Listener {
         if (current == null) {
             return;
         }
+        send(player, current);
+    }
+
+    private void applyTransition(final Player player, final PackRequest previous, final PackRequest current) {
+        loadedPlayers.remove(player.getUniqueId());
+        if (previous != null && (current == null || !previous.id().equals(current.id()))) {
+            player.removeResourcePack(previous.id());
+        }
+        if (current != null) {
+            send(player, current);
+        }
+    }
+
+    private void send(final Player player, final PackRequest current) {
         try {
+            loadedPlayers.remove(player.getUniqueId());
             player.addResourcePack(current.id(), current.url(), current.hash(), current.prompt(), current.required());
         } catch (final IllegalArgumentException exception) {
             plugin.getLogger().warning("Az IceSMP resource pack nem küldhető ki: " + exception.getMessage());
@@ -79,7 +171,7 @@ public final class ResourcePackListener implements Listener {
     private PackRequest loadRequest() {
         final FileConfiguration config = plugin.getConfig();
         if (!config.getBoolean(CONFIG_ROOT + "enabled", true)) {
-            plugin.getLogger().info("IceSMP resource-pack küldés kikapcsolva.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "IceSMP resource-pack küldés kikapcsolva.");
             return null;
         }
 
@@ -155,6 +247,116 @@ public final class ResourcePackListener implements Listener {
         return override.isEmpty() ? metadata.getProperty(metadataKey, "").trim() : override;
     }
 
+    private static boolean sameRequest(final PackRequest first, final PackRequest second) {
+        if (first == second) {
+            return true;
+        }
+        return first != null && second != null
+                && first.id().equals(second.id())
+                && first.url().equals(second.url())
+                && Arrays.equals(first.hash(), second.hash())
+                && first.prompt().equals(second.prompt())
+                && first.required() == second.required();
+    }
+
+    public void close() {
+        loadedPlayers.clear();
+        final ScheduledTask task = developmentPollTask;
+        developmentPollTask = null;
+        if (task != null) task.cancel();
+        final HttpServer server = developmentServer;
+        developmentServer = null;
+        developmentPayload = null;
+        if (server != null) server.stop(0);
+    }
+
+    private boolean developmentFirstPartyPackMode() {
+        return Boolean.getBoolean("icesmp.dev.firstPartyPack");
+    }
+
+    private void refreshDevelopmentFirstPartyPack() {
+        final String configured = System.getProperty("icesmp.dev.packPath", "").trim();
+        if (configured.isEmpty()) return;
+        final Path source = Path.of(configured).toAbsolutePath().normalize();
+        try {
+            if (!Files.isRegularFile(source)) return;
+            final long stamp = Files.getLastModifiedTime(source).toMillis() ^ Files.size(source);
+            if (stamp == developmentSourceStamp) return;
+            final byte[] normalized = normalizeCompositeMetadata(source);
+            final byte[] hash = MessageDigest.getInstance("SHA-1").digest(normalized);
+            final String hashText = HexFormat.of().formatHex(hash);
+            final InetAddress address = InetAddress.getLocalHost();
+            final String path = "/" + hashText + ".zip";
+            ensureDevelopmentServer(address);
+            developmentPayload = new DevelopmentPayload(path, normalized);
+            request = new PackRequest(DEFAULT_PACK_ID,
+                    "http://" + address.getHostAddress() + ":8164" + path, hash,
+                    "§bIceSMP fejlesztői HUD és modellek", true);
+            developmentSourceStamp = stamp;
+            plugin.getLogger().info("1.21.11 composite resource pack elérhető: " + request.url()
+                    + " (SHA-1 " + hashText + ")");
+            for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+                player.getScheduler().run(plugin, ignored -> send(player), null);
+            }
+        } catch (final Exception exception) {
+            plugin.getLogger().warning("A fejlesztői composite pack előkészítése sikertelen: "
+                    + exception.getClass().getSimpleName() + ": " + exception.getMessage());
+        }
+    }
+
+    private void ensureDevelopmentServer(final InetAddress address) throws IOException {
+        if (developmentServer != null) return;
+        synchronized (this) {
+            if (developmentServer != null) return;
+            final HttpServer server = HttpServer.create(new InetSocketAddress(address, 8164), 0);
+            server.createContext("/", exchange -> {
+                final DevelopmentPayload payload = developmentPayload;
+                if (payload == null || !"GET".equals(exchange.getRequestMethod())
+                        || !payload.path().equals(exchange.getRequestURI().getPath())) {
+                    exchange.sendResponseHeaders(404, -1);
+                    exchange.close();
+                    return;
+                }
+                exchange.getResponseHeaders().set("Content-Type", "application/zip");
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+                exchange.sendResponseHeaders(200, payload.content().length);
+                try (var body = exchange.getResponseBody()) {
+                    body.write(payload.content());
+                }
+            });
+            server.start();
+            developmentServer = server;
+        }
+    }
+
+    private byte[] normalizeCompositeMetadata(final Path source) throws Exception {
+        final var output = new java.io.ByteArrayOutputStream();
+        try (ZipInputStream input = new ZipInputStream(Files.newInputStream(source));
+             ZipOutputStream zip = new ZipOutputStream(output)) {
+            ZipEntry entry;
+            while ((entry = input.getNextEntry()) != null) {
+                final byte[] content = input.readAllBytes();
+                final ZipEntry normalizedEntry = new ZipEntry(entry.getName());
+                normalizedEntry.setTime(0L);
+                zip.putNextEntry(normalizedEntry);
+                if ("pack.mcmeta".equals(entry.getName())) {
+                    final JsonObject root = JsonParser.parseString(new String(content, StandardCharsets.UTF_8))
+                            .getAsJsonObject();
+                    final JsonObject pack = root.getAsJsonObject("pack");
+                    pack.remove("supported_formats");
+                    pack.addProperty("pack_format", 75);
+                    pack.addProperty("min_format", 75);
+                    pack.addProperty("max_format", 75);
+                    zip.write(root.toString().getBytes(StandardCharsets.UTF_8));
+                } else {
+                    zip.write(content);
+                }
+                zip.closeEntry();
+            }
+        }
+        return output.toByteArray();
+    }
+
     private record PackRequest(UUID id, String url, byte[] hash, String prompt, boolean required) {
         private PackRequest {
             hash = hash.clone();
@@ -163,6 +365,12 @@ public final class ResourcePackListener implements Listener {
         @Override
         public byte[] hash() {
             return hash.clone();
+        }
+    }
+
+    private record DevelopmentPayload(String path, byte[] content) {
+        private DevelopmentPayload {
+            content = content.clone();
         }
     }
 }

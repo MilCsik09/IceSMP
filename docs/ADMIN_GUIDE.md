@@ -1,5 +1,7 @@
 # IceSMP admin-, moderátori és tesztelői kézikönyv
 
+<!-- icesmp-doc-id: feature.moderation -->
+
 <!-- icesmp-doc-id: guide.admin-and-moderator -->
 
 <details>
@@ -39,6 +41,18 @@ pluginoktól. Az első teszt előtt:
 > jogosultságot szűken oszd, a naplóhoz való fájlhozzáférést korlátozd, és
 > a játékosok felé alkalmazd a szerver adatkezelési szabályzatát.
 
+> **Konzol-naplózás:** a boot-kori leltár-sorok ("Loaded N ...",
+> spell-balansz felülbírálások, érvényes-táblák) alapból FINE szintre
+> kerülnek, így a konzol a tényleges eseményeké marad. Hibakereséshez a
+> `logging.verbose-startup: true` élő-config kulccsal (akár
+> `/icesmp config set` útján, restart nélkül) INFO-ra emelhetők.
+> A vanilla "Named entity … died" sort — amelyet minden custom-nevű,
+> tehát minden szintezett mob halála kiváltana — a plugin Log4j-szűrője
+> alapból még az appenderek előtt eldobja, így sem a terminálban, sem a
+> `latest.log`-ban nem jelenik meg. Élő kulcs:
+> `logging.suppress-named-entity-deaths` (false + reload után a sorok
+> azonnal visszatérnek).
+
 ## 2. Jogosultsági modell
 
 ### 2.1. Moderációs node-ok
@@ -60,6 +74,7 @@ pluginoktól. Az első teszt előtt:
 | `icesmp.moderation.gui` | `/moderation` és `/mod` megnyitása | OP | Moderátor |
 | `icesmp.message` | `/msg`, `/tell`, `/w`, `/reply`, `/r` | TRUE | Játékosok |
 | `icesmp.admin.reload` | `/icesmp reload` és az `/icesmp` admin gyökér | OP | Üzemeltető vagy admin |
+| `icesmp.admin.hud-editor` | `/hud edit global`; a szerver globális HUD-alapja és szintetikus preview | OP, plusz külön configkapu | Csak HUD/resource-pack staginget végző admin |
 
 Az `icesmp.admin.all` minden kanonikus IceSMP admin-domain parentje,
 beleértve az `icesmp.admin.moderation` csomagot. Ezt csak vezető
@@ -118,7 +133,7 @@ megkülönbözteti az autoritatív állapotot a best-effort szöveges naplótól
 | `/reply <üzenet>` | `/r` | Példa: `/r Rendben, indulok.` | Játékos | `icesmp.message` | Nem | Nincs | Csak sikeresen kézbesített előző PM hoz létre reply-partnert; quit vagy kick törli a kapcsolatot. | Ugyanaz, mint a PM-eknél. |
 | `/socialspy` | — | Argumentum nélküli tartós ki/be kapcsoló | Senior moderátor | `icesmp.moderation.socialspy` | Nem | Moderációs GUI, 30. slot; mindig a GUI használóját kapcsolja | Csak a natív IceSMP PM-útvonalat figyeli; nem packet interceptor és nem lát más plugin üzeneteibe. | A kapcsoló állapota tartós; nincs külön kapcsolási auditlog. |
 | `/vanish [online játékos]` | `/v` | `/vanish`; `/v Anna` | Admin | `icesmp.moderation.vanish` | Cél megadásával igen | Moderációs GUI, 31. slot | Toggle, nem explicit `on/off`; cél csak online lehet. Argumentum nélkül csak játékos saját magán használhatja. | A vanish állapot tartós; nincs külön kapcsolási auditlog. |
-| `/invsee <online játékos> [read\|edit] [main\|ender]` | — | `/invsee Anna read main`; `/invsee Anna edit ender` | Senior moderátor/Admin | read: `icesmp.moderation.inventory.read`; edit: `icesmp.moderation.inventory.edit` | Nem | Moderációs GUI, 22–25. slot | Csak online, látható cél; saját inventory tiltott; nincs offline playerdata-szerkesztés. Hibás/hiányzó mód `read`, hibás/hiányzó nézet `main`. | Editenként best-effort `logs/moderation-audit.log`; escrow külön tartós állapot. Read megnyitása nincs naplózva. |
+| `/invsee <online játékos>` | — | `/invsee Anna` | Senior moderátor/Admin | read: `icesmp.moderation.inventory.read`; write: `icesmp.moderation.inventory.edit` | Nem | Moderációs GUI, 22. slot | Csak online, látható cél; saját inventory tiltott; nincs offline playerdata-szerkesztés. Edit joggal az első megnyitó write sessiont kap, a többi egyidejű megnyitó read-only; a MAIN ↔ ENDER váltás a GUI gombjával történik. | Writeonként best-effort `logs/moderation-audit.log`; escrow külön tartós állapot. Read megnyitása nincs naplózva. |
 | `/offlinetp <játékos>` | — | Példa: `/offlinetp Anna` | Admin/Senior moderátor | `icesmp.moderation.offlinetp` | Nem | Moderációs GUI, 29. slot; a 28. slot külön online teleport | A világ UUID-jának és nevének egyeznie és a világnak betöltve lennie kell; nincs biztonságos hely keresése. | Nincs külön teleport-audit. |
 | `/moderation [online játékos]` | `/mod` | `/moderation`; `/mod Anna` | Moderátor/Admin | `icesmp.moderation.gui` | Nem | Maga a GUI | Legfeljebb 45 látható online játékos, nincs lapozás; az akciógombokhoz külön leaf permission kell. | A megnyitás nincs naplózva; a gombok a mögöttes parancs auditját öröklik. |
 | `/icesmp reload` | `/ismp reload` | Konfiguráció és üzenetek újratöltése | Admin/Üzemeltető | `icesmp.admin.reload` | Igen | Az admin/config felületek egyes útvonalai | Nem tölti újra a tartós moderációs state fájlokat; bezárja az élő invsee sessionöket. | Nincs külön moderációs audit; konzol-visszajelzés van. |
@@ -371,19 +386,37 @@ a saját rejtéseit, miközben a tartós állapot a következő indulásra megma
 
 ## 8. Online inventory és ender chest
 
-### 8.1. Read és edit különbség
+### 8.1. Session-modell: automatikus write lease
+
+Az egyetlen parancs:
+
+```text
+/invsee <online játékos>
+```
+
+Nincs több `read|edit` vagy `main|ender` argumentum.
+
+- `icesmp.moderation.inventory.edit` jogosultsággal az első megnyitó automatikusan write sessiont kap.
+- Egy céljátékoshoz egyszerre pontosan egy write session tartozhat; minden további egyidejű megnyitó automatikusan read-only módba kerül.
+- Csak read jogosultsággal a session mindig read-only.
+- A fő inventory és az ender chest között a GUI saját gombjával lehet váltani; a writer lease megmarad.
+- Bezárás, viewer-quit, target-quit, permissionvesztés vagy plugin-disable elengedi a writer lease-t.
+- Egy admin egyszerre legfeljebb egy cél write lease-ét birtokolhatja.
+- A tényleges itemcsere a meglévő invsee escrow-, target-scheduler- és auditútvonalon fut.
+
+A `/mod` céljátékos-oldalán egyetlen **Inventory / Ender chest** gomb található (22. slot), amely ugyanezt az automatikus parancsot használja.
 
 Az invsee csak online, a viewer számára látható másik játékost támogat.
 Nincs offline playerdata-parser, saját inventory adminnézet vagy crafting
 slot kezelése.
 
-| Nézet | Célterület | Mód |
-|---|---|---|
-| `main` | storage 0–35, armor 36–39, offhand 40 | `read` vagy `edit` |
-| `ender` | ender chest 0–26 | `read` vagy `edit` |
+| Nézet | Célterület |
+|---|---|
+| fő inventory | storage 0–35, armor 36–39, offhand 40 |
+| ender chest | ender chest 0–26 |
 
 A nézet körülbelül 10 tickenként frissül. Read módban minden
-inventory-interakció tiltott. Edit módban:
+inventory-interakció tiltott. Write módban:
 
 - a felső cél-slot és az admin kurzorán lévő stack cserélődik;
 - drag a felső inventoryba tiltott;
@@ -391,10 +424,6 @@ inventory-interakció tiltott. Edit módban:
 - a rendszer a kattintáskor ismét ellenőrzi az edit permissiont;
 - a kiszorított tárgy először az admin kurzorára, majd inventoryjába,
   végül — ha minden megtelt — az admin helyén természetes dropként kerül.
-
-Hiányzó vagy ismeretlen mód read-onlyra, hiányzó vagy ismeretlen nézet
-main inventoryra esik vissza. Érzékeny munkánál mindig írd ki mindkét
-argumentumot.
 
 ### 8.2. Invsee-audit
 
@@ -440,6 +469,25 @@ write-ahead-log tranzakcióba fogó, formális exactly-once protokoll.
 Ezért az invsee edit átvételéhez kötelező a crash-fault-injection teszt, és
 abrupt crash után tilos vakon visszaadni egy itemet. Előbb egyeztesd a
 játékosadatot, az escrow-t, az auditlogot, a konzollogot és a mentést.
+
+### 8.5. Adományláda üzemeltetési szerződés
+
+A GUI felső, 0–8. slotja egyirányú deposit-zóna. A közös adományok a 9–44. sloton jelennek meg és kattintással továbbra is elvihetők.
+
+Támogatott beadási módok:
+
+- bal kattintás a deposit-zónára: teljes kurzorstack;
+- jobb kattintás: egy darab;
+- shift-kattintás a saját inventoryból;
+- számbillentyűs hotbar-behelyezés;
+- offhand-csere gomb;
+- több deposit-slotot érintő inventory drag.
+
+A felső inventory minden vanilla mutációja törölve van. A plugin a műveletet a játékos következő entity-tickjén hajtja végre, és csak akkor vesz el itemet, ha a forrás slot/cursor/offhand teljes stackje még pontosan megegyezik a kattintáskor rögzített snapshotpal.
+
+Egy közös adományt egyszerre csak egy játékos vehet el. Az átvétel üres kurzort igényel; a tartós claim után a tárgy markerrel a kurzorra kerül, majd a marker csak a lezáró durable snapshot után tűnik el.
+
+A `donations.yml` minden műveletnél atomikus prepare/available/claim állapotot ír az async IO-úton. A forrás- és célitem ideiglenes markerét csak a játékos region-szála mozgatja. Restartkor a megmaradt marker visszagörgeti a még el nem vett beadást, a hiányzó deposit-marker befejezi a ládába helyezést, a claim-marker pedig kizárja a második kézbesítést. A periodikus és shutdown-save csak kiegészítő snapshot, nem az exactly-once tranzakció alapja.
 
 ## 9. Offline teleport
 
@@ -489,10 +537,7 @@ sincs külön auditlogja.
 | 19 | Teljes history | `icesmp.moderation.history` | `/history <cél>` |
 | 20 | Aktív punishment | `icesmp.moderation.history` | `/punishments <cél>` |
 | 21 | Reportlista | `icesmp.admin.moderation` | Globális `/reports`, nem célszűrt |
-| 22 | Main inventory read | `icesmp.moderation.inventory.read` | `/invsee <cél> read main` |
-| 23 | Main inventory edit | `icesmp.moderation.inventory.edit` | `/invsee <cél> edit main` |
-| 24 | Ender chest read | `icesmp.moderation.inventory.read` | `/invsee <cél> read ender` |
-| 25 | Ender chest edit | `icesmp.moderation.inventory.edit` | `/invsee <cél> edit ender` |
+| 22 | Inventory / Ender chest | read: `icesmp.moderation.inventory.read`; write: `icesmp.moderation.inventory.edit` | `/invsee <cél>`; a MAIN ↔ ENDER váltás a GUI saját gombjával történik |
 | 28 | Teleport online célhoz | `icesmp.moderation.offlinetp` | Közvetlen GUI-művelet; nincs parancsalternatívája és külön auditja |
 | 29 | Utolsó kijelentkezési hely | `icesmp.moderation.offlinetp` | `/offlinetp <cél>` |
 | 30 | SocialSpy kapcsoló | `icesmp.moderation.socialspy` | A viewert, nem a kiválasztott célt kapcsolja |
@@ -780,11 +825,12 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 
 | Terület | Legfontosabb parancsok | Mire használd? |
 |---|---|---|
-| Alaprendszer | `/icesmp`, `/menu`, `/profile`, `/stats`, `/hud` | állapot, reload, config, játékosnézet |
+| Alaprendszer | `/icesmp`, `/menu`, `/profile`, `/stats`, `/hud` | állapot, reload, config, játékosnézet, kliens-bridge diagnosztika (`/icesmp client`) |
 | Moderáció | `/warn`, `/kick`, `/mute`, `/tempban`, `/ban`, `/unmute`, `/unban`, `/history`, `/punishments`, `/reports` | dokumentált staffintézkedés |
 | Láthatóság és kommunikáció | `/msg`, `/tell`, `/w`, `/reply`, `/socialspy`, `/vanish`, `/moderation` | PM, megfigyelés, staffjelenlét |
 | Inventory és hely | `/invsee`, `/offlinetp` | online inventory read/edit és utolsó ismert hely |
 | Tartalomadmin | `/events`, `/quest`, `/npcbind`, `/territory`, `/parkour`, `/crate`, `/iceitem` | esemény-, világ-, crate- és itemkezelés |
+| Season 0 / Prologue | `/prologue` (`status`, `start`, `advance`, `stage`, `stability`, `breach`, `finale`, `gate`, `reset`) | az egyszeri Prologue korszak live-ops vezérlése — a teljes referencia és a kockázati besorolás: [docs/PROLOGUE.md](PROLOGUE.md#14-admin-parancsok) |
 | Karakter és gazdaság | `/class`, `/spec`, `/profession`, `/currency`, `/faction`, `/relic`, `/sinner` | ritka, naplózandó játékosmutáció |
 | Játékosrendszerek | `/afk`, `/sit`, `/party`, `/claim`, `/market`, `/bank`, `/spellbook`, `/talent` és a többi publikus root | a játékoskézikönyv szerinti használat |
 
@@ -798,6 +844,10 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `/crate set <id>` / `/crate remove` | csak stagingen ellenőrzött blokk- és világkötéshez |
 | `/territory setcapital <frakció> selection [név...]` | a `/claim pos1` + `/claim pos2` pontos X/Y/Z dobozát teszi védett fővárossá; előbb ellenőrizd a személyes claim-konfliktust és utána a `/territory show` rajzot |
 | `/icesmp reload` | configmentés és validáció után; strukturális változásnál restart kellhet |
+| `/prologue start` | az éles Prologue-indítás a nyitás pillanatában; enélkül a korszak `DORMANT` marad és a stage-óra nem indul |
+| `/prologue gate open --force` | veszélyes override: megnyitja a Kaput valódi finálégyőzelem nélkül |
+| `/prologue gate close --force` | csak override-dal nyitott Kaput zár vissza; kiérdemelt győzelem után elutasít |
+| `/prologue reset --force` | **staging teszt-eszköz**: visszavonja a Season 1 átmenetet, a krónikát, az emlékművet és a teljes Prologue-állapotot; production világon ne használd |
 | `/faction set`, `/currency set`, `/relic give`, `/iceitem` | gazdasági vagy progressionmutáció; mindig jegyezd fel |
 
 ### Bizonyított eltérések a régi leírásoktól
@@ -821,7 +871,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 - A legacy node-ok működnek, de új kiosztásnál a kanonikus `icesmp.admin.*` neveket használd.
 - A crate-definíciók tetszőleges, `icesmp.` prefixű plusz node-ot regisztrálhatnak default `FALSE` értékkel.
 
-### Teljes node-lista (44)
+### Teljes node-lista (45)
 
 | Node | Leírás | Célközönség | Command | GUI | Listener/service | Parent | Default | Érzékenység | Javasolt kiosztás | Deployed változás |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -830,7 +880,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `icesmp.admin.config` | Élő config override és Config GUI. | Vezető admin | /icesmp config * | Config menü | ConfigMenuGUIListener | icesmp.admin.all | OP | kritikus | Szűk üzemeltetői kör | Új |
 | `icesmp.admin.events` | Világesemények kézi indítása és spawnpontkezelés. | Eventes/Admin | /events adminágak | Esemény/Admin menü | — | icesmp.admin.all | OP | magas | Eventes és admin | Megváltozott |
 | `icesmp.admin.npc` | NPC-kötések kezelése. | Admin/Builder | /npcbind * | Admin menü | NpcInteractionListener | icesmp.admin.all | OP | magas | NPC-t kezelő builder/admin | Megváltozott |
-| `icesmp.admin.quest` | Quest admin és builder. | Admin/Eventes | /quest complete; /quest admin * | Quest builder | QuestBuilderListener | icesmp.admin.all | OP | magas | Quest designer/admin | Megváltozott |
+| `icesmp.admin.quest` | Quest admin és builder. | Admin/Eventes | /quest accept; /quest talk; /quest complete; /quest admin * | Quest builder | QuestBuilderListener | icesmp.admin.all | OP | magas | Quest designer/admin | Megváltozott |
 | `icesmp.admin.parkour` | Parkour pálya létrehozása/törlése. | Builder/Admin | /parkour setstart/setfinish/remove | — | — | icesmp.admin.all | OP | magas | Builder | Megváltozott |
 | `icesmp.admin.exchangeboard` | Árfolyamtábla kezelése. | Builder/Admin | /exchangeboard | Admin menü | — | icesmp.admin.all | OP | magas | Builder/admin | Megváltozott |
 | `icesmp.admin.territory` | Territórium- és claim-admin. | Builder/Admin | /territory *; /claim admin unclaim | Claim/Admin menü | SelectionWandListener | icesmp.admin.all | OP | kritikus | World designer/vezető admin | Megváltozott |
@@ -845,6 +895,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `icesmp.admin.war` | Hadiablak kézi vezérlése. | Eventes/Admin | /faction war start/stop | — | — | icesmp.admin.all | OP | magas | Eventes/vezető admin | Új |
 | `icesmp.admin.crate` | Crate hely, kulcs, stat és recovery admin. | Vezető admin | /crate set/remove/give/list/stats/resetstats/status | — | CrateListener | icesmp.admin.all | OP | kritikus | Crate-admin | Új |
 | `icesmp.admin.inspect` | Összesített játékosinspektor. | Admin | /icesmp inspect | — | — | icesmp.admin.all | OP | magas | Admin | Új |
+| `icesmp.admin.client` | Kliens-bridge diagnosztika és kényszerített resync. | Fejlesztő/üzemeltető | /icesmp client | — | IceSmpClientBridge | icesmp.admin.all | OP | közepes | Üzemeltető/fejlesztő | Új |
 | `icesmp.admin.item` | Bármely natív/plugin item kiadása. | Fejlesztő/vezető admin | /iceitem | Admin menü | — | icesmp.admin.all | OP | kritikus | Csak fejlesztő/vezető admin | Új |
 | `icesmp.territory.builder` | Építés a védett zónákban teljes admin-bypass nélkül. | Builder | — | — | TerritoryProtectionService | icesmp.admin.all | OP | magas | Megbízható builder | Megváltozott |
 | `icesmp.admin.moderation` | Moderációs csomag szülőnode; a report admin is közvetlenül használja. | Moderátor/Admin | /reports | Moderációs GUI reports gomb | Moderation/Report listenerek | icesmp.admin.all | OP | kritikus | Moderátori szerepcsomag | Új |
@@ -903,7 +954,7 @@ A release bundled `config/crates.yml` fájljában a `koznapi` crate permissionje
 | Küldetésnapló | /quest log | Játékos / `—` | 54 | Változatlan |
 | Quest builder | /quest admin builder <id> | Admin / `icesmp.admin.quest` | TYPE_PICKER 36; EDITOR 54 | Megváltozott |
 | NPC/frakció bolt | NPC-kötés/interakció | Játékos / `—` | 9–54, tételszám szerint | Megváltozott |
-| Bestiárium | /bestiarium | Játékos / `—` | 27 | Új |
+| Bestiárium | /bestiarium | Játékos / `—` | 27 főoldal + 54 lapozó | Új |
 | Megbízottak kezelése | /claim trustgui vagy Claim menü | Játékos / `—` | 54 | Új |
 | Config menü | /icesmp config menu vagy admin főmenü | Admin / `icesmp.admin.config` | 36 | Új |
 | Crate böngésző és preview | /crate, /crate info, /crate preview | Játékos / `icesmp.crate.use + opcionális crate-specifikus jog` | 54 | Új |
@@ -1042,15 +1093,29 @@ utolsó választásból nem konvertálódik automatikusan. Minden ilyen rekord a
 `legacy-tax-debts-unresolved` karanténba kerül, és a következő explicit tagság
 sem köti hozzá automatikusan. Több eredet egyszerre is rendezhető,
 de egy beszedési kör játékosonként legfeljebb egy adócsalási bűnt jelent.
+### Profile v2 kaszt/spec üzemeltetési kapu
+
+A Profile v2 mindig aktív és a kaszt/spec egyetlen autoritatív rendszere; nincs legacy migráció,
+fallback vagy kill switch. Az üzemeltetőnek telepítenie kell a
+`class-spec-dependencies.lock.yml` fájlban rögzített kötelező plugineket, majd stagingen
+`-Dpaper.disablePluginRemapping=true` kapcsolóval kell indítania a szervert. Aktív dependency
+enforcement mellett hiányzó vagy eltérő kötelező plugin fail-closed startup hibát okoz.
+Quarantine esetén az evidence megőrzendő, és csak az explicit
+`/spec recover <player|uuid> confirm` parancs használható (`icesmp.admin.spec.recover`).
+A részletes persistence-, recovery- és shutdown-folyamat:
+`docs/admin/CLASS_SPEC_REWORK_RUNBOOK.md`.
 
 ### Konfigurációs fájlok
 
 - `afk.yml`
+- `block-regen.yml`
+- `class-gameplay.yml`
 - `classes.yml`
 - `crafting.yml`
 - `crates.yml`
 - `dev-items.yml`
 - `economy.yml`
+- `event-spawn-safety.yml`
 - `factions.yml`
 - `general.yml`
 - `item-rarity.yml`
@@ -1076,6 +1141,7 @@ de egy beszedési kör játékosonként legfeljebb egy adócsalási bűnt jelent
 - `messages/currency.yml`
 - `messages/devitem.yml`
 - `messages/faction.yml`
+- `messages/hud.yml`
 - `messages/job.yml`
 - `messages/market.yml`
 - `messages/moderation.yml`
@@ -1090,6 +1156,45 @@ de egy beszedési kör játékosonként legfeljebb egy adócsalási bűnt jelent
 - `messages/system.yml`
 - `messages/territory.yml`
 - `messages/world.yml`
+
+### Kaszt-játékmenet live hangolása
+
+A `class-gameplay.yml` numerikus és boolean balance-kulcsai a
+`/icesmp config menu` **Kaszt-játékmenet** almenüjében, kasztonként és
+legfeljebb 45 kulcsos lapokon állíthatók. A staged munkamenet csak Mentéskor
+írja egyetlen optimistic-concurrency tranzakcióval a `config.yml` override-okat;
+görgőkatt az adott kulcsot visszaállítja a csomagolt alapértékre. Az
+`active-kit`, spell-unlock, capstone- és entity-azonosító listák gameplay-definíciók,
+ezért nem kattintásos balance-vezérlők; ezeket ellenőrzött YAML-módosítással
+kezeld. Mentés után ellenőrizd a config-validáció konzolüzeneteit.
+
+### PlayerProfile read-only HTTP API
+
+A `player-profile.http.*` adapter alapból ki van kapcsolva. Engedélyezéshez a
+`general.yml`-ben állítsd a `player-profile.http.enabled` kulcsot `true`-ra, add meg
+a `bind` és `port` értéket, majd indítsd újra a plugint. Az alapértelmezett
+`127.0.0.1:8765` csak a helyi gépről érhető el. Külső hozzáférésnél tartsd
+loopbacken, és TLS-t lezáró reverse proxy mögött publikáld; a beépített adapter
+nem biztosít TLS-t.
+
+Tokenformátumok:
+
+- `self-tokens`: `"<játékos-uuid>:<token>"`; a token csak a hozzárendelt profil
+  SELF nézetét és nem védett szekcióit olvashatja;
+- `admin-tokens`: `"<token>"`; az ADMIN nézetet, valamint a moderációs és
+  operations szekciókat is olvashatja;
+- minden token legalább 24 karakteres, véletlenszerű secret legyen (például
+  `openssl rand -hex 32`), és kizárólag secret-managed deployment configba kerüljön.
+
+A védett kérések fejében `Authorization: Bearer <token>` kell. A
+`GET /api/v1/health` és a látható public profil
+`GET /api/v1/players/<uuid>/public` token nélkül olvasható; a teljes saját profil,
+a `by-name`, a `sections/<section>` és az `admin` route scope-ellenőrzött. Az API
+read-only, de a profiladat személyes és moderációs információt tartalmazhat:
+admin tokent ne adj kliensalkalmazásnak, ne naplózz, ne commitolj, és szivárgás
+esetén azonnal cserélj. A `requests-per-minute`, `max-request-bytes`,
+`max-response-bytes` és `timeout-ms` korlátokat a proxy limitjeivel együtt állítsd;
+a limiter IP-címenként, perces ablakban számol.
 
 ### Release acceptance checklist
 
@@ -1375,6 +1480,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | SIT-14 Seat entity sweep | Admin | szándékosan árva marker tesztvilágban | indulási/disable sweep eltakarítja | kézi entity cleanup | `sit/SIT-14/` |
 | [ ] | SIT-15 GSit nélkül | Üzemeltető | GSit jar/adat nélkül, backup mellett | `/sit` és click-to-sit működik | GSit vissza, rollout stop | `sit/SIT-15/` |
 | [ ] | SIT-16 Nem támogatott pózok | Tesztelő | lay/crawl/stack/player/NPC próbák | IceSMP nem kínál ilyen útvonalat | command/plugin ütközés vizsgálata | `sit/SIT-16/` |
+| [ ] | SIT-17 Campfire story | Builder/tesztelő | `campfire → 1 levegőblokk → ülőblokk` mind a négy főirányban; click és `/sit`; majd felállás/köztes blokk kitöltése/tűz eloltása | csak sikeres ülés indít; a jutalom előtt ugyanaz a szék, üres köz és égő tűz kell | story trigger kikapcsolása, sit megtartása | `sit/SIT-17/` |
 
 ### Natív crate
 
@@ -1400,6 +1506,12 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-18 Restart | Üzemeltető | opening után kontrollált restart | ledger/state konzisztens | rollout stop | `crate/CRATE-18/` |
 | [ ] | CRATE-19 MANUAL_REVIEW | Vezető admin | szándékos nem eldönthető failure | nem auto-complete; dokumentált emberi döntés | jutalmat csak bizonyíték után adj | `crate/CRATE-19/` |
 | [ ] | CRATE-20 CrazyCrates nélkül | Üzemeltető | külső jar/adat nélkül, backup mellett | native set/buy/open/recovery működik | külső plugin vissza, hibajegy | `crate/CRATE-20/` |
+| [ ] | CRATE-21 Nincs inventory-rulett | Tesztelő | mind a 8 bundled láda, egyes nyitás | nem nyílik spin GUI; csak a világban pörög ItemDisplay | crate rollout stop | `crate/CRATE-21/` |
+| [ ] | CRATE-22 Reveal → reward sorrend | Tesztelő/admin | determinisztikus item-, currency- és command reward | jutalom-side-effect csak a 36 tickes reveal után indul; quit közben kulcs refund/recovery | opening id + audit megőrzése | `crate/CRATE-22/` |
+| [ ] | CRATE-23 Nyolc alsó állomás | Builder | `koznapi`, `ritka`, `hosi`, `mitikus`, `mesterseg`, `expedicio`, `hadizsakmany`, `arkanum` | mind a 8 hely külön ID-val, saját kulcsmodellel és permission nélkül nyitható | hibás placement eltávolítása | `crate/CRATE-23/` |
+| [ ] | CRATE-24 Valós preview-modellek | Tesztelő | unique-, recipe-, blueprint- és key reward mind browserben, mind fizikai nyitással | a GUI és a végső ItemDisplay ugyanazt az itemmodellt mutatja, mint a kiosztott stack | crate rollout stop, pack/model manifest vizsgálata | `crate/CRATE-24/` |
+| [ ] | CRATE-25 Random tervrajz policy | Admin/tesztelő | szakma- és szintszűrt normál pool, majd Mitikus `include-loot-only` pool | minden sorsolt recept a tartományban van; boss-only csak engedélyezett poolból jön | érintett pool tiltása | `crate/CRATE-25/` |
+| [ ] | CRATE-26 Elytra-tiltás | Admin | közvetlen `item: ELYTRA`, Elytra-recept és ilyen tervrajz tesztdefiníciója | mindhárom config betöltéskor elutasított; bundled lootban nincs Elytra | crate config rollback | `crate/CRATE-26/` |
 
 ### Globális AFK
 
@@ -1413,6 +1525,32 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | AFK-06 Configvezérelt reward gate | Tesztelő | `afk.block-rewards` és `kill-rewards.afk-block` true/false; profession, mob, boss, dungeon, Wild Hunt | profession és kill/boss útvonal a dokumentált kulcsprecendenciát követi; lifecycle jutalomtiltás mellett is lezárul | érintett jutalomforrás tiltása | `afk/AFK-06/` |
 | [ ] | AFK-06B Feltétlen reward gate | Tesztelő | mindkét AFK-kulcs false; fishing windfall és ambient pénzjutalom | AFK játékos e két jutalmat továbbra sem kapja meg | forráseltérés hibajegy, termékdöntés | `afk/AFK-06B/` |
 | [ ] | AFK-07 Nincs zónás jutalom | Admin | live Ax fájlok eltávolítva | nincs zone, bossbar, timer vagy payout | deployment leállítása | `afk/AFK-07/` |
+
+### Kliens-bridge (protokoll-alap)
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | CLIENT-01 Vanilla parity | Tesztelő | kliensmod NÉLKÜLI join, resource packkal | join, gameplay, HUD és minden rendszer változatlan; `/icesmp client <név>` „vanilla kliens” választ ad | client rollout stop | `client/CLIENT-01/` |
+| [ ] | CLIENT-02 Kézfogás | Fejlesztő | IceSMP Client teszt-build (Phase 0 spike) | CLIENT_HELLO→SERVER_HELLO lefut; `/icesmp client <név>` mutatja a verziót, protokollt, generationt; capability-lista üres, amíg minden `client.features.*` false | `client.enabled: false` és hibajegy | `client/CLIENT-02/` |
+| [ ] | CLIENT-03 Inkompatibilis kliens | Fejlesztő | protokoll-tartományon kívüli teszt-HELLO | PROTOCOL_REJECT megy ki, nincs kick, a játékos vanilla módban játszik | `client.enabled: false` | `client/CLIENT-03/` |
+| [ ] | CLIENT-04 Reconnect és stale csomag | Fejlesztő | gyors reconnect + régi generation-nel küldött csomag | új session nagyobb generationt kap; a régi generation/sequence csomagja stale-dropra megy (`/icesmp client stats`) | hibajegy, rollout stop | `client/CLIENT-04/` |
+| [ ] | CLIENT-05 Rollback-kapcsoló | Admin | élő session mellett `/icesmp config set client.enabled false` | a híd restart nélkül minden üzenetet eldob, gameplay és vanilla kliens érintetlen | restart + hibajegy | `client/CLIENT-05/` |
+| [ ] | CLIENT-06 Natív HUD routing | Fejlesztő | NATIVE_HUD-ot hirdető kliens + `/icesmp config set client.features.native-hud true` | a kliens HUD_STATE-et kap (join után azonnal, majd csak változáskor); a routolt játékosnál sidebar/first-party HUD/compact fallback eltűnik, vanilla társánál változatlan; `/icesmp client resync` teljes state-et küld BEGIN/END között; a kapu false-ra állítva a vanilla HUD restart nélkül visszatér | `client.features.native-hud: false` | `client/CLIENT-06/` |
+| [ ] | CLIENT-07 Keybind cast parity | Fejlesztő | KEYBIND_CAST+ABILITY_BAR kliens, `client.features.keybind-cast` és `ability-bar` kapuk nyitva | a keybind-cast és a katalizátor-cast azonos eredményt ad (cooldown, költség, üzenetek); Lélekkapocs nélkül a főkézben a CAST_SLOT NOT_ALLOWED-dal elutasítva; cooldown alatt NOT_READY; gyors dupla input (katalizátor+keybind) nem okoz dupla castot (közös debounce); a kit-state csak változáskor megy ki, a bar timer kliensoldalon interpolál | `client.features.keybind-cast: false` | `client/CLIENT-07/` |
+| [ ] | CLIENT-08 Natív spellbook parity | Fejlesztő | NATIVE_SPELLBOOK kliens + `client.features.native-spellbook` kapu nyitva | a kliens SPELLBOOK_STATE-et kap (kézfogáskor és unlock/kedvenc/kiválasztás-változáskor); SELECT_SPELL csak aktív-kit-tagot fogad el, TOGGLE_FAVORITE a kit-limitre cappel — mindkettő azonos eredményt ad a vanilla GUI-val és a katalizátor-ciklázással; a durable kedvenc-mentés hibája SERVER_ERROR választ ad, optimista commit nélkül | `client.features.native-spellbook: false` | `client/CLIENT-08/` |
+| [ ] | CLIENT-09 Natív profil parity | Fejlesztő | NATIVE_PROFILE kliens + `client.features.native-profile` kapu nyitva | a kliens PROFILE_STATE-et kap, tartalma soronként azonos a /profile GUI fejlécével és egyenlegeivel (frakció, kaszt+szint, specek, szakmák, Bűnös/Tiszta, talentpontok, egyenlegek, statok, achievement-összegzés); revision/CAS, receipt vagy moderációs adat nem jelenik meg a payloadban (debug-naplóból ellenőrizve); a state csak változáskor megy ki | `client.features.native-profile: false` | `client/CLIENT-09/` |
+| [ ] | CLIENT-10 Relic-state routing | Fejlesztő | RELIC_RENDER_V1 kliens + `client.features.relic-render-v1` kapu nyitva, Evoker teszt-karakter a sarkany_tojas kötéssel | a kliens RELIC_STATE-et kap (relicId, display-név, basePower/resonance/awakening-flagek, dormant-ok); a relic elvesztése/visszaszerzése a dormantReason-váltással state-frissítést vált ki; kötés nélküli kasztnál üres relic-state megy ki | `client.features.relic-render-v1: false` | `client/CLIENT-10/` |
+| [ ] | CLIENT-11 Natív talent parity | Fejlesztő | NATIVE_TALENTS kliens + `client.features.native-talents` kapu nyitva | a kliens TALENT_STATE-et kap (csak a saját kaszt/szakma isAvailable-szűrt talentjei — más kaszt fája nem szivárog); PURCHASE_TALENT azonos eredményt ad a vanilla GUI-val és a /talent spend paranccsal (requirement/pont-hiány REJECTED, durable hiba SERVER_ERROR); sikeres vásárlás után a talent- és profil-state frissül, az attribútum-hatás (pl. max-élet) a vanilla úton is látszik | `client.features.native-talents: false` | `client/CLIENT-11/` |
+| [ ] | CLIENT-12 Quest journal biztonság | Fejlesztő | QUEST_JOURNAL kliens + `client.features.quest-journal` kapu nyitva | a kliens QUEST_STATE-et kap az öt fül tartalmával; HIDDEN/felfedezetlen quest a payloadban SEM szerepel (debug-naplóból ellenőrizve); riddle-quest progressze „???”-ként érkezik; TRACK_QUEST csak aktív questre SUCCESS, másra REJECTED; accept/turn-in üzenettípus nem létezik a protokollban; a levágott fülnél a total > lista-hossz és a /quest log a teljes forrás | `client.features.quest-journal: false` | `client/CLIENT-12/` |
+| [ ] | CLIENT-13 Profession parity | Fejlesztő | NATIVE_PROFESSIONS kliens + `client.features.native-professions` kapu nyitva | a kliens PROFESSION_STATE-et kap a nyolc-szakmás rosterrel (szint/XP-bontás/rang/recept-számok/heti céh-cél a vanilla GUI és a /szakmacel értékeivel egyezően); SELECT_PROFESSION üres kategória-slotba SUCCESS és a vanilla ProfessionGUI is aktívnak mutatja, foglalt slotra REJECTED/SLOT_TAKEN; SELECT_PROFESSION_SPEC a SpecGUI-val azonos kapukkal (szakma+szint+egyszeri választás), respec üzenettípus nem létezik; spec-opció csak a játékos aktív szakmáira érkezik | `client.features.native-professions: false` | `client/CLIENT-13/` |
+| [ ] | CLIENT-14 Recept-böngésző parity | Fejlesztő | RECIPE_BROWSER kliens + `client.features.recipe-browser` kapu nyitva | BROWSE_RECIPES-re requestId-korrelált RECIPE_PAGE érkezik; a csempe-adatok (szintfeltétel, tervrajz-állapot, frakció-kötés, have/need, craftolhatóság) a vanilla /profession recipes csempéivel egyeznek ugyanabban a pillanatban; lap-index túlcsordulás clampelt, ismeretlen szakma REJECTED, nem gyakorolt szakma REJECTED/NOT_ACTIVE_PROFESSION (a vanilla recept-könyv is csak a saját szakmákat mutatja); craft üzenettípus nem létezik a protokollban; a lap-méret a `client.limits.recipe-page-size` kulcsból él | `client.features.recipe-browser: false` | `client/CLIENT-14/` |
+| [ ] | CLIENT-15 Relic attachment-broadcast | Fejlesztő | RELIC_ATTACHMENT_V1 kliens + `client.features.relic-attachment-v1` kapu nyitva; két játékos, az egyik aktív class-relic viselő | a néző RELIC_ATTACHMENT_STATE-et kap, benne a viselő UUID-ja + relic-id/név, ha a `client.limits.relic-attachment-radius` körzeten belül van; kilépéskor a lista üresre frissül; alvó (dormant) viselő sosem szerepel; saját RELIC_STATE-ben az awakeningRemainingMillis az arming után csökkenő maradékot mutat és 0 lesz, amikor a /relic awakening újra ARMED-et adna | `client.features.relic-attachment-v1: false` | `client/CLIENT-15/` |
+| [ ] | CLIENT-16 Party frame parity | Fejlesztő | PARTY_FRAME kliens + `client.features.party-frame` kapu nyitva; két játékos egy partyban | a kliens PARTY_STATE-et kap a taglistával (👑-jelölés, név, fél-szív életerő a vanilla HUD-sorral egyezően); a natív frame-ben és a HUD-panelben a party NEM jelenik meg duplán; a tag sebzésekor a frame fél-szív felbontással frissül; kilépés/disband után a frame eltűnik; invite/kick üzenettípus nem létezik a protokollban | `client.features.party-frame: false` | `client/CLIENT-16/` |
+| [ ] | CLIENT-17 Boss frame parity | Fejlesztő | BOSS_FRAME kliens + `client.features.boss-frame` kapu nyitva; /worldboss teszt-spawn | a kliens BOSS_STATE-et kap (archetípus-név, HP% a vanilla barral egyezően); a natív frame-et kapó játékosnál a vanilla világboss-bar NEM jelenik meg (vanilla kliensnél igen); 50% alatt a frame dühöngés-jelzést mutat a broadcast-üzenettel egy időben; a boss halála/elvonulása után a frame eltűnik és a vanilla bar sem marad fenn | `client.features.boss-frame: false` | `client/CLIENT-17/` |
+| [ ] | CLIENT-18 Territory overlay parity | Fejlesztő | TERRITORY_OVERLAY kliens + `client.features.territory-overlay` kapu nyitva | zónába lépve az overlay a vanilla actionbarral azonos nevet/típust/frakciót mutat (✦ főváros, ⛨ védett, ☠ doom jelekkel), kilépve „Vadon"-t; az aktuális zónán futó raidnél az overlay támadó/védő pontokat mutat a raid-barral egyező értékekkel, más zónában NEM; a határátlépés-actionbar natív kliensen is változatlanul megjelenik (múló értesítés) | `client.features.territory-overlay: false` | `client/CLIENT-18/` |
+| [ ] | CLIENT-19 Faction screen parity | Fejlesztő | FACTION_SCREEN kliens + `client.features.faction-screen` kapu nyitva | a képernyő a /menu frakció-fejlécével azonos kasszát/adókulcsot/királyt mutat, a /faction king tally-sorai egyeznek; Menedék-vendégnél a frakció-blokk üres, de a szezon-állás látszik az /events értékeivel; raid alatt a /faction raid status adataival egyező fázis/pontok/létszám; join/leave üzenettípus nem létezik a protokollban, a váltás a /menu FACTION_SWITCH útján marad | `client.features.faction-screen: false` | `client/CLIENT-19/` |
+| [ ] | CLIENT-20 Attachment-renderer | Fejlesztő | RELIC_ATTACHMENT_V1 kliens + kapu nyitva; két játékos, az egyik aktív relic-viselő | a néző kliense a viselő feje fölött ✦ relikvia-jelvényt renderel a rádiuszon belül; rezonáló viselőnél a jelvény lüktet; láthatatlan vagy lopakodó viselőn NEM jelenik meg; a viselő kilépése/távozása után a jelvény eltűnik; saját relicnél az Awakening-kész HUD-sor lüktet | `client.features.relic-attachment-v1: false` | `client/CLIENT-20/` |
+| [ ] | CLIENT-21 FX-esemény csatorna | Fejlesztő | ADVANCED_FX_V1 kliens + `client.features.advanced-fx-v1` kapu nyitva; /worldboss teszt-spawn | SLAM/ZONE specialnál a kliens ⚠ telegráf-markert renderel a vanilla partikula-gyűrűvel egy helyen és időben, a becsapódásig; a `client.limits.fx-radius` körön kívüli kliens nem kap eseményt; vanilla kliensnél a telegráf-partikula/hang változatlan; sikeres /relic awakening armingnál a kliens banner-visszajelzést mutat; kikapcsolt kapunál egyetlen FX_EVENT sem megy ki | `client.features.advanced-fx-v1: false` | `client/CLIENT-21/` |
 
 ### Mini-plugin megfelelői
 
@@ -1429,7 +1567,8 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | WORLD-01 Crate helyek | Builder/admin | minden final crate block és világ | location, block és world policy egyezik | hely újrakötése | `world/WORLD-01/` |
 | [ ] | WORLD-02 Territórium/claim | Builder/admin | határpontok és bypass profil | védelem, trust és zónaszabály helyes | építés stop | `world/WORLD-02/` |
 | [ ] | WORLD-02B 3D főváros | Builder/admin | radiusos és claim-kijelöléses főváros stagingen | radius mód változatlan; a hat XYZ-határ, vertikális/világváltás, restart, `/territory show`, claim-konfliktus, kijelölés-életciklus és biztonságos tp/home helyes | rollout stop; hibánál kijelölés megtartása | `world/WORLD-02B/` |
-| [ ] | WORLD-03 Quest/NPC | Builder/eventes | minden használt NPC és questhely | FancyNpcs-kötés és fallback út működik | kötés újraépítése | `world/WORLD-03/` |
+| [ ] | WORLD-03 Quest/NPC | Builder/eventes | minden használt NPC és questhely | FancyNpcs-kötés és az admin `/quest talk` áthidalás működik | kötés újraépítése | `world/WORLD-03/` |
+| [ ] | WORLD-03B Quest-forrás v2 | Tesztelő/eventes | NPC-quest + megbízás + lánc-quest stagingen | NPC-quest csak az adó NPC-nél vehető fel és NÁLA adható le (KÉSZ állapot + záró dialógus ott); megbízás a napló Megbízások füléről indul és auto-zárul; `/quest accept`/`talk` játékosként tagadva; lánc-feloldás értesít, auto-lánc explicit auto-accepttel fut; hibás quests.yml reloadnál a korábbi registry él | quest-rollout stop, hibajegy | `world/WORLD-03B/` |
 | [ ] | WORLD-04 Boss/event anchor | Eventes | minden fix spawnhely | biztonságos, nem WG/claim-konfliktusos | anchor eltávolítása | `world/WORLD-04/` |
 | [ ] | WORLD-05 WorldEdit/világcsere | Builder | staging másolat utáni bejárás | crate, territory, NPC, ritual, dungeon ép | rollback snapshot | `world/WORLD-05/` |
 | [ ] | WORLD-06 Resource pack | Builder/tartalomkészítő | final pack és fallback kliens | ITEM_MODEL helyes, fallback használható | pack rollout stop | `world/WORLD-06/` |
@@ -1441,7 +1580,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | DEP-01 Artifact azonosítás | Üzemeltető | release JAR | SHA rögzítve, nem a deployed baseline JAR | ismeretlen JAR nem telepíthető | `deployment/DEP-01/` |
 | [ ] | DEP-02 Teljes backup | Üzemeltető | világ, plugins, config, state, remap cache | visszaállítható backup és restore próba | deployment törlése | `deployment/DEP-02/` |
 | [ ] | DEP-03 Config merge | Admin | live config + referencia | ismeretlen/legacy AFK kulcsok külön kezelve | stagingben javítás | `deployment/DEP-03/` |
-| [ ] | DEP-04 Permissionkiosztás | Vezető admin | LuckPerms export | 44 final statikus/dinamikus node áttekintve | ne nyisd ki a szervert | `deployment/DEP-04/` |
+| [ ] | DEP-04 Permissionkiosztás | Vezető admin | LuckPerms export | 45 final statikus/dinamikus node áttekintve | ne nyisd ki a szervert | `deployment/DEP-04/` |
 | [ ] | DEP-05 Ax cleanup | Üzemeltető | backup | AxAFKZone/AxAPI jar, adat és remap-cache nincs a célban | vissza backupból, vizsgálat | `deployment/DEP-05/` |
 | [ ] | DEP-06 Feltételes pluginok | Szervervezető | kitöltött acceptance | GSit/CrazyCrates/SModeration/InvSee++/MiniMOTD csak saját kapu után kerül ki | külső plugin marad | `deployment/DEP-06/` |
 | [ ] | DEP-07 Első staging start | Üzemeltető | tiszta log és másolt state | nincs kritikus persistence/config hiba | azonnali stop, logmentés | `deployment/DEP-07/` |
@@ -1450,6 +1589,79 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | DEP-10 Rollback próba | Üzemeltető | staging backup | korábbi build+state visszaállítható | production rollout tiltott | `deployment/DEP-10/` |
 | [ ] | DEP-11 Csapatkommunikáció | Szervervezető | team summary és guide linkek | admin/mod/builder/tester tudja a változást | rollout elhalasztása | `deployment/DEP-11/` |
 | [ ] | DEP-12 Production go/no-go | Szervervezető | minden kötelező pipa | dokumentált GO vagy indokolt NO-GO | nincs részleges, néma rollout | `deployment/DEP-12/` |
+
+### Kiegészítő staging-mátrixok
+
+Az alábbi kézi mátrixok az automatizált suite-okkal nem bizonyítható
+runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
+
+#### PlayerProfile
+
+- [ ] first join and profile directory/manifest/all section initialization
+- [ ] class selection, XP, spec and restart
+- [ ] delete all IceSMP player PDC mirrors, rejoin and verify identical class/spec/spell/profession/faction/companion state
+- [ ] spell selection, favorites and mastery
+- [ ] faction membership and switch state
+- [ ] profession XP, level and specialization
+- [ ] quest progress, reward claim and economy credit
+- [ ] wallet, bank, tax debt and refund recovery
+- [ ] `relics.passive-death.mode: keep`: passzív relikviával halál, respawn előtt teljes restart, majd join; a tárgy pontosan egyszer érkezik meg, megtelt inventorynál függőben marad, escrow-íráshibánál pedig a death drop-listában marad
+- [ ] pet/minion spawn, logout, restart and region transfer
+- [ ] Soulforge upgrade, duplicate operation and crash recovery
+- [ ] respec crash points and restart recovery
+- [ ] public, self and admin API auth/visibility/ETag/rate limits
+- [ ] API read during gameplay mutation
+- [ ] two-region Folia session and companion access
+- [ ] corrupt noncritical section, quarantine and explicit recovery
+- [ ] corrupt identity/manifest full-profile block
+- [ ] disable while transaction and HTTP request are active
+
+#### Invsee és adományláda
+
+1. Két admin nyissa meg ugyanazt a célt: az első WRITE, a második READ.
+2. A writer zárja be; a következő új megnyitás kapjon WRITE módot.
+3. MAIN ↔ ENDER váltás alatt maradjon meg ugyanaz a writer lease.
+4. Viewer-quit, target-quit, permissionvesztés és plugin-disable után ne maradjon lock.
+5. Teszteld az invsee escrowt viewer- és target-kilépéssel szerkesztés közben.
+6. Donation cursor bal/jobb katt, shift-click, drag, number key és offhand.
+7. Az adományozó zárja be vagy váltsa le azonnal a GUI-t; ne nyíljon vissza automatikusan.
+8. Töltsd meg a ládát és érd el a per-player limitet; a forrásitem maradjon érintetlen.
+9. Két játékos egyszerre kattintson ugyanarra az adományra; csak egyik kapja meg.
+10. A fogadó kurzorán legyen item: az átvétel tartós claim nélkül utasítódjon el.
+11. Állítsd le a folyamatot durable deposit prepare után, egyszer markerrel, egyszer a region-szálas levonás után: előbbi görgessen vissza, utóbbi pontosan egy adományt publikáljon.
+12. Állítsd le claim prepare előtt és a markerrel végzett kézbesítés után is: joinkor a tárgy mindkét esetben pontosan egyszer legyen meg.
+
+#### World-event spawn-védelem
+
+1. Tó, folyó, waterlogged lépcső és 7/8/9 blokkos partszegély.
+2. 10, 16 és 32 chunkos send distance, eltérő játékosbeállításokkal.
+3. Síkságon előre néző, majd 180 fokkal elforduló játékos.
+4. Több játékos különböző irányokból ugyanabban a térségben.
+5. Escort teljes útvonala, beragadás-nudge és hullámspawn claim/folyó mellett.
+6. Idegen 64–96 blokkra: legyen hallható, de ne jelenjen meg a játékos előtt.
+7. Két egyidejű eventkeresés, harmadik keresés budget-elutasítása és timeout.
+8. Már generált, de inaktív chunk visszatöltése; nem generált chunk fail-closed viselkedése.
+9. Plugin disable érkezési késleltetés és async chunk-future közben.
+10. Meteor lejárat, disable és mesterségesen bent hagyott `meteor-restore.yml` startup-recovery.
+11. Fix világboss-anchor chunkhatár közelében, majd ±8 blokkos probe-szórással.
+12. `/events debug spawn` eredményének összevetése a tényleges eventindítással.
+
+#### Frakció-névszínek
+
+1. Legyen egyszerre RED, BLUE, NEUTRAL és DARK játékos online.
+2. Ellenőrizd a tablistát és a fej fölötti nametaget világos és sötét háttér előtt.
+3. Ellenőrizd a natív chatet mind a négy frakcióval.
+4. Kapcsold ki a natív tablistát, és ellenőrizd a HUD fallbacket.
+5. PlaceholderAPI-olvasóval ellenőrizd a `%icesmp_faction_color%` kimenetet: NEUTRAL `§a`, DARK `§8`.
+6. Aktív raidben az ellenség piros felülírása továbbra is előzze meg a frakció alapszínét.
+
+#### Runtime hardening vizuális és integrációs próbák
+
+1. Két valódi kliens ellenőrizze a vanisht a világban, a tablistában és a production scoreboard/nametag plugin-stackben.
+2. BlockDisplay-fal igazodás és pontos minY/maxY lezárás sziklákon, lépcsőkön, barlangokban és egyenetlen terepen.
+3. Polygon-wand UX és konkáv claim-védelem futó Folia szerveren.
+4. DARK undead spawn-viselkedés valódi chunk unload/reload és szerver-restart során.
+5. WorldGuard-integráció production régiókkal és teljes resource-pack kliens-join.
 
 ### Záró döntés
 
@@ -1475,3 +1687,206 @@ world-location- vagy lifecycle-teszt hibás, a döntés automatikusan
 Ha egy kritikus persistence-, duplikációs, permission-, reconnect-,
 world-location- vagy lifecycle-teszt hibás, a release döntése automatikusan
 **NO-GO**. A zöld build nem írja felül a hiányzó runtime bizonyítékot.
+## First-party IceSMP class HUD
+
+A primary renderer az IceSMP része (`hud.icesmp-hud.enabled: true`); külső HUD plugin nem része
+a runtime- vagy dependency-stacknek. A tartós class/spec/frakció/profil authority továbbra is a
+Profile v2 / `PlayerProfileSnapshot`; a harci mechanikák authority-ja a class service-ek mulandó
+runtime state-je. Egyik HUD-renderer sem írhatja vissza az állapotot.
+
+### Személyes és globális layout-editor
+
+Az editor fő kapuja a `hud.icesmp-hud.editor.enabled` (bundled alapérték: `true`). A
+`hud.icesmp-hud.editor.personal-layouts-enabled` külön, élőben állítható kapu dönti el, hogy a
+játékosok szerkeszthetik-e a saját layoutjukat. Konzolból egyik mód sem nyitható, mert az előnézet
+játékosonkénti bossbar-kimenetet használ.
+
+- `/hud edit` vagy `/hud edit personal`: saját layout; nem kér admin permissiont, Profile v2-be ment.
+- `/hud edit global`: szerveralap; `icesmp.admin.hud-editor` permissiont kér, configba ment.
+
+Mindkét mód izolált, élő munkamenetet nyit. A kijelölt célpont borostyán kiemelést kap. A kompakt
+felület hat kattintható lapra oszlik: Áttekintés, Pozíció, Méret, Előnézet, Presetek és Elemek. A
+gyakori mozgatási és méretezési műveletek csak az actionbaron adnak tömör visszajelzést; a chatbe
+csak lapváltáskor kerül panel. A kattintható vezérlés és a tab completion mellett használható:
+
+- `select <komponens-id>`, illetve `previous` / `next` a szerkesztési célpont váltásához;
+- `move left|right|up|down` és `step 1|5|10|15` a kiválasztott célpontra;
+- `set x <érték>`, `set y <érték>` és `set scale <érték>` közvetlen értékbevitelhez;
+- `margin +|-` a `global` célponton;
+- `scale fine up|down` és `scale coarse up|down`;
+- `visibility` a kiválasztott komponens globális megjelenítéséhez/elrejtéséhez;
+- `preset <720p-gui2|1080p-gui2|2048x1152-gui3|1440p-gui3|4k-gui4|large-accessible>`;
+- `preview faction <previous|next|guest|red|blue|neutral|dark>`;
+- `preview class <previous|next|class-id>` mind a 13 classhoz;
+- `preview state <previous|next|representative|resource|wallet|event|spec|proc|charges|dk-runes|wizard-attunement>`;
+- `undo`, `reset` (kiválasztott célpont), `reset all`, `save`, `cancel`.
+
+A `global` a teljes, jobb felső sarokhoz horgonyzott HUD-blokkot mozgatja és méretezi. A külön
+szerkeszthető komponensek: `frame`, `class-icon`, `class-name`, `faction`, `level-icon`,
+`level-text`, `wallet-frame`, `wallet`, `resource-label`, `resource-bar`, `primary-mechanic`,
+`secondary-mechanic`, `charges`, `state-proc`, `detail-frame`, `detail-metrics`, `event-icon` és
+`event-text`. A keretek is önálló célpontok, ezért az adminnak a hozzájuk tartozó tartalommal együtt
+kell mozgatnia őket. Ez vanilla kliensen kattintásos, nyilas editor; közvetlen fogd-és-húzd
+drag-and-drop csak kliensmoddal lenne megvalósítható.
+
+Az előnézet kizárólag újonnan létrehozott immutable `IceSmpHudModel` fixture-t és immutable
+globális/komponens-layout snapshotot renderel. Nem ír class runtime-ot, PDC-t vagy valutát; másik
+játékos preview-ja és az élő gameplay snapshot nem változik. A személyes `save` a Profile v2
+`preferences` szekciójába csak a pillanatnyi globális alaptól eltérő mezőket írja CAS-mutatációval.
+Ezért egy nem módosított komponens követi a későbbi globális változást, a személyesen beállított mező
+viszont stabil marad restart és globális átállítás után is. Személyes módban a `reset` a kijelölt mezőt,
+a `reset all` a teljes layoutot visszaköti az aktuális globális alaphoz, és mentéskor törli a felesleges
+felülírásokat.
+
+A globális `save` optimista config-generáció/fingerprint ellenőrzéssel egy atomikus batchben írja a
+`hud.icesmp-hud.layout.*` és `hud.icesmp-hud.layout.components.<id>.*` override-okat; közben módosult
+config esetén fail-closed `STALE` eredménnyel elutasít. Siker után minden online játékos effektív HUD-ja
+a saját Folia entity schedulerén frissül. A `cancel` azonnal visszaállítja az élő HUD-snapshotot.
+
+A globális X/Y eltolás,
+jobb oldali biztonsági margó és méret után minden komponens saját relatív X/Y eltolása, mérete és
+láthatósága ugyanazon a production rendererútvonalon érvényesül. A támogatott méretek: `0.75`,
+`0.90`, `1.00`, `1.15`, `1.25`, `1.40`, `1.60`, `1.80`, `2.00`, `2.20`, `2.40`, `2.60`,
+`2.80`, `3.00`, `3.25`, `3.50`; a komponens relatív mérete a globális
+mérettel szorzódik, majd a legközelebbi buildkor generált variánsra kerekül. Hibás vagy tartományon
+kívüli mező komponensenként és mezőnként biztonságos alapértékre esik vissza. A játékos saját
+`/hud toggle` szekciópreferenciája ugyanebben a Profile v2 preferences-authorityban, de külön kulcson marad.
+Pack-readiness hiányában az editor nem küld font-glyphet, és a natív/Folia fallback marad aktív.
+
+Ha a személyes szerkesztést ideiglenesen le kell állítani, a `personal-layouts-enabled` kaput kapcsold
+ki. A már mentett layoutok ettől továbbra is érvényesülnek. Az editor megjelenítési authority;
+gameplay javítására vagy profiladat módosítására soha ne használd.
+
+Minden játékos saját Folia-régiószálán készül egy immutable `HudSnapshot`. A 13 class külön Java
+`hudState` adaptere közvetlenül típusos `ClassHudMetric` és `ClassHudSlot` adatot ad át; renderelt
+magyar szöveg visszaparzolása tilos. A first-party renderer és a PlaceholderAPI ugyanazt az
+immutable cache-t olvassa, ezért az async kérés nem
+érinti az élő `Player`, PDC vagy PlayerProfile objektumot.
+
+A közös contract fő csatornái:
+
+- identity: `class_id`, `class_name`, `class_spec_id`, `class_spec_name`, `class_level`;
+- világ/profil: `faction_id`, `faction`, `balance`, `event`, `wallet_count`, valamint
+  `wallet_<1..4>_<id|name|amount|primary>`;
+- resource: `resource_name`, `resource_current`, `resource_max`, `resource_percent`;
+- mechanika: `class_mechanic_primary`, `class_mechanic_secondary`, `class_state`, `class_proc`,
+  `class_charges`, `class_charges_max`;
+- típusos csatornák: `class_metric_count`, valamint
+  `class_metric_<primary|secondary|tertiary|quaternary|quinary>_<id|label|text|value|max|percent|state|visual_state>`;
+- diszkrét slotok: `class_slot_count`, valamint
+  `class_slot_<1..9>_<id|kind|state|progress|label>`.
+
+A PAPI-változat minden név elé `%icesmp_` prefixet és a végére `%` jelet kap. A PlaceholderAPI
+opcionális olvasási felület; a first-party renderer közvetlenül az immutable snapshotot használja.
+
+Az aktuális class-runtime lefedettség:
+
+| Class | HUD-on olvasható élő mechanika |
+|---|---|
+| Warrior | csatatempó és tier, vér/kimerülés, overdrive/utóhatás, őrség és eskücél |
+| Evoker | empower rank, vörös/kék eszencia, rezonancia/burst, időlenyomat, ally-jel és echo |
+| Archer | szélolvasás, precision chain/weak point és beast bond |
+| Shaman | fő/kísérő totemelem, rezonancia/overload, Maelstrom, árapály és áldásoldal |
+| Monk | flow, combo chain, Stagger és mist-thread slotok |
+| Paladin | oath/conviction, beacon cél, judgement jelek és shield charge |
+| Demon Hunter | load band/overload, fragment/momentum, pain és sigil slotok |
+| Druid | harmony/season, autumn window, feral combo/scent, lunar balance/eclipse, bark/roots és seedek |
+| Priest | litany/verse, shield/atonement/conversion, marrow/ossuary és madness threshold |
+| Death Knight | typed rune slotok és recharge, blood memory, frost marks, plague és ghoul mutation |
+| Assassin | opening, toxin/dose, stealth/detection, shadow trail/echo, infection/strain |
+| Warlock | soul debt, curse/soul thread, ember/overheat és demon roster |
+| Wizard | runewaving első iskola/reakció, három külön attunement/Korona és necromancer court |
+
+A két fő numerikus metric saját faction-színű fill bart kap. A tényleges diszkrét számlálók
+legfeljebb kilenc ready/spent slotként jelennek meg; minden slot a classhoz és mechanikához kötött
+saját glyphet használ, nem közös generic charge ikont. Ezek az adapter charge-értékéből származnak,
+nem kijelzési rétegben fenntartott állapotok. Az Elementalista három extra metricje három külön mini bar.
+
+### Readiness és fallback
+
+Az IceSMP játékosonként csak `SUCCESSFULLY_LOADED` resource-pack státusz után aktiválja a saját
+HUD-ot. Addig — elutasítás, letöltési hiba vagy join-verseny esetén is — a natív compact
+Folia bossbar/scoreboard fallback marad. Sikeres readiness után a natív class/resource sor elnémul,
+így nincs duplikáció vagy villogás. A `/hud mind` a first-party panelt is elrejti.
+
+Várt diagnosztika:
+
+- `IceSMP HUD pack ready: first-party class HUD active; native class HUD suppressed.`
+- hiányzó/elutasított pack esetén a natív fallback marad, a szerverindulás nem fatal;
+- egy korábban aktív HUD elvesztésekor: `native class HUD fallback restored`.
+
+### Vizuális rendszer
+
+A HUD öt külön grafikai skint használ: RED kovácsolt vas/főnix, BLUE fagyacél/jégkristály,
+NEUTRAL faragott tölgy/céhes réz, DARK obszidián/csont/lich-rúna, a Menedék vendége pedig
+önálló erőd/kapu-acél/patina külső héjat. Mind az öt ugyanazt a kanonikus belső panelrácsot használja,
+így a portré, a resource és a mechanikák koordinátái frakcióváltáskor sem mozdulhatnak el.
+Mind a 13 class, továbbá a pénz-, event- és szintjelölés saját 64×64-es ikont kap. A 49
+class-qualified mechanikacsalád egymástól eltérő, átlátszó glyph; mindegyikhez
+`active`, `ready`, `alert` és `spent` variáns tartozik a first-party rendererben.
+A Death Knight rúnaköre slotonként adja át a Vér,
+Fagy és Halál típust, valamint a `ready`, `spent`, `regenerating` állapotot és a regenerációs
+százalékot. A nagy keretek kontrollált antialiasingot és anyagárnyalást használhatnak; a progress
+maszkok kemény alfájúak. A proc-toast mind az öt megjelenítési témához külön 300×72-es keretet
+kap; a production layout ezt class-ikonnal és frakció-accenttel rétegezi.
+
+A szerkesztési források és ellenőrzőlapok a `dev-assets/icesmp-hud/` könyvtárban, a futásidejű
+assetek a `resource-pack/assets/icesmp_hud/` alatt vannak. A reprodukálható generátorok:
+
+```text
+./gradlew generateIceSmpHudAssets
+./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest hudEditorRegressionTest
+./gradlew auditIceSmpHudAssets
+```
+
+A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, 49 egyedi mechanikacsaládot,
+a kilenc typed charge/stack- és nyolc DK slotcsatornát, a progress-maszkok alfáját és a 2,5 MB-os
+runtime asset budgetet. Az asset-audit minden PNG-n ellenőrzi a méretet, alfát, cropot, margót,
+középre igazítást, élességet, magenta fringe-et és a rögzített glyph-width markert.
+A generált layout jobb felső sarokhoz horgonyzott. A 64×64-es ikonokat a first-party font/shader
+réteg rögzített cellákban rajzolja, ezért GUI scale- és dinamikus értékváltáskor sem csúszhat el a panel.
+Az x-horgony a vetítés utáni clip-space jobb széléhez kötődik. A shader a Minecraft `Globals`
+`ScreenSize` mezőjéből visszaszámolja a GUI-skálát, majd a teljes HUD-réteget a config által
+kiválasztott tizenhat buildkori scale-variáns egyikével egységesen méretezi. A renderer a 13 bites
+layout-azonosítót csak a saját HUD-glyphök RGB layoutbitjeiben továbbítja; a shader ebből a
+függőleges pixeleltolást és a scale-indexet alkalmazza. Emiatt teljes képernyőn és kis ablakban is ugyanott marad,
+nem lesz 2–3-szoros a panel, és az alsó sávok sem válnak le a keretről. Egy bitmap glyph legfeljebb 256×256 lehet; a keretek és
+alsó sávok 240 pixel szélesek, így a Minecraft font-stitcher nem cseréli őket hiányzó karakterre.
+A magyar HUD-atlasz a repo-ban licenccel tárolt DejaVu Sans forrás négyszeres túlmintavételezésével
+készül; az alacsony felbontású, pixeles runtime font nem elfogadható generátorkimenet.
+Az új proc-állapot is a régiószálon előállított snapshot része; a renderer kizárólag olvassa.
+
+### A korábbi felső négyzet oka
+
+A képernyő tetején látható négyzet nem scoreboard-adat volt, hanem be nem illeszthető vagy
+resource-pack nélkül kirajzolt HUD font-glyph. A first-party backend csak a kliens sikeres
+pack-visszajelzése után mutat panelt, a build pedig tiltja a 256 pixeles klienskorlátot túllépő
+panelglyphöt; ezért elutasított/hibás packnál ilyen glyph nem kerülhet képernyőre. A saját renderer BMP PUA
+spacinget, rögzített glyph-cellákat és zéró nettó szélességű rajzparancsokat használ; a dinamikus
+`0`/`120` érték vagy rúnaikon így nem tolhat el más HUD-elemet.
+
+### Resource-pack útvonal
+
+A `runFolia` fejlesztésben továbbra is képes a lockolt külső alapcsomagot provisionálni. Productionben
+nincs plugin-auto-download és nincs HUD-plugin self-host. A `.github/workflows/resource-pack-r2.yml`
+SHA-1-gyel ellenőrzi az immutable külső ZIP-et, majd `stageMergedResourcePackForR2` determinisztikusan
+illeszti rá a kanonikus `resource-pack/` fát. Csak az IceSMP namespace-ek, a first-party HUD shader
+és a fehér HUD-bossbar sprite-ok felülírása engedélyezett; minden más ütközés buildhiba. A publikálás
+SHA-1 néven R2-re tölt, és csak a publikus URL ellenőrzése után frissíti a fallback metadatát.
+
+### Profile/menu verdict
+
+Jelenleg a helyes modell **first-party HUD + inventory GUI**: a persistent/contextual kijelzés az
+IceSMP saját renderere, a kattintható Profile v2 szerkesztőmenük inventory GUI-k maradnak. Egy későbbi
+menüvizuál-rework csak a meglévő tranzakciós parancsok és GUI callbackek fölötti megjelenítési réteg
+lehet; a HUD nem lehet mutációs authority.
+
+Kézi elfogadási minimum:
+
+- mind az öt téma (külön Menedék-vendég), mind a 13 class és legalább egy spec/class;
+- DK teljes, fogyó és regeneráló rúnák; Wizard `0` és `120` mana/ráhangolódás; más classnál
+  üres, részleges és teljes charge-sor — egyik értékváltás sem mozdíthatja el a panelt;
+- default frakcióvaluta nulla egyenleggel is; minden pozitív idegen banki valuta saját ikonnal;
+- aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
+- külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
+- a pack sikeres betöltéséig natív compact fallback, utána pontosan egy class HUD.

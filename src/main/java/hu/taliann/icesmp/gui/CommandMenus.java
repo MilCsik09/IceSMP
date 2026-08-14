@@ -6,6 +6,7 @@ import static hu.taliann.icesmp.gui.GuiUtil.label;
 
 import hu.taliann.icesmp.commands.ClaimCommand;
 import hu.taliann.icesmp.commands.EventsCommand;
+import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpecializationType;
@@ -283,7 +284,7 @@ public final class CommandMenus {
                         List.of(grey("Erős környezeti hőellenállás."), click()));
                 case BLUE -> GuiUtil.icon(Material.BLUE_WOOL, Component.text(prefix + ": Fagy (Cryghaliris)", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false),
                         List.of(grey("Fagyvédelem, részleges vízi és éhségelőny."), click()));
-                case NEUTRAL -> GuiUtil.icon(Material.WHITE_WOOL, Component.text(prefix + ": Menedék (Ryanora & Caldestera)", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                case NEUTRAL -> GuiUtil.icon(Material.LIME_WOOL, Component.text(prefix + ": Menedék (Ryanora & Caldestera)", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false),
                         List.of(grey("Esésvédelem, békés lények jóindulata, adómentesség."), click()));
                 case DARK -> GuiUtil.icon(Material.BLACK_WOOL, Component.text(prefix + ": Kitaszított (A Kitaszítottak)", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false),
                         List.of(grey("Wither-ellenállás, helyzetfüggő élőholt-béke."),
@@ -821,6 +822,11 @@ public final class CommandMenus {
                     List.of(grey("Unique/recept/relikvia/tervrajz/erszény."),
                             grey("/iceitem — használat chatben."), click())), "OPEN:iceitem");
         }
+        if (player.hasPermission(Permissions.HUD_EDITOR)) {
+            put(inv, holder, 15, GuiUtil.icon(Material.PAINTING, title("HUD-editor"),
+                    List.of(grey("First-party HUD layout és előnézet."),
+                            grey("/hud edit"), click())), "OPEN:hud edit");
+        }
         if (player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)) {
             put(inv, holder, 12, GuiUtil.icon(Material.ITEM_FRAME, title("Árfolyamtábla lerakása"),
                     List.of(grey("/exchangeboard place"), click())), "RUN:exchangeboard place");
@@ -892,7 +898,8 @@ public final class CommandMenus {
                 || player.hasPermission(ADMIN_NPC_PERMISSION)
                 || player.hasPermission(ADMIN_QUEST_PERMISSION)
                 || player.hasPermission(ADMIN_CONFIG_PERMISSION)
-                || player.hasPermission(ADMIN_ITEM_PERMISSION);
+                || player.hasPermission(ADMIN_ITEM_PERMISSION)
+                || player.hasPermission(Permissions.HUD_EDITOR);
     }
 
     // ===== LEADERBOARD =====

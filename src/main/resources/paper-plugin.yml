@@ -13,21 +13,24 @@ folia-supported: true
 authors: [ Taliann ]
 
 # Opcionális integrációk (mind soft-depend, required: false — nélkülük is fut):
-#  - LibsDisguises: a Druida formák vizuális átalakulása (mob-disguise). A reflexiós híd
-#    (DruidDisguise) join-classpath-tal éri el az osztályait futásidőben.
-#  - PlaceholderAPI: a %icesmp_...% placeholderek (pl. a TAB megjeleníti az Erő-csíkot,
-#    frakciót, kasztot, party-HUD-ot). load: BEFORE, hogy a regisztrációkor már elérhető legyen.
+#  - LibsDisguises: a Druida formák és a kém-álca vizuális átalakulása. A reflexiós hidak
+#    join-classpath-tal érik el az osztályait futásidőben.
+#  - PlaceholderAPI: a %icesmp_...% placeholderek külső, csak olvasó integrációkhoz.
 #  - FancyNpcs: a TALK_TO_NPC quest-objektívák (kaszt-mester próbák). A reflexiós híd
-#    (FancyNpcsQuestBridge) join-classpath-tal éri el az API-ját futásidőben.
+#    join-classpath-tal éri el az API-ját futásidőben.
 #  - WorldEdit/FastAsyncWorldEdit: a WorldGuard-híd Bukkit-adapterét és vektortípusait
 #    adja. A FAWE a WorldEdit nevet provides-aliasként biztosítja.
 #  - WorldGuard: a blokkot helyező események (meteor, kincs) kerülik a WG-régiókat, a
 #    személyes claimek pedig nem metszhetnek WG-régiót. A ProtectionBridge mindkét
 #    plugint opcionális, csatlakoztatott classpathon éri el.
 #  - LuckPerms: a natív chat-formázó a LP prefix/suffix-et jeleníti meg. A reflexiós híd
-#    (LuckPermsBridge) join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
-#  - TAB: csak load-order (az indulási kompatibilitás-tanácsadó megbízhatóan észlelje);
-#    az IceSMP nem hívja az API-ját.
+#    join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
+#  - MythicMobs, FancyDialogs és PacketEvents kizárólag a hozzájuk tartozó opcionális
+#    integrációs utakhoz használhatók. A class-spec-dependencies.lock.yml verzió-pin és
+#    dev-provisioning authority; a runtime preflight kizárólag explicit `required-runtime`
+#    lock-bejegyzést tehet startup-fatalra.
+#  - Production induláskor az IceSMP soha nem tölt le plugint; az automatikus provisioning
+#    kizárólag a Gradle runFolia fejlesztői feladata.
 dependencies:
   server:
     LibsDisguises:
@@ -53,6 +56,15 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
-    TAB:
+    MythicMobs:
       load: BEFORE
       required: false
+      join-classpath: true
+    FancyDialogs:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    packetevents:
+      load: BEFORE
+      required: false
+      join-classpath: true

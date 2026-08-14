@@ -35,11 +35,16 @@ def verify_source_protocol() -> None:
     require_order(tick, "coordinator.commit(closingSeason, openedSeason, seasonCommit)", "processPendingSeasonRewards()")
     if "treasuryManager.deposit(" in close:
         raise SystemExit("Season close must not perform non-idempotent treasury deposits")
-    delivery = season[season.index("private void deliverMemberClaim"):]
+    delivery = season[season.index("private CompletionStage<Void> deliverMemberClaim"):]
     delivery = delivery[:delivery.index("private boolean canFitAll")]
-    require_order(delivery, "getInventory().addItem", "setSeasonRewardReceipts", "persistPlayer", "acknowledgeMemberClaim")
+    # A PlayerProfile-migráció utáni protokoll: durable operation-receipt (prepare→commit)
+    # keretezi a kézbesítést; a commit CSAK sikeres persist után, az acknowledge a commit után.
+    require_order(delivery, "operationStore.prepare", "getInventory().addItem",
+                  "applyMemberBuff", "if (!persistPlayer(player))",
+                  "operationStore.commit", "acknowledgeMemberClaim")
     failed = delivery[delivery.index("if (!persistPlayer(player))"):]
-    require_order(failed, "setStorageContents(inventoryBefore)", "restorePotionEffects", "setSeasonRewardReceipts")
+    require_order(failed, "setStorageContents(inventoryBefore)", "restorePotionEffects",
+                  "operationStore.commit")
     if "dropItemNaturally" in season:
         raise SystemExit("Durable season rewards must not use world-drop overflow")
     if "recordSeasonOnce" not in monument or "applied-grants" not in monument:

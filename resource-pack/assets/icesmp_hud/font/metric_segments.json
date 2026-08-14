@@ -1,0 +1,40 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/metric-track.png",
+      "ascent": -8433771,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/metric-fill.png",
+      "ascent": -8441963,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/metric-fill-warm.png",
+      "ascent": -8441963,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/metric-fill-gold.png",
+      "ascent": -8441963,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

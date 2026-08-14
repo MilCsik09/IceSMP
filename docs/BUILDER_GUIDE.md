@@ -63,7 +63,7 @@ Minden helyszínhez legyen egy rövid átadólap:
 
 | Rendszer | Fizikai hely kell? | Hogyan kötődik a világhoz? | Bundled állapot | Fő builderteendő |
 |---|---|---|---|---|
-| Crate | Igen, ha blokkra kattintható crate kell | Tartós világ UUID + világnév + blokkkoordináta | Két definíció van; fizikai placement runtime adat | Építs pickup-biztos környezetet, majd `/crate set <id>` |
+| Crate | Igen, ha blokkra kattintható crate kell | Tartós világ UUID + világnév + blokkkoordináta | Nyolc alapdefiníció van; fizikai placement runtime adat | Kösd az alsó szint 8 állomását, majd `/crate set <id>` |
 | Sit-only | Nem külön helyszín, de a blokkok geometriája számít | Engedélyezett világok, anyagok és blokkállapot | Alapból engedélyezett | Támogatott ülőfelületekkel és megfelelő fejhellyel építs |
 | Territórium/főváros | Igen | Kör- vagy poligonzóna és opcionális magassági sáv | Nincs bundled élő zónapéldány | Határ, típus, frakció és spawn adminbekötése |
 | Játékosclaim | Játékos hozza létre | Blokkpontos doboz a világ nevével | Runtime tartós adat | Úgy tervezz telkeket, hogy a claimhatárok ne vágják ketté a közös infrastruktúrát |
@@ -154,10 +154,22 @@ Egy crate-definíció attól még létezhet, hogy egyetlen blokk sincs hozzá
 regisztrálva. Egy regisztrált blokk pedig veszélyessé válhat, ha a hozzá
 tartozó definíciót előbb törlitek a configból.
 
-A bundled release két crate ID-t ad: `koznapi` és `ritka`. Mindkettő
-`TRIPWIRE_HOOK` alapú kulcsot használ, de külön item-modellel,
-jutalomkészlettel és szabályokkal. Az elhelyezéskor az ID-t pontosan,
+A bundled release nyolc crate ID-t ad: `koznapi`, `ritka`, `hosi`,
+`mitikus`, `mesterseg`, `expedicio`, `hadizsakmany` és `arkanum`.
+Ezek az alsó szint 8 állomását töltik ki; a felső szint 8 helye későbbi
+szezonális, frakciós és eventládáknak marad. Mindegyik `TRIPWIRE_HOOK`
+alapú, saját item-modellel és jutalomprofillal, és a bundled configban egyik
+sem kér crate-specifikus permissiont. Az elhelyezéskor az ID-t pontosan,
 ékezet nélkül add meg.
+
+A reward-preview nem puszta Material-ikont használ: unique itemnél,
+recepttárgynál, tervrajznál és ládakulcsnál a tényleges `ITEM_MODEL` kerül a
+GUI-ba és a világban futó revealbe. A `random-blueprint` jutalom szakmával,
+`min-level`/`max-level` tartománnyal és az alapból hamis
+`include-loot-only` kapcsolóval szűrhető. Üres pool érvényteleníti a crate
+definícióját. `ELYTRA` sem közvetlen itemként, sem Elytrát eredményező
+receptből/tervrajzból nem engedélyezett; repülőszárnyat csak a relikviarendszer
+kezelhet.
 
 ### 4.2. Crate-hely létrehozása
 
@@ -196,7 +208,7 @@ Cserénél:
 5. próbáld ki a régi és az új kulcsot is;
 6. restart után ismét ellenőrizd.
 
-Ne cserélj crate-definíciót egy aktív spin vagy settlement közben. A
+Ne cserélj crate-definíciót aktív ItemDisplay-reveal vagy settlement közben. A
 config-generáció változása megszakíthatja a folyamatot, amely ezután
 recovery-ágra kerülhet.
 
@@ -1032,3 +1044,46 @@ rituáléstruktúrákat és rejtett helyeket.
 
 A teljes pipálható csapatfolyamat:
 [release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).
+
+## 18. Season 0 / Prologue — Olethropyla runtime hookok
+
+A Prologue **nem használ beégetett világkoordinátákat**. A végleges staging
+világon négy konfigurált runtime hookot kell feloldani és ellenőrizni:
+
+| Hook | Szerep | Builderfeltétel |
+|---|---|---|
+| `prologue-gate` | Olethropyla / Kárhozat Kapuja központi kapu-anchor | a tényleges ősi Kapu helye; védett, jól megközelíthető, a Nether-travel policyvel együtt tesztelve |
+| `prologue-gathering` | a production finale gyülekezőpontja | nagyobb játékoscsoport számára szabad, biztonságos tér, ne essen spawn- vagy combatveszélybe |
+| `prologue-breach` | a breach- és finale-hullámok encounter anchorja | moboknak/addoknak elegendő mozgástér, tiszta spawnmag, nincs claim/WG/territory ütközés |
+| `prologue-boss` | a finale boss arena anchorja | boss + addok + telegraphok számára szabad aréna, menekülési és játékosforgalmi útvonallal |
+
+A dokumentációba **ne írj kitalált koordinátát**. A hookok tényleges értéke a
+végleges world buildből jön; módosítás előtt készíts world/config backupot,
+és minden kötést a végleges release-builddel olvass vissza.
+
+### Builder acceptance
+
+A Prologue helyszínt csak akkor add át, ha mind a négy hook ténylegesen
+feloldódik, nincs idegen claim/WorldGuard/protection konfliktus, és a normál
+játékosos hozzáférés megfelel a Season 0 policynek. Külön próbáld ki:
+
+1. a `prologue-gate` elérhetőségét Season 0 alatt úgy, hogy a Kapu még nem
+   átjárható;
+2. a rehearsal teljes gathering → breach → boss útját tartós Gate/reward
+   side effect nélkül;
+3. production finale startot, pause-t, resume-ot és az irreverzibilis
+   szakasz előtti abortot;
+4. aktív wave és boss közbeni pause-t: a mobok nem harcolhatnak tovább, új
+   spawn/mechanika nem indulhat, a játékos sem ütheti büntetlenül a
+   befagyasztott event mobot;
+5. `BOSS_FIGHT` + pause alatti kontrollált restartot, majd resume-ot;
+6. abort, timeout és kontrollált shutdown után az event entityk teljes
+   cleanupját, árva Prologue mob nélkül;
+7. Gate-unlock után az egyetlen legitim Nether-átjárást Olethropylán; más
+   Nether-portál létrehozása továbbra is tiltott;
+8. az End policy változatlanságát — a Prologue buildermunka nem nyitja meg a
+   Véget és nem hoz létre alternatív portálrendszert.
+
+A world-hook acceptance kézi stagingkapu. A source-level Folia és regression
+tesztek nem helyettesítik a tényleges aréna-, collision-, spawn- és
+játékosforgalmi próbát.

@@ -16,7 +16,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~90 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~94 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -36,20 +36,35 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
-| `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 121 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
-| `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 47 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
+| `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
+| `spells/` | 59 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
+| `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
+| `quest/` | 8 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
+| `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
-| `factions/` | 15 | Explicit tagsági értékobjektum és rollbackelhető membership-mutation, immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és frakcióeredetű adósság-ledger. |
+| `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
-| `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
-| `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
+| `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
+| `items/` | 13 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…) + viselhető prezentáció. |
+| `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
+| `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
+| `archer/` | 3 | Íjász gameplay vertical slice: transiens állapot + konkrét runtime (Szélolvasás, Pontossági lánc, Kötelék) + a repülő nyilak korlátos, magától lejáró fegyelem-nyilvántartása (`ArcherShotLedger`). |
+| `shaman/` | 2 | Sámán gameplay vertical slice: transiens állapot + konkrét runtime (Totemkerék-rezonancia, Maelstrom-ritmus, Dagály↔Apály). |
+| `monk/` | 2 | Szerzetes gameplay vertical slice: transiens állapot + konkrét runtime (Áramlás, Harcművészeti Lánc, Stagger, Ködszál). |
+| `paladin/` | 2 | Paplovag gameplay vertical slice: transiens állapot + konkrét runtime (Meggyőződés/Eskü, Fényjelző, Ítélet-jelek, Pajzstöltet). |
+| `demonhunter/` | 2 | Démonvadász gameplay vertical slice: transiens állapot + konkrét runtime (Kárhozat-terhelés, Lélektöredék/Momentum, Fájdalom/Sigil). |
+| `druid/` | 2 | Druida gameplay vertical slice: transiens állapot + konkrét runtime (Harmónia/Évszak másodlagos mechanika, Természeti Erő primary resource, kombó+Szagnyom, Nap–Hold mérleg/Eclipse, Kéregrétegek/Gyökérháló, Mag→érés→Virágzás). |
+| `priest/` | 2 | Pap gameplay vertical slice: transiens állapot + konkrét runtime (Litánia-versek, Engesztelés rekurzió-őrrel + pajzsháló, Velő/Osszárium, Őrület-Küszöb). |
+| `deathknight/` | 2 | Halállovag gameplay vertical slice: transiens állapot + konkrét runtime (Rúnakör Vér/Fagy/Halál, fix méretű Vér Emlékezete, Fagyjelek, Dögvész + ghúl-mutáció). |
+| `assassin/` | 2 | Orgyilkos gameplay vertical slice: transiens állapot + konkrét runtime (Lehetőség négy nyitányból, háromhelyes Toxinkészlet + Dózis, Észleltség/időkorlátos rejtőzés, korlátos Járvány-nyilvántartás). |
+| `warlock/` | 2 | Boszorkánymester gameplay vertical slice: transiens állapot + konkrét runtime (Paktum/Lélekadósság, háromhelyes Átokgrimoár + Lélekfonal, Izzó Parázs/Túlhevülés). A Demonológus paktum NEM transziens: egyetlen authorityja a durable `demonologist.roster` companion névsor, amit a runtime csak a közös `ClassSpecCatalog.companionProjection` szabállyal olvas, és a `PetManager` companion-gatewayen keresztül, durable-first módon mutál. |
+| `wizard/` | 2 | Varázsló gameplay vertical slice: transiens állapot + konkrét runtime (Rúnaszövés öt tételes párral, három ráhangolódás Konvergenciával/Elemi Koronával; a lecsengés rögzített horgonyból számol, ezért lekérdezés-gyakoriságtól független). A Holtak Udvara NEM transziens: egyetlen authorityja a durable `necromancer.court` companion névsor, és ugyanaz a felvételi szabály (`ClassSpecCatalog.admitsCompanion`) dönt a cast előtt és a commitban. |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 24 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, egyebek. |
+| `utils/` | 28 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, `PlatformCapabilities`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
@@ -259,6 +274,22 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
 
+### 3.8.1 Kaszt/spec rework — verziózárt kapu és adapterhatárok
+
+A 13 kaszt / 35 specializáció reworkje külön, alapból tiltott rollout-kapu mögött épül. Az
+`IceSMPCore.enable()` a gameplay store-ok betöltése előtt futtatja a
+`ClassSpecDependencyPreflight` ellenőrzést. A kapu csak akkor blokkol, ha a rework és az enforcement
+is aktív; legacy módban a jelenlegi production változatlanul elindul.
+
+A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
+megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil
+UUID-t, string ID-t, immutable snapshotot és saját handle-t engednek át. CraftEngine-,
+ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jelenhet meg.
+
+A class/spec integráció teljes helyi próbája a `runFolia` feladattal fut: ugyanazt a lockolt
+Folia 1.21.11 build 14-et és a lockolt pluginverziókat használja, mint a production cél, és előkészíti az egyetlen
+IceSMP + külső composite packot. A sima `runServer` nem production-helyettesítő.
+
 ### 3.9 Territórium-zónák és zóna-védelem
 
 A **zóna-modell** három rétegre bomlik, hogy a geometria, a szabály-feloldás és az
@@ -324,16 +355,13 @@ dungeon/world-boss jutalom és minden más frakciós jogosultság ugyanebből az
 explicit modellből indul. Az onboarding fix `NEUTRAL` Creutzér-jutalma
 vendég-útravaló; nem tesz állampolgárrá. A vendég nincs az aktuális periodikus
 adóbeszedési körben, de a hiányzó assignment nem törölheti egy korábbi polgár
-adóhátralékát vagy adócsalási strike-ját. A `FactionTaxDebtLedger` minden
-tartozást és strike-ot `(UUID, eredet-frakció)` szerint tart nyilván: váltáskor
-a régi tétel nem konvertálódik, hanem az eredeti valutából az eredeti kasszába
+adóhátralékát vagy adócsalási strike-ját. A `PlayerProfileTaxStore` minden
+tartozást és strike-ot az owner profil ECONOMY szekciójában, eredet-frakció szerint tart nyilván:
+váltáskor a régi tétel nem konvertálódik, hanem az eredeti valutából az eredeti kasszába
 törlesztődik. A legacy `tax-arrears` / `tax-evasion-strikes` import eredet-frakciója a scalar
-sémából nem bizonyítható, ezért aktív assignmentből vagy tartós utolsó
-választásból sem kerül automatikusan kikövetkeztetésre. A rekord minden esetben
-`legacy-tax-debts-unresolved` karanténban marad:
-nem vesz részt automatikus beszedésben, és a következő frakcióválasztáshoz sem
-kötődik hozzá. Greenfield szerveren csak explicit offline adminmigrációval vagy
-kontrollált törléssel kerülhet vissza támogatott runtime state-be.
+sémából nem bizonyítható, ezért nem kerül automatikusan új frakcióhoz. A támogatott runtime
+nem tart fenn külön YAML- vagy UUID-map authority-t: a PlayerProfile-tól független régi
+ledger/journal implementáció nincs bekötve.
 
 A `FactionManager` a teljes assignment+history generációt írja lemezre, mielőtt
 volatile live state-et vagy lifecycle-hookot publikál. Fizetős váltásnál a
@@ -595,9 +623,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 576 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 120 fájl).
-  Csomag-megoszlás: listeners 121, managers 121, commands 94, spells 56, gui 47, crates 14, utils 24, data 15,
-  items 12, relics 9, integration 6.
+- **Méret:** 870 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
+  Csomag-megoszlás: listeners 121, managers 125, commands 95, spells 59, gui 69, crates 14, utils 26, data 15, classrelic 14,
+  items 12, relics 11, quest 8, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -646,3 +674,857 @@ single-winner gate-et és race-biztos task lease-t használ. Az üzemeltetési
 és recovery-szerződést az
 [admin kézikönyv crate acceptance szakasza](ADMIN_GUIDE.md#natív-crate)
 foglalja össze.
+## PlayerProfile platform
+
+<!-- icesmp-doc-id: feature.platform.player_profile -->
+
+All IceSMP-owned durable player state must enter a registered PlayerProfile section; PDC may only be runtime, item/entity metadata or a deterministic derived mirror.
+
+### Canonical model
+
+`PlayerProfileSnapshot` is the single logical aggregate for IceSMP-owned, restart-durable player state. It is immutable, Bukkit/YAML/SQL/HTTP independent and owner-bound by UUID. The root contains identity, lifecycle, onboarding, faction, economy, class-spec, professions, spellbook, talents, quests, companions, relics, achievements, statistics, preferences, social links, moderation and operations sections. Shared guild, party, market, claim, treasury, council, raid, season and audit-log aggregates remain separate and are referenced only by stable IDs.
+
+### Storage boundary
+
+Gameplay, commands, GUIs and APIs depend on `PlayerProfileRepository` and `PlayerProfileTransactionManager`, not YAML. `YamlPlayerProfileRepository` is the current adapter; a future SQL adapter must implement the same contracts. The class/spec model is `ClassSpecSection`; no independent ClassProfile aggregate or opaque ICS2 profile blob exists. Profile YAML files round-trip with literal keys on both read and write (SnakeYAML safe load/dump, duplicate keys rejected); Bukkit `YamlConfiguration` must not parse them, because it splits dotted extension keys into nested sections and silently breaks restart durability.
+
+### Ledger-derived summaries and shared-goal splits
+
+The shared punishment ledger (`moderation-data.yml`) stays the moderation audit authority; every ledger mutation re-derives the player's `ModerationSection` reference/summary (active punishment record IDs plus strike count) through `PlayerProfileModerationStore`, and the pre-login gate re-syncs it, so a failed publish self-heals. The weekly profession guild goal splits the same way: the week index and global counters stay a shared aggregate, while per-player contributions (`ProfessionSection.weeklyProgress` with a week marker), the per-week award marker and the pending reward XP live in the PROFESSIONS section — the award is idempotent per (player, week) over the durable owner enumeration, and the claim credits XP and clears the pending entry in one section commit. Daily budgets carry a per-budget reservation serial, so a delayed compensation can only revert the exact reservation it belongs to.
+
+Crate settlements follow the fence-and-receipt shape: the shared crates file keeps only placements and opening-recovery fences, while per-player counts, cooldowns, the stored name and a bounded opening-id receipt list live in the STATISTICS section (`PlayerProfileCrateStore`). The profile commit happens before the fence is dropped, the in-memory `CrateLedger` is a load-time-seeded projection of the profile state, and an orphaned fence whose opening id is already receipted finalizes silently at the next load instead of double-counting. The death-to-respawn catalyst hand-back is a durable LIFECYCLE escrow (`PlayerProfileDeathEscrowStore`): the deposit commits before the respawn claim, and the claim empties the escrow in one section commit, so respawn, rejoin and crash recovery all deliver exactly once.
+
+### Revisions and snapshots
+
+Each section has schema and revision; the manifest carries global generation and the committed section revision map. Missing sections initialize with `-1 -> 0`; normal saves require `n -> n+1`. Full reads validate manifest generation before and after section loading, so snapshots are never an arbitrary time mixture.
+
+### Transactions and recovery
+
+Cross-section operations persist an owner-bound WAL and operation fingerprint, write prepared section files, atomically commit the manifest generation, close the operation receipt, apply runtime effects and clean temporary state. Restart before manifest commit rolls back; restart after commit finalizes. Duplicate operation IDs with a different fingerprint fail closed.
+
+### Lifecycle and Folia
+
+Join creates a session generation, recovers WALs, loads/initializes sections asynchronously, validates health, rebuilds derived mirrors, reconciles DARK/spells/companions, then marks the session ready. Quit fences mutations, drains transactions, flushes sections, cleans runtime and invalidates cache. Disable stops HTTP/admission, drains, flushes, cleans runtime and shuts executors down with a bounded timeout. Resource teardown is separate from stateful shutdown: the external resources (Bukkit service registration, HTTP adapter, repository executor, static authority) close on an idempotent always-cleanup path that also runs after a partial enable or a failed shutdown drain — refusing to save state never leaves a listener or executor behind. Bukkit entity access remains in owner/region-thread adapters; YAML I/O is asynchronous.
+
+### YAML format
+
+Profiles live under `plugins/IceSMP/player-profiles/<uuid>/`. `manifest.yml` records owner UUID, format, schema, generation, lifecycle status, timestamps and every section schema/revision/digest. Each section is a separate structured YAML file with `format: ICESMP-PLAYER-PROFILE-SECTION`, stable section ID, schema, revision, updated timestamp, `data` and preserved `extensions`.
+
+The serializer is deterministic and key based. There is no Java serialization and no Base64-encoded complete profile. Missing documented optional fields use safe defaults; missing mandatory fields, wrong types, owner/section mismatches, duplicate normalized keys, invalid UTF-8, oversized input and skipped revisions fail closed. Unknown extension namespaces are preserved. Atomic replacement uses a temporary file, file sync and directory sync where supported; orphan temporary files are removed during recovery.
+
+A corrupt section is copied to immutable evidence and quarantined independently. Identity or manifest corruption blocks the whole profile; subsystem corruption blocks only that subsystem unless a documented lossless default is safe. Recovery requires an explicit, idempotent admin operation and never deletes evidence.
+
+### Internal Java API
+
+`IceSMPPlayerProfileApi` is registered through Bukkit `ServicesManager`. It exposes immutable snapshots, section snapshots, name lookup, filtered public DTOs and a listener subscription. It never exposes repository adapters, YAML, file paths or mutable Bukkit objects, and all storage reads are asynchronous.
+
+### HTTP API v1
+
+The adapter is disabled by default and binds to `127.0.0.1` only when explicitly enabled; the adapter (and its executor) is not even instantiated while disabled. Public endpoints respect profile visibility. SELF bearer credentials are bound to one player UUID; ADMIN credentials may read health, quarantine and moderation/operations summaries. Authentication resolves before any storage read: the by-name endpoint answers 403 to anonymous callers without touching the repository (no unauthenticated O(N) name scan and no 403-vs-404 existence oracle), a SELF token only resolves its own last known name, and only an ADMIN token may run the global name lookup. Tokens are deployment secrets, are digested in memory and never logged. The adapter enforces rate, request/response size and timeout limits, supports ETag/`If-None-Match`, returns sanitized 403/404/409/429/500 responses and drains on shutdown. It has no write endpoints.
+
+The machine contract is [`openapi/player-profile-v1.yaml`](openapi/player-profile-v1.yaml).
+
+### SQL replacement contract
+
+A future `SqlPlayerProfileRepository` and transaction manager must preserve owner binding, per-section CAS, manifest-equivalent snapshot generation, quarantine semantics, operation fingerprints and recovery results. Gameplay managers, DTOs, commands, GUI and HTTP code must not change. A YAML importer performs structured decode, domain validation and repository saves; it never guesses from PDC or invokes gameplay migration.
+
+### Authority matrix
+
+This matrix is versioned together with `scripts/player_profile_authority_allowlist.json` and enforced by `scripts/check_player_profile_authority.py`, which permits only PlayerProfile authority, runtime state, derived mirrors, item/entity metadata and explicit shared-aggregate references; the historical `TRANSITION` rows are complete.
+
+| Current data | Current authority | Final section or aggregate | Runtime mirror | External visibility | Transition |
+| --- | --- | --- | --- | --- | --- |
+| class/spec, class XP, loadouts, DARK seals, Soulforge progression | PlayerProfile class-spec section | `class-spec` | rebuildable PDC/UI mirror | public/self/admin filtered | complete in root |
+| spell grants, selection, favorites, mastery | legacy player PDC/managers | `spellbook` | selected-spell UI mirror | self/admin; selected public by privacy | stacked spellbook scope |
+| talent points and purchased talents | legacy player PDC/manager | `talents` | GUI cache only | self/admin | stacked spellbook/talent scope |
+| faction membership/history/sinner/player cooldowns | managers/PDC/YAML | `faction` | scoreboard/tag mirror | privacy filtered | stacked faction scope |
+| wallets, bank, tax debt, pending refunds | player stores/managers | `economy` | display cache | self/admin | stacked economy scope |
+| professions, XP, level, specialization, recipes | PDC/managers | `professions` | HUD/GUI mirror | self/public summary | stacked professions scope |
+| quest state, objectives and reward receipts | quest managers/YAML/PDC | `quests` and `operations` | tracker UI | self/admin | stacked quest scope |
+| pets/minions and durable companion state | PlayerProfile namespace + runtime manager | `companions` and `class-spec` | live entity map | privacy filtered | root plus lifecycle hardening |
+
+Companion rosters (`beast_master.stable`, `necromancer.court`, `unholy.ghoul`, `demonologist.roster`) have exactly one authority: the durable `class-spec` loadout roster, keyed by logical companion id. A companion *kind* is an attribute of an instance (`CompanionProfile.KIND_KEY`), never the roster key, so a roster capacity is reachable by repeating a kind — a namespace with three kinds still fills four slots, and no extra kind has to be invented to reach the ceiling. Admission is one rule, `ClassSpecCatalog.admitsCompanion(loadout, namespace, capacity)`: a runtime evaluates it before the action, and `CompanionMutationRequest.capacity` makes the committed mutation re-evaluate the very same ceiling against the freshly loaded profile, so a passing pre-check can never turn into a refused mutation after the cost was paid. Gameplay runtimes never keep a parallel roster: they read the shared `ClassSpecCatalog.companionProjection(loadout, namespace)` rule, which yields entries only through the ACTIVE loadout owning the namespace — an inactive, foreign or SEALED loadout projects nothing while its durable entries stay untouched. Every binding and release commits durably first, and only a committed mutation may embody or despawn anything; a release that never commits releases nothing.
+| achievements, bestiary and milestone claims | managers/PDC/YAML | `achievements` | toast/UI cache | privacy filtered | stacked progression scope |
+| kills/deaths/events/season counters | stats managers/YAML | `statistics` | scoreboard cache | privacy filtered | stacked statistics scope |
+| language/HUD/scoreboard/notification/privacy | config/PDC/managers | `preferences` | online UI state | public visibility flags/self | stacked preferences scope |
+| moderation case details | global moderation aggregate | reference/summary in `moderation` | runtime enforcement cache | admin only | reference integration |
+| guild/party/market/claim/treasury/raid/season | separate global aggregates | stable reference only | runtime membership cache | composed PlayerView | remain separate |
+
+Run `python3 scripts/check_player_profile_authority.py --root .` to verify the exact code-level inventory.
+
+### Full authority scope
+
+The greenfield transition of every IceSMP-owned, restart-durable player domain to the modular PlayerProfile repository is complete. The following domains use PlayerProfile sections as their sole durable authority:
+
+- spellbook, spell mastery and favorites;
+- talents;
+- faction membership, membership history, sinner state and player cooldowns;
+- wallet, bank, tax debt and pending refunds;
+- professions, XP, specialization and learned recipes;
+- quests, objectives and operation receipts;
+- durable companion state;
+- achievements, bestiary and milestone claims;
+- statistics and counters;
+- preferences, HUD, scoreboard, notifications and privacy;
+- moderation reference and summary state.
+
+Shared guild, party, market, claim, treasury, council, raid, season and audit-log aggregates remain separate. PlayerProfile may store only stable references to those aggregates.
+
+### Forbidden runtime patterns
+
+No gameplay path may treat any player PDC key, standalone player YAML file or manager-owned durable map as an authority for the domains above. There is no legacy migration, dual read, dual write, fallback or runtime kill switch.
+
+PDC remains permitted only for:
+
+- rebuildable runtime or UI mirrors;
+- item metadata and provenance;
+- entity metadata and short-lived runtime identity;
+- non-authoritative integration hints that can be recreated from PlayerProfile or shared aggregates.
+
+### Required invariants
+
+- Every durable mutation is owner-bound and section-CAS protected.
+- Cross-section mutations use the PlayerProfile transaction/WAL protocol.
+- Cache state becomes authoritative only after durable commit.
+- Join, quit, reconnect and plugin-disable preserve session fencing and bounded drain semantics.
+- Decode, owner, revision or persistence failure is fail-closed and preserves evidence.
+- Folia entity access remains on the owning entity/region scheduler; persistence I/O remains asynchronous.
+- Runtime mirrors are rebuilt from PlayerProfile after join and invalidated on quit/reset.
+
+### Merge-readiness gates
+
+- Java 21 `clean build` and the complete regression suite pass.
+- Every migrated domain has targeted persistence, CAS, recovery, reconnect and lifecycle regressions.
+- `check_player_profile_authority.py` reports no unknown, stale, invalid or transition authority findings.
+- No player-owned durable PDC/YAML/map authority remains outside explicitly approved metadata/mirror categories.
+- Repository consistency, Markdown links, tooling self-tests and strict repository/documentation inventory pass with zero blocking or review-required findings.
+- The authority matrix marks every player-owned domain complete.
+
+## Class Relic Framework
+
+A kaszthoz kötött, világ-egyedi Class Relic-ek KÜLÖN domainrétege a generikus relikvia-rendszer
+fölött (`classrelic/` csomag). A generikus `RelicDefinition` érintetlen: a Mételytépő, a
+szárny-ereklyék és minden más relikvia változatlanul működik; kaszt-fogalom (class, resonance,
+awakening) kizárólag a `ClassRelicBinding`-ben él (`relics.class-relics.*` config, fail-fast
+betöltéssel: ismeretlen class/spec, parent-eltérés vagy duplikált class/relic kötés a teljes
+szekció elutasítása — a korábbi katalógus-pillanatkép marad publikálva, félbetöltött registry
+nincs). A schema strict: a hiányzó opcionális szekció defaultolhat, de a jelen lévő rossz
+típusú érték (pl. `resonances: "abc"`) reject; az Awakening `cooldown-seconds` egész,
+nem-negatív és korlátos (a felső határ mellett a ready-at aritmetika nem tud túlcsordulni),
+tört érték nem csonkolódik. A candidate a publish előtt a generikus relic-registryvel is
+kereszt-validált: nem létező fizikai relicre mutató kötés a TELJES candidate-et elutasítja —
+a `require-complete-catalog` kapu így kitalált relic-rosterrel sem PASS-olhat. A
+`relics.enabled: false` explicit framework-kapu (use-site élő-config): minden feloldás
+`FRAMEWORK_DISABLED`, a Class Power, a Resonance és az Awakening is inaktív — nem a
+birtoklás-szken mellékhatása dönt.
+
+**Authority-határok.** Két, szándékosan KÜLÖN igazság-forrás: (1) a világ-szintű relic-store
+(`RelicManager` → `RelicWorldStateStore`, relics.yml) mondja meg, kié a relic, elveszett-e
+(lost/reclaim) és mikor kész újra az Awakening — ez NEM játékosprofil-domain; (2) a Profile v2
+(`ClassSpecProfileGateway` → `ClassSpecSection`) mondja meg a kasztot, az aktív specializációt,
+a loadout-státuszt és a SEALED-állapotot. A framework egyiket sem duplikálja a másikba.
+
+**Single-writer világ-relic perzisztencia, publish-commit sorrenddel.** A világ-relic
+aggregátum (ownership, lost/reclaim, awakening, művelet-receiptek) immutable
+`RelicWorldStateSnapshot`-ként publikált; minden logikai mutáció a `RelicWorldStateStore`
+EGYETLEN szerializált kritikus szekciójában candidate pillanatképet épít, azt írja durable-re,
+és CSAK sikeres írás után cseréli be (volatile publish) — a runtime-ból látható committed
+állapot mindig részhalmaza a durable állapotnak, commit előtti candidate-et olvasó SOHA nem
+láthat, sikertelen írásnál a candidate egyszerűen eldobódik. A betöltés/reload ugyanígy
+atomikus: a teljes candidate lokálisan épül fel és egyetlen cserével publikálódik — konkurens
+olvasó sosem lát üres/félig-töltött köztes állapotot. Az Awakening-arm atomikus (két konkurens
+hívásból pontosan egy ARMED), az eredmény `PERSISTENCE_FAILED`, ha a lemez-írás bukik. A
+lost-mutáció owner-kötött: `markLost`/`clearLost` csak a bizonyított aktuális tulajdonossal
+fogadható el (stale példány korábbi gazdájának halála nem jelölheti el másvalaki élő relicét),
+és árva lost állapot (tulajdonos nélkül) se memóriában, se a fájlban nem létezhet.
+
+**Fizikai kézbesítés/transfer recovery-protokoll.** A claim/reclaim (`giveRelic`) és a PvP
+transfer a világ-oldali commitot EGY durable írásban végzi a fizikai mellékhatás függő
+receiptjével együtt (`operations.<relic>`): claim = ownership + lost-törlés + kézbesítés-receipt;
+transfer = új tulajdonos + PDC-átírás-receipt — a fizikai lépés mindig a commit UTÁN fut.
+Crash bármely lépés után determinisztikusan helyreáll a join-recovery-ből: CLAIM/RECLAIM
+receipt → kézbesítés csak akkor, ha a tulajnál nincs példány (duplikátum nem születhet);
+TRANSFER receipt → az új tulajnál lévő példány PDC-átírása (amíg nincs nála, a receipt
+függőben marad). A `canUse` fail-closed: aktív központi tulajdonos nélkül a fizikai példány
+nem használható — persistence-hiba utáni árva singleton nem működhet magától, a jogos
+állapotot a claim/transfer/join-sweep/recovery állítja helyre. A generikus definíció-registry
+kikapcsolt runtime mellett is betöltött (definitions ≠ gameplay-enabled), így a Class Relic
+katalógus létezés-validációja disabled állapotban is fut — validálatlan katalógus akkor sem
+publikálható.
+
+**OWNER ≠ ACTIVE POSSESSION.** Az ownership önmagában nem ad gameplay-erőt: a
+`requires-physical-possession` kötésnél a használható fizikai tárgynak a játékosnál kell
+lennie. Lost/reclaim állapotban (a tárgy halálkor megsemmisült, a tulajdon él) minden
+relic-erő szünetel; sikeres újraidézés után aktiválható újra.
+
+**Három mechanikai réteg.** (A) *Class Power*: állandó, számítás közben lekérdezett modifier —
+a fogyasztók csatornán kérdeznek (`ClassRelicService.modifier(playerId, RelicModifier.…)`),
+relic-id-t és kaszt-vizsgálatot soha nem hordoznak; a modifier-út UUID-only (Player-dereferencia
+és inventory-olvasás nélkül), ezért idegen régió-szálról is biztonságos hot path. (B) *Spec
+Resonance*: tipizált szemantikus jelzésekre reagáló specializációs mechanika — a
+`ClassGameplaySignal` sealed rekord-család hordozza az actort, a cél-identitást (UUID), a
+mennyiséget és a tageket (a payload-hordozó eseményekhez a Generic alak nem használható,
+stringly-typed payload nincs); a routing a `ClassRelicActivationResolver`-ben él, az
+implementáció `ClassRelicResonanceHook`-ként regisztrálható, és a hook a
+`ClassRelicResonanceContext`-ben a régió-helyes `actor` Player referenciát is megkapja —
+globális `Bukkit.getPlayer` lookup a hookban tilos és szükségtelen. (C) *Awakening*: a
+világ-egyedi nagy képesség kerete — a nagy cooldown a RELIC-kel utazik (relic-id →
+awakening-ready-at abszolút időbélyeg a világ-szintű store-ban), gazdacserénél nem nullázódik
+és restartot túlél; az arm a store atomikus műveletén megy át; a rövid proc-cooldownok
+maradnak runtime-állapotok.
+
+**Központi feloldás.** Minden döntés (profil használható? jó kaszt? tulajdonos? nála van?
+melyik resonance?) egyetlen pontban, a pure `ClassRelicActivationResolver`-ben dől el —
+a konkrét képességek csak a kész `ClassRelicActivation`-t fogyasztják. SEALED specializáció
+SOHA nem rezonál, de a kaszt-szintű Class Power tovább élhet (DARK seal/unseal invariáns);
+csak gameplay-re használható profil (READY + nem blokkolt session, `isGameplayUsable`)
+aktiválhat.
+
+**Folia és birtoklás-pillanatkép.** A resolver, a katalógus és a jelzések pure rétegek (nem
+függenek régió-szálaktól). A fizikai birtoklás immutable pillanatképként él
+(`PossessionSnapshot`): KIZÁRÓLAG a játékos saját régió-szálán készül (join-kori első szken +
+másodpercenkénti frissítés a játékos schedulerén), és a szken a kanonikus
+`RelicManager.canUse`-zal validál — azonos relic-id-jű, de stale/rossz gazdához kötött példány
+nem ad erőt. Az UUID-only olvasók fail-closed szabállyal olvassák: ismeretlen vagy TTL-en túli
+pillanatkép = nincs birtoklás (korlátlan ideig élő stale "true" nem létezhet; a maximális
+konzisztencia-ablak a TTL, ~2,5 mp). Kritikus világ-relic mutáció (transfer, lost/reclaim,
+give, expiry) és halál AZONNAL invalidálja az érintett pillanatképeket. A resonance-dispatch
+kikényszeríti az actor-régió szerződést: idegen szálról érkező hívást maga hoppolja az actor
+schedulerére; cél-oldali effekt idegen entityn csak a cél schedulerére hoppolva megengedett.
+
+**Evoker pilot.** A `sarkany_tojas` az első migrált Class Relic: a korábbi
+`ResourceBonusService`-beli ownership+isEvoker hardcode megszűnt, a max-Essence bónusz a
+generikus `CLASS_RESOURCE_MAX` csatornán érkezik (változatlan, configolható 10%). A
+Devastation→`dragon_echo` és Preservation→`temporal_echo` routing él, mindkettő inert
+(enabled: false); az `unborn_dragon` Awakening kerete és durable cooldownja kész, gameplay
+nélkül.
+
+**13/35 teljesség-szerződés.** A `relics.require-complete-catalog: false` fejlesztési állapot:
+a katalógus részleges lehet. A teljes class rework kapuja a kulcs true-ra állítása — akkor
+minden classnak pontosan egy relic és minden specializationnek pontosan egy resonance
+kötelező, különben a betöltés (és a CI) bukik. A class reworknek csak a gameplay-oldalt kell
+hoznia (mechanikák, szemantikus események, resource-hookok, ability-tagek): az ownership, a
+birtoklás-validáció, a binding-registry és a cooldown-perzisztencia ebből a keretből jön.
+
+## Config GUI coverage
+
+The admin GUI is an explicit **runtime-safe allowlist**, not a blind renderer for every scalar in the content configs.
+The build-time `configGuiCoverageRegressionTest` merges every supported YAML file and proves:
+
+- every GUI path exists exactly once;
+- GUI type and packaged default type agree;
+- numeric defaults are inside the declared range;
+- enum defaults are among the declared options;
+- all scalar entries under `world-events.safety.*`, `moderation.vanish.*` and
+  `territory.mob-rules.doom-gate.*` are exposed;
+- every remaining scalar is intentionally file/command-only (content records, lore, rewards, item definitions,
+  spell/quest tables or advanced startup tuning), rather than accidentally omitted.
+
+The test prints the exact `total / displayed / intentionally_excluded / missing / stale / duplicate` counts on every build.
+A new scalar under a mandatory runtime-admin prefix fails the build until a matching GUI component is added.
+
+### Config GUI transaction semantics
+
+Opening the menu captures the effective values, packaged defaults, config generation and SHA-256 fingerprint of `config.yml`.
+Clicks only modify an in-memory per-admin session. **Save** performs one asynchronous batch write; **Cancel**, closing the
+inventory or disconnecting writes nothing. Middle-click removes the override and restores the packaged default.
+A second admin save or external file edit makes an older session stale; stale sessions are rejected without overwriting data.
+
+Entries display whether their effect is live, applied by a reload hook, or requires a restart. In particular the faction-tax
+scheduler toggle/interval is restart-required; event safety and vanish capabilities are live/reload-safe.
+
+## Frakcióhoz kötött játékosnév-színek
+
+A játékosnév-színek egyetlen központi palettát használnak minden támogatott felületen.
+
+| Frakció | Natív szín | Legacy kód | Vizuális szerep |
+|---|---|---|---|
+| RED / Láng | RED | `§c` | támadó, tüzes identitás |
+| BLUE / Fagy | BLUE | `§9` | hideg, kék identitás |
+| NEUTRAL / Menedék | GREEN | `§a` | a Smaragdkő/Ryanora lore-szín, a DARK-tól jól elkülönülő identitás |
+| DARK / Kitaszított | DARK_GRAY | `§8` | sötét, komor identitás |
+| nincs vagy ismeretlen tagság | WHITE | `§f` | fail-safe alapállapot |
+
+A NEUTRAL korábbi szürke (`GRAY` / `§7`) színe megszűnt. A DARK nem kap lich-kék árnyalatot, mert az a vanilla névszín-készletben túl közel kerülne a BLUE frakcióhoz.
+
+Érintett felületek:
+
+- natív tablist játékosnév;
+- fej fölötti scoreboard-team nametag;
+- HUD tablist-fallback;
+- HUD frakcióérték;
+- natív async chat formázás;
+- `%icesmp_faction_color%` PlaceholderAPI-kimenet külső, csak olvasó megjelenítőkhöz.
+
+A paletta élő-configgal felülbírálható: `tablist.faction-colors.<frakció|guest>` (NamedTextColor nevek); a defaultot a `FactionDisplayColorPolicy` adja, minden név-felület (tab, nametag, HUD, chat, `%icesmp_faction_color%`) ugyanazon a feloldón megy át. A kézi staging-ellenőrzés az [admin kézikönyv staging-mátrixai](ADMIN_GUIDE.md#kiegészítő-staging-mátrixok) közt található.
+
+## Runtime hardening szerződések
+
+A moderációs láthatóság, a claim-geometria, a BlockDisplay-határ és a DARK territory-spawn mérvadó szerződései.
+
+### Vanish
+
+- `icesmp.moderation.vanish.see` is explicit-only (`PermissionDefault.FALSE`) and is not inherited by OP, the moderation
+  bundle or `icesmp.admin.all`.
+- Every non-observer viewer gets both `hidePlayer(plugin, subject)` for the in-world entity and
+  `unlistPlayer(subject)` for the per-viewer player list.
+- Separate ownership ledgers restore only IceSMP-owned `showPlayer`/`listPlayer` pairs when vanish ends or the plugin stops.
+- Visibility is reasserted after viewer join, subject toggle, teleport, world change, respawn and a delayed tracking rebuild.
+- Damage immunity remains an event capability; no persistent `Player#setInvulnerable` state is written.
+
+### Territory-style normal claims
+
+- Quick square and two-corner rectangle claims remain compatible.
+- Ordinary claims now also support `point`, `undo`, `clearpoints`, `points`, `polygon` and a dedicated `polywand` flow.
+- The immutable `ClaimShape` is an exact set of claimed X-Z columns and supports concave simple polygons.
+- Membership, overlap, column pricing, territory checks, exact WorldGuard row spans, YAML persistence, chunk lookup,
+  particle preview and BlockDisplay rendering all consume the same shape.
+- Polygon area is bounded by `claims.area-max-columns`; the vertex count is unlimited by default (`claims.polygon-max-points: 0`), because the rasterized column set makes runtime checks independent of it.
+- Rasterization uses budgeted row scanlines rather than scanning the full bounding rectangle. Perimeter length, continuous
+  area and every produced column are checked before publication; long/thin hostile inputs fail closed.
+- Malformed stored polygons are rejected and skipped instead of silently widening to their bounding rectangle.
+
+### Exact bounded BlockDisplay boundary
+
+- Every exact X-Z boundary column owns a separate vertical BlockDisplay segment.
+- Each segment starts at the claim's inclusive `minY` and ends at its inclusive `maxY`.
+- No display block is created below or above the actually claimed Y range.
+- Rectangle and concave polygon boundaries use the same stored Y band.
+- RegionScheduler ownership and per-player preview cleanup remain Folia-safe.
+
+### Stable DARK territory spawning
+
+- DARK ambient undead use the shared `resolveSafeStandingLocation` contract.
+- The floor must be solid, occluding, non-gravity, non-liquid and non-hazardous; three body blocks must be passable.
+- Candidates must still be inside the exact target territory and pass claim/region rules.
+- Each mob receives at most `dark-undead.spawn-attempts-per-mob: 12` distinct attempts.
+- No valid location means no spawn. There is no airborne or close fallback.
+
+### Restored original claim Y behaviour
+
+- Claims are again bounded 3D volumes: exact rectangle/polygon X-Z shape plus inclusive `minY..maxY`.
+- New quick claims use the player's Y; rectangle selections use the two Y values' midpoint; polygons use the first boundary point's Y.
+- Packaged defaults remain the proven original values: `default-height: 20`, `default-depth: 20`.
+- `/claim extend up|down` again expands by `y-extend-step: 5` for the original per-column burned cost.
+- X-Z overlap stays exclusive, so vertically separated claims cannot be stacked over the same footprint.
+- The BlockDisplay boundary is created only from `minY` through `maxY`; no wall exists at unclaimed Y levels.
+
+### Claim persistence guarantees
+
+- World upper bounds are stored and restored as inclusive values (`getMaxHeight() - 1`).
+- Legacy `world;chunkX;chunkZ` keys are structurally validated before conversion.
+- Claims from the temporary X-Z-only format, where both Y fields are absent, retain protection by receiving the full known
+  world-height band and emit an operator warning instead of silently becoming a `0..0` claim.
+- A record containing exactly one of `min-y` or `max-y` is corrupted, not an X-Z-only record; it is rejected fail-closed
+  instead of being silently widened to the full world height.
+- Stored Y bounds are clamped to a loaded world's current legal range; reversed or fully out-of-world ranges fail closed.
+- One malformed trusted-player UUID is isolated to that trust entry and cannot discard the enclosing claim.
+- One malformed claim entry is isolated from the rest of `claims.yml` and cannot abort the complete claim load.
+
+### Viewer-private display guarantees
+
+- Viewer-specific BlockDisplays set `visibleByDefault=false` inside the spawn consumer before the entity enters normal
+  client tracking.
+- The selected viewer is revealed only through `Player#showEntity` on the viewer's own entity scheduler.
+- The compatibility `showOnlyTo` path acquires the effect entity's own Folia scheduler before changing default visibility.
+- A public viewer-scoped spawn API is available for new private effects so callers do not need post-spawn hiding.
+- The aurora veil also uses this pre-tracking viewer-scoped spawn API and no longer becomes public before being hidden.
+- `RuntimeHardeningRegressionSuite` asserts pre-tracking privacy, aurora usage and effect/viewer entity-scheduler ownership.
+
+### Other retained hardening
+
+- bounded world-event/invasion/boss spawn safety and reservations;
+- transactional multi-admin config GUI with stale-write rejection;
+- deterministic and atomic profession recipe reload, including removal of one exact fishing-rod duplicate;
+- Java/YAML item-model validation against the manifest and checked-in resource pack;
+- reversible DARK daylight/zombification capability lifecycle.
+
+### Measured audit results
+
+- Config schema scalar entries: **9594**
+- GUI-displayed entries: **203**
+- Intentionally file/command-only entries: **9391**
+- Missing, stale or duplicate GUI entries: **0 / 0 / 0**
+- Profession recipes: **437**, after removal of one proven exact duplicate
+- Profession recipe key duplicates / semantic duplicates: **0 / 0**
+- Used GUI/item models: **269**
+- Manifest models / checked-in pack models: **298 / 298**
+- Missing manifest / pack mappings: **0 / 0**
+
+### Automated hardening coverage
+
+`RuntimeHardeningRegressionSuite` covers vanilla rectangle compatibility, concave polygon membership and wilderness notches,
+exact overlap/boundaries, self-intersection and oversized-input rejection, bounded scanline and fail-closed persistence contracts,
+entity plus tab-list vanish ownership, exact minY/maxY BlockDisplay clipping, restored vertical extension and stable DARK standing
+locations with finite retries.
+
+The full repository `check` also includes event-spawn safety, config transaction/coverage, profession recipe audit and all
+previously registered regression suites.
+
+## World-event spawn-védelem
+
+A world-eventek helyét az `EventSpawnGuard` választja és publikálja. A guard a kezdeti
+spawn előtt egységesen ellenőrzi a játékostávolságot, a látóirányt, a védett területeket,
+a víz- és partpuffert, a teljes event-footprintet, a lejtést, a biomprofilt, a world
+bordert és a friss eseményhelyek memóriáját.
+
+### Alapértelmezett viselkedés
+
+- A minimum játékostávolság legalább 192 blokk, de a tényleges Paper send/view distance
+  és a 32 blokkos margó ezt automatikusan megemelheti.
+- A 110 fokos, 384 blokkos konzervatív nézési kúp elutasítja a játékos előtt lévő
+  helyeket. Ez szándékosan szigorúbb a blokkonkénti ray trace-nál, és Folia alatt nem
+  olvas idegen régiót.
+- A kereső 32 jelöltet próbál; egyszerre alapból két keresés futhat, egy keresés legfeljebb
+  96 egyedi chunkot érinthet és 5 másodperc után watchdog zárja le.
+- Csak már legenerált chunk tölthető vissza aszinkron módon. A kereső sosem generál új
+  világterületet, és nem végez szinkron chunk-loadot régiószálon.
+- A kiválasztott hely alapból 3 másodperces érkezési előjelet kap, majd közvetlenül a
+  tényleges spawn előtt újra lefut a teljes validáció.
+- Az utolsó eventhelyek 45 percig, 256 blokkos körben nem használhatók újra.
+
+### Speciális profilok
+
+- `stranger`: 64–96 blokkos helyi keresés, 48 blokk minimum, saját nézési kúp. Az Idegen
+  így hallótávolságban marad, de nem a játékos előtt materializálódik.
+- `escort`: távoli, teljes footprinttel validált indulóhely és négypontos útvonalvizsgálat.
+- `escort-route` és `escort-wave`: a már aktív esemény belső mozgását és hullámait nem
+  tiltja le a játékosok megérkezése, de a víz-, terep- és protection szabályok megmaradnak.
+- `meteor`, `world-boss`, `invasion`, `cultists`, `wild-hunt`, valamint a karavánok saját
+  footprint-, lejtés- és biomprofilt használnak.
+
+### Meteor-helyreállítás
+
+A meteor a kráter létrehozása **előtt** kiírja az érintett normál blokkok teljes
+`BlockData` állapotát a `meteor-restore.yml` fájlba. Tile entityt (láda, hordó, tábla,
+spawner stb.) nem ír felül, mert azok NBT-jét a BlockData nem őrizné meg.
+
+- Normál lejáratkor a visszaállítás chunkonként, a megfelelő Folia-régióban fut.
+- Graceful disable alatt ugyanez a helyreállítás indul el.
+- Ha a scheduler már nem fogad taskot, vagy a folyamat félbeszakad, a recovery fájl
+  megmarad, és a következő indulás world-UUID alapján folytatja a helyreállítást.
+- A recovery fájl csak az összes chunk sikeres visszaállítása után törlődik.
+
+### Fix világboss-anchorok
+
+A legacy fix/random világboss-anchor a saját chunkjának egzakt középpontjára normalizálódik.
+A meglévő `[-8, 8)` véletlen eltolás így bizonyítottan ugyanabban a chunkban marad, tehát
+a probe oszlopot mindig az azt birtokló Folia-régiótask olvassa.
+
+### Spawn-diagnosztika
+
+Játékos adminnal:
+
+```text
+/events debug spawn <event-kulcs>
+```
+
+A parancs valódi, spawn nélküli keresést futtat, majd megmutatja a dinamikus minimumot,
+a keresési gyűrűt, a footprintet, az érintett chunkokat, az eltelt időt és az elutasítási
+okok darabszámát.
+
+### Spawn-védelem a config menüben
+
+A vízvédelem három kulcsa a `Világesemények` kategóriába kerül. Ha a kategória más
+fejlesztések miatt elérné a 45 elemű kapacitást, a további placement-beállítások egy
+külön `Event spawn-védelem` kategóriában jelennek meg. Minden itt szereplő beállítás
+élőben olvasódik.
+
+A kötelező kézi staging-próbák az [admin kézikönyv staging-mátrixai](ADMIN_GUIDE.md#kiegészítő-staging-mátrixok) közt találhatók.
+
+## Szakma-recept és item-audit
+
+| profession | recipe key | item | problem | previous behaviour | fixed behaviour | balance rationale | migration / compatibility |
+|---|---|---|---|---|---|---|---|
+| Fisher | `egyszeru_horgaszbot` / `kezdo_horgaszbot` | Fishing Rod | Exact semantic duplicate: `3×STICK + 2×STRING → FISHING_ROD` | Two progression records represented the same craft and could diverge by load order | `egyszeru_horgaszbot` is canonical; `kezdo_horgaszbot` and its recipe are removed | One unlock/cost path prevents fake progression depth and recipe ambiguity | Existing fishing rods remain vanilla-compatible; no item migration is required |
+| All | `icesmp:prof_*` legacy masterworks | PDC-stamped masterwork tools/books | Reload/disable did not remove previously registered Bukkit keys | Disabled or removed recipes could remain craftable until restart; repeated registration could be rejected | Manager owns a deterministic key set, removes it before rebuild and on disable, then registers once | No duplicate registry entries or stale craft path | Already crafted items remain valid; only future crafting availability changes |
+| All | Config catalog (438 before, 437 after) | All profession outputs | No early semantic collision validation, and a rejected reload could expose the already-cleared or partially rebuilt live maps | Similar/duplicate recipes were accepted silently; later validation failures could leave an incomplete runtime catalog | Sorted loading plus canonical input/output fingerprints validate a private candidate; immutable maps and recipe metadata are published with one `volatile` snapshot replacement | Exact duplicates fail early without destabilising active crafting, while intentional recipes with distinct input or output remain independent | Existing runtime generation remains active when a reload is rejected; no item migration is required |
+| All | Unique profession outputs | Resource-pack model | Item/model references were distributed across config and pack | Missing mappings were only found visually | Build validator checks every referenced ITEM_MODEL against the manifest and checked-in pack | Visual identity remains stable without changing public model IDs | No public model ID changed; vanilla `PAPER` is the explicit no-pack fallback |
+
+The automated audit verifies **437 recipes**, zero duplicate keys, zero semantic duplicates, immutable recipe metadata,
+transactional catalog reload publication, exact unique/custom ingredient matching, profession/level gates, deterministic key order,
+output-model presence and removal of stale Bukkit registrations after reload or disable.
+### Generic class HUD projection
+
+`ClassHudState` is an immutable, class-agnostic projection of Profile v2 class/spec identity and the
+13 transient class runtime services. One `ClassHudStateAdapter` per class maps its compact mechanics
+to primary/secondary and up to three additional typed metrics, state, proc, charges and generic
+discrete slots. `ClassHudMechanics.of` derives a bounded visual pip row from actual charge counts;
+the Death Knight replaces it with its typed ready/spent/regenerating/locked rune slots.
+`HudManager` captures that projection on the player's Folia region thread and embeds it in
+`HudSnapshot`; the first-party renderer and PlaceholderAPI only read the concurrent immutable
+projection/cache. Neither can mutate Profile v2 or a class runtime. `ResourcePackListener`
+publishes a thread-safe per-player `SUCCESSFULLY_LOADED` capability; only then does the first-party
+bossbar/font renderer suppress the native compact fallback. No external HUD plugin participates in
+rendering or state ownership. A joining player's missing pack cannot toggle another player's renderer.
+
+The configured `hud.icesmp-hud.layout` is the global presentation base. Personal editor saves use
+`PlayerProfileHudPreferenceStore` and the existing Profile v2 `preferences.values` map as the sole
+durable player authority. Keys below `hud.layout.*` are sparse field-level overrides, not a copied
+snapshot: effective layout is rebuilt as `global base + valid personal differences`, so untouched
+fields inherit later global changes. Reset-to-global removes those keys through the same CAS-backed
+section mutation. Editor sessions and synthetic previews remain isolated, immutable runtime state.
+
+The renderer uses BMP private-use spacing, fixed-width glyph cells and zero-net-width draw commands.
+Dynamic values (including `0`, `120`, class changes, rune states and wallet counts) therefore cannot
+move the panel. Faction frames share one canonical inner grid; only their decorative skin differs.
+The guest/Menedék frame is generated from that grid and may replace only the outer shell. Production
+R2 packaging deterministically merges the immutable external base with explicitly owned IceSMP
+paths; it does not start Folia or any external HUD plugin and rejects unowned ZIP collisions.
+
+## Client Bridge — az IceSMP Client protokoll-alapja
+
+Az opcionális Fabric kliensmod (IceSMP Client) szerveroldali hídja a `client/` csomagban él.
+A foundation fázis KIZÁRÓLAG transportot, kézfogást és session-életciklust ad — gameplay-,
+HUD-, spell- vagy relic-integrációt nem. Architektúra-invariánsok:
+
+- **A kliens sosem authority.** Minden beérkező üzenet kérés vagy ajánlat; gameplay-állítást
+  (cooldown kész, quest kész, resource-érték) a szerver nem fogad el kliensről.
+- **A domain nem tud a hídról.** Gameplay service-ben tilos a kliens-detektálás
+  (`if (hasFabricClient(player))` architektúra-smell); a későbbi fázisok is csak
+  projection/action adapteren át érik el a domain-t.
+- **Vanilla parity.** A mod hiánya nem csökkenthet gameplay-funkcionalitást; a kötelező
+  resource pack minden kliensnél megmarad.
+- **Fail closed.** Hibás/csonka/limitsértő payload — a hibás UTF-8-at is beleértve — válasz
+  nélkül eldobódik; minden hosszmező allokáció előtt limitellenőrzött.
+- **Rollback egyetlen kapcsolóval:** `client.enabled: false` (élő config, restart nélkül) —
+  a híd ettől kezdve minden üzenetet eldob, semmit nem küld és üríti az élő sessionöket;
+  visszakapcsolás után új kézfogás szükséges.
+
+### Rétegek
+
+| Réteg | Osztályok | Bukkit-függés |
+|---|---|---|
+| Wire-protokoll | `client/protocol/ClientProtocol`, `MessageEnvelope`, `ClientMessageCodec`, `ClientHello`, `ServerHello`, `ProtocolReject`, `ClientProtocolException` + a payload-osztályok: `HudState`, `AbilityKit`, `CastSlot`, `Spellbook`, `SpellAction`, `Profile`, `RelicState`, `RelicAttachment`, `Talent`, `TalentAction`, `Quest`, `QuestTrack`, `Profession`, `ProfessionAction`, `BrowseRecipes`, `RecipePage`, `Party`, `Boss`, `Territory`, `Faction`, `FxEvent`, `ActionResult` (`*Payload`) | nincs (pure Java, a Fabric kliensbe átemelhető) |
+| Session | `ClientSession`, `ClientSessionRegistry`, `ClientHandshake`, `ClientRateLimiter`, `ClientCapability` | nincs |
+| Projection | `client/projection/ClientHudProjector`, `ClientProfileProjector`, `ClientRelicProjector`, `ClientTalentProjector`, `ClientQuestProjector`, `ClientProfessionProjector`, `ClientRecipeProjector`, `ClientPartyProjector`, `ClientFactionProjector` (display-only leképezések) | vegyes: a Hud/Relic/Talent projektor tiszta, a többi élő managerekből olvas a néző szálán |
+| Adapter | `IceSmpClientBridge` (PluginMessageListener + PlayerStateCleanup + HudManager.ClientHudRoute + ClientFxRoute) | igen |
+
+### Wire-formátum (protokoll v1)
+
+Csatorna: `icesmp:client` (plugin messaging / custom payload). Envelope, fix szélességű
+big-endian mezőkkel:
+
+```text
+short  MAGIC (0x1CE5)
+byte   protocolVersion
+byte   messageType
+long   sessionGeneration
+long   sequence
+long   requestId (UUID msb)
+long   requestId (UUID lsb)
+int    payloadLength
+byte[] payload
+```
+
+Limitek: a teljes csomag max 64 KiB (ebből 40 bájt a fix fejléc; configgal csak szűkíthető),
+string max 8 KiB (szigorú UTF-8, nem modified-UTF-8), lista max 64 elem. Sérült envelope,
+ismeretlen üzenettípus, hamis hosszmező és trailing bájt egyaránt csendes drop + számláló.
+
+Control üzenettípusok: `0x01 CLIENT_HELLO`, `0x02 SERVER_HELLO`, `0x03 PROTOCOL_REJECT`,
+`0x04 RESYNC_REQUEST`, `0x05 RESYNC_BEGIN`, `0x06 RESYNC_END`, `0x07 PING`, `0x08 PONG`.
+State-sáv (0x20–0x3F, szerver → kliens read-only projekciók): `0x20 HUD_STATE`,
+`0x21 ABILITY_KIT_STATE`, `0x22 SPELLBOOK_STATE`, `0x23 PROFILE_STATE`,
+`0x25 RELIC_STATE`, `0x26 PARTY_STATE`, `0x28 TALENT_STATE`, `0x29 QUEST_STATE`,
+`0x2A PROFESSION_STATE`, `0x2B RECIPE_PAGE`, `0x2C RELIC_ATTACHMENT_STATE`,
+`0x24 FACTION_STATE`, `0x2D BOSS_STATE`, `0x2E TERRITORY_STATE` (0x27 az
+EVENT_STATE-nek fenntartva). Action-sáv (0x40–0x4F, kliens → szerver
+intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
+`0x43 PURCHASE_TALENT`, `0x44 TRACK_QUEST`, `0x45 SELECT_PROFESSION`,
+`0x46 SELECT_PROFESSION_SPEC`, `0x47 BROWSE_RECIPES`.
+Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
+`0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
+RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv (0x60–0x6F, tranziens
+fire-and-forget FX-események): `0x60 FX_EVENT`.
+
+### Kézfogás és capability-k
+
+`CLIENT_HELLO` (kliens verzió + protokoll-tartomány + hirdetett capability-nevek) →
+`ClientHandshake.negotiate`: a közös protokoll a kliens- és szerver-tartomány metszetének
+maximuma; a config-ablak (`client.protocol.min/max`) a kód által beszélt tartományra (jelenleg
+1..1) záródik. Üres metszet nem kick, hanem `PROTOCOL_REJECT` — az inkompatibilis kliens
+vanilla fallbackra esik. Elfogadáskor a session új, szigorúan növekvő generation-t kap, és a
+`SERVER_HELLO` a plugin-verziót, a kiválasztott protokollt, a resource-pack sémát
+(`client.resource-pack-schema`) és az engedélyezett capability-ket viszi.
+
+Egy capability csak akkor aktív, ha a kliens hirdette ÉS `client.features.<kulcs>: true` ÉS a
+protokoll támogatja. Minden feature-kapcsoló alapból `false`, és csak akkor kapcsolható be,
+amikor a hozzá tartozó szerveroldali projection/action fázis elkészült. Ismeretlen
+capability-név nem hiba (forward compat).
+
+### Native HUD routing (HUD_STATE)
+
+A `HUD_STATE` (0x20) a meglévő `HudManager.HudSnapshot` + `ClassHudState` display-only
+projekciók sorosítása (`HudStatePayload`) — NEM új state-modell: pontosan azt viszi, amit a
+first-party HUD és a PlaceholderAPI-bridge is olvas, a `resourceBar` szöveges
+render-műtermék nélkül. A leképezés a tiszta `ClientHudProjector` függvény; a lista-mezők a
+protokoll-limiten (64 elem) csonkolódnak.
+
+Routing (a `hud.refresh-ticks` kadenciájú HUD-tickből, a játékos régió-szálán):
+
+- Egy játékos akkor kap natív HUD-ot, ha él a sessionje ÉS a kézfogásban NATIVE_HUD
+  capability-t kapott ÉS `client.features.native-hud: true` (élő config — kikapcsolása
+  restart nélkül visszaadja a vanilla HUD-ot).
+- A vezetékre csak tényleges változás megy ki: a híd az utoljára küldött payloadot
+  játékosonként cache-eli, azonos bájtsor nem küldődik újra. Új kézfogás és resync a
+  cache-t üríti, így a friss session mindig teljes state-tel indul.
+- **Nincs dupla HUD:** a natív HUD-ra routolt játékosnál a sidebar, a first-party IceSMP HUD
+  és a Folia compact fallback elhallgat (a `HudManager` a `ClientHudRoute` seam-en kérdez rá,
+  a híd típusát nem ismeri; a bekötés a core-ban történik). A világesemény-bossbarok és a
+  tablist maradnak. Resync a BEGIN/END közé teljes friss HUD-state-et küld.
+
+### Ability bar és CAST_SLOT
+
+A kliens SOSEM küld spell-id-t: a `CAST_SLOT` a futásidőben számolt aktív kit 1-alapú
+pozíciójára mutat, a spell-feloldás és minden validáció a szerveré. A kérés a
+`KEYBIND_CAST` capability + `client.features.keybind-cast` élő kapu + saját rate limit
+(`client.limits.cast-messages-per-second`) mögött, a játékos régió-szálán fut be az
+`AbilityCatalystListener.castActiveKitSlot` belépőn — ez UGYANAZT a tranzakciós
+cast-magot futtatja (cooldown → canCast → class-gate → költség-rezerválás → végrehajtás
+→ commit), mint a katalizátor-input, azonos játékos-üzenetekkel; második cast-útvonal
+nem létezik. Vanilla parity kapuk a kliens-útvonalon is: használható Lélekkapocs a
+főkézben, PlayerProfile-session-készenlét és a közös 120 ms-os cast-debounce — a
+kliensmod nem kaphat item-követelmény nélküli castolást. A válasz gépi `ACTION_RESULT`
+(requestId-korrelációval), sikeres cast után azonnali friss kit-state-tel.
+
+Az `ABILITY_KIT_STATE` a kit display-projekciója (spellId, név, költség-szöveg, teljes
+és maradék cooldown, kiválasztott-jelölés) az `ABILITY_BAR` capability +
+`client.features.ability-bar` kapu mögött. A push change-signature alapú: a
+másodpercenként fogyó maradék-cooldown NEM generál forgalmat (a kliens érkezéskor
+readyAt-ra számolja át és lokálisan interpolál — a vizuális timer nem authority);
+összetétel-, kiválasztás- és cooldown-állapotváltás (indul/lejár) küld új state-et.
+
+### Natív Spellbook (SPELLBOOK_STATE, SELECT_SPELL, TOGGLE_FAVORITE)
+
+A `SPELLBOOK_STATE` a vanilla spellbook-GUI-val azonos, rendezett kaszt+spec katalógus
+display-projekciója (név, kész magyar leírás-sorok, szint-követelmény, unlocked/kedvenc/
+kiválasztott/kit-tag jelölők, mastery-rang, költség, cooldown) a `NATIVE_SPELLBOOK`
+capability + `client.features.native-spellbook` kapu mögött. Nem tick-cadence: kézfogáskor,
+resynckor és releváns változáskor megy ki — a tick csak egy olcsó változás-jelet számol
+(unlock/kedvenc/kiválasztás/kit), a describe-nehéz payload csak tényleges változásra épül fel.
+
+A két action a meglévő validált use-case-eken fut, a kliens itt is csak kér: `SELECT_SPELL`
+a katalizátor-ciklázás párja (csak aktív-kit-tag választható, azonos játékos-üzenettel),
+`TOGGLE_FAVORITE` a vanilla spellbook shift-katt párja (aktív-kit-limitre cappelve, durable
+commit után válaszol — a kliens nem commitol optimistán). Mindkettő a `client.limits.ui-actions-per-second`
+rate limit mögött; a válasz gépi `ACTION_RESULT`, sikeres action után friss spellbook- és
+kit-state (a kedvenc/kiválasztás a kit-összetételt is érintheti).
+
+### Natív Profile (PROFILE_STATE)
+
+A `PROFILE_STATE` a /profile GUI fejlécével és egyenleg-nézetével tartalmilag azonos,
+read-only karakter-projekció (frakció, kaszt+szint, kaszt-spec, gyűjtő/készítő szakma,
+szakma-spec, Bűnös/Tiszta, talentpontok, formázott egyenlegek, életre szóló publikus
+számlálók, achievement-összegzés) — a `ClientProfileProjector` UGYANAZOKBÓL a
+manager-hívásokból építi, mint a vanilla GUI. `NATIVE_PROFILE` capability +
+`client.features.native-profile` kapu; push a HUD-mintájú bájt-dedupe-pal (tick-enként
+épül, de csak változásra megy ki). PlayerProfile authority-szabály: revision/CAS,
+operation-receipt, moderációs mező és rejtett quest-state SOHA nem kerülhet a payloadba.
+
+### Relic-state (RELIC_STATE, v1)
+
+A `RELIC_STATE` a SAJÁT játékos class-relic aktivációjának display-projekciója
+(`ClassRelicActivation` tükre + display-név a `relics.definitions` katalógusból) a
+`RELIC_RENDER_V1` capability + `client.features.relic-render-v1` kapu mögött. A
+`ClassRelicService.resolve` UUID-only, lock-mentes és cache-only, ezért a tick-cadence
+olcsón elbírja; a dedupe a normalizált change-signature-ön fut (a fogyó
+awakening-maradék 0/1-re normalizálva — futó cooldown nem generál forgalmat, a kliens
+a fogadás idejétől interpolál). A payload az `awakeningRemainingMillis` mezőt is
+hordozza, forrása a `ClassRelicService.awakeningReadyAt(UUID)` query (katalógus-kötés
+→ relic-id → lock-mentes store-pillanatkép; 0 = kész vagy nincs konfigurálva).
+Szerveroldali vanilla-suppression e fázisban nem kellett, mert a class-relic rétegnek
+jelenleg nincs szerveroldali vizuálja — amikor lesz, a hídbeli `relicRenderActive`
+kapu a kész suppression-predikátum hozzá.
+
+### Relic attachment-broadcast (RELIC_ATTACHMENT_STATE)
+
+A `RELIC_ATTACHMENT_STATE` a néző közelében tartózkodó, AKTÍV class-relicet viselő
+játékosok listája a `RELIC_ATTACHMENT_V1` capability +
+`client.features.relic-attachment-v1` kapu mögött. Folia-safe kereszt-régiós út: a
+pozíciók az owner-thread-frissített `PositionCache` tükréből
+(`nearbyPlayerIds(viewer, radius)` — rádiusz: `client.limits.relic-attachment-radius`),
+az aktiváció a lock-mentes relic-resolve-ból jön — a néző szála idegen
+Player-objektumot nem érint. Csak megjelenítési tények utaznak (viselő-UUID, relic-id
++ név, rezonancia-jelzés); nevet a szerver nem küld, a kliens a saját világában a
+UUID-ból oldja fel az entitást; alvó viselő nem kerül a vezetékre. A lista
+determinisztikusan rendezett és a protokoll-limiten cap-elt, bájt-dedupe-pal csak
+változásra megy ki. A kliensoldali renderer (Phase 8a) a viselők fölé világtérbeli,
+kamera felé forduló relikvia-jelvényt rajzol (rezonáló viselőnél lüktető
+kiemeléssel); láthatatlan/lopakodó viselőre nem rajzol. A resonance/awakening
+tartalmi FX-e a 8b FX-esemény csatornával együtt élesedik.
+
+### Natív talentek (TALENT_STATE, PURCHASE_TALENT)
+
+A `TALENT_STATE` a két talent-pool display-projekciója a `NATIVE_TALENTS` capability +
+`client.features.native-talents` kapu mögött. A vanilla talent-GUI-val egyezően
+KIZÁRÓLAG az isAvailable-szűrt (a játékos aktuális kasztjához/szakmájához tartozó)
+talentek utaznak — a teljes 75-elemes katalógus a 64-es protokoll-limitet is sértené,
+és más kasztok fáját is felfedné. A `PURCHASE_TALENT` a meglévő CAS-védett
+`TalentManager.spendPoint` use-case-en fut (minden requirement/fa-gate/pont-fedezet a
+tranzakción belül validálódik, a durable commit aszinkron), UI-rate-limit mögött;
+gépi `ACTION_RESULT` után friss talent- és profil-state megy ki. Respec-action
+szándékosan nincs a kliens-protokollban: a respec a SpecGUI-ban él, megerősítési
+folyamata a vanilla úton is egy-kattintásos — natívvá tétele külön döntés.
+
+### Natív Quest Journal (QUEST_STATE, TRACK_QUEST)
+
+A `QUEST_STATE` a vanilla questlog öt fülének (Aktív/Kész/Megbízások/Elérhető/
+Teljesített) display-projekciója a `QUEST_JOURNAL` capability +
+`client.features.quest-journal` kapu mögött, azonos fül-besorolással és forrás-API-kkal.
+Biztonsági invariánsok: a láthatóság egyetlen forrása az isVisible-szűrt
+`getVisibleQuestIds` (HIDDEN quest sosem szivárog); a riddle-questek progressze a
+szerveroldali describeProgress „???” placeholderével utazik; reward-előnézet nincs
+(a vanilla felület sem mutat). A fülönkénti listák a 64-es protokoll-limiten
+csonkolódnak, a total-mezők a valós darabszámot viszik (a teljes lista a /quest log
+felületen mindig elérhető). A push olcsó változás-jellel megy (aktív progressz +
+fül-összetétel + követés), a katalógus-bejárós teljes payload csak változásra épül.
+
+A `TRACK_QUEST` az EGYETLEN kliensről engedett quest-mutáció: nincs forrás-kötése, a
+szerver csak aktív questre engedi (üres id = követés törlése). Accept/turn-in
+kliens-actionként TILOS — azok forrás-authorityját (NPC-kattintás, territórium-belépés,
+hitelesített esemény, item-használat) csak a valódi játék-esemény adaptere válthatja
+ki, egy kliens-csomag remote-accept bypass lenne.
+
+### Natív Professions (PROFESSION_STATE, SELECT_PROFESSION, SELECT_PROFESSION_SPEC)
+
+A `PROFESSION_STATE` a szakma-áttekintő vanilla felületeivel (ProfessionGUI,
+`/profession info`, `/szakmacel`) azonos manager-hívásokból épülő display-projekció a
+`NATIVE_PROFESSIONS` capability + `client.features.native-professions` kapu mögött.
+A teljes nyolc-szakmás roster utazik (a tanulható, még nem aktív főszakmák is — a
+vanilla GUI is mutatja őket) szinttel, XP-bontással (`ProfessionManager.xpBreakdown`,
+amely bitre a `levelForExperience` szint-formuláját követi), rang-névvel,
+recept-/tervrajz-darabszámokkal és a céh heti közös céljával. Spec-opció csak a
+játékos aktívan gyakorolt szakmáira megy ki (más szakmák spec-fája nem kerül a
+vezetékre); recept tétel-szinten nem utazik, csak darabszám — a recept-böngésző a
+product spec külön modulja marad. Push a profile-mintájú bájt-dedupe-pal.
+
+A `SELECT_PROFESSION` a ProfessionGUI-kattintás párja: a döntést kizárólag a
+CAS-mutáció hozza (foglalt kategória-slot = unchanged = `REJECTED`/SLOT_TAKEN) —
+szakmaváltás kliensről sem lehetséges, a slot felszabadítása admin-út marad. A
+`SELECT_PROFESSION_SPEC` a SpecGUI-kattintás párja a meglévő canSelect/select
+use-case-en (szakma-, szint- és egyszeri-választás-kapu); respec kliens-actionként
+szándékosan nincs (fizetős SpecGUI-döntés). Mindkét action UI-rate-limit mögött fut,
+gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
+
+### Natív recept-böngésző (BROWSE_RECIPES → RECIPE_PAGE)
+
+A recept-katalógus (437 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
+ez az egyetlen pull-modellű domain: a kliens `BROWSE_RECIPES`-szel egy szakma egy
+lapját kéri, a válasz requestId-korrelált `RECIPE_PAGE` a `RECIPE_BROWSER` capability
++ `client.features.recipe-browser` kapu mögött. A lap a játékos régió-szálán épül
+(inventory-olvasás a have/need értékekhez), a lap-méret
+(`client.limits.recipe-page-size`, clamp 1..64) és a lap-index szerveroldalon clampelt,
+a kérés UI-rate-limit alatt fut. A csempe-tartalom a vanilla recept-könyv
+(`ProfessionRecipeGUI.buildTile`) logikájával bitre azonos feltételekből épül — a
+have-számlálás a megosztott GUI-helpereket használja (unique-anyag kizárással), a
+craftolhatóság a vanilla csempével egyezően szint + tervrajz + hozzávalók. Craft-action
+szándékosan NINCS a protokollban (a product spec szerint is későbbi külön döntés):
+a tényleges craft a vanilla recept-könyv tranzakciós útján marad.
+
+### Party frame (PARTY_STATE)
+
+A `PARTY_STATE` a party-frame strukturált display-projekciója a `PARTY_FRAME`
+capability + `client.features.party-frame` kapu mögött — ugyanaz az adatkör, amit a
+vanilla HUD party-sorai mutatnak (👑/tag-jelölés, név, életerő), mezőkben. A tag-adat
+olvasása szándékosan a vanilla sor útján fut (`Bukkit.getPlayer` + élő mező-olvasás
+védőhálóval, a néző region-szálán — a HudManager dokumentált kereszt-régiós
+kivétele); régió-átmenetkor a tag egy tickre `healthKnown=false`-szal utazik, ahogy a
+vanilla sor „…”-t mutat. Az életerő fél-szívekre kvantált (`ceil(hp/2)` — a vanilla
+kijelzéssel azonos felbontás), így a regen-tickek nem generálnak forgalmat a
+bájt-dedupe alatt. Üres taglista = nincs party. Party-mutáció (invite/kick/promote/
+leave) szándékosan NEM része a protokollnak — a `/party` parancs validált útja marad
+az egyetlen. A natív kliens a strukturált frame aktív állapotában a HUD-panel
+szöveges party-sorait nem rendereli (nincs dupla presentation); a HUD_STATE
+partyLines mezője változatlanul utazik a vanilla-paritás miatt.
+
+### Boss/encounter frame (BOSS_STATE)
+
+A `BOSS_STATE` a világboss-encounter strukturált display-projekciója a `BOSS_FRAME`
+capability + `client.features.boss-frame` kapu mögött. Adatköre a vanilla megosztott
+boss-bar (☠ + HP%) plusz a boss plain neve, archetípus-kulcsa és a második-fázis
+(dühöngés) jelzés — utóbbiakat a szerver eddig is broadcastolta szövegként; a
+WorldBossManager ehhez kapott lock-mentes display-tükröket (activeBossName/
+archetype/enraged, az isBossActive() mögé kapuzott getterekkel). A HP egész
+százalékra kvantált (a vanilla bar felbontása), a push bájt-dedupe-os; a kör a
+vanilla barral egyezően globális. A natív boss-frame-et kapó játékosnál a megosztott
+vanilla világboss-bar elhallgat (`ClientHudRoute.bossFrameActive` suppression —
+nincs dupla presentation); vanilla kliens változatlanul a bart kapja. Kazamata
+mini-bossnak nincs vanilla felülete, ezért a frame-ben sem szerepel
+(display-paritás); encounter-scope/contribution-kör külön rendszer híján nincs.
+
+### Territory overlay (TERRITORY_STATE)
+
+A `TERRITORY_STATE` a néző aktuális territórium-zónájának display-projekciója a
+`TERRITORY_OVERLAY` capability + `client.features.territory-overlay` kapu mögött —
+az az adatkör, amit a vanilla határátlépés-actionbar és a `/territory info` mutat
+(zóna-név, típus, tulajdonos frakció), tartós overlay-ként, plusz az AKTUÁLIS zónán
+futó raid állása (támadó/védő + pontok — a megosztott raid-bar adatköre a zónára
+szűkítve). A zóna-lookup a néző saját region-szálán fut a lock-mentes chunk-indexen
+(tick-enként olcsó); a raid-pontok a capture-tick ütemében változnak, a bájt-dedupe
+nem churn-öl. Zóna-geometria (poligon) szándékosan nem utazik — térkép-overlay külön
+fázis lenne, geometria-lapozó protokollal. A határátlépés-actionbar vanilla úton
+marad: múló értesítés, nem azonos felület a tartós overlay-jel (nincs dupla
+presentation).
+
+### Faction screen (FACTION_STATE)
+
+A `FACTION_STATE` a saját frakció display-projekciója a `FACTION_SCREEN` capability +
+`client.features.faction-screen` kapu mögött — az az adatkör, amit a /menu
+frakció-fejléce, a /faction king|treasury|raid status|war és az /events szezon-állása
+mutat: tagság (Menedék-vendégnél üres frakció-blokk), kincstár-egyenleg formázva +
+adókulcs, király + szavazat-tally (a menü-úttal azonos névfeloldással), szezon-állás
+mind a négy frakcióra (publikus broadcast-adat — vendégnek is utazik), az élő raid
+teljes státusza és a hadi-ablak. A PlayerProfile-internals (membership-history,
+receipts, váltás-számlálók) nem kerülnek a vezetékre. Frakció-mutáció (join/leave)
+szándékosan NEM protokoll-action: a csatlakozás forrás-kötött (a FactionSwitchRules
+csak a Menedék fővárosában validálja), egy kliens-csomag hely-authority bypass lenne
+— a váltás-folyamat a /faction és /menu validált útján marad. A perc-felbontású
+visszaszámlálók miatt a bájt-dedupe percenként legfeljebb egyszer enged ki friss
+state-et.
+
+### FX-esemény csatorna (FX_EVENT, Phase 8b)
+
+Az `FX_EVENT` a presentation-sáv első üzenete az `ADVANCED_FX_V1` capability +
+`client.features.advanced-fx-v1` kapu mögött: tranziens, fire-and-forget esemény —
+nem state (resync nem ismétli, dedupe nincs), és az elveszett/kihagyott esemény
+gameplay-t nem érinthet, mert a vanilla telegráf-partikula/hang minden kliensnek
+változatlanul megy (az FX kiegészítő réteg, nem helyettesítés). A domain-emitterek a
+`ClientFxRoute` seam-en át szólnak (a ClientHudRoute mintája — a domain a hidat nem
+ismeri): v1-ben a világboss-specialok telegráfjai (`boss-slam-telegraph`,
+`boss-zone-telegraph`, `boss-summon` — hely + rádiusz + telegráf-hossz) és a sikeres
+awakening-arming (`awakening-armed`, cél-játékosnak). Kézbesítés: pozicionált
+eseménynél a rádiusz-szűrés (`client.limits.fx-radius`) az owner-thread-frissített
+PositionCache tükrén fut, a küldés a címzett saját ütemezőjén — az emitter bármely
+régió-szálról hívható, idegen Player-állapotot nem érint.
+
+### Session-életciklus és védelem
+
+- A registry (`UUID → ClientSession`) nem durable; quit/kick a központi
+  `PlayerSessionCleanupListener` úton takarít (a híd `PlayerStateCleanup`), disable a
+  `ClientBridge.unregister` lépésben (a bent hagyott channel-listener a régi core-példányt
+  tartaná életben hot reloadnál).
+- Kézfogás utáni üzenet csak élő session + egyező, kialkudott protokoll + egyező generation
+  + szigorúan monoton sequence mellett dolgozódik fel; minden más stale-drop. Reconnect után
+  a régi generation üzenetei így tartalmi validáció nélkül kiesnek.
+- Rate limit játékosonként és kategóriánként (`client.limits.control-messages-per-second`,
+  resync-hez `client.limits.resync-cooldown-ms`, CAST_SLOT-hoz
+  `client.limits.cast-messages-per-second`, UI-actionökhöz
+  `client.limits.ui-actions-per-second`); túllépés csendes drop + számláló,
+  automatikus büntetés nélkül.
+- Folia: a plugin-message callback szál-kontextusa nem garantált, ezért a híd a Playert csak
+  a saját ütemezőjén érinti (`player.getScheduler().run` a kimenő küldésnél); a registry és a
+  számlálók lock-mentes konkurens szerkezetek.
+
+### Diagnosztika és tesztek
+
+`/icesmp client <név>` (session-részletek), `/icesmp client stats` (híd-számlálók),
+`/icesmp client resync <név>` (kényszerített resync: BEGIN + teljes state + END) — jog:
+`icesmp.admin.client`. Debug-napló: `client.debug: true`.
+
+A `clientProtocolRegressionTest` (a `check` része) dependency-free fedi a codec-roundtripet,
+a fail-closed hibautakat, a HUD-state sorosítást és projekciót, a negotiációt, a
+registry-életciklust, a sequence-monotonitást és a rate limitert. A kliensoldali ellenpár a
+`MilCsik09/IceSMP-Fabric` repo: a protokoll-csomag ott bájtazonos port, golden-vector és
+szimulált szerveres kézfogás-suite-okkal (lásd az AGENTS.md kliensprotokoll-DoD szabályát);
+az élő Paper↔Fabric roundtrip-bizonyítás (CLIENT-02) staging-teszt. A protokoll-tartomány
+szándékosan 1..1, és a feature-kapuk alapból zárva maradnak.

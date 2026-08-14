@@ -260,7 +260,7 @@ Moderátori rejtőzés, külön láthatósági jog és kapcsolódó játékossz�
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/recovery, valamint utolsó ismert helyre offline teleport.
+Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/recovery, valamint utolsó ismert helyre offline teleport. Egy céljátékoshoz egyszerre egy write session tartozhat: edit joggal az első megnyitó kapja automatikusan, minden további egyidejű megnyitó read-only.
 
 - **Így találkozol vele:** `/invsee`, `/offlinetp`; Invsee GUI. Parancs: /invsee; /offlinetp.
 - **Kinek szól:** Moderátor, Admin, Tesztelő, Fejlesztő/üzemeltető.
@@ -271,7 +271,7 @@ Online inventory/ender chest olvasás és szerkesztés, biztonságos escrow/reco
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.inventory.edit`; `icesmp.moderation.inventory.read`; `icesmp.moderation.offlinetp`; `read: icesmp.moderation.inventory.read; edit: icesmp.moderation.inventory.edit`
+- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.inventory.edit`; `icesmp.moderation.inventory.read`; `icesmp.moderation.offlinetp`; `read: icesmp.moderation.inventory.read; write: icesmp.moderation.inventory.edit`
 - Config: `moderation.*`, invsee-, escrow-, audit- és permissionbeállítások.
 - Tartós állapot: Escrow és utolsó ismert hely tartós; nyitott GUI sessionállapot.
 - Reload: Config reloadolható, de függőben lévő escrow-nál előbb settlement/recovery szükséges.
@@ -336,20 +336,36 @@ Központi játékosmenük, karakteradatok, tematikus navigáció és jogosultsá
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk.
+Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-specifikus szerverinformációk. A tablista LuckPerms-rang szerint rendez (`tablist.sorting.group-order`), az AFK játékosok a teljes lista végére kerülnek, és az AFK-blokkon belül is a rang+név sorrend érvényesül. A név-színek frakciónként a `tablist.faction-colors.*` kulcsokból jönnek — a Menedék-polgár zöld (Smaragdkő/Ryanora lore-szín), így nem téveszthető össze a sötétszürke Kitaszítottal; a chat-névszín és a `/menu` frakcióválasztó ugyanezt a palettát követi, a raid alatti háborús jelölés színe pedig a `tablist.nametags.war-color` kulccsal hangolható.
 
 - **Így találkozol vele:** `/hud`; a tablista automatikus.
 - **Kinek szól:** Játékos, Admin, Tesztelő.
 - **Mitől mozdul meg:** Csatlakozáskor, periodikus frissítéskor, státusz- és adatváltozáskor.
-- **Ami még kellhet hozzá:** Nincs builderfeladat; a meglévő TAB-plugin funkcióigényét deployment előtt fel kell mérni.
-- **Fontos határ:** Nem cél a TAB teljes upstream-paritása.
+- **First-party IceSMP HUD:** a resource pack elfogadása után játékosonként aktiválódó,
+  rögzített geometriájú kijelzés öt teljesen külön skinből (a Menedék vendége saját erődkeretet kap),
+  13 class-ikonból, class/spec/resource/mechanika állapotból, legfeljebb öt generic metricből,
+  kilenc charge-pipből, DK-rúnákból és négy külön pénztárcahelyből. A fő frakcióvaluta mindig,
+  a többi banki valuta csak pozitív egyenlegnél jelenik meg a saját ikonjával.
+- **Fallback:** pack nélkül a natív compact Folia HUD marad. A resource-packes megjelenítés az
+  IceSMP first-party része; külső HUD plugin nincs a runtime- vagy dependency-stackben.
+- **Információs parity:** frakció, class, specializáció, class-szint, pénz, aktuális event,
+  class resource és a játékhoz szükséges elsődleges/másodlagos, illetve összetett kiegészítő
+  mechanikák ugyanabból az immutable HUD snapshotból készülnek. A Wizard három elemi
+  ráhangolódása külön mini bar, a diszkrét combo/stack/charge értékek pedig vizuális pipsort kapnak.
+- **Személyes layout-editor:** a `/hud edit` lapozott, kattintható nézete kijelölt-elem kiemelést,
+  1/5/10/15 pixeles mozgatást, közvetlen X/Y/méret bevitelt, preset- és szintetikus preview-váltást,
+  láthatóságot, undo/reset/save/cancel műveleteket ad. A Profile v2 csak a globális alaptól eltérő
+  mezőket tárolja, ezért a többi elem a későbbi globális változásokat is örökli.
+- **Ami még kellhet hozzá:** Nincs builderfeladat; a saját tablista és HUD production megjelenését deployment előtt ellenőrizni kell.
+- **Fontos határ:** A natív tablista az IceSMP-hez szükséges funkciókat biztosítja, nem általános külső tablista-motor.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.moderation`; `icesmp.moderation.vanish`; `icesmp.moderation.vanish.see`
 - Config: `hud.*`, `tablist.*`.
-- Tartós állapot: A HUD-beállítás játékoshoz kötötten tárolható; a tablista runtime nézet.
+- Tartós állapot: A HUD-szekciók és a ritka személyes layout-felülírások a Profile v2
+  `preferences` szekciójában maradnak meg; a globális alap config, a tablista runtime nézet.
 - Reload: Szövegek és megjelenési opciók reloadolhatók; futó frissítési periódus restartot igényelhet.
 
 </details>
@@ -442,14 +458,22 @@ Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Választás, XP-források, szintlépés, képességfeloldás és kapcsolódó combat/craft esemény.
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; resource-pack ikonok és balance-adatok tesztelendők.
-- **Fontos határ:** A konkrét élő balance és már létező játékosadat-migráció az élő config nélkül nem bizonyítható.
+- **Fontos határ:** A konkrét élő balance és több-régiós Folia viselkedés stagingben ellenőrizendő; production legacy játékosadat-migráció nincs.
+
+A teljes, 13 kasztot és 35 specializációt kiszolgáló Profile v2 alap a kaszt/spec egyetlen
+autoritatív adatmodellje és persistence-rétege. Nincs legacy player-profile migráció, PDC fallback,
+dual authority vagy runtime kill switch. Hiányzó profil determinisztikus revision-0 greenfield
+aggregátumként jön létre; hibás vagy owner-eltérő profil quarantine-ba kerül és fail-closed marad.
+Az IceSMP a verziózárt dependency manifest alapján ellenőrzi a kötelező megjelenítési és content
+stacket; eltérésnél nem aktivál félkész profilt.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin`; `icesmp.admin.job`; `icesmp.admin.spec`; `icesmp.job.admin`
+- Permission: `icesmp.admin.job`; `icesmp.admin.spec`; quarantine recovery: `icesmp.admin.spec.recover`
 - Config: `classes.*`, `spells.*`, specialization- és ability-definíciók.
-- Tartós állapot: Kaszt, XP, specializáció és unlockok játékosonként tartósak.
+- Startup dependency policy: `class-spec-rework.dependencies.enforce`; dependency lock: `class-spec-dependencies.lock.yml`. Nincs runtime rollout flag.
+- Tartós állapot: ownerhez kötött Profile v2 kaszt, XP/szint, loadout, companion, Soulforge és operation receipt; explicit spell-provenance ledger.
 - Reload: Balance részben reloadolható; új enum/registry-szerkezet restartot igényel.
 
 </details>
@@ -580,13 +604,13 @@ Adatvezérelt ritkaság, egyedi anyag, item-provenance, rúnázás, signature en
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul shard/soulstone és soulforge.
+Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul shard/soulstone és soulforge. A `relics.passive-death.mode: keep` útvonal a passzív relikviát csak a Profile v2 halál-escrow tartós commitja után veszi ki a drop-listából; respawnkor vagy a következő belépéskor idempotens receipt alapján pontosan egyszer kézbesíti, ezért a halál és respawn közötti restart sem veszíti el. Sikertelen escrow-írásnál a tárgy a dropban marad. A generikus réteg fölött külön **Class Relic Framework** él (`relics.class-relics.*`): kaszthoz kötött, világ-egyedi relikviák Class Power / Spec Resonance / Awakening rétegekkel — a bónusz csak akkor jár, ha a Profile v2 szerinti kaszt egyezik ÉS a használható fizikai tárgy a játékosnál van (az ownership önmagában nem elég); SEALED specializáció nem rezonál; az Awakening nagy cooldownja a relickel utazik (gazdacsere/restart nem nullázza), az aktiválása atomikus és csak megtörtént lemez-commit után számít sikeresnek; a `relics.enabled: false` explicit kapu — ilyenkor Class Power, Resonance és Awakening egyaránt inaktív. Pilot: a Sárkánytojás-töredék (Evoker, +10% max Essence a `CLASS_RESOURCE_MAX` csatornán).
 
 - **Így találkozol vele:** `/relic`, `/souls`, `/soulforge`; itemhasználat és craft. Parancs: /relic (alias: /relics, /relikvia); /soulforge (alias: /lelekkovacs); /souls (alias: /lelek, /soul).
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Relikvia-trigger, PVP transfer, inactivity, craft és soul esemény.
 - **Ami még kellhet hozzá:** Soulforge/rituálé helyszín és resource-pack itemek ellenőrzendők, ha a config fizikai helyet kér.
-- **Fontos határ:** PVP transfer, full inventory és disconnect közbeni átadás runtime tesztet igényel.
+- **Fontos határ:** PVP transfer, megtelt inventory, escrow-íráshiba és halál–restart–join közbeni átadás runtime tesztet igényel.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
@@ -628,21 +652,21 @@ Mérföldkövek és jutalmak, datapack advancementek, harci statisztika és rang
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Adatvezérelt küldetések, objective progress, napi feladatok, questnapló és admin/builder questkészítő.
+Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/frakció/napi/heti/titok…), láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, objective progress, napi feladatok és admin/builder questkészítő.
 
-- **Így találkozol vele:** `/quest`, `/daily`; questlog és quest builder GUI. Parancs: /quest (alias: /kuldetes, /quests); /daily. GUI: Küldetésnapló; Quest builder.
+- **Így találkozol vele:** `/quest`, `/daily`; questlog (öt fül: Aktív/Kész/Megbízások/Elérhető/Teljesített) és quest builder GUI. Parancs: /quest (alias: /kuldetes, /quests); /daily. GUI: Küldetésnapló; Quest builder.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
-- **Mitől mozdul meg:** Objective események, NPC-interakció, napi ciklus és admin szerkesztés.
+- **Mitől mozdul meg:** Objective események, hitelesített NPC-interakció (leadás > beszélgetés/szállítás > kínálat prioritással, több questnél tokenes választólistával), napló-megbízás elvállalása, lánc-feloldás és admin szerkesztés.
 - **Ami még kellhet hozzá:** Questhelyszínek, NPC-kötések, biztonságos célterületek és jutalomoverflow tesztelendő.
 - **Fontos határ:** Az élő NPC-k és világhelyek hiányában csak capability-szintű következtetés adható.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.quest`
-- Config: `quests.*`, napi küldetés-, NPC- és rewarddefiníciók.
-- Tartós állapot: Aktív quest, objective progress, napi állapot és builder által mentett definíció tartós.
-- Reload: Adatbetöltés/célzott reload támogatott részen; folyamatban lévő quest kompatibilitását tesztelni kell.
+- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.quest` (a `/quest accept` és `/quest talk` is admin-parancs — a forrás-authority parancsból nem kerülhető meg).
+- Config: `quests.*` (start/turn-in/category/visibility séma), napi küldetés-, NPC- és rewarddefiníciók.
+- Tartós állapot: Aktív quest, objective progress, forrás-audit, felfedezés, követett quest, napi állapot és builder által mentett definíció tartós (PlayerProfile QuestSection az egyetlen player-authority).
+- Reload: a quest-registry csere atomikus és teljes gráf-validációval kapuzott — érvénytelen candidate a korábbi definíciókat hagyja élőben; az admin-szerkesztő ugyanezen a validátoron megy át mentés előtt.
 
 </details>
 
@@ -656,7 +680,7 @@ A forrásban ténylegesen bekötött krónika, emlék, lore-parancs, párbeszéd
 
 - **Így találkozol vele:** `/kronika`, `/emlek`, `/lore`; dialógus- és történeti triggerek. Parancs: /emlek (alias: /emlekek, /memory); /kronika (alias: /chronicle); /lore (alias: /kodex).
 - **Kinek szól:** Játékos, Builder, Eventes, Tesztelő.
-- **Mitől mozdul meg:** Felfedezés, interakció, campfire vagy konfigurált történeti esemény.
+- **Mitől mozdul meg:** Felfedezés, konfigurált történeti esemény, illetve sikeres leülés egy `szék → 1 üres blokk → égő campfire` elrendezésben; a campfire közvetlen kattintása nem trigger.
 - **Ami még kellhet hozzá:** Történeti helyszínek, NPC-k és aktiváló blokkok/területek előkészítendők.
 - **Fontos határ:** Csak a regisztrált forrás- és resource-tartalom aktív; a LORE.md/TEASER.md önmagában nem implementáció.
 
@@ -758,14 +782,14 @@ Játékospiac, NPC/frakció shop, vevőszolgáltatás, kézbesítés, adományl�
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Listing/vásárlás/kézbesítés, NPC-interakció, adomány és board művelet.
 - **Ami még kellhet hozzá:** Shop NPC-k, adományláda-hely és esetleges board-helyszínek kötése szükséges.
-- **Fontos határ:** Full inventory, disconnect és tárolási hiba esetén runtime recovery teszt szükséges.
+- **Fontos határ:** Az adomány csak tartós előkészítés és region-szálas forráslevonás után jelenik meg; félbeszakított beadás vagy átvétel belépéskor automatikusan folytatódik vagy visszagörög.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.exchangeboard`
 - Config: `economy.*`, market-, shop-, donation- és exchange-board definíciók.
-- Tartós állapot: Listingek, journal, kézbesítés és gazdasági állapot tartós.
+- Tartós állapot: Listingek, journal, kézbesítés és gazdasági állapot tartós; az adományláda prepare/available/claim fázisai atomikus YAML-snapshotban élnek.
 - Reload: Árak/listák részben reloadolhatók; nyitott tranzakciónál settlement kell.
 
 </details>
@@ -776,9 +800,9 @@ Játékospiac, NPC/frakció shop, vevőszolgáltatás, kézbesítés, adományl�
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Fizikai crate-helyek, kulcsvásárlás/-felhasználás, browser/spin GUI, több jutalomtípus, audit, settlement és recovery.
+Nyolc permission nélküli alapláda, fizikai crate-helyek, kulcsvásárlás/-felhasználás, valós itemmodelleket mutató browser/preview GUI, világban futó ItemDisplay-reveal, tematikus unique/craftolt/affixes és szűrt random-tervrajz jutalmak, audit, settlement és recovery. A crate parser közvetlen itemként, profession-receptként és tervrajz-poolon keresztül is kizárja az Elytrát; repülőszárny kizárólag a relikviarendszerből létezhet.
 
-- **Így találkozol vele:** `/crate`; crate blokk, browser és spin GUI. Parancs: /crate (alias: /crates, /ladak). GUI: Crate böngésző és preview; Crate nyitási animáció.
+- **Így találkozol vele:** `/crate`; crate blokk, browser/preview GUI és a láda felett futó ItemDisplay-reveal. Parancs: /crate (alias: /crates, /ladak). A nyitás nem nyit inventory-rulettet.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Fejlesztő/üzemeltető.
 - **Mitől mozdul meg:** Blokkinterakció, kulcshasználat, GUI-kattintás, settlement/recovery és adminparancs.
 - **Ami még kellhet hozzá:** Minden crate-hez világ, blokk és hely szükséges; cserét/törlést kontrollált adminfolyamattal kell végezni.
@@ -787,7 +811,7 @@ Fizikai crate-helyek, kulcsvásárlás/-felhasználás, browser/spin GUI, több 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.crate`; `icesmp.crate.ritka`; `icesmp.crate.use`; `icesmp.crate.use + opcionális crate-specifikus jog`
+- Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.crate`; `icesmp.crate.use`. A nyolc bundled láda permissionje üres; az opcionális `icesmp.*` crate-specifikus gate támogatott marad.
 - Config: `crates.*`, crate location/world policy, reward- és auditbeállítások.
 - Tartós állapot: Crate-, opening-, ledger-, audit- és recovery-állapot tartós.
 - Reload: Definíciók generációváltással reloadolhatók; futó opening a saját snapshotján fejeződik be.
@@ -981,7 +1005,7 @@ Szezonállapot, jutalmak, történetmesélés, finálé, monumentum, holiday, am
 
 Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és undead segédszabályok.
 
-- **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium.
+- **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium (kattintható kategória-főoldal + lapozható lajstrom: ismert bejegyzések ikonnal, ismeretlenek „???" sziluettként, teljesítmény-%-kal). A szörny-bejegyzések faj-szintű mélységet kapnak: elejtés-számláló, első-elejtés dátum és kill-alapú tudás-fokozatok (kódex-jegyzet → zsákmány-jegyzet → mestervadász), a világbossok archetípusonként (nem vanilla-fajonként) kerülnek a lajstromba. Külső kijelzéshez: `%icesmp_bestiary_<kategória>%` és `_total` placeholderek.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** Mob spawn, sebzés, ölés, loot, bestiárium-felfedezés és minion lifecycle.
 - **Ami még kellhet hozzá:** Mobspawnokat, arénákat, farmvédelmet és lootforrásokat ellenőrizni kell.
@@ -991,7 +1015,7 @@ Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.*`, `loot.*`, mob-, bestiary-, scaling- és miniondefiníciók.
+- Config: `world.*`, `loot.*`, mob-, bestiary- (mérföldkövek, `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`), scaling- és miniondefiníciók.
 - Tartós állapot: Bestiárium progress és egyes loot/event state-ek tartósak; mob entity runtime.
 - Reload: Loot/balance reloadolható; már spawnolt mobok nem feltétlenül változnak visszamenőleg.
 
@@ -1075,7 +1099,7 @@ Parkourpályák, checkpoint/progress, archeológiai megosztás és rejtett helye
 
 > **Tesztelési vagy rollout-kapu alatt** · A futó JAR-hoz képest: **Új**
 
-Ülés támogatott lépcsőn, alsó/felső slabon, carpet/moss carpet/pale moss carpet és snow geometrián; foglalás- és lifecycle-cleanuppal.
+Ülés támogatott lépcsőn, alsó/felső slabon, carpet/moss carpet/pale moss carpet és snow geometrián; a marker a tényleges ülőfelületre, alsó lépcsőn az irány és a stair-shape szerinti treadre kerül, foglalás- és lifecycle-cleanuppal.
 
 - **Így találkozol vele:** `/sit [fel]`; jobb kattintás, ha a policy engedi.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő.
@@ -1217,6 +1241,39 @@ Jogosultságvédett dev-itemek, itemadás, debug/inspect és a fejlesztői tárg
 
 </details>
 
+### IceSMP Client Bridge (protokoll-alap)
+
+<!-- icesmp-doc-id: feature.developer.client_bridge -->
+
+> **Aktív, adminisztratív** · A futó JAR-hoz képest: **Új rendszer**
+
+Az opcionális Fabric kliensmod (IceSMP Client) szerveroldali alapja: plugin messaging transport
+(`icesmp:client`), verzió- és capability-kézfogás, session-kezelés, rate limit, admin-diagnosztika,
+state-projekciók (HUD_STATE natív HUD routinggal és vanilla-HUD-elhallgatással;
+ABILITY_KIT_STATE az ability barhoz) és az első action-út: CAST_SLOT keybind-cast, ami a
+katalizátorral közös canonical cast-magon fut, azonos parity-kapukkal. A kliens sosem authority,
+a vanilla kliens + kötelező resource pack teljes értékű marad.
+
+- **Így találkozol vele:** `/icesmp client <stats|név>`, `/icesmp client resync <név>`; a játékos
+  számára láthatatlan, amíg nincs IceSMP Client modja.
+- **Kinek szól:** Fejlesztő/üzemeltető, Admin.
+- **Mitől mozdul meg:** A kliensmod kézfogás-üzenete; admin-diagnosztikai parancs.
+- **Ami még kellhet hozzá:** A Fabric kliensmod (külön `MilCsik09/IceSMP-Fabric` repo) — a
+  `client.features.*` kapcsolók a kliens-release-ig maradjanak `false`.
+- **Fontos határ:** A `client.required` termék-elv szerint `false`: az Enhanced kliens nem lehet
+  gameplay-előny feltétele.
+
+<details>
+<summary>Admin- és technikai jegyzet</summary>
+
+- Permission: `icesmp.admin.client`
+- Config: `client.*` (`client.yml`): `enabled` (rollback-kapcsoló), `protocol.min/max`,
+  `resource-pack-schema`, `limits.*`, `features.*` (mind alapból false), `debug`.
+- Tartós állapot: Nincs — a session-registry in-memory, quit/reconnect/disable eldobja.
+- Reload: Minden kulcs élő (use-site olvasás); `client.enabled: false` restart nélkül állítja le a hidat.
+
+</details>
+
 ## Tervezett, de nem aktív tartalom
 
 A lore több ajtót mutat, mint amennyi ma kinyitható. Ez a rész választja el a kánont és a kommunikációs ötleteket a ténylegesen elérhető játékrendszerektől.
@@ -1249,7 +1306,7 @@ Tervezett, de ebben a release-ben nem aktív. A LORE.md és TEASER.md kizáróla
 
 - Nincs jutalmazó AFK-zóna, zónaidő, payout vagy AFK-bossbar. A globális AFK ettől még aktív rendszer.
 - A natív ülés **sit-only**: nincs lay, crawl, stacking, más játékos vagy NPC megülése.
-- A natív tablista és ülés az IceSMP-hez szükséges részhalmaz; nem teljes TAB- vagy GSit-klón.
+- A natív tablista és ülés az IceSMP-hez szükséges részhalmaz; nem általános tablista-motor vagy teljes GSit-klón.
 - A lore-ban és teaserben szereplő hely, szereplő vagy ötlet csak akkor aktív gameplay,
   ha a forrásban parancs, GUI, listener, registry vagy configolt elérési út is tartozik hozzá.
 - A repository egy képességet bizonyít; azt nem, hogy az élő világban minden NPC, zóna,

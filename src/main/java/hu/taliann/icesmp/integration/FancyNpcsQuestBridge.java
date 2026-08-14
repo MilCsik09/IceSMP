@@ -129,17 +129,25 @@ public final class FancyNpcsQuestBridge {
                             return;
                         }
                         if (dataGetName.invoke(data) instanceof String npcName) {
-                            questManager.handleNpcInteract(player, npcName);
+                            // A híd CSAK adapter: hitelesített forrás-kontextust szállít, a
+                            // felvétel/leadás/haladás jogosultságát a QuestManager központi
+                            // authority-útvonala dönti el. Az NPC-hez kötött QUEST binding is
+                            // csak UI-mutató — a quest saját start-policyje (start.npc) számít.
+                            // Nem-quest bindingnél a leadás/haladás akkor is fut, csak az
+                            // új-quest kínálat marad el (a binding az elsődleges funkció).
                             final NpcBindingManager.Binding binding =
                                     npcBindingManager == null ? null : npcBindingManager.get(npcName);
+                            final boolean questSurface = binding == null
+                                    || "QUEST".equals(binding.type().name());
+                            questManager.handleAuthorizedNpcInteract(player, npcName, questSurface);
                             if (binding == null) {
-                                questManager.acceptFromNpc(player, npcName);
                                 if (interactHook != null) {
                                     interactHook.accept(player, npcName);
                                 }
                             } else {
                                 switch (binding.type()) {
-                                    case QUEST -> questManager.acceptBoundQuest(player, binding.value(), npcName);
+                                    case QUEST -> {
+                                    }
                                     case SHOP -> {
                                         if (interactHook != null) {
                                             interactHook.accept(player, binding.value());
@@ -280,7 +288,7 @@ public final class FancyNpcsQuestBridge {
 
     private void logValidationReport(final QuestNpcValidationReport report) {
         if (report.healthy()) {
-            plugin.getLogger().info("Quest-NPC ellenőrzés: mind a(z) "
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Quest-NPC ellenőrzés: mind a(z) "
                     + report.requiredCount() + " kötelező NPC pontos belső névvel elérhető.");
             return;
         }
@@ -301,7 +309,7 @@ public final class FancyNpcsQuestBridge {
         }
         plugin.getLogger().warning("A koordináta és világ nem következtethető biztonságosan. "
                 + "Hozd létre vagy importáld a szükséges NPC-ket pontos belső névvel. "
-                + "A quest-npc-fallback.always csak tudatos fejlesztői megkerüléshez használható.");
+                + "Átmeneti áthidalásra az admin /quest talk parancs használható.");
     }
 
     private static String safeMessage(final ReflectiveOperationException exception) {
@@ -360,10 +368,12 @@ public final class FancyNpcsQuestBridge {
                             || player.getLocation().distanceSquared(npcLocation) > rangeSquared) {
                         continue;
                     }
-                    if (questManager.hasAcceptableQuestFrom(player, entry.getKey())) {
-                        spawnMarker(player, npcLocation, Color.fromRGB(255, 170, 0));
-                    } else if (questManager.hasTalkObjectiveAt(player, entry.getKey())) {
-                        spawnMarker(player, npcLocation, Color.fromRGB(80, 255, 80));
+                    // A jelentés→szín döntés a központi palettában él (leadható > elérhető
+                    // kategória-színnel > folyamatban); a híd csak megjelenít.
+                    final var markerState = questManager.getNpcMarkerState(player, entry.getKey());
+                    if (markerState != null) {
+                        spawnMarker(player, npcLocation,
+                                hu.taliann.icesmp.quest.QuestMarkerPalette.color(markerState));
                     }
                 }
             }, null);

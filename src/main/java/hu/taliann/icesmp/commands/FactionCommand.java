@@ -45,8 +45,10 @@ public final class FactionCommand extends AbstractDispatchCommand {
                           final hu.taliann.icesmp.managers.CouncilManager councilManager,
                           final MessageManager messageManager) {
         super(messageManager, "faction", "&6/faction &7- elérhető parancsok:");
-        final FactionJoinSubcommand joinSubcommand = new FactionJoinSubcommand(factionManager, sinManager, currencyManager, territoryManager, configManager, messageManager);
-        final FactionLeaveSubcommand leaveSubcommand = new FactionLeaveSubcommand(factionManager, sinManager, currencyManager, territoryManager, configManager, messageManager);
+        final FactionJoinSubcommand joinSubcommand = new FactionJoinSubcommand(plugin, factionManager, sinManager,
+                currencyManager, territoryManager, configManager, messageManager);
+        final FactionLeaveSubcommand leaveSubcommand = new FactionLeaveSubcommand(plugin, factionManager, sinManager,
+                currencyManager, territoryManager, configManager, messageManager);
         register(joinSubcommand);
         register(leaveSubcommand);
         this.joinSubcommand = joinSubcommand;

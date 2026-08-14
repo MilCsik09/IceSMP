@@ -1,0 +1,1768 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-battle_tempo-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-battle_tempo-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-battle_tempo-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-battle_tempo-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-empower-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-empower-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-empower-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-empower-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-wind_read-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-wind_read-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-wind_read-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-wind_read-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-totem_wheel-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-totem_wheel-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-totem_wheel-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-totem_wheel-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-flow-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-flow-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-flow-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-flow-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-conviction-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-conviction-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-conviction-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-conviction-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-load-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-load-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-load-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-load-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-harmony-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-harmony-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-harmony-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-harmony-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-litany-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-litany-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-litany-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-litany-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-rune_wheel-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-rune_wheel-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-rune_wheel-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-rune_wheel-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-opening-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-opening-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-opening-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-opening-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-soul_debt-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-soul_debt-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-soul_debt-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-soul_debt-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-runewaving-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-runewaving-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-runewaving-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-runewaving-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-blood_frenzy-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-blood_frenzy-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-blood_frenzy-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-blood_frenzy-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-guard-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-guard-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-guard-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warrior-guard-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-resonance-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-resonance-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-resonance-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-resonance-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-imprint-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-imprint-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-imprint-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-evoker-imprint-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-precision_chain-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-precision_chain-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-precision_chain-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-precision_chain-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-bond-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-bond-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-bond-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-archer-bond-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-resonance-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-resonance-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-resonance-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-resonance-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-maelstrom-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-maelstrom-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-maelstrom-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-maelstrom-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-tide-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-tide-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-tide-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-shaman-tide-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-combo_chain-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-combo_chain-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-combo_chain-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-combo_chain-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-stagger-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-stagger-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-stagger-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-stagger-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-mist_threads-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-mist_threads-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-mist_threads-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-monk-mist_threads-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-beacon-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-beacon-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-beacon-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-beacon-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-judgement_marks-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-judgement_marks-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-judgement_marks-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-judgement_marks-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-shield_charge-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-shield_charge-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-shield_charge-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-paladin-shield_charge-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-fragments-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-fragments-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-fragments-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-fragments-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-pain-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-pain-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-pain-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-pain-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-sigil-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-sigil-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-sigil-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-demon_hunter-sigil-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-combo-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-combo-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-combo-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-combo-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-balance-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-balance-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-balance-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-balance-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-bark-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-bark-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-bark-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-bark-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-seeds-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-seeds-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-seeds-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-druid-seeds-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-shield_web-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-shield_web-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-shield_web-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-shield_web-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-marrow-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-marrow-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-marrow-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-marrow-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-madness-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-madness-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-madness-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-priest-madness-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-blood_memory-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-blood_memory-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-blood_memory-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-blood_memory-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-frost_marks-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-frost_marks-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-frost_marks-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-frost_marks-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-plague-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-plague-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-plague-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-death_knight-plague-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-toxin-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-toxin-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-toxin-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-toxin-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-detection-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-detection-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-detection-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-detection-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-infection-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-infection-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-infection-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-assassin-infection-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-curses-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-curses-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-curses-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-curses-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-embers-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-embers-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-embers-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-embers-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-demons-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-demons-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-demons-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-warlock-demons-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-attunement-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-attunement-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-attunement-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-attunement-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-court-active.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-court-ready.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-court-alert.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/mechanic-wizard-court-spent.png",
+      "ascent": -8458325,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

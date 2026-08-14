@@ -4,19 +4,25 @@ import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CrateKeyFactory;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStore;
+import hu.taliann.icesmp.quest.QuestCategory;
+import hu.taliann.icesmp.quest.QuestChoiceRegistry;
+import hu.taliann.icesmp.quest.QuestGraphValidator;
+import hu.taliann.icesmp.quest.QuestMarkerPalette;
+import hu.taliann.icesmp.quest.QuestSourceContext;
+import hu.taliann.icesmp.quest.QuestSourcePolicy;
+import hu.taliann.icesmp.quest.QuestVisibility;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -24,81 +30,54 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 
-/**
- * Config-driven quest framework: quest
- * definitions live under 'quests.<id>' in config.yml, player progress lives in
- * PDC. Quests gate content (the necromancer initiation), reward progression
- * (class trials) and offer the only way back from the dark pact (the penance
- * chain, whose final reward may cleanse all sins).
- *
- * Objective types: KILL_MOBS (count, optional entity-type + min-mob-level),
- * BREAK_BLOCKS / PLACE_BLOCKS / CRAFT_ITEMS / COLLECT_ITEMS / CONSUME_ITEMS
- * (materials + count), CATCH_FISH / ENCHANT_ITEMS / KILL_PLAYERS (count),
- * BREED_ANIMALS (count, optional entity-type), VISIT_TERRITORY (territory id),
- * REACH_LEVEL (class level), TALK_TO_NPC (npc name, via the FancyNpcs bridge),
- * DELIVER_ITEMS (npc + materials + count — the NPC takes the goods),
- * PARKOUR_TRIAL (course id, via the ParkourManager finish hook).
- * Optional dialogue block: dialogue.speaker + dialogue.give / dialogue.complete
- * lines are spoken by the giver / target NPC.
- *
- * Accept requirements: requires-job, requires-faction, requires-level,
- * requires-quest (chains). Rewards: class-xp, currency (type + amount),
- * unlock-spell, cleanse-sins.
- *
- * <p>Linear auto-chains (no NPC/territory step needed between links, e.g. the
- * first-join onboarding sequence): a quest's optional {@code next} field names
- * the follow-up quest id, auto-accepted for the player the moment this quest
- * completes (see {@link #complete}) — same accept + announce + dialogue flow
- * as an NPC hand-out, just fired from completion instead of an interaction.</p>
- *
- * <p>Besides the config-shipped quests, admins can build quests in-game
- * without touching code or files (<code>/quest admin create|set|delete</code>);
- * those live in custom-quests.yml under the plugin data folder (same schema)
- * and are merged into every lookup. On an id collision the config quest wins,
- * so shipped content can't be shadowed.</p>
- */
-public final class QuestManager implements PersistentStore {
+/** Config-driven quest definitions with PlayerProfile-backed player lifecycle state. */
+public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
-    /** B35 — setter-injektált (konstruktor-sorrend): quest-teljesítés céh-XP-je. */
-    private volatile GuildManager guildManager;
-
-    public void setGuildManager(final GuildManager guildManager) {
-        this.guildManager = guildManager;
-    }
-
-    /** Objective types the framework understands (admin create validates against this). */
     public static final Set<String> OBJECTIVE_TYPES = Set.of(
             "KILL_MOBS", "BREAK_BLOCKS", "CRAFT_ITEMS", "CATCH_FISH",
             "VISIT_TERRITORY", "REACH_LEVEL", "TALK_TO_NPC", "PARKOUR_TRIAL",
             "PLACE_BLOCKS", "COLLECT_ITEMS", "KILL_PLAYERS", "DELIVER_ITEMS",
-            "BREED_ANIMALS", "ENCHANT_ITEMS", "CONSUME_ITEMS",
-            "SMELT_ITEMS", "TAME_ANIMALS", "TRADE_WITH_VILLAGER",
-            "EXPLORE_BIOME", "WIN_RAID", "KILL_WORLDBOSS");
+            "BREED_ANIMALS", "ENCHANT_ITEMS", "CONSUME_ITEMS", "SMELT_ITEMS",
+            "TAME_ANIMALS", "TRADE_WITH_VILLAGER", "EXPLORE_BIOME", "WIN_RAID",
+            "KILL_WORLDBOSS");
 
-    /** Fields the admin editor may set, in tab-complete order. */
     public static final List<String> EDITABLE_FIELDS = List.of(
-            "display-name", "description", "giver-npc", "next",
-            "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
-            "rotation-group", "rotation-daily-count",
-            "requires-job", "requires-faction", "requires-level", "requires-quest", "chapter", "riddle",
-            "min-season-day", "max-season-day",
-            "objective.type", "objective.count", "objective.entity-type",
+            "display-name", "description", "giver-npc", "next", "repeatable",
+            "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
+            "rotation-group", "rotation-daily-count", "requires-job", "requires-faction",
+            "requires-level", "requires-quest", "chapter", "riddle", "min-season-day",
+            "max-season-day", "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
-            "objective.description",
-            "rewards.class-xp", "rewards.currency.type", "rewards.currency.amount",
-            "rewards.items", "rewards.unlock-spell", "rewards.cleanse-sins",
-            "dialogue.speaker", "dialogue.give", "dialogue.complete",
-            // Kattintható párbeszéd-válaszok: bármely index mehet (dialogue.choices.<N>.text|quest),
-            // az 1-es példaként szerepel itt a tab-complete kedvéért.
-            "dialogue.choices.1.text", "dialogue.choices.1.quest");
+            "objective.description", "rewards.class-xp", "rewards.currency.type",
+            "rewards.currency.amount", "rewards.items", "rewards.unlock-spell",
+            "rewards.cleanse-sins", "dialogue.speaker", "dialogue.give",
+            "dialogue.complete", "dialogue.choices.1.text", "dialogue.choices.1.quest",
+            "category", "visibility.mode", "start.type", "start.npc", "start.territory",
+            "start.item-id", "start.event-id", "start.auto-accept", "turn-in.type",
+            "turn-in.npc", "turn-in.territory", "turn-in.event-id");
+
+    private static final Set<String> OBJECTIVE_SUBFIELDS = Set.of(
+            "type", "count", "entity-type", "min-mob-level", "materials",
+            "territory", "level", "npc", "course", "biome", "description");
+    private static final ThreadLocal<Integer> CHAIN_DEPTH = ThreadLocal.withInitial(() -> 0);
+    private static final int MAX_CHAIN_DEPTH = 16;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -108,413 +87,352 @@ public final class QuestManager implements PersistentStore {
     private final FactionManager factionManager;
     private final SinManager sinManager;
     private final SeasonManager seasonManager;
-    private final NamespacedKey activeQuestsKey;
-    private final NamespacedKey completedQuestsKey;
     private final File customQuestsFile;
+    private final PlayerProfileQuestStore questStore = new PlayerProfileQuestStore();
+
+    /** Rebuildable online projection; durable truth remains QuestSection. */
+    private final ConcurrentMap<UUID, QuestMirror> mirrors = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, CompletableFuture<Void>> mutationTails =
+            new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Object> playerLocks = new ConcurrentHashMap<>();
+    private final QuestChoiceRegistry choiceRegistry = new QuestChoiceRegistry();
+    /**
+     * Validált definíció-pillanatkép: minden definíció-olvasás ezen megy át, és a csere
+     * atomi — érvénytelen candidate esetén a korábbi registry marad élőben (reload-safety).
+     */
+    private volatile QuestRegistry registry = QuestRegistry.EMPTY;
     private volatile YamlConfiguration customQuests = new YamlConfiguration();
-    // Bound after construction (manual-DI ordering) — see IceSMPCore#setStatsManager wiring.
+    private volatile GuildManager guildManager;
     private volatile StatsManager statsManager;
-    // Bound after construction (manual-DI ordering) — see IceSMPCore#setCrateKeyFactory wiring.
     private volatile CrateKeyFactory crateKeyFactory;
+    private volatile SpecializationManager specializationManagerRef;
     private volatile boolean warnedMissingCrateKeyFactory;
+    private volatile boolean npcBridgeActive;
+
+    private record QuestMirror(Map<String, Map<String, Long>> active,
+                               Set<String> completed,
+                               Map<String, Long> localDoneAt,
+                               Map<String, Long> localSeason) {
+        private QuestMirror {
+            final LinkedHashMap<String, Map<String, Long>> activeCopy = new LinkedHashMap<>();
+            active.forEach((key, value) -> activeCopy.put(key, Map.copyOf(value)));
+            active = Map.copyOf(activeCopy);
+            completed = Set.copyOf(completed);
+            localDoneAt = Map.copyOf(localDoneAt);
+            localSeason = Map.copyOf(localSeason);
+        }
+
+        private static QuestMirror from(final PlayerProfileQuestStore.State state) {
+            return new QuestMirror(state.progress(), state.completed(), Map.of(), Map.of());
+        }
+    }
+
+    /** Egy quest definíció-szintű metadatai a validált pillanatképben. */
+    public record QuestMeta(QuestSourcePolicy policy, QuestCategory category,
+                            QuestVisibility visibility) {
+    }
+
+    private record QuestRegistry(YamlConfiguration snapshot, Map<String, QuestMeta> meta) {
+        private static final QuestRegistry EMPTY =
+                new QuestRegistry(new YamlConfiguration(), Map.of());
+
+        private ConfigurationSection quest(final String id) {
+            return snapshot.getConfigurationSection("quests." + id);
+        }
+    }
+
+    /**
+     * Új validált registry-pillanatkép építése a packaged + admin-custom definíciókból.
+     * Hibás candidate esetén a KORÁBBI registry marad élőben, a hibalista a visszatérési
+     * érték — az enable-kori első hívásnál ez üres registryt jelent (fail-fast, a
+     * szerver hibás quest-configgal nem szolgál ki fél-érvényes definíciókat).
+     */
+    public synchronized List<String> reloadDefinitions() {
+        final YamlConfiguration merged = new YamlConfiguration();
+        final ConfigurationSection root = merged.createSection("quests");
+        copyQuests(configManager.getConfiguration() == null ? null
+                : configManager.getConfiguration().getConfigurationSection("quests"), root);
+        copyQuests(customQuests.getConfigurationSection("quests"), root);
+        final List<String> errors = QuestGraphValidator.validate(root);
+        if (!errors.isEmpty()) {
+            plugin.getLogger().severe("Quest registry candidate rejected ("
+                    + errors.size() + " error(s)); keeping previous definitions:");
+            errors.forEach(error -> plugin.getLogger().severe("  - " + error));
+            return List.copyOf(errors);
+        }
+        final LinkedHashMap<String, QuestMeta> meta = new LinkedHashMap<>();
+        for (final String id : root.getKeys(false)) {
+            final ConfigurationSection quest = root.getConfigurationSection(id);
+            if (quest == null) continue;
+            meta.put(id.toLowerCase(Locale.ROOT), new QuestMeta(
+                    QuestSourcePolicy.parse(quest),
+                    QuestCategory.fromConfig(quest.getString("category"), QuestCategory.SIDE),
+                    QuestVisibility.fromConfig(quest.getString("visibility.mode",
+                            quest.getString("visibility")), QuestVisibility.ALWAYS)));
+        }
+        registry = new QuestRegistry(merged, Map.copyOf(meta));
+        return List.of();
+    }
+
+    /** Packaged elsőbbség: a custom overlay nem írhat felül csomagolt questet. */
+    private static void copyQuests(final ConfigurationSection source,
+                                   final ConfigurationSection target) {
+        if (source == null) return;
+        for (final String id : source.getKeys(false)) {
+            final ConfigurationSection quest = source.getConfigurationSection(id);
+            final String normalized = id.toLowerCase(Locale.ROOT);
+            if (quest == null || target.isConfigurationSection(normalized)) continue;
+            final ConfigurationSection copy = target.createSection(normalized);
+            quest.getValues(true).forEach((path, value) -> {
+                if (!(value instanceof ConfigurationSection)) copy.set(path, value);
+            });
+        }
+    }
 
     public QuestManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final MessageManager messageManager, final JobManager jobManager,
                         final CurrencyManager currencyManager, final FactionManager factionManager,
                         final SinManager sinManager, final SeasonManager seasonManager) {
-        this.plugin = plugin;
-        this.configManager = configManager;
-        this.messageManager = messageManager;
-        this.jobManager = jobManager;
-        this.currencyManager = currencyManager;
-        this.factionManager = factionManager;
-        this.sinManager = sinManager;
+        this.plugin = Objects.requireNonNull(plugin);
+        this.configManager = Objects.requireNonNull(configManager);
+        this.messageManager = Objects.requireNonNull(messageManager);
+        this.jobManager = Objects.requireNonNull(jobManager);
+        this.currencyManager = Objects.requireNonNull(currencyManager);
+        this.factionManager = Objects.requireNonNull(factionManager);
+        this.sinManager = Objects.requireNonNull(sinManager);
         this.seasonManager = seasonManager;
-        this.activeQuestsKey = new NamespacedKey(plugin, "quests_active");
-        this.completedQuestsKey = new NamespacedKey(plugin, "quests_completed");
         this.customQuestsFile = new File(plugin.getDataFolder(), "custom-quests.yml");
         plugin.getDataFolder().mkdirs();
     }
 
-    /**
-     * Binds the {@link StatsManager} used by {@code /stats} to count completed
-     * quests. Set after construction because of the manual-DI
-     * ordering in {@code IceSMPCore} (StatsManager is built after QuestManager).
-     */
-    public void setStatsManager(final StatsManager statsManager) {
-        this.statsManager = statsManager;
-    }
-
-    /**
-     * Binds the {@link CrateKeyFactory} used by the {@code rewards.crate-key} quest-reward
-     * field. Set after construction because of the manual-DI ordering in
-     * {@code IceSMPCore} (CrateKeyFactory is built after QuestManager).
-     */
-    public void setCrateKeyFactory(final CrateKeyFactory crateKeyFactory) {
-        this.crateKeyFactory = crateKeyFactory;
-    }
-
-    // ===== Admin-készítette questek (custom-quests.yml) =====
+    public void setGuildManager(final GuildManager guildManager) { this.guildManager = guildManager; }
+    public void setStatsManager(final StatsManager statsManager) { this.statsManager = statsManager; }
+    public void setCrateKeyFactory(final CrateKeyFactory crateKeyFactory) { this.crateKeyFactory = crateKeyFactory; }
+    public void setSpecializationManager(final SpecializationManager manager) { this.specializationManagerRef = manager; }
 
     @Override
     public void load() {
-        if (!customQuestsFile.exists()) {
+        if (customQuestsFile.exists()) {
+            try {
+                customQuests = YamlStore.loadTracked(customQuestsFile, plugin.getLogger());
+                hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded "
+                        + getCustomQuestIds().size() + " admin-created quest(s).");
+            } catch (final Exception failure) {
+                plugin.getLogger().severe("Failed to load custom-quests.yml: " + failure.getMessage());
+            }
+        } else {
             customQuests = new YamlConfiguration();
-            return;
         }
-
-        try {
-            customQuests = hu.taliann.icesmp.storage.YamlStore.loadTracked(customQuestsFile, plugin.getLogger());
-            plugin.getLogger().info("Loaded " + getCustomQuestIds().size() + " admin-created quest(s).");
-        } catch (final Exception exception) {
-            plugin.getLogger().severe("Failed to load custom-quests.yml: " + exception.getMessage());
-        }
+        reloadDefinitions();
     }
 
     @Override
     public synchronized void save() {
-        try {
-            YamlStore.saveAtomic(customQuestsFile, customQuests);
-        } catch (final IOException exception) {
-            plugin.getLogger().severe("Failed to save custom-quests.yml: " + exception.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save custom-quests.yml", exception);
+        try { YamlStore.saveAtomic(customQuestsFile, customQuests); }
+        catch (final IOException failure) {
+            throw new java.io.UncheckedIOException("Failed to save custom-quests.yml", failure);
         }
     }
 
-    /**
-     * Copy-on-write snapshot of the custom-quest tree. The admin editor mutates a
-     * private copy and swaps the volatile {@code customQuests} reference, so reader
-     * threads (every region thread resolves quest sections on each progress event)
-     * never observe a YamlConfiguration whose backing maps are mid-mutation — on
-     * Folia the admin edit and player progress genuinely run in parallel.
-     */
     private static YamlConfiguration copyOf(final YamlConfiguration source) {
         final YamlConfiguration copy = new YamlConfiguration();
-        try {
-            copy.loadFromString(source.saveToString());
-        } catch (final InvalidConfigurationException exception) {
-            // Round-tripping our own serialized config cannot produce invalid YAML.
-            throw new IllegalStateException("custom-quests snapshot failed", exception);
+        try { copy.loadFromString(source.saveToString()); }
+        catch (final InvalidConfigurationException impossible) {
+            throw new IllegalStateException("custom quest snapshot failed", impossible);
         }
         return copy;
     }
 
     public Set<String> getCustomQuestIds() {
         final ConfigurationSection section = customQuests.getConfigurationSection("quests");
-        return section == null ? Set.of() : section.getKeys(false);
+        return section == null ? Set.of() : Set.copyOf(section.getKeys(false));
     }
 
     public boolean isCustomQuest(final String questId) {
-        return questId != null && customQuests.isConfigurationSection("quests." + questId.toLowerCase(Locale.ROOT));
+        return questId != null && customQuests.isConfigurationSection(
+                "quests." + normalizeQuestId(questId));
     }
 
     private boolean isConfigQuest(final String questId) {
         return configManager.getConfiguration() != null
-                && configManager.getConfiguration().isConfigurationSection("quests." + questId.toLowerCase(Locale.ROOT));
+                && configManager.getConfiguration().isConfigurationSection(
+                "quests." + normalizeQuestId(questId));
     }
 
-    /**
-     * Creates an admin-authored quest skeleton (id + objective + count +
-     * display name); details are filled in with the set editor.
-     *
-     * @param id the quest id (lowercase letters, digits, underscore)
-     * @param objectiveType one of {@link #OBJECTIVE_TYPES}
-     * @param count the objective count
-     * @param displayName the player-facing name
-     * @return null on success, otherwise an error message key
-     */
     public synchronized String createCustomQuest(final String id, final String objectiveType,
                                                  final int count, final String displayName) {
         if (id == null || id.isBlank() || !id.toLowerCase(Locale.ROOT).matches("[a-z0-9_]+")) {
             return "quest-admin-bad-id";
         }
-
-        final String normalizedId = id.toLowerCase(Locale.ROOT);
-        if (isConfigQuest(normalizedId) || isCustomQuest(normalizedId)) {
-            return "quest-admin-exists";
-        }
-
+        final String normalized = normalizeQuestId(id);
+        if (isConfigQuest(normalized) || isCustomQuest(normalized)) return "quest-admin-exists";
         if (objectiveType == null || !OBJECTIVE_TYPES.contains(objectiveType.toUpperCase(Locale.ROOT))) {
             return "quest-admin-bad-objective";
         }
-
-        if (count < 1) {
-            return "quest-admin-bad-count";
-        }
-
-        final String base = "quests." + normalizedId;
+        if (count < 1) return "quest-admin-bad-count";
         final YamlConfiguration draft = copyOf(customQuests);
-        draft.set(base + ".display-name", displayName == null || displayName.isBlank() ? normalizedId : displayName);
+        final String base = "quests." + normalized;
+        draft.set(base + ".display-name",
+                displayName == null || displayName.isBlank() ? normalized : displayName);
         draft.set(base + ".objective.type", objectiveType.toUpperCase(Locale.ROOT));
         draft.set(base + ".objective.count", count);
-        customQuests = draft;
-        save();
-        return null;
+        return commitCustomQuests(draft);
     }
 
     /**
-     * Sets one field of an admin-authored quest. Values are parsed by field:
-     * numbers for counts/levels/XP, true/false for flags, comma-separated
-     * lists for materials, plain text otherwise.
-     *
-     * @param questId the custom quest id
-     * @param field one of {@link #EDITABLE_FIELDS}
-     * @param rawValue the value as typed (already joined)
-     * @return null on success, otherwise an error message key
+     * Az admin-szerkesztő fail-fast kapuja: a draft a TELJES gráf-validátoron megy át a
+     * mentés előtt (packaged + custom candidate) — hibás állapot nem kerülhet se lemezre,
+     * se az élő registrybe; a részletes hibalista a szerver-logba kerül.
      */
-    /** Objective sub-fields the admin editor may set under objective / objectives.N. */
-    private static final Set<String> OBJECTIVE_SUBFIELDS = Set.of(
-            "type", "count", "entity-type", "min-mob-level", "materials",
-            "territory", "level", "npc", "course", "biome", "description");
-
-    private volatile SpecializationManager specializationManagerRef;
-
-    public void setSpecializationManager(final SpecializationManager specializationManager) {
-        this.specializationManagerRef = specializationManager;
+    private synchronized String commitCustomQuests(final YamlConfiguration draft) {
+        final YamlConfiguration merged = new YamlConfiguration();
+        final ConfigurationSection root = merged.createSection("quests");
+        copyQuests(configManager.getConfiguration() == null ? null
+                : configManager.getConfiguration().getConfigurationSection("quests"), root);
+        copyQuests(draft.getConfigurationSection("quests"), root);
+        final List<String> errors = QuestGraphValidator.validate(root);
+        if (!errors.isEmpty()) {
+            errors.forEach(error ->
+                    plugin.getLogger().warning("Custom quest draft rejected: " + error));
+            return "quest-admin-invalid";
+        }
+        customQuests = draft;
+        save();
+        reloadDefinitions();
+        return null;
     }
 
-    public synchronized String setCustomQuestField(final String questId, final String field, final String rawValue) {
-        if (!isCustomQuest(questId)) {
-            return "quest-admin-not-custom";
-        }
-
+    public synchronized String setCustomQuestField(final String questId, final String field,
+                                                   final String rawValue) {
+        if (!isCustomQuest(questId)) return "quest-admin-not-custom";
         final String normalizedField = field == null ? "" : field.toLowerCase(Locale.ROOT);
-
-        // Accept whitelisted fields, the objectives-mode switch, and any objectives.<N>.<subfield>
-        // path (multi-objective). For parsing we canonicalize objectives.N.X to objective.X so the
-        // existing type-aware cases apply.
         String parseKey = normalizedField;
-        final java.util.regex.Matcher indexed =
-                java.util.regex.Pattern.compile("objectives\\.(\\d+)\\.([a-z-]+)").matcher(normalizedField);
-        // Kattintható párbeszéd-válaszok tetszőleges indexszel: dialogue.choices.<N>.text|quest.
-        final java.util.regex.Matcher choice =
-                java.util.regex.Pattern.compile("dialogue\\.choices\\.(\\d+)\\.(text|quest)").matcher(normalizedField);
+        final var indexed = java.util.regex.Pattern.compile(
+                "objectives\\.(\\d+)\\.([a-z-]+)").matcher(normalizedField);
+        final var choice = java.util.regex.Pattern.compile(
+                "dialogue\\.choices\\.(\\d+)\\.(text|quest)").matcher(normalizedField);
         if (indexed.matches()) {
-            if (!OBJECTIVE_SUBFIELDS.contains(indexed.group(2))) {
-                return "quest-admin-bad-field";
-            }
+            if (!OBJECTIVE_SUBFIELDS.contains(indexed.group(2))) return "quest-admin-bad-field";
             parseKey = "objective." + indexed.group(2);
         } else if (choice.matches()) {
             parseKey = "dialogue.choice-" + choice.group(2);
-        } else if (!EDITABLE_FIELDS.contains(normalizedField) && !"objectives-mode".equals(normalizedField)) {
+        } else if (!EDITABLE_FIELDS.contains(normalizedField)
+                && !"objectives-mode".equals(normalizedField)) {
             return "quest-admin-bad-field";
         }
-
-        if (rawValue == null || rawValue.isBlank()) {
-            return "quest-admin-bad-value";
-        }
+        if (rawValue == null || rawValue.isBlank()) return "quest-admin-bad-value";
 
         final Object parsed;
-        switch (parseKey) {
-            case "objectives-mode" -> {
-                final String mode = rawValue.trim().toUpperCase(Locale.ROOT);
-                if (!"ALL".equals(mode) && !"SEQUENCE".equals(mode)) {
-                    return "quest-admin-bad-value";
+        try {
+            parsed = switch (parseKey) {
+                case "objectives-mode" -> {
+                    final String mode = rawValue.trim().toUpperCase(Locale.ROOT);
+                    if (!Set.of("ALL", "SEQUENCE").contains(mode))
+                        throw new IllegalArgumentException();
+                    yield mode;
                 }
-                parsed = mode;
-            }
-            case "requires-level", "objective.count", "objective.min-mob-level",
-                 "objective.level", "rewards.class-xp", "rotation-daily-count" -> {
-                try {
-                    parsed = Math.max(0, Integer.parseInt(rawValue.trim()));
-                } catch (final NumberFormatException exception) {
-                    return "quest-admin-bad-value";
+                case "requires-level", "objective.count", "objective.min-mob-level",
+                     "objective.level", "rewards.class-xp", "rotation-daily-count" ->
+                        Math.max(0, Integer.parseInt(rawValue.trim()));
+                case "rewards.currency.amount", "cooldown-hours" ->
+                        Math.max(0.0D, Double.parseDouble(rawValue.trim()));
+                case "rewards.cleanse-sins", "repeatable", "seasonal", "start.auto-accept" ->
+                        Boolean.parseBoolean(rawValue.trim());
+                // A típus/kategória/láthatóság mély validációja a commitCustomQuests
+                // gráf-validátorában fut (fail-fast) — itt csak kanonikus alakra hozzuk.
+                case "category", "visibility.mode", "start.type", "turn-in.type" ->
+                        rawValue.trim().toUpperCase(Locale.ROOT);
+                case "dialogue.choice-quest" -> normalizeQuestId(rawValue);
+                case "rewards.items" -> parseItems(rawValue);
+                case "objective.materials" -> parseMaterials(rawValue);
+                case "dialogue.give", "dialogue.complete" -> parseLines(rawValue);
+                case "rewards.currency.type" -> {
+                    final String type = rawValue.trim();
+                    if (!isOwnFactionCurrency(type) && CurrencyType.fromInput(type) == null)
+                        throw new IllegalArgumentException();
+                    yield isOwnFactionCurrency(type) ? "OWN" : type.toUpperCase(Locale.ROOT);
                 }
-            }
-            case "rewards.currency.amount" -> {
-                try {
-                    parsed = Math.max(0.0D, Double.parseDouble(rawValue.trim()));
-                } catch (final NumberFormatException exception) {
-                    return "quest-admin-bad-value";
+                case "objective.type" -> {
+                    final String type = rawValue.trim().toUpperCase(Locale.ROOT);
+                    if (!OBJECTIVE_TYPES.contains(type)) throw new IllegalArgumentException();
+                    yield type;
                 }
-            }
-            case "rewards.cleanse-sins", "repeatable", "seasonal" -> parsed = Boolean.parseBoolean(rawValue.trim());
-            // A választás cél-questje: kisbetűs id-ként tárolódik (mint minden quest-kulcs).
-            case "dialogue.choice-quest" -> parsed = rawValue.trim().toLowerCase(Locale.ROOT);
-            case "cooldown-hours" -> {
-                try {
-                    parsed = Math.max(0.0D, Double.parseDouble(rawValue.trim()));
-                } catch (final NumberFormatException exception) {
-                    return "quest-admin-bad-value";
-                }
-            }
-            // Item-jutalmak: MATERIAL:DARAB bejegyzések vesszővel elválasztva.
-            case "rewards.items" -> {
-                final List<String> items = new ArrayList<>();
-                for (final String token : rawValue.split(",")) {
-                    if (token.isBlank()) {
-                        continue;
-                    }
-                    final String[] parts = token.trim().split(":");
-                    if (Material.matchMaterial(parts[0].trim()) == null) {
-                        return "quest-admin-bad-value";
-                    }
-                    items.add(token.trim().toUpperCase(Locale.ROOT));
-                }
-                if (items.isEmpty()) {
-                    return "quest-admin-bad-value";
-                }
-                parsed = items;
-            }
-            case "objective.materials" -> {
-                final List<String> materials = new ArrayList<>();
-                for (final String token : rawValue.split(",")) {
-                    if (!token.isBlank()) {
-                        materials.add(token.trim().toUpperCase(Locale.ROOT));
-                    }
-                }
-                if (materials.isEmpty()) {
-                    return "quest-admin-bad-value";
-                }
-                parsed = materials;
-            }
-            // Párbeszéd-sorok: | jellel elválasztva több sor adható meg.
-            case "dialogue.give", "dialogue.complete" -> {
-                final List<String> lines = new ArrayList<>();
-                for (final String token : rawValue.split("\\|")) {
-                    if (!token.isBlank()) {
-                        lines.add(token.trim());
-                    }
-                }
-                if (lines.isEmpty()) {
-                    return "quest-admin-bad-value";
-                }
-                parsed = lines;
-            }
-            case "rewards.currency.type" -> {
-                final String type = rawValue.trim();
-                if (!isOwnFactionCurrency(type) && CurrencyType.fromInput(type) == null) {
-                    return "quest-admin-bad-value";
-                }
-                parsed = isOwnFactionCurrency(type) ? "OWN" : type.toUpperCase(Locale.ROOT);
-            }
-            case "objective.type" -> {
-                final String type = rawValue.trim().toUpperCase(Locale.ROOT);
-                if (!OBJECTIVE_TYPES.contains(type)) {
-                    return "quest-admin-bad-objective";
-                }
-                parsed = type;
-            }
-            default -> parsed = rawValue.trim();
+                default -> rawValue.trim();
+            };
+        } catch (final RuntimeException invalid) {
+            return "objective.type".equals(parseKey)
+                    ? "quest-admin-bad-objective" : "quest-admin-bad-value";
         }
-
         final YamlConfiguration draft = copyOf(customQuests);
-        draft.set("quests." + questId.toLowerCase(Locale.ROOT) + "." + normalizedField, parsed);
-        customQuests = draft;
-        save();
-        return null;
+        draft.set("quests." + normalizeQuestId(questId) + "." + normalizedField, parsed);
+        return commitCustomQuests(draft);
     }
 
-    /**
-     * Appends an objective to an admin-authored quest, turning it multi-objective.
-     * The first call migrates the quest's single {@code objective:} block into
-     * {@code objectives.1}, so "kill X mobs AND fetch Y items" is built by
-     * creating the quest, then adding a second objective. Returns the new
-     * objective's 1-based index in {@code [index]}, or an error message key.
-     *
-     * @param questId the custom quest id
-     * @param objectiveType one of {@link #OBJECTIVE_TYPES}
-     * @param count the objective count
-     * @param description an optional short label for the step
-     * @param index a one-element holder receiving the new objective index on success
-     * @return null on success, otherwise an error message key
-     */
-    public synchronized String addObjective(final String questId, final String objectiveType, final int count,
-                                            final String description, final int[] index) {
-        if (!isCustomQuest(questId)) {
-            return "quest-admin-not-custom";
-        }
-        if (objectiveType == null || !OBJECTIVE_TYPES.contains(objectiveType.toUpperCase(Locale.ROOT))) {
+    public synchronized String addObjective(final String questId, final String objectiveType,
+                                            final int count, final String description,
+                                            final int[] index) {
+        if (!isCustomQuest(questId)) return "quest-admin-not-custom";
+        if (objectiveType == null || !OBJECTIVE_TYPES.contains(objectiveType.toUpperCase(Locale.ROOT)))
             return "quest-admin-bad-objective";
-        }
-        if (count < 1) {
-            return "quest-admin-bad-count";
-        }
-
-        final String base = "quests." + questId.toLowerCase(Locale.ROOT);
+        if (count < 1) return "quest-admin-bad-count";
         final YamlConfiguration draft = copyOf(customQuests);
-        final ConfigurationSection quest = draft.getConfigurationSection(base);
-        if (quest == null) {
-            return "quest-admin-not-custom";
-        }
-
-        // Migrate a legacy single objective into objectives.1 on the first add.
+        final ConfigurationSection quest = draft.getConfigurationSection(
+                "quests." + normalizeQuestId(questId));
+        if (quest == null) return "quest-admin-not-custom";
         ConfigurationSection multi = quest.getConfigurationSection("objectives");
         if (multi == null) {
             multi = quest.createSection("objectives");
             final ConfigurationSection single = quest.getConfigurationSection("objective");
             if (single != null) {
                 final ConfigurationSection first = multi.createSection("1");
-                for (final String key : single.getKeys(false)) {
-                    first.set(key, single.get(key));
-                }
+                single.getKeys(false).forEach(key -> first.set(key, single.get(key)));
                 quest.set("objective", null);
             }
         }
-
         int next = 1;
-        while (multi.contains(String.valueOf(next))) {
-            next++;
-        }
+        while (multi.contains(Integer.toString(next))) next++;
         multi.set(next + ".type", objectiveType.toUpperCase(Locale.ROOT));
         multi.set(next + ".count", count);
-        if (description != null && !description.isBlank()) {
+        if (description != null && !description.isBlank())
             multi.set(next + ".description", description.trim());
-        }
-        customQuests = draft;
-        save();
-        if (index != null && index.length > 0) {
-            index[0] = next;
-        }
+        final String rejected = commitCustomQuests(draft);
+        if (rejected != null) return rejected;
+        if (index != null && index.length > 0) index[0] = next;
         return null;
     }
 
-    /**
-     * Deletes an admin-authored quest definition. Config-shipped quests cannot
-     * be deleted from in-game.
-     *
-     * @param questId the custom quest id
-     * @return true if it existed and was removed
-     */
     public synchronized boolean deleteCustomQuest(final String questId) {
-        if (!isCustomQuest(questId)) {
-            return false;
-        }
-
+        if (!isCustomQuest(questId)) return false;
         final YamlConfiguration draft = copyOf(customQuests);
-        draft.set("quests." + questId.toLowerCase(Locale.ROOT), null);
-        customQuests = draft;
-        save();
-        return true;
+        draft.set("quests." + normalizeQuestId(questId), null);
+        // Törléskor is a teljes gráf validál: másik custom quest hivatkozása nem törhet el.
+        return commitCustomQuests(draft) == null;
     }
 
-    // ===== Definíciók =====
-
     public Set<String> getQuestIds() {
-        final Set<String> ids = new LinkedHashSet<>();
-        if (configManager.getConfiguration() != null) {
-            final ConfigurationSection questsSection = configManager.getConfiguration().getConfigurationSection("quests");
-            if (questsSection != null) {
-                ids.addAll(questsSection.getKeys(false));
-            }
-        }
-        ids.addAll(getCustomQuestIds());
-        return ids;
+        return registry.meta().keySet();
     }
 
     public ConfigurationSection getQuestSection(final String questId) {
-        if (questId == null) {
-            return null;
-        }
+        return questId == null ? null : registry.quest(normalizeQuestId(questId));
+    }
 
-        final String path = "quests." + questId.toLowerCase(Locale.ROOT);
-        if (configManager.getConfiguration() != null) {
-            final ConfigurationSection fromConfig = configManager.getConfiguration().getConfigurationSection(path);
-            if (fromConfig != null) {
-                return fromConfig;
-            }
-        }
-        return customQuests.getConfigurationSection(path);
+    public QuestSourcePolicy getSourcePolicy(final String questId) {
+        final QuestMeta meta = questId == null ? null
+                : registry.meta().get(normalizeQuestId(questId));
+        return meta == null ? null : meta.policy();
+    }
+
+    public QuestCategory getCategory(final String questId) {
+        final QuestMeta meta = questId == null ? null
+                : registry.meta().get(normalizeQuestId(questId));
+        return meta == null ? QuestCategory.SIDE : meta.category();
+    }
+
+    public QuestVisibility getVisibility(final String questId) {
+        final QuestMeta meta = questId == null ? null
+                : registry.meta().get(normalizeQuestId(questId));
+        return meta == null ? QuestVisibility.HIDDEN : meta.visibility();
     }
 
     public String getDisplayName(final String questId) {
@@ -522,925 +440,1185 @@ public final class QuestManager implements PersistentStore {
         return quest == null ? questId : quest.getString("display-name", questId);
     }
 
-    /** The first objective's target count (kept for the compact single-objective displays). */
     public int getObjectiveCount(final String questId) {
         final List<ConfigurationSection> objectives = getObjectiveSections(getQuestSection(questId));
         return objectives.isEmpty() ? 1 : Math.max(1, objectives.get(0).getInt("count", 1));
     }
 
-    // ===== Állapot (PDC) =====
-
     public List<String> getActiveQuests(final Player player) {
-        return readCsv(player, activeQuestsKey);
+        return player == null ? List.of() : List.copyOf(mirror(player.getUniqueId()).active().keySet());
     }
 
     public List<String> getCompletedQuests(final Player player) {
-        return readCsv(player, completedQuestsKey);
+        return player == null ? List.of() : List.copyOf(mirror(player.getUniqueId()).completed());
     }
 
     public boolean isActive(final Player player, final String questId) {
-        return questId != null && getActiveQuests(player).contains(questId.toLowerCase(Locale.ROOT));
+        return player != null && questId != null
+                && mirror(player.getUniqueId()).active().containsKey(normalizeQuestId(questId));
     }
 
     public boolean hasCompleted(final Player player, final String questId) {
-        return questId != null && getCompletedQuests(player).contains(questId.toLowerCase(Locale.ROOT));
+        return player != null && questId != null
+                && mirror(player.getUniqueId()).completed().contains(normalizeQuestId(questId));
     }
 
     public int getProgress(final Player player, final String questId) {
-        return player.getPersistentDataContainer().getOrDefault(progressKey(questId), PersistentDataType.INTEGER, 0);
+        return getObjectiveProgress(player, questId, 0);
     }
 
-    // ===== Felvétel / eldobás =====
-
-    /**
-     * Checks whether the player may accept a quest; returns the rejection
-     * message key, or null when acceptance is allowed.
-     *
-     * @param player the player
-     * @param questId the quest
-     * @return null if acceptable, otherwise a message key suffix
-     */
     public String getAcceptBlocker(final Player player, final String questId) {
         final ConfigurationSection quest = getQuestSection(questId);
-        if (quest == null) {
-            return "quest-unknown";
-        }
-
-        if (isActive(player, questId)) {
-            return "quest-already-active";
-        }
-
-        // Rotation: a grouped quest is only acceptable on the days it is on offer.
-        if (!isOfferedToday(questId)) {
-            return "quest-not-offered-today";
-        }
-
-        // Repeatable quests come back after their cooldown; seasonal quests come back
-        // once each new season; others complete once, forever.
+        if (quest == null) return "quest-unknown";
+        if (isActive(player, questId)) return "quest-already-active";
+        if (!isOfferedToday(questId)) return "quest-not-offered-today";
         if (hasCompleted(player, questId)) {
             final boolean repeatable = quest.getBoolean("repeatable", false);
             final boolean seasonal = quest.getBoolean("seasonal", false);
-            if (!repeatable && !seasonal) {
-                return "quest-already-completed";
-            }
-
-            if (seasonal && getCompletedSeason(player, questId) == currentSeasonId()) {
+            if (!repeatable && !seasonal) return "quest-already-completed";
+            if (seasonal && getCompletedSeason(player, questId) == currentSeasonId())
                 return "quest-season-locked";
-            }
-
             if (repeatable) {
-                final long cooldownMillis = (long) (Math.max(0.0D, quest.getDouble("cooldown-hours", 0.0D)) * 3_600_000.0D);
-                if (cooldownMillis > 0L
-                        && System.currentTimeMillis() - getLastCompletedAt(player, questId) < cooldownMillis) {
+                final long cooldown = (long) (Math.max(0.0D,
+                        quest.getDouble("cooldown-hours", 0.0D)) * 3_600_000.0D);
+                if (cooldown > 0L && System.currentTimeMillis()
+                        - getLastCompletedAt(player, questId) < cooldown)
                     return "quest-on-cooldown";
-                }
             }
         }
-
-        // Fejezet-szűrő: a `chapter: N` quest csak az N. szezon-fejezet alatt vehető
-        // fel. A már FELVETT fejezet-quest szezonváltás után is befejezhető (kegyelmi
-        // szabály), de új felvétel és a next-lánc folytatása már nem nyílik meg.
         final int chapter = quest.getInt("chapter", 0);
-        if (chapter > 0) {
-            final SeasonManager seasonRef = seasonManager;
-            final int current = seasonRef == null ? 0 : seasonRef.getSeasonNumber();
-            if (current > 0 && current != chapter) {
-                return current > chapter ? "quest-chapter-closed" : "quest-chapter-future";
-            }
+        if (chapter > 0 && seasonManager != null && seasonManager.getSeasonNumber() > 0
+                && seasonManager.getSeasonNumber() != chapter) {
+            return seasonManager.getSeasonNumber() > chapter
+                    ? "quest-chapter-closed" : "quest-chapter-future";
         }
-
-        // Szezon-közepi ablak: a min/max-season-day questek csak
-        // a szezon adott nap-sávjában vehetők fel — így a szezon KÖZEPÉNEK is van dátum-kapus
-        // tartalma. A már felvett quest az ablak zárta után is befejezhető (kegyelmi szabály).
-        final int minSeasonDay = quest.getInt("min-season-day", 0);
-        final int maxSeasonDay = quest.getInt("max-season-day", 0);
-        if (minSeasonDay > 0 || maxSeasonDay > 0) {
-            final SeasonManager seasonRef = seasonManager;
-            final int day = seasonRef == null ? 0 : seasonRef.getSeasonDay();
-            if (day > 0) {
-                if (minSeasonDay > 0 && day < minSeasonDay) {
-                    return "quest-season-window-future";
-                }
-                if (maxSeasonDay > 0 && day > maxSeasonDay) {
-                    return "quest-season-window-closed";
-                }
-            }
+        final int minDay = quest.getInt("min-season-day", 0);
+        final int maxDay = quest.getInt("max-season-day", 0);
+        if ((minDay > 0 || maxDay > 0) && seasonManager != null
+                && seasonManager.getSeasonDay() > 0) {
+            if (minDay > 0 && seasonManager.getSeasonDay() < minDay)
+                return "quest-season-window-future";
+            if (maxDay > 0 && seasonManager.getSeasonDay() > maxDay)
+                return "quest-season-window-closed";
         }
-
-        final String requiredJobId = quest.getString("requires-job");
-        if (requiredJobId != null && !requiredJobId.isBlank()) {
-            final JobType requiredJob = JobType.fromId(requiredJobId);
-            if (requiredJob == null || jobManager.getPrimaryJob(player) != requiredJob) {
+        final String requiredJob = quest.getString("requires-job");
+        if (requiredJob != null && !requiredJob.isBlank()) {
+            final JobType type = JobType.fromId(requiredJob);
+            if (type == null || jobManager.getPrimaryJob(player) != type)
                 return "quest-requires-job";
-            }
         }
-
-        final String requiredFactionName = quest.getString("requires-faction");
-        if (requiredFactionName != null && !requiredFactionName.isBlank()
-                && !factionManager.isMember(
-                player.getUniqueId(), FactionType.fromInput(requiredFactionName))) {
-            return "quest-requires-faction";
-        }
-
+        final String requiredFaction = quest.getString("requires-faction");
+        if (requiredFaction != null && !requiredFaction.isBlank()
+                && !factionManager.isMember(player.getUniqueId(),
+                FactionType.fromInput(requiredFaction))) return "quest-requires-faction";
         final int requiredLevel = quest.getInt("requires-level", 0);
-        if (requiredLevel > 0 && jobManager.getPrimaryLevel(player) < requiredLevel) {
+        if (requiredLevel > 0 && jobManager.getPrimaryLevel(player) < requiredLevel)
             return "quest-requires-level";
-        }
-
         final String requiredQuest = quest.getString("requires-quest");
-        if (requiredQuest != null && !requiredQuest.isBlank() && !hasCompleted(player, requiredQuest)) {
-            return "quest-requires-quest";
-        }
-
+        if (requiredQuest != null && !requiredQuest.isBlank()
+                && !hasCompleted(player, requiredQuest)) return "quest-requires-quest";
         return null;
     }
 
-    /** A FancyNpcs quest-bridge állapota — a /quest talk tartalék-út ebből tudja, hogy kell-e. */
-    private volatile boolean npcBridgeActive;
+    /** Blokkolók, amelyek TELJESÍTETLEN előfeltételt jeleznek (PREREQUISITES_MET elrejt). */
+    private static final Set<String> PREREQUISITE_BLOCKERS = Set.of(
+            "quest-requires-job", "quest-requires-faction", "quest-requires-level",
+            "quest-requires-quest", "quest-chapter-future", "quest-chapter-closed",
+            "quest-season-window-future", "quest-season-window-closed");
 
-    public void setNpcBridgeActive(final boolean active) {
-        this.npcBridgeActive = active;
+    /**
+     * Láthatóság-döntés player-útvonalakhoz (journal, lista, info, tab-complete).
+     * HIDDEN quest SOHA nem szivárog: csak aktív/teljesített állapotban látszik.
+     */
+    public boolean isVisible(final Player player, final String questId) {
+        if (player == null || getQuestSection(questId) == null) return false;
+        if (isActive(player, questId) || hasCompleted(player, questId)) return true;
+        return switch (getVisibility(questId)) {
+            case ALWAYS -> true;
+            case PREREQUISITES_MET -> {
+                final String blocker = getAcceptBlocker(player, questId);
+                yield blocker == null || !PREREQUISITE_BLOCKERS.contains(blocker);
+            }
+            case DISCOVERED -> isDiscovered(player, questId);
+            case HIDDEN -> false;
+        };
     }
 
-    public boolean isNpcBridgeActive() {
-        return npcBridgeActive;
+    public List<String> getVisibleQuestIds(final Player player) {
+        if (player == null) return List.of();
+        final List<String> visible = new ArrayList<>();
+        for (final String id : getQuestIds()) if (isVisible(player, id)) visible.add(id);
+        return List.copyOf(visible);
     }
 
-    /** A give-dialógus lejátszása parancsos felvételkor (az NPC-út a saját folyamában játssza). */
+    public void setNpcBridgeActive(final boolean active) { npcBridgeActive = active; }
+    public boolean isNpcBridgeActive() { return npcBridgeActive; }
+
     public void playGiveDialogue(final Player player, final String questId) {
         final ConfigurationSection quest = getQuestSection(questId);
-        if (quest != null) {
-            sendDialogue(player, questId, "give", dialogueSpeakerFallback(quest));
-        }
+        if (quest != null) sendDialogue(player, questId, "give", dialogueSpeakerFallback(quest));
     }
 
-    public boolean accept(final Player player, final String questId) {
-        if (getAcceptBlocker(player, questId) != null) {
-            return false;
+    /**
+     * A felvétel EGYETLEN belépési pontja. Két külön kapu, mindkettő kötelező:
+     * az eligibilitás (getAcceptBlocker) és a forrás-jogosultság (QuestSourcePolicy) —
+     * "jogosult vagyok rá" ≠ "ebből a forrásból most ténylegesen felvehetem".
+     * @return null siker esetén, egyébként a blokkolás üzenet-kulcsa
+     */
+    public String acceptWithSource(final Player player, final String questId,
+                                   final QuestSourceContext context) {
+        if (player == null || questId == null || context == null) return "quest-unknown";
+        final QuestSourcePolicy policy = getSourcePolicy(questId);
+        if (policy == null) return "quest-unknown";
+        final String blocker = getAcceptBlocker(player, questId);
+        if (blocker != null) return blocker;
+        if (!policy.startAuthorized(context)) return "quest-source-unauthorized";
+        return acceptInternal(player, questId, context) ? null : "quest-already-active";
+    }
+
+    private boolean acceptInternal(final Player player, final String questId,
+                                   final QuestSourceContext context) {
+        final String id = normalizeQuestId(questId);
+        final UUID playerId = player.getUniqueId();
+        final String source = context.type().name().toLowerCase(Locale.ROOT)
+                + (context.reference().isEmpty() ? "" : ":" + context.reference());
+        synchronized (lock(playerId)) {
+            final QuestMirror before = mirror(playerId);
+            if (before.active().containsKey(id)) return false;
+            final LinkedHashMap<String, Map<String, Long>> active =
+                    new LinkedHashMap<>(before.active());
+            active.put(id, Map.of());
+            mirrors.put(playerId, new QuestMirror(active, before.completed(),
+                    before.localDoneAt(), before.localSeason()));
+            enqueue(playerId, () -> questStore.accept(playerId, id, source)
+                    .thenApply(ignored -> null));
+            enqueue(playerId, () -> questStore.discover(playerId, id, source)
+                    .thenApply(ignored -> null));
         }
-
-        final List<String> active = new ArrayList<>(getActiveQuests(player));
-        active.add(questId.toLowerCase(Locale.ROOT));
-        writeCsv(player, activeQuestsKey, active);
-        // Clear any stale counters (e.g. from a previous run of a repeatable quest).
-        clearAllProgress(player, questId);
-
-        // REACH_LEVEL objectives may already be satisfied at acceptance.
         handleLevelChange(player);
         return true;
     }
 
-    public boolean abandon(final Player player, final String questId) {
-        if (!isActive(player, questId)) {
-            return false;
-        }
+    /** Durable felfedezés-jelölés (láthatóság DISCOVERED módhoz); idempotens. */
+    public void markDiscovered(final Player player, final String questId, final String source) {
+        if (player == null || questId == null) return;
+        final UUID playerId = player.getUniqueId();
+        final String id = normalizeQuestId(questId);
+        enqueue(playerId, () -> questStore.discover(playerId, id,
+                source == null ? "" : source).thenApply(ignored -> null));
+    }
 
-        final List<String> active = new ArrayList<>(getActiveQuests(player));
-        active.remove(questId.toLowerCase(Locale.ROOT));
-        writeCsv(player, activeQuestsKey, active);
-        clearAllProgress(player, questId);
+    public boolean isDiscovered(final Player player, final String questId) {
+        if (player == null || questId == null) return false;
+        try { return questStore.isDiscovered(player.getUniqueId(), normalizeQuestId(questId)); }
+        catch (final RuntimeException notReady) { return false; }
+    }
+
+    /** A követett quest (üres questId = követés törlése). @return false érvénytelen célnál. */
+    public boolean setTracked(final Player player, final String questId) {
+        if (player == null) return false;
+        final String id = questId == null || questId.isBlank() ? "" : normalizeQuestId(questId);
+        if (!id.isEmpty() && !isActive(player, id)) return false;
+        final UUID playerId = player.getUniqueId();
+        enqueue(playerId, () -> questStore.setTracked(playerId, id).thenApply(ignored -> null));
         return true;
     }
 
-    // ===== Haladás-útvonalak (a listenerek hívják) =====
+    public String getTracked(final Player player) {
+        if (player == null) return null;
+        try {
+            final String tracked = questStore.tracked(player.getUniqueId());
+            return tracked != null && isActive(player, tracked) ? tracked : null;
+        } catch (final RuntimeException notReady) { return null; }
+    }
 
-    public void handleKill(final Player player, final EntityType entityType, final int mobLevel) {
-        forEachActive(player, "KILL_MOBS", (questId, objective) -> {
-            final String requiredEntity = objective.getString("entity-type");
-            if (requiredEntity != null && !requiredEntity.isBlank()
-                    && !requiredEntity.equalsIgnoreCase(entityType.name())) {
-                return false;
-            }
+    public boolean abandon(final Player player, final String questId) {
+        if (player == null || !isActive(player, questId)) return false;
+        final String id = normalizeQuestId(questId);
+        final UUID playerId = player.getUniqueId();
+        synchronized (lock(playerId)) {
+            final QuestMirror before = mirror(playerId);
+            final LinkedHashMap<String, Map<String, Long>> active =
+                    new LinkedHashMap<>(before.active());
+            active.remove(id);
+            mirrors.put(playerId, new QuestMirror(active, before.completed(),
+                    before.localDoneAt(), before.localSeason()));
+            enqueue(playerId, () -> questStore.abandon(playerId, id).thenApply(ignored -> null));
+        }
+        return true;
+    }
 
-            final int minMobLevel = objective.getInt("min-mob-level", 0);
-            return mobLevel >= minMobLevel;
+    public void handleKill(final Player player, final EntityType type, final int level) {
+        forEachActive(player, "KILL_MOBS", (id, objective) -> {
+            final String required = objective.getString("entity-type");
+            return (required == null || required.isBlank() || required.equalsIgnoreCase(type.name()))
+                    && level >= objective.getInt("min-mob-level", 0);
         });
     }
+    public void handleBlockBreak(final Player player, final Material material) { forEachActive(player, "BREAK_BLOCKS", (id, obj) -> materialMatches(obj, material)); }
+    public void handleCraft(final Player player, final Material material, final int amount) { forEachActive(player, "CRAFT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
+    public void handleFish(final Player player) { forEachActive(player, "CATCH_FISH", (id, obj) -> true); }
+    public void handlePlaceBlock(final Player player, final Material material) { forEachActive(player, "PLACE_BLOCKS", (id, obj) -> materialMatches(obj, material)); }
+    public void handleCollect(final Player player, final Material material, final int amount) { forEachActive(player, "COLLECT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
+    public void handlePlayerKill(final Player player) { forEachActive(player, "KILL_PLAYERS", (id, obj) -> true); }
+    public void handleBreed(final Player player, final EntityType type) { forEachActive(player, "BREED_ANIMALS", (id, obj) -> entityMatches(obj, type)); }
+    public void handleEnchant(final Player player) { forEachActive(player, "ENCHANT_ITEMS", (id, obj) -> true); }
+    public void handleConsume(final Player player, final Material material) { forEachActive(player, "CONSUME_ITEMS", (id, obj) -> materialMatches(obj, material)); }
+    public void handleSmelt(final Player player, final Material material, final int amount) { forEachActive(player, "SMELT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
+    public void handleTame(final Player player, final EntityType type) { forEachActive(player, "TAME_ANIMALS", (id, obj) -> entityMatches(obj, type)); }
+    public void handleVillagerTrade(final Player player) { forEachActive(player, "TRADE_WITH_VILLAGER", (id, obj) -> true); }
+    public void handleRaidWin(final Player player) { forEachActive(player, "WIN_RAID", (id, obj) -> true); }
+    public void handleBossKill(final Player player) { forEachActive(player, "KILL_WORLDBOSS", (id, obj) -> true); }
+    public void handleParkourFinish(final Player player, final String courseId) { forEachActive(player, "PARKOUR_TRIAL", (id, obj) -> courseId != null && courseId.equalsIgnoreCase(obj.getString("course", ""))); }
 
-    public void handleBlockBreak(final Player player, final Material material) {
-        forEachActive(player, "BREAK_BLOCKS", (questId, objective) -> materialMatches(objective, material));
-    }
-
-    /** Crafting progresses by the recipe's yield per craft action (e.g. 4 for planks). */
-    public void handleCraft(final Player player, final Material material, final int amount) {
-        forEachActive(player, "CRAFT_ITEMS", Math.max(1, amount),
-                (questId, objective) -> materialMatches(objective, material));
-    }
-
-    public void handleFish(final Player player) {
-        forEachActive(player, "CATCH_FISH", (questId, objective) -> true);
-    }
-
-    public void handlePlaceBlock(final Player player, final Material material) {
-        forEachActive(player, "PLACE_BLOCKS", (questId, objective) -> materialMatches(objective, material));
-    }
-
-    /** Item pickups progress by the picked-up stack size, not one per event. */
-    public void handleCollect(final Player player, final Material material, final int amount) {
-        forEachActive(player, "COLLECT_ITEMS", Math.max(1, amount),
-                (questId, objective) -> materialMatches(objective, material));
-    }
-
-    public void handlePlayerKill(final Player killer) {
-        forEachActive(killer, "KILL_PLAYERS", (questId, objective) -> true);
-    }
-
-    public void handleBreed(final Player breeder, final EntityType entityType) {
-        forEachActive(breeder, "BREED_ANIMALS", (questId, objective) -> entityMatches(objective, entityType));
-    }
-
-    public void handleEnchant(final Player player) {
-        forEachActive(player, "ENCHANT_ITEMS", (questId, objective) -> true);
-    }
-
-    public void handleConsume(final Player player, final Material material) {
-        forEachActive(player, "CONSUME_ITEMS", (questId, objective) -> materialMatches(objective, material));
-    }
-
-    /** Furnace extraction progresses by the extracted amount. */
-    public void handleSmelt(final Player player, final Material material, final int amount) {
-        forEachActive(player, "SMELT_ITEMS", Math.max(1, amount),
-                (questId, objective) -> materialMatches(objective, material));
-    }
-
-    public void handleTame(final Player player, final EntityType entityType) {
-        forEachActive(player, "TAME_ANIMALS", (questId, objective) -> entityMatches(objective, entityType));
-    }
-
-    public void handleVillagerTrade(final Player player) {
-        forEachActive(player, "TRADE_WITH_VILLAGER", (questId, objective) -> true);
-    }
-
-    /** Biome keys arrive as "minecraft:plains" style; the objective may use either form. */
     public void handleBiomeVisit(final Player player, final String biomeKey) {
-        forEachActive(player, "EXPLORE_BIOME", (questId, objective) -> {
+        forEachActive(player, "EXPLORE_BIOME", (id, objective) -> {
             final String required = objective.getString("biome", "");
-            if (required.isBlank() || biomeKey == null) {
-                return false;
-            }
+            if (required.isBlank() || biomeKey == null) return false;
             final String shortKey = biomeKey.contains(":")
-                    ? biomeKey.substring(biomeKey.indexOf(':') + 1)
-                    : biomeKey;
+                    ? biomeKey.substring(biomeKey.indexOf(':') + 1) : biomeKey;
             return required.equalsIgnoreCase(biomeKey) || required.equalsIgnoreCase(shortKey);
         });
     }
 
-    public void handleRaidWin(final Player fighter) {
-        forEachActive(fighter, "WIN_RAID", (questId, objective) -> true);
-    }
-
-    public void handleBossKill(final Player killer) {
-        forEachActive(killer, "KILL_WORLDBOSS", (questId, objective) -> true);
-    }
-
-    /** Whether an objective's material list contains this material (empty list = matches nothing). */
-    private static boolean materialMatches(final ConfigurationSection objective, final Material material) {
-        return objective.getStringList("materials").stream().anyMatch(name -> name.equalsIgnoreCase(material.name()));
-    }
-
-    /** Whether an objective's optional entity-type filter matches (blank filter = any). */
-    private static boolean entityMatches(final ConfigurationSection objective, final EntityType entityType) {
-        final String required = objective.getString("entity-type");
-        return required == null || required.isBlank() || required.equalsIgnoreCase(entityType.name());
-    }
-
     public void handleTerritoryEnter(final Player player, final String territoryId) {
-        forEachActive(player, "VISIT_TERRITORY", (questId, objective) ->
-                territoryId != null && territoryId.equalsIgnoreCase(objective.getString("territory", "")));
-
-        // Auto-start quests: crossing into the configured territory hands the quest over
-        // by itself (if every accept requirement is met) — discovery-driven storytelling.
-        if (territoryId == null) {
-            return;
+        forEachActive(player, "VISIT_TERRITORY", (id, objective) ->
+                territoryId != null && territoryId.equalsIgnoreCase(
+                        objective.getString("territory", "")));
+        if (territoryId == null || player == null) return;
+        final QuestSourceContext context = QuestSourceContext.territory(territoryId);
+        for (final String questId : getReadyQuests(player)) {
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.turnInAuthorized(context)) turnIn(player, questId, context);
         }
         for (final String questId : getQuestIds()) {
-            final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null
-                    || !territoryId.equalsIgnoreCase(quest.getString("auto-start-territory", ""))
-                    || getAcceptBlocker(player, questId) != null
-                    || !accept(player, questId)) {
-                continue;
-            }
-
-            player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.2F);
-            player.sendMessage(messageManager.getMessage(
-                    "quest.auto-started",
-                    "<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>",
-                    Map.of(
-                            "quest", getDisplayName(questId),
-                            "description", quest.getString("description", "")
-                    )
-            ));
-            sendDialogue(player, questId, "give", dialogueSpeakerFallback(quest));
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy == null || policy.startType() != QuestSourcePolicy.StartType.LOCATION
+                    || !policy.startReference().equals(context.reference())
+                    || acceptWithSource(player, questId, context) != null) continue;
+            announceAutoStart(player, questId);
         }
     }
 
-    /**
-     * Handles an NPC interaction for quest purposes: completes TALK_TO_NPC
-     * objectives targeting the NPC (a talk resolves in one click, playing the
-     * quest's completion dialogue first), and settles DELIVER_ITEMS objectives
-     * when the player carries enough of the requested goods. Fired by the
-     * reflective FancyNpcs bridge on the player's own region thread.
-     *
-     * @param player the interacting player
-     * @param npcName the NPC's internal (FancyNpcs) name
-     */
-    public void handleNpcInteract(final Player player, final String npcName) {
-        if (npcName == null) {
-            return;
+    /** Világesemény-forrás: EVENT-leadás és EVENT-indítás hitelesített belépője. */
+    public void handleAuthorizedEvent(final Player player, final String eventId) {
+        if (player == null || eventId == null || eventId.isBlank()) return;
+        final QuestSourceContext context = QuestSourceContext.event(eventId);
+        for (final String questId : getReadyQuests(player)) {
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.turnInAuthorized(context)) turnIn(player, questId, context);
         }
-
-        for (final String questId : List.copyOf(getActiveQuests(player))) {
-            final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !isStillFactionEligible(player, quest)) {
-                continue;
-            }
-
-            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
-            final boolean sequence = isSequenceMode(quest);
-            boolean changed = false;
-
-            for (int index = 0; index < objectives.size(); index++) {
-                final ConfigurationSection objective = objectives.get(index);
-                if (isObjectiveComplete(player, questId, index, objective)
-                        || !npcName.equalsIgnoreCase(objective.getString("npc", ""))) {
-                    continue;
-                }
-                if (sequence && !isCurrentStep(player, questId, objectives, index)) {
-                    continue;
-                }
-
-                final String type = objective.getString("type", "");
-                if ("TALK_TO_NPC".equalsIgnoreCase(type)) {
-                    setObjectiveProgress(player, questId, index, Math.max(1, objective.getInt("count", 1)));
-                    changed = true;
-                } else if ("DELIVER_ITEMS".equalsIgnoreCase(type)
-                        && tryDeliver(player, questId, objective, index)) {
-                    changed = true;
-                }
-            }
-
-            if (changed && allObjectivesComplete(player, questId, objectives)) {
-                complete(player, questId);
-            }
-        }
-    }
-
-    /**
-     * Settles a DELIVER_ITEMS objective: takes the goods from the inventory if
-     * enough is carried and marks the objective complete.
-     *
-     * @return true if the delivery succeeded (objective now complete)
-     */
-    private boolean tryDeliver(final Player player, final String questId,
-                               final ConfigurationSection objective, final int index) {
-        final List<String> materials = objective.getStringList("materials");
-        if (materials.isEmpty()) {
-            return false;
-        }
-
-        final int target = Math.max(1, objective.getInt("count", 1));
-        int carried = 0;
-        for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
-            if (item != null && materials.stream().anyMatch(name -> name.equalsIgnoreCase(item.getType().name()))) {
-                carried += item.getAmount();
-            }
-        }
-
-        if (carried < target) {
-            player.sendActionBar(messageManager.getMessage(
-                    "quest.deliver-progress",
-                    "<gray>{quest}: <gold>{carried}</gold>/<gold>{target}</gold> nálad — hozd el mindet!</gray>",
-                    Map.of(
-                            "quest", getDisplayName(questId),
-                            "carried", String.valueOf(carried),
-                            "target", String.valueOf(target)
-                    )
-            ));
-            return false;
-        }
-
-        int remaining = target;
-        for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
-            if (remaining <= 0) {
-                break;
-            }
-            if (item == null || materials.stream().noneMatch(name -> name.equalsIgnoreCase(item.getType().name()))) {
-                continue;
-            }
-            final int take = Math.min(remaining, item.getAmount());
-            item.setAmount(item.getAmount() - take);
-            remaining -= take;
-        }
-
-        setObjectiveProgress(player, questId, index, target);
-        return true;
-    }
-
-    /** The best NPC name to speak as when dialogue.speaker is not set. */
-    private String dialogueSpeakerFallback(final ConfigurationSection quest) {
-        for (final ConfigurationSection objective : getObjectiveSections(quest)) {
-            final String npc = objective.getString("npc", "");
-            if (!npc.isBlank()) {
-                return npc;
-            }
-        }
-        final String giver = quest.getString("giver-npc", "");
-        return giver.isBlank() ? "???" : giver;
-    }
-
-    /**
-     * Plays a quest's configured dialogue lines ({@code dialogue.give} /
-     * {@code dialogue.complete}) as NPC speech, one line per ~1.5 seconds on
-     * the player's own scheduler. The speaker name defaults to the NPC's
-     * internal name; {@code dialogue.speaker} overrides it.
-     */
-    private void sendDialogue(final Player player, final String questId, final String phase,
-                              final String fallbackSpeaker) {
-        final ConfigurationSection quest = getQuestSection(questId);
-        if (quest == null) {
-            return;
-        }
-
-        final List<String> lines = quest.getStringList("dialogue." + phase);
-        if (lines.isEmpty()) {
-            return;
-        }
-
-        final String speaker = quest.getString("dialogue.speaker",
-                fallbackSpeaker == null ? "???" : fallbackSpeaker);
-        for (int index = 0; index < lines.size(); index++) {
-            final String line = lines.get(index);
-            final Runnable send = () -> player.sendMessage(messageManager.getMessage(
-                    "quest.dialogue-line",
-                    "<gold>{speaker}:</gold> <white>{line}</white>",
-                    Map.of("speaker", speaker, "line", line)
-            ));
-            if (index == 0) {
-                send.run();
-            } else {
-                player.getScheduler().runDelayed(plugin, task -> send.run(), null, 30L * index);
-            }
-        }
-
-        // Branching choices appear after the give dialogue: clickable options that
-        // accept the follow-up quest they point to (dialogue.choices.<N>.quest).
-        if ("give".equalsIgnoreCase(phase)) {
-            final ConfigurationSection choices = quest.getConfigurationSection("dialogue.choices");
-            if (choices != null && !choices.getKeys(false).isEmpty()) {
-                player.getScheduler().runDelayed(plugin, task -> sendChoices(player, choices), null,
-                        30L * Math.max(1, lines.size()));
-            }
-        }
-    }
-
-    /** Renders clickable dialogue choices; each runs /quest accept for its target quest. */
-    private void sendChoices(final Player player, final ConfigurationSection choices) {
-        player.sendMessage(messageManager.getMessage("quest.choose-prompt", "<gray>Válassz:</gray>"));
-        for (final String key : choices.getKeys(false).stream().sorted(Comparator.comparingInt(QuestManager::objectiveOrder)).toList()) {
-            final ConfigurationSection choice = choices.getConfigurationSection(key);
-            if (choice == null) {
-                continue;
-            }
-            final String text = choice.getString("text", "...");
-            final String target = choice.getString("quest", "");
-            if (target.isBlank()) {
-                continue;
-            }
-            player.sendMessage(net.kyori.adventure.text.Component.text("  ▸ " + text, net.kyori.adventure.text.format.NamedTextColor.GREEN)
-                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
-                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/quest accept " + target))
-                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
-                            net.kyori.adventure.text.Component.text("Kattints a választáshoz", net.kyori.adventure.text.format.NamedTextColor.GRAY))));
-        }
-    }
-
-    // ===== NPC quest-adók (giver-npc) =====
-
-    /** The NPC name configured to hand out this quest, or null. */
-    public String getGiverNpc(final String questId) {
-        final ConfigurationSection quest = getQuestSection(questId);
-        final String npc = quest == null ? null : quest.getString("giver-npc");
-        return npc == null || npc.isBlank() ? null : npc;
-    }
-
-    // ===== NPC napi rotáció =====
-
-    /**
-     * Whether a quest is on offer today. Quests without a {@code rotation-group}
-     * are always offered; grouped quests rotate — each day a deterministic
-     * subset of the group (sized by {@code rotation-daily-count}) is on offer,
-     * so a single NPC can present a fresh handful of its pool every day.
-     */
-    public boolean isOfferedToday(final String questId) {
-        final ConfigurationSection quest = getQuestSection(questId);
-        if (quest == null) {
-            return false;
-        }
-        final String group = quest.getString("rotation-group", "");
-        return group.isBlank() || todaysRotation(group).contains(questId.toLowerCase(Locale.ROOT));
-    }
-
-    /** The deterministic set of quest ids from a rotation group offered on the current day. */
-    private List<String> todaysRotation(final String group) {
-        final List<String> pool = new ArrayList<>();
-        int dailyCount = 2;
         for (final String questId : getQuestIds()) {
-            final ConfigurationSection quest = getQuestSection(questId);
-            if (quest != null && group.equalsIgnoreCase(quest.getString("rotation-group", ""))) {
-                pool.add(questId.toLowerCase(Locale.ROOT));
-                dailyCount = Math.max(1, quest.getInt("rotation-daily-count", dailyCount));
-            }
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy == null || policy.startType() != QuestSourcePolicy.StartType.EVENT
+                    || !policy.startReference().equals(context.reference())
+                    || acceptWithSource(player, questId, context) != null) continue;
+            announceAutoStart(player, questId);
         }
-        if (pool.size() <= dailyCount) {
-            return pool;
-        }
-
-        pool.sort(Comparator.naturalOrder());
-        // Local-date bucket (same rule as DailyQuestManager.today()): the rotation flips
-        // at the server's LOCAL midnight, not at UTC midnight mid-day for non-UTC servers.
-        final long daySeed = java.time.LocalDate.now(java.time.ZoneId.systemDefault()).toEpochDay();
-        Collections.shuffle(pool, new Random(daySeed * 31L + group.toLowerCase(Locale.ROOT).hashCode()));
-        return new ArrayList<>(pool.subList(0, dailyCount));
     }
 
-    /**
-     * Every NPC name the quest system cares about: quest-giver NPCs plus
-     * TALK_TO_NPC objective targets. Used by the marker tick to know which
-     * NPCs may need a per-player particle marker.
-     */
-    public Set<String> getQuestNpcNames() {
-        final Set<String> names = new LinkedHashSet<>();
+    /** Tárgy-forrás (pl. térkép/levél elolvasása): ITEM-indítás hitelesített belépője. */
+    public String acceptFromItem(final Player player, final String itemId) {
+        if (player == null || itemId == null || itemId.isBlank()) return "quest-unknown";
+        final QuestSourceContext context = QuestSourceContext.item(itemId);
         for (final String questId : getQuestIds()) {
-            final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null) {
-                continue;
-            }
-
-            final String giver = quest.getString("giver-npc");
-            if (giver != null && !giver.isBlank()) {
-                names.add(giver);
-            }
-
-            // Any TALK_TO_NPC or DELIVER_ITEMS objective (across all steps) has a target NPC.
-            for (final ConfigurationSection objective : getObjectiveSections(quest)) {
-                final String talkTarget = objective.getString("npc");
-                if (talkTarget != null && !talkTarget.isBlank()) {
-                    names.add(talkTarget);
-                }
-            }
-        }
-        return names;
-    }
-
-    /** Whether this NPC has at least one quest the player could accept right now. */
-    public boolean hasAcceptableQuestFrom(final Player player, final String npcName) {
-        if (npcName == null) {
-            return false;
-        }
-
-        for (final String questId : getQuestIds()) {
-            if (npcName.equalsIgnoreCase(getGiverNpc(questId)) && getAcceptBlocker(player, questId) == null) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Whether the player has an active, still-open objective (talk/deliver) at this NPC. */
-    public boolean hasTalkObjectiveAt(final Player player, final String npcName) {
-        if (npcName == null) {
-            return false;
-        }
-
-        for (final String questId : getActiveQuests(player)) {
-            final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !isStillFactionEligible(player, quest)) {
-                continue;
-            }
-            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
-            final boolean sequence = isSequenceMode(quest);
-            for (int index = 0; index < objectives.size(); index++) {
-                final ConfigurationSection objective = objectives.get(index);
-                if (!npcName.equalsIgnoreCase(objective.getString("npc", ""))
-                        || isObjectiveComplete(player, questId, index, objective)) {
-                    continue;
-                }
-                // In a sequence, an NPC step only "glows" once it becomes the current step.
-                if (!sequence || isCurrentStep(player, questId, objectives, index)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Hands out the first acceptable quest this NPC gives (config order, so
-     * chains progress naturally). Fired by the FancyNpcs bridge on the
-     * player's own region thread, right after TALK_TO_NPC objectives ran —
-     * so a master NPC can complete the "talk to me" step and immediately
-     * hand the follow-up trial over.
-     *
-     * @param player the interacting player
-     * @param npcName the NPC's internal name
-     * @return the accepted quest id, or null if this NPC had nothing to give
-     */
-    public String acceptFromNpc(final Player player, final String npcName) {
-        if (npcName == null) {
-            return null;
-        }
-
-        for (final String questId : getQuestIds()) {
-            if (!npcName.equalsIgnoreCase(getGiverNpc(questId)) || getAcceptBlocker(player, questId) != null) {
-                continue;
-            }
-
-            final String accepted = tryAcceptAndAnnounce(player, questId, npcName);
-            if (accepted != null) {
-                return accepted;
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.startType() == QuestSourcePolicy.StartType.ITEM
+                    && policy.startReference().equals(context.reference())
+                    && acceptWithSource(player, questId, context) == null) {
+                announceAutoStart(player, questId);
+                return questId;
             }
         }
         return null;
     }
 
+    private void announceAutoStart(final Player player, final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.2F);
+        player.sendMessage(messageManager.getMessage("quest.auto-started",
+                "<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                Map.of("quest", getDisplayName(questId),
+                        "description", quest == null ? "" : quest.getString("description", ""))));
+        sendDialogue(player, questId, "give", dialogueSpeakerFallback(quest));
+    }
+
     /**
-     * Hands out a specific quest regardless of its configured {@code giver-npc} —
-     * used by explicit {@code /npcbind <npc> quest <questId>} bindings, where the
-     * admin already decided which NPC gives this quest out-of-band. Same
-     * accept + announce + dialogue flow as {@link #acceptFromNpc}, just for a
-     * single target id instead of scanning every quest for a name match.
-     *
-     * @param player the interacting player
-     * @param questId the bound quest id
-     * @param npcName the NPC's internal name (used for the "give" dialogue lookup)
-     * @return the accepted quest id, or null if it could not be accepted right now
+     * A hitelesített NPC-interakció EGYETLEN belépési pontja (FancyNpcs-híd és admin
+     * /quest talk). MMO-prioritás: (1) kész quest leadása ennél az NPC-nél, (2)
+     * TALK_TO_NPC/DELIVER_ITEMS feladat-előrehaladás (az itt teljesült quest ugyanennél
+     * az interakciónál le is adható, ha az NPC a jogosult leadási pont), (3) új quest
+     * felvétele — egyetlen jelöltnél azonnal, többnél kattintható választólista.
      */
-    public String acceptBoundQuest(final Player player, final String questId, final String npcName) {
-        if (questId == null || getAcceptBlocker(player, questId) != null) {
-            return null;
+    public void handleAuthorizedNpcInteract(final Player player, final String npcName) {
+        handleAuthorizedNpcInteract(player, npcName, true);
+    }
+
+    /**
+     * @param offerNewQuests false esetén (pl. SHOP/BANK/FACTION bindingű NPC) a leadás és
+     *        a feladat-előrehaladás fut, de az NPC nem kínál fel új questet — a binding a
+     *        kattintás elsődleges funkcióját adja, a folyamatban lévő story nem törhet el
+     */
+    public void handleAuthorizedNpcInteract(final Player player, final String npcName,
+                                            final boolean offerNewQuests) {
+        if (player == null || npcName == null) return;
+        final QuestSourceContext context = QuestSourceContext.npc(npcName);
+        boolean acted = false;
+        for (final String questId : getReadyQuests(player)) {
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.turnInAuthorized(context)
+                    && turnIn(player, questId, context) == null) acted = true;
         }
-        return tryAcceptAndAnnounce(player, questId, npcName);
-    }
-
-    /** Accepts {@code questId} and — on success — plays the sound/message/dialogue trio. */
-    private String tryAcceptAndAnnounce(final Player player, final String questId, final String npcName) {
-        if (!accept(player, questId)) {
-            return null;
+        final NpcProgress progress = progressNpcObjectives(player, npcName);
+        for (final String questId : progress.completedQuests()) {
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.turnInAuthorized(context)) turnIn(player, questId, context);
+            else onObjectivesComplete(player, questId);
         }
-
-        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
-        player.sendMessage(messageManager.getMessage(
-                "quest.accepted-from-npc",
-                "<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>",
-                Map.of(
-                        "quest", getDisplayName(questId),
-                        "description", getQuestSection(questId).getString("description", "")
-                )
-        ));
-        sendDialogue(player, questId, "give", npcName);
-        return questId;
+        if (acted || progress.changed() || !offerNewQuests) return;
+        offerNpcQuests(player, npcName, context);
     }
 
-    /**
-     * Progresses PARKOUR_TRIAL quests when the player finishes a timed parkour
-     * course. Wired into the ParkourManager finish hook.
-     *
-     * @param player the finishing player
-     * @param courseId the completed course id
-     */
-    public void handleParkourFinish(final Player player, final String courseId) {
-        forEachActive(player, "PARKOUR_TRIAL", (questId, objective) ->
-                courseId != null && courseId.equalsIgnoreCase(objective.getString("course", "")));
+    private record NpcProgress(boolean changed, List<String> completedQuests) {
     }
 
-    /**
-     * Re-checks every active REACH_LEVEL objective against the player's primary
-     * class level (level objectives are satisfied by state, not by an event, so
-     * they can't just increment). Wired into the JobManager XP-change hook and
-     * fired on accept. Marks satisfied level-objectives complete and closes the
-     * quest once all objectives are done.
-     */
-    public void handleLevelChange(final Player player) {
+    private NpcProgress progressNpcObjectives(final Player player, final String npcName) {
+        boolean anyChanged = false;
+        final List<String> completed = new ArrayList<>();
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !isStillFactionEligible(player, quest)) {
-                continue;
-            }
-
+            if (quest == null || !isStillFactionEligible(player, quest)) continue;
             final List<ConfigurationSection> objectives = getObjectiveSections(quest);
             final boolean sequence = isSequenceMode(quest);
             boolean changed = false;
+            for (int index = 0; index < objectives.size(); index++) {
+                final ConfigurationSection objective = objectives.get(index);
+                if (isObjectiveComplete(player, questId, index, objective)
+                        || !npcName.equalsIgnoreCase(objective.getString("npc", ""))
+                        || sequence && !isCurrentStep(player, questId, objectives, index)) continue;
+                final String type = objective.getString("type", "");
+                if ("TALK_TO_NPC".equalsIgnoreCase(type)) {
+                    setObjectiveProgress(player, questId, index,
+                            Math.max(1, objective.getInt("count", 1)));
+                    changed = true;
+                } else if ("DELIVER_ITEMS".equalsIgnoreCase(type)
+                        && tryDeliver(player, questId, objective, index)) changed = true;
+            }
+            if (changed) {
+                anyChanged = true;
+                if (allObjectivesComplete(player, questId, objectives)) completed.add(questId);
+            }
+        }
+        return new NpcProgress(anyChanged, List.copyOf(completed));
+    }
 
+    /** Az NPC-nél most felvehető questek, MMO ajánlási sorrendben (story előre). */
+    public List<String> acceptableQuestsFrom(final Player player, final String npcName) {
+        if (player == null || npcName == null) return List.of();
+        final String reference = npcName.trim().toLowerCase(Locale.ROOT);
+        final List<String> offers = new ArrayList<>();
+        for (final String id : getQuestIds()) {
+            final QuestSourcePolicy policy = getSourcePolicy(id);
+            if (policy != null && policy.startType() == QuestSourcePolicy.StartType.NPC
+                    && policy.startReference().equals(reference)
+                    && getAcceptBlocker(player, id) == null) offers.add(id);
+        }
+        offers.sort(Comparator
+                .comparingInt((String id) -> getCategory(id).offerPriority())
+                .thenComparing(Comparator.naturalOrder()));
+        return List.copyOf(offers);
+    }
+
+    private void offerNpcQuests(final Player player, final String npcName,
+                                final QuestSourceContext context) {
+        final List<String> offers = acceptableQuestsFrom(player, npcName);
+        if (offers.isEmpty()) return;
+        if (offers.size() == 1) {
+            acceptAndAnnounce(player, offers.get(0), context, npcName);
+            return;
+        }
+        // A választólista maga is felfedezés: a felkínált quest DISCOVERED-lá válik.
+        player.sendMessage(messageManager.getMessage("quest.npc-offer-header",
+                "<gold>{npc} küldetései:</gold>", Map.of("npc", npcName)));
+        final long now = System.currentTimeMillis();
+        for (final String questId : offers) {
+            markDiscovered(player, questId, "npc:" + npcName.toLowerCase(Locale.ROOT));
+            final String token = choiceRegistry.issue(player.getUniqueId(), questId, context, now);
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                            "  ▸ " + getDisplayName(questId),
+                            net.kyori.adventure.text.format.NamedTextColor.GREEN)
+                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/quest choose " + token))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            net.kyori.adventure.text.Component.text(
+                                    describeOffer(questId),
+                                    net.kyori.adventure.text.format.NamedTextColor.GRAY))));
+        }
+    }
+
+    private String describeOffer(final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        final String description = quest == null ? "" : quest.getString("description", "");
+        return description.isBlank() ? "Kattints a felvételhez" : description;
+    }
+
+    /**
+     * Kiadott választó-token beváltása: a kattintás a MEGTÖRTÉNT NPC-interakció
+     * authorityját viszi tovább, nem kreál újat. @return üzenet-kulcs hibánál, null siker.
+     */
+    public String acceptChoice(final Player player, final String token) {
+        if (player == null) return "quest-unknown";
+        final var choice = choiceRegistry.consume(player.getUniqueId(), token,
+                System.currentTimeMillis());
+        if (choice.isEmpty()) return "quest-choice-expired";
+        final var picked = choice.orElseThrow();
+        final String blocker = acceptWithSource(player, picked.questId(), picked.source());
+        return blocker == null ? null : "quest-choice-blocked";
+    }
+
+    private boolean tryDeliver(final Player player, final String questId,
+                               final ConfigurationSection objective, final int index) {
+        final List<String> materials = objective.getStringList("materials");
+        if (materials.isEmpty()) return false;
+        final int target = Math.max(1, objective.getInt("count", 1));
+        int carried = 0;
+        for (final var item : player.getInventory().getContents()) {
+            if (item != null && materials.stream().anyMatch(name ->
+                    name.equalsIgnoreCase(item.getType().name()))) carried += item.getAmount();
+        }
+        if (carried < target) {
+            player.sendActionBar(messageManager.getMessage("quest.deliver-progress",
+                    "<gray>{quest}: <gold>{carried}</gold>/<gold>{target}</gold> nálad — hozd el mindet!</gray>",
+                    Map.of("quest", getDisplayName(questId), "carried", Integer.toString(carried),
+                            "target", Integer.toString(target))));
+            return false;
+        }
+        int remaining = target;
+        for (final var item : player.getInventory().getContents()) {
+            if (remaining <= 0) break;
+            if (item == null || materials.stream().noneMatch(name ->
+                    name.equalsIgnoreCase(item.getType().name()))) continue;
+            final int take = Math.min(remaining, item.getAmount());
+            item.setAmount(item.getAmount() - take);
+            remaining -= take;
+        }
+        setObjectiveProgress(player, questId, index, target);
+        return true;
+    }
+
+    public void handleLevelChange(final Player player) {
+        if (player == null) return;
+        for (final String questId : List.copyOf(getActiveQuests(player))) {
+            final ConfigurationSection quest = getQuestSection(questId);
+            if (quest == null || !isStillFactionEligible(player, quest)) continue;
+            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+            final boolean sequence = isSequenceMode(quest);
+            boolean changed = false;
             for (int index = 0; index < objectives.size(); index++) {
                 final ConfigurationSection objective = objectives.get(index);
                 if (!"REACH_LEVEL".equalsIgnoreCase(objective.getString("type", ""))
-                        || isObjectiveComplete(player, questId, index, objective)) {
-                    continue;
-                }
-                if (sequence && !isCurrentStep(player, questId, objectives, index)) {
-                    continue;
-                }
+                        || isObjectiveComplete(player, questId, index, objective)
+                        || sequence && !isCurrentStep(player, questId, objectives, index)) continue;
                 if (jobManager.getPrimaryLevel(player) >= Math.max(1, objective.getInt("level", 1))) {
-                    setObjectiveProgress(player, questId, index, Math.max(1, objective.getInt("count", 1)));
+                    setObjectiveProgress(player, questId, index,
+                            Math.max(1, objective.getInt("count", 1)));
                     changed = true;
                 }
             }
-
-            if (changed && allObjectivesComplete(player, questId, objectives)) {
-                complete(player, questId);
-            }
+            if (changed && allObjectivesComplete(player, questId, objectives)) onObjectivesComplete(player, questId);
         }
     }
 
-    /** A matcher receives the single OBJECTIVE section (not the whole quest). */
-    private interface ObjectiveMatcher {
-        boolean matches(String questId, ConfigurationSection objective);
-    }
+    private interface ObjectiveMatcher { boolean matches(String questId, ConfigurationSection objective); }
+    private void forEachActive(final Player player, final String type, final ObjectiveMatcher matcher) { forEachActive(player, type, 1, matcher); }
 
-    private void forEachActive(final Player player, final String objectiveType, final ObjectiveMatcher matcher) {
-        forEachActive(player, objectiveType, 1, matcher);
-    }
-
-    /**
-     * The multi-objective progress engine. A quest may declare a single
-     * {@code objective:} (legacy) or a numbered {@code objectives.1..N} list;
-     * this walks every objective of the given type that is still open, adds
-     * {@code amount} to its own counter, and completes the quest once ALL of
-     * its objectives are done. In {@code objectives-mode: SEQUENCE} only the
-     * current step (the first unfinished objective) accepts progress; the
-     * default {@code ALL} mode advances every matching objective in parallel
-     * (so "kill X mobs AND fetch Y items" both tick from their own events).
-     */
     private void forEachActive(final Player player, final String objectiveType, final int amount,
                                final ObjectiveMatcher matcher) {
+        if (player == null) return;
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !isStillFactionEligible(player, quest)) {
-                continue;
-            }
-
+            if (quest == null || !isStillFactionEligible(player, quest)) continue;
             final List<ConfigurationSection> objectives = getObjectiveSections(quest);
             final boolean sequence = isSequenceMode(quest);
             boolean changed = false;
-
             for (int index = 0; index < objectives.size(); index++) {
                 final ConfigurationSection objective = objectives.get(index);
                 if (!objectiveType.equalsIgnoreCase(objective.getString("type", ""))
-                        || isObjectiveComplete(player, questId, index, objective)) {
-                    continue;
-                }
-                if (sequence && !isCurrentStep(player, questId, objectives, index)) {
-                    continue;
-                }
-                if (!matcher.matches(questId, objective)) {
-                    continue;
-                }
-
+                        || isObjectiveComplete(player, questId, index, objective)
+                        || sequence && !isCurrentStep(player, questId, objectives, index)
+                        || !matcher.matches(questId, objective)) continue;
                 final int target = Math.max(1, objective.getInt("count", 1));
-                final int newProgress = Math.min(target, getObjectiveProgress(player, questId, index) + amount);
-                setObjectiveProgress(player, questId, index, newProgress);
-                changed = true;
-                announceObjective(player, questId, quest, objectives, index, objective, newProgress, target);
-
-                if (sequence) {
-                    break; // only the current step advances per event in a sequence
+                final int old = getObjectiveProgress(player, questId, index);
+                final int next = incrementObjectiveProgress(player, questId, index, amount, target);
+                if (next > old) {
+                    changed = true;
+                    announceObjective(player, questId, objectives, index, objective, next, target);
                 }
+                if (sequence) break;
             }
-
-            if (changed && allObjectivesComplete(player, questId, objectives)) {
-                complete(player, questId);
-            }
+            if (changed && allObjectivesComplete(player, questId, objectives)) onObjectivesComplete(player, questId);
         }
     }
 
-    /** Sends the per-objective progress action bar (compact for single-objective quests). */
-    private void announceObjective(final Player player, final String questId, final ConfigurationSection quest,
+    private void announceObjective(final Player player, final String questId,
                                    final List<ConfigurationSection> objectives, final int index,
-                                   final ConfigurationSection objective, final int progress, final int target) {
-        if (progress >= target && allObjectivesComplete(player, questId, objectives)) {
-            return; // the completion message will fire from forEachActive
-        }
-
+                                   final ConfigurationSection objective, final int progress,
+                                   final int target) {
+        if (progress >= target && allObjectivesComplete(player, questId, objectives)) return;
         if (objectives.size() == 1) {
-            player.sendActionBar(messageManager.getMessage(
-                    "quest.progress",
+            player.sendActionBar(messageManager.getMessage("quest.progress",
                     "<gray>{quest}: <gold>{progress}</gold>/<gold>{target}</gold></gray>",
-                    Map.of(
-                            "quest", getDisplayName(questId),
-                            "progress", String.valueOf(progress),
-                            "target", String.valueOf(target)
-                    )
-            ));
-            return;
+                    Map.of("quest", getDisplayName(questId), "progress", Integer.toString(progress),
+                            "target", Integer.toString(target))));
+        } else {
+            player.sendActionBar(messageManager.getMessage("quest.progress-multi",
+                    "<gray>{quest} — {objective}: <gold>{progress}</gold>/<gold>{target}</gold> <dark_gray>[{step}/{steps}]</dark_gray></gray>",
+                    Map.of("quest", getDisplayName(questId), "objective", objectiveLabel(objective),
+                            "progress", Integer.toString(progress), "target", Integer.toString(target),
+                            "step", Integer.toString(index + 1), "steps", Integer.toString(objectives.size()))));
         }
-
-        player.sendActionBar(messageManager.getMessage(
-                "quest.progress-multi",
-                "<gray>{quest} — {objective}: <gold>{progress}</gold>/<gold>{target}</gold> <dark_gray>[{step}/{steps}]</dark_gray></gray>",
-                Map.of(
-                        "quest", getDisplayName(questId),
-                        "objective", objectiveLabel(objective),
-                        "progress", String.valueOf(progress),
-                        "target", String.valueOf(target),
-                        "step", String.valueOf(index + 1),
-                        "steps", String.valueOf(objectives.size())
-                )
-        ));
     }
 
-    // ===== Objektíva-absztrakció (több-objektívás támogatás) =====
-
-    /**
-     * Returns a quest's objectives in order. Supports both the legacy single
-     * {@code objective:} section and the numbered {@code objectives.1..N} form;
-     * an empty list means the quest has no runnable objective.
-     */
     private List<ConfigurationSection> getObjectiveSections(final ConfigurationSection quest) {
-        if (quest == null) {
-            return List.of();
-        }
-
+        if (quest == null) return List.of();
         final ConfigurationSection multi = quest.getConfigurationSection("objectives");
         if (multi != null) {
             final List<ConfigurationSection> sections = multi.getKeys(false).stream()
                     .sorted(Comparator.comparingInt(QuestManager::objectiveOrder))
-                    .map(multi::getConfigurationSection)
-                    .filter(java.util.Objects::nonNull)
-                    .toList();
-            if (!sections.isEmpty()) {
-                return sections;
-            }
+                    .map(multi::getConfigurationSection).filter(Objects::nonNull).toList();
+            if (!sections.isEmpty()) return sections;
         }
-
         final ConfigurationSection single = quest.getConfigurationSection("objective");
         return single == null ? List.of() : List.of(single);
     }
 
     private static int objectiveOrder(final String key) {
-        try {
-            return Integer.parseInt(key.trim());
-        } catch (final NumberFormatException exception) {
-            return Integer.MAX_VALUE;
-        }
+        try { return Integer.parseInt(key.trim()); }
+        catch (final NumberFormatException ignored) { return Integer.MAX_VALUE; }
     }
 
-    /** How many objectives a quest declares (at least 1 for a well-formed quest). */
-    public int getObjectiveTotal(final String questId) {
-        return getObjectiveSections(getQuestSection(questId)).size();
-    }
+    public int getObjectiveTotal(final String questId) { return getObjectiveSections(getQuestSection(questId)).size(); }
+    private boolean isSequenceMode(final ConfigurationSection quest) { return "SEQUENCE".equalsIgnoreCase(quest.getString("objectives-mode", "ALL")); }
 
-    private boolean isSequenceMode(final ConfigurationSection quest) {
-        return "SEQUENCE".equalsIgnoreCase(quest.getString("objectives-mode", "ALL"));
-    }
-
-    /** Whether index is the current step in a SEQUENCE quest (all earlier objectives done). */
     private boolean isCurrentStep(final Player player, final String questId,
                                   final List<ConfigurationSection> objectives, final int index) {
-        for (int earlier = 0; earlier < index; earlier++) {
-            if (!isObjectiveComplete(player, questId, earlier, objectives.get(earlier))) {
-                return false;
-            }
-        }
+        for (int earlier = 0; earlier < index; earlier++)
+            if (!isObjectiveComplete(player, questId, earlier, objectives.get(earlier))) return false;
         return true;
     }
 
     private boolean allObjectivesComplete(final Player player, final String questId,
                                           final List<ConfigurationSection> objectives) {
-        for (int index = 0; index < objectives.size(); index++) {
-            if (!isObjectiveComplete(player, questId, index, objectives.get(index))) {
-                return false;
-            }
-        }
-        return !objectives.isEmpty();
+        if (objectives.isEmpty()) return false;
+        for (int index = 0; index < objectives.size(); index++)
+            if (!isObjectiveComplete(player, questId, index, objectives.get(index))) return false;
+        return true;
     }
 
     private boolean isObjectiveComplete(final Player player, final String questId, final int index,
                                         final ConfigurationSection objective) {
-        return getObjectiveProgress(player, questId, index) >= Math.max(1, objective.getInt("count", 1));
+        return getObjectiveProgress(player, questId, index)
+                >= Math.max(1, objective.getInt("count", 1));
     }
 
     public int getObjectiveProgress(final Player player, final String questId, final int index) {
-        return player.getPersistentDataContainer()
-                .getOrDefault(objectiveProgressKey(questId, index), PersistentDataType.INTEGER, 0);
+        if (player == null || index < 0) return 0;
+        return Math.toIntExact(mirror(player.getUniqueId()).active()
+                .getOrDefault(normalizeQuestId(questId), Map.of())
+                .getOrDefault(objectiveKey(index), 0L));
     }
 
-    private void setObjectiveProgress(final Player player, final String questId, final int index, final int value) {
-        player.getPersistentDataContainer().set(objectiveProgressKey(questId, index), PersistentDataType.INTEGER, value);
-    }
-
-    /** Objective 0 keeps the legacy key so in-flight single-objective quests survive the upgrade. */
-    private NamespacedKey objectiveProgressKey(final String questId, final int index) {
-        return index == 0 ? progressKey(questId)
-                : new NamespacedKey(plugin, "quest_progress_" + sanitizeId(questId) + "_" + index);
-    }
-
-    /** A short human label for an objective, from its description or a type default. */
-    private String objectiveLabel(final ConfigurationSection objective) {
-        final String described = objective.getString("description", "");
-        if (!described.isBlank()) {
-            return described;
+    private void setObjectiveProgress(final Player player, final String questId,
+                                      final int index, final int value) {
+        if (player == null || index < 0 || value < 0) return;
+        final UUID playerId = player.getUniqueId();
+        final String id = normalizeQuestId(questId);
+        synchronized (lock(playerId)) {
+            final QuestMirror before = mirror(playerId);
+            final Map<String, Long> current = before.active().get(id);
+            if (current == null) return;
+            final LinkedHashMap<String, Long> progress = new LinkedHashMap<>(current);
+            if (value == 0) progress.remove(objectiveKey(index));
+            else progress.put(objectiveKey(index), (long) value);
+            final LinkedHashMap<String, Map<String, Long>> active = new LinkedHashMap<>(before.active());
+            active.put(id, Map.copyOf(progress));
+            mirrors.put(playerId, new QuestMirror(active, before.completed(),
+                    before.localDoneAt(), before.localSeason()));
+            enqueue(playerId, () -> questStore.setProgress(playerId, id, index, value)
+                    .thenApply(ignored -> null));
         }
+    }
+
+    private int incrementObjectiveProgress(final Player player, final String questId,
+                                           final int index, final int amount, final int target) {
+        final UUID playerId = player.getUniqueId();
+        final String id = normalizeQuestId(questId);
+        synchronized (lock(playerId)) {
+            final QuestMirror before = mirror(playerId);
+            final Map<String, Long> current = before.active().get(id);
+            if (current == null) return 0;
+            final long old = current.getOrDefault(objectiveKey(index), 0L);
+            final long next = Math.min(target, Math.addExact(old, amount));
+            if (next == old) return Math.toIntExact(next);
+            final LinkedHashMap<String, Long> progress = new LinkedHashMap<>(current);
+            progress.put(objectiveKey(index), next);
+            final LinkedHashMap<String, Map<String, Long>> active = new LinkedHashMap<>(before.active());
+            active.put(id, Map.copyOf(progress));
+            mirrors.put(playerId, new QuestMirror(active, before.completed(),
+                    before.localDoneAt(), before.localSeason()));
+            enqueue(playerId, () -> questStore.incrementProgress(playerId, id, index, amount, target)
+                    .thenApply(ignored -> null));
+            return Math.toIntExact(next);
+        }
+    }
+
+    public String describeProgress(final Player player, final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest != null && quest.getBoolean("riddle", false))
+            return "??? — a nyomot a leírás rejti";
+        final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+        if (objectives.isEmpty()) return getProgress(player, questId) + "/" + getObjectiveCount(questId);
+        final StringBuilder result = new StringBuilder();
+        for (int i = 0; i < objectives.size(); i++) {
+            if (i > 0) result.append(" • ");
+            final ConfigurationSection objective = objectives.get(i);
+            final int target = Math.max(1, objective.getInt("count", 1));
+            result.append(objectiveLabel(objective)).append(' ')
+                    .append(Math.min(getObjectiveProgress(player, questId, i), target))
+                    .append('/').append(target);
+        }
+        return result.toString();
+    }
+
+    /** Aktív ÉS minden feladata kész — a READY_TO_TURN_IN származtatott állapot. */
+    public boolean isReadyToTurnIn(final Player player, final String questId) {
+        if (!isActive(player, questId)) return false;
+        final ConfigurationSection quest = getQuestSection(questId);
+        return quest != null && allObjectivesComplete(player, questId, getObjectiveSections(quest));
+    }
+
+    public List<String> getReadyQuests(final Player player) {
+        final List<String> ready = new ArrayList<>();
+        if (player != null) {
+            for (final String id : getActiveQuests(player))
+                if (isReadyToTurnIn(player, id)) ready.add(id);
+        }
+        return List.copyOf(ready);
+    }
+
+    /**
+     * A leadás EGYETLEN jogosultság-ellenőrzött belépési pontja. ADMIN kontextus a
+     * készenlét-ellenőrzést is átlépheti (kifejezett admin-authority, tesztelés/mentés).
+     * @return null siker esetén, egyébként a blokkolás üzenet-kulcsa
+     */
+    public String turnIn(final Player player, final String questId,
+                         final QuestSourceContext context) {
+        if (player == null || questId == null || context == null) return "quest-unknown";
+        final QuestSourcePolicy policy = getSourcePolicy(questId);
+        if (policy == null) return "quest-unknown";
+        if (!isActive(player, questId)) return "quest-not-active";
+        final boolean admin = context.type() == QuestSourceContext.Type.ADMIN;
+        if (!admin && !isReadyToTurnIn(player, questId)) return "quest-not-ready";
+        if (!policy.turnInAuthorized(context)) return "quest-source-unauthorized";
+        commitCompletion(player, questId);
+        return null;
+    }
+
+    /**
+     * Feladat-teljesítéskor hívódik: AUTO turn-in azonnal lezár, minden más forrásnál a
+     * quest READY_TO_TURN_IN állapotba lép és a játékos útmutatást kap a leadás helyéről —
+     * a lezárás CSAK a jogosult forrásnál történhet meg.
+     */
+    private void onObjectivesComplete(final Player player, final String questId) {
+        final QuestSourcePolicy policy = getSourcePolicy(questId);
+        if (policy == null || policy.autoTurnIn()) {
+            commitCompletion(player, questId);
+            return;
+        }
+        player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.4F);
+        player.sendMessage(messageManager.getMessage("quest.ready-to-turn-in",
+                "<gold>❖ Küldetés kész: <white>{quest}</white> <gray>— {hint}</gray></gold>",
+                Map.of("quest", getDisplayName(questId), "hint", turnInHint(policy))));
+    }
+
+    private String turnInHint(final QuestSourcePolicy policy) {
+        return switch (policy.turnInType()) {
+            case NPC -> messageManager.get("quest-turn-in-hint-npc",
+                    "add le nála: %s", policy.turnInReference());
+            case LOCATION -> messageManager.get("quest-turn-in-hint-territory",
+                    "add le itt: %s", policy.turnInReference());
+            case EVENT -> messageManager.get("quest-turn-in-hint-event",
+                    "a leadás eseményhez kötött");
+            case ADMIN, AUTO -> "";
+        };
+    }
+
+    private void commitCompletion(final Player player, final String questId) {
+        if (player == null) return;
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest == null || !isStillFactionEligible(player, quest)) return;
+        final UUID playerId = player.getUniqueId();
+        final String id = normalizeQuestId(questId);
+        final long completedAt = System.currentTimeMillis();
+        final long seasonId = currentSeasonId();
+        synchronized (lock(playerId)) {
+            final QuestMirror before = mirror(playerId);
+            if (!before.active().containsKey(id)) return;
+            final LinkedHashMap<String, Map<String, Long>> active = new LinkedHashMap<>(before.active());
+            active.remove(id);
+            final LinkedHashSet<String> completed = new LinkedHashSet<>(before.completed());
+            completed.add(id);
+            final LinkedHashMap<String, Long> done = new LinkedHashMap<>(before.localDoneAt());
+            final LinkedHashMap<String, Long> seasons = new LinkedHashMap<>(before.localSeason());
+            done.put(id, completedAt);
+            seasons.put(id, seasonId);
+            mirrors.put(playerId, new QuestMirror(active, completed, done, seasons));
+            enqueue(playerId, () -> questStore.complete(playerId, id, completedAt, seasonId)
+                    .thenCompose(receipt -> {
+                        if (!receipt.committed()) return CompletableFuture.completedFuture(null);
+                        final CompletableFuture<Void> result = new CompletableFuture<>();
+                        player.getScheduler().run(plugin, task -> finishCompletion(
+                                player, quest, receipt, false, result),
+                                () -> result.completeExceptionally(new IllegalStateException(
+                                        "player scheduler rejected quest completion")));
+                        return result;
+                    }));
+        }
+    }
+
+    /** Replays unacknowledged reward receipts after a reconnect/restart. */
+    public void recoverPendingRewards(final Player player) {
+        if (player == null) return;
+        final Set<String> pending;
+        try { pending = questStore.pendingRewards(player.getUniqueId()); }
+        catch (final RuntimeException notReady) { return; }
+        for (final String receiptId : pending) {
+            final String questId;
+            try { questId = questStore.questFromReceipt(receiptId); }
+            catch (final RuntimeException malformed) {
+                plugin.getLogger().severe("Invalid PlayerProfile quest reward receipt: " + receiptId);
+                continue;
+            }
+            final ConfigurationSection quest = getQuestSection(questId);
+            if (quest == null) {
+                plugin.getLogger().severe("Pending quest reward references missing quest: " + questId);
+                continue;
+            }
+            final var receipt = new PlayerProfileQuestStore.CompletionReceipt(
+                    true, receiptId, questId, 0L, 0L);
+            final CompletableFuture<Void> result = new CompletableFuture<>();
+            player.getScheduler().run(plugin,
+                    task -> finishCompletion(player, quest, receipt, true, result),
+                    () -> result.completeExceptionally(new IllegalStateException(
+                            "player scheduler rejected quest reward recovery")));
+        }
+    }
+
+    private void finishCompletion(final Player player, final ConfigurationSection quest,
+                                  final PlayerProfileQuestStore.CompletionReceipt receipt,
+                                  final boolean recovery, final CompletableFuture<Void> result) {
+        if (!recovery) sendDialogue(player, receipt.questId(), "complete", dialogueSpeakerFallback(quest));
+        applyRewards(player, quest, receipt.receiptId()).whenComplete((ignored, failure) -> {
+            if (failure != null) {
+                plugin.getLogger().severe("Quest reward remains pending for " + player.getUniqueId()
+                        + "/" + receipt.receiptId() + ": " + rootMessage(failure));
+                result.completeExceptionally(unwrap(failure));
+                return;
+            }
+            questStore.settleReward(player.getUniqueId(), receipt.receiptId())
+                    .whenComplete((settled, settleFailure) -> player.getScheduler().run(plugin, task -> {
+                        if (settleFailure != null) {
+                            result.completeExceptionally(unwrap(settleFailure));
+                            return;
+                        }
+                        if (!recovery) {
+                            if (statsManager != null) statsManager.recordQuestComplete(player.getUniqueId());
+                            if (guildManager != null) guildManager.addActivityXp(player,
+                                    Math.max(0, configManager.getInt("guilds.xp-per-quest", 10)));
+                            player.playSound(player.getLocation(),
+                                    Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
+                            player.sendMessage(messageManager.getMessage("quest.completed",
+                                    "<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>",
+                                    Map.of("quest", getDisplayName(receipt.questId()))));
+                            if (configManager.getBoolean("quest-toast.enabled", true))
+                                hu.taliann.icesmp.utils.ToastUtil.show(plugin, player,
+                                        hu.taliann.icesmp.utils.ToastUtil.Kind.QUEST);
+                            unlockNextQuests(player, quest);
+                        } else {
+                            player.sendMessage(messageManager.getMessage("quest.reward-recovered",
+                                    "<gold>A korábban függő küldetésjutalmad helyreállt: <white>{quest}</white>.</gold>",
+                                    Map.of("quest", getDisplayName(receipt.questId()))));
+                        }
+                        result.complete(null);
+                    }, null));
+        });
+    }
+
+    private CompletionStage<Void> applyRewards(final Player player,
+                                               final ConfigurationSection quest,
+                                               final String receiptId) {
+        final List<CompletionStage<?>> stages = new ArrayList<>();
+        final int classXp = quest.getInt("rewards.class-xp", 0);
+        if (classXp > 0 && jobManager.hasPrimaryJob(player)) {
+            stages.add(jobManager.addXpToJobV2(player, classXp,
+                    "quest-xp:" + receiptId));
+        }
+        stages.add(new QuestPhysicalRewardDeliveryService(plugin, questStore,
+                currencyManager, factionManager).deliver(player, quest, receiptId,
+                () -> crateKeyFactory));
+        final String unlockSpell = quest.getString("rewards.unlock-spell");
+        if (unlockSpell != null && !unlockSpell.isBlank()) {
+            stages.add(jobManager.unlockSpellV2(player, unlockSpell,
+                    JobManager.SOURCE_QUEST_PREFIX + normalizeQuestId(quest.getName())));
+        }
+        if (quest.getBoolean("rewards.cleanse-sins", false)) {
+            factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
+            sinManager.breakDarkPact(player);
+        }
+        final SpecializationManager specs = specializationManagerRef;
+        if (specs != null) stages.add(specs.reconcileDarkGates(player));
+        return CompletableFuture.allOf(stages.stream()
+                .map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
+    }
+
+    /**
+     * Lánc-szemantika: a `next` alapból FELOLDÁS (durable felfedezés + értesítés a
+     * forrásról), automatikus felvétel KIZÁRÓLAG explicit `start: CHAIN` +
+     * `auto-accept: true` kötésnél történik. A mélység-őr a szinkron auto-accept →
+     * (REACH_LEVEL) → auto-complete → unlock rekurziót korlátozza.
+     */
+    private void unlockNextQuests(final Player player, final ConfigurationSection completedQuest) {
+        final String completedId = normalizeQuestId(completedQuest.getName());
+        for (final String next : QuestGraphValidator.nextIds(completedQuest)) {
+            final QuestSourcePolicy policy = getSourcePolicy(next);
+            if (policy == null) continue;
+            markDiscovered(player, next, "chain:" + completedId);
+            if (policy.startType() == QuestSourcePolicy.StartType.CHAIN
+                    && policy.chainAutoAccept()) {
+                final int depth = CHAIN_DEPTH.get();
+                if (depth >= MAX_CHAIN_DEPTH) {
+                    plugin.getLogger().severe("Quest chain depth exceeded at " + next);
+                    continue;
+                }
+                CHAIN_DEPTH.set(depth + 1);
+                try {
+                    if (acceptWithSource(player, next,
+                            QuestSourceContext.chain(completedId)) == null) {
+                        announceAutoStart(player, next);
+                    }
+                } finally {
+                    if (depth == 0) CHAIN_DEPTH.remove(); else CHAIN_DEPTH.set(depth);
+                }
+            } else if (getAcceptBlocker(player, next) == null && isVisible(player, next)) {
+                player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.0F);
+                player.sendMessage(messageManager.getMessage("quest.unlocked",
+                        "<gold>✦ Új küldetés vált elérhetővé: <white>{quest}</white> <gray>— {hint}</gray></gold>",
+                        Map.of("quest", getDisplayName(next), "hint", startHint(policy))));
+            }
+        }
+    }
+
+    public String describeStartHint(final String questId) {
+        final QuestSourcePolicy policy = getSourcePolicy(questId);
+        return policy == null ? "" : startHint(policy);
+    }
+
+    public String describeTurnInHint(final String questId) {
+        final QuestSourcePolicy policy = getSourcePolicy(questId);
+        return policy == null ? "" : turnInHint(policy);
+    }
+
+    private String startHint(final QuestSourcePolicy policy) {
+        return switch (policy.startType()) {
+            case NPC -> messageManager.get("quest-start-hint-npc",
+                    "keresd fel: %s", policy.startReference());
+            case LOCATION -> messageManager.get("quest-start-hint-territory",
+                    "a helyszínen indul: %s", policy.startReference());
+            case QUEST_BOARD -> messageManager.get("quest-start-hint-board",
+                    "megtalálod a küldetésnaplóban (Megbízások)");
+            case ITEM -> messageManager.get("quest-start-hint-item",
+                    "egy tárgy rejti az indítását");
+            case EVENT -> messageManager.get("quest-start-hint-event",
+                    "egy világesemény indítja");
+            case CHAIN -> messageManager.get("quest-start-hint-chain",
+                    "a történet folytatásaként indul");
+            case AUTO, ADMIN -> "";
+        };
+    }
+
+    /** Az NPC-indítás nyers (kis-nagybetű-helyes) neve — deployment-validációhoz. */
+    public String getStartNpcRaw(final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest == null) return null;
+        final String startNpc = quest.getString("start.npc", quest.getString("giver-npc", ""));
+        return startNpc.isBlank() ? null : startNpc;
+    }
+
+    public boolean isOfferedToday(final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest == null) return false;
+        final String group = quest.getString("rotation-group", "");
+        return group.isBlank() || todaysRotation(group).contains(normalizeQuestId(questId));
+    }
+
+    private List<String> todaysRotation(final String group) {
+        final List<String> pool = new ArrayList<>();
+        int dailyCount = 2;
+        for (final String id : getQuestIds()) {
+            final ConfigurationSection quest = getQuestSection(id);
+            if (quest != null && group.equalsIgnoreCase(quest.getString("rotation-group", ""))) {
+                pool.add(normalizeQuestId(id));
+                dailyCount = Math.max(1, quest.getInt("rotation-daily-count", dailyCount));
+            }
+        }
+        if (pool.size() <= dailyCount) return pool;
+        pool.sort(Comparator.naturalOrder());
+        final long day = java.time.LocalDate.now(java.time.ZoneId.systemDefault()).toEpochDay();
+        Collections.shuffle(pool, new Random(day * 31L + group.toLowerCase(Locale.ROOT).hashCode()));
+        return new ArrayList<>(pool.subList(0, dailyCount));
+    }
+
+    public Set<String> getQuestNpcNames() {
+        final LinkedHashSet<String> names = new LinkedHashSet<>();
+        for (final String id : getQuestIds()) {
+            final ConfigurationSection quest = getQuestSection(id);
+            if (quest == null) continue;
+            for (final String path : List.of("giver-npc", "start.npc", "turn-in.npc")) {
+                final String npc = quest.getString(path);
+                if (npc != null && !npc.isBlank()) names.add(npc);
+            }
+            for (final ConfigurationSection objective : getObjectiveSections(quest)) {
+                final String npc = objective.getString("npc");
+                if (npc != null && !npc.isBlank()) names.add(npc);
+            }
+        }
+        return Set.copyOf(names);
+    }
+
+    public boolean hasAcceptableQuestFrom(final Player player, final String npcName) {
+        return !acceptableQuestsFrom(player, npcName).isEmpty();
+    }
+
+    public boolean hasReadyTurnInAt(final Player player, final String npcName) {
+        if (player == null || npcName == null) return false;
+        final QuestSourceContext context = QuestSourceContext.npc(npcName);
+        for (final String questId : getReadyQuests(player)) {
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.turnInAuthorized(context)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Központi marker-döntés az NPC fölé: a jelentés→állapot leképezés itt él, a híd
+     * csak megjeleníti. Prioritás: leadható > elérhető (kategória-színnel) > folyamatban.
+     */
+    public QuestMarkerPalette.MarkerState getNpcMarkerState(final Player player,
+                                                            final String npcName) {
+        if (player == null || npcName == null) return null;
+        if (hasReadyTurnInAt(player, npcName)) {
+            return QuestMarkerPalette.MarkerState.READY_TO_TURN_IN;
+        }
+        final List<String> offers = acceptableQuestsFrom(player, npcName);
+        if (!offers.isEmpty()) {
+            return QuestMarkerPalette.availableStateFor(getCategory(offers.get(0)));
+        }
+        return hasTalkObjectiveAt(player, npcName)
+                ? QuestMarkerPalette.MarkerState.IN_PROGRESS_INTERACTION : null;
+    }
+
+    public boolean hasTalkObjectiveAt(final Player player, final String npcName) {
+        if (npcName == null) return false;
+        for (final String id : getActiveQuests(player)) {
+            final ConfigurationSection quest = getQuestSection(id);
+            if (quest == null || !isStillFactionEligible(player, quest)) continue;
+            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+            final boolean sequence = isSequenceMode(quest);
+            for (int i = 0; i < objectives.size(); i++) {
+                final ConfigurationSection objective = objectives.get(i);
+                if (npcName.equalsIgnoreCase(objective.getString("npc", ""))
+                        && !isObjectiveComplete(player, id, i, objective)
+                        && (!sequence || isCurrentStep(player, id, objectives, i))) return true;
+            }
+        }
+        return false;
+    }
+
+    private String acceptAndAnnounce(final Player player, final String questId,
+                                     final QuestSourceContext context, final String speaker) {
+        if (acceptWithSource(player, questId, context) != null) return null;
+        final ConfigurationSection quest = getQuestSection(questId);
+        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
+        player.sendMessage(messageManager.getMessage("quest.accepted-from-npc",
+                "<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                Map.of("quest", getDisplayName(questId), "description",
+                        quest == null ? "" : quest.getString("description", ""))));
+        sendDialogue(player, questId, "give", speaker);
+        return normalizeQuestId(questId);
+    }
+
+    private String dialogueSpeakerFallback(final ConfigurationSection quest) {
+        if (quest == null) return "???";
+        for (final ConfigurationSection objective : getObjectiveSections(quest)) {
+            final String npc = objective.getString("npc", "");
+            if (!npc.isBlank()) return npc;
+        }
+        final String giver = quest.getString("giver-npc", "");
+        return giver.isBlank() ? "???" : giver;
+    }
+
+    private void sendDialogue(final Player player, final String questId, final String phase,
+                              final String fallbackSpeaker) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest == null) return;
+        final List<String> lines = quest.getStringList("dialogue." + phase);
+        if (lines.isEmpty()) return;
+        final String speaker = quest.getString("dialogue.speaker",
+                fallbackSpeaker == null ? "???" : fallbackSpeaker);
+        for (int i = 0; i < lines.size(); i++) {
+            final String line = lines.get(i);
+            final Runnable send = () -> player.sendMessage(messageManager.getMessage(
+                    "quest.dialogue-line", "<gold>{speaker}:</gold> <white>{line}</white>",
+                    Map.of("speaker", speaker, "line", line)));
+            if (i == 0) send.run();
+            else player.getScheduler().runDelayed(plugin, task -> send.run(), null, 30L * i);
+        }
+        if ("give".equalsIgnoreCase(phase)) {
+            final ConfigurationSection choices = quest.getConfigurationSection("dialogue.choices");
+            if (choices != null && !choices.getKeys(false).isEmpty())
+                player.getScheduler().runDelayed(plugin,
+                        task -> sendChoices(player, normalizeQuestId(questId), choices),
+                        null, 30L * Math.max(1, lines.size()));
+        }
+    }
+
+    /**
+     * Dialógus-elágazás: a kattintás egyszer használatos tokent vált be, amely a
+     * lánc-kontextust hordozza — nyers `/quest accept` parancsot a gomb nem futtathat
+     * (az bárhonnan beírható remote-accept bypass lenne).
+     */
+    private void sendChoices(final Player player, final String sourceQuestId,
+                             final ConfigurationSection choices) {
+        player.sendMessage(messageManager.getMessage("quest.choose-prompt", "<gray>Válassz:</gray>"));
+        final QuestSourceContext context = QuestSourceContext.chain(sourceQuestId);
+        final long now = System.currentTimeMillis();
+        for (final String key : choices.getKeys(false).stream()
+                .sorted(Comparator.comparingInt(QuestManager::objectiveOrder)).toList()) {
+            final ConfigurationSection choice = choices.getConfigurationSection(key);
+            if (choice == null) continue;
+            final String target = choice.getString("quest", "");
+            if (target.isBlank()) continue;
+            markDiscovered(player, target, "chain:" + sourceQuestId);
+            final String token = choiceRegistry.issue(player.getUniqueId(),
+                    normalizeQuestId(target), context, now);
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                            "  ▸ " + choice.getString("text", "..."),
+                            net.kyori.adventure.text.format.NamedTextColor.GREEN)
+                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/quest choose " + token))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            net.kyori.adventure.text.Component.text("Kattints a választáshoz",
+                                    net.kyori.adventure.text.format.NamedTextColor.GRAY))));
+        }
+    }
+
+    private boolean isStillFactionEligible(final Player player, final ConfigurationSection quest) {
+        final String required = quest.getString("requires-faction");
+        return required == null || required.isBlank()
+                || factionManager.isMember(player.getUniqueId(), FactionType.fromInput(required));
+    }
+
+    private void grantCrateKeyReward(final Player player, final String raw) {
+        final CrateKeyFactory factory = crateKeyFactory;
+        if (factory == null) {
+            if (!warnedMissingCrateKeyFactory) {
+                warnedMissingCrateKeyFactory = true;
+                plugin.getLogger().warning("Quest crate reward skipped: CrateKeyFactory is not bound.");
+            }
+            return;
+        }
+        final String[] parts = raw.split(":");
+        int amount = 1;
+        if (parts.length >= 2) {
+            try { amount = Math.max(1, Integer.parseInt(parts[1].trim())); }
+            catch (final NumberFormatException ignored) { amount = 1; }
+        }
+        final var key = factory.createKey(parts[0].trim(), amount);
+        if (!key.getType().isAir()) player.getInventory().addItem(key).values()
+                .forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+    }
+
+    public long getLastCompletedAt(final Player player, final String questId) {
+        if (player == null) return 0L;
+        final QuestMirror mirror = mirror(player.getUniqueId());
+        final Long local = mirror.localDoneAt().get(normalizeQuestId(questId));
+        if (local != null) return local;
+        try { return questStore.lastCompletedAt(player.getUniqueId(), questId); }
+        catch (final RuntimeException notReady) { return 0L; }
+    }
+
+    private long getCompletedSeason(final Player player, final String questId) {
+        if (player == null) return -1L;
+        final QuestMirror mirror = mirror(player.getUniqueId());
+        final Long local = mirror.localSeason().get(normalizeQuestId(questId));
+        if (local != null) return local;
+        try { return questStore.completedSeason(player.getUniqueId(), questId); }
+        catch (final RuntimeException notReady) { return -1L; }
+    }
+
+    private long currentSeasonId() { return seasonManager == null ? 0L : seasonManager.getSeasonStart(); }
+
+    private QuestMirror mirror(final UUID playerId) {
+        return mirrors.computeIfAbsent(playerId, ignored -> {
+            try { return QuestMirror.from(questStore.read(playerId)); }
+            catch (final RuntimeException notReady) {
+                return new QuestMirror(Map.of(), Set.of(), Map.of(), Map.of());
+            }
+        });
+    }
+
+    private Object lock(final UUID playerId) {
+        return playerLocks.computeIfAbsent(playerId, ignored -> new Object());
+    }
+
+    private void enqueue(final UUID playerId, final Supplier<CompletionStage<Void>> work) {
+        mutationTails.compute(playerId, (ignored, previous) -> {
+            final CompletableFuture<Void> start = previous == null
+                    ? CompletableFuture.completedFuture(null)
+                    : previous.handle((value, failure) -> null);
+            final CompletableFuture<Void> next = start.thenCompose(nothing -> {
+                try { return Objects.requireNonNull(work.get()).toCompletableFuture(); }
+                catch (final Throwable failure) { return CompletableFuture.failedFuture(failure); }
+            });
+            next.whenComplete((value, failure) -> {
+                mutationTails.remove(playerId, next);
+                if (failure != null) {
+                    mirrors.remove(playerId);
+                    plugin.getLogger().severe("PlayerProfile quest mutation failed for "
+                            + playerId + ": " + rootMessage(failure));
+                }
+            });
+            return next;
+        });
+    }
+
+    private static boolean materialMatches(final ConfigurationSection objective,
+                                           final Material material) {
+        return material != null && objective.getStringList("materials").stream()
+                .anyMatch(name -> name.equalsIgnoreCase(material.name()));
+    }
+
+    private static boolean entityMatches(final ConfigurationSection objective,
+                                         final EntityType type) {
+        final String required = objective.getString("entity-type");
+        return required == null || required.isBlank() || required.equalsIgnoreCase(type.name());
+    }
+
+    private static String objectiveLabel(final ConfigurationSection objective) {
+        final String described = objective.getString("description", "");
+        if (!described.isBlank()) return described;
         return switch (objective.getString("type", "").toUpperCase(Locale.ROOT)) {
             case "KILL_MOBS" -> "Szörnyek";
             case "KILL_PLAYERS" -> "Játékosok";
@@ -1467,344 +1645,63 @@ public final class QuestManager implements PersistentStore {
         };
     }
 
-    /**
-     * A compact multi-objective progress summary for the /quest info line and
-     * the quest menu (e.g. "Szörnyek 4/10 • Gyűjtés 2/5").
-     */
-    public String describeProgress(final Player player, final String questId) {
-        // Rejtvény-quest: a cél SOSEM jelenik meg — a nyom a leírásban van, a
-        // megfejtés a játékosé (vagy a közösségé). Nincs időzített súgás.
-        final ConfigurationSection riddleQuest = getQuestSection(questId);
-        if (riddleQuest != null && riddleQuest.getBoolean("riddle", false)) {
-            return "??? — a nyomot a leírás rejti";
-        }
-        final List<ConfigurationSection> objectives = getObjectiveSections(getQuestSection(questId));
-        if (objectives.isEmpty()) {
-            return getProgress(player, questId) + "/" + getObjectiveCount(questId);
-        }
-        if (objectives.size() == 1) {
-            final ConfigurationSection objective = objectives.get(0);
-            return getObjectiveProgress(player, questId, 0) + "/" + Math.max(1, objective.getInt("count", 1));
-        }
-
-        final StringBuilder summary = new StringBuilder();
-        for (int index = 0; index < objectives.size(); index++) {
-            final ConfigurationSection objective = objectives.get(index);
-            if (index > 0) {
-                summary.append(" • ");
-            }
-            summary.append(objectiveLabel(objective)).append(' ')
-                    .append(Math.min(getObjectiveProgress(player, questId, index), Math.max(1, objective.getInt("count", 1))))
-                    .append('/').append(Math.max(1, objective.getInt("count", 1)));
-        }
-        return summary.toString();
+    private static String objectiveKey(final int index) { return "objective." + index; }
+    private static String normalizeQuestId(final String raw) {
+        if (raw == null || raw.isBlank()) throw new IllegalArgumentException("quest id required");
+        return raw.trim().toLowerCase(Locale.ROOT);
     }
-
-    // ===== Teljesítés és jutalmak =====
-
-    /**
-     * Completes a quest: moves it to the completed list, wipes its progress
-     * and pays out every configured reward.
-     *
-     * @param player the player
-     * @param questId the quest to complete
-     */
-    public void complete(final Player player, final String questId) {
-        final ConfigurationSection quest = getQuestSection(questId);
-        if (quest == null || !isStillFactionEligible(player, quest)) {
-            return;
-        }
-
-        // Story first: the quest's completion dialogue plays on every completion
-        // path (NPC talk, delivery, parkour finish, admin force-complete alike).
-        sendDialogue(player, questId, "complete", dialogueSpeakerFallback(quest));
-
-        final String normalizedId = questId.toLowerCase(Locale.ROOT);
-        final List<String> active = new ArrayList<>(getActiveQuests(player));
-        active.remove(normalizedId);
-        writeCsv(player, activeQuestsKey, active);
-
-        final List<String> completed = new ArrayList<>(getCompletedQuests(player));
-        if (!completed.contains(normalizedId)) {
-            completed.add(normalizedId);
-        }
-        writeCsv(player, completedQuestsKey, completed);
-        clearAllProgress(player, questId);
-        if (statsManager != null) {
-            statsManager.recordQuestComplete(player.getUniqueId());
-        }
-        // Céh-XP a tag-aktivitásból: minden quest-teljesítés a céhet is építi.
-        final GuildManager guildRef = guildManager;
-        if (guildRef != null) {
-            guildRef.addActivityXp(player, Math.max(0, configManager.getInt("guilds.xp-per-quest", 10)));
-        }
-        // Repeatable-cooldown anchor + seasonal anchor: when / in which season was it turned in.
-        player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());
-        player.getPersistentDataContainer().set(seasonKey(questId), PersistentDataType.LONG, currentSeasonId());
-
-        applyRewards(player, quest);
-        player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
-        player.sendMessage(messageManager.getMessage(
-                "quest.completed",
-                "<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>",
-                Map.of("quest", getDisplayName(questId))
-        ));
-        // Vanília advancement-toast a jobb felső sarokban (a chat-üzenet mellett).
-        if (configManager.getBoolean("quest-toast.enabled", true)) {
-            hu.taliann.icesmp.utils.ToastUtil.show(plugin, player,
-                    hu.taliann.icesmp.utils.ToastUtil.Kind.QUEST);
-        }
-
-        advanceChain(player, quest);
+    private static boolean isOwnFactionCurrency(final String raw) {
+        return "OWN".equalsIgnoreCase(raw) || "FACTION".equalsIgnoreCase(raw)
+                || "SAJAT".equalsIgnoreCase(raw) || "SAJÁT".equalsIgnoreCase(raw);
     }
-
-    /**
-     * Linear auto-chain: if the just-completed quest names a {@code next} quest
-     * id, it is accepted for the player right away (subject to the normal
-     * accept-blockers, so requirement mismatches or an already-active/completed
-     * next link simply skip silently). Used by story sequences that shouldn't
-     * need an NPC visit or territory crossing between every link — e.g. the
-     * first-join onboarding chain.
-     */
-    /**
-     * Lánc-mélység a HÍVÁSI VEREMBEN. A quest elfogadása azonnal újraértékeli a REACH_LEVEL
-     * célokat, ezért egy már teljesített, önmagára (vagy körben) mutató, repeatable, nulla
-     * cooldownos quest az {@code accept → complete → reward → advanceChain → accept} láncot
-     * végtelenszer futtatná: sokszoros jutalom, majd StackOverflowError és a régió-szál blokkolása.
-     * ThreadLocal, mert a lánc mindig EGY régió-szálon, egy hívási veremben fut.
-     */
-    private static final ThreadLocal<Integer> chainDepth = ThreadLocal.withInitial(() -> 0);
-    private static final int MAX_CHAIN_DEPTH = 16;
-
-    private void advanceChain(final Player player, final ConfigurationSection completedQuest) {
-        final String next = completedQuest.getString("next");
-        if (next == null || next.isBlank()) {
-            return;
-        }
-        final int depth = chainDepth.get();
-        if (depth >= MAX_CHAIN_DEPTH) {
-            plugin.getLogger().severe("Quest-lánc mélység-korlát (" + MAX_CHAIN_DEPTH + ") elérve a(z) '"
-                    + next + "' questnél — valószínűleg ciklus a next-gráfban (" + player.getName() + ").");
-            return;
-        }
-        chainDepth.set(depth + 1);
-        try {
-            advanceChainStep(player, next);
-        } finally {
-            if (depth == 0) {
-                chainDepth.remove();
-            } else {
-                chainDepth.set(depth);
-            }
-        }
-    }
-
-    private void advanceChainStep(final Player player, final String next) {
-        if (getAcceptBlocker(player, next) != null || !accept(player, next)) {
-            return;
-        }
-
-        final ConfigurationSection nextQuest = getQuestSection(next);
-        player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.2F);
-        player.sendMessage(messageManager.getMessage(
-                "quest.auto-started",
-                "<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>",
-                Map.of(
-                        "quest", getDisplayName(next),
-                        "description", nextQuest == null ? "" : nextQuest.getString("description", "")
-                )
-        ));
-        sendDialogue(player, next, "give", dialogueSpeakerFallback(nextQuest));
-    }
-
-    private void applyRewards(final Player player, final ConfigurationSection quest) {
-        final int classXp = quest.getInt("rewards.class-xp", 0);
-        if (classXp > 0 && jobManager.hasPrimaryJob(player)) {
-            jobManager.addXpToJob(player, classXp);
-        }
-
-        final ConfigurationSection currencyReward = quest.getConfigurationSection("rewards.currency");
-        if (currencyReward != null) {
-            // "OWN" (vagy FACTION/SAJAT) = a játékos SAJÁT frakciójának valutája.
-            final String typeRaw = currencyReward.getString("type", "");
-            final CurrencyType currencyType = isOwnFactionCurrency(typeRaw)
-                    ? factionManager.getChosenFaction(player.getUniqueId())
-                    .map(CurrencyType::fromFactionType).orElse(null)
-                    : CurrencyType.fromInput(typeRaw);
-            final double amount = currencyReward.getDouble("amount", 0.0D);
-            if (currencyType != null && amount > 0.0D) {
-                currencyManager.payOutTokens(player, currencyType, Math.round(amount));
-            }
-        }
-
-        // Item rewards: "MATERIAL:AMOUNT" entries (amount defaults to 1).
-        for (final String entry : quest.getStringList("rewards.items")) {
-            final String[] parts = entry.split(":");
-            final Material material = Material.matchMaterial(parts[0].trim());
-            if (material == null || material.isAir()) {
-                continue;
-            }
-            int amount = 1;
-            if (parts.length >= 2) {
-                try {
-                    amount = Math.max(1, Integer.parseInt(parts[1].trim()));
-                } catch (final NumberFormatException ignored) {
-                    // Malformed amount: give one.
-                }
-            }
-            final Map<Integer, org.bukkit.inventory.ItemStack> leftovers =
-                    player.getInventory().addItem(new org.bukkit.inventory.ItemStack(material, amount));
-            leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-        }
-
-        final String unlockSpell = quest.getString("rewards.unlock-spell");
-        if (unlockSpell != null && !unlockSpell.isBlank()) {
-            jobManager.unlockSpell(player, unlockSpell,
-                    JobManager.SOURCE_QUEST_PREFIX + quest.getName().toLowerCase(Locale.ROOT));
-        }
-
-        // Crate-key reward: "<crateId>:<darab>", pl. "koznapi:1".
-        final String crateKeyReward = quest.getString("rewards.crate-key");
-        if (crateKeyReward != null && !crateKeyReward.isBlank()) {
-            grantCrateKeyReward(player, crateKeyReward);
-        }
-
-        // The penance chain's final mercy: even the dark pact can be broken.
-        if (quest.getBoolean("rewards.cleanse-sins", false)) {
-            // Commit citizenship first: a failed factions.yml write must not clear the pact/spec
-            // while the player remains durably DARK.
-            factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
-            sinManager.breakDarkPact(player);
-            // A DARK-kapus spec (Nekromanta, Szentségtelen, jövőbeliek) nem élhet tovább
-            // a paktum nélkül — a vezeklés a specet is elengedi (a kaszt marad).
-            final SpecializationManager specs = this.specializationManagerRef;
-            if (specs != null) {
-                final hu.taliann.icesmp.data.SpecializationType current = specs.getClassSpecialization(player);
-                if (current != null && (current.getRequiredFaction() == hu.taliann.icesmp.data.FactionType.DARK
-                        || current.requiresSinner())) {
-                    specs.resetClassSpecialization(player);
-                    player.sendMessage(messageManager.getMessage("penance-spec-reset",
-                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott téged. Új utat választhatsz.</yellow>"));
-                }
-            }
-        }
-    }
-
-    private boolean isStillFactionEligible(final Player player, final ConfigurationSection quest) {
-        final String requiredFactionName = quest.getString("requires-faction");
-        return requiredFactionName == null || requiredFactionName.isBlank()
-                || factionManager.isMember(
-                player.getUniqueId(), FactionType.fromInput(requiredFactionName));
-    }
-
-    /**
-     * Grants a {@code "<crateId>:<darab>"} quest reward via the injected
-     * {@link CrateKeyFactory} — null-safe: if it was never bound (a server disabling the
-     * native crate system, or a manual-DI ordering slip), this just warns once to the
-     * console instead of throwing, and the rest of the quest's rewards still apply.
-     */
-    private void grantCrateKeyReward(final Player player, final String crateKeyReward) {
-        final CrateKeyFactory factory = crateKeyFactory;
-        if (factory == null) {
-            if (!warnedMissingCrateKeyFactory) {
-                warnedMissingCrateKeyFactory = true;
-                plugin.getLogger().warning("Quest 'rewards.crate-key' mező van beállítva, de a CrateKeyFactory "
-                        + "nincs bekötve (QuestManager#setCrateKeyFactory) — a kulcs-jutalom kimarad.");
-            }
-            return;
-        }
-
-        final String[] parts = crateKeyReward.split(":");
-        final String crateId = parts[0].trim();
-        int amount = 1;
-        if (parts.length >= 2) {
-            try {
-                amount = Math.max(1, Integer.parseInt(parts[1].trim()));
-            } catch (final NumberFormatException ignored) {
-                // Malformed amount: give one.
-            }
-        }
-
-        final org.bukkit.inventory.ItemStack key = factory.createKey(crateId, amount);
-        if (key.getType().isAir()) {
-            return; // Unknown crate id — config typo, skip rather than hand out a phantom item.
-        }
-        final Map<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(key);
-        leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-    }
-
-    /** Whether the configured reward-currency type means "the player's own faction currency". */
-    private static boolean isOwnFactionCurrency(final String typeRaw) {
-        return "OWN".equalsIgnoreCase(typeRaw) || "FACTION".equalsIgnoreCase(typeRaw)
-                || "SAJAT".equalsIgnoreCase(typeRaw) || "SAJÁT".equalsIgnoreCase(typeRaw);
-    }
-
-    // ===== PDC segédek =====
-
-    public long getLastCompletedAt(final Player player, final String questId) {
-        return player.getPersistentDataContainer().getOrDefault(doneAtKey(questId), PersistentDataType.LONG, 0L);
-    }
-
-    /**
-     * Stabil szezon-azonosító: a kezdő-bélyeg. A getSeasonEndMillis() élő configból
-     * számolódik — egy length-days átírás szezon közben minden teljesített szezonális
-     * questet újranyitna; a seasonStart csak tényleges szezonváltáskor mozdul.
-     */
-    private long currentSeasonId() {
-        return seasonManager == null ? 0L : seasonManager.getSeasonStart();
-    }
-
-    private long getCompletedSeason(final Player player, final String questId) {
-        return player.getPersistentDataContainer().getOrDefault(seasonKey(questId), PersistentDataType.LONG, -1L);
-    }
-
-    private NamespacedKey seasonKey(final String questId) {
-        return new NamespacedKey(plugin, "quest_season_" + sanitizeId(questId));
-    }
-
-    private static String sanitizeId(final String questId) {
-        return questId == null ? "unknown" : questId.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
-    }
-
-    private NamespacedKey doneAtKey(final String questId) {
-        return new NamespacedKey(plugin, "quest_done_at_" + sanitizeId(questId));
-    }
-
-    private NamespacedKey progressKey(final String questId) {
-        return new NamespacedKey(plugin, "quest_progress_" + sanitizeId(questId));
-    }
-
-    /** Wipes every objective's progress counter for a quest (all indices). */
-    private void clearAllProgress(final Player player, final String questId) {
-        final int total = Math.max(1, getObjectiveSections(getQuestSection(questId)).size());
-        for (int index = 0; index < total; index++) {
-            player.getPersistentDataContainer().remove(objectiveProgressKey(questId, index));
-        }
-    }
-
-    private List<String> readCsv(final Player player, final NamespacedKey key) {
-        final String raw = player.getPersistentDataContainer().get(key, PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) {
-            return List.of();
-        }
-
-        final Set<String> unique = new LinkedHashSet<>();
+    private static List<String> parseItems(final String raw) {
+        final List<String> result = new ArrayList<>();
         for (final String token : raw.split(",")) {
-            final String id = token.trim().toLowerCase(Locale.ROOT);
-            if (!id.isEmpty()) {
-                unique.add(id);
-            }
+            if (token.isBlank()) continue;
+            final String[] parts = token.trim().split(":");
+            if (Material.matchMaterial(parts[0].trim()) == null) throw new IllegalArgumentException();
+            result.add(token.trim().toUpperCase(Locale.ROOT));
         }
-        return List.copyOf(unique);
+        if (result.isEmpty()) throw new IllegalArgumentException();
+        return result;
+    }
+    private static List<String> parseMaterials(final String raw) {
+        final List<String> result = new ArrayList<>();
+        for (final String token : raw.split(",")) if (!token.isBlank())
+            result.add(token.trim().toUpperCase(Locale.ROOT));
+        if (result.isEmpty()) throw new IllegalArgumentException();
+        return result;
+    }
+    private static List<String> parseLines(final String raw) {
+        final List<String> result = new ArrayList<>();
+        for (final String token : raw.split("\\|")) if (!token.isBlank()) result.add(token.trim());
+        if (result.isEmpty()) throw new IllegalArgumentException();
+        return result;
+    }
+    private static Throwable unwrap(final Throwable failure) {
+        Throwable current = failure;
+        while ((current instanceof CompletionException
+                || current instanceof java.util.concurrent.ExecutionException)
+                && current.getCause() != null) current = current.getCause();
+        return current;
+    }
+    private static String rootMessage(final Throwable failure) {
+        final Throwable root = unwrap(failure);
+        return root.getMessage() == null ? root.getClass().getSimpleName() : root.getMessage();
     }
 
-    private void writeCsv(final Player player, final NamespacedKey key, final List<String> values) {
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        if (values == null || values.isEmpty()) {
-            pdc.remove(key);
-            return;
+    @Override
+    public void clearPlayerState(final UUID playerId) {
+        choiceRegistry.invalidate(playerId);
+        final CompletableFuture<Void> tail = mutationTails.get(playerId);
+        if (tail == null) {
+            mirrors.remove(playerId);
+            playerLocks.remove(playerId);
+        } else {
+            tail.whenComplete((ignored, failure) -> {
+                mirrors.remove(playerId);
+                playerLocks.remove(playerId);
+            });
         }
-
-        pdc.set(key, PersistentDataType.STRING, String.join(",", new LinkedHashSet<>(values)));
     }
 }

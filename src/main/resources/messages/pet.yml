@@ -14,6 +14,8 @@ messages:
   pet-none-captured: '&7Még nincs befogott társad — szerezz befogó eszközt: /pet item'
   pet-not-allowed: '&cCsak Vadmester, Nekromanta, Szentségtelen vagy Boszorkánymester tarthat társat.'
   pet-not-beastmaster: '&cCsak Vadmesterként idézhetsz állandó társat.'
+  pet-released: '&7A társad visszatért a vadonba; az Istálló-hely felszabadult.'
+  pet-stable-full: '&cAz Istállód megtelt: előbb engedj el egy társat (/pet release).'
   pet-stance: '<gray>Társ parancs: <gold>{stance}</gold></gray>'
   pet-summoned: '&aA társad megjelent melletted.'
   pet-wrong-spec: <red>Ezt az itemet nem a te specializációd használja.</red>

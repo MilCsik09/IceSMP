@@ -40,10 +40,57 @@ world-tweaks:
     mobs: true
 
 hud:
+  icesmp-hud:
+    # Elsődleges, saját IceSMP HUD. Kizárólag a region-threaden előállított immutable
+    # HudSnapshotot rajzolja; a resource pack sikeres betöltéséig a natív Folia HUD marad.
+    enabled: true
+    # Első fél által kezelt élő HUD-editor. A játékos a saját Profile v2 layoutját,
+    # az icesmp.admin.hud-editor jogosultságú admin pedig a szerveralapot szerkesztheti.
+    editor:
+      enabled: true
+      # Kikapcsolva csak a globális admin-editor marad elérhető; a már mentett személyes
+      # layoutok ettől még változatlanul érvényesülnek.
+      personal-layouts-enabled: true
+    # A renderer által ténylegesen alkalmazott, validált alap-layout. Hibás vagy
+    # tartományon kívüli mező külön-külön a biztonságos alapértékre esik vissza.
+    layout:
+      x-offset-pixels: 0
+      y-offset-pixels: 24
+      safe-margin-pixels: 24
+      # Buildkor generált shader-variánsra illeszkedik: 0.75..1.80 között a régi
+      # lépcsők, fölötte 2.00, 2.20, 2.40, 2.60, 2.80, 3.00, 3.25 vagy 3.50.
+      # Más érvényes érték a legközelebbire kerekül.
+      scale: 1.6
+      # Minden első-party rajzcsoport külön, a fenti globális layouthoz képest állítható.
+      # A scale relatív szorzó; a runtime a globális×relatív eredményt a támogatott
+      # shader-variánsok egyikére illeszti. A teljes blokkot a /hud edit save atomikusan írja.
+      components:
+        frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        class-icon: {x-offset-pixels: -7, y-offset-pixels: -12, scale: 1.0, visible: true}
+        class-name: {x-offset-pixels: 3, y-offset-pixels: 15, scale: 1.0, visible: true}
+        faction: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: false}
+        level-icon: {x-offset-pixels: -19, y-offset-pixels: -5, scale: 1.0, visible: true}
+        level-text: {x-offset-pixels: -3, y-offset-pixels: 15, scale: 1.0, visible: true}
+        wallet-frame: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
+        wallet: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        resource-label: {x-offset-pixels: 6, y-offset-pixels: 5, scale: 0.9, visible: true}
+        resource-bar: {x-offset-pixels: 5, y-offset-pixels: -12, scale: 1.0, visible: true}
+        primary-mechanic: {x-offset-pixels: 2, y-offset-pixels: -1, scale: 1.0, visible: true}
+        secondary-mechanic: {x-offset-pixels: 2, y-offset-pixels: 0, scale: 1.0, visible: true}
+        charges: {x-offset-pixels: -38, y-offset-pixels: 32, scale: 0.9, visible: true}
+        state-proc: {x-offset-pixels: -14, y-offset-pixels: -1, scale: 1.0, visible: true}
+        detail-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        detail-metrics: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        event-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        event-text: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
+    # Előkészített HP-rework kapuk. Csak akkor lesznek bekapcsolhatók, amikor az egyedi
+    # HP/armor kijelzés és a pack-készültségi védelem teljes körűen elkészült.
+    hide-vanilla-health: false
+    hide-vanilla-armor: false
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
   # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
   # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.
-  # A TAB plugin többé NEM szükséges — leszedhető; a teljes megjelenés house-ban van.
+  # A teljes tablista-megjelenés IceSMP-tulajdonú; külső tablista-plugin nem része a stacknek.
   enabled: true
   # Alacsony-HP piros vignetta (P8e): a küszöb alatt a képernyő szélén vörös vészköd
   # (per-player világperem-vészjel kihasználva; a peremnek NINCS játékmenet-hatása).
@@ -51,10 +98,12 @@ hud:
   low-hp-vignette:
     enabled: true
     threshold-percent: 30.0   # ez alatti HP%-nál jelenik meg
-  # Az IceSMP saját scoreboard-oldalsávja. Ha mégis külső scoreboard-plugint futtatsz
-  # (pl. TAB), kapcsold false-ra ezt ÉS a tablist.enabled-et a tablist.yml-ben — az
+  # Az IceSMP saját scoreboard-oldalsávja. Ha külső scoreboard-renderert futtatsz,
+  # kapcsold false-ra ezt ÉS a tablist.enabled-et a tablist.yml-ben — az
   # IceSMP-adatok akkor a %icesmp_...% placeholderekkel jeleníthetők meg
   # (docs/SERVER_INTEGRATION.md).
+  # Folia alatt a Bukkit scoreboard API tiltott; ugyanez a kapcsoló a játékosonkénti
+  # compact bossbar fallbacket vezérli, amikor a first-party HUD nem aktív.
   sidebar-enabled: true
   sidebar:
     # Az oldalsáv címe (legacy &-kódokkal; a ㍐ a resource pack glyph-je — RP nélkül
@@ -175,7 +224,10 @@ claims:
   column-cost: 0.5            # minden további oszlop ára (saját frakció-valuta, ELÉG)
   max-columns-per-player: 8192   # claim-plafon játékosonként, oszlopban (≈ 32 chunknyi)
   area-max-columns: 6400      # téglalap vagy poligon maximális kitöltött oszlopszáma
-  polygon-max-points: 64        # territory-szerű claimhatár maximális csúcspontszáma
+  # A claimhatár csúcspontszáma alapból korlátlan (0) — a claim létrehozáskor oszlop-
+  # halmazzá raszterizálódik, így a futásidejű védelem-ellenőrzés költsége a pontszámtól
+  # független; a tényleges méretkorlát az area-max-columns. Pozitív érték felső korlátot ad.
+  polygon-max-points: 0
   y-extend-step: 5            # a magasítás/mélyítés lépésköze (blokk)
   y-extend-cost-per-column: 0.1  # bővítés ára lépésenként: a claim oszlopai × ez az összeg
   protect-containers: true    # konténerek (láda, hordó, kemence…) védelme idegenektől
@@ -415,3 +467,33 @@ combat:
   # Hadi-ablak pont / párbaj bűn-tisztulás csak ennyi másodpercnyi TÉNYLEGES
   # harc (a pár első kontaktusától) után jár — win-trade/bűn-mosás fék.
   min-fight-seconds: 20
+# Moduláris PlayerProfile platform. A YAML repository az egyetlen IceSMP-owned
+# tartós játékosállapot-authority; a PDC csak újraépíthető mirror lehet.
+player-profile:
+  storage:
+    directory: "player-profiles"
+    shutdown-timeout-ms: 10000
+  http:
+    # Biztonságos alapérték: a read-only API explicit engedélyezésig nem indul.
+    enabled: false
+    bind: "127.0.0.1"
+    port: 8765
+    requests-per-minute: 60
+    max-request-bytes: 1024
+    max-response-bytes: 1048576
+    timeout-ms: 3000
+    # Formátum: "<uuid>:<token>". A tokeneket secret-managed deployment configból add meg.
+    self-tokens: []
+    # Admin tokenek. Ne commitolj valódi tokent a repositoryba.
+    admin-tokens: []
+
+# Naplózás — a boot-kori leltár-sorok ("Loaded N ...", spell-balansz felülbírálások,
+# érvényes-táblák, config-echo) alapból FINE szintre kerülnek, hogy a konzol a tényleges
+# eseményeké maradjon. true esetén ezek a sorok INFO-ként látszanak (hibakereséshez).
+logging:
+  verbose-startup: false
+  # A vanilla "Named entity ... died" sort minden custom-nevű (pl. szintezett) mob halála
+  # a konzolba ÉS a latest.logba írná — true esetén a plugin Log4j-szűrője még az
+  # appenderek előtt eldobja, így egyik helyen sem jelenik meg. Élőben olvasott kulcs:
+  # false + /icesmp reload után a sorok azonnal újra látszanak (hibakereséshez).
+  suppress-named-entity-deaths: true

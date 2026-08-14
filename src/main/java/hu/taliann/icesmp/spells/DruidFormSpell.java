@@ -89,6 +89,11 @@ public final class DruidFormSpell extends BaseSpell {
         }
     }
 
+    /** Read-only peek for the gameplay layer: the Évszak-mechanika reuses this form state. */
+    public static Form activeForm(final UUID playerId) {
+        return playerId == null ? null : ACTIVE_FORM.get(playerId);
+    }
+
     /** Párducforma ára (playtest-balansz): -4 teljes szív max-élet, amíg a forma aktív. */
     private static final NamespacedKey CAT_HEALTH_KEY = new NamespacedKey("icesmp", "druid_cat_form_health");
     private static final double CAT_HEALTH_PENALTY = -8.0D;

@@ -20,8 +20,11 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * /quest — küldetések: list (elérhető), info (aktív + haladás), accept,
- * abandon; admin: complete <player> <quest>.
+ * /quest — küldetések. Játékos: log (napló), list (látható), info (aktív + haladás),
+ * track (követés), abandon, choose (dialógus-választás tokennel). Admin: accept
+ * (forrás-kerülő felvétel), talk (NPC-interakció szimulálása), complete, admin
+ * (szerkesztő) — a felvétel/leadás normál útja a forrás-authority (NPC, tábla, lánc),
+ * parancsból csak admin-kontextussal kerülhető meg.
  */
 public final class QuestCommand implements BasicCommand {
 
@@ -57,6 +60,8 @@ public final class QuestCommand implements BasicCommand {
             case "log", "gui", "naplo", "napló" -> handleLog(sender);
             case "list" -> handleList(sender);
             case "info" -> handleInfo(sender);
+            case "track", "kovet", "követ" -> handleTrack(sender, args);
+            case "choose" -> handleChoose(sender, args);
             case "accept" -> handleAccept(sender, args);
             case "talk" -> handleTalk(sender, args);
             case "abandon" -> handleAbandon(sender, args);
@@ -282,8 +287,11 @@ public final class QuestCommand implements BasicCommand {
 
         sender.sendMessage(messageManager.get("quest-list-header", "&6Elérhető küldetések:"));
         boolean any = false;
-        for (final String questId : questManager.getQuestIds()) {
-            if (questManager.getAcceptBlocker(player, questId) != null) {
+        // Láthatóság-szűrt lista: HIDDEN quest ide sem szivárog; a felvétel útját a
+        // forrás adja (NPC/tábla/lánc), a lista csak tájékoztat.
+        for (final String questId : questManager.getVisibleQuestIds(player)) {
+            if (questManager.isActive(player, questId)
+                    || questManager.getAcceptBlocker(player, questId) != null) {
                 continue;
             }
 
@@ -300,6 +308,36 @@ public final class QuestCommand implements BasicCommand {
 
         if (!any) {
             sender.sendMessage(messageManager.get("quest-list-empty", "&7Jelenleg nincs felvehető küldetésed."));
+        }
+    }
+
+    private void handleTrack(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        if (args.length < 2 || "off".equalsIgnoreCase(args[1])) {
+            questManager.setTracked(player, null);
+            sender.sendMessage(messageManager.get("quest-untracked", "&7Küldetés-követés kikapcsolva."));
+            return;
+        }
+        if (!questManager.setTracked(player, args[1])) {
+            sender.sendMessage(messageManager.get("quest-track-failed", "&cCsak aktív küldetést lehet követni."));
+            return;
+        }
+        sender.sendMessage(messageManager.get("quest-tracked", "&aKövetett küldetés: &e%s",
+                questManager.getDisplayName(args[1])));
+    }
+
+    private void handleChoose(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        final String failure = args.length < 2 ? "quest-choice-expired"
+                : questManager.acceptChoice(player, args[1]);
+        if (failure != null) {
+            sender.sendMessage(messageManager.get(failure, defaultBlockerMessage(failure)));
         }
     }
 
@@ -327,61 +365,64 @@ public final class QuestCommand implements BasicCommand {
         ));
     }
 
+    /**
+     * ADMIN-kapuzott felvétel: a parancs korábban bárki számára forrás-kerülő út volt
+     * (bármely quest-id távolról felvehető) — a felvétel normál útja a jogosult forrás
+     * (NPC-interakció, Megbízások-tábla, lánc-feloldás), parancsból csak admin-
+     * kontextussal történhet (tesztelés, mentés).
+     */
     private void handleAccept(final CommandSender sender, final String[] args) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            return;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage(messageManager.get("quest-accept-usage", "&cHasználat: /quest accept <küldetés>"));
+            sender.sendMessage(messageManager.get("quest-accept-usage", "&cHasználat: /quest accept <küldetés> (Admin)"));
             return;
         }
 
-        final String blocker = questManager.getAcceptBlocker(player, args[1]);
+        final String blocker = questManager.acceptWithSource(player, args[1],
+                hu.taliann.icesmp.quest.QuestSourceContext.admin());
         if (blocker != null) {
             sender.sendMessage(messageManager.get(blocker, defaultBlockerMessage(blocker)));
             return;
         }
 
-        questManager.accept(player, args[1]);
         sender.sendMessage(messageManager.get(
                 "quest-accept-success",
                 "&aKüldetés felvéve: &e%s",
                 questManager.getDisplayName(args[1])
         ));
-        // A dialógus a parancsos felvételkor is jár — az elágazó story-döntések
-        // (pl. merchant_choice) szövege enélkül sosem látszana NPC nélkül.
         questManager.playGiveDialogue(player, args[1]);
     }
 
     /**
-     * NPC-tartalék-út: a TALK_TO_NPC/DELIVER_ITEMS objektívák és a giver-npc questek
-     * a FancyNpcs-híd nélkül is teljesíthetők/felvehetők — a sztori-gerinc nem lóghat
-     * némán egy külső pluginon. Alapból csak akkor él, ha a híd NEM aktív.
+     * ADMIN-kapuzott NPC-interakció-szimuláció: a korábbi nyílt /quest talk bárkinek
+     * engedte TETSZŐLEGES NPC-név "megszemélyesítését" (TALK_TO_NPC/DELIVER teljesítés
+     * a helyszín felkeresése nélkül). A hiteles út a tényleges NPC-kattintás; ez a
+     * parancs tesztelésre és híd-kiesés áthidalására szolgál.
      */
     private void handleTalk(final CommandSender sender, final String[] args) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            return;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-        if (questManager.isNpcBridgeActive()
-                && !configManager.getBoolean("quest-npc-fallback.always", false)) {
-            sender.sendMessage(messageManager.get("quest-talk-npc-active",
-                    "&7A mesélők a helyükön állnak — keresd fel őket személyesen (kattints az NPC-re)."));
-            return;
-        }
         if (args.length < 2) {
-            sender.sendMessage(messageManager.get("quest-talk-usage", "&cHasználat: /quest talk <npc-név>"));
+            sender.sendMessage(messageManager.get("quest-talk-usage", "&cHasználat: /quest talk <npc-név> (Admin)"));
             return;
         }
-        final String npcName = args[1];
-        questManager.handleNpcInteract(player, npcName);
-        final String accepted = questManager.acceptFromNpc(player, npcName);
-        if (accepted == null) {
-            sender.sendMessage(messageManager.get("quest-talk-done",
-                    "&7Szót váltottatok. (Ha küldetés-célpont volt, teljesült.)"));
-        }
+        questManager.handleAuthorizedNpcInteract(player, args[1]);
+        sender.sendMessage(messageManager.get("quest-talk-done",
+                "&7NPC-interakció lefutott: &f%s", args[1]));
     }
 
     private void handleAbandon(final CommandSender sender, final String[] args) {
@@ -422,7 +463,12 @@ public final class QuestCommand implements BasicCommand {
 
         final String questId = args[2];
         target.getScheduler().run(plugin, task -> {
-            questManager.complete(target, questId);
+            final String failure = questManager.turnIn(target, questId,
+                    hu.taliann.icesmp.quest.QuestSourceContext.admin());
+            if (failure != null) {
+                sender.sendMessage(messageManager.get(failure, defaultBlockerMessage(failure)));
+                return;
+            }
             sender.sendMessage(messageManager.get("quest-complete-success", "&aKüldetés lezárva: &f%s &7-> &e%s", target.getName(), questId));
         }, null);
     }
@@ -443,6 +489,11 @@ public final class QuestCommand implements BasicCommand {
             case "quest-chapter-future" -> "&cEz a fejezet még nem nyílt meg — várd ki a krónika következő lapját.";
             case "quest-season-window-future" -> "&cEnnek a történetnek még nem jött el az ideje — a szezon későbbi napjain nyílik.";
             case "quest-season-window-closed" -> "&cEz a történet-ablak bezárult ebben a szezonban — az idő továbbhaladt.";
+            case "quest-source-unauthorized" -> "&cEzt a küldetést nem innen lehet felvenni vagy leadni — keresd a jogos forrását.";
+            case "quest-not-active" -> "&cEz a küldetés nem aktív a célnál.";
+            case "quest-not-ready" -> "&cA küldetés feladatai még nincsenek kész.";
+            case "quest-choice-expired" -> "&cEz a választás már lejárt — beszélj újra a mesélővel.";
+            case "quest-choice-blocked" -> "&cEz a küldetés most nem vehető fel.";
             default -> "&cA küldetés nem vehető fel.";
         };
     }
@@ -450,11 +501,14 @@ public final class QuestCommand implements BasicCommand {
     private void sendHelp(final CommandSender sender) {
         sender.sendMessage(messageManager.get("quest-help-header", "&6/quest &7- Elérhető parancsok:"));
         sender.sendMessage(messageManager.get("quest-help-log", "&e/quest log &7- Küldetésnapló (grafikus felület)."));
-        sender.sendMessage(messageManager.get("quest-help-list", "&e/quest list &7- Felvehető küldetések."));
+        sender.sendMessage(messageManager.get("quest-help-list", "&e/quest list &7- Látható küldetések."));
         sender.sendMessage(messageManager.get("quest-help-info", "&e/quest info &7- Aktív küldetéseid és haladásod."));
-        sender.sendMessage(messageManager.get("quest-help-accept", "&e/quest accept <küldetés> &7- Küldetés felvétele."));
+        sender.sendMessage(messageManager.get("quest-help-track", "&e/quest track <küldetés|off> &7- Küldetés követése."));
         sender.sendMessage(messageManager.get("quest-help-abandon", "&e/quest abandon <küldetés> &7- Küldetés eldobása."));
+        sender.sendMessage(messageManager.get("quest-help-choose", "&e/quest choose <token> &7- Kattintható dialógusválasztás beváltása."));
         if (sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("quest-help-accept", "&e/quest accept <küldetés> &7- Forrás-kerülő felvétel (Admin)."));
+            sender.sendMessage(messageManager.get("quest-help-talk", "&e/quest talk <npc> &7- NPC-interakció szimulálása (Admin)."));
             sender.sendMessage(messageManager.get("quest-help-complete", "&e/quest complete <játékos> <küldetés> &7- Lezárás (Admin)."));
             sender.sendMessage(messageManager.get("quest-help-admin", "&e/quest admin &7- Küldetés-szerkesztő (Admin)."));
         }
@@ -464,8 +518,8 @@ public final class QuestCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> subcommands = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("log", "list", "info", "accept", "abandon", "talk", "complete", "admin")
-                : List.of("log", "list", "info", "accept", "abandon", "talk");
+                ? List.of("log", "list", "info", "track", "abandon", "choose", "accept", "talk", "complete", "admin")
+                : List.of("log", "list", "info", "track", "abandon", "choose");
 
         // A Paper a lezáró szóköz utáni ÜRES szót nem adja át (args rövidebb), ezért minden
         // szintet két hosszal kezelünk: N+1 = szó közben (prefix az utolsó arg), N = szóköz
@@ -480,15 +534,29 @@ public final class QuestCommand implements BasicCommand {
             return suggestAdmin(sender, args);
         }
         if (args.length <= 2 && "talk".equals(subcommand)) {
+            if (!sender.hasPermission(ADMIN_PERMISSION)) {
+                return List.of();
+            }
             final String prefix = prefixAt(args, 1);
             return questManager.getQuestNpcNames().stream()
                     .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
         }
-        if (args.length <= 2 && ("accept".equals(subcommand) || "abandon".equals(subcommand))) {
+        if (args.length <= 2 && ("abandon".equals(subcommand) || "track".equals(subcommand))) {
             final String prefix = prefixAt(args, 1);
-            if ("abandon".equals(subcommand) && sender instanceof Player player) {
-                return questManager.getActiveQuests(player).stream().filter(id -> id.startsWith(prefix)).toList();
+            if (sender instanceof Player player) {
+                final List<String> ids = new ArrayList<>(questManager.getActiveQuests(player));
+                if ("track".equals(subcommand)) ids.add("off");
+                return ids.stream().filter(id -> id.startsWith(prefix)).toList();
             }
+            return List.of();
+        }
+        if ("choose".equals(subcommand)) return List.of();
+        if (args.length <= 2 && "accept".equals(subcommand)) {
+            // Admin-eszköz: a teljes id-lista csak admin előtt látszik (HIDDEN-szivárgás ellen).
+            if (!sender.hasPermission(ADMIN_PERMISSION)) {
+                return List.of();
+            }
+            final String prefix = prefixAt(args, 1);
             return questManager.getQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
         }
 

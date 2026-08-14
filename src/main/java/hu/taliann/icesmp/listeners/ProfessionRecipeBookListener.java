@@ -186,7 +186,20 @@ public final class ProfessionRecipeBookListener implements Listener {
             craftXp /= 2;
         }
         if (craftXp > 0) {
-            professionManager.addXpFor(player, recipe.profession(), craftXp);
+            final int durableCraftXp = craftXp;
+            professionManager.addXpFor(player, recipe.profession(), durableCraftXp)
+                    .whenComplete((change, failure) -> {
+                        if (failure == null) return;
+                        plugin.getLogger().severe("Craft XP PlayerProfile commit failed for "
+                                + player.getUniqueId() + " / " + recipe.id() + ": "
+                                + failure.getMessage());
+                        professionManager.runOnOwnerThread(player, () -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(messageManager.get("profession-craft-xp-storage-failed",
+                                        "&eA tárgy elkészült, de a szakma-XP mentése meghiúsult; az adminok értesítést kaptak."));
+                            }
+                        });
+                    });
         }
         // A recept első elkészítése lajstrom-bejegyzés.
         final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
@@ -254,9 +267,20 @@ public final class ProfessionRecipeBookListener implements Listener {
      * hívja, így a parancsból adott tárgy bitre azonos a craftolttal.
      * A hívó szála a cél-játékos szála legyen (a crafted-by a nevét bélyegzi).
      *
-     * @return a kész tárgy, vagy null (ismeretlen unique-eredmény)
+     * @return a kész tárgy, vagy null (ismeretlen unique-eredmény / hibás presentation-config)
      */
     public ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
+        return buildResult(player, recipe, true);
+    }
+
+    /** Builds a crate reward without firing an advancement before the world reveal finishes. */
+    public ItemStack buildDeferredReward(final Player player,
+                                         final ProfessionRecipeCatalog.Recipe recipe) {
+        return buildResult(player, recipe, false);
+    }
+
+    private ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe,
+                                  final boolean awardMasterwork) {
         ItemStack result = recipe.uniqueResult() != null
                 ? uniqueMaterials.create(recipe.uniqueResult(), recipe.resultAmount())
                 : new ItemStack(recipe.result(), recipe.resultAmount());
@@ -414,17 +438,31 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (consumableSection != null) {
             hu.taliann.icesmp.items.ItemDataFactory.applyRecipeConsumable(result, consumableSection);
         }
-        final String itemModel = configManager.getString(
-                "profession-recipes." + recipe.id() + ".result.item-model", "");
-        if (!itemModel.isBlank()) {
-            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(result, itemModel);
+
+        // A unique factory által korábban feltett data componenteket a fenti meta/affix lánc
+        // ledobhatta, ezért a végleges resulton újraalkalmazzuk a unique presentationt.
+        if (recipe.uniqueResult() != null && !uniqueMaterials.applyPresentation(result, recipe.uniqueResult())) {
+            return null;
         }
+
+        // Külön identity az inventory/hand modellhez és a viselt equipment assethez.
+        // Explicit equipment-asset elsőbbséget élvez; hiányában az equippable IceSMP itemek
+        // dokumentált 1:1 render-id fallbackje használható. A pack validator ennek létezését bizonyítja.
+        final String presentationBase = "profession-recipes." + recipe.id() + ".result.";
+        final String itemModel = configManager.getString(presentationBase + "item-model", "");
+        final String equipmentAsset = configManager.getString(presentationBase + "equipment-asset", "");
+        final hu.taliann.icesmp.items.WearablePresentation.Result presentation =
+                hu.taliann.icesmp.items.WearablePresentation.applyWearablePresentation(
+                        result, itemModel, equipmentAsset);
+        if (!equipmentAsset.isBlank() && !presentation.equipmentApplied()) {
+            plugin.getLogger().warning(presentationBase + "equipment-asset: '" + equipmentAsset
+                    + "' cannot be applied (" + presentation.equipmentStatus() + ")");
+            return null;
+        }
+
         // Mestermű-mérföldkő: ha az affix-roll a létra felső fokát adta, az elismerést érdemel.
-        if (recipe.affixTier() != null && affixService != null) {
-            final String rolled = affixService.rarityIdOf(result);
-            if ("legendas".equals(rolled) || "ereklye".equals(rolled)) {
-                hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
-            }
+        if (awardMasterwork) {
+            awardMasterworkIfEligible(player, result);
         }
         // result.rarity: a saját létra egy foka (ocska…ereklye) — tervezett itemnek, amely nem
         // esik át affix-rollon. Az affix-rollos gear a rollott fokot kapja az ItemRarityService-től.
@@ -465,5 +503,16 @@ public final class ProfessionRecipeBookListener implements Listener {
                     (float) cooldownSection.getDouble("seconds", 1.0D));
         }
         return result;
+    }
+
+    /** Fires the milestone only after a deferred item has crossed its real delivery boundary. */
+    public void awardMasterworkIfEligible(final Player player, final ItemStack result) {
+        if (player == null || result == null || affixService == null) {
+            return;
+        }
+        final String rolled = affixService.rarityIdOf(result);
+        if ("legendas".equals(rolled) || "ereklye".equals(rolled)) {
+            hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
+        }
     }
 }

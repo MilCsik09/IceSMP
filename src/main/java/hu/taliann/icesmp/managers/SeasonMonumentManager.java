@@ -17,38 +17,32 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Locale;
 import java.util.UUID;
 
-/**
- * D3 — Szezon-emlékművek (lore: a Korszakok Könyve fizikai emlékművei — "neve örökre
- * bekerül", kódex VIII.). Szezonzáráskor a győztes frakció MARADANDÓ nyomot hagy a
- * világban: egy admin-előkészített ponton ({@code season-monument.location}) a talapzat
- * banner-blokkja a bajnok színére vált, fölötte TextDisplay-hologram sorolja a lezárt
- * korszakokat (szezon-sorszám + bajnok + a korszak hősei a StatsManager top-3-ából).
- * A lista nem törlődik — korszakról korszakra bővül (a legutóbbi {@code max-lines} sor
- * látszik). Hely nélkül a sorok akkor is gyűlnek (monument.yml), csak hologram nincs.
- *
- * <p>Folia: a blokk-csere és a display-entitás minden művelete a hely régió-schedulerén
- * fut; a hívás a SeasonManager tickjéről (globális scheduler) érkezik. A display-entitás
- * perzisztens — a UUID-ját tároljuk, frissítéskor a régit eltávolítjuk.
- */
+/** Durable physical history projection for closed seasons and the one-shot Prologue. */
 public final class SeasonMonumentManager implements PersistentStore {
+    private static volatile SeasonMonumentManager active;
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
+            .withZone(ZoneId.of("Europe/Budapest"));
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final StatsManager statsManager;
     private final File storageFile;
-
+    private static final String PROLOGUE_LINE_PREFIX = "Prologue — Az Első Expedíció — Kárhozat Éjszakája — ";
     private final List<String> lines = new ArrayList<>();
     private final Map<String, Long> appliedGrants = new LinkedHashMap<>();
     private volatile int seasonIndex;
     private volatile UUID displayId;
     private volatile FactionType lastChampion;
+    private volatile boolean lastProjectionPrologue;
 
     public SeasonMonumentManager(final JavaPlugin plugin, final ConfigManager configManager,
                                  final StatsManager statsManager) {
@@ -58,7 +52,10 @@ public final class SeasonMonumentManager implements PersistentStore {
         this.storageFile = new File(plugin.getDataFolder(), "monument.yml");
         YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
+        active = this;
     }
+
+    public static SeasonMonumentManager current() { return active; }
 
     @Override
     public synchronized void load() {
@@ -67,9 +64,8 @@ public final class SeasonMonumentManager implements PersistentStore {
         seasonIndex = 0;
         displayId = null;
         lastChampion = null;
-        if (!storageFile.exists()) {
-            return;
-        }
+        lastProjectionPrologue = false;
+        if (!storageFile.exists()) return;
         final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
         seasonIndex = yaml.getInt("season-index", -1);
         if (seasonIndex < 0) {
@@ -77,6 +73,7 @@ public final class SeasonMonumentManager implements PersistentStore {
             return;
         }
         lines.addAll(yaml.getStringList("lines"));
+        lastProjectionPrologue = yaml.getBoolean("last-projection-prologue", false);
         final String rawChampion = yaml.getString("last-champion", "");
         if (!rawChampion.isBlank()) {
             lastChampion = FactionType.fromInput(rawChampion);
@@ -85,8 +82,7 @@ public final class SeasonMonumentManager implements PersistentStore {
                 return;
             }
         }
-        final org.bukkit.configuration.ConfigurationSection grants =
-                yaml.getConfigurationSection("applied-grants");
+        final org.bukkit.configuration.ConfigurationSection grants = yaml.getConfigurationSection("applied-grants");
         if (grants != null) {
             for (final String key : grants.getKeys(false)) {
                 final long timestamp = grants.getLong(key, -1L);
@@ -100,23 +96,22 @@ public final class SeasonMonumentManager implements PersistentStore {
         }
         final String rawId = yaml.getString("display-uuid", "");
         if (!rawId.isBlank()) {
-            try {
-                displayId = UUID.fromString(rawId);
-            } catch (final IllegalArgumentException invalid) {
+            try { displayId = UUID.fromString(rawId); }
+            catch (final IllegalArgumentException invalid) {
                 YamlStore.failCorrupt(storageFile, plugin.getLogger(), "Érvénytelen monument display UUID");
                 return;
             }
         }
-        if (lastChampion != null) {
-            plugin.getServer().getGlobalRegionScheduler().runDelayed(
-                    plugin, task -> refreshMonument(lastChampion), 1L);
+        if (lastProjectionPrologue || lastChampion != null) {
+            plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin,
+                    task -> refreshMonument(lastProjectionPrologue
+                            ? Material.PURPLE_BANNER : bannerOf(lastChampion)), 1L);
         }
     }
 
     @Override
     public synchronized void save() {
         if (!writeStateLocked()) {
-            // A koordinátor hibagyűjtése csak dobásból lát.
             throw new IllegalStateException("monument.yml mentése sikertelen — részletek a logban");
         }
     }
@@ -128,6 +123,7 @@ public final class SeasonMonumentManager implements PersistentStore {
             yaml.set("lines", List.copyOf(lines));
             yaml.set("display-uuid", displayId == null ? "" : displayId.toString());
             yaml.set("last-champion", lastChampion == null ? "" : lastChampion.name());
+            yaml.set("last-projection-prologue", lastProjectionPrologue);
             for (final Map.Entry<String, Long> entry : appliedGrants.entrySet()) {
                 yaml.set("applied-grants." + entry.getKey(), entry.getValue());
             }
@@ -137,79 +133,110 @@ public final class SeasonMonumentManager implements PersistentStore {
             plugin.getLogger().severe("Failed to save monument.yml: " + exception.getMessage());
             return false;
         } catch (final hu.taliann.icesmp.storage.CriticalPersistenceWriteError fatal) {
-            // A kritikus write-circuit már beállt (minden további írás tiltva) — itt false-t
-            // adunk, hogy a hívó rollback-ága lefusson; a koordinátort a void save() wrapper
-            // dobása értesíti. A fatal elnyelése nélkül a rollback kimaradna (Error != IOException).
             plugin.getLogger().severe(fatal.getMessage() == null ? fatal.toString() : fatal.getMessage());
             return false;
         }
     }
 
-    /** Idempotently records a closed season before refreshing its physical projection. */
     public synchronized boolean recordSeasonOnce(final String grantId, final int closedSeason,
-                                                 final FactionType champion) {
-        if (grantId == null || grantId.isBlank() || closedSeason < 1 || champion == null) {
-            return false;
-        }
-        if (appliedGrants.containsKey(grantId)) {
-            return true;
-        }
-        if (!configManager.getBoolean("season-monument.enabled", true)) {
-            return true;
-        }
-
-        final int previousIndex = seasonIndex;
-        final UUID previousDisplay = displayId;
-        final FactionType previousChampion = lastChampion;
-        final List<String> previousLines = List.copyOf(lines);
+                                                  final FactionType champion) {
+        if (grantId == null || grantId.isBlank() || closedSeason < 1 || champion == null) return false;
+        if (appliedGrants.containsKey(grantId)) return true;
+        if (!configManager.getBoolean("season-monument.enabled", true)) return true;
+        final Snapshot before = snapshot();
         seasonIndex = Math.max(seasonIndex + 1, closedSeason);
         lastChampion = champion;
+        lastProjectionPrologue = false;
         final StringBuilder heroes = new StringBuilder();
         final List<StatsManager.Entry> top = statsManager.top(StatsManager.Category.LEVEL, 3);
         for (int i = 0; i < top.size(); i++) {
             heroes.append(top.get(i).name());
-            if (i < top.size() - 1) {
-                heroes.append(", ");
-            }
+            if (i < top.size() - 1) heroes.append(", ");
         }
-        lines.add(closedSeason + ". korszak — " + champion.getDisplayName()
+        appendLine(closedSeason + ". korszak — " + champion.getDisplayName()
                 + (heroes.isEmpty() ? "" : " — Hősök: " + heroes));
-        final int maxLines = Math.max(1, configManager.getInt("season-monument.max-lines", 12));
-        while (lines.size() > maxLines) {
-            lines.remove(0);
-        }
         appliedGrants.put(grantId, System.currentTimeMillis());
         if (!writeStateLocked()) {
-            appliedGrants.remove(grantId);
-            seasonIndex = previousIndex;
-            displayId = previousDisplay;
-            lastChampion = previousChampion;
-            lines.clear();
-            lines.addAll(previousLines);
+            restore(before);
             return false;
         }
-        refreshMonument(champion);
+        refreshMonument(bannerOf(champion));
         return true;
     }
 
-    /** A fizikai emlékmű frissítése (talapzat-banner + hologram) a hely régió-szálán. */
-    private void refreshMonument(final FactionType champion) {
-        final Location base = parseLocation();
-        if (base == null) {
-            return; // Nincs kijelölt hely — a sorok gyűlnek, hologram nélkül.
+    /**
+     * Teszt-visszaállítás: a Prologue-sor és a hozzá tartozó grant törlése, hogy egy ismételt
+     * próba friss résztvevőszámmal rögzülhessen újra.
+     */
+    public synchronized boolean forgetPrologue(final String grantId) {
+        if (grantId == null || grantId.isBlank()) return false;
+        final Snapshot before = snapshot();
+        final boolean hadGrant = appliedGrants.remove(grantId) != null;
+        final boolean hadLine = lines.removeIf(line -> line.startsWith(PROLOGUE_LINE_PREFIX));
+        if (!hadGrant && !hadLine) return true;
+        lastProjectionPrologue = false;
+        if (!writeStateLocked()) {
+            restore(before);
+            return false;
         }
+        refreshMonument(lastChampion == null ? Material.PURPLE_BANNER : bannerOf(lastChampion));
+        return true;
+    }
+
+    /** Prologue is a historical pre-season entry, not a fake Season 0 league winner. */
+    public synchronized boolean recordPrologueOnce(final String grantId, final int participantCount,
+                                                    final long completedAt) {
+        if (grantId == null || grantId.isBlank() || participantCount < 0 || completedAt <= 0L) return false;
+        if (appliedGrants.containsKey(grantId)) return true;
+        if (!configManager.getBoolean("season-monument.enabled", true)) return true;
+        final Snapshot before = snapshot();
+        lastProjectionPrologue = true;
+        lastChampion = null;
+        appendLine(PROLOGUE_LINE_PREFIX
+                + participantCount + " résztvevő — " + DATE.format(Instant.ofEpochMilli(completedAt)));
+        appliedGrants.put(grantId, System.currentTimeMillis());
+        if (!writeStateLocked()) {
+            restore(before);
+            return false;
+        }
+        refreshMonument(Material.PURPLE_BANNER);
+        return true;
+    }
+
+    private void appendLine(final String line) {
+        lines.add(line);
+        final int maxLines = Math.max(1, configManager.getInt("season-monument.max-lines", 12));
+        while (lines.size() > maxLines) lines.remove(0);
+    }
+
+    private Snapshot snapshot() {
+        return new Snapshot(seasonIndex, displayId, lastChampion, lastProjectionPrologue,
+                List.copyOf(lines), new LinkedHashMap<>(appliedGrants));
+    }
+
+    private void restore(final Snapshot snapshot) {
+        seasonIndex = snapshot.seasonIndex();
+        displayId = snapshot.displayId();
+        lastChampion = snapshot.champion();
+        lastProjectionPrologue = snapshot.prologue();
+        lines.clear();
+        lines.addAll(snapshot.lines());
+        appliedGrants.clear();
+        appliedGrants.putAll(snapshot.grants());
+    }
+
+    private void refreshMonument(final Material banner) {
+        final Location base = parseLocation();
+        if (base == null) return;
         final List<String> snapshot = List.copyOf(lines);
         final UUID oldDisplay = displayId;
         plugin.getServer().getRegionScheduler().run(plugin, base, task -> {
             final World world = base.getWorld();
-            // Talapzat: a bajnok színére váltó banner-blokk.
-            world.getBlockAt(base).setType(bannerOf(champion), false);
-            // Hologram: a régi display cserélődik (a szöveg nő), CENTER-billboard, perzisztens.
+            if (world == null) return;
+            world.getBlockAt(base).setType(banner, false);
             if (oldDisplay != null) {
                 final Entity old = Bukkit.getEntity(oldDisplay);
-                if (old != null && old.isValid()) {
-                    old.remove();
-                }
+                if (old != null && old.isValid()) old.remove();
             }
             Component text = MiniMessage.miniMessage().deserialize(configManager.getString(
                     "season-monument.header", "<gold>📖 A Korszakok Könyve</gold>"));
@@ -234,20 +261,13 @@ public final class SeasonMonumentManager implements PersistentStore {
         });
     }
 
-    /** "world,x,y,z" formátumú emlékmű-pont (üres = nincs fizikai emlékmű). */
     private Location parseLocation() {
         final String raw = configManager.getString("season-monument.location", "");
-        if (raw.isBlank()) {
-            return null;
-        }
+        if (raw.isBlank()) return null;
         final String[] parts = raw.split(",");
-        if (parts.length < 4) {
-            return null;
-        }
+        if (parts.length < 4) return null;
         final World world = Bukkit.getWorld(parts[0].trim());
-        if (world == null) {
-            return null;
-        }
+        if (world == null) return null;
         try {
             return new Location(world, Integer.parseInt(parts[1].trim()),
                     Integer.parseInt(parts[2].trim()), Integer.parseInt(parts[3].trim()));
@@ -258,6 +278,7 @@ public final class SeasonMonumentManager implements PersistentStore {
     }
 
     private static Material bannerOf(final FactionType faction) {
+        if (faction == null) return Material.WHITE_BANNER;
         return switch (faction) {
             case RED -> Material.RED_BANNER;
             case BLUE -> Material.LIGHT_BLUE_BANNER;
@@ -266,4 +287,6 @@ public final class SeasonMonumentManager implements PersistentStore {
         };
     }
 
+    private record Snapshot(int seasonIndex, UUID displayId, FactionType champion, boolean prologue,
+                            List<String> lines, Map<String, Long> grants) { }
 }

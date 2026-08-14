@@ -39,6 +39,7 @@ public final class ClassXpListener implements Listener {
     @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
         final LivingEntity entity = event.getEntity();
+        final java.util.UUID victimId = entity.getUniqueId();
         final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
                 hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(entity,
                         hu.taliann.icesmp.utils.MobKillUtil.RewardKind.PROGRESSION, configManager, afkManager);
@@ -74,7 +75,9 @@ public final class ClassXpListener implements Listener {
                 return;
             }
 
-            jobManager.addXpToJob(killer, totalXp);
+            jobManager.addXpToJobV2(killer, totalXp,
+                    "mob-kill:" + killer.getUniqueId() + ":" + victimId)
+                    .exceptionally(failure -> { plugin.getLogger().warning("Class XP commit failed: " + failure.getMessage()); return false; });
         });
     }
 }

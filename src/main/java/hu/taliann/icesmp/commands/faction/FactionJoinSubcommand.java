@@ -10,6 +10,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             new java.util.concurrent.ConcurrentHashMap<>();
 
     private final FactionManager factionManager;
+    private final JavaPlugin plugin;
     private final SinManager sinManager;
     private final CurrencyManager currencyManager;
     private final TerritoryManager territoryManager;
@@ -38,9 +40,11 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         this.specializationManager = specializationManager;
     }
 
-    public FactionJoinSubcommand(final FactionManager factionManager, final SinManager sinManager,
+    public FactionJoinSubcommand(final JavaPlugin plugin, final FactionManager factionManager,
+                                 final SinManager sinManager,
                                  final CurrencyManager currencyManager, final TerritoryManager territoryManager,
                                  final ConfigManager configManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.factionManager = factionManager;
         this.sinManager = sinManager;
         this.currencyManager = currencyManager;
@@ -169,6 +173,9 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                     "messages.faction-dark-pact-sealed",
                     "&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad."
             ));
+            if (specializationManager != null) {
+                specializationManager.reconcileDarkGates(player);
+            }
             teleportToFactionSpawn(player, FactionType.DARK);
             return true;
         }
@@ -182,10 +189,14 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         } else {
             factionManager.setFaction(uuid, factionType);
         }
-        if (leavingDark && specializationManager != null
-                && specializationManager.resetDarkGatedSpecialization(player)) {
-            player.sendMessage(messageManager.get("messages.dark-spec-lost",
-                    "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
+        if (leavingDark && specializationManager != null) {
+            specializationManager.reconcileDarkGates(player).whenComplete((result, failure) ->
+                    player.getScheduler().run(plugin, task -> {
+                        if (failure == null && result != null && result.committed()) {
+                            player.sendMessage(messageManager.get("messages.dark-spec-sealed",
+                                    "&5A sötét specializációd lezárult, de minden fejlődése megmaradt."));
+                        }
+                    }, null));
         }
         if (hasPriorChoice && !isSwitch) {
             factionManager.recordSeasonSwitch(player); // Semlegesből ingyen váltás is számít
@@ -231,4 +242,3 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         return List.of();
     }
 }
-

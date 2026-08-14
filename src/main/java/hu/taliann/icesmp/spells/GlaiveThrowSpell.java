@@ -1,7 +1,9 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.ArmorStand;
@@ -14,12 +16,14 @@ import org.bukkit.util.Vector;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * "Sarlóvetés" (id marad {@code throw_glaive}) — bumeráng: egy vezetett ARMOR_STAND-lövedék
  * (AngryChicken-mintás) kirepül, majd visszafordul a kaszterhez; oda- és visszaúton is 5.0
  * sebzést oszt minden útba eső élőlénynek, élőlényenként max 1x per irány. Ha a kaszter kilép,
- * a lövedék eltűnik (retired callback).
+ * világot vált vagy a lövedék lejár, a session determinisztikusan megszűnik.
  */
 public final class GlaiveThrowSpell extends BaseSpell {
 
@@ -37,6 +41,7 @@ public final class GlaiveThrowSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final UUID shooterId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final Vector outboundDirection = player.getEyeLocation().getDirection().normalize();
         final ArmorStand projectile = player.getWorld().spawn(
                 player.getEyeLocation().add(outboundDirection.clone().multiply(0.8D)), ArmorStand.class, as -> {
@@ -61,18 +66,27 @@ public final class GlaiveThrowSpell extends BaseSpell {
         final Phase[] phase = {Phase.OUTBOUND};
         final Set<UUID> hitOutbound = new HashSet<>();
         final Set<UUID> hitInbound = new HashSet<>();
+        final AtomicReference<Location> casterEye = new AtomicReference<>(player.getEyeLocation().clone());
+        final AtomicBoolean casterActive = new AtomicBoolean(true);
+        final AtomicBoolean flightActive = new AtomicBoolean(true);
 
-        // Folia: drive the projectile on its own entity scheduler.
-        projectile.getScheduler().runAtFixedRate(plugin, task -> {
-            if (!projectile.isValid() || projectile.isDead()) {
+        // The caster location is sampled only on the caster's own entity scheduler.
+        // The projectile region reads an immutable clone through the atomic reference.
+        player.getScheduler().runAtFixedRate(plugin, task -> {
+            if (!flightActive.get()) {
                 task.cancel();
                 return;
             }
+            casterEye.set(player.getEyeLocation().clone());
+        }, () -> casterActive.set(false), 1L, 1L);
 
-            final Player shooter = plugin.getServer().getPlayer(shooterId);
-            if (shooter == null || !shooter.isOnline()) {
-                // Retired: the caster logged out mid-flight.
-                projectile.remove();
+        // Folia: drive the projectile on its own entity scheduler.
+        projectile.getScheduler().runAtFixedRate(plugin, task -> {
+            if (!projectile.isValid() || projectile.isDead() || !casterActive.get()) {
+                flightActive.set(false);
+                if (projectile.isValid()) {
+                    projectile.remove();
+                }
                 task.cancel();
                 return;
             }
@@ -85,10 +99,17 @@ public final class GlaiveThrowSpell extends BaseSpell {
                     phase[0] = Phase.INBOUND;
                 }
             } else {
-                final Vector toShooter = shooter.getEyeLocation().toVector()
-                        .subtract(projectile.getLocation().toVector());
+                final Location returnTarget = casterEye.get();
+                if (returnTarget == null || returnTarget.getWorld() != projectile.getWorld()) {
+                    flightActive.set(false);
+                    projectile.remove();
+                    task.cancel();
+                    return;
+                }
+                final Vector toShooter = returnTarget.toVector().subtract(projectile.getLocation().toVector());
                 final double distanceToShooter = toShooter.length();
                 if (distanceToShooter <= arrivalRadius) {
+                    flightActive.set(false);
                     projectile.remove();
                     task.cancel();
                     return;
@@ -97,7 +118,8 @@ public final class GlaiveThrowSpell extends BaseSpell {
                 projectile.teleportAsync(projectile.getLocation().add(step));
             }
 
-            final boolean shooterInCurrentRegion = Bukkit.isOwnedByCurrentRegion(shooter);
+            final Player shooter = Bukkit.getPlayer(shooterId);
+            final boolean shooterInCurrentRegion = shooter != null && Bukkit.isOwnedByCurrentRegion(shooter);
             final Set<UUID> hitSet = phase[0] == Phase.OUTBOUND ? hitOutbound : hitInbound;
 
             for (final Entity nearby : projectile.getNearbyEntities(hitRadius, hitRadius, hitRadius)) {
@@ -108,15 +130,16 @@ public final class GlaiveThrowSpell extends BaseSpell {
                 }
 
                 if (shooterInCurrentRegion) {
-                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, damage, getId());
+                    SpellDamageUtil.damageBySpell(shooter, living, damage, getId(), modifiers);
                 } else {
-                    living.damage(damage);
+                    living.damage(SpellDamageUtil.scaledDamage(damage, modifiers));
                 }
                 hitSet.add(living.getUniqueId());
             }
-        }, null, 1L, 1L);
+        }, () -> flightActive.set(false), 1L, 1L);
 
         projectile.getScheduler().runDelayed(plugin, task -> {
+            flightActive.set(false);
             if (projectile.isValid()) {
                 projectile.remove();
             }

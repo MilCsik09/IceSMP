@@ -1,0 +1,15 @@
+package hu.taliann.icesmp.playerprofile.domain;
+import java.util.*;
+public final class ImmutableValues{
+ private ImmutableValues(){}
+ public static Map<String,Object> map(Map<String,?> source){if(source==null||source.isEmpty())return Map.of();if(source.size()>512)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,Object> out=new LinkedHashMap<>();for(var e:source.entrySet()){String k=id(e.getKey(),"key");if(out.putIfAbsent(k,value(e.getValue(),0))!=null)throw new IllegalArgumentException("duplicate key "+k);}return Collections.unmodifiableMap(out);}
+ public static List<String> strings(Collection<String> source,int max){if(source==null||source.isEmpty())return List.of();if(source.size()>max)throw new IllegalArgumentException("collection limit exceeded");ArrayList<String> out=new ArrayList<>();for(String s:source)out.add(id(s,"value"));return List.copyOf(out);}
+ public static Set<String> stringSet(Collection<String> source,int max){return Collections.unmodifiableSet(new LinkedHashSet<>(strings(source,max)));}
+ public static Map<String,String> strings(Map<String,String> source,int max){if(source==null||source.isEmpty())return Map.of();if(source.size()>max)throw new IllegalArgumentException("map limit exceeded");LinkedHashMap<String,String> out=new LinkedHashMap<>();source.forEach((k,v)->out.put(id(k,"key"),v==null?"":bounded(v.trim(),512)));return Collections.unmodifiableMap(out);}
+ public static String id(String v,String name){if(v==null||v.isBlank())throw new IllegalArgumentException(name+" cannot be blank");return bounded(v.trim(),128);}
+ public static String text(String v,int max){return bounded(v==null?"":v.trim(),max);}
+ public static long nonNegative(long v,String name){if(v<0)throw new IllegalArgumentException(name+" must be non-negative");return v;}
+ public static int nonNegative(int v,String name){if(v<0)throw new IllegalArgumentException(name+" must be non-negative");return v;}
+ private static String bounded(String v,int max){if(v.length()>max)throw new IllegalArgumentException("string limit exceeded");return v;}
+ private static Object value(Object v,int depth){if(depth>8)throw new IllegalArgumentException("extension nesting limit exceeded");if(v==null||v instanceof String||v instanceof Boolean||v instanceof Integer||v instanceof Long||v instanceof Double)return v;if(v instanceof Number n)return n.longValue();if(v instanceof Map<?,?> m){LinkedHashMap<String,Object> out=new LinkedHashMap<>();for(var e:m.entrySet())out.put(id(String.valueOf(e.getKey()),"key"),value(e.getValue(),depth+1));return Collections.unmodifiableMap(out);}if(v instanceof Collection<?> c){if(c.size()>512)throw new IllegalArgumentException("collection limit exceeded");ArrayList<Object> out=new ArrayList<>();for(Object o:c)out.add(value(o,depth+1));return List.copyOf(out);}throw new IllegalArgumentException("unsupported structured value type: "+v.getClass().getName());}
+}

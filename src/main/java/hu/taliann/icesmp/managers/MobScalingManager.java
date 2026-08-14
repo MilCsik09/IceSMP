@@ -105,9 +105,9 @@ public final class MobScalingManager {
         }
 
         if (enabled) {
-            plugin.getLogger().info("Mob scaling enabled: 1 level per " + blocksPerLevel + " blocks, max level " + maxLevel + ".");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Mob scaling enabled: 1 level per " + blocksPerLevel + " blocks, max level " + maxLevel + ".");
         } else {
-            plugin.getLogger().info("Mob scaling is disabled in config.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Mob scaling is disabled in config.");
         }
     }
 

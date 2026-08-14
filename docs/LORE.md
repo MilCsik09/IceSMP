@@ -321,6 +321,18 @@ a szóhoz, a Királynő nem jutalmazza, aki a saját szolgáit mészárolja. A K
 lények lelkét arathatja; s ugyanígy a holtidéző sem húzhat szilánkot a holtból, mert az élőhalottban
 nincs lélek — csak a Királynő két mondata visszhangzik benne.
 
+**A kazamaták és őrzőik.** A világ gyökerei közt két letűnt kor romjai érnek össze: legalul a
+Mélység Népének elhagyott tárnái, fölöttük a Káoszkor betemetett kriptái — a nép mindkettőt csak
+**kazamatának** hívja. E mélységekben hever a legtöbb Emlékszilánk, s ott porosodnak a letűnt
+mesterek kincsei; de a mélység nem adja ingyen, amit őriz. A tárnák legalján, ahol a törpök utolsó
+üzenetüket a falba vésték, valami máig **járja az elhagyott folyosókat** — a kevés visszatért
+kutató csak úgy emlegeti: **A Mélység Őrzője**. Hogy a törpök hagyták-e hátra strázsának, vagy a
+csend maga öltött alakot, senki sem tudja. A kripták ura pedig a sírba szállt nemesség
+csontkamráin uralkodik: **A Csontkripta Ura**, akit a Királynő átka a saját sírboltja fölé
+rendelt — s aki elhullik, a kriptát akkor sem hagyja el sokáig: a Királynő szava újra és újra
+felrázza. A legmélyebb csontkamrák ajtaja zárva áll; a **Csontkripta Kulcsát** a vakmerő a holtak
+kezéből fejtheti ki.
+
 ## VIII. A Felsők Kora — A Világ Élő Rendje
 
 *A Káoszkor romjain a Felsők nem csupán harcolnak: építenek, tanulnak, kereskednek — és a világ
@@ -397,7 +409,10 @@ miféle kincse lapul bennük — a kulcsért fizetni kell, a kockázat a vevőé
 korszak egy fejezet a világ újjáépítésének könyvében: a birodalmak versengenek dicsőségben, hódításban
 és gazdagságban, s a korszak végén a krónikák ítélnek — a leghatalmasabb birodalom neve örökre bekerül
 a **Korszakok Könyvébe**, és jutalma legendás. Aztán a lap fordul, s minden verseny újrakezdődik: a
-Káoszkorban semmi sem végleges.
+Káoszkorban semmi sem végleges. Ám a lap nem fordul magától. A vének úgy tartják: a Könyv minden
+fejezetének végén **testet ölt a lezáruló korszak minden ki nem mondott haragja** — egy óriás,
+akit a krónikások csak így neveznek: **A Lapforduló Őre**. Amíg ő áll, a fejezet nem zárulhat
+le; a birodalmak utolsó közös próbája mindig az ő ledöntése.
 
 **Az Oltárok és az Ereklyék Törvénye.** A világban kevés valódi **Ereklye** maradt — a Fa gyermekeinek
 korából való, egyetlen példányban létező hatalmak. Az Ereklye nem tűr osztozást: egyszerre csak egy
@@ -521,6 +536,131 @@ tudja, hány hever még belőlük a romok mélyén, s hány születik újjá a F
 | Boszorkánymester | Kárhozat Lámpása |
 | Démonvadász | Hasadék Szeme |
 | Sárkányidéző | Sárkányvér-fiola |
+
+## Függelék — Az Ismert Ereklyék
+
+*Az Ereklyék törvényét a VIII. fejezet mondja ki: egy-példányos hatalmak a Fa gyermekeinek
+korából, amelyek nem tűrnek osztozást. A krónikások ez idáig hét Ereklyét jegyeztek fel —
+ki tudja, hány szunnyad még felfedezetlenül a világ gyökerei közt.*
+
+- **Mételytépő** (harci fejsze) — a Mélység Népének ítélet-mágiával vert remeke; lesújt a
+  bűnösökre, s igazságot tesz ott, ahol a Káoszkor rendje rég szertefoszlott. *(Lásd: A Mélység
+  Népének hagyatéka.)*
+- **Eleftheria Könnye** — megkövült, éjfekete csepp; a Néma Királynő első suttogása hozta létre,
+  magába zárva a Fa kínjait és a magányt. *(Lásd: A Káoszkor hagyatéka.)*
+- **Főnix-szárny** — Perinfernicitas lángoló ereklyéje, Soleil főnixeinek elhullott tollából
+  szőve. Viselőjét nem égeti tűz, s ha az égből zuhan alá, zuhanása lángviharban végződik —
+  ahogy a főnix sem hal meg, csak fellobban.
+- **Zúzmara-szárny** — Cryghaliris jeges ereklyéje, Kallan jégsárkányainak leheletével átitatva.
+  Aki szárnyra kap vele, körül fagyott csend támad: a levegő megdermed, s vele minden, ami él.
+- **Vándorszél** — Ryanora szabad szele, Arkynn békés örökségének fuvallata. Felszálláskor
+  széllökés repíti gazdáját, s a föld sosem üti meg azt, akit e szél hordoz — a Menedék még a
+  zuhanónak is puha kezet nyújt.
+- **Csontszárny** — a Káoszkor csontból szőtt szárnya, a Néma Királynő élőhalottainak
+  maradványaiból. Éjjel a viselője maga is árnyékká válik — a holtak nem kérdezik, ki repül
+  felettük.
+- **Sárkánytojás-töredék** — egy sosem kelt sárkány álma, kőbe zárva. A Sárkányidéző kezében az
+  Eszencia medre kitágul; bárki másnak csak hideg kő, amely álmában néha megrezzen.
+
+## Függelék — A Források Iskolái
+
+*A VI. fejezet mondja ki: a forrás végleges, de a forráson belül minden Felső hivatást választ —
+a maga áramlatának egy-egy régi, mesteri iskoláját. A krónikások ez idáig e harmincöt iskolát
+jegyezték fel. Öt közülük — a lajstromban †-tel jelölve — tiltott iskola: a birodalmak akadémiái
+megtagadták őket, s tudásuk ma már csak a Kitaszítottak útján szerezhető meg.*
+
+**A Varázsló iskolái** *(Asterlayna szőttese)*
+- **Elementalista** — a csillag-szőttes nyers elemi szálait fonja tűzzé, faggyá és villámmá.
+- **Nekromanta†** — Eleftheria mérgével itatja át az arkánumot: a holt lelket szólítja, ahogy
+  egykor a novícius papnő tette a Hasadás napján.
+
+**A Harcos iskolái** *(Kallan hadi öröksége)*
+- **Berserker** — a Sárkánykirály harsány haragját engedi szabadjára: minél mélyebb a seb, annál
+  vadabb a csapás.
+- **Védelmező** — a régi királyságok pajzsfalának örököse; ahol ő áll, ott a sor nem szakad át.
+
+**Az Íjász iskolái** *(Soleil vadász-fegyelme)*
+- **Mesterlövész** — a sivatagi szél pontossága; egyetlen nyíl, egyetlen lélegzet, egyetlen halál.
+- **Vadmester** — a lángmadár-lovasok ősi kötése: a vadon fenevadja a vadász oldalán harcol.
+
+**Az Orgyilkos iskolái** *(az Első Csend homálya)*
+- **Méregkeverő** — a Botera-negyed sikátorainak tudománya: a penge csak hírnök, a méreg az üzenet.
+- **Fantom** — a hallgatás mestere, aki ott sincs, ahol látják; a Csend homályából csap le.
+- **Pestishozó†** — a Királynő dögvészét hordozza tégelyben; amerre jár, a kór jár utána.
+
+**A Druida iskolái** *(a megrepedt Fa gyökerei)*
+- **Vadőr** — a gyökerek alakváltó haragja: karom, agyar és vihar a Fa védelmében.
+- **Holdjós** — Asterlayna emlékét olvassa a csillagokban; a hold fénye a fegyvere.
+- **Védelmező** — vaskérgű őrző, akit a gyökerek maguk öveznek pajzzsal.
+- **Helyreállító** — a gyógyuló Fa lehelete: ahol ő jár, a seb bezárul, a föld kizöldül.
+
+**A Paplovag iskolái** *(Asterlayna fénye és Soleil tüze)*
+- **Szentlélek** — a hulló csillagfény gyógyító melege a pajzs mögött.
+- **Megtorló** — Soleil tisztító lángja karddá kovácsolva; a bűnre ítélet a válasz.
+- **Védő** — a Fa oltalmának élő fala; aki mögé áll, azt a sötét el nem éri.
+
+**A Halállovag iskolái** *(Eleftheria mérge)*
+- **Vérlovag** — a vérmágia lovagja: a saját életéből fizet, s az ellenségéből vesz vissza.
+- **Fagylovag** — a Holtak Országának hidege a pengén; a fagy nem kegyelmez.
+- **Szentségtelen†** — a Királynő nekromanta-mestersége: parancsol a holtnak, s a hold alatt
+  ghúl jár a nyomában.
+
+**A Sámán iskolái** *(Kallan vihara és a Fa elemi ereje)*
+- **Elemi** — az égzengés totemekbe kötve: villám, láng és földindulás.
+- **Erősítő** — a vihar erejét a fegyverbe és a bajtársak karjába vezeti.
+- **Hullámhívó** — a Bokic vizeinek szava: a hullám gyógyít, sodor és elnyel.
+
+**A Szerzetes iskolái** *(Aetrinita életereje, a Csi)*
+- **Szélfutó** — a Csi mint mozgás: gyorsabb a gondolatnál, s ökle a vihar maga.
+- **Sörfőző** — a Csi mint derű: kifordul az ütés elől, s kortyából erő fakad.
+- **Ködszövő** — a Csi mint gyógyítás: a köd, amely a sebet bezárja.
+
+**A Pap iskolái** *(Asterlayna hulló csillagfénye)*
+- **Fegyelem** — a fény mint pajzs: megelőzi a sebet, mielőtt az megszületne.
+- **Csontpap†** — a fény árnyoldala, a birodalmak által megtagadott halotti liturgia: a
+  csontnak prédikál, s a csont hallgat rá.
+- **Árnyék** — a csillagfény és a Csend határán jár: az elme a csatatere.
+
+**A Boszorkánymester iskolái** *(a Kárhozat Kapujának káosza)*
+- **Átok** — a kaput átjárt rontás lassú tudománya: a szenvedés nem esemény, hanem folyamat.
+- **Pusztítás** — a nyers káosz tűzzé formálva: ami a kapun átfér, az éget.
+- **Demonológus†** — paktumok mestere, aki a Kárhozat népét szolgálatra bírja — s az ár sosem
+  csak arany.
+
+**A Démonvadász iskolái** *(a káosz a démonok ellen fordítva)*
+- **Tombolás** — a felemésztett démon-erő mint penge: gyors, kettős és telhetetlen.
+- **Bosszú** — a felemésztett démon-erő mint páncél: ami őt égeti, azt állja a legjobban.
+
+**A Sárkányidéző iskolái** *(a sárkány-eszencia)*
+- **Perzselés** — Soleil lángjának és a sárkánytűznek ötvözete: a lehelet, amely hadsorokat nyit.
+- **Megőrzés** — a jégsárkányok vérének hűvös oldala: az eszencia, amely óv és összeforraszt.
+
+## Függelék — A Káoszkor Nagyjai
+
+*Amikor a Néma Királynő álma mélyebbre fordul, a Káoszkor legnagyobb szörnyei kelnek útra a
+világban. A krónikások tíz Nagyot jegyeztek fel eddig; ledöntésük a birodalmak közös dicsősége,
+s aki elsőként ejti el őket, azt a lajstromok külön említik.*
+
+- **A Gyűrűk Őre** — gyűrűbe zárt harag, amely megelőzi a rengést; a vének szerint a Lapforduló
+  Őrének kisebb visszhangja, amely nem várja meg a fejezet végét.
+- **Lávakohó Behemót** — a Vérszavanna kohóinak szökött szelleme; lépte nyomán megolvad a homok,
+  s a levegő maga is perzsel körülötte.
+- **Fagyott Trón Királya** — bitorló a Jégmezők jegén: Kallan öröksége nélkül való, de annak
+  minden hidegével; ahol megáll, ott a föld trónussá fagy alatta.
+- **Csontkirály** — a sírba szállt nemesség csontjaiból emelt korona; a Királynő átka táplálja,
+  s hívó szavára a holtak sorfalat állnak.
+- **Mélységi Rém** — a törp-tárnák mélyéről felszivárgott iszonyat; a sötétje nem árnyék, hanem
+  a csend maga, amely egyszer visszanézett.
+- **Méreg Anyakirálynő** — a Káoszkor fészekrakója; ivadékai ott várnak a világ minden
+  repedésében, s a marása lassabban öl, mint ahogy felejt.
+- **Vihar Hírnöke** — Kallan viharának elszabadult, gazdátlan visszhangja; égzengés, amely már
+  nem hallgat senkire.
+- **Dögvész Titán** — Eleftheria mérgének járványhordozója; amerre elvonul, a föld is beteg
+  marad utána.
+- **Vas Őrszem** — a Vasművek Akadémiájának őrszeme, amely túlélte az alkotóit — s már nem
+  ismer jelszót, csak betolakodót.
+- **Pokoli Hadúr** — a Kárhozat Kapuján átszivárgott hadúr; a Senkiföldje az ő portyaterülete,
+  s hadizsákmánya minden, ami él.
 
 ---
 

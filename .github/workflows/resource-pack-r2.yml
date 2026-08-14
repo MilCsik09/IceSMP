@@ -1,6 +1,9 @@
 name: Publish resource pack to R2
 run-name: >-
-  Resource pack ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event_name == 'pull_request' && 'validate-only' || 'publish') }}
+  Resource pack ${{ github.event_name == 'workflow_dispatch' && inputs.mode
+  || (github.event_name == 'pull_request' && 'validate-only')
+  || (github.ref == 'refs/heads/staging' && 'r2-preflight')
+  || 'publish' }}
   @ ${{ github.ref_name }}
 
 on:
@@ -26,23 +29,30 @@ on:
       - "!resource-pack/README.md"
       - "scripts/resource_pack.py"
       - "scripts/test_resource_pack.py"
+      - "scripts/generate_icesmp_hud_assets.py"
+      - "gradle/run-folia.init.gradle"
+      - "build.gradle.kts"
       - ".github/workflows/resource-pack-r2.yml"
   push:
     branches:
       - master
+      - staging
     paths:
       - "resource-pack/**"
       - "!resource-pack/README.md"
       - "scripts/resource_pack.py"
       - "scripts/test_resource_pack.py"
+      - "scripts/generate_icesmp_hud_assets.py"
+      - "gradle/run-folia.init.gradle"
+      - "build.gradle.kts"
       - ".github/workflows/resource-pack-r2.yml"
 
 permissions:
   contents: write
 
 concurrency:
-  group: resource-pack-r2-${{ github.ref }}
-  cancel-in-progress: false
+  group: resource-pack-r2-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   publish:
@@ -51,7 +61,9 @@ jobs:
     env:
       EXECUTION_MODE: >-
         ${{ github.event_name == 'workflow_dispatch' && inputs.mode
-        || (github.event_name == 'pull_request' && 'validate-only' || 'publish') }}
+        || (github.event_name == 'pull_request' && 'validate-only')
+        || (github.ref == 'refs/heads/staging' && 'r2-preflight')
+        || 'publish' }}
       PACK_DIR: resource-pack
       PACK_OUTPUT: build/resource-pack/icesmp.zip
       METADATA_FILE: src/main/resources/resource-pack.properties
@@ -59,6 +71,9 @@ jobs:
         ${{ github.event_name == 'workflow_dispatch' && inputs.public_base_url
         || 'https://assets.icesmp.taliann.dev' }}
       OBJECT_PREFIX: resource-packs
+      EXTERNAL_BASE_URL: https://download.mc-packs.net/pack/4900b0a9bed8db710143393916db3687e01def54.zip
+      EXTERNAL_BASE_SHA1: 4900b0a9bed8db710143393916db3687e01def54
+      EXTERNAL_BASE_PATH: build/resource-pack/external-base.zip
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -71,7 +86,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.RESOURCE_PACK_PUSH_TOKEN || github.token }}
 
       - name: Describe execution
@@ -98,18 +113,51 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install deterministic HUD asset tooling
+        run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
+
       - name: Test pack tooling
         run: python3 scripts/test_resource_pack.py
 
-      - name: Build deterministic ZIP and SHA-1
-        id: pack
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate first-party IceSMP HUD
+        run: ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest auditIceSmpHudAssets --no-daemon --console=plain
+
+      - name: Fetch and verify immutable external base pack
+        shell: bash
         run: |
-          python3 scripts/resource_pack.py build \
-            --source "$PACK_DIR" \
-            --output "$PACK_OUTPUT" \
-            --public-base-url "$PUBLIC_BASE_URL" \
-            --object-prefix "$OBJECT_PREFIX" \
-            --github-output "$GITHUB_OUTPUT"
+          set -euo pipefail
+          mkdir -p "$(dirname "$EXTERNAL_BASE_PATH")"
+          curl --fail --silent --show-error --location --retry 5 \
+            "$EXTERNAL_BASE_URL" --output "$EXTERNAL_BASE_PATH"
+          echo "${EXTERNAL_BASE_SHA1}  ${EXTERNAL_BASE_PATH}" | sha1sum --check --strict
+
+      - name: Deterministically merge first-party HUD pack and stage SHA-1
+        id: pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew stageMergedResourcePackForR2 \
+            -PicesmpExternalPack="$EXTERNAL_BASE_PATH" \
+            --configuration-cache --no-daemon --console=plain
+          source build/resource-pack/merged.properties
+          FILE_NAME="icesmp-${sha1}.zip"
+          OBJECT_KEY="${OBJECT_PREFIX}/${FILE_NAME}"
+          {
+            echo "sha1=${sha1}"
+            echo "size=${size}"
+            echo "file_name=${FILE_NAME}"
+            echo "object_key=${OBJECT_KEY}"
+            echo "url=${PUBLIC_BASE_URL%/}/${OBJECT_KEY}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Validate public custom-domain DNS
         if: env.EXECUTION_MODE == 'publish'
@@ -237,7 +285,9 @@ jobs:
             --only-show-errors
 
       - name: Update bundled plugin fallback metadata
-        if: env.EXECUTION_MODE == 'publish'
+        if: >-
+          (env.EXECUTION_MODE == 'publish' && github.ref == 'refs/heads/master')
+          || (env.EXECUTION_MODE == 'r2-preflight' && github.ref == 'refs/heads/staging')
         env:
           PACK_URL: ${{ steps.pack.outputs.url }}
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
@@ -248,7 +298,9 @@ jobs:
             --sha1 "$PACK_SHA1"
 
       - name: Commit generated fallback metadata
-        if: env.EXECUTION_MODE == 'publish' && github.ref == 'refs/heads/master'
+        if: >-
+          (env.EXECUTION_MODE == 'publish' && github.ref == 'refs/heads/master')
+          || (env.EXECUTION_MODE == 'r2-preflight' && github.ref == 'refs/heads/staging')
         env:
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
         shell: bash
@@ -264,9 +316,9 @@ jobs:
           git add "$METADATA_FILE"
           git commit -m "Update resource pack to ${PACK_SHA1}"
 
-          git fetch origin master
-          git rebase origin/master
-          git push origin HEAD:master
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
 
       - name: Write result summary
         if: always()

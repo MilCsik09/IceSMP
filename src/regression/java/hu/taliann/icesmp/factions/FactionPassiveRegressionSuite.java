@@ -31,7 +31,6 @@ public final class FactionPassiveRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         membershipLifecycleFailsClosed();
-        membershipPersistenceRollbackIsAtomic();
         targetAdapterClearsExistingTargets();
         signatureFoodRequiresLiveMembership();
         redProvenanceAndCombustDurationRemainIndependent();
@@ -86,7 +85,7 @@ public final class FactionPassiveRegressionSuite {
                         && manager.contains("isEligibleForFactionBenefits(final UUID uuid)")
                         && manager.contains("isMember(final UUID uuid, final FactionType faction)"),
                 "central explicit-membership API is incomplete");
-        check(manager.contains("_membership-history")
+        check(manager.contains("PlayerProfileFactionStore")
                         && manager.contains("hasEverChosenFaction")
                         && manager.contains("getLastChosenFaction"),
                 "durable choice history can be bypassed by deleting the current assignment");
@@ -116,42 +115,6 @@ public final class FactionPassiveRegressionSuite {
                         && !compactFood.contains(".orElse(FactionType.NEUTRAL)"),
                 "food duty/signature food regained an implicit NEUTRAL assignment");
     }
-
-    private static void membershipPersistenceRollbackIsAtomic() {
-        final UUID playerId = UUID.randomUUID();
-        final Map<UUID, FactionType> assignments = new HashMap<>();
-        final Map<UUID, FactionType> history = new HashMap<>();
-        assignments.put(playerId, FactionType.RED);
-        history.put(playerId, FactionType.RED);
-
-        final FactionMembershipMutation.Snapshot beforeSwitch =
-                FactionMembershipMutation.capture(assignments, history, playerId);
-        FactionMembershipMutation.assign(
-                assignments, history, playerId, FactionType.BLUE);
-        FactionMembershipMutation.restore(assignments, history, beforeSwitch);
-        check(assignments.get(playerId) == FactionType.RED
-                        && history.get(playerId) == FactionType.RED,
-                "failed membership save did not roll back assignment and history");
-
-        final FactionMembershipMutation.Snapshot beforeReset =
-                FactionMembershipMutation.capture(assignments, history, playerId);
-        FactionMembershipMutation.removeAssignment(assignments, playerId);
-        FactionMembershipMutation.restore(assignments, history, beforeReset);
-        check(assignments.get(playerId) == FactionType.RED
-                        && history.get(playerId) == FactionType.RED,
-                "failed admin reset did not restore durable citizenship");
-
-        try {
-            FactionMembershipMutation.assign(
-                    assignments, history, playerId, FactionType.DARK);
-            throw new IllegalStateException("simulated persistence failure");
-        } catch (final IllegalStateException expected) {
-            FactionMembershipMutation.restore(assignments, history, beforeSwitch);
-        }
-        check(assignments.get(playerId) == FactionType.RED,
-                "simulated save failure left the candidate assignment published");
-    }
-
 
     private static void targetAdapterClearsExistingTargets() {
         final FactionPassiveAdapterPolicy.TargetMutation allow =
@@ -644,17 +607,18 @@ public final class FactionPassiveRegressionSuite {
 
         final String membershipManager = read(
                 "src/main/java/hu/taliann/icesmp/managers/FactionManager.java");
-        check(membershipManager.contains("writeStateLocked(candidate);")
-                        && membershipManager.contains("liveState = candidate;")
-                        && membershipManager.indexOf("writeStateLocked(candidate);")
-                        < membershipManager.indexOf("liveState = candidate;")
-                        && membershipManager.indexOf("liveState = candidate;")
+        check(membershipManager.contains("factionStore.assign(playerId, target)")
+                        && membershipManager.contains("projection.put(playerId, committed);")
+                        && membershipManager.indexOf("factionStore.assign(playerId, target)")
+                        < membershipManager.indexOf("projection.put(playerId, committed);")
+                        && membershipManager.indexOf("projection.put(playerId, committed);")
                         < membershipManager.indexOf("publishMembershipChange(playerId"),
                 "membership state or hook can publish before its durable save");
-        check(membershipManager.contains("FactionMembershipMutation.capture(")
-                        && membershipManager.contains("DurableTransactionProtocol.execute(")
-                        && membershipManager.contains("currencyManager.rollbackDurably(wallet)")
-                        && membershipManager.contains("recoverPendingSwitch()"),
+        final String factionStore = read(
+                "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java");
+        check(membershipManager.contains("factionStore.switchDurably(")
+                        && membershipManager.contains("if (!committed) return false;")
+                        && factionStore.contains("PlayerProfileAuthority.current().transact(playerId"),
                 "paid membership switches bypass the durable WAL/rollback/recovery protocol");
 
         final String foodListener = read(

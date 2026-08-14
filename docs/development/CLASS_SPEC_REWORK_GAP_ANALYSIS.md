@@ -1,0 +1,188 @@
+# Class/spec rework gap analysis — Profile v2 foundation and gameplay slices
+
+## Foundation already closed
+
+- greenfield Profile v2 as the sole class/spec authority;
+- owner-bound immutable aggregate and deterministic codec;
+- strict YAML envelope, CAS, atomic replacement, quarantine and explicit recovery;
+- concurrent first-profile initialization and session-generation fencing;
+- complete DARK gate-set seal/unseal persistence;
+- explicit spell provenance;
+- durable class XP/level, pet roster and Soulforge receipts;
+- respec WAL/wallet/profile recovery protocol;
+- bounded lifecycle shutdown and Folia scheduler boundaries.
+
+## Gameplay closed by the Harcos vertical slice
+
+- the first complete class gameplay implementation is `warrior` with `berserker` and `guardian` only;
+- Düh remains the existing class-resource/cast-cost pool; Csatatempó is a separate transient class decision layer with `Rendezett`, `Heves` and `Túlcsorduló` tiers;
+- Berserker has concrete Vérőrület/Kimerülés build, safe-dump, overdrive/aftermath and explicit PvE/PvP burst clamps;
+- Kimerülés integration preserves fractional elapsed time under frequent HUD/combat polling and splits overdrive-end timing correctly;
+- `defiant` is durability-first critical recovery: persistent cooldown reservation commits before any region-thread recovery side effect, so a crash before commit cannot grant a free survival effect;
+- Guardian has concrete Őrség plus one Eskütárs, with shield/intercept protection and no recursive damage-redirection path;
+- level 28 unlocks the existing second Profile v2 slot for the completed gameplay-v2 classes (`GameplayV2ClassPolicy` allowlist); SECOND-slot learning and loadout switching for unreworked classes fail closed at the gateway;
+- Warrior slot switching is combat-gated, enemy-proximity-gated, preserves common Düh/cooldowns and clears specialization-local transient state;
+- level 30/40/50 Warrior doctrines are durable and slot-local; a committed tier cannot silently overwrite another choice;
+- level 50 starts specialization-local mastery and exposes the capstone trial state; capstone completion remains Profile v2 state;
+- the Sárkánykirály Kürtje remains the Warrior's required personal Lélekkapocs/spellbook: owner/class-bound physical mirror, Profile-v2-backed permissions, existing right-click / sneak-right-click / sneak-scroll UX and a maximum seven-spell active combat set;
+- duplicate/foreign physical artifacts do not create spell, resource or cooldown authority; the personal artifact cannot be moved into external inventories and death retention uses the same-event `itemsToKeep` path instead of asynchronous escrow hand-back;
+- Harcos transient state has explicit death/quit/kick/disable/spec-switch cleanup;
+- `WarriorGameplayRegressionSuite` and `WarriorProfileRegressionSuite` are part of Gradle `check` and the CI marker contract; blocker regressions include 50 ms polling plus source contracts for Defiant ordering, Warrior-only second slot and Soulbond transfer/death handling.
+
+## Gameplay closed by the Sárkányidéző vertical slice
+
+- the second complete class gameplay implementation is `evoker` with `devastation` (Perzselés) and `preservation` (Megőrzés);
+- the class core is Felerősítés: charge-and-release on four concrete spells (`fire_breath`, `eternity_surge`, `dream_breath`, `spiritbloom`) with hold-rank I/II/III, damage interruption and a fizzle window — no generic charged-spell framework;
+- Perzselés plays a single Vörös–Kék Eszencia alternation counter; the armed burst empowers exactly one cast through the shared, doubly-capped power pipeline, with `iker_aram`/`tulhevites`/`orok_izzas`/`kettos_szikra` doctrine variants;
+- Megőrzés plays Visszhang (single-use prepared-heal echo on the caster and one Fiola-marked ally, delivered on the target entity scheduler) and Időlenyomat (heal-only health imprint, single-use, window-bounded, cap-bounded; no inventory/position/quest/item/currency rollback by contract and by regression);
+- the Sárkányvér-fiola reuses the one shared Soulbond lifecycle (owner/class binding, container/death/foreign-copy/duplicate handling) with Evoker presentation and the Megőrzés marking interaction;
+- second-slot unlock, loadout switching, doctrine choice, mastery contribution and capstone reconciliation were generalized behind the explicit `GameplayV2ClassPolicy` allowlist instead of per-class copies; every unreworked class remains fail-closed;
+- Evoker mastery XP (empowered release, resonance burst, landed echo, imprint restore) is combat-gated to keep dummy/AFK farming worthless;
+- Evoker transient state has explicit death/quit/kick/disable/spec-switch cleanup, including the rule that a held charge never survives a spec switch;
+- `EvokerGameplayRegressionSuite` and `EvokerProfileRegressionSuite` are part of Gradle `check` and the CI marker contract, covering charge ranks/fizzle/interrupt, essence alternation/burst/retention, echo single-use, imprint heal-only bounds, allowlist gateway behavior and slot isolation;
+- a pre-existing staging regression was fixed en route: the `check` dependsOn rewrap had broken the `AdvancedConfigMenuRegressionSuite` source contract, so `./gradlew check` failed on the base branch; the list was re-wrapped to restore the contract.
+
+## Gameplay closed by the Íjász vertical slice
+
+- the third complete class gameplay implementation is `archer` with `sharpshooter` (Mesterlövész) and `beast_master` (Vadmester);
+- the class core is Szélolvasás: a disciplined (full-draw, paced, real-distance) hit arms one single-use read that empowers the next disciplined shot; spam breaks it, static camping alone earns nothing, and distance is measured from the recorded shot origin without cross-region entity access;
+- Mesterlövész plays Préda-jel + Pontossági lánc: consecutive full-draw hits on one prey build a bounded chain; the weak-point finisher consumes it as an event-based damage bonus under explicit `classes.archer.pve/pvp-max-bonus-percent` clamps, with `nyugodt_kez`/`gyors_felhuzas`/`eles_szem`/`mely_loves`/`sorozat`/`egy_loves_egy_elet` doctrine variants;
+- Vadmester plays Kötelék on top of the existing companion authority: coordination with the active companion's combat target builds the bond, `primal_bond`/`king_of_beasts` spend it, and pet death collapses it unless `orok_kotelek` retains part; the companion szerep/viselkedés dimension is the existing stance system;
+- the non-DARK companion lifecycle is proven on the existing PetManager/`CompanionProfile` machinery: the `beast_master.stable` roster is durable and slot-local, live pet entity UUIDs remain runtime-only, capture into a full stable (`pets.stable.maximum`, default 3) fails closed, and the new `/pet release` frees a slot with a durable-first companion REMOVE;
+- Archer mastery XP (weak point, coordination, bond spend, capstone) is combat-gated;
+- Archer transient state has explicit death/quit/kick/disable/spec-switch cleanup; the durable stable deliberately survives a loadout switch while the transient bond clears;
+- `ArcherGameplayRegressionSuite` and `ArcherProfileRegressionSuite` are part of Gradle `check` and the CI marker contract, covering read pacing/single-use/distance anchoring, chain prey/window/retention, bond build/spend/collapse, allowlist gateway behavior, roster survival across switches and slot isolation.
+
+## Gameplay closed by the Sámán vertical slice
+
+- the fourth complete class gameplay implementation is `shaman` with `elemental` (Elemi), `enhancement` (Erősítő) and `tidal` (Hullámhívó) — the first three-spec slice;
+- the class core is the Totemkerék on the existing TotemManager: fő/kísérő categories, at most one live totem per category per shaman, same-category placement replaces (cross-region-safe removal on the old totem's scheduler), and the pair is exposed as a runtime projection;
+- Elemi plays Elemi Rezonancia: totem-element-matching casts charge one Overload; the armed Overload empowers the next resonant cast through the doubly-capped shared power pipeline, with `mely_gyokerek`/`eleven_szikra`/`vihar_hirnoke`/`tulcsordulas`/`orok_rezonancia`/`vihar_kegyeltje` doctrine variants;
+- Erősítő plays the Fegyveráldás rhythm: melee hits inside the rhythm window alternate the Vihar↔Föld side and earn bonus Maelstrom, spam earns base only; `stormstrike`/`crash_lightning` spend, the `doom_winds` capstone vents with doctrine retention;
+- Hullámhívó plays one signed tide where direct and chain heals prepare each other; the reached side empowers exactly one cast of the other family and the consume flows the tide back — no infinite heal feedback loop by construction;
+- a three-spec class still holds only the two Profile v2 loadouts; learning the third spec requires a respec of an occupied slot (regression-proven);
+- Shaman mastery XP (overload, Maelstrom spend/vent, tide consume) is combat-gated;
+- Shaman transient state has explicit death/quit/kick/disable/spec-switch cleanup, and the owner's Totemkerék projection clears with the player lifecycle while live totems expire on their own bounded timers;
+- `ShamanGameplayRegressionSuite` and `ShamanProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Szerzetes vertical slice
+
+- the fifth complete class gameplay implementation is `monk` with `windwalker` (Szélfutó), `brewmaster` (Sörfőző) and `mistweaver` (Ködszövő);
+- the class core is Áramlás: technique variety builds flow, repetition earns nothing and refreshes staleness — same-spell spam is never optimal by construction;
+- Szélfutó plays one explicit martial chain declared as plain config data (steps + finishers) with window, threshold and doctrine variants — no generic combo engine;
+- Sörfőző plays Stagger + Főzetöv: a bounded percent of incoming damage defers into a capped pool that drains via direct, half-heart-floored health steps (never a duplicated damage event, never lethal on its own); purifies clear fractions and quit/kick/spec-switch applies the remainder instantly — no consequence-free escape, and no durable combat ledger;
+- Ködszövő plays at most three Ködszál links (oldest replaced at capacity) whose single-pass ripple heals run on the linked ally's scheduler with use-time validity pruning — no generic link framework;
+- Monk mastery XP (finisher, purify, ripple) is combat-gated;
+- `MonkGameplayRegressionSuite` and `MonkProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Paplovag vertical slice
+
+- the sixth complete class gameplay implementation is `paladin` with `holy` (Szentlélek), `retribution` (Megtorló) and `protection` (Oltalmazó);
+- the class core is Meggyőződés és Eskü: an explicit session direction (`/spec esku`, defaulting to the active spec's role) whose in-role deeds build conviction; high conviction empowers in-role casts through the doubly-capped shared power pipeline;
+- Szentlélek plays one Fényjelző beacon: listed heals echo once as a bounded flat heal on the single beacon ally's scheduler — no raid-wide passive heal;
+- Megtorló plays the three Ítélet-jelek (Bűn/Dac/Kárhozat from three concrete spells) toward a single-use Verdict consumed by the listed finishers;
+- Oltalmazó plays Pajzstöltet → Megszentelt Föld: charge from defensive play, spent on self-resistance plus one bounded protective pass over nearby allies with per-ally scheduler hops — deliberately not a Warrior Guardian copy (no oath target, no reverse index);
+- Paladin mastery XP (beacon, Verdict, ground) is combat-gated;
+- `PaladinGameplayRegressionSuite` and `PaladinProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Démonvadász vertical slice
+
+- the seventh complete class gameplay implementation is `demon_hunter` with `havoc` (Tombolás) and `vengeance` (Bosszú);
+- the class core is Kárhozat-terhelés: demonic casts build load; the heated band empowers, the overloaded band empowers more but amplifies incoming damage — a readable, ventable (`consume_magic`), lazily decaying, fully player-controlled risk, never a random punish;
+- Tombolás plays Lélektöredék + Momentum: a bounded lightweight counter (no item/entity spam) collected by mobility casts into per-fragment heals and a charge-based Momentum window;
+- Bosszú plays Fájdalom + Sigilek: taken damage funds sigils and cleaves, with at most two concurrently armed Sigils (third rejected) and no zone framework;
+- the melee-catalyst compatibility list shrank to `death_knight` only — every completed class casts exclusively through its personal Lélekkapocs;
+- Demon Hunter mastery XP (collect, sigil, cleave, capstone) is combat-gated;
+- `DemonHunterGameplayRegressionSuite` and `DemonHunterProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Druida vertical slice
+
+- the eighth complete class gameplay implementation is `druid` with `feral` (Vadőr), `lunar` (Holdjós), `ironbark` (Védelmező) and `restoration` (Helyreállító) — the first four-specialization slice;
+- the secondary mechanic is Harmónia és Évszak: nature casts build Harmónia and a shapeshift on the **existing** form system releases it as that form's season (Tavasz/Nyár/Ősz/Tél); the separate primary resource remains Természeti Erő, and no new form engine was written;
+- Vadőr plays combo points plus the Szagnyom trail: staying on one prey pays, switching prey restarts the trail, and the finisher spends every point at once through the capped shared power pipeline;
+- Holdjós plays the Nap↔Hold balance into an Eclipse window and restarts the sweep afterwards, so the payoff is earned by swinging the balance rather than camping one school;
+- Védelmező plays self-only Kéregrétegek with a damage floor against chip stripping plus a Gyökérháló window that slows attackers on their own region thread — no ally binding and no target-bound reverse index, deliberately different from both earlier tank identities;
+- Helyreállító plays Mag → érés → Virágzás with bounded pure-counter seeds (no persistent world plant entities): a bloom without a ripe seed is rejected, so the heal stays preparation-based;
+- Druid mastery XP (season, finisher, Eclipse, bark, bloom) is combat-gated;
+- `DruidGameplayRegressionSuite` and `DruidProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Pap vertical slice
+
+- the ninth complete class gameplay implementation is `priest` with `discipline` (Fegyelem), `bone_priest` (Csontpap, DARK) and `shadow` (Árnyék);
+- the class core is the Litánia: a chosen prayer (`/spec ima`) whose matching deeds count verses, and the full count recites it once for a blessing plus a short empowering window before restarting — a discrete, re-earned payoff instead of a decaying meter;
+- Fegyelem converts dealt damage into healing and a shield web behind an explicit non-reentrant guard released in a `finally` block, and its source list carries no pure heal, so Engesztelés cannot heal off its own healing;
+- Csontpap rides the **existing** DARK seal/gate system with no second gating mechanism, turning controlled, floor-guarded sacrifice into Velő and bounded Osszárium charges;
+- Árnyék pays its Küszöb risk as a floored, refusable cast toll with a deliberate vent — deterministic throughout, with no random tick and no uncontrollable self-kill;
+- Priest mastery XP (recitation, conversion, Osszárium, over-threshold cast) is combat-gated;
+- `PriestGameplayRegressionSuite` and `PriestProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Halállovag vertical slice
+
+- the tenth complete class gameplay implementation is `death_knight` with `blood` (Vérlovag), `frost` (Fagylovag) and `unholy` (Szentségtelen, DARK);
+- the class core is the Rúnakör: Vér and Fagy recharge lazily, the Halál rune only ever comes from a deliberate transmutation, and every declared spender is refused without its rune;
+- Vérlovag keeps a **fixed eight-entry** recent-damage ring — never an unbounded damage log — and cashes it whole as either a heal or a shield, decided by the chosen spell;
+- Fagylovag stacks bounded Fagyjelek with a genuine partial consumer and a full Zúzás consumer;
+- Szentségtelen rides the existing DARK seal/gate system and the existing minion/summon path under the `unholy.ghoul` namespace, bursting bounded Dögvész marks into bounded ghoul mutation stages — never touching the Nekromanta Soulforge;
+- with this slice the melee-catalyst compatibility list is empty: every class now casts through its personal Lélekkapocs;
+- Death Knight mastery XP (memory, Zúzás, burst) is combat-gated;
+- `DeathKnightGameplayRegressionSuite` and `DeathKnightProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Orgyilkos vertical slice
+
+- the eleventh complete class gameplay implementation is `assassin` with `poisoner` (Méregkeverő), `phantom` (Fantom) and `plaguebringer` (Pestishozó, DARK);
+- the class core is Lehetőség: four distinct openings (position, dodge, interrupt, unseen approach) arm one finisher window that is spent whole and remembers which opening paid for it;
+- Méregkeverő plays exactly three toxin slots with per-slot doses and a whole-kit catalyst — a concrete trio, not a socket framework;
+- Fantom's stealth is strictly finite by three independent limits (time box, detection threshold, strike break) and each Árnyéknyom carries exactly one Visszhang;
+- Pestishozó enforces every mandatory plague cap: hard entity cap, **no mob-to-mob hand-on at all**, expiry plus death/teardown cleanup, blood-moon precedence, minion/world-boss immunity and the guard-region plus type denylist for the boss/dungeon policy;
+- Assassin mastery XP (finisher, catalyse, echo, strain) is combat-gated;
+- `AssassinGameplayRegressionSuite` and `AssassinProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Boszorkánymester vertical slice
+
+- the twelfth complete class gameplay implementation is `warlock` with `affliction` (Átok), `destruction` (Pusztítás) and `demonologist` (Demonológus, DARK);
+- the class core is Paktum és Lélekadósság: pacts buy power and book the debt that paid for them; the debt never decays, only listed repayment work reduces it, the ceiling refuses further pacts and a heavy debt makes incoming damage bite harder;
+- the debt is a **combat meter only** — no wallet, balance, currency or economic manager is touched anywhere, and the suite asserts the absence of that coupling;
+- Átok keeps three curse pages with their own expiries plus one re-tieable Lélekfonal naming exactly one victim;
+- Pusztítás banks embers for a whole-bank burst, and only a maximum-ember burst buys the deterministic Túlhevülés lockout — the risk is entirely opt-in;
+- Demonológus keeps a bounded trio of demon kinds under the existing `demonologist.roster` namespace and leaves the actual summoning to the existing minion/summon spells;
+- Warlock mastery XP (repay, drain, burst, call) is combat-gated;
+- `WarlockGameplayRegressionSuite` and `WarlockProfileRegressionSuite` are part of Gradle `check` and the CI marker contract.
+
+## Gameplay closed by the Varázsló vertical slice
+
+- the thirteenth and final class gameplay implementation is `wizard` with `elementalist` (Elementalista) and `necromancer` (Nekromanta, DARK);
+- the class core is Rúnaszövés: only the last two schools are remembered and an explicitly enumerated five-pair table turns the ordered pair into one reaction that empowers the next cast once — the suite asserts that exactly five of the twenty-five possible pairs react, so the weave cannot be generative;
+- Elementalista reads one three-slot attunement array through exactly two threshold checks (Konvergencia at two, Elemi Korona at three), not three parallel subsystems;
+- Nekromanta keeps a bounded court of raised kinds under the existing `necromancer.court` namespace and **does not reimplement the shard economy** — `SoulforgeManager` retains CAS/receipt/shard/refund authority and only its rank output sizes the court;
+- Wizard mastery XP (reaction, crown, raise, harvest) is combat-gated;
+- `WizardGameplayRegressionSuite` and `WizardProfileRegressionSuite` are part of Gradle `check` and the CI marker contract;
+- **with this slice all 13 classes and 35 specializations have passed the vertical-slice gameplay gate.**
+
+## Explicitly still open after this PR
+
+- no class remains outside the vertical-slice gameplay gate; what stays open below is content, balance and verification work, not class implementation;
+- no generic mechanics-core primitive library is planned from this first implementation; common extraction is allowed only after real repeated consumers prove the same lifecycle/invariants;
+- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial`, `archer_beast_master_trial`, `shaman_elemental_trial`, `shaman_enhancement_trial`, `shaman_tidal_trial`, `monk_windwalker_trial`, `monk_brewmaster_trial`, `monk_mistweaver_trial`, `paladin_holy_trial`, `paladin_retribution_trial`, `paladin_protection_trial`, `demon_hunter_havoc_trial`, `demon_hunter_vengeance_trial`, `druid_feral_trial`, `druid_lunar_trial`, `druid_ironbark_trial`, `druid_restoration_trial`, `priest_discipline_trial`, `priest_bone_priest_trial`, `priest_shadow_trial`, `death_knight_blood_trial`, `death_knight_frost_trial`, `death_knight_unholy_trial`, `assassin_poisoner_trial`, `assassin_phantom_trial`, `assassin_plaguebringer_trial`, `warlock_affliction_trial`, `warlock_destruction_trial`, `warlock_demonologist_trial`, `wizard_elementalist_trial` and `wizard_necromancer_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin, Warlock and Wizard trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin, Warlock and Wizard doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
+- the current Class Relic catalog has no canonical Warrior binding/resonance/awakening definition. The framework is reused but no new Warrior relic design is invented here;
+- full numeric Warrior and Evoker PvE/PvP balance, TTK, party pressure and real Guardian objective protection require staging playtest; the Evoker empower/burst bonus rides the shared cast-power pipeline, so its PvP clamp is the double cap (`classes.evoker.max-power-bonus-percent` + `spells.total-power-cap`), not a per-target split;
+- the separate class-HP/A17 rollout remains disabled and is not activated by this gameplay work;
+- complete ability kits and gameplay loops for every other specialization remain open.
+
+## Release gates outside unit/regression execution
+
+- real multi-region Folia staging, including Guardian oath target retirement, Evoker marked-ally echo delivery and cross-region support effects;
+- Berserker PvP burst/execution, critical-health Defiant recovery and cooldown playtest;
+- Evoker empowered-release timing feel, burst cadence and echo/imprint heal pressure under real party play;
+- Archer read/chain cadence, stable capture/release at capacity and live companion coordination across regions;
+- Shaman totem-pair play across region borders, rhythm-window melee feel and tidal heal pressure in real parties;
+- Monk chain/Stagger/Ködszál pressure in real tanking and party healing, including the Stagger consequence timing;
+- Paladin role/beacon/Verdict/ground pressure in real parties;
+- Demon Hunter overload-risk feel and the two-Sigil tank rotation in real fights;
+- gameplay-v2 second-spec switch under real combat/logout/reconnect timing on every allowlisted class;
+- Lélekkapocs loss/full-inventory/reconnect plus external-container transfer tests on a running server;
+- builder provisioning and gameplay validation of both final trials;
+- deployment plugin bundle and dependency-lock validation;
+- controlled filesystem permission/ENOSPC tests;
+- longer multi-player leak/soak testing.
+
+These staging gates do not authorize a legacy fallback. Failure remains fail closed and must be corrected before release.

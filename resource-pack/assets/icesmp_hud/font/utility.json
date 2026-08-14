@@ -1,0 +1,31 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/icon-money.png",
+      "ascent": -8458294,
+      "height": 15,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/icon-event.png",
+      "ascent": -8458394,
+      "height": 15,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/icon-level.png",
+      "ascent": -8458281,
+      "height": 15,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

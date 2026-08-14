@@ -49,6 +49,7 @@ public final class IceSMPCommand implements BasicCommand {
     private static final String PERMISSION = "icesmp.admin.reload";
     private static final String CONFIG_PERMISSION = "icesmp.admin.config";
     private static final String INSPECT_PERMISSION = "icesmp.admin.inspect";
+    private static final String CLIENT_PERMISSION = "icesmp.admin.client";
     private static final int MAX_SUGGESTED_KEYS = 40;
     private static final int MAX_LISTED_KEYS = 30;
     private static final int MAX_INSPECT_QUESTS = 5;
@@ -70,6 +71,11 @@ public final class IceSMPCommand implements BasicCommand {
 
     private volatile Runnable reloadHook;
     private volatile java.util.function.Consumer<String> configChangeHook;
+    private volatile hu.taliann.icesmp.client.IceSmpClientBridge clientBridge;
+
+    public void setClientBridge(final hu.taliann.icesmp.client.IceSmpClientBridge clientBridge) {
+        this.clientBridge = clientBridge;
+    }
 
     public void setReloadHook(final Runnable reloadHook) {
         this.reloadHook = reloadHook;
@@ -119,6 +125,14 @@ public final class IceSMPCommand implements BasicCommand {
             if (hook != null) {
                 hook.run();
             }
+            // A quest-registry csere atomikus: hibás candidate a korábbi definíciókat
+            // hagyja élni — az admin itt azonnal visszajelzést kap, nem csak a log.
+            final java.util.List<String> questErrors = questManager.reloadDefinitions();
+            if (!questErrors.isEmpty()) {
+                sender.sendMessage(messageManager.get("admin.icesmp.reload.quest-invalid",
+                        "&cA quest-definíciók érvénytelenek (%s hiba) — a korábbi registry maradt élőben, részletek a szerver-logban.",
+                        questErrors.size()));
+            }
             sender.sendMessage(messageManager.get("admin.icesmp.reload.success", "<green>Plugin konfiguracio sikeresen ujratoltve!</green>"));
             return;
         }
@@ -138,6 +152,15 @@ public final class IceSMPCommand implements BasicCommand {
                 return;
             }
             handleInspect(sender, args);
+            return;
+        }
+
+        if (args.length >= 1 && "client".equalsIgnoreCase(args[0])) {
+            if (!sender.hasPermission(CLIENT_PERMISSION)) {
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+                return;
+            }
+            handleClient(sender, args);
             return;
         }
 
@@ -279,6 +302,89 @@ public final class IceSMPCommand implements BasicCommand {
     private String formatKd(final int kills, final int deaths) {
         final double ratio = deaths == 0 ? kills : (double) kills / deaths;
         return String.format(Locale.ROOT, "%.1f", ratio);
+    }
+
+    /**
+     * {@code /icesmp client stats | <név> | resync <név>}: a Client Bridge diagnosztikája.
+     * A session-registry lock-mentes, bármely szálról olvasható — a jelentéshez nem kell
+     * a célpont régió-szálára hoppolni; a resync-küldés a hídon belül maga hoppol.
+     */
+    private void handleClient(final CommandSender sender, final String[] args) {
+        final hu.taliann.icesmp.client.IceSmpClientBridge bridge = this.clientBridge;
+        if (bridge == null) {
+            sender.sendMessage(messageManager.get("admin.icesmp.client.unavailable",
+                    "&cA kliens-bridge nem elérhető (a core még nem épült fel)."));
+            return;
+        }
+        if (args.length < 2 || args[1].isBlank()) {
+            sender.sendMessage(messageManager.get("admin.icesmp.client.usage",
+                    "&cHasználat: /icesmp client <stats|név> &7vagy &c/icesmp client resync <név>"));
+            return;
+        }
+        if ("stats".equalsIgnoreCase(args[1])) {
+            final var stats = bridge.stats();
+            sender.sendMessage(messageManager.get("admin.icesmp.client.stats-header",
+                    "&6=== Kliens-bridge statisztika ==="));
+            sender.sendMessage(messageManager.get("admin.icesmp.client.stats-enabled",
+                    "&7Bridge engedélyezve: &f%s &7| Aktív session: &f%s",
+                    configManager.getBoolean("client.enabled", true) ? "igen" : "nem", stats.activeSessions()));
+            sender.sendMessage(messageManager.get("admin.icesmp.client.stats-traffic",
+                    "&7Fogadott: &f%s &7| Kézfogás OK/elutasítva: &f%s&7/&f%s",
+                    stats.received(), stats.acceptedHandshakes(), stats.rejectedHandshakes()));
+            sender.sendMessage(messageManager.get("admin.icesmp.client.stats-drops",
+                    "&7Eldobva — kikapcsolva: &f%s&7, túlméretes: &f%s&7, hibás: &f%s&7, rate-limit: &f%s&7, stale: &f%s",
+                    stats.droppedDisabled(), stats.droppedOversized(), stats.droppedMalformed(),
+                    stats.droppedRateLimited(), stats.droppedStale()));
+            return;
+        }
+        if ("resync".equalsIgnoreCase(args[1])) {
+            if (args.length < 3 || args[2].isBlank()) {
+                sender.sendMessage(messageManager.get("admin.icesmp.client.resync-usage",
+                        "&cHasználat: /icesmp client resync <név>"));
+                return;
+            }
+            final Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(messageManager.get("admin.icesmp.client.offline",
+                        "&cNincs ilyen online játékos: &f%s", args[2]));
+                return;
+            }
+            if (bridge.requestResync(target)) {
+                sender.sendMessage(messageManager.get("admin.icesmp.client.resync-sent",
+                        "&aResync elküldve: &f%s", target.getName()));
+            } else {
+                sender.sendMessage(messageManager.get("admin.icesmp.client.no-session",
+                        "&e%s &7vanilla kliensről játszik (nincs élő kliens-session).", target.getName()));
+            }
+            return;
+        }
+        final Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(messageManager.get("admin.icesmp.client.offline",
+                    "&cNincs ilyen online játékos: &f%s", args[1]));
+            return;
+        }
+        final var session = bridge.sessionOf(target.getUniqueId()).orElse(null);
+        if (session == null) {
+            sender.sendMessage(messageManager.get("admin.icesmp.client.no-session",
+                    "&e%s &7vanilla kliensről játszik (nincs élő kliens-session).", target.getName()));
+            return;
+        }
+        final long now = System.currentTimeMillis();
+        sender.sendMessage(messageManager.get("admin.icesmp.client.info-header",
+                "&6=== Kliens-session: &f%s &6===", target.getName()));
+        sender.sendMessage(messageManager.get("admin.icesmp.client.info-version",
+                "&7Kliens: &fIceSMP Client %s &7| Protokoll: &f%s &7| Generation: &f%s",
+                session.clientVersion(), session.protocolVersion(), session.generation()));
+        sender.sendMessage(messageManager.get("admin.icesmp.client.info-capabilities",
+                "&7Capability-k: &f%s",
+                session.capabilities().isEmpty() ? "nincs" : session.capabilities().stream()
+                        .map(Enum::name).sorted().reduce((a, b) -> a + ", " + b).orElse("nincs")));
+        sender.sendMessage(messageManager.get("admin.icesmp.client.info-traffic",
+                "&7Kapcsolódva: &f%s mp &7| Utolsó csomag: &f%s mp &7| Elfogadva/eldobva: &f%s&7/&f%s",
+                Math.max(0L, (now - session.connectedAtMillis()) / 1000L),
+                Math.max(0L, (now - session.lastInboundAtMillis()) / 1000L),
+                session.inboundAccepted(), session.inboundDropped()));
     }
 
     /** A GUI-s config-menü megnyitója (setterrel kötve — a listener a parancs UTÁN épül). */
@@ -461,6 +567,8 @@ public final class IceSMPCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-find", "&e/icesmp config find <szöveg> &7- Kulcs-keresés a teljes configban."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-inspect",
                 "&e/icesmp inspect <név> &7- Játékos-jelentés (kaszt, spec, statok, claimek, questek, cooldownok)."));
+        sender.sendMessage(messageManager.get("admin.icesmp.help-client",
+                "&e/icesmp client <stats|név> &7- Kliens-bridge diagnosztika; &e/icesmp client resync <név> &7- kényszerített resync."));
     }
 
     @Override
@@ -476,7 +584,30 @@ public final class IceSMPCommand implements BasicCommand {
             if (sender.hasPermission(INSPECT_PERMISSION)) {
                 options.add("inspect");
             }
+            if (sender.hasPermission(CLIENT_PERMISSION)) {
+                options.add("client");
+            }
             return options.stream().filter(option -> option.startsWith(prefix)).toList();
+        }
+
+        if ("client".equalsIgnoreCase(args[0])) {
+            if (!sender.hasPermission(CLIENT_PERMISSION)) {
+                return List.of();
+            }
+            if (args.length == 2) {
+                final String prefix = args[1].toLowerCase(Locale.ROOT);
+                final List<String> options = new ArrayList<>(List.of("stats", "resync"));
+                Bukkit.getOnlinePlayers().forEach(online -> options.add(online.getName()));
+                return options.stream().filter(option -> option.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
+            }
+            if (args.length == 3 && "resync".equalsIgnoreCase(args[1])) {
+                final String prefix = args[2].toLowerCase(Locale.ROOT);
+                return Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(playerName -> playerName.toLowerCase(Locale.ROOT).startsWith(prefix))
+                        .toList();
+            }
+            return List.of();
         }
 
         if ("inspect".equalsIgnoreCase(args[0])) {

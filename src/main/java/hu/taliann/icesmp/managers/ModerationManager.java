@@ -9,6 +9,8 @@ import hu.taliann.icesmp.moderation.PunishmentState;
 import hu.taliann.icesmp.moderation.PunishmentType;
 import hu.taliann.icesmp.moderation.ReplyPartnerRegistry;
 import hu.taliann.icesmp.moderation.StrictYamlNumber;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileModerationStore;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.CriticalPersistenceWriteError;
 import hu.taliann.icesmp.storage.PersistentStore;
@@ -34,6 +36,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -108,6 +111,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     private final File auditLogFile;
     private final Object stateLock = new Object();
     private final ModerationMutationGate mutationGate = new ModerationMutationGate();
+    private final PlayerProfileModerationStore profileSummaryStore = new PlayerProfileModerationStore();
 
     private PunishmentLedger ledger = new PunishmentLedger();
     private Set<UUID> socialSpy = new HashSet<>();
@@ -147,7 +151,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
                 restoreLocked(loaded);
                 ledger.expireDue(System.currentTimeMillis());
             }
-            plugin.getLogger().info("Moderation ledger loaded: " + punishmentCount()
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Moderation ledger loaded: " + punishmentCount()
                     + " records, " + activePunishments().size() + " active restrictions.");
         } catch (final RuntimeException invalid) {
             YamlStore.failCorrupt(storageFile, plugin.getLogger(),
@@ -181,7 +185,14 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
             rememberKnownLocked(targetId, targetName);
             return ledger.issue(type, targetId, targetName, administratorId, administratorName,
                     reason, now, expiry);
-        }, callback);
+        }, result -> {
+            if (result.successful()) {
+                syncProfileSummaryAsync(targetId);
+            }
+            if (callback != null) {
+                callback.accept(result);
+            }
+        });
     }
 
     /**
@@ -228,7 +239,14 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
             rememberKnownLocked(targetId, targetName);
             return ledger.revoke(targetId, family, administratorId, administratorName, reason,
                     System.currentTimeMillis());
-        }, callback);
+        }, result -> {
+            if (result.successful()) {
+                syncProfileSummaryAsync(targetId);
+            }
+            if (callback != null) {
+                callback.accept(result);
+            }
+        });
     }
 
     public void setSocialSpyAsync(final UUID playerId, final String playerName, final boolean enabled,
@@ -277,11 +295,53 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     }
 
     public void expireDueAsync() {
-        mutateAsync(() -> ledger.expireDue(System.currentTimeMillis()), result -> {
+        mutateAsync(() -> ledger.expireDueDetailed(System.currentTimeMillis()), result -> {
             if (!result.successful()) {
                 plugin.getLogger().severe("Punishment expiry commit failed: " + result.failure());
+                return;
             }
-        }, changed -> changed != null && changed > 0);
+            if (result.value() == null) {
+                return;
+            }
+            result.value().stream().map(PunishmentRecord::targetId).distinct()
+                    .forEach(this::syncProfileSummaryAsync);
+        }, expired -> expired != null && !expired.isEmpty());
+    }
+
+    /**
+     * The profile summary is derived from the ledger, so a failed publish never blocks the
+     * moderation commit — the next mutation or login reconcile re-syncs it.
+     */
+    private void syncProfileSummaryAsync(final UUID targetId) {
+        if (PlayerProfileAuthority.installed().isEmpty()) {
+            return;
+        }
+        final Set<String> refs = new LinkedHashSet<>();
+        final int strikes;
+        synchronized (stateLock) {
+            final long now = System.currentTimeMillis();
+            int punishments = 0;
+            for (final PunishmentRecord record : ledger.history(targetId)) {
+                if (record.type().isRevocationAction()) {
+                    continue;
+                }
+                punishments++;
+                if (record.isLogicallyActive(now)) {
+                    refs.add(record.id().toString());
+                }
+            }
+            strikes = punishments;
+        }
+        profileSummaryStore.syncSummary(targetId, refs, strikes).whenComplete((changed, failure) -> {
+            if (failure != null) {
+                plugin.getLogger().severe("PlayerProfile moderation summary sync failed for "
+                        + targetId + ": " + failure.getMessage());
+            }
+        });
+    }
+
+    public void reconcileProfileSummaryAsync(final UUID targetId) {
+        syncProfileSummaryAsync(targetId);
     }
 
     private <T> void mutateAsync(final StateMutation<T> mutation,

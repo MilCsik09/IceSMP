@@ -28,7 +28,8 @@ public final class MessageManager {
     /** Bundled per-subsystem message files under messages/ (extracted on first run). */
     private static final String[] MESSAGE_GROUPS = {
             "afk", "claim", "currency", "faction", "job", "market", "party", "pet", "profession",
-            "quest", "relic", "sit", "spec", "spell", "system", "territory", "world", "devitem", "moderation"
+            "quest", "relic", "sit", "spec", "spell", "system", "territory", "world", "devitem",
+            "hud", "moderation"
     };
 
     private final JavaPlugin plugin;
@@ -114,6 +115,15 @@ public final class MessageManager {
         return colorize(message);
     }
 
+    public String required(final String key, final Object... args) {
+        final String template = requiredTemplate(key);
+        try {
+            return colorize(String.format(template, args));
+        } catch (final Exception failure) {
+            throw new IllegalStateException("Invalid required message format: " + key, failure);
+        }
+    }
+
     public Component getMessage(final String key) {
         return getMessage(key, "", Map.of());
     }
@@ -130,6 +140,19 @@ public final class MessageManager {
         return renderComponent(message);
     }
 
+    public Component requiredMessage(final String key) {
+        return renderComponent(requiredTemplate(key));
+    }
+
+    public Component requiredMessage(final String key, final Map<String, String> placeholders) {
+        String message = requiredTemplate(key);
+        for (final Map.Entry<String, String> entry : placeholders.entrySet()) {
+            message = message.replace("{" + entry.getKey() + "}",
+                    entry.getValue() == null ? "" : entry.getValue());
+        }
+        return renderComponent(message);
+    }
+
     public Component getComponent(final String key, final String defaultValue) {
         return renderComponent(resolveMessage(key, defaultValue));
     }
@@ -141,6 +164,15 @@ public final class MessageManager {
         } catch (final Exception e) {
             plugin.getLogger().warning("Message format error for key: " + key);
             return renderComponent(defaultValue);
+        }
+    }
+
+    public Component requiredComponent(final String key, final Object... args) {
+        final String template = requiredTemplate(key);
+        try {
+            return renderComponent(String.format(template, args));
+        } catch (final Exception failure) {
+            throw new IllegalStateException("Invalid required message format: " + key, failure);
         }
     }
 
@@ -209,6 +241,12 @@ public final class MessageManager {
         return messagesConfiguration.getString(normalized, defaultValue);
     }
 
+    private String requiredTemplate(final String key) {
+        final String value = resolveMessage(key, null);
+        if (value == null) throw new IllegalStateException("Missing required message key: " + key);
+        return value;
+    }
+
     private String normalizeKey(final String key) {
         if (key == null || key.isBlank()) {
             return "messages.unknown";
@@ -221,4 +259,3 @@ public final class MessageManager {
         return "messages." + key;
     }
 }
-

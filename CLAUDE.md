@@ -28,6 +28,7 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
 
 ## Build & verify
 ```bash
+python3 -m pip install Pillow  # required by HUD asset generation/audit
 ./gradlew build      # plugin jar -> build/libs
 ./gradlew runServer  # helyi tesztszerver (run/ könyvtár, 1.21.11)
 ```
@@ -68,7 +69,7 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
   `MilCsik09/IceSMPGuides` repóba; ne maradjon külön gyökérszintű guide-másolat.
 
 ## Mi ez a projekt
-Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 576 Java-fájl / 90 manager. Minden játékos-szöveg **magyar**.
+Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 870 Java-fájl / 94 manager. Minden játékos-szöveg **magyar**.
 
 ## Architektúra (nagy kép)
 - **Belépési pontok** (`paper-plugin.yml`): `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader`. A tényleges élet a `core/IceSMPCore`-ban van: konstruktorban épül fel az ÖSSZES manager (kézi DI, sorrend számít), majd `enable()`: `load()` a `persistentStores` listán → listener-regisztráció → parancs-regisztráció (kódból, nem manifestből!) → schedulerek; `disable()`: `save()` + cleanup.
@@ -78,7 +79,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - **Config**: `src/main/resources/config/*.yml` — a `ConfigManager` kizárólag a `CONFIG_FILES` allowlist támogatott fájljait fésüli egybe (ÚJ fájlt a listába is fel KELL venni; az ismeretlen `.yml` kimarad és figyelmeztetést kap); üzenetek a `MessageManager`-en át (`messages.yml` kulcsok inline defaultokkal).
 - **Élő-config konvenció**: MINDEN új kulcsot híváskor olvass (`configManager.getX` a use-site-on, ne konstruktorban) → `/icesmp reload` restart nélkül él. Ingame felülbírálás: `/icesmp config get|set|unset|list|find|menu` + kattintható GUI (`ConfigMenuGUI`, jog: `icesmp.admin.config`) — az írás EGYETLEN útja a szerializált `ConfigManager.applyOverride` (data-folder config.yml, utolsóként merge-ölve). A merged YAML és az override-pathok egyetlen immutable `ConfigManager.ConfigSnapshot` objektumban, egy atomikus referenciacserével publikálódnak; ne vezess vissza külön volatile generációrészeket. Boolean-kulcsok egyértelműek: `allow-<szabály>` séma (true=SZABAD), legacy invertált kulcsok fallbackként olvasva.
 - **Esemény-spawnok**: minden világesemény-spawn az `EventSpawnGuard`-on megy át (`isBlocked(eventKey, loc)` — territory/claim/WG per `world-events.spawn-rules.<event>` mátrix; `isUnsafeSurface`; statikus `prepare(Mob)` zombisodás/nappali égés ellen). Új eseménynél új mátrix-sor + guard-hívás kötelező.
-- **Frakciótagság és passzívok:** assignment nélkül a játékos Menedék-vendég, nem implicit `NEUTRAL`; gameplay-jogosultsághoz mindig `FactionMembership`/`FactionManager.isEligibleForFactionBenefits` kell, a `getEconomyFaction` csak megjelenítési/valuta-fallback. Tagságot csak a durable assignment+history candidate sikeres mentése után publikálj; fizetős váltásnál `FactionSwitchJournal`, adóbeszedésnél `FactionTaxJournal` + exact wallet mutation + `DurableTransactionProtocol` kötelező. Ismeretlen eredetű legacy debt nem köthető automatikusan új frakcióhoz. A sebzés-, exhaustion- és targetdöntést a tiszta `FactionPassivePolicy` hozza, a `FactionPassiveListener` csak Paper/Folia adapter; CANCEL döntésnél a targetet ténylegesen `null`-ra állítja. A DARK retaliation játékos–mob páronkénti, a nearby alert minden riasztott mobnak külön lease. Vérhold az ambient és vad DARK truce fölött áll. Signature-food buff csak fogyasztáskori live tagsággal futhat; itembe égetett feltétel nélküli frakcióbuff tilos.
+- **Frakciótagság és passzívok:** assignment nélkül a játékos Menedék-vendég, nem implicit `NEUTRAL`; gameplay-jogosultsághoz mindig `FactionMembership`/`FactionManager.isEligibleForFactionBenefits` kell, a `getEconomyFaction` csak megjelenítési/valuta-fallback. Tagságot csak a durable assignment+history candidate sikeres mentése után publikálj; fizetős váltásnál `FactionSwitchJournal` kötelező. Az adósság, strike és collection outbox kizárólag a PlayerProfile ECONOMY szekciójában él (`PlayerProfileTaxStore`), exact wallet mutation és idempotens receipt mellett. A sebzés-, exhaustion- és targetdöntést a tiszta `FactionPassivePolicy` hozza, a `FactionPassiveListener` csak Paper/Folia adapter; CANCEL döntésnél a targetet ténylegesen `null`-ra állítja. A DARK retaliation játékos–mob páronkénti, a nearby alert minden riasztott mobnak külön lease. Vérhold az ambient és vad DARK truce fölött áll. Signature-food buff csak fogyasztáskori live tagsággal futhat; itembe égetett feltétel nélküli frakcióbuff tilos.
 - **Admin item-adás**: `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` (`ItemGiveCommand`, jog: `icesmp.admin.item`) — a recept-út a `ProfessionRecipeBookListener.buildResult` teljes stamp-láncát használja.
 - **Itemek**: PDC-tagekkel (IDENTITÁS: signature_item, unique-id — ez marad) az `items/*ItemFactory`
   osztályokban, craft-safety listenerekkel védve. **Viselkedés/megjelenés = data-component** (1.20.5+,
@@ -87,7 +88,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   `itemStack.setData(...)` UTÁN a `setItemMeta(...)` TÖRLI a komponenst (a meta-round-trip nem hordozza)
   — a data-komponenseket MINDIG a meta-műveletek UTÁN, utolsóként kell alkalmazni (a `buildResult` a végén hívja).
 - **Spellek**: deklaratív `ConfiguredSpell.builder(...)` a `spells/SpellCatalog`-ban + unlock a `config/classes.yml`-ben; külön osztály csak valóban állapotos spellnek (kötelező `clearPlayerState` override).
-- **Soft-depend integrációk** (`integration/`): PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms — mind reflexiós híd, a plugin nélkülük is fut. Build-oldalon csak `compileOnly` (lásd `build.gradle.kts`).
+- **Soft-depend integrációk**: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard és LuckPerms — runtime opcionális hidak, a plugin nélkülük is fut. Build-oldalon csak PlaceholderAPI és LibsDisguises `compileOnly` (lásd `build.gradle.kts`); a többi híd reflexiós. A first-party HUD kizárólag immutable `HudSnapshot` adatot olvas, és nem gameplay authority.
 
 ## Folia-szabályok (KRITIKUS — részletek: `docs/ARCHITECTURE.md` §4)
 - Soha `Bukkit.getScheduler()`; entitáshoz `entity.getScheduler()`, helyhez `getRegionScheduler()`, globálishoz `getGlobalRegionScheduler()`.
@@ -117,6 +118,12 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   - új rendszer/mechanika → `docs/FEATURES.md` + érintett szerepköri kézikönyv +
     acceptance-eset a `docs/ADMIN_GUIDE.md`-ban + `LORE_REFERENCE.md` sor, ha lore-kötött
   - minden doksi-szám a configból származik, nem fejből
+  - kliensprotokoll-változás (bármi a `client/protocol/` alatt, `ClientCapability`,
+    kézfogás/session-kapu szemantika) → bájtazonos re-port a `MilCsik09/IceSMP-Fabric`
+    repóba (`src/main/java/hu/taliann/icesmp/client/protocol/`) + a golden-vectorok és
+    flow-tesztek frissítése az ottani suite-okban, UGYANABBAN a munkaegységben — a két
+    repo a vezetéken sosem csúszhat szét; a kanonikus protokoll-doksi a
+    `docs/ARCHITECTURE.md` „Client Bridge” szekciója
   - záráskor: fordítás-ellenőrzés + `scripts/check_consistency.py` + tükör-push
 - Játékos-szöveg magyarul, `MessageManager` + `messages.yml` kulccsal és inline defaulttal.
 - **Item-megjelenés szabálya (ITEM_MODEL migráció KÉSZ, 2026-07-23):** MINDEN custom/unique
@@ -136,3 +143,6 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   `NEUTRAL`=Ryanora/Caldestera, `DARK`=Kitaszítottak), lore-elem→mechanika tábla, unique-item
   tervkatalógus, elnevezési irányelvek. Minden új tartalom (item-nevek, ételek, valuta, mob-drop,
   zóna, quest) a kódexhez illeszkedjen — a kód-kötést a referencia-fájlban vezesd.
+## PlayerProfile authority rule
+
+Do not add new persistent player PDC/YAML/map authorities. Add or extend a PlayerProfile section and update the authority matrix/guard. PlayerProfile HTTP remains read-only and disabled by default.

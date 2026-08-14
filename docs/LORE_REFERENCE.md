@@ -78,6 +78,10 @@ A kód generikus `RED/BLUE/NEUTRAL/DARK` azonosítókat használ; a lore ezekre 
 | Arany Áramlása (VIII.) | bank/piac/aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő, „nincs addolt pénz" elv; caldesterai ládák = crate-rendszer (kulcs-ár = valuta-nyelő); **adó = 2% + fejadó**, a fedezetlen rész hátralék, a tartós nem-fizetést a Számvevők bűnként jelentik fel (bűn-küszöb → száműzetés a Kitaszítottak közé) |
 | Korszakok Könyve (VIII.) | szezonliga: frakció-pontverseny, szezon-végi jutalom |
 | Oltárok és Ereklyék (VIII.) | egy-példányos relikviák, PvP-átvétel, inaktivitás-elenyészés; multi-block rituálé-oltárok |
+| **Az Ismert Ereklyék** (függelék) | `relics.yml definitions` — a 7 relikvia kánon-szövege a kódexben: Mételytépő, Eleftheria Könnye, a 4 szárny-ereklye (Főnix-/Zúzmara-/Csontszárny, Vándorszél — `wings` repülés-mechanika) és a Sárkánytojás-töredék (Sárkányidéző Eszencia-bővítés); átvétel/elenyészés a VIII. törvény szerint |
+| **A kazamaták és őrzőik** (VII.) | `world.yml minibosses` — `melyseg` = A Mélység Őrzője, `csontkripta` = A Csontkripta Ura (24 h visszatérés = „a Királynő szava újra felrázza"); `kazamata` loot-table; `csontkripta_kulcsa` item |
+| **A Lapforduló Őre** (VIII.) | a szezonzáró kihívás-boss (`world.yml` season challenge `boss`) — a korszak/fejezet lezárásának közös próbája, bónusz szezonpont |
+| **A Források Iskolái** (függelék) | `SpecializationType` — mind a 35 iskola kaszt-bontásban, kánon egy-mondatosokkal; az 5 †-es (sötét) iskola sinner-kapus (lásd a „Kasztok forrásai" sort) |
 | Hírnökök és Krónikák (VIII.) | quest-rendszer, NPC quest-adók, napi rotáció, frakció-közösségi célok, achievementek/ranglisták |
 
 > **Nem-kánon mechanika:** a kaszt-mester NPC-láncok + parkour-próbapályák a kódban léteznek
@@ -143,6 +147,7 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Jégvirág-por / Parázsmag / Viharkvarc / Mélységi Borostyán | vegyes | köztes anyagok (2. hullám) | ✅ profession-materials ITEM_MODEL-ek; borostyán régészeti lelet is |
 | Sárkánycsont-szilánk / Főnixpihe | BLUE/RED | mob/boss-drop anyagok (2. hullám) | ✅ loot.yml sorok (szilánk boss-only); a 2. hullám fegyver-receptjeinek hozzávalói |
 | Eleftheria Könnye | DARK/közös | relikvia (K5) | ✅ implementálva: egy-példányos relikvia + DARK-kapus rituálé-oltár (relics.yml) |
+| Sárkánytojás-töredék | közös (Evoker-kötés) | Class Relic pilot | ✅ az első Class Relic Frameworkre migrált relikvia: Evoker +10% max Essence (`relics.class-relics.sarkany_tojas`), fizikai-birtoklás követelménnyel; Devastation/Preservation resonance-routing inert, Awakening keret durable cooldownnal (kikapcsolva) |
 | Megrontott Elit Páncél / Fekete Csont / A Néma Királynő Suttogása | DARK/közös | mob-drop (K5 + 2. hullám) | ✅ mindhárom implementálva: undead-only named drop sorok (a Suttogása boss-only, nagyon ritka) |
 | Csontveret | DARK | valuta | a DARK valuta display-neve (K1 reskin) |
 
@@ -248,3 +253,40 @@ játékoskézikönyvben, sem a funkciókatalógusban, sem a kampányanyagban. Az
 mechanika lényege: egy nyilvánosan leírt rejtett frakciónak nincs tétje. A rendszer
 kódszinten aktív; a megismerés útja a játék, nem a kézikönyv. Ez tudatos kihagyás,
 nem dokumentációs hiány — audit ne jelentse hiányzó tartalomként.
+
+## Season 0 / Prologue — Olethropyla technikai megfeleltetése
+
+A **Prologue / Season 0** egyszeri, a normál Season 1+ frakcióligát megelőző korszak. Nem új
+kánont hoz létre: **Olethropyla már évszázadok óta áll**, a Hetedik Vérháború idején jelent meg
+a Jégmezők és a Vérszavanna közötti Senkiföldjén. A Prologue-ban maga a Kapu nem keletkezik;
+a Felsők korában újra destabilizálódik, majd a korszak fináléja után stabil átjáróvá válhat.
+
+Technikai authority: `PrologueManager` + `PrologueContentPolicy`. A világállapot
+`DORMANT → UNSTABLE → BREACHING → FINALE → GATE_OPEN → COMPLETED`, a látható
+eszkaláció pedig `SILENCE → CRACKS → LEAK → COLLAPSE`. A kapustabilitás, finale checkpointok,
+Gate-unlock, reward-plan és Season 1 transition kritikus, atomikusan mentett világállapot.
+A normál `SeasonManager` nem kap „season 0” hack-et: Season 1 csak a Prologue tartós lezárása
+után kap valódi indulási időbélyeget és tiszta ligaállást.
+
+A Season 0 content ceiling központi policyből él: az alap kasztszint-plafon `25`, a
+specializációk és normál relikviaszerzés zárva vannak, a blueprint/felső loot-tier útvonalak
+pedig nem adhatnak Season 1 eleji power leapet. A már megszerzett legitim karakterállapot és
+tárgyak nem törlődnek a váltáskor; a fairness előre alkalmazott kapukkal, nem wipe-pal készül.
+Season 1-ben az új/lemaradó játékosokhoz configolható XP catch-up társul.
+
+A Kárhozat Kapuja Season 0 alatt fizikailag megközelíthető — a „Zarándoklat a Kapuhoz” és a
+Doom Gate lore-kapcsolatok működnek —, de az **Overworld → Nether átkelés authority-szinten
+zárt**. A finálé tartós győzelmi tranzakciója nyitja meg; utána is csak az Olethropylához
+kötött legitim átjáró használható, a saját Nether-portálok létrehozási tilalma megmarad.
+A Nether → Overworld visszaút nem lesz csapda. A Vég ettől függetlenül zárva marad a későbbi
+Season 2 admin-eseményig.
+
+A finálé egy külön checkpointolt Prologue-orchestrator, nem a Season 1+ `SeasonFinaleManager`
+átnevezése. A finale közben a Doom Gate PvP-szabályt csak ideiglenes event-context ceasefire
+írja felül. A győzelmi lánc idempotens sorrendje: boss-victory receipt → Gate-unlock →
+participant reward-plan/Profile v2 prestige státusz → rendkívüli Krónika → Prologue emlékmű →
+Season 1 prepare/activate. A Founder/finale státusz presztízs, nem combat power.
+
+**Lore-korlát:** a Prologue sem az **Első Csend** természetét, sem a **Néma Királynő**
+végjátékát nem fejti meg. A Néma Királynő nem Prologue-finale boss; ezek a rejtélyek a későbbi
+kánon számára változatlanul nyitva maradnak.

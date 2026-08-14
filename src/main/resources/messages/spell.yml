@@ -8,6 +8,11 @@ messages:
   catalyst.no-spells: <red>Nincs elérhető képesség.</red>
   catalyst.no-unlocked: <red>Még nem oldottál fel egyetlen képességet sem.</red>
   catalyst.not-ready: <red>Jelenleg nem tudod használni ezt a képességet.</red>
+  druid:
+    hud:
+      harmony-label: Harmónia
+    season:
+      released: '<green>🍃 {season}: {amount} Harmónia szabadult fel.</green>'
   spell:
     acid_splash:
       name: Savfröccs

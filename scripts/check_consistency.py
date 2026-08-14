@@ -168,14 +168,24 @@ if os.path.exists(menus_path):
             fail(f"CommandMenus: RUN/OPEN cél '{m.group(1)}' nem regisztrált parancs")
 
 # ---------- 5b. duplikált metódus-szignatúrák (a sandbox-javac elnyeli!) ----------
+# A kulcs a legközelebbi megelőző típusdeklarációt is hordozza, különben beágyazott
+# recordok azonos nevű accessorai hamis duplikátumként buknának el.
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
+    src = read(path)
+    type_decls = [(m.start(), m.group(1))
+                  for m in re.finditer(r"\b(?:class|record|interface|enum)\s+(\w+)", src)]
     seen = {}
-    for m in re.finditer(r"(?:public|private|protected)[\w\s<>,\[\]]*?\s(\w+)\(([^)]*)\)\s*\{", read(path)):
+    for m in re.finditer(r"(?:public|private|protected)[\w\s<>,\[\]]*?\s(\w+)\(([^)]*)\)\s*\{", src):
         name, params = m.group(1), m.group(2)
         types = tuple(t.split(".")[-1] for t in re.findall(r"(?:final\s+)?([\w.<>\[\]]+)\s+\w+\s*(?:,|$)", params))
-        key = (name, types)
+        owner = ""
+        for pos, type_name in type_decls:
+            if pos >= m.start():
+                break
+            owner = type_name
+        key = (owner, name, types)
         if key in seen:
-            fail(f"duplikált metódus: {os.path.basename(path)}: {name}({', '.join(types)}) kétszer definiálva")
+            fail(f"duplikált metódus: {os.path.basename(path)}: {owner}.{name}({', '.join(types)}) kétszer definiálva")
         seen[key] = True
 
 # ---------- 6. tükör-drift ----------
@@ -254,12 +264,15 @@ except Exception as e:
 # HIGH/HIGHEST prioritason cancel-elnek, ezert egy NORMAL prioritasu progressz-handler MAR
 # konyvelt, mire a vedelem visszavonta az akciot (tiltott tores is adott XP-t/questet). Az
 # ignoreCancelled=true csak a KORABBI cancel ellen ved. A megfigyelo progressz-handlereknek
-# ezert MONITOR prioritason kell futniuk.
+# ezert MONITOR prioritason kell futniuk. KIVETEL: a cancel-only vedelmi handler (pl. a quest
+# fizikai jutalom-stamp zarolasa) direkt HIGH/HIGHEST prioritason cancel-el es semmit nem
+# konyvel — az ilyet a torzse azonositja: van setCancelled(true), es nincs manager-hivas.
 _PROGRESS_LISTENERS = ["QuestProgressListener", "DailyQuestListener", "ProfessionXpListener",
                        "ServerChallengeListener", "GatheringBuffListener"]
 _CANCELLABLE = {"BlockBreakEvent", "BlockPlaceEvent", "CraftItemEvent", "PlayerFishEvent",
                 "EntityPickupItemEvent", "PlayerHarvestBlockEvent", "SmithItemEvent",
                 "EnchantItemEvent", "InventoryClickEvent", "PlayerItemConsumeEvent"}
+_PROGRESS_CALL = re.compile(r"\b[a-z][A-Za-z]*Manager\s*\.")
 try:
     for _name in _PROGRESS_LISTENERS:
         _lp = pathlib.Path(REPO, "src/main/java/hu/taliann/icesmp/listeners", _name + ".java")
@@ -275,10 +288,17 @@ try:
                 _j += 1
             _sig = _lines[_j] if _j < len(_lines) else ""
             _m = re.search(r"final\s+([A-Za-z]+Event)\s+event", _sig)
-            if _m and _m.group(1) in _CANCELLABLE:
-                fail(f"listener-prioritas: {_name}.java:{_i + 1} — {_m.group(1)} handler NEM MONITOR "
-                     f"prioritason fut, igy a vedelem (HIGH/HIGHEST) cancel-je ELOTT konyvel "
-                     f"(tiltott akcio is jutalmazna)")
+            if not _m or _m.group(1) not in _CANCELLABLE:
+                continue
+            _body_end = _j + 1
+            while _body_end < len(_lines) and "@EventHandler" not in _lines[_body_end]:
+                _body_end += 1
+            _body = "\n".join(_lines[_j:_body_end])
+            if "setCancelled(true)" in _body and not _PROGRESS_CALL.search(_body):
+                continue
+            fail(f"listener-prioritas: {_name}.java:{_i + 1} — {_m.group(1)} handler NEM MONITOR "
+                 f"prioritason fut, igy a vedelem (HIGH/HIGHEST) cancel-je ELOTT konyvel "
+                 f"(tiltott akcio is jutalmazna)")
 except Exception as e:
     warn(f"listener-prioritas ellenorzes kihagyva: {e}")
 
@@ -406,7 +426,7 @@ except Exception as e:
 # ===== Spell-feloldas provenancia: minden grant nevezze meg a forrasat =====
 # Forras nelkul a spec-reset nem tudta visszavenni a sajat spelljeit (a specek hatarlan
 # halmozhatoak lettek), a talent-visszavonas pedig elvitte a kaszt-szintbol IS jaro spellt.
-# A ket-argumentumu unlockSpell csak legacy fallback (SOURCE_LEGACY) — uj hivo ne hasznalja.
+# Source nélküli unlockSpell nincs támogatva — minden hívó explicit provenance-t adjon.
 try:
     def _top_level_args(text, open_index):
         """Argumentumok a nyito zarojeltol a hozza tartozo CSUKOTIG (beagyazott hivasokkal)."""
@@ -431,7 +451,7 @@ try:
 
     for _jp in pathlib.Path(JAVA).rglob("*.java"):
         if _jp.name == "JobManager.java":
-            continue  # a delegalo ket-argumentumu overload itt EL
+            continue  # az implementáció belső hívásait nem vizsgáljuk call-site guardként
         _src = _jp.read_text(encoding="utf-8", errors="ignore")
         for _match in re.finditer(r"unlockSpell\(", _src):
             _args = _top_level_args(_src, _match.end() - 1)
@@ -551,6 +571,35 @@ try:
             fail(f"/lore alias '{_target}'-ra mutat, de nincs ilyen szocikk — a parancs csendben mast adna")
 except Exception as e:
     warn(f"/lore tema-ellenorzes kihagyva: {e}")
+
+
+# ===== lore-lefedettseg: nevesitett tartalom nem elhet kodex-horgony nelkul =====
+# Kezzel talalt drift-osztaly (2026-08-07 audit): 5 relikvia es 3 nevesitett boss letezett a
+# configban a kodex barmely emlitese nelkul. A kapu: minden relics.yml display-name, minden
+# world.yml boss/miniboss nev ES minden SpecializationType display-nev szerepeljen a LORE.md-ben.
+try:
+    _lore_md = read(os.path.join(REPO, "docs/LORE.md"))
+    _relics_yml = read(os.path.join(CFG, "relics.yml"))
+    for _rname in re.findall(r'display-name:\s*"([^"]+)"', _relics_yml):
+        if _rname not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_rname}' relikvianak nincs kodex-bejegyzese a LORE.md-ben")
+    _world_yml = read(os.path.join(CFG, "world.yml"))
+    for _bname in re.findall(r'^\s+name:\s*"([^"]+)"\s*$', _world_yml, re.M):
+        if _bname not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_bname}' nevesitett boss/orzo nincs a LORE.md-ben")
+    _spec_src = read(os.path.join(JAVA, "hu/taliann/icesmp/data/SpecializationType.java"))
+    for _disp in re.findall(r'\("[a-z_]+",\s*"([^"]+)",\s*JobType\.', _spec_src):
+        _plain = re.sub(r"<[^>]+>", "", _disp)
+        if _plain not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_plain}' specializacio-iskola nincs a LORE.md fuggelekeben")
+    _boss_src = read(os.path.join(JAVA, "hu/taliann/icesmp/managers/WorldBossManager.java"))
+    for _draw in re.findall(r'EntityType\.[A-Z_]+,\s*"([^"]+)"', _boss_src):
+        _plain = re.sub(r"&[0-9a-fk-or]", "", _draw).replace("[Világboss]", "")
+        _plain = re.sub(r"^[^A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+", "", _plain).strip()
+        if _plain and _plain not in _lore_md:
+            fail(f"lore-lefedettseg: a(z) '{_plain}' vilagboss-archetipus nincs a LORE.md-ben")
+except Exception as e:
+    warn(f"lore-lefedettseg ellenorzes kihagyva: {e}")
 
 
 # ===== AFK product boundary: global tracking only, no rewarded zones =====

@@ -74,7 +74,7 @@ public final class ProtectionBridgeRegressionSuite {
     }
 
     private static String source(final String path) throws IOException {
-        return Files.readString(Path.of(path));
+        return Files.readString(Path.of(path)).replace("\r\n", "\n");
     }
 
     private static String between(final String source, final String start,

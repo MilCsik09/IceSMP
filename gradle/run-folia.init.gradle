@@ -1,0 +1,170 @@
+// IceSMP Folia 1.21.11 development launcher.
+// Usage: ./gradlew -I gradle/run-folia.init.gradle runFolia
+// The class-spec dependency lock remains the only version/provisioning authority.
+
+// Init scripts are evaluated against Gradle, not a Project; rootDir is therefore unavailable here.
+def invocationDir = gradle.startParameter.projectDir ?: gradle.startParameter.currentDir
+def lockFile = new File(invocationDir, 'src/main/resources/class-spec-dependencies.lock.yml')
+if (!lockFile.isFile()) {
+    throw new GradleException("Missing class-spec dependency lock: ${lockFile}")
+}
+
+def targetMinecraft = null
+def targetFoliaBuild = null
+def dependencies = []
+def inPlugins = false
+def current = null
+
+lockFile.eachLine('UTF-8') { raw ->
+    def trimmed = raw.trim()
+    if (trimmed == 'plugins:') {
+        inPlugins = true
+        return
+    }
+    if (!inPlugins && raw ==~ /\s{2}minecraft:\s*.*/) {
+        targetMinecraft = raw.substring(raw.indexOf(':') + 1).trim()
+                .replace('"', '').replace("'", '')
+        return
+    }
+    if (!inPlugins && raw ==~ /\s{2}folia-build:\s*.*/) {
+        targetFoliaBuild = Integer.parseInt(raw.substring(raw.indexOf(':') + 1).trim())
+        return
+    }
+    if (!inPlugins || trimmed.isEmpty() || trimmed.startsWith('#')) return
+    int indent = raw.length() - raw.stripLeading().length()
+    if (indent == 2 && trimmed.endsWith(':')) {
+        current = [id: trimmed[0..-2]]
+        dependencies << current
+    } else if (indent == 4 && current != null) {
+        int separator = trimmed.indexOf(':')
+        if (separator > 0) {
+            def key = trimmed.substring(0, separator)
+            def value = trimmed.substring(separator + 1).trim()
+            int comment = value.indexOf(' #')
+            if (comment >= 0) value = value.substring(0, comment).trim()
+            value = value.replaceAll(/^['"]|['"]$/, '')
+            current[key] = value
+        }
+    }
+}
+
+if (targetMinecraft != '1.21.11') {
+    throw new GradleException("Folia dev launcher requires lock target 1.21.11, got ${targetMinecraft}")
+}
+if (targetFoliaBuild == null || targetFoliaBuild <= 0) {
+    throw new GradleException("Folia dev launcher requires a positive target.folia-build lock")
+}
+
+def modrinthDeps = dependencies.findAll { it['dev-provision'] == 'modrinth' }
+def localDeps = dependencies.findAll { it['dev-provision'] == 'local' }
+def externalPackUrl = 'https://download.mc-packs.net/pack/4900b0a9bed8db710143393916db3687e01def54.zip'
+def externalPackSha1 = '4900b0a9bed8db710143393916db3687e01def54'
+
+allprojects { project ->
+    if (project != rootProject) return
+    project.plugins.withId('xyz.jpenilla.run-paper') {
+        def localPluginDir = project.providers.gradleProperty('icesmpDevPluginDir')
+                .orElse(project.providers.environmentVariable('ICESMP_DEV_PLUGIN_DIR'))
+        def runPluginsDir = new File(invocationDir, 'run/plugins')
+        def externalPackFile = new File(runPluginsDir, 'IceSMPExternalBase.zip')
+
+        def prepareExternalPack = project.tasks.register('prepareIceSmpExternalPackForFolia') {
+            group = 'icesmp development'
+            description = 'Downloads and verifies the immutable external resource-pack base used by the first-party IceSMP pack.'
+            inputs.property('externalPackUrl', externalPackUrl)
+            inputs.property('externalPackSha1', externalPackSha1)
+            outputs.file(externalPackFile)
+            // Always verify the file hash. A stale/corrupt ZIP can still exist at the expected path.
+            outputs.upToDateWhen { false }
+            doLast {
+                def digest = java.security.MessageDigest.getInstance('SHA-1')
+                def currentHash = externalPackFile.isFile()
+                        ? java.util.HexFormat.of().formatHex(
+                                digest.digest(java.nio.file.Files.readAllBytes(externalPackFile.toPath())))
+                        : ''
+                if (currentHash != externalPackSha1) {
+                    runPluginsDir.mkdirs()
+                    def temporary = new File(runPluginsDir, 'IceSMPExternalBase.zip.part')
+                    new URI(externalPackUrl).toURL().openStream().withCloseable { input ->
+                        java.nio.file.Files.copy(input, temporary.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                    }
+                    digest.reset()
+                    def downloadedHash = java.util.HexFormat.of().formatHex(
+                            digest.digest(java.nio.file.Files.readAllBytes(temporary.toPath())))
+                    if (downloadedHash != externalPackSha1) {
+                        temporary.delete()
+                        throw new GradleException("External resource-pack SHA-1 mismatch: ${downloadedHash}")
+                    }
+                    java.nio.file.Files.move(temporary.toPath(), externalPackFile.toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                }
+                logger.lifecycle('Provisioned the immutable external resource-pack base for the first-party IceSMP HUD.')
+            }
+        }
+
+        def prepareLocal = project.tasks.register('prepareLocalClassSpecPluginsForFolia') {
+            group = 'icesmp development'
+            description = 'Copies licensed/local dependency-lock artifacts into the Folia dev server.'
+            doLast {
+                def configured = localPluginDir.orNull
+                if (configured == null || configured.toString().isBlank()) {
+                    logger.lifecycle('IceSMP local dev plugins skipped. Set -PicesmpDevPluginDir=<dir> or ICESMP_DEV_PLUGIN_DIR when licensed/local artifacts are needed.')
+                    return
+                }
+                def configuredFile = new File(configured.toString())
+                def sourceDir = configuredFile.isAbsolute()
+                        ? configuredFile : new File(invocationDir, configured.toString())
+                if (!sourceDir.isDirectory()) {
+                    throw new GradleException("IceSMP dev plugin directory does not exist: ${sourceDir}")
+                }
+                runPluginsDir.mkdirs()
+                localDeps.each { dep ->
+                    def name = dep['dev-local-file']
+                    if (name == null || name.isBlank()) {
+                        throw new GradleException("${dep.id} uses dev-provision=local without dev-local-file")
+                    }
+                    def source = new File(sourceDir, name)
+                    if (!source.isFile()) {
+                        throw new GradleException("Missing local dev plugin for ${dep.id}: ${source}")
+                    }
+                    java.nio.file.Files.copy(source.toPath(), new File(runPluginsDir, name).toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                    logger.lifecycle("Provisioned local IceSMP dev plugin ${dep.id}: ${name}")
+                }
+            }
+        }
+
+        def extension = project.extensions.getByName('runPaper')
+        def firstPartyPack = new File(invocationDir, 'build/resource-pack/icesmp.zip')
+        extension.folia.registerTask {
+            minecraftVersion(targetMinecraft)
+            build(targetFoliaBuild)
+            jvmArgs('-Xms2G', '-Xmx2G', '-Dicesmp.dev.firstPartyPack=true',
+                    "-Dicesmp.dev.packPath=${firstPartyPack.absolutePath}")
+            downloadPlugins {
+                modrinthDeps.each { dep ->
+                    def projectId = dep['dev-project']
+                    def versionId = dep['dev-version-id']
+                    if (projectId == null || projectId.isBlank()
+                            || versionId == null || versionId.isBlank()) {
+                        throw new GradleException("${dep.id} has incomplete Modrinth provisioning metadata")
+                    }
+                    modrinth(projectId, versionId)
+                }
+            }
+        }
+
+        def firstPartyMergeTasks = project.tasks.matching {
+            it.name == 'stageMergedResourcePackForR2'
+        }
+        project.tasks.named('runFolia').configure {
+            group = 'icesmp development'
+            description = 'Runs the canonical IceSMP Folia 1.21.11 dev server with lock-pinned plugins.'
+            dependsOn(prepareLocal, prepareExternalPack, firstPartyMergeTasks)
+        }
+        firstPartyMergeTasks.configureEach { mergeTask ->
+            mergeTask.dependsOn(prepareExternalPack)
+        }
+    }
+}

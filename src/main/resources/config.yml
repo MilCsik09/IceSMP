@@ -14,3 +14,79 @@ resource-pack:
   override-url: ""
   override-sha1: ""
   prompt: "&bAz IceSMP egyedi modelljeihez és felületéhez szükséges resource pack."
+
+# ===== Season 0 / Prologue — Olethropyla =====
+# Nincsenek map-koordináták a kódban: az anchorokat az /events spawnpoint rendszerrel
+# kell felvenni (prologue-gate, prologue-gathering, prologue-breach, prologue-boss).
+world-events:
+  prologue:
+    enabled: true
+    initial-state: "UNSTABLE"
+    initial-stage: "SILENCE"
+    gate:
+      travel-radius: 24.0
+    progression:
+      class-level-cap: 25
+      specializations-enabled: false
+      relics-enabled: false
+      blueprints-enabled: false
+      allowed-rarities: [ "ocska", "kozonseges", "nem_mindennapi", "ritka" ]
+      # Runtime-only tiltás: a fájlban szereplő Season 1 értékek nem íródnak át.
+      disabled-content-paths:
+        - "world-events.world-boss.enabled"
+        - "wild-hunt.enabled"
+        - "treasure-events.enabled"
+    catch-up:
+      enabled: true
+      target-level: 25
+      multiplier: 1.75
+    timeline:
+      auto-advance: true
+    stages:
+      silence: { stability: 92, duration-hours: 72 }
+      cracks: { stability: 78, duration-hours: 72 }
+      leak: { stability: 43, duration-hours: 48 }
+      collapse: { stability: 17, duration-hours: 999999 }
+    stability-hud:
+      enabled: true
+      radius: 96.0
+      critical-threshold: 20
+    scaling:
+      minimum-players: 5
+      maximum-players: 45
+      mob-per-extra-player: 0.40
+      minimum-mob-count: 4
+      maximum-mob-count: 28
+      boss-health-per-extra-player: 0.075
+      boss-health-maximum-multiplier: 4.0
+    breach:
+      participant-radius: 96.0
+      natural-interval-minutes: 45
+      wave-delay-seconds: 5
+      timeout-seconds: 300
+      spawn-radius: 10.0
+      mob-types: [ "PIGLIN", "PIGLIN_BRUTE", "HOGLIN", "BLAZE", "WITHER_SKELETON" ]
+      minor: { base-count: 4 }
+      major: { base-count: 7 }
+      critical: { base-count: 10 }
+    finale:
+      gathering-seconds: 90
+      minimum-participants: 5
+      participant-radius: 72.0
+      ceasefire-radius: 110.0
+      boss-intro-seconds: 6
+      false-end-seconds: 7
+      epilogue-seconds: 6
+      rewards:
+        minimum-presence-seconds: 45
+        minimum-damage: 1.0
+        minimum-boss-damage: 1.0
+      boss:
+        name: "A Hasadék Őre"
+        entity-type: "WITHER_SKELETON"
+        base-health: 500.0
+        base-attack-damage: 9.0
+        timeout-seconds: 900
+        slam-damage: 7.0
+        hazard-damage: 3.0
+        add-types: [ "PIGLIN_BRUTE", "BLAZE", "WITHER_SKELETON" ]

@@ -93,9 +93,13 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
 
 ### Amit a képernyőd mesél
 
-- A **HUD** mutathatja a kasztod erőforrását, a csapatod állapotát, a fontos
-  világhelyzeteket és a kiválasztott adatokat. A `/hud` paranccsal személyre
-  szabhatod.
+- A **HUD** mutathatja a kasztod erőforrását, a class/spec mechanikád élő
+  barjait, tölteteit vagy rúnáit, a frakciódat, pénzedet, szintedet és a fontos
+  világhelyzeteket. A bankod fő frakcióvalutája mindig látszik, más pénznem csak akkor,
+  ha van belőle egyenleged. A `/hud edit` kattintható szerkesztőjében külön mozgathatod,
+  méretezheted vagy elrejtheted az elemeket; a mentésed restart után is megmarad. A nem
+  módosított elemek automatikusan követik a szerver globális HUD-alapját. Amíg a first-party
+  resource pack nincs sikeresen betöltve, a kompakt natív kijelzés automatikusan marad.
 - A **tablista** frakció- és ranginformációt adhat, háborúban pedig segít
   felismerni a viszonyokat.
 - Harc közben **sebzésszámok**, célpontinformáció és halálösszegző segít
@@ -267,6 +271,14 @@ Az adományláda nem piac:
 - `/adomany add` — a kézben tartott stack felajánlása;
 - `/adomany` — a közös kínálat böngészése.
 
+A GUI felső, 0–8. sora egyirányú beadási zóna: bal kattintás a teljes
+kurzorstackot, jobb kattintás egy darabot ad be; a shift-kattintás, a
+hotbar-szám, az offhand-gomb és a drag is működik. Egy közös adományt
+egyszerre csak egy játékos vehet el; átvétel előtt legyen üres a kurzorod.
+Az adomány csak a tartós mentés után kerül a közös kínálatba. Ha közben
+leáll a szerver vagy megszakad a kapcsolat, a beadás vagy az átvétel a
+következő belépéskor veszteség és dupla kézbesítés nélkül lezáródik.
+
 Nincs vételár; amit elviszel, azt egy másik játékos neked szánta.
 
 ### Miért kerül pénzbe ennyi minden?
@@ -278,6 +290,22 @@ vendég nem tagja a polgári adóbeszedési körnek. Más frakcióknál hátral�
 keletkezhet, ezért ne hagyd figyelmen kívül a pénzügyi figyelmeztetéseket. A
 frakcióváltás a régi tartozást nem váltja át: azt továbbra is az eredeti
 frakció valutájában, az eredeti kassza felé kell rendezni.
+
+### Ládák és kulcsok
+
+A lenti ládaszinten nyolc, alapból mindenki számára nyitható láda kap helyet:
+Köznapi, Ritka, Hősi, Mitikus, Mesterség, Expedíció, Hadizsákmány és Arkánum.
+A permission nem választja szét őket; az ár, a cooldown és a jutalomprofil igen.
+
+A `/crate` böngészőben megnézheted az esélyeket és kulcsot vásárolhatsz. A
+fizikai láda nyitásakor nem jelenik meg inventory-rulett: a kiválasztás a láda
+felett pörgő ItemDisplayen látszik, és a jutalom csak a reveal lezárása után
+kerül kiosztásra. Minden bundled láda nyitásonként pontosan egy kulcsot kér.
+A preview és a világban megjelenő tárgy a valódi resource-pack modellt mutatja.
+A lootban unique szakmaalapanyagok, ténylegesen craftolt és affixet rolloló
+felszerelések, valamint szakma- és szinttartományból sorsolt tervrajzok is
+vannak. Boss-only tervrajz csak a Mitikus poolból jöhet. Elytra egyik ládából
+sem eshet; szárnyként kizárólag a relikviák léteznek.
 
 ---
 
@@ -420,8 +448,12 @@ menüben kezelheted őket:
 
 - `/pet item` — befogóeszköz, ha az irányod használ ilyet;
 - `/pet summon`, `/pet dismiss` — idézés és elbocsátás;
+- `/pet release` — az aktív társ végleges elengedése (Istálló-hely felszabadítása);
 - `/pet name <név>` — elnevezés;
-- `/pet stance <aktiv|passziv|marad>` — viselkedés.
+- `/pet stance <aktiv|passziv|marad>` — viselkedés (szerep: aktív vadász, passzív kísérő, őrhelyen maradó).
+
+A Vadmester Istállója legfeljebb 3 befogott társat tart; teli Istállóval új befogás
+csak elengedés után lehetséges.
 
 A társ tapasztalatot szerezhet, megvédhet, és ritka Társvértet viselhet. A
 pontos befogható vagy idézhető lényt a választott irány és a játékbeli
@@ -580,8 +612,11 @@ A szezon végén jutalom és új pontverseny jön.
 
 ### A halkabb történetek
 
-Tábortűz mellett régi történetet hallhatsz, a krónikák megőrzik a korszak
-eredményeit, és titkos helyek várják az első felfedezőt. Egyes világhelyek vagy
+Tábortűzi történethez ülj le egy olyan székre vagy ülőblokkra, amelytől egy főirányban
+pontosan egy üres blokk, majd egy égő normál vagy lélektűz-campfire áll. A közvetlen
+tábortűz-kattintás nem indít mesét; a kivárás és a jutalom pillanatában is ugyanazon
+a széken kell ülnöd, és az elrendezésnek változatlannak kell maradnia. A krónikák
+megőrzik a korszak eredményeit, és titkos helyek várják az első felfedezőt. Egyes világhelyek vagy
 NPC-k csak akkor élnek, ha az aktuális szezon térképén a csapat már
 aktiválta őket. Ha nem találod őket, az nem feltétlenül rejtvény: kérdezz rá
 az adminoknál vagy nézd meg a szerver közleményeit.
@@ -651,13 +686,30 @@ A küldetések lehetnek harci, gyűjtögető, készítő, felfedező, beszélget
 szállító, parkour-, raid- vagy világesemény-feladatok. Egy küldetés több célt
 is kezelhet párhuzamosan vagy sorrendben.
 
+### Honnan jön a küldetés, és hová kell visszavinni?
+
+Minden küldetésnek saját forrása van, és csak ott vehető fel:
+
+- **NPC-küldetés** — a mesélőre kattintva veszed fel. Ha a feladatait
+  teljesítetted, a küldetés „kész" állapotba lép, és VISSZA kell térned a
+  jogos leadási ponthoz (jellemzően ugyanahhoz az NPC-hez) — a jutalom és a
+  záró párbeszéd ott jár.
+- **Megbízás** — a küldetésnapló „Megbízások" füléről vállalható el
+  kattintással; a teljesítéskor magától lezárul.
+- **Történet-folytatás** — egy lánc előző lépésének teljesítése oldja fel
+  (van, amelyik azonnal folytatódik, van, amelyikhez el kell menned a
+  forrásához), a dialógus-választások pedig elágazó folytatást nyithatnak.
+- Néhány küldetést helyszín, tárgy vagy világesemény indít.
+
 ### Alapparancsok
 
-- `/quest log` — kattintható napló: Aktív, Felvehető, Teljesített.
-- `/quest list` — elérhető és aktív küldetések.
-- `/quest accept <id>` — felvétel.
-- `/quest info` — haladás.
+- `/quest log` — kattintható napló, öt füllel: Aktív, Kész (leadható),
+  Megbízások (itt vállalhatsz), Elérhető (mutatja, hol indul), Teljesített.
+- `/quest list` — a számodra látható küldetések.
+- `/quest info` — aktív küldetéseid és haladásod.
+- `/quest track <id|off>` — követett küldetés kijelölése (a naplóban ★).
 - `/quest abandon <id>` — feladás.
+- `/quest choose <token>` — a párbeszédben megjelenő kattintható választás egyszer használatos beváltása; a tokent nem kell és nem érdemes kézzel beírni, lejárat után beszélj újra az NPC-vel.
 
 Az első belépéskor egy rövid kezdő lánc automatikusan vezet végig az alapokon.
 Kövesd a képernyő jelzéseit; ez az útmutató nem sorolja fel előre a
@@ -666,13 +718,14 @@ megoldásait.
 ### NPC-k és történet
 
 A küldetést adó vagy folytató NPC fölött személyes részecskejelzés jelenhet
-meg. A párbeszédekben választási lehetőséget is kaphatsz, amely másik
-folytatást nyit.
+meg — a színe elárulja, mi vár ott: arany = leadható küldetésed van nála,
+sárga = új küldetést ad, kék = napi/heti kínálat, lila = kaszt-tartalom,
+szürke = folyamatban lévő feladatod célpontja. Ha egy NPC több küldetést is
+kínál, kattintható listából választhatsz. A párbeszédekben választási
+lehetőséget is kaphatsz, amely másik folytatást nyit.
 
 Egyes NPC-k naponta rotáló kínálatot adnak, más feladat hetente vagy
-szezononként ismételhető. Ha az aktuális világban egy szükséges NPC nincs
-kihelyezve, a szerver engedélyezhet `/quest talk <npc-név>` tartalékutat; ezt
-csak akkor használd, ha a játék vagy a csapat kifejezetten erre irányít.
+szezononként ismételhető.
 
 ### Próbák, rejtvények és fejezetek
 
@@ -681,7 +734,12 @@ csak akkor használd, ha a játék vagy a csapat kifejezetten erre irányít.
 - A történeti fejezetek a szezonhoz kapcsolódhatnak.
 - A rejtvényküldetés nem mutatja meg a konkrét célt — ez szándékos.
 - A sötét és vezeklési láncoknak tartós következménye lehet.
-- A `/bestiarium` felfedezői és harci mérföldköveket gyűjt.
+- A `/bestiarium` felfedezői és harci mérföldköveket gyűjt: a négy kategória
+  (szörnyek, receptek, territóriumok, világbossok) kattintva lapozható, az
+  ismeretlen bejegyzések „???"-ként várnak a felfedezésre. A szörnyeknél
+  fajonként számoljuk az elejtéseket: elég kill után a bejegyzés
+  tudás-fokozatot lép (kódex-jegyzet, zsákmány-jegyzet, végül mestervadász
+  jelölés).
 
 Nem találsz itt megoldókulcsot. Ha elakadsz, olvasd újra a párbeszédet,
 vizsgáld meg a helyszínt, kérdezz más játékosokat — és csak ezután gondolj
@@ -776,7 +834,11 @@ legtöbb művelet a `/menu` felületéről is elérhető.
 | `/spell upgrade <id>` | spell-mesterség |
 | `/spec list` | választható specializációk |
 | `/spec choose <id>` | specializáció választása |
+| `/spec switch <first|second|spec-id>` | megtanult kasztspecializáció aktív slotjának váltása biztonságos helyen |
+| `/spec doctrine <30|40|50> <választás>` | a megadott szint végleges doctrine-választásának rögzítése |
 | `/spec respec <class|profession>` | specializáció visszaváltása |
+| `/spec esku <irgalom|itelet|oltalmazas>` | Paplovag-irány (Eskü) választása az ülésre |
+| `/spec ima <vigasz|ostor|csend>` | Pap-litánia (ima) felvétele az ülésre |
 | `/talent` | talentfa |
 | `/profession info` | szakmai állapot |
 | `/profession recipes` | receptkönyv |
@@ -829,7 +891,8 @@ legtöbb művelet a `/menu` felületéről is elérhető.
 | `/reply <üzenet>` | válasz |
 | `/report <játékos> <ok>` | bejelentés |
 | `/afk` | önkéntes AFK |
-| `/hud <szekció>` | HUD testreszabása |
+| `/hud` / `/hud toggle <szekció>` | HUD-állapot és szekciók ki-/bekapcsolása |
+| `/hud edit` | saját, restartálló HUD-layout kattintható szerkesztése |
 | `/sit` | leülés/felállás |
 
 Az admin-, builder- és fejlesztői parancsok nem tartoznak a játékoskézikönyvbe.
@@ -918,3 +981,26 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
+
+## Prologue / Season 0 — amit játékosként tudnod kell
+
+A **Prologue** az IceSMP egyszeri nyitó korszaka. Nem külön karakter vagy külön szerver:
+a most megszerzett legitim karakterhaladásod, tárgyaid, achievementjeid és kozmetikai
+státuszaid **nem törlődnek** a Season 1 kezdetén.
+
+A nyitó korszakban szándékos fejlődési plafon védi a később érkező játékosok esélyeit.
+Az alapbeállítás szerint a kasztod **25. szintig** fejlődhet; a plafon fölé XP sem bankolódik.
+A kasztspecializáció és a normál relikvia-progresszió létezik a világban, de a Prologue alatt
+még nem választható/szerezhető meg rendes játékúton. Egyes magasabb loot- és tervrajzszintek
+ugyanezért későbbi tartalomnak számítanak. A játékbeli menü mindig jelzi az aktuális kaput.
+
+A **Kárhozat Kapuja** már a Prologue előtt is a világ része. Season 0 alatt elmehetsz hozzá,
+a hozzá kötött felfedező- és lore-tartalom működhet, de a Kapun **nem lehet átjutni a Netherbe**.
+Saját Nether-portált továbbra sem lehet szabadon létrehozni. A Kapu állapotának romlását időnként
+a HUD vagy a fallback kijelzés stabilitásmérője és helyi események jelezhetik.
+
+A Prologue lezárása után a világ wipe nélkül lép tovább Season 1-be. A normál szezonliga ekkor
+indul el ténylegesen. Az új vagy lemaradó, 25. szint alatti karakterekhez configolható
+**catch-up XP-bónusz** tartozhat; ez csak a normál XP-t gyorsítja, nem oszt dupla tárgyjutalmat.
+
+A nyitó korszak végének történeti részleteit ez az útmutató szándékosan nem spoilerezi.

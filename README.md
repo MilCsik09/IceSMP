@@ -54,7 +54,9 @@ olvasható.
 
 ## Build és ellenőrzés
 
-Követelmény: Java 21 és elérhető Gradle-dependency repositoryk.
+Követelmény: Java 21, Python 3 + Pillow (`python3 -m pip install Pillow`)
+és elérhető Gradle-dependency repositoryk. A Pillow a HUD-assetek build alatti
+generálásához és auditjához kell.
 
 ```bash
 ./gradlew clean build --no-daemon --stacktrace
@@ -74,3 +76,6 @@ git diff --check
 A zöld build kód- és regressziós bizonyíték. Production rollout előtt az
 [admin kézikönyv acceptance checklistjét](docs/ADMIN_GUIDE.md#release-acceptance-checklist)
 is végig kell futtatni staging/Folia környezetben.
+## PlayerProfile platform
+
+The modular PlayerProfile platform is the canonical authority for restart-durable, player-owned IceSMP state. See the PlayerProfile platform chapter in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#playerprofile-platform), including the structured YAML format and the read-only API contract.

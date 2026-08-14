@@ -3,13 +3,14 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.data.SpecializationType;
+import hu.taliann.icesmp.classspec.domain.LoadoutStatus;
+import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.LinkedHashMap;
@@ -33,15 +34,33 @@ public final class TalentManager {
     private static final String EFFECT_MOVEMENT_SPEED = "movement-speed";
     private static final String EFFECT_ATTACK_DAMAGE = "attack-damage";
 
+    /**
+     * Explicit lifecycle/recovery eligibility snapshot. Gameplay reads still use READY-gated
+     * JobManager/SpecializationManager getters; recovery may use this only after the authoritative
+     * ClassSpecSection has been loaded durably for the current activation generation.
+     */
+    public record EligibilityContext(JobType primaryJob, SpecializationType activeSpecialization) {
+        public static EligibilityContext from(final ClassSpecSection profile) {
+            if (profile == null) throw new IllegalArgumentException("class/spec profile required");
+            final JobType job = JobType.fromId(profile.primaryClassId());
+            SpecializationType spec = null;
+            if (profile.activeSlot() != null) {
+                final var loadout = profile.loadout(profile.activeSlot());
+                if (loadout.status() == LoadoutStatus.ACTIVE) {
+                    spec = SpecializationType.fromId(loadout.specializationId());
+                }
+            }
+            return new EligibilityContext(job, spec);
+        }
+    }
+
     private final ConfigManager configManager;
     private final JobManager jobManager;
     private final ProfessionManager professionManager;
     private final SpecializationManager specializationManager;
-    private final NamespacedKey classTalentsKey;
-    private final NamespacedKey professionTalentsKey;
-    /** K8 Emlékszilánk-beváltásból származó extra talentpontok (PDC, additív). */
-    private final NamespacedKey bonusClassPointsKey;
-    private final NamespacedKey bonusProfessionPointsKey;
+    private final JavaPlugin plugin;
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore talentStore =
+            new hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore();
     private final NamespacedKey healthModifierKey;
     private final NamespacedKey speedModifierKey;
     private final NamespacedKey damageModifierKey;
@@ -49,14 +68,11 @@ public final class TalentManager {
     public TalentManager(final JavaPlugin plugin, final ConfigManager configManager,
                          final JobManager jobManager, final ProfessionManager professionManager,
                          final SpecializationManager specializationManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.jobManager = jobManager;
         this.professionManager = professionManager;
         this.specializationManager = specializationManager;
-        this.classTalentsKey = new NamespacedKey(plugin, "talents_class");
-        this.professionTalentsKey = new NamespacedKey(plugin, "talents_profession");
-        this.bonusClassPointsKey = new NamespacedKey(plugin, "talent_bonus_class");
-        this.bonusProfessionPointsKey = new NamespacedKey(plugin, "talent_bonus_profession");
         this.healthModifierKey = new NamespacedKey(plugin, "talent_max_health");
         this.speedModifierKey = new NamespacedKey(plugin, "talent_movement_speed");
         this.damageModifierKey = new NamespacedKey(plugin, "talent_attack_damage");
@@ -71,45 +87,14 @@ public final class TalentManager {
                 .getConfigurationSection("talents." + (classPool ? "class" : "profession") + ".definitions");
     }
 
-    /**
-     * Gets the talent ranks of a player in the given pool.
-     *
-     * @param player the player
-     * @param classPool true for the class pool, false for the profession pool
-     * @return talent id to rank map (insertion ordered)
-     */
     public Map<String, Integer> getRanks(final Player player, final boolean classPool) {
-        final NamespacedKey key = classPool ? classTalentsKey : professionTalentsKey;
-        final String raw = player.getPersistentDataContainer().get(key, PersistentDataType.STRING);
-        final Map<String, Integer> ranks = new LinkedHashMap<>();
-        if (raw == null || raw.isBlank()) {
-            return ranks;
-        }
-
-        for (final String token : raw.split(",")) {
-            final String[] parts = token.split(":");
-            if (parts.length != 2) {
-                continue;
-            }
-
-            try {
-                final int rank = Integer.parseInt(parts[1].trim());
-                if (rank > 0) {
-                    ranks.put(parts[0].trim().toLowerCase(Locale.ROOT), rank);
-                }
-            } catch (final NumberFormatException ignored) {
-                // Skip malformed entries.
-            }
-        }
-
-        return ranks;
+        return talentStore.state(player.getUniqueId(), pool(classPool)).ranks();
     }
 
     public int getRank(final Player player, final boolean classPool, final String talentId) {
         if (talentId == null || talentId.isBlank()) {
             return 0;
         }
-
         return getRanks(player, classPool).getOrDefault(talentId.toLowerCase(Locale.ROOT), 0);
     }
 
@@ -122,9 +107,6 @@ public final class TalentManager {
             }
             return totalLevels / perLevels + getBonusPoints(player, true);
         }
-
-        // Profession pool: every profession contributes its levels above 1
-        // (unlearned professions sit at level 1 with 0 XP, contributing nothing).
         final int perLevels = Math.max(1, configManager.getInt("talents.profession.points-per-levels", 10));
         int totalLevels = 0;
         for (final ProfessionType professionType : ProfessionType.values()) {
@@ -133,103 +115,65 @@ public final class TalentManager {
         return totalLevels / perLevels + getBonusPoints(player, false);
     }
 
-    /** K8: Emlékszilánk-beváltásból származó extra pontok az adott poolban. */
     public int getBonusPoints(final Player player, final boolean classPool) {
-        return player.getPersistentDataContainer().getOrDefault(
-                classPool ? bonusClassPointsKey : bonusProfessionPointsKey, org.bukkit.persistence.PersistentDataType.INTEGER, 0);
+        return talentStore.state(player.getUniqueId(), pool(classPool)).bonus();
     }
 
-    /**
-     * K8: extra talentpont jóváírása (Emlékszilánk-beváltás — "visszaemlékezés").
-     * A játékos saját régió-szálán hívandó (PDC-írás).
-     *
-     * @param player the player
-     * @param classPool true = kaszt-pool, false = szakma-pool
-     * @param amount hány pont (≥1)
-     */
-    public void grantBonusPoints(final Player player, final boolean classPool, final int amount) {
-        if (amount <= 0) {
-            return;
-        }
-        final NamespacedKey key = classPool ? bonusClassPointsKey : bonusProfessionPointsKey;
-        final int current = player.getPersistentDataContainer().getOrDefault(key, org.bukkit.persistence.PersistentDataType.INTEGER, 0);
-        player.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.INTEGER, current + amount);
+    public java.util.concurrent.CompletionStage<Integer> grantBonusPoints(
+            final Player player, final boolean classPool, final int amount) {
+        if (amount <= 0) return java.util.concurrent.CompletableFuture.completedFuture(
+                getBonusPoints(player, classPool));
+        return talentStore.grantBonus(player.getUniqueId(), pool(classPool), amount);
     }
 
-    /**
-     * Checks whether a talent is available to the player. WoW-style gating via
-     * optional definition keys: 'requires-job' (either class slot),
-     * 'requires-spec' (current class specialization) and 'requires-profession'
-     * (actively practiced profession).
-     *
-     * @param player the player
-     * @param classPool true for the class pool, false for the profession pool
-     * @param talentId the talent definition id
-     * @return true if the player meets every requirement of the talent
-     */
     public boolean isAvailable(final Player player, final boolean classPool, final String talentId) {
         final ConfigurationSection definitions = getDefinitions(classPool);
         if (definitions == null || talentId == null) {
             return false;
         }
-
         final ConfigurationSection talentSection = definitions.getConfigurationSection(talentId.toLowerCase(Locale.ROOT));
-        return talentSection != null && meetsRequirements(player, talentSection);
+        return talentSection != null && meetsRequirements(player, talentSection, null);
     }
 
-    /**
-     * Whether the talent is not only visible (job/spec/profession requirements
-     * met) but also UNLOCKED in the tree: its prerequisite talent
-     * ('requires-talent') already has at least one rank. Used by the talent-tree
-     * GUI to distinguish locked nodes from spendable ones.
-     *
-     * @param player the player
-     * @param classPool true for the class pool, false for the profession pool
-     * @param talentId the talent id
-     * @return true if visible and the parent prerequisite is satisfied
-     */
     public boolean isUnlocked(final Player player, final boolean classPool, final String talentId) {
         final ConfigurationSection definitions = getDefinitions(classPool);
         if (definitions == null || talentId == null) {
             return false;
         }
-
         final ConfigurationSection talentSection = definitions.getConfigurationSection(talentId.toLowerCase(Locale.ROOT));
         return talentSection != null
-                && meetsRequirements(player, talentSection)
+                && meetsRequirements(player, talentSection, null)
                 && treeGatesMet(player, classPool, talentSection);
     }
 
-    /**
-     * The talent-tree gates beyond the job/spec/profession requirements:
-     * <ul>
-     *   <li><b>requires-talent</b>: the parent talent must already have a rank;</li>
-     *   <li><b>excludes</b>: no mutually-exclusive sibling may be ranked (branch choice);</li>
-     *   <li><b>requires-spent</b>: a capstone needs N points already spent in the pool.</li>
-     * </ul>
-     */
-    private boolean treeGatesMet(final Player player, final boolean classPool, final ConfigurationSection talentSection) {
-        final String parentId = talentSection.getString("requires-talent");
-        if (parentId != null && !parentId.isBlank() && getRank(player, classPool, parentId) <= 0) {
-            return false;
-        }
-
-        for (final String excluded : talentSection.getStringList("excludes")) {
-            if (getRank(player, classPool, excluded) > 0) {
-                return false;
-            }
-        }
-
-        final int requiresSpent = Math.max(0, talentSection.getInt("requires-spent", 0));
-        return requiresSpent <= 0 || getSpentPoints(player, classPool) >= requiresSpent;
+    private boolean treeGatesMet(final Player player, final boolean classPool,
+                                 final ConfigurationSection talentSection) {
+        return treeGatesMet(player, classPool, talentSection, getRanks(player, classPool));
     }
 
-    private boolean meetsRequirements(final Player player, final ConfigurationSection talentSection) {
+    private boolean treeGatesMet(final Player player, final boolean classPool,
+                                 final ConfigurationSection talentSection,
+                                 final Map<String, Integer> ranks) {
+        final String parentId = talentSection.getString("requires-talent");
+        if (parentId != null && !parentId.isBlank()
+                && ranks.getOrDefault(parentId.trim().toLowerCase(Locale.ROOT), 0) <= 0) {
+            return false;
+        }
+        for (final String excluded : talentSection.getStringList("excludes")) {
+            if (ranks.getOrDefault(excluded.trim().toLowerCase(Locale.ROOT), 0) > 0) return false;
+        }
+        final int requiresSpent = Math.max(0, talentSection.getInt("requires-spent", 0));
+        return requiresSpent <= 0 || spentPoints(player, classPool, ranks) >= requiresSpent;
+    }
+
+    private boolean meetsRequirements(final Player player, final ConfigurationSection talentSection,
+                                      final EligibilityContext recoveryContext) {
         final String requiredJobId = talentSection.getString("requires-job");
         if (requiredJobId != null && !requiredJobId.isBlank()) {
             final JobType requiredJob = JobType.fromId(requiredJobId);
-            final boolean hasJob = requiredJob != null && jobManager.getPrimaryJob(player) == requiredJob;
-            if (!hasJob) {
+            final JobType actualJob = recoveryContext == null
+                    ? jobManager.getPrimaryJob(player) : recoveryContext.primaryJob();
+            if (requiredJob == null || actualJob != requiredJob) {
                 return false;
             }
         }
@@ -237,7 +181,10 @@ public final class TalentManager {
         final String requiredSpecId = talentSection.getString("requires-spec");
         if (requiredSpecId != null && !requiredSpecId.isBlank()) {
             final SpecializationType requiredSpec = SpecializationType.fromId(requiredSpecId);
-            if (requiredSpec == null || specializationManager.getClassSpecialization(player) != requiredSpec) {
+            final SpecializationType actualSpec = recoveryContext == null
+                    ? specializationManager.getClassSpecialization(player)
+                    : recoveryContext.activeSpecialization();
+            if (requiredSpec == null || actualSpec != requiredSpec) {
                 return false;
             }
         }
@@ -245,6 +192,8 @@ public final class TalentManager {
         final String requiredProfessionId = talentSection.getString("requires-profession");
         if (requiredProfessionId != null && !requiredProfessionId.isBlank()) {
             final ProfessionType requiredProfession = ProfessionType.fromId(requiredProfessionId);
+            // ProfessionManager is already direct PlayerProfile section authority and is safe before
+            // class/spec READY, so this requirement does not need a gameplay getter escape hatch.
             if (requiredProfession == null || !professionManager.hasProfession(player, requiredProfession)) {
                 return false;
             }
@@ -253,55 +202,53 @@ public final class TalentManager {
         return true;
     }
 
-    /**
-     * Removes every ranked talent whose requirements the player no longer meets
-     * (e.g. after a specialization respec) and re-applies the attribute effects —
-     * the refunded points become spendable again.
-     *
-     * @param player the player
-     * @param classPool true for the class pool, false for the profession pool
-     * @return the number of refunded points
-     */
-    public int refundUnavailableTalents(final Player player, final boolean classPool) {
-        final Map<String, Integer> ranks = getRanks(player, classPool);
-        final ConfigurationSection definitions = getDefinitions(classPool);
-        int refunded = 0;
+    public java.util.concurrent.CompletionStage<Integer> refundUnavailableTalents(
+            final Player player, final boolean classPool) {
+        return refundUnavailableTalents(player, classPool, null);
+    }
 
-        final var iterator = ranks.entrySet().iterator();
-        while (iterator.hasNext()) {
-            final Map.Entry<String, Integer> entry = iterator.next();
-            if (!isAvailable(player, classPool, entry.getKey())) {
-                refunded += entry.getValue();
-                // Active talent: revoke the granted spell when the talent lapses.
-                final ConfigurationSection section = definitions == null ? null : definitions.getConfigurationSection(entry.getKey());
+    /** Recovery-safe variant using a durable class/spec eligibility snapshot. */
+    public java.util.concurrent.CompletionStage<Integer> refundUnavailableTalents(
+            final Player player, final boolean classPool, final EligibilityContext recoveryContext) {
+        final ConfigurationSection definitions = getDefinitions(classPool);
+        return talentStore.transact(player.getUniqueId(), pool(classPool), "refund", state -> {
+            final Map<String, Integer> ranks = new LinkedHashMap<>(state.ranks());
+            hu.taliann.icesmp.classspec.domain.SpellGrantLedger ledger = state.spellLedger();
+            int refunded = 0;
+            final var iterator = ranks.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Map.Entry<String, Integer> entry = iterator.next();
+                final ConfigurationSection section = definitions == null ? null
+                        : definitions.getConfigurationSection(entry.getKey());
+                if (section != null && meetsRequirements(player, section, recoveryContext)) continue;
+                refunded = Math.addExact(refunded, entry.getValue());
                 final String grantsSpell = section == null ? null : section.getString("grants-spell");
                 if (grantsSpell != null && !grantsSpell.isBlank()) {
-                    revokeGrantedSpell(player, grantsSpell, entry.getKey());
+                    ledger = ledger.remove(grantsSpell,
+                            JobManager.SOURCE_TALENT_PREFIX + entry.getKey()).ledger();
                 }
                 iterator.remove();
             }
-        }
-
-        if (refunded > 0) {
-            saveRanks(player, classPool, ranks);
-            applyAttributeTalents(player);
-        }
-
-        return refunded;
+            if (refunded == 0) {
+                return hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Decision
+                        .unchanged(state, 0);
+            }
+            return hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Decision
+                    .changed(ranks, state.bonus(), ledger, refunded);
+        }).thenCompose(refunded -> schedulePlayer(player, () -> applyAttributeTalents(player))
+                .thenApply(ignored -> refunded));
     }
 
-    /**
-     * Points spent on talents the player CURRENTLY qualifies for. Talents whose
-     * requirements have lapsed (e.g. after a respec, before they are physically
-     * refunded) are excluded, so they neither inflate the spent count nor satisfy a
-     * capstone's {@code requires-spent} gate with "ghost" points — making both the
-     * available-point math and the gate deterministic regardless of refund timing.
-     */
     public int getSpentPoints(final Player player, final boolean classPool) {
+        return spentPoints(player, classPool, getRanks(player, classPool));
+    }
+
+    private int spentPoints(final Player player, final boolean classPool,
+                            final Map<String, Integer> ranks) {
         int spent = 0;
-        for (final Map.Entry<String, Integer> entry : getRanks(player, classPool).entrySet()) {
+        for (final Map.Entry<String, Integer> entry : ranks.entrySet()) {
             if (isAvailable(player, classPool, entry.getKey())) {
-                spent += entry.getValue();
+                spent = Math.addExact(spent, entry.getValue());
             }
         }
         return spent;
@@ -311,71 +258,52 @@ public final class TalentManager {
         return Math.max(0, getEarnedPoints(player, classPool) - getSpentPoints(player, classPool));
     }
 
-    /**
-     * Spends one talent point on the given talent if a point is available and
-     * the talent has not reached its max rank. Attribute effects are re-applied.
-     *
-     * @param player the player
-     * @param classPool true for the class pool, false for the profession pool
-     * @param talentId the talent to rank up
-     * @return true if the point was spent
-     */
-    public boolean spendPoint(final Player player, final boolean classPool, final String talentId) {
+    public java.util.concurrent.CompletionStage<Boolean> spendPoint(
+            final Player player, final boolean classPool, final String talentId) {
         final ConfigurationSection definitions = getDefinitions(classPool);
         if (definitions == null || talentId == null) {
-            return false;
+            return java.util.concurrent.CompletableFuture.completedFuture(false);
         }
-
         final String normalizedId = talentId.toLowerCase(Locale.ROOT);
         final ConfigurationSection talentSection = definitions.getConfigurationSection(normalizedId);
-        if (talentSection == null || !meetsRequirements(player, talentSection)) {
-            return false;
-        }
-
-        // Talent-tree gating: prerequisite, mutual exclusion and capstone point-gate.
-        if (!treeGatesMet(player, classPool, talentSection)) {
-            return false;
-        }
-
-        if (getAvailablePoints(player, classPool) <= 0) {
-            return false;
-        }
-
-        final Map<String, Integer> ranks = getRanks(player, classPool);
-        final int currentRank = ranks.getOrDefault(normalizedId, 0);
+        if (talentSection == null) return java.util.concurrent.CompletableFuture.completedFuture(false);
         final int maxRank = Math.max(1, talentSection.getInt("max-rank", 1));
-        if (currentRank >= maxRank) {
-            return false;
-        }
-
-        ranks.put(normalizedId, currentRank + 1);
-        saveRanks(player, classPool, ranks);
-        applyAttributeTalents(player);
-
-        // Active talent: the first rank unlocks the granted spell in the catalyst.
-        if (currentRank == 0) {
-            final String grantsSpell = talentSection.getString("grants-spell");
-            if (grantsSpell != null && !grantsSpell.isBlank()) {
-                jobManager.unlockSpell(player, grantsSpell,
-                        JobManager.SOURCE_TALENT_PREFIX + normalizedId);
+        final String grantsSpell = talentSection.getString("grants-spell");
+        final boolean capstone = talentSection.getInt("requires-spent", 0) > 0;
+        return talentStore.transact(player.getUniqueId(), pool(classPool), "spend", state -> {
+            if (!meetsRequirements(player, talentSection, null)
+                    || !treeGatesMet(player, classPool, talentSection, state.ranks())) {
+                return hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Decision
+                        .unchanged(state, new SpendCommit(false, capstone));
             }
-        }
-        // Capstone = requires-spent kapuval védett talent; ennek megvásárlása mérföldkő.
-        final ConfigurationSection bought = getDefinitions(classPool) == null
-                ? null : getDefinitions(classPool).getConfigurationSection(talentId);
-        if (bought != null && bought.getInt("requires-spent", 0) > 0) {
-            AdvancementService.award(player, "capstone");
-        }
-        return true;
+            final int available = Math.max(0,
+                    Math.addExact(earnedBasePoints(player, classPool), state.bonus())
+                            - spentPoints(player, classPool, state.ranks()));
+            final int currentRank = state.ranks().getOrDefault(normalizedId, 0);
+            if (available <= 0 || currentRank >= maxRank) {
+                return hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Decision
+                        .unchanged(state, new SpendCommit(false, capstone));
+            }
+            final Map<String, Integer> ranks = new LinkedHashMap<>(state.ranks());
+            ranks.put(normalizedId, currentRank + 1);
+            hu.taliann.icesmp.classspec.domain.SpellGrantLedger ledger = state.spellLedger();
+            if (currentRank == 0 && grantsSpell != null && !grantsSpell.isBlank()) {
+                ledger = ledger.add(grantsSpell,
+                        JobManager.SOURCE_TALENT_PREFIX + normalizedId).ledger();
+            }
+            return hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Decision
+                    .changed(ranks, state.bonus(), ledger, new SpendCommit(true, capstone));
+        }).thenCompose(commit -> {
+            if (!commit.changed()) return java.util.concurrent.CompletableFuture.completedFuture(false);
+            return schedulePlayer(player, () -> {
+                applyAttributeTalents(player);
+                if (commit.capstone()) AdvancementService.award(player, "capstone");
+            }).thenApply(ignored -> true);
+        });
     }
 
-    /**
-     * Sums the effect contributions of every ranked talent across both pools.
-     *
-     * @param player the player
-     * @param effect the effect identifier (e.g. 'max-health')
-     * @return the total effect value
-     */
+    private record SpendCommit(boolean changed, boolean capstone) { }
+
     public double getEffectTotal(final Player player, final String effect) {
         double total = 0.0D;
         total += getPoolEffectTotal(player, true, effect);
@@ -383,12 +311,6 @@ public final class TalentManager {
         return total;
     }
 
-    /**
-     * Re-applies the attribute-based talent effects as player attribute modifiers.
-     * Idempotent: existing talent modifiers are removed first, so it is safe on join.
-     *
-     * @param player the player to update
-     */
     public void applyAttributeTalents(final Player player) {
         applyModifier(player, Attribute.MAX_HEALTH, healthModifierKey, getEffectTotal(player, EFFECT_MAX_HEALTH));
         applyModifier(player, Attribute.MOVEMENT_SPEED, speedModifierKey, getEffectTotal(player, EFFECT_MOVEMENT_SPEED));
@@ -400,13 +322,11 @@ public final class TalentManager {
         if (instance == null) {
             return;
         }
-
         for (final AttributeModifier modifier : instance.getModifiers()) {
             if (key.equals(modifier.getKey())) {
                 instance.removeModifier(modifier);
             }
         }
-
         if (amount != 0.0D) {
             instance.addModifier(new AttributeModifier(key, amount, AttributeModifier.Operation.ADD_NUMBER));
         }
@@ -417,57 +337,57 @@ public final class TalentManager {
         if (definitions == null) {
             return 0.0D;
         }
-
         double total = 0.0D;
         for (final Map.Entry<String, Integer> entry : getRanks(player, classPool).entrySet()) {
             final ConfigurationSection talentSection = definitions.getConfigurationSection(entry.getKey());
             if (talentSection == null || !effect.equalsIgnoreCase(talentSection.getString("effect", ""))) {
                 continue;
             }
-
-            // Talents whose requirements lapsed (e.g. after a respec) stop contributing.
-            if (!meetsRequirements(player, talentSection)) {
+            if (!meetsRequirements(player, talentSection, null)) {
                 continue;
             }
-
             total += entry.getValue() * talentSection.getDouble("per-rank", 0.0D);
         }
-
         return total;
     }
 
-    /**
-     * Only THIS talent's claim on the spell is dropped: a spell the class level or a
-     * specialization also granted stays unlocked (a source-blind removal used to strip it).
-     * A grant that predates the provenance record and is attributable to no other system
-     * (backfill left it {@code LEGACY}) belongs to the lapsing talent, so it goes.
-     */
-    private void revokeGrantedSpell(final Player player, final String spellId, final String talentId) {
-        jobManager.backfillSpellGrants(player);
-        final java.util.Set<String> sources = jobManager.getGrantSources(player, spellId);
-        if (sources.isEmpty() || sources.equals(java.util.Set.of(JobManager.SOURCE_LEGACY))) {
-            jobManager.revokeGrant(player, spellId, JobManager.SOURCE_LEGACY);
-            return;
-        }
-        jobManager.revokeGrant(player, spellId,
-                JobManager.SOURCE_TALENT_PREFIX + talentId.trim().toLowerCase(java.util.Locale.ROOT));
+    public void runOnOwnerThread(final Player player, final Runnable action) {
+        player.getScheduler().run(plugin, ignored -> action.run(), null);
     }
 
-    private void saveRanks(final Player player, final boolean classPool, final Map<String, Integer> ranks) {
-        final NamespacedKey key = classPool ? classTalentsKey : professionTalentsKey;
-        if (ranks.isEmpty()) {
-            player.getPersistentDataContainer().remove(key);
-            return;
-        }
+    private java.util.concurrent.CompletionStage<Void> schedulePlayer(
+            final Player player, final Runnable action) {
+        final java.util.concurrent.CompletableFuture<Void> result =
+                new java.util.concurrent.CompletableFuture<>();
+        player.getScheduler().run(plugin, ignored -> {
+            try { action.run(); result.complete(null); }
+            catch (final Throwable failure) { result.completeExceptionally(failure); }
+        }, () -> result.completeExceptionally(
+                new IllegalStateException("Player scheduler rejected talent effect")));
+        return result;
+    }
 
-        final StringBuilder serialized = new StringBuilder();
-        for (final Map.Entry<String, Integer> entry : ranks.entrySet()) {
-            if (!serialized.isEmpty()) {
-                serialized.append(',');
-            }
-            serialized.append(entry.getKey()).append(':').append(entry.getValue());
+    private int earnedBasePoints(final Player player, final boolean classPool) {
+        if (classPool) {
+            final int perLevels = Math.max(1,
+                    configManager.getInt("talents.class.points-per-levels", 5));
+            return (jobManager.hasPrimaryJob(player) ? jobManager.getPrimaryLevel(player) : 0)
+                    / perLevels;
         }
+        final int perLevels = Math.max(1,
+                configManager.getInt("talents.profession.points-per-levels", 10));
+        int totalLevels = 0;
+        for (final ProfessionType professionType : ProfessionType.values()) {
+            totalLevels = Math.addExact(totalLevels,
+                    Math.max(0, professionManager.getLevel(player, professionType) - 1));
+        }
+        return totalLevels / perLevels;
+    }
 
-        player.getPersistentDataContainer().set(key, PersistentDataType.STRING, serialized.toString());
+    private static hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Pool pool(
+            final boolean classPool) {
+        return classPool
+                ? hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Pool.CLASS
+                : hu.taliann.icesmp.playerprofile.application.PlayerProfileTalentStore.Pool.PROFESSION;
     }
 }

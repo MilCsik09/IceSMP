@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -32,72 +33,84 @@ public final class JobGiveCatalystSubcommand implements JobSubcommand {
     }
 
     @Override
-    public String name() {
-        return "givecatalyst";
-    }
+    public String name() { return "givecatalyst"; }
 
     @Override
     public String description() {
-        return messageManager.get("messages.job-desc-givecatalyst", "Lélekkapocs adása egy játékosnak (admin).");
+        return messageManager.get("messages.job-desc-givecatalyst",
+                "Lélekkapocs helyreállítása egy játékosnak (admin).");
     }
 
     @Override
     public String usage() {
-        return messageManager.get("messages.job-usage-givecatalyst", "/job givecatalyst <player>");
+        return messageManager.get("messages.job-usage-givecatalyst",
+                "/job givecatalyst <player>");
     }
 
     @Override
     public boolean execute(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogod ehhez a parancshoz."));
+            sender.sendMessage(messageManager.get("messages.permission-denied",
+                    "&cNincs jogod ehhez a parancshoz."));
             return true;
         }
-
         if (args.length < 1) {
-            sender.sendMessage(messageManager.get("messages.job-givecatalyst-usage", "&cHasználat: %s", usage()));
+            sender.sendMessage(messageManager.get("messages.job-givecatalyst-usage",
+                    "&cHasználat: %s", usage()));
             return true;
         }
 
         final Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA céljátékos nem érhető el online."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline",
+                    "&cA céljátékos nem érhető el online."));
             return true;
         }
 
-        // Folia: the target may be in a different region than the admin running the command,
-        // so all target reads/mutations (PDC job lookup, inventory, world drop) run on the
-        // target's own region thread. sender.sendMessage is safe from there.
         target.getScheduler().run(plugin, task -> {
             final JobType primaryJob = jobManager.getPrimaryJob(target);
             if (primaryJob == null) {
-                sender.sendMessage(messageManager.get(
+                tell(sender, messageManager.getComponent(
                         "messages.job-givecatalyst-no-class",
-                        "&cA célpontnak nincs elsődleges kasztja, így nincs Lélekkapcsa sem."
-                ));
+                        "&cA célpontnak nincs elsődleges kasztja, így nincs Lélekkapcsa sem."));
                 return;
             }
-
-            final ItemStack catalyst = catalystItemFactory.createCatalyst(primaryJob);
-            final Map<Integer, ItemStack> leftover = target.getInventory().addItem(catalyst);
-            if (!leftover.isEmpty()) {
-                leftover.values().forEach(item -> target.getWorld().dropItemNaturally(target.getLocation(), item));
+            for (final ItemStack stack : target.getInventory().getContents()) {
+                if (catalystItemFactory.isPersonalCopyFor(
+                        stack, target.getUniqueId(), primaryJob)) {
+                    tell(sender, messageManager.getComponent(
+                            "job-givecatalyst-already-owned",
+                            "&eA célpont személyes Lélekkapcsa már jelen van."));
+                    return;
+                }
             }
-
-            sender.sendMessage(messageManager.getMessage(
+            if (target.getInventory().firstEmpty() < 0) {
+                tell(sender, messageManager.getComponent(
+                        "soulbond.inventory-full-admin",
+                        "&cA célpont inventoryja tele van; a Lélekkapocs nem került a földre."));
+                return;
+            }
+            target.getInventory().addItem(
+                    catalystItemFactory.createCatalyst(primaryJob, target.getUniqueId()));
+            tell(sender, messageManager.getMessage(
                     "job-givecatalyst-success",
-                    "&aLélekkapocs átadva: &e{catalyst} &7-> &f{player}",
-                    Map.of(
-                            "catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob),
-                            "player", target.getName()
-                    )
-            ));
+                    "&aLélekkapocs helyreállítva: &e{catalyst} &7-> &f{player}",
+                    Map.of("catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob),
+                            "player", target.getName())));
         }, null);
         return true;
     }
 
+    private void tell(final CommandSender sender, final Component message) {
+        if (sender instanceof Player player) {
+            player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
+        } else {
+            sender.sendMessage(message);
+        }
+    }
+
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        // Két hosszal: 0 = "/job givecatalyst " (üres prefix), 1 = gépelés közben (args[0] prefix).
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase();
             return Bukkit.getOnlinePlayers().stream()
@@ -105,7 +118,6 @@ public final class JobGiveCatalystSubcommand implements JobSubcommand {
                     .filter(name -> name.toLowerCase().startsWith(prefix))
                     .toList();
         }
-
         return List.of();
     }
 }

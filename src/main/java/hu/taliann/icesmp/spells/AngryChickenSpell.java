@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Chicken;
@@ -26,8 +27,10 @@ public final class AngryChickenSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final UUID shooterId = player.getUniqueId();
+        final CastModifiers modifiers = SpellExecutionContext.capture();
         final Vector direction = player.getEyeLocation().getDirection().normalize();
-        final Chicken chicken = player.getWorld().spawn(player.getEyeLocation().add(direction.multiply(0.8D)), Chicken.class);
+        final Chicken chicken = player.getWorld().spawn(
+                player.getEyeLocation().add(direction.clone().multiply(0.8D)), Chicken.class);
         chicken.setAdult();
         chicken.setAI(false);
         chicken.setGravity(false);
@@ -50,19 +53,16 @@ public final class AngryChickenSpell extends BaseSpell {
 
             final double hitRadius = balance("hit-radius", 1.1D);
             for (final Entity nearby : chicken.getNearbyEntities(hitRadius, hitRadius, hitRadius)) {
-                if (!(nearby instanceof LivingEntity living) || living == chicken || living.getUniqueId().equals(shooterId)) {
-                    continue;
-                }
-                // Baráti tűz-védelem, mint a többi irányított lövedéknél (party/frakció-társ nem cél).
-                if (shooterInCurrentRegion && SpellTargetingUtil.isAlly(shooter, living)) {
+                if (!(nearby instanceof LivingEntity living) || living == chicken || living.getUniqueId().equals(shooterId)
+                        || SpellTargetingUtil.isAlly(shooterId, living)) {
                     continue;
                 }
 
                 final double damage = balance("damage", 8.0D);
                 if (shooterInCurrentRegion) {
-                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, damage, getId());
+                    SpellDamageUtil.damageBySpell(shooter, living, damage, getId(), modifiers);
                 } else {
-                    living.damage(damage);
+                    living.damage(SpellDamageUtil.scaledDamage(damage, modifiers));
                 }
                 chicken.remove();
                 task.cancel();

@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.gui;
 
+import hu.taliann.icesmp.crates.CrateSoundResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -12,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -72,10 +74,9 @@ public final class GuiUtil {
                 : (float) config.getDouble(base + ".volume", sound.defaultVolume);
         final float pitch = config == null ? sound.defaultPitch
                 : (float) config.getDouble(base + ".pitch", sound.defaultPitch);
-        try {
-            player.playSound(player.getLocation(), org.bukkit.Sound.valueOf(soundName), volume, pitch);
-        } catch (final IllegalArgumentException ignored) {
-            // Ismeretlen hang-név a configban — inkább csend, mint hiba.
+        final org.bukkit.Sound resolved = CrateSoundResolver.resolve(soundName);
+        if (resolved != null) {
+            player.playSound(player.getLocation(), resolved, volume, pitch);
         }
     }
 
@@ -93,6 +94,32 @@ public final class GuiUtil {
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
         itemStack.setItemMeta(meta);
         return itemStack;
+    }
+
+    /**
+     * Convenience builder for ampersand-coloured menu text. Kept here so config and utility
+     * menus do not each duplicate legacy-component conversion and non-italic lore handling.
+     */
+    public static ItemStack item(final Material material, final String name,
+                                 final List<String> loreLines) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            final var serializer = net.kyori.adventure.text.serializer.legacy
+                    .LegacyComponentSerializer.legacyAmpersand();
+            meta.displayName(serializer.deserialize(name)
+                    .decoration(TextDecoration.ITALIC, false));
+            final List<Component> lore = new ArrayList<>();
+            for (final String line : loreLines) {
+                lore.add(serializer.deserialize(line)
+                        .colorIfAbsent(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     /**

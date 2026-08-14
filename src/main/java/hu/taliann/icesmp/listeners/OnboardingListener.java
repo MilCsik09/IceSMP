@@ -3,6 +3,7 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.DialogService;
 import hu.taliann.icesmp.managers.QuestManager;
+import hu.taliann.icesmp.quest.OnboardingWelcomeCopy;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -57,11 +58,13 @@ public final class OnboardingListener implements Listener {
             return;
         }
 
-        // QuestManager#accept() already refuses a quest that is active or (non-repeatable)
-        // completed, but the isActive/hasCompleted pre-check avoids even attempting it once
-        // the chain has moved on — a re-join must never re-announce step one.
+        // Az accept-út már elutasítja az aktív vagy (nem ismételhető) teljesített questet,
+        // de az isActive/hasCompleted elő-ellenőrzés a próbálkozást is elkerüli, ha a lánc
+        // már továbbhaladt — az újra-belépés nem jelentheti be újra az első lépést. Az
+        // onboarding AUTO-forrás: a lánc-nyitó quest start-policyje ezt engedélyezi.
         if (questManager.isActive(player, firstQuest) || questManager.hasCompleted(player, firstQuest)
-                || !questManager.accept(player, firstQuest)) {
+                || questManager.acceptWithSource(player, firstQuest,
+                        hu.taliann.icesmp.quest.QuestSourceContext.auto()) != null) {
             return;
         }
 
@@ -76,15 +79,17 @@ public final class OnboardingListener implements Listener {
                 )
         ));
 
-        showWelcomeDialog(player, firstQuest);
+        showWelcomeDialog(player);
     }
 
     /**
-     * Natív üdvözlő-dialógus (P4d) az első belépéskor. Rövid késleltetéssel jön, hogy ne
-     * takarja az intro-cím-szekvenciát; a JÁTÉKOS saját szálán (a join-thread) marad.
-     * Kikapcsolható: {@code onboarding.welcome-dialog=false}.
+     * Natív üdvözlő-dialógus az első belépéskor. Rövid késleltetéssel jön, hogy ne takarja az
+     * intro-cím-szekvenciát; a JÁTÉKOS saját szálán (a join-thread) marad. Kikapcsolható:
+     * {@code onboarding.welcome-dialog=false}. A megjelenítendő szöveget a
+     * {@link OnboardingWelcomeCopy} egyetlen szabálya dönti el, hogy egy elavult, de már
+     * kimásolt config se ragassza be véglegesen a régi onboarding-szöveget.
      */
-    private void showWelcomeDialog(final Player player, final String firstQuest) {
+    private void showWelcomeDialog(final Player player) {
         if (!configManager.getBoolean("onboarding.welcome-dialog", true)) {
             return;
         }
@@ -92,14 +97,9 @@ public final class OnboardingListener implements Listener {
         final MiniMessage mm = MiniMessage.miniMessage();
         final Component title = mm.deserialize(configManager.getString(
                 "onboarding.welcome-dialog-title", "<gradient:#8ab4ff:#c9a3ff>Üdv az IceSMP-n!</gradient>"));
-        final List<String> raw = configManager.getStringList("onboarding.welcome-dialog-lines");
-        final List<String> lines = raw.isEmpty() ? List.of(
-                "<gray>A <white>Fa árnyékában</white> írod a legendád. Első lépések:</gray>",
-                "<yellow>•</yellow> <white>/kaszt</white> — válassz hivatást (13 kaszt).",
-                "<yellow>•</yellow> <white>/faction</white> — a Menedékben kezdesz — állj a Láng vagy a Fagy zászlaja alá.",
-                "<yellow>•</yellow> <white>/menu</white> — minden rendszer egy helyen.",
-                "<gray>A haladásodat a <white>Haladás</white> képernyőn (L) is követheted.</gray>") : raw;
-        final List<Component> body = lines.stream().map(mm::deserialize).toList();
+        final List<Component> body = OnboardingWelcomeCopy
+                .resolve(configManager.getStringList("onboarding.welcome-dialog-lines"))
+                .stream().map(mm::deserialize).toList();
         player.getScheduler().runDelayed(plugin, task -> DialogService.showNotice(player, title, body), null, delay);
     }
 }

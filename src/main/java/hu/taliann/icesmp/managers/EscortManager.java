@@ -27,78 +27,38 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Caravan escort world event: a
- * merchant convoy sets out toward a destination while monster waves harry it —
- * nearby players must keep the pack animal alive until it arrives. Success drops
- * a shared loot table at the destination and unlocks the caravan shop's bonus
- * stock for a while (raw items only, never currency); if the convoy dies or the
- * timer lapses, the goods are lost.
- *
- * <p>World-safety guarantees (server rule: events must never grief terrain): the
- * wave pool contains <em>no explosive mobs</em>, and as a second line of defence
- * the {@link hu.taliann.icesmp.listeners.EscortListener} strips block damage from
- * any explosion a wave mob might still cause. The convoy's movement/wave driver
- * runs on the convoy's own entity scheduler, which follows it across regions
- * (Folia-safe); the global tick only handles the schedule and the timeout.
- */
+/** Caravan escort world event with distant, fully guarded route placement. */
 public final class EscortManager {
-
-    /** Wave composition — deliberately no creepers/ghasts: nothing that can crater terrain. */
     private static final EntityType[] WAVE_POOL = {
             EntityType.ZOMBIE, EntityType.SKELETON, EntityType.PILLAGER,
             EntityType.VINDICATOR, EntityType.SPIDER
     };
+    /** Search + atmospheric arrival + route validation may legitimately take a few seconds. */
+    private static final long SPAWN_GRACE_MILLIS = 30_000L;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MobScalingManager mobScalingManager;
     private final MessageManager messageManager;
-
-    private final BossBar bar = BossBar.bossBar(Component.empty(), 0.0F, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
-
-    private volatile UUID convoyId;
-    /** Az utolsó horgony-játékos (rotáció — teszter-visszajelzés). */
-    private volatile UUID lastAnchorId;
-    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
-    private volatile EventSpawnPointManager spawnPointManager;
-
-    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
-        this.spawnPointManager = spawnPointManager;
-    }
-    /**
-     * Időzítő + sorsolás + a spawn-lánc rezervációja. A rezervációt CAS nyeri meg, ezért a
-     * globál-szálas tick és a parancs-szálas forceStart közül biztosan csak az egyik indít
-     * konvojt (korábban mindkettő átcsúszhatott, és a második orphanná tette az elsőt).
-     */
+    private final EventSpawnGuard spawnGuard;
+    private final BossBar bar = BossBar.bossBar(Component.empty(), 0.0F,
+            BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
     private final hu.taliann.icesmp.utils.PeriodicChanceEvent schedule =
             new hu.taliann.icesmp.utils.PeriodicChanceEvent();
+    private final Set<UUID> waveMobs = ConcurrentHashMap.newKeySet();
 
-    /** A két szál-hop kivárása; lejáratkor a rezerváció magától felszabadul. */
-    private static final long SPAWN_GRACE_MILLIS = 10_000L;
-    /** Hány véletlen irányt próbálunk, amíg védelem-mentes útvonalat találunk. */
-    private static final int ROUTE_ATTEMPTS = 8;
+    private volatile UUID convoyId;
+    private volatile UUID lastAnchorId;
+    private volatile EventSpawnPointManager spawnPointManager;
+    private volatile MajorEventGate eventGate;
     private volatile Location destination;
     private volatile double totalDistance;
     private volatile long expiresAt;
-    /** Escort-success perk: the caravan shop's bonus stock stays unlocked until this time. */
     private volatile long bonusStockUntil;
 
-    /** UUIDs of live wave mobs, pruned as they die; despawned on end/shutdown. */
-    private final Set<UUID> waveMobs = ConcurrentHashMap.newKeySet();
-
-    private final EventSpawnGuard spawnGuard;
-
-
-    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
-    private volatile MajorEventGate eventGate;
-
-    public void setEventGate(final MajorEventGate eventGate) {
-        this.eventGate = eventGate;
-    }
-
     public EscortManager(final JavaPlugin plugin, final ConfigManager configManager,
-                         final MobScalingManager mobScalingManager, final MessageManager messageManager,
+                         final MobScalingManager mobScalingManager,
+                         final MessageManager messageManager,
                          final EventSpawnGuard spawnGuard) {
         this.plugin = plugin;
         this.configManager = configManager;
@@ -108,50 +68,46 @@ public final class EscortManager {
         this.schedule.delayNextAttempt(intervalMillis());
     }
 
-    /** Whether an escort is currently under way. */
+    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
     public boolean isActive() {
         return convoyId != null;
     }
 
-    /** Milliseconds left before the escort times out, or -1 when none is under way. */
     public long getRemainingMillis() {
         return isActive() ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
     }
 
-    /**
-     * Atomically claims the right to settle the escort (success OR failure): only
-     * the first caller wins — the convoy driver (region thread) and the timeout
-     * check (global tick) can never both settle the same convoy.
-     */
     private synchronized UUID claimSettlement() {
         final UUID id = convoyId;
         convoyId = null;
         return id;
     }
 
-    /** Whether the given entity is the escorted convoy (for the death listener). */
     public boolean isConvoy(final UUID entityId) {
         return entityId != null && entityId.equals(convoyId);
     }
 
-    /** Whether the given entity is an escort wave mob (for the explosion guard). */
     public boolean isWaveMob(final UUID entityId) {
         return entityId != null && waveMobs.contains(entityId);
     }
 
-    /** Whether a recent escort success keeps the caravan's bonus stock unlocked. */
     public boolean isBonusStockActive() {
         return System.currentTimeMillis() < bonusStockUntil;
     }
 
-    /** Shows the escort boss bar to a (joining) player if an escort is live. */
     public void showTo(final Player player) {
         if (isActive()) {
             player.showBossBar(bar);
         }
     }
 
-    /** Periodic driver on the global world-events tick (schedule + timeout only). */
     public void tick() {
         if (!configManager.getBoolean("escort.enabled", true)) {
             if (isActive()) {
@@ -159,55 +115,50 @@ public final class EscortManager {
             }
             return;
         }
-
         final long now = System.currentTimeMillis();
         if (isActive()) {
             if (now >= expiresAt) {
                 fail("escort-failed-timeout");
             } else if (!hu.taliann.icesmp.utils.TransientEntities.isAlive(convoyId)) {
-                // Died without our listener catching it (e.g. void) — settle as lost.
                 fail("escort-failed-died");
             }
             return;
         }
-        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
-        // (A kapu-ellenőrzés a sorsolás ELŐTT fut, hogy az időzítő ne fogyjon el hiába.)
         final MajorEventGate gateRef = eventGate;
         if (gateRef != null && !gateRef.mayStartNaturally("escort")) {
             return;
         }
         if (schedule.tryAttempt(intervalMillis(),
-                configManager.getDouble("escort.chance-percent", 30.0D), SPAWN_GRACE_MILLIS)
-                && !start(null)) {
+                configManager.getDouble("escort.chance-percent", 30.0D),
+                SPAWN_GRACE_MILLIS) && !start(null)) {
             schedule.release();
         }
     }
 
-    /** Admin override: starts an escort now near the anchor (or a random player). */
+    /** Admin force defaults to the configured distant anchor; a player anchor is opt-in. */
     public boolean forceStart(final Player anchor) {
         if (isActive() || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
             return false;
         }
-        if (start(anchor)) {
+        final Player selected = configManager.getBoolean(
+                "escort.force-use-player-anchor", false) ? anchor : null;
+        if (start(selected)) {
             return true;
         }
         schedule.release();
         return false;
     }
 
-    /** Handles the convoy's death (from the death listener, on the convoy's region thread). */
     public void onConvoyDied() {
         if (isActive()) {
             fail("escort-failed-died");
         }
     }
 
-    /** Prunes a dead wave mob from the tracked set (from the death listener). */
     public void onWaveMobDied(final UUID entityId) {
         waveMobs.remove(entityId);
     }
 
-    /** Despawns the convoy and any live wave mobs on plugin disable. */
     public void shutdown() {
         final UUID id = convoyId;
         convoyId = null;
@@ -221,23 +172,27 @@ public final class EscortManager {
     }
 
     private boolean start(final Player preferredAnchor) {
-        Player anchor = preferredAnchor;
-        if (anchor == null) {
-            // Hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
+        if (preferredAnchor == null) {
             final EventSpawnPointManager pointsRef = spawnPointManager;
-            final Location fixedAnchor = pointsRef == null ? null : pointsRef.resolveAnchorLocation("escort");
+            final Location fixedAnchor = pointsRef == null
+                    ? null : pointsRef.resolveAnchorLocation("escort");
             if (fixedAnchor != null) {
-                plugin.getServer().getRegionScheduler().run(plugin, fixedAnchor,
-                        spawnTask -> spawnConvoy(fixedAnchor));
+                spawnGuard.findSafeAtOrNear("escort", fixedAnchor,
+                        System.nanoTime(), this::prepareRoute, schedule::release);
                 return true;
             }
+        }
+
+        Player anchor = preferredAnchor;
+        if (anchor == null) {
             final List<Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
                 return false;
             }
-            // Horgony-rotáció: ne mindig ugyanahhoz a játékoshoz spawnoljon.
-            final java.util.List<Player> candidates = online.stream()
-                    .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
+            final List<Player> candidates = online.stream()
+                    .filter(player -> online.size() == 1
+                            || !player.getUniqueId().equals(lastAnchorId))
+                    .toList();
             anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
             lastAnchorId = anchor.getUniqueId();
         }
@@ -245,38 +200,38 @@ public final class EscortManager {
         final Player target = anchor;
         target.getScheduler().run(plugin, task -> {
             final Location base = target.getLocation().clone();
-            plugin.getServer().getRegionScheduler().run(plugin, base, spawnTask -> spawnConvoy(base));
-        }, null);
+            spawnGuard.findSafeNear("escort", base, System.nanoTime(),
+                    this::prepareRoute, schedule::release);
+        }, schedule::release);
         return true;
     }
 
-    private void spawnConvoy(final Location origin) {
-        final World world = origin.getWorld();
-        if (world == null) {
+    /** Start is already guarded; now validate every quarter of a complete route. */
+    private void prepareRoute(final Location start) {
+        final double distance = Math.max(40.0D,
+                configManager.getDouble("escort.route-distance", 150.0D));
+        spawnGuard.findSafeRoute("escort", start, distance, System.nanoTime(), dest -> {
+            try {
+                plugin.getServer().getRegionScheduler().run(plugin, start,
+                        task -> spawnConvoyAt(start, dest));
+            } catch (final RuntimeException unavailable) {
+                schedule.release();
+            }
+        }, schedule::release);
+    }
+
+    private void spawnConvoyAt(final Location requestedStart, final Location dest) {
+        final World world = requestedStart.getWorld();
+        if (world == null || dest == null || dest.getWorld() != world) {
+            schedule.release();
             return;
         }
-
-        // Route: from the anchor's spot toward a random compass direction, config distance away.
-        final double distance = Math.max(40.0D, configManager.getDouble("escort.route-distance", 150.0D));
-        final int startX = origin.getBlockX();
-        final int startZ = origin.getBlockZ();
-
-        final Location start = topOf(world, startX, startZ);
-        // Spawn-rules: a konvoj se induljon territórium/claim/WG-régió belsejéből vagy vízről.
-        if (spawnGuard.isBlocked("escort", start)
-                || spawnGuard.isUnsafeSurface("escort", world, startX, startZ)) {
-            return; // védett/vizes indulópont — a következő intervallum máshol próbálkozik
+        final Location start = spawnGuard.resolveSafeStandingLocation("escort", world,
+                requestedStart.getBlockX(), requestedStart.getBlockZ());
+        if (start == null || spawnGuard.isBlocked("escort", start)) {
+            schedule.release();
+            return;
         }
-
-        // A konvoj VÉGIG megy az útvonalon, ezért nem elég az indulópontot ellenőrizni:
-        // több irányt próbálunk, és csak olyan útvonalat fogadunk el, amelynek a mintavett
-        // pontjai (cél + közbenső szakaszok) is védelem-mentesek.
-        final Location dest = pickRoute(world, start, distance);
-        if (dest == null) {
-            return; // minden próbált irány védett területen vezetett át — később, máshol
-        }
-        final int destX = dest.getBlockX();
-        final int destZ = dest.getBlockZ();
 
         final Llama convoy = world.spawn(start, Llama.class, spawned -> {
             spawned.setPersistent(false);
@@ -286,23 +241,19 @@ public final class EscortManager {
             spawned.customName(Component.text("🛡 Karaván-konvoj", NamedTextColor.GOLD));
             spawned.setCustomNameVisible(true);
             spawned.setGlowing(true);
-            final double health = Math.max(10.0D, configManager.getDouble("escort.convoy-health", 60.0D));
+            final double health = Math.max(10.0D,
+                    configManager.getDouble("escort.convoy-health", 60.0D));
             final AttributeInstance maxHealth = spawned.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null) {
                 maxHealth.setBaseValue(health);
                 spawned.setHealth(health);
             }
         });
-
-        // A liveness fail-CLOSED: regisztráció nélkül a konvoj a következő tickben halottnak
-        // látszana, és az esemény azonnal „a konvoj elesett" eredménnyel zárulna.
         hu.taliann.icesmp.utils.TransientEntities.register(plugin, convoy);
         convoyId = convoy.getUniqueId();
-        destination = dest;
+        destination = dest.clone();
         totalDistance = Math.max(1.0D, horizontalDistance(start, dest));
         expiresAt = System.currentTimeMillis() + maxDurationMillis();
-        // Az „aktív" állapot innentől kézzelfogható (convoyId + expiresAt), a rezerváció
-        // szerepe véget ért.
         schedule.release();
 
         startConvoyDriver(convoy);
@@ -310,30 +261,21 @@ public final class EscortManager {
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
             player.getScheduler().run(plugin, task -> player.showBossBar(bar), null);
         }
-
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "escort-started",
                 "&e🛡 KARAVÁN-KÍSÉRET! Egy konvoj indult útnak ({world}: {x}, {z} → {dx}, {dz}) — védd meg a szörnyektől, míg célba ér!",
-                Map.of(
-                        "world", world.getName(),
-                        "x", String.valueOf(startX),
-                        "z", String.valueOf(startZ),
-                        "dx", String.valueOf(destX),
-                        "dz", String.valueOf(destZ)
-                )
-        ));
+                Map.of("world", world.getName(),
+                        "x", String.valueOf(start.getBlockX()),
+                        "z", String.valueOf(start.getBlockZ()),
+                        "dx", String.valueOf(dest.getBlockX()),
+                        "dz", String.valueOf(dest.getBlockZ()))));
     }
 
-    /**
-     * The convoy's own driver: pathfind toward the destination, spawn harassing
-     * waves, refresh the boss bar and detect arrival. Runs on the convoy's entity
-     * scheduler, which follows it across regions (Folia-safe); auto-cancels when
-     * the escort ends.
-     */
     private void startConvoyDriver(final Llama convoy) {
         final long periodTicks = 30L;
         final long waveEveryCycles = Math.max(1L,
-                (configManager.getLong("escort.wave-interval-seconds", 45L) * 20L) / periodTicks);
+                (configManager.getLong("escort.wave-interval-seconds", 45L) * 20L)
+                        / periodTicks);
         final long[] cycle = {0L};
         final double[] lastDistance = {totalDistance};
         final int[] stuckCycles = {0};
@@ -348,7 +290,6 @@ public final class EscortManager {
                 task.cancel();
                 return;
             }
-
             final double remaining = horizontalDistance(convoy.getLocation(), dest);
             if (remaining <= 4.0D) {
                 task.cancel();
@@ -356,13 +297,15 @@ public final class EscortManager {
                 return;
             }
 
-            // Keep walking toward the goal; if terrain pinned us for several cycles, nudge forward.
             convoy.getPathfinder().moveTo(nextLeg(convoy.getLocation(), dest), 1.1D);
             if (lastDistance[0] - remaining < 0.5D) {
                 stuckCycles[0]++;
                 if (stuckCycles[0] >= 4) {
                     stuckCycles[0] = 0;
-                    convoy.teleportAsync(nudgeToward(convoy.getLocation(), dest));
+                    final Location nudge = safeNudgeToward(convoy.getLocation(), dest);
+                    if (nudge != null && !spawnGuard.isBlocked("escort-route", nudge)) {
+                        convoy.teleportAsync(nudge);
+                    }
                 }
             } else {
                 stuckCycles[0] = 0;
@@ -371,43 +314,41 @@ public final class EscortManager {
 
             updateBar(convoy, remaining);
             convoy.getWorld().spawnParticle(Particle.HAPPY_VILLAGER,
-                    convoy.getLocation().clone().add(0.0D, 1.8D, 0.0D), 3, 0.3D, 0.3D, 0.3D, 0.0D);
-
+                    convoy.getLocation().clone().add(0.0D, 1.8D, 0.0D),
+                    3, 0.3D, 0.3D, 0.3D, 0.0D);
             if (++cycle[0] % waveEveryCycles == 0L) {
                 spawnWave(convoy);
             }
         }, null, periodTicks, periodTicks);
     }
 
-    /** A short pathfinding leg toward the destination (the full route may exceed path range). */
     private Location nextLeg(final Location from, final Location dest) {
-        final double remaining = horizontalDistance(from, dest);
+        final double remaining = Math.max(1.0D, horizontalDistance(from, dest));
         final double step = Math.min(24.0D, remaining);
         final double dx = (dest.getX() - from.getX()) / remaining * step;
         final double dz = (dest.getZ() - from.getZ()) / remaining * step;
-        final World world = from.getWorld();
         final int x = (int) Math.round(from.getX() + dx);
         final int z = (int) Math.round(from.getZ() + dz);
-        return topOf(world, x, z);
+        final Location safe = spawnGuard.resolveSafeStandingLocation(
+                "escort", from.getWorld(), x, z);
+        return safe == null ? from.clone().add(dx, 0.0D, dz) : safe;
     }
 
-    /** A small forward teleport for when the pathfinder is wedged against terrain. */
-    private Location nudgeToward(final Location from, final Location dest) {
+    private Location safeNudgeToward(final Location from, final Location dest) {
         final double remaining = Math.max(1.0D, horizontalDistance(from, dest));
         final double step = Math.min(3.0D, remaining);
-        final int x = (int) Math.round(from.getX() + (dest.getX() - from.getX()) / remaining * step);
-        final int z = (int) Math.round(from.getZ() + (dest.getZ() - from.getZ()) / remaining * step);
-        return topOf(from.getWorld(), x, z);
+        final int x = (int) Math.round(from.getX()
+                + (dest.getX() - from.getX()) / remaining * step);
+        final int z = (int) Math.round(from.getZ()
+                + (dest.getZ() - from.getZ()) / remaining * step);
+        return spawnGuard.resolveSafeStandingLocation("escort", from.getWorld(), x, z);
     }
 
-    /** Spawns a harassing wave around the convoy, aggroed onto it. Runs on the convoy's region. */
     private void spawnWave(final Llama convoy) {
         final World world = convoy.getWorld();
         final Location center = convoy.getLocation();
         final int count = Math.max(1, configManager.getInt("escort.wave-size", 4));
         final int level = Math.max(1, configManager.getInt("escort.wave-level", 3));
-
-        // Bounded tracking: drop entries whose mobs are already gone.
         waveMobs.removeIf(id -> !hu.taliann.icesmp.utils.TransientEntities.isAlive(id));
 
         for (int i = 0; i < count; i++) {
@@ -415,19 +356,17 @@ public final class EscortManager {
             final double radius = 8.0D + ThreadLocalRandom.current().nextDouble(4.0D);
             final int x = center.getBlockX() + (int) Math.round(Math.cos(angle) * radius);
             final int z = center.getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
+            final Location waveSpot = spawnGuard.resolveSafeStandingLocation(
+                    "escort-wave", world, x, z);
+            if (waveSpot == null || spawnGuard.isBlocked("escort-wave", waveSpot)) {
+                continue;
+            }
             final EntityType type = WAVE_POOL[ThreadLocalRandom.current().nextInt(WAVE_POOL.length)];
             final Class<? extends Entity> entityClass = type.getEntityClass();
             if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
                 continue;
             }
-            final Location waveSpot = topOf(world, x, z);
-            // A hullám-mob sem szivároghat védett zónába (a konvoj útja keresztezhet claimet).
-            if (spawnGuard.isBlocked("escort", waveSpot)) {
-                continue;
-            }
             final Mob mob = (Mob) world.spawn(waveSpot, entityClass.asSubclass(Mob.class));
-            // Nappali kíséret-hullám: a zombi/csontváz ne égjen el, mielőtt a játékosokhoz ér
-            // (+ jövőbiztos zombisodás-immunitás, ha a pool piglinnel bővül).
             EventSpawnGuard.prepare(mob);
             mob.setRemoveWhenFarAway(false);
             mob.setPersistent(false);
@@ -436,52 +375,52 @@ public final class EscortManager {
             hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
             waveMobs.add(mob.getUniqueId());
         }
-
         world.playSound(center, Sound.EVENT_RAID_HORN, 0.6F, 1.2F);
-        world.spawnParticle(Particle.ANGRY_VILLAGER, center.clone().add(0.0D, 1.5D, 0.0D), 10, 4.0D, 0.5D, 4.0D, 0.0D);
+        world.spawnParticle(Particle.ANGRY_VILLAGER,
+                center.clone().add(0.0D, 1.5D, 0.0D),
+                10, 4.0D, 0.5D, 4.0D, 0.0D);
     }
 
-    /** The convoy arrived: shared loot at the goal + the caravan's bonus stock unlocks. */
     private void succeed(final Llama convoy) {
         if (claimSettlement() == null) {
-            return; // The timeout tick won the race and already settled as failure.
+            return;
         }
         final Location where = convoy.getLocation().clone();
         final World world = where.getWorld();
         destination = null;
-
         final int rolls = Math.max(1, configManager.getInt("escort.reward-rolls", 4));
         if (world != null) {
             for (final ItemStack loot : LootTable.roll(configManager, "escort.reward-loot", rolls)) {
                 world.dropItemNaturally(where, loot);
             }
-            world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 16, 0.6D, 0.7D, 0.6D, 0.1D);
+            world.spawnParticle(Particle.TOTEM_OF_UNDYING,
+                    where.clone().add(0.0D, 1.0D, 0.0D),
+                    16, 0.6D, 0.7D, 0.6D, 0.1D);
             world.playSound(where, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
         }
         convoy.remove();
         clearWaves();
         hideBarFromAll();
-
-        final long bonusMinutes = Math.max(1L, configManager.getLong("escort.bonus-stock-minutes", 60L));
+        final long bonusMinutes = Math.max(1L,
+                configManager.getLong("escort.bonus-stock-minutes", 60L));
         bonusStockUntil = System.currentTimeMillis() + bonusMinutes * 60_000L;
-
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "escort-success",
                 "&a🛡 A konvoj célba ért! A zsákmány a célnál vár, és a kereskedő-karaván &f{minutes} percig&a bővebb készlettel árul — köszönet a kísérőknek!",
-                Map.of("minutes", String.valueOf(bonusMinutes))
-        ));
+                Map.of("minutes", String.valueOf(bonusMinutes))));
     }
 
     private void fail(final String messageKey) {
         final UUID id = claimSettlement();
         if (id == null) {
-            return; // The driver already settled it (success) — no contradictory broadcast.
+            return;
         }
         hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         destination = null;
         clearWaves();
         hideBarFromAll();
-        Bukkit.getServer().broadcast(messageManager.getMessage(messageKey, defaultFor(messageKey)));
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                messageKey, defaultFor(messageKey)));
     }
 
     private String defaultFor(final String messageKey) {
@@ -491,7 +430,8 @@ public final class EscortManager {
     }
 
     private void updateBar(final Llama convoy, final double remaining) {
-        final float fraction = (float) Math.max(0.0D, Math.min(1.0D, 1.0D - remaining / totalDistance));
+        final float fraction = (float) Math.max(0.0D,
+                Math.min(1.0D, 1.0D - remaining / totalDistance));
         bar.progress(fraction);
         bar.name(Component.text(String.format("🛡 Karaván-kíséret — %d%% • HP %.0f",
                 Math.round(fraction * 100.0F), convoy.getHealth()), NamedTextColor.GOLD));
@@ -505,7 +445,6 @@ public final class EscortManager {
             try {
                 player.getScheduler().run(plugin, task -> player.hideBossBar(bar), null);
             } catch (final IllegalPluginAccessException exception) {
-                // Disable won the race; no scheduler retry is legal once the plugin is disabled.
                 return;
             }
         }
@@ -518,55 +457,19 @@ public final class EscortManager {
         waveMobs.clear();
     }
 
-    /**
-     * Picks a route endpoint whose sampled points all clear the spawn-rules. Tries
-     * several random headings; each candidate is sampled at fixed fractions of the
-     * route so a leg that crosses a town/claim is rejected, not just a protected
-     * endpoint. The samples reuse the START's Y: the guard's zone lookups are
-     * height-aware, and probing the real surface Y of a far column would mean
-     * reading blocks owned by another region thread.
-     *
-     * @return the accepted destination, or null when every heading was blocked
-     */
-    private Location pickRoute(final World world, final Location start, final double distance) {
-        final double[] fractions = {1.0D, 0.75D, 0.5D, 0.25D};
-        for (int attempt = 0; attempt < ROUTE_ATTEMPTS; attempt++) {
-            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
-            final double dx = Math.cos(angle) * distance;
-            final double dz = Math.sin(angle) * distance;
-            boolean clear = true;
-            for (final double fraction : fractions) {
-                final Location sample = new Location(world,
-                        start.getX() + dx * fraction, start.getY(), start.getZ() + dz * fraction);
-                if (spawnGuard.isBlocked("escort", sample)) {
-                    clear = false;
-                    break;
-                }
-            }
-            if (clear) {
-                return new Location(world,
-                        Math.round(start.getX() + dx) + 0.5D, 0.0D, Math.round(start.getZ() + dz) + 0.5D);
-            }
-        }
-        return null;
-    }
-
-    private static double horizontalDistance(final Location a, final Location b) {
-        final double dx = a.getX() - b.getX();
-        final double dz = a.getZ() - b.getZ();
+    private static double horizontalDistance(final Location first, final Location second) {
+        final double dx = first.getX() - second.getX();
+        final double dz = first.getZ() - second.getZ();
         return Math.sqrt(dx * dx + dz * dz);
     }
 
-    private static Location topOf(final World world, final int x, final int z) {
-        final int y = world.getHighestBlockYAt(x, z) + 1;
-        return new Location(world, x + 0.5D, y, z + 0.5D);
-    }
-
     private long intervalMillis() {
-        return Math.max(1L, configManager.getLong("escort.interval-minutes", 120L)) * 60_000L;
+        return Math.max(1L,
+                configManager.getLong("escort.interval-minutes", 120L)) * 60_000L;
     }
 
     private long maxDurationMillis() {
-        return Math.max(1L, configManager.getLong("escort.max-duration-minutes", 15L)) * 60_000L;
+        return Math.max(1L,
+                configManager.getLong("escort.max-duration-minutes", 15L)) * 60_000L;
     }
 }

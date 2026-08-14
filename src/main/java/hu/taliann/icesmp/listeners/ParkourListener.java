@@ -43,7 +43,7 @@ public final class ParkourListener implements Listener {
     public void onTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
         final org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause = event.getCause();
         if (cause == org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL
-                || cause == org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT) {
+                || cause == org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.CONSUMABLE_EFFECT) {
             parkourManager.cancelForMobility(event.getPlayer());
         }
     }

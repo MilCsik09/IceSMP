@@ -1,0 +1,107 @@
+schema-version: 2
+verified-on: "2026-08-11"
+target:
+  minecraft: "1.21.11"
+  platform: "Folia 1.21.11"
+  folia-build: 14
+  java: 21
+
+# Runtime roles:
+#   required-runtime     -> missing/incompatible plugin may block startup when enforcement is enabled
+#   optional-integration -> inspected and version-checked when installed, but never startup-fatal
+#   dev-only             -> development tooling only; ignored by runtime preflight
+#   validation-only      -> compatibility/staging evidence only; ignored by runtime preflight
+#
+# Development provisioning is consumed only by development tooling. Production IceSMP never
+# downloads plugins. Public artifacts use exact Modrinth project + version IDs; licensed/private
+# or otherwise non-redistributable artifacts use a local developer directory.
+plugins:
+  LuckPerms:
+    server-name: LuckPerms
+    runtime-role: optional-integration
+    accepted-versions: ["5.5.53"]
+    verification: official-release
+    source-page: "https://modrinth.com/plugin/luckperms/version/MBSY8toc"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "luckperms"
+    dev-version-id: "MBSY8toc"
+  WorldEdit:
+    server-name: WorldEdit
+    runtime-role: optional-integration
+    accepted-versions: ["7.4.1"]
+    verification: java21-folia-1.21.11-smoke
+    source-page: "https://modrinth.com/plugin/worldedit/version/JUWRHdru"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "worldedit"
+    dev-version-id: "JUWRHdru"
+  WorldGuard:
+    server-name: WorldGuard
+    runtime-role: optional-integration
+    accepted-versions: ["7.0.16"]
+    verification: java21-folia-1.21.11-smoke
+    source-page: "https://modrinth.com/plugin/worldguard/version/EZl3moba"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "worldguard"
+    dev-version-id: "EZl3moba"
+  PlaceholderAPI:
+    server-name: PlaceholderAPI
+    runtime-role: optional-integration
+    accepted-versions: ["2.12.3"]
+    verification: official-release
+    source-page: "https://modrinth.com/plugin/placeholderapi/version/pIvQcXW8"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "placeholderapi"
+    dev-version-id: "pIvQcXW8"
+  MythicMobs:
+    server-name: MythicMobs
+    runtime-role: optional-integration
+    accepted-versions: ["5.13.0"]
+    verification: java21-folia-1.21.11-smoke
+    source-page: "https://modrinth.com/plugin/mythicmobs/version/YVgkWAjK"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "mythicmobs"
+    dev-version-id: "YVgkWAjK"
+  FancyNpcs:
+    server-name: FancyNpcs
+    runtime-role: optional-integration
+    accepted-versions: ["2.10.1-java21"]
+    verification: official-java21-pin
+    source-page: "https://modrinth.com/plugin/fancynpcs/version/axfBJcKs"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "fancynpcs"
+    dev-version-id: "axfBJcKs"
+  FancyDialogs:
+    server-name: FancyDialogs
+    runtime-role: optional-integration
+    accepted-versions: ["1.1.2"]
+    verification: java21-folia-1.21.11-smoke
+    source-page: "https://modrinth.com/plugin/fancydialogs/version/FDN3VGi4"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "fancydialogs"
+    dev-version-id: "FDN3VGi4"
+  PacketEvents:
+    server-name: packetevents
+    runtime-role: optional-integration
+    accepted-versions: ["2.13.0"]
+    verification: official-release
+    source-page: "https://modrinth.com/plugin/packetevents/version/h0ncTpUP"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: modrinth
+    dev-project: "packetevents"
+    dev-version-id: "h0ncTpUP"
+  LibsDisguises:
+    server-name: LibsDisguises
+    runtime-role: optional-integration
+    accepted-versions: ["11.0.18"]
+    verification: official-release-staging-required
+    source-page: "https://www.spigotmc.org/resources/libs-disguises-free.81/"
+    artifact-sha256: "REQUIRED_IN_DEPLOYMENT"
+    dev-provision: local
+    dev-local-file: "LibsDisguises-11.0.18.jar"

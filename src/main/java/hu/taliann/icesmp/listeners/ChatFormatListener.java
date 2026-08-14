@@ -59,18 +59,21 @@ public final class ChatFormatListener implements Listener {
                         .append(message.colorIfAbsent(NamedTextColor.WHITE))));
     }
 
-    /** The speaker's faction colour from the thread-safe HUD snapshot (async-safe). */
+    /**
+     * The speaker's faction colour from the thread-safe HUD snapshot (async-safe). The palette
+     * is the shared {@code tablist.faction-colors.*} mapping, so chat, tablist and nametag can
+     * never drift apart.
+     */
     private NamedTextColor factionColor(final UUID playerId) {
         final HudManager.HudSnapshot snapshot = hudManager.snapshot(playerId);
-        if (snapshot == null) {
-            return NamedTextColor.WHITE;
+        hu.taliann.icesmp.data.FactionType faction = null;
+        if (snapshot != null) {
+            try {
+                faction = hu.taliann.icesmp.data.FactionType.valueOf(snapshot.factionId());
+            } catch (final IllegalArgumentException guest) {
+                faction = null;
+            }
         }
-        return switch (snapshot.factionId()) {
-            case "RED" -> NamedTextColor.RED;
-            case "BLUE" -> NamedTextColor.BLUE;
-            case "NEUTRAL" -> NamedTextColor.GRAY;
-            case "DARK" -> NamedTextColor.DARK_GRAY;
-            default -> NamedTextColor.WHITE;
-        };
+        return hu.taliann.icesmp.managers.TablistManager.factionColor(configManager, faction);
     }
 }

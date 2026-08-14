@@ -70,23 +70,21 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
             return true;
         }
 
-        // Folia: unlockSpell writes the target's PDC, so it must run on the target's own region
-        // thread (the target may be in a different region than the admin). sender.sendMessage is safe
-        // from there.
-        target.getScheduler().run(plugin, task -> {
-            if (!jobManager.unlockSpell(target, spell.getId(),
-                    hu.taliann.icesmp.managers.JobManager.SOURCE_ADMIN)) {
-                sender.sendMessage(messageManager.get("messages.job-spell-already-unlocked", "&eEz a varázslat már fel van oldva."));
-                return;
-            }
-
-            sender.sendMessage(messageManager.get(
-                    "messages.job-unlockspell-success",
-                    "&aVarázslat feloldva: &f%s &7-> &e%s",
-                    target.getName(),
-                    spell.getId()
-            ));
-        }, null);
+        jobManager.unlockSpellV2(target, spell.getId(), JobManager.SOURCE_ADMIN)
+                .whenComplete((unlocked, failure) -> target.getScheduler().run(plugin, task -> {
+                    if (failure != null) {
+                        sender.sendMessage(messageManager.get("messages.job-spell-storage-failed",
+                                "&cA PlayerProfile spellbook mentése meghiúsult."));
+                    } else if (!Boolean.TRUE.equals(unlocked)) {
+                        sender.sendMessage(messageManager.get("messages.job-spell-already-unlocked",
+                                "&eEz a varázslat már fel van oldva."));
+                    } else {
+                        sender.sendMessage(messageManager.get(
+                                "messages.job-unlockspell-success",
+                                "&aVarázslat feloldva: &f%s &7-> &e%s",
+                                target.getName(), spell.getId()));
+                    }
+                }, null));
         return true;
     }
 

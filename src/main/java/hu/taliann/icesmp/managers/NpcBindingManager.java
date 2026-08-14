@@ -79,7 +79,7 @@ public final class NpcBindingManager implements PersistentStore {
                     bindings.put(npcName.toLowerCase(Locale.ROOT), new Binding(type, value == null ? "" : value));
                 }
             }
-            plugin.getLogger().info("Loaded " + bindings.size() + " NPC binding(s).");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "Loaded " + bindings.size() + " NPC binding(s).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load npc-bindings.yml: " + exception.getMessage());
         }

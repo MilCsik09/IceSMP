@@ -12,11 +12,102 @@ A kód és a CI elkészült állapota még nem egyenlő az élesítéssel. Ahol 
 világbejárásos vagy hibaszimulációs próba hiányzik, azt ezen az oldalon külön
 jelezzük.
 
+A 13 kaszt / 35 specializáció teljes reworkjének 1.21.11-es kompatibilitási
+alapja külön, alapból kikapcsolt rollout-kapu mögé került. Ez még nem játékosnak
+kiadható rework: verziózárt dependency-manifestet, fail-fast preflightot,
+Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződéseit adja.
+
 > **Összehasonlítási alap:** az üzemeltető által futóként átadott
 > `IceSMP-1.0-TESTING.jar`. A tartalma nagy bizonyossággal a
 > **2026. július 12-i** forrásállapotnak felel meg; július 13-án nem volt
 > köztes mainline commit. A JAR nem tartalmaz Git SHA-t, ezért ez
 > `HIGH_CONFIDENCE`, nem `EXACT` azonosítás.
+
+## Augusztus eleji integrációs hullám (staging előtt)
+
+A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
+
+- **PlayerProfile-alap:** minden tartós játékos-állapot (kaszt, szakma, quest,
+  pénztárca, statisztika, moderációs összegzés, crate-számlálók, heti céh-cél,
+  halál-escrow) egyetlen, tranzakcióvédett profilrendszerben él — restart és
+  crash ellen journalozott, gépi kapuval őrzött szerkezetben.
+- **Tablist és színek:** LuckPerms-rang szerinti rendezés, AFK játékosok a
+  lista végén; a Menedék-polgár neve zöld (Smaragdkő-szín), így nem
+  téveszthető össze a Kitaszítottal — a saját tablista, nametag, chat és a
+  csak olvasó `%icesmp_faction_color%` kimenet egységesen.
+- **First-party adaptív IceSMP HUD:** öt külön frakciógrafika (külön Menedék-vendég
+  erődkerettel), 64×64-es class/utility/rúna/pénznem ikonok, class/spec/szint/event parity,
+  minden class strukturált mechanikaállapota, legfeljebb öt generic metric, automatikus
+  charge-pipek, Wizard háromcsatornás ráhangolódása és DK slotonkénti rúnaregeneráció.
+  A fő frakcióvaluta mindig, a pozitív idegen banki valuták külön ikonnal jelennek meg;
+  packhiánynál játékosonkénti natív fallback marad; a kijelzés teljesen first-party, külső HUD plugin nélkül.
+  A panelglyphök a kliens 256×256-os font-atlasz korlátján belül maradnak, a jobb oldali
+  horgony clip-space alapú, a teljes kompozíció fizikai méretét pedig a shader a kliens
+  `ScreenSize` értékéből normalizálja. A magyar feliratok négyszeresen túlmintavételezett,
+  élsimított DejaVu-forrásból készülnek; ablak- és GUI-scale váltás nem mozdíthatja vagy
+  többszörös méretűre nagyíthatja a HUD-ot.
+- **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
+  adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
+- **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,
+  víz- és partpuffer, nézési kúp), meteor-kráter terrain-visszaállítási
+  journallal.
+- **Claimek:** fail-closed betöltés + a poligon-kijelölés csúcspont-limitje
+  alapból megszűnt (a területkorlát maradt a valódi kapu).
+- **Konzol:** a boot-kori leltár-sorok elnémultak; hibakereséshez a
+  `logging.verbose-startup` kulccsal visszakapcsolhatók. A szintezett
+  (custom-nevű) mobok vanilla „Named entity … died" halál-sorát a plugin
+  szűrője alapból eldobja — se terminál, se `latest.log`
+  (`logging.suppress-named-entity-deaths`, élő kulcs).
+- **Lifecycle- és API-hardening:** a PlayerProfile erőforrás-teardown részleges
+  indulás és sikertelen leállítási drain után is garantált (nem marad hátra
+  executor, HTTP listener vagy service-regisztráció); az alapból kikapcsolt
+  read-only HTTP API név-feloldása auth-first — anonim hívás egyetlen
+  tárolóolvasást sem indíthat el.
+- **Bestiárium-mélység:** a lajstrom négy kategóriája kattintva lapozható
+  (ismeretlen bejegyzés = „???"), teljesítmény-%-kal és nevezőkkel; a
+  szörnyeknél fajonkénti elejtés-számláló, első-elejtés dátum és kill-alapú
+  tudás-fokozatok; a világbossok archetípusonként kerülnek a lajstromba;
+  `%icesmp_bestiary_*%` placeholderek külső kijelzéshez.
+- **Class Relic Framework (pilot):** kaszthoz kötött, világ-egyedi relikviák
+  külön domainrétege — Class Power / Spec Resonance / Awakening, Profile v2
+  class/spec authorityvel, ownership↔fizikai-birtoklás szétválasztással és a
+  relickel utazó durable Awakening-cooldownnal. Pilot: a Sárkánytojás-töredék
+  Evoker-bónusza az új keretből érkezik (változatlan 10%); a 13/35 teljes
+  roster a class rework kapuja mögött (`require-complete-catalog: false`).
+  A review-körök keményítései: a világ-relic állapot (ownership, lost/reclaim,
+  Awakening, művelet-receiptek) immutable pillanatképként publikált, single-writer
+  perzisztencia-határ mögött — a candidate csak sikeres lemez-commit után válik
+  láthatóvá (hamis ARMED siker és félig-töltött reload-állapot nincs); a relic
+  kézbesítés/transfer durable receipt-alapú recovery-protokollt kapott (crash
+  után determinisztikus, duplikátum-mentes helyreállítás, a tárgy-PDC és a
+  világ-tulajdonos nem csúszhat szét tartósan); a lost-jelölés owner-kötött
+  (stale példány gazdája nem jelölheti el más élő relicét, árva lost nincs); a
+  `canUse` fail-closed (központi tulajdonos nélkül a példány nem működik); a
+  Resonance-szerződés tipizált jelzéseket hordoz (actor, cél-identitás,
+  mennyiség — kill/block/forma/mozgás/low-health payloadokkal) és a hook
+  régió-helyes actor-kontextust kap; a fizikai birtoklás régió-szálas
+  pillanatkép fail-closed TTL-lel és azonnali invalidációval; a katalógus csak
+  létező generikus relicre köthet, kikapcsolt rendszer mellett is validálva;
+  strict config-schema; a `relics.enabled` explicit framework-kapu.
+- **Kódex-bővítés:** mind a 7 ereklye, a 10 világboss-archetípus, a
+  kazamata-őrzők és mind a 35 specializáció-iskola kánon-bejegyzést kapott;
+  a consistency-kapu gépileg őrzi, hogy nevesített tartalom ne élhessen
+  kódex-horgony nélkül.
+- **Quest Framework v2 (MMO-rework):** minden küldetésnek explicit forrása
+  van (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény), és a
+  felvétel + leadás kizárólag a jogosult forrásnál történhet — a régi nyílt
+  `/quest accept`, a napló távoli felvétele, a `/quest talk`
+  NPC-megszemélyesítés és a bind-alapú átadás bypass-ai megszűntek (a
+  parancsok admin-eszközzé váltak). NPC-questnél a feladatok teljesítése után
+  a küldetés KÉSZ állapotba lép és az adó NPC-nél adható le (záró dialógus +
+  jutalom ott); a napló öt füles (Aktív/Kész/Megbízások/Elérhető/Teljesített),
+  küldetés-követéssel; az NPC-k több questnél kattintható, egyszer
+  használatos tokenes listát kínálnak, a marker-színek központi palettából
+  jönnek (arany=leadható, sárga=új, kék=napi/heti, lila=kaszt, türkiz=titok).
+  Kategória- és láthatóság-rendszer (a rejtett quest felfedezésig sehol nem
+  szivárog), tartós felfedezés- és forrás-audit a PlayerProfile-ban, atomikus
+  és teljes gráf-validációval kapuzott quest-reload (hibás config a korábbi
+  definíciókat hagyja élőben), mind a 160 csomagolt küldetés migrálva.
 
 ## Harminc másodpercben
 
@@ -33,7 +124,7 @@ jelezzük.
 | Szakmai alapanyag | 9 | 81 |
 | Relikvia | 5 | 6 |
 | Rituálé | 19 | 21 |
-| Natív crate | 0 | 2 |
+| Natív crate | 0 | 8 |
 
 A 420 konfigurált spell-balance azonosító nem 420 automatikusan elérhető
 képességet jelent: a registry, a kaszt, a specializáció és a feloldási
@@ -136,8 +227,17 @@ GSit-funkciókészlet: nincs lay, crawl, stacking, játékos- vagy NPC-megülés
 ### Natív crate-ek
 
 A játékos vásárolhat kulcsot, információt és preview-t kérhet, majd fizikai
-crate-nél animált nyitást indíthat. A release két csomagolt definíciót
-bizonyít: `koznapi` és `ritka`. Éles megnyitás előtt a helyeket, rewardokat,
+crate-nél világban futó ItemDisplay-revealt indíthat. Inventory-rulett nem
+nyílik; a jutalom side effectje csak a reveal lezárása után indul. A release
+nyolc, permission nélküli definíciót bizonyít: `koznapi`, `ritka`, `hosi`,
+`mitikus`, `mesterseg`, `expedicio`, `hadizsakmany` és `arkanum`.
+Ezek az alsó nyolc fizikai állomást töltik ki; a felső nyolc hely különleges
+ládáknak marad. A lapos vanilla táblák helyét tematikus unique alapanyagok,
+valódi craft- és affix-láncon át készülő tárgyak, valamint szint/szakma szerint
+szűrt random tervrajzok vették át. A Mitikus láda külön boss-only
+tervrajz-poolt kaphat; Elytra minden crate item-, recept- és tervrajzútvonalon
+tiltott. A browser és a világ-reveal a jutalom valódi itemmodelljét mutatja.
+Éles megnyitás előtt a helyeket, rewardokat,
 inventory-overflow-t, settlementet és recoveryt kötelező stagingen tesztelni.
 
 ### Privát üzenetek és report
@@ -154,15 +254,18 @@ A release warningot, kicket, állandó és ideiglenes mute-ot/tiltást,
 visszavonást, historyt, aktív punishment-listát, reportkezelést, PM-et,
 SocialSpy-t, vanish-t, moderációs GUI-t és offline teleportot ad.
 
-Az inventory admin online main inventoryt és ender chestet tud külön
-**read** vagy **edit** módban megnyitni. Az edit útvonal escrow- és reconnect
-recoveryt használ; emiatt az edit permission jóval érzékenyebb, mint a read.
+Az inventory admin a `/invsee <játékos>` egyetlen paranccsal nyitja meg az
+online main inventoryt és ender chestet: edit joggal az első megnyitó
+automatikusan **write** sessiont kap, minden további egyidejű megnyitó
+read-only módot; a MAIN ↔ ENDER váltás a GUI gombjával történik. A write
+útvonal escrow- és reconnect recoveryt használ; emiatt az edit permission
+jóval érzékenyebb, mint a read.
 
 ### Natív MOTD és megjelenítés
 
 A server-list MOTD idő- vagy véletlen választással, eseményprioritással,
-vanished játékosok kiszűrésével és több ikonmóddal működhet. A natív HUD és
-tablista az IceSMP-hez szükséges részhalmazt adja, nem általános TAB-klón.
+vanished játékosok kiszűrésével és több ikonmóddal működhet. A HUD és a saját
+tablista az IceSMP-hez szükséges megjelenítési funkciókat adja.
 
 ### Biztonságosabb mentés és recovery
 
@@ -194,7 +297,7 @@ végig kell járni.
 | AFK-zóna payout, idő és bossbar | Nincs a release-ben |
 | Lay és crawl | Nem része a natív ülésnek |
 | Player/NPC sitting és stacking | Nem része a natív ülésnek |
-| Teljes TAB-klón | Nem cél; csak az IceSMP-hez szükséges subset |
+| Általános külső tablista-motor | Nem cél; az IceSMP saját tablistája a szükséges felületeket kezeli |
 | Teljes GSit-klón | Nem cél; sit-only |
 | Offline inventory edit | Nem bizonyított natív képesség |
 
@@ -219,7 +322,6 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
 | SModeration | Natív moderáció kiváltási jelölt | Permission, persistence, expiry, reconnect és audit |
 | InvSee++ | Az online read/edit scope kiváltási jelöltje | Escrow/recovery és az élő offline igény külön vizsgálata |
 | MiniMOTD | Natív MOTD kiváltási jelölt | Párhuzamos ping, ikon, reload, proxy/server-list próba |
-| TAB | Csak akkor váltható ki, ha elég a natív subset | Élő TAB-config és ütközések leltára |
 | ICEsmpadditions | Warden-XP natív megfelelője jelen van | Drop-tartomány és dupla felülírás teszt |
 | FarmProtect | Player- és mob-trample natív megfelelője jelen van | Mindkét eseményút és védelmi kompatibilitás teszt |
 
@@ -252,6 +354,9 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
    sebzés/exhaustion policy, provokáció, Enderman, ambient/vad DARK undead,
    Vérhold és harci kivételek, koronaátok, két eltérő frakció ugyanazon mobnál,
    valamint reload–relog–restart–disable lifecycle.
+8. **Integrációs hullám:** PlayerProfile-, invsee/adományláda-, world-event
+   spawn-védelmi, frakciószín- és runtime hardening kézi próbák — az admin
+   kézikönyv „Kiegészítő staging-mátrixok” szakasza szerint.
 
 ## Élesítés rövid sorrendje
 
@@ -288,3 +393,36 @@ a JAR-ban. Emiatt több rendszerről csak képességszintű következtetés adha
 A teljes 68 root parancs, 286 route, 79 root alias, 93 routing alias,
 44 permission, 13 550 configútvonal és 545 production komponens gépi
 referenciáját a `Repository Docs Inventory` workflow artifactja tartalmazza.
+
+## Season 0 / Prologue — Kárhozat Kapuja
+
+A release-jelölt tartalmazza a Season 0 egyszeri **Prologue** életciklust és
+Olethropyla, a már létező ősi Kárhozat Kapuja köré épülő átmenetet. A rendszer
+külön tartós világállapotot, alapból 25-ös Season 0 class-szintplafont,
+specializáció-/relic-/blueprint-/high-tier loot kapukat, Nether travel policyt,
+Gate Breach és finale encountert, participant scalinget, rehearsal módot,
+Profile v2 Founder/finale participationt, rendkívüli Krónikát, emlékművet és
+Season 1 átmenetet kezel.
+
+A completion hardeningben a Prologue encounter cleanupból kikerült a globális
+`Bukkit.getEntity(UUID)` lookup; az event entityk a közös transient-entity
+scheduler-handle életcikluson takarítódnak. A production `finale pause` már
+nemcsak az orchestrator tickjét állítja meg: az aktív encounter AI-ja, combatja,
+pending spawnjai, boss mechanikái és timeoutja is szünetel. A pause idő nem
+fogyasztja a timeout-budgetet, a pauseolt phase és a hátralévő encounter-idő
+restart után is megmarad, és resume ugyanabból a checkpointból építkezik.
+
+A finale boss halála azonnali in-memory spawn latch-et állít, mielőtt az
+encounter újra spawnolhatónak számítana; a tartós boss-victory állapot a
+`finaleId`-hoz kötött és idempotens. Persistence hiba esetén a finale fail-closed:
+nincs második boss, Gate activation vagy Season 1 továbblépés, amíg a tartós
+állapot nem rendezhető. Az irreverzibilis lánc sorrendje továbbra is
+**boss victory → Gate unlock → reward plan/Profile v2 reward → Chronicle →
+monument → Season 1 prepare/activate**, one-shot receiptekkel védve.
+
+A világépítői bekötéshez négy konfigurált runtime hook tartozik:
+`prologue-gate`, `prologue-gathering`, `prologue-breach`, `prologue-boss`.
+A repository szándékosan nem talál ki ezekhez koordinátát; a végleges staging
+világon kell őket biztonságos helyre kötni és bejárni. A productionközeli Folia
+pause/restart/finale és world-hook acceptance ettől továbbra is kézi staging
+kapu, nem CI-állítás.
