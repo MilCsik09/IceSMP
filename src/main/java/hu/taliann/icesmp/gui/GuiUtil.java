@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.gui;
 
+import hu.taliann.icesmp.crates.CrateSoundResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -73,10 +74,9 @@ public final class GuiUtil {
                 : (float) config.getDouble(base + ".volume", sound.defaultVolume);
         final float pitch = config == null ? sound.defaultPitch
                 : (float) config.getDouble(base + ".pitch", sound.defaultPitch);
-        try {
-            player.playSound(player.getLocation(), org.bukkit.Sound.valueOf(soundName), volume, pitch);
-        } catch (final IllegalArgumentException ignored) {
-            // Ismeretlen hang-név a configban — inkább csend, mint hiba.
+        final org.bukkit.Sound resolved = CrateSoundResolver.resolve(soundName);
+        if (resolved != null) {
+            player.playSound(player.getLocation(), resolved, volume, pitch);
         }
     }
 

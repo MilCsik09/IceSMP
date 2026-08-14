@@ -231,7 +231,6 @@ public final class ProfessionXpListener implements Listener {
                     org.bukkit.event.inventory.InventoryAction.PICKUP_ONE,
                     org.bukkit.event.inventory.InventoryAction.MOVE_TO_OTHER_INVENTORY,
                     org.bukkit.event.inventory.InventoryAction.HOTBAR_SWAP,
-                    org.bukkit.event.inventory.InventoryAction.HOTBAR_MOVE_AND_READD,
                     org.bukkit.event.inventory.InventoryAction.SWAP_WITH_CURSOR,
                     org.bukkit.event.inventory.InventoryAction.COLLECT_TO_CURSOR,
                     org.bukkit.event.inventory.InventoryAction.DROP_ONE_SLOT,

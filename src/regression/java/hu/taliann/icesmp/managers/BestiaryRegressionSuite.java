@@ -72,7 +72,7 @@ public final class BestiaryRegressionSuite {
                 "mob kills use the shared canonical entry id");
         final String combat = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/StatsCombatListener.java"));
-        check(combat.contains("recordMobKill(killer.getUniqueId(),")
+        check(combat.contains("recordMobKill(kill.killerId(),")
                         && combat.contains("BestiaryManager.entryId"),
                 "species counter rides the existing per-kill statistics commit");
         final String store = Files.readString(Path.of(

@@ -17,9 +17,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
 /**
- * B21 — bestiárium-hookok: mob-faj első elejtése + boss-ARCHETÍPUS (a kill a
- * gyilkos régió-szálán fut, a PDC-írás ott biztonságos), valamint a csak
- * olvasható lapozó GUI kattintás-útvonalai. A recept- és territórium-hook a
+ * B21 — bestiárium-hookok: mob-faj első elejtése + boss-ARCHETÍPUS (a gyilkos
+ * PDC-írása a gyilkos régió-szálára ütemezve), valamint a csak olvasható lapozó
+ * GUI kattintás-útvonalai. A recept- és territórium-hook a
  * ProfessionRecipeBookListener/TerritoryListener setter-injektált hívása.
  */
 public final class BestiaryListener implements Listener {
@@ -44,8 +44,9 @@ public final class BestiaryListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onKill(final EntityDeathEvent event) {
-        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
-        if (killer == null) {
+        final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
+                hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKill(event.getEntity());
+        if (kill == null) {
             return;
         }
         // Folia: a halál a MOB régió-szálán fut — a killer profilját a killer
@@ -53,15 +54,15 @@ public final class BestiaryListener implements Listener {
         if (worldBossManager != null && worldBossManager.isWorldBoss(event.getEntity())) {
             // Az ARCHETÍPUS a lajstrom-kulcs: két azonos vanilla-fajú boss külön bejegyzés.
             final String archetype = worldBossManager.archetypeId(event.getEntity());
-            killer.getScheduler().run(bestiaryManager.plugin(), task ->
-                    bestiaryManager.record(killer, BestiaryManager.Category.BOSSES, archetype), null);
+            kill.runOnKiller(bestiaryManager.plugin(), killer ->
+                    bestiaryManager.record(killer, BestiaryManager.Category.BOSSES, archetype));
             return;
         }
         if (event.getEntity() instanceof Monster) {
             // A ritka variáns ÖNÁLLÓ lajstrom-bejegyzés (pl. albino_zombie).
             final String entry = BestiaryManager.entryId(event.getEntity());
-            killer.getScheduler().run(bestiaryManager.plugin(), task ->
-                    bestiaryManager.record(killer, BestiaryManager.Category.MOBS, entry), null);
+            kill.runOnKiller(bestiaryManager.plugin(), killer ->
+                    bestiaryManager.record(killer, BestiaryManager.Category.MOBS, entry));
         }
     }
 

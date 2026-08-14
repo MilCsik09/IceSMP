@@ -29,8 +29,9 @@ public final class DailyQuestListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
-        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
-        if (killer == null) {
+        final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
+                hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKill(event.getEntity());
+        if (kill == null) {
             return;
         }
         // Folia: the death event runs on the mob's region thread; handle mutates the killer
@@ -43,7 +44,7 @@ public final class DailyQuestListener implements Listener {
         } else {
             return;
         }
-        killer.getScheduler().run(plugin, task -> dailyQuestManager.handle(killer, objective), null);
+        kill.runOnKiller(plugin, killer -> dailyQuestManager.handle(killer, objective));
     }
 
     // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a

@@ -204,17 +204,6 @@ public final class MobKillUtil {
                 : new KillContext(killer.getUniqueId(), victim);
     }
 
-    /**
-     * Legacy compatibility only. New reward/progress code must use {@link #eligibleTrackingKill}.
-     */
-    @Deprecated(forRemoval = true)
-    public static Player eligibleTrackingKiller(final LivingEntity victim) {
-        if (victim == null || MinionManager.isMinionTagged(victim)) {
-            return null;
-        }
-        return victim.getKiller();
-    }
-
     public static boolean isSpawnerSpawned(final Entity entity) {
         return entity != null && SPAWNER_MOB_KEY != null
                 && entity.getPersistentDataContainer().has(

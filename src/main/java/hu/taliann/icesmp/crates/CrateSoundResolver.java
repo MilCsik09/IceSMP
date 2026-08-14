@@ -22,20 +22,23 @@ public final class CrateSoundResolver {
         return name.replace('.', '_').replace('-', '_').toUpperCase(Locale.ROOT);
     }
 
-    @SuppressWarnings("deprecation")
     public static Sound resolve(final String configured) {
         final String enumName = enumName(configured);
         if (enumName == null) {
             return null;
         }
         final String raw = configured.trim();
-        try {
-            return Sound.valueOf(enumName);
-        } catch (final IllegalArgumentException ignored) {
-            // Custom/non-enum registry keys continue through the canonical registry path.
-        }
         final String namespaced = raw.contains(":") ? raw : "minecraft:" + raw;
         final NamespacedKey key = NamespacedKey.fromString(namespaced.toLowerCase(Locale.ROOT));
-        return key == null ? null : Registry.SOUNDS.get(key);
+        final Sound registered = key == null ? null : Registry.SOUND_EVENT.get(key);
+        if (registered != null) {
+            return registered;
+        }
+        try {
+            final Object legacyConstant = Sound.class.getField(enumName).get(null);
+            return legacyConstant instanceof Sound sound ? sound : null;
+        } catch (final NoSuchFieldException | IllegalAccessException ignored) {
+            return null;
+        }
     }
 }
