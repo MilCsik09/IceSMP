@@ -1,176 +1,327 @@
 # Season 0 / Prologue — Olethropyla, a Kárhozat Kapuja
 
-## Kánon és termékhatár
+Ez a dokumentum a Season 0 szerveroldali működésének, live-ops kezelésének,
+world-builder kötéseinek és recovery szabályainak technikai kézikönyve.
 
-A Prologue nem külön normál szezon és nem Season 1 rövidített változata. Olethropyla nem a Prologue alatt keletkezik: a Hetedik Vérháború óta áll a Jégmezők és a Vérszavanna közötti Senkiföldjén. A Season 0 a Felsők korában bekövetkező új destabilizálódását, majd a Kárhozat Éjszakájának sikeres lezárása után a stabil átjáróvá válását kezeli.
+A lore autoritása továbbra is a [LORE.md](LORE.md), a fejlesztői megfeleltetés
+a [LORE_REFERENCE.md](LORE_REFERENCE.md), a játékosoldali szabályok pedig a
+[PLAYER_GUIDE.md](PLAYER_GUIDE.md) fájlban találhatók.
 
-A Prologue nem magyarázza meg az Első Csend természetét, és a Néma Királynő nem fináléboss. Az End továbbra sem Season 0/Season 1 tartalom; a meglévő owner-policy szerint a későbbi Season 2 admin-eseményig zárva marad.
+## 1. Kánon és scope
 
-## Játékosnak látható alapelvek
+Olethropyla, a **Kárhozat Kapuja** nem a Season 0-ban jön létre. A kapu a
+Hetedik Vérháború óta létezik. A Prologue története arról szól, hogy a már
+létező kapu instabillá válik, áttörések történnek körülötte, majd a játékosok
+a Kárhozat Éjszakáján stabilizálják és ténylegesen használhatóvá teszik.
 
-- A karakter, kaszt, legitim tárgyak, achievementek és cosmetic státuszok Season 1-re megmaradnak; nincs wipe.
-- Season 0-ban a kasztszint alapértelmezett plafonja 25. A plafon fölött XP nem bankolódik.
-- A kaszt-specializáció, a normál relikvia-progression, blueprint drop és felső gear/affix raritások alapból zártak.
-- A „Zarándoklat a Kapuhoz” teljesíthető: a Kapuhoz el lehet jutni, csak az átkelés zárt.
-- A saját Nether-portál továbbra sem legitim út. Season 0-ban az Overworld → Nether travel zárt; a finálé után kizárólag Olethropyla builder által kijelölt központi kapuja nyit utat. Nether → Overworld visszatérés megmarad.
-- A Kapu stabilitása a környéken, kapcsolódó event alatt, illetve az összeomlási szakaszban hangsúlyosan jelenik meg.
-- Season 1-től az új/lemaradó karaktereknél az alap catch-up ×1,75 25-ös kasztszintig; 25-nél automatikusan megszűnik.
+A Season 0 nem fedheti fel a Néma Királynő vagy az Első Csend valódi
+magyarázatát. Ezek későbbi történeti scope-ok.
 
-## Prologue authority
+A Prologue nem normál `SeasonManager`-szezon `seasonNumber=0` értékkel. Saját,
+tartós világ-authorityt használ. A normál Season 1 csak a Prologue sikeres,
+idempotens lezárása után kap friss kezdési timestampet és tiszta league
+állapotot.
 
-A tartós világállapotot `PrologueManager` kezeli. A normál `SeasonManager` Season 1+ authority marad; Prologue alatt a normál liga, community goal drift és `SeasonFinaleManager` runtime-gate mögött áll.
+## 2. Prologue lifecycle
 
-A tartós állapotgép:
+A világ-authority fő állapotai:
 
-`DORMANT → UNSTABLE → BREACHING → FINALE → GATE_OPEN → COMPLETED`
+`DORMANT -> UNSTABLE -> BREACHING -> FINALE -> GATE_OPEN -> COMPLETED`
 
-A Kapu eszkalációs szakaszai:
+A kapu vizuális/esemény-eszkalációja külön stage-ként fut:
 
-1. `SILENCE` — Hallgatás;
-2. `CRACKS` — Repedések;
-3. `LEAK` — Szivárgás;
-4. `COLLAPSE` — Összeomlás.
+`SILENCE -> CRACKS -> LEAK -> COLLAPSE`
 
-A stage és a stabilitás külön tartós adat. Az idővonal automatikusan léptethető, de adminból explicit módosítható. A kritikus világállapot `prologue.yml` fájlban, atomic `YamlStore` írással él; persistence-hibánál az in-memory mutation visszagörget, ezért a transition fail-closed.
+A stage és a kapustabilitás tartós állapot. A bundled konfiguráció jelenleg:
 
-## Progression/content policy
+- SILENCE: 92% stabilitás, 72 óra;
+- CRACKS: 78%, 72 óra;
+- LEAK: 43%, 48 óra;
+- COLLAPSE: 17%, kézi/finale lezárásig gyakorlatilag tartós.
 
-A `PrologueContentPolicy` az authority a következő gate-ekre:
+Az automatikus stage-advance configból kikapcsolható. Live módosításkor a
+persistált state és a config nem keverendő össze: a config default/policy, a
+`prologue.yml` pedig az aktuális világállapot.
 
-- kaszt-XP plafon;
-- kaszt-specializáció;
-- relikvia normál megszerzése;
-- blueprint drop;
-- felső rarity/loot ceiling;
-- Nether traversal;
-- Season 1 catch-up.
+## 3. Season 0 progression- és content-policy
 
-A class-XP cap és catch-up a közös `JobManager` Profile v2 mutation útján történik. A durable operation receipt replaye a már elfogadott mutation módját és értékét játssza vissza, így retry közben nem változik a kiosztott XP. A Profile v2 memory/spec unlock út külön ugyanazt a policyt ellenőrzi.
+A bundled Season 0 alapértékek:
 
-A Season 0 loot ceiling runtime-only config overlay. Nem írja át a live configfájlokat: a blueprint és boss drop felső forrásokat lenullázza, a nem engedélyezett raritás-súlyokat 0-ra állítja, valamint a konfigurált nagy power-event forrásokat kikapcsolja. `COMPLETED` után normál config reload állítja vissza a Season 1 értékeket.
+- class level cap: **25**;
+- specialization: zárva;
+- normál relic acquisition: zárva;
+- blueprint acquisition: zárva;
+- engedélyezett item-raritások: `ocska`, `kozonseges`, `nem_mindennapi`, `ritka`;
+- world boss, Wild Hunt és treasure event high-power útvonalak runtime overlayből tiltva.
 
-## Gate Breach
+A class XP minden normál IceSMP jutalomútja a központi policyt kapja. A cap
+nem csak a level-upot blokkolja: az XP a 25. szint kezdeti küszöbén clampelődik,
+így Season 0 alatt nem lehet előre bankolni a 26. szintet.
 
-A `PrologueEncounterEngine` egyetlen újrahasznosítható encounter motor:
+A Prologue lezárása után opcionális catch-up élhet. Bundled érték:
 
-- `MINOR`, `MAJOR`, `CRITICAL` severity;
-- warning pulse, hang és particle;
-- konfigurálható hullámok és elite;
-- ténylegesen a Kapu körül jelen lévő játékosok alapján lineárisan, minimum/maximum korláttal skálázott mob count;
-- meglévő `MajorEventGate`, `EventSpawnGuard` és `TransientEntities` integráció;
-- Folia region/entity/player scheduler használat;
-- Prologue event mobokból nincs vanilla power loot vagy XP.
+- target level: 25;
+- multiplier: 1.75.
 
-A természetes breach csak a `LEAK`/`COLLAPSE` fázisban indulhat, és csak akkor, ha ténylegesen van játékos a Kapu környékén.
+Ez kizárólag a lemaradók felzárkózását szolgálja; nem Season 0 power reward.
 
-## Kárhozat Éjszakája
+A normál relic/debug admin útvonalak megmaradhatnak staging és recovery célra,
+de játékosoldali legitim megszerzés Season 0-ban zárt.
 
-A finálé külön `PrologueFinaleManager`, nem a Season 1+ `SeasonFinaleManager` reskinje. A checkpointok:
+## 4. Nether és End policy
 
-`PREPARING → GATHERING → BREACH_1 → BREACH_2 → ELITE_WAVE → BOSS_INTRO → BOSS_FIGHT → FALSE_END → GATE_AWAKENING → EPILOGUE → COMPLETED`
+Season 0 alatt a Nether játékosok számára zárt. A normál FIRE-alapú
+Nether-portál létrehozása továbbra is blokkolt.
 
-A gathering szerver-wide kihirdetés után utazásra kéri a játékosokat, de nem teleportál. A scaling baseline a tényleges arena-participant snapshotból készül. A finálé kontextusa a Doom Gate környezetében átmeneti PvP ceasefire-t ad; a territory permanens PvP-policyje nem íródik át.
+A Prologue finálé után pontosan egy legitim vanilla `NETHER_PORTAL` utazási
+hely létezik: **Olethropyla**. A játékos csak a konfigurált `prologue-gate`
+anchor közeléből használhat Nether-portált. A bundled travel radius 24 blokk.
 
-A default bossnév „A Hasadék Őre”, és csak konfigurálható helykitöltő lore-megnevezés. A boss determinisztikus: 65% fölött telegráfozott slam, 65–30% között addok és slam, 30% alatt enrage + arena hazard. A mechanikák participant-count alapján korlátozottan skálázódnak.
+Az admin `icesmp.admin.territory.bypass` explicit bypassként használható
+staging/debug célra.
 
-A boss halála után rövid false ending következik, majd Gate awakening. A Gate csak tartós `bossDefeated + finaleVictory` checkpoint után nyitható meg.
+A Netherből Overworld felé történő visszaút engedett; az Overworldből Nether
+felé vezető út kapu-authorityt igényel. Más játékos által épített vagy korábban
+ott maradt portal frame nem válhat legitim shortcut-tá.
 
-## Crash/restart recovery
+Az End Season 0 lezárása után sem nyílik meg automatikusan. Az End portal
+frame és END_PORTAL policy külön világkapu, változatlanul zárt marad.
 
-A győzelmi flow sorrendje:
+## 5. World-builder contract
 
-1. boss defeated;
-2. finale victory committed;
-3. Gate unlocked;
-4. durable reward plan created;
-5. Profile v2 reward delivery/replay;
-6. chronicle/monument one-shot receipt;
-7. tiszta Season 1 generation;
-8. Prologue `COMPLETED`;
-9. normál Season 1 lifecycle aktiválása.
+A repository szándékosan **nem tartalmaz kitalált production koordinátákat**.
+A végleges staging világon négy event-spawnpoint hookot kell felvenni:
 
-Következmények:
+- `prologue-gate` — a tényleges Olethropyla kapu és travel authority közepe;
+- `prologue-gathering` — a finálé gyülekező/briefing tere;
+- `prologue-breach` — az áttörés hullámainak spawn- és harctere;
+- `prologue-boss` — A Hasadék Őre boss encounterének horgonya.
 
-- boss halála utáni, Gate unlock előtti crash esetén a boss nem spawnol újra;
-- Gate unlock utáni crash esetén a Kapu nyitva marad és a reward flow folytatódik;
-- részleges reward delivery után a Profile v2 achievement CAS/idempotencia és a durable participant reward-plan akadályozza a duplázást;
-- offline jogosult a következő Profile v2-ready belépéskor kapja meg ugyanazt a grantot;
-- a Season 1 start timestamp külön kritikus receiptben egyszer foglalódik le, ezért recovery közben nem driftel a plugin vagy Prologue indulási idejére.
+A Prologue runtime ezeket `points` anchor módban használja. A hookokat az
+IceSMP meglévő event-spawnpoint eszközeivel kell felvenni; ne hardcode-olj
+koordinátát Java forrásba.
 
-A finálé wave közbeni restart az aktuális checkpoint hullámát újraindíthatja; előtte power reward nincs, ezért ez nem dupláz jutalmat. Boss fight restartkor csak nem legyőzött boss állhat vissza.
+Builder acceptance minimum:
 
-## Prestige jutalmak
+1. mind a négy pont ugyanazon intended world buildhez tartozik;
+2. a gathering pont nem teleportcsapda és legalább a tervezett tömeget elbírja;
+3. a breach és boss körül nincs víz, void, claim/region ütközés vagy szűk
+   geometria, amely az encountert beszorítja;
+4. a `prologue-gate` körül a tényleges vanilla portal frame és a vizuális kapu
+   egyértelműen ugyanahhoz a helyhez tartozik;
+5. 24 blokkon kívüli Overworld Nether-portal használat játékosként tiltott;
+6. restart, WorldEdit/paste és világmásolat után minden hook újraellenőrzött;
+7. a stabilitás HUD és az ambient effekt 96 blokk környékén vizuálisan
+   ellenőrzött.
 
-A Prologue nem ad combat vagy gazdasági előnyt.
+## 6. Breach encounterek
 
-Profile v2 achievement/flag azonosítók:
+A Prologue egy közös encounter engine-t használ a random/admin breach-ekhez
+és a finálé hullámaihoz.
 
-- `prologue_founder` — Founder / Első Expedíció státusz;
-- `prologue_finale_participant` — Kárhozat Éjszakája tényleges résztvevő.
+Severityk:
 
-A finale eligibility nem last-hit alapú: presence + finale damage vagy boss damage bizonyíték alapján készül. A thresholdok live configból állíthatók.
+- `MINOR` — bundled base count 4;
+- `MAJOR` — bundled base count 7;
+- `CRITICAL` — bundled base count 10.
 
-## Krónika és emlékmű
+A résztvevőszám 5 és 45 közé clampelődik. A mob count, boss HP és más skálák
+a központi `PrologueScaling` szerint nőnek, konfigurált maximumokkal.
 
-Sikeres production finálé után:
+A Prologue mobok transient, nem-persistent entitások. PDC markerrel és
+encounter ID-val rendelkeznek, lootot és XP-t nem dobhatnak, így nem nyitnak
+Season 0 loot-ceiling kerülőutat.
 
-- egyszeri rendkívüli krónika készül Olethropyla megnyílásáról;
-- a meglévő `SeasonMonumentManager` általánosított Prologue-bejegyzést kap: „Az Első Expedíció”, finálénév, dátum és participant count;
-- nincs fake Season 0 frakciógyőztes.
+Cleanup kizárólag a közös transient-entity scheduler-handle életcikluson fut;
+globális `Bukkit.getEntity(UUID)` lookup nem használható.
 
-## Season 1 transition
+## 7. Kárhozat Éjszakája — finale
 
-A transition új `season.yml` generationt készít `season.number = 1` és a tényleges indulási pillanatot rögzítő `season.start` értékkel. A `community-goals.yml` tiszta Season 1 generationnel indul. Csak a Gate unlock + durable reward plan után lehet `COMPLETED` állapotot commitolni; ezután oldódik fel a normál liga, community goal és normál season finale lifecycle.
+A production finale fő checkpointjai:
 
-A Kapu nyitva marad, de a saját Nether-portál policy nem változik. Az End zárva marad.
+`PREPARING -> GATHERING -> BREACH_1 -> BREACH_2 -> ELITE_WAVE -> BOSS_INTRO -> BOSS_FIGHT -> FALSE_END -> GATE_AWAKENING -> EPILOGUE -> COMPLETED`
 
-## Admin/live-ops
+Bundled minimum résztvevőszám: 5. A gathering nem teleportálja erővel a
+játékosokat; a csapatnak fizikailag kell megérkeznie.
+
+A finálé alatt a gate-arénán belül átmeneti PvP ceasefire él. Ez kizárólag a
+finale-context idejére érvényes és nem írja át tartósan a territoryt.
+
+A boss alapértelmezett neve **A Hasadék Őre**, entity típusa
+`WITHER_SKELETON`. Bundled base HP 500 és base attack damage 9. A participant
+scaling és a phase mechanikák az encounter engine-ben futnak.
+
+A boss halála után szándékos false ending következik, majd a Gate awakening.
+A kapu nem nyílhat meg a boss-victory tartós commitja előtt.
+
+## 8. Production és rehearsal
+
+`/prologue finale start` production finálét indít.
+
+`/prologue finale start --rehearsal` ugyanazt az encounter-, boss-, HUD-,
+scheduler- és presentation útvonalat használja, de nem ír production completion
+állapotot:
+
+- nincs tartós Gate unlock;
+- nincs Founder/finale reward commit;
+- nincs Chronicle/monument commit;
+- nincs Season 1 transition.
+
+A rehearsal célja, hogy a builderek és eventesek a tényleges production
+útvonalat próbálják, ne egy külön, gyengébb mockot.
+
+## 9. Pause / resume semantics
+
+Production `finale pause` valódi eseményszünet:
+
+- az orchestrator nem lép tovább;
+- az aktív encounter mobok AI-ja megáll és combatjuk blokkolt;
+- pending spawnok nem futhatnak át a pause-on;
+- boss phase mechanikák nem haladhatnak;
+- az encounter timeout nem fogy;
+- a pause idő nem számít bele a phase age-be.
+
+A pause állapot, a phase és a hátralévő encounter timeout restart után is
+helyreállítható. `resume` ugyanabból a tartós checkpointból folytat.
+
+A rehearsal nem kap külön durable pause/restart persistence frameworköt; a
+production recovery-authority a lényeg.
+
+## 10. Crash safety és irreverzibilis sorrend
+
+A finálé irreverzibilis lánca:
+
+1. boss victory;
+2. Gate unlock;
+3. reward plan létrehozás és Profile v2 reward commit;
+4. rendkívüli Chronicle;
+5. Prologue monument;
+6. Season 1 prepare/activate;
+7. Prologue `COMPLETED`.
+
+A boss completion callback in-memory spawn latch-et állít, mielőtt az encounter
+újra spawnolhatónak számítana. A durable victory a `finaleId`-hoz kötött és
+idempotens.
+
+Ha a boss meghalt, de a victory persistence hibázik, a rendszer fail-closed:
+
+- második boss nem spawnolhat;
+- a Gate nem nyílhat ki;
+- reward/Chronicle/monument/Season 1 nem léphet tovább.
+
+Normál recovery:
+
+1. állítsd meg a live event műveleteket;
+2. mentsd a konzollogot és a plugin Prologue state fájljait;
+3. javítsd a filesystem/persistence hibát;
+4. ellenőrizd `/prologue status` kimenetét;
+5. használd `/prologue finale resume` parancsot;
+6. ellenőrizd, hogy ugyanaz a `finaleId` folytatódik és nincs második boss.
+
+A `/prologue gate open --force` **nem normál recovery**. Ez veszélyes admin
+override: a kaput úgy nyitja ki, hogy a Prologue ettől még nem válik lezárttá.
+Csak dokumentált tulajdonosi/üzemeltetői döntéssel, staging bizonyítékkal
+használd.
+
+## 11. Reward és részvétel
+
+A Season 0 jutalmai prestige/cosmetic státuszok; nem adnak power előnyt.
+
+A PlayerProfile v2 authority két fő flaget használ:
+
+- `prologue_founder`;
+- `prologue_finale_participant`.
+
+A finale eligibility presence és combat contribution alapján számolható.
+Bundled minimumok: 45 másodperc jelenlét, 1.0 event damage vagy 1.0 boss damage.
+
+Az eligible UUID-k a Prologue világstate-ben is tartósan megmaradnak. Ha a
+játékos Profile v2 profilja a commit pillanatában nincs cache-ben/online, a
+jutalom a következő Profile-v2-ready joinkor idempotensen replayelhető.
+
+Nincs Season 0 power item, pénz vagy relic jutalom.
+
+## 12. Chronicle és monument
+
+A sikeres production finale egy extraordinary Chronicle bejegyzést publikál,
+one-shot receipttel. A szöveg spoiler-safe: Olethropyla megnyílását rögzítheti,
+de nem fedheti fel az Első Csend vagy a Néma Királynő valódi magyarázatát.
+
+A Prologue monument az egyszeri Season 0 / Első Expedíció történeti rekordot
+ugyanabban a monument-projection rendszerben tárolja, mint a normál szezonok.
+Nem cél 50 játékos nevének giant hologramként való megjelenítése.
+
+## 13. Season 1 transition
+
+A Prologue nem wipe-olja a játékosprofilt. A fairness-t a Season 0
+progression/loot ceiling adja.
+
+A Prologue lezárása után a Season 1:
+
+- `season.number = 1`;
+- friss, tartósan receiptezett start timestampet kap;
+- tiszta normál season/community league state-ből indul;
+- a Season 0 normál season driftje nem vihető át;
+- a PlayerProfile v2 tartós karakterállapot megmarad;
+- opcionális catch-up segítheti a később érkező játékosokat.
+
+A Season 1 timestamp külön kritikus transition receiptből származik, így
+crash replaykor nem változhat meg minden restarttal.
+
+## 14. Admin parancsok
 
 Permission: `icesmp.admin.prologue`.
 
-- `/prologue status`
-- `/prologue stage <SILENCE|CRACKS|LEAK|COLLAPSE>`
-- `/prologue stability <0-100>`
-- `/prologue breach start [MINOR|MAJOR|CRITICAL]`
-- `/prologue finale start`
-- `/prologue finale start --rehearsal`
-- `/prologue finale pause`
-- `/prologue finale resume`
-- `/prologue finale abort`
-- `/prologue gate open --force`
+```text
+/prologue status
+/prologue stage <SILENCE|CRACKS|LEAK|COLLAPSE>
+/prologue stability <0-100>
+/prologue breach start [MINOR|MAJOR|CRITICAL]
+/prologue finale start [--rehearsal]
+/prologue finale pause
+/prologue finale resume
+/prologue finale abort
+/prologue gate open --force
+```
 
-A `gate open --force` szándékosan explicit veszélyes override. A production state-mutationök a Prologue audit historyban maradnak.
+A stage/stability parancs live-ops mutáció, ezért production használatnál
+rögzítsd az okot és az előtte/utána státuszt. A force-open különösen magas
+kockázatú override.
 
-A rehearsal ugyanazt a wave/scaling/boss/HUD/scheduler útvonalat használja, de nem commitol Gate unlockot, Founder/finale jutalmat, krónikát, monumentet vagy Season 1 transitiont.
+## 15. Staging acceptance
 
-## World-builder contract
+A Prologue release előtt legalább az alábbi kézi próbák szükségesek:
 
-A runtime nem tartalmaz autoritatív koordinátát. A meglévő event spawnpoint rendszerrel a következő event key-khez kell builder anchor:
+- [ ] PRO-01 — mind a négy builder hook feloldódik és biztonságos;
+- [ ] PRO-02 — Season 0 XP cap minden ismert XP forrással és admin SET/ADD úton;
+- [ ] PRO-03 — spec/relic/blueprint/high-tier loot tiltások játékosként, admin debug külön;
+- [ ] PRO-04 — random MINOR/MAJOR/CRITICAL breach, 5/10/25/45 játékosnak megfelelő scaling;
+- [ ] PRO-05 — rehearsal teljes hullám- és bossútja production side-effect nélkül;
+- [ ] PRO-06 — production finale gathering/minimum-player/ceasefire;
+- [ ] PRO-07 — pause/resume minden fontos phase-ben;
+- [ ] PRO-08 — pause közbeni teljes restart és ugyanazon checkpointból resume;
+- [ ] PRO-09 — boss-death és victory-persistence közti fault-injection: nincs duplicate boss vagy Gate unlock;
+- [ ] PRO-10 — boss victory -> Gate -> reward -> Chronicle -> monument -> Season 1 sorrend;
+- [ ] PRO-11 — Nether portal policy a gate-en belül/kívül, admin bypass és Netherből visszaút;
+- [ ] PRO-12 — End továbbra is zárt;
+- [ ] PRO-13 — offline eligible participant következő joinkor pontosan egyszer kap prestige státuszt;
+- [ ] PRO-14 — 50 körüli online játékossal participant tracking/HUD/encounter terhelési próba.
 
-- `prologue-gate` — a monumentális Kárhozat Kapuja és a legitim Overworld → Nether travel ellenőrzési pontja;
-- `prologue-gathering` — rally/gathering tér; hiányában Gate anchor fallback;
-- `prologue-breach` — breach hullámok központja; hiányában Gate anchor fallback;
-- `prologue-boss` — boss-aréna központja; hiányában Gate anchor fallback.
+Minden futásnál rögzítsd a pontos commit SHA-t, JAR SHA-256-ot, config snapshotot,
+konzollogot és a várt/kapott eredményt.
 
-A mapon szükséges továbbá:
+## 16. Automatizált bizonyíték
 
-- monumentális, évszázadok óta álló Olethropyla;
-- finale arena és biztonságos perem;
-- több breach spawn-pozícióra alkalmas járható terület;
-- korrupciós dekoráció és jó vizuális sightline;
-- Season 1 Nether-side arrival point/world-build összekötés.
+A Prologue source-contract és pure-math regresszió:
 
-A spawn anchorokhoz a meglévő `/events spawnpoint` admin workflow használható. A plugin nem talál ki koordinátát.
+`src/regression/java/hu/taliann/icesmp/prologue/PrologueRegressionSuite.java`
 
-## Resource pack
+Gradle task:
 
-A Prologue server-side alapja nem igényel kötelező új pack assetet. A stabilitás Adventure BossBar fallbackkel resource pack nélkül is érthető, a boss mechanikák vanilla particle/sound telegráfot használnak. Később opcionálisan adható dedikált stability ikon, Founder badge, finale achievement ikon vagy boss/corruption asset anélkül, hogy a gameplay authority ezekre támaszkodna.
+```text
+./gradlew prologueRegressionTest
+```
 
-## Szándékosan későbbi scope
-
-- normál Season 1+ faction finale mechanikák a meglévő `SeasonFinaleManager` hatáskörében;
-- teljes class relic roster/power progression;
-- az End megnyitása a későbbi Season 2 owner-eventben;
-- az Első Csend valódi természetének magyarázata;
-- a Néma Királynő végjátékának felfedése;
-- opcionális, pusztán vizuális Prologue resource-pack bővítés.
+A task a normál `check` verification graph része. A teljes merge gate továbbra
+is Java 21 clean build/check + repository consistency/docs gates + productionközeli
+Folia staging acceptance.

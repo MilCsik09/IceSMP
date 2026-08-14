@@ -393,3 +393,36 @@ a JAR-ban. Emiatt több rendszerről csak képességszintű következtetés adha
 A teljes 68 root parancs, 286 route, 79 root alias, 93 routing alias,
 44 permission, 13 550 configútvonal és 545 production komponens gépi
 referenciáját a `Repository Docs Inventory` workflow artifactja tartalmazza.
+
+## Season 0 / Prologue — Kárhozat Kapuja
+
+A release-jelölt tartalmazza a Season 0 egyszeri **Prologue** életciklust és
+Olethropyla, a már létező ősi Kárhozat Kapuja köré épülő átmenetet. A rendszer
+külön tartós világállapotot, alapból 25-ös Season 0 class-szintplafont,
+specializáció-/relic-/blueprint-/high-tier loot kapukat, Nether travel policyt,
+Gate Breach és finale encountert, participant scalinget, rehearsal módot,
+Profile v2 Founder/finale participationt, rendkívüli Krónikát, emlékművet és
+Season 1 átmenetet kezel.
+
+A completion hardeningben a Prologue encounter cleanupból kikerült a globális
+`Bukkit.getEntity(UUID)` lookup; az event entityk a közös transient-entity
+scheduler-handle életcikluson takarítódnak. A production `finale pause` már
+nemcsak az orchestrator tickjét állítja meg: az aktív encounter AI-ja, combatja,
+pending spawnjai, boss mechanikái és timeoutja is szünetel. A pause idő nem
+fogyasztja a timeout-budgetet, a pauseolt phase és a hátralévő encounter-idő
+restart után is megmarad, és resume ugyanabból a checkpointból építkezik.
+
+A finale boss halála azonnali in-memory spawn latch-et állít, mielőtt az
+encounter újra spawnolhatónak számítana; a tartós boss-victory állapot a
+`finaleId`-hoz kötött és idempotens. Persistence hiba esetén a finale fail-closed:
+nincs második boss, Gate activation vagy Season 1 továbblépés, amíg a tartós
+állapot nem rendezhető. Az irreverzibilis lánc sorrendje továbbra is
+**boss victory → Gate unlock → reward plan/Profile v2 reward → Chronicle →
+monument → Season 1 prepare/activate**, one-shot receiptekkel védve.
+
+A világépítői bekötéshez négy konfigurált runtime hook tartozik:
+`prologue-gate`, `prologue-gathering`, `prologue-breach`, `prologue-boss`.
+A repository szándékosan nem talál ki ezekhez koordinátát; a végleges staging
+világon kell őket biztonságos helyre kötni és bejárni. A productionközeli Folia
+pause/restart/finale és world-hook acceptance ettől továbbra is kézi staging
+kapu, nem CI-állítás.

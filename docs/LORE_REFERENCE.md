@@ -253,3 +253,40 @@ játékoskézikönyvben, sem a funkciókatalógusban, sem a kampányanyagban. Az
 mechanika lényege: egy nyilvánosan leírt rejtett frakciónak nincs tétje. A rendszer
 kódszinten aktív; a megismerés útja a játék, nem a kézikönyv. Ez tudatos kihagyás,
 nem dokumentációs hiány — audit ne jelentse hiányzó tartalomként.
+
+## Season 0 / Prologue — Olethropyla technikai megfeleltetése
+
+A **Prologue / Season 0** egyszeri, a normál Season 1+ frakcióligát megelőző korszak. Nem új
+kánont hoz létre: **Olethropyla már évszázadok óta áll**, a Hetedik Vérháború idején jelent meg
+a Jégmezők és a Vérszavanna közötti Senkiföldjén. A Prologue-ban maga a Kapu nem keletkezik;
+a Felsők korában újra destabilizálódik, majd a korszak fináléja után stabil átjáróvá válhat.
+
+Technikai authority: `PrologueManager` + `PrologueContentPolicy`. A világállapot
+`DORMANT → UNSTABLE → BREACHING → FINALE → GATE_OPEN → COMPLETED`, a látható
+eszkaláció pedig `SILENCE → CRACKS → LEAK → COLLAPSE`. A kapustabilitás, finale checkpointok,
+Gate-unlock, reward-plan és Season 1 transition kritikus, atomikusan mentett világállapot.
+A normál `SeasonManager` nem kap „season 0” hack-et: Season 1 csak a Prologue tartós lezárása
+után kap valódi indulási időbélyeget és tiszta ligaállást.
+
+A Season 0 content ceiling központi policyből él: az alap kasztszint-plafon `25`, a
+specializációk és normál relikviaszerzés zárva vannak, a blueprint/felső loot-tier útvonalak
+pedig nem adhatnak Season 1 eleji power leapet. A már megszerzett legitim karakterállapot és
+tárgyak nem törlődnek a váltáskor; a fairness előre alkalmazott kapukkal, nem wipe-pal készül.
+Season 1-ben az új/lemaradó játékosokhoz configolható XP catch-up társul.
+
+A Kárhozat Kapuja Season 0 alatt fizikailag megközelíthető — a „Zarándoklat a Kapuhoz” és a
+Doom Gate lore-kapcsolatok működnek —, de az **Overworld → Nether átkelés authority-szinten
+zárt**. A finálé tartós győzelmi tranzakciója nyitja meg; utána is csak az Olethropylához
+kötött legitim átjáró használható, a saját Nether-portálok létrehozási tilalma megmarad.
+A Nether → Overworld visszaút nem lesz csapda. A Vég ettől függetlenül zárva marad a későbbi
+Season 2 admin-eseményig.
+
+A finálé egy külön checkpointolt Prologue-orchestrator, nem a Season 1+ `SeasonFinaleManager`
+átnevezése. A finale közben a Doom Gate PvP-szabályt csak ideiglenes event-context ceasefire
+írja felül. A győzelmi lánc idempotens sorrendje: boss-victory receipt → Gate-unlock →
+participant reward-plan/Profile v2 prestige státusz → rendkívüli Krónika → Prologue emlékmű →
+Season 1 prepare/activate. A Founder/finale státusz presztízs, nem combat power.
+
+**Lore-korlát:** a Prologue sem az **Első Csend** természetét, sem a **Néma Királynő**
+végjátékát nem fejti meg. A Néma Királynő nem Prologue-finale boss; ezek a rejtélyek a későbbi
+kánon számára változatlanul nyitva maradnak.

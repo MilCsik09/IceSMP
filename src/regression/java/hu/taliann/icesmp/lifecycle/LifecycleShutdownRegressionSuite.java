@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.lifecycle;
 
+import hu.taliann.icesmp.prologue.PrologueRegressionSuite;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -13,6 +15,7 @@ public final class LifecycleShutdownRegressionSuite {
         transientRemovalNeverSchedulesForDisabledPlugin();
         escortShutdownClearsStateBeforeCleanup();
         bossBarCleanupDoesNotScheduleAfterDisable();
+        PrologueRegressionSuite.main(args);
         System.out.println("Lifecycle shutdown regression suite passed.");
     }
 
@@ -63,8 +66,6 @@ public final class LifecycleShutdownRegressionSuite {
     }
 
     private static void check(final boolean condition, final String message) {
-        if (!condition) {
-            throw new AssertionError(message);
-        }
+        if (!condition) throw new AssertionError(message);
     }
 }

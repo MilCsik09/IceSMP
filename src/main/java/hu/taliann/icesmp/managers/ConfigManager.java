@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Centralized, atomically-published configuration with packaged-default fallback and
@@ -63,11 +64,43 @@ public final class ConfigManager {
             "profession-recipes", "sit", "tablist", "dev-items", "client"
     };
 
+    private static volatile ConfigManager active;
+
     private final JavaPlugin plugin;
+    private final Map<String, Object> runtimeOverrides = new ConcurrentHashMap<>();
     private volatile ConfigSnapshot liveSnapshot = new ConfigSnapshot(null, null, Set.of(), 0L, "");
 
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
+        active = this;
+    }
+
+    /** Runtime singleton bridge for late-bound systems installed after the manual core DI graph. */
+    public static ConfigManager current() {
+        return active;
+    }
+
+    /**
+     * Applies a non-persistent runtime gate. This layer survives config reloads but never writes
+     * config.yml or subsystem files; lifecycle owners must clear it when the temporary gate ends.
+     */
+    public void setRuntimeOverride(final String path, final Object value) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("runtime override path is required");
+        }
+        if (value == null) runtimeOverrides.remove(path); else runtimeOverrides.put(path, value);
+    }
+
+    public void clearRuntimeOverride(final String path) {
+        if (path != null) runtimeOverrides.remove(path);
+    }
+
+    public boolean hasRuntimeOverride(final String path) {
+        return path != null && runtimeOverrides.containsKey(path);
+    }
+
+    public Map<String, Object> runtimeOverrides() {
+        return Map.copyOf(runtimeOverrides);
     }
 
     /**
@@ -212,9 +245,15 @@ public final class ConfigManager {
         }
     }
 
+    private Object runtimeValue(final String path) {
+        return runtimeOverrides.get(path);
+    }
+
     public ConfigSnapshot snapshot() { return liveSnapshot; }
     public FileConfiguration getConfiguration() { return liveSnapshot.configuration(); }
-    public boolean contains(final String path) { return liveSnapshot.isSet(path); }
+    public boolean contains(final String path) {
+        return runtimeOverrides.containsKey(path) || liveSnapshot.isSet(path);
+    }
     public boolean hasOverride(final String path) { return liveSnapshot.isOverridden(path); }
     public Object getBaseValue(final String path) { return liveSnapshot.baseValue(path); }
 
@@ -234,30 +273,60 @@ public final class ConfigManager {
     }
 
     public String getString(final String path, final String fallback) {
+        final Object runtime = runtimeValue(path);
+        if (runtime != null) return String.valueOf(runtime);
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getString(path, fallback);
     }
     public int getInt(final String path, final int fallback) {
+        final Object runtime = runtimeValue(path);
+        if (runtime instanceof Number number) return number.intValue();
+        if (runtime instanceof String value) {
+            try { return Integer.parseInt(value); } catch (final NumberFormatException ignored) { }
+        }
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getInt(path, fallback);
     }
     public long getLong(final String path, final long fallback) {
+        final Object runtime = runtimeValue(path);
+        if (runtime instanceof Number number) return number.longValue();
+        if (runtime instanceof String value) {
+            try { return Long.parseLong(value); } catch (final NumberFormatException ignored) { }
+        }
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getLong(path, fallback);
     }
     public double getDouble(final String path, final double fallback) {
+        final Object runtime = runtimeValue(path);
+        if (runtime instanceof Number number) return number.doubleValue();
+        if (runtime instanceof String value) {
+            try { return Double.parseDouble(value); } catch (final NumberFormatException ignored) { }
+        }
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getDouble(path, fallback);
     }
     public boolean getBoolean(final String path, final boolean fallback) {
+        final Object runtime = runtimeValue(path);
+        if (runtime instanceof Boolean value) return value;
+        if (runtime instanceof String value) return Boolean.parseBoolean(value);
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? fallback : configuration.getBoolean(path, fallback);
     }
     public List<String> getStringList(final String path) {
+        final Object runtime = runtimeValue(path);
+        if (runtime instanceof List<?> values) return values.stream().map(String::valueOf).toList();
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? List.of() : configuration.getStringList(path);
     }
     public List<Double> getDoubleList(final String path) {
+        final Object runtime = runtimeValue(path);
+        if (runtime instanceof List<?> values) {
+            final java.util.ArrayList<Double> parsed = new java.util.ArrayList<>();
+            for (final Object value : values) {
+                if (value instanceof Number number) parsed.add(number.doubleValue());
+            }
+            return List.copyOf(parsed);
+        }
         final FileConfiguration configuration = liveSnapshot.configuration();
         return configuration == null ? List.of() : configuration.getDoubleList(path);
     }

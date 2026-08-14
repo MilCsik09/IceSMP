@@ -26,6 +26,8 @@ public final class EventSpawnPointManager implements PersistentStore {
 
     public record SpawnPoint(String id, String eventKey, String world, int x, int y, int z) { }
 
+    private static volatile EventSpawnPointManager active;
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final File storageFile;
@@ -36,6 +38,12 @@ public final class EventSpawnPointManager implements PersistentStore {
         this.configManager = configManager;
         this.storageFile = new File(plugin.getDataFolder(), "event-spawnpoints.yml");
         plugin.getDataFolder().mkdirs();
+        active = this;
+    }
+
+    /** Runtime bridge for systems installed after the core DI graph is assembled. */
+    public static EventSpawnPointManager current() {
+        return active;
     }
 
     public synchronized String add(final String requestedId, final String eventKey,

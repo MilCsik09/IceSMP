@@ -9,31 +9,14 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * The plugin's canonical permission scheme, registered at enable time.
- *
- * <p><b>Séma:</b> minden admin-node {@code icesmp.admin.<domain>} alakú, plusz az
- * {@code icesmp.territory.builder} szerep-node (építők a védett zónákban). A
- * {@link #ALL} ({@code icesmp.admin.all}) valódi szülő-node: az összes admin-node a
- * gyereke, tehát wildcard-támogatás nélküli permission-pluginnal is egyetlen sorban
- * megadható a teljes admin-készlet. Minden node default=OP (az eddigi, regisztrálatlan
- * viselkedéssel azonos: operátornak minden jár).</p>
- *
- * <p><b>Visszafelé kompatibilitás:</b> a korábbi, kilógó nevű node-ok
- * ({@code icesmp.admin}, {@code icesmp.job.admin}, {@code icesmp.currency.admin},
- * {@code icesmp.faction.admin}, {@code icesmp.relic.admin}) alias-ként regisztrálódnak
- * a kanonikus megfelelőjük gyerekével — a meglévő LuckPerms-beállítások változtatás
- * nélkül tovább működnek.</p>
- */
+/** Canonical IceSMP permission scheme. */
 public final class Permissions {
-
-    /** Szülő super-node: az ÖSSZES alábbi node-ot megadja egyben. */
     public static final String ALL = "icesmp.admin.all";
-
     public static final String RELOAD = "icesmp.admin.reload";
     public static final String CONFIG = "icesmp.admin.config";
     public static final String HUD_EDITOR = "icesmp.admin.hud-editor";
     public static final String EVENTS = "icesmp.admin.events";
+    public static final String PROLOGUE = "icesmp.admin.prologue";
     public static final String NPC = "icesmp.admin.npc";
     public static final String QUEST = "icesmp.admin.quest";
     public static final String PARKOUR = "icesmp.admin.parkour";
@@ -65,28 +48,24 @@ public final class Permissions {
     public static final String MODERATION_INVENTORY_EDIT = "icesmp.moderation.inventory.edit";
     public static final String MODERATION_GUI = "icesmp.moderation.gui";
     public static final String MESSAGE = "icesmp.message";
-    /** Player permission for /sit and click-to-sit. */
     public static final String SIT = "icesmp.sit";
     public static final String INSPECT = "icesmp.admin.inspect";
     public static final String CLIENT = "icesmp.admin.client";
     public static final String ITEM = "icesmp.admin.item";
     public static final String TERRITORY_BUILDER = "icesmp.territory.builder";
 
-    private Permissions() {
-    }
+    private Permissions() { }
 
-    /** Registers every canonical node, the {@link #ALL} parent and the legacy aliases. Idempotent. */
     public static void register() {
         final PluginManager pm = Bukkit.getPluginManager();
-
         registerNode(pm, new Permission(CRATE_USE,
                 "Natív ládalista, előnézet, kulcsvásárlás és nyitás", PermissionDefault.TRUE));
-
         final Map<String, String> canonical = new LinkedHashMap<>();
         canonical.put(RELOAD, "Config + üzenetek újratöltése (/icesmp reload)");
         canonical.put(CONFIG, "Ingame config-felülbírálás (/icesmp config)");
         canonical.put(HUD_EDITOR, "Első fél HUD-layout editor (/hud edit)");
         canonical.put(EVENTS, "Világesemény-triggerek (/events)");
+        canonical.put(PROLOGUE, "Season 0 / Kárhozat Kapuja live-ops (/prologue)");
         canonical.put(NPC, "NPC-kötések (/npcbind)");
         canonical.put(QUEST, "Quest admin + force-complete (/quest admin)");
         canonical.put(PARKOUR, "Parkour-pálya kijelölés (/parkour set*)");
@@ -131,9 +110,6 @@ public final class Permissions {
             registerNode(pm, new Permission(entry.getKey(), entry.getValue(), PermissionDefault.OP));
             moderationChildren.put(entry.getKey(), Boolean.TRUE);
         }
-        // Deliberately NOT inherited by OP, the moderation bundle or icesmp.admin.all.
-        // Otherwise every operator testing /vanish can still see the subject and the
-        // feature appears completely broken. Grant this node only to explicit observers.
         registerNode(pm, new Permission(MODERATION_VANISH_SEE,
                 "Vanish állapotú adminok megtekintése", PermissionDefault.FALSE));
         registerNode(pm, new Permission(MODERATION,
@@ -145,8 +121,6 @@ public final class Permissions {
                 "Natív ülés és click-to-sit használata", PermissionDefault.TRUE));
         registerNode(pm, new Permission(ALL,
                 "IceSMP super-admin: az összes IceSMP admin-node egyben", PermissionDefault.OP, allChildren));
-
-        // Legacy aliasok: a régi node megadása a kanonikus gyerekét is megadja.
         registerNode(pm, alias("icesmp.admin", JOB, SINNER));
         registerNode(pm, alias("icesmp.job.admin", JOB));
         registerNode(pm, alias("icesmp.currency.admin", CURRENCY));
@@ -154,7 +128,6 @@ public final class Permissions {
         registerNode(pm, alias("icesmp.relic.admin", RELIC));
     }
 
-    /** Registers optional per-crate icesmp.* gates from the validated crate snapshot. */
     public static void registerCratePermissions(final Collection<String> permissionNodes) {
         final PluginManager pm = Bukkit.getPluginManager();
         for (final String node : permissionNodes) {
@@ -167,19 +140,14 @@ public final class Permissions {
 
     private static Permission alias(final String legacyNode, final String... canonicalChildren) {
         final Map<String, Boolean> children = new LinkedHashMap<>();
-        for (final String child : canonicalChildren) {
-            children.put(child, Boolean.TRUE);
-        }
+        for (final String child : canonicalChildren) children.put(child, Boolean.TRUE);
         return new Permission(legacyNode,
                 "Elavult alias — használd helyette: " + String.join(", ", canonicalChildren),
                 PermissionDefault.OP, children);
     }
 
     private static void registerNode(final PluginManager pm, final Permission permission) {
-        // Idempotent: enable/disable ciklusnál a korábbi definíció cserélődik.
-        if (pm.getPermission(permission.getName()) != null) {
-            pm.removePermission(permission.getName());
-        }
+        if (pm.getPermission(permission.getName()) != null) pm.removePermission(permission.getName());
         pm.addPermission(permission);
     }
 }

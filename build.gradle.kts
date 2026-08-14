@@ -563,6 +563,10 @@ val runtimeHardeningRegressionTest = registerRegression(
     "runtimeHardeningRegressionTest",
     "Runs 2D claim, vanish retracking and DARK mob lifecycle regressions.",
     "hu.taliann.icesmp.runtime.RuntimeHardeningRegressionSuite")
+val prologueRegressionTest = registerRegression(
+    "prologueRegressionTest",
+    "Runs Season 0 Prologue cleanup, pause, victory recovery and transition regressions.",
+    "hu.taliann.icesmp.prologue.PrologueRegressionSuite")
 val warriorGameplayRegressionTest = registerRegression(
     "warriorGameplayRegressionTest",
     "Runs concrete Harcos Csatatempo, Berserker and Guardian state regressions.",
@@ -694,6 +698,7 @@ tasks.check {
         playerProfileHttpContractRegressionTest, playerProfileLifecycleTeardownRegressionTest,
         bestiaryRegressionTest, classRelicRegressionTest, relicTransferOwnershipRegressionTest,
         respecTransactionRegressionTest, spellGrantLedgerRegressionTest, runtimeHardeningRegressionTest,
+        prologueRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
         clientProtocolRegressionTest,
         professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,

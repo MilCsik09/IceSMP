@@ -231,7 +231,7 @@ public final class Unknown {
 
 
 class RepositoryPermissionContractTest(unittest.TestCase):
-    def test_repository_resolves_exactly_46_static_permissions_without_unknown_expressions(self) -> None:
+    def test_repository_resolves_exactly_47_static_permissions_without_unknown_expressions(self) -> None:
         permissions, findings = scan_permissions(
             REPOSITORY_ROOT,
             JavaIndex(REPOSITORY_ROOT),
@@ -249,8 +249,8 @@ class RepositoryPermissionContractTest(unittest.TestCase):
             if any(source["kind"] == "CONFIG" for source in item["sources"])
         }
 
-        self.assertEqual(46, len(permissions))
-        self.assertEqual(46, len(static))
+        self.assertEqual(47, len(permissions))
+        self.assertEqual(47, len(static))
         self.assertEqual(set(), dynamic)
         self.assertTrue(by_node["icesmp.admin"]["legacy_alias"])
         self.assertTrue(by_node["icesmp.job.admin"]["legacy_alias"])

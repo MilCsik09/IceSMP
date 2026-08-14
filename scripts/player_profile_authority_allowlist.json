@@ -390,6 +390,51 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/wizard/WizardGameplayService.java|private final Map<UUID, WizardCombatState> states = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient per-player Wizard combat state (last two woven schools plus the armed rune reaction and the three-slot attunement array). Holds NO court: the Holtak Udvara lives solely in the durable Profile v2 necromancer.court companion roster. Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The soul-shard economy remains entirely with the existing SoulforgeManager authority."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|public boolean isBoss(Entity e){return isPrologueEntity(e)&&\"boss\".equals(e.getPersistentDataContainer().get(roleKey,PersistentDataType.STRING));}",
+      "category": "ENTITY_METADATA",
+      "reason": "Read-only role marker on a Prologue encounter entity; the receiver is the event mob supplied to isBoss, never player-owned state."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|public boolean isPrologueEntity(Entity e){return e!=null&&e.getPersistentDataContainer().has(prologueMobKey,PersistentDataType.BYTE);}",
+      "category": "ENTITY_METADATA",
+      "reason": "Read-only Prologue identity marker on an encounter entity; it classifies transient event mobs and stores no player state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleRunState.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Durable world-finale checkpoint aggregate; finaleId identifies an event run, not a player, and no player-keyed progression is stored."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/prologue/PrologueManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Durable singleton Prologue world aggregate. Participant UUIDs are event eligibility references; delivered player rewards remain Profile v2 authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|private final Map<UUID,String> entityEncounters=new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient encounter-entity UUID to encounter-id projection, populated on spawn and removed on death, encounter cleanup, abort or shutdown; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueHudController.java|private final Map<UUID, BossBar> bars = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient online-player BossBar handles used only for HUD projection and cleared during controller shutdown; no gameplay or durable player authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Double> bossDamage = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Current finale-run boss-damage evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Double> damage = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Current finale-run damage evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Integer> presenceSeconds = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Current finale-run presence evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
     }
   ]
 }
