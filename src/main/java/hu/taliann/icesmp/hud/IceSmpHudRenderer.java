@@ -187,7 +187,7 @@ public final class IceSmpHudRenderer {
                 && specializationMissing ? "Spec: nincs" : model.classHud().mechanicSecondary();
         output.append(text(HudComponent.SECONDARY_MECHANIC, -96, MECHANIC_FONT,
                 compactMechanicLabel(secondaryText),
-                color("A9B7C6", 0xA9B7C6), 60, layout, highlighted));
+                color("A9B7C6", 0xA9B7C6), 66, layout, highlighted));
         if (primary != null && primary.maximum() > 0.0D) {
             drawSegments(output, HudComponent.PRIMARY_MECHANIC, PRIMARY_METRIC_BAR_X, METRIC_FONT,
                     primary.percent(), SEGMENT_FILL, METRIC_SEGMENT_ADVANCE, layout, highlighted);
