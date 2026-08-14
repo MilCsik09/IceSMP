@@ -34,6 +34,8 @@ client:
     # A relic attachment-broadcast rádiusza blokkban: ekkora körzetben lévő aktív
     # viselők kerülnek a néző RELIC_ATTACHMENT_STATE listájába.
     relic-attachment-radius: 32
+    # Pozicionált FX-esemény kézbesítési rádiusza blokkban (advanced-fx-v1 kliensek).
+    fx-radius: 64
   # Kézfogásban engedélyezhető presentation-capability-k. Minden érték alapból false:
   # egy capability csak akkor kapcsolható be, amikor a hozzá tartozó szerveroldali
   # projection/action fázis ténylegesen elkészült. A kliens hiába hirdet többet,

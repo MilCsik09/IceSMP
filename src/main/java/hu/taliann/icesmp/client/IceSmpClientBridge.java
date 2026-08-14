@@ -11,6 +11,7 @@ import hu.taliann.icesmp.client.protocol.ActionResultPayload;
 import hu.taliann.icesmp.client.protocol.BrowseRecipesPayload;
 import hu.taliann.icesmp.client.protocol.BossStatePayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
+import hu.taliann.icesmp.client.protocol.FxEventPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
 import hu.taliann.icesmp.client.protocol.ClientProtocol;
@@ -38,6 +39,7 @@ import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
+import hu.taliann.icesmp.managers.ClientFxRoute;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.FactionTreasuryManager;
@@ -84,7 +86,7 @@ import java.util.function.Function;
  * a teljes réteg a {@code client.enabled} élő config-kapcsolóval üzem közben lekapcsolható.</p>
  */
 public final class IceSmpClientBridge implements PluginMessageListener, PlayerStateCleanup,
-        HudManager.ClientHudRoute {
+        HudManager.ClientHudRoute, ClientFxRoute {
 
     /** Aggregált híd-diagnosztika a /icesmp client stats felülethez. */
     public record BridgeStats(long received, long droppedDisabled, long droppedOversized,
@@ -615,6 +617,62 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private boolean factionScreenActive(final ClientSession session) {
         return configManager.getBoolean("client.features.faction-screen", false)
                 && session.capabilities().contains(ClientCapability.FACTION_SCREEN);
+    }
+
+    /**
+     * {@link ClientFxRoute}: tranziens FX-esemény a hely körüli, ADVANCED_FX_V1
+     * kliensek felé. Bármely régió-szálról hívható: a rádiusz-szűrés az
+     * owner-thread-frissített PositionCache tükrén fut, a tényleges küldés a címzett
+     * saját ütemezőjén — idegen Player-állapotot az emitter szála nem érint.
+     * Fire-and-forget: se dedupe, se resync-ismétlés (a payload doksija szerint az
+     * elveszett esemény gameplay-t nem érinthet).
+     */
+    @Override
+    public void emitFx(final String fxId, final org.bukkit.Location center, final double radius,
+                       final int durationTicks) {
+        if (!enabled() || !configManager.getBoolean("client.features.advanced-fx-v1", false)
+                || center == null || center.getWorld() == null) {
+            return;
+        }
+        final double reach = Math.max(0, configManager.getInt("client.limits.fx-radius", 64));
+        final byte[] payload = new FxEventPayload(fxId, true,
+                center.getX(), center.getY(), center.getZ(), radius, durationTicks).encode();
+        for (final ClientSession session : sessions.snapshot()) {
+            if (!session.capabilities().contains(ClientCapability.ADVANCED_FX_V1)) {
+                continue;
+            }
+            final org.bukkit.Location viewerPos =
+                    hu.taliann.icesmp.utils.PositionCache.get(session.playerId());
+            if (viewerPos == null || viewerPos.getWorld() == null
+                    || !viewerPos.getWorld().getUID().equals(center.getWorld().getUID())
+                    || viewerPos.distanceSquared(center) > reach * reach) {
+                continue;
+            }
+            final Player target = plugin.getServer().getPlayer(session.playerId());
+            if (target != null) {
+                send(target, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_FX_EVENT,
+                        session.generation(), session.nextOutboundSequence(),
+                        MessageEnvelope.NO_REQUEST, payload));
+            }
+        }
+    }
+
+    /** {@link ClientFxRoute}: cél-játékosnak szóló, nem-pozicionált FX-esemény. */
+    @Override
+    public void emitFxFor(final UUID playerId, final String fxId) {
+        if (!enabled() || !configManager.getBoolean("client.features.advanced-fx-v1", false)) {
+            return;
+        }
+        final ClientSession session = sessions.find(playerId).orElse(null);
+        if (session == null || !session.capabilities().contains(ClientCapability.ADVANCED_FX_V1)) {
+            return;
+        }
+        final Player target = plugin.getServer().getPlayer(playerId);
+        if (target != null) {
+            send(target, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_FX_EVENT,
+                    session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST,
+                    new FxEventPayload(fxId, false, 0.0D, 0.0D, 0.0D, 0.0D, 0).encode()));
+        }
     }
 
     /** {@link HudManager.ClientHudRoute}: a vanilla világboss-bar suppression-kapuja. */

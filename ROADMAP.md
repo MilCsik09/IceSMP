@@ -313,9 +313,14 @@ fázisonként, a terv szerinti sorrendben:
   kliensoldali, protokoll-változás nélkül): világtérbeli relikvia-jelvény
   a viselők fölött a RELIC_ATTACHMENT_STATE-ből, rezonancia-lüktetéssel;
   a HUD Awakening-kész sora lüktet.
-- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..20),
-  Phase 8b — FX-esemény csatorna (presentation-sáv, ADVANCED_FX_V1):
-  szerver-emitterek (világboss-telegráf, awakening-arming) + kliens FX.
+- ✅ Phase 8b — FX-esemény csatorna: a presentation-sáv első üzenete
+  (FX_EVENT, tranziens fire-and-forget, ADVANCED_FX_V1 kapu) a
+  ClientFxRoute domain-seamen át; v1-emitterek: világboss SLAM/ZONE/SUMMON
+  telegráf + awakening-arming; kézbesítés PositionCache-rádiusszal, a
+  vanilla telegráf minden kliensnek változatlan (az FX kiegészítő réteg).
+- ⬜ A H fázis lezárása: élő staging-teszt (CLIENT-02..21) — minden
+  további bővítés (új FX-emitterek, spell-animációk, Phase 9
+  admin-eszközök) ez után ütemezendő.
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature

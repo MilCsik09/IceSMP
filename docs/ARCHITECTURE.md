@@ -623,7 +623,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 844 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
+- **Méret:** 846 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 123 fájl).
   Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 7, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1234,7 +1234,8 @@ intent): `0x40 CAST_SLOT`, `0x41 SELECT_SPELL`, `0x42 TOGGLE_FAVORITE`,
 `0x46 SELECT_PROFESSION_SPEC`, `0x47 BROWSE_RECIPES`.
 Result-sáv (0x50–0x5F, szerver → kliens gépi action-válasz, envelope-requestId-korrelációval):
 `0x50 ACTION_RESULT` (kódok: SUCCESS/REJECTED/NOT_READY/INVALID_STATE/NOT_ALLOWED/
-RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv később nyílik.
+RATE_LIMITED/SERVER_ERROR + gépi reason). Presentation-sáv (0x60–0x6F, tranziens
+fire-and-forget FX-események): `0x60 FX_EVENT`.
 
 ### Kézfogás és capability-k
 
@@ -1480,6 +1481,21 @@ csak a Menedék fővárosában validálja), egy kliens-csomag hely-authority byp
 — a váltás-folyamat a /faction és /menu validált útján marad. A perc-felbontású
 visszaszámlálók miatt a bájt-dedupe percenként legfeljebb egyszer enged ki friss
 state-et.
+
+### FX-esemény csatorna (FX_EVENT, Phase 8b)
+
+Az `FX_EVENT` a presentation-sáv első üzenete az `ADVANCED_FX_V1` capability +
+`client.features.advanced-fx-v1` kapu mögött: tranziens, fire-and-forget esemény —
+nem state (resync nem ismétli, dedupe nincs), és az elveszett/kihagyott esemény
+gameplay-t nem érinthet, mert a vanilla telegráf-partikula/hang minden kliensnek
+változatlanul megy (az FX kiegészítő réteg, nem helyettesítés). A domain-emitterek a
+`ClientFxRoute` seam-en át szólnak (a ClientHudRoute mintája — a domain a hidat nem
+ismeri): v1-ben a világboss-specialok telegráfjai (`boss-slam-telegraph`,
+`boss-zone-telegraph`, `boss-summon` — hely + rádiusz + telegráf-hossz) és a sikeres
+awakening-arming (`awakening-armed`, cél-játékosnak). Kézbesítés: pozicionált
+eseménynél a rádiusz-szűrés (`client.limits.fx-radius`) az owner-thread-frissített
+PositionCache tükrén fut, a küldés a címzett saját ütemezőjén — az emitter bármely
+régió-szálról hívható, idegen Player-állapotot nem érint.
 
 ### Session-életciklus és védelem
 

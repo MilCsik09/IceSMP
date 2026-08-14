@@ -72,6 +72,10 @@ public final class ClientProtocol {
     // Result-sáv (0x50-0x5F): szerver → kliens gépi action-válaszok (requestId-korrelációval).
     public static final int MSG_ACTION_RESULT = 0x50;
 
+    // Presentation-sáv (0x60-0x6F): tranziens, fire-and-forget FX-események — nem state
+    // (nincs resync-szemantika, nincs dedupe); kihagyásuk gameplay-t nem érinthet.
+    public static final int MSG_FX_EVENT = 0x60;
+
     // Gépi action-eredménykódok; a lokalizált szöveg kliensoldali felelősség.
     public static final String RESULT_SUCCESS = "SUCCESS";
     public static final String RESULT_REJECTED = "REJECTED";

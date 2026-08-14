@@ -1629,6 +1629,8 @@ public final class IceSMPCore {
         clientBridge.connectTerritory(territoryManager, raidManager);
         clientBridge.connectFaction(factionManager, factionTreasuryManager, currencyManager,
                 kingManager, seasonManager, warWindowManager);
+        worldBossManager.setFxRoute(clientBridge);
+        classRelicService.setFxRoute(clientBridge);
         clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
                 .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
         clientBridge.connectRelicState(relicPlayerId -> {

@@ -119,6 +119,9 @@ public final class WorldBossManager {
     private volatile SeasonFinaleManager seasonFinale;
     /** Current health fraction (0–1) of the active boss, driving the shared HUD boss-bar. */
     private volatile float bossHealthFraction = 1.0F;
+    /** Setter-injektált FX-route (null = nincs kliens-FX; a vanilla telegráf ettől független). */
+    private volatile ClientFxRoute fxRoute;
+
     /** Display-tükör a kliens boss-frame-hez; a getterek isBossActive() mögé kapuzva. */
     private volatile String activeBossName = "";
     private volatile String activeBossArchetype = "";
@@ -207,6 +210,18 @@ public final class WorldBossManager {
     /** The active boss's current health fraction (0–1) for the shared HUD boss-bar. */
     public float getBossHealthFraction() {
         return bossHealthFraction;
+    }
+
+    public void setFxRoute(final ClientFxRoute fxRoute) {
+        this.fxRoute = fxRoute;
+    }
+
+    private void emitFx(final String fxId, final Location center, final double radius,
+                        final int durationTicks) {
+        final ClientFxRoute route = fxRoute;
+        if (route != null) {
+            route.emitFx(fxId, center, radius, durationTicks);
+        }
     }
 
     /** Az aktív világboss plain display-neve a kliens boss-frame-hez; üres, ha nincs boss. */
@@ -629,6 +644,7 @@ public final class WorldBossManager {
                 telegraphFloor(center, 5.0D);
                 world.playSound(center, archetype.sound, 1.6F, 0.6F);
                 world.playSound(center, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.6F);
+                emitFx("boss-slam-telegraph", center, 5.0D, 30);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
@@ -674,6 +690,7 @@ public final class WorldBossManager {
                 telegraphFloor(spot, 3.0D);
                 world.playSound(spot, archetype.sound, 1.2F, 0.8F);
                 world.playSound(spot, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.8F);
+                emitFx("boss-zone-telegraph", spot, 3.0D, 30);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
@@ -708,6 +725,7 @@ public final class WorldBossManager {
                 // Telegraph cue distinct from SLAM/ZONE's warning tone, so players learn to
                 // recognize "adds incoming" purely by ear.
                 world.playSound(at, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.5F, 1.0F);
+                emitFx("boss-summon", at, 0.0D, 40);
                 for (int i = 0; i < count; i++) {
                     final Location spot = at.clone().add(
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));

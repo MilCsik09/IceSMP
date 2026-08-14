@@ -12,6 +12,7 @@ import hu.taliann.icesmp.client.protocol.BossStatePayload;
 import hu.taliann.icesmp.client.protocol.BrowseRecipesPayload;
 import hu.taliann.icesmp.client.protocol.CastSlotPayload;
 import hu.taliann.icesmp.client.protocol.FactionStatePayload;
+import hu.taliann.icesmp.client.protocol.FxEventPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.RecipePagePayload;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
@@ -71,6 +72,7 @@ public final class ClientProtocolRegressionSuite {
         bossPayload();
         territoryPayload();
         factionPayload();
+        fxPayload();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -541,6 +543,17 @@ public final class ClientProtocolRegressionSuite {
                 "FactionStatePayload roundtrip");
         check(member.raidActive() && member.raidRemainingMinutes() == 9
                         && member.kingTally().get(0).votes() == 3, "faction fields preserved");
+    }
+
+    private static void fxPayload() throws Exception {
+        final FxEventPayload telegraph = new FxEventPayload("boss-slam-telegraph", true,
+                12.5D, 64.0D, -30.25D, 5.0D, 30);
+        check(telegraph.equals(FxEventPayload.decode(telegraph.encode())),
+                "positional fx roundtrip");
+
+        final FxEventPayload banner = new FxEventPayload("awakening-armed", false,
+                0.0D, 0.0D, 0.0D, 0.0D, 0);
+        check(banner.equals(FxEventPayload.decode(banner.encode())), "non-positional fx roundtrip");
     }
 
     private static void malformedEnvelopeRejected() {
