@@ -201,7 +201,7 @@ public final class IceSmpHudRenderer {
         output.append(text(HudComponent.STATE_PROC, -113, STATE_FONT,
                 stateText.isBlank() && specializationMissing
                         ? "Válassz profilt" : stateText,
-                color("A9B7C6", 0xA9B7C6), 84, layout, highlighted));
+                color("A9B7C6", 0xA9B7C6), 90, layout, highlighted));
     }
 
     private static void drawCharges(final TextComponent.Builder output, final String classId,
