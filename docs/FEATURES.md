@@ -1323,7 +1323,3 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 <sub>Dokumentációs snapshot: 2026-07-30 · release `4643ab535…` · deployed mapping:
 `775d9e247…` (`HIGH_CONFIDENCE`, nem `EXACT`).</sub>
-
-
-
-

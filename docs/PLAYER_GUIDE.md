@@ -982,4 +982,25 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
 
+## Prologue / Season 0 — amit játékosként tudnod kell
 
+A **Prologue** az IceSMP egyszeri nyitó korszaka. Nem külön karakter vagy külön szerver:
+a most megszerzett legitim karakterhaladásod, tárgyaid, achievementjeid és kozmetikai
+státuszaid **nem törlődnek** a Season 1 kezdetén.
+
+A nyitó korszakban szándékos fejlődési plafon védi a később érkező játékosok esélyeit.
+Az alapbeállítás szerint a kasztod **25. szintig** fejlődhet; a plafon fölé XP sem bankolódik.
+A kasztspecializáció és a normál relikvia-progresszió létezik a világban, de a Prologue alatt
+még nem választható/szerezhető meg rendes játékúton. Egyes magasabb loot- és tervrajzszintek
+ugyanezért későbbi tartalomnak számítanak. A játékbeli menü mindig jelzi az aktuális kaput.
+
+A **Kárhozat Kapuja** már a Prologue előtt is a világ része. Season 0 alatt elmehetsz hozzá,
+a hozzá kötött felfedező- és lore-tartalom működhet, de a Kapun **nem lehet átjutni a Netherbe**.
+Saját Nether-portált továbbra sem lehet szabadon létrehozni. A Kapu állapotának romlását időnként
+a HUD vagy a fallback kijelzés stabilitásmérője és helyi események jelezhetik.
+
+A Prologue lezárása után a világ wipe nélkül lép tovább Season 1-be. A normál szezonliga ekkor
+indul el ténylegesen. Az új vagy lemaradó, 25. szint alatti karakterekhez configolható
+**catch-up XP-bónusz** tartozhat; ez csak a normál XP-t gyorsítja, nem oszt dupla tárgyjutalmat.
+
+A nyitó korszak végének történeti részleteit ez az útmutató szándékosan nem spoilerezi.

@@ -1,15 +1,18 @@
 package hu.taliann.icesmp.playerprofile.application;
 
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.OnboardingSection;
 import hu.taliann.icesmp.playerprofile.domain.section.ProfessionSection;
+import hu.taliann.icesmp.prologue.PrologueContentPolicy;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /** Typed memory unlock and profession specialization authority. */
@@ -17,11 +20,17 @@ public final class PlayerProfileSpecializationProgressStore {
     private static final String ACTIVE_PROFESSION_SPEC = "active";
 
     public boolean memoryUnlocked(final UUID playerId) {
+        final ConfigManager config = ConfigManager.current();
+        if (config != null && !PrologueContentPolicy.specializationAvailable(config)) return false;
         return PlayerProfileAuthority.current().requireSection(playerId,
                 ProfileSectionId.ONBOARDING, OnboardingSection.class).memorySpecUnlocked();
     }
 
     public CompletionStage<Boolean> grantMemoryUnlock(final UUID playerId) {
+        final ConfigManager config = ConfigManager.current();
+        if (config != null && !PrologueContentPolicy.specializationAvailable(config)) {
+            return CompletableFuture.completedFuture(false);
+        }
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.ONBOARDING, OnboardingSection.class, current -> {
                     if (current.memorySpecUnlocked()) {

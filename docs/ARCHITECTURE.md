@@ -16,7 +16,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~92 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~94 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -40,7 +40,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 59 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `quest/` | 8 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
 | `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
@@ -623,9 +623,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 846 Java-fájl, ~85 000 sor; 92 `*Manager` osztály (a `managers/` csomag 125 fájl).
-  Csomag-megoszlás: listeners 122, managers 122, commands 94, spells 56, gui 69, crates 14, utils 26, data 15, classrelic 14,
-  items 12, relics 11, quest 7, integration 6.
+- **Méret:** 870 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
+  Csomag-megoszlás: listeners 121, managers 125, commands 95, spells 59, gui 69, crates 14, utils 26, data 15, classrelic 14,
+  items 12, relics 11, quest 8, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -1528,5 +1528,3 @@ registry-életciklust, a sequence-monotonitást és a rate limitert. A kliensold
 szimulált szerveres kézfogás-suite-okkal (lásd az AGENTS.md kliensprotokoll-DoD szabályát);
 az élő Paper↔Fabric roundtrip-bizonyítás (CLIENT-02) staging-teszt. A protokoll-tartomány
 szándékosan 1..1, és a feature-kapuk alapból zárva maradnak.
-
-

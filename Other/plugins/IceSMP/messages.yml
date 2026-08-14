@@ -1,5 +1,0 @@
-# IceSMP — Üzenetek
-# Az üzenetek alrendszerenként a 'messages/' mappában vannak (messages/<alrendszer>.yml).
-# A MessageManager ezt a fájlt ÉS a messages/ mappa összes .yml-jét betölti és egyesíti.
-# Itt felülírhatsz bármely kulcsot (ez a fájl tölt be utoljára, így nyer).
-messages: {}

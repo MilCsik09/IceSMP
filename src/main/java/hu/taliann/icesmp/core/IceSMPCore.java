@@ -2031,5 +2031,3 @@ public final class IceSMPCore {
         }
     }
 }
-
-

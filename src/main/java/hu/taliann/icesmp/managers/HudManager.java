@@ -1290,4 +1290,3 @@ public final class HudManager {
         return "§" + "0123456789abcdef".charAt(index % 16) + "§r";
     }
 }
-

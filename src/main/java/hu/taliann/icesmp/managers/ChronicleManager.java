@@ -11,19 +11,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * B15 — Heti Krónika: a Bankárszövetség krónikásainak hangján írt, időszakos
- * összefoglaló a szerver állásáról (a kódexet is ők jegyzik — kódex VIII.).
- * A world-events tickről publikálódik (interval-days ütemben, restart-álló
- * utolsó-kiadás időbélyeggel): szezon-állás, toplisták (szint/vagyon/raid),
- * változatos nyitó/záró mondat-sablonokkal, broadcast + a /kronika parancs
- * bármikor visszaolvashatóvá teszi az utolsó számot.
- */
+/** Periodic Bankárszövetség chronicle plus durable extraordinary issues. */
 public final class ChronicleManager implements PersistentStore {
-
     private static final List<String> OPENERS = List.of(
             "&6&l— A Bankárszövetség Krónikája —&r &7Feljegyeztetett, ahogy láttuk:",
             "&6&l— A Bankárszövetség Krónikája —&r &7A számok nem hazudnak. A krónikás néha.",
@@ -45,6 +39,7 @@ public final class ChronicleManager implements PersistentStore {
             "&8E lapot az Idegen is olvassa. Legalábbis reméljük, hogy csak olvassa.",
             "&8A jövő heti számot a jelen tettei írják. Rajta.",
             "&8Sajtóhibáért felelősséget a Néma Királynő vállal.");
+    private static volatile ChronicleManager active;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -52,9 +47,8 @@ public final class ChronicleManager implements PersistentStore {
     private final SeasonManager seasonManager;
     private final MessageManager messageManager;
     private final File storageFile;
-
+    private final Set<String> extraordinaryReceipts = new LinkedHashSet<>();
     private volatile long lastPublishedAt;
-    /** Az utolsó szám sorai (legacy &-kódokkal) — a /kronika ezt olvassa vissza. */
     private volatile List<String> lastIssue = List.of();
 
     public ChronicleManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -67,18 +61,21 @@ public final class ChronicleManager implements PersistentStore {
         this.messageManager = messageManager;
         this.storageFile = new File(plugin.getDataFolder(), "chronicle.yml");
         plugin.getDataFolder().mkdirs();
+        active = this;
     }
 
+    public static ChronicleManager current() { return active; }
+
     @Override
-    public void load() {
+    public synchronized void load() {
         lastPublishedAt = 0L;
         lastIssue = List.of();
-        if (!storageFile.exists()) {
-            return;
-        }
-        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
+        extraordinaryReceipts.clear();
+        if (!storageFile.exists()) return;
+        final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
         lastPublishedAt = yaml.getLong("last-published", 0L);
         lastIssue = List.copyOf(yaml.getStringList("last-issue"));
+        extraordinaryReceipts.addAll(yaml.getStringList("extraordinary-receipts"));
     }
 
     @Override
@@ -87,6 +84,7 @@ public final class ChronicleManager implements PersistentStore {
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("last-published", lastPublishedAt);
             yaml.set("last-issue", lastIssue);
+            yaml.set("extraordinary-receipts", List.copyOf(extraordinaryReceipts));
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save chronicle.yml: " + exception.getMessage());
@@ -94,37 +92,24 @@ public final class ChronicleManager implements PersistentStore {
         }
     }
 
-    /** Az utolsó szám sorai (üres lista = még nem jelent meg krónika). */
-    public List<String> getLastIssue() {
-        return lastIssue;
-    }
+    public List<String> getLastIssue() { return lastIssue; }
 
-    /** Periodikus kiadás a world-events tickről (interval-days ütemben). */
     public void tick() {
-        if (!configManager.getBoolean("chronicle.enabled", true)) {
-            return;
-        }
+        if (!configManager.getBoolean("chronicle.enabled", true)) return;
         final long intervalMillis = Math.max(1L, configManager.getLong("chronicle.interval-days", 7L)) * 86_400_000L;
         final long now = System.currentTimeMillis();
         if (lastPublishedAt == 0L) {
-            // Első indulás: az első szám egy teljes intervallum múlva esedékes.
             lastPublishedAt = now;
             save();
             return;
         }
-        if (now - lastPublishedAt < intervalMillis) {
-            return;
-        }
-        publish();
+        if (now - lastPublishedAt >= intervalMillis) publish();
     }
 
-    /** Összeállítja és kihirdeti az új számot (admin: /events chronicle is hívhatja). */
     public synchronized void publish() {
         lastPublishedAt = System.currentTimeMillis();
         final List<String> lines = new ArrayList<>();
         lines.add(OPENERS.get(ThreadLocalRandom.current().nextInt(OPENERS.size())));
-
-        // Szezon-állás: a négy frakció liga-pontjai, sorrendben.
         final List<FactionType> order = new ArrayList<>(List.of(FactionType.values()));
         order.sort((a, b) -> Integer.compare(seasonManager.getPoints(b), seasonManager.getPoints(a)));
         final StringBuilder standings = new StringBuilder("&e⚔ Liga-állás: ");
@@ -132,21 +117,40 @@ public final class ChronicleManager implements PersistentStore {
             final FactionType faction = order.get(i);
             standings.append(i == 0 ? "&6" : "&7").append(faction.getDisplayName())
                     .append(" &f").append(seasonManager.getPoints(faction));
-            if (i < order.size() - 1) {
-                standings.append(" &8| ");
-            }
+            if (i < order.size() - 1) standings.append(" &8| ");
         }
         lines.add(standings.toString());
-
         appendTop(lines, StatsManager.Category.LEVEL, "&b✦ A leghatalmasabbak (szint): ");
         appendTop(lines, StatsManager.Category.WEALTH, "&a✦ A leggazdagabbak (a Számvevők szerint): ");
         appendTop(lines, StatsManager.Category.RAID_KILLS, "&c✦ A háború bajnokai (raid-ölések): ");
-
         lines.add(CLOSERS.get(ThreadLocalRandom.current().nextInt(CLOSERS.size())));
         lastIssue = List.copyOf(lines);
         save();
+        broadcastIssue(lines);
+    }
 
-        // Egyetlen többsoros komponensben megy ki (7 külön broadcast-csomag helyett).
+    /** Durable one-shot issue used by history-defining world events such as Olethropyla opening. */
+    public synchronized boolean publishExtraordinaryOnce(final String receiptId, final List<String> issueLines) {
+        if (receiptId == null || receiptId.isBlank() || issueLines == null || issueLines.isEmpty()) return false;
+        if (extraordinaryReceipts.contains(receiptId)) return true;
+        final List<String> previousIssue = lastIssue;
+        final long previousPublished = lastPublishedAt;
+        extraordinaryReceipts.add(receiptId);
+        lastPublishedAt = System.currentTimeMillis();
+        lastIssue = List.copyOf(issueLines);
+        try {
+            save();
+        } catch (final RuntimeException failure) {
+            extraordinaryReceipts.remove(receiptId);
+            lastIssue = previousIssue;
+            lastPublishedAt = previousPublished;
+            throw failure;
+        }
+        broadcastIssue(lastIssue);
+        return true;
+    }
+
+    private void broadcastIssue(final List<String> lines) {
         net.kyori.adventure.text.Component issue = net.kyori.adventure.text.Component.empty();
         for (final String line : lines) {
             issue = issue.append(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -159,9 +163,7 @@ public final class ChronicleManager implements PersistentStore {
 
     private void appendTop(final List<String> lines, final StatsManager.Category category, final String prefix) {
         final List<StatsManager.Entry> top = statsManager.top(category, 3);
-        if (top.isEmpty()) {
-            return;
-        }
+        if (top.isEmpty()) return;
         final StringBuilder row = new StringBuilder(prefix);
         for (int i = 0; i < top.size(); i++) {
             final StatsManager.Entry entry = top.get(i);
@@ -171,9 +173,7 @@ public final class ChronicleManager implements PersistentStore {
                 case RAID_KILLS -> String.valueOf(entry.raidKills());
             };
             row.append("&f").append(entry.name()).append(" &7(").append(value).append(")");
-            if (i < top.size() - 1) {
-                row.append("&8, ");
-            }
+            if (i < top.size() - 1) row.append("&8, ");
         }
         lines.add(row.toString());
     }

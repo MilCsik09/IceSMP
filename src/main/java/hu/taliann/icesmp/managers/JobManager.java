@@ -3,10 +3,14 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
 import hu.taliann.icesmp.classspec.application.ProfileDiagnostic;
 import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
+import hu.taliann.icesmp.classspec.domain.ProfileOperation;
+import hu.taliann.icesmp.classspec.domain.ProfileOperationType;
 import hu.taliann.icesmp.classspec.domain.SpellGrantLedger;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
+import hu.taliann.icesmp.prologue.PrologueContentPolicy;
+import hu.taliann.icesmp.prologue.PrologueProgression;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -113,19 +118,12 @@ public final class JobManager implements PlayerStateCleanup {
         return gateway().assignClass(player.getUniqueId(),
                 new ClassSpecProfileGateway.ClassAssignmentRequest(job.getId(), 1, 0, operationId))
                 .thenCompose(result -> {
-                    if (!result.durableOutcomeAccepted()) {
-                        return CompletableFuture.completedFuture(false);
-                    }
-                    if (!result.runtimeGenerationUsable()) {
-                        // The durable class assignment belongs to a newer/reconnecting generation.
-                        // Login reconciliation deterministically rebuilds derived BASE grants.
-                        return CompletableFuture.completedFuture(true);
-                    }
+                    if (!result.durableOutcomeAccepted()) return CompletableFuture.completedFuture(false);
+                    if (!result.runtimeGenerationUsable()) return CompletableFuture.completedFuture(true);
                     return schedulePlayer(player, () -> {
                         AdvancementService.award(player, "root");
                         AdvancementService.award(player, "first_class");
-                    }).thenCompose(ignored -> applyAutoUnlocksV2(player))
-                            .thenApply(ignored -> true);
+                    }).thenCompose(ignored -> applyAutoUnlocksV2(player)).thenApply(ignored -> true);
                 });
     }
 
@@ -134,7 +132,6 @@ public final class JobManager implements PlayerStateCleanup {
                 && profileGateway.isSessionReady(player.getUniqueId()));
     }
 
-    /** Compatibility boolean: durable STALE_SESSION/RUNTIME_EFFECT_FAILED are not “not committed”. */
     public CompletionStage<Boolean> addXpToJobV2(final Player player, final int amount,
                                                   final String operationId) {
         return addXpToJobResultV2(player, amount, operationId)
@@ -169,21 +166,59 @@ public final class JobManager implements PlayerStateCleanup {
 
     private CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateXpResult(
             final Player player,
-            final ClassSpecProfileGateway.ClassExperienceRequest.Mode mode,
-            final int value, final String operationId) {
+            final ClassSpecProfileGateway.ClassExperienceRequest.Mode requestedMode,
+            final int requestedValue, final String operationId) {
         final int baseXp = Math.max(1, configManager.getInt("classes.leveling.base-xp", 100));
         final int increment = Math.max(0, configManager.getInt(
                 "classes.leveling.increment-per-level", 20));
         final int secondSpecUnlockLevel = Math.max(1, configManager.getInt(
                 "classes.specialization.second-slot-level", 28));
         final ClassSpecProfileGateway gateway = gateway();
+        final Optional<ProfileOperation> replay = gateway.operation(player.getUniqueId(), operationId);
+        final ClassSpecProfileGateway.ClassExperienceRequest.Mode mode;
+        final int value;
+        if (replay.isPresent()) {
+            final ProfileOperation receipt = replay.orElseThrow();
+            if (receipt.type() != ProfileOperationType.CLASS_EXPERIENCE) {
+                return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
+                        gateway.diagnostic(player.getUniqueId()), "operation id belongs to another mutation"));
+            }
+            try {
+                mode = ClassSpecProfileGateway.ClassExperienceRequest.Mode.valueOf(receipt.target());
+                value = Integer.parseInt(receipt.amount());
+            } catch (final IllegalArgumentException invalidReceipt) {
+                return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
+                        gateway.diagnostic(player.getUniqueId()), "invalid durable class XP receipt"));
+            }
+        } else {
+            final ClassSpecSection current = gateway.currentProfile(player.getUniqueId()).orElse(null);
+            if (current == null) {
+                return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
+                        gateway.diagnostic(player.getUniqueId()), "class XP profile is unavailable"));
+            }
+            final int currentXp = current.classExperience();
+            long target = requestedMode == ClassSpecProfileGateway.ClassExperienceRequest.Mode.SET
+                    ? requestedValue : (long) currentXp + PrologueProgression.applyMultiplier(
+                    requestedValue, PrologueContentPolicy.catchUpMultiplier(
+                            configManager, current.classLevel(), operationId));
+            target = Math.max(0L, Math.min(Integer.MAX_VALUE, target));
+            if (PrologueContentPolicy.active(configManager)) {
+                target = PrologueContentPolicy.clampClassExperience(
+                        configManager, (int) target, baseXp, increment);
+            }
+            if (target < currentXp || requestedMode == ClassSpecProfileGateway.ClassExperienceRequest.Mode.SET) {
+                mode = ClassSpecProfileGateway.ClassExperienceRequest.Mode.SET;
+                value = (int) target;
+            } else {
+                mode = ClassSpecProfileGateway.ClassExperienceRequest.Mode.ADD;
+                value = (int) Math.min(Integer.MAX_VALUE, target - currentXp);
+            }
+        }
         return gateway.mutateClassExperience(player.getUniqueId(),
                 new ClassSpecProfileGateway.ClassExperienceRequest(mode, value, baseXp,
                         increment, secondSpecUnlockLevel, operationId))
                 .thenCompose(result -> {
-                    if (!result.runtimeGenerationUsable()) {
-                        return CompletableFuture.completedFuture(result);
-                    }
+                    if (!result.runtimeGenerationUsable()) return CompletableFuture.completedFuture(result);
                     return schedulePlayer(player, () -> {
                         if (getPrimaryLevel(player) >= MAX_JOB_LEVEL)
                             AdvancementService.award(player, "class_max");
@@ -208,7 +243,6 @@ public final class JobManager implements PlayerStateCleanup {
         xpChangeHook = xpChangeHook == null ? hook : xpChangeHook.andThen(hook);
     }
 
-    /** READY gameplay path; announcements are appropriate for live class progression. */
     public CompletionStage<Void> applyAutoUnlocksV2(final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway;
         if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) {
@@ -219,10 +253,6 @@ public final class JobManager implements PlayerStateCleanup {
                 : applyAutoUnlocksV2(player, durable, true);
     }
 
-    /**
-     * Lifecycle/reconnect rebuild from authoritative durable class state. It deliberately does not
-     * consult READY-gated gameplay getters and suppresses “new unlock” chat during reconciliation.
-     */
     public CompletionStage<Void> applyAutoUnlocksV2(final Player player,
                                                     final ClassSpecSection durable) {
         return applyAutoUnlocksV2(player, durable, false);
@@ -280,8 +310,7 @@ public final class JobManager implements PlayerStateCleanup {
         return spellGrantStore.replace(player.getUniqueId(), requested).thenApply(ignored -> null);
     }
 
-    public CompletionStage<Boolean> unlockSpellV2(final Player player,
-                                                   final String spellId) {
+    public CompletionStage<Boolean> unlockSpellV2(final Player player, final String spellId) {
         return unlockSpellV2(player, spellId, SOURCE_ADMIN);
     }
 

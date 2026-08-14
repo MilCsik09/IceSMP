@@ -1885,7 +1885,3 @@ Kézi elfogadási minimum:
 - aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
 - külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
 - a pack sikeres betöltéséig natív compact fallback, utána pontosan egy class HUD.
-
-
-
-
