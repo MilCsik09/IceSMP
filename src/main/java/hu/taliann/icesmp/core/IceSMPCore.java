@@ -1626,6 +1626,7 @@ public final class IceSMPCore {
                 professionRecipeCatalog, professionWeeklyGoalManager, uniqueMaterialFactory);
         clientBridge.connectParty(partyManager);
         clientBridge.connectWorldBoss(worldBossManager);
+        clientBridge.connectTerritory(territoryManager, raidManager);
         clientBridge.connectProfile(profilePlayer -> hu.taliann.icesmp.client.projection.ClientProfileProjector
                 .project(profilePlayer, characterMenuContext, statsManager, achievementManager));
         clientBridge.connectRelicState(relicPlayerId -> {

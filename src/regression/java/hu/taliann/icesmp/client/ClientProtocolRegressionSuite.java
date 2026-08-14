@@ -33,6 +33,7 @@ import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
 import hu.taliann.icesmp.client.protocol.TalentActionPayload;
 import hu.taliann.icesmp.client.protocol.TalentStatePayload;
+import hu.taliann.icesmp.client.protocol.TerritoryStatePayload;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -67,6 +68,7 @@ public final class ClientProtocolRegressionSuite {
         recipePayloads();
         partyPayload();
         bossPayload();
+        territoryPayload();
         malformedEnvelopeRejected();
         malformedPayloadRejected();
         handshakeNegotiation();
@@ -497,6 +499,21 @@ public final class ClientProtocolRegressionSuite {
                 "❄ Fagyott Trón Királya [Világboss]", 42, true);
         check(boss.equals(BossStatePayload.decode(boss.encode())), "BossStatePayload roundtrip");
         check(boss.enraged() && boss.healthPercent() == 42, "boss fields preserved");
+    }
+
+    private static void territoryPayload() throws Exception {
+        final TerritoryStatePayload wilderness = new TerritoryStatePayload(false, "", "", "",
+                "", "", false, "", "", 0, 0);
+        check(wilderness.equals(TerritoryStatePayload.decode(wilderness.encode())),
+                "wilderness roundtrip");
+
+        final TerritoryStatePayload zone = new TerritoryStatePayload(true, "jeghatar",
+                "Jéghatár", "CAPITAL", "BLUE", "Cryghaliris",
+                true, "Perinfernicitas", "Cryghaliris", 12, 30);
+        check(zone.equals(TerritoryStatePayload.decode(zone.encode())),
+                "TerritoryStatePayload roundtrip");
+        check(zone.raidActive() && zone.raidDefenderPoints() == 30
+                        && "CAPITAL".equals(zone.typeId()), "territory fields preserved");
     }
 
     private static void malformedEnvelopeRejected() {

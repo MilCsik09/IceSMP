@@ -26,6 +26,7 @@ import hu.taliann.icesmp.client.protocol.ServerHello;
 import hu.taliann.icesmp.client.protocol.SpellActionPayload;
 import hu.taliann.icesmp.client.protocol.SpellbookStatePayload;
 import hu.taliann.icesmp.client.protocol.TalentActionPayload;
+import hu.taliann.icesmp.client.protocol.TerritoryStatePayload;
 import hu.taliann.icesmp.client.protocol.TalentStatePayload;
 import hu.taliann.icesmp.client.projection.ClientTalentProjector;
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
@@ -37,6 +38,8 @@ import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.managers.PartyManager;
+import hu.taliann.icesmp.managers.RaidManager;
+import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
@@ -107,6 +110,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private final ConcurrentHashMap<UUID, byte[]> lastRelicAttachment = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastPartyState = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, byte[]> lastBossState = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, byte[]> lastTerritoryState = new ConcurrentHashMap<>();
 
     /** A core köti be; a slot-cast és a kit-projekció a canonical cast-koordinátort használja. */
     private volatile AbilityCatalystListener abilityCatalyst;
@@ -136,6 +140,10 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
 
     /** A core köti be; a boss-frame a világboss lock-mentes display-tükreit olvassa. */
     private volatile WorldBossManager worldBossManager;
+
+    /** A core köti be; a zóna-lookup lock-mentes chunk-indexből fut a néző szálán. */
+    private volatile TerritoryManager territoryManager;
+    private volatile RaidManager raidManager;
 
     private final AtomicLong received = new AtomicLong();
     private final AtomicLong droppedDisabled = new AtomicLong();
@@ -183,6 +191,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastRelicAttachment.clear();
         lastPartyState.clear();
         lastBossState.clear();
+        lastTerritoryState.clear();
     }
 
     @Override
@@ -285,6 +294,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastRelicAttachment.remove(player.getUniqueId());
         lastPartyState.remove(player.getUniqueId());
         lastBossState.remove(player.getUniqueId());
+        lastTerritoryState.remove(player.getUniqueId());
         final long acceptedGeneration = session.generation();
         player.getScheduler().run(plugin, task -> {
             final ClientSession live = sessions.find(player.getUniqueId()).orElse(null);
@@ -525,6 +535,7 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
             lastRelicAttachment.remove(player.getUniqueId());
             lastPartyState.remove(player.getUniqueId());
             lastBossState.remove(player.getUniqueId());
+            lastTerritoryState.remove(player.getUniqueId());
             pushFullState(player, session);
             sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_RESYNC_END,
                     session.generation(), session.nextOutboundSequence(), requestId, new byte[0]));
@@ -575,6 +586,11 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
     private boolean bossFrameActive(final ClientSession session) {
         return configManager.getBoolean("client.features.boss-frame", false)
                 && session.capabilities().contains(ClientCapability.BOSS_FRAME);
+    }
+
+    private boolean territoryOverlayActive(final ClientSession session) {
+        return configManager.getBoolean("client.features.territory-overlay", false)
+                && session.capabilities().contains(ClientCapability.TERRITORY_OVERLAY);
     }
 
     /** {@link HudManager.ClientHudRoute}: a vanilla világboss-bar suppression-kapuja. */
@@ -652,6 +668,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         if (bossFrameActive(session)) {
             pushBossNow(player, session);
         }
+        if (territoryOverlayActive(session)) {
+            pushTerritoryNow(player, session);
+        }
     }
 
     /** Teljes state-küldés (kézfogás után és resync BEGIN/END között); player-szálon hívandó. */
@@ -692,6 +711,9 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         }
         if (bossFrameActive(session)) {
             pushBossNow(player, session);
+        }
+        if (territoryOverlayActive(session)) {
+            pushTerritoryNow(player, session);
         }
     }
 
@@ -1366,6 +1388,59 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         this.worldBossManager = manager;
     }
 
+    /**
+     * TERRITORY_STATE a vanilla határátlépés-actionbar + /territory info adatkörével,
+     * tartós overlay-ként; player-szálon hívandó. A zóna-lookup a lock-mentes
+     * chunk-indexen fut (tick-enként olcsó), a raid-blokk csak az aktuális zónán futó
+     * raidnél töltött — a pontok a capture-tick ütemében változnak, a dedupe nem churn-öl.
+     */
+    private void pushTerritoryNow(final Player player, final ClientSession session) {
+        final TerritoryManager territories = territoryManager;
+        if (territories == null) {
+            return;
+        }
+        final hu.taliann.icesmp.data.Territory territory =
+                territories.getTerritoryAt(player.getLocation());
+        boolean raidActive = false;
+        String raidAttackerLabel = "";
+        String raidDefenderLabel = "";
+        int raidAttackerPoints = 0;
+        int raidDefenderPoints = 0;
+        final RaidManager raids = raidManager;
+        if (territory != null && raids != null) {
+            final RaidManager.ActiveRaid raid = raids.getActiveRaid();
+            if (raid != null && raids.isRaidActive() && territory.id().equals(raid.territoryId())) {
+                raidActive = true;
+                raidAttackerLabel = raid.attacker().getDisplayName();
+                raidDefenderLabel = raid.defender().getDisplayName();
+                raidAttackerPoints = raids.getPoints(raid.attacker());
+                raidDefenderPoints = raids.getPoints(raid.defender());
+            }
+        }
+        final TerritoryStatePayload payload = territory == null
+                ? new TerritoryStatePayload(false, "", "", "", "", "",
+                        false, "", "", 0, 0)
+                : new TerritoryStatePayload(true, territory.id(), territory.name(),
+                        territory.type().name(),
+                        territory.faction() == null ? "" : territory.faction().name(),
+                        territory.faction() == null ? "" : territory.faction().getDisplayName(),
+                        raidActive, raidAttackerLabel, raidDefenderLabel,
+                        raidAttackerPoints, raidDefenderPoints);
+        final byte[] wire = payload.encode();
+        final byte[] previous = lastTerritoryState.put(player.getUniqueId(), wire);
+        if (previous != null && Arrays.equals(previous, wire)) {
+            return;
+        }
+        sendNow(player, new MessageEnvelope(session.protocolVersion(), ClientProtocol.MSG_TERRITORY_STATE,
+                session.generation(), session.nextOutboundSequence(), MessageEnvelope.NO_REQUEST, wire));
+        debug(() -> "TERRITORY_STATE sent to " + player.getName());
+    }
+
+    public void connectTerritory(final TerritoryManager territories, final RaidManager raids) {
+        this.territoryManager = territories;
+        this.raidManager = raids;
+    }
+
     public void connectHudSnapshots(final Function<UUID, HudManager.HudSnapshot> source) {
         this.hudSnapshotSource = source;
     }
@@ -1469,5 +1544,6 @@ public final class IceSmpClientBridge implements PluginMessageListener, PlayerSt
         lastRelicAttachment.remove(playerId);
         lastPartyState.remove(playerId);
         lastBossState.remove(playerId);
+        lastTerritoryState.remove(playerId);
     }
 }

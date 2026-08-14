@@ -299,9 +299,14 @@ fázisonként, a terv szerinti sorrendben:
   Kazamata mini-bossnak nincs vanilla felülete — display-paritás okán a
   frame-ben sem szerepel; encounter-scope/contribution külön rendszer
   híján nincs.
-- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..17),
-  Phase 7 folytatás (territory overlay, faction screen), Phase 8
-  (FX/animáció + attachment-renderer).
+- ✅ Territory overlay: TERRITORY_STATE — az aktuális zóna (név/típus/
+  tulajdonos, a vanilla actionbar + /territory info adatköre) tartós
+  overlay-ként, az aktuális zónán futó raid állásával; a zóna-lookup a
+  lock-mentes chunk-indexen fut a néző szálán. Zóna-geometria szándékosan
+  nem utazik (térkép-overlay külön fázis lenne).
+- ⬜ A H fázis hátralévő nagyjai: élő staging-teszt (CLIENT-02..18),
+  Phase 7 zárás (faction screen), Phase 8 (FX/animáció +
+  attachment-renderer).
 
 **Kilépési feltétel fázisonként:** vanilla kliens viselkedése változatlan,
 nincs dupla presentation, a kliens semmiben nem authority, és a feature
