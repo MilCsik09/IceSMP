@@ -70,6 +70,54 @@ implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
 - ⏸ A Mételytépő és a Sárkánytojás-töredék tényleges megszerzési forrása
   tulajdonosi döntést igényel.
 
+**PlayerProfile v2 felülvizsgálat (2026-08-14) — igazolt nyitott pontok.**
+A réteg magja (CAS + 2 fázisú WAL + atomikus szekcióírás + karantén) helytálló;
+az alábbi rések kódban visszaigazoltak, javításuk tételenként külön döntést kér:
+
+- 🚧 A talent-vásárlás `operationId`-je véletlen UUID-komponenst hordoz
+  (`PlayerProfileTalentStore.java:114`), miközben az operation-ledger dedupja
+  pontos azonosító-egyezésen áll (`YamlPlayerProfileTransactionManager`) — így a
+  talent-út retry/replay elleni idempotencia-védelme hatástalan. Determinisztikus
+  azonosító önmagában a respec utáni jogos újravásárlást is elnyelné; a javításhoz
+  respec-generáció komponens kell az azonosítóban (tulajdonosi tervdöntés).
+- 🚧 Az `enqueue` a teljes session-munkát a `sessionTails.compute` lambdán belül
+  fűzi (`PlayerProfileService.java:339-354`): már lezárt előzménynél a `work` és a
+  befejező `remove` szinkron, a CHM kulcs-zár alatt futhat — azonos játékosra
+  visszahívó listener/beágyazott művelet rekurzív `compute`-ot okoz
+  (deadlock/`IllegalStateException`-kockázat). A munkaindítást a compute-on
+  kívülre kell vinni.
+- 🚧 `YamlPlayerProfileRepository.loadLocked`: a manifest dekódolása nincs
+  karanténvédelem alatt (`:96-112`) — sérült manifest a teljes profilbetöltést
+  dönti szekció-karantén helyett; deklarálatlan szekciónál a default-írás
+  manifest-frissítés nélkül fut; az evidencia-mentés korlátlan
+  `Files.readAllBytes`-szal dolgozik.
+- 🚧 Quit-út: a `flush → invalidate` sorrend (`PlayerProfileService.java:155-157`)
+  ablakot hagy, amelyben a flush után, invalidálás előtt induló írás a régi
+  cache-példányon landolhat; a kilépési barrier nem zárja ki a párhuzamos mutációt.
+- ⬜ A CAS profil-szintű: az `expectedGeneration` a `profileRevision`
+  (`PlayerProfileService.java:191`), így bármely szekció írása minden más szekció
+  párhuzamos íróját retryra kényszeríti, a többszekciós tranzakciók pedig nem
+  retry-olnak automatikusan — terhelés alatt éhezési kockázat.
+- ⬜ A manager-réteg gameplay-útjai régió-szálon blokkolnak a profilműveleteken
+  (`.join()` — pl. `CurrencyManager`, `FactionManager`, `SinManager`); a
+  virtuális-szálas executor torlódásakor ez régió-tick-lag, a fenti
+  compute-rekurzióval együtt rosszabb. Kell egy kimondott szabály: mely utak
+  blokkolhatnak, és mekkora időkorláttal.
+- ⬜ A szekció-konstruktor limitek jogos növekedésnél is kivételt dobnak és
+  egészséges szekciót karanténoznak — pl. `ProfessionSection.recipes` cap 512,
+  miközben a receptkatalógus már 437 tételes; headroom-figyelés vagy fokozatos
+  bővítési út kell.
+- ⬜ `EconomyReceiptLedger.makeRoom`: tele kvóta + aktív replay-ablak esetén
+  `IllegalStateException` (`:110-113`) — nagyon aktív játékos jogos jóváírása
+  hard-failel. A fail-closed szándékos, de kezelt hibaút és riasztás kell mellé.
+- ⬜ A HTTP `sections/<id>` végpont a nyers `snapshot.value()`-t szerializálja
+  (`PlayerProfileHttpServer.java:229-231`) a kurált DTO-k helyett — SELF-scope-on
+  belső mezők (extensions, receipt-sorok) szivárognak; kurált szekció-DTO kell.
+- ⏸ Az invsee-visszaadási sor önálló, tartós player-item authority a
+  PlayerProfile-on kívül (`InvseeManager.java:111,122`, `invsee-escrow.yml`), és a
+  guild-tagság tárolása is a profilrétegen kívül él — az authority-mátrix alá
+  vonásuk (szekció vagy dokumentált kivétel) tulajdonosi döntés.
+
 ## 2. Builderkapuk
 
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
