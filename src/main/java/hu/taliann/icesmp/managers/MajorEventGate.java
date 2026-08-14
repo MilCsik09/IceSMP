@@ -9,7 +9,8 @@ import java.util.function.BooleanSupplier;
 public final class MajorEventGate {
 
     private static final List<String> DEFAULT_MAJORS =
-            List.of("world-boss", "invasion", "wild-hunt", "escort", "cultists");
+            List.of("world-boss", "invasion", "wild-hunt", "escort", "cultists", "prologue");
+    private static volatile MajorEventGate active;
 
     private final ConfigManager configManager;
     private final Map<String, BooleanSupplier> activeChecks = new ConcurrentHashMap<>();
@@ -18,6 +19,12 @@ public final class MajorEventGate {
 
     public MajorEventGate(final ConfigManager configManager) {
         this.configManager = configManager;
+        active = this;
+    }
+
+    /** Runtime bridge for late-installed orchestration clients. */
+    public static MajorEventGate current() {
+        return active;
     }
 
     public void register(final String eventKey, final BooleanSupplier activeCheck) {
@@ -53,15 +60,14 @@ public final class MajorEventGate {
                 activeSince.remove(other);
                 continue;
             }
-            final boolean active;
+            final boolean activeNow;
             try {
-                active = check.getAsBoolean();
+                activeNow = check.getAsBoolean();
             } catch (final RuntimeException failure) {
-                // An unreadable foreign lifecycle is not proof that an event is active.
                 activeSince.remove(other);
                 continue;
             }
-            if (!active) {
+            if (!activeNow) {
                 activeSince.remove(other);
                 continue;
             }

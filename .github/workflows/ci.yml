@@ -80,7 +80,6 @@ jobs:
       - name: Checkout tested commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -155,10 +154,10 @@ jobs:
           grep -F "Lifecycle shutdown regression suite passed." gradle-build.log
           grep -F "Quest NPC validation regression suite passed." gradle-build.log
           grep -F "Resource pack regression suite passed." gradle-build.log
-          grep -F "ClassProfile v2 domain/codec regression tests passed." gradle-build.log
+          grep -F "ClassSpecSection v2 domain regression tests passed." gradle-build.log
           grep -F "Class/spec application regression suite passed." gradle-build.log
-          grep -F "YamlClassProfileRepository regression tests passed." gradle-build.log
-          grep -F "Class profile lifecycle regression suite passed." gradle-build.log
+          grep -F "PlayerProfile YAML regression suite passed." gradle-build.log
+          grep -F "ClassSpecSection lifecycle regression suite passed." gradle-build.log
           grep -F "Respec transaction regression suite passed." gradle-build.log
           grep -F "Spell grant ledger regression suite passed." gradle-build.log
           grep -F "PlayerProfile full authority regression suite passed." gradle-build.log

@@ -403,7 +403,11 @@ def _resolve_generic_expression(
     # The crate access gate is a validated config value registered by
     # Permissions.registerCratePermissions during every config snapshot swap.
     if name == "definition.permission()" and "registerCratePermissions" in src.source:
-        return {node for node, _ in crate_permissions}, [item for _, item in crate_permissions]
+        if crate_permissions:
+            return {node for node, _ in crate_permissions}, [item for _, item in crate_permissions]
+        return set(), [_source_evidence(
+            src, offset, "hasPermission", "optional config permission set is empty",
+        )]
 
     if not re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*", name):
         return set(), []
@@ -659,6 +663,8 @@ def scan_permissions(
                 root, index, src, offset, expression, constants, crate_permissions,
             )
             if not resolved:
+                if resolution_evidence:
+                    continue
                 findings.append(Finding(
                     "FAIL",
                     "PERMISSION_UNRESOLVED",
