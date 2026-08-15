@@ -35,6 +35,42 @@
       "chars": [
         ""
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_resource.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_health.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_health_warn.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_health_critical.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
+      ]
     }
   ]
 }

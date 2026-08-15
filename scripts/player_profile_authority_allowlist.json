@@ -132,11 +132,6 @@
       "reason": "Combat UI throttle/last-target display state; session only."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final Map<UUID, VitalDisplay> vitalDisplays = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Bounded short-lived target-to-TextDisplay combat UI index; every entry expires on its entity scheduler or is removed on target death/quit, and no value is persisted."
-    },
-    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java|private final ConcurrentHashMap<UUID, Long> lastFallbackWarning = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Per-session log-warning throttle for survival HUD fallback rendering; it contains timestamps only, is not gameplay authority and is cleared with backend runtime state."
@@ -200,6 +195,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, BossBar> foliaCompactBars = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Folia-only native fallback view handles; rebuilt from the immutable HUD snapshot and removed on player cleanup."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, String> playerNames = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Rebuildable presentation cache for party member labels; populated from owner-thread snapshots and removed on player cleanup."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Double> frozenSpeed = new ConcurrentHashMap<>();",

@@ -2056,13 +2056,13 @@ erőd/kapu külső héjat kap, de ugyanabból a kanonikus belső panelgeometriá
 frakciókeretek. A reprodukálható feladatok: `generateIceSmpHudAssets`,
 `validateIceSmpHudPackage`, `iceSmpHudRegressionTest`, `hudEditorRegressionTest`.
 
-A survival bővítés szándékosan elkülönült modul: a fontjai a `font/survival/`, a képei a
+A Player/Target/Party frame bővítés szándékosan elkülönült modul: a fontjai a `font/survival/`, a képei a
 `textures/hud/survival/` alatt, contractja pedig a `survival-hud-manifest.json` fájlban él. A
 `generateIceSmpSurvivalHudAssets` a core generátor után fut, az umbrella
 `generateIceSmpHudAssets` mindkettőt előállítja. A modul a shader fenntartott 11–15-ös ID-it és
-bottom-center horgonyát használja, ezért a jobb felső class HUD koordinátáit és assetjeit nem írja át.
-A `panel.png` a szárazföldi kétoszlopos (armor+food), a `panel_air.png` a levegőfogyáskor használt
-háromoszlopos változat; mindkettő 252×72-es, így belefér a kliens 256 pixeles font-stitcher limitjébe.
+top-left horgonyát használja, ezért a jobb felső class HUD koordinátáit és assetjeit nem írja át.
+A player/party keretek 252×72, a player/mob target keretek 240×88 pixelesek; mindegyik belefér a
+kliens 256 pixeles font-stitcher limitjébe.
 
 A `runFolia` fejlesztői provisioning a változtathatatlan külső packot
 (`4900b0a9bed8db710143393916db3687e01def54`) a first-party merge bemeneteként stage-eli. A külső
@@ -2082,10 +2082,12 @@ A HUD a BMP private-use tartományban generált, repo-validált spacing- és gly
 nem támaszkodik külső HUD motor supplementary-plane sentinelére. Minden dinamikus sprite teljes 64×64-es
 logikai cellát kap, minden rajzparancs visszatér a kezdőpontra, így érték- vagy ikonváltás nem mozdítja
 el a panelt. A shader a Minecraft 1.21.11 `Globals.ScreenSize` értékével kompenzálja a kliens
-GUI-skáláját, így a teljes kompozíció a jobb felső sarokhoz horgonyzott marad. Az admin editor a
+GUI-skáláját, majd 2560×1440 referenciafelbontáshoz reszponzívan skáláz. A class kompozíció a
+jobb, a Player/Target/Party klaszter a bal felső sarokhoz horgonyzott. Az admin editor a
 globális keret mellett minden rajzcsoportnak — paneleknek, ikonoknak, feliratoknak, walletnek,
-resource-csíknak, class XP-nek, mechanikáknak, külön generic charge- és DK-rúna-sornak,
-proc/state-nek, részletmetrikáknak, eventnek és Survival HUD-nak —
+resource-csíknak, mechanikáknak, külön generic charge- és DK-rúna-sornak,
+proc/state-nek, részletmetrikáknak, eventnek, valamint a Player/Target/Party csoportoknak és
+gyermekeiknek —
 külön relatív X/Y, méret és láthatóság transzformot ad. Az X-eltolást és biztonsági margót a
 szerveroldali zéró-nettó-szélességű komponenspozíció alkalmazza. Minden kirajzolt komponens saját
 effektív Y-eltolását és méretét egy 13 bites, HUD-glyph színébe kódolt layout-azonosító viszi a
@@ -2102,10 +2104,10 @@ nagy felbontásban mintavételezett atlasz. A backend csak `SUCCESSFULLY_LOADED`
 ezért pack nélkül nem jelenhet meg felső missing-glyph négyzet.
 
 A normál vanilla health/armor/food/air sprite-ok átlátszó 9×9-es replacementet kapnak. A hardcore
-szívek szándékosan nincsenek generálva vagy owned-ként engedélyezve. A szerveroldali survival panel
+szívek szándékosan nincsenek generálva vagy owned-ként engedélyezve. A szerveroldali Player Frame
 current/max HP-t, százalékot, absorptiont, páncélt és ételt jelenít meg, levegőt pedig csak akkor,
-amikor az a maximum alá csökken. A panel editor-komponense mozgatható és méretezhető, de nem
-rejthető el; pack nélkül a
+amikor az a maximum alá csökken. A frame és minden érték külön editor-komponens, a
+`player-group` pedig együtt mozgatja őket; pack nélkül a
 változatlan vanilla sprite-ok maradnak a biztonságos fallback.
 
 Az editor kizárólag sikeres `SUCCESSFULLY_LOADED` státusznál preview-zik; pack nélkül nem próbál

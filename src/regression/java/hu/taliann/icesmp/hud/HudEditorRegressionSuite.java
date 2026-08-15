@@ -228,35 +228,38 @@ public final class HudEditorRegressionSuite {
                         && runeMoved.componentLayout(HudComponent.CHARGES)
                         .equals(moved.componentLayout(HudComponent.CHARGES)),
                 "death-knight runes must have no layout dependency on generic class charges");
-        final HudLayoutSnapshot survivalHidden = runeMoved.toggleVisibility(HudComponent.SURVIVAL_HUD);
-        check(survivalHidden.visible(HudComponent.SURVIVAL_HUD),
-                "the editor must never hide the only pack-backed survival vitals surface");
-        final SurvivalHudLayout survivalBase = SurvivalHudLayout.defaults();
-        final SurvivalHudLayout survivalMoved = survivalBase.withEditorTransform(
-                new HudComponentLayout(12, -7, HudComponentLayout.DEFAULT_SCALE_INDEX, false));
-        check(survivalBase.scaleIndex() == 5
-                        && survivalMoved.xOffsetPixels() == 12
-                        && survivalMoved.yOffsetPixels() == -7
-                        && survivalMoved.scaleIndex() == survivalBase.scaleIndex(),
-                "survival editor transforms must preserve the reviewed 1.4 base scale and ignore hide");
+        final HudLayoutSnapshot grouped = runeMoved.move(HudComponent.PLAYER_GROUP, 12, -7);
+        check(grouped.effectiveComponentLayout(HudComponent.PLAYER_HEALTH_BAR).xOffsetPixels()
+                        == runeMoved.effectiveComponentLayout(
+                        HudComponent.PLAYER_HEALTH_BAR).xOffsetPixels() + 12
+                        && grouped.effectiveComponentLayout(HudComponent.PLAYER_HEALTH_BAR).yOffsetPixels()
+                        == runeMoved.effectiveComponentLayout(
+                        HudComponent.PLAYER_HEALTH_BAR).yOffsetPixels() - 7,
+                "moving the player group must compose with every child without rewriting it");
 
         final String config = read("src/main/resources/config/general.yml");
         final String renderer = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
         final String survivalRenderer = read(
                 "src/main/java/hu/taliann/icesmp/hud/SurvivalHudRenderer.java");
+        final String targetRenderer = read(
+                "src/main/java/hu/taliann/icesmp/hud/TargetHudRenderer.java");
+        final String partyRenderer = read(
+                "src/main/java/hu/taliann/icesmp/hud/PartyHudRenderer.java");
         final String manager = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
         for (final HudComponent component : HudComponent.editableValues()) {
             check(config.contains("        " + component.id() + ":")
                             && (renderer.contains("HudComponent." + component.name())
                             || survivalRenderer.contains("HudComponent." + component.name())
+                            || targetRenderer.contains("HudComponent." + component.name())
+                            || partyRenderer.contains("HudComponent." + component.name())
                             || manager.contains("HudComponent." + component.name())),
                     "every editable component needs config defaults and a renderer consumer: "
                             + component.id());
         }
         check(manager.contains("layout.components.\" + component.id()")
                         && manager.contains("overrides.put(path + \".visible\"")
-                        && manager.contains("survivalHudLayout(editorLayout)")
-                        && manager.contains("survivalHudLayout(layout)"),
+                        && manager.contains("targetHudState(player)")
+                        && manager.contains("partyHudState(player)"),
                 "component transforms and visibility must round-trip through validated config");
     }
 
@@ -372,7 +375,8 @@ public final class HudEditorRegressionSuite {
                 "personal Profile v2 persistence and explicit global editing must stay wired");
         check(manager.contains("session.working(), session.selected(), true")
                         && renderer.contains("EDITOR_HIGHLIGHT")
-                        && renderer.contains("highlighted == HudComponent.GLOBAL || highlighted == component"),
+                        && renderer.contains("highlighted == HudComponent.GLOBAL || highlighted == component")
+                        && command.contains("hud-editor-category-dk"),
                 "the selected editor component must receive a distinct live-preview tint");
     }
 

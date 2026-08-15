@@ -21,10 +21,10 @@ out vec2 texCoord0;
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
-    float responsiveScale = clamp(min(ScreenSize.x / 1365.0, ScreenSize.y / 768.0), 1.0, 1.5);
+    float responsiveScale = clamp(min(ScreenSize.x / 2560.0, ScreenSize.y / 1440.0), 0.65, 1.5);
     vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;
     bool hudGlyph = false;
-    bool bottomCentered = false;
+    bool topLeft = false;
     float layoutScale = 1.0;
     float layoutYOffset = 0.0;
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
@@ -33,7 +33,7 @@ void main() {
         if (((bit >> MAX_BIT) & 1) == 1) {
             int id = bit - (1 << MAX_BIT);
             hudGlyph = true;
-            bottomCentered = id >= 11 && id <= 15;
+            topLeft = id >= 11 && id <= 15;
             ivec3 packedColor = ivec3(round(Color.rgb * 255.0));
             int layoutCode = (packedColor.r & 15) | ((packedColor.g & 15) << 4)
                     | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8);
@@ -62,9 +62,6 @@ void main() {
             if (!outline && (pos.z == 0 || pos.z == 1000 || pos.z == -90 || pos.z == 2800)) {
                 vertexColor = vec4(0);
             }
-            if (bottomCentered) {
-                pos.y += ui.y - 120.0;
-            }
         }
     }
     sphericalVertexDistance = fog_spherical_distance(pos);
@@ -73,10 +70,10 @@ void main() {
     vec4 clipPosition = ProjMat * ModelViewMat * vec4(pos, 1.0);
     if (hudGlyph) {
         vec2 selectedHudScale = hudScale * layoutScale;
-        if (bottomCentered) {
-            clipPosition.x = clipPosition.x * selectedHudScale.x;
-            clipPosition.y = -clipPosition.w
-                    + (clipPosition.y + clipPosition.w) * selectedHudScale.y
+        if (topLeft) {
+            clipPosition.x = -clipPosition.w + clipPosition.x * selectedHudScale.x;
+            clipPosition.y = clipPosition.w
+                    + (clipPosition.y - clipPosition.w) * selectedHudScale.y
                     - layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;
         } else {
             clipPosition.x = clipPosition.w + clipPosition.x * selectedHudScale.x;

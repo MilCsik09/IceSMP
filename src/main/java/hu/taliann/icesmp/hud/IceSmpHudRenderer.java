@@ -37,9 +37,6 @@ public final class IceSmpHudRenderer {
     static final int WALLET_TEXT_OFFSET = 17;
     static final int WALLET_TEXT_WIDTH = 90;
     static final int EVENT_TEXT_WIDTH = 186;
-    static final int CLASS_XP_BAR_X = -242;
-    static final int CLASS_XP_CENTER_X = -194;
-    static final int SPLIT_EVENT_CENTER_X = -74;
 
     private static final Key SPACE_FONT = Key.key("icesmp_hud", "space");
     private static final Key PANEL_FONT = Key.key("icesmp_hud", "panel");
@@ -57,14 +54,12 @@ public final class IceSmpHudRenderer {
     private static final Key MECHANIC_SLOT_FONT = Key.key("icesmp_hud", "mechanic_slots");
     private static final Key RESOURCE_FONT = Key.key("icesmp_hud", "resource_segments");
     private static final Key METRIC_FONT = Key.key("icesmp_hud", "metric_segments");
-    private static final Key XP_FONT = Key.key("icesmp_hud", "xp_segments");
     private static final Key HEADER_FONT = Key.key("icesmp_hud", "text_header");
     private static final Key SUBHEADER_FONT = Key.key("icesmp_hud", "text_subheader");
     private static final Key RESOURCE_TEXT_FONT = Key.key("icesmp_hud", "text_resource");
     private static final Key MECHANIC_FONT = Key.key("icesmp_hud", "text_mechanic");
     private static final Key STATE_FONT = Key.key("icesmp_hud", "text_state");
     private static final Key EVENT_FONT = Key.key("icesmp_hud", "text_event");
-    private static final Key XP_TEXT_FONT = Key.key("icesmp_hud", "text_xp");
     private static final Key WALLET_TEXT_FONT = Key.key("icesmp_hud", "text_wallet");
     private static final Key WALLET_TEXT_LOWER_FONT = Key.key("icesmp_hud", "text_wallet_lower");
     private static final Key WALLET_TEXT_COMPACT_FONT = Key.key("icesmp_hud", "text_wallet_compact");
@@ -145,18 +140,10 @@ public final class IceSmpHudRenderer {
             if (hasSupplementaryMetrics) {
                 drawSupplementaryMetrics(output, model, safeLayout, highlighted);
             }
-            drawSegments(output, HudComponent.CLASS_XP, CLASS_XP_BAR_X, XP_FONT,
-                    model.classXp().percent(), SEGMENT_GOLD,
-                    METRIC_SEGMENT_ADVANCE, safeLayout, highlighted);
-            output.append(centeredText(HudComponent.CLASS_XP, CLASS_XP_CENTER_X,
-                    XP_TEXT_FONT, classXpLine(model.classXp()),
-                    color("F0D88D", 0xF0D88D), 96, safeLayout, highlighted));
         }
-        final int eventWidth = model.hasClass() ? 104 : EVENT_TEXT_WIDTH;
-        output.append(centeredText(HudComponent.EVENT_TEXT,
-                model.hasClass() ? SPLIT_EVENT_CENTER_X : -134, EVENT_FONT,
-                eventLine(model.event(), eventWidth),
-                color("F0D88D", 0xF0D88D), eventWidth,
+        output.append(centeredText(HudComponent.EVENT_TEXT, -134, EVENT_FONT,
+                eventLine(model.event(), EVENT_TEXT_WIDTH),
+                color("F0D88D", 0xF0D88D), EVENT_TEXT_WIDTH,
                 safeLayout, highlighted));
         return output.build();
     }
@@ -390,26 +377,7 @@ public final class IceSmpHudRenderer {
 
     private static String eventLine(final String rawEvent, final int maximumWidth) {
         final String event = stripLegacy(rawEvent == null ? "" : rawEvent).trim();
-        final String labelled = "ESEMÉNY " + event;
-        return labelled.codePointCount(0, labelled.length()) <= maximumWidth / TEXT_ADVANCE
-                ? labelled : event;
-    }
-
-    private static String classXpLine(final ClassXpProgress progress) {
-        if (progress == null || progress.maxed()) return "MAX SZINT";
-        return "Még " + compactAmount(progress.remaining()) + " XP";
-    }
-
-    private static String compactAmount(final int value) {
-        if (value >= 1_000_000) {
-            return String.format(Locale.ROOT, "%.1fM", value / 1_000_000.0D)
-                    .replace(".0M", "M");
-        }
-        if (value >= 1_000) {
-            return String.format(Locale.ROOT, "%.1fk", value / 1_000.0D)
-                    .replace(".0k", "k");
-        }
-        return Integer.toString(Math.max(0, value));
+        return event.isBlank() ? "nyugalom" : event;
     }
 
     private static void drawSegments(final TextComponent.Builder output, final HudComponent component,
@@ -472,6 +440,7 @@ public final class IceSmpHudRenderer {
     private static TextColor editorColor(final TextColor desired, final HudComponent component,
                                          final HudComponent highlighted) {
         return highlighted == HudComponent.GLOBAL || highlighted == component
+                || highlighted != null && highlighted == component.parentGroup()
                 ? EDITOR_HIGHLIGHT : desired;
     }
 

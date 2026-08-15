@@ -6,8 +6,12 @@
       "ascent": -8515620,
       "height": 14,
       "chars": [
-        " 0123456789./()+",
-        "%HP…"
+        " 0123456789ABCDE",
+        "FGHIJKLMNOPQRSTU",
+        "VWXYZabcdefghijk",
+        "lmnopqrstuvwxyzÁ",
+        "ÉÍÓÖŐÚÜŰáéíóöőúü",
+        "ű_'./+%:,-!?…•—◆"
       ]
     }
   ]

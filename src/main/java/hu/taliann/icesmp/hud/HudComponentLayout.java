@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.hud;
 
-/** Immutable transform relative to the global right-anchored HUD layout. */
+/** Immutable transform relative to the component's global left- or right-anchored HUD group. */
 public record HudComponentLayout(int xOffsetPixels, int yOffsetPixels, int scaleIndex,
                                  boolean visible) {
 
@@ -21,13 +21,20 @@ public record HudComponentLayout(int xOffsetPixels, int yOffsetPixels, int scale
 
     public static HudComponentLayout fromConfigValues(final Object x, final Object y,
                                                        final Object scale, final Object visible) {
+        return fromConfigValues(x, y, scale, visible, defaults());
+    }
+
+    public static HudComponentLayout fromConfigValues(final Object x, final Object y,
+                                                       final Object scale, final Object visible,
+                                                       final HudComponentLayout fallback) {
+        final HudComponentLayout safe = fallback == null ? defaults() : fallback;
         return new HudComponentLayout(
                 HudLayoutSnapshot.validInteger(x, HudLayoutSnapshot.MIN_X_OFFSET,
-                        HudLayoutSnapshot.MAX_X_OFFSET, 0),
+                        HudLayoutSnapshot.MAX_X_OFFSET, safe.xOffsetPixels()),
                 HudLayoutSnapshot.validInteger(y, HudLayoutSnapshot.MIN_Y_OFFSET,
-                        HudLayoutSnapshot.MAX_Y_OFFSET, 0),
-                HudLayoutSnapshot.scaleIndex(scale, DEFAULT_SCALE_INDEX),
-                visible instanceof Boolean value ? value : true);
+                        HudLayoutSnapshot.MAX_Y_OFFSET, safe.yOffsetPixels()),
+                HudLayoutSnapshot.scaleIndex(scale, safe.scaleIndex()),
+                visible instanceof Boolean value ? value : safe.visible());
     }
 
     public double scale() {

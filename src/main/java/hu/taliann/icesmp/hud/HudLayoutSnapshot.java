@@ -18,9 +18,9 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
             750, 900, 1000, 1150, 1250, 1400, 1600, 1800,
             2000, 2200, 2400, 2600, 2800, 3000, 3250, 3500);
     public static final int DEFAULT_X_OFFSET = 0;
-    public static final int DEFAULT_Y_OFFSET = 16;
-    public static final int DEFAULT_SAFE_MARGIN = 16;
-    public static final int DEFAULT_SCALE_INDEX = 4;
+    public static final int DEFAULT_Y_OFFSET = 24;
+    public static final int DEFAULT_SAFE_MARGIN = 24;
+    public static final int DEFAULT_SCALE_INDEX = 2;
 
     public HudLayoutSnapshot {
         xOffsetPixels = clamp(xOffsetPixels, MIN_X_OFFSET, MAX_X_OFFSET);
@@ -29,11 +29,14 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         scaleIndex = clamp(scaleIndex, 0, SCALE_PERMILLE.size() - 1);
         final EnumMap<HudComponent, HudComponentLayout> safe = new EnumMap<>(HudComponent.class);
         for (final HudComponent component : HudComponent.editableValues()) {
-            safe.put(component, HudComponentLayout.defaults());
+            safe.put(component, defaultComponentLayout(component));
         }
         if (components != null) {
             components.forEach((component, layout) -> {
-                if (component != null && component.rendered() && layout != null) safe.put(component, layout);
+                if (component != null && component != HudComponent.GLOBAL
+                        && (component.rendered() || component.isGroup()) && layout != null) {
+                    safe.put(component, layout);
+                }
             });
         }
         components = Map.copyOf(safe);
@@ -72,7 +75,10 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     }
 
     public int anchoredX(final HudComponent component, final int sourceX) {
-        final HudComponentLayout element = componentLayout(component);
+        final HudComponentLayout element = effectiveComponentLayout(component);
+        if (leftAnchored(component)) {
+            return sourceX + xOffsetPixels + safeMarginPixels + element.xOffsetPixels();
+        }
         return anchoredX(sourceX) + element.xOffsetPixels();
     }
 
@@ -82,20 +88,54 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     }
 
     public int shaderCode(final HudComponent component) {
-        final HudComponentLayout element = componentLayout(component);
-        final int y = clamp(yOffsetPixels + element.yOffsetPixels(), MIN_Y_OFFSET, MAX_Y_OFFSET);
+        return shaderCode(component, 0);
+    }
+
+    public int shaderCode(final HudComponent component, final int additionalYOffset) {
+        final HudComponentLayout element = effectiveComponentLayout(component);
+        final int y = clamp(yOffsetPixels + element.yOffsetPixels() + additionalYOffset,
+                MIN_Y_OFFSET, MAX_Y_OFFSET);
         final int effectiveScale = closestScaleIndex(scale() * element.scale());
         return (effectiveScale << 9) | (y + 256);
     }
 
     public boolean visible(final HudComponent component) {
         return component == null || component == HudComponent.GLOBAL || !component.hideable()
-                || componentLayout(component).visible();
+                || effectiveComponentLayout(component).visible();
     }
 
     public HudComponentLayout componentLayout(final HudComponent component) {
         if (component == null || component == HudComponent.GLOBAL) return HudComponentLayout.defaults();
         return components.getOrDefault(component, HudComponentLayout.defaults());
+    }
+
+    /** Resolves a child transform against its movable player/target/party group. */
+    public HudComponentLayout effectiveComponentLayout(final HudComponent component) {
+        final HudComponentLayout child = componentLayout(component);
+        final HudComponent parent = component == null ? null : component.parentGroup();
+        if (parent == null) return child;
+        final HudComponentLayout group = componentLayout(parent);
+        return new HudComponentLayout(
+                group.xOffsetPixels() + child.xOffsetPixels(),
+                group.yOffsetPixels() + child.yOffsetPixels(),
+                closestScaleIndex(group.scale() * child.scale()),
+                group.visible() && child.visible());
+    }
+
+    public static boolean leftAnchored(final HudComponent component) {
+        return component != null && (component == HudComponent.PLAYER_GROUP
+                || component == HudComponent.TARGET_GROUP || component == HudComponent.PARTY_GROUP
+                || component.parentGroup() != null);
+    }
+
+    public static HudComponentLayout defaultComponentLayout(final HudComponent component) {
+        if (component == HudComponent.TARGET_GROUP) {
+            return new HudComponentLayout(264, 0, HudComponentLayout.DEFAULT_SCALE_INDEX, true);
+        }
+        if (component == HudComponent.PARTY_GROUP) {
+            return new HudComponentLayout(0, 82, HudComponentLayout.DEFAULT_SCALE_INDEX, true);
+        }
+        return HudComponentLayout.defaults();
     }
 
     public HudLayoutSnapshot move(final int deltaX, final int deltaY) {
@@ -166,12 +206,13 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
             return new HudLayoutSnapshot(defaults.xOffsetPixels, defaults.yOffsetPixels,
                     defaults.safeMarginPixels, defaults.scaleIndex, components);
         }
-        return withComponent(target, HudComponentLayout.defaults());
+        return withComponent(target, defaultComponentLayout(target));
     }
 
     public HudLayoutSnapshot withComponent(final HudComponent component,
                                            final HudComponentLayout componentLayout) {
-        if (component == null || !component.rendered()) return this;
+        if (component == null || component == HudComponent.GLOBAL
+                || (!component.rendered() && !component.isGroup())) return this;
         final EnumMap<HudComponent, HudComponentLayout> next = new EnumMap<>(components);
         next.put(component, componentLayout == null ? HudComponentLayout.defaults() : componentLayout);
         return new HudLayoutSnapshot(xOffsetPixels, yOffsetPixels, safeMarginPixels, scaleIndex, next);

@@ -335,7 +335,7 @@ public final class HudCommand implements BasicCommand {
                 ? "hud-editor-header-personal" : "hud-editor-header-global"));
         player.sendMessage(editorNavigation(page));
         player.sendMessage(messageManager.requiredComponent("hud-editor-panel",
-                messageManager.required("hud-component-" + selected.id()), editorValues(session)));
+                componentLabel(selected), editorValues(session)));
         switch (page) {
             case OVERVIEW -> sendOverviewPage(player, session);
             case POSITION -> sendPositionPage(player, session);
@@ -466,15 +466,33 @@ public final class HudCommand implements BasicCommand {
         player.sendMessage(button(messageManager.required("hud-editor-button-previous"), "/hud edit previous")
                 .append(Component.space())
                 .append(button(messageManager.required("hud-editor-button-next"), "/hud edit next")));
-        final List<HudComponent> targets = HudComponent.editorTargets();
-        for (int offset = 0; offset < targets.size(); offset += 6) {
-            Component row = Component.empty();
-            for (final HudComponent component : targets.subList(offset, Math.min(offset + 6, targets.size()))) {
-                row = row.append(button(messageManager.required("hud-component-" + component.id()),
-                        "/hud edit select " + component.id(),
-                        component == session.selected())).append(Component.space());
+        final List<HudComponent> all = HudComponent.editorTargets();
+        final List<List<HudComponent>> categories = List.of(
+                all.stream().filter(component -> component == HudComponent.GLOBAL
+                        || component.parentGroup() == null && !component.isGroup()
+                        && component != HudComponent.DK_RUNES).toList(),
+                List.of(HudComponent.DK_RUNES),
+                all.stream().filter(component -> component == HudComponent.PLAYER_GROUP
+                        || component.parentGroup() == HudComponent.PLAYER_GROUP).toList(),
+                all.stream().filter(component -> component == HudComponent.TARGET_GROUP
+                        || component.parentGroup() == HudComponent.TARGET_GROUP).toList(),
+                all.stream().filter(component -> component == HudComponent.PARTY_GROUP
+                        || component.parentGroup() == HudComponent.PARTY_GROUP).toList());
+        final List<String> labels = List.of("class", "dk", "player", "target", "party");
+        for (int category = 0; category < categories.size(); category++) {
+            player.sendMessage(messageManager.requiredComponent(
+                    "hud-editor-category-" + labels.get(category)));
+            final List<HudComponent> targets = categories.get(category);
+            for (int offset = 0; offset < targets.size(); offset += 5) {
+                Component row = Component.empty();
+                for (final HudComponent component : targets.subList(
+                        offset, Math.min(offset + 5, targets.size()))) {
+                    row = row.append(button(componentLabel(component),
+                            "/hud edit select " + component.id(),
+                            component == session.selected())).append(Component.space());
+                }
+                player.sendMessage(row);
             }
-            player.sendMessage(row);
         }
     }
 
@@ -502,8 +520,18 @@ public final class HudCommand implements BasicCommand {
                         ? "hud-editor-actionbar" : "hud-editor-actionbar-pack-missing",
                 messageManager.required(session.scope() == HudEditorStateMachine.Scope.PERSONAL
                         ? "hud-editor-mode-personal" : "hud-editor-mode-global"),
-                messageManager.required("hud-component-" + session.selected().id()),
+                componentLabel(session.selected()),
                 editorValues(session)));
+    }
+
+    private String componentLabel(final HudComponent component) {
+        final String id = component == null ? "global" : component.id();
+        final StringBuilder fallback = new StringBuilder();
+        for (final String word : id.split("-")) {
+            if (!fallback.isEmpty()) fallback.append(' ');
+            fallback.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return messageManager.get("hud-component-" + id, fallback.toString());
     }
 
     private String editorValues(final HudEditorStateMachine.Session session) {

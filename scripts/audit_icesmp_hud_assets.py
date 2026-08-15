@@ -102,7 +102,7 @@ class Finding:
 def expected_size(path: Path) -> tuple[int, int] | None:
     name = path.name
     if path.parent.name == "survival":
-        return {
+        fixed = {
             "panel.png": (252, 72),
             "panel_air.png": (252, 72),
             "health_track.png": (10, 10),
@@ -113,11 +113,25 @@ def expected_size(path: Path) -> tuple[int, int] | None:
             "mini_armor.png": (5, 6),
             "mini_food.png": (5, 6),
             "mini_air.png": (5, 6),
+            "mini_resource.png": (5, 6),
+            "mini_health.png": (5, 6),
+            "mini_health_warn.png": (5, 6),
+            "mini_health_critical.png": (5, 6),
             "icon_armor.png": (14, 14),
             "icon_food.png": (14, 14),
             "icon_air.png": (14, 14),
-            "text-atlas.png": (768, 224),
-        }.get(name)
+            "icon_player.png": (14, 14),
+            "icon_passive.png": (14, 14),
+            "icon_neutral.png": (14, 14),
+            "icon_hostile.png": (14, 14),
+            "icon_boss.png": (14, 14),
+            "text-atlas.png": (768, 672),
+        }
+        if name.startswith(("player_", "party_")):
+            return (252, 72)
+        if name.startswith(("target_player_", "target_mob_")):
+            return (240, 88)
+        return fixed.get(name)
     if path.parent.name != "hud":
         return None
     if name.startswith(("class-", "currency-", "rune-", "icon-", "mechanic-", "charge-")):

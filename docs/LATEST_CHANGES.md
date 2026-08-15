@@ -46,21 +46,20 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   `ScreenSize` értékéből normalizálja. A magyar feliratok négyszeresen túlmintavételezett,
   élsimított Inter SemiBold forrásból készülnek; ablak- és GUI-scale váltás nem mozdíthatja vagy
   többszörös méretűre nagyíthatja a HUD-ot.
-- **Egyedi survival HUD és HP-scaling előkészítés:** a normál vanilla szív-, páncél-, étel- és
-  oxigénsávot pack-readiness után egy nagyobb, alsó-középre horgonyzott panel váltja. A HP current/max
-  és százalék formában, az absorption külön jelöléssel, a páncél és étel mini-sávon és pontos számmal
-  látszik; az oxigén harmadik oszlopa csak fogyó levegőnél nyílik ki. A teljes panel a személyes és
-  globális HUD-editorban külön mozgatható/méretezhető, de nem rejthető el. A gyors, Folia-safe tick
+- **Moduláris Player Frame és HP-scaling előkészítés:** a normál vanilla szív-, páncél-, étel- és
+  oxigénsávot pack-readiness után egy bal felső, frakciószínű Player Frame váltja. A név, frame,
+  HP current/max, százalék, absorption, páncél, étel és feltételes oxigén külön editor-elem;
+  a nyers páncélérték 20 fölött sincs levágva. A gyors, Folia-safe tick
   külön fut a class/sidebar snapshotfrissítéstől. A
   class-health gate továbbra is kikapcsolt, de a normalizálás már tiltott, így későbbi staging
   aktiváláskor a HUD a valódi skálázott HP-t fogja mutatni. Hardcore-heart asset nincs felülírva.
-- **Class XP és combat-vitals:** a first-party panel külön arany XP-sávon mutatja az aktuális
-  class-szinten belüli haladást és a szintlépéshez hiányzó XP-t. A DK-rúnák saját editor-komponenst
-  kaptak, függetlenül a generic charge-sortól. Találat után egy célpontot követő, alapból csak a
-  támadónak látható TextDisplay mutatja a mob/játékos current/max HP-ját, játékosnál opcionálisan a
-  class resource-t is. A display nem passenger: az entitás magasságából számított, nametag alatti
-  pozíciót követi, ezért az eredeti név megmarad. A rendszer eseményvezérelt, világ-szkennelést nem
-  végez.
+- **Target/Party Frame és tisztább class panel:** a tartós class XP-sáv kikerült, az eseménylábléc
+  teljes szélességben legfeljebb három aktív eseményt mutat. A DK-rúnák saját editor-kategóriát
+  kaptak. Találat után screen-space Target Frame jelenik meg: a mob saját bestiárium-, a játékos
+  frakciófüggő grafikát, current/max HP-t, százalékot, szintet/státuszt és játékos resource-t kap.
+  A rendszer nem hoz létre követő vitals-TextDisplayt, így az eredeti mobnév érintetlen marad.
+  A Player Frame alatt négy WoW-stílusú, tagonként frakciószínű Party Frame mutat HP-t,
+  resource-t és online/távol/halott/vezető állapotot.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Társ-rendszer:** a Profile v2-ben tárolt társlista most a `/pet` GUI-ból és

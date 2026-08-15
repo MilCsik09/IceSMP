@@ -66,8 +66,6 @@ HUD_Y = {
     "charge": 137,
     "state": 143,
     "event_icon": 155,
-    "class_xp_bar": 155,
-    "class_xp_text": 165,
     "event_text": 165,
     "detail_text": 190,
     "wallet_icon": 210,
@@ -456,10 +454,10 @@ out vec2 texCoord0;
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
-    float responsiveScale = clamp(min(ScreenSize.x / 1365.0, ScreenSize.y / 768.0), 1.0, 1.5);
+    float responsiveScale = clamp(min(ScreenSize.x / 2560.0, ScreenSize.y / 1440.0), 0.65, 1.5);
     vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;
     bool hudGlyph = false;
-    bool bottomCentered = false;
+    bool topLeft = false;
     float layoutScale = 1.0;
     float layoutYOffset = 0.0;
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
@@ -468,7 +466,7 @@ void main() {
         if (((bit >> MAX_BIT) & 1) == 1) {
             int id = bit - (1 << MAX_BIT);
             hudGlyph = true;
-            bottomCentered = id >= 11 && id <= 15;
+            topLeft = id >= 11 && id <= 15;
             ivec3 packedColor = ivec3(round(Color.rgb * 255.0));
             int layoutCode = (packedColor.r & 15) | ((packedColor.g & 15) << 4)
                     | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8);
@@ -497,9 +495,6 @@ void main() {
             if (!outline && (pos.z == 0 || pos.z == 1000 || pos.z == -90 || pos.z == 2800)) {
                 vertexColor = vec4(0);
             }
-            if (bottomCentered) {
-                pos.y += ui.y - 120.0;
-            }
         }
     }
     sphericalVertexDistance = fog_spherical_distance(pos);
@@ -508,10 +503,10 @@ void main() {
     vec4 clipPosition = ProjMat * ModelViewMat * vec4(pos, 1.0);
     if (hudGlyph) {
         vec2 selectedHudScale = hudScale * layoutScale;
-        if (bottomCentered) {
-            clipPosition.x = clipPosition.x * selectedHudScale.x;
-            clipPosition.y = -clipPosition.w
-                    + (clipPosition.y + clipPosition.w) * selectedHudScale.y
+        if (topLeft) {
+            clipPosition.x = -clipPosition.w + clipPosition.x * selectedHudScale.x;
+            clipPosition.y = clipPosition.w
+                    + (clipPosition.y - clipPosition.w) * selectedHudScale.y
                     - layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;
         } else {
             clipPosition.x = clipPosition.w + clipPosition.x * selectedHudScale.x;
@@ -662,17 +657,13 @@ def generate_layout_preview(text_rows: list[str]) -> None:
     paste_text("Tűz 72", 20, HUD_Y["detail_text"], (199, 212, 234))
     paste_text("Fagy 48", 86, HUD_Y["detail_text"], (199, 212, 234))
     paste_text("Arkán 31", 152, HUD_Y["detail_text"], (199, 212, 234))
-    xp = "Még 120 XP"
-    paste_text(xp, 60 - len(xp) * (TEXT_LOGICAL_WIDTH + 1) // 2,
-               HUD_Y["class_xp_text"], (240, 216, 141))
-    event = "Vérhold 04:12"
-    paste_text(event, 180 - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+    event = "Vérhold • RAID • Világboss"
+    paste_text(event, 120 - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
                HUD_Y["event_text"], (240, 216, 141))
     paste_bar("segment", HUD_X["resource_bar"], HUD_Y["resource_bar"], 13, 10)
     paste_bar("metric", HUD_X["primary_metric_bar"], HUD_Y["metric_bar"], 8, 9)
     paste_bar("metric", HUD_X["secondary_metric_bar"], HUD_Y["metric_bar"],
               8, 5, "fill-gold")
-    paste_bar("metric", 12, HUD_Y["class_xp_bar"], 8, 9, "fill-gold")
 
     wallet = (("currency-neutral.png", "Creutzér 12.8k", 8, HUD_Y["wallet_icon"],
                HUD_Y["wallet_text"], (240, 216, 141)),
@@ -802,13 +793,6 @@ def main() -> None:
         provider("metric-fill-warm.png", chr(0xE182), 6, HUD_Y["metric_bar"], 5),
         provider("metric-fill-gold.png", chr(0xE183), 6, HUD_Y["metric_bar"], 5),
     ])
-    write_font("xp_segments", [
-        provider("metric-track.png", chr(0xE180), 5, HUD_Y["class_xp_bar"], 5),
-        provider("metric-fill.png", chr(0xE181), 6, HUD_Y["class_xp_bar"], 5),
-        provider("metric-fill-warm.png", chr(0xE182), 6, HUD_Y["class_xp_bar"], 5),
-        provider("metric-fill-gold.png", chr(0xE183), 6, HUD_Y["class_xp_bar"], 5),
-    ])
-
     for name, y in {
         "text_header": HUD_Y["header"],
         "text_subheader": HUD_Y["subheader"],
@@ -816,7 +800,6 @@ def main() -> None:
         "text_mechanic": HUD_Y["mechanic_text"],
         "text_state": HUD_Y["state"],
         "text_event": HUD_Y["event_text"],
-        "text_xp": HUD_Y["class_xp_text"],
         "text_detail": HUD_Y["detail_text"],
         "text_wallet": HUD_Y["wallet_text"],
         "text_wallet_lower": HUD_Y["wallet_lower_text"],
