@@ -2417,6 +2417,7 @@ profession-recipes:
       - armor:2
       - armor_toughness:1
       item-model: icesmp:osfa_gerenda
+      equipment-asset: icesmp:osfa_gerenda
     ingredients:
     - LEATHER:6
     - DARK_OAK_LOG:8
@@ -3913,6 +3914,7 @@ profession-recipes:
       attributes:
       - armor:1
       item-model: icesmp:erdojaro_labszar
+      equipment-asset: icesmp:erdojaro_labszar
     ingredients:
     - LEATHER:5
     - unique:kemenyfa_gerenda:1
@@ -3934,6 +3936,7 @@ profession-recipes:
       - armor:1
       - armor_toughness:1
       item-model: icesmp:erdojaro_csuklya
+      equipment-asset: icesmp:erdojaro_csuklya
     ingredients:
     - LEATHER:4
     - unique:kemenyfa_gerenda:1
@@ -4938,6 +4941,7 @@ profession-recipes:
       - armor:1
       - movement_speed:0.01
       item-model: icesmp:erdojaro_csizma
+      equipment-asset: icesmp:erdojaro_csizma
     ingredients:
     - LEATHER:4
     - unique:kemenyfa_gerenda:1
@@ -5091,6 +5095,7 @@ profession-recipes:
       attributes:
       - armor:1
       item-model: icesmp:vizallo_nadrag
+      equipment-asset: icesmp:vizallo_nadrag
     ingredients:
     - LEATHER:6
     - unique:csalizsir:1
@@ -5110,6 +5115,7 @@ profession-recipes:
       affix-tier: crafted
       enchant: minecraft:depth_strider:2
       item-model: icesmp:melysegjaro_csizma
+      equipment-asset: icesmp:melysegjaro_csizma
     ingredients:
     - LEATHER:4
     - unique:gyongyhaz_pikkely:1
@@ -5129,6 +5135,7 @@ profession-recipes:
       affix-tier: crafted
       enchant: minecraft:respiration:2
       item-model: icesmp:buvar_sisak
+      equipment-asset: icesmp:buvar_sisak
     ingredients:
     - IRON_INGOT:5
     - GLASS:2
@@ -5269,4 +5276,3 @@ profession-recipes:
     - '&7A kemencében tovább ég, mint a fa.'
 crafted-by:
   enabled: true
-

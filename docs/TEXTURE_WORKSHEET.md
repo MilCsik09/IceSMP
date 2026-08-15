@@ -1,31 +1,30 @@
-# Textúra-munkalap — a hiányzó item-textúrák
+# Textúra-munkalap — elkészült szakma-textúrák
 
 <!-- icesmp-doc-id: feature.resource-pack.worksheet -->
 
-Ez a **munkalap**: kész, bemásolható promptok a még le nem gyártott item-textúrákhoz.
+Ez a **munkalap** megőrzi a szakma-rework item-textúráihoz használt promptokat.
 A per-tárgy kanonikus leírás (Ábrázolás / Színvilág / lore) a
 [`RESOURCE_PACK_CMD.md`](RESOURCE_PACK_CMD.md) manifestben él — ez a fájl abból
-generálódik, és csak azt sorolja, amihez MÉG NINCS PNG.
+generálódott. A felsorolt 84 PNG elkészült és bekerült a resource packba.
 
 ## Egyeztetés
 
 | | db |
 |---|---:|
 | Bekötött `item-model` (egyedi + ritkaság recept) | **85** |
-| Ebből már van PNG a packban | 1 |
-| **Legyártandó textúra** | **84** |
+| Ebből van PNG a packban | **85** |
+| **Legyártandó textúra** | **0** |
 | Lapok száma (5 tárgy / lap) | 17 |
 
-Már kész, ezért NEM szerepel a lapokon: `bokic_gyogytea` — a grafikája a recept újraírása előttről
-származik, és a manifest leírása a meglévő PNG-t rögzíti.
+A `bokic_gyogytea` már a generálás előtt kész volt, ezért nem szerepel a lapokon. A további
+84 tárgy a lenti 17 lap alapján készült el.
 
-> A számot a `scripts/check_consistency.py` is figyeli: WARN-ol, ha egy deklarált
-> `ITEM_MODEL`-hez nincs PNG a packban. Amikor nullára csökken, minden tárgy a saját
-> grafikáját viseli.
+> A `scripts/check_consistency.py` minden deklarált `ITEM_MODEL`-hez megtalálja a PNG-t;
+> a hiányzó textúrák száma nulla.
 
-## Mielőtt generálsz
+## Gyártási paraméterek
 
-- **64×64 px, átlátszó háttér.** A csomagolt pack mind a 304 item-textúrája ilyen — vegyes felbontás nem kerülhet be.
+- **64×64 px, átlátszó háttér.** A csomagolt pack mind a 388 item-textúrája ilyen — vegyes felbontás nem kerülhet be.
 - **Lapokban kérd, ne egyesével.** Öt tárgy egy lapon: így tartja a stílust a generátor.
 - **Fehér háttér a generáláskor**, alfára vágás utólag. Félig átlátszó élpixel tilos — a játékban csúnya szegély lesz belőle.
 - **Átméretezés PONTOSAN 64×64-re, nearest-neighbour.** Bilineáris skálázás elmossa a pixeleket.

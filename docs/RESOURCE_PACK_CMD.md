@@ -2274,18 +2274,21 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 
 ### `vizallo_nadrag` — Vízálló Nadrág
 - **Fájl:** `vizallo_nadrag.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_LEGGINGS`
+- **Viselt equipment:** `icesmp:vizallo_nadrag` (`humanoid_leggings` réteg)
 - **Ábrázolás:** zsírral kezelt bőrnadrág, sötét foltos szár, hálófonal-varrás az oldalán
 - **Színvilág:** olajos bőrbarna, sötét folt; akcent: halvány halofonal-drapp
 - **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 21. szint).
 
 ### `melysegjaro_csizma` — Mélységjáró Csizma
 - **Fájl:** `melysegjaro_csizma.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_BOOTS`
+- **Viselt equipment:** `icesmp:melysegjaro_csizma` (`humanoid` réteg)
 - **Ábrázolás:** magas szárú bőrcsizma gyöngyház-pikkelyekkel a lábfejen, hálófonal-fűzés
 - **Színvilág:** bőrbarna, gyöngyház-irizálás; akcent: prizmarin-türkiz csillanás
 - **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 24. szint).
 
 ### `buvar_sisak` — Búvársisak
 - **Fájl:** `buvar_sisak.png` &nbsp;|&nbsp; **Alap-item:** `IRON_HELMET`
+- **Viselt equipment:** `icesmp:buvar_sisak` (`humanoid` réteg)
 - **Ábrázolás:** gömbölyű vassisak nagy kerek üvegablakkal, gyöngyház-szegecsek a peremen
 - **Színvilág:** vasszürke, zöldes üveg; akcent: gyöngyház-fehér szegecs
 - **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 27. szint).
@@ -2325,6 +2328,7 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 
 ### `erdojaro_labszar` — Erdőjáró Lábszár
 - **Fájl:** `erdojaro_labszar.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_LEGGINGS`
+- **Viselt equipment:** `icesmp:erdojaro_labszar` (`humanoid_leggings` réteg)
 - **Ábrázolás:** bőr lábszárvédő pácolt fakéreg-csíkokkal megerősítve, zöld kötés a térdnél
 - **Színvilág:** cserzett bőrbarna, sötét kéreg; akcent: mohazöld kötés
 - **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 25. szint).
@@ -2337,6 +2341,7 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 
 ### `erdojaro_csizma` — Erdőjáró Csizma
 - **Fájl:** `erdojaro_csizma.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_BOOTS`
+- **Viselt equipment:** `icesmp:erdojaro_csizma` (`humanoid` réteg)
 - **Ábrázolás:** puha bőrcsizma fűzött szárral, fűkötél-tekercs a bokánál, sáros talp
 - **Színvilág:** bőrbarna, szalmasárga kötél; akcent: friss fűzöld
 - **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 30. szint).
@@ -2349,6 +2354,7 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 
 ### `erdojaro_csuklya` — Erdőjáró Csuklya
 - **Fájl:** `erdojaro_csuklya.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_HELMET`
+- **Viselt equipment:** `icesmp:erdojaro_csuklya` (`humanoid` réteg)
 - **Ábrázolás:** bőrcsuklya felhajtva, kéreg-homlokpánt, egy tölgylevél a halántéknál
 - **Színvilág:** bőrbarna, sötét kéreg; akcent: sárgászöld tölgylevél
 - **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 38. szint).
@@ -2495,6 +2501,7 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 
 ### `osfa_gerenda` — Ősfa Kéregvért
 - **Fájl:** `osfa_gerenda.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_CHESTPLATE`
+- **Viselt equipment:** `icesmp:osfa_gerenda` (`humanoid` réteg)
 - **Ábrázolás:** bőrmellény vastag, pácolt kéregpáncél-lapokkal a mellkason, fűkötél-varrás
 - **Színvilág:** sötét kéregbarna, cserzett bőr; akcent: mohazöld kötés
 - **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 48. szint).
