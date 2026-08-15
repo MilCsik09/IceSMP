@@ -217,6 +217,7 @@ MIRROR = [
     ("docs/LORE_REFERENCE.md", "docs/LORE_REFERENCE.md"),
     ("docs/QUESTS.md", "docs/QUESTS.md"),
     ("docs/RESOURCE_PACK_CMD.md", "docs/RESOURCE_PACK_CMD.md"),
+    ("docs/TEXTURE_WORKSHEET.md", "docs/TEXTURE_WORKSHEET.md"),
     ("docs/TEASER.md", "docs/TEASER.md"),
 ]
 if os.path.isdir(GUIDES):

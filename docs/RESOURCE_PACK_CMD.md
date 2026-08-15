@@ -109,6 +109,10 @@ a Menedék vendége pedig önálló erőd/kapu-acél/patina külső héjat kap. 
 
 ## AI-generálási prompt-sablon
 
+> A **még legyártandó** textúrákhoz a kész, bemásolható promptok a
+> [`TEXTURE_WORKSHEET.md`](TEXTURE_WORKSHEET.md) munkalapon vannak, lapokra bontva.
+> Ez a szekció a sablont és a szabályokat írja le; a munkalap abból generálódik.
+
 Ha a textúrákat képgenerátorral készíted, ez a sablon jó kiindulás. **Tippek:** egyszerre csak 4–6 itemet kérj egy lapra (úgy tartja a stílust); sima FEHÉR hátteret kérj; NE kérj szöveget a képre; az itemek leírását a lenti blokkok **Ábrázolás + Színvilág** sorából másold be.
 
 ```
@@ -2500,9 +2504,9 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 
 ### `bokic_gyogytea` — Bokic Gyógytea
 - **Fájl:** `bokic_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
-- **Ábrázolás:** agyagkorsó gőzölgő, borostyánszín teával, gyógyfű-csokor a fülén
-- **Színvilág:** agyagbarna, borostyán tea; akcent: friss gyógyfű-zöld
-- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ital kategória, 26. szint).
+- **Ábrázolás:** gőzölgő borostyánszín gyógytea agyagbögrében, meleg aranyló pára, gyógyfű-levél
+- **Színvilág:** gyógyzöld borostyán; akcent: mézarany pára
+- **Hangulat / lore:** Hajnali szedésű füvek forrázata a Bokic partjáról — átmelegít és tisztán tart. Gyógynövényes-recept eredménye (Ital kategória, 26. szint). **A textúra már elkészült**, a leírás a meglévő grafikát rögzíti.
 
 ### `sarkanylehelet_parlat` — Sárkánylehelet-párlat
 - **Fájl:** `sarkanylehelet_parlat.png` &nbsp;|&nbsp; **Alap-item:** `DRAGON_BREATH`
