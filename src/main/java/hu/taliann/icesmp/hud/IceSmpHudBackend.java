@@ -62,7 +62,8 @@ public final class IceSmpHudBackend {
         }
         if (survivalVisible && survival != null) {
             try {
-                composed.append(survivalRenderer.render(survival, survivalLayout));
+                composed.append(survivalRenderer.render(survival, survivalLayout,
+                        highlighted == HudComponent.SURVIVAL_HUD));
             } catch (final RuntimeException survivalRenderFailure) {
                 // The distributed pack hides vanilla survival sprites, so a readable emergency
                 // line is safer than dropping the player's only health information.

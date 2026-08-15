@@ -89,7 +89,8 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     }
 
     public boolean visible(final HudComponent component) {
-        return component == null || component == HudComponent.GLOBAL || componentLayout(component).visible();
+        return component == null || component == HudComponent.GLOBAL || !component.hideable()
+                || componentLayout(component).visible();
     }
 
     public HudComponentLayout componentLayout(final HudComponent component) {
@@ -155,7 +156,7 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     }
 
     public HudLayoutSnapshot toggleVisibility(final HudComponent target) {
-        if (target == null || target == HudComponent.GLOBAL) return this;
+        if (target == null || target == HudComponent.GLOBAL || !target.hideable()) return this;
         return withComponent(target, componentLayout(target).toggleVisibility());
     }
 
@@ -190,7 +191,7 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         return closestScaleIndex(target / 1000.0D);
     }
 
-    private static int closestScaleIndex(final double scale) {
+    static int closestScaleIndex(final double scale) {
         final int target = (int) Math.round(scale * 1000.0D);
         int closest = 0;
         for (int index = 1; index < SCALE_PERMILLE.size(); index++) {

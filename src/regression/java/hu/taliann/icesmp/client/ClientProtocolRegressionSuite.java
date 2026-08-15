@@ -180,7 +180,9 @@ public final class ClientProtocolRegressionSuite {
                 ClassHudSlot.charges("rune", "rune", "Rúna", 2, 3));
         final HudManager.HudSnapshot snapshot = new HudManager.HudSnapshot(
                 "Perinfernicitas", "RED", "vörös", "#FF5544", "#803322",
-                "Halállovag", 42, "1 234,5", true, 87, 120, 72, "Rúnaerő", "|||||",
+                "Halállovag", 42, hu.taliann.icesmp.hud.ClassXpProgress.calculate(
+                        10_895, 42, 60, 10, 50),
+                "1 234,5", true, 87, 120, 72, "Rúnaerő", "|||||",
                 "Vérhold", List.of("Társ: Alva (92%)"),
                 List.of(new HudManager.HudCurrency("ember", "Parázs", "12", true)),
                 classHud);

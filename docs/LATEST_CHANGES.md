@@ -47,11 +47,18 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   élsimított Inter SemiBold forrásból készülnek; ablak- és GUI-scale váltás nem mozdíthatja vagy
   többszörös méretűre nagyíthatja a HUD-ot.
 - **Egyedi survival HUD és HP-scaling előkészítés:** a normál vanilla szív-, páncél-, étel- és
-  oxigénsávot pack-readiness után egy alsó-középre horgonyzott panel váltja. A HP current/max és
-  százalék formában, az absorption külön jelöléssel, a másik három erőforrás mini-sávon és pontos
-  számmal látszik. A gyors, Folia-safe tick külön fut a class/sidebar snapshotfrissítéstől. A
+  oxigénsávot pack-readiness után egy nagyobb, alsó-középre horgonyzott panel váltja. A HP current/max
+  és százalék formában, az absorption külön jelöléssel, a páncél és étel mini-sávon és pontos számmal
+  látszik; az oxigén harmadik oszlopa csak fogyó levegőnél nyílik ki. A teljes panel a személyes és
+  globális HUD-editorban külön mozgatható/méretezhető, de nem rejthető el. A gyors, Folia-safe tick
+  külön fut a class/sidebar snapshotfrissítéstől. A
   class-health gate továbbra is kikapcsolt, de a normalizálás már tiltott, így későbbi staging
   aktiváláskor a HUD a valódi skálázott HP-t fogja mutatni. Hardcore-heart asset nincs felülírva.
+- **Class XP és combat-vitals:** a first-party panel külön arany XP-sávon mutatja az aktuális
+  class-szinten belüli haladást és a szintlépéshez hiányzó XP-t. A DK-rúnák saját editor-komponenst
+  kaptak, függetlenül a generic charge-sortól. Találat után egy célpontot követő, alapból csak a
+  támadónak látható TextDisplay mutatja a mob/játékos current/max HP-ját, játékosnál opcionálisan a
+  class resource-t is; a rendszer eseményvezérelt, világ-szkennelést nem végez.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Társ-rendszer:** a Profile v2-ben tárolt társlista most a `/pet` GUI-ból és

@@ -13,17 +13,20 @@ public final class SurvivalHudRenderer {
 
     static final int HEALTH_SEGMENTS = 20;
     static final int MINI_SEGMENTS = 10;
-    static final int HEALTH_SEGMENT_ADVANCE = 9;
-    static final int MINI_SEGMENT_ADVANCE = 5;
-    static final int PANEL_WIDTH = 228;
-    static final int TEXT_ADVANCE = 6;
+    static final int HEALTH_SEGMENT_ADVANCE = 11;
+    static final int MINI_SEGMENT_ADVANCE = 6;
+    static final int PANEL_WIDTH = 252;
+    static final int TEXT_ADVANCE = 7;
 
     private static final int SPACE_MIN = IceSmpHudRenderer.SPACE_MIN;
     private static final int SPACE_MAX = IceSmpHudRenderer.SPACE_MAX;
     private static final int SPACE_FIRST = IceSmpHudRenderer.SPACE_FIRST;
-    private static final int HEALTH_BAR_X = -90;
-    private static final int[] MINI_BAR_X = {-91, -28, 35};
-    private static final int[] MINI_ICON_X = {-107, -44, 19};
+    private static final int HEALTH_BAR_X = -110;
+    private static final int[] NORMAL_STAT_CENTERS = {-63, 63};
+    private static final int[] AIR_STAT_CENTERS = {-84, 0, 84};
+    private static final int MINI_BAR_OFFSET = -22;
+    private static final int MINI_ICON_OFFSET = -38;
+    private static final int MINI_TEXT_OFFSET = 8;
 
     private static final Key SPACE_FONT = Key.key("icesmp_hud", "space");
     private static final Key PANEL_FONT = Key.key("icesmp_hud", "survival/panel");
@@ -35,6 +38,7 @@ public final class SurvivalHudRenderer {
     private static final Key STATS_FONT = Key.key("icesmp_hud", "survival/text_stats");
 
     private static final char PANEL = '\uEB00';
+    private static final char PANEL_WITH_AIR = '\uEB01';
     private static final char HEALTH_TRACK = '\uEB10';
     private static final char HEALTH_FILL = '\uEB11';
     private static final char HEALTH_WARN = '\uEB12';
@@ -46,56 +50,68 @@ public final class SurvivalHudRenderer {
     private static final char ICON_ARMOR = '\uEB30';
     private static final char ICON_FOOD = '\uEB31';
     private static final char ICON_AIR = '\uEB32';
+    private static final TextColor EDITOR_HIGHLIGHT = TextColor.color(0xFFD740);
 
     public Component render(final SurvivalHudState state, final SurvivalHudLayout layout) {
+        return render(state, layout, false);
+    }
+
+    public Component render(final SurvivalHudState state, final SurvivalHudLayout layout,
+                            final boolean highlighted) {
         final SurvivalHudLayout safeLayout = layout == null ? SurvivalHudLayout.defaults() : layout;
         final TextComponent.Builder output = Component.text().shadowColor(ShadowColor.none());
-        output.append(glyph(-PANEL_WIDTH / 2, PANEL_FONT, PANEL, PANEL_WIDTH,
-                TextColor.color(0xFFFFFF), safeLayout));
+        final boolean airVisible = airVisible(state);
+        output.append(glyph(-PANEL_WIDTH / 2, PANEL_FONT,
+                airVisible ? PANEL_WITH_AIR : PANEL, PANEL_WIDTH,
+                highlighted ? EDITOR_HIGHLIGHT : TextColor.color(0xFFFFFF), safeLayout));
 
         drawSegments(output, HEALTH_BAR_X, HEALTH_SEGMENT_FONT,
                 HEALTH_TRACK, healthFill(state.healthPercent()), state.healthPercent(),
                 HEALTH_SEGMENTS, HEALTH_SEGMENT_ADVANCE, safeLayout);
-        drawSegments(output, MINI_BAR_X[0], MINI_SEGMENT_FONT,
-                MINI_TRACK, MINI_ARMOR, state.armorPercent(),
-                MINI_SEGMENTS, MINI_SEGMENT_ADVANCE, safeLayout);
-        drawSegments(output, MINI_BAR_X[1], MINI_SEGMENT_FONT,
-                MINI_TRACK, MINI_FOOD, state.foodPercent(),
-                MINI_SEGMENTS, MINI_SEGMENT_ADVANCE, safeLayout);
-        drawSegments(output, MINI_BAR_X[2], MINI_SEGMENT_FONT,
-                MINI_TRACK, MINI_AIR, state.airPercent(),
-                MINI_SEGMENTS, MINI_SEGMENT_ADVANCE, safeLayout);
-
-        output.append(glyph(MINI_ICON_X[0], ICON_FONT, ICON_ARMOR, 12,
-                TextColor.color(0xFFFFFF), safeLayout));
-        output.append(glyph(MINI_ICON_X[1], ICON_FONT, ICON_FOOD, 12,
-                TextColor.color(0xFFFFFF), safeLayout));
-        output.append(glyph(MINI_ICON_X[2], ICON_FONT, ICON_AIR, 12,
-                TextColor.color(0xFFFFFF), safeLayout));
+        final int[] centers = airVisible ? AIR_STAT_CENTERS : NORMAL_STAT_CENTERS;
+        drawStat(output, centers[0], ICON_ARMOR, MINI_ARMOR, state.armorPercent(),
+                compact(state.armor()) + "/" + compact(state.maximumArmor()),
+                TextColor.color(0xCAD8E8), safeLayout);
+        drawStat(output, centers[1], ICON_FOOD, MINI_FOOD, state.foodPercent(),
+                state.food() + "/" + state.maximumFood(),
+                TextColor.color(0xF0C878), safeLayout);
+        if (airVisible) {
+            drawStat(output, centers[2], ICON_AIR, MINI_AIR, state.airPercent(),
+                    state.air() + "/" + state.maximumAir(),
+                    TextColor.color(0x8DE8F4), safeLayout);
+        }
 
         output.append(centeredText(0, HEADER_FONT, healthLine(state),
                 healthColor(state.healthPercent()), 198, safeLayout));
         output.append(centeredText(0, PERCENT_FONT, state.healthPercent() + "%",
                 TextColor.color(0xF7FBFF), 48, safeLayout));
-        output.append(centeredText(MINI_BAR_X[0] + 25, STATS_FONT,
-                compact(state.armor()) + "/" + compact(state.maximumArmor()),
-                TextColor.color(0xCAD8E8), 54, safeLayout));
-        output.append(centeredText(MINI_BAR_X[1] + 25, STATS_FONT,
-                state.food() + "/" + state.maximumFood(),
-                TextColor.color(0xF0C878), 54, safeLayout));
-        output.append(centeredText(MINI_BAR_X[2] + 25, STATS_FONT,
-                state.air() + "/" + state.maximumAir(),
-                TextColor.color(0x8DE8F4), 54, safeLayout));
         return output.build();
     }
 
     /** Vanilla-font emergency text remains readable even if a custom glyph fails to compose. */
     public Component fallback(final SurvivalHudState state) {
+        final String air = airVisible(state)
+                ? " • O2 " + state.air() + "/" + state.maximumAir() : "";
         return Component.text(healthLine(state) + " • " + state.healthPercent() + "%"
                         + " • Páncél " + compact(state.armor())
-                        + " • Étel " + state.food() + "/" + state.maximumFood()
-                        + " • O2 " + state.air() + "/" + state.maximumAir(),
+                        + " • Étel " + state.food() + "/" + state.maximumFood() + air,
                 healthColor(state.healthPercent())).shadowColor(ShadowColor.none());
+    }
+
+    private static void drawStat(final TextComponent.Builder output, final int center,
+                                 final char icon, final char fill, final int percent,
+                                 final String value, final TextColor color,
+                                 final SurvivalHudLayout layout) {
+        drawSegments(output, center + MINI_BAR_OFFSET, MINI_SEGMENT_FONT,
+                MINI_TRACK, fill, percent, MINI_SEGMENTS, MINI_SEGMENT_ADVANCE, layout);
+        output.append(glyph(center + MINI_ICON_OFFSET, ICON_FONT, icon, 14,
+                TextColor.color(0xFFFFFF), layout));
+        output.append(centeredText(center + MINI_TEXT_OFFSET, STATS_FONT,
+                value, color, 70, layout));
+    }
+
+    static boolean airVisible(final SurvivalHudState state) {
+        return state != null && state.air() < state.maximumAir();
     }
 
     private static void drawSegments(final TextComponent.Builder output, final int x,

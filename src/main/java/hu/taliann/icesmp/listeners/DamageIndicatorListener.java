@@ -1,13 +1,20 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.ResourceManager;
+import hu.taliann.icesmp.utils.DisplayFxUtil;
+import hu.taliann.icesmp.utils.TransientEntities;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.TextDisplay;
@@ -15,6 +22,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Transformation;
@@ -26,6 +35,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Floating damage-number indicators (A8): purely cosmetic — a short-lived
@@ -48,6 +58,8 @@ public final class DamageIndicatorListener implements Listener {
     private static final long RATE_LIMIT_MILLIS = 250L;
     /** Safety valve: if the rate-limit map grows unbounded (many distinct mobs), wipe it rather than leak forever. */
     private static final int MAX_TRACKED_ENTITIES = 2000;
+    /** A combat-vitals displayek külön, jóval alacsonyabb világ-szintű biztonsági plafonja. */
+    private static final int MAX_VITAL_DISPLAYS = 512;
 
     /** Az utolsó célpont bejegyzés max ennyi ideig érvényes (a HUD ennyi ideig mutatja). */
     private static final long LAST_TARGET_TTL_MILLIS = 10_000L;
@@ -55,27 +67,39 @@ public final class DamageIndicatorListener implements Listener {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final AbilityCatalystListener catalystListener;
+    private final ResourceManager resourceManager;
+    private final JobManager jobManager;
     private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();
     // Attacker UUID -> az utolsó célpontja (a HUD célpont-sorához).
     private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();
+    // Target UUID -> a targethoz utasként kötött, rövid életű combat-vitals kijelzés.
+    private final Map<UUID, VitalDisplay> vitalDisplays = new ConcurrentHashMap<>();
+    private final AtomicLong vitalGenerations = new AtomicLong();
 
     /** Egy játékos legutóbb megütött célpontjának pillanatképe. */
     public record LastTarget(UUID targetId, String targetName, boolean player, long atMillis) {
     }
 
+    private record VitalDisplay(TextDisplay display, long generation) {
+    }
+
     public DamageIndicatorListener(final JavaPlugin plugin, final ConfigManager configManager,
                                     final AbilityCatalystListener catalystListener) {
+        this(plugin, configManager, catalystListener, null, null);
+    }
+
+    public DamageIndicatorListener(final JavaPlugin plugin, final ConfigManager configManager,
+                                    final AbilityCatalystListener catalystListener,
+                                    final ResourceManager resourceManager, final JobManager jobManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.catalystListener = catalystListener;
+        this.resourceManager = resourceManager;
+        this.jobManager = jobManager;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamage(final EntityDamageByEntityEvent event) {
-        if (!configManager.getBoolean("spells.damage-indicators.enabled", true)) {
-            return;
-        }
-
         final double damage = event.getFinalDamage();
         if (damage <= 0.0D) {
             return;
@@ -90,9 +114,30 @@ public final class DamageIndicatorListener implements Listener {
         // Az onDamage a MEGÜTÖTT entitás (victim) régió-szálán fut, tehát a neve/típusa
         // itt biztonságosan olvasható; a snapshotot csak later a HUD olvassa (lastTarget()).
         recordLastTarget(attacker.getUniqueId(), victim);
-        if (!isRateLimited(victim.getUniqueId())) {
+        if (configManager.getBoolean("spells.damage-indicators.enabled", true)
+                && !isRateLimited(victim.getUniqueId())) {
             spawnIndicator(attacker, victim, damage);
         }
+        if (victim instanceof LivingEntity living
+                && configManager.getBoolean("hud.profile.enabled", true)) {
+            // MONITOR alatt a Bukkit-életerő még a találat ELŐTTI érték lehet. A sérült entitás
+            // saját következő tickjén olvassuk ki, így a kijelzés a tényleges, levont HP-t mutatja.
+            living.getScheduler().run(plugin,
+                    task -> showTargetVitals(attacker, living), null);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDeath(final EntityDeathEvent event) {
+        removeVitalDisplay(event.getEntity().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(final PlayerQuitEvent event) {
+        final UUID playerId = event.getPlayer().getUniqueId();
+        lastTargets.remove(playerId);
+        lastTargets.entrySet().removeIf(entry -> entry.getValue().targetId().equals(playerId));
+        removeVitalDisplay(playerId);
     }
 
     /** Eltárolja az attacker utolsó megütött célpontját (HUD célpont-sor). */
@@ -146,6 +191,143 @@ public final class DamageIndicatorListener implements Listener {
             }
         }
         return null;
+    }
+
+    /**
+     * Találat után egyetlen, a célpontot utasként követő HP/resource sort tart életben.
+     * Nincs periodikus világ- vagy közelség-szkennelés: csak az új találat frissíti és hosszabbítja
+     * meg a kijelzést. Alapból private az attacker számára; az {@code everyone} opció tudatos
+     * szerverdizájn-döntésként nyilvánossá teheti.
+     */
+    private void showTargetVitals(final Player attacker, final LivingEntity target) {
+        if (!target.isValid() || target.isDead()
+                || !configManager.getBoolean("hud.profile.enabled", true)) {
+            return;
+        }
+        final UUID targetId = target.getUniqueId();
+        final VitalDisplay current = vitalDisplays.get(targetId);
+        TextDisplay display = current == null ? null : current.display();
+        if (display == null || !display.isValid()) {
+            if (current != null) {
+                vitalDisplays.remove(targetId, current);
+            }
+            if (vitalDisplays.size() >= MAX_VITAL_DISPLAYS || target.getWorld() == null) {
+                return;
+            }
+            final boolean attackerOnly = !"everyone".equalsIgnoreCase(
+                    configManager.getString("hud.profile.visibility", "attacker-only"));
+            final Location at = target.getLocation();
+            display = at.getWorld().spawn(at, TextDisplay.class, spawned -> {
+                spawned.setBillboard(Display.Billboard.CENTER);
+                spawned.setPersistent(false);
+                spawned.addScoreboardTag(DisplayFxUtil.FX_TAG);
+                spawned.setDefaultBackground(false);
+                spawned.setBackgroundColor(Color.fromARGB(150, 4, 8, 13));
+                spawned.setShadowed(true);
+                spawned.setSeeThrough(false);
+                spawned.setAlignment(TextDisplay.TextAlignment.CENTER);
+                spawned.setLineWidth(240);
+                if (attackerOnly) {
+                    spawned.setVisibleByDefault(false);
+                }
+            });
+            if (!target.addPassenger(display)) {
+                removeIfValid(display);
+                return;
+            }
+            TransientEntities.register(plugin, display);
+        }
+
+        applyVitalsAppearance(display, target);
+        final long generation = vitalGenerations.incrementAndGet();
+        final VitalDisplay refreshed = new VitalDisplay(display, generation);
+        vitalDisplays.put(targetId, refreshed);
+
+        final boolean attackerOnly = !"everyone".equalsIgnoreCase(
+                configManager.getString("hud.profile.visibility", "attacker-only"));
+        display.setVisibleByDefault(!attackerOnly);
+        if (attackerOnly) {
+            revealToAttacker(attacker, display);
+        }
+
+        final long lifetime = Math.max(20L, Math.min(6000L,
+                configManager.getInt("hud.profile.lifetime-ticks", 100)));
+        final TextDisplay scheduledDisplay = display;
+        display.getScheduler().runDelayed(plugin,
+                task -> expireVitalDisplay(targetId, generation, scheduledDisplay),
+                () -> vitalDisplays.remove(targetId, refreshed), lifetime);
+    }
+
+    private void applyVitalsAppearance(final TextDisplay display, final LivingEntity target) {
+        final AttributeInstance maxAttribute = target.getAttribute(Attribute.MAX_HEALTH);
+        final double maximum = Math.max(1.0D, maxAttribute == null ? 20.0D : maxAttribute.getValue());
+        final double health = Math.max(0.0D, Math.min(maximum, target.getHealth()));
+        final double percent = health / maximum;
+        final NamedTextColor healthColor = percent <= 0.25D
+                ? NamedTextColor.RED : percent <= 0.55D ? NamedTextColor.YELLOW : NamedTextColor.GREEN;
+        Component text = Component.text("HP ", NamedTextColor.GRAY)
+                .append(Component.text(compact(health) + "/" + compact(maximum), healthColor));
+
+        if (target instanceof Player player && resourceManager != null && jobManager != null
+                && configManager.getBoolean("hud.profile.show-player-resource", true)
+                && resourceManager.isEnabled() && jobManager.hasPrimaryJob(player)) {
+            text = text.append(Component.text("  •  ", NamedTextColor.DARK_GRAY))
+                    .append(Component.text(resourceManager.resourceName(player) + " ", NamedTextColor.GRAY))
+                    .append(Component.text(resourceManager.resourceValue(player) + "/"
+                            + resourceManager.resourceMax(player), NamedTextColor.AQUA));
+        }
+        display.text(text);
+
+        final float scale = (float) Math.max(0.35D, Math.min(2.0D,
+                configManager.getDouble("hud.profile.scale", 0.75D)));
+        final float y = (float) Math.max(-2.0D, Math.min(3.0D,
+                configManager.getDouble("hud.profile.height-offset", 0.55D)));
+        display.setTransformation(new Transformation(
+                new Vector3f(0.0F, y, 0.0F), new AxisAngle4f(),
+                new Vector3f(scale, scale, scale), new AxisAngle4f()));
+        display.setViewRange((float) Math.max(0.25D, Math.min(4.0D,
+                configManager.getDouble("hud.profile.view-range", 1.0D))));
+    }
+
+    private void revealToAttacker(final Player attacker, final TextDisplay display) {
+        if (attacker == null) {
+            return;
+        }
+        final Runnable reveal = () -> {
+            if (attacker.isOnline() && display.isValid()) {
+                attacker.showEntity(plugin, display);
+            }
+        };
+        if (org.bukkit.Bukkit.isOwnedByCurrentRegion(attacker)) {
+            reveal.run();
+        } else {
+            attacker.getScheduler().run(plugin, task -> reveal.run(), null);
+        }
+    }
+
+    private void expireVitalDisplay(final UUID targetId, final long generation,
+                                    final TextDisplay display) {
+        final VitalDisplay current = vitalDisplays.get(targetId);
+        if (current == null || current.generation() != generation || current.display() != display) {
+            return;
+        }
+        vitalDisplays.remove(targetId, current);
+        removeIfValid(display);
+    }
+
+    private void removeVitalDisplay(final UUID targetId) {
+        final VitalDisplay current = vitalDisplays.remove(targetId);
+        if (current != null) {
+            removeIfValid(current.display());
+        }
+    }
+
+    private static String compact(final double value) {
+        final double rounded = Math.rint(value * 10.0D) / 10.0D;
+        if (Math.abs(rounded - Math.rint(rounded)) < 0.001D) {
+            return Long.toString(Math.round(rounded));
+        }
+        return String.format(Locale.ROOT, "%.1f", rounded);
     }
 
     /** True if this entity already showed an indicator within the rate-limit window. */

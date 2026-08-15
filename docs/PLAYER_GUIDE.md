@@ -94,22 +94,29 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
 
 ### Amit a képernyőd mesél
 
-- A **HUD** mutathatja a kasztod erőforrását, a class/spec mechanikád élő
+- A **HUD** mutatja a kasztod erőforrását, a class/spec mechanikád élő
   barjait, tölteteit vagy rúnáit, a frakciódat, pénzedet, szintedet és a fontos
   világhelyzeteket. A négy frakcióvalutád mindegyike saját, állandó helyet kap, ezért a nulla
-  egyenleg sem rendezi át a panelt. A `/hud edit` kattintható szerkesztőjében külön mozgathatod,
-  méretezheted vagy elrejtheted az elemeket; a mentésed restart után is megmarad. A nem
+  egyenleg sem rendezi át a panelt. A panel alsó bal oldalán külön arany **class XP-sáv** jelzi
+  az aktuális szinten belüli haladást és kiírja, mennyi XP kell még a következő szinthez.
+  A `/hud edit` kattintható szerkesztőjében külön mozgathatod, méretezheted vagy elrejtheted az
+  elemeket; a DK-rúnák, a más kasztok töltetei, a class XP-sáv és a Survival HUD külön célpont.
+  A mentésed restart után is megmarad. A nem
   módosított elemek automatikusan követik a szerver globális HUD-alapját. Amíg a first-party
   resource pack nincs sikeresen betöltve, a kompakt natív kijelzés automatikusan marad.
 - A képernyő alján a saját **túlélési panel** váltja fel a vanilla szíveket, páncélt,
   éhséget és levegőbuborékokat. A HP-sáv fölött a jelenlegi/maximális életerő, a sávon a
   százalék látszik; az ideiglenes elnyelési HP külön `(+érték)` jelölést kap. A páncél, az
-  étel és az oxigén saját mini-sávon, pontos számmal jelenik meg. A panel a resource pack
-  sikeres betöltése után aktiválódik; pack nélkül a vanilla kijelzők maradnak láthatók.
+  étel saját mini-sávon, pontos számmal jelenik meg; az oxigén oszlopa csak akkor nyílik ki,
+  amikor ténylegesen fogyni kezd a levegőd. A teljes panel a `/hud edit` felületén mozgatható és
+  méretezhető, de életbiztonsági okból nem rejthető el. A panel a resource pack sikeres betöltése
+  után aktiválódik; pack nélkül a vanilla kijelzők maradnak láthatók.
 - A **tablista** frakció- és ranginformációt adhat, háborúban pedig segít
   felismerni a viszonyokat.
-- Harc közben **sebzésszámok**, célpontinformáció és halálösszegző segít
-  megérteni, mi történt.
+- Harc közben **sebzésszámok**, célpontinformáció és halálösszegző segít megérteni, mi történt.
+  Ha megütsz egy játékost vagy ellenséges mobot, rövid időre a neve alatt is megjelenik a pontos
+  jelenlegi/maximális HP-ja; játékos célpontnál a class resource is látszik. Ez alapból csak neked,
+  a támadónak jelenik meg.
 - A vanília **Haladás** képernyő IceSMP-füle mérföldköveket és rejtett
   felfedezéseket is őriz. Némelyik eredmény azért csendes, mert a titok a
   jutalom része.

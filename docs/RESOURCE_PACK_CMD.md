@@ -2061,6 +2061,8 @@ A survival bővítés szándékosan elkülönült modul: a fontjai a `font/survi
 `generateIceSmpSurvivalHudAssets` a core generátor után fut, az umbrella
 `generateIceSmpHudAssets` mindkettőt előállítja. A modul a shader fenntartott 11–15-ös ID-it és
 bottom-center horgonyát használja, ezért a jobb felső class HUD koordinátáit és assetjeit nem írja át.
+A `panel.png` a szárazföldi kétoszlopos (armor+food), a `panel_air.png` a levegőfogyáskor használt
+háromoszlopos változat; mindkettő 252×72-es, így belefér a kliens 256 pixeles font-stitcher limitjébe.
 
 A `runFolia` fejlesztői provisioning a változtathatatlan külső packot
 (`4900b0a9bed8db710143393916db3687e01def54`) a first-party merge bemeneteként stage-eli. A külső
@@ -2082,7 +2084,8 @@ logikai cellát kap, minden rajzparancs visszatér a kezdőpontra, így érték-
 el a panelt. A shader a Minecraft 1.21.11 `Globals.ScreenSize` értékével kompenzálja a kliens
 GUI-skáláját, így a teljes kompozíció a jobb felső sarokhoz horgonyzott marad. Az admin editor a
 globális keret mellett minden rajzcsoportnak — paneleknek, ikonoknak, feliratoknak, walletnek,
-resource-csíknak, mechanikáknak, charge/rúna-sornak, proc/state-nek, részletmetrikáknak és eventnek —
+resource-csíknak, class XP-nek, mechanikáknak, külön generic charge- és DK-rúna-sornak,
+proc/state-nek, részletmetrikáknak, eventnek és Survival HUD-nak —
 külön relatív X/Y, méret és láthatóság transzformot ad. Az X-eltolást és biztonsági margót a
 szerveroldali zéró-nettó-szélességű komponenspozíció alkalmazza. Minden kirajzolt komponens saját
 effektív Y-eltolását és méretét egy 13 bites, HUD-glyph színébe kódolt layout-azonosító viszi a
@@ -2100,7 +2103,9 @@ ezért pack nélkül nem jelenhet meg felső missing-glyph négyzet.
 
 A normál vanilla health/armor/food/air sprite-ok átlátszó 9×9-es replacementet kapnak. A hardcore
 szívek szándékosan nincsenek generálva vagy owned-ként engedélyezve. A szerveroldali survival panel
-current/max HP-t, százalékot, absorptiont, páncélt, ételt és levegőt jelenít meg; pack nélkül a
+current/max HP-t, százalékot, absorptiont, páncélt és ételt jelenít meg, levegőt pedig csak akkor,
+amikor az a maximum alá csökken. A panel editor-komponense mozgatható és méretezhető, de nem
+rejthető el; pack nélkül a
 változatlan vanilla sprite-ok maradnak a biztonságos fallback.
 
 Az editor kizárólag sikeres `SUCCESSFULLY_LOADED` státusznál preview-zik; pack nélkül nem próbál

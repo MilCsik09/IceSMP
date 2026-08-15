@@ -12,6 +12,7 @@ import hu.taliann.icesmp.hud.HudLayoutSnapshot;
 import hu.taliann.icesmp.hud.HudPreviewCatalog;
 import hu.taliann.icesmp.hud.IceSmpHudBackend;
 import hu.taliann.icesmp.hud.IceSmpHudModel;
+import hu.taliann.icesmp.hud.ClassXpProgress;
 import hu.taliann.icesmp.hud.SurvivalHudLayout;
 import hu.taliann.icesmp.hud.SurvivalHudState;
 import hu.taliann.icesmp.utils.PlatformCapabilities;
@@ -126,12 +127,14 @@ public final class HudManager {
     public record HudSnapshot(String faction, String factionId, String factionTheme,
                               String factionAccent, String factionAccentSoft,
                               String className, int classLevel,
+                              ClassXpProgress classXp,
                               String balance, boolean hasClass, int resource, int resourceMax,
                               int resourcePercent, String resourceName, String resourceBar,
                               String event, List<String> partyLines,
                               List<HudCurrency> currencies,
                               hu.taliann.icesmp.classspec.integration.ClassHudState classHud) {
         public HudSnapshot {
+            classXp = classXp == null ? ClassXpProgress.empty() : classXp;
             partyLines = partyLines == null ? List.of() : List.copyOf(partyLines);
             currencies = currencies == null ? List.of() : List.copyOf(currencies);
         }
@@ -420,7 +423,7 @@ public final class HudManager {
         if (session == null || !editorSessionEnabled(session)) return false;
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
                 HudPreviewCatalog.model(session.preview()), session.working(), session.selected(), true,
-                survivalSnapshots.get(player.getUniqueId()), configuredSurvivalHudLayout(),
+                survivalSnapshots.get(player.getUniqueId()), survivalHudLayout(session.working()),
                 survivalHudEnabled()));
     }
 
@@ -743,6 +746,11 @@ public final class HudManager {
         // bridge, so it also folds in the resource system's enabled state — with the system off,
         // %icesmp_resource...% goes blank instead of showing a phantom full bar.
         final boolean showResource = hasClass && resourceManager.isEnabled();
+        final ClassXpProgress classXp = hasClass ? ClassXpProgress.calculate(
+                jobManager.getXp(player), jobManager.getPrimaryLevel(player),
+                configManager.getInt("classes.leveling.base-xp", 100),
+                configManager.getInt("classes.leveling.increment-per-level", 20),
+                JobManager.MAX_JOB_LEVEL) : ClassXpProgress.empty();
         final double balance = currencyManager.getBalance(player, factionManager.getEconomyFaction(player.getUniqueId()));
         return new HudSnapshot(
                 faction == null ? "Menedék vendége" : faction.getDisplayName(),
@@ -750,6 +758,7 @@ public final class HudManager {
                 factionTheme(faction), factionAccent(faction), factionAccentSoft(faction),
                 hasClass ? PlainTextComponentSerializer.plainText().serialize(job.getDisplayName()) : "nincs",
                 hasClass ? jobManager.getPrimaryLevel(player) : 0,
+                classXp,
                 currencyManager.formatBalance(balance),
                 showResource,
                 showResource ? resourceManager.resourceValue(player) : 0,
@@ -851,21 +860,29 @@ public final class HudManager {
     private boolean renderIceSmpHud(final Player player, final HudSnapshot snapshot) {
         final SurvivalHudState survival = survivalSnapshots.get(player.getUniqueId());
         final boolean survivalVisible = survivalHudEnabled() && survival != null;
-        final SurvivalHudLayout survivalLayout = configuredSurvivalHudLayout();
         final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
         if (editorSessionEnabled(editorSession)) {
+            final HudLayoutSnapshot editorLayout = editorSession.working();
             return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                    HudPreviewCatalog.model(editorSession.preview()), editorSession.working(),
-                    editorSession.selected(), true, survival, survivalLayout, survivalVisible));
+                    HudPreviewCatalog.model(editorSession.preview()), editorLayout,
+                    editorSession.selected(), true, survival, survivalHudLayout(editorLayout),
+                    survivalVisible));
         }
         if (editorSession != null) hudEditor.cancel(player.getUniqueId());
         final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
         final boolean visible = snapshot != null && isEnabled() && configured
                 && !isSectionHidden(player, SECTION_ALL) && snapshot.classHud() != null
                 && !nativeHudRouted(player.getUniqueId());
+        final HudLayoutSnapshot layout = effectiveHudLayout(player);
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                snapshot == null ? null : IceSmpHudModel.from(snapshot), effectiveHudLayout(player),
-                null, visible, survival, survivalLayout, survivalVisible));
+                snapshot == null ? null : IceSmpHudModel.from(snapshot), layout,
+                null, visible, survival, survivalHudLayout(layout), survivalVisible));
+    }
+
+    private SurvivalHudLayout survivalHudLayout(final HudLayoutSnapshot layout) {
+        final HudLayoutSnapshot safe = layout == null ? configuredHudLayout() : layout;
+        return configuredSurvivalHudLayout().withEditorTransform(
+                safe.componentLayout(HudComponent.SURVIVAL_HUD));
     }
 
     public enum HudEditorSaveStatus { SAVED, NO_CHANGES, STALE, NO_SESSION, IN_PROGRESS }

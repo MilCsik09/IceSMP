@@ -25,11 +25,11 @@ HUD_BIT = 13
 HUD_MAX_BIT = 10
 HUD_ADD_HEIGHT = 4095
 SURVIVAL_CANVAS_HEIGHT = 120
-PANEL_SIZE = (228, 60)
+PANEL_SIZE = (252, 72)
 HEALTH_SEGMENTS = 20
 MINI_SEGMENTS = 10
-TEXT_LOGICAL_WIDTH = 5
-TEXT_LOGICAL_HEIGHT = 12
+TEXT_LOGICAL_WIDTH = 6
+TEXT_LOGICAL_HEIGHT = 14
 TEXT_OVERSAMPLE = 8
 TEXT_FONT_SOURCE = ROOT / "dev-assets" / "icesmp-hud" / "source" / "Inter-SemiBold.ttf"
 
@@ -102,17 +102,19 @@ def fixed_width(image: Image.Image) -> Image.Image:
     return image
 
 
-def generate_panel() -> None:
+def generate_panel(file_name: str, air_visible: bool) -> None:
     image = Image.new("RGBA", PANEL_SIZE, (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((1, 1, 226, 58), radius=8,
-                           fill=(4, 8, 13, 196), outline=(91, 174, 190, 178), width=1)
-    draw.rounded_rectangle((4, 4, 223, 55), radius=6,
-                           outline=(157, 226, 235, 38), width=1)
-    draw.line((18, 35, 209, 35), fill=(91, 174, 190, 70))
-    draw.line((76, 39, 76, 55), fill=(91, 174, 190, 52))
-    draw.line((151, 39, 151, 55), fill=(91, 174, 190, 52))
-    save_png(fixed_width(image), TEXTURES / "panel.png")
+    draw.rounded_rectangle((1, 1, 250, 70), radius=9,
+                           fill=(4, 8, 13, 218), outline=(91, 174, 190, 210), width=1)
+    draw.rounded_rectangle((4, 4, 247, 67), radius=7,
+                           outline=(157, 226, 235, 55), width=1)
+    draw.line((12, 37, 239, 37), fill=(91, 174, 190, 94))
+    draw.line((16, 18, 235, 18), fill=(157, 226, 235, 30))
+    dividers = (84, 168) if air_visible else (126,)
+    for x in dividers:
+        draw.line((x, 40, x, 66), fill=(91, 174, 190, 66))
+    save_png(fixed_width(image), TEXTURES / file_name)
 
 
 def segment(name: str, size: tuple[int, int], base: tuple[int, int, int, int],
@@ -125,37 +127,37 @@ def segment(name: str, size: tuple[int, int], base: tuple[int, int, int, int],
 
 
 def generate_segments() -> None:
-    segment("health_track.png", (8, 8), (12, 17, 23, 238), (55, 68, 79, 255))
-    segment("health_fill.png", (8, 8), (36, 170, 107, 255), (157, 248, 198, 255))
-    segment("health_warn.png", (8, 8), (193, 116, 38, 255), (255, 205, 113, 255))
-    segment("health_critical.png", (8, 8), (184, 48, 48, 255), (255, 125, 106, 255))
-    segment("mini_track.png", (4, 5), (11, 16, 22, 238), (55, 68, 79, 255))
-    segment("mini_armor.png", (4, 5), (93, 122, 158, 255), (211, 229, 246, 255))
-    segment("mini_food.png", (4, 5), (184, 119, 42, 255), (250, 213, 116, 255))
-    segment("mini_air.png", (4, 5), (34, 145, 181, 255), (151, 239, 250, 255))
+    segment("health_track.png", (10, 10), (12, 17, 23, 244), (62, 77, 89, 255))
+    segment("health_fill.png", (10, 10), (29, 173, 104, 255), (170, 255, 205, 255))
+    segment("health_warn.png", (10, 10), (202, 119, 34, 255), (255, 215, 120, 255))
+    segment("health_critical.png", (10, 10), (190, 43, 48, 255), (255, 131, 112, 255))
+    segment("mini_track.png", (5, 6), (11, 16, 22, 244), (62, 77, 89, 255))
+    segment("mini_armor.png", (5, 6), (89, 124, 166, 255), (219, 237, 255, 255))
+    segment("mini_food.png", (5, 6), (190, 119, 34, 255), (255, 220, 118, 255))
+    segment("mini_air.png", (5, 6), (27, 148, 188, 255), (160, 242, 255, 255))
 
 
 def icon_canvas() -> tuple[Image.Image, ImageDraw.ImageDraw]:
-    image = Image.new("RGBA", (12, 12), (0, 0, 0, 0))
+    image = Image.new("RGBA", (14, 14), (0, 0, 0, 0))
     return image, ImageDraw.Draw(image)
 
 
 def generate_icons() -> None:
     armor, draw = icon_canvas()
-    draw.polygon(((6, 1), (10, 3), (9, 8), (6, 11), (3, 8), (2, 3)),
+    draw.polygon(((7, 1), (12, 3), (11, 9), (7, 13), (3, 9), (2, 3)),
                  fill=(167, 196, 226, 255), outline=(232, 244, 255, 255))
-    draw.line((6, 2, 6, 9), fill=(101, 132, 169, 255))
+    draw.line((7, 2, 7, 11), fill=(101, 132, 169, 255))
     save_png(fixed_width(armor), TEXTURES / "icon_armor.png")
 
     food, draw = icon_canvas()
-    draw.ellipse((2, 3, 9, 10), fill=(214, 145, 55, 255), outline=(255, 221, 128, 255))
-    draw.line((7, 3, 9, 1), fill=(120, 190, 101, 255), width=2)
+    draw.ellipse((2, 4, 11, 12), fill=(214, 145, 55, 255), outline=(255, 221, 128, 255))
+    draw.line((8, 4, 11, 1), fill=(120, 190, 101, 255), width=2)
     save_png(fixed_width(food), TEXTURES / "icon_food.png")
 
     air, draw = icon_canvas()
-    draw.ellipse((1, 4, 6, 9), fill=(57, 170, 207, 96), outline=(164, 239, 250, 255))
-    draw.ellipse((6, 1, 10, 5), fill=(57, 170, 207, 96), outline=(164, 239, 250, 255))
-    draw.point((3, 5), fill=(240, 255, 255, 255))
+    draw.ellipse((1, 5, 7, 11), fill=(57, 170, 207, 96), outline=(164, 239, 250, 255))
+    draw.ellipse((7, 1, 12, 6), fill=(57, 170, 207, 96), outline=(164, 239, 250, 255))
+    draw.point((3, 6), fill=(240, 255, 255, 255))
     save_png(fixed_width(air), TEXTURES / "icon_air.png")
 
 
@@ -171,28 +173,28 @@ def generate_text_atlas() -> list[str]:
     atlas = Image.new("RGBA", (columns * cell_width, rows * cell_height), (0, 0, 0, 0))
     if not TEXT_FONT_SOURCE.is_file():
         raise FileNotFoundError(f"Missing reproducible survival HUD font: {TEXT_FONT_SOURCE}")
-    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=9 * TEXT_OVERSAMPLE)
+    font = ImageFont.truetype(TEXT_FONT_SOURCE, size=10 * TEXT_OVERSAMPLE)
     _, font_descent = font.getmetrics()
     baseline_y = cell_height - font_descent - TEXT_OVERSAMPLE // 2
+    stroke_width = TEXT_OVERSAMPLE // 2
     for index, char in enumerate(padded):
         x = (index % columns) * cell_width
         y = (index // columns) * cell_height
         if index < len(unique):
-            box = font.getbbox(char, anchor="ls")
+            box = font.getbbox(char, anchor="ls", stroke_width=stroke_width)
             width = max(0, box[2] - box[0])
             height = max(0, box[3] - box[1])
             if width > 0 and height > 0:
-                glyph = Image.new("L", (width, height), 0)
+                glyph = Image.new("RGBA", (width, height), (0, 0, 0, 0))
                 ImageDraw.Draw(glyph).text(
-                    (-box[0], -box[1]), char, font=font, fill=255, anchor="ls")
+                    (-box[0], -box[1]), char, font=font,
+                    fill=(239, 247, 252, 255), stroke_width=stroke_width,
+                    stroke_fill=(2, 5, 8, 224), anchor="ls")
                 maximum_width = cell_width - TEXT_OVERSAMPLE // 2
                 if width > maximum_width:
                     glyph = glyph.resize((maximum_width, height), Image.Resampling.LANCZOS)
-                glyph = glyph.point(lambda alpha: min(255, round(alpha * 1.18)))
-                colored = Image.new("RGBA", glyph.size, (239, 247, 252, 255))
-                colored.putalpha(glyph)
                 atlas.alpha_composite(
-                    colored,
+                    glyph,
                     (x + (cell_width - glyph.width) // 2, y + baseline_y + box[1]))
         atlas.putpixel((x + cell_width - 1, y + cell_height - 1), (255, 255, 255, 1))
     save_png(atlas, TEXTURES / "text-atlas.png")
@@ -210,27 +212,30 @@ def text_provider(y: int, rows: list[str]) -> dict:
 
 
 def generate_fonts(text_rows: list[str]) -> None:
-    write_font("panel", [provider("panel.png", chr(0xEB00), 11, 15, PANEL_SIZE[1])])
+    write_font("panel", [
+        provider("panel.png", chr(0xEB00), 11, 15, PANEL_SIZE[1]),
+        provider("panel_air.png", chr(0xEB01), 11, 15, PANEL_SIZE[1]),
+    ])
     write_font("health_segments", [
-        provider("health_track.png", chr(0xEB10), 12, 32, 8),
-        provider("health_fill.png", chr(0xEB11), 13, 32, 8),
-        provider("health_warn.png", chr(0xEB12), 13, 32, 8),
-        provider("health_critical.png", chr(0xEB13), 13, 32, 8),
+        provider("health_track.png", chr(0xEB10), 12, 36, 10),
+        provider("health_fill.png", chr(0xEB11), 13, 36, 10),
+        provider("health_warn.png", chr(0xEB12), 13, 36, 10),
+        provider("health_critical.png", chr(0xEB13), 13, 36, 10),
     ])
     write_font("mini_segments", [
-        provider("mini_track.png", chr(0xEB20), 12, 52, 5),
-        provider("mini_armor.png", chr(0xEB21), 13, 52, 5),
-        provider("mini_food.png", chr(0xEB22), 13, 52, 5),
-        provider("mini_air.png", chr(0xEB23), 13, 52, 5),
+        provider("mini_track.png", chr(0xEB20), 12, 61, 6),
+        provider("mini_armor.png", chr(0xEB21), 13, 61, 6),
+        provider("mini_food.png", chr(0xEB22), 13, 61, 6),
+        provider("mini_air.png", chr(0xEB23), 13, 61, 6),
     ])
     write_font("icons", [
-        provider("icon_armor.png", chr(0xEB30), 14, 48, 12),
-        provider("icon_food.png", chr(0xEB31), 14, 48, 12),
-        provider("icon_air.png", chr(0xEB32), 14, 48, 12),
+        provider("icon_armor.png", chr(0xEB30), 14, 56, 14),
+        provider("icon_food.png", chr(0xEB31), 14, 56, 14),
+        provider("icon_air.png", chr(0xEB32), 14, 56, 14),
     ])
-    write_font("text_header", [text_provider(27, text_rows)])
-    write_font("text_percent", [text_provider(41, text_rows)])
-    write_font("text_stats", [text_provider(69, text_rows)])
+    write_font("text_header", [text_provider(30, text_rows)])
+    write_font("text_percent", [text_provider(46, text_rows)])
+    write_font("text_stats", [text_provider(81, text_rows)])
 
 
 def generate_vanilla_replacements() -> None:
@@ -241,46 +246,55 @@ def generate_vanilla_replacements() -> None:
         save_png(transparent, VANILLA_HUD / name)
 
 
-def generate_preview() -> None:
+def generate_preview(air_visible: bool, target_name: str) -> None:
     scale = 3
-    panel = Image.open(TEXTURES / "panel.png").convert("RGBA")
+    panel_name = "panel_air.png" if air_visible else "panel.png"
+    panel = Image.open(TEXTURES / panel_name).convert("RGBA")
     canvas = Image.new("RGBA", (PANEL_SIZE[0] * scale, PANEL_SIZE[1] * scale),
                        (20, 27, 35, 255))
     canvas.alpha_composite(panel.resize(canvas.size, Image.Resampling.NEAREST), (0, 0))
     for index in range(HEALTH_SEGMENTS):
         name = "health_fill.png" if index < 15 else "health_track.png"
         segment_image = Image.open(TEXTURES / name).convert("RGBA").resize(
-            (8 * scale, 8 * scale), Image.Resampling.NEAREST)
-        canvas.alpha_composite(segment_image, ((24 + index * 9) * scale, 17 * scale))
-    for group, (fill, active) in enumerate((("mini_armor.png", 8), ("mini_food.png", 7),
-                                            ("mini_air.png", 10))):
-        icon_name = ("icon_armor.png", "icon_food.png", "icon_air.png")[group]
+            (10 * scale, 10 * scale), Image.Resampling.NEAREST)
+        canvas.alpha_composite(segment_image, ((16 + index * 11) * scale, 21 * scale))
+    groups = [("mini_armor.png", 8, "icon_armor.png", "18/20"),
+              ("mini_food.png", 7, "icon_food.png", "14/20")]
+    centers = [63, 189]
+    if air_visible:
+        groups.append(("mini_air.png", 5, "icon_air.png", "150/300"))
+        centers = [42, 126, 210]
+    for center, (fill, active, icon_name, value) in zip(centers, groups):
         icon = Image.open(TEXTURES / icon_name).convert("RGBA").resize(
-            (12 * scale, 12 * scale), Image.Resampling.NEAREST)
-        canvas.alpha_composite(icon, ((7 + group * 63) * scale, 35 * scale))
+            (14 * scale, 14 * scale), Image.Resampling.NEAREST)
+        canvas.alpha_composite(icon, ((center - 38) * scale, 41 * scale))
         for index in range(MINI_SEGMENTS):
             name = fill if index < active else "mini_track.png"
             segment_image = Image.open(TEXTURES / name).convert("RGBA").resize(
-                (4 * scale, 5 * scale), Image.Resampling.NEAREST)
+                (5 * scale, 6 * scale), Image.Resampling.NEAREST)
             canvas.alpha_composite(segment_image,
-                                   ((23 + group * 63 + index * 5) * scale, 37 * scale))
+                                   ((center - 22 + index * 6) * scale, 44 * scale))
     font_path = ROOT / "dev-assets" / "icesmp-hud" / "source" / "Inter-SemiBold.ttf"
-    font = ImageFont.truetype(font_path, 8 * scale)
-    small = ImageFont.truetype(font_path, 6 * scale)
+    font = ImageFont.truetype(font_path, 10 * scale)
+    small = ImageFont.truetype(font_path, 8 * scale)
     draw = ImageDraw.Draw(canvas)
-    draw.text((PANEL_SIZE[0] * scale // 2, 2 * scale), "87.5 / 120 HP (+4)", font=font,
-              fill=(154, 242, 194, 255), anchor="ma")
-    draw.text((PANEL_SIZE[0] * scale // 2, 18 * scale), "73%", font=font,
-              fill=(247, 251, 255, 255), anchor="ma")
-    for x, value in ((48, "18/20"), (111, "14/20"), (174, "300/300")):
-        draw.text((x * scale, 45 * scale), value, font=small,
-                  fill=(218, 232, 242, 255), anchor="ma")
-    target = ROOT / "build" / "reports" / "icesmp-hud" / "survival-preview.png"
+    draw.text((PANEL_SIZE[0] * scale // 2, 3 * scale), "87.5 / 120 HP (+4)", font=font,
+              fill=(154, 242, 194, 255), stroke_width=scale,
+              stroke_fill=(2, 5, 8, 224), anchor="ma")
+    draw.text((PANEL_SIZE[0] * scale // 2, 21 * scale), "73%", font=font,
+              fill=(247, 251, 255, 255), stroke_width=scale,
+              stroke_fill=(2, 5, 8, 224), anchor="ma")
+    for center, (_, _, _, value) in zip(centers, groups):
+        draw.text(((center + 8) * scale, 56 * scale), value, font=small,
+                  fill=(218, 232, 242, 255), stroke_width=scale,
+                  stroke_fill=(2, 5, 8, 224), anchor="ma")
+    target = ROOT / "build" / "reports" / "icesmp-hud" / target_name
     save_png(canvas, target)
 
 
 def main() -> None:
-    generate_panel()
+    generate_panel("panel.png", False)
+    generate_panel("panel_air.png", True)
     generate_segments()
     generate_icons()
     generate_fonts(generate_text_atlas())
@@ -293,6 +307,8 @@ def main() -> None:
         "panel_size": list(PANEL_SIZE),
         "health_segments": HEALTH_SEGMENTS,
         "mini_segments": MINI_SEGMENTS,
+        "air_display": "only_when_depleted",
+        "default_scale": 1.4,
         "text_font": "Inter SemiBold",
         "text_oversample": TEXT_OVERSAMPLE,
         "text_atlas": "icesmp_hud:hud/survival/text-atlas.png",
@@ -308,7 +324,8 @@ def main() -> None:
     }
     (ASSETS / "survival-hud-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    generate_preview()
+    generate_preview(False, "survival-preview.png")
+    generate_preview(True, "survival-air-preview.png")
 
 
 if __name__ == "__main__":

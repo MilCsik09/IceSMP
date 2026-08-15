@@ -4,11 +4,13 @@
   "anchor": "bottom_center",
   "canvas_height": 120,
   "panel_size": [
-    228,
-    60
+    252,
+    72
   ],
   "health_segments": 20,
   "mini_segments": 10,
+  "air_display": "only_when_depleted",
+  "default_scale": 1.4,
   "text_font": "Inter SemiBold",
   "text_oversample": 8,
   "text_atlas": "icesmp_hud:hud/survival/text-atlas.png",

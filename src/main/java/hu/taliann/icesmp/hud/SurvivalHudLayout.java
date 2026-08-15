@@ -3,7 +3,7 @@ package hu.taliann.icesmp.hud;
 /** Validated bottom-centred layout for the non-optional survival HUD replacement. */
 public record SurvivalHudLayout(int xOffsetPixels, int yOffsetPixels, int scaleIndex) {
 
-    public static final int DEFAULT_SCALE_INDEX = 2;
+    public static final int DEFAULT_SCALE_INDEX = 5;
 
     public SurvivalHudLayout {
         xOffsetPixels = HudLayoutSnapshot.clamp(xOffsetPixels,
@@ -30,6 +30,15 @@ public record SurvivalHudLayout(int xOffsetPixels, int yOffsetPixels, int scaleI
 
     public int anchoredX(final int sourceX) {
         return sourceX + xOffsetPixels;
+    }
+
+    public SurvivalHudLayout withEditorTransform(final HudComponentLayout transform) {
+        final HudComponentLayout safe = transform == null
+                ? HudComponentLayout.defaults() : transform;
+        final double baseScale = HudLayoutSnapshot.SCALE_PERMILLE.get(scaleIndex) / 1000.0D;
+        return new SurvivalHudLayout(xOffsetPixels + safe.xOffsetPixels(),
+                yOffsetPixels + safe.yOffsetPixels(),
+                HudLayoutSnapshot.closestScaleIndex(baseScale * safe.scale()));
     }
 
     /** Same 13-bit transport as the editable class HUD: signed Y plus scale variant. */

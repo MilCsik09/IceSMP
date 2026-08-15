@@ -34,11 +34,12 @@ public final class OperationalConfigHelp {
             case "hud.dynamic.combat-grace-seconds" -> "Az utolsó adott vagy kapott találat után ennyi másodpercig marad aktív a letisztított harci HUD-nézet.";
             case "hud.dynamic.rotating-line" -> "Engedélyezi az esemény-, szezon- és napi kihívás információit váltogató dinamikus HUD-sort.";
             case "hud.dynamic.rotation-seconds" -> "A dinamikus információs HUD-sor ennyi másodpercenként vált a következő elérhető információra.";
-            case "hud.profile.enabled" -> "Engedélyezi a közeli játékoshoz tartozó rövid profil-kijelzést, amely a konfigurált távolságon belül jelenik meg.";
-            case "hud.profile.update-interval-ticks" -> "A közeli játékosprofil-kijelzés újraszámításának sűrűsége tickben. Kisebb érték simább, de több közelség-ellenőrzést végez.";
-            case "hud.profile.lifetime-ticks" -> "Ennyi tickig marad életben egy létrehozott profil-kijelzés frissítés nélkül, mielőtt a rendszer eltávolítja.";
-            case "hud.profile.distance" -> "Legfeljebb ilyen távolságból jelenhet meg a közeli játékos profilja. Nagy érték több entitás- és távolságellenőrzést okozhat.";
-            case "hud.profile.height-offset" -> "A profil-kijelzés függőleges eltolása a céljátékoshoz képest. Negatív érték lejjebb, pozitív érték feljebb helyezi.";
+            case "hud.profile.enabled" -> "Találat után eseményvezérelten, periodikus világ-szkennelés nélkül mutatja a célpont feje alatt a HP-t, játékosnál pedig igény szerint a class resource-t.";
+            case "hud.profile.lifetime-ticks" -> "Az utolsó találat után ennyi tickig követi a célpontot a HP/resource kijelzés; minden új találat újraindítja az időablakot.";
+            case "hud.profile.show-player-resource" -> "A játékos célpontok HP-ja mellett megjeleníti az aktuális class-resource nevét és jelenlegi/maximális értékét. Mobokra nincs hatása.";
+            case "hud.profile.scale" -> "A célpontot követő HP/resource szöveg méretszorzója. A képernyő-HUD méretétől és a resource packtól független.";
+            case "hud.profile.height-offset" -> "A célpont utasaként mozgó HP/resource sor függőleges eltolása a nametag alatti finom pozicionáláshoz.";
+            case "hud.profile.view-range" -> "A TextDisplay kliensoldali renderelési tartományának szorzója. Alap attacker-only láthatóság mellett sem teszi nyilvánossá az adatot.";
             case "tablist.enabled" -> "A natív IceSMP tablista teljes főkapcsolója: header/footer, formázott tabnevek, nametagek, rendezés és pingkijelzés csak ennek engedélyével működik.";
             case "tablist.refresh-ticks" -> "A natív tablista diffelt frissítési periódusa tickben. Kisebb érték gyorsabb név/ping frissítést, de több kliens- és scoreboard-munkát jelent; élőben újraütemeződik.";
             case "tablist.sweep-every-refresh" -> "Minden ennyiedik tablista-frissítés végez drágább teljes takarítást a kilépett vagy átrendeződött bejegyzéseken. Nagyobb érték ritkább söprést jelent.";

@@ -81,6 +81,7 @@ val validateIceSmpHudPackage by tasks.registering {
             "mechanic_icon" to 86, "mechanic_text" to 94,
             "metric_bar" to 108, "runes" to 130,
             "charge" to 137, "state" to 143,
+            "class_xp_bar" to 155, "class_xp_text" to 165,
             "event_text" to 165, "wallet_text" to 217,
             "wallet_lower_text" to 237
         )
@@ -127,9 +128,9 @@ val validateIceSmpHudPackage by tasks.registering {
             "currency", "currency_lower", "currency_compact", "currency_compact_lower",
             "runes", "runes_compact", "runes_panel", "charges",
             "mechanic_icons", "mechanic_slots", "resource_segments",
-            "metric_segments", "text_header", "text_subheader", "text_resource",
+            "metric_segments", "xp_segments", "text_header", "text_subheader", "text_resource",
             "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet", "text_wallet_lower",
-            "text_wallet_compact", "text_wallet_compact_lower").forEach { name ->
+            "text_wallet_compact", "text_wallet_compact_lower", "text_xp").forEach { name ->
             require(fonts.resolve("$name.json").isFile) { "Missing IceSMP HUD font: $name" }
         }
         listOf("panel", "health_segments", "mini_segments", "icons",
@@ -141,9 +142,11 @@ val validateIceSmpHudPackage by tasks.registering {
         val survivalManifest = JsonSlurper().parse(
             hud.file("survival-hud-manifest.json").asFile) as Map<*, *>
         require(survivalManifest["anchor"] == "bottom_center"
-            && survivalManifest["panel_size"] == listOf(228, 60)
+            && survivalManifest["panel_size"] == listOf(252, 72)
             && (survivalManifest["health_segments"] as Number).toInt() == 20
             && (survivalManifest["mini_segments"] as Number).toInt() == 10
+            && survivalManifest["air_display"] == "only_when_depleted"
+            && (survivalManifest["default_scale"] as Number).toDouble() == 1.4
             && survivalManifest["text_font"] == "Inter SemiBold"
             && (survivalManifest["text_oversample"] as Number).toInt() == 8
             && survivalManifest["text_atlas"] == "icesmp_hud:hud/survival/text-atlas.png"
@@ -153,8 +156,15 @@ val validateIceSmpHudPackage by tasks.registering {
         val survivalTextAtlas = ImageIO.read(
             hud.file("textures/hud/survival/text-atlas.png").asFile)
             ?: error("Unreadable isolated survival text atlas")
-        require(survivalTextAtlas.width == 640 && survivalTextAtlas.height == 192) {
+        require(survivalTextAtlas.width == 768 && survivalTextAtlas.height == 224) {
             "Survival HUD text atlas lost its isolated fixed-cell geometry"
+        }
+        listOf("panel.png", "panel_air.png").forEach { name ->
+            val panel = ImageIO.read(hud.file("textures/hud/survival/$name").asFile)
+                ?: error("Unreadable survival HUD panel: $name")
+            require(panel.width == 252 && panel.height == 72) {
+                "Survival HUD panel exceeds or lost its reviewed glyph geometry: $name"
+            }
         }
         val textures = hud.dir("textures/hud").asFile
         listOf("guest", "red", "blue", "neutral", "dark").forEach { theme ->

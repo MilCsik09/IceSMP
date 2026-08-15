@@ -1154,7 +1154,10 @@ to primary/secondary and up to three additional typed metrics, state, proc, char
 discrete slots. `ClassHudMechanics.of` derives a bounded visual pip row from actual charge counts;
 the Death Knight replaces it with its typed ready/spent/regenerating/locked rune slots.
 `HudManager` captures that projection on the player's Folia region thread and embeds it in
-`HudSnapshot`; the first-party renderer and PlaceholderAPI only read the concurrent immutable
+`HudSnapshot`. Ugyanitt a teljes class XP és az aktuális class-szint alapján a pure
+`ClassXpProgress` kiszámítja a szint kezdőpontját, költségét, belső haladást, hiányzó XP-t és
+százalékot; ez kizárólag display-projekció, nem második leveling authority. A first-party renderer
+és a PlaceholderAPI csak a concurrent immutable
 projection/cache. Neither can mutate Profile v2 or a class runtime. `ResourcePackListener`
 publishes a thread-safe per-player `SUCCESSFULLY_LOADED` capability; only then does the first-party
 bossbar/font renderer suppress the native compact fallback. No external HUD plugin participates in
@@ -1166,6 +1169,10 @@ durable player authority. Keys below `hud.layout.*` are sparse field-level overr
 snapshot: effective layout is rebuilt as `global base + valid personal differences`, so untouched
 fields inherit later global changes. Reset-to-global removes those keys through the same CAS-backed
 section mutation. Editor sessions and synthetic previews remain isolated, immutable runtime state.
+`CLASS_XP`, generic `CHARGES` és `DK_RUNES` külön komponens, így a Death Knight typed slotjainak
+pozíciója/láthatósága nem módosít más class-diszkrét mérőt. A `SURVIVAL_HUD` szintén editor-célpont,
+de `hideable=false`: a komponens csak az elkülönült bottom-center layout eltolását és méretét adja,
+a jobb felső global transzformot nem örökli.
 
 The renderer uses BMP private-use spacing, fixed-width glyph cells and zero-net-width draw commands.
 Dynamic values (including `0`, `120`, class changes, rune states and wallet counts) therefore cannot
@@ -1197,6 +1204,22 @@ not hide the only health display. The `hide-vanilla-*` config values are package
 not runtime kill switches; an invalid value logs a severe warning while the replacement remains on.
 Current/max numbers are rendered directly, with no ten-heart normalization, so enabling the separate
 class health-scaling gate later does not require another HUD protocol or asset change.
+Normál állapotban a 252×72-es panel két alsó oszlopot renderel (armor, food); a külön
+`panel_air` háromoszlopos variáns csak akkor lép életbe, amikor `air < maximumAir`. Ez renderer-
+állapot, nem asset-átmozgatás, ezért merüléskor sem csúszik el a HP-sáv.
+
+### Eseményvezérelt célpont-vitals
+
+`DamageIndicatorListener` a nem törölt, pozitív játékos-sebzés MONITOR eseménye után a sérült
+`LivingEntity` saját következő entity tickjén olvassa ki a tényleges current/max HP-t. Célpontonként
+legfeljebb egy nem perzisztens, FX-tagelt `TextDisplay` jön létre, amely utasként követi az entitást;
+az új találat csak frissíti a szöveget és generációs lejáratát. Játékos célpontnál ugyanazon a
+régiószálon olvasható class resource kerülhet a HP mellé. Alapértelmezésben
+`visibleByDefault=false`, és csak a támadó saját entity schedulerén kap `showEntity` hívást.
+
+Nincs online-player × nearby-entity poll, cross-region world scan vagy tartós entity. A kijelző
+display-scheduleres TTL-lel, death/quit eseménnyel, a közös transient registryvel és chunk-load
+FX-takarítással záródik; a világ-szintű 512 aktív célpont plafon védi a hibás terhelési helyzetet.
 
 ## Client Bridge — az IceSMP Client protokoll-alapja
 

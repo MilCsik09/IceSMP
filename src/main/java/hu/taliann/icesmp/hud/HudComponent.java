@@ -7,25 +7,28 @@ import java.util.Optional;
 
 /** Stable ids for every independently editable first-party HUD draw group. */
 public enum HudComponent {
-    GLOBAL("global", false),
-    FRAME("frame", true),
-    CLASS_ICON("class-icon", true),
-    CLASS_NAME("class-name", true),
-    FACTION("faction", true),
-    LEVEL_ICON("level-icon", false),
-    LEVEL_TEXT("level-text", true),
-    WALLET_FRAME("wallet-frame", true),
-    WALLET("wallet", true),
-    RESOURCE_LABEL("resource-label", true),
-    RESOURCE_BAR("resource-bar", true),
-    PRIMARY_MECHANIC("primary-mechanic", true),
-    SECONDARY_MECHANIC("secondary-mechanic", true),
-    CHARGES("charges", true),
-    STATE_PROC("state-proc", true),
-    DETAIL_FRAME("detail-frame", true),
-    DETAIL_METRICS("detail-metrics", true),
-    EVENT_ICON("event-icon", false),
-    EVENT_TEXT("event-text", true);
+    GLOBAL("global", false, false),
+    FRAME("frame", true, true),
+    CLASS_ICON("class-icon", true, true),
+    CLASS_NAME("class-name", true, true),
+    FACTION("faction", true, true),
+    LEVEL_ICON("level-icon", false, false),
+    LEVEL_TEXT("level-text", true, true),
+    CLASS_XP("class-xp", true, true),
+    WALLET_FRAME("wallet-frame", true, true),
+    WALLET("wallet", true, true),
+    RESOURCE_LABEL("resource-label", true, true),
+    RESOURCE_BAR("resource-bar", true, true),
+    PRIMARY_MECHANIC("primary-mechanic", true, true),
+    SECONDARY_MECHANIC("secondary-mechanic", true, true),
+    CHARGES("charges", true, true),
+    DK_RUNES("dk-runes", true, true),
+    STATE_PROC("state-proc", true, true),
+    DETAIL_FRAME("detail-frame", true, true),
+    DETAIL_METRICS("detail-metrics", true, true),
+    EVENT_ICON("event-icon", false, false),
+    EVENT_TEXT("event-text", true, true),
+    SURVIVAL_HUD("survival-hud", true, false);
 
     private static final List<HudComponent> EDITABLE = Arrays.stream(values())
             .filter(HudComponent::rendered).toList();
@@ -34,10 +37,12 @@ public enum HudComponent {
 
     private final String id;
     private final boolean rendered;
+    private final boolean hideable;
 
-    HudComponent(final String id, final boolean rendered) {
+    HudComponent(final String id, final boolean rendered, final boolean hideable) {
         this.id = id;
         this.rendered = rendered;
+        this.hideable = hideable;
     }
 
     public String id() {
@@ -46,6 +51,10 @@ public enum HudComponent {
 
     public boolean rendered() {
         return rendered;
+    }
+
+    public boolean hideable() {
+        return hideable;
     }
 
     public static List<HudComponent> editableValues() {

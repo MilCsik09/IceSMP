@@ -4,9 +4,18 @@
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/panel.png",
       "ascent": -8482830,
-      "height": 60,
+      "height": 72,
       "chars": [
         ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/panel_air.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
       ]
     }
   ]

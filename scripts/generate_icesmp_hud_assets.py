@@ -66,6 +66,8 @@ HUD_Y = {
     "charge": 137,
     "state": 143,
     "event_icon": 155,
+    "class_xp_bar": 155,
+    "class_xp_text": 165,
     "event_text": 165,
     "detail_text": 190,
     "wallet_icon": 210,
@@ -660,13 +662,17 @@ def generate_layout_preview(text_rows: list[str]) -> None:
     paste_text("Tűz 72", 20, HUD_Y["detail_text"], (199, 212, 234))
     paste_text("Fagy 48", 86, HUD_Y["detail_text"], (199, 212, 234))
     paste_text("Arkán 31", 152, HUD_Y["detail_text"], (199, 212, 234))
-    event = "ESEMÉNY Vérhold 04:12"
-    paste_text(event, HUD_X["event_center"] - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+    xp = "Még 120 XP"
+    paste_text(xp, 60 - len(xp) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+               HUD_Y["class_xp_text"], (240, 216, 141))
+    event = "Vérhold 04:12"
+    paste_text(event, 180 - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
                HUD_Y["event_text"], (240, 216, 141))
     paste_bar("segment", HUD_X["resource_bar"], HUD_Y["resource_bar"], 13, 10)
     paste_bar("metric", HUD_X["primary_metric_bar"], HUD_Y["metric_bar"], 8, 9)
     paste_bar("metric", HUD_X["secondary_metric_bar"], HUD_Y["metric_bar"],
               8, 5, "fill-gold")
+    paste_bar("metric", 12, HUD_Y["class_xp_bar"], 8, 9, "fill-gold")
 
     wallet = (("currency-neutral.png", "Creutzér 12.8k", 8, HUD_Y["wallet_icon"],
                HUD_Y["wallet_text"], (240, 216, 141)),
@@ -796,6 +802,12 @@ def main() -> None:
         provider("metric-fill-warm.png", chr(0xE182), 6, HUD_Y["metric_bar"], 5),
         provider("metric-fill-gold.png", chr(0xE183), 6, HUD_Y["metric_bar"], 5),
     ])
+    write_font("xp_segments", [
+        provider("metric-track.png", chr(0xE180), 5, HUD_Y["class_xp_bar"], 5),
+        provider("metric-fill.png", chr(0xE181), 6, HUD_Y["class_xp_bar"], 5),
+        provider("metric-fill-warm.png", chr(0xE182), 6, HUD_Y["class_xp_bar"], 5),
+        provider("metric-fill-gold.png", chr(0xE183), 6, HUD_Y["class_xp_bar"], 5),
+    ])
 
     for name, y in {
         "text_header": HUD_Y["header"],
@@ -804,6 +816,7 @@ def main() -> None:
         "text_mechanic": HUD_Y["mechanic_text"],
         "text_state": HUD_Y["state"],
         "text_event": HUD_Y["event_text"],
+        "text_xp": HUD_Y["class_xp_text"],
         "text_detail": HUD_Y["detail_text"],
         "text_wallet": HUD_Y["wallet_text"],
         "text_wallet_lower": HUD_Y["wallet_lower_text"],

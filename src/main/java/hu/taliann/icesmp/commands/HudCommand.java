@@ -273,8 +273,12 @@ public final class HudCommand implements BasicCommand {
     }
 
     private void visibility(final Player player) {
-        if (hudManager.hudEditorSession(player).orElseThrow().selected() == HudComponent.GLOBAL) {
+        final HudComponent selected = hudManager.hudEditorSession(player).orElseThrow().selected();
+        if (selected == HudComponent.GLOBAL) {
             throw error("hud-editor-error-global-visibility");
+        }
+        if (!selected.hideable()) {
+            throw error("hud-editor-error-protected-visibility");
         }
         hudManager.toggleHudEditorComponent(player);
     }
@@ -423,7 +427,7 @@ public final class HudCommand implements BasicCommand {
                         "/hud edit scale coarse up")).append(Component.space())
                 .append(inputButton(messageManager.required("hud-editor-input-scale"),
                         "/hud edit set scale ")));
-        if (session.selected() != HudComponent.GLOBAL) {
+        if (session.selected() != HudComponent.GLOBAL && session.selected().hideable()) {
             final boolean visible = session.working().componentLayout(session.selected()).visible();
             player.sendMessage(button(messageManager.required(visible
                             ? "hud-editor-button-hide" : "hud-editor-button-show"),

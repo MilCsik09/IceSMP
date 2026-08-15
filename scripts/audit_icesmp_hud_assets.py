@@ -103,19 +103,20 @@ def expected_size(path: Path) -> tuple[int, int] | None:
     name = path.name
     if path.parent.name == "survival":
         return {
-            "panel.png": (228, 60),
-            "health_track.png": (8, 8),
-            "health_fill.png": (8, 8),
-            "health_warn.png": (8, 8),
-            "health_critical.png": (8, 8),
-            "mini_track.png": (4, 5),
-            "mini_armor.png": (4, 5),
-            "mini_food.png": (4, 5),
-            "mini_air.png": (4, 5),
-            "icon_armor.png": (12, 12),
-            "icon_food.png": (12, 12),
-            "icon_air.png": (12, 12),
-            "text-atlas.png": (640, 192),
+            "panel.png": (252, 72),
+            "panel_air.png": (252, 72),
+            "health_track.png": (10, 10),
+            "health_fill.png": (10, 10),
+            "health_warn.png": (10, 10),
+            "health_critical.png": (10, 10),
+            "mini_track.png": (5, 6),
+            "mini_armor.png": (5, 6),
+            "mini_food.png": (5, 6),
+            "mini_air.png": (5, 6),
+            "icon_armor.png": (14, 14),
+            "icon_food.png": (14, 14),
+            "icon_air.png": (14, 14),
+            "text-atlas.png": (768, 224),
         }.get(name)
     if path.parent.name != "hud":
         return None
@@ -345,7 +346,7 @@ def render_report(findings: list[Finding], mechanics: list[str], report: Path) -
               "| Class-/specváltás | A render minden tickben az új Profile v2 + transient class runtime snapshotból épül; nincs külön tartós HUD/class authority. | PASS |",
               "| Vendégkeret | Külön külső Menedék-héj, a kanonikus frakciókerettel azonos belső alpha-geometria és rögzített glyph-cella. | PASS |",
               "| HUD/fallback | First-party pack-ready HUD → Paper sidebar / Folia compact bossbar fallback; egyszerre csak egy class HUD. | PASS |",
-              "| Survival HUD | Pack-ready után a HP current/max + százalék, páncél, étel és levegő külön gyors region-thread tickből frissül. | PASS |",
+              "| Survival HUD | Pack-ready után a nagyobb HP current/max + százalék, páncél és étel külön gyors region-thread tickből frissül; az O2-oszlop csak fogyó levegőnél jelenik meg. | PASS |",
               "| Folia | A globális tick csak iterál; minden Player-olvasás és render a játékos entity schedulerén történik. | PASS |",
               "| Authority | Profile v2 a tartós class/spec authority; a class service-ek UUID-mapjai lifecycle-takarított transient combat runtime-ok. | PASS |",
               "", "## Tételes PNG-ellenőrzés", "",
@@ -358,10 +359,10 @@ def render_report(findings: list[Finding], mechanics: list[str], report: Path) -
               "- [ ] Mind az öt téma, külön Menedék-vendég külső héjjal; a belső rács nem mozdul.",
               "- [ ] Mind a 13 class: primary és minden elérhető secondary mechanika ikonja, üres/aktív/ready/alert/spent állapot.",
               "- [ ] DK rúnák: ready, spent, regenerating százalék és locked; más classok typed charge/stack pipjei.",
-              "- [ ] Wallet: nulla primary és pozitív idegen valuták; event nyugalmi/aktív; class-level.",
+              "- [ ] Wallet: nulla primary és pozitív idegen valuták; event nyugalmi/aktív; class-level és class XP 0/rész/max.",
               "- [ ] Class- és frakcióváltás közben nincs geometria- vagy glyph-width ugrás.",
               "- [ ] Pack elfogadás/elutasítás/hiba; pontosan egy first-party HUD vagy működő natív fallback.",
-              "- [ ] Survival panel: 0/1/30/60/100% HP, absorption, 20+ armor, éhség és fogyó/visszatöltő levegő.",
+              "- [ ] Survival panel: 0/1/30/60/100% HP, absorption, 20+ armor, éhség, szárazföldi kétoszlopos és fogyó/visszatöltő levegőnél háromoszlopos állapot.",
               "- [ ] GUI scale 1–4, legalább 1280×720 és 2560×1440; nincs vágás, magenta fringe vagy hibás pixel."]
     report.parent.mkdir(parents=True, exist_ok=True)
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")

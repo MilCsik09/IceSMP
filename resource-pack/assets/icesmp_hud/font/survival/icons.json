@@ -3,8 +3,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/icon_armor.png",
-      "ascent": -8507439,
-      "height": 12,
+      "ascent": -8507447,
+      "height": 14,
       "chars": [
         ""
       ]
@@ -12,8 +12,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/icon_food.png",
-      "ascent": -8507439,
-      "height": 12,
+      "ascent": -8507447,
+      "height": 14,
       "chars": [
         ""
       ]
@@ -21,8 +21,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/icon_air.png",
-      "ascent": -8507439,
-      "height": 12,
+      "ascent": -8507447,
+      "height": 14,
       "chars": [
         ""
       ]

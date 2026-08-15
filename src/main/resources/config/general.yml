@@ -71,20 +71,26 @@ hud:
         faction: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: false}
         level-icon: {x-offset-pixels: -19, y-offset-pixels: -5, scale: 1.0, visible: true}
         level-text: {x-offset-pixels: -3, y-offset-pixels: 15, scale: 1.0, visible: true}
+        class-xp: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
         wallet-frame: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
         wallet: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         resource-label: {x-offset-pixels: 6, y-offset-pixels: 5, scale: 0.9, visible: true}
         resource-bar: {x-offset-pixels: 5, y-offset-pixels: -12, scale: 1.0, visible: true}
         primary-mechanic: {x-offset-pixels: 2, y-offset-pixels: -1, scale: 1.0, visible: true}
         secondary-mechanic: {x-offset-pixels: 2, y-offset-pixels: 0, scale: 1.0, visible: true}
-        charges: {x-offset-pixels: -38, y-offset-pixels: 32, scale: 0.9, visible: true}
+        charges: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 0.9, visible: true}
+        dk-runes: {x-offset-pixels: -38, y-offset-pixels: 32, scale: 0.9, visible: true}
         state-proc: {x-offset-pixels: -14, y-offset-pixels: -1, scale: 1.0, visible: true}
         detail-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         detail-metrics: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         event-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         event-text: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
+        # A survival panel bottom-center horgonyú, ezért ez a transzform nem függ a
+        # jobb felső class HUD globális X/Y/scale értékeitől. Biztonságból nem rejthető el.
+        survival-hud: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
     # Alsó-középre rögzített túlélési panel. A HP számszerű current/max értéket és
-    # százalékot is mutat; a páncél, étel és levegő saját mini-sávot kap.
+    # százalékot is mutat; a páncél és étel saját mini-sávot kap, az oxigén pedig
+    # csak merüléskor jelenik meg, így szárazföldön nem foglal fölöslegesen helyet.
     # A gyors tick csak élő attribútumokat olvas a játékos saját region-threadjén.
     survival:
       refresh-ticks: 2
@@ -92,7 +98,7 @@ hud:
       layout:
         x-offset-pixels: 0
         y-offset-pixels: 0
-        scale: 1.0
+        scale: 1.4
     # Csomagszerződés, NEM runtime kapcsoló: a kiadott pack ezeket a vanilla sprite-okat
     # átlátszóra cseréli. Mind a négynek true értéken kell maradnia; hibás értéknél a
     # szerver SEVERE figyelmeztetést ír, de a játékos biztonsága érdekében tovább renderel.
@@ -193,11 +199,15 @@ hud:
     rotating-line: true
     rotation-seconds: 4
   profile:
+    # Eseményvezérelt combat-vitals: találat után a célpont feje alatt HP-t, játékosnál pedig
+    # opcionálisan class resource-t mutat. Nincs periodikus világ- vagy közelség-szkennelés.
     enabled: true
-    update-interval-ticks: 5
-    lifetime-ticks: 200
-    distance: 3.0
-    height-offset: -0.25
+    lifetime-ticks: 100
+    visibility: attacker-only # attacker-only | everyone
+    show-player-resource: true
+    scale: 0.75
+    height-offset: 0.55
+    view-range: 1.0
 
 # WoW-stílusú csapat (party) rendszer: max 5 fő, teljesen frakció-független (bármelyik
 # frakcióból lehet egy csapatban), meghívó/elfogadás alapú tagság. A közeli mob-ölésekből

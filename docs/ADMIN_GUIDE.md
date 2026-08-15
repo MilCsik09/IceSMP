@@ -1567,8 +1567,11 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
 |---|---|---|---|---|---|---|
-| [ ] | HUD-01 Survival parity | Tesztelő | packos vanilla kliens; teljes/részleges/kritikus HP, absorption, armor, food, víz alatti air | current/max és százalék pontos; mindhárom mini-sáv és érték követi a szervert; vanilla normál sprite nem látszik duplán | pack/HUD rollout stop | `hud/HUD-01/` |
+| [ ] | HUD-01 Survival parity | Tesztelő | packos vanilla kliens; teljes/részleges/kritikus HP, absorption, armor, food, szárazföld és víz alatti air | current/max és százalék pontos; szárazföldön csak armor+food, levegőfogyáskor stabil harmadik O2-oszlop jelenik meg; vanilla normál sprite nem látszik duplán | pack/HUD rollout stop | `hud/HUD-01/` |
 | [ ] | HUD-02 Fallback és routing | Fejlesztő | pack elfogadás/elutasítás; `/hud mind`; NATIVE_HUD kliens; 720p/1080p/4K és több GUI scale | pack nélkül vanilla survival kijelzés; packkal survival panel mindig megmarad; class panel routing szerint pontosan egyszer látszik; nincs elmozdulás vagy hardcore asset | HUD rollout stop | `hud/HUD-02/` |
+| [ ] | HUD-03 Editor-szétválasztás | Tesztelő | `/hud edit`; Survival HUD, DK-rúnák, más class charge és class XP kiválasztása | mind a négy önállóan mozgatható/méretezhető; DK-rúna változtatása nem mozdít generic charge-ot; Survival HUD visibility nem kapcsolható ki | HUD rollout stop | `hud/HUD-03/` |
+| [ ] | HUD-04 Class XP | Tesztelő | level 1 rész-XP, szintlépés előtti 1 XP, levelváltás, max level | arany sáv az aktuális class-szint intervallumát mutatja; „Még N XP” pontos; szintlépéskor nulláról indul; maxon `MAX SZINT` | class XP-sáv kikapcsolása layoutban | `hud/HUD-04/` |
+| [ ] | HUD-05 Célpont-vitals | Tesztelő | mob és classos játékos melee/lövedékes sebzése; két támadó; death/quit; attacker-only/everyone | követő current/max HP pontosan a találat utáni érték; játékos resource pontos; attacker-only nem szivárog; új ütés hosszabbít, TTL/death/quit eltávolít; nincs bennragadt display | `hud.profile.enabled: false` | `hud/HUD-05/` |
 
 ### Kliens-bridge (protokoll-alap)
 
@@ -1751,9 +1754,10 @@ runtime state-je. Egyik HUD-renderer sem írhatja vissza az állapotot.
 ### Survival HUD-csere
 
 A kiadott pack a normál vanilla HP-, armor-, food- és oxygen-sprite-okat átlátszóra cseréli, majd
-pack-readiness után az IceSMP alsó-középre rögzített panelje veszi át mind a négy kijelzést. A HP
+pack-readiness után az IceSMP nagyobb, alsó-középre rögzített panelje veszi át mind a négy kijelzést. A HP
 felett a jelenlegi/maximális érték, a sávban a százalék, absorption esetén külön `(+érték)` látható;
-a páncél, étel és levegő saját mini-sávot és pontos értéket kap. Hardcore-heart és vehicle-heart
+a páncél és étel saját mini-sávot és pontos értéket kap. A levegő harmadik oszlopa csak akkor jelenik
+meg, amikor az oxigén a maximum alá csökken. Hardcore-heart és vehicle-heart
 sprite nincs felülírva.
 
 Az életkritikus kijelzés nem ugyanazt a láthatósági kaput használja, mint a class panel. A `/hud mind`,
@@ -1769,7 +1773,14 @@ panelt, hogy ne maradjon látható HP nélkül a játékos.
   módosítása restartot igényel;
 - `hud.icesmp-hud.survival.armor-maximum`: a páncél-mini-sáv 100%-os referenciaértéke;
 - `hud.icesmp-hud.survival.layout.x-offset-pixels`, `y-offset-pixels`, `scale`: a teljes panel
-  globális eltolása és mérete. Ezek az admin config-GUI operatív HUD lapján is elérhetők.
+  szerveralap eltolása és mérete. Ezek az admin config-GUI operatív HUD lapján is elérhetők;
+- `hud.icesmp-hud.layout.components.survival-hud.*`: a `/hud edit` külön Survival HUD célpontjának
+  relatív transzformja. Személyesen és globálisan menthető, de `visible: false` sem rejti el.
+
+A harci célpont feje alatti, resource packtól független kijelzés a `hud.profile.*` kulcsokat használja:
+`enabled`, `lifetime-ticks`, `visibility` (`attacker-only` vagy `everyone`),
+`show-player-resource`, `scale`, `height-offset` és `view-range`. Az alap attacker-only mód ajánlott,
+mert PvP-ben nem teszi minden szemlélő számára nyilvánossá a játékos class resource-át.
 
 A `classes.yml` `health.enabled` kapuja továbbra is `false`: ez a változás a kijelzőt és a későbbi
 HP-scaling támogatását készíti elő, nem kapcsolja be élesben a teljes class-health/damage profilt.
@@ -1806,9 +1817,11 @@ csak lapváltáskor kerül panel. A kattintható vezérlés és a tab completion
 
 A `global` a teljes, jobb felső sarokhoz horgonyzott HUD-blokkot mozgatja és méretezi. A külön
 szerkeszthető komponensek: `frame`, `class-icon`, `class-name`, `faction`, `level-icon`,
-`level-text`, `wallet-frame`, `wallet`, `resource-label`, `resource-bar`, `primary-mechanic`,
-`secondary-mechanic`, `charges`, `state-proc`, `detail-frame`, `detail-metrics`, `event-icon` és
-`event-text`. A keretek is önálló célpontok, ezért az adminnak a hozzájuk tartozó tartalommal együtt
+`level-text`, `class-xp`, `wallet-frame`, `wallet`, `resource-label`, `resource-bar`, `primary-mechanic`,
+`secondary-mechanic`, `charges`, `dk-runes`, `state-proc`, `detail-frame`, `detail-metrics`, `event-icon`,
+`event-text` és `survival-hud`. A `charges` kizárólag generic class-slot, a `dk-runes` kizárólag a
+Death Knight typed rúnáit mozgatja. A `survival-hud` külön bottom-center horgonyt használ és
+életbiztonsági okból nem rejthető el. A keretek is önálló célpontok, ezért az adminnak a hozzájuk tartozó tartalommal együtt
 kell mozgatnia őket. Ez vanilla kliensen kattintásos, nyilas editor; közvetlen fogd-és-húzd
 drag-and-drop csak kliensmoddal lenne megvalósítható.
 
@@ -1980,8 +1993,11 @@ Kézi elfogadási minimum:
   üres, részleges és teljes charge-sor — egyik értékváltás sem mozdíthatja el a panelt;
 - default frakcióvaluta nulla egyenleggel is; minden pozitív idegen banki valuta saját ikonnal;
 - aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
+- class XP 0/részleges/szintlépés előtti/max állapot; DK-rúna és generic charge külön editor-mozgatása;
 - 20/20, részleges, kritikus és nagyobb skálázott max HP; absorption; 0/20 és 20/20 armor/food;
-  szárazföldi és fogyó oxigén; `/hud mind` és NATIVE_HUD közben is látható survival panel;
+  szárazföldi kétoszlopos és fogyó oxigénnél háromoszlopos panel; editor move/scale és tiltott hide;
+  `/hud mind` és NATIVE_HUD közben is látható survival panel;
+- mob/játékos célpont fej fölötti HP, játékos resource, attacker-only privacy és TTL/death cleanup;
 - külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
 - a pack sikeres betöltéséig natív compact/class és vanilla survival fallback, utána pontosan egy
   class HUD és egy survival panel ugyanabban a per-player bossbar-kompozícióban.

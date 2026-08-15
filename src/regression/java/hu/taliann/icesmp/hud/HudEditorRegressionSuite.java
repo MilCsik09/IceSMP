@@ -102,6 +102,7 @@ public final class HudEditorRegressionSuite {
                 "hud-editor-error-usage-scale", "hud-editor-error-scale-mode",
                 "hud-editor-error-scale-direction", "hud-editor-error-missing-component",
                 "hud-editor-error-unknown-component", "hud-editor-error-global-visibility",
+                "hud-editor-error-protected-visibility",
                 "hud-editor-error-missing-preset", "hud-editor-error-unknown-preset",
                 "hud-editor-error-usage-preview", "hud-editor-error-preview-axis",
                 "hud-editor-error-preview-value", "hud-editor-error-invalid-change",
@@ -219,19 +220,41 @@ public final class HudEditorRegressionSuite {
                         && moved.componentLayout(HudComponent.WALLET)
                         .equals(before.componentLayout(HudComponent.WALLET)),
                 "editing one component may not move, scale or hide another component");
+        final HudLayoutSnapshot runeMoved = moved.move(HudComponent.DK_RUNES, 15, 5);
+        check(runeMoved.componentLayout(HudComponent.DK_RUNES).xOffsetPixels()
+                        == moved.componentLayout(HudComponent.DK_RUNES).xOffsetPixels() + 15
+                        && runeMoved.componentLayout(HudComponent.CHARGES)
+                        .equals(moved.componentLayout(HudComponent.CHARGES)),
+                "death-knight runes must have no layout dependency on generic class charges");
+        final HudLayoutSnapshot survivalHidden = runeMoved.toggleVisibility(HudComponent.SURVIVAL_HUD);
+        check(survivalHidden.visible(HudComponent.SURVIVAL_HUD),
+                "the editor must never hide the only pack-backed survival vitals surface");
+        final SurvivalHudLayout survivalBase = SurvivalHudLayout.defaults();
+        final SurvivalHudLayout survivalMoved = survivalBase.withEditorTransform(
+                new HudComponentLayout(12, -7, HudComponentLayout.DEFAULT_SCALE_INDEX, false));
+        check(survivalBase.scaleIndex() == 5
+                        && survivalMoved.xOffsetPixels() == 12
+                        && survivalMoved.yOffsetPixels() == -7
+                        && survivalMoved.scaleIndex() == survivalBase.scaleIndex(),
+                "survival editor transforms must preserve the reviewed 1.4 base scale and ignore hide");
 
         final String config = read("src/main/resources/config/general.yml");
         final String renderer = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
+        final String survivalRenderer = read(
+                "src/main/java/hu/taliann/icesmp/hud/SurvivalHudRenderer.java");
         final String manager = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
         for (final HudComponent component : HudComponent.editableValues()) {
             check(config.contains("        " + component.id() + ":")
-                            && renderer.contains("HudComponent." + component.name()),
+                            && (renderer.contains("HudComponent." + component.name())
+                            || survivalRenderer.contains("HudComponent." + component.name())
+                            || manager.contains("HudComponent." + component.name())),
                     "every editable component needs config defaults and a renderer consumer: "
                             + component.id());
         }
         check(manager.contains("layout.components.\" + component.id()")
                         && manager.contains("overrides.put(path + \".visible\"")
-                        && manager.contains("IceSmpHudModel.from(snapshot), effectiveHudLayout(player), visible"),
+                        && manager.contains("survivalHudLayout(editorLayout)")
+                        && manager.contains("survivalHudLayout(layout)"),
                 "component transforms and visibility must round-trip through validated config");
     }
 
