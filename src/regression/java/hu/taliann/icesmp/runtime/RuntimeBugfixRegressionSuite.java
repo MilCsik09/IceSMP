@@ -14,6 +14,7 @@ public final class RuntimeBugfixRegressionSuite {
 
     public static void main(final String[] args) throws IOException {
         petDoesNotInheritOwnerScoreboardTeam();
+        petStableSelectionAndSpawnAreFailClosed();
         loreUsageIsReadableAndNotAParsedTag();
         spectatorClicksReachTheCommandMenu();
         corruptionIsFullyConfigurable();
@@ -29,6 +30,55 @@ public final class RuntimeBugfixRegressionSuite {
                 "pet adoption still assigns the player's scoreboard team");
         check(source.contains("pet.setTarget(null)"),
                 "untamed companion must clear vanilla AI targets");
+    }
+
+    private static void petStableSelectionAndSpawnAreFailClosed() throws IOException {
+        final String manager = read("src/main/java/hu/taliann/icesmp/managers/PetManager.java");
+        check(manager.contains("CompletionStage<String> selectV2")
+                        && manager.contains("Kind.SET_ACTIVE")
+                        && manager.contains("pet-select:"),
+                "stable selection must commit through the Profile v2 active-companion mutation");
+        check(manager.contains("findSafeSpawnLocation(player)")
+                        && manager.contains("safePetStandingSpace")
+                        && manager.contains("Bukkit.isOwnedByCurrentRegion")
+                        && !manager.contains("spawn(player.getLocation()"),
+                "pet summon must use bounded region-local safe placement, not the player's exact location");
+        check(manager.contains("pendingDeathCooldowns.put")
+                        && manager.contains("Pet death cooldown persistence failed"),
+                "pet death must remain fail-closed while its durable cooldown is committing");
+        check(manager.contains("activePetCompanionIds.compute")
+                        && manager.contains("beginPetActivation")
+                        && manager.contains("pet-selection-superseded"),
+                "stale async callbacks must not replace the newest durable companion selection");
+
+        final String gui = read("src/main/java/hu/taliann/icesmp/gui/PetGUI.java");
+        final String listener = read("src/main/java/hu/taliann/icesmp/listeners/PetGUIListener.java");
+        check(gui.contains("SELECT:") && gui.contains("RELEASE:"),
+                "pet GUI must expose roster selection and targeted release");
+        check(listener.contains("petManager.selectV2")
+                        && listener.contains("petManager.releaseV2")
+                        && !listener.contains("performCommand("),
+                "pet GUI must refresh only from async mutation completion, not immediately after command dispatch");
+
+        final String xp = read("src/main/java/hu/taliann/icesmp/listeners/PetXpListener.java");
+        check(xp.contains("activePetAttribution")
+                        && xp.contains("creditedCompanionId")
+                        && xp.contains("eligibleAttributedKill"),
+                "the exact live durable companion's own kill must use the normal progression gate");
+
+        final YamlConfiguration pets = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/pets.yml").toFile());
+        check(pets.isInt("pets.stable.maximum")
+                        && pets.isInt("pets.companion.spawn-search-radius")
+                        && pets.isInt("pets.companion.spawn-vertical-range"),
+                "stable capacity and safe-spawn search bounds must be packaged config");
+        final YamlConfiguration messages = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/messages/pet.yml").toFile());
+        check(messages.isString("messages.pet-selection-invalid")
+                        && messages.isString("messages.pet-selection-superseded")
+                        && messages.isString("messages.pet-no-safe-spawn")
+                        && messages.isString("messages.pet-spawn-blocked"),
+                "pet selection and safe-spawn failure messages must be configurable");
     }
 
     private static void loreUsageIsReadableAndNotAParsedTag() throws IOException {

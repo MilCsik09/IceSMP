@@ -84,6 +84,7 @@ messages:
   quest-list-line: '&e%s &7(%s) - %s'
   quest-requires-faction: '&cEhhez a küldetéshez másik frakció tagjának kell lenned.'
   quest-requires-job: '&cEhhez a küldetéshez másik kaszt szükséges.'
+  quest-requires-specialization: '&cEzt a próbát csak a hozzá tartozó aktív specializációval kezdheted el.'
   quest-requires-level: '&cMég nem vagy elég magas szintű ehhez a küldetéshez.'
   quest-requires-quest: '&cElőbb az előfeltétel-küldetést kell teljesítened.'
   quest-unknown: '&cIsmeretlen küldetés: &f%s'

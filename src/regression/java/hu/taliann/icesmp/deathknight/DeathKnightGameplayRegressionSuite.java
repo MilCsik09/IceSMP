@@ -17,7 +17,7 @@ public final class DeathKnightGameplayRegressionSuite {
         castTransactionCommitsRuneExactlyOnce();
         bloodMemoryIsBoundedAndSpentWhole();
         frostMarksConsumePartiallyOrFully();
-        plagueBurstsAndMutatesTheGhoul();
+        plagueBurstIsTransientOnly();
         lifecycleCleanupRebuildsDeterministically();
         sourceContracts();
         System.out.println("Death Knight gameplay regression suite passed. assertions=" + assertions);
@@ -122,16 +122,12 @@ public final class DeathKnightGameplayRegressionSuite {
                 "empty marks cannot be consumed again");
     }
 
-    private static void plagueBurstsAndMutatesTheGhoul() {
+    private static void plagueBurstIsTransientOnly() {
         final DeathKnightCombatState state = new DeathKnightCombatState();
         check(state.addPlague(99, 6) == 6, "Dögvész is bounded");
         check(state.burstPlague() == 6 && state.plague() == 0,
                 "plague burst spends the stack exactly once");
         check(state.burstPlague() == 0, "empty plague burst has no hidden second payout");
-        check(state.advanceMutation(3) == 1, "ghoul mutation advances one stage");
-        state.advanceMutation(3);
-        check(state.advanceMutation(3) == 3, "mutation reaches its bounded final stage");
-        check(state.advanceMutation(3) == 3, "mutation cannot exceed its maximum");
     }
 
     private static void lifecycleCleanupRebuildsDeterministically() {
@@ -142,7 +138,6 @@ public final class DeathKnightGameplayRegressionSuite {
         state.rememberDamage(7.0D, t0);
         state.addFrostMarks(3, 5);
         state.addPlague(4, 6);
-        state.advanceMutation(3);
         state.clearSpecializationState();
         check(state.runes(DeathKnightCombatState.Rune.HALAL, 2, t0, 6_000L) == 0,
                 "spec/loadout switch clears Halál rune");
@@ -150,8 +145,8 @@ public final class DeathKnightGameplayRegressionSuite {
                 "spec/loadout switch clears blood memory");
         check(state.frostMarks() == 0,
                 "spec/loadout switch clears Fagyjelek");
-        check(state.plague() == 0 && state.mutation() == 0,
-                "spec/loadout switch clears Unholy transient state");
+        check(state.plague() == 0,
+                "spec/loadout switch clears only Unholy transient plague state");
         state.prime(2, t0);
         check(state.runes(DeathKnightCombatState.Rune.VER, 2, t0, 6_000L) == 2,
                 "reconnect/rebuild starts a deterministic natural rune wheel");
@@ -201,6 +196,9 @@ public final class DeathKnightGameplayRegressionSuite {
                 "Death Knight runtime has no repeating scans");
         check(!service.contains("SoulforgeManager") && !service.contains("SummonMinionsSpell"),
                 "Unholy runtime does not become a second Soulforge/minion authority");
+        check(service.contains("advanceUnholyGhoulMutationV2")
+                        && service.contains("unholyGhoulMutationStage"),
+                "Unholy mutation reads and writes the durable ghoul profile through PetManager");
 
         final String adapter = normalized(
                 "src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java");
@@ -208,6 +206,18 @@ public final class DeathKnightGameplayRegressionSuite {
                 "loadout switch clears spec-local DK state");
         check(adapter.contains("registerTransientOwner(deathKnight);"),
                 "seal/reset reconciliation owns DK full cleanup");
+        check(adapter.contains("deathKnight.setPetManager(pets);"),
+                "the Death Knight runtime receives the shared durable companion gateway");
+
+        final String pets = normalized(
+                "src/main/java/hu/taliann/icesmp/managers/PetManager.java");
+        check(pets.contains("GHOUL_MUTATION_STAGE")
+                        && pets.contains("CompanionMutationRequest.Kind.STATE")
+                        && pets.contains("mutation-bonus-levels-per-stage"),
+                "ghoul mutation is durable and changes the live companion's combat scaling");
+        check(!normalized("src/main/java/hu/taliann/icesmp/deathknight/DeathKnightCombatState.java")
+                        .contains("int mutation"),
+                "no transient mutation mirror can drift from Profile v2");
 
         final String catalog = normalized(
                 "src/main/java/hu/taliann/icesmp/classspec/domain/ClassSpecCatalog.java");

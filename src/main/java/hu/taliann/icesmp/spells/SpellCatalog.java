@@ -5,16 +5,11 @@ import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.utils.MessageManager;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.Panda;
-import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.Husk;
-import org.bukkit.entity.Zombie;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffectType;
 
@@ -108,27 +103,14 @@ public final class SpellCatalog {
                                             final JavaPlugin plugin, final MinionManager minionManager,
                                             final ConfigManager configManager, final TalentManager talentManager) {
         // --- NEKROMANTA idézések ---
-        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
-                "raise_horde", "Holtak Hada", 240, SpellCostType.XP, 90,
-                Zombie.class, 4, 45,
-                (mob, owner) -> {
-                    final Zombie zombie = (Zombie) mob;
-                    zombie.setShouldBurnInDay(false);
-                    zombie.setAdult();
-                },
+        registry.register(new DurableCompanionCallSpell(mm,
+                "raise_horde", "Feltámasztott Őr", 240, SpellCostType.XP, 90,
                 Particle.SOUL, Sound.ENTITY_ZOMBIE_AMBIENT, 0.7F,
-                "<dark_gray>A föld megnyílik: a holtak hada engedelmeskedik a hívásodnak.</dark_gray>"));
-        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
-                "bone_archers", "Csontíjászok", 240, SpellCostType.XP, 100,
-                Skeleton.class, 2, 45,
-                (mob, owner) -> {
-                    final AbstractSkeleton skeleton = (AbstractSkeleton) mob;
-                    skeleton.setShouldBurnInDay(false);
-                    skeleton.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
-                    skeleton.getEquipment().setItemInMainHandDropChance(0.0F);
-                },
+                "<dark_gray>A feltámasztási rítus megkezdődött.</dark_gray>"));
+        registry.register(new DurableCompanionCallSpell(mm,
+                "bone_archers", "Csontíjász", 240, SpellCostType.XP, 100,
                 Particle.SOUL_FIRE_FLAME, Sound.ENTITY_SKELETON_AMBIENT, 0.7F,
-                "<dark_gray>Csontíjászok emelkednek ki a sírjukból, hogy szolgáljanak.</dark_gray>"));
+                "<dark_gray>A csontíjász feltámasztási rítusa megkezdődött.</dark_gray>"));
 
         // --- SZENTSÉGTELEN idézések ---
         registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
@@ -153,24 +135,18 @@ public final class SpellCatalog {
                 "<dark_green>A föld felmorajlik: a holtak serege felsorakozik a Szentségtelen mögé.</dark_green>"));
 
         // --- DEMONOLÓGUS idézések ---
-        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
-                "imp_swarm", "Imp-raj", 180, SpellCostType.XP, 60,
-                org.bukkit.entity.Vex.class, 3, 30,
-                (mob, owner) -> { },
+        registry.register(new DurableCompanionCallSpell(mm,
+                "imp_swarm", "Imp-idézés", 180, SpellCostType.XP, 60,
                 Particle.SMOKE, Sound.ENTITY_VEX_AMBIENT, 0.6F,
-                "<dark_purple>Sikoltva rajzanak elő a kis démonok — a Légió előőrse.</dark_purple>"));
-        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "<dark_purple>Az imp megkötési rítusa megkezdődött.</dark_purple>"));
+        registry.register(new DurableCompanionCallSpell(mm,
                 "magma_servant", "Magma-szolga", 200, SpellCostType.XP, 70,
-                org.bukkit.entity.MagmaCube.class, 1, 45,
-                (mob, owner) -> ((org.bukkit.entity.MagmaCube) mob).setSize(3),
                 Particle.LAVA, Sound.ENTITY_MAGMA_CUBE_SQUISH, 0.5F,
-                "<dark_purple>A föld megreped, és izzó szolga emelkedik ki belőle.</dark_purple>"));
-        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
-                "legion", "A Légió", 300, SpellCostType.XP, 110,
-                org.bukkit.entity.Vex.class, 5, 40,
-                (mob, owner) -> { },
+                "<dark_purple>A Magma-szolga megkötési rítusa megkezdődött.</dark_purple>"));
+        registry.register(new DurableCompanionCallSpell(mm,
+                "legion", "Légiókapu", 300, SpellCostType.XP, 110,
                 Particle.SMOKE, Sound.ENTITY_WITHER_SPAWN, 0.35F,
-                "<dark_purple>A fátyol felszakad: a Légió átözönlik, és a hívó szavára vár.</dark_purple>"));
+                "<dark_purple>A Légiókapu megnyílt; az infernal paktuma formálódik.</dark_purple>"));
 
         // --- VADMESTER idézések ---
         registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,

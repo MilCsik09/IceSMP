@@ -105,6 +105,9 @@ public final class DruidGameplayRegressionSuite {
         state.armRoots(t0, 6_000L);
         check(state.isRootsArmed(t0 + 5_999L), "the root net holds for its window");
         check(!state.isRootsArmed(t0 + 6_001L), "the root net expires — no permanent aura");
+        state.armThorns(t0, 6_000L);
+        check(state.consumeThorns(t0 + 1_000L), "a cracked thorny bark retaliates once");
+        check(!state.consumeThorns(t0 + 1_001L), "thorn retaliation cannot double-fire");
     }
 
     private static void restorationSeedsMustRipen() {
@@ -143,6 +146,7 @@ public final class DruidGameplayRegressionSuite {
         state.armEclipse(t0, 6_000L);
         state.addBarkLayer(3);
         state.armRoots(t0, 6_000L);
+        state.armThorns(t0, 6_000L);
         state.plantSeed(t0, 3, 20_000L);
         state.clearSpecializationState();
         check(state.harmony(t0, 6_000L, 4.0D) == 0, "spec switch clears the harmony");
@@ -153,6 +157,7 @@ public final class DruidGameplayRegressionSuite {
                 "spec switch clears the balance and the Eclipse");
         check(state.barkLayers() == 0 && !state.isRootsArmed(t0),
                 "spec switch clears the bark and the roots");
+        check(!state.consumeThorns(t0), "spec switch clears armed thorns");
         check(state.seedCount(t0, 20_000L) == 0, "spec switch clears the seeds");
     }
 
@@ -175,6 +180,15 @@ public final class DruidGameplayRegressionSuite {
                 "Védelmező is self-only — no Warrior-Guardian-style target-bound index");
         check(service.contains("attacker.getScheduler().run(plugin,"),
                 "the Gyökérháló slow hops to the attacker's own region thread");
+        for (final String doctrine : new String[]{"eles_karom", "gyors_marcangolas",
+                "napkelte", "holdkelte", "csillagszem", "tuskes_kereg",
+                "gyokerek_ura", "melyebb_gyoker", "orok_tavasz"}) {
+            check(service.contains('"' + doctrine + '"'),
+                    "the doctrine has a concrete gameplay hook: " + doctrine);
+        }
+        check(service.contains("\"celestial_alignment\".equals(spellId)")
+                        && service.contains("state.armEclipse"),
+                "Égi Együttállás is a real Eclipse capstone, not a generic spell only");
 
         final String gameplayConfig = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));

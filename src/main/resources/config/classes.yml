@@ -1249,18 +1249,19 @@ soulforge:
 # ===== HP-rendszer (kaszt-HP-profilok + kijelzés + harcon kívüli regen) =====
 # Max HP = 20 (vanília) + (base − 20) + kaszt-szint × per-level (+ talentek).
 # 50. szinten: tank ~50, bruiser ~42-43, mozgékony ~37-38, caster ~32-33.
-# A szívsor a display.normalize-zal mindig hearts db szív marad (a tényleges
-# max nő, a kijelzés nem duzzad). A direkt gyógyítások (heal-self) a maxHP/20
+# A packos survival HUD current/max HP-t és százalékot ír, ezért nincs szükség
+# tíz szívre normalizálásra. A direkt gyógyítások (heal-self) a maxHP/20
 # aránnyal skálázódnak (scale-heals, plafon: scale-heals-cap) — a heal nem
 # értéktelenedik el a nagyobb tavak mellett.
 health:
-  # IDEIGLENESEN KIKAPCSOLVA (tulaj-döntés, 2026-07-22): a kaszt-HP-profilok, a
-  # szívsor-normalizálás és a harcon kívüli regen alapból nem él — minden vanília.
-  # Visszakapcsolás: enabled: true (+ scale-heals: true) — restart nélkül,
+  # A kaszt-HP-profilok és a harcon kívüli regen alapból továbbra sem élnek.
+  # Visszakapcsolás: enabled: true — a HUD már a valódi skálázott HP-t mutatja,
+  # a heal-skálázás elő van készítve. Restart nélkül,
   # /icesmp reload vagy a config-GUI HP-kategóriája is átbillenti.
   enabled: false
   display:
-    normalize: true
+    # Csak resource-pack nélküli, régi megjelenési fallbackhez állítsd true-ra.
+    normalize: false
     hearts: 10
   # Harcon kívüli regen: az utolsó sebzés-kontaktus (adott VAGY kapott) után
   # delay-seconds-szel indul; interval-ticks-enként percent-per-tick %-ot tölt;
@@ -1271,7 +1272,7 @@ health:
     interval-ticks: 40
     percent-per-tick: 5.0
     min-food: 6
-  scale-heals: false
+  scale-heals: true
   # Kaszt-sebzés-profilok (a WoW-érzés másik fele, ugyanezen fő-kapcsoló alatt):
   # fizikai sebzés-bónusz = kaszt-szint × per-level (kézre attribútumként, nyílra/
   # szigonyra a találatkor adódik hozzá). 50. szinten: fizikai kasztok +5, casterek

@@ -22,11 +22,13 @@ public final class EventSpawnSafetyRegressionSuite {
         verifiesBoundedCandidateSearch();
         verifiesCircularWaterBuffer();
         verifiesFixedAnchorChunkGeometry();
+        verifiesSingleRegionProbeGeometry();
         verifiesPackagedSafetyProfiles();
         verifiesRuntimeWiring();
         verifiesMeteorRecoveryWiring();
         verifiesConfigMenuExtension();
         verifiesKnownEntityEventPaths();
+        verifiesQueuedAdminFeedback();
         System.out.println("Event spawn safety regression suite passed.");
     }
 
@@ -120,6 +122,15 @@ public final class EventSpawnSafetyRegressionSuite {
         }
     }
 
+    private static void verifiesSingleRegionProbeGeometry() {
+        for (final int block : List.of(-33, -17, -16, -1, 0, 15, 16, 31, 32, 1_000_003)) {
+            final int center = (int) EventSpawnSafetyPolicy.chunkCenterCoordinate(block);
+            final int expectedChunk = block >> 4;
+            check((center - 7) >> 4 == expectedChunk && (center + 7) >> 4 == expectedChunk,
+                    "seven-block centered probe escaped one Folia chunk at " + block);
+        }
+    }
+
     private static void verifiesPackagedSafetyProfiles() {
         final YamlConfiguration config = YamlConfiguration.loadConfiguration(Path.of(
                 "src/main/resources/config/event-spawn-safety.yml").toFile());
@@ -142,7 +153,8 @@ public final class EventSpawnSafetyRegressionSuite {
 
         check(config.getBoolean("world-events.water-safety.enabled")
                         && config.getBoolean("world-events.water-safety.enforce-all-events")
-                        && config.getInt("world-events.water-safety.buffer-blocks") >= 1,
+                        && config.getInt("world-events.water-safety.buffer-blocks") >= 1
+                        && config.getInt("world-events.water-safety.buffer-blocks") <= 7,
                 "global water and shoreline protection regressed");
 
         check(config.getDouble("world-events.profiles.stranger.search-min-radius-blocks") >= 64.0D
@@ -152,13 +164,21 @@ public final class EventSpawnSafetyRegressionSuite {
                 "Stranger must use its intentional local hidden profile");
         check(!config.getBoolean("world-events.profiles.player-caravan.arrival.enabled", true),
                 "paid player caravan must not be held in a cosmetic arrival delay");
-        for (final String internal : List.of("escort-route", "escort-wave")) {
+        for (final String internal : List.of("escort-route", "escort-wave", "invasion-wave")) {
             check(config.getDouble("world-events.profiles." + internal
                             + ".min-horizontal-distance-blocks", -1.0D) == 0.0D,
                     internal + " must remain usable after players reach the event");
             check(!config.getBoolean("world-events.profiles." + internal
                             + ".use-dynamic-view-distance", true),
                     internal + " must not inherit the global distance gate");
+            check(config.getInt("world-events.profiles." + internal
+                            + ".footprint-radius-blocks", -1) == 0,
+                    internal + " must validate only its owning spawn column");
+        }
+        for (final String large : List.of("meteor", "world-boss", "invasion")) {
+            check(config.getInt("world-events.profiles." + large
+                            + ".footprint-radius-blocks", 99) <= 7,
+                    large + " footprint may cross the scheduled Folia region");
         }
         check(!config.isSet("world-events.placement.generate-unloaded-chunks"),
                 "event placement must never expose world generation as an option");
@@ -182,6 +202,9 @@ public final class EventSpawnSafetyRegressionSuite {
                         && guard.contains("timeoutTicks")
                         && guard.contains("GlobalRegionScheduler().runDelayed")
                         && guard.contains("max-chunks-per-search")
+                        && guard.contains("MAX_SINGLE_REGION_PROBE_RADIUS = 7")
+                        && guard.contains("centeredCandidate(origin, offset)")
+                        && guard.contains("eventFamily(entry.getKey()).equals(eventFamily(key))")
                         && guard.contains("EventSpawnDebugListener")
                         && guard.contains("EventSpawnConfigMenuExtension.install"),
                 "central guard lost one or more immersive placement guarantees");
@@ -258,8 +281,9 @@ public final class EventSpawnSafetyRegressionSuite {
         final String escort = read("src/main/java/hu/taliann/icesmp/managers/EscortManager.java");
         check(escort.contains("findSafeAtOrNear(\"escort\"")
                         && escort.contains("findSafeNear(\"escort\"")
-                        && escort.contains("findSafeRoute(\"escort\"")
+                        && escort.contains("findSafeRoute(\"escort-route\"")
                         && escort.contains("resolveSafeStandingLocation(\n                    \"escort-wave\"")
+                        && escort.contains("resolveSafeStandingLocation(\n                \"escort-route\"")
                         && escort.contains("isBlocked(\"escort-route\"")
                         && escort.contains("force-use-player-anchor\", false")
                         && !escort.contains("spawnConvoy(base)"),
@@ -292,9 +316,25 @@ public final class EventSpawnSafetyRegressionSuite {
 
         assertContains("WildHuntManager.java", "findSafeNear(\"wild-hunt\"");
         assertContains("MeteorEventManager.java", "findSafeNear(\"meteor\"");
-        assertContains("InvasionManager.java", "findSafeNear(\"invasion\"");
+        final String invasion = read(
+                "src/main/java/hu/taliann/icesmp/managers/InvasionManager.java");
+        check(invasion.contains("findSafeNear(\"invasion\"")
+                        && invasion.contains("\"invasion-wave\""),
+                "invasion center or per-mob wave guard regressed");
         assertContains("WorldBossManager.java", "findSafeNear(\"world-boss\"");
         assertContains("DarkUndeadAmbienceManager.java", "isBlocked(\"dark-undead\"");
+    }
+
+    private static void verifiesQueuedAdminFeedback() throws Exception {
+        final String command = read(
+                "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java");
+        for (final String event : List.of("worldboss", "invasion", "escort", "meteor")) {
+            check(command.contains("events-" + event + "-searching"),
+                    event + " admin command still reports an async search as a completed spawn");
+        }
+        check(!command.contains("messageManager.get(\"events-worldboss-spawned\"")
+                        && !command.contains("messageManager.get(\"events-meteor-spawned\""),
+                "admin feedback still claims the world boss or meteor already spawned");
     }
 
     private static void assertContains(final String file, final String marker) throws Exception {

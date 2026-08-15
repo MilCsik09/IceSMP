@@ -88,7 +88,7 @@ public final class EventSpawnConfigMenuExtension {
                 ConfigMenuGUI.Entry.toggle(
                         "world-events.water-safety.enforce-all-events", "Vízvédelem minden eventre"),
                 ConfigMenuGUI.Entry.integer(
-                        "world-events.water-safety.buffer-blocks", "Víztől mért puffer (blokk)", 1, 0, 32),
+                        "world-events.water-safety.buffer-blocks", "Víztől mért puffer (blokk)", 1, 0, 7),
                 ConfigMenuGUI.Entry.toggle(
                         "world-events.placement.dynamic-view-distance-enabled", "Dinamikus látótáv-védelem"),
                 ConfigMenuGUI.Entry.number(

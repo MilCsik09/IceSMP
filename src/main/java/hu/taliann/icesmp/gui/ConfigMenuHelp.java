@@ -33,7 +33,7 @@ public final class ConfigMenuHelp {
 
         return switch (key) {
             case "health.enabled" -> "Bekapcsolja a kasztok eltérő maximális életerő-profilját és annak karbantartását. Kikapcsolva a játékosok vanilla életerőn maradnak.";
-            case "health.display.normalize" -> "A kliens szívsorát 10 látható szívre normalizálja, miközben a valódi kaszt-HP aránya megmarad. Csak a megjelenítést skálázza.";
+            case "health.display.normalize" -> "Csak resource-pack nélküli fallbackhez normalizálja a vanilla szívsor hosszát. A packos survival HUD mindig a valódi current/max HP-t és százalékot mutatja.";
             case "health.ooc-regen.enabled" -> "Engedélyezi a plugin saját, harcon kívüli életerő-regenerációját a combat tag lejárása után.";
             case "health.ooc-regen.delay-seconds" -> "Sebzés vagy harci állapot után ennyi másodpercet vár a saját HP-regeneráció megkezdéséig.";
             case "health.ooc-regen.percent-per-tick" -> "A saját regeneráció egy ciklusban a maximális HP ekkora százalékát tölti vissza. Nagy érték nagyon gyors gyógyulást okoz.";

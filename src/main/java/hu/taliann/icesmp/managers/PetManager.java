@@ -14,11 +14,13 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.Block;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -38,14 +40,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
- * Companion pets for the Beast Master and Necromancer. The pet can be ANY mob,
- * obtained with a spec-specific capture item:
- * the Beast Master tames any non-hostile animal, the Necromancer binds any hostile
- * mob / undead. Type, level, XP, name and roster are durable Profile v2 state and
- * re-apply on summon. Tameable pets follow via vanilla; the rest are kept near the
- * owner by a teleport-follow tick. Levels come from the owner's nearby kills.
+ * Durable companions for every pet-owning specialization. Type, level, XP, name,
+ * stance, equipment and roster live in Profile v2; live entity identities and
+ * combat controls are rebuildable runtime projections. Owner and pet kills use
+ * the same progression reward gate.
  */
 public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
 
@@ -66,6 +67,10 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     private final Map<UUID, Long> attackReady = new ConcurrentHashMap<>();
     /** Profile v2 runtime-only owner -> live pet identity; never written to PDC/profile. */
     private final Map<UUID, UUID> activePetEntities = new ConcurrentHashMap<>();
+    /** Runtime-only owner -> logical companion identity represented by the live entity. */
+    private final Map<UUID, UUID> activePetCompanionIds = new ConcurrentHashMap<>();
+    /** Logical companion -> local fail-closed cooldown while the death mutation is committing. */
+    private final Map<UUID, Long> pendingDeathCooldowns = new ConcurrentHashMap<>();
     private volatile ClassSpecProfileGateway profileGateway;
     private volatile java.util.function.Consumer<UUID> petDeathHook = ignored -> { };
 
@@ -140,6 +145,37 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         return activeCompanion(player).map(CompanionProfile::name).filter(name -> !name.isBlank()).orElse("Társ");
     }
 
+    /** Stable roster in deterministic order for GUI and command selection. */
+    public List<CompanionProfile> companionRoster(final Player player) {
+        return currentLoadout(player).stream()
+                .flatMap(loadout -> loadout.companionRoster().values().stream())
+                .sorted(java.util.Comparator.comparing(companion -> companion.companionId().toString()))
+                .toList();
+    }
+
+    public Optional<UUID> selectedCompanionId(final Player player) {
+        return activeCompanion(player).map(CompanionProfile::companionId);
+    }
+
+    /** One-based stable index or full logical UUID. */
+    public Optional<CompanionProfile> resolveCompanion(final Player player, final String selector) {
+        if (selector == null || selector.isBlank()) {
+            return Optional.empty();
+        }
+        final List<CompanionProfile> roster = companionRoster(player);
+        try {
+            final int index = Integer.parseInt(selector.trim());
+            return index >= 1 && index <= roster.size() ? Optional.of(roster.get(index - 1)) : Optional.empty();
+        } catch (final NumberFormatException ignored) {
+            try {
+                final UUID id = UUID.fromString(selector.trim());
+                return roster.stream().filter(companion -> companion.companionId().equals(id)).findFirst();
+            } catch (final IllegalArgumentException invalidUuid) {
+                return Optional.empty();
+            }
+        }
+    }
+
     /** Whether the player may capture the target with their spec's capture item. */
     public boolean isValidTarget(final Player player, final Entity target) {
         if (!(target instanceof Mob) || target instanceof Player || minionManager.isMinion(target)) {
@@ -187,6 +223,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     private static final String DEMON_ROSTER = "demonologist.roster";
     private static final String NECRO_COURT = "necromancer.court";
+    private static final String UNHOLY_GHOUL = "unholy.ghoul";
+    private static final String GHOUL_MUTATION_STAGE = "ghoul_mutation_stage";
 
     public record PetMutationResult(boolean committed, String error) {
         public PetMutationResult { error = error == null ? "" : error; }
@@ -200,15 +238,80 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         player.getScheduler().run(plugin, task -> action.run(), null);
     }
 
+    public boolean hasUnholyGhoul(final Player player) {
+        return activeCompanion(player).filter(companion ->
+                UNHOLY_GHOUL.equals(companion.namespace())).isPresent();
+    }
+
+    public int unholyGhoulMutationStage(final Player player) {
+        return activeCompanion(player)
+                .filter(companion -> UNHOLY_GHOUL.equals(companion.namespace()))
+                .map(companion -> parseNonNegativeInt(
+                        companion.persistentState().get(GHOUL_MUTATION_STAGE)))
+                .orElse(0);
+    }
+
+    public CompletionStage<PetMutationResult> advanceUnholyGhoulMutationV2(
+            final Player player, final int maximum, final String operationId) {
+        if (player == null || !isUnholy(player)) {
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-wrong-spec"));
+        }
+        final ActiveCompanionRef active = activeCompanionRef(player)
+                .filter(ref -> UNHOLY_GHOUL.equals(ref.companion().namespace()))
+                .orElse(null);
+        if (active == null) {
+            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-companion-absent"));
+        }
+        final int boundedMaximum = Math.max(1, maximum);
+        final int current = Math.min(boundedMaximum, parseNonNegativeInt(
+                active.companion().persistentState().get(GHOUL_MUTATION_STAGE)));
+        if (current >= boundedMaximum) {
+            return CompletableFuture.completedFuture(PetMutationResult.applied());
+        }
+        final Map<String, String> state = new java.util.LinkedHashMap<>(
+                active.companion().persistentState());
+        state.put(GHOUL_MUTATION_STAGE, Integer.toString(current + 1));
+        final UUID sessionToken = currentSessionToken(player).orElse(null);
+        if (sessionToken == null) {
+            return CompletableFuture.completedFuture(PetMutationResult.rejected(
+                    "pet-session-unavailable"));
+        }
+        return mutateCompanion(player, active,
+                ClassSpecProfileGateway.CompanionMutationRequest.Kind.STATE,
+                "", 0, 0L, 0L, List.of(), state, operationId)
+                .thenCompose(result -> {
+                    if (!result.durableMutationApplied()) {
+                        return CompletableFuture.completedFuture(PetMutationResult.rejected(
+                                result.detail().isBlank() ? "pet-persistence-failed" : result.detail()));
+                    }
+                    final CompletableFuture<PetMutationResult> completion = new CompletableFuture<>();
+                    runOnCurrentPlayer(player, sessionToken, () -> {
+                        if (active.companion().companionId().equals(
+                                selectedCompanionId(player).orElse(null))) {
+                            final PetRuntimeSnapshot snapshot = runtimeSnapshot(player);
+                            scheduleActivePet(player, pet -> applyBuffs(
+                                    pet, snapshot.buffLevel(), false));
+                        }
+                        completion.complete(PetMutationResult.applied());
+                    }, () -> completion.complete(PetMutationResult.appliedWithRuntimeFailure(
+                            "pet-stale-session")));
+                    return completion;
+                });
+    }
+
     private Optional<UUID> currentSessionToken(final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway;
         return gateway == null ? Optional.empty() : gateway.currentSessionToken(player.getUniqueId());
     }
 
     private boolean isCurrentSession(final Player player, final UUID sessionToken) {
+        return player != null && isCurrentSession(player.getUniqueId(), sessionToken);
+    }
+
+    private boolean isCurrentSession(final UUID playerId, final UUID sessionToken) {
         final ClassSpecProfileGateway gateway = profileGateway;
         return gateway != null && sessionToken != null
-                && gateway.isCurrentSession(player.getUniqueId(), sessionToken);
+                && gateway.isCurrentSession(playerId, sessionToken);
     }
 
     private void runOnCurrentPlayer(final Player player, final UUID sessionToken,
@@ -248,8 +351,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final String operationId = "pet-capture:" + logicalId;
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
                         ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0, 0L, 0L, List.of(), Map.of(), stableCapacity, operationId))
-                .thenCompose(result -> afterDurablePetMutation(player, sessionToken, result,
-                        () -> { removeActive(player); adopt(mob, player); }));
+                .thenCompose(result -> afterDurableCapture(player, sessionToken, result, logicalId, mob));
     }
 
     public CompletionStage<PetMutationResult> ritualSummonV2(final Player player) {
@@ -273,10 +375,12 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             form=demonForm(level); formName=demonFormName(form);
         }
         // A paktum plafonja minden úton tart: a rituálé sem kerülheti meg a durable névsor kapacitását.
-        final int rosterCapacity=demonologist
-                ?Math.max(1,configManager.getInt("classes.warlock.demonologist.roster-capacity",3)):0;
-        if(rosterCapacity>0&&!ClassSpecCatalog.admitsCompanion(currentLoadout(player).orElse(null),namespace,rosterCapacity))
-            return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-roster-full"));
+        final int rosterCapacity = unholy ? 1
+                : Math.max(1, configManager.getInt("classes.warlock.demonologist.roster-capacity", 3));
+        if (!ClassSpecCatalog.admitsCompanion(currentLoadout(player).orElse(null), namespace, rosterCapacity)) {
+            return CompletableFuture.completedFuture(PetMutationResult.rejected(
+                    unholy ? "pet-companion-exists" : "pet-roster-full"));
+        }
         final UUID sessionToken=currentSessionToken(player).orElse(null);
         if(sessionToken==null)return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
         final UUID logicalId=UUID.randomUUID();
@@ -285,7 +389,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final String operationId="pet-ritual:"+logicalId;
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
                         ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion, "", 0,0L,0L,List.of(),Map.of(),rosterCapacity,operationId))
-                .thenCompose(result -> afterDurablePetMutation(player,sessionToken,result,()->spawnAndAdopt(player,form)));
+                .thenCompose(result -> afterDurableSpawnMutation(
+                        player, sessionToken, result, logicalId, form));
     }
 
     /**
@@ -314,8 +419,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                         ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion,
                         "", 0, 0L, 0L, List.of(), Map.of(), Math.max(1, capacity),
                         "warlock-bind:" + logicalId))
-                .thenCompose(result -> afterDurablePetMutation(player, sessionToken, result,
-                        () -> { removeActive(player); spawnAndAdopt(player, form); }));
+                .thenCompose(result -> afterDurableSpawnMutation(
+                        player, sessionToken, result, logicalId, form));
     }
 
     /**
@@ -353,8 +458,10 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             if (count <= 0) return CompletableFuture.completedFuture(0);
             final CompletableFuture<Integer> completion = new CompletableFuture<>();
             runOnCurrentPlayer(player, sessionToken, () -> {
-                activeOwners.remove(player.getUniqueId());
-                removeActive(player);
+                final UUID liveCompanionId = activePetCompanionIds.get(player.getUniqueId());
+                if (liveCompanionId != null && companionById(player, liveCompanionId).isEmpty()) {
+                    removeActive(player, liveCompanionId);
+                }
                 completion.complete(count);
             }, () -> completion.complete(count));
             return completion;
@@ -404,8 +511,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                         ClassSpecProfileGateway.CompanionMutationRequest.Kind.ADD, logicalId, companion,
                         "", 0, 0L, 0L, List.of(), Map.of(), Math.max(1, capacity),
                         "necromancer-raise:" + logicalId))
-                .thenCompose(result -> afterDurablePetMutation(player, sessionToken, result,
-                        () -> { removeActive(player); spawnAndAdopt(player, form); }));
+                .thenCompose(result -> afterDurableSpawnMutation(
+                        player, sessionToken, result, logicalId, form));
     }
 
     private EntityType demonForm(final int level) {
@@ -421,27 +528,72 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     public CompletionStage<String> summonV2(final Player player) {
         if (!canOwnPet(player)) return CompletableFuture.completedFuture("pet-not-allowed");
-        if (isUnholy(player) || isWarlock(player)) return CompletableFuture.completedFuture("pet-ritual-required");
-        final Optional<LoadoutSlot> slot=activeSlot(player);
-        if (slot.isEmpty()) return CompletableFuture.completedFuture("pet-none-captured");
-        final ClassLoadout loadout=currentLoadout(player).orElse(null);
-        if (loadout==null||loadout.companionRoster().isEmpty()) return CompletableFuture.completedFuture("pet-none-captured");
-        final CompanionProfile selected=activeCompanion(player).orElseGet(()->loadout.companionRoster().values().stream()
-                .sorted(java.util.Comparator.comparing(c->c.companionId().toString())).findFirst().orElseThrow());
-        if (selected.resummonAtEpochMillis()>System.currentTimeMillis()) return CompletableFuture.completedFuture("pet-respawn-cooldown");
+        final CompanionProfile selected = activeCompanion(player)
+                .orElseGet(() -> companionRoster(player).stream().findFirst().orElse(null));
+        if (selected == null) {
+            return CompletableFuture.completedFuture(isUnholy(player) || isWarlock(player)
+                    ? "pet-ritual-required" : "pet-none-captured");
+        }
+        return selectV2(player, selected.companionId());
+    }
+
+    /** Durable stable selection followed by a safe runtime switch to that companion. */
+    public CompletionStage<String> selectV2(final Player player, final UUID companionId) {
+        if (!canOwnPet(player)) return CompletableFuture.completedFuture("pet-not-allowed");
+        final Optional<LoadoutSlot> slot = activeSlot(player);
+        final CompanionProfile selected = companionRoster(player).stream()
+                .filter(companion -> companion.companionId().equals(companionId)).findFirst().orElse(null);
+        if (slot.isEmpty() || selected == null) return CompletableFuture.completedFuture("pet-selection-invalid");
+        if (resummonAt(selected) > System.currentTimeMillis()) {
+            return CompletableFuture.completedFuture("pet-respawn-cooldown");
+        }
+        if (selected.companionId().equals(selectedCompanionId(player).orElse(null)) && hasActivePet(player)) {
+            return CompletableFuture.completedFuture("pet-already-summoned");
+        }
+        final UUID sessionToken = currentSessionToken(player).orElse(null);
+        if (sessionToken == null) return CompletableFuture.completedFuture("pet-session-unavailable");
         final CompletionStage<ProfileMutationResult<hu.taliann.icesmp.classspec.application.ProfileDiagnostic>> durable;
-        if (activeCompanion(player).isPresent()) durable=CompletableFuture.completedFuture(ProfileMutationResult.noChange(gateway().diagnostic(player.getUniqueId()),"already active"));
-        else durable=gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
-                ClassSpecProfileGateway.CompanionMutationRequest.Kind.SET_ACTIVE,selected.companionId(),null,"",0,0L,0L,List.of(),Map.of(),"pet-summon:"+UUID.randomUUID()));
-        final UUID sessionToken=currentSessionToken(player).orElse(null);
-        if(sessionToken==null)return CompletableFuture.completedFuture("pet-session-unavailable");
-        return durable.thenCompose(result->{
-            if (!(result.committed()||result.status()==ProfileMutationResult.Status.NO_CHANGE)) return CompletableFuture.completedFuture("pet-persistence-failed");
-            final CompletableFuture<String> completion=new CompletableFuture<>();
-            runOnCurrentPlayer(player,sessionToken,()->{
-                try { final EntityType type=entityType(selected.typeId()); if(type==null){completion.complete("pet-none-captured");return;} removeActive(player); spawnAndAdopt(player,type); completion.complete(null);}
-                catch(Throwable failure){completion.complete("pet-runtime-retry");}
-            },()->completion.complete("pet-stale-session"));
+        if (selected.companionId().equals(selectedCompanionId(player).orElse(null))) {
+            durable = CompletableFuture.completedFuture(ProfileMutationResult.noChange(
+                    gateway().diagnostic(player.getUniqueId()), "companion already selected"));
+        } else {
+            durable = gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
+                    ClassSpecProfileGateway.CompanionMutationRequest.Kind.SET_ACTIVE, selected.companionId(), null,
+                    "", 0, 0L, 0L, List.of(), Map.of(), "pet-select:" + UUID.randomUUID()));
+        }
+        return durable.thenCompose(result -> {
+            if (!result.runtimeGenerationUsable()) {
+                return CompletableFuture.completedFuture(switch (result.status()) {
+                    case STALE_SESSION -> "pet-stale-session";
+                    case RUNTIME_EFFECT_FAILED -> "pet-runtime-retry";
+                    default -> "pet-persistence-failed";
+                });
+            }
+            final CompletableFuture<String> completion = new CompletableFuture<>();
+            runOnCurrentPlayer(player, sessionToken, () -> {
+                if (!selected.companionId().equals(selectedCompanionId(player).orElse(null))) {
+                    completion.complete("pet-selection-superseded");
+                    return;
+                }
+                try {
+                    final EntityType type = entityType(selected.typeId());
+                    if (type == null) {
+                        completion.complete("pet-selection-invalid");
+                        return;
+                    }
+                    beginPetActivation(player, selected.companionId());
+                    spawnAndAdopt(player, type);
+                    completion.complete(null);
+                } catch (final PetSpawnException failure) {
+                    retirePetActivation(player.getUniqueId(), selected.companionId());
+                    completion.complete(failure.messageKey());
+                } catch (final Throwable failure) {
+                    retirePetActivation(player.getUniqueId(), selected.companionId());
+                    plugin.getLogger().warning("Pet runtime switch failed for " + player.getUniqueId()
+                            + ": " + failure.getMessage());
+                    completion.complete("pet-runtime-retry");
+                }
+            }, () -> completion.complete("pet-stale-session"));
             return completion;
         });
     }
@@ -449,57 +601,86 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     public CompletionStage<Boolean> dismissV2(final Player player) {
         final Optional<LoadoutSlot> slot=activeSlot(player); final Optional<CompanionProfile> active=activeCompanion(player);
         if(slot.isEmpty()||active.isEmpty()) return CompletableFuture.completedFuture(false);
+        final UUID companionId = active.orElseThrow().companionId();
         final UUID sessionToken=currentSessionToken(player).orElse(null);
         if(sessionToken==null)return CompletableFuture.completedFuture(false);
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
-                ClassSpecProfileGateway.CompanionMutationRequest.Kind.DISMISS,active.orElseThrow().companionId(),null,"",0,0L,0L,List.of(),Map.of(),"pet-dismiss:"+UUID.randomUUID()))
+                ClassSpecProfileGateway.CompanionMutationRequest.Kind.DISMISS,companionId,null,"",0,0L,0L,List.of(),Map.of(),"pet-dismiss:"+UUID.randomUUID()))
                 .thenCompose(result->{
-                    if(!result.committed())return CompletableFuture.completedFuture(false);
+                    if(!result.durableMutationApplied())return CompletableFuture.completedFuture(false);
                     final CompletableFuture<Boolean> completion=new CompletableFuture<>();
-                    runOnCurrentPlayer(player,sessionToken,()->{activeOwners.remove(player.getUniqueId());removeActive(player);completion.complete(true);},()->completion.complete(false));
+                    runOnCurrentPlayer(player,sessionToken,()->{
+                        removeActive(player, companionId);
+                        completion.complete(true);
+                    },()->completion.complete(true));
                     return completion;
                 });
     }
 
     /** Durable-first stable release: the roster entry is removed before any live-entity effect. */
     public CompletionStage<Boolean> releaseV2(final Player player) {
+        final List<CompanionProfile> roster = companionRoster(player);
+        final CompanionProfile selected = activeCompanion(player)
+                .orElseGet(() -> roster.size() == 1 ? roster.getFirst() : null);
+        return selected == null ? CompletableFuture.completedFuture(false)
+                : releaseV2(player, selected.companionId());
+    }
+
+    /** Durable-first release of an explicitly selected stable entry. */
+    public CompletionStage<Boolean> releaseV2(final Player player, final UUID companionId) {
         final Optional<LoadoutSlot> slot = activeSlot(player);
-        final Optional<CompanionProfile> active = activeCompanion(player);
-        if (slot.isEmpty() || active.isEmpty()) return CompletableFuture.completedFuture(false);
+        final CompanionProfile selected = companionRoster(player).stream()
+                .filter(companion -> companion.companionId().equals(companionId)).findFirst().orElse(null);
+        if (slot.isEmpty() || selected == null) return CompletableFuture.completedFuture(false);
         final UUID sessionToken = currentSessionToken(player).orElse(null);
         if (sessionToken == null) return CompletableFuture.completedFuture(false);
-        final UUID companionId = active.orElseThrow().companionId();
         return gateway().mutateCompanion(player.getUniqueId(), companionRequest(slot.orElseThrow(),
                         ClassSpecProfileGateway.CompanionMutationRequest.Kind.REMOVE, companionId,
                         null, "", 0, 0L, 0L, List.of(), Map.of(), "pet-release:" + companionId))
                 .thenCompose(result -> {
-                    if (!result.committed()) return CompletableFuture.completedFuture(false);
+                    if (!result.durableMutationApplied()) return CompletableFuture.completedFuture(false);
                     final CompletableFuture<Boolean> completion = new CompletableFuture<>();
                     runOnCurrentPlayer(player, sessionToken, () -> {
-                        activeOwners.remove(player.getUniqueId());
-                        removeActive(player);
+                        pendingDeathCooldowns.remove(companionId);
+                        removeActive(player, companionId);
                         completion.complete(true);
-                    }, () -> completion.complete(false));
+                    }, () -> completion.complete(true));
                     return completion;
                 });
     }
 
     public CompletionStage<Boolean> setNameV2(final Player player, final String name) {
         if(name==null||name.isBlank()||name.length()>24)return CompletableFuture.completedFuture(false);
+        final ActiveCompanionRef active = activeCompanionRef(player).orElse(null);
+        if (active == null) return CompletableFuture.completedFuture(false);
+        final UUID companionId = active.companion().companionId();
         final UUID sessionToken=currentSessionToken(player).orElse(null);
         if(sessionToken==null)return CompletableFuture.completedFuture(false);
-        return mutateActive(player,ClassSpecProfileGateway.CompanionMutationRequest.Kind.RENAME,name,0,0L,0L,List.of(),Map.of(),"pet-rename:"+UUID.randomUUID())
+        return mutateCompanion(player, active, ClassSpecProfileGateway.CompanionMutationRequest.Kind.RENAME,
+                        name, 0, 0L, 0L, List.of(), Map.of(), "pet-rename:" + UUID.randomUUID())
                 .thenCompose(result->{
-                    if(!result.committed())return CompletableFuture.completedFuture(false);
+                    if(!result.durableMutationApplied())return CompletableFuture.completedFuture(false);
                     final CompletableFuture<Boolean> completion=new CompletableFuture<>();
-                    runOnCurrentPlayer(player,sessionToken,()->{Mob pet=activePet(player);if(pet!=null)updateName(pet,player);completion.complete(true);},()->completion.complete(false));
+                    runOnCurrentPlayer(player,sessionToken,()->{
+                        companionById(player, companionId).ifPresent(committed -> {
+                            if (companionId.equals(selectedCompanionId(player).orElse(null))) {
+                                scheduleActivePet(player, pet -> updateName(
+                                        pet, committed.name(), committed.level()));
+                            }
+                        });
+                        completion.complete(true);
+                    },()->completion.complete(true));
                     return completion;
                 });
     }
 
     public CompletionStage<Boolean> setStanceV2(final Player player, final MinionManager.Stance stance) {
         java.util.Objects.requireNonNull(stance,"stance");
-        return mutateActive(player,ClassSpecProfileGateway.CompanionMutationRequest.Kind.STANCE,stance.name(),0,0L,0L,List.of(),Map.of(),"pet-stance:"+UUID.randomUUID()).thenApply(result -> result.committed());
+        final ActiveCompanionRef active = activeCompanionRef(player).orElse(null);
+        if (active == null) return CompletableFuture.completedFuture(false);
+        return mutateCompanion(player, active, ClassSpecProfileGateway.CompanionMutationRequest.Kind.STANCE,
+                stance.name(), 0, 0L, 0L, List.of(), Map.of(), "pet-stance:" + UUID.randomUUID())
+                .thenApply(ProfileMutationResult::durableMutationApplied);
     }
 
     public CompletionStage<MinionManager.Stance> cycleStanceV2(final Player player) {
@@ -509,25 +690,52 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     public CompletionStage<PetMutationResult> equipArmorV2(final Player player, final Entity clicked) {
         if(!canOwnPet(player))return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-not-allowed"));
-        final Mob pet=activePet(player);if(pet==null||clicked==null||!pet.getUniqueId().equals(clicked.getUniqueId()))return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-armor-not-pet"));
-        if(hasPetArmor(player))return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-armor-already"));
+        final UUID petId = activePetId(player);
+        if(petId==null||clicked==null||!petId.equals(clicked.getUniqueId()))return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-armor-not-pet"));
+        final ActiveCompanionRef active = activeCompanionRef(player).orElse(null);
+        final UUID companionId = activePetCompanionIds.get(player.getUniqueId());
+        if (active == null || companionId == null
+                || !companionId.equals(active.companion().companionId())) {
+            return CompletableFuture.completedFuture(
+                PetMutationResult.rejected("pet-armor-not-pet"));
+        }
+        if(!active.companion().equipmentIds().isEmpty())return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-armor-already"));
         final UUID sessionToken=currentSessionToken(player).orElse(null);
         if(sessionToken==null)return CompletableFuture.completedFuture(PetMutationResult.rejected("pet-session-unavailable"));
-        return mutateActive(player,ClassSpecProfileGateway.CompanionMutationRequest.Kind.EQUIPMENT,"",0,0L,0L,List.of("pet_armor"),Map.of(),"pet-armor:"+UUID.randomUUID())
-                .thenCompose(result->afterDurablePetMutation(player,sessionToken,result,()->applyEquipment(pet)));
+        return mutateCompanion(player, active, ClassSpecProfileGateway.CompanionMutationRequest.Kind.EQUIPMENT,
+                        "", 0, 0L, 0L, List.of("pet_armor"), Map.of(),
+                        "pet-armor:" + UUID.randomUUID())
+                .thenCompose(result->afterDurableEntityMutation(player,sessionToken,result,
+                        companionId, clicked,
+                        pet -> applyEquipment(pet)));
     }
 
     public CompletionStage<Boolean> addXpV2(final Player player, final int amount, final String operationId) {
         if(amount<=0||!canOwnPet(player))return CompletableFuture.completedFuture(false);
-        final CompanionProfile before=activeCompanion(player).orElse(null);
-        final Optional<LoadoutSlot> slot=activeSlot(player);
-        if(before==null||slot.isEmpty())return CompletableFuture.completedFuture(false);
+        final ActiveCompanionRef active = activeCompanionRef(player).orElse(null);
+        if (active == null) return CompletableFuture.completedFuture(false);
+        return addXpV2(player, active, amount, operationId);
+    }
+
+    /** Credits a kill to the exact durable companion represented by the killing entity. */
+    public CompletionStage<Boolean> addXpV2(final Player player, final UUID companionId,
+                                             final int amount, final String operationId) {
+        if (amount <= 0 || !canOwnPet(player)) return CompletableFuture.completedFuture(false);
+        final ActiveCompanionRef companion = companionRefById(player, companionId).orElse(null);
+        if (companion == null) return CompletableFuture.completedFuture(false);
+        return addXpV2(player, companion, amount, operationId);
+    }
+
+    private CompletionStage<Boolean> addXpV2(final Player player, final ActiveCompanionRef active,
+                                              final int amount, final String operationId) {
+        final CompanionProfile before = active.companion();
+        final LoadoutSlot slot = active.slot();
         final int maxLevel=Math.max(1,Math.min(CompanionProfile.MAX_LEVEL,
                 configManager.getInt("pets.companion.max-level",30)));
         final int baseXp=Math.max(1,configManager.getInt("pets.companion.base-xp",10));
         final int increment=Math.max(0,configManager.getInt("pets.companion.increment-per-level",5));
         return gateway().mutateCompanionProgress(player.getUniqueId(),
-                        new ClassSpecProfileGateway.CompanionProgressRequest(slot.orElseThrow(),
+                        new ClassSpecProfileGateway.CompanionProgressRequest(slot,
                                 before.companionId(),amount,baseXp,increment,maxLevel,operationId))
                 .thenCompose(result->{
                     if(!result.durableOutcomeAccepted())return CompletableFuture.completedFuture(false);
@@ -535,14 +743,23 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                     // fabricate a second feedback effect. Reconnect rebuilds the live companion.
                     if(!result.committed())return CompletableFuture.completedFuture(true);
                     final CompanionProfile committed=gateway().currentProfile(player.getUniqueId())
-                            .map(profile->profile.loadout(slot.orElseThrow()).companionRoster().get(before.companionId()))
+                            .map(profile->profile.loadout(slot).companionRoster().get(before.companionId()))
                             .orElse(null);
                     if(committed==null||committed.level()<=before.level())return CompletableFuture.completedFuture(true);
                     final UUID sessionToken=currentSessionToken(player).orElse(null);
                     if(sessionToken==null)return CompletableFuture.completedFuture(true);
                     final int committedLevel=committed.level();
                     final CompletableFuture<Boolean> completion=new CompletableFuture<>();
-                    runOnCurrentPlayer(player,sessionToken,()->{if(committedLevel>=maxLevel)AdvancementService.award(player,"pet_bond");Mob pet=activePet(player);if(pet!=null){applyBuffs(pet,committedLevel,false);updateName(pet,player);}player.sendMessage(messageManager.getMessage("pet-level-up","<dark_green>🐾 A társad szintet lépett: <white>{level}</white></dark_green>",Map.of("level",String.valueOf(committedLevel))));completion.complete(true);},()->completion.complete(true));
+                    runOnCurrentPlayer(player,sessionToken,()->{
+                        if(committedLevel>=maxLevel)AdvancementService.award(player,"pet_bond");
+                        if (before.companionId().equals(selectedCompanionId(player).orElse(null))) {
+                            scheduleActivePet(player, pet -> {
+                                applyBuffs(pet, committedLevel, false);
+                                updateName(pet, committed.name(), committedLevel);
+                            });
+                        }
+                        player.sendMessage(messageManager.getMessage("pet-level-up","<dark_green>🐾 A társad szintet lépett: <white>{level}</white></dark_green>",Map.of("level",String.valueOf(committedLevel))));completion.complete(true);
+                    },()->completion.complete(true));
                     return completion;
                 });
     }
@@ -550,7 +767,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     /**
      * Handles a pet's death: clears the combat state for that pet, and if it was the
      * owner's active companion, clears the stored reference and notifies them. The
-     * owner-side PDC/message runs on the owner's region thread (Folia-safe); call this
+     * owner-side Profile v2 mutation/message runs on the owner's region thread (Folia-safe); call this
      * from an EntityDeathEvent for minion-tagged mobs.
      */
     public void handlePetDeath(final LivingEntity dead) {
@@ -558,16 +775,39 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final Player owner=Bukkit.getPlayer(ownerId);if(owner==null)return;
         final UUID sessionToken=currentSessionToken(owner).orElse(null);if(sessionToken==null)return;
         runOnCurrentPlayer(owner,sessionToken,()->{
-            if(!deadId.equals(activePetEntities.get(ownerId)))return;
-            final CompanionProfile companion=activeCompanion(owner).orElse(null);final Optional<LoadoutSlot> slot=activeSlot(owner);
-            activeOwners.remove(ownerId);activePetEntities.remove(ownerId,deadId);combatTargets.remove(ownerId);
+            final java.util.concurrent.atomic.AtomicReference<UUID> retiredCompanion =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            final java.util.concurrent.atomic.AtomicBoolean matched =
+                    new java.util.concurrent.atomic.AtomicBoolean(false);
+            activePetCompanionIds.compute(ownerId, (id, logicalId) -> {
+                if (!deadId.equals(activePetEntities.get(id))) return logicalId;
+                activePetEntities.remove(id, deadId);
+                retiredCompanion.set(logicalId);
+                matched.set(true);
+                return null;
+            });
+            if (!matched.get()) return;
+            final UUID logicalId = retiredCompanion.get();
+            final ActiveCompanionRef companionRef = companionRefById(owner, logicalId).orElse(null);
+            final CompanionProfile companion = companionRef == null ? null : companionRef.companion();
+            activeOwners.remove(ownerId);
+            combatTargets.remove(ownerId);
             petDeathHook.accept(ownerId);
-            if(companion!=null&&slot.isPresent()){
+            if(companionRef != null){
                 try {
                     final long seconds=Math.max(0L,configManager.getLong("pets.companion.death-respawn-seconds",120L));
                     final long cd=Math.multiplyExact(seconds,1000L);final long at=Math.addExact(System.currentTimeMillis(),cd);
-                    gateway().mutateCompanion(ownerId,companionRequest(slot.orElseThrow(),ClassSpecProfileGateway.CompanionMutationRequest.Kind.RESPAWN_AT,companion.companionId(),null,"",0,0L,at,List.of(),Map.of(),"pet-death:"+deadId))
-                            .exceptionally(failure->{plugin.getLogger().severe("Failed to persist pet death for "+ownerId+": "+failure.getMessage());return null;});
+                    pendingDeathCooldowns.put(companion.companionId(), at);
+                    gateway().mutateCompanion(ownerId,companionRequest(companionRef.slot(),ClassSpecProfileGateway.CompanionMutationRequest.Kind.RESPAWN_AT,companion.companionId(),null,"",0,0L,at,List.of(),Map.of(),"pet-death:"+deadId))
+                            .whenComplete((result, failure) -> {
+                                if (failure == null && result != null && result.durableOutcomeAccepted()) {
+                                    pendingDeathCooldowns.remove(companion.companionId(), at);
+                                    return;
+                                }
+                                gateway().blockSession(ownerId, "Pet death cooldown persistence failed");
+                                plugin.getLogger().severe("Failed to persist pet death for " + ownerId
+                                        + (failure == null ? "" : ": " + failure.getMessage()));
+                            });
                 } catch (ArithmeticException invalidConfig) {
                     gateway().blockSession(ownerId,"Pet respawn cooldown overflow");
                     plugin.getLogger().severe("Pet respawn cooldown overflow for "+ownerId);
@@ -594,12 +834,36 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     /** A kattintott entitás a játékos runtime registryben aktív társa-e. */
     public boolean isActivePetEntity(final Player player, final Entity clicked) {
-        final Mob pet = activePet(player);
-        return pet != null && pet.getUniqueId().equals(clicked.getUniqueId());
+        return player != null && clicked != null
+                && clicked.getUniqueId().equals(activePetId(player));
+    }
+
+    public record PetKillAttribution(UUID ownerId, UUID companionId) {
+    }
+
+    /** Resolves only the one live durable companion, never a temporary spell minion. */
+    public Optional<PetKillAttribution> activePetAttribution(final Entity entity) {
+        if (entity == null) return Optional.empty();
+        final UUID ownerId = minionManager.getOwner(entity);
+        if (ownerId == null) return Optional.empty();
+        final UUID entityId = entity.getUniqueId();
+        final java.util.concurrent.atomic.AtomicReference<PetKillAttribution> attribution =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        activePetCompanionIds.compute(ownerId, (id, companionId) -> {
+            if (companionId != null && entityId.equals(activePetEntities.get(id))) {
+                attribution.set(new PetKillAttribution(id, companionId));
+            }
+            return companionId;
+        });
+        return Optional.ofNullable(attribution.get());
+    }
+
+    public Optional<UUID> activePetOwnerId(final Entity entity) {
+        return activePetAttribution(entity).map(PetKillAttribution::ownerId);
     }
 
     public boolean hasActivePet(final Player player) {
-        return activePet(player) != null;
+        return player != null && activePetId(player) != null;
     }
 
     public int nextLevelCost(final Player player) {
@@ -607,10 +871,27 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public long respawnRemainingSeconds(final Player player) {
-        final long at=activeCompanion(player).map(CompanionProfile::resummonAtEpochMillis).orElse(0L);
+        final long at=activeCompanion(player).map(this::resummonAt).orElse(0L);
         final long now=System.currentTimeMillis();if(at<=now)return 0L;
         try{return Math.addExact(Math.subtractExact(at,now),999L)/1000L;}
         catch(ArithmeticException corrupt){gateway().blockSession(player.getUniqueId(),"Pet respawn timestamp overflow");return Long.MAX_VALUE;}
+    }
+
+    public long respawnRemainingSeconds(final CompanionProfile companion) {
+        if (companion == null) return 0L;
+        final long at = resummonAt(companion);
+        final long now = System.currentTimeMillis();
+        if (at <= now) return 0L;
+        try {
+            return Math.addExact(Math.subtractExact(at, now), 999L) / 1000L;
+        } catch (final ArithmeticException corrupt) {
+            return Long.MAX_VALUE;
+        }
+    }
+
+    private long resummonAt(final CompanionProfile companion) {
+        return Math.max(companion.resummonAtEpochMillis(),
+                pendingDeathCooldowns.getOrDefault(companion.companionId(), 0L));
     }
 
     /** Társvért: a durable companion equipment listában él, így újraidézéskor is visszakerül. */
@@ -638,7 +919,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * and a live runtime companion. Must run on the owner's region thread (Folia).
      */
     public boolean canReceiveCombatTarget(final Player owner) {
-        return owner != null && canOwnPet(owner) && activePet(owner) != null;
+        return owner != null && canOwnPet(owner) && activePetId(owner) != null;
     }
 
     /**
@@ -672,6 +953,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * STAY holds position, PASSIVE only follows.
      */
     public void tick() {
+        final long now = System.currentTimeMillis();
+        pendingDeathCooldowns.entrySet().removeIf(entry -> entry.getValue() <= now);
         final double followSq = Math.pow(Math.max(4.0D, configManager.getDouble("pets.companion.follow-distance", 16.0D)), 2);
         final double followStartSq = Math.pow(Math.max(2.0D, configManager.getDouble("pets.companion.follow-start-distance", 5.0D)), 2);
         final double reach = Math.max(1.5D, configManager.getDouble("pets.companion.attack-reach", 2.6D));
@@ -705,7 +988,12 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             return;
         }
         final UUID ownerId = owner.getUniqueId();
-        final int level = getLevel(owner);
+        final int level;
+        try {
+            level = runtimeSnapshot(owner).buffLevel();
+        } catch (final IllegalStateException missingProjection) {
+            return;
+        }
         final Location ownerLoc = owner.getLocation();
         final World ownerWorld = owner.getWorld();
         final MinionManager.Stance stance = getStance(owner);
@@ -853,7 +1141,29 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         return activeCompanion(player).map(CompanionProfile::typeId).map(this::entityType).orElse(null);
     }
 
-    private void adopt(final Mob mob, final Player player) {
+    private record PetRuntimeSnapshot(UUID ownerId, UUID companionId, String name, int level, int buffLevel,
+                                      double talentHealthBonus, boolean armored) {
+    }
+
+    private PetRuntimeSnapshot runtimeSnapshot(final Player player) {
+        final CompanionProfile companion = activeCompanion(player).orElseThrow(
+                () -> new IllegalStateException("Active companion snapshot is unavailable"));
+        final int level = companion.level();
+        final int buffLevel = level
+                + (Boolean.parseBoolean(companion.persistentState().getOrDefault("ritual_summoned", "false"))
+                ? Math.max(0, configManager.getInt("pets.summon.bonus-levels", 5)) : 0)
+                + (UNHOLY_GHOUL.equals(companion.namespace())
+                ? unholyMutationBonusLevels(companion) : 0);
+        final hu.taliann.icesmp.managers.TalentManager talents = this.talentManagerRef;
+        final double talentHealthBonus = talents == null ? 0.0D
+                : Math.max(0.0D, talents.getEffectTotal(player, "max-health")
+                        * Math.max(0.0D, configManager.getDouble("pets.talent-health-share", 0.5D)));
+        final String name = companion.name().isBlank() ? "Társ" : companion.name();
+        return new PetRuntimeSnapshot(player.getUniqueId(), companion.companionId(), name, level,
+                buffLevel, talentHealthBonus, !companion.equipmentIds().isEmpty());
+    }
+
+    private boolean adopt(final Mob mob, final PetRuntimeSnapshot snapshot) {
         mob.setPersistent(true);
         mob.setRemoveWhenFarAway(false);
         if (mob instanceof Tameable tameable) {
@@ -868,33 +1178,37 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         // zombi/csontváz/phantom nappali égést ÉS a piglin/hoglin overworld-zombisodását is.
         EventSpawnGuard.prepare(mob);
         // Idézett társ prémiuma: bónusz-szintekkel skálázott statok (a rituálé-beszerzés ára).
-        final int buffLevel = getLevel(player)
-                + (isSummonedPet(player) ? Math.max(0, configManager.getInt("pets.summon.bonus-levels", 5)) : 0);
-        applyBuffs(mob, buffLevel, true);
+        applyBuffs(mob, snapshot.buffLevel(), true);
         // A gazda max-health talentjei a PERMANENS társat is erősítik (a minionokkal
         // azonos megosztási arány — a két rendszer skálázása konzisztens).
-        final hu.taliann.icesmp.managers.TalentManager talents = this.talentManagerRef;
-        if (talents != null) {
-            final double share = Math.max(0.0D, talents.getEffectTotal(player, "max-health")
-                    * Math.max(0.0D, configManager.getDouble("pets.talent-health-share", 0.5D)));
+        if (snapshot.talentHealthBonus() > 0.0D) {
             final org.bukkit.attribute.AttributeInstance hp =
                     mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-            if (share > 0.0D && hp != null) {
-                hp.setBaseValue(hp.getBaseValue() + share);
+            if (hp != null) {
+                hp.setBaseValue(hp.getBaseValue() + snapshot.talentHealthBonus());
                 mob.setHealth(hp.getValue());
             }
         }
-        if (hasPetArmor(player)) {
+        if (snapshot.armored()) {
             applyEquipment(mob);
             final AttributeInstance hp = mob.getAttribute(Attribute.MAX_HEALTH);
             if (hp != null) {
                 mob.setHealth(hp.getValue());
             }
         }
-        updateName(mob, player);
-        minionManager.tag(mob, player.getUniqueId());
-        activePetEntities.put(player.getUniqueId(), mob.getUniqueId());
-        activeOwners.add(player.getUniqueId());
+        updateName(mob, snapshot.name(), snapshot.level());
+        minionManager.tag(mob, snapshot.ownerId());
+        final java.util.concurrent.atomic.AtomicBoolean activated =
+                new java.util.concurrent.atomic.AtomicBoolean(false);
+        activePetCompanionIds.compute(snapshot.ownerId(), (ownerId, expectedId) -> {
+            if (!snapshot.companionId().equals(expectedId)) return expectedId;
+            activePetEntities.put(ownerId, mob.getUniqueId());
+            activeOwners.add(ownerId);
+            activated.set(true);
+            return expectedId;
+        });
+        if (!activated.get()) mob.remove();
+        return activated.get();
     }
 
     private int levelCost(final int level) {
@@ -941,8 +1255,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         }
     }
 
-    private void updateName(final Mob pet, final Player player) {
-        pet.customName(Component.text(getName(player) + " [Lv " + getLevel(player) + "]", NamedTextColor.GREEN));
+    private void updateName(final Mob pet, final String name, final int level) {
+        pet.customName(Component.text(name + " [Lv " + level + "]", NamedTextColor.GREEN));
         pet.setCustomNameVisible(true);
     }
 
@@ -954,9 +1268,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     @Override
     public void clearPlayerState(final UUID playerId) {
         if (playerId != null) {
-            activeOwners.remove(playerId);
-            activePetEntities.remove(playerId);
-            combatTargets.remove(playerId);
+            retirePetActivation(playerId, null);
             // A gazda nélkül maradt társ/minionok despawnolnak (Profile v2-ből újraidézhetők) —
             // nem maradhat árva, örök-persistent entitás a világban.
             minionManager.removeAllOwned(playerId);
@@ -972,9 +1284,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         return Optional.ofNullable(combatTargets.get(ownerId));
     }
 
-    /** Live active pet handle for same-call scheduler hops; may be null. */
-    public Mob livePet(final Player player) {
-        return activePet(player);
+    /** Runs a cross-entity effect exclusively on the active pet's entity scheduler. */
+    public void runOnActivePet(final Player player, final Consumer<Mob> effect) {
+        if (player != null && effect != null) {
+            scheduleActivePet(player, effect);
+        }
     }
 
     /** Owner-thread callback after the active companion's live entity died. */
@@ -982,22 +1296,62 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         petDeathHook = hook == null ? ignored -> { } : hook;
     }
 
-    private Mob activePet(final Player player) {
+    private void scheduleActivePet(final Player player, final Consumer<Mob> effect) {
         final UUID petId = activePetId(player);
-        if (petId == null) {
-            return null;
-        }
+        if (petId == null) return;
         final Entity entity = Bukkit.getEntity(petId);
-        return entity instanceof Mob mob && mob.isValid() ? mob : null;
+        if (!(entity instanceof Mob pet)) return;
+        pet.getScheduler().run(plugin, task -> {
+            if (pet.isValid() && !pet.isDead()) {
+                effect.accept(pet);
+            }
+        }, null);
+    }
+
+    private void beginPetActivation(final Player player, final UUID companionId) {
+        retirePetActivation(player.getUniqueId(), null);
+        activePetCompanionIds.put(player.getUniqueId(), companionId);
+    }
+
+    private boolean activationCurrent(final UUID ownerId, final UUID companionId) {
+        return ownerId != null && companionId != null
+                && companionId.equals(activePetCompanionIds.get(ownerId));
     }
 
     private boolean removeActive(final Player player) {
-        combatTargets.remove(player.getUniqueId());
-        final UUID petId = activePetId(player);
-        if (petId == null) {
-            return false;
+        return retirePetActivation(player.getUniqueId(), null);
+    }
+
+    private boolean removeActive(final Player player, final UUID expectedCompanionId) {
+        return retirePetActivation(player.getUniqueId(), expectedCompanionId);
+    }
+
+    /** Atomically retires only the expected activation generation, then removes its entity. */
+    private boolean retirePetActivation(final UUID ownerId, final UUID expectedCompanionId) {
+        final java.util.concurrent.atomic.AtomicReference<UUID> retiredEntity =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicBoolean retired =
+                new java.util.concurrent.atomic.AtomicBoolean(false);
+        activePetCompanionIds.compute(ownerId, (id, currentCompanionId) -> {
+            if (expectedCompanionId != null && !expectedCompanionId.equals(currentCompanionId)) {
+                return currentCompanionId;
+            }
+            retiredEntity.set(activePetEntities.remove(id));
+            retired.set(currentCompanionId != null || retiredEntity.get() != null);
+            return null;
+        });
+        if (expectedCompanionId == null && retiredEntity.get() == null) {
+            final UUID orphanEntity = activePetEntities.remove(ownerId);
+            if (orphanEntity != null) {
+                retiredEntity.set(orphanEntity);
+                retired.set(true);
+            }
         }
-        activePetEntities.remove(player.getUniqueId());
+        if (!retired.get()) return false;
+        activeOwners.remove(ownerId);
+        combatTargets.remove(ownerId);
+        final UUID petId = retiredEntity.get();
+        if (petId == null) return false;
         attackReady.remove(petId);
         final Entity entity = Bukkit.getEntity(petId);
         if (entity != null) {
@@ -1016,6 +1370,57 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final ClassSpecProfileGateway gateway=profileGateway;return gateway==null?Optional.empty():gateway.activeCompanion(player.getUniqueId());
     }
 
+    private int unholyMutationBonusLevels(final CompanionProfile companion) {
+        return parseNonNegativeInt(companion.persistentState().get(GHOUL_MUTATION_STAGE))
+                * Math.max(0, configManager.getInt(
+                "pets.summon.mutation-bonus-levels-per-stage", 2));
+    }
+
+    private static int parseNonNegativeInt(final String raw) {
+        if (raw == null || raw.isBlank()) return 0;
+        try {
+            return Math.max(0, Integer.parseInt(raw));
+        } catch (final NumberFormatException invalid) {
+            return 0;
+        }
+    }
+
+    private record ActiveCompanionRef(LoadoutSlot slot, CompanionProfile companion) {
+    }
+
+    /** Coherent active-slot/companion read from one immutable Profile v2 snapshot. */
+    private Optional<ActiveCompanionRef> activeCompanionRef(final Player player) {
+        return currentProfile(player).flatMap(profile -> {
+            final LoadoutSlot slot = profile.activeSlot();
+            if (slot == null) return Optional.empty();
+            final ClassLoadout loadout = profile.loadout(slot);
+            final String raw = loadout.mechanicState().get("companion.active_id");
+            if (raw == null || raw.isBlank()) return Optional.empty();
+            try {
+                return Optional.ofNullable(loadout.companionRoster().get(UUID.fromString(raw)))
+                        .map(companion -> new ActiveCompanionRef(slot, companion));
+            } catch (final IllegalArgumentException invalidIdentity) {
+                gateway().blockSession(player.getUniqueId(), "Invalid active companion identity");
+                return Optional.empty();
+            }
+        });
+    }
+
+    private Optional<CompanionProfile> companionById(final Player player, final UUID companionId) {
+        return companionRefById(player, companionId).map(ActiveCompanionRef::companion);
+    }
+
+    private Optional<ActiveCompanionRef> companionRefById(final Player player, final UUID companionId) {
+        if (companionId == null) return Optional.empty();
+        return currentProfile(player).flatMap(profile -> {
+            for (final LoadoutSlot slot : LoadoutSlot.values()) {
+                final CompanionProfile companion = profile.loadout(slot).companionRoster().get(companionId);
+                if (companion != null) return Optional.of(new ActiveCompanionRef(slot, companion));
+            }
+            return Optional.empty();
+        });
+    }
+
     private Optional<ClassSpecSection> currentProfile(final Player player) {
         final ClassSpecProfileGateway gateway=profileGateway;return gateway==null?Optional.empty():gateway.currentProfile(player.getUniqueId());
     }
@@ -1024,13 +1429,18 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     private Optional<ClassLoadout> currentLoadout(final Player player) { return currentProfile(player).filter(p->p.activeSlot()!=null).map(p->p.loadout(p.activeSlot())); }
     private String activeSpec(final Player player) { return currentLoadout(player).map(ClassLoadout::specializationId).orElse(""); }
 
-    private CompletionStage<ProfileMutationResult<hu.taliann.icesmp.classspec.application.ProfileDiagnostic>> mutateActive(
-            final Player player, final ClassSpecProfileGateway.CompanionMutationRequest.Kind kind, final String text,
+    private CompletionStage<ProfileMutationResult<hu.taliann.icesmp.classspec.application.ProfileDiagnostic>> mutateCompanion(
+            final Player player, final ActiveCompanionRef active,
+            final ClassSpecProfileGateway.CompanionMutationRequest.Kind kind, final String text,
             final int level, final long experience, final long resummonAt, final List<String> equipment,
             final Map<String,String> state, final String operationId) {
-        final Optional<LoadoutSlot> slot=activeSlot(player);final Optional<CompanionProfile> active=activeCompanion(player);
-        if(slot.isEmpty()||active.isEmpty())return CompletableFuture.completedFuture(ProfileMutationResult.rejected(gateway().diagnostic(player.getUniqueId()),"no active companion"));
-        return gateway().mutateCompanion(player.getUniqueId(),companionRequest(slot.orElseThrow(),kind,active.orElseThrow().companionId(),null,text,level,experience,resummonAt,equipment,state,operationId));
+        if (active == null) {
+            return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
+                    gateway().diagnostic(player.getUniqueId()), "no active companion"));
+        }
+        return gateway().mutateCompanion(player.getUniqueId(), companionRequest(active.slot(), kind,
+                active.companion().companionId(), null, text, level, experience, resummonAt,
+                equipment, state, operationId));
     }
 
     private static ClassSpecProfileGateway.CompanionMutationRequest companionRequest(LoadoutSlot slot,ClassSpecProfileGateway.CompanionMutationRequest.Kind kind,UUID id,CompanionProfile companion,String text,int level,long experience,long at,List<String> equipment,Map<String,String> state,String operationId){
@@ -1041,11 +1451,133 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         return new ClassSpecProfileGateway.CompanionMutationRequest(slot,kind,id,companion,text,level,experience,at,equipment,state,capacity,operationId);
     }
 
-    private CompletionStage<PetMutationResult> afterDurablePetMutation(final Player player,
-            final UUID sessionToken, final ProfileMutationResult<?> result, final Runnable runtimeEffect) {
-        if(!result.durableMutationApplied())return CompletableFuture.completedFuture(PetMutationResult.rejected(result.detail().isBlank()?"pet-persistence-failed":result.detail()));
-        final CompletableFuture<PetMutationResult> completion=new CompletableFuture<>();
-        runOnCurrentPlayer(player,sessionToken,()->{try{runtimeEffect.run();completion.complete(PetMutationResult.applied());}catch(Throwable failure){plugin.getLogger().severe("Durable pet mutation committed but runtime reconciliation failed for "+player.getUniqueId()+": "+failure.getMessage());completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry"));}},()->completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-stale-session")));
+    private CompletionStage<PetMutationResult> afterDurableSpawnMutation(final Player player,
+            final UUID sessionToken, final ProfileMutationResult<?> result, final UUID companionId,
+            final EntityType type) {
+        if (!result.durableMutationApplied()) {
+            return CompletableFuture.completedFuture(PetMutationResult.rejected(
+                    result.detail().isBlank() ? "pet-persistence-failed" : result.detail()));
+        }
+        final CompletableFuture<PetMutationResult> completion = new CompletableFuture<>();
+        runOnCurrentPlayer(player, sessionToken, () -> {
+            if (!companionId.equals(selectedCompanionId(player).orElse(null))) {
+                completion.complete(PetMutationResult.appliedWithRuntimeFailure(
+                        "pet-selection-superseded"));
+                return;
+            }
+            try {
+                beginPetActivation(player, companionId);
+                spawnAndAdopt(player, type);
+                completion.complete(PetMutationResult.applied());
+            } catch (final PetSpawnException failure) {
+                retirePetActivation(player.getUniqueId(), companionId);
+                completion.complete(PetMutationResult.appliedWithRuntimeFailure(failure.messageKey()));
+            } catch (final Throwable failure) {
+                retirePetActivation(player.getUniqueId(), companionId);
+                plugin.getLogger().severe("Durable pet mutation committed but runtime reconciliation failed for "
+                        + player.getUniqueId() + ": " + failure.getMessage());
+                completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry"));
+            }
+        }, () -> completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-stale-session")));
+        return completion;
+    }
+
+    private CompletionStage<PetMutationResult> afterDurableCapture(final Player player,
+            final UUID sessionToken, final ProfileMutationResult<?> result, final UUID companionId,
+            final Mob mob) {
+        if (!result.durableMutationApplied()) {
+            return CompletableFuture.completedFuture(PetMutationResult.rejected(
+                    result.detail().isBlank() ? "pet-persistence-failed" : result.detail()));
+        }
+        final CompletableFuture<PetMutationResult> completion = new CompletableFuture<>();
+        runOnCurrentPlayer(player, sessionToken, () -> {
+            if (!companionId.equals(selectedCompanionId(player).orElse(null))) {
+                removeCapturedEntity(mob, completion, "pet-selection-superseded");
+                return;
+            }
+            final UUID ownerId = player.getUniqueId();
+            final PetRuntimeSnapshot snapshot;
+            try {
+                beginPetActivation(player, companionId);
+                snapshot = runtimeSnapshot(player);
+            } catch (final Throwable failure) {
+                retirePetActivation(ownerId, companionId);
+                removeCapturedEntity(mob, completion, "pet-runtime-retry");
+                return;
+            }
+            mob.getScheduler().run(plugin, task -> {
+                if (!isCurrentSession(ownerId, sessionToken)) {
+                    retirePetActivation(ownerId, companionId);
+                    if (mob.isValid()) mob.remove();
+                    completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-stale-session"));
+                    return;
+                }
+                if (!mob.isValid() || mob.isDead()) {
+                    retirePetActivation(ownerId, companionId);
+                    completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry"));
+                    return;
+                }
+                if (!activationCurrent(ownerId, companionId)) {
+                    mob.remove();
+                    completion.complete(PetMutationResult.appliedWithRuntimeFailure(
+                            "pet-selection-superseded"));
+                    return;
+                }
+                try {
+                    completion.complete(adopt(mob, snapshot)
+                            ? PetMutationResult.applied()
+                            : PetMutationResult.appliedWithRuntimeFailure("pet-selection-superseded"));
+                } catch (final Throwable failure) {
+                    retirePetActivation(ownerId, companionId);
+                    if (mob.isValid()) mob.remove();
+                    plugin.getLogger().severe("Durable pet capture committed but entity adoption failed for "
+                            + ownerId + ": " + failure.getMessage());
+                    completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry"));
+                }
+            }, () -> {
+                retirePetActivation(ownerId, companionId);
+                completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry"));
+            });
+        }, () -> removeCapturedEntity(mob, completion, "pet-stale-session"));
+        return completion;
+    }
+
+    private void removeCapturedEntity(final Mob mob,
+                                      final CompletableFuture<PetMutationResult> completion,
+                                      final String messageKey) {
+        mob.getScheduler().run(plugin, task -> {
+            if (mob.isValid()) mob.remove();
+            completion.complete(PetMutationResult.appliedWithRuntimeFailure(messageKey));
+        }, () -> completion.complete(PetMutationResult.appliedWithRuntimeFailure(messageKey)));
+    }
+
+    private CompletionStage<PetMutationResult> afterDurableEntityMutation(final Player player,
+            final UUID sessionToken, final ProfileMutationResult<?> result, final UUID companionId,
+            final Entity entity, final Consumer<Mob> runtimeEffect) {
+        if (!result.durableMutationApplied()) {
+            return CompletableFuture.completedFuture(PetMutationResult.rejected(
+                    result.detail().isBlank() ? "pet-persistence-failed" : result.detail()));
+        }
+        final CompletableFuture<PetMutationResult> completion = new CompletableFuture<>();
+        if (!(entity instanceof Mob mob)) {
+            return CompletableFuture.completedFuture(PetMutationResult.appliedWithRuntimeFailure(
+                    "pet-runtime-retry"));
+        }
+        final UUID ownerId = player.getUniqueId();
+        mob.getScheduler().run(plugin, task -> {
+            if (!isCurrentSession(ownerId, sessionToken) || !mob.isValid() || mob.isDead()
+                    || !mob.getUniqueId().equals(activePetEntities.get(ownerId))
+                    || !companionId.equals(activePetCompanionIds.get(ownerId))) {
+                completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry"));
+                return;
+            }
+            try {
+                runtimeEffect.accept(mob);
+                completion.complete(PetMutationResult.applied());
+            } catch (final Throwable failure) {
+                completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry"));
+            }
+        }, () -> completion.complete(PetMutationResult.appliedWithRuntimeFailure("pet-runtime-retry")));
         return completion;
     }
 
@@ -1055,8 +1587,96 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     private void spawnAndAdopt(final Player player, final EntityType type) {
         if(type==null||type.getEntityClass()==null||!Mob.class.isAssignableFrom(type.getEntityClass()))throw new IllegalArgumentException("Unsupported companion entity type");
-        final Mob mob=(Mob)player.getWorld().spawn(player.getLocation(),type.getEntityClass().asSubclass(Mob.class));
-        try{adopt(mob,player);}catch(Throwable failure){mob.remove();throw failure;}
+        final PetRuntimeSnapshot snapshot = runtimeSnapshot(player);
+        final Location spawn = findSafeSpawnLocation(player).orElseThrow(
+                () -> new PetSpawnException("pet-no-safe-spawn"));
+        final Mob mob;
+        try {
+            mob = (Mob) player.getWorld().spawn(spawn, type.getEntityClass().asSubclass(Mob.class));
+        } catch (final RuntimeException blocked) {
+            throw new PetSpawnException("pet-spawn-blocked", blocked);
+        }
+        if (!mob.isValid()) {
+            throw new PetSpawnException("pet-spawn-blocked");
+        }
+        try {
+            if (!adopt(mob, snapshot)) {
+                throw new PetSpawnException("pet-selection-superseded");
+            }
+        } catch (final Throwable failure) {
+            if (mob.isValid()) mob.remove();
+            throw failure;
+        }
+    }
+
+    /** Bounded, region-local standing-space search around the player; never loads a chunk. */
+    private Optional<Location> findSafeSpawnLocation(final Player player) {
+        final Location origin = player.getLocation();
+        final World world = origin.getWorld();
+        if (world == null) return Optional.empty();
+        final int radius = Math.max(1, Math.min(8,
+                configManager.getInt("pets.companion.spawn-search-radius", 4)));
+        final int vertical = Math.max(0, Math.min(4,
+                configManager.getInt("pets.companion.spawn-vertical-range", 2)));
+        for (int ring = 1; ring <= radius; ring++) {
+            for (int dx = -ring; dx <= ring; dx++) {
+                for (int dz = -ring; dz <= ring; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != ring) continue;
+                    for (int step = 0; step <= vertical * 2; step++) {
+                        final int dy = step == 0 ? 0 : (step % 2 == 1 ? (step + 1) / 2 : -step / 2);
+                        final int x = origin.getBlockX() + dx;
+                        final int y = origin.getBlockY() + dy;
+                        final int z = origin.getBlockZ() + dz;
+                        final int chunkX = x >> 4;
+                        final int chunkZ = z >> 4;
+                        if (!world.isChunkLoaded(chunkX, chunkZ)
+                                || !Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) continue;
+                        final Location candidate = new Location(world, x + 0.5D, y, z + 0.5D,
+                                origin.getYaw(), origin.getPitch());
+                        if (world.getWorldBorder().isInside(candidate) && safePetStandingSpace(world, x, y, z)) {
+                            return Optional.of(candidate);
+                        }
+                    }
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean safePetStandingSpace(final World world, final int x, final int y, final int z) {
+        if (y <= world.getMinHeight() || y + 2 >= world.getMaxHeight()) return false;
+        final Block floor = world.getBlockAt(x, y - 1, z);
+        final Material floorType = floor.getType();
+        if (!floorType.isSolid() || floor.isLiquid() || floorType.hasGravity()
+                || floorType == Material.POWDER_SNOW || floorType == Material.MAGMA_BLOCK
+                || floorType == Material.CAMPFIRE || floorType == Material.SOUL_CAMPFIRE
+                || floorType == Material.CACTUS || floorType == Material.SWEET_BERRY_BUSH
+                || floorType == Material.WITHER_ROSE) return false;
+        return clearPetBody(world.getBlockAt(x, y, z))
+                && clearPetBody(world.getBlockAt(x, y + 1, z))
+                && clearPetBody(world.getBlockAt(x, y + 2, z));
+    }
+
+    private static boolean clearPetBody(final Block block) {
+        return block.isPassable() && !block.isLiquid()
+                && block.getType() != Material.FIRE && block.getType() != Material.SOUL_FIRE;
+    }
+
+    private static final class PetSpawnException extends RuntimeException {
+        private final String messageKey;
+
+        private PetSpawnException(final String messageKey) {
+            this(messageKey, null);
+        }
+
+        private PetSpawnException(final String messageKey, final Throwable cause) {
+            super(messageKey, cause);
+            this.messageKey = messageKey;
+        }
+
+        private String messageKey() {
+            return messageKey;
+        }
     }
 
 }

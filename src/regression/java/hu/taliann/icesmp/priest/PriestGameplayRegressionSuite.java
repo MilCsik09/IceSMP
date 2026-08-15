@@ -164,6 +164,15 @@ public final class PriestGameplayRegressionSuite {
                 "the Küszöb strain is floored — it can never be the killing blow");
         check(!service.contains("Math.random") && !service.contains("ThreadLocalRandom"),
                 "no random self-harm: the Árnyék risk is entirely deterministic");
+        for (final String doctrine : new String[]{"surubb_pajzs", "orok_kegyelem",
+                "megvalto_szo"}) {
+            check(service.contains('"' + doctrine + '"'),
+                    "the Discipline doctrine has a concrete gameplay hook: " + doctrine);
+        }
+        check(service.contains("\"evangelism\".equals(spellId)")
+                        && service.contains("capstone-window-millis")
+                        && service.contains("disciplineShieldCap(playerId)"),
+                "Evangelizmus spends prepared Discipline state and renews both loop outputs");
 
         final String gameplayConfig = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));

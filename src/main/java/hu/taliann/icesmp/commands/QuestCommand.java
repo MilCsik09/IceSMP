@@ -479,6 +479,7 @@ public final class QuestCommand implements BasicCommand {
             case "quest-already-active" -> "&cEz a küldetés már aktív nálad.";
             case "quest-already-completed" -> "&cEzt a küldetést már teljesítetted.";
             case "quest-requires-job" -> "&cEhhez a küldetéshez másik kaszt szükséges.";
+            case "quest-requires-specialization" -> "&cEzt a próbát csak a hozzá tartozó aktív specializációval kezdheted el.";
             case "quest-requires-faction" -> "&cEhhez a küldetéshez másik frakció tagjának kell lenned.";
             case "quest-requires-level" -> "&cMég nem vagy elég magas szintű ehhez a küldetéshez.";
             case "quest-requires-quest" -> "&cElőbb az előfeltétel-küldetést kell teljesítened.";

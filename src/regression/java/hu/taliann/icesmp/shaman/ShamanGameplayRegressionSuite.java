@@ -158,6 +158,10 @@ public final class ShamanGameplayRegressionSuite {
                 "shaman cast bonuses ride the capped shared power pipeline");
         check(service.contains("totemManager.clearOwnerProjection(playerId);"),
                 "death/logout/kick class cleanup tears down live totems through TotemManager");
+        check(service.contains("\"spirit_tide\".equals(spellId)")
+                        && service.contains("Math.abs(state(playerId).tide()) < tideThreshold(playerId)")
+                        && service.contains("state.consumeTide(0)"),
+                "Szellemár requires and consumes a full Dagály/Apály state");
 
         final String gameplay = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));
@@ -171,6 +175,10 @@ public final class ShamanGameplayRegressionSuite {
                 "Enhancement defaults cannot reference the Elemental-only Earthbind Totem grant");
         check(!tidalKit.contains("windfury_totem"),
                 "Tidal defaults cannot reference the Enhancement-only Windfury Totem grant");
+        check(enhancementKit.contains("searing_totem"),
+                "Enhancement's default seven-spell kit exposes a second Totemkerék category");
+        check(tidalKit.contains("spirit_link"),
+                "Tidal's default seven-spell kit exposes its chain-side preparation tool");
     }
 
     private static void check(final boolean condition, final String message) {

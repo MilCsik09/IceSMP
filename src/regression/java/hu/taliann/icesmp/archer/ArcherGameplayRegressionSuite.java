@@ -155,9 +155,9 @@ public final class ArcherGameplayRegressionSuite {
         check(pets.contains("Kind.REMOVE") && pets.contains("pet-release:"),
                 "stable release is a durable-first companion REMOVE");
         final int removeCommit = pets.indexOf("pet-release:");
-        final int removeEffect = pets.indexOf("removeActive(player)", removeCommit);
+        final int removeEffect = pets.indexOf("removeActive(player, companionId)", removeCommit);
         check(removeCommit >= 0 && removeEffect > removeCommit,
-                "release removes the live entity only after the durable commit");
+                "release removes only the matching live entity after the durable commit");
 
         final String service = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/archer/ArcherGameplayService.java"));

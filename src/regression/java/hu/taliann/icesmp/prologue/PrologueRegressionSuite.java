@@ -9,6 +9,7 @@ public final class PrologueRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         progressionCeilingAndCatchUp();
+        dormantIsFullPassthrough();
         participantScalingIsBounded();
         pauseClockStopsTimeout();
         cleanupAndPauseContracts();
@@ -29,6 +30,48 @@ public final class PrologueRegressionSuite {
                 "valid XP below the cap is changed");
         check(PrologueProgression.applyMultiplier(100,1.75D)==175,"catch-up multiplier drifted");
         check(PrologueProgression.applyMultiplier(100,1.0D)==100,"disabled catch-up changes XP");
+    }
+
+    private static void dormantIsFullPassthrough() throws Exception {
+        check(!PrologueContentPolicy.restrictsContent(PrologueState.DORMANT),
+                "DORMANT still enables Prologue progression/content restrictions");
+        check(!PrologueContentPolicy.catchUpEnabledFor(PrologueState.DORMANT),
+                "DORMANT incorrectly enables post-Prologue catch-up");
+        check(!PrologueContentPolicy.controlsNetherGate(PrologueState.DORMANT),
+                "DORMANT still claims Prologue Nether gate authority");
+        for(PrologueState state:new PrologueState[]{PrologueState.UNSTABLE,PrologueState.BREACHING,
+                PrologueState.FINALE,PrologueState.GATE_OPEN}) {
+            check(PrologueContentPolicy.restrictsContent(state),
+                    state+" no longer applies active Prologue restrictions");
+        }
+        check(!PrologueContentPolicy.restrictsContent(PrologueState.COMPLETED),
+                "COMPLETED still applies Season 0 content restrictions");
+        check(PrologueContentPolicy.catchUpEnabledFor(PrologueState.COMPLETED),
+                "COMPLETED no longer enables configured catch-up");
+        check(PrologueContentPolicy.controlsNetherGate(PrologueState.COMPLETED),
+                "COMPLETED no longer preserves the unlocked central Nether gate authority");
+
+        String overlay=source("src/main/java/hu/taliann/icesmp/prologue/PrologueRuntimeConfigOverlay.java");
+        check(overlay.contains("if (!PrologueContentPolicy.active(config))")
+                        &&overlay.contains("config.reload()")&&overlay.contains("applied = false"),
+                "DORMANT does not restore the configured values behind the Prologue overlay");
+        String runtime=source("src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java");
+        check(runtime.contains("if (!PrologueContentPolicy.active(config))")
+                        &&runtime.contains("config.clearRuntimeOverride(\"world-events.season.enabled\")")
+                        &&runtime.contains("hud.setEventActive(false)"),
+                "DORMANT does not release season gates and runtime presentation");
+        String hud=source("src/main/java/hu/taliann/icesmp/prologue/PrologueHudController.java");
+        check(hud.contains("!PrologueContentPolicy.active(config)")&&hud.contains("hideAll()"),
+                "DORMANT still displays the Prologue HUD or ambient presentation");
+        String portal=source("src/main/java/hu/taliann/icesmp/listeners/PortalGuardListener.java");
+        check(portal.contains("if (!PrologueContentPolicy.netherGateAuthorityActive(configManager)) return;"),
+                "DORMANT still applies the Prologue Nether seal/location authority");
+        String encounter=source("src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java");
+        check(encounter.contains("if(!PrologueContentPolicy.active(config)"),
+                "DORMANT can still start Prologue encounter waves or bosses");
+        String finale=source("src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleManager.java");
+        check(finale.contains("rehearsalMode&&!PrologueContentPolicy.active(config)"),
+                "DORMANT can still start a rehearsal without entering an active state");
     }
 
     private static void participantScalingIsBounded() {

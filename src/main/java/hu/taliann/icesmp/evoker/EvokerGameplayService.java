@@ -166,7 +166,7 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
         } else if (rank >= 3) {
             bonus += Math.max(0.0D, config.getDouble("classes.evoker.empower.rank3-power-percent", 40.0D));
         }
-        if ("devastation".equals(activeSpec(playerId)) && essenceColorOf(spellId) != null
+        if ("devastation".equals(activeSpec(playerId)) && isDevastationBurstConsumer(spellId)
                 && state.isBurstArmed(burstThreshold(playerId))) {
             bonus += burstPowerPercent(playerId);
         }
@@ -204,9 +204,21 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
     private void handleDevastationCast(final Player player, final EvokerCombatState state,
                                        final String spellId, final int releasedRank) {
         final UUID playerId = player.getUniqueId();
+        final int threshold = burstThreshold(playerId);
+        if ("eternity_breath".equals(spellId)) {
+            if (state.isBurstArmed(threshold)) {
+                state.consumeBurst(burstRetention(playerId));
+                player.sendActionBar(messages.getMessage("evoker.essence.capstone",
+                        "<gold>✸ Az Örökkévalóság Lehelete elnyelte a teljes Izzást.</gold>"));
+                if (isInCombat(playerId)) {
+                    specs.contributeClassMastery(player, JobType.EVOKER,
+                            config.getInt("classes.evoker.mastery.resonance-burst-xp", 5));
+                }
+            }
+            return;
+        }
         EvokerCombatState.EssenceColor color = essenceColorOf(spellId);
         if (color == null) return;
-        final int threshold = burstThreshold(playerId);
         if (state.isBurstArmed(threshold)) {
             state.consumeBurst(burstRetention(playerId));
             player.sendActionBar(messages.getMessage("evoker.essence.burst",
@@ -559,6 +571,10 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
             result.add(normalize(raw));
         }
         return result;
+    }
+
+    private boolean isDevastationBurstConsumer(final String spellId) {
+        return essenceColorOf(spellId) != null || "eternity_breath".equals(spellId);
     }
 
     private Set<String> echoHealSpells() {

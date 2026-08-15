@@ -59,7 +59,8 @@ public final class PrologueEncounterEngine implements Listener {
     public boolean isBoss(Entity e){return isPrologueEntity(e)&&"boss".equals(e.getPersistentDataContainer().get(roleKey,PersistentDataType.STRING));}
 
     public boolean startBreach(BreachSeverity severity,int participantCount,Runnable completion,Consumer<String> failure){
-        if(severity==null||isActive()||(eventGate!=null&&!eventGate.mayStartNaturally(EVENT_KEY)))return false;
+        if(!PrologueContentPolicy.active(config)||severity==null||isActive()
+                ||(eventGate!=null&&!eventGate.mayStartNaturally(EVENT_KEY)))return false;
         return startBreachWave(severity,1,participantCount,completion==null?()->{}:completion,failure==null?x->{}:failure);
     }
     private boolean startBreachWave(BreachSeverity severity,int wave,int players,Runnable completion,Consumer<String> failure){
@@ -75,7 +76,7 @@ public final class PrologueEncounterEngine implements Listener {
         return startWave(id,severity,players,elite,done,fail,-1L);
     }
     boolean startWave(String id,BreachSeverity severity,int players,boolean elite,Runnable done,Consumer<String> fail,long timeoutOverride){
-        if(id==null||id.isBlank()||severity==null||isActive())return false;
+        if(!PrologueContentPolicy.active(config)||id==null||id.isBlank()||severity==null||isActive())return false;
         Location anchor=worldAccess.breachAnchor();
         if(anchor==null||anchor.getWorld()==null){if(fail!=null)fail.accept("Nincs beállítva Prologue breach/gate anchor.");return false;}
         int min=Math.max(1,config.getInt("world-events.prologue.scaling.minimum-players",5));
@@ -102,7 +103,7 @@ public final class PrologueEncounterEngine implements Listener {
 
     public boolean startBoss(int players,Runnable victory,Consumer<String> failure){return startBoss(players,victory,failure,-1L);}
     boolean startBoss(int players,Runnable victory,Consumer<String> failure,long timeoutOverride){
-        if(isActive())return false;Location anchor=worldAccess.bossAnchor();
+        if(!PrologueContentPolicy.active(config)||isActive())return false;Location anchor=worldAccess.bossAnchor();
         if(anchor==null||anchor.getWorld()==null){if(failure!=null)failure.accept("Nincs beállítva Prologue boss/gate anchor.");return false;}
         long fallback=Math.max(60L,config.getLong("world-events.prologue.finale.boss.timeout-seconds",900L))*1000L;
         ActiveEncounter e=new ActiveEncounter("prologue-boss",victory==null?()->{}:victory,failure==null?x->{}:failure,1,timeout(timeoutOverride,fallback));

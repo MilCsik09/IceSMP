@@ -1,0 +1,31 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_armor.png",
+      "ascent": -8507439,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_food.png",
+      "ascent": -8507439,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_air.png",
+      "ascent": -8507439,
+      "height": 12,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

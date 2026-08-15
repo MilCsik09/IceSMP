@@ -8,7 +8,7 @@ package hu.taliann.icesmp.deathknight;
  * it, so the wheel is charged as deliberately as it is spent. Vérlovag keeps a fixed-size ring
  * of recent taken damage (never an unbounded log) that converts into either a heal or a shield.
  * Fagylovag stacks Fagyjelek that Zúzás consumes partially or fully. Szentségtelen carries the
- * Dögvész stacks and the ghoul's mutation stage. Durable state remains in PlayerProfile.</p>
+ * Dögvész stacks. Durable ghoul mutation state remains in PlayerProfile.</p>
  */
 public final class DeathKnightCombatState {
 
@@ -33,7 +33,6 @@ public final class DeathKnightCombatState {
     private int frostMarks;
 
     private int plague;
-    private int mutation;
 
     // ===== Rúnakör (class core) =====
 
@@ -171,16 +170,6 @@ public final class DeathKnightCombatState {
         return burst;
     }
 
-    /** The ghoul mutates by feeding: each burst advances it one bounded stage. */
-    public synchronized int advanceMutation(final int maximum) {
-        mutation = Math.max(0, Math.min(Math.max(1, maximum), mutation + 1));
-        return mutation;
-    }
-
-    public synchronized int mutation() {
-        return mutation;
-    }
-
     /** Spec switch cleanup: the wheel is re-primed and every spec pool is dropped. */
     public synchronized void clearSpecializationState() {
         java.util.Arrays.fill(runes, 0);
@@ -191,7 +180,6 @@ public final class DeathKnightCombatState {
         memoryCursor = 0;
         frostMarks = 0;
         plague = 0;
-        mutation = 0;
     }
 
     /** Death/logout/admin reset cleanup. */

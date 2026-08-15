@@ -43,17 +43,25 @@ Az automatikus stage-advance configból kikapcsolható. Live módosításkor a
 persistált state és a config nem keverendő össze: a config default/policy, a
 `prologue.yml` pedig az aktuális világállapot.
 
-**A korszak alapból inert.** Friss telepítéskor az állapot `DORMANT`, amelyben a
-timeline nem léptet — így a plugin tetszőleges idővel a nyitás előtt felkerülhet
-a szerverre. Az órát a `/prologue start` indítja el, és a stage-időzítés attól a
-pillanattól számol. Enélkül az eszkaláció a telepítéstől ketyegne, és egy 8+ napos
-előkészítés után az első belépő játékost már `COLLAPSE` állapotú Kapu fogadná.
-Ugyanez az elv, mint a Season 1 indulási timestampjénél: nem a plugin indulása a
-korszak kezdete.
+**A korszak alapból teljesen inert.** Friss telepítéskor az állapot `DORMANT`.
+Ebben az állapotban a Prologue úgy viselkedik, mintha nem lenne jelen: nem léptet
+timeline-t, nem alkalmaz XP-, specializáció-, relic-, blueprint-, rarity- vagy
+eventkorlátot, nem tiltja a normál season/community lifecycle-t, nem veszi át a
+Nether-travel authorityt, és nem jelenít meg Prologue HUD-ot vagy ambient effektet.
+A post-Prologue catch-up sem aktív. A Prologue-tól független általános
+szerverconfig — például a globális portal-creation és End policy — ettől még
+változatlanul érvényes.
+
+Az órát és a Prologue korlátozásait a `/prologue start` aktiválja, a stage-időzítés
+attól a pillanattól számol. Így a plugin tetszőleges idővel a nyitás előtt
+felkerülhet a szerverre anélkül, hogy a játékosokra Season 0 szabályokat tenne.
+Enélkül az eszkaláció a telepítéstől ketyegne, és egy 8+ napos előkészítés után az
+első belépő játékost már `COLLAPSE` állapotú Kapu fogadná. Ugyanez az elv, mint a
+Season 1 indulási timestampjénél: nem a plugin indulása a korszak kezdete.
 
 ## 3. Season 0 progression- és content-policy
 
-A bundled Season 0 alapértékek:
+A Prologue élesítése után érvényes bundled Season 0 alapértékek:
 
 - class level cap: **25**;
 - specialization: zárva;
@@ -78,8 +86,10 @@ de játékosoldali legitim megszerzés Season 0-ban zárt.
 
 ## 4. Nether és End policy
 
-Season 0 alatt a Nether játékosok számára zárt. A normál FIRE-alapú
-Nether-portál létrehozása továbbra is blokkolt.
+A Prologue élesítése után, Season 0 alatt a Nether játékosok számára zárt. A
+`DORMANT` állapot ezt a Prologue-pecsétet és a központi gate-location authorityt
+nem alkalmazza. A normál FIRE-alapú Nether-portál létrehozása külön, általános
+szerverpolicy, ezért továbbra is a saját konfigurációja szerint működik.
 
 A Prologue finálé után pontosan egy legitim vanilla `NETHER_PORTAL` utazási
 hely létezik: **Olethropyla**. A játékos csak a konfigurált `prologue-gate`
@@ -355,8 +365,10 @@ A Prologue release előtt legalább az alábbi kézi próbák szükségesek:
 - [ ] PRO-12 — End továbbra is zárt;
 - [ ] PRO-13 — offline eligible participant következő joinkor pontosan egyszer kap prestige státuszt;
 - [ ] PRO-14 — 50 körüli online játékossal participant tracking/HUD/encounter terhelési próba;
-- [ ] PRO-15 — friss telepítés után az állapot `DORMANT`, és a stage a konfigurált
-      SILENCE-időtartamot bőven meghaladó várakozás alatt sem lép tovább;
+- [ ] PRO-15 — friss telepítés után az állapot `DORMANT`: nincs stage-lépés,
+      Prologue XP/spec/relic/blueprint/rarity/eventkorlát, season/community
+      override, Nether-pecsét vagy gate-location authority, HUD/ambient/breach és
+      catch-up; a Prologue-tól független szerverconfig marad az authority;
 - [ ] PRO-16 — `/prologue start` élesít, a stage-óra a parancs pillanatától számol,
       ismételt hívás nem csinál semmit;
 - [ ] PRO-17 — `/prologue advance` finálé alatt fázist, egyébként stage-et léptet,

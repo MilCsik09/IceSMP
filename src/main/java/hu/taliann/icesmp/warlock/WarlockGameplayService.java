@@ -134,6 +134,12 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
         final WarlockCombatState state = state(playerId);
         final String spellId = spell.getId().toLowerCase(Locale.ROOT);
         final long now = System.currentTimeMillis();
+        if ("demonologist".equals(activeSpec(playerId))
+                && demonKindOf(spellId) != null
+                && boundDemons(player).size() >= rosterCapacity(playerId)) {
+            rosterFullMessage(player);
+            return false;
+        }
         if (pactSpells().contains(spellId) && state.isDebtCeilingReached(debtCeiling(playerId))) {
             player.sendActionBar(messages.getMessage("warlock.debt.ceiling",
                     "<red>A Lélekadósság betelt — előbb törleszd, csak utána köss új paktumot.</red>"));
@@ -327,8 +333,23 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
         if (kind == null) return;
         gateway.bindDemonV2(player, kind, rosterCapacity(player.getUniqueId()))
                 .thenAccept(result -> {
-                    if (!result.committed()) return;
-                    gateway.runOnPlayer(player, () -> rewardBinding(player, state, kind));
+                    gateway.runOnPlayer(player, () -> {
+                        if (!result.committed()) {
+                            if ("pet-roster-full".equals(result.error())) rosterFullMessage(player);
+                            else player.sendActionBar(messages.getMessage(
+                                    "warlock.roster.failed",
+                                    "<red>A démon paktumba kötése most nem sikerült ({reason}).</red>",
+                                    Map.of("reason", result.error().isBlank()
+                                            ? "ismeretlen hiba" : result.error())));
+                            return;
+                        }
+                        rewardBinding(player, state, kind);
+                        if (!result.error().isBlank()) {
+                            player.sendActionBar(messages.getMessage(
+                                    "warlock.roster.runtime-warning",
+                                    "<yellow>A paktum tartós, de a démon megjelenítését újra kell próbálni.</yellow>"));
+                        }
+                    });
                 });
     }
 
@@ -543,6 +564,13 @@ public final class WarlockGameplayService implements Listener, PlayerStateCleanu
                     "classes.warlock.demonologist.legion-extra-slot", 1));
         }
         return capacity;
+    }
+
+    private void rosterFullMessage(final Player player) {
+        player.sendActionBar(messages.getMessage("warlock.roster.full",
+                "<red>A démoni névsor megtelt ({count}/{capacity}) — előbb bocsáss el valakit.</red>",
+                Map.of("count", Integer.toString(boundDemons(player).size()),
+                        "capacity", Integer.toString(rosterCapacity(player.getUniqueId())))));
     }
 
     /** The three concrete demon kinds of the roster. */

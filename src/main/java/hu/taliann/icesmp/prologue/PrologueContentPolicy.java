@@ -5,7 +5,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import java.util.List;
 import java.util.Locale;
 
-/** Egyetlen content/progression authority a Prologue kapuihoz. */
+/** Egyetlen content/progression authority a Prologue kapuihoz; DORMANT állapotban pass-through. */
 public final class PrologueContentPolicy {
     private static final String ROOT = "world-events.prologue.";
     private static final List<String> DEFAULT_PROLOGUE_RARITIES =
@@ -20,7 +20,11 @@ public final class PrologueContentPolicy {
     public static boolean active(final ConfigManager config) {
         if (!enabled(config)) return false;
         final PrologueManager manager = PrologueManager.current();
-        return manager == null || !manager.state().completed();
+        return manager != null && restrictsContent(manager.state());
+    }
+
+    static boolean restrictsContent(final PrologueState state) {
+        return state != null && state != PrologueState.DORMANT && !state.completed();
     }
 
     public static boolean normalSeasonLifecycleAllowed(final ConfigManager config) {
@@ -66,19 +70,34 @@ public final class PrologueContentPolicy {
     }
 
     public static boolean netherTraversalAvailable(final ConfigManager config) {
-        if (!enabled(config)) return true;
+        if (!netherGateAuthorityActive(config)) return true;
         final PrologueManager manager = PrologueManager.current();
         return manager != null && manager.gateUnlocked();
     }
 
+    public static boolean netherGateAuthorityActive(final ConfigManager config) {
+        if (!enabled(config)) return false;
+        final PrologueManager manager = PrologueManager.current();
+        return manager != null && controlsNetherGate(manager.state());
+    }
+
+    static boolean controlsNetherGate(final PrologueState state) {
+        return state != null && state != PrologueState.DORMANT;
+    }
+
     public static double catchUpMultiplier(final ConfigManager config, final int classLevel,
                                            final String operationId) {
-        if (!enabled(config) || active(config)
+        final PrologueManager manager = PrologueManager.current();
+        if (!enabled(config) || manager == null || !catchUpEnabledFor(manager.state())
                 || !config.getBoolean(ROOT + "catch-up.enabled", true)) return 1.0D;
         final int target = Math.max(1, config.getInt(ROOT + "catch-up.target-level", 25));
         if (classLevel >= target || isAdministrativeXp(operationId)) return 1.0D;
         final double configured = config.getDouble(ROOT + "catch-up.multiplier", 1.75D);
         return Double.isFinite(configured) ? Math.max(1.0D, Math.min(4.0D, configured)) : 1.0D;
+    }
+
+    static boolean catchUpEnabledFor(final PrologueState state) {
+        return state != null && state.completed();
     }
 
     private static boolean isAdministrativeXp(final String operationId) {

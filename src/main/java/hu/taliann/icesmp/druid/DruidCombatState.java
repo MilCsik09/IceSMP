@@ -27,6 +27,7 @@ public final class DruidCombatState {
 
     private int barkLayers;
     private long rootsUntil;
+    private long thornsUntil;
 
     private final long[] seedPlantedAt = new long[5];
 
@@ -147,6 +148,16 @@ public final class DruidCombatState {
         return rootsUntil > now;
     }
 
+    public synchronized void armThorns(final long now, final long windowMillis) {
+        thornsUntil = now + Math.max(1L, windowMillis);
+    }
+
+    public synchronized boolean consumeThorns(final long now) {
+        if (thornsUntil <= now) return false;
+        thornsUntil = 0L;
+        return true;
+    }
+
     // ===== Helyreállító: Mag → érés → Virágzás =====
 
     /** Plants one seed if a slot is free within the maximum. Expired seeds free their slot. */
@@ -213,6 +224,7 @@ public final class DruidCombatState {
         eclipseUntil = 0L;
         barkLayers = 0;
         rootsUntil = 0L;
+        thornsUntil = 0L;
         java.util.Arrays.fill(seedPlantedAt, 0L);
     }
 

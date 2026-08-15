@@ -16,8 +16,8 @@ import org.bukkit.event.world.PortalCreateEvent;
 
 /**
  * Single-Nether-gate + End owner policy. FIRE creation remains blocked independently from
- * traversal; Prologue additionally fail-closes Overworld -> Nether travel until Olethropyla
- * is durably unlocked, and afterwards only the configured central gate is legitimate.
+ * traversal; once armed, Prologue additionally fail-closes Overworld -> Nether travel until
+ * Olethropyla is durably unlocked, and afterwards only the configured central gate is legitimate.
  */
 public final class PortalGuardListener implements Listener {
 
@@ -50,6 +50,7 @@ public final class PortalGuardListener implements Listener {
         // Nether -> Overworld return remains legal. The restriction controls entry from the living world.
         if (event.getFrom().getWorld() != null
                 && event.getFrom().getWorld().getEnvironment() == World.Environment.NETHER) return;
+        if (!PrologueContentPolicy.netherGateAuthorityActive(configManager)) return;
         if (!PrologueContentPolicy.netherTraversalAvailable(configManager)) {
             event.setCancelled(true);
             player.sendActionBar(messageManager.getMessage(
