@@ -95,7 +95,10 @@ public final class IceSmpHudRegressionSuite {
         final String listener = read(
                 "src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java");
         check(listener.contains("living.getScheduler().run(plugin")
-                        && listener.contains("target.addPassenger(display)")
+                        && listener.contains("target.getScheduler().runAtFixedRate(plugin")
+                        && listener.contains("target.getHeight()) + offset")
+                        && listener.contains("display.teleportAsync(next)")
+                        && !listener.contains("target.addPassenger(display)")
                         && listener.contains("setVisibleByDefault(false)")
                         && listener.contains("attacker.showEntity(plugin, display)")
                         && listener.contains("MAX_VITAL_DISPLAYS = 512")

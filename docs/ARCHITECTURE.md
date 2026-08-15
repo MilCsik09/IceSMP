@@ -1212,9 +1212,11 @@ Normál állapotban a 252×72-es panel két alsó oszlopot renderel (armor, food
 
 `DamageIndicatorListener` a nem törölt, pozitív játékos-sebzés MONITOR eseménye után a sérült
 `LivingEntity` saját következő entity tickjén olvassa ki a tényleges current/max HP-t. Célpontonként
-legfeljebb egy nem perzisztens, FX-tagelt `TextDisplay` jön létre, amely utasként követi az entitást;
-az új találat csak frissíti a szöveget és generációs lejáratát. Játékos célpontnál ugyanazon a
-régiószálon olvasható class resource kerülhet a HP mellé. Alapértelmezésben
+legfeljebb egy nem perzisztens, FX-tagelt `TextDisplay` jön létre. Nem utasként csatlakozik: a
+célpont saját entity schedulerén futó rövid követőfeladat az entitás aktuális magasságából számított,
+nametag alatti világpozícióra teleportálja, így a vanilla/custom név érintetlen marad. Az új találat
+csak frissíti a szöveget és generációs lejáratát. Játékos célpontnál ugyanazon a régiószálon olvasható
+class resource kerülhet a HP mellé. Alapértelmezésben
 `visibleByDefault=false`, és csak a támadó saját entity schedulerén kap `showEntity` hívást.
 
 Nincs online-player × nearby-entity poll, cross-region world scan vagy tartós entity. A kijelző

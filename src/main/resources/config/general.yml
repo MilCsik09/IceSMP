@@ -199,14 +199,15 @@ hud:
     rotating-line: true
     rotation-seconds: 4
   profile:
-    # Eseményvezérelt combat-vitals: találat után a célpont feje alatt HP-t, játékosnál pedig
-    # opcionálisan class resource-t mutat. Nincs periodikus világ- vagy közelség-szkennelés.
+    # Eseményvezérelt combat-vitals: találat után a célpont saját magasságából számított,
+    # feje alatti ponton HP-t, játékosnál pedig opcionálisan class resource-t mutat.
+    # Nem utasítja az entitást és nincs periodikus világ- vagy közelség-szkennelés.
     enabled: true
     lifetime-ticks: 100
     visibility: attacker-only # attacker-only | everyone
     show-player-resource: true
     scale: 0.75
-    height-offset: 0.55
+    height-offset: 0.20
     view-range: 1.0
 
 # WoW-stílusú csapat (party) rendszer: max 5 fő, teljesen frakció-független (bármelyik

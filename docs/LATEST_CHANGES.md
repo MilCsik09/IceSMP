@@ -58,7 +58,9 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   class-szinten belüli haladást és a szintlépéshez hiányzó XP-t. A DK-rúnák saját editor-komponenst
   kaptak, függetlenül a generic charge-sortól. Találat után egy célpontot követő, alapból csak a
   támadónak látható TextDisplay mutatja a mob/játékos current/max HP-ját, játékosnál opcionálisan a
-  class resource-t is; a rendszer eseményvezérelt, világ-szkennelést nem végez.
+  class resource-t is. A display nem passenger: az entitás magasságából számított, nametag alatti
+  pozíciót követi, ezért az eredeti név megmarad. A rendszer eseményvezérelt, világ-szkennelést nem
+  végez.
 - **Staff-eszközök:** automatikus single-writer `/invsee`, húzható
   adományláda-input, staged config-GUI (mentés/elvetés tranzakcióval).
 - **Társ-rendszer:** a Profile v2-ben tárolt társlista most a `/pet` GUI-ból és

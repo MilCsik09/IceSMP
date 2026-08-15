@@ -38,7 +38,7 @@ public final class OperationalConfigHelp {
             case "hud.profile.lifetime-ticks" -> "Az utolsó találat után ennyi tickig követi a célpontot a HP/resource kijelzés; minden új találat újraindítja az időablakot.";
             case "hud.profile.show-player-resource" -> "A játékos célpontok HP-ja mellett megjeleníti az aktuális class-resource nevét és jelenlegi/maximális értékét. Mobokra nincs hatása.";
             case "hud.profile.scale" -> "A célpontot követő HP/resource szöveg méretszorzója. A képernyő-HUD méretétől és a resource packtól független.";
-            case "hud.profile.height-offset" -> "A célpont utasaként mozgó HP/resource sor függőleges eltolása a nametag alatti finom pozicionáláshoz.";
+            case "hud.profile.height-offset" -> "A célpont saját magasságából számított HP/resource sor függőleges eltolása a nametag alatti finom pozicionáláshoz.";
             case "hud.profile.view-range" -> "A TextDisplay kliensoldali renderelési tartományának szorzója. Alap attacker-only láthatóság mellett sem teszi nyilvánossá az adatot.";
             case "tablist.enabled" -> "A natív IceSMP tablista teljes főkapcsolója: header/footer, formázott tabnevek, nametagek, rendezés és pingkijelzés csak ennek engedélyével működik.";
             case "tablist.refresh-ticks" -> "A natív tablista diffelt frissítési periódusa tickben. Kisebb érték gyorsabb név/ping frissítést, de több kliens- és scoreboard-munkát jelent; élőben újraütemeződik.";

@@ -1571,7 +1571,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | HUD-02 Fallback és routing | Fejlesztő | pack elfogadás/elutasítás; `/hud mind`; NATIVE_HUD kliens; 720p/1080p/4K és több GUI scale | pack nélkül vanilla survival kijelzés; packkal survival panel mindig megmarad; class panel routing szerint pontosan egyszer látszik; nincs elmozdulás vagy hardcore asset | HUD rollout stop | `hud/HUD-02/` |
 | [ ] | HUD-03 Editor-szétválasztás | Tesztelő | `/hud edit`; Survival HUD, DK-rúnák, más class charge és class XP kiválasztása | mind a négy önállóan mozgatható/méretezhető; DK-rúna változtatása nem mozdít generic charge-ot; Survival HUD visibility nem kapcsolható ki | HUD rollout stop | `hud/HUD-03/` |
 | [ ] | HUD-04 Class XP | Tesztelő | level 1 rész-XP, szintlépés előtti 1 XP, levelváltás, max level | arany sáv az aktuális class-szint intervallumát mutatja; „Még N XP” pontos; szintlépéskor nulláról indul; maxon `MAX SZINT` | class XP-sáv kikapcsolása layoutban | `hud/HUD-04/` |
-| [ ] | HUD-05 Célpont-vitals | Tesztelő | mob és classos játékos melee/lövedékes sebzése; két támadó; death/quit; attacker-only/everyone | követő current/max HP pontosan a találat utáni érték; játékos resource pontos; attacker-only nem szivárog; új ütés hosszabbít, TTL/death/quit eltávolít; nincs bennragadt display | `hud.profile.enabled: false` | `hud/HUD-05/` |
+| [ ] | HUD-05 Célpont-vitals | Tesztelő | eltérő magasságú és nametagelt mob (külön pók), classos játékos melee/lövedékes sebzése; két támadó; death/quit; attacker-only/everyone | követő current/max HP pontosan a találat utáni érték és a megmaradó eredeti név alatt jelenik meg; játékos resource pontos; attacker-only nem szivárog; új ütés hosszabbít, TTL/death/quit eltávolít; nincs bennragadt display | `hud.profile.enabled: false` | `hud/HUD-05/` |
 
 ### Kliens-bridge (protokoll-alap)
 
@@ -1997,7 +1997,8 @@ Kézi elfogadási minimum:
 - 20/20, részleges, kritikus és nagyobb skálázott max HP; absorption; 0/20 és 20/20 armor/food;
   szárazföldi kétoszlopos és fogyó oxigénnél háromoszlopos panel; editor move/scale és tiltott hide;
   `/hud mind` és NATIVE_HUD közben is látható survival panel;
-- mob/játékos célpont fej fölötti HP, játékos resource, attacker-only privacy és TTL/death cleanup;
+- eltérő magasságú, nametagelt mob/játékos célpont fej fölötti, az eredeti név alatt maradó HP;
+  játékos resource, attacker-only privacy és TTL/death cleanup;
 - külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
 - a pack sikeres betöltéséig natív compact/class és vanilla survival fallback, utána pontosan egy
   class HUD és egy survival panel ugyanabban a per-player bossbar-kompozícióban.

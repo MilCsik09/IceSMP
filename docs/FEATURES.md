@@ -366,8 +366,10 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
   a DK-rúnák nem osztoznak a többi kaszt generic charge-komponensével. A Profile v2 csak a globális alaptól eltérő
   mezőket tárolja, ezért a többi elem a későbbi globális változásokat is örökli.
 - **Combat-vitals névsor:** egy játékos vagy mob megsebzése eseményvezérelten rövid életű,
-  célpontot követő current/max HP-sort hoz létre. Játékos célpontnál opcionálisan class resource is
-  kerül mellé; alapból csak a támadó látja. Nincs periodikus világ- vagy közelség-szkennelés.
+  célpontot követő current/max HP-sort hoz létre. A külön display a célpont tényleges magasságából
+  számított helyen, az érintetlen eredeti név alatt marad; nem lesz az entitás utasa. Játékos
+  célpontnál opcionálisan class resource is kerül mellé; alapból csak a támadó látja. Nincs
+  periodikus világ- vagy közelség-szkennelés.
 - **Ami még kellhet hozzá:** Nincs builderfeladat; a saját tablista és HUD production megjelenését deployment előtt ellenőrizni kell.
 - **Fontos határ:** A natív tablista az IceSMP-hez szükséges funkciókat biztosítja, nem általános külső tablista-motor.
 

@@ -80,9 +80,11 @@ public final class HudEditorRegressionSuite {
         final String messageManager = read(
                 "src/main/java/hu/taliann/icesmp/utils/MessageManager.java");
         check(messageManager.contains("\"hud\"")
+                        && messageManager.contains("mergeBundledDefault(merged, \"messages.yml\")")
+                        && messageManager.contains("mergeBundledDefault(merged, \"messages/\" + group + \".yml\")")
                         && java.nio.file.Files.isRegularFile(java.nio.file.Path.of(
                                 "src/main/resources/messages/hud.yml")),
-                "HUD messages are a bundled message group");
+                "HUD messages and newly required keys must retain bundled upgrade fallbacks");
     }
 
     private static void editorCopyLivesInTheMessageLayer() throws Exception {

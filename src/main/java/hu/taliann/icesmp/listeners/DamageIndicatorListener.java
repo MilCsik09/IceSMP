@@ -5,6 +5,7 @@ import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.utils.DisplayFxUtil;
 import hu.taliann.icesmp.utils.TransientEntities;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Color;
@@ -72,7 +73,7 @@ public final class DamageIndicatorListener implements Listener {
     private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();
     // Attacker UUID -> az utolsó célpontja (a HUD célpont-sorához).
     private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();
-    // Target UUID -> a targethoz utasként kötött, rövid életű combat-vitals kijelzés.
+    // Target UUID -> rövid életű, külön entitásként a célpont feje alatt követett combat-vitals kijelzés.
     private final Map<UUID, VitalDisplay> vitalDisplays = new ConcurrentHashMap<>();
     private final AtomicLong vitalGenerations = new AtomicLong();
 
@@ -80,7 +81,10 @@ public final class DamageIndicatorListener implements Listener {
     public record LastTarget(UUID targetId, String targetName, boolean player, long atMillis) {
     }
 
-    private record VitalDisplay(TextDisplay display, long generation) {
+    private record VitalDisplay(TextDisplay display, ScheduledTask followTask, long generation) {
+    }
+
+    private record VitalsAppearance(Component text, float scale, float viewRange) {
     }
 
     public DamageIndicatorListener(final JavaPlugin plugin, final ConfigManager configManager,
@@ -194,31 +198,34 @@ public final class DamageIndicatorListener implements Listener {
     }
 
     /**
-     * Találat után egyetlen, a célpontot utasként követő HP/resource sort tart életben.
-     * Nincs periodikus világ- vagy közelség-szkennelés: csak az új találat frissíti és hosszabbítja
-     * meg a kijelzést. Alapból private az attacker számára; az {@code everyone} opció tudatos
-     * szerverdizájn-döntésként nyilvánossá teheti.
+     * Találat után egyetlen, a célpont magasságához igazított HP/resource sort tart életben.
+     * A rövid target-owned követőfeladat csak ezt az egy displayt mozgatja; világ- vagy
+     * közelség-szkennelés nincs. Alapból private az attacker számára; az {@code everyone} opció
+     * tudatos szerverdizájn-döntésként nyilvánossá teheti.
      */
     private void showTargetVitals(final Player attacker, final LivingEntity target) {
         if (!target.isValid() || target.isDead()
                 || !configManager.getBoolean("hud.profile.enabled", true)) {
             return;
         }
+        final VitalsAppearance appearance = captureVitalsAppearance(target);
+        final boolean attackerOnly = !"everyone".equalsIgnoreCase(
+                configManager.getString("hud.profile.visibility", "attacker-only"));
         final UUID targetId = target.getUniqueId();
         final VitalDisplay current = vitalDisplays.get(targetId);
         TextDisplay display = current == null ? null : current.display();
-        if (display == null || !display.isValid()) {
+        boolean created = false;
+        if (display == null) {
             if (current != null) {
                 vitalDisplays.remove(targetId, current);
             }
             if (vitalDisplays.size() >= MAX_VITAL_DISPLAYS || target.getWorld() == null) {
                 return;
             }
-            final boolean attackerOnly = !"everyone".equalsIgnoreCase(
-                    configManager.getString("hud.profile.visibility", "attacker-only"));
-            final Location at = target.getLocation();
+            final Location at = vitalsLocation(target);
             display = at.getWorld().spawn(at, TextDisplay.class, spawned -> {
                 spawned.setBillboard(Display.Billboard.CENTER);
+                spawned.setTeleportDuration(2);
                 spawned.setPersistent(false);
                 spawned.addScoreboardTag(DisplayFxUtil.FX_TAG);
                 spawned.setDefaultBackground(false);
@@ -227,25 +234,39 @@ public final class DamageIndicatorListener implements Listener {
                 spawned.setSeeThrough(false);
                 spawned.setAlignment(TextDisplay.TextAlignment.CENTER);
                 spawned.setLineWidth(240);
-                if (attackerOnly) {
-                    spawned.setVisibleByDefault(false);
-                }
+                spawned.setVisibleByDefault(!attackerOnly);
+                applyVitalsAppearance(spawned, appearance);
             });
-            if (!target.addPassenger(display)) {
-                removeIfValid(display);
-                return;
-            }
             TransientEntities.register(plugin, display);
+            created = true;
         }
 
-        applyVitalsAppearance(display, target);
+        if (!created) {
+            final TextDisplay updatedDisplay = display;
+            display.getScheduler().run(plugin, task -> {
+                if (updatedDisplay.isValid()) {
+                    updatedDisplay.setVisibleByDefault(!attackerOnly);
+                    applyVitalsAppearance(updatedDisplay, appearance);
+                }
+            }, null);
+        }
         final long generation = vitalGenerations.incrementAndGet();
-        final VitalDisplay refreshed = new VitalDisplay(display, generation);
+        final ScheduledTask followTask;
+        if (current == null || current.display() != display || current.followTask() == null) {
+            final TextDisplay followedDisplay = display;
+            followTask = target.getScheduler().runAtFixedRate(plugin,
+                    task -> followTargetVitals(targetId, target, followedDisplay, task),
+                    () -> retireTargetVitals(targetId, followedDisplay), 1L, 2L);
+        } else {
+            followTask = current.followTask();
+        }
+        if (followTask == null) {
+            removeDisplaySafely(display);
+            return;
+        }
+        final VitalDisplay refreshed = new VitalDisplay(display, followTask, generation);
         vitalDisplays.put(targetId, refreshed);
 
-        final boolean attackerOnly = !"everyone".equalsIgnoreCase(
-                configManager.getString("hud.profile.visibility", "attacker-only"));
-        display.setVisibleByDefault(!attackerOnly);
         if (attackerOnly) {
             revealToAttacker(attacker, display);
         }
@@ -258,7 +279,43 @@ public final class DamageIndicatorListener implements Listener {
                 () -> vitalDisplays.remove(targetId, refreshed), lifetime);
     }
 
-    private void applyVitalsAppearance(final TextDisplay display, final LivingEntity target) {
+    private void followTargetVitals(final UUID targetId, final LivingEntity target,
+                                    final TextDisplay display, final ScheduledTask task) {
+        final VitalDisplay current = vitalDisplays.get(targetId);
+        if (current == null || current.display() != display || !target.isValid() || target.isDead()) {
+            task.cancel();
+            if (current != null && current.display() == display
+                    && vitalDisplays.remove(targetId, current)) {
+                removeDisplaySafely(display);
+            }
+            return;
+        }
+        final Location next = vitalsLocation(target);
+        display.getScheduler().run(plugin, scheduled -> {
+            if (display.isValid()) {
+                display.teleportAsync(next);
+            }
+        }, null);
+    }
+
+    private void retireTargetVitals(final UUID targetId, final TextDisplay display) {
+        final VitalDisplay current = vitalDisplays.get(targetId);
+        if (current != null && current.display() == display) {
+            vitalDisplays.remove(targetId, current);
+        }
+        // EntityScheduler retired callbacks run in critical code: only enqueue cleanup on the
+        // display's own scheduler here; never remove another entity directly from the callback.
+        display.getScheduler().run(plugin, task -> removeIfValid(display), null);
+    }
+
+    private Location vitalsLocation(final LivingEntity target) {
+        final double offset = Math.max(-2.0D, Math.min(3.0D,
+                configManager.getDouble("hud.profile.height-offset", 0.20D)));
+        return target.getLocation().clone().add(
+                0.0D, Math.max(0.1D, target.getHeight()) + offset, 0.0D);
+    }
+
+    private VitalsAppearance captureVitalsAppearance(final LivingEntity target) {
         final AttributeInstance maxAttribute = target.getAttribute(Attribute.MAX_HEALTH);
         final double maximum = Math.max(1.0D, maxAttribute == null ? 20.0D : maxAttribute.getValue());
         final double health = Math.max(0.0D, Math.min(maximum, target.getHealth()));
@@ -276,17 +333,21 @@ public final class DamageIndicatorListener implements Listener {
                     .append(Component.text(resourceManager.resourceValue(player) + "/"
                             + resourceManager.resourceMax(player), NamedTextColor.AQUA));
         }
-        display.text(text);
-
         final float scale = (float) Math.max(0.35D, Math.min(2.0D,
                 configManager.getDouble("hud.profile.scale", 0.75D)));
-        final float y = (float) Math.max(-2.0D, Math.min(3.0D,
-                configManager.getDouble("hud.profile.height-offset", 0.55D)));
+        final float viewRange = (float) Math.max(0.25D, Math.min(4.0D,
+                configManager.getDouble("hud.profile.view-range", 1.0D)));
+        return new VitalsAppearance(text, scale, viewRange);
+    }
+
+    private static void applyVitalsAppearance(final TextDisplay display,
+                                               final VitalsAppearance appearance) {
+        display.text(appearance.text());
         display.setTransformation(new Transformation(
-                new Vector3f(0.0F, y, 0.0F), new AxisAngle4f(),
-                new Vector3f(scale, scale, scale), new AxisAngle4f()));
-        display.setViewRange((float) Math.max(0.25D, Math.min(4.0D,
-                configManager.getDouble("hud.profile.view-range", 1.0D))));
+                new Vector3f(), new AxisAngle4f(),
+                new Vector3f(appearance.scale(), appearance.scale(), appearance.scale()),
+                new AxisAngle4f()));
+        display.setViewRange(appearance.viewRange());
     }
 
     private void revealToAttacker(final Player attacker, final TextDisplay display) {
@@ -294,7 +355,7 @@ public final class DamageIndicatorListener implements Listener {
             return;
         }
         final Runnable reveal = () -> {
-            if (attacker.isOnline() && display.isValid()) {
+            if (attacker.isOnline()) {
                 attacker.showEntity(plugin, display);
             }
         };
@@ -312,14 +373,20 @@ public final class DamageIndicatorListener implements Listener {
             return;
         }
         vitalDisplays.remove(targetId, current);
+        current.followTask().cancel();
         removeIfValid(display);
     }
 
     private void removeVitalDisplay(final UUID targetId) {
         final VitalDisplay current = vitalDisplays.remove(targetId);
         if (current != null) {
-            removeIfValid(current.display());
+            current.followTask().cancel();
+            removeDisplaySafely(current.display());
         }
+    }
+
+    private void removeDisplaySafely(final TextDisplay display) {
+        display.getScheduler().run(plugin, task -> removeIfValid(display), null);
     }
 
     private static String compact(final double value) {
