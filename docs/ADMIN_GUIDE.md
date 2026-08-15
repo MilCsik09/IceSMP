@@ -1522,6 +1522,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | PROF-03 Főzetek valóban hatnak | Tesztelő | mind a 16 alkimista főzet elkészítése és elfogyasztása/eldobása | minden főzet a leírt hatást adja; a dobó/elnyúló változat a vanília terület-kezelést használja | alkimista rollout stop | `profession/PROF-03/` |
 | [ ] | PROF-04 Tomusok üllőn átadnak | Tesztelő | mind a 13 tomus elkészítése, üllőn felszerelésre helyezése | mindegyik átadja a nevében ígért bűbájt a megfelelő szintem | bűvölő rollout stop | `profession/PROF-04/` |
 | [ ] | PROF-05 Nincs nyersanyag-hurok | Admin | a gépi kapu (`scripts/check_consistency.py`) + kézi próba a korábbi 15 hurok receptjein | nincs olyan craft-kör, amely nettó nyersanyagot termel | katalógus rollback | `profession/PROF-05/` |
+| [ ] | PROF-07 Ellenszer és kenőcsvonal | Tesztelő | Méregvonó Pép méreg/wither alatt, majd aktív buffokkal; a 7 kenőcs/tea elfogyasztása | a pép MINDEN hatást levesz (a jókat is); a kenőcsök a leírt hosszú hatást adják | gyógynövényes rollout stop | `profession/PROF-07/` |
 | [ ] | PROF-06 Heti cél és tömeges XP | Tesztelő | recept-craft, shift-craft és 64-es kemencekivét | a craft-XP tölti a heti céh-célt; a tömeges munka darabonként számít a sapkáig | XP-kulcsok visszaállítása | `profession/PROF-06/` |
 
 ### Globális AFK

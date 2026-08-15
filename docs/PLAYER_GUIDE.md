@@ -534,6 +534,24 @@ a szakmaláncok egyedi alapanyaga.
 Az alkimista főzetei és a bűvölő tomusai **valódi hatást hordoznak**: a főzet
 megiható és dobható, a tomus üllőn átadja a bűbájt.
 
+### Melyik szakma mit ad?
+
+Mindegyiknek megvan a maga terméke, és ezek nem helyettesítik egymást:
+
+- **Kovács** — fém fegyver és páncél, sorsolt minőséggel.
+- **Favágó** — íjak, fejszék és az erdőjáró bőrdarabok.
+- **Bányász** — több érc ugyanabból a fejtésből, plusz saját csákány- és ásóvonal.
+- **Halász** — horgászbotok és a víz alatti felszerelés.
+- **Szakács** — ételek és italok rövid, tematikus buffokkal.
+- **Bűvölő** — bűvölőkönyvek, tekercsek és a hét rúna.
+- **Alkimista** — **harci, azonnali** főzetek: erő, gyorsaság, gyógyítás, méreg.
+- **Gyógynövényes** — **hosszú hatású, harcon kívüli** kenőcsök és teák, plusz a
+  **Méregvonó Pép**, az egyetlen hordozható ellenszer. Az utóbbi minden aktív hatást
+  levesz rólad — a rosszat is, a jót is, tehát nem mindig éri meg meginni.
+
+Az alkimista és a gyógynövényes szándékosan egymás ellenpárja: az egyik hatást ad,
+a másik levesz.
+
 ### Mesterfok és rúnák
 
 Magasabb szinten szakmaspecializációt választhatsz, és egyes mesterségek

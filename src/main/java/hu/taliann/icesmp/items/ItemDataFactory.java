@@ -55,11 +55,26 @@ public final class ItemDataFactory {
      */
     public static void applyConsumable(final ItemStack item, final ItemUseAnimation animation, final Key sound,
                                        final float seconds, final boolean particles, final List<PotionEffect> effects) {
+        applyConsumable(item, animation, sound, seconds, particles, effects, false);
+    }
+
+    /**
+     * A {@code clearEffects} a fogyasztáskor MINDEN aktív státuszhatást levesz. Ez a
+     * gyógynövényes ellenszer-vonalának a magja: az alkimista hatást ad, a gyógynövényes
+     * hatást vesz le — a kettő így nem fedi egymást. Kompromisszumos, nem szigorúan jobb,
+     * mert a saját buffokat is törli.
+     */
+    public static void applyConsumable(final ItemStack item, final ItemUseAnimation animation, final Key sound,
+                                       final float seconds, final boolean particles,
+                                       final List<PotionEffect> effects, final boolean clearEffects) {
         final Consumable.Builder builder = Consumable.consumable()
                 .animation(animation)
                 .sound(sound)
                 .consumeSeconds(seconds)
                 .hasConsumeParticles(particles);
+        if (clearEffects) {
+            builder.addEffect(ConsumeEffect.clearAllStatusEffects());
+        }
         if (effects != null && !effects.isEmpty()) {
             builder.addEffect(ConsumeEffect.applyStatusEffects(List.copyOf(effects), 1.0F));
         }
@@ -369,7 +384,8 @@ public final class ItemDataFactory {
         applyConsumable(item, drink ? ItemUseAnimation.DRINK : ItemUseAnimation.EAT,
                 drink ? DRINK_SOUND : EAT_SOUND,
                 (float) Math.max(0.1D, section.getDouble("seconds", drink ? 1.6D : 1.6D)),
-                section.getBoolean("particles", true), effects);
+                section.getBoolean("particles", true), effects,
+                section.getBoolean("clear-effects", false));
     }
 
     /**

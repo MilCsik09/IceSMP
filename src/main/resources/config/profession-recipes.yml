@@ -3638,6 +3638,339 @@ profession-recipes:
       item-model: "icesmp:tengerek_gyongye"
       consumable: {animation: eat, seconds: 1.6, nutrition: 6, saturation: 6.0, effects: ["DOLPHINS_GRACE:30:0", "WATER_BREATHING:45:0"]}
     ingredients: ["COD:2", "PRISMARINE_SHARD:1"]
+  gyogyfuves_kotes:
+    profession: herbalist
+    kind: egyedi
+    level: 14
+    learn: level
+    display-name: Gyógyfüves Kötés
+    category: Kenőcs
+    result:
+      material: BREAD
+      amount: 2
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 4
+        saturation: 2.0
+        effects:
+        - REGENERATION:20:0
+    ingredients:
+    - GLOW_BERRIES:2
+    - PAPER:1
+    - unique:aszalohalo:1
+    lore:
+    - 'Nem varázslat: tiszta vászon és türelem.'
+    - A seb magától gyógyul, csak hagyni kell.
+  meregvono_pep:
+    profession: herbalist
+    kind: egyedi
+    level: 25
+    learn: level
+    display-name: Méregvonó Pép
+    category: Kenőcs
+    result:
+      material: BROWN_MUSHROOM
+      amount: 3
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 2
+        saturation: 0.5
+        clear-effects: true
+    ingredients:
+    - unique:gyogy_kivonat:1
+    - BROWN_MUSHROOM:3
+    - SUGAR:1
+    lore:
+    - Kihúz a vérből mindent, ami nem oda való —
+    - a jót is. Válaszd meg, mikor nyúlsz érte.
+  bokic_gyogytea:
+    profession: herbalist
+    kind: egyedi
+    level: 26
+    learn: level
+    display-name: Bokic Gyógytea
+    category: Ital
+    result:
+      material: HONEY_BOTTLE
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects:
+        - REGENERATION:40:0
+        - ABSORPTION:60:0
+    ingredients:
+    - HONEY_BOTTLE:1
+    - GLOW_BERRIES:2
+    - unique:gyogy_kivonat:1
+    - unique:desztillalt_esoviz:1
+    lore:
+    - A Bokic partján minden fű gyógyít —
+    - ha tudod, melyiket mikor szeded.
+  eronlet_kenocs:
+    profession: herbalist
+    kind: egyedi
+    level: 31
+    learn: level
+    display-name: Erőnlét Kenőcs
+    category: Kenőcs
+    result:
+      material: HONEYCOMB
+      amount: 2
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 3
+        saturation: 1.0
+        effects:
+        - HASTE:120:0
+    ingredients:
+    - unique:gyogy_kivonat:1
+    - HONEYCOMB:3
+    - unique:oltoviasz:1
+    lore:
+    - A tenyérre kenve a szerszám könnyebb lesz.
+    - A munka nem — csak a kéz bírja tovább.
+  vandor_labkenocs:
+    profession: herbalist
+    kind: egyedi
+    level: 34
+    learn: level
+    display-name: Vándor Lábkenőcs
+    category: Kenőcs
+    result:
+      material: SUGAR
+      amount: 2
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 2
+        saturation: 0.5
+        effects:
+        - SPEED:180:0
+        - JUMP_BOOST:180:0
+    ingredients:
+    - unique:gyogy_kivonat:1
+    - SUGAR:4
+    - unique:permetezo_kanna:1
+    lore:
+    - A Menedéktől Caldesteráig hosszú az út.
+    - A láb nem panaszkodik, ha kenve van.
+  jegviragos_borogatas:
+    profession: herbalist
+    kind: egyedi
+    level: 38
+    learn: level
+    display-name: Jégvirágos Borogatás
+    category: Kenőcs
+    result:
+      material: SNOWBALL
+      amount: 2
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 2
+        saturation: 0.5
+        effects:
+        - FIRE_RESISTANCE:120:0
+        - RESISTANCE:60:0
+    ingredients:
+    - unique:jegviragpor:2
+    - unique:gyogy_kivonat:1
+    - SNOWBALL:3
+    lore:
+    - Kallan jege nem olvad el a bőrön —
+    - előbb a láng adja fel.
+  arnygomba_fozet:
+    profession: herbalist
+    kind: egyedi
+    level: 41
+    learn: level
+    display-name: Árnygomba Főzet
+    category: Ital
+    result:
+      material: HONEY_BOTTLE
+      amount: 2
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects:
+        - NIGHT_VISION:300:0
+        - SLOW_FALLING:120:0
+    ingredients:
+    - unique:arnygomba:2
+    - HONEY_BOTTLE:2
+    - unique:desztillalt_esoviz:1
+    lore:
+    - A gomba a sötétben nő, és a sötétet is ismeri.
+    - Aki issza, egy ideig ő is.
+  eletfa_balzsam:
+    profession: herbalist
+    kind: egyedi
+    level: 48
+    learn: level
+    display-name: Életfa Balzsam
+    category: Kenőcs
+    result:
+      material: GLISTERING_MELON_SLICE
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 6
+        saturation: 4.0
+        effects:
+        - REGENERATION:90:1
+        - ABSORPTION:180:1
+        - HEALTH_BOOST:300:0
+    ingredients:
+    - unique:gyogy_kivonat:3
+    - GLISTERING_MELON_SLICE:2
+    - unique:fonixpihe:1
+    - unique:oltoviasz:2
+    lore:
+    - A Világfa kérge alatt lassú, öreg nedv fut.
+    - Egy csepp belőle egy egész napot ér.
+  tarnasz_lapat:
+    profession: miner
+    kind: egyedi
+    level: 11
+    learn: level
+    display-name: Tárnász Lapát
+    category: Szerszám
+    result:
+      material: IRON_SHOVEL
+      affix-tier: crafted
+      attributes:
+      - attack_damage:0.5
+    ingredients:
+    - IRON_INGOT:1
+    - STICK:2
+    - unique:tarnatamasz_szegecs:1
+    lore:
+    - A tárna nem csak kőből áll.
+    - A törmeléket is el kell hordani valakinek.
+  melyszikla_lapat:
+    profession: miner
+    kind: egyedi
+    level: 38
+    learn: level
+    display-name: Mélyszikla Lapát
+    category: Szerszám
+    result:
+      material: DIAMOND_SHOVEL
+      affix-tier: crafted
+      enchant: minecraft:efficiency:3
+    ingredients:
+    - DIAMOND:1
+    - STICK:2
+    - unique:melysegi_borostyan:1
+    - unique:tarnatamasz_szegecs:1
+    lore:
+    - A mélyszikla nem enged a vasnak.
+    - A gyémánt viszont nem kérdez.
+  viharkvarc_csakany:
+    profession: miner
+    kind: egyedi
+    level: 44
+    learn: level
+    display-name: Viharkvarc Csákány
+    category: Szerszám
+    result:
+      material: DIAMOND_PICKAXE
+      affix-tier: crafted
+      enchant: minecraft:fortune:2
+    ingredients:
+    - DIAMOND:3
+    - STICK:2
+    - unique:viharkvarc:2
+    - unique:ercmoso_lug:1
+    lore:
+    - A kvarc a villám emlékét őrzi.
+    - Az ér tőle kétszer adja meg magát.
+  erdojaro_labszar:
+    profession: lumberjack
+    kind: egyedi
+    level: 25
+    learn: level
+    display-name: Erdőjáró Lábszár
+    category: Ritkaság
+    result:
+      material: LEATHER_LEGGINGS
+      affix-tier: crafted
+      attributes:
+      - armor:1
+    ingredients:
+    - LEATHER:5
+    - unique:kemenyfa_gerenda:1
+    - unique:favedo_pac:1
+    lore:
+    - Bőr és pácolt kéreg — az erdő nem ellenség,
+    - ha úgy öltözöl, ahogy ő.
+  erdojaro_csuklya:
+    profession: lumberjack
+    kind: egyedi
+    level: 38
+    learn: level
+    display-name: Erdőjáró Csuklya
+    category: Ritkaság
+    result:
+      material: LEATHER_HELMET
+      affix-tier: crafted
+      attributes:
+      - armor:1
+      - armor_toughness:1
+    ingredients:
+    - LEATHER:4
+    - unique:kemenyfa_gerenda:1
+    - unique:szavannafu_kotel:1
+    - unique:favedo_pac:1
+    lore:
+    - Aki a lombok alatt jár, ne csörögjön.
+    - A csuklya nem véd — elrejt.
+  vasbor_fozet:
+    profession: alchemist
+    kind: egyedi
+    level: 42
+    learn: level
+    display-name: Vasbőr Főzet
+    category: Ital
+    result:
+      material: POTION
+      amount: 2
+      potion-color: 7A7A8C
+      potion-effects:
+      - RESISTANCE:180:0
+    ingredients:
+    - GLASS_BOTTLE:2
+    - NETHER_WART:1
+    - unique:tiszta_vasesszencia:1
+    - unique:katalizator_so:1
+    lore:
+    - A vas nem a páncélban van.
+    - Egy órára a bőröd alatt is elfér.
+  sarkanyver_fozet:
+    profession: alchemist
+    kind: egyedi
+    level: 45
+    learn: level
+    display-name: Sárkányvér Főzet
+    category: Ital
+    result:
+      material: POTION
+      amount: 2
+      potion-color: 9B1B1B
+      potion-effects:
+      - HEALTH_BOOST:300:0
+      - REGENERATION:60:0
+    ingredients:
+    - GLASS_BOTTLE:2
+    - unique:sarkanycsont_szilank:1
+    - GHAST_TEAR:1
+    - unique:lombik_szen:1
+    lore:
+    - Kallan sárkányai nem haltak meg egészen.
+    - A csontjukban még lüktet valami.
 
 crafted-by:
   enabled: true

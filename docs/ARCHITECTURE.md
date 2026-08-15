@@ -1156,11 +1156,25 @@ A **hozam-arány felső határa emberi szabály marad** — a checker nem modell
 receptgazdaságot, mert az nagy és törékeny infrastruktúra lenne egy olyan kérdésre, amit
 review-ban másodpercek alatt el lehet dönteni.
 
-Két eredmény-mező hordozza a korábban hiányzó viselkedést: a `result.potion-effects`
+**Szakma-identitás.** A fajta-szabály önmagában nem tesz jó szakmát: minden szakmának
+saját *terméke* kell, különben a katalógus mérete nő, a játékélmény nem. A kovács
+felszerelést kovácsol (83% egyedi), és ez nem elérendő ARÁNY, hanem a felszerelés
+természetéből következik — ha minden szakma erre törekedne, mind ugyanazt gyártaná.
+A megosztás ezért termék szerint megy: kovács = fém felszerelés, favágó = bőr/fa
+erdőjáró darabok, bányász = kitermelés + saját szerszámvonal, halász = botok,
+szakács = buffos étel, bűvölő = könyvek és rúnák, alkimista = **harci, azonnali**
+főzetek, gyógynövényes = **hosszú hatású, harcon kívüli** kenőcsök és az EGYETLEN
+ellenszer-forrás (`consumable.clear-effects`). Az utolsó kettő szándékosan egymás
+ellenpárja: az egyik hatást ad, a másik levesz.
+
+Három eredmény-mező hordozza a korábban hiányzó viselkedést: a `result.potion-effects`
 (+ `result.potion-color`) valódi custom effekteket tesz a főzet-eredményre, hogy a vanília
 dobási/terület/időtartam-kezelés dolgozzon vele listener-utánzat helyett; a `result.enchant`
-enchantelt könyvnél stored-enchantként kerül fel. Mindkettő **meta-művelet**, ezért a
-data-komponens-blokk ELŐTT fut a `buildResult`-ban (a `setItemMeta` eldobná a komponenseket).
+enchantelt könyvnél stored-enchantként kerül fel; a `result.consumable.clear-effects`
+pedig `ConsumeEffect.clearAllStatusEffects()`-et tesz a CONSUMABLE komponensre. Az első
+kettő **meta-művelet**, ezért a data-komponens-blokk ELŐTT fut a `buildResult`-ban (a
+`setItemMeta` eldobná a komponenseket); a harmadik maga is data-komponens, a blokk része.
+Az ellenszer szándékosan nem szigorúan jobb a tejnél: a saját buffokat is törli.
 
 | profession | recipe key | item | problem | previous behaviour | fixed behaviour | balance rationale | migration / compatibility |
 |---|---|---|---|---|---|---|---|
@@ -1436,7 +1450,7 @@ gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
 
 ### Natív recept-böngésző (BROWSE_RECIPES → RECIPE_PAGE)
 
-A recept-katalógus (295 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
+A recept-katalógus (310 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
 ez az egyetlen pull-modellű domain: a kliens `BROWSE_RECIPES`-szel egy szakma egy
 lapját kéri, a válasz requestId-korrelált `RECIPE_PAGE` a `RECIPE_BROWSER` capability
 + `client.features.recipe-browser` kapu mögött. A lap a játékos régió-szálán épül
