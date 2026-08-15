@@ -1436,7 +1436,7 @@ gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
 
 ### Natív recept-böngésző (BROWSE_RECIPES → RECIPE_PAGE)
 
-A recept-katalógus (437 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
+A recept-katalógus (295 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
 ez az egyetlen pull-modellű domain: a kliens `BROWSE_RECIPES`-szel egy szakma egy
 lapját kéri, a válasz requestId-korrelált `RECIPE_PAGE` a `RECIPE_BROWSER` capability
 + `client.features.recipe-browser` kapu mögött. A lap a játékos régió-szálán épül
@@ -1448,6 +1448,13 @@ have-számlálás a megosztott GUI-helpereket használja (unique-anyag kizárás
 craftolhatóság a vanilla csempével egyezően szint + tervrajz + hozzávalók. Craft-action
 szándékosan NINCS a protokollban (a product spec szerint is későbbi külön döntés):
 a tényleges craft a vanilla recept-könyv tranzakciós útján marad.
+
+A csempe a **recept-fajtát** (`kind`) is hordozza, közvetlenül a `category` után a
+vezetéken. A vanilla recept-könyv a gyakorló receptet külön kiírja (szándékosan
+vanília-értékű, XP-ért van) — enélkül a natív böngésző rossz üzletnek mutatná
+ugyanazt a receptet, és a két felület tartalma elcsúszna. A mezőt a Fabric-repo
+`ProtocolRegressionSuite` golden-vektora és a `HandshakeFlowRegressionSuite`
+flow-roundtripje őrzi a szerveroldali kódoló bájtjaihoz kötve.
 
 ### Party frame (PARTY_STATE)
 
