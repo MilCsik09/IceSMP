@@ -433,7 +433,7 @@ profession-recipes:
     learn: level
     display-name: "Kezdő Alapfőzet"
     category: "Ital"
-    result: {material: POTION, amount: 1, potion-effects: [REGENERATION:8:0], potion-color: F06F9C}
+    result: {material: POTION, amount: 1, potion-effects: [REGENERATION:8:0], potion-color: F06F9C, item-model: icesmp:kezdo_fozet}
     ingredients: ["NETHER_WART:1", "GLASS_BOTTLE:1"]
     lore:
     - A tanonc első főzete —
@@ -445,7 +445,7 @@ profession-recipes:
     learn: level
     display-name: "Gyógyító Főzet"
     category: "Ital"
-    result: {material: POTION, amount: 3, potion-effects: [INSTANT_HEALTH:1:0], potion-color: F82423}
+    result: {material: POTION, amount: 3, potion-effects: [INSTANT_HEALTH:1:0], potion-color: F82423, item-model: icesmp:gyogyito_fozet}
     ingredients: ["GLISTERING_MELON_SLICE:1", "GLASS_BOTTLE:3", "NETHER_WART:1"]
     lore:
     - Csillámló dinnye, forró vízben.
@@ -457,7 +457,7 @@ profession-recipes:
     learn: level
     display-name: "Erő Főzete"
     category: "Ital"
-    result: {material: POTION, amount: 3, potion-effects: [STRENGTH:180:0], potion-color: '932423'}
+    result: {material: POTION, amount: 3, potion-effects: [STRENGTH:180:0], potion-color: '932423', item-model: icesmp:ero_fozet}
     ingredients: ["BLAZE_POWDER:1", "GLASS_BOTTLE:3", "NETHER_WART:1"]
     lore:
     - Lángpor és nether-gomba —
@@ -469,7 +469,7 @@ profession-recipes:
     learn: level
     display-name: "Sebesség Főzete"
     category: "Ital"
-    result: {material: POTION, amount: 3, potion-effects: [SPEED:180:0], potion-color: 7CAFC6}
+    result: {material: POTION, amount: 3, potion-effects: [SPEED:180:0], potion-color: 7CAFC6, item-model: icesmp:sebesseg_fozet}
     ingredients: ["SUGAR:1", "GLASS_BOTTLE:3", "NETHER_WART:1"]
     lore:
     - Cukor és türelem.
@@ -481,7 +481,7 @@ profession-recipes:
     learn: level
     display-name: "Tűzállóság Főzete"
     category: "Ital"
-    result: {material: POTION, amount: 3, potion-effects: [FIRE_RESISTANCE:180:0], potion-color: E49A3A}
+    result: {material: POTION, amount: 3, potion-effects: [FIRE_RESISTANCE:180:0], potion-color: E49A3A, item-model: icesmp:tuzallosag_fozet}
     ingredients: ["MAGMA_CREAM:1", "GLASS_BOTTLE:3", "NETHER_WART:1"]
     lore:
     - A magmakrém megköti a hőt,
@@ -493,7 +493,7 @@ profession-recipes:
     learn: level
     display-name: "Éjjellátás Főzete"
     category: "Ital"
-    result: {material: POTION, amount: 3, potion-effects: [NIGHT_VISION:180:0], potion-color: 1F1FA1}
+    result: {material: POTION, amount: 3, potion-effects: [NIGHT_VISION:180:0], potion-color: 1F1FA1, item-model: icesmp:ejjellatas_fozet}
     ingredients: ["GOLDEN_CARROT:1", "GLASS_BOTTLE:3", "NETHER_WART:1"]
     lore:
     - Aranyrépa és sötétség.
@@ -505,7 +505,7 @@ profession-recipes:
     learn: level
     display-name: "Dobó Gyógyító Főzet"
     category: "Ital"
-    result: {material: SPLASH_POTION, amount: 2, potion-effects: [INSTANT_HEALTH:1:0], potion-color: F82423}
+    result: {material: SPLASH_POTION, amount: 2, potion-effects: [INSTANT_HEALTH:1:0], potion-color: F82423, item-model: icesmp:dobo_gyogyito_fozet}
     ingredients: ["GLISTERING_MELON_SLICE:2", "GUNPOWDER:1", "GLASS_BOTTLE:2"]
     lore:
     - Amit nem érsz el kézzel,
@@ -517,7 +517,7 @@ profession-recipes:
     learn: level
     display-name: "Láthatatlanság Főzete"
     category: "Ital"
-    result: {material: POTION, amount: 3, potion-effects: [INVISIBILITY:180:0], potion-color: 7F8392}
+    result: {material: POTION, amount: 3, potion-effects: [INVISIBILITY:180:0], potion-color: 7F8392, item-model: icesmp:lathatatlansag_fozet}
     ingredients: ["FERMENTED_SPIDER_EYE:1", "GOLDEN_CARROT:1", "GLASS_BOTTLE:3"]
     lore:
     - Nem tűnsz el —
@@ -529,7 +529,7 @@ profession-recipes:
     learn: blueprint
     display-name: "Elnyúló Regeneráció Főzete"
     category: "Ital (tervrajz)"
-    result: {material: LINGERING_POTION, amount: 2, potion-effects: [REGENERATION:45:0], potion-color: CD5CAB}
+    result: {material: LINGERING_POTION, amount: 2, potion-effects: [REGENERATION:45:0], potion-color: CD5CAB, item-model: icesmp:elnyulo_regeneracio_fozet}
     ingredients:
     - "GHAST_TEAR:2"
     - "DRAGON_BREATH:1"
@@ -545,7 +545,7 @@ profession-recipes:
     learn: blueprint
     display-name: "Hosszan Tartó Erőfőzet"
     category: "Ital (tervrajz)"
-    result: {material: LINGERING_POTION, amount: 2, potion-effects: [STRENGTH:60:0], potion-color: '932423'}
+    result: {material: LINGERING_POTION, amount: 2, potion-effects: [STRENGTH:60:0], potion-color: '932423', item-model: icesmp:hosszu_erofozet}
     ingredients:
     - "BLAZE_POWDER:2"
     - "DRAGON_BREATH:1"
@@ -895,7 +895,7 @@ profession-recipes:
     learn: level
     display-name: "Esszenciás Főzet"
     category: "Ital"
-    result: {material: POTION, amount: 1, potion-effects: [STRENGTH:120:0, SPEED:120:0], potion-color: 6B4423}
+    result: {material: POTION, amount: 1, potion-effects: [STRENGTH:120:0, SPEED:120:0], potion-color: 6B4423, item-model: icesmp:eszencias_fozet}
     ingredients: ["GLASS_BOTTLE:1", "unique:vad_esszencia:2"]
     lore:
     - A vadállat dühe üvegbe zárva.
@@ -1084,7 +1084,7 @@ profession-recipes:
     learn: level
     display-name: "Kivonatos Regeneráció Főzete"
     category: "Ital"
-    result: {material: POTION, amount: 3, potion-effects: [REGENERATION:90:0], potion-color: CD5CAB}
+    result: {material: POTION, amount: 3, potion-effects: [REGENERATION:90:0], potion-color: CD5CAB, item-model: icesmp:kivonatos_regeneracio_fozet}
     ingredients:
     - "GLASS_BOTTLE:3"
     - "NETHER_WART:1"
@@ -1100,7 +1100,7 @@ profession-recipes:
     learn: level
     display-name: "Rúnasav Bomba"
     category: "Ital"
-    result: {material: SPLASH_POTION, amount: 2, potion-effects: [INSTANT_DAMAGE:1:0, WEAKNESS:15:0], potion-color: 8F3FBF}
+    result: {material: SPLASH_POTION, amount: 2, potion-effects: [INSTANT_DAMAGE:1:0, WEAKNESS:15:0], potion-color: 8F3FBF, item-model: icesmp:runasav_bomba}
     ingredients: ["GLASS_BOTTLE:2", "GUNPOWDER:1", "unique:runapor:2"]
     lore:
     - A rúnapor savval keverve
@@ -2016,7 +2016,7 @@ profession-recipes:
     learn: level
     display-name: "Visszhang-szilánk"
     category: "Ritkaság"
-    result: {material: ECHO_SHARD}
+    result: {material: ECHO_SHARD, item-model: icesmp:visszhang_szilank}
     ingredients: ["SCULK:8", "AMETHYST_SHARD:2", "unique:nema_kristaly:1"]
   magma_jaro_talp:
     profession: miner
@@ -2209,7 +2209,7 @@ profession-recipes:
     learn: level
     display-name: "Sárkánylehelet-párlat"
     category: "Ritkaság"
-    result: {material: DRAGON_BREATH}
+    result: {material: DRAGON_BREATH, item-model: icesmp:sarkanylehelet_parlat}
     ingredients: ["GLASS_BOTTLE:3", "unique:karhozat_parazs:1", "unique:desztillalt_esoviz:1"]
   fonixpihe_agyas:
     profession: herbalist
@@ -2416,6 +2416,7 @@ profession-recipes:
       attributes:
       - armor:2
       - armor_toughness:1
+      item-model: icesmp:osfa_gerenda
     ingredients:
     - LEATHER:6
     - DARK_OAK_LOG:8
@@ -2947,7 +2948,7 @@ profession-recipes:
     learn: level
     display-name: "Tenger Szíve-foglalat"
     category: "Ritkaság"
-    result: {material: HEART_OF_THE_SEA}
+    result: {material: HEART_OF_THE_SEA, item-model: icesmp:tenger_szive_foglalat}
     ingredients: ["NAUTILUS_SHELL:4", "PRISMARINE_CRYSTALS:8", "unique:gyongyhaz_pikkely:2", "unique:dermedt_konnycsepp:1"]
   koral_kertesz:
     profession: fisherman
@@ -3655,6 +3656,7 @@ profession-recipes:
         saturation: 2.0
         effects:
         - REGENERATION:20:0
+      item-model: icesmp:gyogyfuves_kotes
     ingredients:
     - GLOW_BERRIES:2
     - PAPER:1
@@ -3678,6 +3680,7 @@ profession-recipes:
         nutrition: 2
         saturation: 0.5
         clear-effects: true
+      item-model: icesmp:meregvono_pep
     ingredients:
     - unique:gyogy_kivonat:1
     - BROWN_MUSHROOM:3
@@ -3700,6 +3703,7 @@ profession-recipes:
         effects:
         - REGENERATION:40:0
         - ABSORPTION:60:0
+      item-model: icesmp:bokic_gyogytea
     ingredients:
     - HONEY_BOTTLE:1
     - GLOW_BERRIES:2
@@ -3725,6 +3729,7 @@ profession-recipes:
         saturation: 1.0
         effects:
         - HASTE:120:0
+      item-model: icesmp:eronlet_kenocs
     ingredients:
     - unique:gyogy_kivonat:1
     - HONEYCOMB:3
@@ -3750,6 +3755,7 @@ profession-recipes:
         effects:
         - SPEED:180:0
         - JUMP_BOOST:180:0
+      item-model: icesmp:vandor_labkenocs
     ingredients:
     - unique:gyogy_kivonat:1
     - SUGAR:4
@@ -3775,6 +3781,7 @@ profession-recipes:
         effects:
         - FIRE_RESISTANCE:120:0
         - RESISTANCE:60:0
+      item-model: icesmp:jegviragos_borogatas
     ingredients:
     - unique:jegviragpor:2
     - unique:gyogy_kivonat:1
@@ -3798,6 +3805,7 @@ profession-recipes:
         effects:
         - NIGHT_VISION:300:0
         - SLOW_FALLING:120:0
+      item-model: icesmp:arnygomba_fozet
     ingredients:
     - unique:arnygomba:2
     - HONEY_BOTTLE:2
@@ -3823,6 +3831,7 @@ profession-recipes:
         - REGENERATION:90:1
         - ABSORPTION:180:1
         - HEALTH_BOOST:300:0
+      item-model: icesmp:eletfa_balzsam
     ingredients:
     - unique:gyogy_kivonat:3
     - GLISTERING_MELON_SLICE:2
@@ -3843,6 +3852,7 @@ profession-recipes:
       affix-tier: crafted
       attributes:
       - attack_damage:0.5
+      item-model: icesmp:tarnasz_lapat
     ingredients:
     - IRON_INGOT:1
     - STICK:2
@@ -3861,6 +3871,7 @@ profession-recipes:
       material: DIAMOND_SHOVEL
       affix-tier: crafted
       enchant: minecraft:efficiency:3
+      item-model: icesmp:melyszikla_lapat
     ingredients:
     - DIAMOND:1
     - STICK:2
@@ -3880,6 +3891,7 @@ profession-recipes:
       material: DIAMOND_PICKAXE
       affix-tier: crafted
       enchant: minecraft:fortune:2
+      item-model: icesmp:viharkvarc_csakany
     ingredients:
     - DIAMOND:3
     - STICK:2
@@ -3900,6 +3912,7 @@ profession-recipes:
       affix-tier: crafted
       attributes:
       - armor:1
+      item-model: icesmp:erdojaro_labszar
     ingredients:
     - LEATHER:5
     - unique:kemenyfa_gerenda:1
@@ -3920,6 +3933,7 @@ profession-recipes:
       attributes:
       - armor:1
       - armor_toughness:1
+      item-model: icesmp:erdojaro_csuklya
     ingredients:
     - LEATHER:4
     - unique:kemenyfa_gerenda:1
@@ -3941,6 +3955,7 @@ profession-recipes:
       potion-color: 7A7A8C
       potion-effects:
       - RESISTANCE:180:0
+      item-model: icesmp:vasbor_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - NETHER_WART:1
@@ -3963,6 +3978,7 @@ profession-recipes:
       potion-effects:
       - HEALTH_BOOST:300:0
       - REGENERATION:60:0
+      item-model: icesmp:sarkanyver_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - unique:sarkanycsont_szilank:1
@@ -3983,6 +3999,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:fire_protection:2
+      item-model: icesmp:tuzvedelem_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4001,6 +4018,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:blast_protection:2
+      item-model: icesmp:robbanasvedelem_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4019,6 +4037,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:projectile_protection:2
+      item-model: icesmp:lovedekvedelem_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4037,6 +4056,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:respiration:2
+      item-model: icesmp:legzes_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4055,6 +4075,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:aqua_affinity:1
+      item-model: icesmp:vizi_ugyesseg_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4073,6 +4094,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:thorns:2
+      item-model: icesmp:tovis_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4090,6 +4112,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:depth_strider:2
+      item-model: icesmp:melyseglepte_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4108,6 +4131,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:frost_walker:1
+      item-model: icesmp:fagyjaro_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4126,6 +4150,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:soul_speed:2
+      item-model: icesmp:lelekfutas_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4144,6 +4169,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:swift_sneak:2
+      item-model: icesmp:sunnyogas_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4162,6 +4188,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:bane_of_arthropods:3
+      item-model: icesmp:izeltlabu_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4180,6 +4207,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:flame:1
+      item-model: icesmp:lang_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4198,6 +4226,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:infinity:1
+      item-model: icesmp:vegtelen_tomus
     ingredients:
     - BOOK:1
     - LAPIS_BLOCK:1
@@ -4217,6 +4246,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:punch:2
+      item-model: icesmp:lokes_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4235,6 +4265,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:loyalty:3
+      item-model: icesmp:husegeskuu_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4253,6 +4284,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:riptide:2
+      item-model: icesmp:szigonyvihar_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4271,6 +4303,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:channeling:1
+      item-model: icesmp:villamhivo_tomus
     ingredients:
     - BOOK:1
     - LAPIS_BLOCK:1
@@ -4290,6 +4323,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:impaling:3
+      item-model: icesmp:dofes_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4308,6 +4342,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:multishot:1
+      item-model: icesmp:sokloves_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:3
@@ -4326,6 +4361,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:density:3
+      item-model: icesmp:surites_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4344,6 +4380,7 @@ profession-recipes:
       material: ENCHANTED_BOOK
       amount: 1
       enchant: minecraft:wind_burst:2
+      item-model: icesmp:szellokitores_tomus
     ingredients:
     - BOOK:1
     - LAPIS_LAZULI:4
@@ -4364,6 +4401,7 @@ profession-recipes:
       potion-effects:
       - STRENGTH:120:0
       potion-color: '932423'
+      item-model: icesmp:dobo_ero_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - GUNPOWDER:1
@@ -4384,6 +4422,7 @@ profession-recipes:
       potion-effects:
       - SPEED:120:0
       potion-color: 7CAFC6
+      item-model: icesmp:dobo_sebesseg_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - GUNPOWDER:1
@@ -4403,6 +4442,7 @@ profession-recipes:
       potion-effects:
       - FIRE_RESISTANCE:120:0
       potion-color: E49A3A
+      item-model: icesmp:dobo_tuzallosag_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - GUNPOWDER:1
@@ -4423,6 +4463,7 @@ profession-recipes:
       potion-effects:
       - NIGHT_VISION:180:0
       potion-color: 1F1FA1
+      item-model: icesmp:dobo_ejjellatas_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - GUNPOWDER:1
@@ -4442,6 +4483,7 @@ profession-recipes:
       potion-effects:
       - INVISIBILITY:90:0
       potion-color: 7F8392
+      item-model: icesmp:dobo_lathatatlansag_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - GUNPOWDER:1
@@ -4462,6 +4504,7 @@ profession-recipes:
       potion-effects:
       - RESISTANCE:120:0
       potion-color: 7A7A8C
+      item-model: icesmp:dobo_vasbor_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - GUNPOWDER:1
@@ -4481,6 +4524,7 @@ profession-recipes:
       potion-effects:
       - REGENERATION:30:0
       potion-color: F82423
+      item-model: icesmp:elnyulo_gyogyito_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - DRAGON_BREATH:1
@@ -4501,6 +4545,7 @@ profession-recipes:
       potion-effects:
       - FIRE_RESISTANCE:90:0
       potion-color: E49A3A
+      item-model: icesmp:elnyulo_tuzallosag_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - DRAGON_BREATH:1
@@ -4521,6 +4566,7 @@ profession-recipes:
       potion-effects:
       - SPEED:90:0
       potion-color: 7CAFC6
+      item-model: icesmp:elnyulo_sebesseg_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - DRAGON_BREATH:1
@@ -4541,6 +4587,7 @@ profession-recipes:
       potion-effects:
       - WATER_BREATHING:240:0
       potion-color: 2E5F8C
+      item-model: icesmp:vizlegzes_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - NETHER_WART:1
@@ -4561,6 +4608,7 @@ profession-recipes:
       potion-effects:
       - SLOW_FALLING:120:0
       potion-color: D8D8E8
+      item-model: icesmp:lebego_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - NETHER_WART:1
@@ -4581,6 +4629,7 @@ profession-recipes:
       potion-effects:
       - HASTE:180:0
       potion-color: D9AF43
+      item-model: icesmp:sietseg_fozet
     ingredients:
     - GLASS_BOTTLE:2
     - NETHER_WART:1
@@ -4663,6 +4712,7 @@ profession-recipes:
       material: IRON_PICKAXE
       affix-tier: crafted
       enchant: minecraft:efficiency:2
+      item-model: icesmp:banyasz_vesocsakany
     ingredients:
     - IRON_INGOT:3
     - STICK:2
@@ -4681,6 +4731,7 @@ profession-recipes:
       material: NETHERITE_SHOVEL
       affix-tier: crafted
       enchant: minecraft:efficiency:4
+      item-model: icesmp:netherit_lapat
     ingredients:
     - NETHERITE_INGOT:1
     - STICK:2
@@ -4722,6 +4773,7 @@ profession-recipes:
         saturation: 6.0
         effects:
         - SATURATION:2:0
+      item-model: icesmp:taplalo_pep
     ingredients:
     - WHEAT:3
     - unique:tozegkocka:1
@@ -4746,6 +4798,7 @@ profession-recipes:
         saturation: 0.5
         effects:
         - SLOW_FALLING:180:0
+      item-model: icesmp:laposfoldi_kenocs
     ingredients:
     - unique:gyogy_kivonat:1
     - SLIME_BALL:3
@@ -4768,6 +4821,7 @@ profession-recipes:
         seconds: 1.6
         effects:
         - WATER_BREATHING:240:0
+      item-model: icesmp:vizi_fu_fozet
     ingredients:
     - SEAGRASS:6
     - HONEY_BOTTLE:2
@@ -4789,6 +4843,7 @@ profession-recipes:
         seconds: 1.6
         effects:
         - LUCK:300:0
+      item-model: icesmp:szerencsefu_tea
     ingredients:
     - unique:gyogy_kivonat:1
     - HONEY_BOTTLE:2
@@ -4812,6 +4867,7 @@ profession-recipes:
         seconds: 1.6
         effects:
         - HERO_OF_THE_VILLAGE:300:0
+      item-model: icesmp:hosnapi_fozet
     ingredients:
     - unique:gyogy_kivonat:2
     - HONEY_BOTTLE:1
@@ -4881,6 +4937,7 @@ profession-recipes:
       attributes:
       - armor:1
       - movement_speed:0.01
+      item-model: icesmp:erdojaro_csizma
     ingredients:
     - LEATHER:4
     - unique:kemenyfa_gerenda:1
@@ -4899,6 +4956,7 @@ profession-recipes:
       material: IRON_AXE
       affix-tier: crafted
       enchant: minecraft:efficiency:2
+      item-model: icesmp:favago_szekerce
     ingredients:
     - IRON_INGOT:3
     - STICK:2
@@ -4918,6 +4976,7 @@ profession-recipes:
       material: CROSSBOW
       affix-tier: crafted
       enchant: minecraft:multishot:1
+      item-model: icesmp:vadonjaro_szamszerij
     ingredients:
     - STICK:5
     - IRON_INGOT:1
@@ -4937,6 +4996,7 @@ profession-recipes:
       material: BOW
       affix-tier: crafted
       enchant: minecraft:flame:1
+      item-model: icesmp:mestervadasz_ij
     ingredients:
     - STICK:3
     - STRING:4
@@ -4957,6 +5017,7 @@ profession-recipes:
       affix-tier: crafted
       attributes:
       - knockback_resistance:0.15
+      item-model: icesmp:tuskes_pajzs
     ingredients:
     - OAK_PLANKS:6
     - IRON_INGOT:2
@@ -5029,6 +5090,7 @@ profession-recipes:
       affix-tier: crafted
       attributes:
       - armor:1
+      item-model: icesmp:vizallo_nadrag
     ingredients:
     - LEATHER:6
     - unique:csalizsir:1
@@ -5047,6 +5109,7 @@ profession-recipes:
       material: LEATHER_BOOTS
       affix-tier: crafted
       enchant: minecraft:depth_strider:2
+      item-model: icesmp:melysegjaro_csizma
     ingredients:
     - LEATHER:4
     - unique:gyongyhaz_pikkely:1
@@ -5065,6 +5128,7 @@ profession-recipes:
       material: IRON_HELMET
       affix-tier: crafted
       enchant: minecraft:respiration:2
+      item-model: icesmp:buvar_sisak
     ingredients:
     - IRON_INGOT:5
     - GLASS:2
@@ -5083,6 +5147,7 @@ profession-recipes:
       material: TRIDENT
       affix-tier: crafted
       enchant: minecraft:impaling:3
+      item-model: icesmp:dofoszigony
     ingredients:
     - PRISMARINE_SHARD:6
     - PRISMARINE_CRYSTALS:2
@@ -5101,6 +5166,7 @@ profession-recipes:
       material: TRIDENT
       affix-tier: crafted
       enchant: minecraft:loyalty:2
+      item-model: icesmp:husegeskuu_szigony
     ingredients:
     - PRISMARINE_SHARD:8
     - unique:gyongyhaz_pikkely:2
@@ -5119,6 +5185,7 @@ profession-recipes:
       material: TRIDENT
       affix-tier: crafted
       enchant: minecraft:riptide:2
+      item-model: icesmp:viharszigony
     ingredients:
     - PRISMARINE_SHARD:8
     - PRISMARINE_CRYSTALS:4
@@ -5137,6 +5204,7 @@ profession-recipes:
       material: TRIDENT
       affix-tier: crafted
       enchant: minecraft:channeling:1
+      item-model: icesmp:villamszigony
     ingredients:
     - PRISMARINE_SHARD:8
     - COPPER_BLOCK:2
@@ -5156,6 +5224,7 @@ profession-recipes:
       material: FISHING_ROD
       affix-tier: crafted
       enchant: minecraft:luck_of_the_sea:3
+      item-model: icesmp:mesterfoku_horgaszbot
     ingredients:
     - STICK:3
     - STRING:4

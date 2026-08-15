@@ -132,6 +132,21 @@ for model, places in sorted(used_models.items()):
     if model not in manifest_models:
         fail(f"ITEM_MODEL '{model}' használatban ({sorted(places)[0]}), de hiányzik a docs/RESOURCE_PACK_CMD.md manifestből")
 
+# A manifest-sor csak a BRIEF; a kliens a PNG-t rendereli. Deklarált item-model
+# hiányzó textúrával a játékban hiányzó-modellként (fekete-lila kocka) jelenik meg,
+# és ezt eddig SEMMI nem fogta meg. WARN, nem FAIL: a művészi munka a kódtól külön
+# ütemben halad, de a hiány legyen látható és számolható.
+_pack_item_textures = {
+    os.path.basename(_p)[:-4]
+    for _p in glob.glob(os.path.join(REPO, "resource-pack/assets/icesmp/textures/item/*.png"))
+}
+if _pack_item_textures:
+    _missing_textures = sorted(set(used_models) - _pack_item_textures)
+    if _missing_textures:
+        warn(f"resource pack: {len(_missing_textures)} deklarált ITEM_MODEL-hez nincs PNG a packban "
+             f"(elsők: {', '.join(_missing_textures[:5])}) — a kliens hiányzó modellt renderel, "
+             f"amíg a textúrák meg nem érkeznek")
+
 # A teljes migráció után numerikus CustomModelData nem kerülhet vissza.
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
     src = read(path)

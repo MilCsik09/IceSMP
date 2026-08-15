@@ -2393,3 +2393,128 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 - **Ábrázolás:** netherit lapát sötét, mattfekete lappal, borostyán-erezet a fémben
 - **Színvilág:** netherit sötétbarna-fekete; akcent: izzó borostyán erezet
 - **Hangulat / lore:** Bányász-recept eredménye (Szerszám kategória, 49. szint).
+
+## Szakma-rework — korábban modell nélkül maradt tárgyak
+
+
+### Alkimista
+
+### `kezdo_fozet` — Kezdő Alapfőzet
+- **Fájl:** `kezdo_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** egyszerű üvegfiola halvány rózsaszín főzettel, gyűrött parafadugó
+- **Színvilág:** halvány rózsaszín, tiszta üveg; akcent: fakó rózsaszín pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 3. szint).
+
+### `gyogyito_fozet` — Gyógyító Főzet
+- **Fájl:** `gyogyito_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** kerek fiola élénkvörös főzettel, csillámló dinnyeszelet-folt az üvegen át
+- **Színvilág:** élénk vörös; akcent: arany dinnye-csillanás
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 6. szint).
+
+### `ero_fozet` — Erő Főzete
+- **Fájl:** `ero_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** vaskos fiola sötétvörös főzettel, lángpor-üledék a talpán
+- **Színvilág:** mélyvörös, sötét üledék; akcent: parázs-narancs szemcse
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 10. szint).
+
+### `sebesseg_fozet` — Sebesség Főzete
+- **Fájl:** `sebesseg_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola világoskék főzettel, sodródó vonalak a folyadékban
+- **Színvilág:** égszínkék; akcent: fehér sodrás-vonal
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 14. szint).
+
+### `tuzallosag_fozet` — Tűzállóság Főzete
+- **Fájl:** `tuzallosag_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** vaskos fiola narancs főzettel, magmakrém-gömb a fenekén
+- **Színvilág:** narancs-borostyán; akcent: izzó magmavörös
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 18. szint).
+
+### `ejjellatas_fozet` — Éjjellátás Főzete
+- **Fájl:** `ejjellatas_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola mély éjkék főzettel, apró csillagszikrák a folyadékban
+- **Színvilág:** mély éjkék; akcent: aranysárga szikra
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 20. szint).
+
+### `dobo_gyogyito_fozet` — Dobó Gyógyító Főzet
+- **Fájl:** `dobo_gyogyito_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola élénkvörös főzettel, hosszú nyak, lőporcsík
+- **Színvilág:** élénk vörös, szürke lőpor; akcent: arany csillanás
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 24. szint).
+
+### `eszencias_fozet` — Esszenciás Főzet
+- **Fájl:** `eszencias_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** zömök fiola barnás-vörös főzettel, vadállat-esszencia örvénylik benne
+- **Színvilág:** vadbarna, mélyvörös; akcent: nyers narancs örvény
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 26. szint).
+
+### `lathatatlansag_fozet` — Láthatatlanság Főzete
+- **Fájl:** `lathatatlansag_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola alig látható, füstszürke folyadékkal, a fiola kontúrja is halvány
+- **Színvilág:** sápadt füstszürke, áttetsző; akcent: alig látható fehér pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 26. szint).
+
+### `kivonatos_regeneracio_fozet` — Kivonatos Regeneráció Főzete
+- **Fájl:** `kivonatos_regeneracio_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** fiola rózsaszín-lila főzettel, gyógyfű-levél az üvegre kötve
+- **Színvilág:** rózsalila; akcent: mohazöld levél
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 28. szint).
+
+### `runasav_bomba` — Rúnasav Bomba
+- **Fájl:** `runasav_bomba.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola maró lila folyadékkal, rúna-karcok az üvegen
+- **Színvilág:** maró lila, savzöld; akcent: fehér rúna-karc
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 32. szint).
+
+### `elnyulo_regeneracio_fozet` — Elnyúló Regeneráció Főzete
+- **Fájl:** `elnyulo_regeneracio_fozet.png` &nbsp;|&nbsp; **Alap-item:** `LINGERING_POTION`
+- **Ábrázolás:** széles talpú elnyúló fiola rózsalila főzettel, alul terjedő köd
+- **Színvilág:** rózsalila, sárkánylehelet-lila; akcent: halvány rózsaszín pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital (tervrajz) kategória, 38. szint).
+
+### `hosszu_erofozet` — Hosszan Tartó Erőfőzet
+- **Fájl:** `hosszu_erofozet.png` &nbsp;|&nbsp; **Alap-item:** `LINGERING_POTION`
+- **Ábrázolás:** széles talpú elnyúló fiola sötétvörös főzettel, alul nehéz, vörös köd
+- **Színvilág:** mélyvörös, lila köd; akcent: parázs-narancs
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital (tervrajz) kategória, 40. szint).
+
+
+### Bányász
+
+### `visszhang_szilank` — Visszhang-szilánk
+- **Fájl:** `visszhang_szilank.png` &nbsp;|&nbsp; **Alap-item:** `ECHO_SHARD`
+- **Ábrázolás:** szögletes, sötét sculk-szilánk, hullámzó visszhang-gyűrűk a felszínén
+- **Színvilág:** éjfekete-kék sculk; akcent: hideg türkiz visszhang-gyűrű
+- **Hangulat / lore:** Bányász-recept eredménye (Ritkaság kategória, 37. szint).
+
+
+### Favágó
+
+### `osfa_gerenda` — Ősfa Kéregvért
+- **Fájl:** `osfa_gerenda.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_CHESTPLATE`
+- **Ábrázolás:** bőrmellény vastag, pácolt kéregpáncél-lapokkal a mellkason, fűkötél-varrás
+- **Színvilág:** sötét kéregbarna, cserzett bőr; akcent: mohazöld kötés
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 48. szint).
+
+
+### Gyógynövényes
+
+### `bokic_gyogytea` — Bokic Gyógytea
+- **Fájl:** `bokic_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
+- **Ábrázolás:** agyagkorsó gőzölgő, borostyánszín teával, gyógyfű-csokor a fülén
+- **Színvilág:** agyagbarna, borostyán tea; akcent: friss gyógyfű-zöld
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ital kategória, 26. szint).
+
+### `sarkanylehelet_parlat` — Sárkánylehelet-párlat
+- **Fájl:** `sarkanylehelet_parlat.png` &nbsp;|&nbsp; **Alap-item:** `DRAGON_BREATH`
+- **Ábrázolás:** szélesszájú fiola örvénylő lila gőzzel, a gőz kicsap a nyakán
+- **Színvilág:** sárkánylehelet-lila, füstszürke; akcent: világos lila örvény
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ritkaság kategória, 47. szint).
+
+
+### Halász
+
+### `tenger_szive_foglalat` — Tenger Szíve-foglalat
+- **Fájl:** `tenger_szive_foglalat.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
+- **Ábrázolás:** türkiz szívkagyló ezüst foglalatban, gyöngyház-erezet, halvány kék derengés
+- **Színvilág:** prizmarin-türkiz, gyöngyház, ezüst; akcent: halvány kék fény
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 44. szint).
