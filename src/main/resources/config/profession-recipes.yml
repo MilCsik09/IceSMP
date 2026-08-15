@@ -683,12 +683,12 @@ profession-recipes:
     kind: egyedi
     level: 45
     learn: blueprint
-    display-name: "Tűzcsapás Tomus"
+    display-name: "Örvénylő Pusztítás Tomus"
     lore:
     - "&7Netherit-porral kevert ősi rúna,"
     - "&7mely pusztító örvényt zár a fegyverbe."
     category: "Bűvölés (tervrajz)"
-    result: {material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:orvenylo_pusztitas_tomus", enchant: minecraft:fire_aspect:2}
+    result: {material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:orvenylo_pusztitas_tomus", enchant: minecraft:sweeping_edge:3}
     ingredients: ["BOOK:1", "LAPIS_LAZULI:8", "NETHERITE_SCRAP:1", "DIAMOND:4"]
   selyemerintes_tomus:
     profession: enchanter
@@ -917,7 +917,7 @@ profession-recipes:
     kind: egyedi
     level: 40
     learn: blueprint
-    display-name: "Szörnyirtás Tomus"
+    display-name: "Szörnymag Talizmán"
     lore:
     - "&7Egy Szörny Mag lüktet a talizmán szívében,"
     - "&7sötét energiát kölcsönözve viselőjének."
@@ -1122,12 +1122,13 @@ profession-recipes:
     kind: egyedi
     level: 30
     learn: level
-    display-name: "Vasesszenciás Ütés Tomus"
+    display-name: "Vasesszenciás Páncéltörés Tomus"
     lore:
-    - "&7Tiszta Vasesszenciával írt rúna,"
-    - "&7mely a legkeményebb páncélt is megtöri."
+    - '&7A Vasművek titka: a páncél is fém,'
+    - '&7és a fém is enged, ha jól ütik.'
+    - '&8Buzogányra való.'
     category: "Bűvölés"
-    result: {material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:vasesszencias_paloscsapas_tomus", enchant: minecraft:knockback:2}
+    result: {material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:vasesszencias_paloscsapas_tomus", enchant: minecraft:breach:2}
     ingredients: ["BOOK:1", "LAPIS_LAZULI:3", "unique:tiszta_vasesszencia:2"]
   kemenyfa_ijkeret_tomus:
     profession: enchanter
