@@ -36,14 +36,14 @@ professions:
     recipe-craft-per-level: 2
     recipe-craft-grey-after: 20
     mining-ore: 5
-    herbalism-harvest: 3
-    logging: 2
+    herbalism-harvest: 4
+    logging: 4
     crafting-gear: 8
     smithing: 15
     enchanting: 10
     brewing: 12
-    fishing: 4
-    cooking: 3
+    fishing: 5
+    cooking: 5
   specialization:
     # A szakma ezen a szinten specializálódhat (/spec choose).
     required-level: 25
@@ -59,8 +59,8 @@ profession-weekly:
     miner: 5000
     herbalist: 4000
     lumberjack: 4000
-    armorer: 2500
-    alchemist: 1800
-    enchanter: 1500
-    fisherman: 3000
-    cook: 1500
+    armorer: 3500
+    alchemist: 3000
+    enchanter: 3000
+    fisherman: 3500
+    cook: 3000

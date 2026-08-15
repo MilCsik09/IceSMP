@@ -4,6 +4,7 @@ import hu.taliann.icesmp.items.BlueprintItemFactory;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -54,29 +55,37 @@ public final class BlueprintUseListener implements Listener {
             player.sendMessage(messageManager.get("blueprint-unknown", "&cEz a tervrajz nem tartozik ismert recepthez."));
             return;
         }
+        final ItemStack reservedBlueprint = item.clone();
+        reservedBlueprint.setAmount(1);
+        if (item.getAmount() == 1) {
+            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+        } else {
+            item.setAmount(item.getAmount() - 1);
+        }
         professionManager.learnRecipe(player, recipeId)
                 .whenComplete((learned, failure) -> professionManager.runOnOwnerThread(player, () -> {
                     if (failure != null) {
+                        restoreBlueprint(player, reservedBlueprint);
                         player.sendMessage(messageManager.get("blueprint-storage-failed",
-                                "&cA recept PlayerProfile mentése meghiúsult; a tervrajz nem fogyott el."));
+                                "&cA recept PlayerProfile mentése meghiúsult; a tervrajzot visszakaptad."));
                         return;
                     }
                     if (!Boolean.TRUE.equals(learned)) {
+                        restoreBlueprint(player, reservedBlueprint);
                         player.sendMessage(messageManager.get("blueprint-already-known",
                                 "&7Ezt a receptet már ismered."));
                         return;
                     }
-                    final ItemStack current = player.getInventory().getItemInMainHand();
-                    if (!recipeId.equals(blueprintFactory.recipeIdOf(current)) || current.getAmount() <= 0) {
-                        player.sendMessage(messageManager.get("blueprint-item-changed",
-                                "&eA recept elmentve, de a kézben tartott tervrajz megváltozott, ezért nem fogyasztottunk itemet."));
-                        return;
-                    }
-                    current.setAmount(current.getAmount() - 1);
                     player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.7F, 1.0F);
                     player.sendMessage(messageManager.get("blueprint-learned",
                             "&aÚj receptet tanultál: &e%s&a! (Recept-könyv: /profession recipes)",
                             recipe.displayName()));
                 }));
+    }
+
+    private static void restoreBlueprint(final Player player, final ItemStack blueprint) {
+        for (final ItemStack overflow : player.getInventory().addItem(blueprint).values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+        }
     }
 }

@@ -439,6 +439,7 @@ public final class IceSMPCore {
         worldBossManager.setSpawnPointManager(eventSpawnPointManager); // hely-horgony
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
+        this.professionRecipeBookListener.setWeeklyGoalManager(professionWeeklyGoalManager);
         this.devItemManager = new hu.taliann.icesmp.managers.DevItemManager(plugin, configManager, messageManager,
                 uniqueMaterialFactory, professionRecipeCatalog, blueprintItemFactory, professionRecipeBookListener);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);

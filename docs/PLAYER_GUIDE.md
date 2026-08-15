@@ -508,13 +508,22 @@ fejt, a gyógynövényész érett növényt gyűjt, a favágó rönköt vág; a 
 pedig a saját műhelyfolyamataikban haladnak.
 
 - `/profession info` — szakmai állapot.
-- `/profession join <szakma>` — tanulás vagy váltás.
+- `/profession join <szakma>` — szakma választása az üres gyűjtögető vagy készítő helyre;
+  foglalt helyet csak admin tud átállítani.
 - `/profession recipes` — a ténylegesen ismert és zárolt receptek.
 - `/szakmacel` — a szakmád heti közös célja.
 
 A teljes receptkatalógus nem része ennek a kézikönyvnek. A receptkönyv jelzi a
 szintet, a hozzávalót, az esetleges tervrajzot és azt is, ha valamilyen
 szolgáltatói kellék hiányzik.
+
+A szakmai receptek nem egyszerűen drágább vanilla másolatok: az alapanyag-
+finomítás jobb hozamot, a felszerelés valódi enchantot/affixet, az alkimista
+főzet natív potion-hatást, az összetett étel pedig feltüntetett buffot ad.
+A boss-only tervrajz tanuláskor elfogy; ritka vanilla tárgyat csak ritka vagy
+eventből származó alapanyaggal lehet szakmai úton előállítani. Craftolni csak
+az éppen aktív szakmád receptjeit tudod. A sikeresen jóváírt craft-XP a heti
+szakmacélba is beleszámít.
 
 ### Mesterfok és rúnák
 

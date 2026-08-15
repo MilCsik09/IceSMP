@@ -147,8 +147,9 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
             if (!rule.appliesTo(material)) {
                 continue;
             }
-
-            return meetsRequirement(player, rule) ? null : rule;
+            if (!meetsRequirement(player, rule)) {
+                return rule;
+            }
         }
 
         return null;

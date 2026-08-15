@@ -46,6 +46,7 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
 
     private volatile long week;
     private final Map<ProfessionType, AtomicLong> counters = new ConcurrentHashMap<>();
+    private int pendingContributions;
 
     public ProfessionWeeklyGoalManager(final JavaPlugin plugin, final ConfigManager configManager,
                                        final ProfessionManager professionManager,
@@ -63,22 +64,38 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
     }
 
     /** Hozzájárulás (a ProfessionXpListener hívja a játékos saját régió-szálán). */
-    public void add(final Player player, final ProfessionType profession, final int units) {
+    public synchronized void add(final Player player, final ProfessionType profession, final int units) {
         if (units <= 0 || !configManager.getBoolean("profession-weekly.enabled", true)) {
             return;
         }
-        counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
         if (PlayerProfileAuthority.installed().isEmpty()) {
+            counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
             return;
         }
         final UUID playerId = player.getUniqueId();
-        weeklyStore.recordContribution(playerId, profession, units, week)
+        final long contributionWeek = week;
+        pendingContributions++;
+        weeklyStore.recordContribution(playerId, profession, units, contributionWeek)
                 .whenComplete((total, failure) -> {
-                    if (failure != null) {
-                        plugin.getLogger().severe("Heti céh-hozzájárulás mentése sikertelen: "
-                                + playerId + ": " + failure.getMessage());
-                    }
+                    completeContribution(playerId, profession, units, contributionWeek, failure);
                 });
+    }
+
+    private synchronized void completeContribution(final UUID playerId, final ProfessionType profession,
+                                                    final int units, final long contributionWeek,
+                                                    final Throwable failure) {
+        try {
+            if (failure != null) {
+                plugin.getLogger().severe("Heti céh-hozzájárulás mentése sikertelen: "
+                        + playerId + ": " + failure.getMessage());
+                return;
+            }
+            if (week == contributionWeek) {
+                counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
+            }
+        } finally {
+            pendingContributions--;
+        }
     }
 
     public long counterOf(final ProfessionType profession) {
@@ -95,6 +112,10 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
     public synchronized void tick() {
         final long now = currentWeek();
         if (now == week) {
+            return;
+        }
+        // A hétváltás megvárja az előző hét már elindított durable contribution-commitjait.
+        if (pendingContributions > 0) {
             return;
         }
         evaluateWeek(week);

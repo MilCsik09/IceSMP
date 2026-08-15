@@ -1513,6 +1513,17 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-25 Random tervrajz policy | Admin/tesztelő | szakma- és szintszűrt normál pool, majd Mitikus `include-loot-only` pool | minden sorsolt recept a tartományban van; boss-only csak engedélyezett poolból jön | érintett pool tiltása | `crate/CRATE-25/` |
 | [ ] | CRATE-26 Elytra-tiltás | Admin | közvetlen `item: ELYTRA`, Elytra-recept és ilyen tervrajz tesztdefiníciója | mindhárom config betöltéskor elutasított; bundled lootban nincs Elytra | crate config rollback | `crate/CRATE-26/` |
 
+### Profession-gazdaság és recepttranzakció
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | PROF-01 Blueprint foglalás | Tesztelő | ismeretlen és már ismert tervrajz; tanulás közben gyors kézcsere | sikeres tanulás pontosan egy itemet fogyaszt; redundant/storage-failure útvonal visszaadja; kézcsere nem dupláz | blueprint drop ideiglenes tiltása | `profession/PROF-01/` |
+| [ ] | PROF-02 Aktív szakmakapu | Admin/tesztelő | nyitott receptkönyv, majd admin profession clear/set | a régi GUI-ból sem craftolható az inaktív szakma receptje | profession craft rollout stop | `profession/PROF-02/` |
+| [ ] | PROF-03 Natív payload | Tesztelő | minden profession potion/splash/lingering potion és enchanted book egy példánya | a potion tooltipje és használata a configolt hatást adja; minden könyv valós stored enchantot visz és üllőben használható | érintett recept tiltása | `profession/PROF-03/` |
+| [ ] | PROF-04 Gazdasági körök | Admin | rúnapor- és ősfa-lánc többszöri craftja, továbbá közvetlen finomítások | nincs glowstone- vagy dark-oak-log sokszorozás; a katalizátoros hozamelőny a dokumentált 25–50%-os sávban marad | érintett recept tiltása | `profession/PROF-04/` |
+| [ ] | PROF-05 Ritka tárgykapu | Eventes | Heart of the Sea, Echo Shard és Totem profession útjai | loot-only eredményhez blueprint és ritka/event alapanyag kell; normál szintnyitással nem farmolható | loot pool/recept tiltása | `profession/PROF-05/` |
+| [ ] | PROF-06 XP és heti cél | Tesztelő | egy receptcraft, majd 1 és 16 főtt étel kivétele | csak durable XP-commit tölti a heti célt; főttétel-XP mennyiségarányos; egyesével kivétel nem előnyösebb | heti cél rollout stop | `profession/PROF-06/` |
+
 ### Globális AFK
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |

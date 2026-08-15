@@ -44,12 +44,20 @@ public final class ProfessionRecipeBookListener implements Listener {
     /** E7 — setter-injektált: kaszt-zárt receptek (job:) ellenőrzése. */
     private volatile hu.taliann.icesmp.managers.JobManager jobManager;
 
+    /** A sikeresen jóváírt craft-XP ugyanazt a heti célt tölti, mint a világtevékenységek XP-je. */
+    private volatile hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoalManager;
+
     public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
         this.jobManager = jobManager;
     }
 
     public void setBestiaryManager(final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager) {
         this.bestiaryManager = bestiaryManager;
+    }
+
+    public void setWeeklyGoalManager(
+            final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoalManager) {
+        this.weeklyGoalManager = weeklyGoalManager;
     }
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
@@ -121,6 +129,11 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (recipe == null) {
             return;
         }
+        if (!professionManager.hasProfession(player, recipe.profession())) {
+            player.sendMessage(messageManager.get("profession-recipe-not-active",
+                    "&cEzt a szakmát jelenleg nem gyakorlod."));
+            return;
+        }
         if (professionManager.getLevel(player, recipe.profession()) < recipe.level()) {
             player.sendMessage(messageManager.get("profession-recipe-level", "&cEhhez a recepthez magasabb szakma-szint kell."));
             return;
@@ -189,7 +202,18 @@ public final class ProfessionRecipeBookListener implements Listener {
             final int durableCraftXp = craftXp;
             professionManager.addXpFor(player, recipe.profession(), durableCraftXp)
                     .whenComplete((change, failure) -> {
-                        if (failure == null) return;
+                        if (failure == null) {
+                            if (change != null && change.changed()) {
+                                professionManager.runOnOwnerThread(player, () -> {
+                                    final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef =
+                                            weeklyGoalManager;
+                                    if (weeklyRef != null && player.isOnline()) {
+                                        weeklyRef.add(player, recipe.profession(), durableCraftXp);
+                                    }
+                                });
+                            }
+                            return;
+                        }
                         plugin.getLogger().severe("Craft XP PlayerProfile commit failed for "
                                 + player.getUniqueId() + " / " + recipe.id() + ": "
                                 + failure.getMessage());
@@ -426,6 +450,9 @@ public final class ProfessionRecipeBookListener implements Listener {
                         hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rolledRarity));
             }
         }
+        hu.taliann.icesmp.items.ItemDataFactory.applyRecipePotion(
+                result, configManager.getConfiguration().getConfigurationSection(
+                        "profession-recipes." + recipe.id() + ".result"));
         // P7 data-komponensek UTOLSÓnak (minden setItemMeta után). A signature-étel
         // CONSUMABLE komponense csak a fogyasztási UX-et hordozza; a buffot a
         // FactionFoodListener az élő tagság alapján adja.

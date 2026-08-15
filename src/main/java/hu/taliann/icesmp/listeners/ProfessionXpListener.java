@@ -290,7 +290,9 @@ public final class ProfessionXpListener implements Listener {
         if (!isSurvival(event.getPlayer())) {
             return;
         }
-        awardXp(event.getPlayer(), ProfessionType.COOK, "professions.xp.cooking", 3);
+        final int perItem = Math.max(0, configManager.getInt("professions.xp.cooking", 5));
+        awardXpAmount(event.getPlayer(), ProfessionType.COOK,
+                perItem * Math.max(1, event.getItemAmount()));
     }
 
     private boolean isOre(final Material material) {

@@ -18,6 +18,7 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -370,6 +371,30 @@ public final class ItemDataFactory {
                 drink ? DRINK_SOUND : EAT_SOUND,
                 (float) Math.max(0.1D, section.getDouble("seconds", drink ? 1.6D : 1.6D)),
                 section.getBoolean("particles", true), effects);
+    }
+
+    /** Native potion payload for POTION/SPLASH_POTION/LINGERING_POTION profession results. */
+    public static void applyRecipePotion(final ItemStack item,
+                                         final org.bukkit.configuration.ConfigurationSection resultSection) {
+        if (resultSection == null || !(item.getItemMeta() instanceof PotionMeta meta)) {
+            return;
+        }
+        final String baseType = resultSection.getString("potion-type", "");
+        if (!baseType.isBlank()) {
+            try {
+                meta.setBasePotionType(org.bukkit.potion.PotionType.valueOf(
+                        baseType.trim().toUpperCase(Locale.ROOT)));
+            } catch (final IllegalArgumentException ignored) {
+                // A hibás config nem törheti a craftot; a consistency gate külön jelzi.
+            }
+        }
+        for (final String token : resultSection.getStringList("potion-effects")) {
+            final PotionEffect effect = parseEffect(token);
+            if (effect != null) {
+                meta.addCustomEffect(effect, true);
+            }
+        }
+        item.setItemMeta(meta);
     }
 
     /** "TÍPUS:másodperc:szint" → PotionEffect (a szint opcionális, default 0). Ismeretlen típus → null. */

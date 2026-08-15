@@ -43,6 +43,24 @@ public final class ProfessionRecipeAuditRegressionSuite {
             final String unique = result.getString("unique", null);
             final Material material = unique == null ? Material.matchMaterial(result.getString("material", "")) : Material.PAPER;
             check(material != null, "valid output material: " + id);
+            if (material == Material.ENCHANTED_BOOK) {
+                check(!result.getString("enchant", "").isBlank(),
+                        "enchanted profession book has a real stored enchant: " + id);
+            }
+            if (material == Material.POTION || material == Material.SPLASH_POTION
+                    || material == Material.LINGERING_POTION) {
+                final String potionType = result.getString("potion-type", "").toLowerCase(Locale.ROOT);
+                check(!potionType.isBlank()
+                                || !result.getStringList("potion-effects").isEmpty(),
+                        "profession potion has a native effect payload: " + id);
+                check(potionType.isBlank() || Set.of("awkward", "healing", "strong_healing",
+                                "strength", "long_strength", "swiftness", "fire_resistance",
+                                "night_vision", "invisibility", "long_regeneration").contains(potionType),
+                        "profession potion has a supported native base type: " + id);
+            }
+            check(!section.getBoolean("loot-only", false)
+                            || "blueprint".equalsIgnoreCase(section.getString("learn", "level")),
+                    "loot-only recipe is blueprint-gated: " + id);
             final ProfessionType profession = ProfessionType.fromId(section.getString("profession", ""));
             check(profession != null, "valid profession gate: " + id);
             final ProfessionRecipeCatalog.Recipe recipe = new ProfessionRecipeCatalog.Recipe(
@@ -106,6 +124,23 @@ public final class ProfessionRecipeAuditRegressionSuite {
         check(bookListener.contains("recipe.uniqueIngredients().entrySet()")
                         && bookListener.contains("uniqueMaterials.idOf(item)"),
                 "catalog custom ingredients require canonical unique-item identity");
+        check(bookListener.contains("hasProfession(player, recipe.profession())"),
+                "catalog craft revalidates the active profession at the mutation boundary");
+        check(bookListener.contains("applyRecipePotion") && bookListener.contains("weeklyRef.add"),
+                "catalog craft applies potion payloads and contributes committed XP to weekly goals");
+        final String blueprintListener = Files.readString(
+                Path.of("src/main/java/hu/taliann/icesmp/listeners/BlueprintUseListener.java"));
+        check(blueprintListener.indexOf("item.setAmount(item.getAmount() - 1)")
+                        < blueprintListener.indexOf("professionManager.learnRecipe"),
+                "blueprint is reserved before its asynchronous durable learn commit");
+        check(blueprintListener.contains("restoreBlueprint(player, reservedBlueprint)"),
+                "failed or redundant blueprint learns restore the reserved item");
+        check(root.getString("runapor_finomitas.result.material", "")
+                        .equals(Material.EXPERIENCE_BOTTLE.name()),
+                "runapor refinement cannot multiply glowstone");
+        check(root.getString("osfa_gerenda.result.material", "")
+                        .equals(Material.DARK_OAK_PLANKS.name()),
+                "ancient timber processing cannot multiply dark-oak logs");
         System.out.println("PROFESSION_RECIPE_AUDIT recipes=" + ids.size()
                 + " semantic_duplicates=0 key_duplicates=0 atomic_reload=true");
         System.out.println("Profession recipe audit regression suite passed.");

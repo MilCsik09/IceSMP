@@ -120,7 +120,7 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
 | Kaszt | 13 | 13 |
 | Specializáció | 31 | 35 |
 | Questdefiníció | 45 | 160 |
-| Szakmai recept | 124 | 438 |
+| Szakmai recept | 124 | 437 |
 | Szakmai alapanyag | 9 | 81 |
 | Relikvia | 5 | 6 |
 | Rituálé | 19 | 21 |

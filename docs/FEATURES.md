@@ -536,7 +536,7 @@ Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz é
 
 - **Így találkozol vele:** `/profession`, `/szakmacel`, profession GUI. Parancs: /profession (alias: /prof, /szakma); /szakmacel (alias: /weeklygoal). GUI: Szakmaválasztó.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
-- **Mitől mozdul meg:** Gyűjtés, craft, heti reset/cél és GUI-választás.
+- **Mitől mozdul meg:** Gyűjtés, mennyiségarányos főttétel-kivétel, craft, heti reset/cél és GUI-választás; a sikeresen commitolt recept-craft XP a heti céhet is tölti.
 - **Ami még kellhet hozzá:** Szakmai alapanyagforrások, biztonságos farmok és esetleges munkaállomások ellenőrzendők.
 - **Fontos határ:** WorldEdit és lootforrás-változás után a fejlődési sebességet újra kell mérni.
 
@@ -562,7 +562,7 @@ Szakmai receptkönyv, craft-korlátok, blueprint-feloldás, katalizátorvédelem
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Craft-előkészítés/befejezés, blueprint használat és item-validáció.
 - **Ami még kellhet hozzá:** Craftállomások, recept-hozzávalók és resource-pack itemmodellek ellenőrzendők.
-- **Fontos határ:** Tömeges vagy automatizált craft és inventory-failure útvonalakat runtime kell tesztelni.
+- **Fontos határ:** A receptkönyv a mutáció pillanatában újraellenőrzi az aktív szakmát. A blueprint tanulás előtt lefoglalódik, és csak sikertelen/redundáns durable commitnál jár vissza. Az enchantkönyvek és potionök natív payloadot kapnak; a nyersanyag-finomítás nem alkothat pozitív visszaforgatási kört.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
