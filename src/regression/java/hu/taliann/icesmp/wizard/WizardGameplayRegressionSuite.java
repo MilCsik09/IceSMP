@@ -20,6 +20,7 @@ public final class WizardGameplayRegressionSuite {
         weaveIsAnExplicitPairTable();
         reactionArmsAndIsSpentOnce();
         attunementsFeedConvergenceAndCrown();
+        elementalOverloadConsumesCrown();
         theCombatStateHoldsNoCourtAuthority();
         attunementDecayIsPollingFrequencyInvariant();
         cleanupLifecycle();
@@ -106,6 +107,19 @@ public final class WizardGameplayRegressionSuite {
                 "attunement holds inside the grace window");
         check(!state.isCrowned(70, t0 + 12_000L, 6_000L, 6.0D),
                 "idle attunements decay and the crown slips");
+    }
+
+    private static void elementalOverloadConsumesCrown() {
+        final WizardCombatState state = new WizardCombatState();
+        final long now = 75_000L;
+        for (int index = 0; index < WizardCombatState.ATTUNEMENTS; index++) {
+            state.addAttunement(index, 70, now, 6_000L, 6.0D);
+        }
+        check(state.isCrowned(70, now, 6_000L, 6.0D),
+                "the overload starts from a complete Elemi Korona");
+        state.consumeAttunements();
+        check(state.attunedCount(1, now, 6_000L, 6.0D) == 0,
+                "the capstone consumes all three attunements exactly once");
     }
 
     /**
@@ -213,6 +227,9 @@ public final class WizardGameplayRegressionSuite {
         }
         check(!service.contains("runAtFixedRate") && !service.contains("getNearbyEntities"),
                 "no repeating tasks or proximity scans in the wizard runtime");
+        check(service.contains("\"elemental_overload\".equals(spellId)")
+                        && service.contains("state.consumeAttunements();"),
+                "Elemi Túlterhelés requires and spends the Elemi Korona");
 
         final String state = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/wizard/WizardCombatState.java"));
@@ -263,6 +280,8 @@ public final class WizardGameplayRegressionSuite {
                 "src/main/resources/config/class-gameplay.yml"));
         check(gameplayConfig.contains("attunement-threshold: 70"),
                 "the 70+ attunement bar is admin-tunable live config");
+        check(gameplayConfig.contains("lidercz-spells: []"),
+                "Wraith Form remains a form spell and cannot also create a durable courtier");
         check(gameplayConfig.contains("classes: []"),
                 "every class casts through its personal Lélekkapocs");
     }

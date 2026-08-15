@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.quest;
 
+import hu.taliann.icesmp.classspec.domain.ClassSpecCatalog;
 import hu.taliann.icesmp.managers.QuestManager;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -87,6 +88,11 @@ public final class QuestGraphValidator {
         if (!requiredQuest.isBlank()
                 && !knownIds.contains(requiredQuest.toLowerCase(Locale.ROOT))) {
             errors.add(id + ": unknown requires-quest: " + requiredQuest);
+        }
+        final String requiredSpecialization = quest.getString("requires-specialization", "");
+        if (!requiredSpecialization.isBlank()
+                && !ClassSpecCatalog.isKnownSpecialization(requiredSpecialization)) {
+            errors.add(id + ": unknown requires-specialization: " + requiredSpecialization);
         }
     }
 

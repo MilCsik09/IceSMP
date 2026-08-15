@@ -12,10 +12,12 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
+import java.util.Map;
+import java.util.UUID;
+
 /**
- * Drives the companion GUI: every click delegates to an existing /pet subcommand
- * (PetManager stays the single owner of pet state) and then rebuilds the GUI so
- * the stance/status tiles always show live state.
+ * Drives the companion GUI through PetManager and rebuilds it only after the
+ * asynchronous durable mutation has completed.
  */
 public final class PetGUIListener implements Listener {
 
@@ -40,9 +42,12 @@ public final class PetGUIListener implements Listener {
             return;
         }
 
-        final String action = holder.getActionAt(event.getRawSlot());
+        String action = holder.getActionAt(event.getRawSlot());
         if (action == null) {
             return;
+        }
+        if (event.isRightClick() && action.startsWith("SELECT:")) {
+            action = "RELEASE:" + action.substring("SELECT:".length());
         }
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
 
@@ -55,9 +60,91 @@ public final class PetGUIListener implements Listener {
             player.sendMessage(messageManager.get("pet-name-usage", "&cHasználat: /pet name <név>"));
             return;
         }
-        if (action.startsWith("RUN:")) {
-            player.performCommand(action.substring("RUN:".length()));
-            PetGUI.open(player, petManager, messageManager);
+        player.closeInventory();
+        if ("SUMMON".equals(action)) {
+            petManager.summonV2(player).whenComplete((error, failure) -> refresh(player, () -> {
+                if (failure != null) {
+                    player.sendMessage(messageManager.get("pet-persistence-failed",
+                            "&cA társ idézését nem sikerült tartósan menteni."));
+                } else if (error != null) {
+                    player.sendMessage(messageManager.get(error, "&cMost nem tudsz társat idézni."));
+                } else {
+                    player.sendMessage(messageManager.get("pet-summoned", "&aA társad megjelent melletted."));
+                }
+            }));
+            return;
+        }
+        if ("DISMISS".equals(action)) {
+            petManager.dismissV2(player).whenComplete((committed, failure) -> refresh(player, () ->
+                    player.sendMessage(failure == null && Boolean.TRUE.equals(committed)
+                            ? messageManager.get("pet-dismissed", "&7A társad eltűnt.")
+                            : messageManager.get("pet-none", "&7Nincs aktív társad, vagy a mentés sikertelen."))));
+            return;
+        }
+        if (action.startsWith("SELECT:")) {
+            final UUID companionId = parseId(action.substring("SELECT:".length()));
+            if (companionId == null) return;
+            petManager.selectV2(player, companionId).whenComplete((error, failure) -> refresh(player, () -> {
+                if (failure != null) {
+                    player.sendMessage(messageManager.get("pet-persistence-failed",
+                            "&cA társválasztást nem sikerült tartósan menteni."));
+                } else if (error != null) {
+                    player.sendMessage(messageManager.get(error, "&cMost nem választhatod ezt a társat."));
+                } else {
+                    player.sendMessage(messageManager.get("pet-selected",
+                            "&aKiválasztottad és magad mellé hívtad a társadat."));
+                }
+            }));
+            return;
+        }
+        if (action.startsWith("RELEASE:")) {
+            final UUID companionId = parseId(action.substring("RELEASE:".length()));
+            if (companionId == null) return;
+            petManager.releaseV2(player, companionId).whenComplete((committed, failure) -> refresh(player, () ->
+                    player.sendMessage(failure == null && Boolean.TRUE.equals(committed)
+                            ? messageManager.get("pet-released",
+                                    "&7A társad visszatért a vadonba; a helye felszabadult.")
+                            : messageManager.get("pet-none", "&7A társ elengedése nem sikerült."))));
+            return;
+        }
+        if (action.startsWith("STANCE:")) {
+            final hu.taliann.icesmp.managers.MinionManager.Stance stance;
+            try {
+                stance = hu.taliann.icesmp.managers.MinionManager.Stance.valueOf(
+                        action.substring("STANCE:".length()));
+            } catch (final IllegalArgumentException invalid) {
+                return;
+            }
+            petManager.setStanceV2(player, stance).whenComplete((committed, failure) -> refresh(player, () -> {
+                if (failure != null || !Boolean.TRUE.equals(committed)) {
+                    player.sendMessage(messageManager.get("pet-persistence-failed",
+                            "&cA társ parancsát nem sikerült tartósan menteni."));
+                    return;
+                }
+                player.sendMessage(messageManager.getMessage("pet-stance",
+                        "<gray>Társ parancs: <gold>{stance}</gold></gray>", Map.of("stance", switch (stance) {
+                            case ACTIVE -> "Támadás";
+                            case PASSIVE -> "Passzív";
+                            case STAY -> "Maradj";
+                        })));
+            }));
+        }
+    }
+
+    private void refresh(final Player player, final Runnable feedback) {
+        petManager.runOnPlayer(player, () -> {
+            feedback.run();
+            if (player.isOnline()) {
+                PetGUI.open(player, petManager, messageManager);
+            }
+        });
+    }
+
+    private static UUID parseId(final String raw) {
+        try {
+            return UUID.fromString(raw);
+        } catch (final IllegalArgumentException invalid) {
+            return null;
         }
     }
 

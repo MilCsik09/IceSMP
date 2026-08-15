@@ -49,6 +49,9 @@ public final class ConfigMenuGUI {
             if (key.equals("factions.tax.enabled") || key.equals("factions.tax.interval-minutes")) {
                 return ReloadMode.RESTART_REQUIRED;
             }
+            if (key.equals("hud.icesmp-hud.survival.refresh-ticks")) {
+                return ReloadMode.RESTART_REQUIRED;
+            }
             if (key.startsWith("motd.") || key.startsWith("sit.") || key.startsWith("crates.")
                     || key.startsWith("resource-pack.") || key.startsWith("factions.passives.")
                     || key.startsWith("factions.whisper.") || key.startsWith("professions.recipes.")) {
@@ -72,7 +75,7 @@ public final class ConfigMenuGUI {
         final Map<String, Category> categories = new LinkedHashMap<>();
         categories.put("hp", new Category("hp", "HP-rendszer", Material.GOLDEN_APPLE, List.of(
                 Entry.toggle("health.enabled", "Kaszt-HP-profilok bekapcsolva"),
-                Entry.toggle("health.display.normalize", "Szívsor-normalizálás (10 szív)"),
+                Entry.toggle("health.display.normalize", "Régi szívsor-fallback normalizálása"),
                 Entry.toggle("health.ooc-regen.enabled", "Harcon kívüli regen"),
                 Entry.number("health.ooc-regen.delay-seconds", "Regen-késleltetés (mp)", 1, 0, 60),
                 Entry.number("health.ooc-regen.percent-per-tick", "Regen üteme (%/2mp)", 1, 0, 25),

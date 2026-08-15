@@ -142,6 +142,15 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
         if (!isWizard(player) || spell == null) return true;
         final UUID playerId = player.getUniqueId();
         final String spellId = spell.getId().toLowerCase(Locale.ROOT);
+        if ("elementalist".equals(activeSpec(playerId))
+                && "elemental_overload".equals(spellId)
+                && !state(playerId).isCrowned(attunementThreshold(playerId),
+                System.currentTimeMillis(), attunementDecayDelayMillis(),
+                attunementDecayPerSecond())) {
+            player.sendActionBar(messages.getMessage("wizard.overload.need",
+                    "<red>Az Elemi Túlterheléshez teljes Elemi Korona kell.</red>"));
+            return false;
+        }
         if (!"necromancer".equals(activeSpec(playerId))) return true;
         if (raiseKindOf(spellId) == null) return true;
         if (admitsRaise(player)) return true;
@@ -174,7 +183,8 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
             bonus += reactionBonusPercent(armed, playerId);
         }
         final String spec = activeSpec(playerId);
-        if ("elementalist".equals(spec) && schoolOf(spellId) != null) {
+        if ("elementalist".equals(spec)
+                && (schoolOf(spellId) != null || "elemental_overload".equals(spellId))) {
             if (state.isCrowned(attunementThreshold(playerId), now,
                     attunementDecayDelayMillis(), attunementDecayPerSecond())) {
                 bonus += Math.max(0.0D, config.getDouble(
@@ -240,6 +250,16 @@ public final class WizardGameplayService implements Listener, PlayerStateCleanup
     private void handleElementalistCast(final Player player, final WizardCombatState state,
                                         final String spellId, final long now) {
         final UUID playerId = player.getUniqueId();
+        if ("elemental_overload".equals(spellId)) {
+            state.consumeAttunements();
+            if (isInCombat(playerId)) {
+                specs.contributeClassMastery(player, JobType.WIZARD,
+                        config.getInt("classes.wizard.mastery.crown-xp", 8));
+            }
+            player.sendActionBar(messages.getMessage("wizard.overload.released",
+                    "<gold>⚡ Elemi Túlterhelés — a Korona mindhárom eleme kisült.</gold>"));
+            return;
+        }
         final int index = attunementIndexOf(spellId);
         if (index < 0) return;
         int gain = config.getInt("classes.wizard.elementalist.attunement-per-cast", 18);

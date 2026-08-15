@@ -1,6 +1,6 @@
 # IceSMP konfiguráció — pets (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Idézett társak (pet/minion) =====
-# max-active: hány aktív idézett társa lehet egyszerre egy játékosnak (spam-védelem);
+# max-active: hány ideiglenes varázslat-minionja lehet egyszerre egy játékosnak (spam-védelem);
 # talent-health-share: a gazda kaszt "max-health" talentjeinek hányada száll a minionra.
 # Társ-parancs: lopakodás + jobb katt a saját minionon → állásmód-váltás.
 pets:
@@ -14,6 +14,7 @@ pets:
   summon:
     night-only: true
     bonus-levels: 5
+    mutation-bonus-levels-per-stage: 2
     tier2-level: 15
     tier3-level: 25
     heart-drop-chance: 0.03   # Nyughatatlan Szív: élőhalott-kill (Szentségtelen)
@@ -30,7 +31,7 @@ pets:
   max-active: 8
   talent-health-share: 0.5
   # Társvért (ritka szörny-zsákmány a társ-tartó kasztoknak): jobb katt vele a saját
-  # társadon → a társ páncélt és életerőt kap; a jelzés a gazdán él, újraidézéskor is megmarad.
+  # társadon → a társ páncélt és életerőt kap; a felszerelés a durable társprofilban él.
   equipment:
     drop-chance: 0.01   # esély szörny-killenként (csak amíg nincs felszerelve)
     armor-bonus: 4.0    # +armor a társnak
@@ -51,6 +52,10 @@ pets:
     follow-distance: 16.0
     # Ennél messzebb (blokk) a társ gyalog elindul a gazda után (alap követés minden petnek).
     follow-start-distance: 5.0
+    # Idézéskor a játékos körüli, már betöltött és Folia-lokális oszlopokban keres
+    # stabil talajt és három blokknyi szabad testteret. Sikertelen keresésnél nincs spawn.
+    spawn-search-radius: 4
+    spawn-vertical-range: 2
     # Plugin-vezérelt harc (a mob saját AI-jától függetlenül): a társ a célpont felé
     # pathfinderrel megy, és a plugin osztja a sebzést — így bármilyen mob "rendes pet".
     tick-ticks: 5             # milyen sűrűn fusson a társ-vezérlő (tick)

@@ -144,6 +144,15 @@ public final class EvokerGameplayRegressionSuite {
                 "plugin disable cancels all Evoker transient state");
         check(service.contains("state.clearSpecializationState();"),
                 "specialization reconcile has an explicit charge/state cleanup path");
+        check(service.contains("isDevastationBurstConsumer(spellId)")
+                        && service.contains("\"eternity_breath\".equals(spellId)")
+                        && service.contains("state.consumeBurst"),
+                "Örökkévalóság Lehelete consumes the prepared Izzás burst");
+
+        final String gameplay = normalized("src/main/resources/config/class-gameplay.yml");
+        final int empower = gameplay.indexOf("    empower:", gameplay.indexOf("  evoker:"));
+        check(gameplay.indexOf("        - eternity_breath", empower) > empower,
+                "the Devastation capstone participates in the Felerősítés charge loop");
 
         final String adapter = normalized("src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java");
         check(adapter.contains("evoker.clearSpecializationState(playerId);"),

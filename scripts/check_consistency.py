@@ -4,8 +4,9 @@
 Azokat a konzisztencia-osztályokat ellenőrzi, amiket kézzel könnyű elfelejteni:
   1. minden config-YAML parse-olható
   2. quest-hivatkozások épek (next/requires-quest/crate-key/requires-faction/rotáció)
-  3. ITEM_MODEL: minden deklarált modell-id szerepel a docs/RESOURCE_PACK_CMD.md manifestben
-  4. jogosultság-node-ok: minden kódban használt icesmp.admin.* regisztrálva van a
+  3. class/spec lefedettség (capstone-próbák, doctrine-horgok, mechanikai capstone-bekötés)
+  4. ITEM_MODEL: minden deklarált modell-id szerepel a docs/RESOURCE_PACK_CMD.md manifestben
+  5. jogosultság-node-ok: minden kódban használt icesmp.admin.* regisztrálva van a
      Permissions.java-ban (FAIL — az icesmp.admin.all csak a regisztrált node-okat adja meg)
   5. /menu akció-célok (RUN:/OPEN:) létező parancsra mutatnak
   6. tükör-repo drift (ha a IceSMPGuides checkout elérhető)
@@ -111,6 +112,121 @@ for _qid in list(_next_edges):
             fail("quests.yml next-gráf CIKLUS: " + " -> ".join(_cycle)
                  + " — a lánc végtelen jutalom-hurokba futhat")
             break
+
+# ---------- 2c. class/spec tartalmi lefedettség ----------
+_spec_manager_path = os.path.join(JAVA, "hu/taliann/icesmp/managers/SpecializationManager.java")
+_spec_manager = read(_spec_manager_path)
+_trial_pairs = dict(re.findall(r'Map\.entry\("([a-z0-9_]+)",\s*"([a-z0-9_]+)"\)',
+                               _spec_manager))
+for _trial_id, _spec_id in sorted(_trial_pairs.items()):
+    _trial = quests.get(_trial_id)
+    if not isinstance(_trial, dict):
+        fail(f"capstone-próba hiányzik: {_trial_id} ({_spec_id})")
+        continue
+    if _trial.get("category") != "SPECIALIZATION":
+        fail(f"{_trial_id}: category SPECIALIZATION kell")
+    if _trial.get("requires-specialization") != _spec_id:
+        fail(f"{_trial_id}: requires-specialization '{_spec_id}' kell")
+    if int(_trial.get("requires-level", 0) or 0) < 50:
+        fail(f"{_trial_id}: requires-level legalább 50 kell")
+    _objective = _trial.get("objective") or {}
+    if _objective.get("type") != "CAST_SPELLS" or not _objective.get("spells"):
+        fail(f"{_trial_id}: nem üres CAST_SPELLS objective kell")
+
+_service_specs = {
+    "Warrior": {"berserker", "guardian"},
+    "Evoker": {"devastation", "preservation"},
+    "Archer": {"sharpshooter", "beast_master"},
+    "Shaman": {"elemental", "enhancement", "tidal"},
+    "Monk": {"windwalker", "brewmaster", "mistweaver"},
+    "Paladin": {"holy", "retribution", "protection"},
+    "DemonHunter": {"havoc", "vengeance"},
+    "Druid": {"feral", "lunar", "ironbark", "restoration"},
+    "Priest": {"discipline", "bone_priest", "shadow"},
+    "DeathKnight": {"blood", "frost", "unholy"},
+    "Assassin": {"poisoner", "phantom", "plaguebringer"},
+    "Warlock": {"affliction", "destruction", "demonologist"},
+    "Wizard": {"elementalist", "necromancer"},
+}
+_config_key_for_service = {
+    "DeathKnight": "death_knight",
+    "DemonHunter": "demon_hunter",
+}
+_service_for_spec = {
+    spec: os.path.join(JAVA, f"hu/taliann/icesmp/{name.lower()}/{name}GameplayService.java")
+    for name, specs_for_service in _service_specs.items() for spec in specs_for_service
+}
+
+for _match in re.finditer(
+        r"case\s+([A-Z_]+)\s*->\s*switch\s*\(level\)\s*\{(.*?)\n\s*\};",
+        _spec_manager, re.S):
+    _spec_id = _match.group(1).lower()
+    _service_path = _service_for_spec.get(_spec_id)
+    if _service_path is None or not os.path.exists(_service_path):
+        fail(f"doctrine-audit: {_spec_id} gameplay service-e nem oldható fel")
+        continue
+    _service_source = read(_service_path)
+    for _doctrine_id in re.findall(r'"([a-z0-9_]+)"', _match.group(2)):
+        if f'"{_doctrine_id}"' not in _service_source:
+            fail(f"doctrine nincs bekötve: {_spec_id}.{_doctrine_id} "
+                 f"({os.path.basename(_service_path)})")
+
+_class_gameplay = configs.get("class-gameplay.yml", {}) or {}
+_class_roots = _class_gameplay.get("classes", {}) or {}
+_specializations = _class_gameplay.get("specializations", {}) or {}
+
+
+def _string_values(value, skip_active_kit=False):
+    if isinstance(value, str):
+        return {value}
+    if isinstance(value, list):
+        result = set()
+        for item in value:
+            result |= _string_values(item, skip_active_kit)
+        return result
+    if isinstance(value, dict):
+        result = set()
+        for key, item in value.items():
+            if skip_active_kit and key == "active-kit":
+                continue
+            result |= _string_values(item, skip_active_kit)
+        return result
+    return set()
+
+
+for _spec_id, _trial_id in sorted((spec, trial) for trial, spec in _trial_pairs.items()):
+    _capstone = (_specializations.get(_spec_id) or {}).get("capstone-spell")
+    if not _capstone:
+        fail(f"{_spec_id}: capstone-spell hiányzik a class-gameplay.yml-ből")
+        continue
+    _service_path = _service_for_spec.get(_spec_id)
+    _service_source = read(_service_path) if _service_path and os.path.exists(_service_path) else ""
+    _service_name = next((name for name, specs_for_service in _service_specs.items()
+                          if _spec_id in specs_for_service), "")
+    _class_name = _config_key_for_service.get(_service_name, _service_name.lower())
+    _mechanic_values = _string_values(_class_roots.get(_class_name, {}), True)
+    if _capstone not in _mechanic_values and f'"{_capstone}"' not in _service_source:
+        fail(f"capstone csak gimmick/generikus spell: {_spec_id}.{_capstone}")
+
+_classes_catalog = configs.get("classes.yml", {}) or {}
+_class_unlocks = _classes_catalog.get("classes", {}) or {}
+_spec_unlocks = _classes_catalog.get("specializations", {}) or {}
+for _service_name, _spec_ids in _service_specs.items():
+    _class_id = _config_key_for_service.get(_service_name, _service_name.lower())
+    _class_gameplay_root = _class_roots.get(_class_id, {}) or {}
+    _kit = _class_gameplay_root.get("active-kit", {}) or {}
+    _maximum = int(_kit.get("maximum", 0) or 0)
+    _base_spells = set(((_class_unlocks.get(_class_id) or {}).get("spell-unlocks") or {}).keys())
+    for _spec_id in _spec_ids:
+        _configured = _kit.get(_spec_id) or []
+        if len(_configured) != _maximum:
+            fail(f"{_class_id}.{_spec_id}: active-kit {len(_configured)} spell, várt {_maximum}")
+        _available = (_base_spells
+                      | set(((_spec_unlocks.get(_spec_id) or {}).get("spell-unlocks") or {}).keys())
+                      | set(((_specializations.get(_spec_id) or {}).get("spell-unlocks") or {}).keys()))
+        for _spell_id in _configured:
+            if _spell_id not in _available:
+                fail(f"{_class_id}.{_spec_id}: active-kit nem feloldható spell: {_spell_id}")
 
 # ---------- 3. ITEM_MODEL manifest-lefedettség + legacy drift-védelem ----------
 manifest = read(os.path.join(REPO, "docs/RESOURCE_PACK_CMD.md"))

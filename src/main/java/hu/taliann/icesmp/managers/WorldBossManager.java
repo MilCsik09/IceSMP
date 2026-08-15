@@ -360,13 +360,16 @@ public final class WorldBossManager {
             return;
         }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
-        plugin.getServer().getRegionScheduler().run(plugin, where, task -> {
-            final Location approx = where.clone().add(
-                    ThreadLocalRandom.current().nextDouble(-8.0D, 8.0D), 0.0D,
-                    ThreadLocalRandom.current().nextDouble(-8.0D, 8.0D));
-            final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
-            spawnBoss(approx, lifetimeMinutes);
-        });
+        final EventSpawnGuard guard = spawnGuard;
+        if (guard == null) {
+            spawnGraceUntil = 0L;
+            plugin.getLogger().warning("World boss spawn aborted: EventSpawnGuard is unavailable.");
+            return;
+        }
+        final long lifetimeMinutes = Math.max(1L,
+                configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
+        guard.findSafeAtOrNear("world-boss", where, System.nanoTime(),
+                location -> spawnBoss(location, lifetimeMinutes), () -> spawnGraceUntil = 0L);
     }
 
     /**

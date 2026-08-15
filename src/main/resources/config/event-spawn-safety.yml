@@ -39,8 +39,8 @@ world-events:
   water-safety:
     enabled: true
     enforce-all-events: true
-    # 0 = csak a spawnoszlop; 8 = közvetlen tó-/folyópart és waterlogged felszín is tiltott.
-    buffer-blocks: 8
+    # 0 = csak a spawnoszlop; 7 = a chunk-középre igazított, egy régión belüli teljes puffer.
+    buffer-blocks: 7
 
   # Eventenkénti footprint, lejtés, biom és láthatósági profilok.
   profiles:
@@ -81,7 +81,7 @@ world-events:
       min-horizontal-distance-blocks: 0.0
       use-dynamic-view-distance: false
       ignore-recent-locations: true
-      footprint-radius-blocks: 1
+      footprint-radius-blocks: 0
       max-height-delta-blocks: 3
       visibility-cone:
         enabled: false
@@ -89,25 +89,33 @@ world-events:
       min-horizontal-distance-blocks: 0.0
       use-dynamic-view-distance: false
       ignore-recent-locations: true
-      footprint-radius-blocks: 1
+      footprint-radius-blocks: 0
       max-height-delta-blocks: 3
       visibility-cone:
         enabled: false
     meteor:
-      footprint-radius-blocks: 8
+      footprint-radius-blocks: 7
       max-height-delta-blocks: 4
       require-sky: true
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
     world-boss:
-      footprint-radius-blocks: 10
+      footprint-radius-blocks: 7
       max-height-delta-blocks: 4
       require-sky: true
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
     invasion:
-      footprint-radius-blocks: 8
+      footprint-radius-blocks: 7
       max-height-delta-blocks: 4
       require-sky: true
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
+    invasion-wave:
+      min-horizontal-distance-blocks: 0.0
+      use-dynamic-view-distance: false
+      ignore-recent-locations: true
+      footprint-radius-blocks: 0
+      max-height-delta-blocks: 3
+      visibility-cone:
+        enabled: false
     cultists:
       footprint-radius-blocks: 6
       max-height-delta-blocks: 3

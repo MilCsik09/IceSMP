@@ -108,6 +108,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final JobManager jobManager;
     private final SpecializationManager specializationManager;
     private final SpellMasteryManager masteryManager;
+    private volatile hu.taliann.icesmp.managers.QuestManager questManager;
     private final PlayerProfileSpellbookStateStore spellbookStateStore =
             new PlayerProfileSpellbookStateStore();
     private final ConfigManager configManager;
@@ -157,6 +158,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setProfileGateway(final ClassSpecProfileGateway gateway) {
         profileGateway = java.util.Objects.requireNonNull(gateway, "gateway");
+    }
+
+    public void setQuestManager(final hu.taliann.icesmp.managers.QuestManager manager) {
+        questManager = java.util.Objects.requireNonNull(manager, "manager");
     }
 
     private static ClassCastHook standardHook(final java.util.function.BiPredicate<Player, Spell> gate,
@@ -601,6 +606,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         lastCastTime.put(playerId, now);
         final hu.taliann.icesmp.managers.StatsManager stats = statsManager;
         if (stats != null) stats.recordSpellCast(playerId);
+        final hu.taliann.icesmp.managers.QuestManager quests = questManager;
+        if (quests != null) quests.handleSpellCast(player, selected.getId());
         return SlotCastStatus.SUCCESS;
     }
 

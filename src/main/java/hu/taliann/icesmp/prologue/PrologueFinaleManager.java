@@ -51,6 +51,8 @@ public final class PrologueFinaleManager {
 
     public synchronized boolean start(boolean rehearsalMode,String actor){
         if(isActive()||encounters.isActive())return false;
+        if(!PrologueContentPolicy.enabled(config)
+                ||rehearsalMode&&!PrologueContentPolicy.active(config))return false;
         if(eventGate!=null&&!eventGate.mayStartNaturally("prologue"))return false;
         gatheringWarningSent=false;safety.reset();settlement.resetTransient();
         if(rehearsalMode){

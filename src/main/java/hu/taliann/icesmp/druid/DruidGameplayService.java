@@ -137,7 +137,7 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         }
         if ("restoration".equals(spec) && bloomSpells().contains(spellId)
                 && state.ripeSeedCount(System.currentTimeMillis(),
-                ripenMillis(playerId), seedExpiryMillis()) <= 0) {
+                ripenMillis(playerId), seedExpiryMillis(playerId)) <= 0) {
             player.sendActionBar(messages.getMessage("druid.seed.unripe",
                     "<red>Egyetlen Magod sem ért még be — a Virágzás előkészítést kér.</red>"));
             return false;
@@ -159,13 +159,22 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         }
         final String spec = activeSpec(playerId);
         if ("lunar".equals(spec) && state.isEclipseArmed(now)
-                && (solarSpells().contains(spellId) || lunarSpells().contains(spellId))) {
+                && (solarSpells().contains(spellId) || lunarSpells().contains(spellId)
+                || "celestial_alignment".equals(spellId))) {
             double eclipse = Math.max(0.0D, config.getDouble(
                     "classes.druid.lunar.eclipse-bonus-percent", 18.0D));
             if ("ket_egbolt".equals(doctrine(playerId, 50))) {
                 eclipse += config.getDouble("classes.druid.lunar.two-skies-extra-percent", 6.0D);
             }
+            if ("csillagszem".equals(doctrine(playerId, 40))) {
+                eclipse += config.getDouble("classes.druid.lunar.star-eye-extra-percent", 6.0D);
+            }
             bonus += eclipse;
+        }
+        if ("feral".equals(spec) && clawSpells().contains(spellId)
+                && "eles_karom".equals(doctrine(playerId, 30))) {
+            bonus += Math.max(0.0D, config.getDouble(
+                    "classes.druid.feral.sharp-claw-power-percent", 8.0D));
         }
         if ("feral".equals(spec) && finisherSpells().contains(spellId)) {
             bonus += state.combo() * Math.max(0.0D, config.getDouble(
@@ -268,6 +277,10 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         }
         if (!clawSpells().contains(spellId)) return;
         int gain = config.getInt("classes.druid.feral.combo-per-cast", 1);
+        if ("gyors_marcangolas".equals(doctrine(playerId, 40))) {
+            gain += Math.max(0, config.getInt(
+                    "classes.druid.feral.quick-rend-extra-combo", 1));
+        }
         if (state.isScentLive(now) && "ragadozo_osztone".equals(doctrine(playerId, 30))) {
             gain += Math.max(0, config.getInt("classes.druid.feral.instinct-extra-combo", 1));
         }
@@ -279,10 +292,33 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
     private void handleLunarCast(final Player player, final DruidCombatState state,
                                  final String spellId, final long now) {
         final UUID playerId = player.getUniqueId();
-        final int shift = config.getInt("classes.druid.lunar.shift-per-cast", 25);
+        if ("celestial_alignment".equals(spellId)) {
+            state.armEclipse(now, Math.max(1000L, config.getLong(
+                    "classes.druid.lunar.capstone-eclipse-window-millis", 12000L)));
+            state.resetBalance(0);
+            if (isInCombat(playerId)) {
+                specs.contributeClassMastery(player, JobType.DRUID,
+                        config.getInt("classes.druid.mastery.eclipse-xp", 6));
+            }
+            player.sendActionBar(messages.getMessage("druid.eclipse.capstone",
+                    "<aqua>✦ Égi Együttállás — a teljes Eclipse megnyílt.</aqua>"));
+            return;
+        }
+        int shift = config.getInt("classes.druid.lunar.shift-per-cast", 25);
         final int delta;
-        if (solarSpells().contains(spellId)) delta = shift;
-        else if (lunarSpells().contains(spellId)) delta = -shift;
+        if (solarSpells().contains(spellId)) {
+            if ("napkelte".equals(doctrine(playerId, 30))) {
+                shift += Math.max(0, config.getInt(
+                        "classes.druid.lunar.rising-shift-extra", 10));
+            }
+            delta = shift;
+        } else if (lunarSpells().contains(spellId)) {
+            if ("holdkelte".equals(doctrine(playerId, 30))) {
+                shift += Math.max(0, config.getInt(
+                        "classes.druid.lunar.rising-shift-extra", 10));
+            }
+            delta = -shift;
+        }
         else return;
         final int cap = Math.max(10, Math.min(100,
                 config.getInt("classes.druid.lunar.balance-cap", 100)));
@@ -344,16 +380,16 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
                                        final String spellId, final long now) {
         final UUID playerId = player.getUniqueId();
         if (seedSpells().contains(spellId)) {
-            if (state.plantSeed(now, seedMaximum(playerId), seedExpiryMillis())) {
+            if (state.plantSeed(now, seedMaximum(playerId), seedExpiryMillis(playerId))) {
                 player.sendActionBar(messages.getMessage("druid.seed.planted",
                         "<green>🌱 Mag elültetve ({count}/{max}) — érnie kell.</green>",
-                        Map.of("count", Integer.toString(state.seedCount(now, seedExpiryMillis())),
+                        Map.of("count", Integer.toString(state.seedCount(now, seedExpiryMillis(playerId))),
                                 "max", Integer.toString(seedMaximum(playerId)))));
             }
             return;
         }
         if (!bloomSpells().contains(spellId)) return;
-        final int ripe = state.collectRipeSeeds(now, ripenMillis(playerId), seedExpiryMillis());
+        final int ripe = state.collectRipeSeeds(now, ripenMillis(playerId), seedExpiryMillis(playerId));
         if (ripe <= 0) return;
         double heal = ripe * Math.max(0.0D, config.getDouble(
                 "classes.druid.restoration.heal-per-ripe-seed", 3.0D));
@@ -361,6 +397,12 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
             heal += config.getDouble("classes.druid.restoration.worldtree-extra-heal", 2.0D);
         }
         healPlayer(player, heal);
+        if ("orok_tavasz".equals(doctrine(playerId, 50))) {
+            final int ticksPerSeed = Math.max(1, config.getInt(
+                    "classes.druid.restoration.eternal-spring-regen-ticks-per-seed", 40));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
+                    ripe * ticksPerSeed, 0, false, true, true));
+        }
         if (isInCombat(playerId)) {
             specs.contributeClassMastery(player, JobType.DRUID,
                     config.getInt("classes.druid.mastery.bloom-xp", 5));
@@ -390,6 +432,10 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
                     "classes.druid.ironbark.thick-extra-reduction-percent", 4.0D));
         }
         event.setDamage(event.getDamage() * (1.0D - reduction / 100.0D));
+        if ("tuskes_kereg".equals(doctrine(playerId, 40))) {
+            state.armThorns(System.currentTimeMillis(), Math.max(1000L, config.getLong(
+                    "classes.druid.ironbark.roots-window-millis", 6000L)));
+        }
     }
 
     /** Gyökérháló retaliation: the attacker gets slowed on their own region thread. */
@@ -400,17 +446,34 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         final UUID playerId = victim.getUniqueId();
         if (!"ironbark".equals(activeSpec(playerId))) return;
         final long now = System.currentTimeMillis();
-        if (!state(playerId).isRootsArmed(now)) return;
         if (!(event.getDamager() instanceof LivingEntity attacker)) return;
+        final DruidCombatState combat = state(playerId);
+        if (combat.consumeThorns(now)) {
+            final double damage = Math.max(0.0D, config.getDouble(
+                    "classes.druid.ironbark.thorn-damage", 2.0D));
+            if (damage > 0.0D) {
+                attacker.getScheduler().run(plugin, task -> {
+                    if (attacker.isValid() && !attacker.isDead()) attacker.damage(damage);
+                }, null);
+            }
+        }
+        if (!combat.isRootsArmed(now)) return;
         int ticks = Math.max(1, config.getInt("classes.druid.ironbark.roots-slow-ticks", 40));
         if ("melyre_nyulo_gyokerek".equals(doctrine(playerId, 40))) {
             ticks += Math.max(0, config.getInt(
                     "classes.druid.ironbark.deep-roots-extra-ticks", 20));
         }
         final int duration = ticks;
+        final int amplifier = "gyokerek_ura".equals(doctrine(playerId, 50))
+                ? Math.max(0, config.getInt("classes.druid.ironbark.root-master-amplifier", 1))
+                : 0;
+        if ("gyokerek_ura".equals(doctrine(playerId, 50))) {
+            healPlayer(victim, Math.max(0.0D, config.getDouble(
+                    "classes.druid.ironbark.root-master-heal", 1.0D)));
+        }
         // Folia: the attacker lives on its own region thread — never touch it inline.
         attacker.getScheduler().run(plugin, task -> attacker.addPotionEffect(
-                new PotionEffect(PotionEffectType.SLOWNESS, duration, 0,
+                new PotionEffect(PotionEffectType.SLOWNESS, duration, amplifier,
                         false, true, true)), null);
     }
 
@@ -467,8 +530,8 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
                             + (state.isRootsArmed(now) ? " • Gyökérháló" : ""),
                     NamedTextColor.DARK_GREEN));
             case "restoration" -> suffix = suffix.append(Component.text("  • Mag "
-                            + state.ripeSeedCount(now, ripenMillis(playerId), seedExpiryMillis())
-                            + "/" + state.seedCount(now, seedExpiryMillis()) + " érett",
+                            + state.ripeSeedCount(now, ripenMillis(playerId), seedExpiryMillis(playerId))
+                            + "/" + state.seedCount(now, seedExpiryMillis(playerId)) + " érett",
                     NamedTextColor.GREEN));
             default -> { }
         }
@@ -515,8 +578,8 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
                 if (combat.isRootsArmed(now)) proc = "Gyökérháló";
             }
             case "restoration" -> {
-                charges = combat.ripeSeedCount(now, ripenMillis(id), seedExpiryMillis());
-                maximum = combat.seedCount(now, seedExpiryMillis());
+                charges = combat.ripeSeedCount(now, ripenMillis(id), seedExpiryMillis(id));
+                maximum = combat.seedCount(now, seedExpiryMillis(id));
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                         "seeds", "Mag", "Mag " + charges + "/" + maximum + " érett",
                         charges, Math.max(1, maximum), charges > 0 ? "ripe" : "growing");
@@ -736,9 +799,14 @@ public final class DruidGameplayService implements Listener, PlayerStateCleanup 
         return Math.max(500L, ripen);
     }
 
-    private long seedExpiryMillis() {
-        return Math.max(2000L, config.getLong(
+    private long seedExpiryMillis(final UUID playerId) {
+        long expiry = Math.max(2000L, config.getLong(
                 "classes.druid.restoration.expiry-millis", 20000L));
+        if ("melyebb_gyoker".equals(doctrine(playerId, 40))) {
+            expiry += Math.max(0L, config.getLong(
+                    "classes.druid.restoration.deep-root-extra-expiry-millis", 8000L));
+        }
+        return expiry;
     }
 
     private static UUID attackerId(final EntityDamageByEntityEvent event) {

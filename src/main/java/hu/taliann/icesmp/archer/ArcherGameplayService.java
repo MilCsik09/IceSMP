@@ -16,7 +16,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -425,16 +424,13 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
     private void buffActivePet(final Player owner, final boolean capstone) {
         final PetManager petManager = pets;
         if (petManager == null) return;
-        final Mob pet = petManager.livePet(owner);
-        if (pet == null) return;
         final int regenTicks = config.getInt(capstone
                 ? "classes.archer.bond.king-pet-regen-ticks"
                 : "classes.archer.bond.primal-regen-ticks", capstone ? 200 : 120);
         final int amplifier = (capstone ? 1 : 0)
                 + ("vastag_bor".equals(doctrine(owner.getUniqueId(), 40)) ? 1 : 0);
         final boolean caretaker = "gondozo".equals(doctrine(owner.getUniqueId(), 30));
-        pet.getScheduler().run(plugin, task -> {
-            if (!pet.isValid() || pet.isDead()) return;
+        petManager.runOnActivePet(owner, pet -> {
             pet.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
                     regenTicks + (caretaker ? config.getInt(
                             "classes.archer.bond.caretaker-extra-ticks", 60) : 0),
@@ -445,7 +441,7 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
                 pet.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
                         regenTicks, 0, false, true, true));
             }
-        }, null);
+        });
         owner.sendActionBar(messages.getMessage(capstone
                         ? "archer.bond.king" : "archer.bond.primal",
                 capstone ? "<gold>Vadak Királya: a falka ereje a társadban lüktet.</gold>"

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Non-persistent Season 0 content ceiling over the existing live configuration tree.
+ * Non-persistent Season 0 content ceiling over the existing live configuration tree while armed.
  * Nothing is written to disk; a normal config reload restores the configured Season 1 values.
  */
 public final class PrologueRuntimeConfigOverlay {
@@ -42,9 +42,7 @@ public final class PrologueRuntimeConfigOverlay {
     }
 
     public void reconcile() {
-        final PrologueManager manager = PrologueManager.current();
-        if (manager == null || !PrologueContentPolicy.enabled(config)) return;
-        if (manager.state().completed()) {
+        if (!PrologueContentPolicy.active(config)) {
             if (applied) {
                 config.reload();
                 applied = false;

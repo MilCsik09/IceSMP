@@ -44,7 +44,10 @@ FALLBACK_POLICY_PATH = (
 )
 # Repository documentation belongs beside the source pack but must not affect client bytes/hash.
 SOURCE_ONLY_PATHS = frozenset({"README.md"})
-MERGE_OWNED_PREFIXES = ("assets/icesmp/", "assets/icesmp_hud/")
+MERGE_OWNED_PREFIXES = (
+    "assets/icesmp/",
+    "assets/icesmp_hud/",
+)
 MERGE_OWNED_FILES = frozenset(
     {
         "pack.mcmeta",
@@ -53,6 +56,28 @@ MERGE_OWNED_FILES = frozenset(
         "assets/minecraft/shaders/core/rendertype_text.fsh",
         "assets/minecraft/textures/gui/sprites/boss_bar/white_background.png",
         "assets/minecraft/textures/gui/sprites/boss_bar/white_progress.png",
+        # Exact regular-survival replacement surface. Keeping this allow-list explicit makes
+        # an accidental hardcore/vehicle/other vanilla HUD override a merge failure.
+        *(
+            f"assets/minecraft/textures/gui/sprites/hud/heart/{name}.png"
+            for name in (
+                "absorbing_full", "absorbing_full_blinking", "absorbing_half",
+                "absorbing_half_blinking", "container", "container_blinking",
+                "frozen_full", "frozen_full_blinking", "frozen_half",
+                "frozen_half_blinking", "full", "full_blinking", "half",
+                "half_blinking", "poisoned_full", "poisoned_full_blinking",
+                "poisoned_half", "poisoned_half_blinking", "withered_full",
+                "withered_full_blinking", "withered_half", "withered_half_blinking",
+            )
+        ),
+        *(
+            f"assets/minecraft/textures/gui/sprites/hud/{name}.png"
+            for name in (
+                "armor_empty", "armor_full", "armor_half",
+                "food_empty", "food_empty_hunger", "food_full", "food_full_hunger",
+                "food_half", "food_half_hunger", "air", "air_bursting", "air_empty",
+            )
+        ),
     }
 )
 

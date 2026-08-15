@@ -130,6 +130,12 @@ public final class PrologueRuntime implements Listener {
 
     private void tick() {
         reconcileSeasonGates();
+        if (!PrologueContentPolicy.active(config)) {
+            nextNaturalBreachAt = 0L;
+            hud.setEventActive(false);
+            hud.tick();
+            return;
+        }
         timeline.tick();
         if (finale.isActive()) participants.tickPresence();
         finale.tick();
@@ -139,7 +145,7 @@ public final class PrologueRuntime implements Listener {
     }
 
     private void reconcileSeasonGates() {
-        if (manager.state().completed()) {
+        if (!PrologueContentPolicy.active(config)) {
             config.clearRuntimeOverride("world-events.season.enabled");
             config.clearRuntimeOverride("world-events.season-finale.enabled");
             config.clearRuntimeOverride("community-goals.enabled");
@@ -181,6 +187,10 @@ public final class PrologueRuntime implements Listener {
     }
 
     public void startAdminBreach(final BreachSeverity severity, final CommandSender sender) {
+        if (!PrologueContentPolicy.active(config)) {
+            sender.sendMessage("§cA Prologue DORMANT vagy inaktív. Előbb használd a /prologue start parancsot.");
+            return;
+        }
         if (finale.isActive()) {
             sender.sendMessage("§cFinálé közben külön breach nem indítható.");
             return;

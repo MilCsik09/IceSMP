@@ -1580,6 +1580,689 @@ quests:
       count: 24
     rewards:
       class-xp: 400
+  # --- Specializációs csúcspróbák (50. szint) ---
+  warrior_berserker_broken_horn:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Berserker"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Düh és Csatatempó. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "warrior"
+    requires-specialization: "berserker"
+    requires-level: 50
+    requires-quest: "warrior_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Düh és Csatatempó"
+      count: 18
+      spells:
+        - "reckless_swing"
+        - "bloodbath"
+        - "whirlwind"
+  warrior_guardian_last_wall:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Őrző"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Őrség és pajzstöltet. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "warrior"
+    requires-specialization: "guardian"
+    requires-level: 50
+    requires-quest: "warrior_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Őrség és pajzstöltet"
+      count: 18
+      spells:
+        - "bulwark"
+        - "shield_charge"
+        - "aegis"
+        - "whirlwind"
+  evoker_devastation_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Pusztító"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Felerősítés és Eszencia. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "evoker"
+    requires-specialization: "devastation"
+    requires-level: 50
+    requires-quest: "evoker_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Felerősítés és Eszencia"
+      count: 18
+      spells:
+        - "fire_breath"
+        - "disintegrate"
+        - "pyre"
+        - "eternity_surge"
+  evoker_preservation_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Megőrző"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Visszhang és Időlenyomat. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "evoker"
+    requires-specialization: "preservation"
+    requires-level: 50
+    requires-quest: "evoker_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Visszhang és Időlenyomat"
+      count: 18
+      spells:
+        - "echo"
+        - "reversion"
+        - "spiritbloom"
+        - "temporal_anomaly"
+  archer_sharpshooter_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Mesterlövész"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Szélolvasás és Pontosság. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "archer"
+    requires-specialization: "sharpshooter"
+    requires-level: 50
+    requires-quest: "archer_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Szélolvasás és Pontosság"
+      count: 18
+      spells:
+        - "hunters_mark"
+        - "piercing_bolt"
+        - "deadeye"
+        - "headshot"
+        - "perfect_focus"
+  archer_beast_master_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Vadmester"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Kötelék és társparancs. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "archer"
+    requires-specialization: "beast_master"
+    requires-level: 50
+    requires-quest: "archer_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Kötelék és társparancs"
+      count: 18
+      spells:
+        - "wolf_call"
+        - "primal_bond"
+        - "thick_hide"
+        - "stampede"
+  shaman_elemental_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Elementalista"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Totemkerék és Rezonancia. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "shaman"
+    requires-specialization: "elemental"
+    requires-level: 50
+    requires-quest: "shaman_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Totemkerék és Rezonancia"
+      count: 18
+      spells:
+        - "lightning_bolt"
+        - "flame_shock"
+        - "searing_totem"
+        - "healing_stream_totem"
+        - "lava_burst"
+        - "chain_lightning"
+  shaman_enhancement_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Erősítő"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Maelstrom és Fegyveráldás. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "shaman"
+    requires-specialization: "enhancement"
+    requires-level: 50
+    requires-quest: "shaman_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Maelstrom és Fegyveráldás"
+      count: 18
+      spells:
+        - "stormstrike"
+        - "lava_lash"
+        - "windfury_totem"
+        - "crash_lightning"
+        - "feral_spirit"
+  shaman_tidal_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Hullámhívó"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Dagály és Apály. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "shaman"
+    requires-specialization: "tidal"
+    requires-level: 50
+    requires-quest: "shaman_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Dagály és Apály"
+      count: 18
+      spells:
+        - "healing_surge"
+        - "riptide"
+        - "chain_heal"
+        - "healing_rain"
+  monk_windwalker_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Széljáró"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Áramlás és harcművészeti lánc. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "monk"
+    requires-specialization: "windwalker"
+    requires-level: 50
+    requires-quest: "monk_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Áramlás és harcművészeti lánc"
+      count: 18
+      spells:
+        - "tiger_palm"
+        - "blackout_kick"
+        - "rising_sun_kick"
+        - "flying_kick"
+        - "fists_of_fury"
+        - "whirling_dragon_punch"
+  monk_brewmaster_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Sörmester"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Stagger és tisztítás. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "monk"
+    requires-specialization: "brewmaster"
+    requires-level: 50
+    requires-quest: "monk_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Stagger és tisztítás"
+      count: 18
+      spells:
+        - "keg_smash"
+        - "breath_of_fire"
+        - "purifying_brew"
+        - "ironskin_brew"
+        - "fortifying_brew"
+  monk_mistweaver_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Ködszövő"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Ködszál és gyógyító ritmus. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "monk"
+    requires-specialization: "mistweaver"
+    requires-level: 50
+    requires-quest: "monk_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Ködszál és gyógyító ritmus"
+      count: 18
+      spells:
+        - "vivify"
+        - "soothing_mist"
+        - "renewing_mist"
+        - "enveloping_mist"
+        - "essence_font"
+        - "life_cocoon"
+  paladin_holy_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Szent Paplovag"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Meggyőződés és Fényjel. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "paladin"
+    requires-specialization: "holy"
+    requires-level: 50
+    requires-quest: "paladin_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Meggyőződés és Fényjel"
+      count: 18
+      spells:
+        - "flash_heal"
+        - "holy_light"
+        - "beacon_of_light"
+        - "word_of_glory"
+        - "lay_on_hands"
+  paladin_retribution_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Megtorló"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Ítélet-jelek és végrehajtás. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "paladin"
+    requires-specialization: "retribution"
+    requires-level: 50
+    requires-quest: "paladin_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Ítélet-jelek és végrehajtás"
+      count: 18
+      spells:
+        - "smite"
+        - "crusader_strike"
+        - "judgment"
+        - "blade_of_justice"
+        - "holy_fire"
+        - "divine_storm"
+  paladin_protection_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Védelmező Paplovag"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Pajzstöltet és szent védelem. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "paladin"
+    requires-specialization: "protection"
+    requires-level: 50
+    requires-quest: "paladin_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Pajzstöltet és szent védelem"
+      count: 18
+      spells:
+        - "consecration"
+        - "avengers_shield"
+        - "shield_of_the_righteous"
+        - "blessed_hammer"
+        - "consecrated_ground"
+        - "guardian_of_kings"
+  demon_hunter_havoc_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Pusztító Démonvadász"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Kárhozat-terhelés és Momentum. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "demon_hunter"
+    requires-specialization: "havoc"
+    requires-level: 50
+    requires-quest: "demon_hunter_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Kárhozat-terhelés és Momentum"
+      count: 18
+      spells:
+        - "demons_bite"
+        - "chaos_strike"
+        - "fel_rush"
+        - "blade_dance"
+        - "eye_beam"
+        - "vengeful_retreat"
+  demon_hunter_vengeance_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Bosszúálló Démonvadász"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Fájdalom és Sigil. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "demon_hunter"
+    requires-specialization: "vengeance"
+    requires-level: 50
+    requires-quest: "demon_hunter_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Fájdalom és Sigil"
+      count: 18
+      spells:
+        - "shear"
+        - "immolation_aura"
+        - "soul_cleave"
+        - "demon_spikes"
+        - "fiery_brand"
+        - "sigil_of_flame"
+  druid_feral_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Vadőr"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Harmónia, Szagnyom és Kombó. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "druid"
+    requires-specialization: "feral"
+    requires-level: 50
+    requires-quest: "druid_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Harmónia, Szagnyom és Kombó"
+      count: 18
+      spells:
+        - "savage_claw"
+        - "maul"
+        - "swipe"
+        - "feral_charge"
+        - "primal_roar"
+  druid_lunar_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Holdjós"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Nap–Hold mérleg és Eclipse. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "druid"
+    requires-specialization: "lunar"
+    requires-level: 50
+    requires-quest: "druid_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Nap–Hold mérleg és Eclipse"
+      count: 18
+      spells:
+        - "moonfire"
+        - "starsurge"
+        - "sunfire"
+        - "solar_beam"
+        - "starfall"
+        - "hurricane"
+  druid_ironbark_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Védelmező Druida"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Kéregréteg és Gyökérháló. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "druid"
+    requires-specialization: "ironbark"
+    requires-level: 50
+    requires-quest: "druid_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Kéregréteg és Gyökérháló"
+      count: 18
+      spells:
+        - "mangle"
+        - "iron_bark"
+        - "thornguard"
+        - "bristling_fur"
+        - "entangling_roots"
+        - "frenzied_regen"
+  druid_restoration_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Helyreállító"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Magvetés, érés és Virágzás. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "druid"
+    requires-specialization: "restoration"
+    requires-level: 50
+    requires-quest: "druid_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Magvetés, érés és Virágzás"
+      count: 18
+      spells:
+        - "rejuvenation"
+        - "regrowth"
+        - "healing_touch"
+        - "swiftmend"
+        - "lifebloom"
+        - "wild_bloom"
+  priest_discipline_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Fegyelem Pap"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Litánia, Engesztelés és Pajzsháló. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "priest"
+    requires-specialization: "discipline"
+    requires-level: 50
+    requires-quest: "priest_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Litánia, Engesztelés és Pajzsháló"
+      count: 18
+      spells:
+        - "heal"
+        - "power_word_shield"
+        - "penance"
+        - "power_word_radiance"
+        - "atonement"
+        - "barrier"
+  priest_bone_priest_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Csontpap"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Velő és Osszárium. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "priest"
+    requires-specialization: "bone_priest"
+    requires-level: 50
+    requires-quest: "priest_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Velő és Osszárium"
+      count: 18
+      spells:
+        - "bone_mend"
+        - "leeching_ray"
+        - "bone_ward"
+        - "queens_lament"
+        - "blood_tithe"
+        - "silence_of_the_grave"
+  priest_shadow_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Árnyékpap"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Őrület és Küszöb. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "priest"
+    requires-specialization: "shadow"
+    requires-level: 50
+    requires-quest: "priest_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Őrület és Küszöb"
+      count: 18
+      spells:
+        - "shadow_word_pain"
+        - "mind_blast"
+        - "mind_flay"
+        - "vampiric_touch"
+        - "shadow_word_death"
+        - "dispersion"
+  death_knight_blood_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Vérlovag"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Rúnakör és Vér Emlékezete. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "death_knight"
+    requires-specialization: "blood"
+    requires-level: 50
+    requires-quest: "death_knight_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Rúnakör és Vér Emlékezete"
+      count: 18
+      spells:
+        - "heart_strike"
+        - "marrowrend"
+        - "death_strike"
+        - "rune_tap"
+        - "blood_boil"
+        - "vampiric_blood"
+  death_knight_frost_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Fagylovag"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Rúnakör és Fagyjelek. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "death_knight"
+    requires-specialization: "frost"
+    requires-level: 50
+    requires-quest: "death_knight_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Rúnakör és Fagyjelek"
+      count: 18
+      spells:
+        - "obliterate"
+        - "frost_strike"
+        - "howling_blast"
+        - "icy_touch"
+        - "frostscythe"
+        - "remorseless_winter"
+  death_knight_unholy_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Szentségtelen"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Dögvész és ghúlmutáció. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "death_knight"
+    requires-specialization: "unholy"
+    requires-level: 50
+    requires-quest: "death_knight_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Dögvész és ghúlmutáció"
+      count: 18
+      spells:
+        - "festering_strike"
+        - "outbreak"
+        - "unholy_coil"
+        - "raise_ghoul"
+        - "grip_of_the_dead"
+        - "epidemic"
+  assassin_poisoner_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Méregkeverő"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Toxinkészlet és Opportunity. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "assassin"
+    requires-specialization: "poisoner"
+    requires-level: 50
+    requires-quest: "assassin_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Toxinkészlet és Opportunity"
+      count: 18
+      spells:
+        - "venom_strike"
+        - "toxin_dart"
+        - "acid_splash"
+        - "numbing_agent"
+        - "paralytic_strike"
+        - "contagion"
+  assassin_phantom_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Fantom"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Rejtőzés és fantomnyom. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "assassin"
+    requires-specialization: "phantom"
+    requires-level: 50
+    requires-quest: "assassin_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Rejtőzés és fantomnyom"
+      count: 18
+      spells:
+        - "hide"
+        - "ghost_step"
+        - "phase_blink"
+        - "haunt"
+        - "cold_spot"
+        - "ethereal_form"
+  assassin_plaguebringer_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Pestishozó"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Fertőzés és Dögvész. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "assassin"
+    requires-specialization: "plaguebringer"
+    requires-level: 50
+    requires-quest: "assassin_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Fertőzés és Dögvész"
+      count: 18
+      spells:
+        - "plague_cut"
+        - "plague_contagion"
+        - "black_boils"
+        - "miasma"
+        - "festering_wounds"
+        - "plague_wind"
+  warlock_affliction_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Átokmester"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Lélekadósság, Átokgrimoár és Lélekfonal. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "warlock"
+    requires-specialization: "affliction"
+    requires-level: 50
+    requires-quest: "warlock_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Lélekadósság, Átokgrimoár és Lélekfonal"
+      count: 18
+      spells:
+        - "corruption"
+        - "agony"
+        - "unstable_affliction"
+        - "malefic_grasp"
+        - "siphon_life"
+        - "seed_of_corruption"
+  warlock_destruction_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Pusztító Boszorkánymester"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Lélekadósság, Parázs és Túlhevülés. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "warlock"
+    requires-specialization: "destruction"
+    requires-level: 50
+    requires-quest: "warlock_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Lélekadósság, Parázs és Túlhevülés"
+      count: 18
+      spells:
+        - "immolate"
+        - "incinerate"
+        - "conflagrate"
+        - "chaos_bolt"
+        - "rain_of_fire"
+        - "shadowfury"
+  warlock_demonologist_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Demonológus"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Lélekadósság és démonroster. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "warlock"
+    requires-specialization: "demonologist"
+    requires-level: 50
+    requires-quest: "warlock_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Lélekadósság és démonroster"
+      count: 18
+      spells:
+        - "fel_bolt"
+        - "imp_swarm"
+        - "magma_servant"
+        - "demon_skin"
+        - "chaos_flame"
+        - "sacrifice_pact"
+  wizard_elementalist_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Elementalista Varázsló"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Rúnaszövés és Elemi Korona. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "wizard"
+    requires-specialization: "elementalist"
+    requires-level: 50
+    requires-quest: "wizard_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Rúnaszövés és Elemi Korona"
+      count: 18
+      spells:
+        - "fireball"
+        - "frost_nova"
+        - "thunder_strike"
+        - "ember_storm"
+        - "gale_burst"
+        - "stone_skin"
+  wizard_necromancer_trial:
+    category: SPECIALIZATION
+    visibility: PREREQUISITES_MET
+    display-name: "Csúcspróba: Nekromanta"
+    description: "Bizonyítsd, hogy uralod a következő harci rendszert: Rúnaszövés és Holtak Udvara. A próba teljesítése feloldja a specializációd záróképességét."
+    requires-job: "wizard"
+    requires-specialization: "necromancer"
+    requires-level: 50
+    requires-quest: "wizard_master_trial"
+    objective:
+      type: "CAST_SPELLS"
+      description: "Rúnaszövés és Holtak Udvara"
+      count: 18
+      spells:
+        - "life_drain"
+        - "bone_spear"
+        - "grave_grasp"
+        - "raise_horde"
+        - "bone_archers"
+        - "soul_harvest"
   # --- Példa: több-objektívás quest (párhuzamos ALL mód) ---
   # "Ölj 10 mobot ÉS hozz 16 kenyeret" — a két feladat egymástól függetlenül
   # halad, a quest akkor zárul, ha mindkettő kész. Repeatable, napi cooldownnal.

@@ -21,7 +21,7 @@ import java.util.UUID;
  * bizonyított accept/talk/journal/bind bypass-ok zárása), teljes gráf-validátor,
  * választó-token életciklus, kategória/láthatóság szótárak, marker-paletta, a
  * PlayerProfile-kiterjesztések (forrás-audit, felfedezés, követés) durable
- * viselkedése, a 160 csomagolt quest migrációs szerződése és a bypass-mentességet
+ * viselkedése, a csomagolt quest-katalógus migrációs szerződése és a bypass-mentességet
  * őrző forrás-szerződések.
  */
 public final class QuestFrameworkV2RegressionSuite {
@@ -496,20 +496,21 @@ public final class QuestFrameworkV2RegressionSuite {
         }
     }
 
-    // ---------- a 160 csomagolt quest migrációs szerződése ----------
+    // ---------- a csomagolt quest-katalógus migrációs szerződése ----------
 
     private static void packagedQuestMigrationContract() throws Exception {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(
                 new java.io.File("src/main/resources/config/quests.yml"));
         final ConfigurationSection quests = yaml.getConfigurationSection("quests");
-        check(quests != null && quests.getKeys(false).size() == 160,
-                "packaged catalog carries the 160 quests");
+        check(quests != null && quests.getKeys(false).size() == 195,
+                "packaged catalog carries the 160 world quests plus 35 capstone trials");
 
         final List<String> errors = QuestGraphValidator.validate(quests);
         check(errors.isEmpty(), "the full packaged quest graph validates: " + errors);
 
         int npcStarts = 0;
         int chainStarts = 0;
+        int specializationTrials = 0;
         for (final String questId : quests.getKeys(false)) {
             final ConfigurationSection quest = quests.getConfigurationSection(questId);
             final QuestSourcePolicy policy = QuestSourcePolicy.parse(quest);
@@ -552,9 +553,21 @@ public final class QuestFrameworkV2RegressionSuite {
                 check("SECRET".equals(quest.getString("category")),
                         "riddle quest is SECRET category: " + questId);
             }
+            if ("SPECIALIZATION".equals(quest.getString("category"))) {
+                specializationTrials++;
+                check(quest.getInt("requires-level") >= 50,
+                        "capstone trial is level 50 gated: " + questId);
+                check(!quest.getString("requires-specialization", "").isBlank(),
+                        "capstone trial is bound to its active specialization: " + questId);
+                check("CAST_SPELLS".equals(quest.getString("objective.type"))
+                                && !quest.getStringList("objective.spells").isEmpty(),
+                        "capstone trial practices specialization abilities: " + questId);
+            }
         }
         check(npcStarts == 23, "all 23 giver quests migrated to NPC start, found " + npcStarts);
         check(chainStarts == 24, "all 24 chain targets migrated to CHAIN start, found " + chainStarts);
+        check(specializationTrials == 35,
+                "all 35 capstone trials are packaged, found " + specializationTrials);
         check(QuestSourcePolicy.parse(quests.getConfigurationSection("onboarding_herald"))
                         .startType() == QuestSourcePolicy.StartType.AUTO,
                 "onboarding chain opener stays AUTO-sourced");
@@ -579,6 +592,10 @@ public final class QuestFrameworkV2RegressionSuite {
                 "clickable choices carry single-use tokens, never raw accept commands");
         check(manager.contains("reloadDefinitions") && manager.contains("keeping previous"),
                 "invalid definition reload keeps the previous registry snapshot");
+        check(manager.contains("handleSpellCast(final Player player, final String spellId)")
+                        && manager.contains("forEachActive(player, \"CAST_SPELLS\"")
+                        && manager.contains("quest-requires-specialization"),
+                "capstone trial progress and specialization gate share the central QuestManager");
 
         final String logListener = java.nio.file.Files.readString(java.nio.file.Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/QuestLogListener.java"));

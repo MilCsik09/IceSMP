@@ -14,11 +14,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
- * /pet — companion control for the Beast Master and Necromancer: get the capture
- * item, summon / dismiss / name / info. Capture itself is by right-clicking a mob
- * with the capture item.
+ * /pet — durable companion roster and runtime controls for every pet-owning specialization.
  */
 public final class PetCommand implements BasicCommand {
 
@@ -83,7 +82,6 @@ public final class PetCommand implements BasicCommand {
                     return;
                 }
                 if (petManager.isUnholy(player) || petManager.isWarlock(player)) {
-                    // A Szentségtelen/Boszorkánymester társa nem befogható: rituálé idézi.
                     player.sendMessage(messageManager.get("pet-ritual-hint",
                             "&5A társadat rituálé idézi, nem befogás. Kellék: &fNyughatatlan Szív&5 "
                                     + "(élőholt-kill) / &fDémon-pecsét&5 (boszorka- és illager-kill) — "
@@ -108,23 +106,62 @@ public final class PetCommand implements BasicCommand {
                             player.sendMessage(messageManager.get("pet-summoned", "&aA társad megjelent melletted."));
                         }
                     }));
+            case "select", "valaszt" -> {
+                if (args.length < 2) {
+                    player.sendMessage(messageManager.get("pet-select-usage",
+                            "&cHasználat: /pet select <istállóhely>"));
+                    return;
+                }
+                final var selected = petManager.resolveCompanion(player, args[1]);
+                if (selected.isEmpty()) {
+                    player.sendMessage(messageManager.get("pet-selection-invalid",
+                            "&cNincs társ ezen az istállóhelyen."));
+                    return;
+                }
+                petManager.selectV2(player, selected.orElseThrow().companionId()).whenComplete((error, failure) ->
+                        petManager.runOnPlayer(player, () -> {
+                            if (failure != null) {
+                                player.sendMessage(messageManager.get("pet-persistence-failed",
+                                        "&cA társválasztást nem sikerült tartósan menteni."));
+                            } else if (error != null) {
+                                player.sendMessage(messageManager.get(error, "&cMost nem választhatod ezt a társat."));
+                            } else {
+                                player.sendMessage(messageManager.get("pet-selected",
+                                        "&aKiválasztottad és magad mellé hívtad a társadat."));
+                            }
+                        }));
+            }
             case "dismiss" -> petManager.dismissV2(player).whenComplete((committed, failure) ->
                     petManager.runOnPlayer(player, () -> player.sendMessage(
                             failure == null && Boolean.TRUE.equals(committed)
                                     ? messageManager.get("pet-dismissed", "&7A társad eltűnt.")
                                     : messageManager.get("pet-none", "&7Nincs aktív társad, vagy a mentés sikertelen."))));
-            case "release" -> petManager.releaseV2(player).whenComplete((committed, failure) ->
-                    petManager.runOnPlayer(player, () -> player.sendMessage(
-                            failure == null && Boolean.TRUE.equals(committed)
-                                    ? messageManager.get("pet-released",
-                                            "&7A társad visszatért a vadonba; az Istálló-hely felszabadult.")
-                                    : messageManager.get("pet-none", "&7Nincs aktív társad, vagy a mentés sikertelen."))));
+            case "release" -> {
+                final CompletionStage<Boolean> release;
+                if (args.length >= 2) {
+                    final var selected = petManager.resolveCompanion(player, args[1]);
+                    if (selected.isEmpty()) {
+                        player.sendMessage(messageManager.get("pet-selection-invalid",
+                                "&cNincs társ ezen az istállóhelyen."));
+                        return;
+                    }
+                    release = petManager.releaseV2(player, selected.orElseThrow().companionId());
+                } else {
+                    release = petManager.releaseV2(player);
+                }
+                release.whenComplete((committed, failure) ->
+                        petManager.runOnPlayer(player, () -> player.sendMessage(
+                                failure == null && Boolean.TRUE.equals(committed)
+                                        ? messageManager.get("pet-released",
+                                                "&7A társad visszatért a vadonba; az Istálló-hely felszabadult.")
+                                        : messageManager.get("pet-none", "&7Nincs kiválasztott társad, vagy a mentés sikertelen."))));
+            }
             case "name" -> {
                 if (args.length < 2) {
                     player.sendMessage(messageManager.get("pet-name-usage", "&cHasználat: /pet name <név>"));
                     return;
                 }
-                final String requestedName = args[1];
+                final String requestedName = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
                 petManager.setNameV2(player, requestedName).whenComplete((committed, failure) ->
                         petManager.runOnPlayer(player, () -> player.sendMessage(
                                 failure == null && Boolean.TRUE.equals(committed)
@@ -132,14 +169,17 @@ public final class PetCommand implements BasicCommand {
                                         : messageManager.get("pet-name-invalid",
                                                 "&cÉrvénytelen név, nincs aktív társ, vagy a mentés sikertelen."))));
             }
-            default -> player.sendMessage(messageManager.getMessage(
+            case "info" -> player.sendMessage(messageManager.getMessage(
                     "pet-info",
-                    "<dark_green>🐺 Társ: <white>{name}</white> &7| Szint: <white>{level}</white> &7| XP: <white>{xp}</white> &8(/pet summon|dismiss|release|name)</dark_green>",
+                    "<dark_green>🐺 Társ: <white>{name}</white> &7| Szint: <white>{level}</white> &7| XP: <white>{xp}</white> &7| Társlista: <white>{roster}</white></dark_green>",
                     Map.of(
                             "name", petManager.getName(player),
                             "level", String.valueOf(petManager.getLevel(player)),
-                            "xp", String.valueOf(petManager.getXp(player))
+                            "xp", String.valueOf(petManager.getXp(player)),
+                            "roster", String.valueOf(petManager.companionRoster(player).size())
                     )));
+            default -> player.sendMessage(messageManager.get("pet-command-usage",
+                    "&cHasználat: /pet <menu|item|summon|select|dismiss|release|name|stance|info>"));
         }
     }
 
@@ -147,11 +187,20 @@ public final class PetCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("menu", "item", "summon", "dismiss", "release", "name", "stance", "info").stream().filter(o -> o.startsWith(prefix)).toList();
+            return List.of("menu", "item", "summon", "select", "dismiss", "release", "name", "stance", "info").stream().filter(o -> o.startsWith(prefix)).toList();
         }
         if (args.length == 2 && "stance".equalsIgnoreCase(args[0])) {
             final String prefix = args[1].toLowerCase(Locale.ROOT);
             return List.of("aktiv", "passziv", "marad").stream().filter(o -> o.startsWith(prefix)).toList();
+        }
+        if (args.length == 2 && ("select".equalsIgnoreCase(args[0]) || "valaszt".equalsIgnoreCase(args[0])
+                || "release".equalsIgnoreCase(args[0]))) {
+            final String prefix = args[1].toLowerCase(Locale.ROOT);
+            if (commandSourceStack.getSender() instanceof Player player) {
+                final int size = petManager.companionRoster(player).size();
+                return java.util.stream.IntStream.rangeClosed(1, size).mapToObj(String::valueOf)
+                        .filter(value -> value.startsWith(prefix)).toList();
+            }
         }
         return List.of();
     }

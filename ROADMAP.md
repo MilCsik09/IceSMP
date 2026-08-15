@@ -395,6 +395,15 @@ fázisonként, a terv szerinti sorrendben:
   BROWSE_RECIPES saját-szakma kapu (vanilla paritás), PositionCache/emitFx
   unloaded-world védelem; kliensen resync-ürítés teljessé téve,
   recept-fülek saját szakmára szűrve.
+- ✅ World-event spawn hardening: automatikus jelöltek chunk-középre
+  igazítva, effektív footprint/partpuffer egy régión belüli 7 blokkra
+  korlátozva, escort-route és inváziós hullám belső profillal; az admin
+  parancsok az aszinkron keresést nem jelentik többé kész spawnként.
+- ✅ Teljes class-mechanika audit: mind a 13 kaszt, 35 specializáció, 210
+  doctrine és 35 capstone producer→consumer útja bekötve; minden alap aktív
+  kit 7/7 feloldható spell. A csúcspróbák spec- és szintkapus
+  `CAST_SPELLS` questek, a durable pet/minion roster egyetlen példány-authorityt
+  használ, a Szentségtelen ghúl mutációja pedig tényleges Profile v2 társállapot.
 - ⬜ Review-ből nyitva hagyott kis tételek: (1) a protokollnak nincs
   aggregát (beágyazott listás) payload-méret garanciája — a jelenlegi
   tartalom-skálán elméleti, a hibaút a HUD-tick védőhálóval lefedve; ha a
@@ -513,6 +522,9 @@ entity cleanup és boss-victory persistence race hardeningjét is lezárta.
   pause, pause-időt kizáró timeout, paused restart recovery, finaleId-kötött
   boss-victory pending receipt, fail-closed persistence failure és idempotens
   Gate/reward/Season 1 settlement elkészült.
+- ✅ **DORMANT pass-through:** élesítés előtt nincs Prologue content/progression
+  ceiling, season/community override, Nether authority, HUD/ambient/breach vagy
+  idő előtti catch-up; a normál szerverconfig marad érvényben.
 - ✅ **Dokumentációs szinkron:** lore mapping, player-facing Prologue policy,
   admin live-ops és builder hookok a meglévő kanonikus guide-okban szerepelnek.
 - ◇ **World-builder acceptance:** a `prologue-gate`, `prologue-gathering`,

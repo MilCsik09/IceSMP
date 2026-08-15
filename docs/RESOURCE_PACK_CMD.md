@@ -2056,6 +2056,12 @@ erőd/kapu külső héjat kap, de ugyanabból a kanonikus belső panelgeometriá
 frakciókeretek. A reprodukálható feladatok: `generateIceSmpHudAssets`,
 `validateIceSmpHudPackage`, `iceSmpHudRegressionTest`, `hudEditorRegressionTest`.
 
+A survival bővítés szándékosan elkülönült modul: a fontjai a `font/survival/`, a képei a
+`textures/hud/survival/` alatt, contractja pedig a `survival-hud-manifest.json` fájlban él. A
+`generateIceSmpSurvivalHudAssets` a core generátor után fut, az umbrella
+`generateIceSmpHudAssets` mindkettőt előállítja. A modul a shader fenntartott 11–15-ös ID-it és
+bottom-center horgonyát használja, ezért a jobb felső class HUD koordinátáit és assetjeit nem írja át.
+
 A `runFolia` fejlesztői provisioning a változtathatatlan külső packot
 (`4900b0a9bed8db710143393916db3687e01def54`) a first-party merge bemeneteként stage-eli. A külső
 letöltés kizárólag fejlesztői/CI lépés, SHA-1 eltérésnél fail-closed; nincs migrációs HUD-csomag.
@@ -2065,7 +2071,10 @@ nem self-hostol és nem tölt le runtime plugin- vagy packfüggőséget. A `Publ
 workflow SHA-1-gyel ellenőrzi a lockolt külső alapcsomagot, majd Folia vagy külső HUD plugin indítása nélkül futtatja
 a `stageMergedResourcePackForR2` feladatot. A merge csak a `pack.mcmeta`, `pack.png`, az
 `assets/icesmp/`, `assets/icesmp_hud/`, a first-party text shader és a fehér HUD-bossbar sprite-ok
-ütközését engedi; más közös útvonal fail-closed buildhiba. Az eredmény SHA-1 néven kerül R2-re.
+ütközését, továbbá egy tételes allow-listben a normál szív-, páncél-, étel- és levegősprite-okat
+engedi; más közös útvonal fail-closed buildhiba. A teljes vanilla HUD-mappa nincs owned prefixként
+engedélyezve, így egy véletlen hardcore- vagy vehicle-heart felülírás is leállítja a merge-et. Az
+eredmény SHA-1 néven kerül R2-re.
 
 A HUD a BMP private-use tartományban generált, repo-validált spacing- és glyph-kiosztást használ;
 nem támaszkodik külső HUD motor supplementary-plane sentinelére. Minden dinamikus sprite teljes 64×64-es
@@ -2085,9 +2094,14 @@ a `hud-manifest.json`, a generátor, az immutable Java globális/komponens snaps
 validált contractja. A komponens relatív scale a globális scale-lel szorzódik, majd erre a táblára
 illeszkedik; emiatt az editor nem ígér a vanilla shader által nem reprezentálható runtime méretet.
 A 240×160-as keretek és 240×22-es sávok beleférnek a Minecraft 256×256-os font-stitcherébe;
-a jobb oldali horgony clip-space alapú, a magyar szöveg pedig a licencelt DejaVu Sans forrásból
-négyszeresen túlmintavételezett atlasz. A backend csak `SUCCESSFULLY_LOADED` pack után renderel,
+a jobb oldali horgony clip-space alapú, a magyar szöveg pedig a licencelt Inter SemiBold forrásból
+nagy felbontásban mintavételezett atlasz. A backend csak `SUCCESSFULLY_LOADED` pack után renderel,
 ezért pack nélkül nem jelenhet meg felső missing-glyph négyzet.
+
+A normál vanilla health/armor/food/air sprite-ok átlátszó 9×9-es replacementet kapnak. A hardcore
+szívek szándékosan nincsenek generálva vagy owned-ként engedélyezve. A szerveroldali survival panel
+current/max HP-t, százalékot, absorptiont, páncélt, ételt és levegőt jelenít meg; pack nélkül a
+változatlan vanilla sprite-ok maradnak a biztonságos fallback.
 
 Az editor kizárólag sikeres `SUCCESSFULLY_LOADED` státusznál preview-zik; pack nélkül nem próbál
 HUD-fontot kirajzolni, és nem rontja el a natív/Folia fallbacket. A felbontás/GUI-scale presetek

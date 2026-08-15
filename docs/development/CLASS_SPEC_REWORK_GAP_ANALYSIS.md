@@ -162,11 +162,17 @@
 
 - no class remains outside the vertical-slice gameplay gate; what stays open below is content, balance and verification work, not class implementation;
 - no generic mechanics-core primitive library is planned from this first implementation; common extraction is allowed only after real repeated consumers prove the same lifecycle/invariants;
-- the physical world content for `warrior_berserker_broken_horn` (Törött Kürt), `warrior_guardian_last_wall` (Utolsó Fal), `evoker_devastation_trial`, `evoker_preservation_trial`, `archer_sharpshooter_trial`, `archer_beast_master_trial`, `shaman_elemental_trial`, `shaman_enhancement_trial`, `shaman_tidal_trial`, `monk_windwalker_trial`, `monk_brewmaster_trial`, `monk_mistweaver_trial`, `paladin_holy_trial`, `paladin_retribution_trial`, `paladin_protection_trial`, `demon_hunter_havoc_trial`, `demon_hunter_vengeance_trial`, `druid_feral_trial`, `druid_lunar_trial`, `druid_ironbark_trial`, `druid_restoration_trial`, `priest_discipline_trial`, `priest_bone_priest_trial`, `priest_shadow_trial`, `death_knight_blood_trial`, `death_knight_frost_trial`, `death_knight_unholy_trial`, `assassin_poisoner_trial`, `assassin_phantom_trial`, `assassin_plaguebringer_trial`, `warlock_affliction_trial`, `warlock_destruction_trial`, `warlock_demonologist_trial`, `wizard_elementalist_trial` and `wizard_necromancer_trial` is a builder/event gate; no fabricated coordinates or fake arena completion is part of the code slices. The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin, Warlock and Wizard trial ids intentionally carry no lore names because the canonical game-design document (`IceSMP_Kasztok_es_Specializaciok_Teljes_Jatekdesign_VEGLEGES.md`) is not available in this repository or the session file library; the Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin, Warlock and Wizard doctrine identifiers are likewise mechanic-descriptive working names pending canonical verification;
+- all 35 capstone IDs resolve to bundled level-50 `CAST_SPELLS` quests with
+  job, active-specialization and class-master-trial gates. They intentionally
+  have no physical builder/event hook; the required 18 successful allowlisted
+  casts are the trial, and completion reconciles the durable Profile v2
+  capstone state;
 - the current Class Relic catalog has no canonical Warrior binding/resonance/awakening definition. The framework is reused but no new Warrior relic design is invented here;
 - full numeric Warrior and Evoker PvE/PvP balance, TTK, party pressure and real Guardian objective protection require staging playtest; the Evoker empower/burst bonus rides the shared cast-power pipeline, so its PvP clamp is the double cap (`classes.evoker.max-power-bonus-percent` + `spells.total-power-cap`), not a per-target split;
 - the separate class-HP/A17 rollout remains disabled and is not activated by this gameplay work;
-- complete ability kits and gameplay loops for every other specialization remain open.
+- final PvE/PvP numbers and class feel remain staging work; no specialization
+  is missing its seven-spell default kit, doctrine hooks or producer→consumer
+  gameplay loop.
 
 ## Release gates outside unit/regression execution
 
@@ -180,7 +186,8 @@
 - Demon Hunter overload-risk feel and the two-Sigil tank rotation in real fights;
 - gameplay-v2 second-spec switch under real combat/logout/reconnect timing on every allowlisted class;
 - Lélekkapocs loss/full-inventory/reconnect plus external-container transfer tests on a running server;
-- builder provisioning and gameplay validation of both final trials;
+- all 35 capstone trials with positive cast, rejected-cast, wrong-spec and
+  reconnect controls; no builder provisioning is required;
 - deployment plugin bundle and dependency-lock validation;
 - controlled filesystem permission/ENOSPC tests;
 - longer multi-player leak/soak testing.

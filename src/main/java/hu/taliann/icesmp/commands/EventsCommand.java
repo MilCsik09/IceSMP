@@ -245,7 +245,7 @@ public final class EventsCommand implements BasicCommand {
 
         final Player anchor = sender instanceof Player player ? player : null;
         sender.sendMessage(worldBossManager.forceSpawn(anchor)
-                ? messageManager.get("events-worldboss-spawned", "&cVilágboss megidézve!")
+                ? messageManager.get("events-worldboss-searching", "&eA világboss biztonságos spawnhelyének keresése elindult…")
                 : messageManager.get("events-worldboss-failed", "&7Nem sikerült (már aktív boss, vagy nincs online játékos)."));
     }
 
@@ -256,7 +256,7 @@ public final class EventsCommand implements BasicCommand {
 
         final Player anchor = sender instanceof Player player ? player : null;
         sender.sendMessage(invasionManager.forceStart(anchor)
-                ? messageManager.get("events-invasion-started", "&cInvázió elindítva!")
+                ? messageManager.get("events-invasion-searching", "&eAz invázió biztonságos spawnhelyének keresése elindult…")
                 : messageManager.get("events-invasion-failed", "&7Nem sikerült (nincs online játékos)."));
     }
 
@@ -349,7 +349,7 @@ public final class EventsCommand implements BasicCommand {
         }
         final Player anchor = sender instanceof Player player ? player : null;
         sender.sendMessage(escortManager.forceStart(anchor)
-                ? messageManager.get("events-escort-started", "&eKaraván-kíséret elindítva!")
+                ? messageManager.get("events-escort-searching", "&eA karaván biztonságos útvonalának keresése elindult…")
                 : messageManager.get("events-escort-failed", "&7Nem sikerült (már úton van egy konvoj, vagy nincs online játékos)."));
     }
 
@@ -359,7 +359,7 @@ public final class EventsCommand implements BasicCommand {
         }
         final Player anchor = sender instanceof Player player ? player : null;
         sender.sendMessage(meteorEventManager.forceSpawn(anchor)
-                ? messageManager.get("events-meteor-spawned", "&cMeteor becsapódott a közeledben!")
+                ? messageManager.get("events-meteor-searching", "&eA meteor biztonságos becsapódási helyének keresése elindult…")
                 : messageManager.get("events-meteor-failed", "&7Nem sikerült (már van kráter, vagy nincs online játékos)."));
     }
 

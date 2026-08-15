@@ -39,7 +39,9 @@ public final class PrologueHudController {
     }
 
     public void tick() {
-        if (!config.getBoolean("world-events.prologue.stability-hud.enabled", true)) {
+        if (!PrologueContentPolicy.active(config)
+                || !config.getBoolean("world-events.prologue.stability-hud.enabled", true)) {
+            nextAmbientAt = 0L;
             hideAll();
             return;
         }
@@ -88,7 +90,7 @@ public final class PrologueHudController {
     }
 
     private void ambientPulse(final Location gate) {
-        if (gate == null || gate.getWorld() == null || state.state().completed()) return;
+        if (!PrologueContentPolicy.active(config) || gate == null || gate.getWorld() == null) return;
         final long now = System.currentTimeMillis();
         if (now < nextAmbientAt) return;
         final long seconds = Math.max(8L, config.getLong(

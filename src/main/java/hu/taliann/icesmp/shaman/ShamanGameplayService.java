@@ -123,8 +123,15 @@ public final class ShamanGameplayService implements Listener, PlayerStateCleanup
     public boolean beforeCast(final Player player, final Spell spell) {
         if (!isShaman(player) || spell == null) return true;
         final UUID playerId = player.getUniqueId();
+        final String spellId = spell.getId().toLowerCase(Locale.ROOT);
+        if ("tidal".equals(activeSpec(playerId)) && "spirit_tide".equals(spellId)
+                && Math.abs(state(playerId).tide()) < tideThreshold(playerId)) {
+            player.sendActionBar(messages.getMessage("shaman.tide.capstone-need",
+                    "<red>A Szellemárhoz teljes Dagály vagy Apály kell.</red>"));
+            return false;
+        }
         if (!"enhancement".equals(activeSpec(playerId))) return true;
-        final int cost = maelstromCost(playerId, spell.getId().toLowerCase(Locale.ROOT));
+        final int cost = maelstromCost(playerId, spellId);
         if (cost > 0 && state(playerId).maelstrom() < cost) {
             player.sendActionBar(messages.getMessage("shaman.maelstrom.need",
                     "<red>Nincs elég Maelstrom. Szükséges: {amount}.</red>",
@@ -149,7 +156,11 @@ public final class ShamanGameplayService implements Listener, PlayerStateCleanup
                 && state.isOverloadArmed(overloadThreshold(playerId))) {
             bonus += overloadBonusPercent(playerId);
         } else if ("tidal".equals(spec)) {
-            if (chainHealSpells().contains(spellId) && state.isHighTide(tideThreshold(playerId))) {
+            if ("spirit_tide".equals(spellId)
+                    && Math.abs(state.tide()) >= tideThreshold(playerId)) {
+                bonus += tideBonusPercent(playerId, state.tide() > 0);
+            } else if (chainHealSpells().contains(spellId)
+                    && state.isHighTide(tideThreshold(playerId))) {
                 bonus += tideBonusPercent(playerId, true);
             } else if (directHealSpells().contains(spellId)
                     && state.isLowTide(tideThreshold(playerId))) {
@@ -242,6 +253,20 @@ public final class ShamanGameplayService implements Listener, PlayerStateCleanup
                                  final String spellId) {
         final UUID playerId = player.getUniqueId();
         final int threshold = tideThreshold(playerId);
+        if ("spirit_tide".equals(spellId)) {
+            final boolean high = state.isHighTide(threshold);
+            state.consumeTide(0);
+            applyLifeVeinAbsorption(player);
+            if (isInCombat(playerId)) {
+                specs.contributeClassMastery(player, JobType.SHAMAN,
+                        config.getInt("classes.shaman.mastery.tide-xp", 4));
+            }
+            player.sendActionBar(messages.getMessage("shaman.tide.capstone",
+                    high
+                            ? "<gold>🌊 Szellemár: a teljes Dagály áldássá oldódott.</gold>"
+                            : "<gold>🌊 Szellemár: a teljes Apály áldássá oldódott.</gold>"));
+            return;
+        }
         if (chainHealSpells().contains(spellId)) {
             if (state.isHighTide(threshold)) {
                 state.consumeTide(tideRetentionPercent(playerId));

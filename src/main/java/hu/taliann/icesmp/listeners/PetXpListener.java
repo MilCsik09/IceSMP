@@ -9,7 +9,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Awards Beast Master companion XP when the owner kills a hostile mob.
+ * Awards companion XP when either the owner or their live durable pet kills a hostile mob.
  */
 public final class PetXpListener implements Listener {
 
@@ -41,26 +41,48 @@ public final class PetXpListener implements Listener {
         if (!(event.getEntity() instanceof Monster)) {
             return;
         }
-        final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
+        hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
                 hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(event.getEntity(),
                         hu.taliann.icesmp.utils.MobKillUtil.RewardKind.PROGRESSION, configManager, afkManager);
+        java.util.UUID killingCompanionId = null;
         if (kill == null) {
-            return;
+            final org.bukkit.event.entity.EntityDamageEvent last = event.getEntity().getLastDamageCause();
+            final org.bukkit.entity.Entity causing = last == null ? null
+                    : last.getDamageSource().getCausingEntity();
+            final PetManager.PetKillAttribution attribution =
+                    petManager.activePetAttribution(causing).orElse(null);
+            if (attribution == null) return;
+            killingCompanionId = attribution.companionId();
+            kill = hu.taliann.icesmp.utils.MobKillUtil.eligibleAttributedKill(
+                    event.getEntity(), attribution.ownerId(),
+                    hu.taliann.icesmp.utils.MobKillUtil.RewardKind.PROGRESSION, configManager, afkManager);
+            if (kill == null) {
+                return;
+            }
         }
         // Folia: the death event runs on the mob's region thread; the killer is a DIFFERENT entity —
         // even the canOwnPet spec check reads its PDC. Hop first, then check + award on the killer's
-        // thread. (Both pet-owning specs — Beast Master AND Necromancer — earn companion XP.)
+        // thread. Every specialization admitted by PetManager earns companion XP.
         final boolean undeadVictim = event.getEntity() instanceof org.bukkit.entity.Zombie
                 || event.getEntity() instanceof org.bukkit.entity.AbstractSkeleton
                 || event.getEntity() instanceof org.bukkit.entity.Phantom;
         final boolean occultVictim = event.getEntity() instanceof org.bukkit.entity.Witch
                 || event.getEntity() instanceof org.bukkit.entity.Raider;
-        kill.runOnKiller(plugin, killer -> {
+        final java.util.UUID victimId = kill.victimId();
+        final hu.taliann.icesmp.utils.MobKillUtil.KillContext reward = kill;
+        final java.util.UUID creditedCompanionId = killingCompanionId;
+        reward.runOnKiller(plugin, killer -> {
             if (!petManager.canOwnPet(killer)) {
                 return;
             }
-            petManager.addXpV2(killer, Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2)),
-                    "pet-kill-xp:" + event.getEntity().getUniqueId()).exceptionally(failure -> false);
+            final int xp = Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2));
+            if (creditedCompanionId == null) {
+                petManager.addXpV2(killer, xp, "pet-kill-xp:" + victimId)
+                        .exceptionally(failure -> false);
+            } else {
+                petManager.addXpV2(killer, creditedCompanionId, xp, "pet-kill-xp:" + victimId)
+                        .exceptionally(failure -> false);
+            }
             // Rituálé-kellék dropok: a beszerzés-kihívás forrása (a drop a mob helyén esik).
             final hu.taliann.icesmp.items.CaptureItemFactory factory = this.captureItemFactory;
             if (factory == null) {
@@ -68,14 +90,14 @@ public final class PetXpListener implements Listener {
             }
             if (!petManager.hasPetArmor(killer)
                     && Math.random() < configManager.getDouble("pets.equipment.drop-chance", 0.01D)) {
-                dropAtVictim(kill, factory.createPetArmorItem(1));
+                dropAtVictim(reward, factory.createPetArmorItem(1));
             }
             if (undeadVictim && petManager.isUnholy(killer)
                     && Math.random() < configManager.getDouble("pets.summon.heart-drop-chance", 0.03D)) {
-                dropAtVictim(kill, factory.createHeartItem(1));
+                dropAtVictim(reward, factory.createHeartItem(1));
             } else if (occultVictim && petManager.isWarlock(killer)
                     && Math.random() < configManager.getDouble("pets.summon.seal-drop-chance", 0.06D)) {
-                dropAtVictim(kill, factory.createSealItem(1));
+                dropAtVictim(reward, factory.createSealItem(1));
             }
         });
     }

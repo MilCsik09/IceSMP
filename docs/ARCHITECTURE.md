@@ -39,7 +39,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
-| `spells/` | 59 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
+| `spells/` | 60 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `quest/` | 8 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
@@ -274,12 +274,14 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
 
-### 3.8.1 Kaszt/spec rework — verziózárt kapu és adapterhatárok
+### 3.8.1 Kaszt/spec rework — Profile v2 authority és adapterhatárok
 
-A 13 kaszt / 35 specializáció reworkje külön, alapból tiltott rollout-kapu mögött épül. Az
-`IceSMPCore.enable()` a gameplay store-ok betöltése előtt futtatja a
-`ClassSpecDependencyPreflight` ellenőrzést. A kapu csak akkor blokkol, ha a rework és az enforcement
-is aktív; legacy módban a jelenlegi production változatlanul elindul.
+A 13 kaszt / 35 specializáció reworkje elkészült és a Profile v2 mindig aktív,
+egyetlen kaszt/spec authorityjára épül; nincs legacy gameplay fallback vagy
+runtime rollout-kapcsoló. Az `IceSMPCore.enable()` a gameplay store-ok
+betöltése előtt futtatja a `ClassSpecDependencyPreflight` ellenőrzést. Aktív
+dependency enforcement mellett a hiányzó vagy verzióeltérő kötelező komponens
+fail-closed startup hibát okoz, nem félkész class runtime-ot.
 
 A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
 megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil
@@ -624,7 +626,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
 - **Méret:** 870 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
-  Csomag-megoszlás: listeners 121, managers 125, commands 95, spells 59, gui 69, crates 14, utils 26, data 15, classrelic 14,
+  Csomag-megoszlás: listeners 121, managers 125, commands 95, spells 60, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 8, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
@@ -1172,6 +1174,30 @@ The guest/Menedék frame is generated from that grid and may replace only the ou
 R2 packaging deterministically merges the immutable external base with explicitly owned IceSMP
 paths; it does not start Folia or any external HUD plugin and rejects unowned ZIP collisions.
 
+### Survival HUD projection
+
+`SurvivalHudState` is a second immutable projection, sampled on each player's Folia entity thread
+from current/max health, absorption, armor, food and remaining/max air. It is intentionally separate
+from the slower class/sidebar `HudSnapshot`: `hud.icesmp-hud.survival.refresh-ticks` drives a small,
+default two-tick refresh without rebuilding profile, wallet or event state. `SurvivalHudRenderer`
+composes it into the same per-player first-party bossbar as the class panel, so the two renderers do
+not contend for bossbar ownership.
+
+The survival layout uses its own `icesmp_hud:survival/*` font providers, private-use glyph range,
+texture subtree and `survival-hud-manifest.json`. Its shader layout IDs occupy the reserved
+bottom-center anchor range; the existing class HUD keeps its right-top IDs and coordinates. The
+generated pack makes only the normal vanilla health, armor, food and air sprites transparent.
+Hardcore and vehicle-heart assets are deliberately not generated. This separation keeps the asset
+paths merge-safe against the profession branch and lets either generator be reviewed independently.
+
+Pack readiness is the safety gate. Before `SUCCESSFULLY_LOADED`, no custom survival glyph is sent and
+the unmodified client sprites remain visible. After readiness, the replacement is non-optional:
+`/hud mind`, a disabled sidebar/class panel or NATIVE_HUD routing may hide class presentation but may
+not hide the only health display. The `hide-vanilla-*` config values are package-contract assertions,
+not runtime kill switches; an invalid value logs a severe warning while the replacement remains on.
+Current/max numbers are rendered directly, with no ten-heart normalization, so enabling the separate
+class health-scaling gate later does not require another HUD protocol or asset change.
+
 ## Client Bridge — az IceSMP Client protokoll-alapja
 
 Az opcionális Fabric kliensmod (IceSMP Client) szerveroldali hídja a `client/` csomagban él.
@@ -1268,10 +1294,12 @@ Routing (a `hud.refresh-ticks` kadenciájú HUD-tickből, a játékos régió-sz
 - A vezetékre csak tényleges változás megy ki: a híd az utoljára küldött payloadot
   játékosonként cache-eli, azonos bájtsor nem küldődik újra. Új kézfogás és resync a
   cache-t üríti, így a friss session mindig teljes state-tel indul.
-- **Nincs dupla HUD:** a natív HUD-ra routolt játékosnál a sidebar, a first-party IceSMP HUD
+- **Nincs dupla class-HUD:** a natív HUD-ra routolt játékosnál a sidebar, a first-party class-panel
   és a Folia compact fallback elhallgat (a `HudManager` a `ClientHudRoute` seam-en kérdez rá,
-  a híd típusát nem ismeri; a bekötés a core-ban történik). A világesemény-bossbarok és a
-  tablist maradnak. Resync a BEGIN/END közé teljes friss HUD-state-et küld.
+  a híd típusát nem ismeri; a bekötés a core-ban történik). A first-party survival panel addig
+  marad, amíg a kliensprotokoll nem hirdet vele egyenértékű survival-HUD capabilityt; különben a
+  pack által elrejtett vanilla sávok miatt eltűnne a HP. A világesemény-bossbarok és a tablist
+  maradnak. Resync a BEGIN/END közé teljes friss HUD-state-et küld.
 
 ### Ability bar és CAST_SLOT
 
