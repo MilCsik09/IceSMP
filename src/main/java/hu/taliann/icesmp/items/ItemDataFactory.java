@@ -372,6 +372,47 @@ public final class ItemDataFactory {
                 section.getBoolean("particles", true), effects);
     }
 
+    /**
+     * Recept-vezérelt főzethatás ({@code result.potion-effects}): a POTION/SPLASH_POTION/
+     * LINGERING_POTION eredményre valódi custom effekteket tesz, hogy a vanília dobási,
+     * területi és időtartam-kezelés dolgozzon vele — listener-utánzat nélkül.
+     *
+     * <p>Meta-művelet, ezért a data-komponensek ELŐTT kell hívni (a setItemMeta eldobná őket).
+     *
+     * @return true, ha legalább egy effekt felkerült
+     */
+    public static boolean applyPotionEffects(final ItemStack item, final List<String> specs,
+                                             final String colorHex) {
+        if (item == null || specs == null || specs.isEmpty()) {
+            return false;
+        }
+        final ItemMeta meta = item.getItemMeta();
+        if (!(meta instanceof org.bukkit.inventory.meta.PotionMeta potionMeta)) {
+            return false;
+        }
+        boolean applied = false;
+        for (final String token : specs) {
+            final PotionEffect parsed = parseEffect(token);
+            if (parsed != null) {
+                potionMeta.addCustomEffect(parsed, true);
+                applied = true;
+            }
+        }
+        if (!applied) {
+            return false;
+        }
+        if (colorHex != null && !colorHex.isBlank()) {
+            try {
+                potionMeta.setColor(org.bukkit.Color.fromRGB(
+                        Integer.parseInt(colorHex.replace("#", "").trim(), 16)));
+            } catch (final IllegalArgumentException ignored) {
+                // Hibás szín a configban nem törheti a craftot — szín nélkül megy tovább.
+            }
+        }
+        item.setItemMeta(potionMeta);
+        return true;
+    }
+
     /** "TÍPUS:másodperc:szint" → PotionEffect (a szint opcionális, default 0). Ismeretlen típus → null. */
     private static PotionEffect parseEffect(final String token) {
         if (token == null || token.isBlank()) {

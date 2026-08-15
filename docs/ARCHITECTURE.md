@@ -1134,11 +1134,39 @@ A kötelező kézi staging-próbák az [admin kézikönyv staging-mátrixai](ADM
 
 ## Szakma-recept és item-audit
 
+### Recept-fajta szerződés (a katalógus önpolicolása)
+
+A katalógus azért tudott 292 vanília-duplikátumig sodródni, mert nem volt szabály arra,
+*mitől recept egy recept* — nem volt mihez képest nemet mondani. Minden recept ezért
+kötelezően kimondja a fajtáját (`kind:`), és a fajta szabja meg, milyen kart húzhat meg:
+
+| `kind` | Mit ad | Kötelező megszorítás (gépi kapu) |
+|---|---|---|
+| `gyakorlo` | vanília-paritás, XP-ért | `level <= 15`, egyedi alapanyag nélkül; a GUI kiírja, hogy gyakorló |
+| `hozam` | ugyanaz olcsóbban/többet | nem zárhat pozitív nyersanyagkört |
+| `egyedi` | valódi custom tárgy | kötelező funkcionális komponens: `affix-tier` / `enchant` / `attributes` / `consumable` / `signature` / `potion-effects` |
+| `lanc` | egyedi alapanyag | egyedi kimenet vagy egyedi hozzávaló, és a kimenetnek kell fogyasztó |
+| `ritkasag` | loot-szintű tárgy | boss/esemény-kötött alapanyag + `amount: 1`, sokszorozás tilos |
+
+A kapukat a `scripts/check_consistency.py` és a `professionRecipeAuditRegressionTest`
+együtt tartja fenn. Amit a gép állít, az **mind a katalógus adataiból levezethető**:
+fajta-konzisztencia, funkcionális komponens megléte, ritkaság-kapu, zsákutcás lánc-alapanyag,
+valamint 1- és 2-körös nyersanyag-hurok (a blokk↔item visszaalakítás nevesített táblával).
+A **hozam-arány felső határa emberi szabály marad** — a checker nem modellezi a vanília
+receptgazdaságot, mert az nagy és törékeny infrastruktúra lenne egy olyan kérdésre, amit
+review-ban másodpercek alatt el lehet dönteni.
+
+Két eredmény-mező hordozza a korábban hiányzó viselkedést: a `result.potion-effects`
+(+ `result.potion-color`) valódi custom effekteket tesz a főzet-eredményre, hogy a vanília
+dobási/terület/időtartam-kezelés dolgozzon vele listener-utánzat helyett; a `result.enchant`
+enchantelt könyvnél stored-enchantként kerül fel. Mindkettő **meta-művelet**, ezért a
+data-komponens-blokk ELŐTT fut a `buildResult`-ban (a `setItemMeta` eldobná a komponenseket).
+
 | profession | recipe key | item | problem | previous behaviour | fixed behaviour | balance rationale | migration / compatibility |
 |---|---|---|---|---|---|---|---|
-| Fisher | `egyszeru_horgaszbot` / `kezdo_horgaszbot` | Fishing Rod | Exact semantic duplicate: `3×STICK + 2×STRING → FISHING_ROD` | Two progression records represented the same craft and could diverge by load order | `egyszeru_horgaszbot` is canonical; `kezdo_horgaszbot` and its recipe are removed | One unlock/cost path prevents fake progression depth and recipe ambiguity | Existing fishing rods remain vanilla-compatible; no item migration is required |
+| Fisher | `egyszeru_horgaszbot` / `kezdo_horgaszbot` | Fishing Rod | Exact semantic duplicate: `3×STICK + 2×STRING → FISHING_ROD` | Two progression records represented the same craft and could diverge by load order | Both are removed; the catalog's first rod is `uszokeszlet` (affix + Lure), which is not a vanilla duplicate | One unlock/cost path prevents fake progression depth and recipe ambiguity | Existing fishing rods remain vanilla-compatible; no item migration is required |
 | All | `icesmp:prof_*` legacy masterworks | PDC-stamped masterwork tools/books | Reload/disable did not remove previously registered Bukkit keys | Disabled or removed recipes could remain craftable until restart; repeated registration could be rejected | Manager owns a deterministic key set, removes it before rebuild and on disable, then registers once | No duplicate registry entries or stale craft path | Already crafted items remain valid; only future crafting availability changes |
-| All | Config catalog (438 before, 437 after) | All profession outputs | No early semantic collision validation, and a rejected reload could expose the already-cleared or partially rebuilt live maps | Similar/duplicate recipes were accepted silently; later validation failures could leave an incomplete runtime catalog | Sorted loading plus canonical input/output fingerprints validate a private candidate; immutable maps and recipe metadata are published with one `volatile` snapshot replacement | Exact duplicates fail early without destabilising active crafting, while intentional recipes with distinct input or output remain independent | Existing runtime generation remains active when a reload is rejected; no item migration is required |
+| All | Config catalog (437 before the rework, 302 after) | All profession outputs | No early semantic collision validation, and a rejected reload could expose the already-cleared or partially rebuilt live maps | Similar/duplicate recipes were accepted silently; later validation failures could leave an incomplete runtime catalog | Sorted loading plus canonical input/output fingerprints validate a private candidate; immutable maps and recipe metadata are published with one `volatile` snapshot replacement | Exact duplicates fail early without destabilising active crafting, while intentional recipes with distinct input or output remain independent | Existing runtime generation remains active when a reload is rejected; no item migration is required |
 | All | Unique profession outputs | Resource-pack model | Item/model references were distributed across config and pack | Missing mappings were only found visually | Build validator checks every referenced ITEM_MODEL against the manifest and checked-in pack | Visual identity remains stable without changing public model IDs | No public model ID changed; vanilla `PAPER` is the explicit no-pack fallback |
 
 The automated audit verifies **437 recipes**, zero duplicate keys, zero semantic duplicates, immutable recipe metadata,

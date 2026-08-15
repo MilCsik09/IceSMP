@@ -87,6 +87,21 @@ az ki van véve (kereskedő-karaván spawnútja: `CaravanManager:176-192`
   (`VanishListener.onChat:155-161`, `moderation.vanish.allow-chat: false`) —
   a játékos nem kap visszajelzést, ami szerverhibának látszik.
   Egy `MessageManager`-kulcs kell hozzá, a blokk szándékos.
+
+**Szakma-katalógus rework (2026-08-15) — lezárva.** A katalógus 437-ről 295 receptre
+csökkent, minden recept kimondja a fajtáját, és a fajta-szabályokat gépi kapu tartja
+fenn (`check_consistency.py` + `professionRecipeAuditRegressionTest`). Lezárt tételek:
+15 nyersanyag-hurok, 16 hatás nélküli főzet, 13 üres enchantkönyv, 9 loot-ritkaságot
+törő recept, a tervrajz-duplikáció, az inaktív szakmával craftolás, a recept-XP heti
+célba kötése és a tömeges XP darabszám-alapú jóváírása. A részletek a
+`docs/ARCHITECTURE.md` „Recept-fajta szerződés" szekciójában élnek.
+
+- ◇ **Szakma-rework runtime acceptance:** a `docs/ADMIN_GUIDE.md` PROF-01..06 sorai
+  productionközeli Folia stagingen még kézi próbát igényelnek — különösen a
+  tervrajz-fogyasztás versenyhelyzete és a 16 főzet tényleges hatása.
+- ⏸ A szakmák közti XP-tempó (a mért ~11 270 favágó akció vs. ~1 879 alkimista craft
+  ugyanazért az 1→50 alap-XP-ért) továbbra is nyitott: nem az akciószámot, hanem a
+  várható játékidőt kell kiegyenlíteni, és ehhez mérés kell, nem becslés.
 - ⬜ A szezon 41–53. napjának történeti üresjáratát és a túl korán
   elérhető rejtvényeket tartalom- és időkapu-tervvel kell rendezni.
 - ⏸ A Mételytépő és a Sárkánytojás-töredék tényleges megszerzési forrása

@@ -1513,6 +1513,17 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-25 Random tervrajz policy | Admin/tesztelő | szakma- és szintszűrt normál pool, majd Mitikus `include-loot-only` pool | minden sorsolt recept a tartományban van; boss-only csak engedélyezett poolból jön | érintett pool tiltása | `crate/CRATE-25/` |
 | [ ] | CRATE-26 Elytra-tiltás | Admin | közvetlen `item: ELYTRA`, Elytra-recept és ilyen tervrajz tesztdefiníciója | mindhárom config betöltéskor elutasított; bundled lootban nincs Elytra | crate config rollback | `crate/CRATE-26/` |
 
+### Szakma-katalógus (rework)
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | PROF-01 Tervrajz nem sokszorozódik | Tesztelő | tervrajz jobb kattintás, majd a lap AZONNALI áthelyezése/eldobása a mentés alatt | a lap egyszer fogy el; ismert receptnél és mentési hibánál visszajár, duplikátum nem keletkezik | tervrajz-forrás tiltása, rollback | `profession/PROF-01/` |
+| [ ] | PROF-02 Inaktív szakma craft-kapu | Admin/tesztelő | receptkönyv megnyitása, majd `/profession clear` vagy váltás MÁSIK szakmára a nyitott GUI mellett | a régi szakma receptje nem craftolható; „Ezt a szakmát jelenleg nem gyakorlod" üzenet jön | craft-út tiltása | `profession/PROF-02/` |
+| [ ] | PROF-03 Főzetek valóban hatnak | Tesztelő | mind a 16 alkimista főzet elkészítése és elfogyasztása/eldobása | minden főzet a leírt hatást adja; a dobó/elnyúló változat a vanília terület-kezelést használja | alkimista rollout stop | `profession/PROF-03/` |
+| [ ] | PROF-04 Tomusok üllőn átadnak | Tesztelő | mind a 13 tomus elkészítése, üllőn felszerelésre helyezése | mindegyik átadja a nevében ígért bűbájt a megfelelő szintem | bűvölő rollout stop | `profession/PROF-04/` |
+| [ ] | PROF-05 Nincs nyersanyag-hurok | Admin | a gépi kapu (`scripts/check_consistency.py`) + kézi próba a korábbi 15 hurok receptjein | nincs olyan craft-kör, amely nettó nyersanyagot termel | katalógus rollback | `profession/PROF-05/` |
+| [ ] | PROF-06 Heti cél és tömeges XP | Tesztelő | recept-craft, shift-craft és 64-es kemencekivét | a craft-XP tölti a heti céh-célt; a tömeges munka darabonként számít a sapkáig | XP-kulcsok visszaállítása | `profession/PROF-06/` |
+
 ### Globális AFK
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |

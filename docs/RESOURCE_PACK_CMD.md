@@ -874,12 +874,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 
 ## Recept — Alapanyag (tervrajz)
 
-### `tengeristen_amulettje` — Tengeristen Amulettje
-- **Fájl:** `tengeristen_amulettje.png` &nbsp;|&nbsp; **Alap-item:** `CONDUIT`
-- **Ábrázolás:** prizmarin-türkiz kagylószív, gyöngyház csillám, örvénylő tengerkék energia, apró korall-berakás
-- **Színvilág:** prizmarin; akcent: türkiz
-- **Hangulat / lore:** A tenger mélyének szíve dobog benne, egy elfeledett isten hagyatéka. Halász-recept eredménye (Alapanyag (tervrajz) kategória, 48. szint).
-
 ## Recept — Bűvölés
 
 ### `csali_tomus` — Csali Tomus
@@ -988,12 +982,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** meleg fabarna; akcent: világos acélszürke
 - **Hangulat / lore:** Favágó-recept eredménye (Eszköz kategória, 44. szint).
 
-### `csillekerek` — Megkent Csille
-- **Fájl:** `csillekerek.png` &nbsp;|&nbsp; **Alap-item:** `MINECART`
-- **Ábrázolás:** bányász-csille, a névhez illő tematikus díszítéssel
-- **Színvilág:** világos acélszürke; akcent: meleg fabarna
-- **Hangulat / lore:** A tárnák olajozott vasparipája — nyikorgás nélkül fut a sínen. Bányász-recept eredménye (Eszköz kategória, 14. szint).
-
 ### `feszitett_szaru_ij` — Feszített Szaruíj
 - **Fájl:** `feszitett_szaru_ij.png` &nbsp;|&nbsp; **Alap-item:** `BOW`
 - **Ábrázolás:** átlós ívkar sárgás-borostyán csontlemez borítással, feszülő inhúros ideg
@@ -1005,12 +993,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** fonott vesszőkeret zöld-okker levélmintával, faragott kéreg felület, réz-szegecses perem
 - **Színvilág:** zöld-okker; akcent: réz
 - **Hangulat / lore:** Favágó-recept eredménye (Eszköz kategória, 36. szint).
-
-### `melysegi_tajolo` — Tárnatájoló
-- **Fájl:** `melysegi_tajolo.png` &nbsp;|&nbsp; **Alap-item:** `COMPASS`
-- **Ábrázolás:** réz tok, borostyán számlap, izzó zöld-okker mágnestű, tárna-koromfoltok
-- **Színvilág:** réz; akcent: borostyán
-- **Hangulat / lore:** A tű nem északra mutat — a legközelebbi tárnára. Bányász-recept eredménye (Eszköz kategória, 23. szint).
 
 ### `melyvizi_horog` — Mélyvízi Horogsor
 - **Fájl:** `melyvizi_horog.png` &nbsp;|&nbsp; **Alap-item:** `FISHING_ROD`
@@ -1030,12 +1012,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** acélszürke; akcent: domború vas-boglár
 - **Hangulat / lore:** Kovács-recept eredménye (Eszköz kategória, 31. szint).
 
-### `tavcso` — Bányamérnöki Távcső
-- **Fájl:** `tavcso.png` &nbsp;|&nbsp; **Alap-item:** `SPYGLASS`
-- **Ábrázolás:** kihúzható távcső, a névhez illő tematikus díszítéssel
-- **Színvilág:** vörösréz, narancsos árnyalatokkal; akcent: világító cián
-- **Hangulat / lore:** A bányamérnök szeme: meglátja a repedést, mielőtt omlana. Bányász-recept eredménye (Eszköz kategória, 27. szint).
-
 ### `uszokeszlet` — Úszókészlet
 - **Fájl:** `uszokeszlet.png` &nbsp;|&nbsp; **Alap-item:** `FISHING_ROD`
 - **Ábrázolás:** átlós vékony nádnyél, piros-fehér parafa úszó, könnyű zsinór, apró ólomsúlyok
@@ -1047,12 +1023,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** átlós tiszafa ívkar, barna bőrmarkolat, feszes ínhúr, egyszerű vadász-faragás
 - **Színvilág:** tiszafa-barna; akcent: feszes ínhúr-drapp
 - **Hangulat / lore:** Favágó-recept eredménye (Eszköz kategória, 14. szint).
-
-### `viharjelzo_boja` — Viharjelző Bója
-- **Fájl:** `viharjelzo_boja.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
-- **Ábrázolás:** rozsdás vas kalitka, viharkék izzó gömb, sós tengeri patina, kötélgyűrű tetején
-- **Színvilág:** rozsdás vasszürke; akcent: viharkék izzás
-- **Hangulat / lore:** A kikötők őrszeme: ha pislog, vihar közeleg a Bokic felől. Halász-recept eredménye (Eszköz kategória, 32. szint).
 
 ## Recept — Fagyott királyság (konyha)
 
@@ -1165,12 +1135,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** sötét, ibolyafekete likőr karcsú üvegben, halvány türkiz derengéssel
 - **Színvilág:** ibolyafekete; akcent: hideg türkiz derengés
 - **Hangulat / lore:** Árnyéklikőr — a Kitaszítottak itala; aki issza, egy pillanatra beleolvad az árnyékba.
-
-### `bokic_gyogytea` — Bokic-parti Gyógytea
-- **Fájl:** `bokic_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
-- **Ábrázolás:** gőzölgő borostyánszín gyógytea agyagbögrében, meleg aranyló pára, gyógyfű-levél
-- **Színvilág:** gyógyzöld borostyán; akcent: mézarany pára
-- **Hangulat / lore:** Hajnali szedésű füvek forrázata a Bokic partjáról — átmelegít és tisztán tart. Gyógynövényész-recept eredménye (Ital kategória, 24. szint).
 
 ### `caldesterai_gyogytea` — Caldesterai Gyógytea
 - **Fájl:** `caldesterai_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
@@ -1293,12 +1257,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** prizmarin kristálykocka szivárványos sarkfény-derengéssel, türkiz belső ragyogás, gyöngyház élek, hideg fénytörés
 - **Színvilág:** prizmarin; akcent: türkiz
 - **Hangulat / lore:** Cseppkőbe zárt északi fény — a szoba, ahol áll, sosem lesz igazán sötét. Bűvölő-recept eredménye (Különleges kategória, 38. szint).
-
-### `viharuveg_lampas` — Viharüveg Lámpás
-- **Fájl:** `viharuveg_lampas.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
-- **Ábrázolás:** üveglámpás örvénylő viharfelhővel belül, ezüst keret, kékesszürke villám-szikrák, ködös derengés
-- **Színvilág:** ezüst; akcent: kékes
-- **Hangulat / lore:** Viharkvarc-szilánk ég az üveg mögött — a fénye nem alszik ki, mert a vihar sosem fárad el. Bűvölő-recept eredménye (Különleges kategória, 28. szint).
 
 ## Recept — Legendás (tervrajz)
 
@@ -1556,12 +1514,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** vörös-arany; akcent: arany
 - **Hangulat / lore:** Nem arannyá változtat — bölccsé. Az alkimista-céh végső titka. Alkimista-recept eredménye (Ritkaság kategória, 50. szint).
 
-### `borostyan_lampa` — Borostyánfényű Lámpás
-- **Fájl:** `borostyan_lampa.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
-- **Ábrázolás:** réz lámpás meleg borostyán izzással, arany fénysugarak, apró rovar-zárvány az üvegben, patinás keret
-- **Színvilág:** réz; akcent: arany
-- **Hangulat / lore:** A mélység gyantája ég benne — fénye nyugtatja a tárnák szellemeit. Bányász-recept eredménye (Ritkaság kategória, 39. szint).
-
 ### `cehmester_ulloje` — A Céhmester Üllője
 - **Fájl:** `cehmester_ulloje.png` &nbsp;|&nbsp; **Alap-item:** `ANVIL`
 - **Ábrázolás:** kovácsolt sötét vasüllő arany céh-címerrel, parázsló szikrák, réz peremdísz, kalapács-nyom kopás
@@ -1604,47 +1556,11 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** jégkék; akcent: zúzmara
 - **Hangulat / lore:** Cryghaliris kertjeinek dísze — nem hervad el soha. Gyógynövényész-recept eredménye (Ritkaság kategória, 34. szint).
 
-### `kristaly_katalizator` — Kristály-katalizátor
-- **Fájl:** `kristaly_katalizator.png` &nbsp;|&nbsp; **Alap-item:** `END_CRYSTAL`
-- **Ábrázolás:** lebegő kristály keretben, a névhez illő tematikus díszítéssel
-- **Színvilág:** világító cián; akcent: királylila
-- **Hangulat / lore:** Néma kristály szívvel ver — ne nézz bele túl sokáig. Alkimista-recept eredménye (Ritkaság kategória, 49. szint).
-
 ### `melyseg_szive` — A Mélység Szíve
 - **Fájl:** `melyseg_szive.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
 - **Ábrázolás:** türkiz-prizmarin szívkagyló örvénylő tengerkék maggal, gyöngyház erezet, halvány kék derengés, ezüst csillám
 - **Színvilág:** türkiz; akcent: prizmarin
 - **Hangulat / lore:** A legmélyebb tárna alján dobog valami. A bányászcéh legendás mesterműve. Bányász-recept eredménye (Ritkaság kategória, 50. szint).
-
-### `oceanjaro_terkep` — Óceánjáró Térképe
-- **Fájl:** `oceanjaro_terkep.png` &nbsp;|&nbsp; **Alap-item:** `MAP`
-- **Ábrázolás:** kiterített térkép útvonallal és jelöléssel
-- **Színvilág:** krémszínű pergamen; akcent: középkék
-- **Hangulat / lore:** Olyan zátonyokat is jelöl, amiket még senki sem látott — még. Halász-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `orok_viragzas` — Örök Virágzás Csokra
-- **Fájl:** `orok_viragzas.png` &nbsp;|&nbsp; **Alap-item:** `PEONY`
-- **Ábrázolás:** virág / virágcsokor
-- **Színvilág:** rózsás pír; akcent: élénk levélzöld
-- **Hangulat / lore:** Ryanora mezőinek emléke — a csokor sosem hullajtja szirmát. Gyógynövényész-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `osi_ereklye_kiemeles` — Ereklye-kiemelő Készlet
-- **Fájl:** `osi_ereklye_kiemeles.png` &nbsp;|&nbsp; **Alap-item:** `BRUSH`
-- **Ábrázolás:** finomszőrű ecset, a névhez illő tematikus díszítéssel
-- **Színvilág:** vörösréz, narancsos árnyalatokkal; akcent: krémszínű pergamen
-- **Hangulat / lore:** Puha ecset, acél türelem — a múlt nem szereti a sietséget. Bányász-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `totem_ujraelesztes` — Újraélesztett Totem
-- **Fájl:** `totem_ujraelesztes.png` &nbsp;|&nbsp; **Alap-item:** `TOTEM_OF_UNDYING`
-- **Ábrázolás:** arany-smaragd totem ragyogó élet-maggal, felfelé áramló fénykristályok, smaragdzöld szemek, feltámadás-derengés
-- **Színvilág:** arany; akcent: smaragdzöld
-- **Hangulat / lore:** Lélekhamuval újratöltve. Egyszer még visszaránt a peremről. Alkimista-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `vandorbot` — Vándorbot
-- **Fájl:** `vandorbot.png` &nbsp;|&nbsp; **Alap-item:** `STICK`
-- **Ábrázolás:** görcsös meleg barna vándorbot kopott bőrfonással, apró borostyán-kő a tetején, útpor, zöld inda
-- **Színvilág:** barna; akcent: borostyán
-- **Hangulat / lore:** Egyszerű bot, ezer mérföld emléke. A vándor sosem hagyja el. Favágó-recept eredménye (Ritkaság kategória, 33. szint).
 
 ### `vasfa_ij` — Vasfa Íj
 - **Fájl:** `vasfa_ij.png` &nbsp;|&nbsp; **Alap-item:** `BOW`
@@ -1657,24 +1573,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** sötétkék bőrkötésű kódex arany csillag-mintával, izzó rúnák a lapokon, ezüst kapocs, mágikus derengés
 - **Színvilág:** sötétkék bőr; akcent: arany csillag-rúna
 - **Hangulat / lore:** Minden lapja egy-egy elfeledett név. A bűvölőcéhek legféltettebb kincse. Bűvölő-recept eredménye (Ritkaság kategória, 50. szint).
-
-### `vezetokurt` — Mélység Vezérkürtje
-- **Fájl:** `vezetokurt.png` &nbsp;|&nbsp; **Alap-item:** `CONDUIT`
-- **Ábrázolás:** csavart mélységi kagyló-kürt türkiz belső izzással, gyöngyház erezet, korall-tüskék, prizmarin derengés
-- **Színvilág:** türkiz; akcent: gyöngyház
-- **Hangulat / lore:** A mélység válaszol, ha megszólal. A halászcéhek őrzik a titkát. Halász-recept eredménye (Ritkaság kategória, 46. szint).
-
-### `vihar_palack` — Palackozott Vihar
-- **Fájl:** `vihar_palack.png` &nbsp;|&nbsp; **Alap-item:** `WIND_CHARGE`
-- **Ábrázolás:** átlátszó gömbpalack örvénylő szürkéskék viharral, kavargó szél-örvény, kékesfehér villám-szikrák, ezüst dugó
-- **Színvilág:** kék; akcent: ezüst
-- **Hangulat / lore:** Egy marék szél, üvegbe zárva. Óvatosan a dugóval! Alkimista-recept eredménye (Ritkaság kategória, 46. szint).
-
-### `vilagfa_magja` — A Világfa Magja
-- **Fájl:** `vilagfa_magja.png` &nbsp;|&nbsp; **Alap-item:** `OAK_SAPLING`
-- **Ábrázolás:** izzó arany-zöld facsemete-mag lüktető életfénnyel, smaragd levélkék, borostyán gyökér-erek, mágikus derengés
-- **Színvilág:** arany; akcent: zöld
-- **Hangulat / lore:** Azt mondják, az Első Fa magja. Ültesd el, és figyeld, mi nő belőle. Gyógynövényész-recept eredménye (Ritkaság kategória, 50. szint).
 
 ### `wither_rozsa_oltvany` — Fonnyadt Rózsa-oltvány
 - **Fájl:** `wither_rozsa_oltvany.png` &nbsp;|&nbsp; **Alap-item:** `WITHER_ROSE`
@@ -1721,12 +1619,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Hangulat / lore:** Viharfogó tekercs — a vihart papírra szelídítő rúna; a villám a lap fölött cikázik.
 
 ## Recept — Szerszám
-
-### `egyszeru_horgaszbot` — Nádvessző Horgászbot
-- **Fájl:** `egyszeru_horgaszbot.png` &nbsp;|&nbsp; **Alap-item:** `FISHING_ROD`
-- **Ábrázolás:** átlós vékony faág nyél, egyszerű fehér zsinór, apró vas horog, natúr fakéreg
-- **Színvilág:** natúr fabarna; akcent: fehér zsinór
-- **Hangulat / lore:** Egyszerű bot a Bokic partjáról, de a víz szellemei így is figyelnek rá. Halász-recept eredménye (Szerszám kategória, 5. szint).
 
 ### `gyemant_fejsze` — Prizmaél Fejsze
 - **Fájl:** `gyemant_fejsze.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_AXE`
@@ -1832,18 +1724,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** aranybarna; akcent: erdei gombabarna
 - **Hangulat / lore:** Erdei Gomba Pite — a Bokic-mente erdejének melege; egyszerű, laktató, otthonos.
 
-### `fonix_fuszeres_szarny` — Főnixfűszeres Szárny
-- **Fájl:** `fonix_fuszeres_szarny.png` &nbsp;|&nbsp; **Alap-item:** `COOKED_CHICKEN`
-- **Ábrázolás:** ropogós csirkeszárny izzó narancs fűszerbevonattal, parázsló chili-máz, arany pirulás
-- **Színvilág:** narancs; akcent: arany
-- **Hangulat / lore:** Csípős! A Perinfernicitas konyhájának kedvence — óvatosan vele. Szakács-recept eredménye (Étel kategória, 41. szint).
-
-### `fuszeres_vandorhus` — Fűszeres Vándorhús
-- **Fájl:** `fuszeres_vandorhus.png` &nbsp;|&nbsp; **Alap-item:** `COOKED_MUTTON`
-- **Ábrázolás:** fűszerezett sült ürühús szeletek tányéron, aranybarna kéreg, meleg fűszerpír
-- **Színvilág:** sült aranybarna; akcent: fűszerpiros
-- **Hangulat / lore:** Vándorfűszerrel érlelt, füstölt hús — hetekig eláll a nyeregtáskában. Szakács-recept eredménye (Étel kategória, 28. szint).
-
 ### `halasz_fogasa` — Halász Fogása
 - **Fájl:** `halasz_fogasa.png` &nbsp;|&nbsp; **Alap-item:** `COOKED_SALMON`
 - **Ábrázolás:** ropogósra sült lazacfilé tányéron, rózsaszínes hússal, aranybarna héjjal, citromkarikával
@@ -1929,12 +1809,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Hangulat / lore:** A Bokic-parti aratóünnep édes lepénye — egy szelet szerencse minden vándornak. Szakács-recept eredménye (Étel kategória, 30. szint).
 
 ## Recept — Étel (tervrajz)
-
-### `aranyalma_lakoma` — Aranyalma Lakoma
-- **Fájl:** `aranyalma_lakoma.png` &nbsp;|&nbsp; **Alap-item:** `GOLDEN_APPLE`
-- **Ábrázolás:** csillogó aranyalma fényes arany héjjal, meleg sárga ragyogás, halvány glória
-- **Színvilág:** fényes arany; akcent: halvány glóriafehér
-- **Hangulat / lore:** Ünnepi lakoma, melyben a Fa áldása és az arany fénye egyaránt megcsillan. Szakács-recept eredménye (Étel (tervrajz) kategória, 45. szint).
 
 ### `legendas_lakoma` — Legendás Lakoma
 - **Fájl:** `legendas_lakoma.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_GOLDEN_APPLE`

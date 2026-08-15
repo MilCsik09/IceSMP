@@ -516,6 +516,24 @@ A teljes receptkatalógus nem része ennek a kézikönyvnek. A receptkönyv jelz
 szintet, a hozzávalót, az esetleges tervrajzot és azt is, ha valamilyen
 szolgáltatói kellék hiányzik.
 
+Craftolni csak abból a szakmából tudsz, amelyet **éppen gyakorolsz**. A korábbi
+szakmád szintje megmarad a profilodon, de a receptjei váltás után zárva vannak.
+
+### Miért van, hogy egy recept ugyanannyit ad, mint a műhelyasztal?
+
+Mert szándékosan. Az ilyen recept **gyakorló receptként** van megjelölve a
+receptkönyvben: azért létezik, hogy a szakma elején legyen mit csinálni és
+legyen miből XP-t szerezni — nem azért, hogy nyerj rajta. Gyakorló recept csak
+alacsony szinten van, és sosem kér egyedi alapanyagot.
+
+Minden más recept ad valamit a műhelyasztal fölé: vagy **több jön ki ugyanabból
+az anyagból**, vagy olyasmi készül, amit vanília úton nem tudsz megcsinálni —
+sorsolt minőségű felszerelés, valódi hatású főzet, bűvölőkönyv, étel-buff vagy
+a szakmaláncok egyedi alapanyaga.
+
+Az alkimista főzetei és a bűvölő tomusai **valódi hatást hordoznak**: a főzet
+megiható és dobható, a tomus üllőn átadja a bűbájt.
+
 ### Mesterfok és rúnák
 
 Magasabb szinten szakmaspecializációt választhatsz, és egyes mesterségek

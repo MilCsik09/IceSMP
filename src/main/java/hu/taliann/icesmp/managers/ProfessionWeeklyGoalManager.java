@@ -67,17 +67,28 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
         if (units <= 0 || !configManager.getBoolean("profession-weekly.enabled", true)) {
             return;
         }
-        counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
         if (PlayerProfileAuthority.installed().isEmpty()) {
+            // Tartós hozzájárulás-tár nélkül a memóriabeli számláló az egyetlen igazság.
+            counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
             return;
         }
+        // A hét azonosítója a művelet ELEJÉN rögzül, és a globális számláló csak a tartós
+        // hozzájárulás sikeres mentése UTÁN nő: fordítva egy mentési hiba tartósan eltérítené
+        // a céh-számlálót a valódi hozzájárulásoktól, egy hétforduló alatt beérkező callback
+        // pedig a régi hét munkáját írná az új hét számlálójára.
+        final long operationWeek = week;
         final UUID playerId = player.getUniqueId();
-        weeklyStore.recordContribution(playerId, profession, units, week)
+        weeklyStore.recordContribution(playerId, profession, units, operationWeek)
                 .whenComplete((total, failure) -> {
                     if (failure != null) {
                         plugin.getLogger().severe("Heti céh-hozzájárulás mentése sikertelen: "
                                 + playerId + ": " + failure.getMessage());
+                        return;
                     }
+                    if (operationWeek != week) {
+                        return;
+                    }
+                    counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
                 });
     }
 

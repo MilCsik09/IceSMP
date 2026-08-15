@@ -29,6 +29,7 @@ messages:
   profession-help-recipes: '&e/profession recipes &7- Recept-könyv (tanult/zárolt receptek, craftolás).'
   profession-help-blueprint: '&e/profession blueprint <játékos> <recept-id> &7- Tervrajz átadása (Admin).'
   profession-recipe-level: '&cEhhez a recepthez magasabb szakma-szint kell.'
+  profession-recipe-not-practiced: '&cEzt a szakmát jelenleg nem gyakorlod.'
   profession-recipe-not-learned: '&cEhhez a recepthez előbb meg kell szerezned a tervrajzot.'
   profession-recipe-missing: '&cNincs meg minden hozzávaló ehhez a recepthez.'
   profession-recipe-crafted: '&aElkészítetted: &e%s'
