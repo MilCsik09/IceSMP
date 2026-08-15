@@ -89,7 +89,7 @@ az ki van véve (kereskedő-karaván spawnútja: `CaravanManager:176-192`
   Egy `MessageManager`-kulcs kell hozzá, a blokk szándékos.
 
 **Szakma-katalógus rework (2026-08-15) — lezárva.** A katalógus 437-ről 295-re csökkent, majd
-a szakma-identitás pótlásával 310-re állt be; minden recept kimondja a fajtáját, és a fajta-szabályokat gépi kapu tartja
+a szakma-identitás pótlásával 376-ra állt be; minden recept kimondja a fajtáját, és a fajta-szabályokat gépi kapu tartja
 fenn (`check_consistency.py` + `professionRecipeAuditRegressionTest`). Lezárt tételek:
 15 nyersanyag-hurok, 16 hatás nélküli főzet, 13 üres enchantkönyv, 9 loot-ritkaságot
 törő recept, a tervrajz-duplikáció, az inaktív szakmával craftolás, a recept-XP heti

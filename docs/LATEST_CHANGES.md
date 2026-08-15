@@ -120,7 +120,7 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
 | Kaszt | 13 | 13 |
 | Specializáció | 31 | 35 |
 | Questdefiníció | 45 | 160 |
-| Szakmai recept | 124 | 310 |
+| Szakmai recept | 124 | 376 |
 | Szakmai alapanyag | 9 | 81 |
 | Relikvia | 5 | 6 |
 | Rituálé | 19 | 21 |
@@ -249,7 +249,7 @@ adatkezelési szabályzathoz és a staffszerepekhez kell igazítani.
 ### A szakmák végre azt adják, amit ígérnek
 
 A receptkatalógus átesett egy teljes átvizsgáláson: 437-ről 295-re csökkent,
-majd a szakma-identitás pótlásával **310 receptre** állt be. Minden recept
+majd a szakma-identitás pótlásával **376 receptre** állt be. Minden recept
 indokolja a létezését.
 
 - **Az alkimista főzetei hatnak.** Korábban mind a 16 főzet üres palack volt: a
@@ -282,8 +282,10 @@ indokolja a létezését.
   aktív hatást levesz (a jókat is — nem mindig éri meg). Az alkimista marad a
   harci, azonnali főzeteké; a kettő szándékosan egymás ellenpárja. A bányász saját
   ásó- és szerencsecsákány-vonalat kapott, a favágó egy erdőjáró bőrszettet.
-- Ezzel a katalógus 295-ről **310 receptre** nőtt, és nincs olyan szakma, ahol
-  ötnél több szint telne el új recept nélkül.
+- Ezzel a katalógus 295-ről **376 receptre** nőtt, és nincs olyan szakma, ahol
+  ötnél több szint telne el új recept nélkül. A bűvölő 21 új tomust kapott a
+  korábban lefedetlen vanília bűbájokra, az alkimista dobható és elnyúló
+  változatokat, a halász pedig négy szigonyt és a búvárfelszerelést.
 
 Ami eltűnt, az nagyrészt a műhelyasztal átnevezett másolata volt, vagy olyan
 tárgy, amit vanília úton csak lootból lehet szerezni — a Tenger Szíve, a

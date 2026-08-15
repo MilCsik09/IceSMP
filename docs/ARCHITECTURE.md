@@ -1450,7 +1450,7 @@ gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
 
 ### Natív recept-böngésző (BROWSE_RECIPES → RECIPE_PAGE)
 
-A recept-katalógus (310 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
+A recept-katalógus (376 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
 ez az egyetlen pull-modellű domain: a kliens `BROWSE_RECIPES`-szel egy szakma egy
 lapját kéri, a válasz requestId-korrelált `RECIPE_PAGE` a `RECIPE_BROWSER` capability
 + `client.features.recipe-browser` kapu mögött. A lap a játékos régió-szálán épül
