@@ -345,6 +345,12 @@ mérőt, láncot, töltetet vagy rúnát mutatja; a spellkönyv pedig az egyszer
 használható, legfeljebb hét képességedet. A pontos számokat továbbra is a
 játékbeli leírásból olvasd, mert a balance élőben változhat.
 
+A **kifizetés is látszik**, nem csak a felépítés: amikor a kaszt-magod
+ténylegesen megerősít egy képességet, az akciósáv kiírja a kapott
+százalékot (`✦ Kaszt-erő: +N%`), az Íjász Szélolvasása pedig a találat
+pillanatában jelzi vissza az elsütést. Ha egyszerre él kombó-lánc befejező
+és kaszt-bónusz, a kiírt százalék a kettő összege.
+
 ### A választás súlya
 
 Egy karakternek **egy kasztja van**. A választás után rendes játékosparanccsal

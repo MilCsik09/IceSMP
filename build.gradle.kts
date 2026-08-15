@@ -248,11 +248,12 @@ val validateIceSmpHudPackage by tasks.registering {
         fun survivalSpriteNames(key: String): List<String> =
             (survivalManifest[key] as? List<*>)?.map { it.toString() }
                 ?: error("Survival HUD manifest list is missing: $key")
+        // A `+` a sor VÉGÉN marad: sor elején Kotlin unary plusnak veszi, és a lista szétesik.
         val transparentSprites =
-            survivalSpriteNames("heart_sprites").map { "heart/$it" }
-                + survivalSpriteNames("armor_sprites")
-                + survivalSpriteNames("food_sprites")
-                + survivalSpriteNames("air_sprites")
+            survivalSpriteNames("heart_sprites").map { "heart/$it" } +
+                survivalSpriteNames("armor_sprites") +
+                survivalSpriteNames("food_sprites") +
+                survivalSpriteNames("air_sprites")
         require(transparentSprites.size == 34 && transparentSprites.distinct().size == 34) {
             "Survival HUD must own exactly the reviewed 34 regular vanilla sprites"
         }
@@ -271,8 +272,8 @@ val validateIceSmpHudPackage by tasks.registering {
             .filter { it.isFile && it.name.contains("hardcore", ignoreCase = true) }
             .toList()
         require(forbiddenHardcoreSprites.isEmpty()) {
-            "Non-hardcore server pack must not override hardcore heart sprites: "
-                + forbiddenHardcoreSprites.joinToString()
+            "Non-hardcore server pack must not override hardcore heart sprites: " +
+                forbiddenHardcoreSprites.joinToString()
         }
         logger.lifecycle("First-party IceSMP HUD package valid: class HUD plus complete survival replacement")
     }

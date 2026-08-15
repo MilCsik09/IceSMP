@@ -579,11 +579,20 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         putCooldown(player, selected, now - refundMillis);
         applyCooldownOverlay(player, selected, refundMillis);
         playCastFlourish(player, combo);
+        // A kaszt-bónusz ugyanúgy a varázslat erejét emeli, mint a lánc-befejező: ha
+        // egyszerre él a kettő, a kiírt százalék a ténylegesen alkalmazott összeg legyen.
+        final int classBonusShown = (int) Math.round(classBonusPercent);
         if (chainFinisher) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.combo-finisher",
                     "<gold>⚡ Kombó-lánc befejező! +{bonus}% erő és gyorsabb felépülés.</gold>",
-                    Map.of("bonus", String.valueOf((int) Math.round(chainBonusPercent)))));
+                    Map.of("bonus", String.valueOf(
+                            (int) Math.round(chainBonusPercent) + classBonusShown))));
+        } else if (classBonusShown > 0) {
+            player.sendActionBar(messageManager.getMessage(
+                    "catalyst.class-power",
+                    "<aqua>✦ Kaszt-erő: +{bonus}% ezen a varázslaton.</aqua>",
+                    Map.of("bonus", String.valueOf(classBonusShown))));
         } else if (combo) {
             final String nextInChain = nextComboStep(player, selected.getId());
             final Spell nextSpell = nextInChain == null ? null : spellRegistry.getById(nextInChain);

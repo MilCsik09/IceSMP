@@ -27,6 +27,10 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
 
+- **Kaszt-kifizetés visszajelzés:** a kaszt-magok eddig is emelték a képességek
+  erejét, de a játékos ebből semmit nem látott. Mostantól a megerősített cast
+  kiírja a kapott százalékot, az Íjász Szélolvasása pedig a találat
+  pillanatában jelez; kombó-lánc befejezőnél a kiírt érték a két bónusz összege.
 - **PlayerProfile-alap:** minden tartós játékos-állapot (kaszt, szakma, quest,
   pénztárca, statisztika, moderációs összegzés, crate-számlálók, heti céh-cél,
   halál-escrow) egyetlen, tranzakcióvédett profilrendszerben él — restart és
