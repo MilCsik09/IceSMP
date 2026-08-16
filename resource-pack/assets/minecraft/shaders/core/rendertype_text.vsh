@@ -24,6 +24,7 @@ void main() {
     float responsiveScale = clamp(min(ScreenSize.x / 1365.0, ScreenSize.y / 768.0), 1.0, 1.5);
     vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;
     bool hudGlyph = false;
+    bool bottomCentered = false;
     float layoutScale = 1.0;
     float layoutYOffset = 0.0;
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
@@ -32,6 +33,7 @@ void main() {
         if (((bit >> MAX_BIT) & 1) == 1) {
             int id = bit - (1 << MAX_BIT);
             hudGlyph = true;
+            bottomCentered = id >= 11 && id <= 15;
             ivec3 packedColor = ivec3(round(Color.rgb * 255.0));
             int layoutCode = (packedColor.r & 15) | ((packedColor.g & 15) << 4)
                     | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8);
@@ -51,9 +53,17 @@ void main() {
             else if (id == 8) layer = 5;
             else if (id == 9) layer = 6;
             else if (id == 10) { layer = 7; outline = true; }
+            else if (id == 11) layer = 1;
+            else if (id == 12) layer = 2;
+            else if (id == 13) layer = 3;
+            else if (id == 14) layer = 4;
+            else if (id == 15) { layer = 5; outline = true; }
             pos.z += layer;
             if (!outline && (pos.z == 0 || pos.z == 1000 || pos.z == -90 || pos.z == 2800)) {
                 vertexColor = vec4(0);
+            }
+            if (bottomCentered) {
+                pos.y += ui.y - 120.0;
             }
         }
     }
@@ -63,9 +73,17 @@ void main() {
     vec4 clipPosition = ProjMat * ModelViewMat * vec4(pos, 1.0);
     if (hudGlyph) {
         vec2 selectedHudScale = hudScale * layoutScale;
-        clipPosition.x = clipPosition.w + clipPosition.x * selectedHudScale.x;
-        clipPosition.y = clipPosition.w + (clipPosition.y - clipPosition.w) * selectedHudScale.y
-                - layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;
+        if (bottomCentered) {
+            clipPosition.x = clipPosition.x * selectedHudScale.x;
+            clipPosition.y = -clipPosition.w
+                    + (clipPosition.y + clipPosition.w) * selectedHudScale.y
+                    - layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;
+        } else {
+            clipPosition.x = clipPosition.w + clipPosition.x * selectedHudScale.x;
+            clipPosition.y = clipPosition.w
+                    + (clipPosition.y - clipPosition.w) * selectedHudScale.y
+                    - layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;
+        }
     }
     gl_Position = clipPosition;
 }

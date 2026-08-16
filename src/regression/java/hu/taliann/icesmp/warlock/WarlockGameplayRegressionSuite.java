@@ -186,6 +186,21 @@ public final class WarlockGameplayRegressionSuite {
         check(!service.contains("rosterSize()") && !service.contains("callDemon(")
                         && !service.contains("dismissRoster()"),
                 "no transient roster call survives in the service");
+        check(service.contains("boundDemons(player).size() >= rosterCapacity(playerId)")
+                        && service.contains("rosterFullMessage(player);"),
+                "a full durable roster rejects the cast before resource/cooldown commit");
+        check(service.contains("if (!result.committed())")
+                        && service.contains("warlock.roster.failed"),
+                "an asynchronous demon binding rejection is never silent");
+
+        final String spellCatalog = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/spells/SpellCatalog.java"));
+        for (final String durable : new String[]{"raise_horde", "bone_archers", "imp_swarm",
+                "magma_servant", "legion"}) {
+            final int id = spellCatalog.indexOf('"' + durable + '"');
+            check(id > 0 && spellCatalog.lastIndexOf("new DurableCompanionCallSpell", id) > 0,
+                    "durable summon cannot also create a temporary wave: " + durable);
+        }
 
         final String pets = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/PetManager.java"));

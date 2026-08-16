@@ -345,9 +345,15 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
   rögzített geometriájú kijelzés öt teljesen külön skinből (a Menedék vendége saját erődkeretet kap),
   13 class-ikonból, class/spec/resource/mechanika állapotból, legfeljebb öt generic metricből,
   kilenc charge-pipből, DK-rúnákból és négy külön pénztárcahelyből. A fő frakcióvaluta mindig,
-  a többi banki valuta csak pozitív egyenlegnél jelenik meg a saját ikonjával.
+  a másik három banki valuta nulla egyenlegnél is a saját, stabil helyén jelenik meg.
+- **Skálázásbiztos túlélési panel:** alsó-középre rögzített, gyors külön tickből frissülő HP-sáv
+  jelenlegi/maximális értékkel, százalékkal és absorption-jelöléssel, továbbá pontos páncél-, étel-
+  és oxigén-mini-sávokkal. A kiadott pack csak a normál vanilla survival sprite-okat teszi
+  átlátszóvá; hardcore szíveket szándékosan nem fed le. A panel nem függ a class/sidebar HUD
+  láthatóságától, így `/hud mind` vagy natív class-HUD routing sem hagyhatja vakon a játékost.
 - **Fallback:** pack nélkül a natív compact Folia HUD marad. A resource-packes megjelenítés az
-  IceSMP first-party része; külső HUD plugin nincs a runtime- vagy dependency-stackben.
+  IceSMP first-party része; a survival értékeket ilyenkor a változatlan vanilla sávok mutatják,
+  külső HUD plugin pedig nincs a runtime- vagy dependency-stackben.
 - **Információs parity:** frakció, class, specializáció, class-szint, pénz, aktuális event,
   class resource és a játékhoz szükséges elsődleges/másodlagos, illetve összetett kiegészítő
   mechanikák ugyanabból az immutable HUD snapshotból készülnek. A Wizard három elemi
@@ -452,11 +458,11 @@ A Felsők emlékei elvesztek, de a vérük emlékezik. A kaszt, a szakma, a megt
 
 > **Aktív és játékosok számára elérhető** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock műveletek. A külön class-health réteg létezik, de a csomagolt alapbeállításban ki van kapcsolva (`health.enabled: false`).
+Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock műveletek. Mind a 13 kaszt és 35 specializáció saját, ténylegesen fogyasztott harci mechanikával fut; a 210 doctrine-választás nem puszta címke, hanem a hozzá tartozó class service viselkedését módosítja. Minden alap aktív készlet pontosan hét, a kaszt/spec által valóban feloldható képességet tartalmaz. A külön class-health réteg létezik, de a csomagolt alapbeállításban ki van kapcsolva (`health.enabled: false`).
 
 - **Így találkozol vele:** `/class`, `/spec`, kaszt- és specializációs GUI. Parancs: /class (alias: /job, /kaszt); /spec (alias: /specializacio, /specialization). GUI: Kasztválasztó; Specializációk.
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
-- **Mitől mozdul meg:** Választás, XP-források, szintlépés, képességfeloldás és kapcsolódó combat/craft esemény.
+- **Mitől mozdul meg:** Választás, XP-források, szintlépés, képességfeloldás, doctrine-döntés, a spec saját producer→consumer harci ciklusa és kapcsolódó combat/craft esemény.
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; resource-pack ikonok és balance-adatok tesztelendők.
 - **Fontos határ:** A konkrét élő balance és több-régiós Folia viselkedés stagingben ellenőrizendő; production legacy játékosadat-migráció nincs.
 
@@ -467,11 +473,18 @@ aggregátumként jön létre; hibás vagy owner-eltérő profil quarantine-ba ke
 Az IceSMP a verziózárt dependency manifest alapján ellenőrzi a kötelező megjelenítési és content
 stacket; eltérésnél nem aktivál félkész profilt.
 
+Az 50. szintű záróképesség egyik specializációnál sem automatikus és nem
+dekoráció: a kaszt mesterpróbája után megjelenő, az aktív specializációhoz
+kötött `CAST_SPELLS` csúcspróbát kell teljesíteni. A 35 próbát a quest-rendszer
+tartós teljesítése oldja fel, utána a Profile v2 capstone állapota adja a
+képesség-provenanciát. Specváltás vagy respec nem hagyhat hátra idegen
+képességet, mérőt, töltetet vagy cooldown-resetet.
+
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: `icesmp.admin.job`; `icesmp.admin.spec`; quarantine recovery: `icesmp.admin.spec.recover`
-- Config: `classes.*`, `spells.*`, specialization- és ability-definíciók.
+- Config: `classes.*`, `class-gameplay.yml`, `spells.*`, specialization-, doctrine-, active-kit- és ability-definíciók.
 - Startup dependency policy: `class-spec-rework.dependencies.enforce`; dependency lock: `class-spec-dependencies.lock.yml`. Nincs runtime rollout flag.
 - Tartós állapot: ownerhez kötött Profile v2 kaszt, XP/szint, loadout, companion, Soulforge és operation receipt; explicit spell-provenance ledger.
 - Reload: Balance részben reloadolható; új enum/registry-szerkezet restartot igényel.
@@ -664,7 +677,7 @@ Mérföldkövek és jutalmak, datapack advancementek, harci statisztika és rang
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/frakció/napi/heti/titok…), láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, objective progress, napi feladatok és admin/builder questkészítő.
+Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/specializáció/frakció/napi/heti/titok…), kaszt-, specializáció- és szintkapuk, láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, objective progress — köztük sikeres, engedélyezett kasztolást számláló `CAST_SPELLS` —, napi feladatok és admin/builder questkészítő.
 
 - **Így találkozol vele:** `/quest`, `/daily`; questlog (öt fül: Aktív/Kész/Megbízások/Elérhető/Teljesített) és quest builder GUI. Parancs: /quest (alias: /kuldetes, /quests); /daily. GUI: Küldetésnapló; Quest builder.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
@@ -716,15 +729,15 @@ Pet/társ kezelés, befogás, XP, harci viselkedés, parancsok és társ-GUI.
 
 - **Így találkozol vele:** `/pet`; Pet GUI; befogó item és játékosparancs. Parancs: /pet (alias: /companion, /tars). GUI: Társ GUI.
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
-- **Mitől mozdul meg:** Befogás, pet parancs, combat, XP és GUI-művelet.
-- **Ami még kellhet hozzá:** Nincs kötelező helyszín; mob-kompatibilitás és biztonságos pet spawn tesztelendő.
+- **Mitől mozdul meg:** Befogás, társlistás kiválasztás, pet parancs, combat, gazda- vagy pet-killből érkező XP és GUI-művelet.
+- **Ami még kellhet hozzá:** Nincs kötelező helyszín; az idézés betöltött, Folia-lokális oszlopokban stabil talajt és három blokk szabad testteret keres.
 - **Fontos határ:** Entity lifecycle, chunk unload és protection plugin interakció runtime tesztet igényel.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `pets.*`, capture-item és kapcsolódó message/itemdefiníciók.
+- Config: `pets.*`, benne az Istálló-kapacitás és a biztonságos spawn keresési tartománya; capture-item és kapcsolódó message/itemdefiníciók.
 - Tartós állapot: Tulajdonjog, petadat és XP tartós.
 - Reload: Balance reloadolható részei következő eseménynél érvényesek; aktív pet entityk újraszinkronizálása kellhet.
 
@@ -969,6 +982,13 @@ A megsebzett világ jelekben beszél: vörös holdban, egy távoli horda zajába
 
 Blood Moon, world boss, Wild Hunt, invasion, meteor, caravan, escort, abundance, treasure és szerverchallenge.
 
+A közös spawnkereső az automatikus jelölteket chunk-középre igazítja, a
+footprint- és partvizsgálatot pedig legfeljebb 7 blokkos, egy Folia-régión
+belüli körre korlátozza. Így egy jelölt csak egy chunkot fogyaszt a keresési
+keretből; az escort útvonala és az invázió külső hulláma saját, egyoszlopos
+belső profilt használ. Adminindításkor a parancs először csak a keresés
+elindulását igazolja, tényleges sikert az esemény spawn utáni broadcastja jelez.
+
 - **Így találkozol vele:** `/events`; admin eventindítók és automatikus eseménytriggerek. Parancs: /events (alias: /esemeny, /event).
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** Ütemezett/valószínűségi trigger, adminindítás, spawnpont és lifecycle esemény.
@@ -979,9 +999,36 @@ Blood Moon, world boss, Wild Hunt, invasion, meteor, caravan, escort, abundance,
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.events`
-- Config: `world.*`, event-, boss-, mob-, loot- és season-definíciók.
+- Config: `world.*`, `world-events.water-safety.*`, `world-events.profiles.*`,
+  valamint event-, boss-, mob-, loot- és season-definíciók.
 - Tartós állapot: Event-, spawnpont-, raid- és finaleállapot részben tartós.
 - Reload: Definíciók reloadolhatók részenként; aktív esemény saját state-jét nem szabad félúton lecserélni.
+
+</details>
+
+### Season 0 / Prologue — Olethropyla
+
+<!-- icesmp-doc-id: feature.world.prologue -->
+
+> **Aktív kód, kézi élesítést és builder-előkészítést igényel** · A futó JAR-hoz képest: **Új rendszer**
+
+Az egyszeri Prologue lifecycle Season 0 progression- és contentkapukat, Gate
+Breach/finale eseményt, Olethropyla Nether-authorityt, résztvevő-skálázást,
+prestige státuszokat és a Season 1 idempotens átmenetét kezeli.
+
+- **Így találkozol vele:** Élesítés után a Kárhozat Kapujának HUD-ja, áttörései és fináléja; admin live-ops: `/prologue`.
+- **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
+- **Mitől mozdul meg:** Kizárólag a `/prologue start` vagy más, állapotot ténylegesen módosító adminfolyamat után; a friss `DORMANT` állapot teljes pass-through.
+- **Ami még kellhet hozzá:** A négy `prologue-*` runtime hook és a productionközeli staging acceptance.
+- **Fontos határ:** `DORMANT` alatt nincs Prologue XP-/contentkorlát, season/community override, Nether-pecsét vagy gate-location authority, HUD/ambient/breach és catch-up; a Prologue-tól független szerverconfig változatlanul érvényes.
+
+<details>
+<summary>Admin- és technikai jegyzet</summary>
+
+- Permission: `icesmp.admin.prologue`
+- Config: `world-events.prologue.*`, valamint a kapcsolódó spawn/profile/anchor utak.
+- Tartós állapot: `prologue.yml`, finale run state és Season 1 transition receipt.
+- Reload: A tartalmi overlay csak aktív Prologue alatt él; `DORMANT`/lezárás/tiltás esetén a konfigurált értékek visszaállnak.
 
 </details>
 

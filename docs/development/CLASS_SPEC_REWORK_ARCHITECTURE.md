@@ -101,4 +101,4 @@ A Warrior must use its personal Kürt and an Evoker its personal Sárkányvér-f
 
 ## Content gates outside this architecture
 
-The current Class Relic catalog defines only the Evoker/Sárkánytojás pilot, so the Warrior slice does not invent a relic. `Törött Kürt`, `Utolsó Fal`, `evoker_devastation_trial` and `evoker_preservation_trial` have stable capstone trial identifiers and Profile v2 completion state, but their physical content remains a builder/event gate until it exists in the world. The Evoker trial ids carry no lore names because the canonical game-design document is not available in this repository; naming them is content work, not code work.
+The current Class Relic catalog defines only the Evoker/Sárkánytojás pilot, so the Warrior slice does not invent a relic. All 35 stable capstone trial identifiers now resolve to bundled level-50 `CAST_SPELLS` quests gated by job, active specialization and the corresponding class master trial. They deliberately have no physical world hook: successful, allowlisted spell commits are the trial, and quest completion durably reconciles the Profile v2 capstone state. Class Relic acquisition remains separate content work.

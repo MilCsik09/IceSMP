@@ -20,6 +20,11 @@ public final class OperationalConfigHelp {
             case "hud.icesmp-hud.layout.y-offset-pixels" -> "A teljes first-party HUD globális shaderes függőleges eltolása pixelben. Pozitív érték lefelé mozgat; tartományon kívül biztonságos alapérték lép életbe.";
             case "hud.icesmp-hud.layout.safe-margin-pixels" -> "Biztonsági távolság a képernyő jobb szélétől pixelben. Nagyobb érték balra húzza a teljes first-party HUD-ot.";
             case "hud.icesmp-hud.layout.scale" -> "A teljes first-party HUD globális mérete a buildkor generált shader-variánsok egyikén. A /hud edit komponensméretei ehhez képest relatívak.";
+            case "hud.icesmp-hud.survival.refresh-ticks" -> "A HP, páncél, étel és levegő külön gyors frissítési periódusa. Kisebb érték simább, de több játékos-scheduler feladatot jelent; task-újraütemezéshez restart kell.";
+            case "hud.icesmp-hud.survival.armor-maximum" -> "A survival mini-sáv 100%-os páncélértéke. A kiírt tényleges armor ezt meghaladhatja, de a sáv ilyenkor telített marad.";
+            case "hud.icesmp-hud.survival.layout.x-offset-pixels" -> "A bottom-center survival panel vízszintes eltolása. Nem módosítja a külön jobb felső class HUD helyét.";
+            case "hud.icesmp-hud.survival.layout.y-offset-pixels" -> "A bottom-center survival panel függőleges eltolása. Pozitív érték lefelé, negatív felfelé mozgatja.";
+            case "hud.icesmp-hud.survival.layout.scale" -> "A survival panel külön méretszorzója; a class HUD globális és komponensméretétől független.";
             case "hud.sidebar-enabled" -> "Paperen az IceSMP scoreboard-oldalsávját, Folián a compact class bossbar fallbacket kapcsolja. A sikeresen betöltött first-party HUD automatikusan elrejti a fallbacket.";
             case "hud.tablist-enabled" -> "Az egyszerű, régi frakciószínű tabnév-fallback kapcsolója. Csak akkor van hatása, ha a natív tablist.enabled ki van kapcsolva.";
             case "hud.low-hp-vignette.enabled" -> "Engedélyezi az alacsony életerőnél megjelenő vörös képernyőszéli vészjelzést. Csak vizuális, nem módosít sebzést vagy maximális HP-t.";
@@ -52,7 +57,8 @@ public final class OperationalConfigHelp {
             case "pets.summon.tier3-level" -> "E companion-szinttől használja a rituális társ a harmadik, legerősebb fejlődési formáját vagy tierjét.";
             case "pets.summon.heart-drop-chance" -> "Egy jogosult élőhalott ölésének 0–1 közötti esélye Nyughatatlan Szív dobására. 0.03 háromszázalékos esélyt jelent.";
             case "pets.summon.seal-drop-chance" -> "Egy jogosult boszorka vagy illager ölésének 0–1 közötti esélye Démon-pecsét dobására. 0.06 hatszázalékos esélyt jelent.";
-            case "pets.max-active" -> "Egy játékos egyszerre legfeljebb ennyi plugin által kezelt idézett társat tarthat aktívan. A plafon csökkentése nem duplikál és nem hoz létre új társat.";
+            case "pets.stable.maximum" -> "A Vadmester Profile v2-ben tárolt Istállójának férőhelye. A GUI legfeljebb kilenc helyet jelenít meg, a befogás pedig commitkor is ellenőrzi a plafont.";
+            case "pets.max-active" -> "A spell- és shard-rendszer rövid életű minionjainak egyidejű plafonja; a kiválasztott tartós companion nem ezt a keretet használja.";
             case "pets.talent-health-share" -> "A gazda maximális-életerő talentbónuszának ekkora 0–1 közötti hányada kerül át a társ maximális HP-jára.";
             case "pets.equipment.drop-chance" -> "Jogosult szörnyölésenként ekkora 0–1 közötti eséllyel esik Társvért, amíg a játékos társa még nincs felszerelve.";
             case "pets.equipment.armor-bonus" -> "A Társvért felszerelése ennyi közvetlen armor attribútumbónuszt ad a companionnak.";
@@ -66,6 +72,8 @@ public final class OperationalConfigHelp {
             case "pets.companion.damage-per-level" -> "A companion minden megszerzett szintje ennyi sebzést ad a plugin által vezérelt támadáshoz.";
             case "pets.companion.follow-distance" -> "Ha a társ ennél messzebb kerül a gazdától, a követőrendszer visszateleportálja. Ez a végső lemaradásvédelem.";
             case "pets.companion.follow-start-distance" -> "E távolság fölött kezdi a companion gyalog vagy pathfinderrel követni a gazdát; a teleportküszöbnél kisebbnek érdemes maradnia.";
+            case "pets.companion.spawn-search-radius" -> "Idézéskor legfeljebb ekkora vízszintes sugárban keres a rendszer már betöltött, Folia-lokális, stabil és szabad állóhelyet.";
+            case "pets.companion.spawn-vertical-range" -> "A játékos lábmagasságához képest ennyi blokkot keres felfelé és lefelé biztonságos companion-spawnhoz.";
             case "pets.companion.tick-ticks" -> "A companion követési és harci driverének periódusa tickben. Kisebb érték gyorsabb reakciót, de több entitásmunkát jelent; a task élőben újraütemeződik.";
             case "pets.companion.attack-damage-base" -> "A plugin által vezérelt companion-támadás alap sebzése, amelyhez a szintenkénti damage-per-level bónusz hozzáadódik.";
             case "pets.companion.attack-reach" -> "Ekkora blokktávolságból tekinti találónak a companion a pluginvezérelt közelharci támadását.";

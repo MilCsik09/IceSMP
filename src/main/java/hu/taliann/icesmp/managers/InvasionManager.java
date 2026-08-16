@@ -224,13 +224,13 @@ public final class InvasionManager {
             final EntityType type = horde.randomMob();
             plugin.getServer().getRegionScheduler().run(
                     plugin, new Location(world, x, 0, z), task ->
-                            spawnAt(topOf(world, x, z), type, level));
+                            spawnAt(topOf(world, x, z), type, level, "invasion-wave"));
         }
 
         final int bossBonus = Math.max(0, configManager.getInt(
                 "world-events.invasion.mini-boss-level-bonus", 6));
         final Mob champion = spawnAt(topOf(world, center.getBlockX(),
-                center.getBlockZ()), horde.miniBoss, level + bossBonus);
+                center.getBlockZ()), horde.miniBoss, level + bossBonus, "invasion");
         if (champion != null) {
             champion.customName(net.kyori.adventure.text.Component.text(
                     "☠ " + horde.displayName + " Bajnoka",
@@ -252,15 +252,15 @@ public final class InvasionManager {
     }
 
     private Mob spawnAt(final Location spot, final EntityType type,
-                        final int level) {
+                        final int level, final String eventKey) {
         final Class<? extends Entity> entityClass = type.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)
                 || spot.getWorld() == null) {
             return null;
         }
         final EventSpawnGuard guard = spawnGuard;
-        if (guard != null && (guard.isBlocked("invasion", spot)
-                || guard.isUnsafeSurface("invasion", spot.getWorld(),
+        if (guard != null && (guard.isBlocked(eventKey, spot)
+                || guard.isUnsafeSurface(eventKey, spot.getWorld(),
                 spot.getBlockX(), spot.getBlockZ()))) {
             return null;
         }

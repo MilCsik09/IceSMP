@@ -12,6 +12,16 @@
   ],
   "entries": [
     {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/assassin/AssassinGameplayService.java|if (target.getPersistentDataContainer().has(WORLD_BOSS_KEY, PersistentDataType.BYTE)) {",
+      "category": "ENTITY_METADATA",
+      "reason": "Read-only immunity probe of the world-boss marker on a MOB (the scanner cannot tell the receiver is a LivingEntity, not a player), so boss entities can never be infected. No player state is read or written."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().remove(",
+      "category": "ENTITY_METADATA",
+      "reason": "Exact reviewed method-chain receiver: the source entity crown-curse target marker is removed when its targeting lifecycle ends."
+    },
+    {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().set(",
       "category": "ENTITY_METADATA",
       "reason": "Exact reviewed method-chain receiver: ProjectileLaunchEvent and CreatureSpawnEvent entities receive scripted/dungeon combat identity markers; no player progression is stored."
@@ -22,9 +32,9 @@
       "reason": "Exact reviewed method-chain receiver: EntityTargetLivingEntityEvent source entity carries the temporary crown-curse target UUID marker."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java|event.getEntity().getPersistentDataContainer().remove(",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/MobMoneyDropListener.java|event.getEntity().getPersistentDataContainer().set(spawnerMobKey,",
       "category": "ENTITY_METADATA",
-      "reason": "Exact reviewed method-chain receiver: the source entity crown-curse target marker is removed when its targeting lifecycle ends."
+      "reason": "Exact reviewed method-chain receiver: CreatureSpawnEvent entity receives the spawner-origin anti-farm marker."
     },
     {
       "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/SignatureItemListener.java|event.getProjectile().getPersistentDataContainer().set(eclipseArrowKey, PersistentDataType.BYTE, (byte) 1);",
@@ -32,9 +42,34 @@
       "reason": "Exact reviewed method-chain receiver: the freshly spawned projectile carries only the Nightfall impact marker."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/listeners/MobMoneyDropListener.java|event.getEntity().getPersistentDataContainer().set(spawnerMobKey,",
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|public boolean isBoss(Entity e){return isPrologueEntity(e)&&\"boss\".equals(e.getPersistentDataContainer().get(roleKey,PersistentDataType.STRING));}",
       "category": "ENTITY_METADATA",
-      "reason": "Exact reviewed method-chain receiver: CreatureSpawnEvent entity receives the spawner-origin anti-farm marker."
+      "reason": "Read-only role marker on a Prologue encounter entity; the receiver is the event mob supplied to isBoss, never player-owned state."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|public boolean isPrologueEntity(Entity e){return e!=null&&e.getPersistentDataContainer().has(prologueMobKey,PersistentDataType.BYTE);}",
+      "category": "ENTITY_METADATA",
+      "reason": "Read-only Prologue identity marker on an encounter entity; it classifies transient event mobs and stores no player state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicActivationResolver.java|public ClassRelicActivation resolve(final ClassRelicCatalog catalog, final UUID playerId,",
+      "category": "RUNTIME",
+      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicActivationResolver.java|return resolve(catalog, playerId, binding.orElseThrow().relicId());",
+      "category": "RUNTIME",
+      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicService.java|public ClassRelicActivation resolve(final UUID playerId) {",
+      "category": "RUNTIME",
+      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|.project(classRelicService.resolve(relicPlayerId), relicId -> {",
+      "category": "RUNTIME",
+      "reason": "Pure client projection wiring: resolve reads the canonical class-relic service and maps definitions to display names; this callback owns no YAML or player progression."
     },
     {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|<file combines YAML persistence with player-UUID-shaped data>",
@@ -42,9 +77,24 @@
       "reason": "Core wiring references persistence infrastructure; the class owns no player YAML authority."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/gui/ClassGameplayConfigMenuGUI.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "RUNTIME",
+      "reason": "Read-only packaged class-gameplay schema plus an inventory holder owner UUID; staged edits publish through ConfigManager and no player-owned YAML state is stored here."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java|List<String> resolve(Player player, List<String> unlocked, Set<String> favorites);",
+      "category": "RUNTIME",
+      "reason": "Pure active-kit callback signature; resolve receives transient Bukkit/session inputs and does not read or write YAML."
+    },
+    {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "World corruption event aggregate; purge contributors are event-scoped runtime state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CrateManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Crate placements and opening-recovery fences; per-player counts, cooldowns and settlement receipts live in the PlayerProfile STATISTICS section."
     },
     {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/DevItemManager.java|<file combines YAML persistence with player-UUID-shaped data>",
@@ -60,6 +110,11 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/InvseeManager.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "Admin inventory-escrow operation aggregate; player inventories stay Minecraft-owned."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Meteor crater terrain-restore journal: world/chunk block data keyed by world UUID, no player-owned state."
     },
     {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/ParkourManager.java|<file combines YAML persistence with player-UUID-shaped data>",
@@ -87,224 +142,19 @@
       "reason": "Moderation report queue and feedback delivery aggregate referencing players by stable UUID."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java|private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Rebuildable session projection of SpellbookSection cooldowns; cleared on quit."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java|List<String> resolve(Player player, List<String> unlocked, Set<String> favorites);",
-      "category": "RUNTIME",
-      "reason": "Pure active-kit callback signature; resolve receives transient Bukkit/session inputs and does not read or write YAML."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/gui/ClassGameplayConfigMenuGUI.java|<file combines YAML persistence with player-UUID-shaped data>",
-      "category": "RUNTIME",
-      "reason": "Read-only packaged class-gameplay schema plus an inventory holder owner UUID; staged edits publish through ConfigManager and no player-owned YAML state is stored here."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/classspec/application/TargetRegistry.java|private final Map<UUID, Set<UUID>> targetsByOwner = new HashMap<>();",
-      "category": "RUNTIME",
-      "reason": "UUID-only transient caster-to-target index; cleared on target/caster lifecycle transitions and plugin disable, never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/classspec/application/TargetRegistry.java|private final Map<UUID, Set<UUID>> ownersByTarget = new HashMap<>();",
-      "category": "RUNTIME",
-      "reason": "UUID-only transient reverse target index; cleared symmetrically on target/caster lifecycle transitions and plugin disable, never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/RelicPvpTransferListener.java|private final Map<UUID, CompletionStage<?>> deposits = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "In-flight durable escrow completion fence only; Profile v2 DeathEscrowSection remains the sole persisted authority and the entry is removed when preparation completes."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/RelicPvpTransferListener.java|private final Map<UUID, PreparedDeath> preparedDeaths = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Session-generation and receipt coordination for the current death event; the durable escrow lives solely in Profile v2 and this marker is consumed by death cleanup."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Combat UI throttle/last-target display state; session only."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Combat UI throttle/last-target display state; session only."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DeathRecapListener.java|private final Map<UUID, Deque<Entry>> recentDamage = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Recent damage recap ring buffer for the death screen; session only."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/QuestBuilderListener.java|private final Map<UUID, Prompt> prompts = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Admin chat-prompt wizard session state."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/TerritoryListener.java|private final Map<UUID, String> lastTerritoryIds = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Last-seen territory id for enter/leave transitions; rebuilt from location."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/TheftListener.java|private final Map<UUID, Map<String, Long>> lastTheftAt = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Theft notification throttle timestamps; session only."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|private final Map<UUID, Integer> purgeContributors = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Purge contribution tally scoped to one corruption event."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CraftingRestrictionManager.java|private final Map<UUID, Long> lastNotifyMillis = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Restriction notification debounce timestamps; session only."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/GlobalAfkTracker.java|private final ConcurrentHashMap<UUID, State> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "AFK activity tracking; rebuilt from live movement events."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HonorDuelManager.java|private final Map<UUID, UUID> acceptTokens = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Duel invite handshake tokens; expire in seconds."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java|private final ConcurrentHashMap<UUID, BossBar> bars = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "First-party HUD presentation handles only; rebuilt from immutable HudSnapshot data and removed on player cleanup or backend close."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, List<Component>> lastLines = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, BossBar> foliaCompactBars = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Folia-only native fallback view handles; rebuilt from the immutable HUD snapshot and removed on player cleanup."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Double> frozenSpeed = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Long> abilityDamageBypass = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MinionManager.java|private final Map<UUID, Set<UUID>> minionsByOwner = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Live summoned entity tracking; entities despawn with the session."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/PetManager.java|private final Map<UUID, Long> attackReady = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Pet combat readiness/target tracking for live entities."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/PetManager.java|private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Pet combat readiness/target tracking for live entities."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/ReportManager.java|private final Map<UUID, Long> lastReportAt = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Report submission spam-guard timestamps; session only."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/ResourceManager.java|private final Map<UUID, Double> resource = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Class resource (mana/rage/energy) pool; rebuilt on join by design."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/RitualManager.java|private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Ritual rate-limit documented as in-memory, reset on restart."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/spells/HideSpell.java|private static final Map<UUID, ItemStack[]> HIDDEN_ARMOR = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Stateful spell armor stash with mandatory clearPlayerState cleanup."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/spells/InnerFocusSpell.java|private static final Map<UUID, Float> FROZEN_PLAYERS = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Stateful spell walk-speed freeze with mandatory clearPlayerState cleanup."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/CrateManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleRunState.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
-      "reason": "Crate placements and opening-recovery fences; per-player counts, cooldowns and settlement receipts live in the PlayerProfile STATISTICS section."
+      "reason": "Durable world-finale checkpoint aggregate; finaleId identifies an event run, not a player, and no player-keyed progression is stored."
     },
     {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/prologue/PrologueManager.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
-      "reason": "Meteor crater terrain-restore journal: world/chunk block data keyed by world UUID, no player-owned state."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java|private final Map<UUID, EventSpawnSafetyPolicy.PlayerPoint> players = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Live player-position tracking for spawn-distance checks; rebuilt from movement events."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/VanishManager.java|private final ConcurrentHashMap<UUID, Set<UUID>> unlistedByViewer = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Per-viewer vanish visibility projection; session-scoped and re-derived on join."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicActivationResolver.java|public ClassRelicActivation resolve(final ClassRelicCatalog catalog, final UUID playerId,",
-      "category": "RUNTIME",
-      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicActivationResolver.java|return resolve(catalog, playerId, binding.orElseThrow().relicId());",
-      "category": "RUNTIME",
-      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/classrelic/ClassRelicService.java|public ClassRelicActivation resolve(final UUID playerId) {",
-      "category": "RUNTIME",
-      "reason": "Pure aktivacios feloldas: a Profile v2 gateway-t es a vilag-szintu relic-ownershipet OLVASSA, sajat tartos player-allapotot nem hoz letre — a resolve() nev veletlenul illeszkedik a PLAYER_YAML mintara."
+      "reason": "Durable singleton Prologue world aggregate. Participant UUIDs are event eligibility references; delivered player rewards remain Profile v2 authority."
     },
     {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/relics/RelicWorldStateStore.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "A RelicManager vilag-szintu relic aggregatumanak (relic → owner UUID, lost/reclaim, awakening ready-at) single-writer perzisztencia-hatara; tulajdonosokat stabil UUID-kent referal, sajat tartos player-allapotot nem hoz letre."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, WarriorCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Warrior combat state (Csatatempó/Fury/Guard). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, OathTarget> oathTargets = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Live Guardian oath-target handles (entity + scheduler). Runtime-only projection cleared on death/quit/kick/disable, target death and spec switch; never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, EvokerCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Evoker combat state (Felerősítés charge, essence alternation, echo/imprint windows). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, MarkTarget> markTargets = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Live Megőrzés marked-ally handles (player + scheduler) for echo delivery. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/archer/ArcherGameplayService.java|private final Map<UUID, ArcherCombatState> states = new ConcurrentHashMap<>();",
@@ -317,54 +167,9 @@
       "reason": "In-flight arrow ids mapped to the immutable discipline verdict of the shot that launched them (full draw, pacing, plain copied launch coordinates). Strictly transient: hard-capped, self-expiring on write, removed when the arrow resolves, and dropped for the owner on death/quit/kick/disable. No durable authority and no live entity handle."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/shaman/ShamanGameplayService.java|private final Map<UUID, ShamanCombatState> states = new ConcurrentHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/assassin/AssassinCombatState.java|private final Map<UUID, Long> infected = new LinkedHashMap<>();",
       "category": "RUNTIME",
-      "reason": "Transient per-player Shaman combat state (Overload, Maelstrom rhythm, tide). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/TotemManager.java|private final java.util.Map<UUID, java.util.Map<TotemCategory, OwnedTotem>> totemsByOwner =",
-      "category": "RUNTIME",
-      "reason": "Totemkerék projection of live totem entities per owner. Runtime-only live-entity identity, pruned on totem removal/lifetime/shutdown and on owner cleanup; never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java|private final Map<UUID, MonkCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Monk combat state (flow, chain, Stagger pool, link identities). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; the Stagger consequence lands before clearing. Durable state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java|private final Map<UUID, List<LinkTarget>> linkTargets = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Live Ködszál ally handles (player + scheduler) for single-pass ripple heals. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java|private final Map<UUID, PaladinCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Paladin combat state (Eskü choice, Meggyőződés, Ítélet-jelek, Pajzstöltet). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java|private final Map<UUID, BeaconTarget> beaconTargets = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Live Fényjelző beacon handle (single ally + scheduler) for bounded heal echoes. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/demonhunter/DemonHunterGameplayService.java|private final Map<UUID, DemonHunterCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Demon Hunter combat state (load, fragments/momentum, pain, sigil pair). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java|private final Map<UUID, DruidCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Druid combat state (harmony/season window, combo + live scent target, Nap-Hold balance/eclipse, bark layers/roots, seed timers). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/priest/PriestGameplayService.java|private final Map<UUID, PriestCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Priest combat state (chosen Litany + verse count, Atonement window/shield web/reentrancy guard, Marrow and Ossuary charges, Madness meter). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java|private final Map<UUID, DeathKnightCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Death Knight combat state (rune wheel charges and recharge stamps, fixed-size recent-damage ring, frost marks, plague marks and ghoul mutation stage). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+      "reason": "Live plague-carrier ids with their expiry stamps, held inside the transient Assassin combat state. Never durable: hard entity cap, self-expiring entries, immediate removal on carrier death, and full teardown on spec switch/death/quit/kick/disable."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/assassin/AssassinGameplayService.java|private final Map<UUID, AssassinCombatState> states = new ConcurrentHashMap<>();",
@@ -372,74 +177,14 @@
       "reason": "Transient per-player Assassin combat state (Opportunity window and its opening, three-slot toxin kit with doses, shadow-trail echo, detection meter and time-boxed stealth, plague strain plus the hard-capped live infection registry). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/assassin/AssassinCombatState.java|private final Map<UUID, Long> infected = new LinkedHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/classspec/application/TargetRegistry.java|private final Map<UUID, Set<UUID>> ownersByTarget = new HashMap<>();",
       "category": "RUNTIME",
-      "reason": "Live plague-carrier ids with their expiry stamps, held inside the transient Assassin combat state. Never durable: hard entity cap, self-expiring entries, immediate removal on carrier death, and full teardown on spec switch/death/quit/kick/disable."
+      "reason": "UUID-only transient reverse target index; cleared symmetrically on target/caster lifecycle transitions and plugin disable, never persisted."
     },
     {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/assassin/AssassinGameplayService.java|if (target.getPersistentDataContainer().has(WORLD_BOSS_KEY, PersistentDataType.BYTE)) {",
-      "category": "ENTITY_METADATA",
-      "reason": "Read-only immunity probe of the world-boss marker on a MOB (the scanner cannot tell the receiver is a LivingEntity, not a player), so boss entities can never be infected. No player state is read or written."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java|private final Map<UUID, WarlockCombatState> states = new ConcurrentHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/classspec/application/TargetRegistry.java|private final Map<UUID, Set<UUID>> targetsByOwner = new HashMap<>();",
       "category": "RUNTIME",
-      "reason": "Transient per-player Warlock combat state (soul-debt meter, three-slot curse grimoire, single soul-thread target, ember bank with the overheat lockout). Holds NO demon roster: the Demonologist pact lives solely in the durable Profile v2 demonologist.roster companion roster. Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The debt is a combat meter only and is never an economic balance."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/wizard/WizardGameplayService.java|private final Map<UUID, WizardCombatState> states = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient per-player Wizard combat state (last two woven schools plus the armed rune reaction and the three-slot attunement array). Holds NO court: the Holtak Udvara lives solely in the durable Profile v2 necromancer.court companion roster. Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The soul-shard economy remains entirely with the existing SoulforgeManager authority."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|public boolean isBoss(Entity e){return isPrologueEntity(e)&&\"boss\".equals(e.getPersistentDataContainer().get(roleKey,PersistentDataType.STRING));}",
-      "category": "ENTITY_METADATA",
-      "reason": "Read-only role marker on a Prologue encounter entity; the receiver is the event mob supplied to isBoss, never player-owned state."
-    },
-    {
-      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|public boolean isPrologueEntity(Entity e){return e!=null&&e.getPersistentDataContainer().has(prologueMobKey,PersistentDataType.BYTE);}",
-      "category": "ENTITY_METADATA",
-      "reason": "Read-only Prologue identity marker on an encounter entity; it classifies transient event mobs and stores no player state."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleRunState.java|<file combines YAML persistence with player-UUID-shaped data>",
-      "category": "GLOBAL_AGGREGATE_REFERENCE",
-      "reason": "Durable world-finale checkpoint aggregate; finaleId identifies an event run, not a player, and no player-keyed progression is stored."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/prologue/PrologueManager.java|<file combines YAML persistence with player-UUID-shaped data>",
-      "category": "GLOBAL_AGGREGATE_REFERENCE",
-      "reason": "Durable singleton Prologue world aggregate. Participant UUIDs are event eligibility references; delivered player rewards remain Profile v2 authority."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|private final Map<UUID,String> entityEncounters=new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient encounter-entity UUID to encounter-id projection, populated on spawn and removed on death, encounter cleanup, abort or shutdown; never persisted."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueHudController.java|private final Map<UUID, BossBar> bars = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Transient online-player BossBar handles used only for HUD projection and cleared during controller shutdown; no gameplay or durable player authority."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Double> bossDamage = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Current finale-run boss-damage evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Double> damage = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Current finale-run damage evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
-    },
-    {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Integer> presenceSeconds = new ConcurrentHashMap<>();",
-      "category": "RUNTIME",
-      "reason": "Current finale-run presence evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
-    },
-    {
-      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/core/IceSMPCore.java|.project(classRelicService.resolve(relicPlayerId), relicId -> {",
-      "category": "RUNTIME",
-      "reason": "Pure client projection wiring: resolve reads the canonical class-relic service and maps definitions to display names; this callback owns no YAML or player progression."
+      "reason": "UUID-only transient caster-to-target index; cleared on target/caster lifecycle transitions and plugin disable, never persisted."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, byte[]> lastBossState = new ConcurrentHashMap<>();",
@@ -505,6 +250,266 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, String> lastSpellbookSignature = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient per-session client payload signature used only to suppress unchanged spellbook messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java|private final Map<UUID, DeathKnightCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Death Knight combat state (rune wheel charges and recharge stamps, fixed-size recent-damage ring, frost marks, plague marks and ghoul mutation stage). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/demonhunter/DemonHunterGameplayService.java|private final Map<UUID, DemonHunterCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Demon Hunter combat state (load, fragments/momentum, pain, sigil pair). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java|private final Map<UUID, DruidCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Druid combat state (harmony/season window, combo + live scent target, Nap-Hold balance/eclipse, bark layers/roots, seed timers). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, EvokerCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Evoker combat state (Felerősítés charge, essence alternation, echo/imprint windows). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java|private final Map<UUID, MarkTarget> markTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Megőrzés marked-ally handles (player + scheduler) for echo delivery. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java|private final ConcurrentHashMap<UUID, BossBar> bars = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "First-party HUD presentation handles only; rebuilt from immutable HudSnapshot data and removed on player cleanup or backend close."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java|private final ConcurrentHashMap<UUID, Long> lastFallbackWarning = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Per-session log-warning throttle for survival HUD fallback rendering; it contains timestamps only, is not gameplay authority and is cleared with backend runtime state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/AbilityCatalystListener.java|private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Rebuildable session projection of SpellbookSection cooldowns; cleared on quit."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Combat UI throttle/last-target display state; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Combat UI throttle/last-target display state; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DeathRecapListener.java|private final Map<UUID, Deque<Entry>> recentDamage = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Recent damage recap ring buffer for the death screen; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/QuestBuilderListener.java|private final Map<UUID, Prompt> prompts = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Admin chat-prompt wizard session state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/RelicPvpTransferListener.java|private final Map<UUID, CompletionStage<?>> deposits = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "In-flight durable escrow completion fence only; Profile v2 DeathEscrowSection remains the sole persisted authority and the entry is removed when preparation completes."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/RelicPvpTransferListener.java|private final Map<UUID, PreparedDeath> preparedDeaths = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Session-generation and receipt coordination for the current death event; the durable escrow lives solely in Profile v2 and this marker is consumed by death cleanup."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/TerritoryListener.java|private final Map<UUID, String> lastTerritoryIds = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Last-seen territory id for enter/leave transitions; rebuilt from location."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/TheftListener.java|private final Map<UUID, Map<String, Long>> lastTheftAt = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Theft notification throttle timestamps; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java|private final Map<UUID, Integer> purgeContributors = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Purge contribution tally scoped to one corruption event."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/CraftingRestrictionManager.java|private final Map<UUID, Long> lastNotifyMillis = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Restriction notification debounce timestamps; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java|private final Map<UUID, EventSpawnSafetyPolicy.PlayerPoint> players = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live player-position tracking for spawn-distance checks; rebuilt from movement events."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/GlobalAfkTracker.java|private final ConcurrentHashMap<UUID, State> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "AFK activity tracking; rebuilt from live movement events."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HonorDuelManager.java|private final Map<UUID, UUID> acceptTokens = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Duel invite handshake tokens; expire in seconds."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, BossBar> foliaCompactBars = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Folia-only native fallback view handles; rebuilt from the immutable HUD snapshot and removed on player cleanup."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, List<Component>> lastLines = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/HudManager.java|private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Rendered HUD line/team cache; re-rendered every tick from authoritative state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Double> frozenSpeed = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Long> abilityDamageBypass = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java|private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Relic ability runtime state (short cooldowns, freeze, bypass); documented in-memory."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/MinionManager.java|private final Map<UUID, Set<UUID>> minionsByOwner = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live summoned entity tracking; entities despawn with the session."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/PetManager.java|private final Map<UUID, Long> attackReady = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Pet combat readiness/target tracking for live entities."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/PetManager.java|private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Pet combat readiness/target tracking for live entities."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/ReportManager.java|private final Map<UUID, Long> lastReportAt = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Report submission spam-guard timestamps; session only."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/ResourceManager.java|private final Map<UUID, Double> resource = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Class resource (mana/rage/energy) pool; rebuilt on join by design."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/RitualManager.java|private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Ritual rate-limit documented as in-memory, reset on restart."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/TotemManager.java|private final java.util.Map<UUID, java.util.Map<TotemCategory, OwnedTotem>> totemsByOwner =",
+      "category": "RUNTIME",
+      "reason": "Totemkerék projection of live totem entities per owner. Runtime-only live-entity identity, pruned on totem removal/lifetime/shutdown and on owner cleanup; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/VanishManager.java|private final ConcurrentHashMap<UUID, Set<UUID>> unlistedByViewer = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Per-viewer vanish visibility projection; session-scoped and re-derived on join."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java|private final Map<UUID, List<LinkTarget>> linkTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Ködszál ally handles (player + scheduler) for single-pass ripple heals. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java|private final Map<UUID, MonkCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Monk combat state (flow, chain, Stagger pool, link identities). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; the Stagger consequence lands before clearing. Durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java|private final Map<UUID, BeaconTarget> beaconTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Fényjelző beacon handle (single ally + scheduler) for bounded heal echoes. Runtime-only, validity checked at use time and cleared with the player lifecycle; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java|private final Map<UUID, PaladinCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Paladin combat state (Eskü choice, Meggyőződés, Ítélet-jelek, Pajzstöltet). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/priest/PriestGameplayService.java|private final Map<UUID, PriestCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Priest combat state (chosen Litany + verse count, Atonement window/shield web/reentrancy guard, Marrow and Ossuary charges, Madness meter). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java|private final Map<UUID,String> entityEncounters=new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient encounter-entity UUID to encounter-id projection, populated on spawn and removed on death, encounter cleanup, abort or shutdown; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueHudController.java|private final Map<UUID, BossBar> bars = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient online-player BossBar handles used only for HUD projection and cleared during controller shutdown; no gameplay or durable player authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Double> bossDamage = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Current finale-run boss-damage evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Double> damage = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Current finale-run damage evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java|private final ConcurrentHashMap<UUID, Integer> presenceSeconds = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Current finale-run presence evidence. It is reset on begin/resume and only projects eligible participant references into the durable world aggregate."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/shaman/ShamanGameplayService.java|private final Map<UUID, ShamanCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Shaman combat state (Overload, Maelstrom rhythm, tide). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/spells/HideSpell.java|private static final Map<UUID, ItemStack[]> HIDDEN_ARMOR = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Stateful spell armor stash with mandatory clearPlayerState cleanup."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/spells/InnerFocusSpell.java|private static final Map<UUID, Float> FROZEN_PLAYERS = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Stateful spell walk-speed freeze with mandatory clearPlayerState cleanup."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java|private final Map<UUID, WarlockCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Warlock combat state (soul-debt meter, three-slot curse grimoire, single soul-thread target, ember bank with the overheat lockout). Holds NO demon roster: the Demonologist pact lives solely in the durable Profile v2 demonologist.roster companion roster. Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The debt is a combat meter only and is never an economic balance."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, OathTarget> oathTargets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Live Guardian oath-target handles (entity + scheduler). Runtime-only projection cleared on death/quit/kick/disable, target death and spec switch; never persisted."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java|private final Map<UUID, WarriorCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Warrior combat state (Csatatempó/Fury/Guard). Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable class/spec state stays in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/wizard/WizardGameplayService.java|private final Map<UUID, WizardCombatState> states = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient per-player Wizard combat state (last two woven schools plus the armed rune reaction and the three-slot attunement array). Holds NO court: the Holtak Udvara lives solely in the durable Profile v2 necromancer.court companion roster. Cleared on death/quit/kick/disable and spec switch via PlayerStateCleanup; durable state stays in Profile v2. The soul-shard economy remains entirely with the existing SoulforgeManager authority."
     }
   ]
 }

@@ -844,7 +844,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `/crate set <id>` / `/crate remove` | csak stagingen ellenőrzött blokk- és világkötéshez |
 | `/territory setcapital <frakció> selection [név...]` | a `/claim pos1` + `/claim pos2` pontos X/Y/Z dobozát teszi védett fővárossá; előbb ellenőrizd a személyes claim-konfliktust és utána a `/territory show` rajzot |
 | `/icesmp reload` | configmentés és validáció után; strukturális változásnál restart kellhet |
-| `/prologue start` | az éles Prologue-indítás a nyitás pillanatában; enélkül a korszak `DORMANT` marad és a stage-óra nem indul |
+| `/prologue start` | az éles Prologue-indítás a nyitás pillanatában; enélkül `DORMANT` marad, ezért sem stage-óra, sem Prologue-korlát, overlay, Nether-pecsét, HUD vagy ambient hatás nincs |
 | `/prologue gate open --force` | veszélyes override: megnyitja a Kaput valódi finálégyőzelem nélkül |
 | `/prologue gate close --force` | csak override-dal nyitott Kaput zár vissza; kiérdemelt győzelem után elutasít |
 | `/prologue reset --force` | **staging teszt-eszköz**: visszavonja a Season 1 átmenetet, a krónikát, az emlékművet és a teljes Prologue-állapotot; production világon ne használd |
@@ -1168,6 +1168,20 @@ görgőkatt az adott kulcsot visszaállítja a csomagolt alapértékre. Az
 ezért nem kattintásos balance-vezérlők; ezeket ellenőrzött YAML-módosítással
 kezeld. Mentés után ellenőrizd a config-validáció konzolüzeneteit.
 
+A csomagolt class-szerződés pontosan 13 kasztot, 35 specializációt, specenként
+hat doctrine-választást (összesen 210), hét aktív-kit slotot és egy mechanikai
+capstone-t fed. A `scripts/check_consistency.py` indulási/CI kapuja ellenőrzi,
+hogy minden doctrine ID-t olvas-e a megfelelő gameplay service, minden default
+kit 7/7 eleme feloldható-e, és a capstone nem csak egy generikus, a spec
+mechanikájától független spell-e.
+
+A 35 szint-50-es capstone quest `category: SPECIALIZATION`,
+`requires-specialization`, `requires-job`, `requires-level: 50` és
+`objective.type: CAST_SPELLS` kaput használ. Csak a sikeresen commitolt,
+engedélylistás kasztolás növeli a számlálót; elutasított, megszakadt vagy másik
+spechez tartozó cast nem. A quest elfogadása után elvesztett jogosultság
+blokkolja a további haladást, nem írja felül a Profile v2 class/spec authorityt.
+
 ### PlayerProfile read-only HTTP API
 
 A `player-profile.http.*` adapter alapból ki van kapcsolva. Engedélyezéshez a
@@ -1304,6 +1318,29 @@ jelölje: az alatta megadott bizonyítékhelyet is töltse ki.
 - **Hiba esetén:** az előre rögzített rollback fut, az élő state és log
   megőrzésével.
 - **Bizonyíték helye:** `deployment/approval/`.
+
+### Season 0 / Prologue
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | PRO-15 DORMANT pass-through | Admin/tesztelő | friss vagy `/prologue reset --force` után `DORMANT`; külön ismert normál season/community és portal config | nincs Prologue XP/spec/relic/blueprint/rarity/eventkorlát, runtime override, Nether-pecsét/gate-location authority, HUD/ambient/breach vagy catch-up; a Prologue-tól független config érvényes | Prologue rollout stop, config/state/log mentése | `prologue/PRO-15/` |
+| [ ] | PRO-16 Élesítés | Admin/eventes | sikeres PRO-15 után `/prologue start` | `UNSTABLE`, a stage-óra a parancstól számol, a konfigurált Season 0 kapuk és megjelenítés életbe lépnek; ismételt start idempotens | `/prologue reset --force` csak stagingmásolaton | `prologue/PRO-16/` |
+
+### Kasztok, capstone-próbák és társak
+
+Az automatizált class-regresszió a szerződéseket bizonyítja, a tényleges
+harcérzetet, mob-AI-t és többjátékos Folia-viselkedést nem. A következő sorok
+mind külön staging-bizonyítékot kérnek.
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | CLS-01 Katalógus és active kit | Admin/tesztelő | új profil mind a 13 kaszthoz; minden spec kiválasztható | 35/35 spec, mindegyik default készlete 7/7 feloldható képesség; nincs idegen vagy használhatatlan spell | érintett class rollout stop | `classes/CLS-01/` |
+| [ ] | CLS-02 Doctrine-hatások | Tesztelő | minden spec 30/40/50-es két választása külön kontrollal | 210/210 doctrine módosítja a dokumentált mechanikát; egyik sem csak felirat vagy holt config | érintett doctrine visszavonása | `classes/CLS-02/` |
+| [ ] | CLS-03 Capstone-próbák | Tesztelő | 50-es szint, teljesített kaszt-mesterpróba; megfelelő és eltérő spec kontroll | mind a 35 próba csak a megkövetelt aktív speccel vehető fel és csak a felsorolt sikeres castokat számolja; 18 után pontosan a saját capstone oldódik | quest/capstone rollout stop | `classes/CLS-03/` |
+| [ ] | CLS-04 Producer→consumer ciklus | Tesztelő | minden spec alap mechanikája feltöltve, majd fogyasztó és capstone külön | a HUD/state felépül, a fogyasztó egyszer és a megfelelő erővel költi el; nincs ingyenes vagy soha el nem fogyó mérő | érintett class tiltása vagy build rollback | `classes/CLS-04/` |
+| [ ] | CLS-05 Specváltás és lifecycle | Tesztelő | aktív mérő/töltet, combat grace, közeli ellenség, quit/kick/restart | tiltott váltás fail-closed; jogszerű váltás nem gyógyít és nem resetel erőforrást/cooldownt; spec-local transient állapot kitisztul | profil/log mentése, relog, rollout stop | `classes/CLS-05/` |
+| [ ] | CLS-06 Durable társ/roster | Tesztelő | Vadmester, Demonológus, Nekromanta és Szentségtelen; teli roster, dismiss, halál, relog | roster-limit cast előtt blokkol; egy képesség egy durable társat hoz létre, nem marad ideiglenes duplikátum; relog után ugyanaz az authority épül újra | live entity cleanup, profil megőrzése | `classes/CLS-06/` |
+| [ ] | CLS-07 Szentségtelen ghúlmutáció | Tesztelő | tartós ghúl és ghúl nélküli kontroll, Dögvész-burstök, relog | ghúl nélkül nincs hamis fejlődés; ghúllal a bounded mutation stage Profile v2-ben nő, tényleges buffot ad és relog után megmarad | társprofil/log mentése, rollout stop | `classes/CLS-07/` |
 
 ### Frakciótagság és frakciópasszívok
 
@@ -1538,6 +1575,13 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | AFK-06B Feltétlen reward gate | Tesztelő | mindkét AFK-kulcs false; fishing windfall és ambient pénzjutalom | AFK játékos e két jutalmat továbbra sem kapja meg | forráseltérés hibajegy, termékdöntés | `afk/AFK-06B/` |
 | [ ] | AFK-07 Nincs zónás jutalom | Admin | live Ax fájlok eltávolítva | nincs zone, bossbar, timer vagy payout | deployment leállítása | `afk/AFK-07/` |
 
+### Survival HUD
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | HUD-01 Survival parity | Tesztelő | packos vanilla kliens; teljes/részleges/kritikus HP, absorption, armor, food, víz alatti air | current/max és százalék pontos; mindhárom mini-sáv és érték követi a szervert; vanilla normál sprite nem látszik duplán | pack/HUD rollout stop | `hud/HUD-01/` |
+| [ ] | HUD-02 Fallback és routing | Fejlesztő | pack elfogadás/elutasítás; `/hud mind`; NATIVE_HUD kliens; 720p/1080p/4K és több GUI scale | pack nélkül vanilla survival kijelzés; packkal survival panel mindig megmarad; class panel routing szerint pontosan egyszer látszik; nincs elmozdulás vagy hardcore asset | HUD rollout stop | `hud/HUD-02/` |
+
 ### Kliens-bridge (protokoll-alap)
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
@@ -1547,7 +1591,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CLIENT-03 Inkompatibilis kliens | Fejlesztő | protokoll-tartományon kívüli teszt-HELLO | PROTOCOL_REJECT megy ki, nincs kick, a játékos vanilla módban játszik | `client.enabled: false` | `client/CLIENT-03/` |
 | [ ] | CLIENT-04 Reconnect és stale csomag | Fejlesztő | gyors reconnect + régi generation-nel küldött csomag | új session nagyobb generationt kap; a régi generation/sequence csomagja stale-dropra megy (`/icesmp client stats`) | hibajegy, rollout stop | `client/CLIENT-04/` |
 | [ ] | CLIENT-05 Rollback-kapcsoló | Admin | élő session mellett `/icesmp config set client.enabled false` | a híd restart nélkül minden üzenetet eldob, gameplay és vanilla kliens érintetlen | restart + hibajegy | `client/CLIENT-05/` |
-| [ ] | CLIENT-06 Natív HUD routing | Fejlesztő | NATIVE_HUD-ot hirdető kliens + `/icesmp config set client.features.native-hud true` | a kliens HUD_STATE-et kap (join után azonnal, majd csak változáskor); a routolt játékosnál sidebar/first-party HUD/compact fallback eltűnik, vanilla társánál változatlan; `/icesmp client resync` teljes state-et küld BEGIN/END között; a kapu false-ra állítva a vanilla HUD restart nélkül visszatér | `client.features.native-hud: false` | `client/CLIENT-06/` |
+| [ ] | CLIENT-06 Natív HUD routing | Fejlesztő | NATIVE_HUD-ot hirdető kliens + `/icesmp config set client.features.native-hud true` | a kliens HUD_STATE-et kap (join után azonnal, majd csak változáskor); a routolt játékosnál sidebar/first-party class panel/compact fallback eltűnik, a survival panel megmarad, vanilla társánál változatlan; `/icesmp client resync` teljes state-et küld BEGIN/END között; a kapu false-ra állítva a vanilla class HUD restart nélkül visszatér | `client.features.native-hud: false` | `client/CLIENT-06/` |
 | [ ] | CLIENT-07 Keybind cast parity | Fejlesztő | KEYBIND_CAST+ABILITY_BAR kliens, `client.features.keybind-cast` és `ability-bar` kapuk nyitva | a keybind-cast és a katalizátor-cast azonos eredményt ad (cooldown, költség, üzenetek); Lélekkapocs nélkül a főkézben a CAST_SLOT NOT_ALLOWED-dal elutasítva; cooldown alatt NOT_READY; gyors dupla input (katalizátor+keybind) nem okoz dupla castot (közös debounce); a kit-state csak változáskor megy ki, a bar timer kliensoldalon interpolál | `client.features.keybind-cast: false` | `client/CLIENT-07/` |
 | [ ] | CLIENT-08 Natív spellbook parity | Fejlesztő | NATIVE_SPELLBOOK kliens + `client.features.native-spellbook` kapu nyitva | a kliens SPELLBOOK_STATE-et kap (kézfogáskor és unlock/kedvenc/kiválasztás-változáskor); SELECT_SPELL csak aktív-kit-tagot fogad el, TOGGLE_FAVORITE a kit-limitre cappel — mindkettő azonos eredményt ad a vanilla GUI-val és a katalizátor-ciklázással; a durable kedvenc-mentés hibája SERVER_ERROR választ ad, optimista commit nélkül | `client.features.native-spellbook: false` | `client/CLIENT-08/` |
 | [ ] | CLIENT-09 Natív profil parity | Fejlesztő | NATIVE_PROFILE kliens + `client.features.native-profile` kapu nyitva | a kliens PROFILE_STATE-et kap, tartalma soronként azonos a /profile GUI fejlécével és egyenlegeivel (frakció, kaszt+szint, specek, szakmák, Bűnös/Tiszta, talentpontok, egyenlegek, statok, achievement-összegzés); revision/CAS, receipt vagy moderációs adat nem jelenik meg a payloadban (debug-naplóból ellenőrizve); a state csak változáskor megy ki | `client.features.native-profile: false` | `client/CLIENT-09/` |
@@ -1619,6 +1663,9 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 - [ ] wallet, bank, tax debt and refund recovery
 - [ ] `relics.passive-death.mode: keep`: passzív relikviával halál, respawn előtt teljes restart, majd join; a tárgy pontosan egyszer érkezik meg, megtelt inventorynál függőben marad, escrow-íráshibánál pedig a death drop-listában marad
 - [ ] pet/minion spawn, logout, restart and region transfer
+- [ ] Vadmester három társ befogása, `/pet` GUI-s váltás, `/pet select 1..3`, nem aktív társ célzott elengedése, relog utáni visszahívás
+- [ ] pet spawn falban, vízben és veszélyes talajon elutasítva; nyílt helyen sikeres; WorldGuard/protection spawn-cancel után nincs fantom runtime pet
+- [ ] gazda- és pet-kill pontosan egyszer ad companion XP-t; pet halál után az azonnali summon fail-closed, a cooldown restart után is megmarad
 - [ ] Soulforge upgrade, duplicate operation and crash recovery
 - [ ] respec crash points and restart recovery
 - [ ] public, self and admin API auth/visibility/ETag/rate limits
@@ -1645,18 +1692,25 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 
 #### World-event spawn-védelem
 
-1. Tó, folyó, waterlogged lépcső és 7/8/9 blokkos partszegély.
+1. Tó, folyó, waterlogged lépcső és 0/7/8 blokkos partszegély; a 8-as régi
+   érték effektíven 7-re korlátozódjon.
 2. 10, 16 és 32 chunkos send distance, eltérő játékosbeállításokkal.
 3. Síkságon előre néző, majd 180 fokkal elforduló játékos.
 4. Több játékos különböző irányokból ugyanabban a térségben.
-5. Escort teljes útvonala, beragadás-nudge és hullámspawn claim/folyó mellett.
+5. Escort teljes útvonala, beragadás-nudge és hullámspawn claim/folyó mellett;
+   az útvonalpróba az `escort-route`, a hullám az `escort-wave` profilt használja.
 6. Idegen 64–96 blokkra: legyen hallható, de ne jelenjen meg a játékos előtt.
-7. Két egyidejű eventkeresés, harmadik keresés budget-elutasítása és timeout.
+7. Két egyidejű eventkeresés, harmadik keresés budget-elutasítása és timeout;
+   egy 32 jelöltes világboss-/invázió-/meteor-keresés ne merítse ki idő előtt a
+   96 chunkos keretet pusztán a footprint miatt.
 8. Már generált, de inaktív chunk visszatöltése; nem generált chunk fail-closed viselkedése.
 9. Plugin disable érkezési késleltetés és async chunk-future közben.
 10. Meteor lejárat, disable és mesterségesen bent hagyott `meteor-restore.yml` startup-recovery.
-11. Fix világboss-anchor chunkhatár közelében, majd ±8 blokkos probe-szórással.
+11. Fix világboss-anchor chunkhatár közelében: az első érvényes pont vagy a
+    chunk-középre igazított fallback teljes ±7-es vizsgálata maradjon egy régióban.
 12. `/events debug spawn` eredményének összevetése a tényleges eventindítással.
+13. `/events worldboss`, `invasion`, `escort` és `meteor`: az első válasz csak a
+    keresés indulását jelezze; tényleges sikerüzenet/broadcast csak valódi spawn után legyen.
 
 #### Frakció-névszínek
 
@@ -1705,6 +1759,35 @@ A primary renderer az IceSMP része (`hud.icesmp-hud.enabled: true`); külső HU
 a runtime- vagy dependency-stacknek. A tartós class/spec/frakció/profil authority továbbra is a
 Profile v2 / `PlayerProfileSnapshot`; a harci mechanikák authority-ja a class service-ek mulandó
 runtime state-je. Egyik HUD-renderer sem írhatja vissza az állapotot.
+
+### Survival HUD-csere
+
+A kiadott pack a normál vanilla HP-, armor-, food- és oxygen-sprite-okat átlátszóra cseréli, majd
+pack-readiness után az IceSMP alsó-középre rögzített panelje veszi át mind a négy kijelzést. A HP
+felett a jelenlegi/maximális érték, a sávban a százalék, absorption esetén külön `(+érték)` látható;
+a páncél, étel és levegő saját mini-sávot és pontos értéket kap. Hardcore-heart és vehicle-heart
+sprite nincs felülírva.
+
+Az életkritikus kijelzés nem ugyanazt a láthatósági kaput használja, mint a class panel. A `/hud mind`,
+`hud.enabled: false`, `hud.icesmp-hud.enabled: false` és a kliensmod NATIVE_HUD route csak a
+class/sidebar réteget némítja; a survival panel a sikeresen betöltött pack mellett megmarad. A négy
+`hud.icesmp-hud.hide-vanilla-*` kulcs csomagszerződés, nem operátori kapcsoló: mindnek `true` értéken
+kell maradnia. Hibás értéknél a szerver SEVERE diagnosztikát ír, de biztonságból tovább rendereli a
+panelt, hogy ne maradjon látható HP nélkül a játékos.
+
+Állítható értékek:
+
+- `hud.icesmp-hud.survival.refresh-ticks`: külön survival mintavételi periódus; alapból 2 tick,
+  módosítása restartot igényel;
+- `hud.icesmp-hud.survival.armor-maximum`: a páncél-mini-sáv 100%-os referenciaértéke;
+- `hud.icesmp-hud.survival.layout.x-offset-pixels`, `y-offset-pixels`, `scale`: a teljes panel
+  globális eltolása és mérete. Ezek az admin config-GUI operatív HUD lapján is elérhetők.
+
+A `classes.yml` `health.enabled` kapuja továbbra is `false`: ez a változás a kijelzőt és a későbbi
+HP-scaling támogatását készíti elő, nem kapcsolja be élesben a teljes class-health/damage profilt.
+Aktiválás előtt stagingen kell ellenőrizni minden kaszt max HP-ját, direkt gyógyítását és fizikai
+sebzését. Az előkészített `health.display.normalize: false` miatt bekapcsolás után is a valódi
+current/max érték kerül a HUD-ra, nem tíz szívre visszaosztott szám.
 
 ### Személyes és globális layout-editor
 
@@ -1819,13 +1902,15 @@ nem kijelzési rétegben fenntartott állapotok. Az Elementalista három extra m
 Az IceSMP játékosonként csak `SUCCESSFULLY_LOADED` resource-pack státusz után aktiválja a saját
 HUD-ot. Addig — elutasítás, letöltési hiba vagy join-verseny esetén is — a natív compact
 Folia bossbar/scoreboard fallback marad. Sikeres readiness után a natív class/resource sor elnémul,
-így nincs duplikáció vagy villogás. A `/hud mind` a first-party panelt is elrejti.
+így nincs duplikáció vagy villogás. A `/hud mind` csak a class/sidebar réteget rejti el; a survival
+panel szándékosan megmarad. Pack nélkül a custom survival panel nem indul el, és a kliens változatlan
+vanilla survival sprite-jai látszanak.
 
 Várt diagnosztika:
 
-- `IceSMP HUD pack ready: first-party class HUD active; native class HUD suppressed.`
+- `IceSMP HUD pack ready: first-party survival/class HUD active.`
 - hiányzó/elutasított pack esetén a natív fallback marad, a szerverindulás nem fatal;
-- egy korábban aktív HUD elvesztésekor: `native class HUD fallback restored`.
+- egy korábban aktív HUD elvesztésekor: `native HUD fallback restored`.
 
 ### Vizuális rendszer
 
@@ -1847,13 +1932,16 @@ assetek a `resource-pack/assets/icesmp_hud/` alatt vannak. A reprodukálható ge
 
 ```text
 ./gradlew generateIceSmpHudAssets
+python3 scripts/generate_icesmp_survival_hud_assets.py
 ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest hudEditorRegressionTest
 ./gradlew auditIceSmpHudAssets
 ```
 
-A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, 49 egyedi mechanikacsaládot,
+A Gradle umbrella generator a core után automatikusan futtatja a külön survival generátort; a közvetlen
+Python parancs célzott asset-iterációra szolgál. A validátor ellenőrzi a négy frakciót, mind a 13 class mappinget, 49 egyedi mechanikacsaládot,
 a kilenc typed charge/stack- és nyolc DK slotcsatornát, a progress-maszkok alfáját és a 2,5 MB-os
-runtime asset budgetet. Az asset-audit minden PNG-n ellenőrzi a méretet, alfát, cropot, margót,
+runtime asset budgetet, valamint a survival manifestet, fontokat, normál vanilla replacementeket és
+a hardcore-heart assetek hiányát. Az asset-audit minden PNG-n ellenőrzi a méretet, alfát, cropot, margót,
 középre igazítást, élességet, magenta fringe-et és a rögzített glyph-width markert.
 A generált layout jobb felső sarokhoz horgonyzott. A 64×64-es ikonokat a first-party font/shader
 réteg rögzített cellákban rajzolja, ezért GUI scale- és dinamikus értékváltáskor sem csúszhat el a panel.
@@ -1864,7 +1952,10 @@ layout-azonosítót csak a saját HUD-glyphök RGB layoutbitjeiben továbbítja;
 függőleges pixeleltolást és a scale-indexet alkalmazza. Emiatt teljes képernyőn és kis ablakban is ugyanott marad,
 nem lesz 2–3-szoros a panel, és az alsó sávok sem válnak le a keretről. Egy bitmap glyph legfeljebb 256×256 lehet; a keretek és
 alsó sávok 240 pixel szélesek, így a Minecraft font-stitcher nem cseréli őket hiányzó karakterre.
-A magyar HUD-atlasz a repo-ban licenccel tárolt DejaVu Sans forrás négyszeres túlmintavételezésével
+A survival panel külön layout-ID tartományban, a képernyő alsó közepéhez horgonyzott; saját
+`font/survival/`, `textures/hud/survival/` és manifest fájlt használ, így nem írja felül a class HUD
+vagy a profession branch IceSMP assetjeit. A magyar HUD-atlasz a repo-ban licenccel tárolt
+Inter SemiBold forrás nagy felbontású mintavételezésével
 készül; az alacsony felbontású, pixeles runtime font nem elfogadható generátorkimenet.
 Az új proc-állapot is a régiószálon előállított snapshot része; a renderer kizárólag olvassa.
 
@@ -1883,7 +1974,8 @@ A `runFolia` fejlesztésben továbbra is képes a lockolt külső alapcsomagot p
 nincs plugin-auto-download és nincs HUD-plugin self-host. A `.github/workflows/resource-pack-r2.yml`
 SHA-1-gyel ellenőrzi az immutable külső ZIP-et, majd `stageMergedResourcePackForR2` determinisztikusan
 illeszti rá a kanonikus `resource-pack/` fát. Csak az IceSMP namespace-ek, a first-party HUD shader
-és a fehér HUD-bossbar sprite-ok felülírása engedélyezett; minden más ütközés buildhiba. A publikálás
+és bossbar sprite-ok, valamint a normál survival HUD-sprite-ok felülírása engedélyezett; minden más
+ütközés buildhiba. Hardcore-heart útvonal nem owned és nem generálható. A publikálás
 SHA-1 néven R2-re tölt, és csak a publikus URL ellenőrzése után frissíti a fallback metadatát.
 
 ### Profile/menu verdict
@@ -1900,5 +1992,8 @@ Kézi elfogadási minimum:
   üres, részleges és teljes charge-sor — egyik értékváltás sem mozdíthatja el a panelt;
 - default frakcióvaluta nulla egyenleggel is; minden pozitív idegen banki valuta saját ikonnal;
 - aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
+- 20/20, részleges, kritikus és nagyobb skálázott max HP; absorption; 0/20 és 20/20 armor/food;
+  szárazföldi és fogyó oxigén; `/hud mind` és NATIVE_HUD közben is látható survival panel;
 - külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
-- a pack sikeres betöltéséig natív compact fallback, utána pontosan egy class HUD.
+- a pack sikeres betöltéséig natív compact/class és vanilla survival fallback, utána pontosan egy
+  class HUD és egy survival panel ugyanabban a per-player bossbar-kompozícióban.

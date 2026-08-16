@@ -129,8 +129,8 @@ public final class WizardCombatState {
     }
 
     public synchronized int attunedCount(final int threshold, final long now,
-                                         final long decayDelayMillis,
-                                         final double decayPerSecond) {
+                                          final long decayDelayMillis,
+                                          final double decayPerSecond) {
         decayAttunements(now, decayDelayMillis, decayPerSecond);
         final int bar = Math.max(1, threshold);
         int count = 0;
@@ -138,6 +138,11 @@ public final class WizardCombatState {
             if (value >= bar) count++;
         }
         return count;
+    }
+
+    public synchronized void consumeAttunements() {
+        java.util.Arrays.fill(attunement, 0);
+        attunementLastGainAt = 0L;
     }
 
     /** Spec switch cleanup: the weave and the attunements are dropped. */

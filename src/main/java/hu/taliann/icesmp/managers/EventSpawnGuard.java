@@ -47,6 +47,7 @@ import java.util.function.Predicate;
 public final class EventSpawnGuard {
     public static final String EVENT_NO_BURN_KEY = "event_no_daylight_burn";
     public static final String EVENT_NO_ZOMBIFICATION_KEY = "event_no_zombification";
+    private static final int MAX_SINGLE_REGION_PROBE_RADIUS = 7;
 
     private static volatile EventSpawnGuard activeGuard;
 
@@ -258,7 +259,7 @@ public final class EventSpawnGuard {
                 "world-events.safety.reservation-distance-blocks", 64.0D));
         reservations.entrySet().removeIf(entry -> entry.getValue().expiresAtMillis() <= now);
         for (final Map.Entry<String, Reservation> entry : reservations.entrySet()) {
-            if (!entry.getKey().equals(key)
+            if (!eventFamily(entry.getKey()).equals(eventFamily(key))
                     && EventSpawnSafetyPolicy.withinHorizontal(candidate,
                     entry.getValue().point(), reservationDistance)) {
                 return BlockReason.RESERVED;
@@ -307,7 +308,7 @@ public final class EventSpawnGuard {
         if (!footprintAllowed(eventKey, world, x, z, floorY)) {
             return BlockReason.FOOTPRINT_OR_SLOPE;
         }
-        if (waterSafetyRequired(eventKey) && waterOrShoreUnsafe(world, x, z)) {
+        if (waterSafetyRequired(eventKey) && waterOrShoreUnsafe(eventKey, world, x, z)) {
             return BlockReason.WATER_OR_SHORE;
         }
         return BlockReason.NONE;
@@ -366,9 +367,10 @@ public final class EventSpawnGuard {
         return true;
     }
 
-    private boolean waterOrShoreUnsafe(final World world, final int centerX, final int centerZ) {
+    private boolean waterOrShoreUnsafe(final String eventKey, final World world,
+                                       final int centerX, final int centerZ) {
         for (final EventSpawnSafetyPolicy.GridOffset offset
-                : EventSpawnSafetyPolicy.waterProbeOffsets(shorelineRadius())) {
+                : EventSpawnSafetyPolicy.waterProbeOffsets(shorelineRadius(eventKey))) {
             final int x = centerX + offset.x();
             final int z = centerZ + offset.z();
             final int chunkX = x >> 4;
@@ -384,9 +386,13 @@ public final class EventSpawnGuard {
         return false;
     }
 
-    private int shorelineRadius() {
-        return Math.max(0, Math.min(32, configManager.getInt(
-                "world-events.water-safety.buffer-blocks", 8)));
+    private int shorelineRadius(final String eventKey) {
+        final String key = normalizeEventKey(eventKey);
+        if (key.endsWith("-route") || key.endsWith("-wave")) {
+            return 0;
+        }
+        return Math.max(0, Math.min(MAX_SINGLE_REGION_PROBE_RADIUS, configManager.getInt(
+                "world-events.water-safety.buffer-blocks", MAX_SINGLE_REGION_PROBE_RADIUS)));
     }
 
     private static boolean waterAtSurface(final World world, final int x, final int z) {
@@ -502,7 +508,7 @@ public final class EventSpawnGuard {
             return;
         }
         final EventSpawnSafetyPolicy.Offset offset = candidates.get(index);
-        final Location column = origin.clone().add(offset.x(), 0.0D, offset.z());
+        final Location column = centeredCandidate(origin, offset);
         if (column.getWorld() == null) {
             context.reject(BlockReason.INVALID_WORLD);
             tryCandidate(context, origin, candidates, index + 1, onFound, onFailure);
@@ -571,7 +577,8 @@ public final class EventSpawnGuard {
             runContinuation(onUnavailable);
             return;
         }
-        final int radius = Math.max(waterSafetyRequired(context.eventKey) ? shorelineRadius() : 0,
+        final int radius = Math.max(waterSafetyRequired(context.eventKey)
+                        ? shorelineRadius(context.eventKey) : 0,
                 footprintRadius(context.eventKey));
         final int minChunkX = (column.getBlockX() - radius) >> 4;
         final int maxChunkX = (column.getBlockX() + radius) >> 4;
@@ -689,7 +696,7 @@ public final class EventSpawnGuard {
                 final BlockReason reason = surface == BlockReason.NONE
                         ? blockReason(context.eventKey, location, false) : surface;
                 if (reason != BlockReason.NONE) {
-                    reservations.remove(context.eventKey);
+                    releaseFamilyReservation(context.eventKey);
                     pendingArrivals.remove(context.eventKey);
                     recordArrivalFailure(context, reason, location);
                     onFailure.run();
@@ -706,7 +713,7 @@ public final class EventSpawnGuard {
                 onFound.accept(location);
             }, delayTicks);
         } catch (final RuntimeException unavailable) {
-            reservations.remove(context.eventKey);
+            releaseFamilyReservation(context.eventKey);
             pendingArrivals.remove(context.eventKey);
             recordArrivalFailure(context, BlockReason.UNLOADED_CHUNK, location);
             onFailure.run();
@@ -885,7 +892,7 @@ public final class EventSpawnGuard {
             return;
         }
         activeSearches.decrementAndGet();
-        reservations.remove(context.eventKey);
+        releaseFamilyReservation(context.eventKey);
         if (!context.debugOnly) {
             final long backoffMillis = Math.max(0L, configManager.getLong(
                     "world-events.placement.search-backoff-seconds", 30L)) * 1_000L;
@@ -921,6 +928,8 @@ public final class EventSpawnGuard {
         if (context == null || start == null || start.getWorld() == null) {
             if (context != null) {
                 failSearch(context, BlockReason.INVALID_WORLD, start, onFailure);
+            } else {
+                releaseFamilyReservation(eventKey);
             }
             return;
         }
@@ -1029,7 +1038,7 @@ public final class EventSpawnGuard {
             return;
         }
         final EventSpawnSafetyPolicy.Offset offset = candidates.get(index);
-        final Location column = origin.clone().add(offset.x(), 0.0D, offset.z());
+        final Location column = centeredCandidate(origin, offset);
         prepareCandidateChunks(context, column, () -> {
             context.attempts.incrementAndGet();
             final World world = column.getWorld();
@@ -1081,7 +1090,7 @@ public final class EventSpawnGuard {
                 + "/" + trackedSendDistance + " chunk §7| nézési kúp: §f"
                 + (visibilityConeEnabled(key) ? "igen" : "nem"));
         lines.add("§7Footprint: §f" + footprintRadius(key)
-                + " blokk §7| vízpuffer: §f" + shorelineRadius());
+                + " blokk §7| vízpuffer: §f" + shorelineRadius(key));
         lines.add("§7Aktív keresések: §f" + activeSearches.get()
                 + " §7| friss helyek: §f" + recentLocations.size());
         final SearchDiagnostic previous = diagnostics.get(key);
@@ -1109,6 +1118,11 @@ public final class EventSpawnGuard {
         reservations.put(eventKey, new Reservation(point(location),
                 System.currentTimeMillis() + ttlMillis));
         return true;
+    }
+
+    private void releaseFamilyReservation(final String eventKey) {
+        final String family = eventFamily(eventKey);
+        reservations.keySet().removeIf(key -> eventFamily(key).equals(family));
     }
 
     private void markRecent(final String eventKey, final Location location) {
@@ -1269,16 +1283,14 @@ public final class EventSpawnGuard {
     }
 
     private int footprintRadius(final String eventKey) {
-        return Math.max(0, Math.min(32, configManager.getInt(
+        return Math.max(0, Math.min(MAX_SINGLE_REGION_PROBE_RADIUS, configManager.getInt(
                 profilePath(eventKey, "footprint-radius-blocks"),
                 defaultFootprintRadius(eventKey))));
     }
 
     private static int defaultFootprintRadius(final String eventKey) {
         return switch (eventKey) {
-            case "meteor" -> 8;
-            case "world-boss" -> 10;
-            case "invasion" -> 8;
+            case "meteor", "world-boss", "invasion" -> MAX_SINGLE_REGION_PROBE_RADIUS;
             case "cultists" -> 6;
             case "caravan", "player-caravan", "escort" -> 5;
             case "wild-hunt" -> 4;
@@ -1346,6 +1358,31 @@ public final class EventSpawnGuard {
     private static String normalizeEventKey(final String eventKey) {
         return eventKey == null || eventKey.isBlank()
                 ? "unknown" : eventKey.toLowerCase(Locale.ROOT).replace('_', '-');
+    }
+
+    private static String eventFamily(final String eventKey) {
+        final String normalized = normalizeEventKey(eventKey);
+        if (normalized.endsWith("-route")) {
+            return normalized.substring(0, normalized.length() - "-route".length());
+        }
+        if (normalized.endsWith("-wave")) {
+            return normalized.substring(0, normalized.length() - "-wave".length());
+        }
+        return normalized;
+    }
+
+    /**
+     * Automatic candidates use the center column of their chunk. Together with the
+     * seven-block probe cap this keeps every Folia surface read on the scheduled region.
+     */
+    private static Location centeredCandidate(final Location origin,
+                                              final EventSpawnSafetyPolicy.Offset offset) {
+        final int rawX = (int) Math.floor(origin.getX() + offset.x());
+        final int rawZ = (int) Math.floor(origin.getZ() + offset.z());
+        final Location centered = origin.clone();
+        centered.setX(EventSpawnSafetyPolicy.chunkCenterCoordinate(rawX));
+        centered.setZ(EventSpawnSafetyPolicy.chunkCenterCoordinate(rawZ));
+        return centered;
     }
 
     private static EventSpawnSafetyPolicy.Point point(final Location location) {

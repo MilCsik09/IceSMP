@@ -16,7 +16,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -173,7 +172,7 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
             if ("perfect_focus".equals(spellId)) {
                 state.armWindRead(now, windReadWindowMillis(playerId));
                 player.sendActionBar(messages.getMessage("archer.wind.focused",
-                        "<green>Tökéletes Fókusz: a következő fegyelmezett lövésed olvasott.</green>"));
+                        "<green>Tökéletes Fókusz: a következő teljes húzású lövésed olvasott.</green>"));
             } else if ("masterful_shot".equals(spellId)
                     && state.consumeWeakPoint(weakPointThreshold(playerId), 0)) {
                 if ("egy_loves_egy_elet".equals(doctrine(playerId, 50))) {
@@ -324,9 +323,13 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         final boolean pvp = event.getEntity() instanceof Player;
         double bonusPercent = 0.0D;
         if (state.consumeWindRead(now)) {
-            bonusPercent += config.getDouble(pvp
+            final double windBonus = config.getDouble(pvp
                     ? "classes.archer.wind.pvp-bonus-percent"
                     : "classes.archer.wind.pve-bonus-percent", pvp ? 8.0D : 18.0D);
+            bonusPercent += windBonus;
+            archer.sendActionBar(messages.getMessage("archer.wind.spent",
+                    "<green>➶ Szélolvasás elsütve: +{bonus}% sebzés.</green>",
+                    Map.of("bonus", Integer.toString((int) Math.round(windBonus)))));
         }
         if ("sharpshooter".equals(activeSpec(archerId))
                 && event.getEntity() instanceof LivingEntity
@@ -378,7 +381,7 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         if (disciplined && !state.isWindReadArmed(now)) {
             state.armWindRead(now, windReadWindowMillis(archerId));
             archer.sendActionBar(messages.getMessage("archer.wind.read",
-                    "<green>➶ Szélolvasás: a következő fegyelmezett lövésed erősebb.</green>"));
+                    "<green>➶ Szélolvasás: a következő teljes húzású lövésed erősebb.</green>"));
         }
 
         final String spec = activeSpec(archerId);
@@ -425,16 +428,13 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
     private void buffActivePet(final Player owner, final boolean capstone) {
         final PetManager petManager = pets;
         if (petManager == null) return;
-        final Mob pet = petManager.livePet(owner);
-        if (pet == null) return;
         final int regenTicks = config.getInt(capstone
                 ? "classes.archer.bond.king-pet-regen-ticks"
                 : "classes.archer.bond.primal-regen-ticks", capstone ? 200 : 120);
         final int amplifier = (capstone ? 1 : 0)
                 + ("vastag_bor".equals(doctrine(owner.getUniqueId(), 40)) ? 1 : 0);
         final boolean caretaker = "gondozo".equals(doctrine(owner.getUniqueId(), 30));
-        pet.getScheduler().run(plugin, task -> {
-            if (!pet.isValid() || pet.isDead()) return;
+        petManager.runOnActivePet(owner, pet -> {
             pet.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
                     regenTicks + (caretaker ? config.getInt(
                             "classes.archer.bond.caretaker-extra-ticks", 60) : 0),
@@ -445,7 +445,7 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
                 pet.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
                         regenTicks, 0, false, true, true));
             }
-        }, null);
+        });
         owner.sendActionBar(messages.getMessage(capstone
                         ? "archer.bond.king" : "archer.bond.primal",
                 capstone ? "<gold>Vadak Királya: a falka ereje a társadban lüktet.</gold>"

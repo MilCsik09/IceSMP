@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "module": "survival",
+  "anchor": "bottom_center",
+  "canvas_height": 120,
+  "panel_size": [
+    228,
+    60
+  ],
+  "health_segments": 20,
+  "mini_segments": 10,
+  "text_font": "Inter SemiBold",
+  "text_oversample": 8,
+  "text_atlas": "icesmp_hud:hud/survival/text-atlas.png",
+  "vanilla_health_hidden": true,
+  "vanilla_armor_hidden": true,
+  "vanilla_food_hidden": true,
+  "vanilla_oxygen_hidden": true,
+  "hardcore_hearts_overridden": false,
+  "heart_sprites": [
+    "absorbing_full.png",
+    "absorbing_full_blinking.png",
+    "absorbing_half.png",
+    "absorbing_half_blinking.png",
+    "container.png",
+    "container_blinking.png",
+    "frozen_full.png",
+    "frozen_full_blinking.png",
+    "frozen_half.png",
+    "frozen_half_blinking.png",
+    "full.png",
+    "full_blinking.png",
+    "half.png",
+    "half_blinking.png",
+    "poisoned_full.png",
+    "poisoned_full_blinking.png",
+    "poisoned_half.png",
+    "poisoned_half_blinking.png",
+    "withered_full.png",
+    "withered_full_blinking.png",
+    "withered_half.png",
+    "withered_half_blinking.png"
+  ],
+  "armor_sprites": [
+    "armor_empty.png",
+    "armor_full.png",
+    "armor_half.png"
+  ],
+  "food_sprites": [
+    "food_empty.png",
+    "food_empty_hunger.png",
+    "food_full.png",
+    "food_full_hunger.png",
+    "food_half.png",
+    "food_half_hunger.png"
+  ],
+  "air_sprites": [
+    "air.png",
+    "air_bursting.png",
+    "air_empty.png"
+  ]
+}

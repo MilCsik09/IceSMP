@@ -6,6 +6,7 @@ import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -64,6 +65,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
     private final Map<UUID, DeathKnightCombatState> states = new ConcurrentHashMap<>();
 
     private volatile ResourceManager combatTracker;
+    private volatile PetManager pets;
 
     public DeathKnightGameplayService(final JavaPlugin plugin,
                                       final ConfigManager config,
@@ -81,6 +83,10 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
 
     public void setCombatTracker(final ResourceManager resources) {
         combatTracker = Objects.requireNonNull(resources, "resources");
+    }
+
+    public void setPetManager(final PetManager petManager) {
+        pets = Objects.requireNonNull(petManager, "petManager");
     }
 
     public List<String> activeSpellIds(final Player player,
@@ -156,7 +162,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
                 perPlague += config.getDouble("classes.death_knight.unholy.ravage-extra-percent", 1.5D);
             }
             bonus += state.plague() * perPlague;
-            bonus += state.mutation() * Math.max(0.0D, config.getDouble(
+            bonus += ghoulMutationStage(player) * Math.max(0.0D, config.getDouble(
                     "classes.death_knight.unholy.per-mutation-percent", 4.0D));
         }
         final double cap = Math.max(0.0D,
@@ -293,14 +299,35 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
                 healPlayer(player, burst * Math.max(0.0D, config.getDouble(
                         "classes.death_knight.unholy.acid-heal-per-plague", 0.5D)));
             }
-            final int stage = state.advanceMutation(mutationMaximum(playerId));
             if (isInCombat(playerId)) {
                 specs.contributeClassMastery(player, JobType.DEATH_KNIGHT,
                         config.getInt("classes.death_knight.mastery.burst-xp", 6));
             }
+            final PetManager gateway = pets;
+            if (gateway == null || !gateway.hasUnholyGhoul(player)) {
+                player.sendActionBar(messages.getMessage("deathknight.plague.no-ghoul",
+                        "<dark_green>☣ {count} Dögvész robbant; nincs tartós ghúl, amely mutálódhatna.</dark_green>",
+                        Map.of("count", Integer.toString(burst))));
+                return;
+            }
             player.sendActionBar(messages.getMessage("deathknight.plague.burst",
-                    "<dark_green>☣ {count} Dögvész robbant — a ghúl {stage}. fokozatra mutálódott.</dark_green>",
-                    Map.of("count", Integer.toString(burst), "stage", Integer.toString(stage))));
+                    "<dark_green>☣ {count} Dögvész robbant — a ghúl mutációja formálódik.</dark_green>",
+                    Map.of("count", Integer.toString(burst))));
+            gateway.advanceUnholyGhoulMutationV2(player, mutationMaximum(playerId),
+                            "dk-ghoul-mutation:" + playerId + ":" + UUID.randomUUID())
+                    .thenAccept(result -> gateway.runOnPlayer(player, () -> {
+                        if (!result.committed()) {
+                            player.sendActionBar(messages.getMessage(
+                                    "deathknight.plague.mutation-failed",
+                                    "<red>A Dögvész kisült, de a ghúl tartós mutációja nem sikerült.</red>"));
+                            return;
+                        }
+                        player.sendActionBar(messages.getMessage(
+                                "deathknight.plague.mutated",
+                                "<dark_green>A ghúl elérte a(z) {stage}. mutációs fokozatot.</dark_green>",
+                                Map.of("stage", Integer.toString(
+                                        gateway.unholyGhoulMutationStage(player)))));
+                    }));
             return;
         }
         if (!plagueSpells().contains(spellId)) return;
@@ -338,7 +365,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
             case "frost" -> suffix = suffix.append(Component.text("  • Fagyjel "
                     + state.frostMarks() + "/" + markMaximum(playerId), NamedTextColor.AQUA));
             case "unholy" -> suffix = suffix.append(Component.text("  • Dögvész "
-                            + state.plague() + " • Ghúl " + state.mutation() + ". fokozat",
+                            + state.plague() + " • Ghúl " + ghoulMutationStage(player) + ". fokozat",
                     NamedTextColor.DARK_GREEN));
             default -> { }
         }
@@ -384,7 +411,7 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
                 secondary = hu.taliann.icesmp.classspec.integration.ClassHudMetric.value(
                         "plague", "Dögvész", "Dögvész " + combat.plague(),
                         combat.plague(), 100, "active");
-                stateText = "Ghúl " + combat.mutation() + ". fokozat";
+                stateText = "Ghúl " + ghoulMutationStage(player) + ". fokozat";
             }
             default -> { }
         }
@@ -619,6 +646,11 @@ public final class DeathKnightGameplayService implements Listener, PlayerStateCl
             maximum += Math.max(0, config.getInt("classes.death_knight.unholy.twisted-extra-stage", 1));
         }
         return maximum;
+    }
+
+    private int ghoulMutationStage(final Player player) {
+        final PetManager gateway = pets;
+        return gateway == null ? 0 : gateway.unholyGhoulMutationStage(player);
     }
 
     private static double maxHealth(final LivingEntity entity) {

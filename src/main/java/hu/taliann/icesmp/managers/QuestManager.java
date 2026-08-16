@@ -55,15 +55,15 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             "PLACE_BLOCKS", "COLLECT_ITEMS", "KILL_PLAYERS", "DELIVER_ITEMS",
             "BREED_ANIMALS", "ENCHANT_ITEMS", "CONSUME_ITEMS", "SMELT_ITEMS",
             "TAME_ANIMALS", "TRADE_WITH_VILLAGER", "EXPLORE_BIOME", "WIN_RAID",
-            "KILL_WORLDBOSS");
+            "KILL_WORLDBOSS", "CAST_SPELLS");
 
     public static final List<String> EDITABLE_FIELDS = List.of(
             "display-name", "description", "giver-npc", "next", "repeatable",
             "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count", "requires-job", "requires-faction",
-            "requires-level", "requires-quest", "chapter", "riddle", "min-season-day",
+            "requires-specialization", "requires-level", "requires-quest", "chapter", "riddle", "min-season-day",
             "max-season-day", "objective.type", "objective.count", "objective.entity-type",
-            "objective.min-mob-level", "objective.materials", "objective.territory",
+            "objective.min-mob-level", "objective.materials", "objective.spells", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
             "objective.description", "rewards.class-xp", "rewards.currency.type",
             "rewards.currency.amount", "rewards.items", "rewards.unlock-spell",
@@ -75,7 +75,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     private static final Set<String> OBJECTIVE_SUBFIELDS = Set.of(
             "type", "count", "entity-type", "min-mob-level", "materials",
-            "territory", "level", "npc", "course", "biome", "description");
+            "spells", "territory", "level", "npc", "course", "biome", "description");
     private static final ThreadLocal<Integer> CHAIN_DEPTH = ThreadLocal.withInitial(() -> 0);
     private static final int MAX_CHAIN_DEPTH = 16;
 
@@ -345,6 +345,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                 case "dialogue.choice-quest" -> normalizeQuestId(rawValue);
                 case "rewards.items" -> parseItems(rawValue);
                 case "objective.materials" -> parseMaterials(rawValue);
+                case "objective.spells" -> parseIds(rawValue);
                 case "dialogue.give", "dialogue.complete" -> parseLines(rawValue);
                 case "rewards.currency.type" -> {
                     final String type = rawValue.trim();
@@ -507,6 +508,14 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             if (type == null || jobManager.getPrimaryJob(player) != type)
                 return "quest-requires-job";
         }
+        final String requiredSpecialization = quest.getString("requires-specialization");
+        if (requiredSpecialization != null && !requiredSpecialization.isBlank()) {
+            final SpecializationManager manager = specializationManagerRef;
+            final var active = manager == null ? null : manager.getClassSpecialization(player);
+            if (active == null || !active.getId().equalsIgnoreCase(requiredSpecialization.trim())) {
+                return "quest-requires-specialization";
+            }
+        }
         final String requiredFaction = quest.getString("requires-faction");
         if (requiredFaction != null && !requiredFaction.isBlank()
                 && !factionManager.isMember(player.getUniqueId(),
@@ -522,7 +531,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     /** Blokkolók, amelyek TELJESÍTETLEN előfeltételt jeleznek (PREREQUISITES_MET elrejt). */
     private static final Set<String> PREREQUISITE_BLOCKERS = Set.of(
-            "quest-requires-job", "quest-requires-faction", "quest-requires-level",
+            "quest-requires-job", "quest-requires-specialization", "quest-requires-faction", "quest-requires-level",
             "quest-requires-quest", "quest-chapter-future", "quest-chapter-closed",
             "quest-season-window-future", "quest-season-window-closed");
 
@@ -669,6 +678,13 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     public void handleVillagerTrade(final Player player) { forEachActive(player, "TRADE_WITH_VILLAGER", (id, obj) -> true); }
     public void handleRaidWin(final Player player) { forEachActive(player, "WIN_RAID", (id, obj) -> true); }
     public void handleBossKill(final Player player) { forEachActive(player, "KILL_WORLDBOSS", (id, obj) -> true); }
+    public void handleSpellCast(final Player player, final String spellId) {
+        final String normalized = spellId == null ? "" : spellId.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) return;
+        forEachActive(player, "CAST_SPELLS", (id, objective) -> objective.getStringList("spells")
+                .stream().map(value -> value.trim().toLowerCase(Locale.ROOT))
+                .anyMatch(normalized::equals));
+    }
     public void handleParkourFinish(final Player player, final String courseId) { forEachActive(player, "PARKOUR_TRIAL", (id, obj) -> courseId != null && courseId.equalsIgnoreCase(obj.getString("course", ""))); }
 
     public void handleBiomeVisit(final Player player, final String biomeKey) {
@@ -787,7 +803,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         final List<String> completed = new ArrayList<>();
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !isStillFactionEligible(player, quest)) continue;
+            if (quest == null || !isStillEligible(player, quest)) continue;
             final List<ConfigurationSection> objectives = getObjectiveSections(quest);
             final boolean sequence = isSequenceMode(quest);
             boolean changed = false;
@@ -911,7 +927,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         if (player == null) return;
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !isStillFactionEligible(player, quest)) continue;
+            if (quest == null || !isStillEligible(player, quest)) continue;
             final List<ConfigurationSection> objectives = getObjectiveSections(quest);
             final boolean sequence = isSequenceMode(quest);
             boolean changed = false;
@@ -938,7 +954,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         if (player == null) return;
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !isStillFactionEligible(player, quest)) continue;
+            if (quest == null || !isStillEligible(player, quest)) continue;
             final List<ConfigurationSection> objectives = getObjectiveSections(quest);
             final boolean sequence = isSequenceMode(quest);
             boolean changed = false;
@@ -1157,7 +1173,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     private void commitCompletion(final Player player, final String questId) {
         if (player == null) return;
         final ConfigurationSection quest = getQuestSection(questId);
-        if (quest == null || !isStillFactionEligible(player, quest)) return;
+        if (quest == null || !isStillEligible(player, quest)) return;
         final UUID playerId = player.getUniqueId();
         final String id = normalizeQuestId(questId);
         final long completedAt = System.currentTimeMillis();
@@ -1432,7 +1448,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         if (npcName == null) return false;
         for (final String id : getActiveQuests(player)) {
             final ConfigurationSection quest = getQuestSection(id);
-            if (quest == null || !isStillFactionEligible(player, quest)) continue;
+            if (quest == null || !isStillEligible(player, quest)) continue;
             final List<ConfigurationSection> objectives = getObjectiveSections(quest);
             final boolean sequence = isSequenceMode(quest);
             for (int i = 0; i < objectives.size(); i++) {
@@ -1524,10 +1540,22 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         }
     }
 
-    private boolean isStillFactionEligible(final Player player, final ConfigurationSection quest) {
-        final String required = quest.getString("requires-faction");
-        return required == null || required.isBlank()
-                || factionManager.isMember(player.getUniqueId(), FactionType.fromInput(required));
+    private boolean isStillEligible(final Player player, final ConfigurationSection quest) {
+        final String requiredFaction = quest.getString("requires-faction");
+        if (requiredFaction != null && !requiredFaction.isBlank()
+                && !factionManager.isMember(player.getUniqueId(), FactionType.fromInput(requiredFaction))) {
+            return false;
+        }
+        final String requiredJob = quest.getString("requires-job");
+        if (requiredJob != null && !requiredJob.isBlank()) {
+            final JobType type = JobType.fromId(requiredJob);
+            if (type == null || jobManager.getPrimaryJob(player) != type) return false;
+        }
+        final String requiredSpecialization = quest.getString("requires-specialization");
+        if (requiredSpecialization == null || requiredSpecialization.isBlank()) return true;
+        final SpecializationManager manager = specializationManagerRef;
+        final var active = manager == null ? null : manager.getClassSpecialization(player);
+        return active != null && active.getId().equalsIgnoreCase(requiredSpecialization.trim());
     }
 
     private void grantCrateKeyReward(final Player player, final String raw) {
@@ -1641,6 +1669,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             case "TALK_TO_NPC" -> "Beszélgetés";
             case "PARKOUR_TRIAL" -> "Parkour";
             case "WIN_RAID" -> "Raid";
+            case "CAST_SPELLS" -> "Képességhasználat";
             default -> "Feladat";
         };
     }
@@ -1664,6 +1693,16 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         }
         if (result.isEmpty()) throw new IllegalArgumentException();
         return result;
+    }
+
+    private static List<String> parseIds(final String raw) {
+        final List<String> result = new ArrayList<>();
+        for (final String token : raw.split(",")) {
+            final String normalized = token.trim().toLowerCase(Locale.ROOT);
+            if (!normalized.isEmpty()) result.add(normalized);
+        }
+        if (result.isEmpty()) throw new IllegalArgumentException();
+        return List.copyOf(result);
     }
     private static List<String> parseMaterials(final String raw) {
         final List<String> result = new ArrayList<>();

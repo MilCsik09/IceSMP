@@ -1,0 +1,40 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_track.png",
+      "ascent": -8491059,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_armor.png",
+      "ascent": -8499251,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_food.png",
+      "ascent": -8499251,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_air.png",
+      "ascent": -8499251,
+      "height": 5,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

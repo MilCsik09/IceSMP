@@ -45,6 +45,7 @@ public final class QuestBuilderGUI {
             new FieldTile(21, "requires-faction", Material.WHITE_BANNER, "Frakció-feltétel"),
             new FieldTile(22, "requires-job", Material.IRON_PICKAXE, "Kaszt-feltétel"),
             new FieldTile(23, "auto-start-territory", Material.COMPASS, "Auto-start terület"),
+            new FieldTile(24, "requires-specialization", Material.NETHER_STAR, "Specializáció-feltétel"),
             new FieldTile(28, "rewards.class-xp", Material.GLOWSTONE_DUST, "Jutalom: kaszt-XP"),
             new FieldTile(29, "rewards.currency.type", Material.GOLD_NUGGET, "Jutalom: valuta típusa"),
             new FieldTile(30, "rewards.currency.amount", Material.GOLD_INGOT, "Jutalom: valuta összege"),
@@ -80,6 +81,7 @@ public final class QuestBuilderGUI {
         putType("REACH_LEVEL", Material.EXPERIENCE_BOTTLE, "Szint elérése");
         putType("PARKOUR_TRIAL", Material.RABBIT_FOOT, "Parkour-pálya teljesítése");
         putType("WIN_RAID", Material.CROSSBOW, "Raid megnyerése");
+        putType("CAST_SPELLS", Material.ENCHANTED_BOOK, "Képességek használata");
     }
 
     private static void putType(final String type, final Material material, final String name) {

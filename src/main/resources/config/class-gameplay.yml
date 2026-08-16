@@ -1,8 +1,8 @@
-# Gameplay vertical slice-ok (Harcos, Sárkányidéző) — live balance. Nem generic mechanic DSL.
+# Mind a 13 kaszt gameplay-v2 live balance-a. Nem generic mechanic DSL.
 classes:
   specialization:
-    # A második megtanult specializáció ezen a szinten nyílik, de kizárólag a kész gameplay-v2
-    # classoknál (GameplayV2ClassPolicy allowlist); a többi class SECOND-slotja fail-closed marad.
+    # A második megtanult specializáció ezen a szinten nyílik a GameplayV2ClassPolicy
+    # allowlistjén; az aktuális katalógus mind a 13 kasztot tartalmazza.
     second-slot-level: 28
     # Spec-váltás csak harcon kívül és közeli ellenségtől távol.
     switch-combat-grace-seconds: 8
@@ -174,6 +174,7 @@ classes:
       spells:
         - fire_breath
         - eternity_surge
+        - eternity_breath
         - dream_breath
         - spiritbloom
       rank2-hold-millis: 1200
@@ -316,6 +317,7 @@ classes:
         - windfury_totem
         - crash_lightning
         - feral_spirit
+        - searing_totem
         - doom_winds
       tidal:
         - healing_surge
@@ -323,6 +325,7 @@ classes:
         - healing_stream_totem
         - chain_heal
         - healing_rain
+        - spirit_link
         - spirit_tide
 
     # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
@@ -738,10 +741,10 @@ classes:
       feral:
         - savage_claw
         - maul
-        - swipe
         - feral_charge
         - primal_roar
         - survival_instincts
+        - druid_cat_form
         - the_wild_hunt
       lunar:
         - moonfire
@@ -749,23 +752,23 @@ classes:
         - sunfire
         - solar_beam
         - starfall
-        - hurricane
+        - druid_moonkin_form
         - celestial_alignment
       ironbark:
         - mangle
         - iron_bark
         - thornguard
-        - bristling_fur
         - entangling_roots
         - frenzied_regen
+        - druid_bear_form
         - incarnation_bear
       restoration:
         - rejuvenation
         - regrowth
-        - healing_touch
         - swiftmend
         - lifebloom
         - wild_bloom
+        - druid_moonkin_form
         - flourish
 
     # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
@@ -820,6 +823,8 @@ classes:
         - rampage
         - the_wild_hunt
       combo-per-cast: 1
+      sharp-claw-power-percent: 8.0
+      quick-rend-extra-combo: 1
       combo-maximum: 5
       hunt-extra-combo: 1
       instinct-extra-combo: 1
@@ -843,9 +848,12 @@ classes:
         - starsurge
         - starfall
       shift-per-cast: 25
+      rising-shift-extra: 10
       balance-cap: 100
       eclipse-window-millis: 6000
       eclipse-bonus-percent: 18.0
+      star-eye-extra-percent: 6.0
+      capstone-eclipse-window-millis: 12000
       long-alignment-extra-millis: 2000
       two-skies-extra-percent: 6.0
       eternal-restart-value: 20
@@ -871,6 +879,9 @@ classes:
       quick-roots-extra-millis: 2000
       roots-slow-ticks: 40
       deep-roots-extra-ticks: 20
+      thorn-damage: 2.0
+      root-master-amplifier: 1
+      root-master-heal: 1.0
 
     # Helyreállító: Mag → érés → Virágzás. A Magok tiszta számlálók (nincs világban maradó növény-entitás),
     # és a Virágzás CSAK a beérett Magokat aratja le — a gyógyítás előkészítés-alapú.
@@ -890,8 +901,10 @@ classes:
       early-ripen-reduction-millis: 1000
       quick-bloom-reduction-millis: 500
       expiry-millis: 20000
+      deep-root-extra-expiry-millis: 8000
       heal-per-ripe-seed: 3.0
       worldtree-extra-heal: 2.0
+      eternal-spring-regen-ticks-per-seed: 40
 
   priest:
     # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
@@ -976,9 +989,15 @@ classes:
         - power_word_shield
       window-millis: 8000
       lasting-extra-millis: 3000
+      eternal-grace-extra-millis: 4000
       conversion-percent: 35.0
       shield-cap: 20
       wide-extra-cap: 6
+      dense-shield-gain-percent: 40.0
+      redeeming-heal: 3.0
+      redeeming-shield: 4
+      capstone-window-millis: 14000
+      capstone-shield: 8
 
     # Csontpap (DARK — a meglévő pecsét/kapu rendszer alatt): a KONTROLLÁLT áldozat (élet-költségű
     # spellek) Velőt ad, a Velő Osszárium-töltetté sűrűsödik, a sötét gyógyítás ezt égeti el.
@@ -1547,8 +1566,7 @@ classes:
         - raise_horde
       csontvaz-spells:
         - bone_archers
-      lidercz-spells:
-        - wraith_form
+      lidercz-spells: []
       necrotic-spells:
         - life_drain
         - bone_spear

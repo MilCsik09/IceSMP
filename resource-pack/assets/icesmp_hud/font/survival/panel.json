@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/panel.png",
+      "ascent": -8482830,
+      "height": 60,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

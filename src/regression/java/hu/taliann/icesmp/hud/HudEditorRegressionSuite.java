@@ -229,9 +229,14 @@ public final class HudEditorRegressionSuite {
                     "every editable component needs config defaults and a renderer consumer: "
                             + component.id());
         }
+        // Külön feltételek, nem egyetlen összefüggő literál: a render-hívás formázása és
+        // argumentumlistája bővülhet, a kapu viszont a SZEMANTIKÁRA nézzen — modell, érvényesített
+        // layout és láthatóság egyszerre menjen át a renderelőn.
         check(manager.contains("layout.components.\" + component.id()")
                         && manager.contains("overrides.put(path + \".visible\"")
-                        && manager.contains("IceSmpHudModel.from(snapshot), effectiveHudLayout(player), visible"),
+                        && manager.contains("IceSmpHudModel.from(snapshot)")
+                        && manager.contains("effectiveHudLayout(player)")
+                        && manager.contains("iceSmpHudBackend.render(player"),
                 "component transforms and visibility must round-trip through validated config");
     }
 

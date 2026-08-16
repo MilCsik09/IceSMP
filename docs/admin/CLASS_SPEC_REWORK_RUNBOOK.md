@@ -6,7 +6,7 @@ Profile v2 is always enabled and is the sole class/spec authority. There is no m
 dual-write period or kill switch. `class-spec-rework.dependencies.enforce` controls dependency validation only; it
 does not select another runtime.
 
-The completed gameplay vertical slices are the **Harcos** (`warrior`: `berserker`, `guardian`), the **Sárkányidéző** (`evoker`: `devastation`/Perzselés, `preservation`/Megőrzés) and the **Íjász** (`archer`: `sharpshooter`/Mesterlövész, `beast_master`/Vadmester) the **Sámán** (`shaman`: `elemental`/Elemi, `enhancement`/Erősítő, `tidal`/Hullámhívó) the **Szerzetes** (`monk`: `windwalker`/Szélfutó, `brewmaster`/Sörfőző, `mistweaver`/Ködszövő) the **Paplovag** (`paladin`: `holy`/Szentlélek, `retribution`/Megtorló, `protection`/Oltalmazó) and the **Démonvadász** (`demon_hunter`: `havoc`/Tombolás, `vengeance`/Bosszú). Combat meters, charges, chains and prepared-heal windows are transient runtime state; class, loadouts, doctrines, mastery, capstone and the companion stable remain Profile v2 state. The completed slices are listed in the explicit `GameplayV2ClassPolicy` allowlist — every other class stays single-spec and fail-closed.
+The completed gameplay catalog covers all **13 classes and 35 specializations**: Warrior, Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin, Warlock and Wizard. Combat meters, charges, chains and prepared-heal windows are transient runtime state; class, loadouts, doctrines, mastery, capstone and the companion stable remain Profile v2 state. All thirteen classes are listed in the explicit `GameplayV2ClassPolicy` allowlist and use the same fail-closed switching boundary.
 
 ## Normal states
 
@@ -22,13 +22,13 @@ The completed gameplay vertical slices are the **Harcos** (`warrior`: `berserker
 
 Use `/spec info` for schema, revision, class, slots, complete seal reasons, slot mastery, doctrine/capstone state and session block detail. Repository logs include owner UUID, bounded error detail and evidence ID; raw payloads are not dumped into logs.
 
-For the completed gameplay-v2 classes (Warrior, Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter):
+For every gameplay-v2 class:
 
 - `/spec switch <first|second|spec-id>` changes the active learned specialization only when the switch safety gate passes;
 - `/spec doctrine <30|40|50> <choice>` commits the active loadout's doctrine choice;
 - class level/XP is shared by the two loadouts; doctrine, mastery and capstone are slot-local;
 - resource and active spell cooldown consequences are not reset by a legal loadout switch;
-- spec-local transient state (Berserker Vérőrület/Kimerülés, Guardian Őrség/Eskütárs, Evoker Izzás/Visszhang/Időlenyomat/jelölt társ, any held Felerősítés charge, Archer Szélolvasás/Pontossági lánc/Kötelék, Sámán Rezonancia/Maelstrom/Ár, Szerzetes Áramlás/Lánc/Ködszál, Paplovag Meggyőződés/Jelek/Pajzstöltet, and Démonvadász Terhelés/Töredék/Fájdalom/Sigil) is cleared at the switch boundary. The Paplovag session Eskü choice deliberately survives a spec switch (class-level identity) and resets on relog. The Sörfőző Stagger pool is applied immediately (never lethal on its own) before it clears — a switch or logout is not a consequence-free escape. The Vadmester **stable roster is durable Profile v2 state** and deliberately survives the switch; only the transient bond clears.
+- spec-local transient state is cleared at the switch boundary. Session-level class choices (for example Paplovag Eskü and Pap Litánia) follow their documented class lifecycle; durable companion rosters survive the switch, while their transient combat bonds do not. The Sörfőző Stagger pool is applied immediately (never lethal on its own) before it clears — a switch or logout is not a consequence-free escape.
 
 ## Switch safety
 
@@ -38,7 +38,7 @@ The switch gate is live-config driven:
 - `classes.specialization.switch-combat-grace-seconds` — default 8;
 - `classes.specialization.switch-safe-radius` — default 12 blocks.
 
-The SECOND loadout unlocks and is accepted only for the classes in the `GameplayV2ClassPolicy` allowlist (`warrior`, `evoker`, `archer`, `shaman`, `monk`, `paladin`, `demon_hunter`). Other classes remain single-spec until their own gameplay slice explicitly enables and validates second-spec switching.
+The SECOND loadout unlocks and is accepted only for the classes in the `GameplayV2ClassPolicy` allowlist. That list now contains all thirteen classes; a future class remains single-spec until its own gameplay slice explicitly enables and validates second-spec switching.
 
 A switch fails closed while the player is still in the combat grace, while a hostile living entity is inside the configured radius, while the target slot is unavailable, or while the Profile v2 session is not READY. The switch must never be used as a heal, Düh reset or cooldown reset.
 
@@ -195,7 +195,12 @@ At level 50 the relevant loadout may enter capstone `AVAILABLE`. The stable cont
 - Elementalista: `wizard_elementalist_trial`;
 - Nekromanta: `wizard_necromancer_trial`.
 
-The Evoker, Archer, Shaman, Monk, Paladin, Demon Hunter, Druid, Priest, Death Knight, Assassin, Warlock and Wizard trial quest ids are deliberately mechanical placeholders: the canonical trial names/lore live in the game-design document that is not currently available in this repository, so no lore names were invented for them. The repository does not claim that any trial's physical build exists. Do not fabricate coordinates or mark a trial completed through unrelated kills. Builder/event provisioning and staging validation are mandatory before those trials are considered live content.
+All 35 trial IDs are stable mechanical identifiers. Each bundled quest is a
+level-50, job- and specialization-gated `CAST_SPELLS` challenge that requires
+the corresponding class master trial and counts 18 successful casts from its
+explicit allowlist. It has no physical build dependency; do not fabricate an
+NPC, arena or coordinate for it. Completion is the durable Profile v2 capstone
+gate, not an unrelated kill or admin-side spell grant.
 
 The current `relics.class-relics` catalog contains Evoker pilot relic content from the Class Relic Framework but no canonical Warrior binding. Do not invent an operational relic/resonance/awakening entry as a workaround; each class is playable without a relic and future relic content is a separate gate.
 
@@ -253,6 +258,13 @@ Before moving a gameplay PR out of draft, perform live Folia tests for:
 - Monk chain cadence, Stagger drain/purify pressure under real tanking (including the logout/switch consequence), and Ködszál ripple delivery across regions;
 - Paladin Eskü/Meggyőződés role feel, beacon echo across regions, Verdict cadence and Megszentelt Föld area pressure;
 - Demon Hunter load-band risk feel (overload fragility in real fights), fragment/mobility weave and the two-Sigil tank rotation;
+- Druid Harmónia/form release, Feral combo spend, Lunar Eclipse, Ironbark layer/root retaliation and Restoration seed ripen/harvest;
+- Priest Litánia, Discipline atonement/shield conversion, Bone Priest nonlethal sacrifice and Shadow threshold/vent;
+- Death Knight rune transmutation, Blood memory conversion, Frost mark spends and durable Unholy ghoul mutation across relog;
+- Assassin opportunity finishers, toxin kit, finite stealth/detection and bounded plague carriers;
+- Warlock pact debt, three-page curse book, ember overheat and full durable demon roster refusal before cast;
+- Wizard ordered rune reactions, three-attunement crown consume and bounded durable necromancer court;
+- all 35 level-50 trials with matching active spec, mismatching-spec negative control and exact capstone grant;
 - death/quit/kick/disable cleanup and reconnect reconstruction;
 - personal Kürt/Fiola loss, death retention, external-container transfer attempts, foreign copy and duplicate-copy behavior;
 - real TTK/healing/CC/party balance. Unit tests prove invariants, not final balance.

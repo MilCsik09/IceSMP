@@ -331,6 +331,7 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
     private final BlockRegenService blockRegenService;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask survivalHudTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask tablistTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask healthTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask corruptionAuraTask;
@@ -570,6 +571,7 @@ public final class IceSMPCore {
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
                 catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager,
                 talentManager, messageManager, spellFavoritesManager);
+        abilityCatalystListener.setQuestManager(questManager);
         abilityCatalystListener.setItemRarityService(itemRarityService);
         this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
@@ -1290,6 +1292,10 @@ public final class IceSMPCore {
             hudTask.cancel();
             hudTask = null;
         }
+        if (survivalHudTask != null) {
+            survivalHudTask.cancel();
+            survivalHudTask = null;
+        }
         if (tablistTask != null) {
             tablistTask.cancel();
             tablistTask = null;
@@ -1532,10 +1538,17 @@ public final class IceSMPCore {
      * scheduler; each manager hops to the affected player's region thread.
      */
     private void scheduleHud() {
-        // Both tasks are always present so either subsystem can be enabled by a config reload.
+        // The presentation tasks stay present so live gates can re-enable their surfaces.
         final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
         hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
+
+        // HP/armor/food/air are combat-critical and intentionally do not wait for the heavier
+        // sidebar, wallet and party snapshot cadence.
+        final long survivalTicks = Math.max(1L, configManager.getLong(
+                "hud.icesmp-hud.survival.refresh-ticks", 2L));
+        survivalHudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> hudManager.tickSurvivalHud(), survivalTicks, survivalTicks);
 
         // A tablist {event} tokenje a HUD-snapshotból olvas, de a tablista nem függ a HUD kapcsolójától.
         tablistManager.setHudManager(hudManager);

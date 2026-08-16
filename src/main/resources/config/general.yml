@@ -83,10 +83,23 @@ hud:
         detail-metrics: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         event-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         event-text: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
-    # Előkészített HP-rework kapuk. Csak akkor lesznek bekapcsolhatók, amikor az egyedi
-    # HP/armor kijelzés és a pack-készültségi védelem teljes körűen elkészült.
-    hide-vanilla-health: false
-    hide-vanilla-armor: false
+    # Alsó-középre rögzített túlélési panel. A HP számszerű current/max értéket és
+    # százalékot is mutat; a páncél, étel és levegő saját mini-sávot kap.
+    # A gyors tick csak élő attribútumokat olvas a játékos saját region-threadjén.
+    survival:
+      refresh-ticks: 2
+      armor-maximum: 20.0
+      layout:
+        x-offset-pixels: 0
+        y-offset-pixels: 0
+        scale: 1.0
+    # Csomagszerződés, NEM runtime kapcsoló: a kiadott pack ezeket a vanilla sprite-okat
+    # átlátszóra cseréli. Mind a négynek true értéken kell maradnia; hibás értéknél a
+    # szerver SEVERE figyelmeztetést ír, de a játékos biztonsága érdekében tovább renderel.
+    hide-vanilla-health: true
+    hide-vanilla-armor: true
+    hide-vanilla-food: true
+    hide-vanilla-oxygen: true
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
   # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
   # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.

@@ -96,7 +96,9 @@ public final class FactionPassiveRegressionSuite {
         final String council = read("src/main/java/hu/taliann/icesmp/managers/CouncilManager.java");
         final String food = read("src/main/java/hu/taliann/icesmp/listeners/FactionFoodListener.java");
         final String compactFood = food.replaceAll("\\s+", "");
-        check(quests.contains("isStillFactionEligible")
+        // A kapu nem a NÉVRE néz: a helper létezzen, tagságot revalidáljon, és legyen
+        // legalább egy tényleges hívása — a „definiálva, de sehol nem hívva” eset is bukjon.
+        check(quests.split("isStillEligible", -1).length - 1 >= 2
                         && quests.contains("factionManager.isMember("),
                 "faction quest progress/completion no longer revalidates membership");
         check(community.contains("if (playerFaction == null)")

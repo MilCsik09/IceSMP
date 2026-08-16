@@ -169,7 +169,18 @@ public final class MobKillUtil {
         if (killer == null) {
             return null;
         }
-        final UUID killerId = killer.getUniqueId();
+        return eligibleAttributedKill(victim, killer.getUniqueId(), kind, configManager, afkManager);
+    }
+
+    /** Applies the same reward gate when a durable companion is the direct kill source. */
+    public static KillContext eligibleAttributedKill(final LivingEntity victim,
+                                                     final UUID killerId,
+                                                     final RewardKind kind,
+                                                     final ConfigManager configManager,
+                                                     final AfkManager afkManager) {
+        if (victim == null || killerId == null || kind == null) {
+            return null;
+        }
         if (excludeMinions(configManager) && MinionManager.isMinionTagged(victim)) {
             return null;
         }

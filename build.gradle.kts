@@ -8,10 +8,23 @@ plugins {
 }
 
 val pythonCommand = if (System.getProperty("os.name").lowercase().contains("windows")) "python" else "python3"
-val generateIceSmpHudAssets by tasks.registering(Exec::class) {
+val generateIceSmpHudCoreAssets by tasks.registering(Exec::class) {
     group = "build"
-    description = "Regenerates the first-party IceSMP HUD fonts, sprites and positioning shader."
+    description = "Regenerates the first-party IceSMP class HUD fonts, sprites and positioning shader."
     commandLine(pythonCommand, "scripts/generate_icesmp_hud_assets.py")
+}
+
+val generateIceSmpSurvivalHudAssets by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Regenerates the isolated HP, armor, food and oxygen HUD module."
+    dependsOn(generateIceSmpHudCoreAssets)
+    commandLine(pythonCommand, "scripts/generate_icesmp_survival_hud_assets.py")
+}
+
+val generateIceSmpHudAssets by tasks.registering {
+    group = "build"
+    description = "Regenerates the complete first-party IceSMP HUD package."
+    dependsOn(generateIceSmpSurvivalHudAssets)
 }
 
 val auditIceSmpHudAssets by tasks.registering(Exec::class) {
@@ -40,6 +53,7 @@ val validateIceSmpHudPackage by tasks.registering {
     inputs.dir(hud)
     inputs.files(
         "scripts/generate_icesmp_hud_assets.py",
+        "scripts/generate_icesmp_survival_hud_assets.py",
         "src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java"
     )
     doLast {
@@ -101,8 +115,12 @@ val validateIceSmpHudPackage by tasks.registering {
             && (manifest["compact_wallet_anchor_delta"] as Number).toInt() == -23) {
             "Empty supplementary detail rows must collapse before the wallet"
         }
-        require(manifest["vanilla_health_hidden"] == false && manifest["vanilla_armor_hidden"] == false) {
-            "Vanilla health/armor may not be hidden before the HP-rework renderer is complete"
+        require(manifest["vanilla_health_hidden"] == true
+            && manifest["vanilla_armor_hidden"] == true
+            && manifest["vanilla_food_hidden"] == true
+            && manifest["vanilla_oxygen_hidden"] == true
+            && manifest["hardcore_hearts_overridden"] == false) {
+            "The complete survival replacement must hide regular bars without touching hardcore hearts"
         }
         val fonts = hud.dir("font").asFile
         listOf("space", "panel", "wallet_panel", "wallet_panel_compact", "detail_panel", "class_icon",
@@ -113,6 +131,30 @@ val validateIceSmpHudPackage by tasks.registering {
             "text_mechanic", "text_state", "text_event", "text_detail", "text_wallet", "text_wallet_lower",
             "text_wallet_compact", "text_wallet_compact_lower").forEach { name ->
             require(fonts.resolve("$name.json").isFile) { "Missing IceSMP HUD font: $name" }
+        }
+        listOf("panel", "health_segments", "mini_segments", "icons",
+            "text_header", "text_percent", "text_stats").forEach { name ->
+            require(fonts.resolve("survival/$name.json").isFile) {
+                "Missing isolated survival HUD font: $name"
+            }
+        }
+        val survivalManifest = JsonSlurper().parse(
+            hud.file("survival-hud-manifest.json").asFile) as Map<*, *>
+        require(survivalManifest["anchor"] == "bottom_center"
+            && survivalManifest["panel_size"] == listOf(228, 60)
+            && (survivalManifest["health_segments"] as Number).toInt() == 20
+            && (survivalManifest["mini_segments"] as Number).toInt() == 10
+            && survivalManifest["text_font"] == "Inter SemiBold"
+            && (survivalManifest["text_oversample"] as Number).toInt() == 8
+            && survivalManifest["text_atlas"] == "icesmp_hud:hud/survival/text-atlas.png"
+            && survivalManifest["hardcore_hearts_overridden"] == false) {
+            "Survival HUD manifest lost its reviewed coverage or geometry"
+        }
+        val survivalTextAtlas = ImageIO.read(
+            hud.file("textures/hud/survival/text-atlas.png").asFile)
+            ?: error("Unreadable isolated survival text atlas")
+        require(survivalTextAtlas.width == 640 && survivalTextAtlas.height == 192) {
+            "Survival HUD text atlas lost its isolated fixed-cell geometry"
         }
         val textures = hud.dir("textures/hud").asFile
         listOf("guest", "red", "blue", "neutral", "dark").forEach { theme ->
@@ -189,6 +231,9 @@ val validateIceSmpHudPackage by tasks.registering {
             && shader.readText().contains("const float HUD_LAYOUT_SCALES[16]")
             && shader.readText().contains("int layoutCode = (packedColor.r & 15)")
             && shader.readText().contains("vec2 selectedHudScale = hudScale * layoutScale")
+            && shader.readText().contains("bottomCentered = id >= 11 && id <= 15")
+            && shader.readText().contains("pos.y += ui.y - 120.0")
+            && shader.readText().contains("clipPosition.x = clipPosition.x * selectedHudScale.x")
             && shader.readText().contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")) {
             "Missing first-party 1.21.11 HUD positioning shader"
         }
@@ -199,7 +244,38 @@ val validateIceSmpHudPackage by tasks.registering {
         require(!renderer.contains("primaryMetric()") && !renderer.contains("secondaryMetric()")) {
             "The renderer must consume generic metric slots, not class-specific accessors"
         }
-        logger.lifecycle("First-party IceSMP HUD package valid: fixed layout, 13 classes, 4 wallets, safe HP gates")
+        val vanillaHud = pack.dir("assets/minecraft/textures/gui/sprites/hud").asFile
+        fun survivalSpriteNames(key: String): List<String> =
+            (survivalManifest[key] as? List<*>)?.map { it.toString() }
+                ?: error("Survival HUD manifest list is missing: $key")
+        // A `+` a sor VÉGÉN marad: sor elején Kotlin unary plusnak veszi, és a lista szétesik.
+        val transparentSprites =
+            survivalSpriteNames("heart_sprites").map { "heart/$it" } +
+                survivalSpriteNames("armor_sprites") +
+                survivalSpriteNames("food_sprites") +
+                survivalSpriteNames("air_sprites")
+        require(transparentSprites.size == 34 && transparentSprites.distinct().size == 34) {
+            "Survival HUD must own exactly the reviewed 34 regular vanilla sprites"
+        }
+        transparentSprites.forEach { name ->
+            val image = ImageIO.read(vanillaHud.resolve(name))
+                ?: error("Unreadable vanilla HUD replacement: $name")
+            val alpha = image.alphaRaster
+            require(image.width == 9 && image.height == 9 && alpha != null
+                && (0 until image.width).all { x ->
+                    (0 until image.height).all { y -> alpha.getSample(x, y, 0) == 0 }
+                }) {
+                "Vanilla HUD replacement must stay transparent 9x9: $name"
+            }
+        }
+        val forbiddenHardcoreSprites = vanillaHud.resolve("heart").walkTopDown()
+            .filter { it.isFile && it.name.contains("hardcore", ignoreCase = true) }
+            .toList()
+        require(forbiddenHardcoreSprites.isEmpty()) {
+            "Non-hardcore server pack must not override hardcore heart sprites: " +
+                forbiddenHardcoreSprites.joinToString()
+        }
+        logger.lifecycle("First-party IceSMP HUD package valid: class HUD plus complete survival replacement")
     }
 }
 
@@ -477,7 +553,7 @@ val pauseMenuDialogRegressionTest = registerRegression(
     "hu.taliann.icesmp.dialog.PauseMenuDialogRegressionSuite")
 val runtimeBugfixRegressionTest = registerRegression(
     "runtimeBugfixRegressionTest",
-    "Runs pet nametag, lore output, corruption safety and spectator-menu regressions.",
+    "Runs pet stable/spawn/XP, lore output, corruption safety and spectator-menu regressions.",
     "hu.taliann.icesmp.runtime.RuntimeBugfixRegressionSuite")
 val factionPassiveRegressionTest = registerRegression(
     "factionPassiveRegressionTest",

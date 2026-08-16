@@ -108,6 +108,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final JobManager jobManager;
     private final SpecializationManager specializationManager;
     private final SpellMasteryManager masteryManager;
+    private volatile hu.taliann.icesmp.managers.QuestManager questManager;
     private final PlayerProfileSpellbookStateStore spellbookStateStore =
             new PlayerProfileSpellbookStateStore();
     private final ConfigManager configManager;
@@ -157,6 +158,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setProfileGateway(final ClassSpecProfileGateway gateway) {
         profileGateway = java.util.Objects.requireNonNull(gateway, "gateway");
+    }
+
+    public void setQuestManager(final hu.taliann.icesmp.managers.QuestManager manager) {
+        questManager = java.util.Objects.requireNonNull(manager, "manager");
     }
 
     private static ClassCastHook standardHook(final java.util.function.BiPredicate<Player, Spell> gate,
@@ -574,11 +579,20 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         putCooldown(player, selected, now - refundMillis);
         applyCooldownOverlay(player, selected, refundMillis);
         playCastFlourish(player, combo);
+        // A kaszt-bónusz ugyanúgy a varázslat erejét emeli, mint a lánc-befejező: ha
+        // egyszerre él a kettő, a kiírt százalék a ténylegesen alkalmazott összeg legyen.
+        final int classBonusShown = (int) Math.round(classBonusPercent);
         if (chainFinisher) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.combo-finisher",
                     "<gold>⚡ Kombó-lánc befejező! +{bonus}% erő és gyorsabb felépülés.</gold>",
-                    Map.of("bonus", String.valueOf((int) Math.round(chainBonusPercent)))));
+                    Map.of("bonus", String.valueOf(
+                            (int) Math.round(chainBonusPercent) + classBonusShown))));
+        } else if (classBonusShown > 0) {
+            player.sendActionBar(messageManager.getMessage(
+                    "catalyst.class-power",
+                    "<aqua>✦ Kaszt-erő: +{bonus}% ezen a varázslaton.</aqua>",
+                    Map.of("bonus", String.valueOf(classBonusShown))));
         } else if (combo) {
             final String nextInChain = nextComboStep(player, selected.getId());
             final Spell nextSpell = nextInChain == null ? null : spellRegistry.getById(nextInChain);
@@ -601,6 +615,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         lastCastTime.put(playerId, now);
         final hu.taliann.icesmp.managers.StatsManager stats = statsManager;
         if (stats != null) stats.recordSpellCast(playerId);
+        final hu.taliann.icesmp.managers.QuestManager quests = questManager;
+        if (quests != null) quests.handleSpellCast(player, selected.getId());
         return SlotCastStatus.SUCCESS;
     }
 

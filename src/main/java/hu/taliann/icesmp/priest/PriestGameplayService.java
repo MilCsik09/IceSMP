@@ -143,6 +143,15 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
         final UUID playerId = player.getUniqueId();
         final String spellId = spell.getId().toLowerCase(Locale.ROOT);
         final String spec = activeSpec(playerId);
+        if ("discipline".equals(spec) && "evangelism".equals(spellId)) {
+            final PriestCombatState discipline = state(playerId);
+            if (!discipline.isAtonementActive(System.currentTimeMillis())
+                    && discipline.shield() <= 0) {
+                player.sendActionBar(messages.getMessage("priest.evangelism.need",
+                        "<red>Az Evangelizmushoz aktív Engesztelés vagy Pajzsháló kell.</red>"));
+                return false;
+            }
+        }
         if ("bone_priest".equals(spec) && sacrificeSpells().contains(spellId)
                 && player.getHealth() <= healthFloor(player,
                 "classes.priest.bone.min-health-ratio", 0.35D)) {
@@ -218,6 +227,14 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
         if (!state.recite(required, now, Math.max(1000L, config.getLong(
                 "classes.priest.litany.window-millis", 6000L)))) return;
         applyRecitationBlessing(player, litany);
+        if ("discipline".equals(activeSpec(playerId))
+                && "megvalto_szo".equals(doctrine(playerId, 50))) {
+            healPlayer(player, Math.max(0.0D, config.getDouble(
+                    "classes.priest.discipline.redeeming-heal", 3.0D)));
+            state.addShield(Math.max(0, config.getInt(
+                    "classes.priest.discipline.redeeming-shield", 4)),
+                    disciplineShieldCap(playerId));
+        }
         if (isInCombat(playerId)) {
             specs.contributeClassMastery(player, JobType.PRIEST,
                     config.getInt("classes.priest.mastery.recite-xp", 5));
@@ -246,12 +263,31 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
     private void handleDisciplineCast(final Player player, final PriestCombatState state,
                                       final String spellId, final long now) {
         final UUID playerId = player.getUniqueId();
+        if ("evangelism".equals(spellId)) {
+            long window = Math.max(1000L, config.getLong(
+                    "classes.priest.discipline.capstone-window-millis", 14000L));
+            if ("orok_kegyelem".equals(doctrine(playerId, 50))) {
+                window += Math.max(0L, config.getLong(
+                        "classes.priest.discipline.eternal-grace-extra-millis", 4000L));
+            }
+            state.armAtonement(now, window);
+            state.addShield(Math.max(0, config.getInt(
+                    "classes.priest.discipline.capstone-shield", 8)),
+                    disciplineShieldCap(playerId));
+            player.sendActionBar(messages.getMessage("priest.evangelism.armed",
+                    "<gold>✝ Evangelizmus — az Engesztelés és a Pajzsháló megújult.</gold>"));
+            return;
+        }
         if (!atonementSpells().contains(spellId)) return;
         long window = Math.max(1000L, config.getLong(
                 "classes.priest.discipline.window-millis", 8000L));
         if ("tarto_vezekles".equals(doctrine(playerId, 40))) {
             window += Math.max(0L, config.getLong(
                     "classes.priest.discipline.lasting-extra-millis", 3000L));
+        }
+        if ("orok_kegyelem".equals(doctrine(playerId, 50))) {
+            window += Math.max(0L, config.getLong(
+                    "classes.priest.discipline.eternal-grace-extra-millis", 4000L));
         }
         state.armAtonement(now, window);
         player.sendActionBar(messages.getMessage("priest.atonement.armed",
@@ -278,13 +314,12 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
                     "classes.priest.discipline.conversion-percent", 35.0D))) / 100.0D;
             final double converted = event.getFinalDamage() * share;
             healPlayer(priest, converted);
-            int shieldCap = Math.max(0, config.getInt(
-                    "classes.priest.discipline.shield-cap", 20));
-            if ("szeles_pajzs".equals(doctrine(attackerId, 30))) {
-                shieldCap += Math.max(0, config.getInt(
-                        "classes.priest.discipline.wide-extra-cap", 6));
+            double shieldGain = converted;
+            if ("surubb_pajzs".equals(doctrine(attackerId, 40))) {
+                shieldGain *= 1.0D + Math.max(0.0D, config.getDouble(
+                        "classes.priest.discipline.dense-shield-gain-percent", 40.0D)) / 100.0D;
             }
-            state.addShield((int) Math.round(converted), shieldCap);
+            state.addShield((int) Math.round(shieldGain), disciplineShieldCap(attackerId));
             if (isInCombat(attackerId)) {
                 specs.contributeClassMastery(priest, JobType.PRIEST,
                         config.getInt("classes.priest.mastery.atonement-xp", 3));
@@ -591,6 +626,16 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
         final long windowMillis = Math.max(1L, config.getLong(
                 "classes.priest.mastery.combat-window-seconds", 10L)) * 1000L;
         return tracker != null && tracker.isInCombat(playerId, windowMillis);
+    }
+
+    private int disciplineShieldCap(final UUID playerId) {
+        int cap = Math.max(0, config.getInt(
+                "classes.priest.discipline.shield-cap", 20));
+        if ("szeles_pajzs".equals(doctrine(playerId, 30))) {
+            cap += Math.max(0, config.getInt(
+                    "classes.priest.discipline.wide-extra-cap", 6));
+        }
+        return cap;
     }
 
     private Set<String> atonementSpells() {

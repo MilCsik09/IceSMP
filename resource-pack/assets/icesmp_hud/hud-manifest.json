@@ -152,6 +152,9 @@
     3.25,
     3.5
   ],
-  "vanilla_health_hidden": false,
-  "vanilla_armor_hidden": false
+  "vanilla_health_hidden": true,
+  "vanilla_armor_hidden": true,
+  "vanilla_food_hidden": true,
+  "vanilla_oxygen_hidden": true,
+  "hardcore_hearts_overridden": false
 }

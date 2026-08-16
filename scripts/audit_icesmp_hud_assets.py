@@ -101,6 +101,22 @@ class Finding:
 
 def expected_size(path: Path) -> tuple[int, int] | None:
     name = path.name
+    if path.parent.name == "survival":
+        return {
+            "panel.png": (228, 60),
+            "health_track.png": (8, 8),
+            "health_fill.png": (8, 8),
+            "health_warn.png": (8, 8),
+            "health_critical.png": (8, 8),
+            "mini_track.png": (4, 5),
+            "mini_armor.png": (4, 5),
+            "mini_food.png": (4, 5),
+            "mini_air.png": (4, 5),
+            "icon_armor.png": (12, 12),
+            "icon_food.png": (12, 12),
+            "icon_air.png": (12, 12),
+            "text-atlas.png": (640, 192),
+        }.get(name)
     if path.parent.name != "hud":
         return None
     if name.startswith(("class-", "currency-", "rune-", "icon-", "mechanic-", "charge-")):
@@ -200,7 +216,7 @@ def inspect(path: Path) -> Finding:
 
 def font_errors() -> list[str]:
     errors: list[str] = []
-    for font in sorted((RUNTIME / "font").glob("*.json")):
+    for font in sorted((RUNTIME / "font").rglob("*.json")):
         data = json.loads(font.read_text(encoding="utf-8"))
         for provider in data.get("providers", []):
             reference = provider.get("file")
@@ -329,6 +345,7 @@ def render_report(findings: list[Finding], mechanics: list[str], report: Path) -
               "| Class-/specváltás | A render minden tickben az új Profile v2 + transient class runtime snapshotból épül; nincs külön tartós HUD/class authority. | PASS |",
               "| Vendégkeret | Külön külső Menedék-héj, a kanonikus frakciókerettel azonos belső alpha-geometria és rögzített glyph-cella. | PASS |",
               "| HUD/fallback | First-party pack-ready HUD → Paper sidebar / Folia compact bossbar fallback; egyszerre csak egy class HUD. | PASS |",
+              "| Survival HUD | Pack-ready után a HP current/max + százalék, páncél, étel és levegő külön gyors region-thread tickből frissül. | PASS |",
               "| Folia | A globális tick csak iterál; minden Player-olvasás és render a játékos entity schedulerén történik. | PASS |",
               "| Authority | Profile v2 a tartós class/spec authority; a class service-ek UUID-mapjai lifecycle-takarított transient combat runtime-ok. | PASS |",
               "", "## Tételes PNG-ellenőrzés", "",
@@ -344,6 +361,7 @@ def render_report(findings: list[Finding], mechanics: list[str], report: Path) -
               "- [ ] Wallet: nulla primary és pozitív idegen valuták; event nyugalmi/aktív; class-level.",
               "- [ ] Class- és frakcióváltás közben nincs geometria- vagy glyph-width ugrás.",
               "- [ ] Pack elfogadás/elutasítás/hiba; pontosan egy first-party HUD vagy működő natív fallback.",
+              "- [ ] Survival panel: 0/1/30/60/100% HP, absorption, 20+ armor, éhség és fogyó/visszatöltő levegő.",
               "- [ ] GUI scale 1–4, legalább 1280×720 és 2560×1440; nincs vágás, magenta fringe vagy hibás pixel."]
     report.parent.mkdir(parents=True, exist_ok=True)
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -353,7 +371,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--report", default="docs/HUD_ASSET_AUDIT.md")
     args = parser.parse_args()
-    files = sorted((RUNTIME / "textures" / "hud").glob("*.png"))
+    files = sorted((RUNTIME / "textures" / "hud").rglob("*.png"))
     findings = [inspect(path) for path in files]
     missing_fonts = font_errors()
     if missing_fonts:

@@ -12,6 +12,8 @@ import hu.taliann.icesmp.hud.HudLayoutSnapshot;
 import hu.taliann.icesmp.hud.HudPreviewCatalog;
 import hu.taliann.icesmp.hud.IceSmpHudBackend;
 import hu.taliann.icesmp.hud.IceSmpHudModel;
+import hu.taliann.icesmp.hud.SurvivalHudLayout;
+import hu.taliann.icesmp.hud.SurvivalHudState;
 import hu.taliann.icesmp.utils.PlatformCapabilities;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -19,6 +21,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -140,9 +144,10 @@ public final class HudManager {
     /**
      * Seam az opcionális Client Bridge felé: a HudManager nem ismerheti a híd típusát
      * (a domain/presentation réteg kliensmod-függetlensége architektúra-invariáns), a
-     * core köti be. Ha a route szerint a játékos natív HUD-ot kap, a vanilla
-     * IceSMP-felületek (sidebar, first-party HUD, compact fallback) elhallgatnak —
-     * ugyanaz a játékos sosem kaphatja mindkét megjelenítést.
+     * core köti be. Ha a route szerint a játékos natív kaszt-HUD-ot kap, a sidebar,
+     * a first-party kasztpanel és a compact fallback elhallgat. A survival panel
+     * ettől függetlenül aktív marad, mert a vanilla sávokat a kötelező resource pack
+     * váltja ki, és a kliensbridge jelenleg nem hirdet survival-HUD képességet.
      */
     public interface ClientHudRoute {
         boolean nativeHudActive(UUID playerId);
@@ -166,12 +171,14 @@ public final class HudManager {
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, SurvivalHudState> survivalSnapshots = new ConcurrentHashMap<>();
     private final Set<UUID> iceSmpHudPlayers = ConcurrentHashMap.newKeySet();
     private final HudEditorStateMachine hudEditor = new HudEditorStateMachine();
     private final Set<UUID> hudEditorSaves = ConcurrentHashMap.newKeySet();
     private final IceSmpHudBackend iceSmpHudBackend;
     private final AtomicBoolean iceSmpHudReady = new AtomicBoolean();
     private final AtomicBoolean placeholderBridgeReady = new AtomicBoolean();
+    private final AtomicBoolean survivalContractWarning = new AtomicBoolean();
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
                       final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
@@ -230,7 +237,35 @@ public final class HudManager {
 
     /** First-party HUD is display-only and consumes the same immutable snapshot as PAPI. */
     public boolean iceSmpHudActive() {
-        return configManager.getBoolean("hud.icesmp-hud.enabled", true) && iceSmpHudReady.get();
+        return isEnabled() && configManager.getBoolean("hud.icesmp-hud.enabled", true)
+                && iceSmpHudReady.get();
+    }
+
+    /**
+     * The shipped pack always hides all four vanilla bars. These flags document and validate that
+     * package contract; they must never become runtime kill switches that could leave a player blind.
+     */
+    private boolean survivalHudEnabled() {
+        final boolean contractComplete = configManager.getBoolean("hud.icesmp-hud.hide-vanilla-health", true)
+                && configManager.getBoolean("hud.icesmp-hud.hide-vanilla-armor", true)
+                && configManager.getBoolean("hud.icesmp-hud.hide-vanilla-food", true)
+                && configManager.getBoolean("hud.icesmp-hud.hide-vanilla-oxygen", true);
+        if (!contractComplete && survivalContractWarning.compareAndSet(false, true)) {
+            plugin.getLogger().severe("Invalid survival HUD package contract: all hide-vanilla-* flags "
+                    + "must remain true. Keeping the replacement panel active to avoid a blind client.");
+        } else if (contractComplete) {
+            survivalContractWarning.set(false);
+        }
+        return true;
+    }
+
+    public SurvivalHudLayout configuredSurvivalHudLayout() {
+        final FileConfiguration configuration = configManager.getConfiguration();
+        if (configuration == null) return SurvivalHudLayout.defaults();
+        return SurvivalHudLayout.fromConfigValues(
+                configuration.get("hud.icesmp-hud.survival.layout.x-offset-pixels"),
+                configuration.get("hud.icesmp-hud.survival.layout.y-offset-pixels"),
+                configuration.get("hud.icesmp-hud.survival.layout.scale"));
     }
 
     public boolean hudEditorEnabled() {
@@ -384,7 +419,9 @@ public final class HudManager {
         final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
         if (session == null || !editorSessionEnabled(session)) return false;
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                HudPreviewCatalog.model(session.preview()), session.working(), session.selected(), true));
+                HudPreviewCatalog.model(session.preview()), session.working(), session.selected(), true,
+                survivalSnapshots.get(player.getUniqueId()), configuredSurvivalHudLayout(),
+                survivalHudEnabled()));
     }
 
     private boolean editorSessionEnabled(final HudEditorStateMachine.Session session) {
@@ -468,8 +505,11 @@ public final class HudManager {
     }
 
     private boolean iceSmpHudActive(final Player player) {
-        return configManager.getBoolean("hud.icesmp-hud.enabled", true)
-                && player != null && iceSmpHudPlayers.contains(player.getUniqueId());
+        return player != null && isEnabled()
+                && configManager.getBoolean("hud.icesmp-hud.enabled", true)
+                && !isSectionHidden(player, SECTION_ALL)
+                && !nativeHudRouted(player.getUniqueId())
+                && iceSmpHudPlayers.contains(player.getUniqueId());
     }
 
     public void setPlaceholderBridgeReady(final boolean ready) {
@@ -679,6 +719,17 @@ public final class HudManager {
         }
     }
 
+    /** Fast, lightweight survival-resource tick; every entity read stays on its owning thread. */
+    public void tickSurvivalHud() {
+        for (final Player player : Bukkit.getOnlinePlayers()) {
+            player.getScheduler().run(plugin, task -> {
+                final SurvivalHudState survival = buildSurvivalSnapshot(player);
+                survivalSnapshots.put(player.getUniqueId(), survival);
+                renderIceSmpHud(player, snapshots.get(player.getUniqueId()));
+            }, null);
+        }
+    }
+
     /** The latest thread-safe HUD snapshot for a player (null until the first tick). Used by PlaceholderAPI. */
     public HudSnapshot snapshot(final UUID playerId) {
         return snapshots.get(playerId);
@@ -708,6 +759,19 @@ public final class HudManager {
                 showResource ? resourceManager.resourceBarPlain(player) : "",
                 net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(eventLabel()),
                 partyLinesPlain(player), walletCurrencies(player), resourceManager.classHudState(player));
+    }
+
+    private SurvivalHudState buildSurvivalSnapshot(final Player player) {
+        final AttributeInstance maximumHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        final AttributeInstance armor = player.getAttribute(Attribute.ARMOR);
+        final double configuredMaximumArmor = Math.max(1.0D, configManager.getDouble(
+                "hud.icesmp-hud.survival.armor-maximum", 20.0D));
+        return new SurvivalHudState(
+                player.getHealth(), maximumHealth == null ? 20.0D : maximumHealth.getValue(),
+                player.getAbsorptionAmount(), armor == null ? 0.0D : armor.getValue(),
+                configuredMaximumArmor,
+                player.getFoodLevel(), 20,
+                player.getRemainingAir(), player.getMaximumAir());
     }
 
     private List<HudCurrency> walletCurrencies(final Player player) {
@@ -768,7 +832,9 @@ public final class HudManager {
         playerTeams.remove(player.getUniqueId());
         lastLines.remove(player.getUniqueId());
         snapshots.remove(player.getUniqueId());
+        survivalSnapshots.remove(player.getUniqueId());
         iceSmpHudPlayers.remove(player.getUniqueId());
+        updateIceSmpHudReadiness(!iceSmpHudPlayers.isEmpty());
         hudEditor.cancel(player.getUniqueId());
         iceSmpHudBackend.hide(player);
         hiddenSectionsCache.remove(player.getUniqueId());
@@ -783,19 +849,23 @@ public final class HudManager {
     }
 
     private boolean renderIceSmpHud(final Player player, final HudSnapshot snapshot) {
+        final SurvivalHudState survival = survivalSnapshots.get(player.getUniqueId());
+        final boolean survivalVisible = survivalHudEnabled() && survival != null;
+        final SurvivalHudLayout survivalLayout = configuredSurvivalHudLayout();
         final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
         if (editorSessionEnabled(editorSession)) {
             return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
                     HudPreviewCatalog.model(editorSession.preview()), editorSession.working(),
-                    editorSession.selected(), true));
+                    editorSession.selected(), true, survival, survivalLayout, survivalVisible));
         }
         if (editorSession != null) hudEditor.cancel(player.getUniqueId());
         final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
-        final boolean visible = configured && !isSectionHidden(player, SECTION_ALL)
-                && snapshot.classHud() != null
+        final boolean visible = snapshot != null && isEnabled() && configured
+                && !isSectionHidden(player, SECTION_ALL) && snapshot.classHud() != null
                 && !nativeHudRouted(player.getUniqueId());
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                IceSmpHudModel.from(snapshot), effectiveHudLayout(player), visible));
+                snapshot == null ? null : IceSmpHudModel.from(snapshot), effectiveHudLayout(player),
+                null, visible, survival, survivalLayout, survivalVisible));
     }
 
     public enum HudEditorSaveStatus { SAVED, NO_CHANGES, STALE, NO_SESSION, IN_PROGRESS }
@@ -816,7 +886,7 @@ public final class HudManager {
 
     private void restoreLiveHud(final Player player) {
         final HudSnapshot live = snapshots.get(player.getUniqueId());
-        if (live == null) {
+        if (live == null && !survivalSnapshots.containsKey(player.getUniqueId())) {
             iceSmpHudBackend.hide(player);
             recordIceSmpHudState(player, false);
         } else {
@@ -828,7 +898,7 @@ public final class HudManager {
         final boolean previous = iceSmpHudReady.getAndSet(ready);
         if (previous == ready) return;
         if (ready) {
-            plugin.getLogger().info("IceSMP HUD pack ready: first-party class HUD active; native class HUD suppressed.");
+            plugin.getLogger().info("IceSMP HUD pack ready: first-party survival/class HUD active.");
         } else {
             plugin.getLogger().warning("IceSMP HUD pack unavailable after being active; native HUD fallback restored.");
         }

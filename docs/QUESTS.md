@@ -15,7 +15,8 @@
 - Questforrás: `src/main/resources/config/quests.yml`.
 - Runtimeforrás: `QuestManager`, `FancyNpcsQuestBridge`, `QuestCommand`, `NpcBindCommand` és `NpcBindingManager`.
 - Loreforrás: `docs/LORE.md` és `docs/LORE_REFERENCE.md`; a tervezetet az owner lore-baseline-jával is összeolvastuk.
-- Bundled questek: **160/160**.
+- Bundled questek: **195/195** — 160 világ-/történeti küldetés és 35
+  specializációs csúcspróba.
 - Quest-NPC belső ID-k: **18/18**.
 - Játékos-látható `dialogue` blokkot tartalmazó questek: **45/45**.
 - Territory-hookok: **4**; parkour-hookok: **1**; biome-hookok: **5**.
@@ -122,6 +123,12 @@ mező-referencia a fájl fejlécében él):
 - `start` nélkül — Megbízások-tábla (küldetésnapló), automatikus lezárással.
 - `category:` a napló-rendezés és a marker-szín; `visibility:` a lista-kori
   láthatóság (`HIDDEN` = felfedezésig semmilyen player-felületen nem látszik).
+- `requires-job`, `requires-specialization` és `requires-level` együtt
+  zárhatja a küldetést egy konkrét, aktív karakterútra. Ha a játékos menet
+  közben elveszíti valamelyik feltételt, a progress nem halad tovább.
+- `objective.type: CAST_SPELLS` csak az objektíva `spells` listáján szereplő,
+  sikeresen commitolt kasztolást számolja. Nincs NPC-, helyszín- vagy
+  aréna-hookja.
 - A gráf-validátor minden reloadnál a TELJES katalógust ellenőrzi (ismeretlen
   `next`/`requires-quest`, lánc-ciklus, üres quest, hibás forrás-mező) —
   hibás fájl a korábbi definíciókat hagyja élőben.
@@ -462,8 +469,9 @@ körülbelül 1,5 másodpercenként követik egymást.
 
 ## 7. Teljes bundled questkatalógus
 
-A katalógus **160/160** quest ID-t fed le, config-sorrendben. A player-facing
-név és leírás szó szerinti. A rejtvények konkrét megoldását ez a builderdoc sem
+A katalógus **195/195** quest ID-t fed le. A 7.1–7.6 fejezet megtartja a 160
+világ- és történeti küldetés stabil leltári számozását; a 7.7 külön sorolja a
+35 specializációs csúcspróbát. A player-facing név és leírás szó szerinti. A rejtvények konkrét megoldását ez a builderdoc sem
 írja ki: a világban csak a verset és a tematikus környezetet használd, ne tegyél
 ki megoldótáblát.
 
@@ -657,6 +665,31 @@ ki megoldótáblát.
 | **159.** `heti_nagyvadaszat` | **A nagy hajtóvadászat**<br>A krónikás hetente megnyitja a vadászlajstromot: százhúsz szörny, aki győzi. A neved a lap tetejére kerül — a jutalom a lap aljára. | szörny legyőzése; ×120 | ismételhető: 168 óra | 400 kaszt-XP; 150 `OWN` valuta; crate-kulcs: `ritka:1` |
 | **160.** `heti_nagyhalaszat` | **A nagy fogás**<br>A kikötő heti fogadása: negyven hal egy hét alatt. A vén halászok szerint lehetetlen. A vén halászok sok mindent mondanak. | hal kifogása; ×40 | ismételhető: 168 óra | 300 kaszt-XP; 120 `OWN` valuta; crate-kulcs: `koznapi:2` |
 
+### 7.7. Specializációs csúcspróbák (35)
+
+Mindegyik sor `category: SPECIALIZATION`, `visibility: PREREQUISITES_MET`,
+`requires-level: 50` és `objective.type: CAST_SPELLS` értékkel fut. A próba a
+megnevezett kaszt mesterpróbáját követeli, csak a megnevezett aktív
+specializációval halad, és 18 sikeres, a saját allowlistáján szereplő
+képességhasználat után oldja fel a Profile v2 capstone-t. Ezekhez nem kell
+world-hook.
+
+| Kaszt | Specializáció → quest ID | Előfeltétel |
+|---|---|---|
+| Harcos (`warrior`) | `berserker` → `warrior_berserker_broken_horn`<br>`guardian` → `warrior_guardian_last_wall` | `warrior_master_trial` |
+| Sárkányidéző (`evoker`) | `devastation` → `evoker_devastation_trial`<br>`preservation` → `evoker_preservation_trial` | `evoker_master_trial` |
+| Íjász (`archer`) | `sharpshooter` → `archer_sharpshooter_trial`<br>`beast_master` → `archer_beast_master_trial` | `archer_master_trial` |
+| Sámán (`shaman`) | `elemental` → `shaman_elemental_trial`<br>`enhancement` → `shaman_enhancement_trial`<br>`tidal` → `shaman_tidal_trial` | `shaman_master_trial` |
+| Szerzetes (`monk`) | `windwalker` → `monk_windwalker_trial`<br>`brewmaster` → `monk_brewmaster_trial`<br>`mistweaver` → `monk_mistweaver_trial` | `monk_master_trial` |
+| Paplovag (`paladin`) | `holy` → `paladin_holy_trial`<br>`retribution` → `paladin_retribution_trial`<br>`protection` → `paladin_protection_trial` | `paladin_master_trial` |
+| Démonvadász (`demon_hunter`) | `havoc` → `demon_hunter_havoc_trial`<br>`vengeance` → `demon_hunter_vengeance_trial` | `demon_hunter_master_trial` |
+| Druida (`druid`) | `feral` → `druid_feral_trial`<br>`lunar` → `druid_lunar_trial`<br>`ironbark` → `druid_ironbark_trial`<br>`restoration` → `druid_restoration_trial` | `druid_master_trial` |
+| Pap (`priest`) | `discipline` → `priest_discipline_trial`<br>`bone_priest` → `priest_bone_priest_trial`<br>`shadow` → `priest_shadow_trial` | `priest_master_trial` |
+| Halállovag (`death_knight`) | `blood` → `death_knight_blood_trial`<br>`frost` → `death_knight_frost_trial`<br>`unholy` → `death_knight_unholy_trial` | `death_knight_master_trial` |
+| Orgyilkos (`assassin`) | `poisoner` → `assassin_poisoner_trial`<br>`phantom` → `assassin_phantom_trial`<br>`plaguebringer` → `assassin_plaguebringer_trial` | `assassin_master_trial` |
+| Boszorkánymester (`warlock`) | `affliction` → `warlock_affliction_trial`<br>`destruction` → `warlock_destruction_trial`<br>`demonologist` → `warlock_demonologist_trial` | `warlock_master_trial` |
+| Varázsló (`wizard`) | `elementalist` → `wizard_elementalist_trial`<br>`necromancer` → `wizard_necromancer_trial` | `wizard_master_trial` |
+
 ## 8. Builder acceptance checklist
 
 - [ ] A FancyNpcs listában mind a 18 belső ID pontosan egyszer szerepel.
@@ -672,12 +705,15 @@ ki megoldótáblát.
 - [ ] Mind az öt biome túlélő módban és tiltott portál nélkül elérhető.
 - [ ] Onboarding új fiókkal, reconnecttel és teljes inventoryval végigpróbálva.
 - [ ] A 45 dialógus give/complete időzítése, a Benedek-választás mindkét ága és a questjutalmak tesztelve.
+- [ ] Mind a 35 csúcspróba csak a megfelelő 50-es aktív speccel jelenik meg;
+  engedélyezett sikeres cast halad, más spell, sikertelen cast és specváltás
+  nem; a 18. után pontosan a saját capstone oldódik.
 - [ ] WorldEdit vagy világmásolás után NPC-nevek, territoryk, komp, parkour és útjelzés újraauditálva.
 - [ ] Az átadólap tartalmazza a tényleges világot, koordinátát, felelőst, mentést, pozitív/negatív próbát és bizonyítékhelyet.
 
 ### Gyors számellenőrzés
 
-- Questek: `160`.
+- Questek: `195` (`160` világ-/történeti + `35` specializációs csúcspróba).
 - Egyedi quest-NPC ID-k: `18`.
 - Dialógusos questek: `45`.
 - Territory ID-k: `4`.

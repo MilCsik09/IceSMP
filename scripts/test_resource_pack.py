@@ -308,6 +308,59 @@ class ResourcePackToolingTest(unittest.TestCase):
             with self.assertRaisesRegex(resource_pack.PackError, "Unowned resource-pack collision"):
                 resource_pack.merge_pack(base, root, Path(temp) / "merged.zip")
 
+    def test_survival_hud_sprite_collision_is_explicitly_owned(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_first_party_hud_layer(root)
+            health = root / "assets/minecraft/textures/gui/sprites/hud/heart/full.png"
+            health.parent.mkdir(parents=True, exist_ok=True)
+            health.write_bytes(MINIMAL_PNG_HEADER)
+            base = Path(temp) / "external.zip"
+            with zipfile.ZipFile(base, "w") as archive:
+                archive.writestr("pack.mcmeta", '{"pack":{"description":"external"}}')
+                archive.writestr(
+                    "assets/minecraft/textures/gui/sprites/hud/heart/full.png", b"external")
+
+            merged = Path(temp) / "merged.zip"
+            resource_pack.merge_pack(base, root, merged)
+            with zipfile.ZipFile(merged) as archive:
+                self.assertEqual(
+                    archive.read("assets/minecraft/textures/gui/sprites/hud/heart/full.png"),
+                    MINIMAL_PNG_HEADER,
+                )
+
+    def test_hardcore_heart_collision_is_not_owned(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            self.add_first_party_hud_layer(root)
+            hardcore = root / "assets/minecraft/textures/gui/sprites/hud/heart/hardcore_full.png"
+            hardcore.parent.mkdir(parents=True, exist_ok=True)
+            hardcore.write_bytes(MINIMAL_PNG_HEADER)
+            base = Path(temp) / "external.zip"
+            with zipfile.ZipFile(base, "w") as archive:
+                archive.writestr("pack.mcmeta", '{"pack":{"description":"external"}}')
+                archive.writestr(hardcore.relative_to(root).as_posix(), b"external")
+
+            with self.assertRaisesRegex(resource_pack.PackError, "Unowned resource-pack collision"):
+                resource_pack.merge_pack(base, root, Path(temp) / "merged.zip")
+
+    def test_shipped_survival_sprite_surface_matches_exact_merge_allow_list(self) -> None:
+        pack_root = Path(resource_pack.__file__).resolve().parents[1] / "resource-pack"
+        hud_root = pack_root / "assets/minecraft/textures/gui/sprites/hud"
+        shipped = {
+            path.relative_to(pack_root).as_posix()
+            for path in hud_root.rglob("*.png")
+        }
+        allowed = {
+            path for path in resource_pack.MERGE_OWNED_FILES
+            if path.startswith("assets/minecraft/textures/gui/sprites/hud/")
+        }
+        self.assertEqual(len(shipped), 34)
+        self.assertSetEqual(shipped, allowed)
+        self.assertFalse(any("hardcore" in path or "vehicle" in path for path in shipped))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -210,7 +210,7 @@ public final class EscortManager {
     private void prepareRoute(final Location start) {
         final double distance = Math.max(40.0D,
                 configManager.getDouble("escort.route-distance", 150.0D));
-        spawnGuard.findSafeRoute("escort", start, distance, System.nanoTime(), dest -> {
+        spawnGuard.findSafeRoute("escort-route", start, distance, System.nanoTime(), dest -> {
             try {
                 plugin.getServer().getRegionScheduler().run(plugin, start,
                         task -> spawnConvoyAt(start, dest));
@@ -330,7 +330,7 @@ public final class EscortManager {
         final int x = (int) Math.round(from.getX() + dx);
         final int z = (int) Math.round(from.getZ() + dz);
         final Location safe = spawnGuard.resolveSafeStandingLocation(
-                "escort", from.getWorld(), x, z);
+                "escort-route", from.getWorld(), x, z);
         return safe == null ? from.clone().add(dx, 0.0D, dz) : safe;
     }
 
@@ -341,7 +341,7 @@ public final class EscortManager {
                 + (dest.getX() - from.getX()) / remaining * step);
         final int z = (int) Math.round(from.getZ()
                 + (dest.getZ() - from.getZ()) / remaining * step);
-        return spawnGuard.resolveSafeStandingLocation("escort", from.getWorld(), x, z);
+        return spawnGuard.resolveSafeStandingLocation("escort-route", from.getWorld(), x, z);
     }
 
     private void spawnWave(final Llama convoy) {
