@@ -2041,7 +2041,8 @@ Kézi elfogadási minimum:
 - aktív/nyugalmi event, class-szint, `/hud mind`, pack elfogadás/elutasítás és letöltési hiba;
 - nincs tartós class XP-sáv; az eseménylábléc 0–3 aktív eseménnyel; DK-rúna és generic charge
   külön editor-kategóriában;
-- 20/20, részleges, kritikus és nagyobb skálázott max HP; absorption; 0/20 és 20/20 armor/food;
+- 20/20, részleges, kritikus és nagyobb skálázott max HP; absorption; 0, 20 és 30+ flat armor;
+  0/20 és 20/20 food;
   fogyó oxigén; Player-group és minden gyermek külön editor move/scale;
   `/hud mind` és NATIVE_HUD közben is látható Player Frame;
 - passzív/hostile/elit/boss és frakciószínű játékos Target Frame; eredeti nametag változatlan;
