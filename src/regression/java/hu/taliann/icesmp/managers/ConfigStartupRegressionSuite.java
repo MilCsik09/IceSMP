@@ -198,8 +198,14 @@ public final class ConfigStartupRegressionSuite {
                 "general.yml must not duplicate sit.yml ownership");
         check(factions.getBoolean("factions.kings.dethrone-on-expiry"),
                 "king expiry default missing");
-        check(world.getInt("mob-scaling.hard-cap-level") == 15,
-                "mob scaling hard cap default missing");
+        check(world.getInt("mob-scaling.normal-max-level") == 50,
+                "mob scaling normal progression cap default missing");
+        check(world.getInt("mob-scaling.hard-cap-level") == 70,
+                "mob scaling survival hard cap default missing");
+        check(world.getDouble("mob-scaling.curves.health-per-level") == 0.08D,
+                "mob scaling health curve default missing");
+        check(world.getDouble("mob-scaling.curves.damage-per-level") == 0.025D,
+                "mob scaling damage curve default missing");
         check(world.getInt("world-events.orchestration.max-active-minutes") == 60,
                 "major-event active-time cap default missing");
         check(relics.isConfigurationSection("relics.definitions.sarkany_tojas"),

@@ -57,9 +57,9 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
   Az érdemi résztvevők PlayerProfile receipt-alapú személyes ascension komponenst
   kapnak, full inventorynál world drop nélkül, reconnect/restart recoveryvel.
 - A dependency-free kapuk jelenleg 79 Itemization-, 49 Mob-domain- és 16 runtime-source
-  assertiont futtatnak; a consistency és resource-pack ellenőrzés is zöld. A Java 21
-  Gradle és a productionközeli Folia/multiplayer balance továbbra is külön rollout-gate,
-  amíg az exact feature HEAD-en futó CI és staging jegyzőkönyv nem zárja le.
+  assertiont futtatnak; a consistency és resource-pack ellenőrzés is zöld. A feature
+  branch minden forrásváltozását exact commiton futó Java 21 Gradle CI ellenőrzi. A
+  productionközeli Folia/process-kill és multiplayer balance külön staging gate marad.
 
 ### Itemization 2.0 Phase 4–5 — survival economy pilot
 
@@ -83,9 +83,9 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
   mutat, SHIFT megerősítést kér. A szűk item-mutation WAL exact before/after snapshotból
   recoveryzik; mixed állapotnál fail-closed admin review marad.
 
-> A pure-domain regresszió és a consistency/YAML kapuk zöldre hozhatók lokálisan. A
-> teljes Java 21 Gradle gate és Folia process-kill/runtime acceptance továbbra is staging
-> gate; a wrapper-disztribúció letöltését a jelenlegi izolált környezet hálózata blokkolja.
+> A pure-domain regresszió és a consistency/YAML kapuk lokálisan futnak. A lokális
+> Java 17-es izolált környezet helyett a feature branch exact commitos Java 21 Gradle
+> CI-je a build authority; a Folia process-kill/runtime acceptance továbbra is staging gate.
 
 A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
 

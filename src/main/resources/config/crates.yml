@@ -134,7 +134,7 @@ crates:
       - { type: unique-item, weight: 10.0, id: folyositoszer, amount: 2, description: "&f2× Folyósítószer" }
       - { type: unique-item, weight: 10.0, id: sarkfeny_cseppko, amount: 2, description: "&b2× Sarkfény-cseppkő" }
       - { type: template, weight: 2.0, id: vadvilagi_eskukard, description: "&9Authored Vadvidéki Eskükard" }
-      - { type: unique-item, weight: 8.0, id: runapor, amount: 12, description: "&b12× Rúnapor" }
+      - { type: unique-item, weight: 6.0, id: runapor, amount: 12, description: "&b12× Rúnapor" }
       - { type: random-blueprint, weight: 14.0, min-level: 30, max-level: 48, description: "&bVéletlen mesterség-tervrajz" }
       - { type: currency, weight: 8.0, currency: NEUTRAL, amount: 1400, description: "&e1400 Creutzér" }
 
