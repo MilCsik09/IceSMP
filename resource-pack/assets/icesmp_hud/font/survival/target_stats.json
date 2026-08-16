@@ -1,0 +1,18 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/text-atlas.png",
+      "ascent": -8515656,
+      "height": 14,
+      "chars": [
+        " 0123456789ABCDE",
+        "FGHIJKLMNOPQRSTU",
+        "VWXYZabcdefghijk",
+        "lmnopqrstuvwxyzÁ",
+        "ÉÍÓÖŐÚÜŰáéíóöőúü",
+        "ű_'./+%:,-!?…•—◆"
+      ]
+    }
+  ]
+}

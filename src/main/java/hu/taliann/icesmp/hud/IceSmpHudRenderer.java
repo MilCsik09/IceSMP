@@ -105,6 +105,7 @@ public final class IceSmpHudRenderer {
     public Component render(final IceSmpHudModel model, final HudLayoutSnapshot layout,
                             final HudComponent highlighted) {
         final HudLayoutSnapshot safeLayout = layout == null ? HudLayoutSnapshot.defaults() : layout;
+        if (!safeLayout.componentLayout(HudComponent.CLASS_GROUP).visible()) return Component.empty();
         final boolean hasSupplementaryMetrics = hasSupplementaryMetrics(model);
         final boolean compactWallet = !hasSupplementaryMetrics;
         final TextComponent.Builder output = Component.text().shadowColor(ShadowColor.none());
@@ -142,8 +143,9 @@ public final class IceSmpHudRenderer {
             }
         }
         output.append(centeredText(HudComponent.EVENT_TEXT, -134, EVENT_FONT,
-                eventLine(model.event()),
-                color("F0D88D", 0xF0D88D), EVENT_TEXT_WIDTH, safeLayout, highlighted));
+                eventLine(model.event(), EVENT_TEXT_WIDTH),
+                color("F0D88D", 0xF0D88D), EVENT_TEXT_WIDTH,
+                safeLayout, highlighted));
         return output.build();
     }
 
@@ -165,7 +167,7 @@ public final class IceSmpHudRenderer {
             int index = 0;
             for (final ClassHudSlot slot : model.classHud().slots()) {
                 if (index >= 6) break;
-                output.append(glyph(HudComponent.CHARGES, -244 + index * 18,
+                output.append(glyph(HudComponent.DK_RUNES, -244 + index * 18,
                         RUNE_PANEL_FONT, runeGlyph(slot), 18, null, layout, highlighted));
                 index++;
             }
@@ -374,11 +376,9 @@ public final class IceSmpHudRenderer {
                 ? compactProc : "PROC: " + compactProc;
     }
 
-    private static String eventLine(final String rawEvent) {
+    private static String eventLine(final String rawEvent, final int maximumWidth) {
         final String event = stripLegacy(rawEvent == null ? "" : rawEvent).trim();
-        final String labelled = "ESEMÉNY " + event;
-        return labelled.codePointCount(0, labelled.length()) <= EVENT_TEXT_WIDTH / TEXT_ADVANCE
-                ? labelled : event;
+        return event.isBlank() ? "nyugalom" : event;
     }
 
     private static void drawSegments(final TextComponent.Builder output, final HudComponent component,
@@ -440,7 +440,8 @@ public final class IceSmpHudRenderer {
 
     private static TextColor editorColor(final TextColor desired, final HudComponent component,
                                          final HudComponent highlighted) {
-        return highlighted == HudComponent.GLOBAL || highlighted == component
+        return highlighted != null && highlighted != HudComponent.GLOBAL
+                && (highlighted == component || highlighted == component.parentGroup())
                 ? EDITOR_HIGHLIGHT : desired;
     }
 
@@ -453,7 +454,8 @@ public final class IceSmpHudRenderer {
         final int source = desired == null ? 0xFFFFFF : desired.value();
         final int code = component == null || component == HudComponent.GLOBAL
                 ? layout.shaderCode() : layout.shaderCode(component);
-        return TextColor.color((source & 0xF00000) | ((code & 0xF) << 16)
+        return TextColor.color((source & 0xE00000) | (((code >> 13) & 0x1) << 20)
+                | ((code & 0xF) << 16)
                 | (source & 0x00F000) | (((code >> 4) & 0xF) << 8)
                 | (source & 0x0000E0) | (((code >> 12) & 0x1) << 4)
                 | ((code >> 8) & 0xF));
@@ -462,7 +464,8 @@ public final class IceSmpHudRenderer {
     static int decodeLayoutCode(final TextColor encoded) {
         final int value = encoded.value();
         return ((value >> 16) & 0xF) | (((value >> 8) & 0xF) << 4)
-                | ((value & 0xF) << 8) | (((value >> 4) & 0x1) << 12);
+                | ((value & 0xF) << 8) | (((value >> 4) & 0x1) << 12)
+                | (((value >> 20) & 0x1) << 13);
     }
 
     private static Component space(final int requested) {

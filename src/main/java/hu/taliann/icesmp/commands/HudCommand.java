@@ -273,8 +273,12 @@ public final class HudCommand implements BasicCommand {
     }
 
     private void visibility(final Player player) {
-        if (hudManager.hudEditorSession(player).orElseThrow().selected() == HudComponent.GLOBAL) {
+        final HudComponent selected = hudManager.hudEditorSession(player).orElseThrow().selected();
+        if (selected == HudComponent.GLOBAL) {
             throw error("hud-editor-error-global-visibility");
+        }
+        if (!selected.hideable()) {
+            throw error("hud-editor-error-protected-visibility");
         }
         hudManager.toggleHudEditorComponent(player);
     }
@@ -294,6 +298,10 @@ public final class HudCommand implements BasicCommand {
     }
 
     private void preview(final Player player, final String[] args) {
+        if (args.length == 3 && "live".equalsIgnoreCase(args[2])) {
+            hudManager.previewLiveHud(player);
+            return;
+        }
         if (args.length < 4) {
             throw error("hud-editor-error-usage-preview");
         }
@@ -331,12 +339,12 @@ public final class HudCommand implements BasicCommand {
                 ? "hud-editor-header-personal" : "hud-editor-header-global"));
         player.sendMessage(editorNavigation(page));
         player.sendMessage(messageManager.requiredComponent("hud-editor-panel",
-                messageManager.required("hud-component-" + selected.id()), editorValues(session)));
+                componentLabel(selected), editorValues(session)));
         switch (page) {
             case OVERVIEW -> sendOverviewPage(player, session);
             case POSITION -> sendPositionPage(player, session);
             case APPEARANCE -> sendAppearancePage(player, session);
-            case PREVIEW -> sendPreviewPage(player, session.preview());
+            case PREVIEW -> sendPreviewPage(player, session);
             case PRESETS -> sendPresetPage(player, layout);
             case COMPONENTS -> sendComponentPage(player, session);
         }
@@ -423,7 +431,7 @@ public final class HudCommand implements BasicCommand {
                         "/hud edit scale coarse up")).append(Component.space())
                 .append(inputButton(messageManager.required("hud-editor-input-scale"),
                         "/hud edit set scale ")));
-        if (session.selected() != HudComponent.GLOBAL) {
+        if (session.selected() != HudComponent.GLOBAL && session.selected().hideable()) {
             final boolean visible = session.working().componentLayout(session.selected()).visible();
             player.sendMessage(button(messageManager.required(visible
                             ? "hud-editor-button-hide" : "hud-editor-button-show"),
@@ -431,9 +439,14 @@ public final class HudCommand implements BasicCommand {
         }
     }
 
-    private void sendPreviewPage(final Player player, final HudPreviewSelection preview) {
-        player.sendMessage(messageManager.requiredComponent("hud-editor-preview",
-                preview.faction(), preview.playerClass(), preview.state()));
+    private void sendPreviewPage(final Player player, final HudEditorStateMachine.Session session) {
+        final HudPreviewSelection preview = session.preview();
+        player.sendMessage(session.syntheticPreview()
+                ? messageManager.requiredComponent("hud-editor-preview",
+                        preview.faction(), preview.playerClass(), preview.state())
+                : messageManager.requiredComponent("hud-editor-preview-live"));
+        player.sendMessage(button(messageManager.required("hud-editor-button-preview-live"),
+                "/hud edit preview live", !session.syntheticPreview()));
         player.sendMessage(previewAxis("hud-editor-axis-faction", preview.faction(), "faction"));
         player.sendMessage(previewAxis("hud-editor-axis-class", preview.playerClass(), "class"));
         player.sendMessage(previewAxis("hud-editor-axis-state", preview.state(), "state"));
@@ -462,15 +475,34 @@ public final class HudCommand implements BasicCommand {
         player.sendMessage(button(messageManager.required("hud-editor-button-previous"), "/hud edit previous")
                 .append(Component.space())
                 .append(button(messageManager.required("hud-editor-button-next"), "/hud edit next")));
-        final List<HudComponent> targets = HudComponent.editorTargets();
-        for (int offset = 0; offset < targets.size(); offset += 6) {
-            Component row = Component.empty();
-            for (final HudComponent component : targets.subList(offset, Math.min(offset + 6, targets.size()))) {
-                row = row.append(button(messageManager.required("hud-component-" + component.id()),
-                        "/hud edit select " + component.id(),
-                        component == session.selected())).append(Component.space());
+        final List<HudComponent> all = HudComponent.editorTargets();
+        final List<List<HudComponent>> categories = List.of(
+                all.stream().filter(component -> component == HudComponent.GLOBAL
+                        || component == HudComponent.CLASS_GROUP
+                        || (component.parentGroup() == HudComponent.CLASS_GROUP
+                        && component != HudComponent.DK_RUNES)).toList(),
+                List.of(HudComponent.DK_RUNES),
+                all.stream().filter(component -> component == HudComponent.PLAYER_GROUP
+                        || component.parentGroup() == HudComponent.PLAYER_GROUP).toList(),
+                all.stream().filter(component -> component == HudComponent.TARGET_GROUP
+                        || component.parentGroup() == HudComponent.TARGET_GROUP).toList(),
+                all.stream().filter(component -> component == HudComponent.PARTY_GROUP
+                        || component.parentGroup() == HudComponent.PARTY_GROUP).toList());
+        final List<String> labels = List.of("class", "dk", "player", "target", "party");
+        for (int category = 0; category < categories.size(); category++) {
+            player.sendMessage(messageManager.requiredComponent(
+                    "hud-editor-category-" + labels.get(category)));
+            final List<HudComponent> targets = categories.get(category);
+            for (int offset = 0; offset < targets.size(); offset += 5) {
+                Component row = Component.empty();
+                for (final HudComponent component : targets.subList(
+                        offset, Math.min(offset + 5, targets.size()))) {
+                    row = row.append(button(componentLabel(component),
+                            "/hud edit select " + component.id(),
+                            component == session.selected())).append(Component.space());
+                }
+                player.sendMessage(row);
             }
-            player.sendMessage(row);
         }
     }
 
@@ -498,8 +530,18 @@ public final class HudCommand implements BasicCommand {
                         ? "hud-editor-actionbar" : "hud-editor-actionbar-pack-missing",
                 messageManager.required(session.scope() == HudEditorStateMachine.Scope.PERSONAL
                         ? "hud-editor-mode-personal" : "hud-editor-mode-global"),
-                messageManager.required("hud-component-" + session.selected().id()),
+                componentLabel(session.selected()),
                 editorValues(session)));
+    }
+
+    private String componentLabel(final HudComponent component) {
+        final String id = component == null ? "global" : component.id();
+        final StringBuilder fallback = new StringBuilder();
+        for (final String word : id.split("-")) {
+            if (!fallback.isEmpty()) fallback.append(' ');
+            fallback.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return messageManager.get("hud-component-" + id, fallback.toString());
     }
 
     private String editorValues(final HudEditorStateMachine.Session session) {
@@ -638,7 +680,7 @@ public final class HudCommand implements BasicCommand {
             options.addAll(HudLayoutPreset.VALUES.stream().map(HudLayoutPreset::id).toList());
         else if (args.length == 3 && "reset".equalsIgnoreCase(args[1])) options.add("all");
         else if (args.length == 3 && "preview".equalsIgnoreCase(args[1]))
-            options.addAll(List.of("faction", "class", "state"));
+            options.addAll(List.of("live", "faction", "class", "state"));
         else if (args.length == 4 && "preview".equalsIgnoreCase(args[1])) {
             switch (args[2].toLowerCase(Locale.ROOT)) {
                 case "faction" -> {

@@ -343,12 +343,16 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
 - **Mitől mozdul meg:** Csatlakozáskor, periodikus frissítéskor, státusz- és adatváltozáskor.
 - **First-party IceSMP HUD:** a resource pack elfogadása után játékosonként aktiválódó,
   rögzített geometriájú kijelzés öt teljesen külön skinből (a Menedék vendége saját erődkeretet kap),
-  13 class-ikonból, class/spec/resource/mechanika állapotból, legfeljebb öt generic metricből,
-  kilenc charge-pipből, DK-rúnákból és négy külön pénztárcahelyből. A fő frakcióvaluta mindig,
-  a másik három banki valuta nulla egyenlegnél is a saját, stabil helyén jelenik meg.
-- **Skálázásbiztos túlélési panel:** alsó-középre rögzített, gyors külön tickből frissülő HP-sáv
+  13 class-ikonból, class/spec/resource/mechanika állapotból,
+  legfeljebb öt generic metricből, kilenc charge-pipből, DK-rúnákból és négy külön pénztárcahelyből.
+  A fő frakcióvaluta mindig, a másik három banki valuta nulla egyenlegnél is a saját, stabil
+  helyén jelenik meg. A tartós class XP-sáv nem foglalja az eseményláblécet; az legfeljebb három
+  párhuzamos eseményt ír ki teljes szélességben.
+- **Skálázásbiztos Player Frame:** bal felső, frakciószínű, gyors külön tickből frissülő HP-sáv
   jelenlegi/maximális értékkel, százalékkal és absorption-jelöléssel, továbbá pontos páncél-, étel-
-  és oxigén-mini-sávokkal. A kiadott pack csak a normál vanilla survival sprite-okat teszi
+  és feltételes oxigénkijelzéssel; az armor maximum nélküli flat szám, az oxigénoszlop csak fogyó
+  levegőnél jelenik meg. A frame és minden érték saját editor-komponens. A kiadott pack
+  csak a normál vanilla survival sprite-okat teszi
   átlátszóvá; hardcore szíveket szándékosan nem fed le. A panel nem függ a class/sidebar HUD
   láthatóságától, így `/hud mind` vagy natív class-HUD routing sem hagyhatja vakon a játékost.
 - **Fallback:** pack nélkül a natív compact Folia HUD marad. A resource-packes megjelenítés az
@@ -360,8 +364,17 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
   ráhangolódása külön mini bar, a diszkrét combo/stack/charge értékek pedig vizuális pipsort kapnak.
 - **Személyes layout-editor:** a `/hud edit` lapozott, kattintható nézete kijelölt-elem kiemelést,
   1/5/10/15 pixeles mozgatást, közvetlen X/Y/méret bevitelt, preset- és szintetikus preview-váltást,
-  láthatóságot, undo/reset/save/cancel műveleteket ad. A Profile v2 csak a globális alaptól eltérő
-  mezőket tárolja, ezért a többi elem a későbbi globális változásokat is örökli.
+  láthatóságot, undo/reset/save/cancel műveleteket ad. A Player, Target és Party Frame külön
+  mozgatható csoport, alattuk minden grafika/adat saját elem. A DK-rúnák saját kategóriában vannak,
+  és nem osztoznak a többi kaszt generic charge-komponensével. A Profile v2 csak a tiszta
+  `hud.layout-v2.*` eltéréseket tárolja; legacy layout-migráció nincs.
+- **Target Frame:** egy játékos vagy mob megsebzése eseményvezérelten screen-space célpontkeretet
+  nyit a Player Frame mellett. A mob passzív/semleges/ellenséges/elit/boss bestiárium-grafikát,
+  a játékos saját frakciószínt kap; név, szint, current/max HP, százalék, státusz és játékosnál
+  class resource jelenik meg. Követő vitals-TextDisplay nincs, az eredeti entitásnévhez nem nyúl.
+- **Party Frame:** a Player Frame alatt legfeljebb négy másik tag WoW-stílusú sora látszik.
+  A sor palettája mindig az adott tag frakciója; HP/resource mellett vezető, halott, távoli és
+  offline állapotot is mutat. A renderer kizárólag immutable, Folia-safe cache-eket olvas.
 - **Ami még kellhet hozzá:** Nincs builderfeladat; a saját tablista és HUD production megjelenését deployment előtt ellenőrizni kell.
 - **Fontos határ:** A natív tablista az IceSMP-hez szükséges funkciókat biztosítja, nem általános külső tablista-motor.
 

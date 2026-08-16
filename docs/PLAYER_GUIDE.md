@@ -94,22 +94,34 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
 
 ### Amit a képernyőd mesél
 
-- A **HUD** mutathatja a kasztod erőforrását, a class/spec mechanikád élő
-  barjait, tölteteit vagy rúnáit, a frakciódat, pénzedet, szintedet és a fontos
-  világhelyzeteket. A négy frakcióvalutád mindegyike saját, állandó helyet kap, ezért a nulla
-  egyenleg sem rendezi át a panelt. A `/hud edit` kattintható szerkesztőjében külön mozgathatod,
-  méretezheted vagy elrejtheted az elemeket; a mentésed restart után is megmarad. A nem
+- A jobb felső **class HUD** mutatja a kasztod erőforrását, a class/spec mechanikád élő
+  sávjait, tölteteit vagy rúnáit, a frakciódat, pénzedet, szintedet és legfeljebb három
+  egyidejű világeseményt. A négy frakcióvalutád mindegyike saját, állandó helyet kap, ezért a
+  nulla egyenleg sem rendezi át a panelt. A tartós class XP-sáv kikerült innen, hogy az eseménysor
+  olvasható maradjon; a teljes kaszt-XP-det a `/job status` mutatja.
+  A `/hud edit` kattintható szerkesztőjében külön mozgathatod, méretezheted vagy elrejtheted az
+  elemeket. A DK-rúnák saját kategóriát kaptak, és nem mozgatják a többi kaszt tölteteit.
+  A mentésed restart után is megmarad. A nem
   módosított elemek automatikusan követik a szerver globális HUD-alapját. Amíg a first-party
   resource pack nincs sikeresen betöltve, a kompakt natív kijelzés automatikusan marad.
-- A képernyő alján a saját **túlélési panel** váltja fel a vanilla szíveket, páncélt,
-  éhséget és levegőbuborékokat. A HP-sáv fölött a jelenlegi/maximális életerő, a sávon a
-  százalék látszik; az ideiglenes elnyelési HP külön `(+érték)` jelölést kap. A páncél, az
-  étel és az oxigén saját mini-sávon, pontos számmal jelenik meg. A panel a resource pack
-  sikeres betöltése után aktiválódik; pack nélkül a vanilla kijelzők maradnak láthatók.
+- A bal felső, frakciószínű **Player Frame** váltja fel a vanilla szíveket, páncélt, éhséget
+  és levegőbuborékokat. A HP current/max és százalék formában jelenik meg; az absorption külön
+  pajzsként látszik. A páncél maximum nélküli flat szám, az étel saját mini-sávot
+  kap, az oxigén pedig csak fogyó levegőnél jelenik meg. A frame, név, HP-sáv, HP-szöveg,
+  százalék, pajzs, páncél, étel és oxigén külön editor-komponens; a Player Frame csoporttal
+  együtt is mozgathatók. Pack nélkül a vanilla kijelzők maradnak láthatók.
+- Ha megütsz egy mobot vagy játékost, a Player Frame mellett jelenik meg a **Target Frame**.
+  A mobok bestiárium-stílusú, a játékosok frakciószínű keretet kapnak. A név, szint,
+  current/max HP, százalék, rang/státusz, valamint játékosnál a class resource is látszik.
+  A kijelzés nem hoz létre követő feliratot a mob testén, ezért az eredeti nametag nem tűnik el.
+- Partyban legfeljebb négy másik tag **Party Frame-je** sorakozik a saját frame-ed alatt.
+  Minden sor az adott tag frakciószínét, HP-ját, class resource-át, valamint a vezető,
+  halott, távoli vagy offline állapotot mutatja.
 - A **tablista** frakció- és ranginformációt adhat, háborúban pedig segít
   felismerni a viszonyokat.
-- Harc közben **sebzésszámok**, célpontinformáció és halálösszegző segít
-  megérteni, mi történt.
+- Harc közben **sebzésszámok**, a képernyőn megjelenő Target Frame és halálösszegző segít
+  megérteni, mi történt. A rövid sebzésszámok továbbra is a találat helyén jelennek meg, a
+  tartósabb HP/resource információ viszont csak a saját Target Frame-edben látható.
 - A vanília **Haladás** képernyő IceSMP-füle mérföldköveket és rejtett
   felfedezéseket is őriz. Némelyik eredmény azért csendes, mert a titok a
   jutalom része.
@@ -1023,7 +1035,7 @@ zászlók alatt élő Felsők is indulhatnak közös kalandra.
 - a közeli mobölésből származó kaszt-XP megosztható;
 - bizonyos eseményeknél minden közeli tag személyes zsákmányt kap;
 - a párttagok nem sebzik egymást;
-- a HUD mutatja a tagok életét;
+- a saját frame-ed alatti party HUD mutatja a tagok életét, class resource-át és állapotát;
 - egyes kazamatakapuk közös kulcsnyitást támogatnak.
 
 A vezető `/party kick`, `/party promote` és `/party disband` műveleteket

@@ -3,8 +3,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/health_track.png",
-      "ascent": -8491039,
-      "height": 8,
+      "ascent": -8491043,
+      "height": 10,
       "chars": [
         ""
       ]
@@ -12,8 +12,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/health_fill.png",
-      "ascent": -8499231,
-      "height": 8,
+      "ascent": -8499235,
+      "height": 10,
       "chars": [
         ""
       ]
@@ -21,8 +21,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/health_warn.png",
-      "ascent": -8499231,
-      "height": 8,
+      "ascent": -8499235,
+      "height": 10,
       "chars": [
         ""
       ]
@@ -30,8 +30,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/health_critical.png",
-      "ascent": -8499231,
-      "height": 8,
+      "ascent": -8499235,
+      "height": 10,
       "chars": [
         ""
       ]

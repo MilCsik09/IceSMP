@@ -16,6 +16,8 @@ public final class IceSmpHudBackend {
     private final Predicate<UUID> resourcePackReady;
     private final IceSmpHudRenderer renderer = new IceSmpHudRenderer();
     private final SurvivalHudRenderer survivalRenderer = new SurvivalHudRenderer();
+    private final TargetHudRenderer targetRenderer = new TargetHudRenderer();
+    private final PartyHudRenderer partyRenderer = new PartyHudRenderer();
     private final ConcurrentHashMap<UUID, BossBar> bars = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Long> lastFallbackWarning = new ConcurrentHashMap<>();
 
@@ -37,17 +39,18 @@ public final class IceSmpHudBackend {
                           final HudLayoutSnapshot layout, final HudComponent highlighted,
                           final boolean visible) {
         return render(player, model, layout, highlighted, visible,
-                null, SurvivalHudLayout.defaults(), false);
+                null, null, null, false);
     }
 
-    /** Composes the optional class panel and mandatory survival replacement into one boss bar. */
+    /** Composes class, player, target and party surfaces into one invisible carrier boss bar. */
     public boolean render(final Player player, final IceSmpHudModel model,
                           final HudLayoutSnapshot layout, final HudComponent highlighted,
                           final boolean classVisible,
-                          final SurvivalHudState survival,
-                          final SurvivalHudLayout survivalLayout,
-                          final boolean survivalVisible) {
-        if (player == null || (!classVisible && !survivalVisible)
+                          final PlayerHudState playerState,
+                          final TargetHudState targetState,
+                          final PartyHudState partyState,
+                          final boolean playerFrameVisible) {
+        if (player == null || (!classVisible && !playerFrameVisible)
                 || !resourcePackReady.test(player.getUniqueId())) {
             hide(player);
             return false;
@@ -60,14 +63,22 @@ public final class IceSmpHudBackend {
                 warnFallback(player, "class", classRenderFailure);
             }
         }
-        if (survivalVisible && survival != null) {
+        if (playerFrameVisible && playerState != null) {
             try {
-                composed.append(survivalRenderer.render(survival, survivalLayout));
+                composed.append(survivalRenderer.render(playerState, layout, highlighted));
             } catch (final RuntimeException survivalRenderFailure) {
-                // The distributed pack hides vanilla survival sprites, so a readable emergency
-                // line is safer than dropping the player's only health information.
-                composed.append(survivalRenderer.fallback(survival));
+                composed.append(survivalRenderer.fallback(playerState));
                 warnFallback(player, "survival", survivalRenderFailure);
+            }
+            try {
+                composed.append(targetRenderer.render(targetState, layout, highlighted));
+            } catch (final RuntimeException targetRenderFailure) {
+                warnFallback(player, "target", targetRenderFailure);
+            }
+            try {
+                composed.append(partyRenderer.render(partyState, layout, highlighted));
+            } catch (final RuntimeException partyRenderFailure) {
+                warnFallback(player, "party", partyRenderFailure);
             }
         }
         final Component rendered = composed.build();

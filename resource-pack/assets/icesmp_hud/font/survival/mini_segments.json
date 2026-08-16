@@ -3,8 +3,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/mini_track.png",
-      "ascent": -8491059,
-      "height": 5,
+      "ascent": -8491068,
+      "height": 6,
       "chars": [
         ""
       ]
@@ -12,8 +12,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/mini_armor.png",
-      "ascent": -8499251,
-      "height": 5,
+      "ascent": -8499260,
+      "height": 6,
       "chars": [
         ""
       ]
@@ -21,8 +21,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/mini_food.png",
-      "ascent": -8499251,
-      "height": 5,
+      "ascent": -8499260,
+      "height": 6,
       "chars": [
         ""
       ]
@@ -30,10 +30,46 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/mini_air.png",
-      "ascent": -8499251,
-      "height": 5,
+      "ascent": -8499260,
+      "height": 6,
       "chars": [
         ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_resource.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_health.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_health_warn.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_health_critical.png",
+      "ascent": -8499260,
+      "height": 6,
+      "chars": [
+        ""
       ]
     }
   ]

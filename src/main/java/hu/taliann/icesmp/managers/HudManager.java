@@ -12,8 +12,11 @@ import hu.taliann.icesmp.hud.HudLayoutSnapshot;
 import hu.taliann.icesmp.hud.HudPreviewCatalog;
 import hu.taliann.icesmp.hud.IceSmpHudBackend;
 import hu.taliann.icesmp.hud.IceSmpHudModel;
-import hu.taliann.icesmp.hud.SurvivalHudLayout;
+import hu.taliann.icesmp.hud.ClassXpProgress;
+import hu.taliann.icesmp.hud.PartyHudState;
+import hu.taliann.icesmp.hud.PlayerHudState;
 import hu.taliann.icesmp.hud.SurvivalHudState;
+import hu.taliann.icesmp.hud.TargetHudState;
 import hu.taliann.icesmp.utils.PlatformCapabilities;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -126,12 +129,14 @@ public final class HudManager {
     public record HudSnapshot(String faction, String factionId, String factionTheme,
                               String factionAccent, String factionAccentSoft,
                               String className, int classLevel,
+                              ClassXpProgress classXp,
                               String balance, boolean hasClass, int resource, int resourceMax,
                               int resourcePercent, String resourceName, String resourceBar,
                               String event, List<String> partyLines,
                               List<HudCurrency> currencies,
                               hu.taliann.icesmp.classspec.integration.ClassHudState classHud) {
         public HudSnapshot {
+            classXp = classXp == null ? ClassXpProgress.empty() : classXp;
             partyLines = partyLines == null ? List.of() : List.copyOf(partyLines);
             currencies = currencies == null ? List.of() : List.copyOf(currencies);
         }
@@ -145,7 +150,7 @@ public final class HudManager {
      * Seam az opcionális Client Bridge felé: a HudManager nem ismerheti a híd típusát
      * (a domain/presentation réteg kliensmod-függetlensége architektúra-invariáns), a
      * core köti be. Ha a route szerint a játékos natív kaszt-HUD-ot kap, a sidebar,
-     * a first-party kasztpanel és a compact fallback elhallgat. A survival panel
+     * a first-party kasztpanel és a compact fallback elhallgat. A Player Frame
      * ettől függetlenül aktív marad, mert a vanilla sávokat a kötelező resource pack
      * váltja ki, és a kliensbridge jelenleg nem hirdet survival-HUD képességet.
      */
@@ -172,6 +177,7 @@ public final class HudManager {
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, SurvivalHudState> survivalSnapshots = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, String> playerNames = new ConcurrentHashMap<>();
     private final Set<UUID> iceSmpHudPlayers = ConcurrentHashMap.newKeySet();
     private final HudEditorStateMachine hudEditor = new HudEditorStateMachine();
     private final Set<UUID> hudEditorSaves = ConcurrentHashMap.newKeySet();
@@ -259,15 +265,6 @@ public final class HudManager {
         return true;
     }
 
-    public SurvivalHudLayout configuredSurvivalHudLayout() {
-        final FileConfiguration configuration = configManager.getConfiguration();
-        if (configuration == null) return SurvivalHudLayout.defaults();
-        return SurvivalHudLayout.fromConfigValues(
-                configuration.get("hud.icesmp-hud.survival.layout.x-offset-pixels"),
-                configuration.get("hud.icesmp-hud.survival.layout.y-offset-pixels"),
-                configuration.get("hud.icesmp-hud.survival.layout.scale"));
-    }
-
     public boolean hudEditorEnabled() {
         return configManager.getBoolean("hud.icesmp-hud.editor.enabled", true);
     }
@@ -291,7 +288,7 @@ public final class HudManager {
                     configuration.get(path + ".x-offset-pixels"),
                     configuration.get(path + ".y-offset-pixels"),
                     configuration.get(path + ".scale"),
-                    configuration.get(path + ".visible")));
+                    configuration.get(path + ".visible"), layout.componentLayout(component)));
         }
         return layout;
     }
@@ -415,13 +412,15 @@ public final class HudManager {
         return hudEditor.previewState(player.getUniqueId(), state);
     }
 
+    public HudEditorStateMachine.Session previewLiveHud(final Player player) {
+        return hudEditor.livePreview(player.getUniqueId());
+    }
+
     public boolean refreshHudEditorPreview(final Player player) {
         final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
         if (session == null || !editorSessionEnabled(session)) return false;
-        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                HudPreviewCatalog.model(session.preview()), session.working(), session.selected(), true,
-                survivalSnapshots.get(player.getUniqueId()), configuredSurvivalHudLayout(),
-                survivalHudEnabled()));
+        return renderHudEditorProjection(player, session, snapshots.get(player.getUniqueId()),
+                survivalSnapshots.get(player.getUniqueId()));
     }
 
     private boolean editorSessionEnabled(final HudEditorStateMachine.Session session) {
@@ -736,6 +735,7 @@ public final class HudManager {
     }
 
     private HudSnapshot buildSnapshot(final Player player) {
+        playerNames.put(player.getUniqueId(), player.getName());
         final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
         final JobType job = jobManager.getPrimaryJob(player);
         final boolean hasClass = job != null;
@@ -743,6 +743,11 @@ public final class HudManager {
         // bridge, so it also folds in the resource system's enabled state — with the system off,
         // %icesmp_resource...% goes blank instead of showing a phantom full bar.
         final boolean showResource = hasClass && resourceManager.isEnabled();
+        final ClassXpProgress classXp = hasClass ? ClassXpProgress.calculate(
+                jobManager.getXp(player), jobManager.getPrimaryLevel(player),
+                configManager.getInt("classes.leveling.base-xp", 100),
+                configManager.getInt("classes.leveling.increment-per-level", 20),
+                JobManager.MAX_JOB_LEVEL) : ClassXpProgress.empty();
         final double balance = currencyManager.getBalance(player, factionManager.getEconomyFaction(player.getUniqueId()));
         return new HudSnapshot(
                 faction == null ? "Menedék vendége" : faction.getDisplayName(),
@@ -750,6 +755,7 @@ public final class HudManager {
                 factionTheme(faction), factionAccent(faction), factionAccentSoft(faction),
                 hasClass ? PlainTextComponentSerializer.plainText().serialize(job.getDisplayName()) : "nincs",
                 hasClass ? jobManager.getPrimaryLevel(player) : 0,
+                classXp,
                 currencyManager.formatBalance(balance),
                 showResource,
                 showResource ? resourceManager.resourceValue(player) : 0,
@@ -757,19 +763,17 @@ public final class HudManager {
                 showResource ? resourceManager.resourcePercent(player) : 0,
                 resourceManager.resourceName(player),
                 showResource ? resourceManager.resourceBarPlain(player) : "",
-                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(eventLabel()),
+                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
+                        .serialize(hudEventLabel()),
                 partyLinesPlain(player), walletCurrencies(player), resourceManager.classHudState(player));
     }
 
     private SurvivalHudState buildSurvivalSnapshot(final Player player) {
         final AttributeInstance maximumHealth = player.getAttribute(Attribute.MAX_HEALTH);
         final AttributeInstance armor = player.getAttribute(Attribute.ARMOR);
-        final double configuredMaximumArmor = Math.max(1.0D, configManager.getDouble(
-                "hud.icesmp-hud.survival.armor-maximum", 20.0D));
         return new SurvivalHudState(
                 player.getHealth(), maximumHealth == null ? 20.0D : maximumHealth.getValue(),
                 player.getAbsorptionAmount(), armor == null ? 0.0D : armor.getValue(),
-                configuredMaximumArmor,
                 player.getFoodLevel(), 20,
                 player.getRemainingAir(), player.getMaximumAir());
     }
@@ -833,6 +837,7 @@ public final class HudManager {
         lastLines.remove(player.getUniqueId());
         snapshots.remove(player.getUniqueId());
         survivalSnapshots.remove(player.getUniqueId());
+        playerNames.remove(player.getUniqueId());
         iceSmpHudPlayers.remove(player.getUniqueId());
         updateIceSmpHudReadiness(!iceSmpHudPlayers.isEmpty());
         hudEditor.cancel(player.getUniqueId());
@@ -850,22 +855,139 @@ public final class HudManager {
 
     private boolean renderIceSmpHud(final Player player, final HudSnapshot snapshot) {
         final SurvivalHudState survival = survivalSnapshots.get(player.getUniqueId());
-        final boolean survivalVisible = survivalHudEnabled() && survival != null;
-        final SurvivalHudLayout survivalLayout = configuredSurvivalHudLayout();
+        final boolean playerFrameVisible = survivalHudEnabled() && survival != null;
         final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
         if (editorSessionEnabled(editorSession)) {
-            return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                    HudPreviewCatalog.model(editorSession.preview()), editorSession.working(),
-                    editorSession.selected(), true, survival, survivalLayout, survivalVisible));
+            return renderHudEditorProjection(player, editorSession, snapshot, survival);
         }
         if (editorSession != null) hudEditor.cancel(player.getUniqueId());
         final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
         final boolean visible = snapshot != null && isEnabled() && configured
                 && !isSectionHidden(player, SECTION_ALL) && snapshot.classHud() != null
                 && !nativeHudRouted(player.getUniqueId());
+        final HudLayoutSnapshot layout = effectiveHudLayout(player);
+        final PlayerHudState playerState = survival == null ? null : new PlayerHudState(
+                player.getName(), snapshot == null ? "ice" : snapshot.factionTheme(),
+                snapshot == null ? "8BE9FD" : snapshot.factionAccent(), survival);
         return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                snapshot == null ? null : IceSmpHudModel.from(snapshot), effectiveHudLayout(player),
-                null, visible, survival, survivalLayout, survivalVisible));
+                snapshot == null ? null : IceSmpHudModel.from(snapshot), layout,
+                null, visible, playerState, targetHudState(player), partyHudState(player),
+                playerFrameVisible));
+    }
+
+    /**
+     * The editor opens on the exact live read projection. Synthetic class/target/party fixtures
+     * are opt-in through the Preview page and never replace gameplay state implicitly.
+     */
+    private boolean renderHudEditorProjection(final Player player,
+                                              final HudEditorStateMachine.Session session,
+                                              final HudSnapshot snapshot,
+                                              final SurvivalHudState survival) {
+        if (session.syntheticPreview()) {
+            final IceSmpHudModel preview = HudPreviewCatalog.model(session.preview());
+            final SurvivalHudState previewSurvival = survival == null
+                    ? PlayerHudState.preview().survival() : survival;
+            return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                    preview, session.working(), session.selected(), true,
+                    new PlayerHudState(player.getName(), preview.factionTheme(),
+                            preview.factionAccent(), previewSurvival),
+                    TargetHudState.previewMob(), PartyHudState.preview(), survivalHudEnabled()));
+        }
+        final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
+        final boolean classVisible = snapshot != null && isEnabled() && configured
+                && !isSectionHidden(player, SECTION_ALL) && snapshot.classHud() != null
+                && !nativeHudRouted(player.getUniqueId());
+        final PlayerHudState playerState = survival == null ? null : new PlayerHudState(
+                player.getName(), snapshot == null ? "ice" : snapshot.factionTheme(),
+                snapshot == null ? "8BE9FD" : snapshot.factionAccent(), survival);
+        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                snapshot == null ? null : IceSmpHudModel.from(snapshot), session.working(),
+                session.selected(), classVisible, playerState, targetHudState(player),
+                partyHudState(player), survivalHudEnabled() && survival != null));
+    }
+
+    private TargetHudState targetHudState(final Player viewer) {
+        final hu.taliann.icesmp.listeners.DamageIndicatorListener indicators = damageIndicators;
+        if (indicators == null || !configManager.getBoolean("hud.icesmp-hud.target-frame.enabled", true)) {
+            return null;
+        }
+        final hu.taliann.icesmp.listeners.DamageIndicatorListener.LastTarget target =
+                indicators.lastTarget(viewer.getUniqueId());
+        if (target == null) return null;
+        final HudSnapshot targetHud = target.player() ? snapshots.get(target.targetId()) : null;
+        final SurvivalHudState targetSurvival = target.player()
+                ? survivalSnapshots.get(target.targetId()) : null;
+        final FactionType faction = target.player()
+                ? factionManager.getChosenFaction(target.targetId()).orElse(null) : null;
+        final String relation;
+        if (!target.player()) {
+            relation = target.rank() == TargetHudState.Rank.BOSS ? "Boss"
+                    : target.rank() == TargetHudState.Rank.ELITE ? "Elit" : "";
+        } else if (partyManager.isSameParty(viewer.getUniqueId(), target.targetId())) {
+            relation = "Csapattag";
+        } else {
+            final FactionType viewerFaction = factionManager.getChosenFaction(
+                    viewer.getUniqueId()).orElse(null);
+            relation = faction != null && faction == viewerFaction ? "Szövetséges" : "Játékos";
+        }
+        final String liveClass = targetHud == null || !targetHud.hasClass()
+                ? target.className() : targetHud.className();
+        final String status = liveClass.isBlank() ? relation
+                : relation + (relation.isBlank() ? "" : " • ") + liveClass;
+        final double health = targetSurvival == null ? target.health() : targetSurvival.health();
+        final double maximumHealth = targetSurvival == null
+                ? target.maximumHealth() : targetSurvival.maximumHealth();
+        final String resourceName = targetHud == null
+                ? target.resourceName() : targetHud.resourceName();
+        final int resource = targetHud == null ? target.resource() : targetHud.resource();
+        final int resourceMaximum = targetHud == null
+                ? target.resourceMaximum() : targetHud.resourceMax();
+        final int level = targetHud == null ? target.level() : targetHud.classLevel();
+        return new TargetHudState(target.targetId(), target.targetName(), target.kind(), target.rank(),
+                factionTheme(faction), factionAccent(faction), level,
+                health, maximumHealth, resourceName,
+                resource, resourceMaximum, status);
+    }
+
+    private PartyHudState partyHudState(final Player viewer) {
+        if (!configManager.getBoolean("party.hud-enabled", true)) return null;
+        final PartyManager.Party party = partyManager.getParty(viewer.getUniqueId());
+        if (party == null) return null;
+        final List<PartyHudState.Member> members = new ArrayList<>();
+        final org.bukkit.Location viewerPosition = hu.taliann.icesmp.utils.PositionCache.get(
+                viewer.getUniqueId());
+        final double rangeSquared = Math.pow(partyManager.getShareRadius(), 2.0D);
+        for (final UUID memberId : party.getMembers()) {
+            if (memberId.equals(viewer.getUniqueId()) || members.size() >= 4) continue;
+            final HudSnapshot memberHud = snapshots.get(memberId);
+            final SurvivalHudState memberSurvival = survivalSnapshots.get(memberId);
+            final boolean online = memberHud != null && memberSurvival != null;
+            final org.bukkit.Location memberPosition = hu.taliann.icesmp.utils.PositionCache.get(memberId);
+            final boolean inRange = sameWorldAndRange(viewerPosition, memberPosition, rangeSquared);
+            members.add(new PartyHudState.Member(memberId,
+                    playerNames.getOrDefault(memberId, "?"),
+                    memberHud == null ? "ice" : memberHud.factionTheme(),
+                    memberHud == null ? "8BE9FD" : memberHud.factionAccent(),
+                    memberSurvival == null ? 0.0D : memberSurvival.health(),
+                    memberSurvival == null ? 20.0D : memberSurvival.maximumHealth(),
+                    memberHud == null ? 0 : memberHud.resourcePercent(),
+                    memberId.equals(party.getLeader()), online, inRange,
+                    memberSurvival != null && memberSurvival.health() <= 0.0D));
+        }
+        return members.isEmpty() ? null : new PartyHudState(members);
+    }
+
+    private static boolean sameWorldAndRange(final org.bukkit.Location first,
+                                             final org.bukkit.Location second,
+                                             final double rangeSquared) {
+        try {
+            return first != null && second != null && first.getWorld() != null
+                    && second.getWorld() != null
+                    && first.getWorld().getUID().equals(second.getWorld().getUID())
+                    && first.distanceSquared(second) <= rangeSquared;
+        } catch (final RuntimeException unavailableWorld) {
+            return false;
+        }
     }
 
     public enum HudEditorSaveStatus { SAVED, NO_CHANGES, STALE, NO_SESSION, IN_PROGRESS }
@@ -1178,21 +1300,7 @@ public final class HudManager {
             return null;
         }
 
-        Component health = Component.empty();
-        if (target.player()) {
-            final Player targetPlayer = Bukkit.getPlayer(target.targetId());
-            if (targetPlayer != null && targetPlayer.isOnline()) {
-                try {
-                    // Cross-region mező-olvasás a party-frame try/catch mintájával.
-                    final org.bukkit.attribute.AttributeInstance maxAttr =
-                            targetPlayer.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-                    final double max = Math.max(1.0D, maxAttr == null ? 20.0D : maxAttr.getValue());
-                    health = healthBar(Math.max(0.0D, targetPlayer.getHealth()), max);
-                } catch (final Exception ignored) {
-                    // Régió-átmenet — ezen a ticken a név magában is elég.
-                }
-            }
-        }
+        final Component health = healthBar(target.health(), target.maximumHealth());
         final Map<String, String> tokens = new HashMap<>(baseTokens);
         tokens.put("target_name", target.targetName());
         tokens.put("target_health", legacy(health));
@@ -1269,24 +1377,14 @@ public final class HudManager {
         final Component marker = Component.text(leader ? "👑 " : "• ",
                 leader ? NamedTextColor.GOLD : NamedTextColor.GRAY);
 
-        final Player member = Bukkit.getPlayer(memberId);
-        if (member == null || !member.isOnline()) {
+        final SurvivalHudState state = survivalSnapshots.get(memberId);
+        if (state == null) {
             return marker.append(Component.text("?", NamedTextColor.DARK_GRAY));
         }
-        final String name = member.getName().length() > 10
-                ? member.getName().substring(0, 10) : member.getName();
-
-        try {
-            // Cross-region reads on Folia: health/max-health are plain field reads; if the
-            // member's region is mid-transition we fall back to a placeholder for one tick.
-            final org.bukkit.attribute.AttributeInstance maxAttr =
-                    member.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-            final double max = Math.max(1.0D, maxAttr == null ? 20.0D : maxAttr.getValue());
-            final double hp = Math.max(0.0D, member.getHealth());
-            return marker.append(Component.text(name + " ", NamedTextColor.WHITE)).append(healthBar(hp, max));
-        } catch (final Exception ignored) {
-            return marker.append(Component.text(name + " …", NamedTextColor.DARK_GRAY));
-        }
+        final String rawName = playerNames.getOrDefault(memberId, "?");
+        final String name = rawName.length() > 10 ? rawName.substring(0, 10) : rawName;
+        return marker.append(Component.text(name + " ", NamedTextColor.WHITE))
+                .append(healthBar(state.health(), state.maximumHealth()));
     }
 
     /** A 5-segment health bar coloured by remaining fraction (green/yellow/red) plus the heart count. */
@@ -1307,6 +1405,25 @@ public final class HudManager {
      * scoreboard can never grow arbitrarily wide.
      */
     private Component eventLabel() {
+        final List<String> active = activeEventNames();
+        if (active.isEmpty()) {
+            return Component.text("nyugalom", NamedTextColor.GRAY);
+        }
+        final String shown = String.join(", ", active.subList(0, Math.min(2, active.size())));
+        final Component label = Component.text(shown, NamedTextColor.YELLOW);
+        return active.size() <= 2 ? label
+                : label.append(Component.text(" +" + (active.size() - 2), NamedTextColor.GOLD));
+    }
+
+    private Component hudEventLabel() {
+        final List<String> active = activeEventNames();
+        if (active.isEmpty()) return Component.text("nyugalom", NamedTextColor.GRAY);
+        final List<String> shown = active.subList(0, Math.min(3, active.size()));
+        final String suffix = active.size() > 3 ? " • +" + (active.size() - 3) : "";
+        return Component.text(String.join(" • ", shown) + suffix, NamedTextColor.YELLOW);
+    }
+
+    private List<String> activeEventNames() {
         final List<String> active = new ArrayList<>();
         if (raidManager.isRaidActive()) {
             active.add("Raid!");
@@ -1336,13 +1453,7 @@ public final class HudManager {
         if (buff != null) {
             active.add(buff);
         }
-        if (active.isEmpty()) {
-            return Component.text("nyugalom", NamedTextColor.GRAY);
-        }
-        final String shown = String.join(", ", active.subList(0, Math.min(2, active.size())));
-        final Component label = Component.text(shown, NamedTextColor.YELLOW);
-        return active.size() <= 2 ? label
-                : label.append(Component.text(" +" + (active.size() - 2), NamedTextColor.GOLD));
+        return List.copyOf(active);
     }
 
     private Component tabName(final Player player) {

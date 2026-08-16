@@ -2,11 +2,182 @@
   "providers": [
     {
       "type": "bitmap",
-      "file": "icesmp_hud:hud/survival/panel.png",
+      "file": "icesmp_hud:hud/survival/player_ice.png",
       "ascent": -8482830,
-      "height": 60,
+      "height": 72,
       "chars": [
         ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_player_ice.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/party_ice.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/player_ember.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_player_ember.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/party_ember.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/player_frost.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_player_frost.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/party_frost.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/player_guild.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_player_guild.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/party_guild.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/player_lich.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_player_lich.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/party_lich.png",
+      "ascent": -8482830,
+      "height": 72,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_mob_passive.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_mob_neutral.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_mob_hostile.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_mob_elite.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/target_mob_boss.png",
+      "ascent": -8482830,
+      "height": 88,
+      "chars": [
+        ""
       ]
     }
   ]

@@ -12,15 +12,18 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     public static final int MAX_X_OFFSET = 512;
     public static final int MIN_Y_OFFSET = -256;
     public static final int MAX_Y_OFFSET = 255;
+    static final int SHADER_MIN_Y_OFFSET = -512;
+    static final int SHADER_MAX_Y_OFFSET = 511;
     public static final int MIN_SAFE_MARGIN = 0;
     public static final int MAX_SAFE_MARGIN = 128;
     public static final List<Integer> SCALE_PERMILLE = List.of(
             750, 900, 1000, 1150, 1250, 1400, 1600, 1800,
             2000, 2200, 2400, 2600, 2800, 3000, 3250, 3500);
     public static final int DEFAULT_X_OFFSET = 0;
-    public static final int DEFAULT_Y_OFFSET = 16;
-    public static final int DEFAULT_SAFE_MARGIN = 16;
-    public static final int DEFAULT_SCALE_INDEX = 4;
+    public static final int DEFAULT_Y_OFFSET = 24;
+    public static final int DEFAULT_SAFE_MARGIN = 24;
+    /** 2560x1440 design baseline; the shader applies its own resolution-responsive multiplier. */
+    public static final int DEFAULT_SCALE_INDEX = 6;
 
     public HudLayoutSnapshot {
         xOffsetPixels = clamp(xOffsetPixels, MIN_X_OFFSET, MAX_X_OFFSET);
@@ -29,11 +32,14 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         scaleIndex = clamp(scaleIndex, 0, SCALE_PERMILLE.size() - 1);
         final EnumMap<HudComponent, HudComponentLayout> safe = new EnumMap<>(HudComponent.class);
         for (final HudComponent component : HudComponent.editableValues()) {
-            safe.put(component, HudComponentLayout.defaults());
+            safe.put(component, defaultComponentLayout(component));
         }
         if (components != null) {
             components.forEach((component, layout) -> {
-                if (component != null && component.rendered() && layout != null) safe.put(component, layout);
+                if (component != null && component != HudComponent.GLOBAL
+                        && (component.rendered() || component.isGroup()) && layout != null) {
+                    safe.put(component, layout);
+                }
             });
         }
         components = Map.copyOf(safe);
@@ -72,29 +78,89 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     }
 
     public int anchoredX(final HudComponent component, final int sourceX) {
-        final HudComponentLayout element = componentLayout(component);
+        final HudComponentLayout element = effectiveComponentLayout(component);
+        if (leftAnchored(component)) {
+            return sourceX + xOffsetPixels + safeMarginPixels + element.xOffsetPixels();
+        }
         return anchoredX(sourceX) + element.xOffsetPixels();
     }
 
-    /** 13-bit shader payload: 9-bit signed Y plus a 4-bit scale variant. */
+    /** 14-bit shader payload: 10-bit signed Y plus a 4-bit scale variant. */
     public int shaderCode() {
-        return (scaleIndex << 9) | (yOffsetPixels + 256);
+        return (scaleIndex << 10) | (yOffsetPixels + 512);
     }
 
     public int shaderCode(final HudComponent component) {
-        final HudComponentLayout element = componentLayout(component);
-        final int y = clamp(yOffsetPixels + element.yOffsetPixels(), MIN_Y_OFFSET, MAX_Y_OFFSET);
+        return shaderCode(component, 0);
+    }
+
+    public int shaderCode(final HudComponent component, final int additionalYOffset) {
+        final HudComponentLayout element = effectiveComponentLayout(component);
+        final int y = clamp(yOffsetPixels + element.yOffsetPixels() + additionalYOffset,
+                SHADER_MIN_Y_OFFSET, SHADER_MAX_Y_OFFSET);
         final int effectiveScale = closestScaleIndex(scale() * element.scale());
-        return (effectiveScale << 9) | (y + 256);
+        return (effectiveScale << 10) | (y + 512);
     }
 
     public boolean visible(final HudComponent component) {
-        return component == null || component == HudComponent.GLOBAL || componentLayout(component).visible();
+        return component == null || component == HudComponent.GLOBAL || !component.hideable()
+                || effectiveComponentLayout(component).visible();
     }
 
     public HudComponentLayout componentLayout(final HudComponent component) {
         if (component == null || component == HudComponent.GLOBAL) return HudComponentLayout.defaults();
         return components.getOrDefault(component, HudComponentLayout.defaults());
+    }
+
+    /** Resolves a child transform against its movable player/target/party group. */
+    public HudComponentLayout effectiveComponentLayout(final HudComponent component) {
+        final HudComponentLayout child = componentLayout(component);
+        final HudComponent parent = component == null ? null : component.parentGroup();
+        if (parent == null) return child;
+        final HudComponentLayout group = componentLayout(parent);
+        return new HudComponentLayout(
+                group.xOffsetPixels() + child.xOffsetPixels(),
+                group.yOffsetPixels() + child.yOffsetPixels(),
+                closestScaleIndex(group.scale() * child.scale()),
+                group.visible() && child.visible());
+    }
+
+    public static boolean leftAnchored(final HudComponent component) {
+        if (component == null) return false;
+        final HudComponent anchor = component.isGroup() ? component : component.parentGroup();
+        return anchor == HudComponent.PLAYER_GROUP || anchor == HudComponent.TARGET_GROUP
+                || anchor == HudComponent.PARTY_GROUP;
+    }
+
+    public static HudComponentLayout defaultComponentLayout(final HudComponent component) {
+        if (component == null || component == HudComponent.GLOBAL) {
+            return HudComponentLayout.defaults();
+        }
+        return switch (component) {
+            case CLASS_GROUP -> component(0, 32, 2, true);
+            case CLASS_ICON -> component(-7, -12, 2, true);
+            case CLASS_NAME -> component(3, 15, 2, true);
+            case FACTION -> component(0, 0, 2, false);
+            case LEVEL_TEXT -> component(-3, 15, 2, true);
+            case WALLET_FRAME -> component(0, 10, 2, true);
+            case RESOURCE_LABEL -> component(6, 5, 1, true);
+            case RESOURCE_BAR -> component(5, -12, 2, true);
+            case PRIMARY_MECHANIC -> component(2, -1, 2, true);
+            case SECONDARY_MECHANIC -> component(2, 0, 2, true);
+            case CHARGES -> component(55, -91, 4, true);
+            case DK_RUNES -> component(-38, 32, 1, true);
+            case STATE_PROC -> component(-14, -1, 2, true);
+            case EVENT_TEXT -> component(-15, 9, 2, true);
+            case PLAYER_GROUP -> component(0, 0, 1, true);
+            case TARGET_GROUP -> component(264, 0, 1, true);
+            case PARTY_GROUP -> component(0, 82, 1, true);
+            default -> HudComponentLayout.defaults();
+        };
+    }
+
+    private static HudComponentLayout component(final int x, final int y, final int scaleIndex,
+                                                final boolean visible) {
+        return new HudComponentLayout(x, y, scaleIndex, visible);
     }
 
     public HudLayoutSnapshot move(final int deltaX, final int deltaY) {
@@ -155,7 +221,7 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     }
 
     public HudLayoutSnapshot toggleVisibility(final HudComponent target) {
-        if (target == null || target == HudComponent.GLOBAL) return this;
+        if (target == null || target == HudComponent.GLOBAL || !target.hideable()) return this;
         return withComponent(target, componentLayout(target).toggleVisibility());
     }
 
@@ -165,12 +231,13 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
             return new HudLayoutSnapshot(defaults.xOffsetPixels, defaults.yOffsetPixels,
                     defaults.safeMarginPixels, defaults.scaleIndex, components);
         }
-        return withComponent(target, HudComponentLayout.defaults());
+        return withComponent(target, defaultComponentLayout(target));
     }
 
     public HudLayoutSnapshot withComponent(final HudComponent component,
                                            final HudComponentLayout componentLayout) {
-        if (component == null || !component.rendered()) return this;
+        if (component == null || component == HudComponent.GLOBAL
+                || (!component.rendered() && !component.isGroup())) return this;
         final EnumMap<HudComponent, HudComponentLayout> next = new EnumMap<>(components);
         next.put(component, componentLayout == null ? HudComponentLayout.defaults() : componentLayout);
         return new HudLayoutSnapshot(xOffsetPixels, yOffsetPixels, safeMarginPixels, scaleIndex, next);
@@ -190,7 +257,7 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         return closestScaleIndex(target / 1000.0D);
     }
 
-    private static int closestScaleIndex(final double scale) {
+    static int closestScaleIndex(final double scale) {
         final int target = (int) Math.round(scale * 1000.0D);
         int closest = 0;
         for (int index = 1; index < SCALE_PERMILLE.size(); index++) {

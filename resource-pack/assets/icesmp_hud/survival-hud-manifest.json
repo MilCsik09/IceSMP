@@ -1,14 +1,50 @@
 {
-  "version": 1,
-  "module": "survival",
-  "anchor": "bottom_center",
+  "version": 2,
+  "module": "frames",
+  "anchor": "top_left",
   "canvas_height": 120,
   "panel_size": [
-    228,
-    60
+    252,
+    72
   ],
+  "target_panel_size": [
+    240,
+    88
+  ],
+  "player_frame_themes": [
+    "ice",
+    "ember",
+    "frost",
+    "guild",
+    "lich"
+  ],
+  "target_player_themes": [
+    "ice",
+    "ember",
+    "frost",
+    "guild",
+    "lich"
+  ],
+  "target_mob_styles": [
+    "passive",
+    "neutral",
+    "hostile",
+    "elite",
+    "boss"
+  ],
+  "party_frame_themes": [
+    "ice",
+    "ember",
+    "frost",
+    "guild",
+    "lich"
+  ],
+  "party_max_rows": 4,
   "health_segments": 20,
   "mini_segments": 10,
+  "armor_display": "flat_value",
+  "air_display": "only_when_depleted",
+  "default_scale": 1.0,
   "text_font": "Inter SemiBold",
   "text_oversample": 8,
   "text_atlas": "icesmp_hud:hud/survival/text-atlas.png",

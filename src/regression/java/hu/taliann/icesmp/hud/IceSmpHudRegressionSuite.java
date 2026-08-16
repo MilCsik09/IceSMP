@@ -4,7 +4,9 @@ import hu.taliann.icesmp.classspec.integration.ClassHudMetric;
 import hu.taliann.icesmp.classspec.integration.ClassHudSlot;
 import hu.taliann.icesmp.classspec.integration.ClassHudState;
 import hu.taliann.icesmp.managers.HudManager;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
@@ -21,6 +23,9 @@ public final class IceSmpHudRegressionSuite {
     public static void main(final String[] args) throws Exception {
         fixedLayoutIsIndependentOfDynamicValues();
         survivalVitalsAreCompleteAndFixedWidth();
+        topLeftCarrierDrawsReturnToOrigin();
+        classXpCurveRemainsExactButPersistentBarIsAbsent();
+        targetVitalsAreEventDrivenAndBounded();
         factionThemeProjectionSelectsEveryFrame();
         layoutGeometryStaysInsideArtCompartments();
         specializationlessStateIsExplicit();
@@ -34,26 +39,97 @@ public final class IceSmpHudRegressionSuite {
 
     private static void survivalVitalsAreCompleteAndFixedWidth() {
         final SurvivalHudState state = new SurvivalHudState(
-                75.0D, 100.0D, 4.0D, 18.0D, 20.0D,
+                75.0D, 100.0D, 4.0D, 18.0D,
                 14, 20, 150, 300);
         final String rendered = PlainTextComponentSerializer.plainText().serialize(
-                new SurvivalHudRenderer().render(state, SurvivalHudLayout.defaults()));
-        check(rendered.contains("75 / 100 HP (+4)") && rendered.contains("75%")
-                        && rendered.contains("18/20") && rendered.contains("14/20")
+                new SurvivalHudRenderer().render(state, HudLayoutSnapshot.defaults()));
+        check(rendered.contains("75 / 100 HP") && rendered.contains("+4 pajzs")
+                        && rendered.contains("75%")
+                        && rendered.contains("18") && !rendered.contains("18/")
+                        && rendered.contains("14/20")
                         && rendered.contains("150/300"),
-                "survival HUD must expose current/max HP, percent, armor, food and oxygen");
+                "survival HUD must expose HP, flat armor, food and oxygen without an armor maximum");
         check(count(rendered, '\uEB00') == 1
                         && count(rendered, '\uEB10') == SurvivalHudRenderer.HEALTH_SEGMENTS
                         && count(rendered, '\uEB11') == 15
-                        && count(rendered, '\uEB20') == SurvivalHudRenderer.MINI_SEGMENTS * 3,
+                        && count(rendered, '\uEB20') == SurvivalHudRenderer.MINI_SEGMENTS * 2,
                 "survival bars must keep a fixed draw width independent of their values");
+        final SurvivalHudState dry = new SurvivalHudState(
+                20.0D, 20.0D, 0.0D, 0.0D,
+                20, 20, 300, 300);
+        final String dryRendered = PlainTextComponentSerializer.plainText().serialize(
+                new SurvivalHudRenderer().render(dry, HudLayoutSnapshot.defaults()));
+        check(!dryRendered.contains("300/300")
+                        && count(dryRendered, '\uEB20') == SurvivalHudRenderer.MINI_SEGMENTS
+                        && count(dryRendered, '\uEB00') == 1,
+                "full oxygen must collapse to the balanced two-column surface layout");
         final SurvivalHudState clamped = new SurvivalHudState(
-                Double.NaN, -1.0D, -4.0D, 48.0D, 20.0D,
+                Double.NaN, -1.0D, -4.0D, 48.0D,
                 40, 20, -10, 300);
         check(clamped.health() == 0.0D && clamped.maximumHealth() == 20.0D
-                        && clamped.absorption() == 0.0D && clamped.armorPercent() == 100
+                        && clamped.absorption() == 0.0D && clamped.armor() == 48.0D
                         && clamped.food() == 20 && clamped.air() == 0,
                 "invalid live values must clamp before reaching the survival compositor");
+    }
+
+    private static void topLeftCarrierDrawsReturnToOrigin() {
+        final HudLayoutSnapshot layout = HudLayoutSnapshot.defaults();
+        final Component player = new SurvivalHudRenderer().render(PlayerHudState.preview(), layout, null);
+        final Component targetMob = new TargetHudRenderer().render(TargetHudState.previewMob(), layout, null);
+        final Component targetPlayer = new TargetHudRenderer().render(
+                TargetHudState.previewPlayer(), layout, null);
+        final Component party = new PartyHudRenderer().render(PartyHudState.preview(), layout, null);
+        check(carrierAdvance(player, null) == 0
+                        && carrierAdvance(targetMob, null) == 0
+                        && carrierAdvance(targetPlayer, null) == 0
+                        && carrierAdvance(party, null) == 0,
+                "every absolute top-left draw must restore the carrier cursor exactly");
+        check(PartyHudRenderer.ROW_ADVANCE == 78,
+                "scaled party rows must retain a visible gap instead of overlapping");
+    }
+
+    private static void classXpCurveRemainsExactButPersistentBarIsAbsent() {
+        final ClassXpProgress levelOne = ClassXpProgress.calculate(30, 1, 60, 10, 50);
+        check(levelOne.intoLevel() == 30 && levelOne.levelCost() == 60
+                        && levelOne.remaining() == 30 && levelOne.percent() == 50,
+                "class XP must project total experience into the first level interval");
+        final ClassXpProgress levelThree = ClassXpProgress.calculate(150, 3, 60, 10, 50);
+        check(levelThree.intoLevel() == 20 && levelThree.levelCost() == 80
+                        && levelThree.remaining() == 60 && levelThree.percent() == 25,
+                "class XP must subtract every completed progressive level cost");
+        final ClassXpProgress maxed = ClassXpProgress.calculate(999_999, 50, 60, 10, 50);
+        check(maxed.maxed() && maxed.percent() == 100 && maxed.remaining() == 0,
+                "maximum class level must complete the XP bar without a phantom next cost");
+        final String rendered = PlainTextComponentSerializer.plainText().serialize(
+                new IceSmpHudRenderer().render(
+                        HudPreviewCatalog.model(HudPreviewSelection.defaults())));
+        check(!rendered.contains("Még ") && !rendered.contains(" XP")
+                        && rendered.contains("Vérhold 04:12"),
+                "class XP math must remain available without occupying the persistent class HUD");
+    }
+
+    private static void targetVitalsAreEventDrivenAndBounded() throws Exception {
+        final String listener = read(
+                "src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java");
+        check(listener.contains("recordLastTarget(attacker.getUniqueId(), victim, damage)")
+                        && listener.contains("living.getHealth() - finalDamage")
+                        && listener.contains("TargetHudState.Rank")
+                        && !listener.contains("showTargetVitals")
+                        && !listener.contains("vitalDisplays")
+                        && listener.contains("setVisibleByDefault(false)")
+                        && listener.contains("attacker.showEntity(plugin, display)")
+                        && !listener.contains("getNearbyEntities("),
+                "target HUD must use an immutable owner-thread snapshot and leave only damage numbers in-world");
+        final String config = read("src/main/resources/config/general.yml");
+        final String manager = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
+        check(config.contains("target-frame:") && config.contains("enabled: true")
+                        && config.contains("expire-seconds: 10")
+                        && !config.contains("visibility: attacker-only"),
+                "combat target vitals must ship as a screen-space target frame");
+        check(manager.contains("survivalSnapshots.get(target.targetId())")
+                        && manager.contains("snapshots.get(target.targetId())")
+                        && manager.contains("targetSurvival == null ? target.health()"),
+                "player targets must refresh from immutable live HUD caches without cross-region reads");
     }
 
     private static void fixedLayoutIsIndependentOfDynamicValues() throws Exception {
@@ -77,7 +153,7 @@ public final class IceSmpHudRegressionSuite {
                         && source.contains("LEVEL_CENTER_X = -36")
                         && source.contains("RESOURCE_TEXT_X = -186")
                         && source.contains("EVENT_TEXT_WIDTH = 186")
-                        && source.contains("eventLine(model.event())")
+                        && source.contains("eventLine(model.event(), EVENT_TEXT_WIDTH)")
                         && source.contains("compactStateLine(model.classHud().state(), model.classHud().proc())")
                         && !source.contains("\"Lv. \"")
                         && source.contains("centeredText(HudComponent.EVENT_TEXT")
@@ -180,6 +256,8 @@ public final class IceSmpHudRegressionSuite {
 
         final String rendererSource = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
         check(rendererSource.contains("RUNE_PANEL_FONT")
+                        && rendererSource.contains("glyph(HudComponent.DK_RUNES")
+                        && rendererSource.contains("glyph(HudComponent.CHARGES")
                         && rendererSource.contains("WALLET_PANEL_COMPACT_FONT")
                         && rendererSource.contains("CURRENCY_COMPACT_FONT")
                         && !rendererSource.contains("compactWalletLayout")
@@ -218,7 +296,7 @@ public final class IceSmpHudRegressionSuite {
         check(IceSmpHudRenderer.LEVEL_CENTER_X == -36
                         && IceSmpHudRenderer.RESOURCE_TEXT_X == IceSmpHudRenderer.RESOURCE_BAR_X + 8
                         && IceSmpHudRenderer.EVENT_TEXT_WIDTH == 186,
-                "level, resource label and event text must stay inside their art compartments");
+                "level, resource label and full-width event text must stay inside their compartments");
         check(IceSmpHudRenderer.WALLET_LEFT_X + IceSmpHudRenderer.WALLET_TEXT_OFFSET
                         + IceSmpHudRenderer.WALLET_TEXT_WIDTH <= -139,
                 "left wallet label must stop before the centre divider");
@@ -238,7 +316,7 @@ public final class IceSmpHudRegressionSuite {
                         && listener.contains("isLoaded(final UUID"),
                 "custom HUD readiness must come from a thread-safe pack status snapshot");
         check(backend.contains("resourcePackReady.test(player.getUniqueId())")
-                        && backend.contains("survivalRenderer.fallback(survival)")
+                        && backend.contains("survivalRenderer.fallback(playerState)")
                         && !backend.contains("PersistentDataContainer") && !backend.contains("PlayerProfile"),
                 "backend must be display-only, pack-gated and preserve emergency vital text");
         check(hud.contains("!iceSmpHudActive(player)")
@@ -315,7 +393,7 @@ public final class IceSmpHudRegressionSuite {
                         && manifest.contains("\"compact_wallet_anchor_y\": 178")
                         && manifest.contains("\"compact_wallet_anchor_delta\": -23")
                         && manifest.contains("\"rune_panel_size\": 18")
-                        && manifest.contains("\"layout_color_payload_bits\": 13")
+                        && manifest.contains("\"layout_color_payload_bits\": 14")
                         && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"vanilla_health_hidden\": true")
                         && manifest.contains("\"vanilla_armor_hidden\": true")
@@ -328,7 +406,10 @@ public final class IceSmpHudRegressionSuite {
                         && config.contains("hide-vanilla-food: true")
                         && config.contains("hide-vanilla-oxygen: true")
                         && config.contains("refresh-ticks: 2")
-                        && config.contains("armor-maximum: 20.0"),
+                        && !config.contains("armor-display-cap")
+                        && config.contains("player-group:")
+                        && config.contains("target-group:")
+                        && config.contains("party-group:"),
                 "all hidden vanilla survival values must have an enabled custom replacement");
         final Path frames = Path.of("dev-assets/icesmp-hud/source/frames-v3.png");
         final var image = ImageIO.read(frames.toFile());
@@ -350,10 +431,10 @@ public final class IceSmpHudRegressionSuite {
                         && vertexShader.contains("const float HUD_LAYOUT_SCALES[16]")
                         && vertexShader.contains("int layoutCode = (packedColor.r & 15)")
                         && vertexShader.contains("vec2 selectedHudScale = hudScale * layoutScale")
-                        && vertexShader.contains("bottomCentered = id >= 11 && id <= 15")
-                        && vertexShader.contains("pos.y += ui.y - 120.0")
-                        && vertexShader.contains("clipPosition.x = clipPosition.x * selectedHudScale.x")
-                        && vertexShader.contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")
+                        && vertexShader.contains("topLeft = id >= 11 && id <= 15")
+                        && vertexShader.contains("ScreenSize.x / 2560.0")
+                        && vertexShader.contains("clipPosition.x = -clipPosition.w")
+                        && vertexShader.contains("layoutYOffset * responsiveScale * layoutScale")
                         && vertexShader.contains("fog_spherical_distance(pos)")
                         && !vertexShader.contains("uniform int FogShape"),
                 "HUD vertex shader must implement the Minecraft 1.21.11 UBO contract");
@@ -385,23 +466,33 @@ public final class IceSmpHudRegressionSuite {
                 "isolated survival generator must cover regular sprites without hardcore overrides");
         final String survivalManifest = read(
                 "resource-pack/assets/icesmp_hud/survival-hud-manifest.json");
-        check(survivalManifest.contains("\"anchor\": \"bottom_center\"")
+        check(survivalManifest.contains("\"anchor\": \"top_left\"")
+                        && survivalManifest.contains("\"version\": 2")
                         && survivalManifest.contains("\"panel_size\": [")
+                        && survivalManifest.contains("\"target_panel_size\": [")
+                        && survivalManifest.contains("\"party_max_rows\": 4")
                         && survivalManifest.contains("\"health_segments\": 20")
                         && survivalManifest.contains("\"mini_segments\": 10")
+                        && survivalManifest.contains("\"armor_display\": \"flat_value\"")
+                        && survivalManifest.contains("\"air_display\": \"only_when_depleted\"")
+                        && survivalManifest.contains("\"default_scale\": 1.0")
                         && survivalManifest.contains("\"text_font\": \"Inter SemiBold\"")
                         && survivalManifest.contains("\"text_oversample\": 8")
                         && survivalManifest.contains(
                                 "\"text_atlas\": \"icesmp_hud:hud/survival/text-atlas.png\"")
                         && survivalManifest.contains("\"hardcore_hearts_overridden\": false"),
-                "survival module manifest must retain its bottom-centred complete layout");
+                "frame module manifest must retain its responsive top-left complete layout");
         final var survivalTextAtlas = ImageIO.read(Path.of(
                 "resource-pack/assets/icesmp_hud/textures/hud/survival/text-atlas.png").toFile());
-        check(survivalTextAtlas != null && survivalTextAtlas.getWidth() == 640
-                        && survivalTextAtlas.getHeight() == 192,
-                "survival text atlas must remain isolated from the class HUD atlas");
+        check(survivalTextAtlas != null && survivalTextAtlas.getWidth() == 768
+                        && survivalTextAtlas.getHeight() == 672,
+                "frame text atlas must retain complete Hungarian target/party typography");
         for (final String font : List.of("panel", "health_segments", "mini_segments", "icons",
-                "text_header", "text_percent", "text_stats")) {
+                "player_name", "text_header", "text_percent", "text_stats",
+                "target_header", "target_status", "target_health_segments", "target_health",
+                "target_resource_segments", "target_stats", "party_header",
+                "party_health_segments", "party_health_text", "party_resource_segments",
+                "party_status")) {
             check(Files.isRegularFile(Path.of(
                     "resource-pack/assets/icesmp_hud/font/survival", font + ".json")),
                     "missing isolated survival font: " + font);
@@ -489,6 +580,43 @@ public final class IceSmpHudRegressionSuite {
             if (value.charAt(index) == needle) count++;
         }
         return count;
+    }
+
+    private static int carrierAdvance(final Component component, final Key inheritedFont) {
+        final Key font = component.style().font() == null
+                ? inheritedFont : component.style().font();
+        int advance = 0;
+        if (component instanceof TextComponent text && !text.content().isEmpty()) {
+            final int[] codePoints = text.content().codePoints().toArray();
+            for (final int codePoint : codePoints) advance += glyphAdvance(font, codePoint);
+        }
+        for (final Component child : component.children()) {
+            advance += carrierAdvance(child, font);
+        }
+        return advance;
+    }
+
+    private static int glyphAdvance(final Key font, final int codePoint) {
+        if (font == null) throw new AssertionError("HUD glyph has no explicit font");
+        final String id = font.asString();
+        if ("icesmp_hud:space".equals(id)) {
+            return codePoint - IceSmpHudRenderer.SPACE_FIRST + IceSmpHudRenderer.SPACE_MIN;
+        }
+        if ("icesmp_hud:survival/panel".equals(id)) {
+            return codePoint >= 0xEB05 && codePoint <= 0xEB0E
+                    ? TargetHudRenderer.PANEL_ADVANCE : SurvivalHudRenderer.PANEL_ADVANCE;
+        }
+        if (id.equals("icesmp_hud:survival/health_segments")
+                || id.equals("icesmp_hud:survival/target_health_segments")) {
+            return SurvivalHudRenderer.HEALTH_SEGMENT_ADVANCE;
+        }
+        if (id.endsWith("mini_segments") || id.endsWith("resource_segments")
+                || id.endsWith("party_health_segments")) {
+            return SurvivalHudRenderer.MINI_SEGMENT_ADVANCE;
+        }
+        if ("icesmp_hud:survival/icons".equals(id)) return SurvivalHudRenderer.ICON_ADVANCE;
+        if (id.startsWith("icesmp_hud:survival/")) return SurvivalHudRenderer.TEXT_ADVANCE;
+        throw new AssertionError("Unknown top-left HUD font: " + id);
     }
 
     private static void check(final boolean condition, final String message) {

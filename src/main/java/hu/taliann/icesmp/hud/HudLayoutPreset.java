@@ -8,12 +8,12 @@ public record HudLayoutPreset(String id, String resolution, int guiScale,
                               HudLayoutSnapshot layout) {
 
     public static final List<HudLayoutPreset> VALUES = List.of(
-            preset("720p-gui2", "1280x720", 2, 0, 8, 12, 2),
-            preset("1080p-gui2", "1920x1080", 2, 0, 12, 16, 3),
-            preset("2048x1152-gui3", "2048x1152", 3, 0, 16, 16, 4),
-            preset("1440p-gui3", "2560x1440", 3, 0, 18, 20, 5),
-            preset("4k-gui4", "3840x2160", 4, 0, 24, 24, 6),
-            preset("large-accessible", "bármely", 3, -12, 24, 24, 7));
+            preset("720p-gui2", "1280x720", 2, 0, 18, 18, 6),
+            preset("1080p-gui2", "1920x1080", 2, 0, 24, 24, 6),
+            preset("2048x1152-gui3", "2048x1152", 3, 0, 24, 24, 6),
+            preset("1440p-gui3", "2560x1440", 3, 0, 24, 24, 6),
+            preset("4k-gui4", "3840x2160", 4, 0, 28, 28, 6),
+            preset("large-accessible", "bármely", 3, 0, 28, 28, 8));
 
     public static Optional<HudLayoutPreset> find(final String id) {
         return VALUES.stream().filter(preset -> preset.id.equalsIgnoreCase(id)).findFirst();

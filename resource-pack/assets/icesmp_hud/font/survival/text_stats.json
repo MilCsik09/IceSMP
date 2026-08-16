@@ -3,11 +3,15 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/text-atlas.png",
-      "ascent": -8515643,
-      "height": 12,
+      "ascent": -8515655,
+      "height": 14,
       "chars": [
-        " 0123456789./()+",
-        "%HP…"
+        " 0123456789ABCDE",
+        "FGHIJKLMNOPQRSTU",
+        "VWXYZabcdefghijk",
+        "lmnopqrstuvwxyzÁ",
+        "ÉÍÓÖŐÚÜŰáéíóöőúü",
+        "ű_'./+%:,-!?…•—◆"
       ]
     }
   ]

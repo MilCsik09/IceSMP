@@ -454,10 +454,10 @@ out vec2 texCoord0;
 void main() {
     vec3 pos = Position;
     vec2 ui = ceil(2 / vec2(ProjMat[0][0], -ProjMat[1][1]));
-    float responsiveScale = clamp(min(ScreenSize.x / 1365.0, ScreenSize.y / 768.0), 1.0, 1.5);
+    float responsiveScale = clamp(min(ScreenSize.x / 2560.0, ScreenSize.y / 1440.0), 0.65, 1.5);
     vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;
     bool hudGlyph = false;
-    bool bottomCentered = false;
+    bool topLeft = false;
     float layoutScale = 1.0;
     float layoutYOffset = 0.0;
     vertexColor = Color * texelFetch(Sampler2, UV2 / 16, 0);
@@ -466,14 +466,15 @@ void main() {
         if (((bit >> MAX_BIT) & 1) == 1) {
             int id = bit - (1 << MAX_BIT);
             hudGlyph = true;
-            bottomCentered = id >= 11 && id <= 15;
+            topLeft = id >= 11 && id <= 15;
             ivec3 packedColor = ivec3(round(Color.rgb * 255.0));
             int layoutCode = (packedColor.r & 15) | ((packedColor.g & 15) << 4)
-                    | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8);
-            layoutYOffset = float((layoutCode & 511) - 256);
-            layoutScale = HUD_LAYOUT_SCALES[(layoutCode >> 9) & 15];
-            vec3 visualColor = vec3((packedColor & ivec3(240, 240, 224))
-                    + ivec3(8, 8, 16)) / 255.0;
+                    | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8)
+                    | ((packedColor.r & 16) << 9);
+            layoutYOffset = float((layoutCode & 1023) - 512);
+            layoutScale = HUD_LAYOUT_SCALES[(layoutCode >> 10) & 15];
+            vec3 visualColor = vec3((packedColor & ivec3(224, 240, 224))
+                    + ivec3(16, 8, 16)) / 255.0;
             vertexColor = vec4(min(visualColor, vec3(1.0)), Color.a)
                     * texelFetch(Sampler2, UV2 / 16, 0);
             pos.y -= (bit << HEIGHT_BIT) + ADD_OFFSET + DEFAULT_OFFSET;
@@ -495,9 +496,6 @@ void main() {
             if (!outline && (pos.z == 0 || pos.z == 1000 || pos.z == -90 || pos.z == 2800)) {
                 vertexColor = vec4(0);
             }
-            if (bottomCentered) {
-                pos.y += ui.y - 120.0;
-            }
         }
     }
     sphericalVertexDistance = fog_spherical_distance(pos);
@@ -506,11 +504,12 @@ void main() {
     vec4 clipPosition = ProjMat * ModelViewMat * vec4(pos, 1.0);
     if (hudGlyph) {
         vec2 selectedHudScale = hudScale * layoutScale;
-        if (bottomCentered) {
-            clipPosition.x = clipPosition.x * selectedHudScale.x;
-            clipPosition.y = -clipPosition.w
-                    + (clipPosition.y + clipPosition.w) * selectedHudScale.y
-                    - layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;
+        if (topLeft) {
+            clipPosition.x = -clipPosition.w + clipPosition.x * selectedHudScale.x;
+            clipPosition.y = clipPosition.w
+                    + (clipPosition.y - clipPosition.w) * selectedHudScale.y
+                    - layoutYOffset * responsiveScale * layoutScale
+                    * 2.0 * clipPosition.w / ScreenSize.y;
         } else {
             clipPosition.x = clipPosition.w + clipPosition.x * selectedHudScale.x;
             clipPosition.y = clipPosition.w
@@ -660,8 +659,8 @@ def generate_layout_preview(text_rows: list[str]) -> None:
     paste_text("Tűz 72", 20, HUD_Y["detail_text"], (199, 212, 234))
     paste_text("Fagy 48", 86, HUD_Y["detail_text"], (199, 212, 234))
     paste_text("Arkán 31", 152, HUD_Y["detail_text"], (199, 212, 234))
-    event = "ESEMÉNY Vérhold 04:12"
-    paste_text(event, HUD_X["event_center"] - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
+    event = "Vérhold • RAID • Világboss"
+    paste_text(event, 120 - len(event) * (TEXT_LOGICAL_WIDTH + 1) // 2,
                HUD_Y["event_text"], (240, 216, 141))
     paste_bar("segment", HUD_X["resource_bar"], HUD_Y["resource_bar"], 13, 10)
     paste_bar("metric", HUD_X["primary_metric_bar"], HUD_Y["metric_bar"], 8, 9)
@@ -796,7 +795,6 @@ def main() -> None:
         provider("metric-fill-warm.png", chr(0xE182), 6, HUD_Y["metric_bar"], 5),
         provider("metric-fill-gold.png", chr(0xE183), 6, HUD_Y["metric_bar"], 5),
     ])
-
     for name, y in {
         "text_header": HUD_Y["header"],
         "text_subheader": HUD_Y["subheader"],
@@ -845,8 +843,8 @@ def main() -> None:
         "compact_wallet_anchor_y": COMPACT_WALLET_ANCHOR_Y,
         "compact_wallet_anchor_delta": COMPACT_WALLET_ANCHOR_DELTA,
         "rune_panel_size": 18,
-        "layout_color_payload_bits": 13,
-        "layout_y_offset_range": [-256, 255],
+        "layout_color_payload_bits": 14,
+        "layout_y_offset_range": [-512, 511],
         "layout_scale_variants": list(HUD_LAYOUT_SCALES),
         "vanilla_health_hidden": True,
         "vanilla_armor_hidden": True,

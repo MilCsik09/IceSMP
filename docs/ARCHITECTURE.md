@@ -1196,7 +1196,11 @@ to primary/secondary and up to three additional typed metrics, state, proc, char
 discrete slots. `ClassHudMechanics.of` derives a bounded visual pip row from actual charge counts;
 the Death Knight replaces it with its typed ready/spent/regenerating/locked rune slots.
 `HudManager` captures that projection on the player's Folia region thread and embeds it in
-`HudSnapshot`; the first-party renderer and PlaceholderAPI only read the concurrent immutable
+`HudSnapshot`. Ugyanitt a teljes class XP és az aktuális class-szint alapján a pure
+`ClassXpProgress` kiszámítja a szint kezdőpontját, költségét, belső haladást, hiányzó XP-t és
+százalékot; ez kizárólag display-projekció, nem második leveling authority, és a persistent class
+panel nem rendereli. A first-party renderer
+és a PlaceholderAPI csak a concurrent immutable
 projection/cache. Neither can mutate Profile v2 or a class runtime. `ResourcePackListener`
 publishes a thread-safe per-player `SUCCESSFULLY_LOADED` capability; only then does the first-party
 bossbar/font renderer suppress the native compact fallback. No external HUD plugin participates in
@@ -1204,10 +1208,13 @@ rendering or state ownership. A joining player's missing pack cannot toggle anot
 
 The configured `hud.icesmp-hud.layout` is the global presentation base. Personal editor saves use
 `PlayerProfileHudPreferenceStore` and the existing Profile v2 `preferences.values` map as the sole
-durable player authority. Keys below `hud.layout.*` are sparse field-level overrides, not a copied
+durable player authority. Keys below `hud.layout-v2.*` are sparse field-level overrides, not a copied
 snapshot: effective layout is rebuilt as `global base + valid personal differences`, so untouched
 fields inherit later global changes. Reset-to-global removes those keys through the same CAS-backed
-section mutation. Editor sessions and synthetic previews remain isolated, immutable runtime state.
+section mutation. Legacy layout keys are intentionally ignored; there is no migration path. Editor
+sessions and synthetic previews remain isolated, immutable runtime state. Generic `CHARGES` és
+`DK_RUNES` külön editor-kategória. A `PLAYER_GROUP`, `TARGET_GROUP` és `PARTY_GROUP` transzformja
+a gyermekek relatív transzformjával kompozícióban érvényesül.
 
 The renderer uses BMP private-use spacing, fixed-width glyph cells and zero-net-width draw commands.
 Dynamic values (including `0`, `120`, class changes, rune states and wallet counts) therefore cannot
@@ -1216,18 +1223,19 @@ The guest/Menedék frame is generated from that grid and may replace only the ou
 R2 packaging deterministically merges the immutable external base with explicitly owned IceSMP
 paths; it does not start Folia or any external HUD plugin and rejects unowned ZIP collisions.
 
-### Survival HUD projection
+### Player/Target/Party frame projections
 
 `SurvivalHudState` is a second immutable projection, sampled on each player's Folia entity thread
 from current/max health, absorption, armor, food and remaining/max air. It is intentionally separate
 from the slower class/sidebar `HudSnapshot`: `hud.icesmp-hud.survival.refresh-ticks` drives a small,
 default two-tick refresh without rebuilding profile, wallet or event state. `SurvivalHudRenderer`
-composes it into the same per-player first-party bossbar as the class panel, so the two renderers do
-not contend for bossbar ownership.
+a frakciópalettás `PlayerHudState` részeként kompozícióba helyezi. A `TargetHudRenderer` és
+`PartyHudRenderer` ugyanabba az egyetlen per-player bossbar-carrierbe ír, így a rétegek nem
+versenyeznek bossbar-tulajdonért.
 
-The survival layout uses its own `icesmp_hud:survival/*` font providers, private-use glyph range,
-texture subtree and `survival-hud-manifest.json`. Its shader layout IDs occupy the reserved
-bottom-center anchor range; the existing class HUD keeps its right-top IDs and coordinates. The
+The frame layout uses its own `icesmp_hud:survival/*` font providers, private-use glyph range,
+texture subtree and `survival-hud-manifest.json`. Its shader layout IDs occupy the reserved top-left
+anchor range; the existing class HUD keeps its right-top IDs and coordinates. The
 generated pack makes only the normal vanilla health, armor, food and air sprites transparent.
 Hardcore and vehicle-heart assets are deliberately not generated. This separation keeps the asset
 paths merge-safe against the profession branch and lets either generator be reviewed independently.
@@ -1239,6 +1247,20 @@ not hide the only health display. The `hide-vanilla-*` config values are package
 not runtime kill switches; an invalid value logs a severe warning while the replacement remains on.
 Current/max numbers are rendered directly, with no ten-heart normalization, so enabling the separate
 class health-scaling gate later does not require another HUD protocol or asset change.
+Az armor flat számként, maximum és százalékos sáv nélkül rajzolódik; a food és conditional oxygen
+egymástól független fixed-width draw group. Az oxygen csak `air < maximumAir` esetén jelenik meg.
+
+### Eseményvezérelt Target Frame
+
+`DamageIndicatorListener` a nem törölt, pozitív játékos-sebzés MONITOR eseményén, a sérült
+entitás owner-threadjén rögzíti a név/típus/rang/szint és a találat után projektált current/max HP
+immutable snapshotját. A `HudManager` ezt screen-space `TargetHudState`-té alakítja. Játékos
+célpontnál a célpont saját HUD tickjének immutable health/resource snapshotja frissíti az adatot;
+cross-region live `Player`-olvasás nincs. A mob eredeti nevét a rendszer nem írja.
+
+Nincs online-player × nearby-entity poll, cross-region world scan vagy tartós vitals-entity.
+Lejárat, death és quit törli a target snapshotot. Egyedül a rövid életű floating damage-number
+marad `TextDisplay`; saját entity schedulerén egy másodperc után eltávolítja magát.
 
 ## Client Bridge — az IceSMP Client protokoll-alapja
 
@@ -1338,7 +1360,7 @@ Routing (a `hud.refresh-ticks` kadenciájú HUD-tickből, a játékos régió-sz
   cache-t üríti, így a friss session mindig teljes state-tel indul.
 - **Nincs dupla class-HUD:** a natív HUD-ra routolt játékosnál a sidebar, a first-party class-panel
   és a Folia compact fallback elhallgat (a `HudManager` a `ClientHudRoute` seam-en kérdez rá,
-  a híd típusát nem ismeri; a bekötés a core-ban történik). A first-party survival panel addig
+  a híd típusát nem ismeri; a bekötés a core-ban történik). A first-party Player Frame addig
   marad, amíg a kliensprotokoll nem hirdet vele egyenértékű survival-HUD capabilityt; különben a
   pack által elrejtett vanilla sávok miatt eltűnne a HP. A világesemény-bossbarok és a tablist
   maradnak. Resync a BEGIN/END közé teljes friss HUD-state-et küld.

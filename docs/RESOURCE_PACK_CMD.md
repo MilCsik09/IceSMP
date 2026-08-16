@@ -72,15 +72,16 @@ keresztül kerül a klienshez.
 
 ## Technikai tudnivalók
 
-- **Méret:** **64×64 px**, átlátszó háttérrel (PNG) — a csomagolt pack mind a 304 item-textúrája ilyen, vegyes felbontás tilos.
+- **Inventory-item mérete:** 64×64 px, átlátszó háttérrel (PNG). Ez a pack egységes item-sprite felbontása.
+- **Viselt equipment mérete:** humanoid, leggings és wings layer 64×32 px; horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy átméretezni.
 - **Fájlnév és hely:** a kész PNG az `assets/icesmp/textures/item/<modell-id>.png` útvonalra kerül; a JSON-bekötés kész, csak a PNG-t kell szállítani.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik — a vanilla textúrája jó kiindulás a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED = Perinfernicitas (láng, vörös-arany), BLUE = Cryghaliris (jég, kék-ezüst), NEUTRAL = Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK = Kitaszítottak (csont, éjfekete-lila, és a jellegzetes **hideg türkiz derengés** — a lich-szem: a Néma Királyné élőhalott-fénye a szemekben, rúnákban, élek mentén).
 
 ## Stílus-szabályok (vanilla-konzisztencia)
 
-1. **Egységes felbontás: 64×64.** A pack ezen a felbontáson áll; ettől eltérő méretű PNG nem kerülhet be. A részletesség nem jogosít fotorealizmusra — a pixel-fegyelem (kemény átmenet, korlátozott paletta) 64-en is kötelező.
-2. **Margó:** a tárgy ne érjen a vászon széléig — a vászon ~80%-át töltse ki, középre igazítva (64×64-nél ~6-8 px üres perem).
+1. **Egységes item-felbontás:** minden inventory-sprite 64×64 px. Az equipment UV-lapok ettől szándékosan eltérnek, mert méretüket a vanilla renderer rögzíti.
+2. **Margó:** az inventory-tárgy ne érjen a vászon széléig — a 64×64-es vászon ~80%-át töltse ki, középre igazítva, nagyjából 6–8 px üres peremmel.
 3. **Sziluett-olvashatóság:** az item egy vanilla tárgy helyén jelenik meg — első ránézésre ugyanannak a tárgy-osztálynak tűnjön (bot=bot, sisak=sisak). Kard/szerszám 45°-ban átlósan: markolat balra-le, hegy jobbra-fel.
 4. **Kontúr:** 2-3 px sötét körvonal a külső élen (64×64-en ez felel meg a vanilla 1 px-es érzetének), de NEM tiszta fekete — az anyagszín legmélyebb árnyalata; a belső vonalak még lágyabbak.
 5. **Paletta-fegyelem:** anyagonként 4–8 tónus, kemény pixel-átmenetek — semmi blur, anti-aliasing vagy színátmenet; dither csak nagyon indokoltan.
@@ -89,6 +90,17 @@ keresztül kerül a klienshez.
 8. **Telítettség:** a vanilla visszafogott, földes palettája mellett a neon kiabál — izzó akcent (lich-türkiz, láng) csak kevés pixelen (2–6 fénypont).
 9. **Kicsiben is működjön:** a textúra 64×64, de az inventoryban ~16-32 képernyő-pixelen jelenik meg — a 4 px-nél vékonyabb részlet ott eltűnik; minden darabot 16×16-ra kicsinyítve is ellenőrizz.
 10. **Perspektíva:** lapos sprite szemből (vagy 45°-os szerszám) — nem izometrikus/3D nézet.
+
+### Equipment UV- és használati állapotok
+
+- A head/chest/legs/feet textúrák kizárólag a saját vanilla UV-szigeteiket festhetik; az üres
+  terület maradjon teljesen átlátszó.
+- A kardok és szerszámok orientációja: markolat balra-lent, működő vég vagy hegy jobbra-fent.
+  A horgászbot item model parentje mindig `minecraft:item/handheld_rod`.
+- A bow/crossbow pull, charged, fishing cast, shield blocking és trident throwing/in-hand sprite
+  vizuálisan is különbözzön az alaptól és egymástól; pusztán más fájlnév nem számít állapotnak.
+- Regenerálás és ellenőrzés: `python3 scripts/generate_equipment_assets.py`, majd
+  `python3 scripts/audit_equipment_assets.py`.
 
 ## Globális paletta
 
@@ -1941,11 +1953,13 @@ erőd/kapu külső héjat kap, de ugyanabból a kanonikus belső panelgeometriá
 frakciókeretek. A reprodukálható feladatok: `generateIceSmpHudAssets`,
 `validateIceSmpHudPackage`, `iceSmpHudRegressionTest`, `hudEditorRegressionTest`.
 
-A survival bővítés szándékosan elkülönült modul: a fontjai a `font/survival/`, a képei a
+A Player/Target/Party frame bővítés szándékosan elkülönült modul: a fontjai a `font/survival/`, a képei a
 `textures/hud/survival/` alatt, contractja pedig a `survival-hud-manifest.json` fájlban él. A
 `generateIceSmpSurvivalHudAssets` a core generátor után fut, az umbrella
 `generateIceSmpHudAssets` mindkettőt előállítja. A modul a shader fenntartott 11–15-ös ID-it és
-bottom-center horgonyát használja, ezért a jobb felső class HUD koordinátáit és assetjeit nem írja át.
+top-left horgonyát használja, ezért a jobb felső class HUD koordinátáit és assetjeit nem írja át.
+A player/party keretek 252×72, a player/mob target keretek 240×88 pixelesek; mindegyik belefér a
+kliens 256 pixeles font-stitcher limitjébe.
 
 A `runFolia` fejlesztői provisioning a változtathatatlan külső packot
 (`4900b0a9bed8db710143393916db3687e01def54`) a first-party merge bemeneteként stage-eli. A külső
@@ -1965,9 +1979,12 @@ A HUD a BMP private-use tartományban generált, repo-validált spacing- és gly
 nem támaszkodik külső HUD motor supplementary-plane sentinelére. Minden dinamikus sprite teljes 64×64-es
 logikai cellát kap, minden rajzparancs visszatér a kezdőpontra, így érték- vagy ikonváltás nem mozdítja
 el a panelt. A shader a Minecraft 1.21.11 `Globals.ScreenSize` értékével kompenzálja a kliens
-GUI-skáláját, így a teljes kompozíció a jobb felső sarokhoz horgonyzott marad. Az admin editor a
+GUI-skáláját, majd 2560×1440 referenciafelbontáshoz reszponzívan skáláz. A class kompozíció a
+jobb, a Player/Target/Party klaszter a bal felső sarokhoz horgonyzott. Az admin editor a
 globális keret mellett minden rajzcsoportnak — paneleknek, ikonoknak, feliratoknak, walletnek,
-resource-csíknak, mechanikáknak, charge/rúna-sornak, proc/state-nek, részletmetrikáknak és eventnek —
+resource-csíknak, mechanikáknak, külön generic charge- és DK-rúna-sornak,
+proc/state-nek, részletmetrikáknak, eventnek, valamint a Player/Target/Party csoportoknak és
+gyermekeiknek —
 külön relatív X/Y, méret és láthatóság transzformot ad. Az X-eltolást és biztonsági margót a
 szerveroldali zéró-nettó-szélességű komponenspozíció alkalmazza. Minden kirajzolt komponens saját
 effektív Y-eltolását és méretét egy 13 bites, HUD-glyph színébe kódolt layout-azonosító viszi a
@@ -1984,8 +2001,10 @@ nagy felbontásban mintavételezett atlasz. A backend csak `SUCCESSFULLY_LOADED`
 ezért pack nélkül nem jelenhet meg felső missing-glyph négyzet.
 
 A normál vanilla health/armor/food/air sprite-ok átlátszó 9×9-es replacementet kapnak. A hardcore
-szívek szándékosan nincsenek generálva vagy owned-ként engedélyezve. A szerveroldali survival panel
-current/max HP-t, százalékot, absorptiont, páncélt, ételt és levegőt jelenít meg; pack nélkül a
+szívek szándékosan nincsenek generálva vagy owned-ként engedélyezve. A szerveroldali Player Frame
+current/max HP-t, százalékot, absorptiont, páncélt és ételt jelenít meg, levegőt pedig csak akkor,
+amikor az a maximum alá csökken. A frame és minden érték külön editor-komponens, a
+`player-group` pedig együtt mozgatja őket; pack nélkül a
 változatlan vanilla sprite-ok maradnak a biztonságos fallback.
 
 Az editor kizárólag sikeres `SUCCESSFULLY_LOADED` státusznál preview-zik; pack nélkül nem próbál

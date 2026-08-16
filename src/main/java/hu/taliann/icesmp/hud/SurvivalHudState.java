@@ -2,7 +2,7 @@ package hu.taliann.icesmp.hud;
 
 /** Immutable, display-only projection of the four vanilla survival HUD resources. */
 public record SurvivalHudState(double health, double maximumHealth, double absorption,
-                               double armor, double maximumArmor,
+                               double armor,
                                int food, int maximumFood,
                                int air, int maximumAir) {
 
@@ -10,7 +10,6 @@ public record SurvivalHudState(double health, double maximumHealth, double absor
         maximumHealth = positive(maximumHealth, 20.0D);
         health = clamp(finite(health, 0.0D), 0.0D, maximumHealth);
         absorption = Math.max(0.0D, finite(absorption, 0.0D));
-        maximumArmor = positive(maximumArmor, 20.0D);
         armor = Math.max(0.0D, finite(armor, 0.0D));
         maximumFood = Math.max(1, maximumFood);
         food = Math.max(0, Math.min(maximumFood, food));
@@ -20,10 +19,6 @@ public record SurvivalHudState(double health, double maximumHealth, double absor
 
     public int healthPercent() {
         return percent(health, maximumHealth);
-    }
-
-    public int armorPercent() {
-        return percent(armor, maximumArmor);
     }
 
     public int foodPercent() {

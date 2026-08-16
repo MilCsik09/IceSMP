@@ -8,6 +8,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /** Centralized access to all user-facing, configurable messages. */
@@ -52,8 +55,14 @@ public final class MessageManager {
         plugin.getDataFolder().mkdirs();
         final YamlConfiguration merged = new YamlConfiguration();
 
-        // Per-subsystem defaults: messages/<subsystem>.yml. Extract the bundled set on first run,
-        // then merge every .yml present (so a newly added group file is picked up automatically).
+        // The bundled files must remain the fallback authority after upgrades: saveResource(false)
+        // intentionally preserves an admin's older file, which may not contain newly required keys.
+        mergeBundledDefault(merged, "messages.yml");
+        for (final String group : MESSAGE_GROUPS) {
+            mergeBundledDefault(merged, "messages/" + group + ".yml");
+        }
+
+        // Disk files are overrides. Every present .yml is merged so custom groups remain supported.
         final File dir = new File(plugin.getDataFolder(), "messages");
         dir.mkdirs();
         for (final String group : MESSAGE_GROUPS) {
@@ -76,6 +85,21 @@ public final class MessageManager {
         mergeInto(merged, YamlConfiguration.loadConfiguration(messagesFile));
 
         messagesConfiguration = merged;
+    }
+
+    private void mergeBundledDefault(final YamlConfiguration target, final String resourcePath) {
+        try (InputStream stream = plugin.getResource(resourcePath)) {
+            if (stream == null) {
+                plugin.getLogger().warning("Missing bundled message resource: " + resourcePath);
+                return;
+            }
+            try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                mergeInto(target, YamlConfiguration.loadConfiguration(reader));
+            }
+        } catch (final java.io.IOException failure) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING,
+                    "Could not load bundled message resource: " + resourcePath, failure);
+        }
     }
 
     /** Copies every leaf (non-section) key from {@code source} into {@code target}. */

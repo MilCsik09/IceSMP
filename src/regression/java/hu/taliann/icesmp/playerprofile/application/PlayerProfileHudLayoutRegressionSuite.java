@@ -15,7 +15,7 @@ public final class PlayerProfileHudLayoutRegressionSuite {
         unchangedFieldsFollowTheGlobalBase();
         onlyPersonalDifferencesArePersisted();
         malformedFieldsFallBackIndependently();
-        legacyLevelTextAnchorMigratesToTheCenteredBaseline();
+        legacyLayoutKeysAreIgnored();
         System.out.println("PlayerProfile HUD-layout regression suite passed.");
     }
 
@@ -51,11 +51,11 @@ public final class PlayerProfileHudLayoutRegressionSuite {
                 personal, global);
 
         check(saved.size() == 5
-                        && "3500".equals(saved.get("hud.layout.scale"))
-                        && "15".equals(saved.get("hud.layout.event-text.x"))
-                        && "-10".equals(saved.get("hud.layout.event-text.y"))
-                        && "3500".equals(saved.get("hud.layout.event-text.scale"))
-                        && "false".equals(saved.get("hud.layout.event-text.visible")),
+                        && "3500".equals(saved.get("hud.layout-v2.scale"))
+                        && "15".equals(saved.get("hud.layout-v2.event-text.x"))
+                        && "-10".equals(saved.get("hud.layout-v2.event-text.y"))
+                        && "3500".equals(saved.get("hud.layout-v2.event-text.scale"))
+                        && "false".equals(saved.get("hud.layout-v2.event-text.visible")),
                 "a Profile v2 csak az öt tényleges személyes eltérést tárolhatja");
         check(PlayerProfileHudPreferenceStore.applyLayoutOverrides(global, saved).equals(personal),
                 "a ritka felülírásoknak veszteség nélkül kell visszaállítaniuk az effektív layoutot");
@@ -67,13 +67,13 @@ public final class PlayerProfileHudLayoutRegressionSuite {
         final HudLayoutSnapshot global = new HudLayoutSnapshot(7, 9, 19, 6)
                 .withComponent(HudComponent.WALLET, new HudComponentLayout(3, 4, 5, true));
         final Map<String, String> malformed = new LinkedHashMap<>();
-        malformed.put("hud.layout.x", "999999");
-        malformed.put("hud.layout.y", "-23");
-        malformed.put("hud.layout.scale", "3333");
-        malformed.put("hud.layout.wallet.x", "nem-szám");
-        malformed.put("hud.layout.wallet.y", "11");
-        malformed.put("hud.layout.wallet.scale", "3500");
-        malformed.put("hud.layout.wallet.visible", "talán");
+        malformed.put("hud.layout-v2.x", "999999");
+        malformed.put("hud.layout-v2.y", "-23");
+        malformed.put("hud.layout-v2.scale", "3333");
+        malformed.put("hud.layout-v2.wallet.x", "nem-szám");
+        malformed.put("hud.layout-v2.wallet.y", "11");
+        malformed.put("hud.layout-v2.wallet.scale", "3500");
+        malformed.put("hud.layout-v2.wallet.visible", "talán");
 
         final HudLayoutSnapshot merged = PlayerProfileHudPreferenceStore.applyLayoutOverrides(
                 global, malformed);
@@ -86,15 +86,11 @@ public final class PlayerProfileHudLayoutRegressionSuite {
                 "hibás komponensmező csak önmagában eshet vissza az alapra");
     }
 
-    private static void legacyLevelTextAnchorMigratesToTheCenteredBaseline() {
-        final HudLayoutSnapshot global = HudLayoutSnapshot.defaults()
-                .withComponent(HudComponent.LEVEL_TEXT,
-                        new HudComponentLayout(0, 0, 2, true));
+    private static void legacyLayoutKeysAreIgnored() {
+        final HudLayoutSnapshot global = HudLayoutSnapshot.defaults();
         final Map<String, String> legacy = Map.of("hud.layout.level-text.x", "-16");
-        final HudLayoutSnapshot merged = PlayerProfileHudPreferenceStore.applyLayoutOverrides(
-                global, legacy);
-        check(merged.componentLayout(HudComponent.LEVEL_TEXT).xOffsetPixels() == 0,
-                "a régi -16-os szintpozíciót az új középre igazított alapra kell migrálni");
+        check(PlayerProfileHudPreferenceStore.applyLayoutOverrides(global, legacy).equals(global),
+                "a v2 HUD nem migrálhat vagy olvashat régi layout-kulcsokat");
     }
 
     private static void check(final boolean condition, final String message) {

@@ -1,0 +1,22 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_track.png",
+      "ascent": -8491076,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/mini_resource.png",
+      "ascent": -8499268,
+      "height": 6,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

@@ -2029,7 +2029,8 @@ public final class IceSMPCore {
         // A sebzés-szám listener a kombó-boost jelzéshez a katalizátor-listenert,
         // a HUD célpont-sora pedig ezt a listenert olvassa.
         final hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators =
-                new hu.taliann.icesmp.listeners.DamageIndicatorListener(plugin, configManager, abilityCatalystListener);
+                new hu.taliann.icesmp.listeners.DamageIndicatorListener(plugin, configManager,
+                        abilityCatalystListener, resourceManager, jobManager);
         pluginManager.registerEvents(damageIndicators, plugin);
         hudManager.setDamageIndicators(damageIndicators);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DeathRecapListener(configManager, messageManager), plugin);

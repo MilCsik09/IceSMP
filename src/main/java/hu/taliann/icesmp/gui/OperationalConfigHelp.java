@@ -18,13 +18,11 @@ public final class OperationalConfigHelp {
             case "hud.icesmp-hud.editor.enabled" -> "Productionben alapból kikapcsolt admin-kapu a /hud edit élő, játékosonként izolált előnézetéhez. A permissiont nem helyettesíti.";
             case "hud.icesmp-hud.layout.x-offset-pixels" -> "A teljes first-party HUD globális vízszintes eltolása pixelben. A komponensek saját relatív eltolását a /hud edit kezeli.";
             case "hud.icesmp-hud.layout.y-offset-pixels" -> "A teljes first-party HUD globális shaderes függőleges eltolása pixelben. Pozitív érték lefelé mozgat; tartományon kívül biztonságos alapérték lép életbe.";
-            case "hud.icesmp-hud.layout.safe-margin-pixels" -> "Biztonsági távolság a képernyő jobb szélétől pixelben. Nagyobb érték balra húzza a teljes first-party HUD-ot.";
+            case "hud.icesmp-hud.layout.safe-margin-pixels" -> "Biztonsági távolság a képernyő széleitől pixelben: a bal felső frame-klasztert jobbra, a jobb felső class HUD-ot balra húzza.";
             case "hud.icesmp-hud.layout.scale" -> "A teljes first-party HUD globális mérete a buildkor generált shader-variánsok egyikén. A /hud edit komponensméretei ehhez képest relatívak.";
             case "hud.icesmp-hud.survival.refresh-ticks" -> "A HP, páncél, étel és levegő külön gyors frissítési periódusa. Kisebb érték simább, de több játékos-scheduler feladatot jelent; task-újraütemezéshez restart kell.";
-            case "hud.icesmp-hud.survival.armor-maximum" -> "A survival mini-sáv 100%-os páncélértéke. A kiírt tényleges armor ezt meghaladhatja, de a sáv ilyenkor telített marad.";
-            case "hud.icesmp-hud.survival.layout.x-offset-pixels" -> "A bottom-center survival panel vízszintes eltolása. Nem módosítja a külön jobb felső class HUD helyét.";
-            case "hud.icesmp-hud.survival.layout.y-offset-pixels" -> "A bottom-center survival panel függőleges eltolása. Pozitív érték lefelé, negatív felfelé mozgatja.";
-            case "hud.icesmp-hud.survival.layout.scale" -> "A survival panel külön méretszorzója; a class HUD globális és komponensméretétől független.";
+            case "hud.icesmp-hud.target-frame.enabled" -> "Találat után a képernyő bal felső részén megjelenő Target Frame főkapcsolója. Nem hoz létre TextDisplay entitást a célpont fölött.";
+            case "hud.icesmp-hud.target-frame.expire-seconds" -> "Az utolsó sikeres találat után ennyi másodpercig marad a célpont a Target Frame-ben. Új találat újraindítja az időt.";
             case "hud.sidebar-enabled" -> "Paperen az IceSMP scoreboard-oldalsávját, Folián a compact class bossbar fallbacket kapcsolja. A sikeresen betöltött first-party HUD automatikusan elrejti a fallbacket.";
             case "hud.tablist-enabled" -> "Az egyszerű, régi frakciószínű tabnév-fallback kapcsolója. Csak akkor van hatása, ha a natív tablist.enabled ki van kapcsolva.";
             case "hud.low-hp-vignette.enabled" -> "Engedélyezi az alacsony életerőnél megjelenő vörös képernyőszéli vészjelzést. Csak vizuális, nem módosít sebzést vagy maximális HP-t.";
@@ -34,11 +32,6 @@ public final class OperationalConfigHelp {
             case "hud.dynamic.combat-grace-seconds" -> "Az utolsó adott vagy kapott találat után ennyi másodpercig marad aktív a letisztított harci HUD-nézet.";
             case "hud.dynamic.rotating-line" -> "Engedélyezi az esemény-, szezon- és napi kihívás információit váltogató dinamikus HUD-sort.";
             case "hud.dynamic.rotation-seconds" -> "A dinamikus információs HUD-sor ennyi másodpercenként vált a következő elérhető információra.";
-            case "hud.profile.enabled" -> "Engedélyezi a közeli játékoshoz tartozó rövid profil-kijelzést, amely a konfigurált távolságon belül jelenik meg.";
-            case "hud.profile.update-interval-ticks" -> "A közeli játékosprofil-kijelzés újraszámításának sűrűsége tickben. Kisebb érték simább, de több közelség-ellenőrzést végez.";
-            case "hud.profile.lifetime-ticks" -> "Ennyi tickig marad életben egy létrehozott profil-kijelzés frissítés nélkül, mielőtt a rendszer eltávolítja.";
-            case "hud.profile.distance" -> "Legfeljebb ilyen távolságból jelenhet meg a közeli játékos profilja. Nagy érték több entitás- és távolságellenőrzést okozhat.";
-            case "hud.profile.height-offset" -> "A profil-kijelzés függőleges eltolása a céljátékoshoz képest. Negatív érték lejjebb, pozitív érték feljebb helyezi.";
             case "tablist.enabled" -> "A natív IceSMP tablista teljes főkapcsolója: header/footer, formázott tabnevek, nametagek, rendezés és pingkijelzés csak ennek engedélyével működik.";
             case "tablist.refresh-ticks" -> "A natív tablista diffelt frissítési periódusa tickben. Kisebb érték gyorsabb név/ping frissítést, de több kliens- és scoreboard-munkát jelent; élőben újraütemeződik.";
             case "tablist.sweep-every-refresh" -> "Minden ennyiedik tablista-frissítés végez drágább teljes takarítást a kilépett vagy átrendeződött bejegyzéseken. Nagyobb érték ritkább söprést jelent.";

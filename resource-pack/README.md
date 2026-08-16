@@ -1,6 +1,6 @@
 # IceSMP Hybrid Resource Pack
 
-Minden item 64×64-es, részletes 2D inventory-ikont használ. A 3D geometria kizárólag hét,
+Minden inventory-item 64×64-es, részletes 2D ikont használ. A 3D geometria kizárólag hét,
 világban megjelenített nagy tárgynál kapcsol be; a fegyverek, eszközök és felszerelések az
 ellenőrzött, részletes 2D változatot tartják meg.
 
@@ -56,6 +56,20 @@ hivatkozását, az explicit config `equipment-asset` ID-kat, valamint a közös 
 same-render-id fallbackeket. Hiányzó asset vagy texture publikálási hibát okoz. Emiatt például az
 `IRON_HORSE_ARMOR + icesmp:vas_lopancel` binding ugyanazzal a policyvel kerül runtime-feloldásra és
 CI-ellenőrzésre; a `vas_lopancel` equipment JSON törlése nem tud csendben átcsúszni.
+
+A viselt textúrák nem inventory-sprite-ok: a vanilla modell rögzített UV-kiosztását követik.
+A humanoid, leggings és wings rétegek 64×32-esek, a horse body/saddle rétegek 64×64-esek. Egy
+slot textúrája csak a hozzá tartozó UV-szigeteket festheti, különben a minta más testrészeken is
+megjelenik vagy elfordul. A repositoryban lévő determinisztikus generátor és audit használata:
+
+```bash
+python3 scripts/generate_equipment_assets.py
+python3 scripts/audit_equipment_assets.py
+```
+
+Az audit ellenőrzi a méretet, a bináris alfát, a slot-UV izolációt, az elytra UV-határát, a
+state-textúrák tényleges eltérését, valamint azt, hogy a horgászbotok a helyes
+`minecraft:item/handheld_rod` kézorientációt használják.
 
 ### Jelenlegi 3D capability boundary
 

@@ -53,7 +53,8 @@ public final class HudPreviewCatalog {
                 currency("neutral", "Creutzér", "12.8k", faction.currency),
                 currency("dark", "Csontveret", "64", faction.currency));
         return new IceSmpHudModel(faction.name, faction.theme, faction.accent,
-                playerClass.name, 42, "12.8k", true, resource, 100, resource,
+                playerClass.name, 42, ClassXpProgress.calculate(10_895, 42, 60, 10, 50),
+                "12.8k", true, resource, 100, resource,
                 playerClass.resource, event, wallets, classState(safe, playerClass));
     }
 

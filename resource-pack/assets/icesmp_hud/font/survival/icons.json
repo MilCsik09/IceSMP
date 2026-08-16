@@ -3,8 +3,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/icon_armor.png",
-      "ascent": -8507439,
-      "height": 12,
+      "ascent": -8507447,
+      "height": 14,
       "chars": [
         ""
       ]
@@ -12,8 +12,8 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/icon_food.png",
-      "ascent": -8507439,
-      "height": 12,
+      "ascent": -8507447,
+      "height": 14,
       "chars": [
         ""
       ]
@@ -21,10 +21,55 @@
     {
       "type": "bitmap",
       "file": "icesmp_hud:hud/survival/icon_air.png",
-      "ascent": -8507439,
-      "height": 12,
+      "ascent": -8507447,
+      "height": 14,
       "chars": [
         ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_player.png",
+      "ascent": -8507405,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_passive.png",
+      "ascent": -8507405,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_neutral.png",
+      "ascent": -8507405,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_hostile.png",
+      "ascent": -8507405,
+      "height": 14,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/survival/icon_boss.png",
+      "ascent": -8507405,
+      "height": 14,
+      "chars": [
+        ""
       ]
     }
   ]
