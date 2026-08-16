@@ -49,7 +49,7 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
 - **Moduláris Player Frame és HP-scaling előkészítés:** a normál vanilla szív-, páncél-, étel- és
   oxigénsávot pack-readiness után egy bal felső, frakciószínű Player Frame váltja. A név, frame,
   HP current/max, százalék, absorption, páncél, étel és feltételes oxigén külön editor-elem;
-  a nyers páncélérték 20 fölött sincs levágva. A gyors, Folia-safe tick
+  a páncél maximum és százalékos sáv nélküli flat érték. A gyors, Folia-safe tick
   külön fut a class/sidebar snapshotfrissítéstől. A
   class-health gate továbbra is kikapcsolt, de a normalizálás már tiltott, így későbbi staging
   aktiváláskor a HUD a valódi skálázott HP-t fogja mutatni. Hardcore-heart asset nincs felülírva.

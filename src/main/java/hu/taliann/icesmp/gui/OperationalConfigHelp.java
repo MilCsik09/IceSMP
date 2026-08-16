@@ -21,7 +21,6 @@ public final class OperationalConfigHelp {
             case "hud.icesmp-hud.layout.safe-margin-pixels" -> "Biztonsági távolság a képernyő széleitől pixelben: a bal felső frame-klasztert jobbra, a jobb felső class HUD-ot balra húzza.";
             case "hud.icesmp-hud.layout.scale" -> "A teljes first-party HUD globális mérete a buildkor generált shader-variánsok egyikén. A /hud edit komponensméretei ehhez képest relatívak.";
             case "hud.icesmp-hud.survival.refresh-ticks" -> "A HP, páncél, étel és levegő külön gyors frissítési periódusa. Kisebb érték simább, de több játékos-scheduler feladatot jelent; task-újraütemezéshez restart kell.";
-            case "hud.icesmp-hud.player-frame.armor-display-cap" -> "A Player Frame páncélsávjának 100%-pontja. A kiírt nyers armor nincs levágva, ezért 20 fölött is pontos marad.";
             case "hud.icesmp-hud.target-frame.enabled" -> "Találat után a képernyő bal felső részén megjelenő Target Frame főkapcsolója. Nem hoz létre TextDisplay entitást a célpont fölött.";
             case "hud.icesmp-hud.target-frame.expire-seconds" -> "Az utolsó sikeres találat után ennyi másodpercig marad a célpont a Target Frame-ben. Új találat újraindítja az időt.";
             case "hud.sidebar-enabled" -> "Paperen az IceSMP scoreboard-oldalsávját, Folián a compact class bossbar fallbacket kapcsolja. A sikeresen betöltött first-party HUD automatikusan elrejti a fallbacket.";

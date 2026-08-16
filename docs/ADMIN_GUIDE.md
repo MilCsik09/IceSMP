@@ -1567,7 +1567,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
 |---|---|---|---|---|---|---|
-| [ ] | HUD-01 Player Frame parity | Tesztelő | packos vanilla kliens; teljes/részleges/kritikus és 20 föletti max HP, absorption, 0/20/30+ armor, food, szárazföld és víz alatti air | current/max és százalék pontos; absorption külön; nyers armor nincs levágva; O2 csak fogyáskor jelenik meg; vanilla normál sprite nem duplázódik | pack/HUD rollout stop | `hud/HUD-01/` |
+| [ ] | HUD-01 Player Frame parity | Tesztelő | packos vanilla kliens; teljes/részleges/kritikus és 20 föletti max HP, absorption, 0/20/30+ armor, food, szárazföld és víz alatti air | current/max HP és százalék pontos; absorption külön; armor kizárólag flat érték, maximum vagy skálázott sáv nélkül; O2 csak fogyáskor jelenik meg; vanilla normál sprite nem duplázódik | pack/HUD rollout stop | `hud/HUD-01/` |
 | [ ] | HUD-02 Reszponzív routing | Fejlesztő | pack elfogadás/elutasítás; `/hud mind`; NATIVE_HUD kliens; 720p/1080p/1440p/4K és több GUI scale | pack nélkül vanilla survival kijelzés; packkal Player Frame megmarad; class panel routing szerint pontosan egyszer látszik; bal/jobb felső margó stabil, bossbar/actionbar/hotbar szabad | HUD rollout stop | `hud/HUD-02/` |
 | [ ] | HUD-03 Editor-szétválasztás | Tesztelő | `/hud edit`; Class, DK, Player, Target és Party kategória; csoport és gyermek mozgatása | minden v2 komponens megnyitható hiba nélkül; a csoport együtt, a gyermek relatívan mozog; DK-rúna nem mozdít generic charge-ot; mentés `hud.layout-v2.*` kulcsra történik | HUD rollout stop | `hud/HUD-03/` |
 | [ ] | HUD-04 Target Frame | Tesztelő | passzív/semleges/hostile/elit/boss mob, nametagelt pók, classos játékos; melee/lövedék; death/quit; 1–30 mp expiry | mob/player eltérő frame; pontos találat utáni HP, játékosnál élő HP/resource; az eredeti név változatlan; nincs követő vitals-TextDisplay; új ütés hosszabbít, expiry/death/quit eltávolít | `hud.icesmp-hud.target-frame.enabled: false` | `hud/HUD-04/` |
@@ -1756,8 +1756,9 @@ runtime state-je. Egyik HUD-renderer sem írhatja vissza az állapotot.
 A kiadott pack a normál vanilla HP-, armor-, food- és oxygen-sprite-okat átlátszóra cseréli, majd
 pack-readiness után az IceSMP bal felső, frakciószínű Player Frame-je veszi át mind a négy
 kijelzést. A név, keret, HP-sáv, current/max szöveg, százalék, absorption, páncél, étel és
-oxigén önálló komponens. Az armor sáv 100%-pontja konfigurálható, de a kiírt nyers érték
-nincs erre levágva; az oxigén csak akkor jelenik meg, amikor a levegő a maximum alá csökken.
+oxigén önálló komponens. Az armor kizárólag flat számként jelenik meg: nincs maximuma,
+százaléka vagy referenciaértékre skálázott sávja. Az oxigén csak akkor jelenik meg, amikor a
+levegő a maximum alá csökken.
 Hardcore-heart és vehicle-heart sprite nincs felülírva.
 
 Az életkritikus kijelzés nem ugyanazt a láthatósági kaput használja, mint a class panel. A `/hud mind`,
@@ -1771,8 +1772,6 @@ panelt, hogy ne maradjon látható HP nélkül a játékos.
 
 - `hud.icesmp-hud.survival.refresh-ticks`: külön survival mintavételi periódus; alapból 2 tick,
   módosítása restartot igényel;
-- `hud.icesmp-hud.player-frame.armor-display-cap`: a páncél-mini-sáv 100%-os
-  referenciaértéke, alapból 30;
 - `hud.icesmp-hud.target-frame.enabled`: a találat utáni screen-space Target Frame főkapcsolója;
 - `hud.icesmp-hud.target-frame.expire-seconds`: a legutóbbi találat utáni megjelenítés 1–30
   másodperc között, alapból 10;

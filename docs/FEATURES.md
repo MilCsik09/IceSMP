@@ -350,8 +350,8 @@ Kapcsolható HUD, rendezett tablista, szerep-/állapotjelzések és IceSMP-speci
   párhuzamos eseményt ír ki teljes szélességben.
 - **Skálázásbiztos Player Frame:** bal felső, frakciószínű, gyors külön tickből frissülő HP-sáv
   jelenlegi/maximális értékkel, százalékkal és absorption-jelöléssel, továbbá pontos páncél-, étel-
-  és feltételes oxigén-mini-sávval; a nyers armor 20 fölött sincs levágva, az oxigénoszlop csak
-  fogyó levegőnél jelenik meg. A frame és minden érték saját editor-komponens. A kiadott pack
+  és feltételes oxigénkijelzéssel; az armor maximum nélküli flat szám, az oxigénoszlop csak fogyó
+  levegőnél jelenik meg. A frame és minden érték saját editor-komponens. A kiadott pack
   csak a normál vanilla survival sprite-okat teszi
   átlátszóvá; hardcore szíveket szándékosan nem fed le. A panel nem függ a class/sidebar HUD
   láthatóságától, így `/hud mind` vagy natív class-HUD routing sem hagyhatja vakon a játékost.

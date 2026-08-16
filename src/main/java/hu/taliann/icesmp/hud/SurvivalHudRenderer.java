@@ -36,7 +36,6 @@ public final class SurvivalHudRenderer {
     static final char HEALTH_WARN = '\uEB12';
     static final char HEALTH_CRITICAL = '\uEB13';
     static final char MINI_TRACK = '\uEB20';
-    static final char MINI_ARMOR = '\uEB21';
     static final char MINI_FOOD = '\uEB22';
     static final char MINI_AIR = '\uEB23';
     static final char MINI_RESOURCE = '\uEB24';
@@ -85,15 +84,16 @@ public final class SurvivalHudRenderer {
                     "+" + compact(survival.absorption()) + " pajzs",
                     TextColor.color(0xF0D36F), 92, safeLayout, 0, highlighted));
         }
-        drawStat(output, HudComponent.PLAYER_ARMOR, 51, ICON_ARMOR, MINI_ARMOR,
-                survival.armorPercent(), compact(survival.armor()) + "/"
-                        + compact(survival.maximumArmor()), TextColor.color(0xCAD8E8),
-                safeLayout, highlighted);
-        drawStat(output, HudComponent.PLAYER_FOOD, 127, ICON_FOOD, MINI_FOOD,
+        final boolean airVisible = airVisible(survival);
+        final int armorCenter = airVisible ? 42 : 63;
+        final int foodCenter = airVisible ? 126 : 189;
+        drawFlatStat(output, HudComponent.PLAYER_ARMOR, armorCenter, ICON_ARMOR,
+                compact(survival.armor()), TextColor.color(0xCAD8E8), safeLayout, highlighted);
+        drawStat(output, HudComponent.PLAYER_FOOD, foodCenter, ICON_FOOD, MINI_FOOD,
                 survival.foodPercent(), survival.food() + "/" + survival.maximumFood(),
                 TextColor.color(0xF0C878), safeLayout, highlighted);
-        if (airVisible(survival)) {
-            drawStat(output, HudComponent.PLAYER_OXYGEN, 203, ICON_AIR, MINI_AIR,
+        if (airVisible) {
+            drawStat(output, HudComponent.PLAYER_OXYGEN, 210, ICON_AIR, MINI_AIR,
                     survival.airPercent(), survival.air() + "/" + survival.maximumAir(),
                     TextColor.color(0x8DE8F4), safeLayout, highlighted);
         }
@@ -126,6 +126,17 @@ public final class SurvivalHudRenderer {
                 TextColor.color(0xFFFFFF), layout, 0, highlighted));
         output.append(centeredText(component, center + 8, STATS_FONT,
                 value, color, 68, layout, 0, highlighted));
+    }
+
+    private static void drawFlatStat(final TextComponent.Builder output,
+                                     final HudComponent component, final int center,
+                                     final char icon, final String value, final TextColor color,
+                                     final HudLayoutSnapshot layout,
+                                     final HudComponent highlighted) {
+        output.append(glyph(component, center - 15, ICON_FONT, icon, ICON_ADVANCE,
+                TextColor.color(0xFFFFFF), layout, 0, highlighted));
+        output.append(centeredText(component, center + 11, STATS_FONT,
+                value, color, 42, layout, 0, highlighted));
     }
 
     static boolean airVisible(final SurvivalHudState state) {

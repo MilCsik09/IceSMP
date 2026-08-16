@@ -39,34 +39,35 @@ public final class IceSmpHudRegressionSuite {
 
     private static void survivalVitalsAreCompleteAndFixedWidth() {
         final SurvivalHudState state = new SurvivalHudState(
-                75.0D, 100.0D, 4.0D, 18.0D, 20.0D,
+                75.0D, 100.0D, 4.0D, 18.0D,
                 14, 20, 150, 300);
         final String rendered = PlainTextComponentSerializer.plainText().serialize(
                 new SurvivalHudRenderer().render(state, HudLayoutSnapshot.defaults()));
         check(rendered.contains("75 / 100 HP") && rendered.contains("+4 pajzs")
                         && rendered.contains("75%")
-                        && rendered.contains("18/20") && rendered.contains("14/20")
+                        && rendered.contains("18") && !rendered.contains("18/")
+                        && rendered.contains("14/20")
                         && rendered.contains("150/300"),
-                "survival HUD must expose current/max HP, percent, armor, food and oxygen");
+                "survival HUD must expose HP, flat armor, food and oxygen without an armor maximum");
         check(count(rendered, '\uEB00') == 1
                         && count(rendered, '\uEB10') == SurvivalHudRenderer.HEALTH_SEGMENTS
                         && count(rendered, '\uEB11') == 15
-                        && count(rendered, '\uEB20') == SurvivalHudRenderer.MINI_SEGMENTS * 3,
+                        && count(rendered, '\uEB20') == SurvivalHudRenderer.MINI_SEGMENTS * 2,
                 "survival bars must keep a fixed draw width independent of their values");
         final SurvivalHudState dry = new SurvivalHudState(
-                20.0D, 20.0D, 0.0D, 0.0D, 20.0D,
+                20.0D, 20.0D, 0.0D, 0.0D,
                 20, 20, 300, 300);
         final String dryRendered = PlainTextComponentSerializer.plainText().serialize(
                 new SurvivalHudRenderer().render(dry, HudLayoutSnapshot.defaults()));
         check(!dryRendered.contains("300/300")
-                        && count(dryRendered, '\uEB20') == SurvivalHudRenderer.MINI_SEGMENTS * 2
+                        && count(dryRendered, '\uEB20') == SurvivalHudRenderer.MINI_SEGMENTS
                         && count(dryRendered, '\uEB00') == 1,
                 "full oxygen must collapse to the balanced two-column surface layout");
         final SurvivalHudState clamped = new SurvivalHudState(
-                Double.NaN, -1.0D, -4.0D, 48.0D, 20.0D,
+                Double.NaN, -1.0D, -4.0D, 48.0D,
                 40, 20, -10, 300);
         check(clamped.health() == 0.0D && clamped.maximumHealth() == 20.0D
-                        && clamped.absorption() == 0.0D && clamped.armorPercent() == 100
+                        && clamped.absorption() == 0.0D && clamped.armor() == 48.0D
                         && clamped.food() == 20 && clamped.air() == 0,
                 "invalid live values must clamp before reaching the survival compositor");
     }
@@ -405,7 +406,7 @@ public final class IceSmpHudRegressionSuite {
                         && config.contains("hide-vanilla-food: true")
                         && config.contains("hide-vanilla-oxygen: true")
                         && config.contains("refresh-ticks: 2")
-                        && config.contains("armor-display-cap: 30.0")
+                        && !config.contains("armor-display-cap")
                         && config.contains("player-group:")
                         && config.contains("target-group:")
                         && config.contains("party-group:"),
@@ -472,6 +473,7 @@ public final class IceSmpHudRegressionSuite {
                         && survivalManifest.contains("\"party_max_rows\": 4")
                         && survivalManifest.contains("\"health_segments\": 20")
                         && survivalManifest.contains("\"mini_segments\": 10")
+                        && survivalManifest.contains("\"armor_display\": \"flat_value\"")
                         && survivalManifest.contains("\"air_display\": \"only_when_depleted\"")
                         && survivalManifest.contains("\"default_scale\": 1.0")
                         && survivalManifest.contains("\"text_font\": \"Inter SemiBold\"")

@@ -64,8 +64,6 @@ public final class OperationalConfigMenuGUI {
                         "Globális HUD méret", 0.05D, 0.75D, 3.50D),
                 ConfigMenuGUI.Entry.integer("hud.icesmp-hud.survival.refresh-ticks",
                         "Survival HUD frissítése (tick)", 1, 1, 20),
-                ConfigMenuGUI.Entry.number("hud.icesmp-hud.player-frame.armor-display-cap",
-                        "Player Frame páncélskála", 1.0D, 1.0D, 100.0D),
                 ConfigMenuGUI.Entry.toggle("hud.icesmp-hud.target-frame.enabled", "Target Frame"),
                 ConfigMenuGUI.Entry.integer("hud.icesmp-hud.target-frame.expire-seconds",
                         "Target Frame eltűnése (mp)", 1, 1, 30),

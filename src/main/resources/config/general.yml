@@ -111,9 +111,6 @@ hud:
     # A gyors tick minden élő értéket a játékos saját region-threadjén olvas.
     survival:
       refresh-ticks: 2
-    player-frame:
-      # Csak a sáv 100%-pontja; a kiírt páncélérték nincs levágva ennél a számnál.
-      armor-display-cap: 30.0
     target-frame:
       enabled: true
       # Találat után ennyi másodpercig marad látható a Target Frame (1–30).

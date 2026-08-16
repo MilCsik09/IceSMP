@@ -349,7 +349,7 @@ def generate_preview(air_visible: bool, target_name: str) -> None:
         segment_image = Image.open(TEXTURES / name).convert("RGBA").resize(
             (10 * scale, 10 * scale), Image.Resampling.NEAREST)
         canvas.alpha_composite(segment_image, ((16 + index * 11) * scale, 21 * scale))
-    groups = [("mini_armor.png", 8, "icon_armor.png", "18/20"),
+    groups = [(None, 0, "icon_armor.png", "18"),
               ("mini_food.png", 7, "icon_food.png", "14/20")]
     centers = [63, 189]
     if air_visible:
@@ -359,12 +359,13 @@ def generate_preview(air_visible: bool, target_name: str) -> None:
         icon = Image.open(TEXTURES / icon_name).convert("RGBA").resize(
             (14 * scale, 14 * scale), Image.Resampling.NEAREST)
         canvas.alpha_composite(icon, ((center - 38) * scale, 41 * scale))
-        for index in range(MINI_SEGMENTS):
-            name = fill if index < active else "mini_track.png"
-            segment_image = Image.open(TEXTURES / name).convert("RGBA").resize(
-                (5 * scale, 6 * scale), Image.Resampling.NEAREST)
-            canvas.alpha_composite(segment_image,
-                                   ((center - 22 + index * 6) * scale, 44 * scale))
+        if fill is not None:
+            for index in range(MINI_SEGMENTS):
+                name = fill if index < active else "mini_track.png"
+                segment_image = Image.open(TEXTURES / name).convert("RGBA").resize(
+                    (5 * scale, 6 * scale), Image.Resampling.NEAREST)
+                canvas.alpha_composite(segment_image,
+                                       ((center - 22 + index * 6) * scale, 44 * scale))
     font_path = ROOT / "dev-assets" / "icesmp-hud" / "source" / "Inter-SemiBold.ttf"
     font = ImageFont.truetype(font_path, 10 * scale)
     small = ImageFont.truetype(font_path, 8 * scale)
@@ -417,6 +418,7 @@ def main() -> None:
         "party_max_rows": 4,
         "health_segments": HEALTH_SEGMENTS,
         "mini_segments": MINI_SEGMENTS,
+        "armor_display": "flat_value",
         "air_display": "only_when_depleted",
         "default_scale": 1.0,
         "text_font": "Inter SemiBold",

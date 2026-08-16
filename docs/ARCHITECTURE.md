@@ -1205,8 +1205,8 @@ not hide the only health display. The `hide-vanilla-*` config values are package
 not runtime kill switches; an invalid value logs a severe warning while the replacement remains on.
 Current/max numbers are rendered directly, with no ten-heart normalization, so enabling the separate
 class health-scaling gate later does not require another HUD protocol or asset change.
-Az armor, food és conditional oxygen egymástól független fixed-width draw group; az oxygen csak
-`air < maximumAir` esetén rajzolódik. A nyers armor nincs a display-caphez vágva.
+Az armor flat számként, maximum és százalékos sáv nélkül rajzolódik; a food és conditional oxygen
+egymástól független fixed-width draw group. Az oxygen csak `air < maximumAir` esetén jelenik meg.
 
 ### Eseményvezérelt Target Frame
 

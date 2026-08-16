@@ -771,12 +771,9 @@ public final class HudManager {
     private SurvivalHudState buildSurvivalSnapshot(final Player player) {
         final AttributeInstance maximumHealth = player.getAttribute(Attribute.MAX_HEALTH);
         final AttributeInstance armor = player.getAttribute(Attribute.ARMOR);
-        final double configuredMaximumArmor = Math.max(1.0D, configManager.getDouble(
-                "hud.icesmp-hud.player-frame.armor-display-cap", 30.0D));
         return new SurvivalHudState(
                 player.getHealth(), maximumHealth == null ? 20.0D : maximumHealth.getValue(),
                 player.getAbsorptionAmount(), armor == null ? 0.0D : armor.getValue(),
-                configuredMaximumArmor,
                 player.getFoodLevel(), 20,
                 player.getRemainingAir(), player.getMaximumAir());
     }

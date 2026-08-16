@@ -106,7 +106,7 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
   resource pack nincs sikeresen betöltve, a kompakt natív kijelzés automatikusan marad.
 - A bal felső, frakciószínű **Player Frame** váltja fel a vanilla szíveket, páncélt, éhséget
   és levegőbuborékokat. A HP current/max és százalék formában jelenik meg; az absorption külön
-  pajzsként látszik. A páncél kiírt értéke 20 fölött sincs levágva, az étel saját mini-sávot
+  pajzsként látszik. A páncél maximum nélküli flat szám, az étel saját mini-sávot
   kap, az oxigén pedig csak fogyó levegőnél jelenik meg. A frame, név, HP-sáv, HP-szöveg,
   százalék, pajzs, páncél, étel és oxigén külön editor-komponens; a Player Frame csoporttal
   együtt is mozgathatók. Pack nélkül a vanilla kijelzők maradnak láthatók.

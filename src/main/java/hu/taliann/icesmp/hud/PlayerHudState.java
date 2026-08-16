@@ -10,12 +10,12 @@ public record PlayerHudState(String name, String factionTheme, String factionAcc
         factionTheme = Objects.requireNonNullElse(factionTheme, "ice");
         factionAccent = Objects.requireNonNullElse(factionAccent, "8BE9FD");
         survival = survival == null
-                ? new SurvivalHudState(20, 20, 0, 0, 30, 20, 20, 300, 300)
+                ? new SurvivalHudState(20, 20, 0, 0, 20, 20, 300, 300)
                 : survival;
     }
 
     public static PlayerHudState preview() {
         return new PlayerHudState("Játékos", "frost", "8BE9FD",
-                new SurvivalHudState(78.5, 120, 6, 28, 30, 17, 20, 180, 300));
+                new SurvivalHudState(78.5, 120, 6, 28, 17, 20, 180, 300));
     }
 }
