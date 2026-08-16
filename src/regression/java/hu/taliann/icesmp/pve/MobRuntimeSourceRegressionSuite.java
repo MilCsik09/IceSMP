@@ -72,7 +72,9 @@ public final class MobRuntimeSourceRegressionSuite {
                         > playerdataCommit,
                 "personal reward does not preserve receipt -> playerdata -> commit ordering");
         check(delivery.contains("if (!canFit(player, reward))")
-                        && delivery.contains("hasReceipt")
+                        && delivery.contains("receiptCount")
+                        && delivery.contains("EncounterRewardRecoveryPolicy.decide")
+                        && delivery.contains("Decision.MANUAL_REVIEW")
                         && delivery.contains("byTypeAndStatus")
                         && !delivery.contains("dropItemNaturally"),
                 "full inventory/restart reward recovery can lose or duplicate an item");
@@ -86,8 +88,9 @@ public final class MobRuntimeSourceRegressionSuite {
                         && wildHunt.contains("MobRank.ELITE"),
                 "existing invasion, cultist and wild-hunt events bypass canonical ranks");
 
-        check(occurrences(content, "schema-version: 1") == 6,
-                "pilot content must contain exactly six reviewed MobTemplates");
+        final int templateCount = occurrences(content, "schema-version: 1");
+        check(templateCount >= 15 && templateCount <= 25,
+                "systemic content must stay inside the reviewed 15-25 MobTemplate scope");
         check(occurrences(content, "kind:") >= 6
                         && content.contains("rank: VETERAN")
                         && content.contains("rank: CHAMPION")
