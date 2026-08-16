@@ -443,7 +443,8 @@ public final class HudEditorRegressionSuite {
                         && renderer.contains("EDITOR_HIGHLIGHT")
                         && renderer.contains("highlighted != HudComponent.GLOBAL")
                         && command.contains("/hud edit preview live")
-                        && command.contains("hud-editor-category-dk"),
+                        && command.contains("List.of(\"class\", \"dk\", \"player\", \"target\", \"party\")")
+                        && messages.contains("hud-editor-category-dk"),
                 "specific editor components must receive a tint without recolouring the full live HUD");
         check(manager.contains("if (session.syntheticPreview())")
                         && manager.contains("IceSmpHudModel.from(snapshot)")
