@@ -559,7 +559,7 @@ Regisztrált spellkatalógus, célzás, költség, cooldown, projectile/state ke
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz és szakmai GUI.
-A receptkatalógus 377 receptet tartalmaz, és minden recept kimondja a **fajtáját**
+A receptkatalógus 392 receptet tartalmaz, és minden recept kimondja a **fajtáját**
 (gyakorló / hozam / egyedi / lánc / ritkaság); a fajta szabja meg, mit adhat a
 vanília fölé, és ezt gépi kapu tartja fenn.
 
@@ -625,6 +625,11 @@ Reforge, egy authored rollra alkalmazható Stat Lock, quality-padlót emelő Amp
 költséglépcsőt megőrző Stability Seal, determinisztikus Ascension és veszteséges
 salvage előnézetet kínál. Reroll, rúnacsere és ascension közben az item UUID-ja nem
 változik; az ismételt reroll költséglépcsője magával az itemmel utazik.
+
+A jelenlegi systemic survival katalógus 48 authored template, 15 registry-bekötött
+Signature Effect, 3 szett, 7 explicit ascension-út és 10 valós rúna. A 392 receptből
+15 gear-recept canonical `ItemTemplate → ItemInstance`; ezek szint, blueprint és
+masterwork quality-padlót adhatnak, de nem változtatják meg a template stat-budgetjét.
 
 Az ascension csak explicit stage-et definiáló template-nél működik. Az új rollérték
 a régi normalizált qualityt viszi át az új authored tartományba, nem sorsol újra;
@@ -1116,15 +1121,19 @@ encounter vagy authored hely, a MobTemplate, majd a territory/biome/mélység/t�
 és event állapot határozza meg. A HP gyorsabb, a damage lassabb, külön bounded görbén
 nő; 70 fölötti boss csak authored override, nem wilderness extrapoláció.
 
-A pilot 6 canonical MobTemplate-et használ, miközben a többi vanilla mob fallbackként
+A rendszer 18 canonical MobTemplate-et használ surface/night/deep/swamp/Nether/End/
+storm és meglévő event forrásokra, miközben a többi vanilla mob fallbackként
 helyes marad. A hét rank: Normal, Veteran, Elite, Champion, Miniboss, Boss és World
 Boss; a 12 archetype közös ability registryre épül. Hat reusable ability vanilla
 telegráfot ad, az Elite spawnkor legfeljebb két biztonságos affixet kaphat a hétből.
 Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rankot kapnak.
 
-A világboss startkor stabil, csökkenő hozadékú player-count snapshotot készít. Late
+A világboss startkor stabil, csökkenő hozadékú player-count és élő equipped-CombatPower
+snapshotot készít. A power csak valid main/offhand+armor canonical itemek tényleges
+stat/rúna/Signature/szett kontextusa; nem publikus Gear Score. Late
 join után contribution gyűjthető, de a HP nem ugrál. A bounded ledger sebzést,
-tankolást, valódi ally-supportot és objective hookot támogat; self-paddinget,
+tankolást, Monk/Paladin ally-healt és shieldet, valamint telegráf-kitérés objective-et
+támogat; self-paddinget,
 pre-combat farmot és dupla settlementet elutasít. Az érdemi résztvevő személyes,
 PlayerProfile receipt-alapú ascension komponenst kap; tele inventorynál a jutalom
 reconnectig függőben marad, nem esik a földre.

@@ -189,3 +189,16 @@ runes:
     applies: [ "weapon" ]
     chance: 0.08
     echo-damage-percent: 30.0
+  runa_suly:
+    display: "Súly Rúnája"
+    applies: [ "weapon" ]
+    minimum-target-health: 40.0
+    large-target-damage-percent: 4.0
+  runa_oltalom:
+    display: "Oltalom Rúnája"
+    applies: [ "chest" ]
+    low-health-reduction-percent: 6.0
+  runa_vadasz:
+    display: "Vadász Rúnája"
+    applies: [ "bow" ]
+    monster-damage-percent: 5.0

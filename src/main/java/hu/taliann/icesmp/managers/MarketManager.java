@@ -74,14 +74,16 @@ public final class MarketManager implements PersistentStore {
 
     public record ItemMetadata(String templateId, hu.taliann.icesmp.itemization.ItemRarity rarity,
                                int itemLevel, ItemTemplate.Slot slot, Set<String> classRestrictions,
-                               String signatureEffectId, int socketCount, String ascensionState) { }
+                               String signatureEffectId, int socketCount, String ascensionState,
+                               double averageRollQuality, String setId, Set<String> statIds) { }
 
     public record ItemFilter(String templateId,
                              hu.taliann.icesmp.itemization.ItemRarity rarity,
                              Integer minimumItemLevel, Integer maximumItemLevel,
                              ItemTemplate.Slot slot, String classId,
                              String signatureEffectId, Integer minimumSocketCount,
-                             String ascensionState) { }
+                             String ascensionState, Double minimumRollQuality,
+                             String setId, String requiredStatId) { }
 
     private enum TakeEvidence { TAGGED_PRESENT, ORIGINAL_PRESENT, ABSENT, AMBIGUOUS }
 
@@ -311,10 +313,16 @@ public final class MarketManager implements PersistentStore {
         if (inspection.status() != ItemIdentityService.Status.VALID) return null;
         final ItemInstance instance = inspection.instance();
         final ItemTemplate template = inspection.template();
+        final double averageQuality = instance.rolls().isEmpty() ? 1.0D
+                : instance.rolls().values().stream().mapToDouble(ItemInstance.Roll::quality)
+                .average().orElse(1.0D);
+        final HashSet<String> stats = new HashSet<>(template.fixedStatsAt(
+                instance.ascension().stageId()).keySet());
+        stats.addAll(instance.rolls().keySet());
         return new ItemMetadata(template.templateId(), template.rarity(), instance.itemLevel(),
                 template.slot(), template.classRestrictions(), template.signatureEffectId(),
                 template.runeSocketCountAt(instance.ascension().stageId()),
-                instance.ascension().stageId());
+                instance.ascension().stageId(), averageQuality, template.setId(), Set.copyOf(stats));
     }
 
     public List<Listing> filterListings(final ItemFilter filter) {
@@ -336,7 +344,15 @@ public final class MarketManager implements PersistentStore {
                     && (filter.minimumSocketCount() == null
                     || item.socketCount() >= filter.minimumSocketCount())
                     && (filter.ascensionState() == null || filter.ascensionState().isBlank()
-                    || item.ascensionState().equalsIgnoreCase(filter.ascensionState()));
+                    || item.ascensionState().equalsIgnoreCase(filter.ascensionState()))
+                    && (filter.minimumRollQuality() == null
+                    || item.averageRollQuality() >= Math.max(0.0D,
+                    Math.min(1.0D, filter.minimumRollQuality())))
+                    && (filter.setId() == null || filter.setId().isBlank()
+                    || item.setId().equalsIgnoreCase(filter.setId()))
+                    && (filter.requiredStatId() == null || filter.requiredStatId().isBlank()
+                    || item.statIds().contains(filter.requiredStatId()
+                    .toLowerCase(java.util.Locale.ROOT).replace('-', '_')));
         }).toList();
     }
 

@@ -843,7 +843,8 @@ try:
     # A rúnák fogyasztója a rúna-felhelyezés (nem recept-hozzávaló) — nem zsákutca.
     # A suttogas_meghivo esemeny-belepo (WhisperListener), nem craft-alapanyag.
     _RUNE_SINKS = {"runa_elek", "runa_zapor", "runa_bastya", "runa_lang",
-                   "runa_fagy", "runa_moho", "runa_visszhang", "suttogas_meghivo"}
+                   "runa_fagy", "runa_moho", "runa_visszhang", "runa_suly",
+                   "runa_oltalom", "runa_vadasz", "suttogas_meghivo"}
     # Vanillában visszaalakítható blokk↔item párok: a katalógus nem láthatja, hogy a
     # kimenet a bemenetté alakítható vissza, ezért a hurok-detektornak meg kell mondani.
     _REVERSIBLE = {
