@@ -104,6 +104,10 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   journallal. A kereső jelöltjei most chunk-középre kerülnek, a 7 blokkos
   effektív footprint/partpuffer egy régión belül marad, ezért a világboss,
   invázió, meteor és escort keresése nem égeti el idő előtt a chunk-budgetet.
+  Egy chunkon belül több biztonságos oszlopot próbál, majd csak szükség esetén
+  indít legfeljebb 24 új chunkos és 768 blokkos, aszinkron terepbővítő mentőfázist; így a
+  látótávon kívüli, még nem generált környezet nem ejti el automatikusan az eventet.
+  A mentőfázis minimum 15 másodperces watchdogja régi staging-konfig mellett is él.
   Az escort route és az inváziós mellékmobok egyoszlopos belső profilt
   használnak; az admin parancs aszinkron keresést, nem kész spawnt jelent.
 - **Claimek:** fail-closed betöltés + a poligon-kijelölés csúcspont-limitje

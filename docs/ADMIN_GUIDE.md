@@ -1706,12 +1706,16 @@ runtime viselkedést fedik; staging-bizonyíték nélkül nem pipálhatók ki.
 7. Két egyidejű eventkeresés, harmadik keresés budget-elutasítása és timeout;
    egy 32 jelöltes világboss-/invázió-/meteor-keresés ne merítse ki idő előtt a
    96 chunkos keretet pusztán a footprint miatt.
-8. Már generált, de inaktív chunk visszatöltése; nem generált chunk fail-closed viselkedése.
+8. Már generált, de inaktív chunk visszatöltése; nem generált terepnél először fusson ki
+   a normál fázis, majd legfeljebb 24 chunkos, 768 blokkos aszinkron mentőfázis induljon.
+   A 25. új chunk fail-closed `SEARCH_BUDGET` elutasítás legyen.
 9. Plugin disable érkezési késleltetés és async chunk-future közben.
 10. Meteor lejárat, disable és mesterségesen bent hagyott `meteor-restore.yml` startup-recovery.
 11. Fix világboss-anchor chunkhatár közelében: az első érvényes pont vagy a
-    chunk-középre igazított fallback teljes ±7-es vizsgálata maradjon egy régióban.
-12. `/events debug spawn` eredményének összevetése a tényleges eventindítással.
+    chunk-középre igazított fallback mind a négy ±7-kompatibilis középoszlopa
+    maradjon ugyanabban a Folia-régióban.
+12. `/events debug spawn` eredményének összevetése a tényleges eventindítással; nagy
+    eventprofilnál a debug is ugyanazt a limitált terrain-expansion fázist használja.
 13. `/events worldboss`, `invasion`, `escort` és `meteor`: az első válasz csak a
     keresés indulását jelezze; tényleges sikerüzenet/broadcast csak valódi spawn után legyen.
 

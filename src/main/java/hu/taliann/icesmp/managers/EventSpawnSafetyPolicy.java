@@ -168,6 +168,60 @@ public final class EventSpawnSafetyPolicy {
     }
 
     /**
+     * Bounded alternative standing columns around a chunk-centred candidate. Every returned
+     * column keeps the complete footprint inside the same chunk, so a Folia region task may
+     * reject a blocked centre without reading neighbouring regions.
+     */
+    public static List<GridOffset> candidateProbeOffsets(final int footprintRadius,
+                                                          final int maxProbes,
+                                                          final long seed) {
+        final int radius = Math.max(0, Math.min(7, footprintRadius));
+        final int minimum = -8 + radius;
+        final int maximum = 7 - radius;
+        final int limit = Math.max(1, maxProbes);
+        final List<GridOffset> offsets = new ArrayList<>((maximum - minimum + 1)
+                * (maximum - minimum + 1));
+        for (int x = minimum; x <= maximum; x++) {
+            for (int z = minimum; z <= maximum; z++) {
+                offsets.add(new GridOffset(x, z));
+            }
+        }
+        if (offsets.size() <= limit) {
+            offsets.sort(Comparator
+                    .comparingInt((GridOffset offset) -> offset.x() * offset.x()
+                            + offset.z() * offset.z())
+                    .thenComparingLong(offset -> probeOrder(offset, seed)));
+            return List.copyOf(offsets);
+        }
+        final GridOffset preferred = offsets.stream().min(Comparator
+                .comparingInt((GridOffset offset) -> offset.x() * offset.x()
+                        + offset.z() * offset.z())
+                .thenComparingLong(offset -> probeOrder(offset, seed))).orElseThrow();
+        offsets.sort(Comparator.comparingLong(offset -> probeOrder(offset, seed)));
+        final List<GridOffset> result = new ArrayList<>(limit);
+        result.add(preferred);
+        for (final GridOffset offset : offsets) {
+            if (!offset.equals(preferred)) {
+                result.add(offset);
+            }
+            if (result.size() >= limit) {
+                break;
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static long probeOrder(final GridOffset offset, final long seed) {
+        long value = seed ^ (offset.x() * 0x9E3779B97F4A7C15L)
+                ^ (offset.z() * 0xC2B2AE3D27D4EB4FL);
+        value ^= value >>> 30;
+        value *= 0xBF58476D1CE4E5B9L;
+        value ^= value >>> 27;
+        value *= 0x94D049BB133111EBL;
+        return value ^ value >>> 31;
+    }
+
+    /**
      * Returns every integer column inside a circular buffer, nearest columns first.
      * Only 33 bounded masks can exist, so repeated runtime checks reuse immutable lists.
      */

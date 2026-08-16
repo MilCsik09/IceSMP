@@ -451,9 +451,17 @@ public final class WorldBossManager {
         if (approx.getWorld() == null) {
             return;
         }
-        final int highestY = approx.getWorld().getHighestBlockYAt(approx.getBlockX(), approx.getBlockZ());
-        final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
-                highestY + 1.0D, approx.getBlockZ() + 0.5D);
+        final Location spawnLocation;
+        if (finale) {
+            final int highestY = approx.getWorld().getHighestBlockYAt(
+                    approx.getBlockX(), approx.getBlockZ());
+            spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
+                    highestY + 1.0D, approx.getBlockZ() + 0.5D);
+        } else {
+            // The guard already resolved and revalidated the exact standing Y. Recomputing with
+            // WORLD_SURFACE here could move the boss onto a leaf canopy after a successful search.
+            spawnLocation = approx.clone();
+        }
 
         // Placement rules (config: world-events.spawn-rules.world-boss): never inside a
         // town/claim/WG region, never on a water surface. Skipping leaves activeBossUntil

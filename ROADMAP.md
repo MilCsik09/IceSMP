@@ -186,13 +186,11 @@ koordinátája, pozitív és negatív próbája, valamint visszaállítható men
 
 - ◇ Az A17 kaszt-HP rendszer alapból aktív. Kiadás előtt egységes
   pajzs/abszorpció-szabály, PvP TTK- és PvE sebzésteszt kell.
-- 🚧 A 2026-08-16-i staging logban a caravan partkeresése, valamint az escort és
-  world-boss biztonságos spawnkeresése is eredmény nélkül zárult. A 32 próbás keretben
-  az `UNLOADED_CHUNK`, `UNSAFE_SURFACE`, `FOOTPRINT_OR_SLOPE` és `SEARCH_BUDGET`
-  elutasítások együtt az esemény teljes elmaradását okozták. Az `EventSpawnGuard`, a
-  shoreline-kereső, az anchorválasztás és a chunkbetöltési stratégia célzott vizsgálata
-  szükséges; a fail-closed védelem maradjon meg, de normál játékospozíció mellett az
-  eseménynek megbízhatóan kell biztonságos helyet találnia.
+- ◇ A 2026-08-16-i caravan/world-boss spawnkifutás forrásoldali oka javítva: a guard
+  egy chunkon belül több Folia-lokális oszlopot próbál, majd a generált terepet preferáló
+  első fázis után legfeljebb 24 új chunkos aszinkron mentőfázist használ. Stagingen még
+  kötelező ugyanazon `-8513,10055` / `-8533,10036` környezet, óceánpart, erdő és hegyvidék
+  runtime próbája; veszélyes víz-, közeli-, látható vagy protection-fallback továbbra sincs.
 - ◇ A frakciópasszív-rework defaultjai csak konzervatív kiindulópontok. A
   `docs/ADMIN_GUIDE.md` teljes membership/RED/BLUE/NEUTRAL/DARK, vegyes
   játékosos, Suttogó- és lifecycle mátrixát productionközeli Folia stagingen

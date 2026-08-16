@@ -1106,10 +1106,17 @@ bordert és a friss eseményhelyek memóriáját.
 - A 110 fokos, 384 blokkos konzervatív nézési kúp elutasítja a játékos előtt lévő
   helyeket. Ez szándékosan szigorúbb a blokkonkénti ray trace-nál, és Folia alatt nem
   olvas idegen régiót.
-- A kereső 32 jelöltet próbál; egyszerre alapból két keresés futhat, egy keresés legfeljebb
-  96 egyedi chunkot érinthet és 5 másodperc után watchdog zárja le.
-- Csak már legenerált chunk tölthető vissza aszinkron módon. A kereső sosem generál új
-  világterületet, és nem végez szinkron chunk-loadot régiószálon.
+- A kereső először 32 jelöltet próbál már generált terepen. Egy kiválasztott chunkon belül
+  legfeljebb nyolc, a teljes footprintet ugyanabban a Folia-régióban tartó oszlopot vizsgál,
+  ezért egyetlen fa vagy tereptárgy nem érvényteleníti automatikusan az egész chunkot.
+- Ha az első fázis kifut, a nagy világ-események 24 további jelöltes mentőfázist kapnak.
+  Ez legfeljebb 24 új chunkot generálhat, legfeljebb 768 blokkig és kizárólag aszinkron
+  API-val; a teljes keresés továbbra is legfeljebb 96 egyedi chunkot érint, és
+  15 másodperces watchdog zárja le. A terrain-expansion saját minimum timeoutja a
+  korábbi, telepített 5 másodperces érték mellett is érvényesül.
+  Az Idegen és az állatvándorlás nem bővíti a világot.
+- Az `/events debug spawn` ugyanazt a kétfázisú keresőt futtatja spawn nélkül; nagy
+  eseményprofilnál ezért a fenti, limitált aszinkron mentőterepet is létrehozhatja.
 - A kiválasztott hely alapból 3 másodperces érkezési előjelet kap, majd közvetlenül a
   tényleges spawn előtt újra lefut a teljes validáció.
 - Az utolsó eventhelyek 45 percig, 256 blokkos körben nem használhatók újra.
@@ -1122,7 +1129,8 @@ bordert és a friss eseményhelyek memóriáját.
 - `escort-route` és `escort-wave`: a már aktív esemény belső mozgását és hullámait nem
   tiltja le a játékosok megérkezése, de a víz-, terep- és protection szabályok megmaradnak.
 - `meteor`, `world-boss`, `invasion`, `cultists`, `wild-hunt`, valamint a karavánok saját
-  footprint-, lejtés- és biomprofilt használnak.
+  footprint-, lejtés- és biomprofilt használnak, és csak az első generált-terepes fázis
+  sikertelensége után kérhetik a limitált terrain-expansion mentést.
 
 ### Meteor-helyreállítás
 

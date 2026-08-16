@@ -1002,8 +1002,11 @@ Blood Moon, world boss, Wild Hunt, invasion, meteor, caravan, escort, abundance,
 A közös spawnkereső az automatikus jelölteket chunk-középre igazítja, a
 footprint- és partvizsgálatot pedig legfeljebb 7 blokkos, egy Folia-régión
 belüli körre korlátozza. Így egy jelölt csak egy chunkot fogyaszt a keresési
-keretből; az escort útvonala és az invázió külső hulláma saját, egyoszlopos
-belső profilt használ. Adminindításkor a parancs először csak a keresés
+keretből. A guard ugyanabban a chunkban több biztonságos oszlopot is kipróbál;
+ha a már generált terepen nincs megfelelő hely, a nagy események külön,
+24 chunkra és 768 blokkra korlátozott aszinkron terepbővítő mentőfázist kapnak. Az escort
+útvonala és az invázió külső hulláma saját, egyoszlopos belső profilt használ.
+Adminindításkor a parancs először csak a keresés
 elindulását igazolja, tényleges sikert az esemény spawn utáni broadcastja jelez.
 
 - **Így találkozol vele:** `/events`; admin eventindítók és automatikus eseménytriggerek. Parancs: /events (alias: /esemeny, /event).

@@ -78,7 +78,8 @@ public final class EventSpawnGuard {
                                   long expiresAtMillis) { }
 
     private record SearchDiagnostic(String eventKey, boolean success, int attempts,
-                                    int chunks, long elapsedMillis, String detail,
+                                    int chunks, int terrainExpansionChunks,
+                                    long elapsedMillis, String detail,
                                     Map<BlockReason, Integer> reasons) { }
 
     private static final class SearchContext {
@@ -86,19 +87,23 @@ public final class EventSpawnGuard {
         private final long startedAtMillis;
         private final long deadlineMillis;
         private final int maxChunks;
+        private final int maxTerrainExpansionChunks;
         private final boolean debugOnly;
         private final AtomicBoolean completed = new AtomicBoolean();
         private final AtomicInteger attempts = new AtomicInteger();
         private final Set<String> chunks = ConcurrentHashMap.newKeySet();
+        private final Set<String> terrainExpansionChunks = ConcurrentHashMap.newKeySet();
         private final Map<BlockReason, Integer> reasons = new ConcurrentHashMap<>();
         private final List<String> debugLines = new ArrayList<>();
 
         private SearchContext(final String eventKey, final long timeoutMillis,
-                              final int maxChunks, final boolean debugOnly) {
+                              final int maxChunks, final int maxTerrainExpansionChunks,
+                              final boolean debugOnly) {
             this.eventKey = eventKey;
             this.startedAtMillis = System.currentTimeMillis();
             this.deadlineMillis = startedAtMillis + timeoutMillis;
             this.maxChunks = maxChunks;
+            this.maxTerrainExpansionChunks = maxTerrainExpansionChunks;
             this.debugOnly = debugOnly;
         }
 
@@ -494,50 +499,112 @@ public final class EventSpawnGuard {
         final List<EventSpawnSafetyPolicy.Offset> candidates = EventSpawnSafetyPolicy.candidates(
                 configManager.getInt("world-events.safety.search-attempts", 32),
                 searchMinRadius(context.eventKey), searchMaxRadius(context.eventKey), seed);
-        tryCandidate(context, origin, candidates, 0, onFound, onFailure);
+        tryCandidate(context, origin, candidates, 0, seed, false, onFound, onFailure,
+                () -> searchTerrainExpansion(context, origin, seed, onFound, onFailure));
+    }
+
+    private void searchTerrainExpansion(final SearchContext context, final Location origin,
+                                        final long seed, final Consumer<Location> onFound,
+                                        final Runnable onFailure) {
+        if (!terrainExpansionEnabled(context.eventKey)
+                || context.maxTerrainExpansionChunks <= 0
+                || configManager.getBoolean(
+                        "world-events.safety.require-loaded-chunk", false)) {
+            failSearch(context, BlockReason.SEARCH_BUDGET, origin, onFailure);
+            return;
+        }
+        final int attempts = Math.max(1, configManager.getInt(
+                profilePath(context.eventKey, "terrain-expansion-attempts"),
+                configManager.getInt(
+                        "world-events.placement.terrain-expansion.attempts", 24)));
+        final long rescueSeed = seed ^ 0x6A09E667F3BCC909L;
+        final double rescueMaxRadius = Math.max(searchMaxRadius(context.eventKey),
+                configManager.getDouble(
+                        profilePath(context.eventKey, "terrain-expansion-max-radius-blocks"),
+                        configManager.getDouble(
+                                "world-events.placement.terrain-expansion.max-radius-blocks",
+                                768.0D)));
+        final List<EventSpawnSafetyPolicy.Offset> candidates = EventSpawnSafetyPolicy.candidates(
+                attempts, searchMinRadius(context.eventKey), rescueMaxRadius,
+                rescueSeed);
+        tryCandidate(context, origin, candidates, 0, rescueSeed, true, onFound, onFailure,
+                () -> failSearch(context, BlockReason.SEARCH_BUDGET, origin, onFailure));
     }
 
     private void tryCandidate(final SearchContext context, final Location origin,
                               final List<EventSpawnSafetyPolicy.Offset> candidates, final int index,
-                              final Consumer<Location> onFound, final Runnable onFailure) {
+                              final long seed, final boolean allowTerrainExpansion,
+                              final Consumer<Location> onFound, final Runnable onFailure,
+                              final Runnable onExhausted) {
         if (!contextAlive(context, origin, onFailure)) {
             return;
         }
         if (index >= candidates.size()) {
-            failSearch(context, BlockReason.SEARCH_BUDGET, origin, onFailure);
+            onExhausted.run();
             return;
         }
         final EventSpawnSafetyPolicy.Offset offset = candidates.get(index);
         final Location column = centeredCandidate(origin, offset);
         if (column.getWorld() == null) {
             context.reject(BlockReason.INVALID_WORLD);
-            tryCandidate(context, origin, candidates, index + 1, onFound, onFailure);
+            tryCandidate(context, origin, candidates, index + 1, seed, allowTerrainExpansion,
+                    onFound, onFailure, onExhausted);
             return;
         }
-        prepareCandidateChunks(context, column,
+        prepareCandidateChunks(context, column, allowTerrainExpansion,
                 () -> validateCandidate(context, origin, candidates, index,
-                        column, onFound, onFailure),
+                        column, seed, allowTerrainExpansion, onFound, onFailure, onExhausted),
                 () -> {
                     context.reject(BlockReason.UNLOADED_CHUNK);
-                    tryCandidate(context, origin, candidates, index + 1, onFound, onFailure);
+                    tryCandidate(context, origin, candidates, index + 1, seed,
+                            allowTerrainExpansion, onFound, onFailure, onExhausted);
                 });
     }
 
     private void validateCandidate(final SearchContext context, final Location origin,
                                    final List<EventSpawnSafetyPolicy.Offset> candidates,
                                    final int index, final Location column,
-                                   final Consumer<Location> onFound, final Runnable onFailure) {
+                                   final long seed, final boolean allowTerrainExpansion,
+                                   final Consumer<Location> onFound, final Runnable onFailure,
+                                   final Runnable onExhausted) {
         if (!contextAlive(context, origin, onFailure)) {
             return;
         }
+        final List<EventSpawnSafetyPolicy.GridOffset> probes =
+                EventSpawnSafetyPolicy.candidateProbeOffsets(
+                        candidateProbeRadius(context.eventKey), maxColumnProbes(context.eventKey),
+                        seed ^ (index * 0x9E3779B97F4A7C15L));
+        validateCandidateProbe(context, origin, candidates, index, column, probes, 0,
+                seed, allowTerrainExpansion, onFound, onFailure, onExhausted);
+    }
+
+    private void validateCandidateProbe(final SearchContext context, final Location origin,
+                                        final List<EventSpawnSafetyPolicy.Offset> candidates,
+                                        final int index, final Location column,
+                                        final List<EventSpawnSafetyPolicy.GridOffset> probes,
+                                        final int probeIndex, final long seed,
+                                        final boolean allowTerrainExpansion,
+                                        final Consumer<Location> onFound,
+                                        final Runnable onFailure, final Runnable onExhausted) {
+        if (!contextAlive(context, origin, onFailure)) {
+            return;
+        }
+        if (probeIndex >= probes.size()) {
+            tryCandidate(context, origin, candidates, index + 1, seed, allowTerrainExpansion,
+                    onFound, onFailure, onExhausted);
+            return;
+        }
         context.attempts.incrementAndGet();
-        final World world = column.getWorld();
-        final int x = column.getBlockX();
-        final int z = column.getBlockZ();
+        final EventSpawnSafetyPolicy.GridOffset probe = probes.get(probeIndex);
+        final Location probedColumn = column.clone().add(probe.x(), 0.0D, probe.z());
+        final World world = probedColumn.getWorld();
+        final int x = probedColumn.getBlockX();
+        final int z = probedColumn.getBlockZ();
         final BlockReason surface = surfaceReason(context.eventKey, world, x, z);
         if (surface != BlockReason.NONE) {
             context.reject(surface);
-            tryCandidate(context, origin, candidates, index + 1, onFound, onFailure);
+            validateCandidateProbe(context, origin, candidates, index, column, probes,
+                    probeIndex + 1, seed, allowTerrainExpansion, onFound, onFailure, onExhausted);
             return;
         }
         final Location candidate = new Location(world, x + 0.5D,
@@ -545,7 +612,8 @@ public final class EventSpawnGuard {
         final BlockReason reason = blockReason(context.eventKey, candidate, false);
         if (reason != BlockReason.NONE || !reserve(context, candidate)) {
             context.reject(reason == BlockReason.NONE ? BlockReason.RESERVED : reason);
-            tryCandidate(context, origin, candidates, index + 1, onFound, onFailure);
+            validateCandidateProbe(context, origin, candidates, index, column, probes,
+                    probeIndex + 1, seed, allowTerrainExpansion, onFound, onFailure, onExhausted);
             return;
         }
         publishFound(context, candidate, onFound, onFailure);
@@ -560,10 +628,16 @@ public final class EventSpawnGuard {
 
     /**
      * Prepares every chunk touched by the spawn footprint and shoreline buffer without
-     * synchronously loading terrain on a Folia region thread. Only already-generated
-     * chunks may be loaded; this search can never grow the world.
+     * synchronously loading terrain on a Folia region thread. The normal phase only reloads
+     * generated terrain; the bounded rescue phase may asynchronously expand a few chunks.
      */
     private void prepareCandidateChunks(final SearchContext context, final Location column,
+                                        final Runnable onReady, final Runnable onUnavailable) {
+        prepareCandidateChunks(context, column, false, onReady, onUnavailable);
+    }
+
+    private void prepareCandidateChunks(final SearchContext context, final Location column,
+                                        final boolean allowTerrainExpansion,
                                         final Runnable onReady, final Runnable onUnavailable) {
         if (context.completed.get() || !plugin.isEnabled()) {
             return;
@@ -577,9 +651,7 @@ public final class EventSpawnGuard {
             runContinuation(onUnavailable);
             return;
         }
-        final int radius = Math.max(waterSafetyRequired(context.eventKey)
-                        ? shorelineRadius(context.eventKey) : 0,
-                footprintRadius(context.eventKey));
+        final int radius = candidateProbeRadius(context.eventKey);
         final int minChunkX = (column.getBlockX() - radius) >> 4;
         final int maxChunkX = (column.getBlockX() + radius) >> 4;
         final int minChunkZ = (column.getBlockZ() - radius) >> 4;
@@ -615,7 +687,18 @@ public final class EventSpawnGuard {
         for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
                 if (!world.isChunkLoaded(chunkX, chunkZ)) {
-                    loads.add(world.getChunkAtAsync(chunkX, chunkZ, false));
+                    if (allowTerrainExpansion) {
+                        final String chunkKey = world.getUID() + ":" + chunkX + ":" + chunkZ;
+                        if (context.terrainExpansionChunks.add(chunkKey)
+                                && context.terrainExpansionChunks.size()
+                                > context.maxTerrainExpansionChunks) {
+                            context.terrainExpansionChunks.remove(chunkKey);
+                            context.reject(BlockReason.SEARCH_BUDGET);
+                            runContinuation(onUnavailable);
+                            return;
+                        }
+                    }
+                    loads.add(world.getChunkAtAsync(chunkX, chunkZ, allowTerrainExpansion));
                 }
             }
         }
@@ -653,9 +736,17 @@ public final class EventSpawnGuard {
             context.debugLines.add("§aKiválasztott hely: §f" + location.getWorld().getName()
                     + " " + location.getBlockX() + ", " + location.getBlockY()
                     + ", " + location.getBlockZ());
+            final SearchDiagnostic diagnostic = new SearchDiagnostic(context.eventKey, true,
+                    context.attempts.get(), context.chunks.size(),
+                    context.terrainExpansionChunks.size(),
+                    System.currentTimeMillis() - context.startedAtMillis,
+                    "candidate-selected", Map.copyOf(context.reasons));
+            diagnostics.put(context.eventKey, diagnostic);
             if (context.completed.compareAndSet(false, true)) {
                 activeSearches.decrementAndGet();
             }
+            context.debugLines.add(formatDiagnostic(diagnostic));
+            onFound.accept(location);
             return;
         }
         final boolean arrival = configManager.getBoolean(
@@ -706,6 +797,7 @@ public final class EventSpawnGuard {
                 markRecent(context.eventKey, location);
                 diagnostics.put(context.eventKey, new SearchDiagnostic(context.eventKey, true,
                         context.attempts.get(), context.chunks.size(),
+                        context.terrainExpansionChunks.size(),
                         System.currentTimeMillis() - context.startedAtMillis,
                         "arrival-complete@" + world.getName() + ":"
                                 + location.getBlockX() + "," + location.getBlockZ(),
@@ -728,6 +820,7 @@ public final class EventSpawnGuard {
         activeSearches.decrementAndGet();
         diagnostics.put(context.eventKey, new SearchDiagnostic(context.eventKey, true,
                 context.attempts.get(), context.chunks.size(),
+                context.terrainExpansionChunks.size(),
                 System.currentTimeMillis() - context.startedAtMillis,
                 detail + "@" + location.getWorld().getName() + ":"
                         + location.getBlockX() + "," + location.getBlockZ(),
@@ -743,6 +836,7 @@ public final class EventSpawnGuard {
         searchBackoffUntil.put(context.eventKey, System.currentTimeMillis() + backoffMillis);
         diagnostics.put(context.eventKey, new SearchDiagnostic(context.eventKey, false,
                 context.attempts.get(), context.chunks.size(),
+                context.terrainExpansionChunks.size(),
                 System.currentTimeMillis() - context.startedAtMillis,
                 "arrival-revalidation-" + reason + "@" + location.getWorld().getName()
                         + ":" + location.getBlockX() + "," + location.getBlockZ(),
@@ -847,11 +941,20 @@ public final class EventSpawnGuard {
                 break;
             }
         }
-        final long timeout = Math.max(250L, configManager.getLong(
+        final long configuredTimeout = Math.max(250L, configManager.getLong(
                 "world-events.placement.search-timeout-millis", 5000L));
+        final long timeout = terrainExpansionEnabled(key)
+                ? Math.max(configuredTimeout, configManager.getLong(
+                        "world-events.placement.terrain-expansion.minimum-timeout-millis", 15000L))
+                : configuredTimeout;
         final int maxChunks = Math.max(1, configManager.getInt(
                 "world-events.placement.max-chunks-per-search", 96));
-        final SearchContext context = new SearchContext(key, timeout, maxChunks, debugOnly);
+        final int maxTerrainExpansionChunks = terrainExpansionEnabled(key)
+                ? Math.max(0, configManager.getInt(
+                        "world-events.placement.terrain-expansion.max-new-chunks-per-search", 24))
+                : 0;
+        final SearchContext context = new SearchContext(key, timeout, maxChunks,
+                maxTerrainExpansionChunks, debugOnly);
         final long timeoutTicks = Math.max(1L, (timeout + 49L) / 50L);
         try {
             plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> {
@@ -902,6 +1005,7 @@ public final class EventSpawnGuard {
                 : origin.getWorld().getName() + ":" + origin.getBlockX() + "," + origin.getBlockZ();
         diagnostics.put(context.eventKey, new SearchDiagnostic(context.eventKey, false,
                 context.attempts.get(), context.chunks.size(),
+                context.terrainExpansionChunks.size(),
                 System.currentTimeMillis() - context.startedAtMillis,
                 terminalReason + "@" + detail, Map.copyOf(context.reasons)));
         if (context.debugOnly) {
@@ -912,7 +1016,7 @@ public final class EventSpawnGuard {
             onFailure.run();
             return;
         }
-        logSearchFailure(context.eventKey, origin, context.attempts.get(), context.reasons);
+        logSearchFailure(context, origin);
         onFailure.run();
     }
 
@@ -1019,61 +1123,8 @@ public final class EventSpawnGuard {
             failSearch(context, BlockReason.INVALID_WORLD, origin, failed);
             return;
         }
-        final List<EventSpawnSafetyPolicy.Offset> candidates = EventSpawnSafetyPolicy.candidates(
-                configManager.getInt("world-events.safety.search-attempts", 32),
-                searchMinRadius(context.eventKey), searchMaxRadius(context.eventKey),
-                origin.getBlockX() * 31L + origin.getBlockZ());
-        tryDebugCandidate(context, origin.clone(), candidates, 0, found, failed);
-    }
-
-    private void tryDebugCandidate(final SearchContext context, final Location origin,
-                                   final List<EventSpawnSafetyPolicy.Offset> candidates,
-                                   final int index, final Consumer<Location> onFound,
-                                   final Runnable onFailure) {
-        if (!contextAlive(context, origin, onFailure)) {
-            return;
-        }
-        if (index >= candidates.size()) {
-            failSearch(context, BlockReason.SEARCH_BUDGET, origin, onFailure);
-            return;
-        }
-        final EventSpawnSafetyPolicy.Offset offset = candidates.get(index);
-        final Location column = centeredCandidate(origin, offset);
-        prepareCandidateChunks(context, column, () -> {
-            context.attempts.incrementAndGet();
-            final World world = column.getWorld();
-            final int x = column.getBlockX();
-            final int z = column.getBlockZ();
-            final BlockReason surface = surfaceReason(context.eventKey, world, x, z);
-            if (surface != BlockReason.NONE) {
-                context.reject(surface);
-                tryDebugCandidate(context, origin, candidates, index + 1, onFound, onFailure);
-                return;
-            }
-            final Location candidate = new Location(world, x + 0.5D,
-                    standingFloorY(world, x, z) + 1.0D, z + 0.5D);
-            final BlockReason reason = blockReason(context.eventKey, candidate, false);
-            if (reason != BlockReason.NONE) {
-                context.reject(reason);
-                tryDebugCandidate(context, origin, candidates, index + 1, onFound, onFailure);
-                return;
-            }
-            context.debugLines.add("§aKiválasztott hely: §f" + world.getName() + " "
-                    + x + ", " + candidate.getBlockY() + ", " + z);
-            final SearchDiagnostic diagnostic = new SearchDiagnostic(context.eventKey, true,
-                    context.attempts.get(), context.chunks.size(),
-                    System.currentTimeMillis() - context.startedAtMillis,
-                    "candidate-selected", Map.copyOf(context.reasons));
-            diagnostics.put(context.eventKey, diagnostic);
-            if (context.completed.compareAndSet(false, true)) {
-                activeSearches.decrementAndGet();
-            }
-            context.debugLines.add(formatDiagnostic(diagnostic));
-            onFound.accept(candidate);
-        }, () -> {
-            context.reject(BlockReason.UNLOADED_CHUNK);
-            tryDebugCandidate(context, origin, candidates, index + 1, onFound, onFailure);
-        });
+        final long seed = origin.getBlockX() * 31L + origin.getBlockZ();
+        searchNear(context, origin.clone(), seed, found, failed);
     }
 
     public List<String> policySummary(final String eventKey) {
@@ -1091,6 +1142,11 @@ public final class EventSpawnGuard {
                 + (visibilityConeEnabled(key) ? "igen" : "nem"));
         lines.add("§7Footprint: §f" + footprintRadius(key)
                 + " blokk §7| vízpuffer: §f" + shorelineRadius(key));
+        lines.add("§7Oszloppróba: §f" + maxColumnProbes(key)
+                + " §7| limitált terepbővítés: §f"
+                + (terrainExpansionEnabled(key) ? "igen/" + configManager.getInt(
+                        "world-events.placement.terrain-expansion.max-new-chunks-per-search", 24)
+                : "nem"));
         lines.add("§7Aktív keresések: §f" + activeSearches.get()
                 + " §7| friss helyek: §f" + recentLocations.size());
         final SearchDiagnostic previous = diagnostics.get(key);
@@ -1104,6 +1160,7 @@ public final class EventSpawnGuard {
         return (diagnostic.success() ? "§aSIKER" : "§cSIKERTELEN")
                 + " §7próbák=§f" + diagnostic.attempts()
                 + " §7chunkok=§f" + diagnostic.chunks()
+                + " §7új=§f" + diagnostic.terrainExpansionChunks()
                 + " §7idő=§f" + diagnostic.elapsedMillis() + "ms"
                 + " §7okok=§f" + diagnostic.reasons();
     }
@@ -1205,8 +1262,8 @@ public final class EventSpawnGuard {
                 && Math.abs(location.getZ() - center.getZ()) <= half;
     }
 
-    private void logSearchFailure(final String eventKey, final Location origin,
-                                  final int attempts, final Map<BlockReason, Integer> reasons) {
+    private void logSearchFailure(final SearchContext context, final Location origin) {
+        final String eventKey = context.eventKey;
         final long now = System.currentTimeMillis();
         final long previous = diagnosticLogAt.getOrDefault(eventKey, 0L);
         if (now - previous < 60_000L || !diagnosticLogAt.replace(eventKey, previous, now)
@@ -1216,8 +1273,29 @@ public final class EventSpawnGuard {
         final String where = origin == null || origin.getWorld() == null ? "unknown"
                 : origin.getWorld().getName() + ":" + origin.getBlockX() + "," + origin.getBlockZ();
         plugin.getLogger().warning("Event spawn search aborted: event=" + eventKey
-                + ", attempts=" + attempts + ", origin=" + where + ", reasons=" + reasons
+                + ", attempts=" + context.attempts.get()
+                + ", chunks=" + context.chunks.size()
+                + ", terrain-expansion=" + context.terrainExpansionChunks.size()
+                + ", origin=" + where + ", reasons=" + context.reasons
                 + ". No close, visible, wet or forbidden fallback was used.");
+    }
+
+    private boolean terrainExpansionEnabled(final String eventKey) {
+        return configManager.getBoolean(profilePath(eventKey, "terrain-expansion-enabled"),
+                configManager.getBoolean(
+                        "world-events.placement.terrain-expansion.enabled", true));
+    }
+
+    private int maxColumnProbes(final String eventKey) {
+        return Math.max(1, configManager.getInt(
+                profilePath(eventKey, "max-column-probes-per-candidate"),
+                configManager.getInt(
+                        "world-events.placement.max-column-probes-per-candidate", 8)));
+    }
+
+    private int candidateProbeRadius(final String eventKey) {
+        return Math.max(waterSafetyRequired(eventKey) ? shorelineRadius(eventKey) : 0,
+                footprintRadius(eventKey));
     }
 
     private List<EventSpawnSafetyPolicy.PlayerPoint> playerSnapshot() {
