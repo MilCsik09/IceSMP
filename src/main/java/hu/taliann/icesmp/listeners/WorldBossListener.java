@@ -14,9 +14,9 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 
 /**
- * Pays out world boss kills: routes the slayer + boss into the WorldBossManager
- * (treasury reward, league points, slayer buff). Also refreshes the shared boss-bar
- * fraction whenever the boss is hit so players see their damage register.
+ * Records bounded boss contribution and settles every eligible participant through
+ * the shared AFK/reward gate. Also refreshes the boss-bar fraction whenever the boss
+ * is hit so players see their damage register.
  */
 public final class WorldBossListener implements Listener {
 
