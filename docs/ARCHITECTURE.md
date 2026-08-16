@@ -141,6 +141,38 @@ a resource csak aktív kaszt-erőforrásnál, a party pedig tagonként bővül. 
 `spacer` sora választja el a resource-packből érkező cím-glyphöt a felső vonaltól. A glyph
 `height`/`ascent` metrikája továbbra is a resource pack font-JSON-jának felelőssége.
 
+### 3.1.3 Mob/Encounter 2.0 — authored réteg és survival fallback
+
+A `pve/` csomag dependency-free domainje az authority a mob ID, schema, rank,
+archetype, ability, affix, levelgörbe, encounter snapshot és contribution szabályokhoz.
+A `MobTemplateRegistry` a `mob-templates.yml` katalógust fail-fast tölti: invalid entity,
+rank/archetype, hiányzó ability/loot profile, Bestiary ID-ütközés vagy schemahiba nem
+eredményez részleges registryt. Természetes vanilla mobhoz nem kötelező template;
+`MobTemplateRegistry.naturalTemplate` üres találatán a vanilla fallback él tovább.
+
+A level resolution precedenciája: encounter override → authored location → explicit
+MobTemplate → survival földrajzi alap. Az utolsó réteg a wilderness-distance alap fölé
+territory-, biome/dimension-, depth- és event/Vérhold-bónuszt tesz, majd 70-nél clampel;
+a normál távolsági görbe önmagában 1–50. A 70 fölötti display level csak explicit
+authored boss/encounter útvonalon engedett. A HP és damage külön, monoton és bounded:
+alapértelmezésben `min(8, 1 + (level-1)×0.08)` és
+`min(3, 1 + (level-1)×0.025)`, amelyre a template/rank szorzók kerülnek; abszolút
+védőkorlát is érvényes. A `CombatPowerEstimator` belső telemetry/snapshot input,
+nem publikus gear score és nem loot-authority.
+
+Az ability runtime eseményvezérelt, legfeljebb 2048 aktív state-et tart, minden mobot
+a saját entity schedulerén kezel, a location-hatásokat region schedulerre adja át.
+Veszélyes castnál a vanilla partikula/hang telegráf megelőzi az executiont. A summon,
+projectile és state élettartama bounded; terrain-rombolás nincs. Az Elite spawnkor
+legfeljebb két valid affixet kap, kombinációs tiltással és despawn/death/disable cleanup-pal.
+
+A világboss startkor immutable résztvevő-snapshotot készít. A HP létszámgörbéje
+`1 + 0.65×(n-1)^0.8` (configolt és capelt), a damage csak logaritmikusan, legfeljebb
+1.18×-ra nő; late join hozzájárulhat, de a boss HP-ja nem ugrál. A bounded
+`ContributionLedger` elutasítja a pre-combat és self-support paddinget, egyszeri
+settlement claimet ad, majd encounter-endkor lezár. A Profile-receipt alapú személyes
+reward az Itemization 2.0 boss-component source authorityja.
+
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
 majd a fő `messages.yml`-t override-ként. Rendering: a `get`/`getMessage`/`getComponent` **mind**
@@ -175,6 +207,13 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     payment+item publish és `player.saveData()` történik. Boot/join recovery csak a két
     exact állapotot fogadja el; mixed snapshot kézi review. Az itembe írt bounded operation
     receipt és revision védi a retry/double-click utat.
+  - **Encounter reward receipt/outbox** (PlayerProfile v2 `OPERATIONS`): a világboss
+    meaningful-contribution küszöbénél először bounded eligibility receipt készül.
+    Settlementkor ez COMMITTED állapotba kerül, majd a személyes delivery külön PREPARED
+    receiptet kap. A sorrend `receipt → inventory → player.saveData() → COMMITTED`;
+    full inventory nem dob tárgyat a földre, az exact markeres item reconnect után commitolható.
+    A boss transient, ezért restart után a COMMITTED eligibility újrakézbesíthető, a csak
+    PREPARED jelölt exact-before állapotként rollbackelhető.
   - **Frakcióváltás- és adó-WAL** (`faction-switch-journal.yml`,
     `faction-tax-journal.yml`): a `DurableTransactionProtocol` előbb tartós prepare rekordot ír,
     majd exact wallet before/after snapshotot commitol, ezután írja a teljes membership- vagy
@@ -1556,7 +1595,9 @@ vanilla barral egyezően globális. A natív boss-frame-et kapó játékosnál a
 vanilla világboss-bar elhallgat (`ClientHudRoute.bossFrameActive` suppression —
 nincs dupla presentation); vanilla kliens változatlanul a bart kapja. Kazamata
 mini-bossnak nincs vanilla felülete, ezért a frame-ben sem szerepel
-(display-paritás); encounter-scope/contribution-kör külön rendszer híján nincs.
+(display-paritás). A Mob/Encounter 2.0 contribution ledger külön server-authority;
+nem kerül nyilvános DPS-listaként a frame-be, a személyes eligibilityt csak a reward
+settlement fogyasztja.
 
 ### Territory overlay (TERRITORY_STATE)
 

@@ -717,6 +717,23 @@ Teszteld az arénát normál és szezonbosszal, második fázissal,
 speciáltámadással, addokkal, despawnnal, boss halálával és teljes
 inventorys lootkiosztással.
 
+Mob/Encounter 2.0 mellett az aréna nem szűk HP-doboz. A `ring_warden` és a későbbi
+authored bossok charge/slam/zóna telegráfjának talajon és vanilla kliensen is jól
+olvashatónak kell lennie. Hagyj legalább két eltérő kitérési irányt, ne vezessen minden
+menekülőút claim/storage/dekoráció mögé, és az add spawnhely ne zárja körbe azonnal a
+játékost. A rendszer nem rombol terepet, ezért ne építs olyan mechanikát, amelynek a
+jelentése csak blokkpusztítással lenne érthető.
+
+A világboss HP-ja a startkori releváns játékos-snapshotból származik, late joinkor nem
+ugrik. Playtesten 1, 2, 5 és nagyobb csoporttal mérd a járható felületet, mechanic
+frequencyt és time-to-killt; ne csak a killing blow-t ellenőrizd. A personal rewardhoz
+érdemi contribution kell, tele inventorynál pedig a komponens függőben marad és
+reconnect után kézbesíthető — arénába ezért ne tervezz „leeső bossláda” látványelemet.
+
+Authored location szintje felülírhatja a survival-distance alapot, de a teljes vadont
+ne fesd statikus MMO zónákra. Territory/biome/mélység maradjon valódi survival input;
+Deep Dark vagy mélybánya telegráfjainál külön ellenőrizd a fény- és részecske-kontrasztot.
+
 ### 9.3. Kereskedő-karaván
 
 A `caravan.stops` üres listája mellett a rendszer event anchorhoz vagy

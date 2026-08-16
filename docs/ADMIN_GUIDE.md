@@ -1123,6 +1123,7 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `loot.yml`
 - `moderation.yml`
 - `motd.yml`
+- `mob-templates.yml`
 - `pets.yml`
 - `profession-materials.yml`
 - `profession-recipes.yml`
@@ -1162,6 +1163,45 @@ Staging acceptance: (1) két gyors SHIFT+katt, (2) disconnect journal prepare é
 playerdata publish között, (3) process-kill mindkét oldalon, (4) tele inventory salvage,
 (5) market list/buy/cancel canonical+rúnás+ascended itemmel, (6) világboss component
 egyszeri delivery, (7) protected claim/WG érc nem ad ritka materialt.
+
+Phase 5.5 recovery policy: az item mutation boot/join audit csak exact-before állapotot
+abortál és exact-after állapotot commitol; `before == after` vagy mixed snapshot kézi
+review. A journal legfeljebb 256 műveletet és slotonként 1 MiB payloadot fogad, egy
+játékosnak egyszerre csak egy pending mutationje lehet. A soft-diversity 32 elemre
+bounded, ordering/reconnect/restart regresszióval; a mining daily budget napváltása és
+corrupt state-je fail-closed. Ettől a valódi process-kill/Folia acceptance még release-gate.
+
+### Mob/Encounter 2.0 üzemeltetés
+
+- `world.yml` `mob-scaling.*`: normál maximum `50`, általános hard cap `70`, authored
+  boss cap `200`. Default görbe: HP `min(8, 1+(level-1)×0.08)`, damage
+  `min(3, 1+(level-1)×0.025)`; külön abszolút health/damage cap védi a hibás inputot.
+- Precedencia: encounter override → authored location → MobTemplate → wilderness
+  distance, majd territory/biome-or-dimension/depth/event bónusz. A safe-zone ramp
+  megmarad; claim önmagában nem tesz minden területet biztonságossá.
+- `mob-templates.yml`: ability-, loot-profile- és a 6 pilot MobTemplate-authority.
+  Duplicate ID, invalid entity/rank/archetype, missing ability/loot vagy Bestiary ID
+  ütközés startupkor fail-fast. Vanilla fallbackhez nem kell minden mobot authoredolni.
+- A natural promotion csak `NATURAL`/`CHUNK_GEN` spawnnál sorsol Veteran/Elite rankot;
+  protected-city selectorban nem. Elite legfeljebb két valid affixet kap.
+- Az ability runtime globális scan helyett entity scheduler tickeket használ, legfeljebb
+  2048 aktív state-tel. Telegraph, cooldown, summon-darab és summon-lifespan bounded;
+  disable/death/despawn cleanup kötelező, terrain damage nincs.
+- Világboss scaling: `1 + player-coefficient × (n-1)^player-exponent`, default
+  `0.65`/`0.8`, max HP-szorzó `12`; damage per doubling `0.04`, max `1.18`.
+  A snapshot startkor rögzül, late join nem skáláz újra.
+- Contribution minimum default `25`. A ledger max. 128 résztvevő, pre-combat és
+  self-support nem számít, personal settlement egyszer claimelhető. A reward Profile v2
+  operation receipt; full inventorynál nincs world drop. Restartkor COMMITTED
+  eligibility kézbesíthető, PREPARED jelölt exact-before rollback.
+
+Mob 2.0 staging acceptance: (1) Lv. 1/10/25/50/70 és cap, (2) távolság + mélység +
+Deep Dark + territory + Vérhold, (3) Veteran/Elite max. két affix, (4) mind a hat pilot
+template és vanilla fallback, (5) telegráf/cast/caster death/target death/region hop/
+disable, (6) 1/2/5/40 fős boss snapshot, late join/death/disconnect, (7) contribution,
+AFK és duplicate settlement, (8) tele inventory + reconnect/restart delivery, (9)
+50–60 online játékos melletti profiler-felvétel. Ments JAR SHA-256-ot, config snapshotot,
+boss encounter ID-t és az érintett Profile operation receiptet.
 
 ### Üzenetfájlok
 

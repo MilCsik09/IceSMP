@@ -715,7 +715,7 @@ A nagy harci események alapból nem torlódnak egymásra.
 | Jelenség | Mit jelent neked? |
 |---|---|
 | Vérhold | erősebb éjszakai ellenfelek, nagyobb kockázat és jutalom |
-| Világboss | közösségi nagy ellenfél, jelzett támadásokkal |
+| Világboss | közösségi nagy ellenfél, jelzett támadásokkal és személyes contribution-jutalommal |
 | Invázió | hullámokban érkező, megerősített szörnyek |
 | Vad Hajsza | kóbor elit fenevad és személyes jutalom |
 | Kereskedő-karaván | időleges, rotáló ritka kínálat |
@@ -740,10 +740,26 @@ meteor vagy kíséret tényleges indulását a szerver eseményüzenete és az
 
 ### A világ nehézsége
 
-A biztonságos vidékektől távolodva a szörnyek szintje emelkedhet. Erősebbek,
-de több kaszt-XP-t és jobb zsákmányt adhatnak. A spawnerből származó mobok
-nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a
-skálázást és jutalmat.
+A biztonságos vidékektől távolodva a szörnyek szintje emelkedhet. A normál vadon
+Lv. 1–50 között halad; a territory, biome, föld alatti mélység, dimenzió, Vérhold
+vagy más event együtt legfeljebb az általános Lv. 70 survival capig emelheti.
+Authored rom, dungeon vagy boss saját szintet írhat elő; 70 fölötti szint nem a
+végtelen távolsági skála, hanem külön boss/encounter tartalom. A HP gyorsabban,
+a sebzés óvatosabban nő, így a magas szint nem automatikus előjel nélküli one-shot.
+
+A **Veterán** erősebb alapellenfél, az **Elit** legfeljebb két, a neve mellett
+röviden jelzett affixet kaphat; a Bajnok/Miniboss/Boss saját mechanikákat használhat.
+Charge, slam, lövedéksorozat vagy zóna előtt vanilla kliensen is hang/részecske
+telegráf látható — ezt figyeld, ne csak a nametaget. A spawnerből származó mobok
+nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a skálázást
+és jutalmat.
+
+Világbossnál nem csak a killing blow számít. Érdemi bosssebzés, tankolás és a
+támogatott encounter-célok contributiont adnak; AFK, önmagadon farmolt heal vagy
+harc előtti padding nem. A boss HP-ja a harc eleji résztvevő-snapshot alapján,
+csökkenő hozadékkal skálázódik, ezért ki-/belépéssel nem ugráltatható. A küszöböt
+elérő játékos személyes ascension komponenst kap. Ha tele az inventoryd, a jutalom
+nem esik a földre: felszabadított hellyel a következő reconnectkor újrapróbálható.
 
 Az authored harci felszerelés enyhén figyelembe veszi a szintedet, kasztodat,
 specializációdat, jelenlegi gear-statisztikáidat, üres felszereléshelyedet és a

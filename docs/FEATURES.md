@@ -1110,18 +1110,43 @@ template-et választ: level/class/spec/build/üres slot/forrás legfeljebb 1,5×
 adhat, az utolsó legfeljebb 32 drop pedig csak enyhe, nem garantált diverzitási
 korrekciót végez. A más kasztnak való, kereskedhető tárgyak súlya pozitív marad.
 
+A Mob/Encounter 2.0 normál survival progressionje Lv. 1–50, a földrajzi/event
+bónuszokkal elérhető általános hard cap Lv. 70. A mob szintjét rétegesen az explicit
+encounter vagy authored hely, a MobTemplate, majd a territory/biome/mélység/távolság
+és event állapot határozza meg. A HP gyorsabb, a damage lassabb, külön bounded görbén
+nő; 70 fölötti boss csak authored override, nem wilderness extrapoláció.
+
+A pilot 6 canonical MobTemplate-et használ, miközben a többi vanilla mob fallbackként
+helyes marad. A hét rank: Normal, Veteran, Elite, Champion, Miniboss, Boss és World
+Boss; a 12 archetype közös ability registryre épül. Hat reusable ability vanilla
+telegráfot ad, az Elite spawnkor legfeljebb két biztonságos affixet kaphat a hétből.
+Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rankot kapnak.
+
+A világboss startkor stabil, csökkenő hozadékú player-count snapshotot készít. Late
+join után contribution gyűjthető, de a HP nem ugrál. A bounded ledger sebzést,
+tankolást, valódi ally-supportot és objective hookot támogat; self-paddinget,
+pre-combat farmot és dupla settlementet elutasít. Az érdemi résztvevő személyes,
+PlayerProfile receipt-alapú ascension komponenst kap; tele inventorynál a jutalom
+reconnectig függőben marad, nem esik a földre.
+
 - **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium (kattintható kategória-főoldal + lapozható lajstrom: ismert bejegyzések ikonnal, ismeretlenek „???" sziluettként, teljesítmény-%-kal). A szörny-bejegyzések faj-szintű mélységet kapnak: elejtés-számláló, első-elejtés dátum és kill-alapú tudás-fokozatok (kódex-jegyzet → zsákmány-jegyzet → mestervadász), a világbossok archetípusonként (nem vanilla-fajonként) kerülnek a lajstromba. Külső kijelzéshez: `%icesmp_bestiary_<kategória>%` és `_total` placeholderek.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** Mob spawn, sebzés, ölés, loot, bestiárium-felfedezés és minion lifecycle.
-- **Ami még kellhet hozzá:** Mobspawnokat, arénákat, farmvédelmet és lootforrásokat ellenőrizni kell.
-- **Fontos határ:** Vanilla/custom mob és más lootplugin együttműködése runtime tesztet igényel.
+- **Ami még kellhet hozzá:** Mobspawnokat, arénákat, telegráf-láthatóságot,
+  farmvédelmet, 50–60 fős encounter terhelést és lootforrásokat stagingen ellenőrizni kell.
+- **Fontos határ:** A forrásregresszió nem bizonyít production Folia region-hopot,
+  harcérzetet vagy vanilla/custom mob és más lootplugin együttműködést.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.*`, `loot.*`, `itemization.loot.*`, mob-, bestiary- (mérföldkövek, `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`), scaling- és miniondefiníciók.
-- Tartós állapot: Bestiárium progress, bounded authored-loot előzmény és egyes loot/event state-ek tartósak; mob entity runtime.
+- Config: `world.yml` `mob-scaling.*` és `world-events.world-boss.*`,
+  `mob-templates.yml`, `loot.*`, `itemization.loot.*`, bestiary- (mérföldkövek,
+  `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`) és miniondefiníciók.
+- Tartós állapot: Bestiárium progress, bounded authored-loot előzmény és egyes
+  loot/event state-ek tartósak; mob/ability/ledger entity runtime. A személyes boss
+  reward eligibility/delivery receipt a PlayerProfile v2 `OPERATIONS` szekcióban él.
 - Reload: Loot/balance reloadolható; már spawnolt mobok nem feltétlenül változnak visszamenőleg.
 
 </details>

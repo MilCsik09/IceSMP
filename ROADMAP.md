@@ -258,16 +258,22 @@ nyilvános felületre.
 
 ### C — PvE Depth
 
-- ⬜ `MobTemplate` + hibrid 1–50 progression, ahol az explicit encounter/zóna
+- ✅ `MobTemplate` + hibrid 1–50 progression, ahol az explicit encounter/zóna
   felülírja, a távolság/mélység/territory pedig survival-wilderness fallback;
-  általános vadon hard cap 70.
-- ⬜ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
+  általános vadon hard cap 70. A pilot 6 authored template-et, vanilla fallbacket,
+  12 archetype-vokabulárt és külön bounded HP/damage görbét ad.
+- ✅ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
   mobonként, spawnkor rögzített döntéssel és bounded élettartammal.
-- ⬜ Eseményvezérelt boss contribution ledger sebzés, gyógyítás, tankolás
-  és mechanikai részvétel alapján.
+- ✅ Eseményvezérelt, legfeljebb 128 résztvevős boss contribution ledger sebzés,
+  támogatás, tankolás és objective API-val; a világboss start-snapshotból skálázódik,
+  a személyes komponens receipt-alapúan idempotens és tele inventorynál függőben marad.
 - ⬜ Személyes harci összefoglaló; nyilvános DPS-szégyenfal nélkül.
 - ⬜ Bestiárium 2.0 többszintű kutatással és információs/kozmetikai
   jutalmakkal.
+
+**Release-gate:** a dependency-free domain/source regresszió nem helyettesíti az
+exact Java 21 CI-t és a 50–60 fős Folia staging playtestet (region-hop, late join,
+disconnect, full inventory, boss despawn/restart, képesség-telegráf olvashatóság).
 
 **Kapunyitás D/E felé:** minden idézett entitás életciklusa rendezett,
 a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.

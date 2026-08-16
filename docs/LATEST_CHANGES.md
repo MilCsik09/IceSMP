@@ -25,6 +25,42 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 ## Augusztus eleji integrációs hullám (staging előtt)
 
+### Itemization 2.0 Phase 5.5 hardening
+
+- A mutation journal most hard-bounded és egy játékoshoz egyszerre egy pending műveletet
+  enged. Restartkor csak exact-before → abort és exact-after → commit automatikus;
+  mixed vagy azonos before/after állapot fail-closed kézi review.
+- A process-kill/retry regresszió bizonyítja, hogy az újrapróbálás nem duplikál, a
+  Profile v2 restart-regresszió pedig a 32 elemű soft-diversity sorrendjét, a mining
+  napi budget rolloverét és a corrupt-state tiltást ellenőrzi.
+- A survival vertical slice authority változatlan: az item UUID, provenance, roll quality,
+  rúna, reroll count és ascension stage az itemmel utazik; a playerhez tartozó pity/budget
+  marad a PlayerProfile v2-ben.
+
+### Mob/Encounter 2.0 pilot
+
+- A normál survival progression Lv. 1–50, a földrajzi/event bónuszokkal elérhető hard
+  cap Lv. 70. Encounter/authored hely/MobTemplate elsőbbséget élvez a territory,
+  biome/dimension, mélység, távolság és Vérhold fallback fölött; 70 fölötti display
+  level csak explicit authored bossnál lehet.
+- A HP és damage külön, monoton, bounded görbét kapott. Default HP: `1+(level-1)×0.08`
+  legfeljebb 8×; damage: `1+(level-1)×0.025` legfeljebb 3×, további abszolút cappal.
+- A canonical katalógus 6 MobTemplate-et, 6 registry abilityt, 7 rankot, 12 archetype-ot
+  és 7 Elite affixet ad. Egy elit spawnkor legfeljebb két valid affixet kap; a veszélyes
+  ability vanilla partikula/hang telegráfja megelőzi a sebzést.
+- Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rank-scalinget
+  használnak. A Target Frame rankot és rövid affix státuszt mutat, a Bestiary authored
+  template ID-t ismer fel; vanilla fallback megmarad.
+- A világboss startkor diminishing player-count snapshotot készít, ezért a HP nem
+  ugrál late join/death/disconnect miatt. A bounded contribution ledger sebzést,
+  tankolást, ally-supportot és objective hookot kezel; self/pre-combat paddinget tilt.
+  Az érdemi résztvevők PlayerProfile receipt-alapú személyes ascension komponenst
+  kapnak, full inventorynál world drop nélkül, reconnect/restart recoveryvel.
+- A dependency-free kapuk jelenleg 79 Itemization-, 49 Mob-domain- és 16 runtime-source
+  assertiont futtatnak; a consistency és resource-pack ellenőrzés is zöld. A Java 21
+  Gradle és a productionközeli Folia/multiplayer balance továbbra is külön rollout-gate,
+  amíg az exact feature HEAD-en futó CI és staging jegyzőkönyv nem zárja le.
+
 ### Itemization 2.0 Phase 4–5 — survival economy pilot
 
 - Hat authored template fölött elkészült a controlled reroll: Full Reforge, egyetlen
