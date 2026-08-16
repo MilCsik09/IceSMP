@@ -239,6 +239,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintItemFactory;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
     private final hu.taliann.icesmp.pve.EncounterRewardDeliveryService encounterRewardDelivery;
+    private final hu.taliann.icesmp.pve.EquippedCombatPowerService equippedCombatPowerService;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchItemFactory;
     private final hu.taliann.icesmp.managers.DevItemManager devItemManager;
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
@@ -431,8 +432,10 @@ public final class IceSMPCore {
         worldBossManager.setUniqueMaterials(uniqueMaterialFactory);
         this.encounterRewardDelivery = new hu.taliann.icesmp.pve.EncounterRewardDeliveryService(
                 plugin, uniqueMaterialFactory, messageManager);
+        this.equippedCombatPowerService = new hu.taliann.icesmp.pve.EquippedCombatPowerService(
+                plugin, itemIdentityService, jobManager);
         worldBossManager.setPveRuntime(mobScalingManager, mobAbilityRuntime,
-                encounterRewardDelivery);
+                encounterRewardDelivery, equippedCombatPowerService);
         this.itemMutationCoordinator = new hu.taliann.icesmp.itemization.ItemMutationCoordinator(
                 plugin, configManager, itemIdentityService, uniqueMaterialFactory, messageManager);
         this.itemForgeGUI = new hu.taliann.icesmp.gui.ItemForgeGUI(
@@ -1926,6 +1929,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(totemManager, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(mobAbilityRuntime, plugin);
+        pluginManager.registerEvents(equippedCombatPowerService, plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
         pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager, afkManager), plugin);
         final ProfessionXpListener professionXpListener = new ProfessionXpListener(professionManager, configManager, talentManager, afkManager);

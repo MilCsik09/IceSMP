@@ -19,6 +19,8 @@ public final class MobEncounterDomainRegressionSuite {
         encounterSnapshotUsesDiminishingStableScaling();
         contributionIsBoundedMeaningfulAndIdempotent();
         combatPowerRemainsAContextEstimate();
+        equippedCombatPowerTracksLiveCanonicalGear();
+        encounterRewardFaultMatrixIsFailClosed();
         System.out.println("Mob/Encounter domain regression suite passed. assertions=" + assertions);
     }
 
@@ -170,6 +172,57 @@ public final class MobEncounterDomainRegressionSuite {
         check(Double.isFinite(CombatPowerEstimator.estimate(new CombatPowerEstimator.Input(
                 1, Double.NaN, Double.POSITIVE_INFINITY, -5.0D,
                 0.0D, 0.0D, 0.0D, 0, 0))), "telemetry estimate is finite and bounded");
+    }
+
+    private static void equippedCombatPowerTracksLiveCanonicalGear() {
+        final double naked = EquippedCombatPowerModel.estimate(1, List.of());
+        final var starter = gear(hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND,
+                8, hu.taliann.icesmp.itemization.ItemRarity.UNCOMMON, 3.0D, 0.0D,
+                Map.of("attack_damage", 1.0D), 0, 0, "");
+        final var midArmor = gear(hu.taliann.icesmp.itemization.ItemTemplate.Slot.CHEST,
+                28, hu.taliann.icesmp.itemization.ItemRarity.RARE, 0.0D, 8.0D,
+                Map.of("max_health", 12.0D, "armor", 4.0D), 1, 0, "frost_guard");
+        final var signature = gear(hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND,
+                45, hu.taliann.icesmp.itemization.ItemRarity.LEGENDARY, 12.0D, 0.0D,
+                Map.of("attack_damage", 8.0D, "ability_power", 10.0D), 1, 2, "frost_guard");
+        final double starterPower = EquippedCombatPowerModel.estimate(8, List.of(starter));
+        final double midPower = EquippedCombatPowerModel.estimate(28, List.of(starter, midArmor));
+        final double ascendedPower = EquippedCombatPowerModel.estimate(50,
+                List.of(signature, midArmor));
+        check(naked < starterPower && starterPower < midPower && midPower < ascendedPower,
+                "naked, starter, mid-game and ascended canonical equipment form a live power curve");
+        check(ascendedPower <= 10_000.0D,
+                "equipped CombatPower remains bounded and internal");
+        check(EquippedCombatPowerModel.estimate(28, List.of(midArmor)) < ascendedPower,
+                "mixed or ignored malformed slots cannot inherit the stronger item estimate");
+    }
+
+    private static EquippedCombatPowerModel.GearSignal gear(
+            final hu.taliann.icesmp.itemization.ItemTemplate.Slot slot, final int level,
+            final hu.taliann.icesmp.itemization.ItemRarity rarity,
+            final double damage, final double armor, final Map<String, Double> stats,
+            final int runes, final int signatureTier, final String setId) {
+        return new EquippedCombatPowerModel.GearSignal(slot, level, rarity, damage, armor,
+                Map.of(), stats, runes, signatureTier, setId);
+    }
+
+    private static void encounterRewardFaultMatrixIsFailClosed() {
+        check(EncounterRewardRecoveryPolicy.decide(
+                        EncounterRewardRecoveryPolicy.ReceiptState.PREPARED, 0)
+                        == EncounterRewardRecoveryPolicy.Decision.DELIVER,
+                "prepared exact-before reward retries delivery");
+        check(EncounterRewardRecoveryPolicy.decide(
+                        EncounterRewardRecoveryPolicy.ReceiptState.PREPARED, 1)
+                        == EncounterRewardRecoveryPolicy.Decision.COMMIT_WITNESS,
+                "prepared exact-after witness commits without duplicate delivery");
+        check(EncounterRewardRecoveryPolicy.decide(
+                        EncounterRewardRecoveryPolicy.ReceiptState.PREPARED, 2)
+                        == EncounterRewardRecoveryPolicy.Decision.MANUAL_REVIEW,
+                "duplicate reward witnesses fail closed");
+        check(EncounterRewardRecoveryPolicy.decide(
+                        EncounterRewardRecoveryPolicy.ReceiptState.COMMITTED, 1)
+                        == EncounterRewardRecoveryPolicy.Decision.CLEANUP_ONLY,
+                "committed reward retry only cleans its marker");
     }
 
     private static Set<UUID> players(final int count) {

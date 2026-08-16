@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.pve.ContributionLedger;
 import hu.taliann.icesmp.pve.EncounterRewardDeliveryService;
 import hu.taliann.icesmp.pve.EncounterScalingPolicy;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.pve.MobAbilityRuntime;
 import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -61,6 +62,7 @@ public final class WorldBossManager {
     private volatile MobScalingManager mobScaling;
     private volatile MobAbilityRuntime mobAbilityRuntime;
     private volatile EncounterRewardDeliveryService rewardDelivery;
+    private volatile EquippedCombatPowerService equippedCombatPower;
     private volatile EncounterScalingPolicy.Snapshot encounterSnapshot;
     private volatile ContributionLedger contributionLedger;
     private final Set<UUID> rewardCandidates = java.util.concurrent.ConcurrentHashMap.newKeySet();
@@ -72,10 +74,12 @@ public final class WorldBossManager {
 
     public void setPveRuntime(final MobScalingManager mobScaling,
                               final MobAbilityRuntime mobAbilityRuntime,
-                              final EncounterRewardDeliveryService rewardDelivery) {
+                              final EncounterRewardDeliveryService rewardDelivery,
+                              final EquippedCombatPowerService equippedCombatPower) {
         this.mobScaling = mobScaling;
         this.mobAbilityRuntime = mobAbilityRuntime;
         this.rewardDelivery = rewardDelivery;
+        this.equippedCombatPower = equippedCombatPower;
     }
 
     /**
@@ -350,6 +354,11 @@ public final class WorldBossManager {
         }
         final double tierReference = Math.max(1.0D, configManager.getDouble(
                 "world-events.world-boss.scaling.tier-reference-power", 250.0D));
+        final EquippedCombatPowerService powerService = equippedCombatPower;
+        final double averageCombatPower = participants.stream()
+                .mapToDouble(playerId -> powerService == null
+                        ? tierReference : powerService.powerOf(playerId, tierReference))
+                .average().orElse(tierReference);
         final EncounterScalingPolicy.Tuning tuning = new EncounterScalingPolicy.Tuning(
                 configManager.getDouble("world-events.world-boss.scaling.player-coefficient", 0.65D),
                 configManager.getDouble("world-events.world-boss.scaling.player-exponent", 0.8D),
@@ -358,7 +367,7 @@ public final class WorldBossManager {
                 configManager.getDouble("world-events.world-boss.scaling.maximum-damage-multiplier", 1.18D),
                 configManager.getDouble("world-events.world-boss.scaling.combat-power-influence", 0.20D));
         return EncounterScalingPolicy.snapshot(boss.getUniqueId(), 1, participants,
-                tierReference, tierReference, System.currentTimeMillis(), tuning);
+                averageCombatPower, tierReference, System.currentTimeMillis(), tuning);
     }
 
     /**

@@ -32,7 +32,36 @@ public final class ItemizationDomainRegressionSuite {
         salvageIsConservativeBoundedAndLegacySafe();
         recoveryNeverGuessesAcrossAmbiguousSnapshots();
         mutationCrashRecoverySettlesExactlyOnce();
+        mutationFaultMatrixCoversRerollRuneAndAscension();
         System.out.println("Itemization domain regression suite passed. assertions=" + assertions);
+    }
+
+    private static void mutationFaultMatrixCoversRerollRuneAndAscension() {
+        final List<String> before = List.of("item:revision=4", "payment:present");
+        final List<String> after = List.of("item:revision=5", "payment:consumed");
+        for (final ItemMutationFaultMatrix.Operation operation
+                : ItemMutationFaultMatrix.Operation.values()) {
+            check(ItemMutationFaultMatrix.recover(ItemMutationFaultMatrix.simulate(operation,
+                            ItemMutationFaultMatrix.FailurePoint.BEFORE_PREPARE, before, after))
+                            == ItemMutationRecoveryPolicy.Decision.ABORT_BEFORE,
+                    operation + " before prepare is a no-op");
+            check(ItemMutationFaultMatrix.recover(ItemMutationFaultMatrix.simulate(operation,
+                            ItemMutationFaultMatrix.FailurePoint.AFTER_PREPARE, before, after))
+                            == ItemMutationRecoveryPolicy.Decision.ABORT_BEFORE,
+                    operation + " prepared exact-before aborts without payment loss");
+            check(ItemMutationFaultMatrix.recover(ItemMutationFaultMatrix.simulate(operation,
+                            ItemMutationFaultMatrix.FailurePoint.AFTER_INVENTORY_PUBLISH, before, after))
+                            == ItemMutationRecoveryPolicy.Decision.COMMIT_AFTER,
+                    operation + " exact-after commits without a free retry");
+            check(ItemMutationFaultMatrix.recover(ItemMutationFaultMatrix.simulate(operation,
+                            ItemMutationFaultMatrix.FailurePoint.AFTER_JOURNAL_COMMIT, before, after))
+                            == ItemMutationRecoveryPolicy.Decision.COMMIT_AFTER,
+                    operation + " committed state remains idempotent");
+            check(ItemMutationFaultMatrix.recover(ItemMutationFaultMatrix.simulate(operation,
+                            ItemMutationFaultMatrix.FailurePoint.MIXED_INVENTORY, before, after))
+                            == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
+                    operation + " mixed state fails closed");
+        }
     }
 
     private static void templateRejectsDeadStatsAndInvalidSockets() {

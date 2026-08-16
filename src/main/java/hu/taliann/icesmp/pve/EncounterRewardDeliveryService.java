@@ -160,7 +160,16 @@ public final class EncounterRewardDeliveryService implements Listener {
 
     private void deliver(final Player player, final PlayerProfileOperation operation) {
         if (!player.isOnline() || operation.status() == PlayerProfileOperation.Status.COMMITTED) return;
-        if (hasReceipt(player, operation.operationId())) {
+        final int witnesses = receiptCount(player, operation.operationId());
+        final EncounterRewardRecoveryPolicy.Decision recovery =
+                EncounterRewardRecoveryPolicy.decide(
+                        EncounterRewardRecoveryPolicy.ReceiptState.PREPARED, witnesses);
+        if (recovery == EncounterRewardRecoveryPolicy.Decision.MANUAL_REVIEW) {
+            plugin.getLogger().severe("Ambiguous duplicate encounter reward witnesses for "
+                    + player.getUniqueId() + '/' + operation.operationId());
+            return;
+        }
+        if (recovery == EncounterRewardRecoveryPolicy.Decision.COMMIT_WITNESS) {
             commit(player, operation);
             return;
         }
@@ -238,9 +247,9 @@ public final class EncounterRewardDeliveryService implements Listener {
         }
     }
 
-    private boolean hasReceipt(final Player player, final String operationId) {
-        return Arrays.stream(player.getInventory().getStorageContents())
-                .anyMatch(item -> operationId.equals(receipt(item)));
+    private int receiptCount(final Player player, final String operationId) {
+        return (int) Arrays.stream(player.getInventory().getStorageContents())
+                .filter(item -> operationId.equals(receipt(item))).count();
     }
 
     private String receipt(final ItemStack item) {
