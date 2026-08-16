@@ -20,6 +20,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public final class ProfessionRecipeAuditRegressionSuite {
+    private static final Set<String> KINDS =
+            Set.of("gyakorlo", "hozam", "egyedi", "lanc", "ritkasag");
+    private static final List<String> FUNCTIONAL_KEYS =
+            List.of("affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects");
+    private static final int GYAKORLO_MAX_LEVEL = 15;
+    /** A vanília MAGA is ugyanígy duplikálja ezt a tárgyat — a katalógusból ez nem látszik. */
+    private static final Set<String> VANILLA_DUPLICATION = Set.of("kovacsmesteri_sablon");
+
     private ProfessionRecipeAuditRegressionSuite() { }
 
     public static void main(final String[] args) throws Exception {
@@ -52,9 +60,56 @@ public final class ProfessionRecipeAuditRegressionSuite {
                     Math.max(1, result.getInt("amount", 1)), result.getString("affix-tier", null), unique,
                     parsed.materials(), parsed.uniqueMaterials(), section.getStringList("lore"),
                     result.getString("signature", null), FactionType.fromInput(section.getString("faction", null)),
-                    section.getBoolean("loot-only", false), section.getString("job", null));
+                    section.getBoolean("loot-only", false), section.getString("job", null),
+                    section.getString("kind", "hozam"));
             final String fingerprint = ProfessionRecipeCatalog.semanticFingerprint(recipe);
             check(fingerprints.add(fingerprint), "semantic duplicate: " + id + " -> " + fingerprint);
+
+            // Recept-fajta szerződés: minden recept KIMONDJA, mire való, és a fajta megszabja,
+            // milyen kart húzhat meg. Enélkül a katalógus visszacsúszik oda, hogy a vanilla
+            // duplikátumnak és az üres ígéret-itemnek nincs mihez képest nemet mondani.
+            final String kind = section.getString("kind", "");
+            check(KINDS.contains(kind), "recipe declares a valid kind: " + id + " -> '" + kind + "'");
+            if ("egyedi".equals(kind)) {
+                boolean functional = false;
+                for (final String key : FUNCTIONAL_KEYS) {
+                    if (result.contains(key)) {
+                        functional = true;
+                        break;
+                    }
+                }
+                check(functional, "kind=egyedi carries a functional component: " + id);
+            }
+            if ("ritkasag".equals(kind)) {
+                check(Math.max(1, result.getInt("amount", 1)) == 1,
+                        "kind=ritkasag never multiplies: " + id);
+            }
+            if ("gyakorlo".equals(kind)) {
+                check(Math.max(1, section.getInt("level", 1)) <= GYAKORLO_MAX_LEVEL,
+                        "kind=gyakorlo stays at or below level " + GYAKORLO_MAX_LEVEL + ": " + id);
+                check(parsed.uniqueMaterials().isEmpty(),
+                        "kind=gyakorlo costs nothing beyond plain materials: " + id);
+            }
+            // Üres ígéret-item: a főzet, ami nem hat, és az enchantkönyv, ami üllőn nem ad
+            // semmit. Mindkettő a nevével ígér, és a felület nem árulja el, hogy nem teljesít.
+            if (material != null && material.name().endsWith("POTION")) {
+                check(!result.getStringList("potion-effects").isEmpty(),
+                        "potion result carries real effects: " + id);
+            }
+            if (material == Material.ENCHANTED_BOOK) {
+                final String enchant = result.getString("enchant", "");
+                check(enchant != null && !enchant.isBlank(),
+                        "enchanted book result carries a real enchantment: " + id);
+            }
+            // Önmagát sokszorozó recept: a kimenet ugyanaz az anyag, mint a bemenet, többször.
+            // Ez korlátlanul ismételhető nyersanyag-forrás, a gazdaság csendes szivárgása.
+            if (unique == null && material != null) {
+                final Integer sameMaterialInput = parsed.materials().get(material);
+                check(sameMaterialInput == null
+                                || Math.max(1, result.getInt("amount", 1)) <= sameMaterialInput
+                                || VANILLA_DUPLICATION.contains(id),
+                        "recipe does not multiply its own input material: " + id);
+            }
             if (unique != null) {
                 final String model = materials.getString("profession-materials."
                         + unique.toLowerCase(Locale.ROOT) + ".item-model");
@@ -71,7 +126,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
         final ProfessionRecipeCatalog.Recipe immutableRecipe = new ProfessionRecipeCatalog.Recipe(
                 "immutable_audit", ProfessionType.COOK, 1, false, "Audit", "Audit",
                 Material.PAPER, 1, null, null, mutableIngredients, mutableUniqueIngredients,
-                mutableLore, null, null, false, null);
+                mutableLore, null, null, false, null, "hozam");
         mutableIngredients.clear();
         mutableUniqueIngredients.clear();
         mutableLore.clear();

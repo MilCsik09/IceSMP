@@ -52,6 +52,13 @@ public final class ProfessionRecipeBookListener implements Listener {
         this.bestiaryManager = bestiaryManager;
     }
 
+    /** Setter-injektált: a recept-craft XP-je is tölti a heti céh-célt (mint a gyűjtő-XP). */
+    private volatile hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoal;
+
+    public void setWeeklyGoal(final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoal) {
+        this.weeklyGoal = weeklyGoal;
+    }
+
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     private final ProfessionManager professionManager;
@@ -119,6 +126,14 @@ public final class ProfessionRecipeBookListener implements Listener {
     private void craft(final Player player, final String recipeId, final int page) {
         final ProfessionRecipeCatalog.Recipe recipe = catalog.get(recipeId);
         if (recipe == null) {
+            return;
+        }
+        // A GUI csak az aktív szakmák receptjeit listázza, de a jogosultságot minden mutációs
+        // útnak MAGÁNAK kell ellenőriznie: a szintet a profil megőrzi szakmaváltás után is,
+        // így egy nyitva maradt GUI-ból a régi szakma receptjei tovább craftolhatók lennének.
+        if (!professionManager.hasProfession(player, recipe.profession())) {
+            player.sendMessage(messageManager.get("profession-recipe-not-practiced",
+                    "&cEzt a szakmát jelenleg nem gyakorlod."));
             return;
         }
         if (professionManager.getLevel(player, recipe.profession()) < recipe.level()) {
@@ -189,6 +204,16 @@ public final class ProfessionRecipeBookListener implements Listener {
             final int durableCraftXp = craftXp;
             professionManager.addXpFor(player, recipe.profession(), durableCraftXp)
                     .whenComplete((change, failure) -> {
+                        // A heti céh-cél CSAK valódi, tartósan jóváírt XP-re tölthet — a
+                        // gyűjtő-XP útjával azonos szabály (ProfessionXpListener).
+                        if (failure == null && change != null && change.changed()) {
+                            professionManager.runOnOwnerThread(player, () -> {
+                                final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
+                                if (weeklyRef != null && player.isOnline()) {
+                                    weeklyRef.add(player, recipe.profession(), durableCraftXp);
+                                }
+                            });
+                        }
                         if (failure == null) return;
                         plugin.getLogger().severe("Craft XP PlayerProfile commit failed for "
                                 + player.getUniqueId() + " / " + recipe.id() + ": "
@@ -371,6 +396,16 @@ public final class ProfessionRecipeBookListener implements Listener {
                 }
                 result.setItemMeta(enchMeta);
             }
+        }
+
+        // Recept-oldali főzethatás (result.potion-effects): a főzet-eredmény valódi custom
+        // effekteket kap, így a vanília dobás/terület/időtartam kezeli — meta-művelet, ezért
+        // a data-komponens-blokk ELŐTT fut.
+        final List<String> potionSpecs = configManager.getConfiguration()
+                .getStringList("profession-recipes." + recipe.id() + ".result.potion-effects");
+        if (!potionSpecs.isEmpty()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyPotionEffects(result, potionSpecs,
+                    configManager.getString("profession-recipes." + recipe.id() + ".result.potion-color", ""));
         }
 
         // „Készítette: X" (kódex VIII.: a mester keze alól kikerülő mű a nevét is viseli):
