@@ -357,6 +357,12 @@ mérőt, láncot, töltetet vagy rúnát mutatja; a spellkönyv pedig az egyszer
 használható, legfeljebb hét képességedet. A pontos számokat továbbra is a
 játékbeli leírásból olvasd, mert a balance élőben változhat.
 
+A **kifizetés is látszik**, nem csak a felépítés: amikor a kaszt-magod
+ténylegesen megerősít egy képességet, az akciósáv kiírja a kapott
+százalékot (`✦ Kaszt-erő: +N%`), az Íjász Szélolvasása pedig a találat
+pillanatában jelzi vissza az elsütést. Ha egyszerre él kombó-lánc befejező
+és kaszt-bónusz, a kiírt százalék a kettő összege.
+
 ### A választás súlya
 
 Egy karakternek **egy kasztja van**. A választás után rendes játékosparanccsal
@@ -580,6 +586,42 @@ pedig a saját műhelyfolyamataikban haladnak.
 A teljes receptkatalógus nem része ennek a kézikönyvnek. A receptkönyv jelzi a
 szintet, a hozzávalót, az esetleges tervrajzot és azt is, ha valamilyen
 szolgáltatói kellék hiányzik.
+
+Craftolni csak abból a szakmából tudsz, amelyet **éppen gyakorolsz**. A korábbi
+szakmád szintje megmarad a profilodon, de a receptjei váltás után zárva vannak.
+
+### Miért van, hogy egy recept ugyanannyit ad, mint a műhelyasztal?
+
+Mert szándékosan. Az ilyen recept **gyakorló receptként** van megjelölve a
+receptkönyvben: azért létezik, hogy a szakma elején legyen mit csinálni és
+legyen miből XP-t szerezni — nem azért, hogy nyerj rajta. Gyakorló recept csak
+alacsony szinten van, és sosem kér egyedi alapanyagot.
+
+Minden más recept ad valamit a műhelyasztal fölé: vagy **több jön ki ugyanabból
+az anyagból**, vagy olyasmi készül, amit vanília úton nem tudsz megcsinálni —
+sorsolt minőségű felszerelés, valódi hatású főzet, bűvölőkönyv, étel-buff vagy
+a szakmaláncok egyedi alapanyaga.
+
+Az alkimista főzetei és a bűvölő tomusai **valódi hatást hordoznak**: a főzet
+megiható és dobható, a tomus üllőn átadja a bűbájt.
+
+### Melyik szakma mit ad?
+
+Mindegyiknek megvan a maga terméke, és ezek nem helyettesítik egymást:
+
+- **Kovács** — fém fegyver és páncél, sorsolt minőséggel.
+- **Favágó** — íjak, fejszék és az erdőjáró bőrdarabok.
+- **Bányász** — több érc ugyanabból a fejtésből, plusz saját csákány- és ásóvonal.
+- **Halász** — horgászbotok és a víz alatti felszerelés.
+- **Szakács** — ételek és italok rövid, tematikus buffokkal.
+- **Bűvölő** — bűvölőkönyvek, tekercsek és a hét rúna.
+- **Alkimista** — **harci, azonnali** főzetek: erő, gyorsaság, gyógyítás, méreg.
+- **Gyógynövényes** — **hosszú hatású, harcon kívüli** kenőcsök és teák, plusz a
+  **Méregvonó Pép**, az egyetlen hordozható ellenszer. Az utóbbi minden aktív hatást
+  levesz rólad — a rosszat is, a jót is, tehát nem mindig éri meg meginni.
+
+Az alkimista és a gyógynövényes szándékosan egymás ellenpárja: az egyik hatást ad,
+a másik levesz.
 
 ### Mesterfok és rúnák
 

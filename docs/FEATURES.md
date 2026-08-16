@@ -559,6 +559,9 @@ Regisztrált spellkatalógus, célzás, költség, cooldown, projectile/state ke
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz és szakmai GUI.
+A receptkatalógus 376 receptet tartalmaz, és minden recept kimondja a **fajtáját**
+(gyakorló / hozam / egyedi / lánc / ritkaság); a fajta szabja meg, mit adhat a
+vanília fölé, és ezt gépi kapu tartja fenn.
 
 - **Így találkozol vele:** `/profession`, `/szakmacel`, profession GUI. Parancs: /profession (alias: /prof, /szakma); /szakmacel (alias: /weeklygoal). GUI: Szakmaválasztó.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
@@ -573,6 +576,15 @@ Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz é
 - Config: `professions.*`, `profession-materials.*`, heti cél és resource beállítások.
 - Tartós állapot: Profession, XP, specializáció és heti cél állapota tartós.
 - Reload: Balance és receptek célzott reloadot kapnak; periódus/reset scheduler restartot igényelhet.
+- Recept-fajták: minden recept `kind:` mezőt visel. `egyedi` csak funkcionális komponenssel
+  (affix/enchant/attribútum/consumable/signature/potion-effects), `ritkasag` csak boss-kötött
+  alapanyaggal és `amount: 1`-gyel, `gyakorlo` csak L15-ig és egyedi alapanyag nélkül.
+- Eredmény-mezők: `result.potion-effects` (+ `result.potion-color`) valódi főzethatáshoz,
+  `result.enchant` a bűvölőkönyvekhez — mindkettőt a `buildResult` alkalmazza.
+- Craft-kapu: a recept-craft élő szakmatagságot kér (`hasProfession`), nem csak megőrzött szintet.
+- Tervrajz: a lap a tartós mentés ELINDÍTÁSA ELŐTT fogy el, sikertelen mentésnél visszajár.
+- A recept-craft XP-je a heti céh-célt is tölti; a tömeges munka (shift-craft, kemencéből
+  kivett adag) darabonként számít a `professions.xp.bulk-event-cap` sapkáig.
 
 </details>
 

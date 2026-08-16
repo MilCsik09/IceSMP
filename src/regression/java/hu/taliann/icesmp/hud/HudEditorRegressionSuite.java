@@ -307,10 +307,16 @@ public final class HudEditorRegressionSuite {
                     "every editable component needs config defaults and a renderer consumer: "
                             + component.id());
         }
+        // Külön feltételek, nem egyetlen összefüggő literál: a render-hívás formázása és
+        // argumentumlistája bővülhet, a kapu viszont a SZEMANTIKÁRA nézzen — modell, érvényesített
+        // layout és láthatóság egyszerre menjen át a renderelőn.
         check(manager.contains("layout.components.\" + component.id()")
                         && manager.contains("overrides.put(path + \".visible\"")
                         && manager.contains("targetHudState(player)")
-                        && manager.contains("partyHudState(player)"),
+                        && manager.contains("partyHudState(player)")
+                        && manager.contains("IceSmpHudModel.from(snapshot)")
+                        && manager.contains("effectiveHudLayout(player)")
+                        && manager.contains("iceSmpHudBackend.render(player"),
                 "component transforms and visibility must round-trip through validated config");
     }
 
@@ -346,7 +352,8 @@ public final class HudEditorRegressionSuite {
         editor.setScale(player, 3.50D);
         final HudEditorStateMachine.Session session = editor.session(player).orElseThrow();
         final HudComponentLayout component = session.working().componentLayout(HudComponent.EVENT_TEXT);
-        check(session.working().xOffsetPixels() == 15 && session.working().yOffsetPixels() == 1
+        check(session.working().xOffsetPixels() == 15
+                        && session.working().yOffsetPixels() == HudLayoutSnapshot.DEFAULT_Y_OFFSET - 15
                         && component.xOffsetPixels() == 42 && component.yOffsetPixels() == -31
                         && component.scaleIndex() == 15 && component.scale() == 3.50D,
                 "15-pixel movement and direct X/Y/scale entry must update only the selected target");

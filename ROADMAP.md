@@ -34,6 +34,13 @@ Jelölések:
   A megoldási irány szűk WAL/pending rekord: az irreverzibilis lépés előtt
   tartós műveleti rekord, majd idempotens induláskori recovery. Teljes
   wallet- vagy claim-snapshotot nem szabad régiószálon szinkron írni.
+  A minta már létezik a repóban (`RespecTransactionJournal` +
+  `RespecRecoveryProtocol`, `DurableTransactionProtocol` +
+  `DurableRecoveryPolicy`, `FactionSwitchJournal`) — ide ezt kell rákötni,
+  nem újat tervezni. A `ClaimManager`-ben jelenleg nincs journal; a
+  `CurrencyManager.deposit:555-592` az itemeket az enqueue-olt
+  wallet-mutáció tartós kiírása ELŐTT veszi ki az inventoryból (logikai
+  hibára van kompenzáció, crashre nincs).
 
 **Kilépési feltétel:** a normál út, lemezhiba és több időablakban
 megszakított folyamat is bizonyítottan ugyanarra az eredményre áll helyre;
@@ -44,27 +51,61 @@ claim.
 
 Ezek nem mind kiadásblokkolók, de a forrásban még létező rések. Az
 implementálásuk előtt tételenként újra kell igazolni a kiváltási utat.
+A lista tételei 2026-08-14-én forrásban ellenőrizve; ami azóta elkészült,
+az ki van véve (kereskedő-karaván spawnútja: `CaravanManager:176-192`
+`EventSpawnGuard` + generáció-újraellenőrzés a hopolt callbackben).
 
 - 🚧 A `claims.yml` hibás szemantikai rekordját a loader jelenleg
-  kihagyhatja, egy későbbi mentés pedig véglegesítheti az adatvesztést.
-  Fail-closed betöltés, karantén és látható mentési hiba szükséges.
-- ⬜ A HUD és a parkour quit-takarítása mellé kick-út kell; a hosszú életű
-  report-, cooldown- és debounce mapekhez explicit purge-szabály kell.
+  kihagyhatja (`ClaimManager.load:1184-1187`), a következő `flushToDisk`
+  pedig már csak a túlélő claimeket írja vissza — így véglegesíti az
+  adatvesztést. Fail-closed betöltés, karantén és látható mentési hiba
+  szükséges.
+- ⬜ A hosszú életű report-, cooldown- és debounce mapekhez explicit
+  purge-szabály kell. A HUD/parkour kick-út ELŐTT tisztázandó, hogy valós
+  rés-e: a `ParkourListener` csak `PlayerQuitEvent`-et kezel, de a Paper
+  kick után is dob quit-eventet — ezt runtime-próbával kell eldönteni, nem
+  kódolvasással (a kaszt-service-ek eddig külön kezelték a kicket).
 - ⬜ A legacy `claims.block-in-*` beállításokat egyértelmű, validált sémára
   kell migrálni.
 - ⬜ A GUI-kban maradt közvetlen szövegek kerüljenek a
   `MessageManager`-be.
 - ⬜ A `/icesmp reload` csak valóban sikeres validálás után küldjön
-  sikerüzenetet.
-- ⬜ A `ProtectionBridge` konkrét policy/flag alapján döntsön; ne kezeljen
-  automatikusan minden WorldGuard-régiót tiltott területként.
-- ⬜ A kereskedő-karaván minden spawnútja menjen át az
-  `EventSpawnGuard`-on, és a régiószálra hopolt callback ismét ellenőrizze,
-  hogy az esemény még ugyanahhoz a generációhoz tartozik.
+  sikerüzenetet. A quest-hibáról már megy külön üzenet
+  (`IceSMPCommand:131-135`), de a siker-üzenet utána feltétel nélkül elmegy,
+  és a `ConfigValidator.validate` `void` — előbb visszatérési értéket kell
+  adnia, hogy legyen mire kapuzni.
+- ⬜ A `ProtectionBridge` konkrét policy/flag alapján döntsön; a
+  `queryProtected:96-101` jelenleg `getApplicableRegions(...).size() > 0`
+  alapján minden WorldGuard-régiót tiltott területként kezel.
 - ⬜ A `/menu` adjon utat a `/tanacs`, `/komp` és `/faction war`
-  funkciókhoz; staff-elemet csak megfelelő jogosultsággal mutasson.
+  funkciókhoz; staff-elemet csak megfelelő jogosultsággal mutasson. A két
+  parancs regisztrálva van (`IceSMPCore:1812-1813`), csak a `CommandMenus`
+  csempéje hiányzik.
 - ⬜ Tanácsszavazásnál játékidő-alapú alt-védelem, az ambient jutalmaknál
   napi keret, a parkournál tartós ranglista szükséges.
+- ⬜ Vanishben a publikus chat némán eldobódik
+  (`VanishListener.onChat:155-161`, `moderation.vanish.allow-chat: false`) —
+  a játékos nem kap visszajelzést, ami szerverhibának látszik.
+  Egy `MessageManager`-kulcs kell hozzá, a blokk szándékos.
+
+**Szakma-katalógus rework (2026-08-15) — lezárva.** A katalógus 437-ről 295-re csökkent, majd
+a szakma-identitás pótlásával 376-ra állt be; minden recept kimondja a fajtáját, és a fajta-szabályokat gépi kapu tartja
+fenn (`check_consistency.py` + `professionRecipeAuditRegressionTest`). Lezárt tételek:
+15 nyersanyag-hurok, 16 hatás nélküli főzet, 13 üres enchantkönyv, 9 loot-ritkaságot
+törő recept, a tervrajz-duplikáció, az inaktív szakmával craftolás, a recept-XP heti
+célba kötése és a tömeges XP darabszám-alapú jóváírása. A részletek a
+`docs/ARCHITECTURE.md` „Recept-fajta szerződés" szekciójában élnek.
+
+- ◇ **Szakma-rework runtime acceptance:** a `docs/ADMIN_GUIDE.md` PROF-01..07 sorai
+  productionközeli Folia stagingen még kézi próbát igényelnek — különösen a
+  tervrajz-fogyasztás versenyhelyzete, a 16 főzet tényleges hatása és a Méregvonó Pép
+  hatás-törlése.
+- ⏸ A 15 új identitás-recept balansza (gyógynövényes kenőcsvonal, bányász ásó- és
+  szerencsecsákány, favágó erdőjáró szett, két alkimista főzet) élő próbán mérendő:
+  a hatás-időtartamok konzervatív kiindulópontok, nem mért értékek.
+- ⏸ A szakmák közti XP-tempó (a mért ~11 270 favágó akció vs. ~1 879 alkimista craft
+  ugyanazért az 1→50 alap-XP-ért) továbbra is nyitott: nem az akciószámot, hanem a
+  várható játékidőt kell kiegyenlíteni, és ehhez mérés kell, nem becslés.
 - ⬜ A szezon 41–53. napjának történeti üresjáratát és a túl korán
   elérhető rejtvényeket tartalom- és időkapu-tervvel kell rendezni.
 - ⏸ A Mételytépő és a Sárkánytojás-töredék tényleges megszerzési forrása

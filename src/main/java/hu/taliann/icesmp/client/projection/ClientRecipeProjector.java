@@ -73,7 +73,7 @@ public final class ClientRecipeProjector {
                     uniqueMaterials.displayName(entry.getKey()), entry.getValue(), have, true));
         }
         return new RecipePagePayload.Entry(
-                recipe.id(), recipe.displayName(), recipe.category(),
+                recipe.id(), recipe.displayName(), recipe.category(), recipe.kind(),
                 recipe.level(), levelOk, recipe.blueprint(), learned, recipe.lootOnly(),
                 recipe.faction() == null ? ""
                         : recipe.faction().getDisplayName() + " (" + recipe.faction().getFullName() + ")",

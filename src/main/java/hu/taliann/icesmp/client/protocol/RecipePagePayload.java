@@ -17,8 +17,14 @@ import java.util.List;
 public record RecipePagePayload(String professionId, int page, int pageCount, int totalRecipes,
                                 List<Entry> entries) {
 
-    /** Egy recept-csempe; a {@code factionLabel} üres, ha a recept nem frakció-kötött. */
-    public record Entry(String recipeId, String displayName, String category,
+    /**
+     * Egy recept-csempe; a {@code factionLabel} üres, ha a recept nem frakció-kötött.
+     *
+     * <p>A {@code kind} a recept-fajta (gyakorlo/hozam/egyedi/lanc/ritkasag). A vanilla
+     * recept-könyv a gyakorló receptet külön kiírja, mert az szándékosan vanilla-értékű —
+     * enélkül a natív felületen rossz üzletnek látszana, és a két felület tartalma elcsúszna.
+     */
+    public record Entry(String recipeId, String displayName, String category, String kind,
                         int requiredLevel, boolean levelOk, boolean blueprint, boolean learned,
                         boolean lootOnly, String factionLabel, boolean affix,
                         int resultAmount, boolean craftable, List<Ingredient> ingredients) {
@@ -46,6 +52,7 @@ public record RecipePagePayload(String professionId, int page, int pageCount, in
                 ClientMessageCodec.writeString(out, entry.recipeId());
                 ClientMessageCodec.writeString(out, entry.displayName());
                 ClientMessageCodec.writeString(out, entry.category());
+                ClientMessageCodec.writeString(out, entry.kind());
                 out.writeInt(entry.requiredLevel());
                 out.writeBoolean(entry.levelOk());
                 out.writeBoolean(entry.blueprint());
@@ -78,6 +85,7 @@ public record RecipePagePayload(String professionId, int page, int pageCount, in
                 final String recipeId = ClientMessageCodec.readString(in);
                 final String displayName = ClientMessageCodec.readString(in);
                 final String category = ClientMessageCodec.readString(in);
+                final String kind = ClientMessageCodec.readString(in);
                 final int requiredLevel = in.readInt();
                 final boolean levelOk = in.readBoolean();
                 final boolean blueprint = in.readBoolean();
@@ -94,7 +102,7 @@ public record RecipePagePayload(String professionId, int page, int pageCount, in
                             ClientMessageCodec.readString(in),
                             in.readInt(), in.readInt(), in.readBoolean()));
                 }
-                entries.add(new Entry(recipeId, displayName, category, requiredLevel, levelOk,
+                entries.add(new Entry(recipeId, displayName, category, kind, requiredLevel, levelOk,
                         blueprint, learned, lootOnly, factionLabel, affix, resultAmount,
                         craftable, ingredients));
             }

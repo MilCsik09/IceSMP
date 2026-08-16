@@ -27,6 +27,10 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
 
+- **Kaszt-kifizetés visszajelzés:** a kaszt-magok eddig is emelték a képességek
+  erejét, de a játékos ebből semmit nem látott. Mostantól a megerősített cast
+  kiírja a kapott százalékot, az Íjász Szélolvasása pedig a találat
+  pillanatában jelez; kombó-lánc befejezőnél a kiírt érték a két bónusz összege.
 - **PlayerProfile-alap:** minden tartós játékos-állapot (kaszt, szakma, quest,
   pénztárca, statisztika, moderációs összegzés, crate-számlálók, heti céh-cél,
   halál-escrow) egyetlen, tranzakcióvédett profilrendszerben él — restart és
@@ -150,8 +154,8 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
 | Funkcionális GUI-család | 14 | 22 |
 | Kaszt | 13 | 13 |
 | Specializáció | 31 | 35 |
-| Questdefiníció | 45 | 195 |
-| Szakmai recept | 124 | 438 |
+| Questdefiníció | 45 | 160 |
+| Szakmai recept | 124 | 376 |
 | Szakmai alapanyag | 9 | 81 |
 | Relikvia | 5 | 6 |
 | Rituálé | 19 | 21 |
@@ -276,6 +280,51 @@ inventory-overflow-t, settlementet és recoveryt kötelező stagingen tesztelni.
 Új PM/reply útvonalak és játékosreportok érkeztek. A report indoka legalább
 három szó. A chatnapló, a SocialSpy és a reportkezelés hozzáférését az
 adatkezelési szabályzathoz és a staffszerepekhez kell igazítani.
+
+### A szakmák végre azt adják, amit ígérnek
+
+A receptkatalógus átesett egy teljes átvizsgáláson: 437-ről 295-re csökkent,
+majd a szakma-identitás pótlásával **376 receptre** állt be. Minden recept
+indokolja a létezését.
+
+- **Az alkimista főzetei hatnak.** Korábban mind a 16 főzet üres palack volt: a
+  neve gyógyítást vagy erőt ígért, de semmit nem csinált. Most valódi hatásuk
+  van, és a dobható, illetve elnyúló változatokat a vanília terület- és
+  időtartam-kezelése működteti.
+- **A bűvölő tomusai átadják a bűbájt.** A 13 enchantkönyv üresen került ki a
+  receptkönyvből; üllőn nem adtak semmit. Most mindegyik a nevében ígért bűbájt
+  viszi.
+- **Eltűnt 15 nyersanyag-hurok.** Több receptpár körbe volt kötve úgy, hogy a
+  kör végén több nyersanyag jött ki, mint amennyi bement — rúnapor és glowstone,
+  sötéttölgy, lazurit, sőt vasból arany. Ezek korlátlanul ismételhető
+  pénznyomdák voltak.
+- **A tervrajz egyszer fogy el.** Korábban a lap gyors áthelyezésével a recept
+  elmentődött, de a tervrajz megmaradt — minden boss-only tervrajz újra és újra
+  eladható volt.
+- **Csak azt craftolod, amit gyakorolsz.** Szakmaváltás után a régi szakma
+  receptjei zárva vannak, még nyitva maradt receptkönyvből is.
+- **Ami a műhelyasztallal egyenértékű, az meg van jelölve.** Az ilyen recept
+  „gyakorló receptként" jelenik meg: azért van, hogy a szakma elején legyen
+  miből XP-t szerezni, nem azért, hogy nyerj rajta. Csak alacsony szinten van, és
+  sosem kér egyedi alapanyagot.
+- A recept-craft XP-je mostantól a **heti céh-célt is tölti**, és a tömeges munka
+  (shift-craft, kemencéből egyszerre kivett adag) darabonként számít.
+
+- **Minden szakma kapott saját terméket.** A takarítás után látszott, hogy a
+  gyógynövényesnek 27 receptből egyetlen egyedi tárgya volt — festéket és cukrot
+  gyártott. Most övé a **kenőcs- és teavonal**: hosszú hatású, harcon kívüli
+  támogatás, és a **Méregvonó Pép**, az egyetlen hordozható ellenszer, ami minden
+  aktív hatást levesz (a jókat is — nem mindig éri meg). Az alkimista marad a
+  harci, azonnali főzeteké; a kettő szándékosan egymás ellenpárja. A bányász saját
+  ásó- és szerencsecsákány-vonalat kapott, a favágó egy erdőjáró bőrszettet.
+- Ezzel a katalógus 295-ről **376 receptre** nőtt, és nincs olyan szakma, ahol
+  ötnél több szint telne el új recept nélkül. A bűvölő 21 új tomust kapott a
+  korábban lefedetlen vanília bűbájokra, az alkimista dobható és elnyúló
+  változatokat, a halász pedig négy szigonyt és a búvárfelszerelést.
+
+Ami eltűnt, az nagyrészt a műhelyasztal átnevezett másolata volt, vagy olyan
+tárgy, amit vanília úton csak lootból lehet szerezni — a Tenger Szíve, a
+nautilusz-héj, a szivacs és a totem gyárthatósága a ritkaságukat szüntette meg.
 
 ## Amit a staff kap
 

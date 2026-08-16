@@ -532,6 +532,7 @@ public final class IceSMPCore {
         questManager.setGuildManager(guildManager); // quest-teljesítés céh-XP
         professionRecipeBookListener.setBestiaryManager(bestiaryManager); // recept-lajstrom
         professionRecipeBookListener.setJobManager(jobManager); // kaszt-zárt receptek
+        professionRecipeBookListener.setWeeklyGoal(professionWeeklyGoalManager); // craft-XP a heti célba
         // Vendor-only unique anyagok a boltokban (economy.yml `unique:` bolt-item mező).
         shopManager.setUniqueMaterialFactory(uniqueMaterialFactory);
         // A Rejtélyes Idegen (tisztán atmoszférikus, ritka felbukkanás).

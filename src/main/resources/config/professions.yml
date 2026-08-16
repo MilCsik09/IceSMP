@@ -35,6 +35,10 @@ professions:
     recipe-craft-base: 8
     recipe-craft-per-level: 2
     recipe-craft-grey-after: 20
+    # Tömeges munka (shift-craft, kemencéből egyszerre kivett adag) darabonként számít,
+    # de eseményenként legfeljebb ennyiszeres jóváírással — így nem éri meg egyesével
+    # kattintgatni, viszont egy 64-es adag sem ugorhatja meg a napi tempót.
+    bulk-event-cap: 16
     mining-ore: 5
     herbalism-harvest: 3
     logging: 2

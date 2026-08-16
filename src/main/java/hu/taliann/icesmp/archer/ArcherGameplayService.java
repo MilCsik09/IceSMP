@@ -172,7 +172,7 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
             if ("perfect_focus".equals(spellId)) {
                 state.armWindRead(now, windReadWindowMillis(playerId));
                 player.sendActionBar(messages.getMessage("archer.wind.focused",
-                        "<green>Tökéletes Fókusz: a következő fegyelmezett lövésed olvasott.</green>"));
+                        "<green>Tökéletes Fókusz: a következő teljes húzású lövésed olvasott.</green>"));
             } else if ("masterful_shot".equals(spellId)
                     && state.consumeWeakPoint(weakPointThreshold(playerId), 0)) {
                 if ("egy_loves_egy_elet".equals(doctrine(playerId, 50))) {
@@ -323,9 +323,13 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         final boolean pvp = event.getEntity() instanceof Player;
         double bonusPercent = 0.0D;
         if (state.consumeWindRead(now)) {
-            bonusPercent += config.getDouble(pvp
+            final double windBonus = config.getDouble(pvp
                     ? "classes.archer.wind.pvp-bonus-percent"
                     : "classes.archer.wind.pve-bonus-percent", pvp ? 8.0D : 18.0D);
+            bonusPercent += windBonus;
+            archer.sendActionBar(messages.getMessage("archer.wind.spent",
+                    "<green>➶ Szélolvasás elsütve: +{bonus}% sebzés.</green>",
+                    Map.of("bonus", Integer.toString((int) Math.round(windBonus)))));
         }
         if ("sharpshooter".equals(activeSpec(archerId))
                 && event.getEntity() instanceof LivingEntity
@@ -377,7 +381,7 @@ public final class ArcherGameplayService implements Listener, PlayerStateCleanup
         if (disciplined && !state.isWindReadArmed(now)) {
             state.armWindRead(now, windReadWindowMillis(archerId));
             archer.sendActionBar(messages.getMessage("archer.wind.read",
-                    "<green>➶ Szélolvasás: a következő fegyelmezett lövésed erősebb.</green>"));
+                    "<green>➶ Szélolvasás: a következő teljes húzású lövésed erősebb.</green>"));
         }
 
         final String spec = activeSpec(archerId);

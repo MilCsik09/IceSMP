@@ -15,6 +15,7 @@ import hu.taliann.icesmp.client.protocol.FactionStatePayload;
 import hu.taliann.icesmp.client.protocol.FxEventPayload;
 import hu.taliann.icesmp.client.protocol.ClientHello;
 import hu.taliann.icesmp.client.protocol.RecipePagePayload;
+import java.util.HexFormat;
 import hu.taliann.icesmp.client.protocol.ClientMessageCodec;
 import hu.taliann.icesmp.client.protocol.HudStatePayload;
 import hu.taliann.icesmp.managers.HudManager;
@@ -449,19 +450,26 @@ public final class ClientProtocolRegressionSuite {
                 "BrowseRecipesPayload roundtrip");
 
         final RecipePagePayload page = new RecipePagePayload("cook", 3, 5, 72,
-                List.of(new RecipePagePayload.Entry("gulyas", "Gulyás", "Étel",
+                List.of(new RecipePagePayload.Entry("gulyas", "Gulyás", "Étel", "egyedi",
                         12, true, false, true, false, "", false, 2, false,
                         List.of(new RecipePagePayload.Ingredient("Marhahús", 3, 1, false),
                                 new RecipePagePayload.Ingredient("Jégfűszer", 1, 0, true))),
-                        new RecipePagePayload.Entry("legendas_lakoma", "Legendás lakoma", "Étel",
+                        new RecipePagePayload.Entry("legendas_lakoma", "Legendás lakoma", "Étel", "ritkasag",
                                 45, false, true, false, true, "RED (Perinfernicitas)", true, 1, false,
                                 List.of())));
         check(page.equals(RecipePagePayload.decode(page.encode())), "RecipePagePayload roundtrip");
         check(page.totalRecipes() == 72 && page.pageCount() == 5, "paging metadata preserved");
+        // A recept-fajta a vezetéken utazik: enélkül a natív böngésző nem tudná kiírni a
+        // gyakorló-címkét, és a két felület tartalma elcsúszna.
+        final String goldenRecipePage = "00000004636f6f6b000000030000000500000048000000020000000667756c7961730000000747756c79c3a17300000005c38974656c000000066567796564690000000c010001000000000000000000020000000002000000094d6172686168c3ba730000000300000001000000000b4ac3a96766c5b1737a65720000000100000000010000000f6c6567656e6461735f6c616b6f6d61000000104c6567656e64c3a173206c616b6f6d6100000005c38974656c000000087269746b617361670000002d00010001000000155245442028506572696e6665726e6963697461732901000000010000000000";
+        check(goldenRecipePage.equals(HexFormat.of().formatHex(page.encode())),
+                "RecipePagePayload golden vector");
+        check(page.equals(RecipePagePayload.decode(HexFormat.of().parseHex(goldenRecipePage))),
+                "RecipePagePayload golden decode");
 
         final List<RecipePagePayload.Entry> tooMany = new java.util.ArrayList<>();
         for (int i = 0; i <= ClientProtocol.MAX_LIST_ELEMENTS; i++) {
-            tooMany.add(new RecipePagePayload.Entry("r" + i, "", "", 0, true, false, true,
+            tooMany.add(new RecipePagePayload.Entry("r" + i, "", "", "hozam", 0, true, false, true,
                     false, "", false, 1, false, List.of()));
         }
         try {

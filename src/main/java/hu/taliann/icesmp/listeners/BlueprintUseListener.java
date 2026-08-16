@@ -54,29 +54,41 @@ public final class BlueprintUseListener implements Listener {
             player.sendMessage(messageManager.get("blueprint-unknown", "&cEz a tervrajz nem tartozik ismert recepthez."));
             return;
         }
+        // A tervrajz a tartós mentés ELINDÍTÁSA ELŐTT fogy el, még ugyanezen a régió-szálon.
+        // Fordított sorrendben az aszinkron mentés alatt a játékos kirakhatja/eldobhatja a
+        // lapot, és a recept elmentve maradna, miközben a tervrajz újra eladható — minden
+        // boss-only tervrajz korlátlanul sokszorozódna. Sikertelen/felesleges mentésnél
+        // a lapot visszaadjuk.
+        item.setAmount(item.getAmount() - 1);
         professionManager.learnRecipe(player, recipeId)
                 .whenComplete((learned, failure) -> professionManager.runOnOwnerThread(player, () -> {
                     if (failure != null) {
+                        refund(player, recipeId);
                         player.sendMessage(messageManager.get("blueprint-storage-failed",
                                 "&cA recept PlayerProfile mentése meghiúsult; a tervrajz nem fogyott el."));
                         return;
                     }
                     if (!Boolean.TRUE.equals(learned)) {
+                        refund(player, recipeId);
                         player.sendMessage(messageManager.get("blueprint-already-known",
                                 "&7Ezt a receptet már ismered."));
                         return;
                     }
-                    final ItemStack current = player.getInventory().getItemInMainHand();
-                    if (!recipeId.equals(blueprintFactory.recipeIdOf(current)) || current.getAmount() <= 0) {
-                        player.sendMessage(messageManager.get("blueprint-item-changed",
-                                "&eA recept elmentve, de a kézben tartott tervrajz megváltozott, ezért nem fogyasztottunk itemet."));
-                        return;
-                    }
-                    current.setAmount(current.getAmount() - 1);
                     player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.7F, 1.0F);
                     player.sendMessage(messageManager.get("blueprint-learned",
                             "&aÚj receptet tanultál: &e%s&a! (Recept-könyv: /profession recipes)",
                             recipe.displayName()));
                 }));
+    }
+
+    /** Visszaadja az előre levont tervrajzot; tele hátizsáknál a játékos lába elé esik. */
+    private void refund(final Player player, final String recipeId) {
+        final ItemStack blueprint = blueprintFactory.create(recipeId);
+        if (blueprint == null) {
+            return;
+        }
+        for (final ItemStack overflow : player.getInventory().addItem(blueprint).values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+        }
     }
 }
