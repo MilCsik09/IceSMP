@@ -580,7 +580,7 @@ public final class MobScalingManager {
     }
 
     private MobRank promotedRank(final SpawnReason spawnReason, final List<String> selectors) {
-        if (spawnReason != SpawnReason.NATURAL && spawnReason != SpawnReason.CHUNK_GEN) {
+        if (spawnReason != SpawnReason.NATURAL) {
             return MobRank.NORMAL;
         }
         if (selectors.stream().anyMatch(selector -> selector.equals("protected-city"))) {

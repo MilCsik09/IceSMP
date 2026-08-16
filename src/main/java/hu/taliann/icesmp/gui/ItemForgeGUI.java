@@ -179,7 +179,7 @@ public final class ItemForgeGUI implements Listener {
         final ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text(name, NamedTextColor.AQUA)
                 .decoration(TextDecoration.ITALIC, false));
-        final List<Component> lore = loreLines.stream().map(line -> Component.text(line,
+        final List<Component> lore = loreLines.stream().<Component>map(line -> Component.text(line,
                 NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)).toList();
         meta.lore(lore);
         item.setItemMeta(meta);

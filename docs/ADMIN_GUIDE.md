@@ -1182,7 +1182,7 @@ corrupt state-je fail-closed. Ettől a valódi process-kill/Folia acceptance mé
 - `mob-templates.yml`: ability-, loot-profile- és a 6 pilot MobTemplate-authority.
   Duplicate ID, invalid entity/rank/archetype, missing ability/loot vagy Bestiary ID
   ütközés startupkor fail-fast. Vanilla fallbackhez nem kell minden mobot authoredolni.
-- A natural promotion csak `NATURAL`/`CHUNK_GEN` spawnnál sorsol Veteran/Elite rankot;
+- A natural promotion csak `NATURAL` spawnnál sorsol Veteran/Elite rankot;
   protected-city selectorban nem. Elite legfeljebb két valid affixet kap.
 - Az ability runtime globális scan helyett entity scheduler tickeket használ, legfeljebb
   2048 aktív state-tel. Telegraph, cooldown, summon-darab és summon-lifespan bounded;
