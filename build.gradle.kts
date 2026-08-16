@@ -268,9 +268,9 @@ val validateIceSmpHudPackage by tasks.registering {
             }
         }
         val shader = pack.file("assets/minecraft/shaders/core/rendertype_text.vsh").asFile
-        require((manifest["layout_color_payload_bits"] as? Number)?.toInt() == 13
+        require((manifest["layout_color_payload_bits"] as? Number)?.toInt() == 14
             && (manifest["layout_y_offset_range"] as? List<*>)
-                ?.map { (it as Number).toInt() } == listOf(-256, 255)
+                ?.map { (it as Number).toInt() } == listOf(-512, 511)
             && (manifest["layout_scale_variants"] as? List<*>)
                 ?.map { (it as Number).toDouble() } == listOf(
                     0.75, 0.9, 1.0, 1.15, 1.25, 1.4, 1.6, 1.8,
@@ -282,12 +282,15 @@ val validateIceSmpHudPackage by tasks.registering {
             && shader.readText().contains("vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize")
             && shader.readText().contains("const float HUD_LAYOUT_SCALES[16]")
             && shader.readText().contains("int layoutCode = (packedColor.r & 15)")
+            && shader.readText().contains("(packedColor.r & 16) << 9")
+            && shader.readText().contains("layoutCode & 1023")
+            && shader.readText().contains("layoutCode >> 10")
             && shader.readText().contains("vec2 selectedHudScale = hudScale * layoutScale")
             && shader.readText().contains("topLeft = id >= 11 && id <= 15")
             && shader.readText().contains("ScreenSize.x / 2560.0")
             && shader.readText().contains("ScreenSize.y / 1440.0")
             && shader.readText().contains("clipPosition.x = -clipPosition.w + clipPosition.x * selectedHudScale.x")
-            && shader.readText().contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")) {
+            && shader.readText().contains("layoutYOffset * responsiveScale * layoutScale")) {
             "Missing first-party 1.21.11 HUD positioning shader"
         }
         val renderer = rendererSource.asFile.readText()
@@ -301,11 +304,12 @@ val validateIceSmpHudPackage by tasks.registering {
         fun survivalSpriteNames(key: String): List<String> =
             (survivalManifest[key] as? List<*>)?.map { it.toString() }
                 ?: error("Survival HUD manifest list is missing: $key")
-        val transparentSprites =
-            survivalSpriteNames("heart_sprites").map { "heart/$it" }
-                + survivalSpriteNames("armor_sprites")
-                + survivalSpriteNames("food_sprites")
-                + survivalSpriteNames("air_sprites")
+        val transparentSprites = buildList {
+            addAll(survivalSpriteNames("heart_sprites").map { "heart/$it" })
+            addAll(survivalSpriteNames("armor_sprites"))
+            addAll(survivalSpriteNames("food_sprites"))
+            addAll(survivalSpriteNames("air_sprites"))
+        }
         require(transparentSprites.size == 34 && transparentSprites.distinct().size == 34) {
             "Survival HUD must own exactly the reviewed 34 regular vanilla sprites"
         }
@@ -324,8 +328,8 @@ val validateIceSmpHudPackage by tasks.registering {
             .filter { it.isFile && it.name.contains("hardcore", ignoreCase = true) }
             .toList()
         require(forbiddenHardcoreSprites.isEmpty()) {
-            "Non-hardcore server pack must not override hardcore heart sprites: "
-                + forbiddenHardcoreSprites.joinToString()
+            "Non-hardcore server pack must not override hardcore heart sprites: " +
+                forbiddenHardcoreSprites.joinToString()
         }
         logger.lifecycle("First-party IceSMP HUD package valid: class HUD plus Player/Target/Party frames")
     }
