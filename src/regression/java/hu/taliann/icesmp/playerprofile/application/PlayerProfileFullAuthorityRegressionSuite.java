@@ -2,6 +2,8 @@ package hu.taliann.icesmp.playerprofile.application;
 
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.EconomySection;
 import hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository;
 import hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager;
 
@@ -33,7 +35,7 @@ public final class PlayerProfileFullAuthorityRegressionSuite {
             repository.loadSnapshot(hunter).toCompletableFuture().join();
 
             verifyOperationReceipts(repository, victim);
-            verifyPeriodBudgets(victim);
+            verifyPeriodBudgets(repository, victim);
             verifySpellbookState(repository, hunter);
             verifyBountyAndWalletRecovery(repository, victim, hunter);
 
@@ -81,7 +83,8 @@ public final class PlayerProfileFullAuthorityRegressionSuite {
                 "season-member-reward", "fingerprint-1").toCompletableFuture().join());
     }
 
-    private static void verifyPeriodBudgets(final UUID player) {
+    private static void verifyPeriodBudgets(final YamlPlayerProfileRepository repository,
+                                            final UUID player) {
         final PlayerProfileDailyBudgetStore store = new PlayerProfileDailyBudgetStore();
         final var first = store.reserve(player, "honor-duel.weekly", 42L, 1L, 2L)
                 .toCompletableFuture().join();
@@ -98,6 +101,28 @@ public final class PlayerProfileFullAuthorityRegressionSuite {
                 "budget compensation durable");
         check(!store.rollback(player, "honor-duel.weekly", first, 1L)
                 .toCompletableFuture().join(), "stale compensation rejected");
+
+        repository.invalidate(player);
+        repository.loadSnapshot(player).toCompletableFuture().join();
+        check(store.read(player, "honor-duel.weekly").equals(
+                        new PlayerProfileDailyBudgetStore.BudgetState(42L, 1L)),
+                "daily budget and ordering survive repository restart");
+        final var rollover = store.reserve(player, "honor-duel.weekly", 43L, 2L, 3L)
+                .toCompletableFuture().join();
+        check(rollover.allowed() && rollover.state().equals(
+                        new PlayerProfileDailyBudgetStore.BudgetState(43L, 2L)),
+                "new period resets spent value without resetting the durable serial");
+        repository.invalidate(player);
+        repository.loadSnapshot(player).toCompletableFuture().join();
+        check(store.read(player, "honor-duel.weekly").equals(rollover.state()),
+                "rollover state remains restart durable");
+
+        PlayerProfileAuthority.current().putExtension(player, ProfileSectionId.ECONOMY,
+                EconomySection.class, "budget.honor-duel.weekly.sum", "corrupt")
+                .toCompletableFuture().join();
+        repository.invalidate(player);
+        repository.loadSnapshot(player).toCompletableFuture().join();
+        expect(IllegalStateException.class, () -> store.read(player, "honor-duel.weekly"));
     }
 
     private static void verifySpellbookState(final YamlPlayerProfileRepository repository,

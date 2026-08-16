@@ -31,6 +31,7 @@ public final class ItemizationDomainRegressionSuite {
         relativeQualityHandlesIntegerDecimalNegativeAndClamp();
         salvageIsConservativeBoundedAndLegacySafe();
         recoveryNeverGuessesAcrossAmbiguousSnapshots();
+        mutationCrashRecoverySettlesExactlyOnce();
         System.out.println("Itemization domain regression suite passed. assertions=" + assertions);
     }
 
@@ -352,6 +353,66 @@ public final class ItemizationDomainRegressionSuite {
         check(ItemMutationRecoveryPolicy.decide(List.of("partial", "state"), before, after)
                         == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
                 "partial or externally changed inventory fails closed instead of guessing");
+        check(ItemMutationRecoveryPolicy.decide(before, before, before)
+                        == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
+                "a no-op before/after witness is ambiguous and cannot settle a payment");
+    }
+
+    private static void mutationCrashRecoverySettlesExactlyOnce() {
+        final List<String> before = List.of("same-item@revision-4", "three-reroll-dust");
+        final List<String> after = List.of("same-item@revision-5", "one-reroll-dust");
+
+        final RecoveryHarness killedBeforePublish = new RecoveryHarness(before, after);
+        check(killedBeforePublish.restart(before)
+                        == ItemMutationRecoveryPolicy.Decision.ABORT_BEFORE,
+                "prepared journal plus exact-before restart aborts");
+        check(killedBeforePublish.closed && killedBeforePublish.commits == 0,
+                "exact-before closes the witness without a free mutation");
+        killedBeforePublish.restart(before);
+        check(killedBeforePublish.settlements == 1,
+                "exact-before retry cannot settle the journal twice");
+
+        final RecoveryHarness killedAfterPublish = new RecoveryHarness(before, after);
+        check(killedAfterPublish.restart(after)
+                        == ItemMutationRecoveryPolicy.Decision.COMMIT_AFTER,
+                "published inventory plus open journal commits after restart");
+        check(killedAfterPublish.closed && killedAfterPublish.commits == 1,
+                "exact-after accounts one payment and one upgrade");
+        killedAfterPublish.restart(after);
+        check(killedAfterPublish.commits == 1 && killedAfterPublish.settlements == 1,
+                "duplicate recovery cannot duplicate payment or upgrade");
+
+        final RecoveryHarness mixed = new RecoveryHarness(before, after);
+        check(mixed.restart(List.of("same-item@revision-5", "three-reroll-dust"))
+                        == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
+                "mixed item/payment state is quarantined");
+        check(!mixed.closed && mixed.commits == 0 && mixed.settlements == 0,
+                "mixed state stays pending and grants nothing");
+    }
+
+    private static final class RecoveryHarness {
+        private final List<String> before;
+        private final List<String> after;
+        private boolean closed;
+        private int commits;
+        private int settlements;
+
+        private RecoveryHarness(final List<String> before, final List<String> after) {
+            this.before = before;
+            this.after = after;
+        }
+
+        private ItemMutationRecoveryPolicy.Decision restart(final List<String> current) {
+            if (closed) return ItemMutationRecoveryPolicy.Decision.COMMIT_AFTER;
+            final ItemMutationRecoveryPolicy.Decision decision =
+                    ItemMutationRecoveryPolicy.decide(current, before, after);
+            if (decision != ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW) {
+                closed = true;
+                settlements++;
+                if (decision == ItemMutationRecoveryPolicy.Decision.COMMIT_AFTER) commits++;
+            }
+            return decision;
+        }
     }
 
     private static ItemTemplate mutationTemplate() {

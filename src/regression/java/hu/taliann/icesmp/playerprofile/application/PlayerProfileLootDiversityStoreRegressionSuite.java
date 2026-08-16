@@ -3,6 +3,8 @@ package hu.taliann.icesmp.playerprofile.application;
 import hu.taliann.icesmp.itemization.ItemRarity;
 import hu.taliann.icesmp.itemization.ItemTemplate;
 import hu.taliann.icesmp.itemization.LootDiversityState;
+import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection;
 import hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository;
 import hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager;
 
@@ -10,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 /** Restart durability, idempotency and hard-bound regressions for soft loot pity evidence. */
@@ -59,6 +62,14 @@ public final class PlayerProfileLootDiversityStoreRegressionSuite {
             check(durable.recentDrops().get(LootDiversityState.MAX_DROPS - 1)
                             .itemId().equals(newest),
                     "restart preserves newest loot ordering");
+            PlayerProfileAuthority.current().putExtension(player, ProfileSectionId.STATISTICS,
+                    StatisticsSection.class, PlayerProfileLootDiversityStore.EXTENSION_KEY,
+                    List.of("malformed-entry"))
+                    .toCompletableFuture().join();
+            repository.invalidate(player);
+            repository.loadSnapshot(player).toCompletableFuture().join();
+            expect(IllegalStateException.class, () -> store.current(player),
+                    "corrupt diversity evidence fails closed after reconnect");
             check(service.shutdown(Duration.ofSeconds(5)).toCompletableFuture().join().drained(),
                     "repository drained");
         } finally {
@@ -78,5 +89,18 @@ public final class PlayerProfileLootDiversityStoreRegressionSuite {
     private static void check(final boolean condition, final String message) {
         assertions++;
         if (!condition) throw new AssertionError(message);
+    }
+
+    private static void expect(final Class<? extends Throwable> expected,
+                               final Runnable action,
+                               final String message) {
+        assertions++;
+        try {
+            action.run();
+        } catch (final Throwable failure) {
+            if (expected.isInstance(failure)) return;
+            throw new AssertionError(message + ": " + failure, failure);
+        }
+        throw new AssertionError(message);
     }
 }

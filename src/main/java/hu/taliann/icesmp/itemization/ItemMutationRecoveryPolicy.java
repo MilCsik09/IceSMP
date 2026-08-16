@@ -14,6 +14,7 @@ public final class ItemMutationRecoveryPolicy {
         Objects.requireNonNull(current, "current");
         Objects.requireNonNull(before, "before");
         Objects.requireNonNull(after, "after");
+        if (before.equals(after)) return Decision.MANUAL_REVIEW;
         if (current.equals(after)) return Decision.COMMIT_AFTER;
         if (current.equals(before)) return Decision.ABORT_BEFORE;
         return Decision.MANUAL_REVIEW;
