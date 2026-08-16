@@ -234,12 +234,18 @@ def icon(name: str) -> Image.Image:
     return binary_alpha(Image.open(ITEM_TEXTURES / f"{name}.png"))
 
 
+def pixels(image: Image.Image):
+    """Return a flat pixel iterator on both Pillow 11 and Pillow 12+."""
+    getter = getattr(image, "get_flattened_data", None)
+    return getter() if getter is not None else image.getdata()
+
+
 def palette(name: str, size: int = 8) -> list[tuple[int, int, int, int]]:
     override = PALETTE_OVERRIDES.get(name)
     if override is not None:
         return override
     source = icon(name)
-    opaque = [pixel[:3] for pixel in source.get_flattened_data() if pixel[3]]
+    opaque = [pixel[:3] for pixel in pixels(source) if pixel[3]]
     strip = Image.new("RGB", (len(opaque), 1))
     strip.putdata(opaque)
     quantized = strip.quantize(colors=size, method=Image.Quantize.MEDIANCUT).convert("RGB")

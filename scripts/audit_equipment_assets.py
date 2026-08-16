@@ -29,6 +29,12 @@ class AuditError(RuntimeError):
     pass
 
 
+def pixels(image: Image.Image):
+    """Return a flat pixel iterator on both Pillow 11 and Pillow 12+."""
+    getter = getattr(image, "get_flattened_data", None)
+    return getter() if getter is not None else image.getdata()
+
+
 def load(path: Path, size: tuple[int, int]) -> Image.Image:
     try:
         image = Image.open(path).convert("RGBA")
@@ -36,7 +42,7 @@ def load(path: Path, size: tuple[int, int]) -> Image.Image:
         raise AuditError(f"Unreadable equipment texture: {path}") from exception
     if image.size != size:
         raise AuditError(f"Wrong equipment texture size: {path} is {image.size}, expected {size}")
-    alpha_values = set(image.getchannel("A").get_flattened_data())
+    alpha_values = set(pixels(image.getchannel("A")))
     if not alpha_values.issubset({0, 255}):
         raise AuditError(f"Equipment texture has partial alpha: {path}")
     if alpha_values == {0}:
@@ -45,7 +51,7 @@ def load(path: Path, size: tuple[int, int]) -> Image.Image:
 
 
 def opaque_colours(image: Image.Image) -> int:
-    return len({pixel[:3] for pixel in image.get_flattened_data() if pixel[3]})
+    return len({pixel[:3] for pixel in pixels(image) if pixel[3]})
 
 
 def allowed(slot: str, x: int, y: int) -> bool:
