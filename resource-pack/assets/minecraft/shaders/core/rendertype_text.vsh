@@ -36,11 +36,12 @@ void main() {
             topLeft = id >= 11 && id <= 15;
             ivec3 packedColor = ivec3(round(Color.rgb * 255.0));
             int layoutCode = (packedColor.r & 15) | ((packedColor.g & 15) << 4)
-                    | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8);
-            layoutYOffset = float((layoutCode & 511) - 256);
-            layoutScale = HUD_LAYOUT_SCALES[(layoutCode >> 9) & 15];
-            vec3 visualColor = vec3((packedColor & ivec3(240, 240, 224))
-                    + ivec3(8, 8, 16)) / 255.0;
+                    | ((packedColor.b & 15) << 8) | ((packedColor.b & 16) << 8)
+                    | ((packedColor.r & 16) << 9);
+            layoutYOffset = float((layoutCode & 1023) - 512);
+            layoutScale = HUD_LAYOUT_SCALES[(layoutCode >> 10) & 15];
+            vec3 visualColor = vec3((packedColor & ivec3(224, 240, 224))
+                    + ivec3(16, 8, 16)) / 255.0;
             vertexColor = vec4(min(visualColor, vec3(1.0)), Color.a)
                     * texelFetch(Sampler2, UV2 / 16, 0);
             pos.y -= (bit << HEIGHT_BIT) + ADD_OFFSET + DEFAULT_OFFSET;
@@ -74,7 +75,8 @@ void main() {
             clipPosition.x = -clipPosition.w + clipPosition.x * selectedHudScale.x;
             clipPosition.y = clipPosition.w
                     + (clipPosition.y - clipPosition.w) * selectedHudScale.y
-                    - layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;
+                    - layoutYOffset * responsiveScale * layoutScale
+                    * 2.0 * clipPosition.w / ScreenSize.y;
         } else {
             clipPosition.x = clipPosition.w + clipPosition.x * selectedHudScale.x;
             clipPosition.y = clipPosition.w

@@ -10,8 +10,7 @@ import java.util.List;
 
 /** Four-row WoW-style party cluster under the local player frame. */
 public final class PartyHudRenderer {
-    static final int ROW_WIDTH = 252;
-    static final int ROW_ADVANCE = 66;
+    static final int ROW_ADVANCE = 78;
     private static final Key HEADER_FONT = Key.key("icesmp_hud", "survival/party_header");
     private static final Key HEALTH_SEGMENT_FONT = Key.key("icesmp_hud", "survival/party_health_segments");
     private static final Key RESOURCE_SEGMENT_FONT = Key.key("icesmp_hud", "survival/party_resource_segments");
@@ -30,7 +29,8 @@ public final class PartyHudRenderer {
             final int y = row * ROW_ADVANCE;
             final TextColor accent = SurvivalHudRenderer.accent(member.factionAccent(), 0x8BE9FD);
             output.append(SurvivalHudRenderer.glyph(HudComponent.PARTY_FRAME, 0,
-                    SurvivalHudRenderer.PANEL_FONT, partyGlyph(member.factionTheme()), ROW_WIDTH,
+                    SurvivalHudRenderer.PANEL_FONT, partyGlyph(member.factionTheme()),
+                    SurvivalHudRenderer.PANEL_ADVANCE,
                     accent, safeLayout, y, highlighted));
             output.append(SurvivalHudRenderer.text(HudComponent.PARTY_NAME, 14,
                     HEADER_FONT,
@@ -40,7 +40,8 @@ public final class PartyHudRenderer {
             SurvivalHudRenderer.drawSegments(output, HudComponent.PARTY_HEALTH, 14,
                     HEALTH_SEGMENT_FONT, SurvivalHudRenderer.MINI_TRACK,
                     SurvivalHudRenderer.miniHealthFill(member.healthPercent()), member.healthPercent(),
-                    18, 7, safeLayout, y, highlighted);
+                    18, 7, SurvivalHudRenderer.MINI_SEGMENT_ADVANCE,
+                    safeLayout, y, highlighted);
             output.append(SurvivalHudRenderer.text(HudComponent.PARTY_HEALTH, 148,
                     HEALTH_TEXT_FONT,
                     SurvivalHudRenderer.compact(member.health()) + "/"
@@ -50,7 +51,8 @@ public final class PartyHudRenderer {
             SurvivalHudRenderer.drawSegments(output, HudComponent.PARTY_RESOURCE, 14,
                     RESOURCE_SEGMENT_FONT, SurvivalHudRenderer.MINI_TRACK,
                     SurvivalHudRenderer.MINI_RESOURCE, member.resourcePercent(),
-                    18, 7, safeLayout, y, highlighted);
+                    18, 7, SurvivalHudRenderer.MINI_SEGMENT_ADVANCE,
+                    safeLayout, y, highlighted);
             if (!member.status().isBlank()) {
                 output.append(SurvivalHudRenderer.text(HudComponent.PARTY_STATUS, 188,
                         STATUS_FONT, member.status(),

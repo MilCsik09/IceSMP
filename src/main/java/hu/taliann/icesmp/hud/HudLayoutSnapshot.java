@@ -12,6 +12,8 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     public static final int MAX_X_OFFSET = 512;
     public static final int MIN_Y_OFFSET = -256;
     public static final int MAX_Y_OFFSET = 255;
+    static final int SHADER_MIN_Y_OFFSET = -512;
+    static final int SHADER_MAX_Y_OFFSET = 511;
     public static final int MIN_SAFE_MARGIN = 0;
     public static final int MAX_SAFE_MARGIN = 128;
     public static final List<Integer> SCALE_PERMILLE = List.of(
@@ -83,9 +85,9 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         return anchoredX(sourceX) + element.xOffsetPixels();
     }
 
-    /** 13-bit shader payload: 9-bit signed Y plus a 4-bit scale variant. */
+    /** 14-bit shader payload: 10-bit signed Y plus a 4-bit scale variant. */
     public int shaderCode() {
-        return (scaleIndex << 9) | (yOffsetPixels + 256);
+        return (scaleIndex << 10) | (yOffsetPixels + 512);
     }
 
     public int shaderCode(final HudComponent component) {
@@ -95,9 +97,9 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     public int shaderCode(final HudComponent component, final int additionalYOffset) {
         final HudComponentLayout element = effectiveComponentLayout(component);
         final int y = clamp(yOffsetPixels + element.yOffsetPixels() + additionalYOffset,
-                MIN_Y_OFFSET, MAX_Y_OFFSET);
+                SHADER_MIN_Y_OFFSET, SHADER_MAX_Y_OFFSET);
         final int effectiveScale = closestScaleIndex(scale() * element.scale());
-        return (effectiveScale << 9) | (y + 256);
+        return (effectiveScale << 10) | (y + 512);
     }
 
     public boolean visible(final HudComponent component) {

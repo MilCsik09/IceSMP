@@ -11,6 +11,7 @@ import java.util.List;
 /** Player- and bestiary-specific target frames in the top-left frame cluster. */
 public final class TargetHudRenderer {
     static final int PANEL_WIDTH = 240;
+    static final int PANEL_ADVANCE = PANEL_WIDTH + 1;
     static final int BAR_SEGMENTS = 16;
     private static final Key HEADER_FONT = Key.key("icesmp_hud", "survival/target_header");
     private static final Key STATUS_FONT = Key.key("icesmp_hud", "survival/target_status");
@@ -31,10 +32,10 @@ public final class TargetHudRenderer {
                 : mobAccent(state);
 
         output.append(SurvivalHudRenderer.glyph(HudComponent.TARGET_FRAME, 0,
-                SurvivalHudRenderer.PANEL_FONT, panelGlyph(state), PANEL_WIDTH, accent,
+                SurvivalHudRenderer.PANEL_FONT, panelGlyph(state), PANEL_ADVANCE, accent,
                 safeLayout, 0, highlighted));
         output.append(SurvivalHudRenderer.glyph(HudComponent.TARGET_ICON, 12,
-                SurvivalHudRenderer.ICON_FONT, iconGlyph(state), 14,
+                SurvivalHudRenderer.ICON_FONT, iconGlyph(state), SurvivalHudRenderer.ICON_ADVANCE,
                 TextColor.color(0xFFFFFF), safeLayout, 0, highlighted));
         output.append(SurvivalHudRenderer.text(HudComponent.TARGET_NAME, 32,
                 HEADER_FONT, state.name(), accent, 142,
@@ -48,7 +49,8 @@ public final class TargetHudRenderer {
         SurvivalHudRenderer.drawSegments(output, HudComponent.TARGET_HEALTH_BAR, 16,
                 HEALTH_SEGMENT_FONT, SurvivalHudRenderer.HEALTH_TRACK,
                 SurvivalHudRenderer.healthFill(state.healthPercent()), state.healthPercent(),
-                BAR_SEGMENTS, 13, safeLayout, 0, highlighted);
+                BAR_SEGMENTS, 13, SurvivalHudRenderer.HEALTH_SEGMENT_ADVANCE,
+                safeLayout, 0, highlighted);
         output.append(SurvivalHudRenderer.centeredText(HudComponent.TARGET_HEALTH_TEXT, 120,
                 HEALTH_FONT,
                 SurvivalHudRenderer.compact(state.health()) + " / "
@@ -60,7 +62,7 @@ public final class TargetHudRenderer {
             SurvivalHudRenderer.drawSegments(output, HudComponent.TARGET_RESOURCE, 16,
                     RESOURCE_SEGMENT_FONT, SurvivalHudRenderer.MINI_TRACK,
                     SurvivalHudRenderer.MINI_RESOURCE, state.resourcePercent(), 16, 13,
-                    safeLayout, 0, highlighted);
+                    SurvivalHudRenderer.MINI_SEGMENT_ADVANCE, safeLayout, 0, highlighted);
             output.append(SurvivalHudRenderer.centeredText(HudComponent.TARGET_RESOURCE, 120,
                     STATS_FONT, state.resourceName() + " "
                             + state.resource() + "/" + state.resourceMaximum(),

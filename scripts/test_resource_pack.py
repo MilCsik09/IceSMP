@@ -74,10 +74,14 @@ class ResourcePackToolingTest(unittest.TestCase):
             "vec2 hudScale = vec2(responsiveScale) * ui / ScreenSize;"
             "const float HUD_LAYOUT_SCALES[16]=float[16](.75,.9,1,1.15,1.25,1.4,1.6,1.8,"
             "2,2.2,2.4,2.6,2.8,3,3.25,3.5);"
-            "ivec3 packedColor=ivec3(0);int layoutCode = (packedColor.r & 15);"
-            "float layoutScale=1;float layoutYOffset=0;vec4 clipPosition=vec4(0);"
+            "ivec3 packedColor=ivec3(0);int layoutCode = (packedColor.r & 15) "
+            "| ((packedColor.r & 16) << 9);"
+            "float layoutYOffset=float((layoutCode & 1023)-512);"
+            "float layoutScale=HUD_LAYOUT_SCALES[(layoutCode >> 10)&15];"
+            "vec4 clipPosition=vec4(0);"
             "vec2 selectedHudScale = hudScale * layoutScale;"
-            "clipPosition.y-=layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y;"
+            "clipPosition.y-=layoutYOffset * responsiveScale * layoutScale "
+            "* 2.0 * clipPosition.w / ScreenSize.y;"
             "fog_spherical_distance(vec3(0));}\n",
             encoding="utf-8",
         )

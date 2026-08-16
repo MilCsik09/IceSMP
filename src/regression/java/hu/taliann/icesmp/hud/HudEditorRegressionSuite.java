@@ -362,14 +362,14 @@ public final class HudEditorRegressionSuite {
                 "X offset and right-edge safety margin must both reach renderer coordinates");
         final TextColor encoded = IceSmpHudRenderer.encodeLayoutColor(TextColor.color(0x77DDF2), layout);
         check(IceSmpHudRenderer.decodeLayoutCode(encoded) == layout.shaderCode()
-                        && ((encoded.value() >> 20) & 0xF) == 0x7,
-                "renderer color transport must preserve visual high nibbles and exact layout payload");
-        check(layout.shaderCode() == (7 << 9) + 219,
-                "shader payload must contain signed 9-bit Y and a scale index");
+                        && ((encoded.value() >> 21) & 0x7) == ((0x77DDF2 >> 21) & 0x7),
+                "renderer color transport must preserve visual high bits and exact layout payload");
+        check(layout.shaderCode() == (7 << 10) + 475,
+                "shader payload must contain signed 10-bit Y and a scale index");
         final HudLayoutSnapshot componentLayout = layout.withComponent(HudComponent.EVENT_TEXT,
                 new HudComponentLayout(9, 12, 2, true));
         check(componentLayout.anchoredX(HudComponent.EVENT_TEXT, -214) == -197
-                        && componentLayout.shaderCode(HudComponent.EVENT_TEXT) == (7 << 9) + 263,
+                        && componentLayout.shaderCode(HudComponent.EVENT_TEXT) == (7 << 10) + 519,
                 "component X/Y/scale must be composed into its own renderer payload");
         final TextColor componentEncoded = IceSmpHudRenderer.encodeLayoutColor(
                 TextColor.color(0xF0D88D), componentLayout, HudComponent.EVENT_TEXT);
@@ -381,7 +381,12 @@ public final class HudEditorRegressionSuite {
                 TextColor.color(0x77DDF2), maximumScale);
         check(maximumScale.scalePermille() == 3500
                         && IceSmpHudRenderer.decodeLayoutCode(maximumEncoded) == maximumScale.shaderCode(),
-                "the thirteenth color bit must transport all sixteen scale variants exactly");
+                "the fourteen-bit color payload must transport all sixteen scale variants exactly");
+        final HudLayoutSnapshot defaults = HudLayoutSnapshot.defaults();
+        final int fourthPartyRow = defaults.shaderCode(
+                HudComponent.PARTY_FRAME, PartyHudRenderer.ROW_ADVANCE * 3);
+        check((fourthPartyRow & 1023) - 512 == 340,
+                "the fourth party row must retain its own Y coordinate without clipping");
     }
 
     private static void generatedShaderVariantsMatchRuntimeContract() throws Exception {
@@ -395,13 +400,16 @@ public final class HudEditorRegressionSuite {
                         && generator.contains("3.00, 3.25, 3.50")
                         && generator.contains("python3 -m pip install Pillow")
                         && manifest.contains("\"layout_scale_variants\"")
-                        && manifest.contains("\"layout_color_payload_bits\": 13")
+                        && manifest.contains("\"layout_color_payload_bits\": 14")
                         && manifest.contains("3.5"),
                 "runtime, build generator and manifest must share all expanded scale variants");
-        check(shader.contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")
+        check(shader.contains("layoutYOffset * responsiveScale * layoutScale")
                         && shader.contains("vec2 selectedHudScale = hudScale * layoutScale")
-                        && shader.contains("(packedColor.b & 16) << 8"),
-                "shader must actually apply selected Y and scale values");
+                        && shader.contains("(packedColor.b & 16) << 8")
+                        && shader.contains("(packedColor.r & 16) << 9")
+                        && shader.contains("layoutCode & 1023")
+                        && shader.contains("layoutCode >> 10"),
+                "shader must apply selected Y in the same responsive scale as top-left X");
     }
 
     private static void editorControlsAreClickableAndQuiet() throws Exception {

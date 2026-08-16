@@ -17,6 +17,8 @@ public final class SurvivalHudRenderer {
     static final int HEALTH_SEGMENT_ADVANCE = 11;
     static final int MINI_SEGMENT_ADVANCE = 6;
     static final int PANEL_WIDTH = 252;
+    static final int PANEL_ADVANCE = PANEL_WIDTH + 1;
+    static final int ICON_ADVANCE = 15;
     static final int TEXT_ADVANCE = 7;
 
     static final Key SPACE_FONT = Key.key("icesmp_hud", "space");
@@ -62,7 +64,7 @@ public final class SurvivalHudRenderer {
         final TextComponent.Builder output = Component.text().shadowColor(ShadowColor.none());
 
         output.append(glyph(HudComponent.PLAYER_FRAME, 0, PANEL_FONT,
-                playerPanelGlyph(safeState.factionTheme()), PANEL_WIDTH,
+                playerPanelGlyph(safeState.factionTheme()), PANEL_ADVANCE,
                 accent(safeState.factionAccent(), 0x8BE9FD), safeLayout, 0, highlighted));
         output.append(text(HudComponent.PLAYER_NAME, 14, NAME_FONT, safeState.name(),
                 accent(safeState.factionAccent(), 0x8BE9FD), 150,
@@ -120,7 +122,7 @@ public final class SurvivalHudRenderer {
         drawSegments(output, component, center - 22, MINI_SEGMENT_FONT,
                 MINI_TRACK, fill, percent, MINI_SEGMENTS, MINI_SEGMENT_ADVANCE,
                 layout, 0, highlighted);
-        output.append(glyph(component, center - 38, ICON_FONT, icon, 14,
+        output.append(glyph(component, center - 38, ICON_FONT, icon, ICON_ADVANCE,
                 TextColor.color(0xFFFFFF), layout, 0, highlighted));
         output.append(centeredText(component, center + 8, STATS_FONT,
                 value, color, 68, layout, 0, highlighted));
@@ -135,14 +137,28 @@ public final class SurvivalHudRenderer {
                              final int percent, final int count, final int advance,
                              final HudLayoutSnapshot layout, final int additionalY,
                              final HudComponent highlighted) {
+        drawSegments(output, component, x, font, track, fill, percent, count, advance,
+                advance, layout, additionalY, highlighted);
+    }
+
+    /**
+     * Draws fixed-position segments while resetting by the bitmap glyph's real font advance.
+     * The visual step may intentionally be wider than the glyph (Target/Party bars); conflating
+     * those values makes the carrier cursor drift after every segment and moves later HUD rows.
+     */
+    static void drawSegments(final TextComponent.Builder output, final HudComponent component,
+                             final int x, final Key font, final char track, final char fill,
+                             final int percent, final int count, final int positionAdvance,
+                             final int glyphAdvance, final HudLayoutSnapshot layout,
+                             final int additionalY, final HudComponent highlighted) {
         if (!layout.visible(component)) return;
         int active = (int) Math.round(Math.max(0, Math.min(100, percent)) * count / 100.0D);
         if (percent > 0) active = Math.max(1, active);
         for (int index = 0; index < count; index++) {
-            output.append(glyph(component, x + index * advance, font, track, advance,
+            output.append(glyph(component, x + index * positionAdvance, font, track, glyphAdvance,
                     TextColor.color(0xFFFFFF), layout, additionalY, highlighted));
             if (index < active) {
-                output.append(glyph(component, x + index * advance, font, fill, advance,
+                output.append(glyph(component, x + index * positionAdvance, font, fill, glyphAdvance,
                         TextColor.color(0xFFFFFF), layout, additionalY, highlighted));
             }
         }
@@ -204,7 +220,8 @@ public final class SurvivalHudRenderer {
 
     static TextColor encode(final TextColor desired, final int code) {
         final int source = desired == null ? 0xFFFFFF : desired.value();
-        return TextColor.color((source & 0xF00000) | ((code & 0xF) << 16)
+        return TextColor.color((source & 0xE00000) | (((code >> 13) & 0x1) << 20)
+                | ((code & 0xF) << 16)
                 | (source & 0x00F000) | (((code >> 4) & 0xF) << 8)
                 | (source & 0x0000E0) | (((code >> 12) & 0x1) << 4)
                 | ((code >> 8) & 0xF));

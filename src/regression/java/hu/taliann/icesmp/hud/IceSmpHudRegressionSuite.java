@@ -4,7 +4,9 @@ import hu.taliann.icesmp.classspec.integration.ClassHudMetric;
 import hu.taliann.icesmp.classspec.integration.ClassHudSlot;
 import hu.taliann.icesmp.classspec.integration.ClassHudState;
 import hu.taliann.icesmp.managers.HudManager;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
@@ -21,6 +23,7 @@ public final class IceSmpHudRegressionSuite {
     public static void main(final String[] args) throws Exception {
         fixedLayoutIsIndependentOfDynamicValues();
         survivalVitalsAreCompleteAndFixedWidth();
+        topLeftCarrierDrawsReturnToOrigin();
         classXpCurveRemainsExactButPersistentBarIsAbsent();
         targetVitalsAreEventDrivenAndBounded();
         factionThemeProjectionSelectsEveryFrame();
@@ -66,6 +69,22 @@ public final class IceSmpHudRegressionSuite {
                         && clamped.absorption() == 0.0D && clamped.armorPercent() == 100
                         && clamped.food() == 20 && clamped.air() == 0,
                 "invalid live values must clamp before reaching the survival compositor");
+    }
+
+    private static void topLeftCarrierDrawsReturnToOrigin() {
+        final HudLayoutSnapshot layout = HudLayoutSnapshot.defaults();
+        final Component player = new SurvivalHudRenderer().render(PlayerHudState.preview(), layout, null);
+        final Component targetMob = new TargetHudRenderer().render(TargetHudState.previewMob(), layout, null);
+        final Component targetPlayer = new TargetHudRenderer().render(
+                TargetHudState.previewPlayer(), layout, null);
+        final Component party = new PartyHudRenderer().render(PartyHudState.preview(), layout, null);
+        check(carrierAdvance(player, null) == 0
+                        && carrierAdvance(targetMob, null) == 0
+                        && carrierAdvance(targetPlayer, null) == 0
+                        && carrierAdvance(party, null) == 0,
+                "every absolute top-left draw must restore the carrier cursor exactly");
+        check(PartyHudRenderer.ROW_ADVANCE == 78,
+                "scaled party rows must retain a visible gap instead of overlapping");
     }
 
     private static void classXpCurveRemainsExactButPersistentBarIsAbsent() {
@@ -373,7 +392,7 @@ public final class IceSmpHudRegressionSuite {
                         && manifest.contains("\"compact_wallet_anchor_y\": 178")
                         && manifest.contains("\"compact_wallet_anchor_delta\": -23")
                         && manifest.contains("\"rune_panel_size\": 18")
-                        && manifest.contains("\"layout_color_payload_bits\": 13")
+                        && manifest.contains("\"layout_color_payload_bits\": 14")
                         && manifest.contains("\"layout_scale_variants\"")
                         && manifest.contains("\"vanilla_health_hidden\": true")
                         && manifest.contains("\"vanilla_armor_hidden\": true")
@@ -414,7 +433,7 @@ public final class IceSmpHudRegressionSuite {
                         && vertexShader.contains("topLeft = id >= 11 && id <= 15")
                         && vertexShader.contains("ScreenSize.x / 2560.0")
                         && vertexShader.contains("clipPosition.x = -clipPosition.w")
-                        && vertexShader.contains("layoutYOffset * 2.0 * clipPosition.w / ScreenSize.y")
+                        && vertexShader.contains("layoutYOffset * responsiveScale * layoutScale")
                         && vertexShader.contains("fog_spherical_distance(pos)")
                         && !vertexShader.contains("uniform int FogShape"),
                 "HUD vertex shader must implement the Minecraft 1.21.11 UBO contract");
@@ -559,6 +578,43 @@ public final class IceSmpHudRegressionSuite {
             if (value.charAt(index) == needle) count++;
         }
         return count;
+    }
+
+    private static int carrierAdvance(final Component component, final Key inheritedFont) {
+        final Key font = component.style().font() == null
+                ? inheritedFont : component.style().font();
+        int advance = 0;
+        if (component instanceof TextComponent text && !text.content().isEmpty()) {
+            final int[] codePoints = text.content().codePoints().toArray();
+            for (final int codePoint : codePoints) advance += glyphAdvance(font, codePoint);
+        }
+        for (final Component child : component.children()) {
+            advance += carrierAdvance(child, font);
+        }
+        return advance;
+    }
+
+    private static int glyphAdvance(final Key font, final int codePoint) {
+        if (font == null) throw new AssertionError("HUD glyph has no explicit font");
+        final String id = font.asString();
+        if ("icesmp_hud:space".equals(id)) {
+            return codePoint - IceSmpHudRenderer.SPACE_FIRST + IceSmpHudRenderer.SPACE_MIN;
+        }
+        if ("icesmp_hud:survival/panel".equals(id)) {
+            return codePoint >= 0xEB05 && codePoint <= 0xEB0E
+                    ? TargetHudRenderer.PANEL_ADVANCE : SurvivalHudRenderer.PANEL_ADVANCE;
+        }
+        if (id.equals("icesmp_hud:survival/health_segments")
+                || id.equals("icesmp_hud:survival/target_health_segments")) {
+            return SurvivalHudRenderer.HEALTH_SEGMENT_ADVANCE;
+        }
+        if (id.endsWith("mini_segments") || id.endsWith("resource_segments")
+                || id.endsWith("party_health_segments")) {
+            return SurvivalHudRenderer.MINI_SEGMENT_ADVANCE;
+        }
+        if ("icesmp_hud:survival/icons".equals(id)) return SurvivalHudRenderer.ICON_ADVANCE;
+        if (id.startsWith("icesmp_hud:survival/")) return SurvivalHudRenderer.TEXT_ADVANCE;
+        throw new AssertionError("Unknown top-left HUD font: " + id);
     }
 
     private static void check(final boolean condition, final String message) {

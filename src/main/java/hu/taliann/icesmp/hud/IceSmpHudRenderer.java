@@ -454,7 +454,8 @@ public final class IceSmpHudRenderer {
         final int source = desired == null ? 0xFFFFFF : desired.value();
         final int code = component == null || component == HudComponent.GLOBAL
                 ? layout.shaderCode() : layout.shaderCode(component);
-        return TextColor.color((source & 0xF00000) | ((code & 0xF) << 16)
+        return TextColor.color((source & 0xE00000) | (((code >> 13) & 0x1) << 20)
+                | ((code & 0xF) << 16)
                 | (source & 0x00F000) | (((code >> 4) & 0xF) << 8)
                 | (source & 0x0000E0) | (((code >> 12) & 0x1) << 4)
                 | ((code >> 8) & 0xF));
@@ -463,7 +464,8 @@ public final class IceSmpHudRenderer {
     static int decodeLayoutCode(final TextColor encoded) {
         final int value = encoded.value();
         return ((value >> 16) & 0xF) | (((value >> 8) & 0xF) << 4)
-                | ((value & 0xF) << 8) | (((value >> 4) & 0x1) << 12);
+                | ((value & 0xF) << 8) | (((value >> 4) & 0x1) << 12)
+                | (((value >> 20) & 0x1) << 13);
     }
 
     private static Component space(final int requested) {
