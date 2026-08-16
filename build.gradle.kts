@@ -55,6 +55,20 @@ val auditEquipmentAssets by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_equipment_assets.py")
 }
 
+val progressionBalanceRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Runs the Itemization/Mob 2.0 economy, Monte Carlo and bounded-load gate."
+    inputs.files(
+        "scripts/test_progression_balance.py",
+        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/crafting.yml",
+        "src/main/resources/config/profession-recipes.yml",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+    )
+    commandLine(pythonCommand, "scripts/test_progression_balance.py")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -824,6 +838,7 @@ tasks.check {
     dependsOn(auditIceSmpHudAssets)
     dependsOn(auditEquipmentAssets)
     dependsOn(validateIceSmpHudPackage)
+    dependsOn(progressionBalanceRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,

@@ -36,6 +36,11 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 - A survival vertical slice authority változatlan: az item UUID, provenance, roll quality,
   rúna, reroll count és ascension stage az itemmel utazik; a playerhez tartozó pity/budget
   marad a PlayerProfile v2-ben.
+- A katalógus 48 authored template-re, 15 tényleges Signature fogyasztóra, 3 szettre,
+  7 ascendelhető tárgyra és 10 rúnára bővült. A profession katalógus 15 canonical
+  gear receptet tartalmaz; a céltemplate craft előtt ismert.
+- Az öt ritka mining-anyag dimension/depth/block policyt, közös Profile v2 napi 6-os
+  budgetet és Silk Touch/regen/AFK/protection/full-inventory tiltást használ.
 
 ### Mob/Encounter 2.0 pilot
 
@@ -45,25 +50,29 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
   level csak explicit authored bossnál lehet.
 - A HP és damage külön, monoton, bounded görbét kapott. Default HP: `1+(level-1)×0.08`
   legfeljebb 8×; damage: `1+(level-1)×0.025` legfeljebb 3×, további abszolút cappal.
-- A canonical katalógus 6 MobTemplate-et, 6 registry abilityt, 7 rankot, 12 archetype-ot
+- A canonical katalógus 18 MobTemplate-et, 6 registry abilityt, 7 rankot, 12 archetype-ot
   és 7 Elite affixet ad. Egy elit spawnkor legfeljebb két valid affixet kap; a veszélyes
   ability vanilla partikula/hang telegráfja megelőzi a sebzést.
 - Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rank-scalinget
   használnak. A Target Frame rankot és rövid affix státuszt mutat, a Bestiary authored
   template ID-t ismer fel; vanilla fallback megmarad.
 - A világboss startkor diminishing player-count snapshotot készít, ezért a HP nem
-  ugrál late join/death/disconnect miatt. A bounded contribution ledger sebzést,
-  tankolást, ally-supportot és objective hookot kezel; self/pre-combat paddinget tilt.
+  ugrál late join/death/disconnect miatt. A snapshot a hat felszerelési slot owner-threaden
+  frissített, bounded CombatPower-cache-ét használja, nem rarityt vagy neutral referenciát
+  nevez ki kizárólagos authoritynak. A bounded contribution ledger sebzést, tankolást,
+  Monk/Paladin ally-healt és shieldet, valamint telegráf-kitérés objective-et kezel;
+  self/pre-combat paddinget tilt.
   Az érdemi résztvevők PlayerProfile receipt-alapú személyes ascension komponenst
   kapnak, full inventorynál world drop nélkül, reconnect/restart recoveryvel.
-- A dependency-free kapuk jelenleg 79 Itemization-, 49 Mob-domain- és 16 runtime-source
-  assertiont futtatnak; a consistency és resource-pack ellenőrzés is zöld. A feature
-  branch minden forrásváltozását exact commiton futó Java 21 Gradle CI ellenőrzi. A
+- A dependency-free kapuk mellett a 100 000 mintás deterministic balance harness a
+  roll/amplifier eloszlást, promotion-sűrűséget, reroll capet, mining faucetet,
+  encounter görbét és 2048-as runtime-state capet ellenőrzi. A feature branch minden
+  forrásváltozását exact commiton futó Java 21 Gradle CI ellenőrzi. A
   productionközeli Folia/process-kill és multiplayer balance külön staging gate marad.
 
 ### Itemization 2.0 Phase 4–5 — survival economy pilot
 
-- Hat authored template fölött elkészült a controlled reroll: Full Reforge, egyetlen
+- Az authored katalógus fölött elkészült a controlled reroll: Full Reforge, egyetlen
   authored Stat Lock, Quality Amplifier, Stability Seal, bounded és itemmel utazó
   költséglépcső.
 - Az explicit ascension stage-ek nem rerollolnak: a normalizált qualityt viszik át az

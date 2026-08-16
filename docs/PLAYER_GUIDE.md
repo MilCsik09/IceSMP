@@ -599,6 +599,11 @@ tervrajz és mestermű jelző additív, plafonozott minimum-qualityt adhat. A t�
 megmarad a készítő UUID-ja, a név craftkori pillanatképe, a szakma, hely/idő és a
 Mestermű jelző; egy későbbi névváltás nem írja át az eredetét.
 
+A jelenlegi 48 tárgyas katalógus starter, mid-game és high-end felszerelést, három
+szettet, valamint mining/fishing/hunting/farming, profession, wilderness, event és
+boss forrásokat köt össze. A tíz rúna közül a Súly nagy célpont ellen, az Oltalom
+alacsony életerőn, a Vadász pedig nem játékos célpontra lőve ad bounded előnyt.
+
 A főkézben tartott canonical tárggyal nyisd meg a `/profession forge` felületet:
 
 - **Full Reforge:** minden rollolható stat újragurul;
@@ -614,13 +619,19 @@ adásvétel, relog és restart után sem nullázódik.
 
 ### A pilot survival gazdasági út
 
-Egy Bányász valódi deepslate diamond/emerald ércből, napi anti-farm sapkával ritkán
-**Sarkfény-cseppkövet** talál. A Kovács ezt feldolgozott alapanyagokkal authored
+Egy Bányász valódi vanilla érctörésből, közös napi anti-farm sapkával ritkán
+**Sarkfény-cseppkövet, Viharkvarcot, Mélységi Borostyánt, Néma Kristályt** vagy a
+Netherben **Kárhozat Parazsát** talál. Silk Touch, regenerált/pajzsolt blokk, AFK,
+védett régió és tele inventory nem termel ritka jutalmat. A Kovács ezt feldolgozott alapanyagokkal authored
 Vadvidéki Eskükarddá vagy tervrajzos Glatziendorfi gearré kovácsolja. A gear
 rerollolható, rúnázható és — trade policy szerint — a piacon eladható. A követett
 világboss személyes **Fekete Villám Szilánkja** olyan komponens, amely a Jégvért
 Ascensionjéhez kell. Az Ascension után ugyanaz az item UUID marad, és a rollok a régi
 relatív qualityn maradnak az új tartományban.
+
+A Bestiárium első elejtés után mutatja az authored mob rangját és archetípusát;
+további elejtésekkel képesség-/ellenállás-jegyek, majd a forrásprofil nyílik meg.
+Pontos drop rate-et nem spoilerez.
 
 ### Miért van, hogy egy recept ugyanannyit ad, mint a műhelyasztal?
 

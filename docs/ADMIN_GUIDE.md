@@ -1144,6 +1144,9 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - A balance-kulcsok az `item-templates.yml` `itemization.crafting`, `reroll`,
   `salvage`, `gathering` és `ascension` blokkjában vannak. Identity/schema/template
   invariáns nem kapcsolható ki configból.
+- Bundled baseline: 48 authored template, 15 Signature-fogyasztó, 3 set, 7 ascendable,
+  10 rúna és 15 canonical gear-recept. A `scripts/test_progression_balance.py` ezt,
+  valamint 100 000 mintás roll/promotion és encounter/economy cap regressziót ellenőriz.
 - Az `item-mutation-journal.yml` aktív rekordja normál esetben rövid életű. Restartkor
   exact before inventory esetén abort, exact after esetén commit-cleanup történik.
   Eltérő/mixed snapshotnál a rendszer nem találgat: konzol SEVERE + játékosüzenet után
@@ -1179,24 +1182,28 @@ corrupt state-je fail-closed. Ettől a valódi process-kill/Folia acceptance mé
 - Precedencia: encounter override → authored location → MobTemplate → wilderness
   distance, majd territory/biome-or-dimension/depth/event bónusz. A safe-zone ramp
   megmarad; claim önmagában nem tesz minden területet biztonságossá.
-- `mob-templates.yml`: ability-, loot-profile- és a 6 pilot MobTemplate-authority.
+- `mob-templates.yml`: ability-, loot-profile- és a 18 MobTemplate-authority.
   Duplicate ID, invalid entity/rank/archetype, missing ability/loot vagy Bestiary ID
   ütközés startupkor fail-fast. Vanilla fallbackhez nem kell minden mobot authoredolni.
 - A natural promotion csak `NATURAL` spawnnál sorsol Veteran/Elite rankot;
-  protected-city selectorban nem. Elite legfeljebb két valid affixet kap.
+  protected-city selectorban nem. Mélység, Nether/End és Vérhold kis bounded bónuszt
+  ad; Elite legfeljebb két valid affixet kap.
 - Az ability runtime globális scan helyett entity scheduler tickeket használ, legfeljebb
   2048 aktív state-tel. Telegraph, cooldown, summon-darab és summon-lifespan bounded;
   disable/death/despawn cleanup kötelező, terrain damage nincs.
 - Világboss scaling: `1 + player-coefficient × (n-1)^player-exponent`, default
   `0.65`/`0.8`, max HP-szorzó `12`; damage per doubling `0.04`, max `1.18`.
-  A snapshot startkor rögzül, late join nem skáláz újra.
+  A snapshot startkor rögzül, late join nem skáláz újra. A power-inputot az
+  `EquippedCombatPowerService` owner-thread cache adja; malformed/stale/duplikált vagy
+  rossz slotú item kimarad.
 - Contribution minimum default `25`. A ledger max. 128 résztvevő, pre-combat és
-  self-support nem számít, personal settlement egyszer claimelhető. A reward Profile v2
+  self-support nem számít, Monk/Paladin ally heal/shield és bounded telegráf-objective
+  számít, personal settlement egyszer claimelhető. A reward Profile v2
   operation receipt; full inventorynál nincs world drop. Restartkor COMMITTED
   eligibility kézbesíthető, PREPARED jelölt exact-before rollback.
 
 Mob 2.0 staging acceptance: (1) Lv. 1/10/25/50/70 és cap, (2) távolság + mélység +
-Deep Dark + territory + Vérhold, (3) Veteran/Elite max. két affix, (4) mind a hat pilot
+Deep Dark + territory + Vérhold, (3) Veteran/Elite max. két affix, (4) mind a 18 authored
 template és vanilla fallback, (5) telegráf/cast/caster death/target death/region hop/
 disable, (6) 1/2/5/40 fős boss snapshot, late join/death/disconnect, (7) contribution,
 AFK és duplicate settlement, (8) tele inventory + reconnect/restart delivery, (9)

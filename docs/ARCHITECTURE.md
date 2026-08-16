@@ -145,10 +145,11 @@ a resource csak aktív kaszt-erőforrásnál, a party pedig tagonként bővül. 
 
 A `pve/` csomag dependency-free domainje az authority a mob ID, schema, rank,
 archetype, ability, affix, levelgörbe, encounter snapshot és contribution szabályokhoz.
-A `MobTemplateRegistry` a `mob-templates.yml` katalógust fail-fast tölti: invalid entity,
+A `MobTemplateRegistry` a 18 elemű `mob-templates.yml` katalógust fail-fast tölti: invalid entity,
 rank/archetype, hiányzó ability/loot profile, Bestiary ID-ütközés vagy schemahiba nem
 eredményez részleges registryt. Természetes vanilla mobhoz nem kötelező template;
-`MobTemplateRegistry.naturalTemplate` üres találatán a vanilla fallback él tovább.
+`MobTemplateRegistry.naturalTemplate` biome-, dimension-, depth-, night- és weather-tag
+specificitás alapján választ; üres találatán a vanilla fallback él tovább.
 
 A level resolution precedenciája: encounter override → authored location → explicit
 MobTemplate → survival földrajzi alap. Az utolsó réteg a wilderness-distance alap fölé
@@ -157,8 +158,12 @@ a normál távolsági görbe önmagában 1–50. A 70 fölötti display level cs
 authored boss/encounter útvonalon engedett. A HP és damage külön, monoton és bounded:
 alapértelmezésben `min(8, 1 + (level-1)×0.08)` és
 `min(3, 1 + (level-1)×0.025)`, amelyre a template/rank szorzók kerülnek; abszolút
-védőkorlát is érvényes. A `CombatPowerEstimator` belső telemetry/snapshot input,
-nem publikus gear score és nem loot-authority.
+védőkorlát is érvényes. Az `EquippedCombatPowerService` a player owner-threadjén csak a
+main/offhand és négy armor slot valid, UUID-duplikátummentes canonical itemjeit mintavételezi,
+majd immutable cache-t publikál a cross-region boss-snapshotnak. A
+`EquippedCombatPowerModel` tényleges statot, item levelt, Signature-tier kontextust, szettet és
+rúnát ad a bounded `CombatPowerEstimator`-nak; malformed/stale/rossz slot fail-closed kimarad.
+Ez belső telemetry/snapshot input, nem publikus gear score és nem loot-authority.
 
 Az ability runtime eseményvezérelt, legfeljebb 2048 aktív state-et tart, minden mobot
 a saját entity schedulerén kezel, a location-hatásokat region schedulerre adja át.
@@ -169,9 +174,16 @@ legfeljebb két valid affixet kap, kombinációs tiltással és despawn/death/di
 A világboss startkor immutable résztvevő-snapshotot készít. A HP létszámgörbéje
 `1 + 0.65×(n-1)^0.8` (configolt és capelt), a damage csak logaritmikusan, legfeljebb
 1.18×-ra nő; late join hozzájárulhat, de a boss HP-ja nem ugrál. A bounded
-`ContributionLedger` elutasítja a pre-combat és self-support paddinget, egyszeri
+`ContributionLedger` elutasítja a pre-combat és self-support paddinget. A Monk és Paladin
+owner-thread heal/shield runtimeja tényleges ally-hatást jelent a ledgernek; a kijelölt
+világboss-zónából kitérő, már aktív résztvevő bounded objective-et kap. A ledger egyszeri
 settlement claimet ad, majd encounter-endkor lezár. A Profile-receipt alapú személyes
 reward az Itemization 2.0 boss-component source authorityja.
+
+Az item mutation crash policy közös exact snapshot-mátrixot használ reroll/rúna/ascension
+művelethez: prepare előtti/utáni exact-before abort, inventory publish utáni exact-after
+commit, mixed state kézi review. Az encounter reward PREPARED receiptje nulla markernél
+kézbesít, egy exact markernél commitol, több markernél fail-closed kézi vizsgálat.
 
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),

@@ -260,7 +260,7 @@ nyilvános felületre.
 
 - ✅ `MobTemplate` + hibrid 1–50 progression, ahol az explicit encounter/zóna
   felülírja, a távolság/mélység/territory pedig survival-wilderness fallback;
-  általános vadon hard cap 70. A pilot 6 authored template-et, vanilla fallbacket,
+  általános vadon hard cap 70. A rendszer 18 authored template-et, vanilla fallbacket,
   12 archetype-vokabulárt és külön bounded HP/damage görbét ad.
 - ✅ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
   mobonként, spawnkor rögzített döntéssel és bounded élettartammal.
@@ -268,8 +268,8 @@ nyilvános felületre.
   támogatás, tankolás és objective API-val; a világboss start-snapshotból skálázódik,
   a személyes komponens receipt-alapúan idempotens és tele inventorynál függőben marad.
 - ⬜ Személyes harci összefoglaló; nyilvános DPS-szégyenfal nélkül.
-- ⬜ Bestiárium 2.0 többszintű kutatással és információs/kozmetikai
-  jutalmakkal.
+- ✅ Bestiárium authored rang/archetípus → ability/resistance → loot-profile
+  tudáslépcsőkkel; pontos drop rate nélkül. Kozmetikai jutalomkatalógus későbbi scope.
 
 **Release-gate:** a dependency-free domain/source regresszió nem helyettesíti az
 exact Java 21 CI-t és a 50–60 fős Folia staging playtestet (region-hop, late join,
