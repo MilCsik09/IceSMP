@@ -85,7 +85,7 @@ Minden helyszínhez legyen egy rövid átadólap:
 | Szezon-emlékmű | Opcionális | Egy configolt hely | Bundled location üres | Tartósan szabad terület a bannernek és hologramnak |
 | Városi őrjárat | Opcionális | Világ + legalább két waypoint | Bundled guard map üres | Járható útvonal, talaj- és szűkületteszt |
 | Árfolyamtábla | Igen | Admin aktuális állóhelye | Runtime elhelyezés | Látható, nem torlaszoló hely és eltávolítási hozzáférés |
-| Profession craft | Nem kötelező | `/profession recipes` GUI közvetlenül a játékos inventoryjából craftol | 438 receptdefiníció | A műhely csak tematikus; ne állítsd technikai követelménynek |
+| Profession craft | Nem kötelező | `/profession recipes` GUI közvetlenül a játékos inventoryjából craftol | 376 receptdefiníció | A műhely csak tematikus; ne állítsd technikai követelménynek |
 | Resource-packes tárgymegjelenés | Nem helykoordináta, de vizuális előfeltétel | Namespaced `item-model` kulcsok | Számos aktív modellhivatkozás | A packben legyen megfelelő modell, és teszteld pack nélkül is |
 | Globális AFK | Nem | Aktivitás és globális állapot | Nincs builderkötés | Ne építs jutalmazó AFK-zónát; ilyen deployment scope nincs |
 

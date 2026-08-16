@@ -101,6 +101,12 @@ public final class ProfessionRecipeGUI {
         final List<Component> lore = new ArrayList<>();
         lore.add(grey("Szakma: ").append(recipe.profession().getDisplayName()));
         lore.add(grey("Kategória: " + recipe.category()));
+        // A gyakorlórecept szándékosan vanilla-értékű: azért van, hogy a szakma elején
+        // legyen mit csinálni. Ha ezt a felület NEM mondja ki, rossz üzletnek látszik.
+        if ("gyakorlo".equals(recipe.kind())) {
+            lore.add(Component.text("✎ Gyakorló recept — szakma-XP-ért, nem nyereségért",
+                    NamedTextColor.DARK_AQUA).decoration(TextDecoration.ITALIC, false));
+        }
         lore.add(levelOk
                 ? Component.text("✔ Szint " + recipe.level(), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
                 : Component.text("✘ Szint " + recipe.level() + " kell (most " + level + ")", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));

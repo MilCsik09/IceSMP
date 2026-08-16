@@ -55,11 +55,26 @@ public final class ItemDataFactory {
      */
     public static void applyConsumable(final ItemStack item, final ItemUseAnimation animation, final Key sound,
                                        final float seconds, final boolean particles, final List<PotionEffect> effects) {
+        applyConsumable(item, animation, sound, seconds, particles, effects, false);
+    }
+
+    /**
+     * A {@code clearEffects} a fogyasztáskor MINDEN aktív státuszhatást levesz. Ez a
+     * gyógynövényes ellenszer-vonalának a magja: az alkimista hatást ad, a gyógynövényes
+     * hatást vesz le — a kettő így nem fedi egymást. Kompromisszumos, nem szigorúan jobb,
+     * mert a saját buffokat is törli.
+     */
+    public static void applyConsumable(final ItemStack item, final ItemUseAnimation animation, final Key sound,
+                                       final float seconds, final boolean particles,
+                                       final List<PotionEffect> effects, final boolean clearEffects) {
         final Consumable.Builder builder = Consumable.consumable()
                 .animation(animation)
                 .sound(sound)
                 .consumeSeconds(seconds)
                 .hasConsumeParticles(particles);
+        if (clearEffects) {
+            builder.addEffect(ConsumeEffect.clearAllStatusEffects());
+        }
         if (effects != null && !effects.isEmpty()) {
             builder.addEffect(ConsumeEffect.applyStatusEffects(List.copyOf(effects), 1.0F));
         }
@@ -369,7 +384,49 @@ public final class ItemDataFactory {
         applyConsumable(item, drink ? ItemUseAnimation.DRINK : ItemUseAnimation.EAT,
                 drink ? DRINK_SOUND : EAT_SOUND,
                 (float) Math.max(0.1D, section.getDouble("seconds", drink ? 1.6D : 1.6D)),
-                section.getBoolean("particles", true), effects);
+                section.getBoolean("particles", true), effects,
+                section.getBoolean("clear-effects", false));
+    }
+
+    /**
+     * Recept-vezérelt főzethatás ({@code result.potion-effects}): a POTION/SPLASH_POTION/
+     * LINGERING_POTION eredményre valódi custom effekteket tesz, hogy a vanília dobási,
+     * területi és időtartam-kezelés dolgozzon vele — listener-utánzat nélkül.
+     *
+     * <p>Meta-művelet, ezért a data-komponensek ELŐTT kell hívni (a setItemMeta eldobná őket).
+     *
+     * @return true, ha legalább egy effekt felkerült
+     */
+    public static boolean applyPotionEffects(final ItemStack item, final List<String> specs,
+                                             final String colorHex) {
+        if (item == null || specs == null || specs.isEmpty()) {
+            return false;
+        }
+        final ItemMeta meta = item.getItemMeta();
+        if (!(meta instanceof org.bukkit.inventory.meta.PotionMeta potionMeta)) {
+            return false;
+        }
+        boolean applied = false;
+        for (final String token : specs) {
+            final PotionEffect parsed = parseEffect(token);
+            if (parsed != null) {
+                potionMeta.addCustomEffect(parsed, true);
+                applied = true;
+            }
+        }
+        if (!applied) {
+            return false;
+        }
+        if (colorHex != null && !colorHex.isBlank()) {
+            try {
+                potionMeta.setColor(org.bukkit.Color.fromRGB(
+                        Integer.parseInt(colorHex.replace("#", "").trim(), 16)));
+            } catch (final IllegalArgumentException ignored) {
+                // Hibás szín a configban nem törheti a craftot — szín nélkül megy tovább.
+            }
+        }
+        item.setItemMeta(potionMeta);
+        return true;
     }
 
     /** "TÍPUS:másodperc:szint" → PotionEffect (a szint opcionális, default 0). Ismeretlen típus → null. */

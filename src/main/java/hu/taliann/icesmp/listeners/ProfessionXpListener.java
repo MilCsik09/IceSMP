@@ -185,8 +185,31 @@ public final class ProfessionXpListener implements Listener {
 
         final ItemStack result = event.getRecipe().getResult();
         if (isArmorerCraft(result.getType())) {
-            awardXp(player, ProfessionType.ARMORER, "professions.xp.crafting-gear", 8);
+            awardXpAmount(player, ProfessionType.ARMORER,
+                    Math.max(0, configManager.getInt("professions.xp.crafting-gear", 8))
+                            * craftedBatches(event));
         }
+    }
+
+    /**
+     * Shift-crafttal egyetlen eseményben több adag készül el; a jóváírásnak ezt követnie kell,
+     * különben a tömeges craft kevesebb XP-t ad, mint ugyanaz egyesével. A mennyiséget a
+     * mátrix legkisebb hozzávaló-stackje adja (vanília szabály), eseményenkénti sapkával.
+     */
+    private int craftedBatches(final CraftItemEvent event) {
+        if (!event.isShiftClick()) {
+            return 1;
+        }
+        int batches = Integer.MAX_VALUE;
+        for (final ItemStack ingredient : event.getInventory().getMatrix()) {
+            if (ingredient != null && ingredient.getType() != Material.AIR) {
+                batches = Math.min(batches, ingredient.getAmount());
+            }
+        }
+        if (batches == Integer.MAX_VALUE || batches < 1) {
+            return 1;
+        }
+        return Math.min(Math.max(1, configManager.getInt("professions.xp.bulk-event-cap", 16)), batches);
     }
 
     // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
@@ -290,7 +313,13 @@ public final class ProfessionXpListener implements Listener {
         if (!isSurvival(event.getPlayer())) {
             return;
         }
-        awardXp(event.getPlayer(), ProfessionType.COOK, "professions.xp.cooking", 3);
+        // A kemencéből egyszerre kivett adag MINDEN darabja munka: darabonként jár az XP,
+        // különben a türelmes, egyesével kivevő játékos jobban járna, mint aki egyben visz
+        // el 64-et. A sapka az eseményenkénti jóváírást korlátozza (élő kulcs).
+        final int cap = Math.max(1, configManager.getInt("professions.xp.bulk-event-cap", 16));
+        awardXpAmount(event.getPlayer(), ProfessionType.COOK,
+                Math.max(0, configManager.getInt("professions.xp.cooking", 3))
+                        * Math.min(cap, Math.max(1, event.getItemAmount())));
     }
 
     private boolean isOre(final Material material) {

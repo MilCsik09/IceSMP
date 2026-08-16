@@ -41,7 +41,7 @@ public final class ProfessionRecipeCatalog {
                          String affixTier, String uniqueResult, Map<Material, Integer> ingredients,
                          Map<String, Integer> uniqueIngredients, List<String> lore,
                          String signature, hu.taliann.icesmp.data.FactionType faction,
-                         boolean lootOnly, String job) {
+                         boolean lootOnly, String job, String kind) {
         public Recipe {
             ingredients = ingredients == null ? Map.of() : Map.copyOf(ingredients);
             uniqueIngredients = uniqueIngredients == null ? Map.of() : Map.copyOf(uniqueIngredients);
@@ -152,7 +152,8 @@ public final class ProfessionRecipeCatalog {
                 uniqueResult == null || uniqueResult.isBlank() ? null : uniqueResult.toLowerCase(Locale.ROOT),
                 parsedIngredients.materials(), parsedIngredients.uniqueMaterials(), lore,
                 signature == null || signature.isBlank() ? null : signature.toLowerCase(Locale.ROOT), faction,
-                lootOnly, job == null || job.isBlank() ? null : job.toLowerCase(Locale.ROOT));
+                lootOnly, job == null || job.isBlank() ? null : job.toLowerCase(Locale.ROOT),
+                section.getString("kind", "hozam").toLowerCase(Locale.ROOT));
     }
 
     /** Canonical input/output signature independent of YAML order, profession and progression metadata. */

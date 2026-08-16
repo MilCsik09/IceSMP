@@ -72,22 +72,22 @@ keresztül kerül a klienshez.
 
 ## Technikai tudnivalók
 
-- **Méret:** 16×16 vagy 32×32 px, átlátszó háttérrel (PNG) — a teljes pack egységesen ugyanazt használja, vegyes felbontás tilos.
+- **Méret:** **64×64 px**, átlátszó háttérrel (PNG) — a csomagolt pack mind a 304 item-textúrája ilyen, vegyes felbontás tilos.
 - **Fájlnév és hely:** a kész PNG az `assets/icesmp/textures/item/<modell-id>.png` útvonalra kerül; a JSON-bekötés kész, csak a PNG-t kell szállítani.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik — a vanilla textúrája jó kiindulás a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED = Perinfernicitas (láng, vörös-arany), BLUE = Cryghaliris (jég, kék-ezüst), NEUTRAL = Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK = Kitaszítottak (csont, éjfekete-lila, és a jellegzetes **hideg türkiz derengés** — a lich-szem: a Néma Királyné élőhalott-fénye a szemekben, rúnákban, élek mentén).
 
 ## Stílus-szabályok (vanilla-konzisztencia)
 
-1. **Egységes felbontás:** a felbontást a textúra-készítő választja meg (vanilla-hű 16×16 vagy részletesebb 32×32) — de a TELJES pack egységesen ugyanazt használja, vegyes felbontás tilos.
-2. **Margó:** a tárgy ne érjen a vászon széléig — a vászon ~80%-át töltse ki, középre igazítva (16-osnál ~1-2 px, 32-esnél ~3-4 px üres perem).
+1. **Egységes felbontás: 64×64.** A pack ezen a felbontáson áll; ettől eltérő méretű PNG nem kerülhet be. A részletesség nem jogosít fotorealizmusra — a pixel-fegyelem (kemény átmenet, korlátozott paletta) 64-en is kötelező.
+2. **Margó:** a tárgy ne érjen a vászon széléig — a vászon ~80%-át töltse ki, középre igazítva (64×64-nél ~6-8 px üres perem).
 3. **Sziluett-olvashatóság:** az item egy vanilla tárgy helyén jelenik meg — első ránézésre ugyanannak a tárgy-osztálynak tűnjön (bot=bot, sisak=sisak). Kard/szerszám 45°-ban átlósan: markolat balra-le, hegy jobbra-fel.
-4. **Kontúr:** 1 px sötét körvonal a külső élen, de NEM tiszta fekete — az anyagszín legmélyebb árnyalata; a belső vonalak még lágyabbak.
+4. **Kontúr:** 2-3 px sötét körvonal a külső élen (64×64-en ez felel meg a vanilla 1 px-es érzetének), de NEM tiszta fekete — az anyagszín legmélyebb árnyalata; a belső vonalak még lágyabbak.
 5. **Paletta-fegyelem:** anyagonként 4–8 tónus, kemény pixel-átmenetek — semmi blur, anti-aliasing vagy színátmenet; dither csak nagyon indokoltan.
 6. **Fényirány:** mindig bal-felső fényforrás (világos él fent/balra, mély tónus lent/jobbra); vetett árnyék a sziluetten kívül nincs.
 7. **Alfa igen/nem:** minden pixel vagy teljesen fedő, vagy teljesen átlátszó — félig átlátszó élpixel TILOS (a játékban csúnya szegély lesz belőle).
 8. **Telítettség:** a vanilla visszafogott, földes palettája mellett a neon kiabál — izzó akcent (lich-türkiz, láng) csak kevés pixelen (2–6 fénypont).
-9. **Kicsiben is működjön:** az inventoryban ~16–32 képernyő-pixel látszik — a 2 px-nél kisebb részlet eltűnik; minden darabot kicsinyítve is ellenőrizz.
+9. **Kicsiben is működjön:** a textúra 64×64, de az inventoryban ~16-32 képernyő-pixelen jelenik meg — a 4 px-nél vékonyabb részlet ott eltűnik; minden darabot 16×16-ra kicsinyítve is ellenőrizz.
 10. **Perspektíva:** lapos sprite szemből (vagy 45°-os szerszám) — nem izometrikus/3D nézet.
 
 ## Globális paletta
@@ -109,6 +109,10 @@ a Menedék vendége pedig önálló erőd/kapu-acél/patina külső héjat kap. 
 
 ## AI-generálási prompt-sablon
 
+> A **még legyártandó** textúrákhoz a kész, bemásolható promptok a
+> [`TEXTURE_WORKSHEET.md`](TEXTURE_WORKSHEET.md) munkalapon vannak, lapokra bontva.
+> Ez a szekció a sablont és a szabályokat írja le; a munkalap abból generálódik.
+
 Ha a textúrákat képgenerátorral készíted, ez a sablon jó kiindulás. **Tippek:** egyszerre csak 4–6 itemet kérj egy lapra (úgy tartja a stílust); sima FEHÉR hátteret kérj; NE kérj szöveget a képre; az itemek leírását a lenti blokkok **Ábrázolás + Színvilág** sorából másold be.
 
 ```
@@ -120,13 +124,20 @@ Items:
 2. [második item…]
 ...
 
-Style: chunky 16-bit pixel art, limited palette (4-8 tones per material),
-1px dark outline in the material's own darkest shade (not pure black),
-light source from the top-left, crisp hard pixels, no anti-aliasing,
-no gradients, no drop shadows, flat 2D sprite view (no isometric perspective),
-each item centered with a small margin, consistent style across all icons,
-cohesive fantasy RPG game asset set, high quality pixel art.
+Style: detailed 64x64 pixel art (chunky pixels, NOT smooth digital painting),
+limited palette (4-8 tones per material), 2-3px dark outline in the material's own
+darkest shade (not pure black), light source from the top-left, crisp hard pixels,
+no anti-aliasing, no gradients, no drop shadows, flat 2D sprite view (no isometric
+perspective), each item centered with a small margin, consistent style across all
+icons, cohesive fantasy RPG game asset set, readable when scaled down to 16x16,
+high quality pixel art. No text, no labels, no watermarks.
 ```
+
+A generátor a 64×64-et hajlamos „festménynek" érteni: ha sima, elmosott képet ad,
+told meg a `chunky pixels, visible square pixels, retro game sprite` kifejezésekkel.
+A kész lapot darabold szét, mindegyik darabot méretezd PONTOSAN 64×64-re
+(nearest-neighbour, sosem bilineáris!), és vágd ki a fehér hátteret alfára —
+félig átlátszó élpixel nem maradhat.
 
 A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange-red", BLUE = „icy light blue and silver", NEUTRAL = „merchant gold and amber", DARK = „bone white, pitch black, with cold turquoise lich-glow accents".
 
@@ -874,12 +885,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 
 ## Recept — Alapanyag (tervrajz)
 
-### `tengeristen_amulettje` — Tengeristen Amulettje
-- **Fájl:** `tengeristen_amulettje.png` &nbsp;|&nbsp; **Alap-item:** `CONDUIT`
-- **Ábrázolás:** prizmarin-türkiz kagylószív, gyöngyház csillám, örvénylő tengerkék energia, apró korall-berakás
-- **Színvilág:** prizmarin; akcent: türkiz
-- **Hangulat / lore:** A tenger mélyének szíve dobog benne, egy elfeledett isten hagyatéka. Halász-recept eredménye (Alapanyag (tervrajz) kategória, 48. szint).
-
 ## Recept — Bűvölés
 
 ### `csali_tomus` — Csali Tomus
@@ -988,12 +993,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** meleg fabarna; akcent: világos acélszürke
 - **Hangulat / lore:** Favágó-recept eredménye (Eszköz kategória, 44. szint).
 
-### `csillekerek` — Megkent Csille
-- **Fájl:** `csillekerek.png` &nbsp;|&nbsp; **Alap-item:** `MINECART`
-- **Ábrázolás:** bányász-csille, a névhez illő tematikus díszítéssel
-- **Színvilág:** világos acélszürke; akcent: meleg fabarna
-- **Hangulat / lore:** A tárnák olajozott vasparipája — nyikorgás nélkül fut a sínen. Bányász-recept eredménye (Eszköz kategória, 14. szint).
-
 ### `feszitett_szaru_ij` — Feszített Szaruíj
 - **Fájl:** `feszitett_szaru_ij.png` &nbsp;|&nbsp; **Alap-item:** `BOW`
 - **Ábrázolás:** átlós ívkar sárgás-borostyán csontlemez borítással, feszülő inhúros ideg
@@ -1005,12 +1004,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** fonott vesszőkeret zöld-okker levélmintával, faragott kéreg felület, réz-szegecses perem
 - **Színvilág:** zöld-okker; akcent: réz
 - **Hangulat / lore:** Favágó-recept eredménye (Eszköz kategória, 36. szint).
-
-### `melysegi_tajolo` — Tárnatájoló
-- **Fájl:** `melysegi_tajolo.png` &nbsp;|&nbsp; **Alap-item:** `COMPASS`
-- **Ábrázolás:** réz tok, borostyán számlap, izzó zöld-okker mágnestű, tárna-koromfoltok
-- **Színvilág:** réz; akcent: borostyán
-- **Hangulat / lore:** A tű nem északra mutat — a legközelebbi tárnára. Bányász-recept eredménye (Eszköz kategória, 23. szint).
 
 ### `melyvizi_horog` — Mélyvízi Horogsor
 - **Fájl:** `melyvizi_horog.png` &nbsp;|&nbsp; **Alap-item:** `FISHING_ROD`
@@ -1030,12 +1023,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** acélszürke; akcent: domború vas-boglár
 - **Hangulat / lore:** Kovács-recept eredménye (Eszköz kategória, 31. szint).
 
-### `tavcso` — Bányamérnöki Távcső
-- **Fájl:** `tavcso.png` &nbsp;|&nbsp; **Alap-item:** `SPYGLASS`
-- **Ábrázolás:** kihúzható távcső, a névhez illő tematikus díszítéssel
-- **Színvilág:** vörösréz, narancsos árnyalatokkal; akcent: világító cián
-- **Hangulat / lore:** A bányamérnök szeme: meglátja a repedést, mielőtt omlana. Bányász-recept eredménye (Eszköz kategória, 27. szint).
-
 ### `uszokeszlet` — Úszókészlet
 - **Fájl:** `uszokeszlet.png` &nbsp;|&nbsp; **Alap-item:** `FISHING_ROD`
 - **Ábrázolás:** átlós vékony nádnyél, piros-fehér parafa úszó, könnyű zsinór, apró ólomsúlyok
@@ -1047,12 +1034,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** átlós tiszafa ívkar, barna bőrmarkolat, feszes ínhúr, egyszerű vadász-faragás
 - **Színvilág:** tiszafa-barna; akcent: feszes ínhúr-drapp
 - **Hangulat / lore:** Favágó-recept eredménye (Eszköz kategória, 14. szint).
-
-### `viharjelzo_boja` — Viharjelző Bója
-- **Fájl:** `viharjelzo_boja.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
-- **Ábrázolás:** rozsdás vas kalitka, viharkék izzó gömb, sós tengeri patina, kötélgyűrű tetején
-- **Színvilág:** rozsdás vasszürke; akcent: viharkék izzás
-- **Hangulat / lore:** A kikötők őrszeme: ha pislog, vihar közeleg a Bokic felől. Halász-recept eredménye (Eszköz kategória, 32. szint).
 
 ## Recept — Fagyott királyság (konyha)
 
@@ -1165,12 +1146,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** sötét, ibolyafekete likőr karcsú üvegben, halvány türkiz derengéssel
 - **Színvilág:** ibolyafekete; akcent: hideg türkiz derengés
 - **Hangulat / lore:** Árnyéklikőr — a Kitaszítottak itala; aki issza, egy pillanatra beleolvad az árnyékba.
-
-### `bokic_gyogytea` — Bokic-parti Gyógytea
-- **Fájl:** `bokic_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
-- **Ábrázolás:** gőzölgő borostyánszín gyógytea agyagbögrében, meleg aranyló pára, gyógyfű-levél
-- **Színvilág:** gyógyzöld borostyán; akcent: mézarany pára
-- **Hangulat / lore:** Hajnali szedésű füvek forrázata a Bokic partjáról — átmelegít és tisztán tart. Gyógynövényész-recept eredménye (Ital kategória, 24. szint).
 
 ### `caldesterai_gyogytea` — Caldesterai Gyógytea
 - **Fájl:** `caldesterai_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
@@ -1293,12 +1268,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** prizmarin kristálykocka szivárványos sarkfény-derengéssel, türkiz belső ragyogás, gyöngyház élek, hideg fénytörés
 - **Színvilág:** prizmarin; akcent: türkiz
 - **Hangulat / lore:** Cseppkőbe zárt északi fény — a szoba, ahol áll, sosem lesz igazán sötét. Bűvölő-recept eredménye (Különleges kategória, 38. szint).
-
-### `viharuveg_lampas` — Viharüveg Lámpás
-- **Fájl:** `viharuveg_lampas.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
-- **Ábrázolás:** üveglámpás örvénylő viharfelhővel belül, ezüst keret, kékesszürke villám-szikrák, ködös derengés
-- **Színvilág:** ezüst; akcent: kékes
-- **Hangulat / lore:** Viharkvarc-szilánk ég az üveg mögött — a fénye nem alszik ki, mert a vihar sosem fárad el. Bűvölő-recept eredménye (Különleges kategória, 28. szint).
 
 ## Recept — Legendás (tervrajz)
 
@@ -1556,12 +1525,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** vörös-arany; akcent: arany
 - **Hangulat / lore:** Nem arannyá változtat — bölccsé. Az alkimista-céh végső titka. Alkimista-recept eredménye (Ritkaság kategória, 50. szint).
 
-### `borostyan_lampa` — Borostyánfényű Lámpás
-- **Fájl:** `borostyan_lampa.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
-- **Ábrázolás:** réz lámpás meleg borostyán izzással, arany fénysugarak, apró rovar-zárvány az üvegben, patinás keret
-- **Színvilág:** réz; akcent: arany
-- **Hangulat / lore:** A mélység gyantája ég benne — fénye nyugtatja a tárnák szellemeit. Bányász-recept eredménye (Ritkaság kategória, 39. szint).
-
 ### `cehmester_ulloje` — A Céhmester Üllője
 - **Fájl:** `cehmester_ulloje.png` &nbsp;|&nbsp; **Alap-item:** `ANVIL`
 - **Ábrázolás:** kovácsolt sötét vasüllő arany céh-címerrel, parázsló szikrák, réz peremdísz, kalapács-nyom kopás
@@ -1604,47 +1567,11 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** jégkék; akcent: zúzmara
 - **Hangulat / lore:** Cryghaliris kertjeinek dísze — nem hervad el soha. Gyógynövényész-recept eredménye (Ritkaság kategória, 34. szint).
 
-### `kristaly_katalizator` — Kristály-katalizátor
-- **Fájl:** `kristaly_katalizator.png` &nbsp;|&nbsp; **Alap-item:** `END_CRYSTAL`
-- **Ábrázolás:** lebegő kristály keretben, a névhez illő tematikus díszítéssel
-- **Színvilág:** világító cián; akcent: királylila
-- **Hangulat / lore:** Néma kristály szívvel ver — ne nézz bele túl sokáig. Alkimista-recept eredménye (Ritkaság kategória, 49. szint).
-
 ### `melyseg_szive` — A Mélység Szíve
 - **Fájl:** `melyseg_szive.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
 - **Ábrázolás:** türkiz-prizmarin szívkagyló örvénylő tengerkék maggal, gyöngyház erezet, halvány kék derengés, ezüst csillám
 - **Színvilág:** türkiz; akcent: prizmarin
 - **Hangulat / lore:** A legmélyebb tárna alján dobog valami. A bányászcéh legendás mesterműve. Bányász-recept eredménye (Ritkaság kategória, 50. szint).
-
-### `oceanjaro_terkep` — Óceánjáró Térképe
-- **Fájl:** `oceanjaro_terkep.png` &nbsp;|&nbsp; **Alap-item:** `MAP`
-- **Ábrázolás:** kiterített térkép útvonallal és jelöléssel
-- **Színvilág:** krémszínű pergamen; akcent: középkék
-- **Hangulat / lore:** Olyan zátonyokat is jelöl, amiket még senki sem látott — még. Halász-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `orok_viragzas` — Örök Virágzás Csokra
-- **Fájl:** `orok_viragzas.png` &nbsp;|&nbsp; **Alap-item:** `PEONY`
-- **Ábrázolás:** virág / virágcsokor
-- **Színvilág:** rózsás pír; akcent: élénk levélzöld
-- **Hangulat / lore:** Ryanora mezőinek emléke — a csokor sosem hullajtja szirmát. Gyógynövényész-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `osi_ereklye_kiemeles` — Ereklye-kiemelő Készlet
-- **Fájl:** `osi_ereklye_kiemeles.png` &nbsp;|&nbsp; **Alap-item:** `BRUSH`
-- **Ábrázolás:** finomszőrű ecset, a névhez illő tematikus díszítéssel
-- **Színvilág:** vörösréz, narancsos árnyalatokkal; akcent: krémszínű pergamen
-- **Hangulat / lore:** Puha ecset, acél türelem — a múlt nem szereti a sietséget. Bányász-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `totem_ujraelesztes` — Újraélesztett Totem
-- **Fájl:** `totem_ujraelesztes.png` &nbsp;|&nbsp; **Alap-item:** `TOTEM_OF_UNDYING`
-- **Ábrázolás:** arany-smaragd totem ragyogó élet-maggal, felfelé áramló fénykristályok, smaragdzöld szemek, feltámadás-derengés
-- **Színvilág:** arany; akcent: smaragdzöld
-- **Hangulat / lore:** Lélekhamuval újratöltve. Egyszer még visszaránt a peremről. Alkimista-recept eredménye (Ritkaság kategória, 48. szint).
-
-### `vandorbot` — Vándorbot
-- **Fájl:** `vandorbot.png` &nbsp;|&nbsp; **Alap-item:** `STICK`
-- **Ábrázolás:** görcsös meleg barna vándorbot kopott bőrfonással, apró borostyán-kő a tetején, útpor, zöld inda
-- **Színvilág:** barna; akcent: borostyán
-- **Hangulat / lore:** Egyszerű bot, ezer mérföld emléke. A vándor sosem hagyja el. Favágó-recept eredménye (Ritkaság kategória, 33. szint).
 
 ### `vasfa_ij` — Vasfa Íj
 - **Fájl:** `vasfa_ij.png` &nbsp;|&nbsp; **Alap-item:** `BOW`
@@ -1657,24 +1584,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Ábrázolás:** sötétkék bőrkötésű kódex arany csillag-mintával, izzó rúnák a lapokon, ezüst kapocs, mágikus derengés
 - **Színvilág:** sötétkék bőr; akcent: arany csillag-rúna
 - **Hangulat / lore:** Minden lapja egy-egy elfeledett név. A bűvölőcéhek legféltettebb kincse. Bűvölő-recept eredménye (Ritkaság kategória, 50. szint).
-
-### `vezetokurt` — Mélység Vezérkürtje
-- **Fájl:** `vezetokurt.png` &nbsp;|&nbsp; **Alap-item:** `CONDUIT`
-- **Ábrázolás:** csavart mélységi kagyló-kürt türkiz belső izzással, gyöngyház erezet, korall-tüskék, prizmarin derengés
-- **Színvilág:** türkiz; akcent: gyöngyház
-- **Hangulat / lore:** A mélység válaszol, ha megszólal. A halászcéhek őrzik a titkát. Halász-recept eredménye (Ritkaság kategória, 46. szint).
-
-### `vihar_palack` — Palackozott Vihar
-- **Fájl:** `vihar_palack.png` &nbsp;|&nbsp; **Alap-item:** `WIND_CHARGE`
-- **Ábrázolás:** átlátszó gömbpalack örvénylő szürkéskék viharral, kavargó szél-örvény, kékesfehér villám-szikrák, ezüst dugó
-- **Színvilág:** kék; akcent: ezüst
-- **Hangulat / lore:** Egy marék szél, üvegbe zárva. Óvatosan a dugóval! Alkimista-recept eredménye (Ritkaság kategória, 46. szint).
-
-### `vilagfa_magja` — A Világfa Magja
-- **Fájl:** `vilagfa_magja.png` &nbsp;|&nbsp; **Alap-item:** `OAK_SAPLING`
-- **Ábrázolás:** izzó arany-zöld facsemete-mag lüktető életfénnyel, smaragd levélkék, borostyán gyökér-erek, mágikus derengés
-- **Színvilág:** arany; akcent: zöld
-- **Hangulat / lore:** Azt mondják, az Első Fa magja. Ültesd el, és figyeld, mi nő belőle. Gyógynövényész-recept eredménye (Ritkaság kategória, 50. szint).
 
 ### `wither_rozsa_oltvany` — Fonnyadt Rózsa-oltvány
 - **Fájl:** `wither_rozsa_oltvany.png` &nbsp;|&nbsp; **Alap-item:** `WITHER_ROSE`
@@ -1721,12 +1630,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Hangulat / lore:** Viharfogó tekercs — a vihart papírra szelídítő rúna; a villám a lap fölött cikázik.
 
 ## Recept — Szerszám
-
-### `egyszeru_horgaszbot` — Nádvessző Horgászbot
-- **Fájl:** `egyszeru_horgaszbot.png` &nbsp;|&nbsp; **Alap-item:** `FISHING_ROD`
-- **Ábrázolás:** átlós vékony faág nyél, egyszerű fehér zsinór, apró vas horog, natúr fakéreg
-- **Színvilág:** natúr fabarna; akcent: fehér zsinór
-- **Hangulat / lore:** Egyszerű bot a Bokic partjáról, de a víz szellemei így is figyelnek rá. Halász-recept eredménye (Szerszám kategória, 5. szint).
 
 ### `gyemant_fejsze` — Prizmaél Fejsze
 - **Fájl:** `gyemant_fejsze.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_AXE`
@@ -1832,18 +1735,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** aranybarna; akcent: erdei gombabarna
 - **Hangulat / lore:** Erdei Gomba Pite — a Bokic-mente erdejének melege; egyszerű, laktató, otthonos.
 
-### `fonix_fuszeres_szarny` — Főnixfűszeres Szárny
-- **Fájl:** `fonix_fuszeres_szarny.png` &nbsp;|&nbsp; **Alap-item:** `COOKED_CHICKEN`
-- **Ábrázolás:** ropogós csirkeszárny izzó narancs fűszerbevonattal, parázsló chili-máz, arany pirulás
-- **Színvilág:** narancs; akcent: arany
-- **Hangulat / lore:** Csípős! A Perinfernicitas konyhájának kedvence — óvatosan vele. Szakács-recept eredménye (Étel kategória, 41. szint).
-
-### `fuszeres_vandorhus` — Fűszeres Vándorhús
-- **Fájl:** `fuszeres_vandorhus.png` &nbsp;|&nbsp; **Alap-item:** `COOKED_MUTTON`
-- **Ábrázolás:** fűszerezett sült ürühús szeletek tányéron, aranybarna kéreg, meleg fűszerpír
-- **Színvilág:** sült aranybarna; akcent: fűszerpiros
-- **Hangulat / lore:** Vándorfűszerrel érlelt, füstölt hús — hetekig eláll a nyeregtáskában. Szakács-recept eredménye (Étel kategória, 28. szint).
-
 ### `halasz_fogasa` — Halász Fogása
 - **Fájl:** `halasz_fogasa.png` &nbsp;|&nbsp; **Alap-item:** `COOKED_SALMON`
 - **Ábrázolás:** ropogósra sült lazacfilé tányéron, rózsaszínes hússal, aranybarna héjjal, citromkarikával
@@ -1929,12 +1820,6 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Hangulat / lore:** A Bokic-parti aratóünnep édes lepénye — egy szelet szerencse minden vándornak. Szakács-recept eredménye (Étel kategória, 30. szint).
 
 ## Recept — Étel (tervrajz)
-
-### `aranyalma_lakoma` — Aranyalma Lakoma
-- **Fájl:** `aranyalma_lakoma.png` &nbsp;|&nbsp; **Alap-item:** `GOLDEN_APPLE`
-- **Ábrázolás:** csillogó aranyalma fényes arany héjjal, meleg sárga ragyogás, halvány glória
-- **Színvilág:** fényes arany; akcent: halvány glóriafehér
-- **Hangulat / lore:** Ünnepi lakoma, melyben a Fa áldása és az arany fénye egyaránt megcsillan. Szakács-recept eredménye (Étel (tervrajz) kategória, 45. szint).
 
 ### `legendas_lakoma` — Legendás Lakoma
 - **Fájl:** `legendas_lakoma.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_GOLDEN_APPLE`
@@ -2093,3 +1978,554 @@ Az editor kizárólag sikeres `SUCCESSFULLY_LOADED` státusznál preview-zik; pa
 HUD-fontot kirajzolni, és nem rontja el a natív/Folia fallbacket. A felbontás/GUI-scale presetek
 szerveroldali ellenőrzési profilok, nem kliensdetektálás. A staging vizuális elfogadást valódi
 Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- és shader-contractot igazol.
+
+## Szakma-bővítés — Bűvölő
+
+### `tuzvedelem_tomus` — Tűzvédelem Tomus
+- **Fájl:** `tuzvedelem_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón pajzs alakú rúna lángnyelvek között
+- **Színvilág:** mélyvörös bőrkötés, arany veret; akcent: parázs-narancs
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 16. szint).
+
+### `izeltlabu_tomus` — Ízeltlábú-irtás Tomus
+- **Fájl:** `izeltlabu_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón nyolclábú rúna áthúzva
+- **Színvilág:** fakó lila kötés; akcent: mérgeszöld pókszem
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 19. szint).
+
+### `robbanasvedelem_tomus` — Robbanásvédelem Tomus
+- **Fájl:** `robbanasvedelem_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón repedt kőpajzs-rúna, körülötte szilánk-glifek
+- **Színvilág:** kormos szürke kötés, vas veret; akcent: parázsvörös repedés
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 22. szint).
+
+### `vizi_ugyesseg_tomus` — Vízi Ügyesség Tomus
+- **Fájl:** `vizi_ugyesseg_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón hullám-rúna csákány-sziluetten át
+- **Színvilág:** tengerkék kötés, ezüst veret; akcent: prizmarin-türkiz
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 23. szint).
+
+### `lovedekvedelem_tomus` — Lövedékvédelem Tomus
+- **Fájl:** `lovedekvedelem_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón ferde nyílvessző-rúna pajzson megtörve
+- **Színvilág:** zöldes bőr, réz veret; akcent: fehér nyílhegy
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 24. szint).
+
+### `legzes_tomus` — Légzés Tomus
+- **Fájl:** `legzes_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón buborék-lánc rúna kagyló-ívben
+- **Színvilág:** gyöngyház-fehér kötés; akcent: prizmarin-türkiz
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 25. szint).
+
+### `lokes_tomus` — Lökés Tomus
+- **Fájl:** `lokes_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón kifelé mutató lökéshullám-rúna
+- **Színvilág:** szürkésbarna kötés, vas veret; akcent: fehér lökés-ív
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 27. szint).
+
+### `sokloves_tomus` — Sokvessző Tomus
+- **Fájl:** `sokloves_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón három szétnyíló vessző-rúna legyezőben
+- **Színvilág:** drapp kötés, toll-veret; akcent: fehér tollpehely
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 28. szint).
+
+### `tovis_tomus` — Tövis Tomus
+- **Fájl:** `tovis_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón tüskekoszorú-rúna, befelé álló hegyekkel
+- **Színvilág:** sötétzöld kötés, vas veret; akcent: kaktuszzöld tüskehegy
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 29. szint).
+
+### `lang_tomus` — Láng Tomus
+- **Fájl:** `lang_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón nyílvessző-rúna lángoló heggyel
+- **Színvilág:** meleg vörösbarna kötés; akcent: izzó narancs láng
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 31. szint).
+
+### `melyseglepte_tomus` — Mélységlépte Tomus
+- **Fájl:** `melyseglepte_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón lábnyom-rúna hullámvonalak alatt
+- **Színvilág:** mélykék kötés, hálófonal-fűzés; akcent: habfehér
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 32. szint).
+
+### `fagyjaro_tomus` — Fagyjáró Tomus
+- **Fájl:** `fagyjaro_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón hatágú jégkristály-rúna talp alatt
+- **Színvilág:** jégkék kötés, ezüst veret; akcent: zúzmara-fehér csillám
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 33. szint).
+
+### `dofes_tomus` — Döfés Tomus
+- **Fájl:** `dofes_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón lefelé döfő háromág-rúna
+- **Színvilág:** prizmarin-türkiz kötés; akcent: fehér kristályhegy
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 34. szint).
+
+### `lelekfutas_tomus` — Lélekfutás Tomus
+- **Fájl:** `lelekfutas_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón futó láng-rúna lélekhomok-szemcsék felett
+- **Színvilág:** homokbarna kötés; akcent: hideg türkiz lélekláng
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 36. szint).
+
+### `husegeskuu_tomus` — Hűségeskü Tomus
+- **Fájl:** `husegeskuu_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón szigony-rúna visszatérő ívvel
+- **Színvilág:** gyöngyház-fehér kötés; akcent: aranyfonál
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 37. szint).
+
+### `sunnyogas_tomus` — Surranás Tomus
+- **Fájl:** `sunnyogas_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón kuporgó alak-rúna sculk-erek között
+- **Színvilág:** éjfekete kötés; akcent: hideg türkiz sculk-derengés
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 39. szint).
+
+### `szigonyvihar_tomus` — Szigonyvihar Tomus
+- **Fájl:** `szigonyvihar_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón örvény-rúna szigonyheggyel a közepén
+- **Színvilág:** viharszürke kötés; akcent: fehér örvény
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 42. szint).
+
+### `surites_tomus` — Sűrítés Tomus
+- **Fájl:** `surites_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón lefelé nyomó buzogányfej-rúna, alatta becsapódás-gyűrű
+- **Színvilág:** nehéz vasszürke kötés; akcent: fehér becsapódás-gyűrű
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 44. szint).
+
+### `szellokitores_tomus` — Szélkitörés Tomus
+- **Fájl:** `szellokitores_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón szétfújó szél-rúna spirálban
+- **Színvilág:** halvány szürkéskék kötés; akcent: fehér szélörvény
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 45. szint).
+
+### `vegtelen_tomus` — Végtelen Tomus
+- **Fájl:** `vegtelen_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón végtelen-hurok rúna nyílvessző-ívből
+- **Színvilág:** mély lila kötés, arany veret; akcent: ender-lila derengés
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 46. szint).
+
+### `villamhivo_tomus` — Villámhívó Tomus
+- **Fájl:** `villamhivo_tomus.png` &nbsp;|&nbsp; **Alap-item:** `ENCHANTED_BOOK`
+- **Ábrázolás:** enchantelt könyv oldalról, a borítón cikcakk villám-rúna rézgyűrűben
+- **Színvilág:** patinazöld réz kötés; akcent: fehér-kék villám
+- **Hangulat / lore:** Bűvölő-recept eredménye (Bűvölés kategória, 47. szint).
+
+
+## Szakma-bővítés — Alkimista
+
+### `vizlegzes_fozet` — Vízlégzés Főzet
+- **Fájl:** `vizlegzes_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola tengerkék folyadékkal, apró buborékok láncban felfelé
+- **Színvilág:** tengerkék; akcent: fehér buborék
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 21. szint).
+
+### `lebego_fozet` — Lebegő Főzet
+- **Fájl:** `lebego_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola sápadt fehéres folyadékkal, egy fantomhártya-fecni lebeg benne
+- **Színvilág:** sápadt törtfehér, halvány lila; akcent: irizáló hártya-csillanás
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 27. szint).
+
+### `dobo_ero_fozet` — Dobó Erőfőzet
+- **Fájl:** `dobo_ero_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola vörös folyadékkal, hosszú nyak, lőporcsík a nyakon
+- **Színvilág:** mélyvörös folyadék, szürke lőpor; akcent: parázs-narancs
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 29. szint).
+
+### `dobo_sebesseg_fozet` — Dobó Sebességfőzet
+- **Fájl:** `dobo_sebesseg_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola világoskék folyadékkal, cukorkristályok a talpán
+- **Színvilág:** világos égszínkék; akcent: fehér cukorkristály
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 30. szint).
+
+### `dobo_tuzallosag_fozet` — Dobó Tűzállóság-főzet
+- **Fájl:** `dobo_tuzallosag_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola narancssárga folyadékkal, magmakrém-buborékok
+- **Színvilág:** narancs-borostyán; akcent: izzó magmavörös buborék
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 33. szint).
+
+### `dobo_ejjellatas_fozet` — Dobó Éjjellátás-főzet
+- **Fájl:** `dobo_ejjellatas_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola sötétkék folyadékkal, apró aranyrépa-sziluett benne
+- **Színvilág:** mély éjkék; akcent: aranysárga répa-folt
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 34. szint).
+
+### `sietseg_fozet` — Sietség Főzet
+- **Fájl:** `sietseg_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola mézsárga folyadékkal, vörös redstone-szemcsék örvénylenek benne
+- **Színvilág:** mézsárga; akcent: izzó vörös redstone-szemcse
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 35. szint).
+
+### `dobo_lathatatlansag_fozet` — Dobó Láthatatlanság-főzet
+- **Fájl:** `dobo_lathatatlansag_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola halvány, majdnem áttetsző szürke folyadékkal
+- **Színvilág:** sápadt füstszürke, áttetsző; akcent: alig látható fehér pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 36. szint).
+
+### `elnyulo_gyogyito_fozet` — Elnyúló Gyógyfőzet
+- **Fájl:** `elnyulo_gyogyito_fozet.png` &nbsp;|&nbsp; **Alap-item:** `LINGERING_POTION`
+- **Ábrázolás:** széles talpú elnyúló fiola rózsaszín-vörös folyadékkal, alul szétterülő köd
+- **Színvilág:** rózsavörös, sárkánylehelet-lila köd; akcent: halvány rózsaszín pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 39. szint).
+
+### `elnyulo_tuzallosag_fozet` — Elnyúló Tűzállóság-főzet
+- **Fájl:** `elnyulo_tuzallosag_fozet.png` &nbsp;|&nbsp; **Alap-item:** `LINGERING_POTION`
+- **Ábrázolás:** széles talpú elnyúló fiola narancs folyadékkal, alul kúszó, meleg köd
+- **Színvilág:** narancs-borostyán, lila köd; akcent: parázs-narancs
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 41. szint).
+
+### `vasbor_fozet` — Vasbőr Főzet
+- **Fájl:** `vasbor_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** zömök üvegfiola szürke, fémesen csillogó folyadékkal, vas-dugó
+- **Színvilág:** ónszürke folyadék, tiszta üveg; akcent: fémes ezüst csillanás
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 42. szint).
+
+### `dobo_vasbor_fozet` — Dobó Vasbőr-főzet
+- **Fájl:** `dobo_vasbor_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola ónszürke folyadékkal, vasesszencia-szemcsék ülepednek
+- **Színvilág:** ónszürke, tiszta üveg; akcent: ezüstös vasszemcse
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 43. szint).
+
+### `elnyulo_sebesseg_fozet` — Elnyúló Sebességfőzet
+- **Fájl:** `elnyulo_sebesseg_fozet.png` &nbsp;|&nbsp; **Alap-item:** `LINGERING_POTION`
+- **Ábrázolás:** széles talpú elnyúló fiola világoskék folyadékkal, alul sodródó köd
+- **Színvilág:** égszínkék, lila köd; akcent: fehér sodrás-vonal
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 44. szint).
+
+### `sarkanyver_fozet` — Sárkányvér Főzet
+- **Fájl:** `sarkanyver_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola mélyvörös, sűrű folyadékkal, apró csontszilánk a talpán
+- **Színvilág:** mélyvörös folyadék; akcent: csont-törtfehér szilánk
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 45. szint).
+
+
+## Szakma-bővítés — Gyógynövényes
+
+### `gyogyfuves_kotes` — Gyógyfüves Kötés
+- **Fájl:** `gyogyfuves_kotes.png` &nbsp;|&nbsp; **Alap-item:** `BREAD`
+- **Ábrázolás:** feltekert vászoncsík, zöld gyógyfű-levelek a hajtásba tűzve, egy csepp nedv a szélén
+- **Színvilág:** törtfehér vászon, mohazöld levél; akcent: friss zöld
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 14. szint).
+
+### `taplalo_pep` — Tápláló Pép
+- **Fájl:** `taplalo_pep.png` &nbsp;|&nbsp; **Alap-item:** `BREAD`
+- **Ábrázolás:** vastag szelet barna kenyér, mézzel megkenve, tőzegdarabkák a tetején
+- **Színvilág:** kenyérbarna, mézarany; akcent: sötét tőzegbarna
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 17. szint).
+
+### `meregvono_pep` — Méregvonó Pép
+- **Fájl:** `meregvono_pep.png` &nbsp;|&nbsp; **Alap-item:** `BROWN_MUSHROOM`
+- **Ábrázolás:** kis agyagtál sűrű, szürkés-barna péppel, gomba-kalap a tetején, halvány zöld gőzcsík
+- **Színvilág:** agyagbarna, szürke pép, gombabarna; akcent: fakó zöld
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 25. szint).
+
+### `laposfoldi_kenocs` — Lápföldi Kenőcs
+- **Fájl:** `laposfoldi_kenocs.png` &nbsp;|&nbsp; **Alap-item:** `SLIME_BALL`
+- **Ábrázolás:** lapos kagylóhéj-tálka szürkészöld, nyúlós kenőccsel, egy nádszál keresztben
+- **Színvilág:** iszapszürke, mohazöld; akcent: halvány nádsárga
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 26. szint).
+
+### `vizi_fu_fozet` — Vízifű Főzet
+- **Fájl:** `vizi_fu_fozet.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
+- **Ábrázolás:** karcsú üvegkancsó világoszöld főzettel, hínárszálak lebegnek benne
+- **Színvilág:** tengerzöld folyadék, tiszta üveg; akcent: világos hínárzöld
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ital kategória, 29. szint).
+
+### `eronlet_kenocs` — Erőnlét Kenőcs
+- **Fájl:** `eronlet_kenocs.png` &nbsp;|&nbsp; **Alap-item:** `HONEYCOMB`
+- **Ábrázolás:** lapos rézdoboz nyitva, aranyló méhviasz-kenőcs benne, lépsejt-minta a felszínén
+- **Színvilág:** vörösréz, mézarany; akcent: meleg borostyán
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 31. szint).
+
+### `vandor_labkenocs` — Vándor Lábkenőcs
+- **Fájl:** `vandor_labkenocs.png` &nbsp;|&nbsp; **Alap-item:** `SUGAR`
+- **Ábrázolás:** bőrbe kötött kis tégely, vászonszalag a nyakán, halvány szürke kenőcs kikandikál
+- **Színvilág:** cserzett bőrbarna, törtfehér vászon; akcent: halvány ezüstszürke
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 34. szint).
+
+### `szerencsefu_tea` — Szerencsefű Tea
+- **Fájl:** `szerencsefu_tea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
+- **Ábrázolás:** agyagcsésze gőzölgő, aranyszínű teával, négylevelű levél a csésze peremén
+- **Színvilág:** agyagbarna csésze, arany tea; akcent: friss négylevelű zöld
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ital kategória, 36. szint).
+
+### `jegviragos_borogatas` — Jégvirágos Borogatás
+- **Fájl:** `jegviragos_borogatas.png` &nbsp;|&nbsp; **Alap-item:** `SNOWBALL`
+- **Ábrázolás:** összehajtott kékes vászon, zúzmarás jégvirág-szirmok a redőkben, apró jégkristályok
+- **Színvilág:** jégkék, törtfehér; akcent: zúzmara-csillám
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 38. szint).
+
+### `arnygomba_fozet` — Árnygomba Főzet
+- **Fájl:** `arnygomba_fozet.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
+- **Ábrázolás:** zömök üvegfiola sötét, gomba-szürke főzettel, parafadugó, sápadt gomba-sziluett az üvegen át
+- **Színvilág:** sötétszürke folyadék, fakó gombabarna, zöldes üveg; akcent: hideg türkiz derengés
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ital kategória, 41. szint).
+
+### `hosnapi_fozet` — Hősnapi Főzet
+- **Fájl:** `hosnapi_fozet.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
+- **Ábrázolás:** ünnepi, zöld szalagos üvegkupa mélyzöld itallal, apró smaragd-szilánk a talpán
+- **Színvilág:** smaragdzöld ital, zöld szalag; akcent: smaragd-csillanás
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ital kategória, 44. szint).
+
+### `eletfa_balzsam` — Életfa Balzsam
+- **Fájl:** `eletfa_balzsam.png` &nbsp;|&nbsp; **Alap-item:** `GLISTERING_MELON_SLICE`
+- **Ábrázolás:** faragott fatégely aranyzöld, sűrű balzsammal, egyetlen világító levélrügy a tetején
+- **Színvilág:** meleg fabarna, aranyzöld balzsam; akcent: eleven, világos zöld fénypont
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Kenőcs kategória, 48. szint).
+
+
+## Szakma-bővítés — Halász
+
+### `vizallo_nadrag` — Vízálló Nadrág
+- **Fájl:** `vizallo_nadrag.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_LEGGINGS`
+- **Viselt equipment:** `icesmp:vizallo_nadrag` (`humanoid_leggings` réteg)
+- **Ábrázolás:** zsírral kezelt bőrnadrág, sötét foltos szár, hálófonal-varrás az oldalán
+- **Színvilág:** olajos bőrbarna, sötét folt; akcent: halvány halofonal-drapp
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 21. szint).
+
+### `melysegjaro_csizma` — Mélységjáró Csizma
+- **Fájl:** `melysegjaro_csizma.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_BOOTS`
+- **Viselt equipment:** `icesmp:melysegjaro_csizma` (`humanoid` réteg)
+- **Ábrázolás:** magas szárú bőrcsizma gyöngyház-pikkelyekkel a lábfejen, hálófonal-fűzés
+- **Színvilág:** bőrbarna, gyöngyház-irizálás; akcent: prizmarin-türkiz csillanás
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 24. szint).
+
+### `buvar_sisak` — Búvársisak
+- **Fájl:** `buvar_sisak.png` &nbsp;|&nbsp; **Alap-item:** `IRON_HELMET`
+- **Viselt equipment:** `icesmp:buvar_sisak` (`humanoid` réteg)
+- **Ábrázolás:** gömbölyű vassisak nagy kerek üvegablakkal, gyöngyház-szegecsek a peremen
+- **Színvilág:** vasszürke, zöldes üveg; akcent: gyöngyház-fehér szegecs
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 27. szint).
+
+### `dofoszigony` — Döfőszigony
+- **Fájl:** `dofoszigony.png` &nbsp;|&nbsp; **Alap-item:** `TRIDENT`
+- **Ábrázolás:** három ágú prizmarin szigony hosszú, hegyes ágakkal, horgok az ágak tövén
+- **Színvilág:** prizmarin-türkiz, tengerkék; akcent: fehér kristályhegy
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 33. szint).
+
+### `husegeskuu_szigony` — Hűségeskü Szigony
+- **Fájl:** `husegeskuu_szigony.png` &nbsp;|&nbsp; **Alap-item:** `TRIDENT`
+- **Ábrázolás:** prizmarin szigony gyöngyház-gyűrűvel a nyélen, vékony fényfonál a gyűrűből
+- **Színvilág:** prizmarin-türkiz, gyöngyház; akcent: halvány aranyfonál
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 36. szint).
+
+### `viharszigony` — Viharszigony
+- **Fájl:** `viharszigony.png` &nbsp;|&nbsp; **Alap-item:** `TRIDENT`
+- **Ábrázolás:** prizmarin szigony viharkvarc-betéttel, örvénylő vízcsík tekeredik a nyélre
+- **Színvilág:** prizmarin-türkiz, viharszürke; akcent: fehér örvény-vonal
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 42. szint).
+
+### `villamszigony` — Villámszigony
+- **Fájl:** `villamszigony.png` &nbsp;|&nbsp; **Alap-item:** `TRIDENT`
+- **Ábrázolás:** prizmarin szigony rézgyűrűkkel a nyélen, apró villámív a három ág között
+- **Színvilág:** prizmarin-türkiz, patinás réz; akcent: fehér-kék villámív
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 46. szint).
+
+### `mesterfoku_horgaszbot` — Mesterfokú Horgászbot
+- **Fájl:** `mesterfoku_horgaszbot.png` &nbsp;|&nbsp; **Alap-item:** `FISHING_ROD`
+- **Ábrázolás:** ívelt, sokszor javított horgászbot, két horog és parafa úszó a zsinóron, gyöngyház-gyűrűk
+- **Színvilág:** sötét fabarna, viaszolt zsinór; akcent: gyöngyház-fehér gyűrű
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 48. szint).
+
+
+## Szakma-bővítés — Favágó
+
+### `erdojaro_labszar` — Erdőjáró Lábszár
+- **Fájl:** `erdojaro_labszar.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_LEGGINGS`
+- **Viselt equipment:** `icesmp:erdojaro_labszar` (`humanoid_leggings` réteg)
+- **Ábrázolás:** bőr lábszárvédő pácolt fakéreg-csíkokkal megerősítve, zöld kötés a térdnél
+- **Színvilág:** cserzett bőrbarna, sötét kéreg; akcent: mohazöld kötés
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 25. szint).
+
+### `favago_szekerce` — Favágó Szekerce
+- **Fájl:** `favago_szekerce.png` &nbsp;|&nbsp; **Alap-item:** `IRON_AXE`
+- **Ábrázolás:** vasfejsze széles pengével, köszörűkő-nyom az élen, gyantás fanyél
+- **Színvilág:** vasszürke penge, meleg fabarna nyél; akcent: fényes köszörült él
+- **Hangulat / lore:** Favágó-recept eredménye (Szerszám kategória, 27. szint).
+
+### `erdojaro_csizma` — Erdőjáró Csizma
+- **Fájl:** `erdojaro_csizma.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_BOOTS`
+- **Viselt equipment:** `icesmp:erdojaro_csizma` (`humanoid` réteg)
+- **Ábrázolás:** puha bőrcsizma fűzött szárral, fűkötél-tekercs a bokánál, sáros talp
+- **Színvilág:** bőrbarna, szalmasárga kötél; akcent: friss fűzöld
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 30. szint).
+
+### `vadonjaro_szamszerij` — Vadonjáró Számszeríj
+- **Fájl:** `vadonjaro_szamszerij.png` &nbsp;|&nbsp; **Alap-item:** `CROSSBOW`
+- **Ábrázolás:** fa számszeríj három betöltött vesszővel legyezőszerűen, csontenyves kötés a kereszttagon
+- **Színvilág:** meleg fabarna, csontfehér kötés; akcent: acélszürke vesszőhegy
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 33. szint).
+
+### `erdojaro_csuklya` — Erdőjáró Csuklya
+- **Fájl:** `erdojaro_csuklya.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_HELMET`
+- **Viselt equipment:** `icesmp:erdojaro_csuklya` (`humanoid` réteg)
+- **Ábrázolás:** bőrcsuklya felhajtva, kéreg-homlokpánt, egy tölgylevél a halántéknál
+- **Színvilág:** bőrbarna, sötét kéreg; akcent: sárgászöld tölgylevél
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 38. szint).
+
+### `tuskes_pajzs` — Tüskés Pajzs
+- **Fájl:** `tuskes_pajzs.png` &nbsp;|&nbsp; **Alap-item:** `SHIELD`
+- **Ábrázolás:** kerek fapajzs vaskerettel, rövid vastüskék a peremen, csontenyv-fugák
+- **Színvilág:** tölgybarna, vasszürke keret; akcent: fényes tüskehegyek
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 42. szint).
+
+### `mestervadasz_ij` — Mestervadász Íj
+- **Fájl:** `mestervadasz_ij.png` &nbsp;|&nbsp; **Alap-item:** `BOW`
+- **Ábrázolás:** hosszú, karcsú íj keményfa karral, a felső végén apró parázs-szikra a húron
+- **Színvilág:** sötét keményfa, viaszolt húr; akcent: parázs-narancs szikra
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 45. szint).
+
+
+## Szakma-bővítés — Bányász
+
+### `tarnasz_lapat` — Tárnász Lapát
+- **Fájl:** `tarnasz_lapat.png` &nbsp;|&nbsp; **Alap-item:** `IRON_SHOVEL`
+- **Ábrázolás:** zömök vaslapát rövid, szegecselt nyéllel, kopott él, tárnaporos felület
+- **Színvilág:** nyers vasszürke, sötét fanyél; akcent: fényes, kopott vas-él
+- **Hangulat / lore:** Bányász-recept eredménye (Szerszám kategória, 11. szint).
+
+### `banyasz_vesocsakany` — Bányász Vésőcsákány
+- **Fájl:** `banyasz_vesocsakany.png` &nbsp;|&nbsp; **Alap-item:** `IRON_PICKAXE`
+- **Ábrázolás:** keskeny, véső-orrú vascsákány, mérőzsinór tekercs a nyélen
+- **Színvilág:** vasszürke, kenderzsinór-drapp; akcent: krétafehér mérőjel
+- **Hangulat / lore:** Bányász-recept eredménye (Szerszám kategória, 20. szint).
+
+### `melyszikla_lapat` — Mélyszikla Lapát
+- **Fájl:** `melyszikla_lapat.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_SHOVEL`
+- **Ábrázolás:** gyémánthegyű lapát mélyszikla-mintás lapáttal, borostyán-csepp a nyél tövében
+- **Színvilág:** gyémánt-cián, mélyszikla-szürke; akcent: meleg borostyánsárga
+- **Hangulat / lore:** Bányász-recept eredménye (Szerszám kategória, 38. szint).
+
+### `viharkvarc_csakany` — Viharkvarc Csákány
+- **Fájl:** `viharkvarc_csakany.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_PICKAXE`
+- **Ábrázolás:** gyémántcsákány kvarcfehér betétekkel a fejen, apró villám-repedés a fémben
+- **Színvilág:** gyémánt-cián, kvarcfehér; akcent: halványlila villám-szikra
+- **Hangulat / lore:** Bányász-recept eredménye (Szerszám kategória, 44. szint).
+
+### `netherit_lapat` — Netherit Lapát
+- **Fájl:** `netherit_lapat.png` &nbsp;|&nbsp; **Alap-item:** `NETHERITE_SHOVEL`
+- **Ábrázolás:** netherit lapát sötét, mattfekete lappal, borostyán-erezet a fémben
+- **Színvilág:** netherit sötétbarna-fekete; akcent: izzó borostyán erezet
+- **Hangulat / lore:** Bányász-recept eredménye (Szerszám kategória, 49. szint).
+
+## Szakma-rework — korábban modell nélkül maradt tárgyak
+
+
+### Alkimista
+
+### `kezdo_fozet` — Kezdő Alapfőzet
+- **Fájl:** `kezdo_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** egyszerű üvegfiola halvány rózsaszín főzettel, gyűrött parafadugó
+- **Színvilág:** halvány rózsaszín, tiszta üveg; akcent: fakó rózsaszín pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 3. szint).
+
+### `gyogyito_fozet` — Gyógyító Főzet
+- **Fájl:** `gyogyito_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** kerek fiola élénkvörös főzettel, csillámló dinnyeszelet-folt az üvegen át
+- **Színvilág:** élénk vörös; akcent: arany dinnye-csillanás
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 6. szint).
+
+### `ero_fozet` — Erő Főzete
+- **Fájl:** `ero_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** vaskos fiola sötétvörös főzettel, lángpor-üledék a talpán
+- **Színvilág:** mélyvörös, sötét üledék; akcent: parázs-narancs szemcse
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 10. szint).
+
+### `sebesseg_fozet` — Sebesség Főzete
+- **Fájl:** `sebesseg_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola világoskék főzettel, sodródó vonalak a folyadékban
+- **Színvilág:** égszínkék; akcent: fehér sodrás-vonal
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 14. szint).
+
+### `tuzallosag_fozet` — Tűzállóság Főzete
+- **Fájl:** `tuzallosag_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** vaskos fiola narancs főzettel, magmakrém-gömb a fenekén
+- **Színvilág:** narancs-borostyán; akcent: izzó magmavörös
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 18. szint).
+
+### `ejjellatas_fozet` — Éjjellátás Főzete
+- **Fájl:** `ejjellatas_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola mély éjkék főzettel, apró csillagszikrák a folyadékban
+- **Színvilág:** mély éjkék; akcent: aranysárga szikra
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 20. szint).
+
+### `dobo_gyogyito_fozet` — Dobó Gyógyító Főzet
+- **Fájl:** `dobo_gyogyito_fozet.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola élénkvörös főzettel, hosszú nyak, lőporcsík
+- **Színvilág:** élénk vörös, szürke lőpor; akcent: arany csillanás
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 24. szint).
+
+### `eszencias_fozet` — Esszenciás Főzet
+- **Fájl:** `eszencias_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** zömök fiola barnás-vörös főzettel, vadállat-esszencia örvénylik benne
+- **Színvilág:** vadbarna, mélyvörös; akcent: nyers narancs örvény
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 26. szint).
+
+### `lathatatlansag_fozet` — Láthatatlanság Főzete
+- **Fájl:** `lathatatlansag_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** karcsú fiola alig látható, füstszürke folyadékkal, a fiola kontúrja is halvány
+- **Színvilág:** sápadt füstszürke, áttetsző; akcent: alig látható fehér pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 26. szint).
+
+### `kivonatos_regeneracio_fozet` — Kivonatos Regeneráció Főzete
+- **Fájl:** `kivonatos_regeneracio_fozet.png` &nbsp;|&nbsp; **Alap-item:** `POTION`
+- **Ábrázolás:** fiola rózsaszín-lila főzettel, gyógyfű-levél az üvegre kötve
+- **Színvilág:** rózsalila; akcent: mohazöld levél
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 28. szint).
+
+### `runasav_bomba` — Rúnasav Bomba
+- **Fájl:** `runasav_bomba.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
+- **Ábrázolás:** gömbölyű dobófiola maró lila folyadékkal, rúna-karcok az üvegen
+- **Színvilág:** maró lila, savzöld; akcent: fehér rúna-karc
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital kategória, 32. szint).
+
+### `elnyulo_regeneracio_fozet` — Elnyúló Regeneráció Főzete
+- **Fájl:** `elnyulo_regeneracio_fozet.png` &nbsp;|&nbsp; **Alap-item:** `LINGERING_POTION`
+- **Ábrázolás:** széles talpú elnyúló fiola rózsalila főzettel, alul terjedő köd
+- **Színvilág:** rózsalila, sárkánylehelet-lila; akcent: halvány rózsaszín pára
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital (tervrajz) kategória, 38. szint).
+
+### `hosszu_erofozet` — Hosszan Tartó Erőfőzet
+- **Fájl:** `hosszu_erofozet.png` &nbsp;|&nbsp; **Alap-item:** `LINGERING_POTION`
+- **Ábrázolás:** széles talpú elnyúló fiola sötétvörös főzettel, alul nehéz, vörös köd
+- **Színvilág:** mélyvörös, lila köd; akcent: parázs-narancs
+- **Hangulat / lore:** Alkimista-recept eredménye (Ital (tervrajz) kategória, 40. szint).
+
+
+### Bányász
+
+### `visszhang_szilank` — Visszhang-szilánk
+- **Fájl:** `visszhang_szilank.png` &nbsp;|&nbsp; **Alap-item:** `ECHO_SHARD`
+- **Ábrázolás:** szögletes, sötét sculk-szilánk, hullámzó visszhang-gyűrűk a felszínén
+- **Színvilág:** éjfekete-kék sculk; akcent: hideg türkiz visszhang-gyűrű
+- **Hangulat / lore:** Bányász-recept eredménye (Ritkaság kategória, 37. szint).
+
+
+### Favágó
+
+### `osfa_gerenda` — Ősfa Kéregvért
+- **Fájl:** `osfa_gerenda.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER_CHESTPLATE`
+- **Viselt equipment:** `icesmp:osfa_gerenda` (`humanoid` réteg)
+- **Ábrázolás:** bőrmellény vastag, pácolt kéregpáncél-lapokkal a mellkason, fűkötél-varrás
+- **Színvilág:** sötét kéregbarna, cserzett bőr; akcent: mohazöld kötés
+- **Hangulat / lore:** Favágó-recept eredménye (Ritkaság kategória, 48. szint).
+
+
+### Gyógynövényes
+
+### `bokic_gyogytea` — Bokic Gyógytea
+- **Fájl:** `bokic_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
+- **Ábrázolás:** gőzölgő borostyánszín gyógytea agyagbögrében, meleg aranyló pára, gyógyfű-levél
+- **Színvilág:** gyógyzöld borostyán; akcent: mézarany pára
+- **Hangulat / lore:** Hajnali szedésű füvek forrázata a Bokic partjáról — átmelegít és tisztán tart. Gyógynövényes-recept eredménye (Ital kategória, 26. szint). **A textúra már elkészült**, a leírás a meglévő grafikát rögzíti.
+
+### `sarkanylehelet_parlat` — Sárkánylehelet-párlat
+- **Fájl:** `sarkanylehelet_parlat.png` &nbsp;|&nbsp; **Alap-item:** `DRAGON_BREATH`
+- **Ábrázolás:** szélesszájú fiola örvénylő lila gőzzel, a gőz kicsap a nyakán
+- **Színvilág:** sárkánylehelet-lila, füstszürke; akcent: világos lila örvény
+- **Hangulat / lore:** Gyógynövényes-recept eredménye (Ritkaság kategória, 47. szint).
+
+
+### Halász
+
+### `tenger_szive_foglalat` — Tenger Szíve-foglalat
+- **Fájl:** `tenger_szive_foglalat.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
+- **Ábrázolás:** türkiz szívkagyló ezüst foglalatban, gyöngyház-erezet, halvány kék derengés
+- **Színvilág:** prizmarin-türkiz, gyöngyház, ezüst; akcent: halvány kék fény
+- **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 44. szint).

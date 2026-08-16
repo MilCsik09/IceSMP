@@ -120,8 +120,8 @@ dev-items:
         netherit_tervrajz:
           entry: "blueprint:netherit_csakany"
           weight: 45
-        orokzold_tervrajz:
-          entry: "blueprint:orokzold_sarj"
+        szellemszarvas_tervrajz:
+          entry: "blueprint:szellemszarvas_bubaj"
           weight: 35
         osi_szilank:
           entry: "unique:osi_ereklyeszilank:1"

@@ -132,6 +132,21 @@ for model, places in sorted(used_models.items()):
     if model not in manifest_models:
         fail(f"ITEM_MODEL '{model}' használatban ({sorted(places)[0]}), de hiányzik a docs/RESOURCE_PACK_CMD.md manifestből")
 
+# A manifest-sor csak a BRIEF; a kliens a PNG-t rendereli. Deklarált item-model
+# hiányzó textúrával a játékban hiányzó-modellként (fekete-lila kocka) jelenik meg,
+# és ezt eddig SEMMI nem fogta meg. WARN, nem FAIL: a művészi munka a kódtól külön
+# ütemben halad, de a hiány legyen látható és számolható.
+_pack_item_textures = {
+    os.path.basename(_p)[:-4]
+    for _p in glob.glob(os.path.join(REPO, "resource-pack/assets/icesmp/textures/item/*.png"))
+}
+if _pack_item_textures:
+    _missing_textures = sorted(set(used_models) - _pack_item_textures)
+    if _missing_textures:
+        warn(f"resource pack: {len(_missing_textures)} deklarált ITEM_MODEL-hez nincs PNG a packban "
+             f"(elsők: {', '.join(_missing_textures[:5])}) — a kliens hiányzó modellt renderel, "
+             f"amíg a textúrák meg nem érkeznek")
+
 # A teljes migráció után numerikus CustomModelData nem kerülhet vissza.
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
     src = read(path)
@@ -202,6 +217,7 @@ MIRROR = [
     ("docs/LORE_REFERENCE.md", "docs/LORE_REFERENCE.md"),
     ("docs/QUESTS.md", "docs/QUESTS.md"),
     ("docs/RESOURCE_PACK_CMD.md", "docs/RESOURCE_PACK_CMD.md"),
+    ("docs/TEXTURE_WORKSHEET.md", "docs/TEXTURE_WORKSHEET.md"),
     ("docs/TEASER.md", "docs/TEASER.md"),
 ]
 if os.path.isdir(GUIDES):
@@ -639,6 +655,155 @@ try:
             fail(f"AFK product-boundary: tiltott scheduler token az IceSMPCore-ban: {_token}")
 except Exception as e:
     fail(f"AFK product-boundary ellenőrzés hibája: {e}")
+
+# ---------- szakma-katalógus: recept-fajta + nyersanyag-hurok ----------
+# A katalógus önpolicolásának a magja. Minden recept KIMONDJA a fajtáját, és a fajta
+# megmondja, milyen kart húzhat meg; a hurok-detektor pedig a katalógus adataiból
+# számol, nem külső vanilla-modellből. Amit ez a szakasz állít, az mind a fájlból
+# levezethető — a hozam-arány emberi szabály marad, azt itt SEM állítjuk.
+try:
+    _KINDS = {"gyakorlo", "hozam", "egyedi", "lanc", "ritkasag"}
+    _FUNC = ("affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects")
+    _GYAKORLO_MAX_LEVEL = 15
+    # Boss/esemény-kötött alapanyagok: csak ezek kapuzhatnak ritkaság-receptet.
+    _BOSS_UNIQUES = {
+        "elso_csend_szilankja", "osi_ereklyeszilank", "szorny_mag", "vad_esszencia",
+        "sarkanycsont_szilank", "karhozat_parazs", "fonixpihe", "dermedt_konnycsepp",
+        "nema_kristaly", "emlekszilank", "arnyekpor",
+    }
+    # Boss/esemény-kötött VANILLA anyagok: ezek is kapuzhatnak ritkaság-receptet.
+    _BOSS_MATERIALS = {"NETHER_STAR", "DRAGON_EGG", "ELYTRA", "HEART_OF_THE_SEA",
+                       "TOTEM_OF_UNDYING", "ECHO_SHARD"}
+    # A vanilla MAGA is duplikálja ezt a tárgyat ugyanilyen recepttel — a katalógusból ez
+    # nem látszik, ezért nevesítve engedjük át a hurok-detektoron.
+    _VANILLA_DUPLICATION = {"kovacsmesteri_sablon"}
+    # A rúnák fogyasztója a rúna-felhelyezés (nem recept-hozzávaló) — nem zsákutca.
+    # A suttogas_meghivo esemeny-belepo (WhisperListener), nem craft-alapanyag.
+    _RUNE_SINKS = {"runa_elek", "runa_zapor", "runa_bastya", "runa_lang",
+                   "runa_fagy", "runa_moho", "runa_visszhang", "suttogas_meghivo"}
+    # Vanillában visszaalakítható blokk↔item párok: a katalógus nem láthatja, hogy a
+    # kimenet a bemenetté alakítható vissza, ezért a hurok-detektornak meg kell mondani.
+    _REVERSIBLE = {
+        "AMETHYST_BLOCK": ("AMETHYST_SHARD", 4), "LAPIS_BLOCK": ("LAPIS_LAZULI", 9),
+        "COAL_BLOCK": ("COAL", 9), "IRON_BLOCK": ("IRON_INGOT", 9),
+        "GOLD_BLOCK": ("GOLD_INGOT", 9), "DIAMOND_BLOCK": ("DIAMOND", 9),
+        "REDSTONE_BLOCK": ("REDSTONE", 9), "SLIME_BLOCK": ("SLIME_BALL", 9),
+        "DRIED_KELP_BLOCK": ("DRIED_KELP", 9), "HONEY_BLOCK": ("HONEY_BOTTLE", 4),
+        "GLOWSTONE": ("GLOWSTONE_DUST", 4), "PRISMARINE": ("PRISMARINE_SHARD", 4),
+    }
+
+    _recipes = (configs.get("profession-recipes.yml") or {}).get("profession-recipes") or {}
+    _materials = (configs.get("profession-materials.yml") or {}).get("profession-materials") or {}
+
+    def _inputs(_rec):
+        """(anyag -> darab, unique -> darab) a hozzávaló-listából."""
+        _plain, _uniq = {}, {}
+        for _entry in (_rec.get("ingredients") or []):
+            _parts = str(_entry).split(":")
+            if _parts[0] == "unique":
+                _uniq[_parts[1]] = _uniq.get(_parts[1], 0) + int(_parts[2] if len(_parts) > 2 else 1)
+            else:
+                _plain[_parts[0]] = _plain.get(_parts[0], 0) + int(_parts[1] if len(_parts) > 1 else 1)
+        return _plain, _uniq
+
+    _made_unique, _used_unique = {}, {}
+    for _rid, _rec in _recipes.items():
+        _res = _rec.get("result") or {}
+        if "unique" in _res:
+            _made_unique.setdefault(_res["unique"], []).append(_rid)
+        _, _u = _inputs(_rec)
+        for _uid in _u:
+            _used_unique.setdefault(_uid, []).append(_rid)
+
+    for _rid, _rec in sorted(_recipes.items()):
+        _res = _rec.get("result") or {}
+        _kind = _rec.get("kind")
+        _plain, _uniq = _inputs(_rec)
+        _amount = int(_res.get("amount", 1))
+        if _kind not in _KINDS:
+            fail(f"recept-fajta: '{_rid}' kind='{_kind}' — a megengedettek: {sorted(_KINDS)}")
+            continue
+        if _kind == "egyedi" and not any(_k in _res for _k in _FUNC):
+            fail(f"recept-fajta: '{_rid}' kind=egyedi, de a kimeneten NINCS funkcionális "
+                 f"komponens ({', '.join(_FUNC)}) — üres ígéret-item")
+        if _kind == "lanc" and "unique" not in _res and not _uniq:
+            fail(f"recept-fajta: '{_rid}' kind=lanc, de se egyedi kimenete, se egyedi hozzávalója nincs")
+        if _kind == "gyakorlo":
+            if int(_rec.get("level", 0)) > _GYAKORLO_MAX_LEVEL:
+                fail(f"recept-fajta: '{_rid}' kind=gyakorlo L{_rec.get('level')} — a gyakorlórecept "
+                     f"csak L{_GYAKORLO_MAX_LEVEL}-ig megengedett (fölötte a vanilla-paritás sértő)")
+            if _uniq:
+                fail(f"recept-fajta: '{_rid}' kind=gyakorlo, de egyedi alapanyagot kér — "
+                     f"a gyakorlórecept nem kerülhet semmibe a nyersanyagon felül")
+        if _kind == "ritkasag":
+            if _amount != 1:
+                fail(f"recept-fajta: '{_rid}' kind=ritkasag amount={_amount} — a ritkaság nem sokszorozható")
+            if not (set(_uniq) & _BOSS_UNIQUES) and not (set(_plain) & _BOSS_MATERIALS):
+                fail(f"recept-fajta: '{_rid}' kind=ritkasag, de nincs boss/esemény-kötött alapanyaga "
+                     f"(egy boss-kötött egyedi alapanyag vagy {sorted(_BOSS_MATERIALS)} egyike kell)")
+
+    for _uid, _rids in sorted(_made_unique.items()):
+        if _uid not in _used_unique and _uid not in _RUNE_SINKS:
+            fail(f"lánc-zsákutca: a(z) '{_uid}' egyedi alapanyag craftolható ({_rids[0]}), "
+                 f"de egyetlen recept sem használja")
+    for _uid in sorted(_materials):
+        if _uid not in _used_unique and _uid not in _made_unique and _uid not in _RUNE_SINKS:
+            warn(f"felhasználatlan egyedi alapanyag: '{_uid}' — sem recept nem kéri, sem recept nem adja")
+
+    # 1-körös hurok: a recept a saját bemenetét sokszorozza.
+    for _rid, _rec in sorted(_recipes.items()):
+        _res = _rec.get("result") or {}
+        _mat = _res.get("material")
+        _plain, _ = _inputs(_rec)
+        _amount = int(_res.get("amount", 1))
+        if _rid in _VANILLA_DUPLICATION:
+            continue
+        if _mat and _mat in _plain and _amount > _plain[_mat]:
+            fail(f"nyersanyag-hurok: '{_rid}' {_plain[_mat]}× {_mat} → {_amount}× {_mat} "
+                 f"(+{_amount - _plain[_mat]}/craft, korlátlanul ismételhető)")
+        # Blokk↔item visszaalakítás: a kimenet többe kerül, mint amennyiből a bemenet kijön.
+        for _in_mat, _in_amt in _plain.items():
+            _rev = _REVERSIBLE.get(_in_mat)
+            if _rev and _mat == _rev[0] and _amount > _in_amt * _rev[1]:
+                fail(f"nyersanyag-hurok: '{_rid}' {_in_amt}× {_in_mat} → {_amount}× {_mat}, "
+                     f"de {_rev[1]}× {_mat} visszaalakítható 1× {_in_mat}-re (+{_amount - _in_amt * _rev[1]})")
+
+    # 2-körös hurok: A egyedi alapanyagot gyárt, B azt elhasználva TÖBBET ad vissza A bemenetéből.
+    for _a_id, _a in sorted(_recipes.items()):
+        _a_res = _a.get("result") or {}
+        _a_unique = _a_res.get("unique")
+        if not _a_unique:
+            continue
+        _a_plain, _ = _inputs(_a)
+        _a_out = int(_a_res.get("amount", 1))
+        for _b_id, _b in sorted(_recipes.items()):
+            _b_res = _b.get("result") or {}
+            _b_plain, _b_uniq = _inputs(_b)
+            if _a_unique not in _b_uniq or not _b_res.get("material"):
+                continue
+            _shared = _b_res["material"]
+            if _shared not in _a_plain:
+                continue
+            # Hány A-craft kell egy B-hez, és mennyi közös anyagba kerül összesen.
+            _cycles = -(-_b_uniq[_a_unique] // max(1, _a_out))
+            _spent = _cycles * _a_plain[_shared] + _b_plain.get(_shared, 0)
+            _gained = int(_b_res.get("amount", 1))
+            if _gained > _spent:
+                fail(f"nyersanyag-hurok: '{_a_id}' + '{_b_id}' kör nettó +{_gained - _spent}× "
+                     f"{_shared} ({_spent} be, {_gained} ki) — korlátlanul ismételhető")
+
+    # A dokumentált receptszám nem csúszhat el a valóditól.
+    _catalog_size = len(_recipes)
+    for _doc_rel in ("docs/BUILDER_GUIDE.md", "docs/FEATURES.md", "AGENTS.md", "CLAUDE.md"):
+        _doc_path = os.path.join(REPO, _doc_rel)
+        if not os.path.exists(_doc_path):
+            continue
+        for _claim in re.findall(r"(\d{3})\s*(?:recept|receptes|recipe)", read(_doc_path)):
+            if int(_claim) != _catalog_size:
+                fail(f"receptszám-drift: {_doc_rel} {_claim} receptet állít, a katalógusban "
+                     f"{_catalog_size} van")
+except Exception as e:
+    fail(f"szakma-katalógus ellenőrzés hibája: {e}")
 
 for w in warns:
     print(f"⚠ WARN: {w}")
