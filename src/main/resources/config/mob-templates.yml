@@ -64,6 +64,27 @@ mob-loot-profiles:
   world_boss:
     sources: [ "combat:world_boss" ]
     rewards: [ "material:osi_ereklyeszilank", "authored:glatziendorfi_jegtoro" ]
+  surface_survival:
+    sources: [ "combat:wilderness" ]
+    rewards: [ "material:vad_esszencia", "authored:kovacstanonc_penge", "authored:borkeretes_ij" ]
+  night_hunt:
+    sources: [ "combat:wilderness:night" ]
+    rewards: [ "material:arnyekpor", "authored:szelvago_ij" ]
+  swamp_survival:
+    sources: [ "combat:wilderness:swamp" ]
+    rewards: [ "material:gyogy_kivonat", "rune:runa_oltalom" ]
+  nether_survival:
+    sources: [ "combat:wilderness:nether" ]
+    rewards: [ "material:karhozat_parazs", "authored:parazs_kard" ]
+  end_survival:
+    sources: [ "combat:wilderness:end" ]
+    rewards: [ "material:nema_kristaly", "authored:nema_kristaly_fokusz" ]
+  storm_survival:
+    sources: [ "combat:wilderness:storm" ]
+    rewards: [ "material:viharkvarc", "rune:runa_vadasz" ]
+  wild_hunt:
+    sources: [ "combat:event:wild_hunt" ]
+    rewards: [ "material:vad_esszencia", "authored:szellemszarvas_bubaj" ]
 
 mob-templates:
   frozen_husk:
@@ -162,3 +183,195 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: ring_warden
     affix-pool: []
+  frontier_shambler:
+    schema-version: 1
+    display-name: "Határvidéki Kóborló"
+    entity-type: ZOMBIE
+    level: { minimum: 1, maximum: 18 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.0, damage-multiplier: 0.95, movement-multiplier: 0.95, cc-resistance: 0.05 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "holy" ]
+    loot-profile: surface_survival
+    source-tags: [ "region:wilderness" ]
+    spawn-policy: natural
+    bestiary-id: frontier_shambler
+    affix-pool: [ "VOLATILE", "VAMPIRIC", "FRENZIED", "SHIELDED" ]
+  moonbone_archer:
+    schema-version: 1
+    display-name: "Holdcsont Íjász"
+    entity-type: SKELETON
+    level: { minimum: 8, maximum: 28 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.9, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.08 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: night_hunt
+    source-tags: [ "time:night" ]
+    spawn-policy: natural
+    bestiary-id: moonbone_archer
+    affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "FROSTBOUND" ]
+  dusk_weaver:
+    schema-version: 1
+    display-name: "Alkonyszövő"
+    entity-type: SPIDER
+    level: { minimum: 10, maximum: 30 }
+    rank: NORMAL
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.9, damage-multiplier: 1.1, movement-multiplier: 1.15, cc-resistance: 0.10 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: night_hunt
+    source-tags: [ "time:night" ]
+    spawn-policy: natural
+    bestiary-id: dusk_weaver
+    affix-pool: [ "VAMPIRIC", "VOLATILE", "FRENZIED", "FROSTBOUND" ]
+  mire_hexer:
+    schema-version: 1
+    display-name: "Lápi Rontó"
+    entity-type: WITCH
+    level: { minimum: 18, maximum: 36 }
+    rank: VETERAN
+    archetype: CONTROLLER
+    stats: { health-multiplier: 1.1, damage-multiplier: 0.95, movement-multiplier: 0.95, cc-resistance: 0.25 }
+    abilities: [ "rime_burst", "winter_mend" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: swamp_survival
+    source-tags: [ "biome:swamp" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: mire_hexer
+    affix-pool: [ "ARCANE", "VAMPIRIC", "SUMMONER", "SHIELDED" ]
+  bog_warden:
+    schema-version: 1
+    display-name: "Iszapőr"
+    entity-type: SLIME
+    level: { minimum: 14, maximum: 32 }
+    rank: NORMAL
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.25, damage-multiplier: 0.9, movement-multiplier: 0.9, cc-resistance: 0.35 }
+    abilities: [ "iceguard" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "frost" ]
+    loot-profile: swamp_survival
+    source-tags: [ "biome:mangrove_swamp" ]
+    spawn-policy: natural
+    bestiary-id: bog_warden
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "VOLATILE", "FRENZIED" ]
+  ember_brute:
+    schema-version: 1
+    display-name: "Parázsverő"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 28, maximum: 48 }
+    rank: VETERAN
+    archetype: BRUISER
+    stats: { health-multiplier: 1.25, damage-multiplier: 1.08, movement-multiplier: 1.0, cc-resistance: 0.30 }
+    abilities: [ "telegraphed_lunge", "glacial_slam" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: ember_brute
+    affix-pool: [ "FRENZIED", "VOLATILE", "SHIELDED", "VAMPIRIC" ]
+  ash_artillery:
+    schema-version: 1
+    display-name: "Hamuzápor"
+    entity-type: BLAZE
+    level: { minimum: 26, maximum: 46 }
+    rank: NORMAL
+    archetype: ARTILLERY
+    stats: { health-multiplier: 0.95, damage-multiplier: 1.08, movement-multiplier: 1.0, cc-resistance: 0.18 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether" ]
+    spawn-policy: natural
+    bestiary-id: ash_artillery
+    affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "SUMMONER" ]
+  soul_valley_sentinel:
+    schema-version: 1
+    display-name: "Lélek-völgyi Őr"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 34, maximum: 54 }
+    rank: VETERAN
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.2, damage-multiplier: 1.05, movement-multiplier: 0.95, cc-resistance: 0.40 }
+    abilities: [ "iceguard", "glacial_slam" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "biome:soul_sand_valley" ]
+    spawn-policy: natural
+    bestiary-id: soul_valley_sentinel
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "FRENZIED", "ARCANE" ]
+  void_skirmisher:
+    schema-version: 1
+    display-name: "Ürességi Portyázó"
+    entity-type: ENDERMAN
+    level: { minimum: 38, maximum: 58 }
+    rank: NORMAL
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 1.1, damage-multiplier: 1.05, movement-multiplier: 1.1, cc-resistance: 0.30 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "arcane" ]
+    weaknesses: [ "holy" ]
+    loot-profile: end_survival
+    source-tags: [ "dimension:the_end" ]
+    spawn-policy: natural
+    bestiary-id: void_skirmisher
+    affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "VAMPIRIC" ]
+  storm_charged_creeper:
+    schema-version: 1
+    display-name: "Vihartöltött Kúszó"
+    entity-type: CREEPER
+    level: { minimum: 20, maximum: 44 }
+    rank: NORMAL
+    archetype: CHARGER
+    stats: { health-multiplier: 1.05, damage-multiplier: 1.0, movement-multiplier: 1.05, cc-resistance: 0.15 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "lightning" ]
+    weaknesses: [ "frost" ]
+    loot-profile: storm_survival
+    source-tags: [ "weather:storm" ]
+    spawn-policy: natural
+    bestiary-id: storm_charged_creeper
+    affix-pool: [ "VOLATILE", "ARCANE", "FRENZIED", "FROSTBOUND" ]
+  deepstone_brood:
+    schema-version: 1
+    display-name: "Mélyszikla Raj"
+    entity-type: SILVERFISH
+    level: { minimum: 24, maximum: 44 }
+    rank: NORMAL
+    archetype: SUMMONER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.1, cc-resistance: 0.12 }
+    abilities: [ "call_frozen" ]
+    resistances: [ "stone" ]
+    weaknesses: [ "fire" ]
+    loot-profile: deep_mine
+    source-tags: [ "dimension:normal", "depth:deep" ]
+    spawn-policy: natural
+    bestiary-id: deepstone_brood
+    affix-pool: [ "SUMMONER", "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+  wild_hunt_hound:
+    schema-version: 1
+    display-name: "Vad Hajtóeb"
+    entity-type: WOLF
+    level: { minimum: 34, maximum: 50 }
+    rank: ELITE
+    archetype: ASSASSIN
+    stats: { health-multiplier: 1.3, damage-multiplier: 1.08, movement-multiplier: 1.2, cc-resistance: 0.25 }
+    abilities: [ "telegraphed_lunge", "rime_burst" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: wild_hunt
+    source-tags: [ "event:wild_hunt" ]
+    spawn-policy: event
+    bestiary-id: wild_hunt_hound
+    affix-pool: [ "VAMPIRIC", "FRENZIED", "FROSTBOUND", "VOLATILE" ]

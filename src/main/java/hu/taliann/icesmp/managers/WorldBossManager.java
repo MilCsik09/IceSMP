@@ -329,6 +329,24 @@ public final class WorldBossManager {
         }
     }
 
+    public void recordBossSupport(final UUID actor, final UUID target, final double amount) {
+        final ContributionLedger ledger = contributionLedger;
+        if (ledger != null && actor != null && target != null && amount > 0.0D) {
+            ledger.recordSupport(actor, target, Math.min(1_000.0D, amount),
+                    System.currentTimeMillis());
+        }
+    }
+
+    public void recordBossObjective(final UUID playerId) {
+        final ContributionLedger ledger = contributionLedger;
+        if (ledger != null && playerId != null
+                && ledger.contribution(playerId).score() > 0.0D
+                && ledger.contribution(playerId).objectives() < Math.max(1, Math.min(10,
+                configManager.getInt("world-events.world-boss.contribution.maximum-objectives", 5)))) {
+            ledger.recordObjective(playerId, System.currentTimeMillis());
+        }
+    }
+
     public EncounterScalingPolicy.Snapshot encounterSnapshot() { return encounterSnapshot; }
 
     private EncounterScalingPolicy.Snapshot createEncounterSnapshot(final LivingEntity boss) {
@@ -820,7 +838,10 @@ public final class WorldBossManager {
                 if (survivors.isEmpty()) {
                     return;
                 }
-                final Location spot = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size())).getLocation().clone();
+                final Player zoneTarget = survivors.get(
+                        ThreadLocalRandom.current().nextInt(survivors.size()));
+                final UUID zoneTargetId = zoneTarget.getUniqueId();
+                final Location spot = zoneTarget.getLocation().clone();
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
                 spawnTelegraphRing(world, archetype.particle, spot, 3.0D);
                 telegraphFloor(spot, 3.0D);
@@ -841,12 +862,18 @@ public final class WorldBossManager {
                                 if (isInZone(player, spot)) {
                                     player.damage(damage, boss);
                                     player.addPotionEffect(zoneDebuff);
+                                } else if (player.getUniqueId().equals(zoneTargetId)
+                                        && isSurvivor(player)) {
+                                    recordBossObjective(zoneTargetId);
                                 }
                             } else {
                                 player.getScheduler().run(plugin, t2 -> {
                                     if (isInZone(player, spot)) {
                                         player.damage(damage);
                                         player.addPotionEffect(zoneDebuff);
+                                    } else if (player.getUniqueId().equals(zoneTargetId)
+                                            && isSurvivor(player)) {
+                                        recordBossObjective(zoneTargetId);
                                     }
                                 }, null);
                             }

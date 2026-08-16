@@ -112,18 +112,35 @@ public final class MobTemplateRegistry {
     /** Returns the most specific natural template; empty means canonical vanilla fallback. */
     public Optional<MobTemplate> naturalTemplate(final EntityType type,
                                                  final NamespacedKey biomeKey) {
+        return naturalTemplate(type, biomeKey, Set.of());
+    }
+
+    /** Context tags make dimension/depth/night/weather profiles data-driven without authored zones. */
+    public Optional<MobTemplate> naturalTemplate(final EntityType type,
+                                                 final NamespacedKey biomeKey,
+                                                 final Set<String> rawContextTags) {
         final List<MobTemplate> candidates = byEntityType.getOrDefault(type, List.of()).stream()
                 .filter(template -> template.spawnPolicy().equals("natural")
                         || template.spawnPolicy().equals("natural_or_authored"))
                 .toList();
         if (candidates.isEmpty()) return Optional.empty();
         final String biomeTag = biomeKey == null ? "" : "biome:" + biomeKey.getKey();
-        return candidates.stream().filter(template -> template.sourceTags().contains(biomeTag))
-                .findFirst().or(() -> candidates.stream().filter(template -> template.sourceTags()
-                        .stream().noneMatch(tag -> tag.startsWith("biome:"))).findFirst());
+        final LinkedHashSet<String> contextTags = new LinkedHashSet<>();
+        contextTags.add(biomeTag);
+        if (rawContextTags != null) rawContextTags.forEach(tag -> contextTags.add(normalize(tag)));
+        return candidates.stream()
+                .filter(template -> contextualTags(template).stream().allMatch(contextTags::contains))
+                .max(java.util.Comparator.comparingInt(template -> contextualTags(template).size()));
     }
 
     public Map<String, MobTemplate> all() { return templates; }
+
+    private static Set<String> contextualTags(final MobTemplate template) {
+        return template.sourceTags().stream().filter(tag -> tag.startsWith("biome:")
+                || tag.startsWith("dimension:") || tag.startsWith("depth:")
+                || tag.startsWith("time:") || tag.startsWith("weather:"))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
 
     private static Set<String> normalizedSet(final List<String> values) {
         if (values == null || values.isEmpty()) return Set.of();

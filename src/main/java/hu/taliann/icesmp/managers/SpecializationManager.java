@@ -125,8 +125,17 @@ public final class SpecializationManager {
     private volatile WarlockGameplayService warlockGameplayService;
     private volatile WizardGameplayService wizardGameplayService;
     private volatile CatalystItemFactory soulbondFactory;
+    private volatile WorldBossManager worldBossManager;
     private volatile Consumer<UUID> classSwitchCleanup = ignored -> { };
     private volatile Consumer<Player> classProfileRefresh = ignored -> { };
+
+    public void setWorldBossManager(final WorldBossManager worldBossManager) {
+        this.worldBossManager = worldBossManager;
+        final MonkGameplayService monk = monkGameplayService;
+        final PaladinGameplayService paladin = paladinGameplayService;
+        if (monk != null) monk.setWorldBossManager(worldBossManager);
+        if (paladin != null) paladin.setWorldBossManager(worldBossManager);
+    }
 
     public SpecializationManager(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager, final JobManager jobManager,
@@ -162,6 +171,10 @@ public final class SpecializationManager {
                 plugin, configManager, jobManager, this, factory, messageManager);
         final PaladinGameplayService paladinRuntime = new PaladinGameplayService(
                 plugin, configManager, jobManager, this, factory, messageManager);
+        if (worldBossManager != null) {
+            monkRuntime.setWorldBossManager(worldBossManager);
+            paladinRuntime.setWorldBossManager(worldBossManager);
+        }
         final DemonHunterGameplayService demonHunterRuntime = new DemonHunterGameplayService(
                 plugin, configManager, jobManager, this, factory, messageManager);
         plugin.getServer().getPluginManager().registerEvents(warriorRuntime, plugin);

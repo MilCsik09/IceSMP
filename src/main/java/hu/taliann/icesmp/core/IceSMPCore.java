@@ -443,6 +443,7 @@ public final class IceSMPCore {
         this.moneyPouchItemFactory = new hu.taliann.icesmp.items.MoneyPouchItemFactory(plugin);
         this.guildManager = new hu.taliann.icesmp.managers.GuildManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.bestiaryManager.setMobTemplateRegistry(mobTemplateRegistry);
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager, factionManager, seasonManager, messageManager);
         // Hadi-ablak — RED↔BLUE ölés az ablak alatt nem bűn, liga-pontot ér.
         this.warWindowManager = new hu.taliann.icesmp.managers.WarWindowManager(plugin, configManager, messageManager, seasonManager);
@@ -595,6 +596,7 @@ public final class IceSMPCore {
         this.shopManager.setCaravanStockSeed(caravanManager::getStockSeed);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, sinManager, questManager);
+        this.specializationManager.setWorldBossManager(worldBossManager);
         questManager.setSpecializationManager(specializationManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);

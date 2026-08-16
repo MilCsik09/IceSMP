@@ -36,6 +36,11 @@ mob-scaling:
     veteran-percent: 6.0
     elite-percent: 1.5
     second-affix-percent: 20.0
+    deep-threshold-y: 0
+    deep-elite-bonus-percent: 0.75
+    dimension-elite-bonus-percent: 0.75
+    blood-moon-elite-bonus-percent: 1.0
+    danger-veteran-bonus-percent: 2.0
   ranks:
     normal: { health-multiplier: 1.0, damage-multiplier: 1.0 }
     veteran: { health-multiplier: 1.35, damage-multiplier: 1.08 }
@@ -155,6 +160,9 @@ world-events:
       tier-reference-power: 250.0
     contribution:
       minimum-score: 25.0
+      # A telegráf célpontjának sikeres kitérése csak már aktív résztvevőnek jár,
+      # encounterenként bounded darabszámmal; AFK/előharc padding nem kvalifikál.
+      maximum-objectives: 5
     aura-radius: 12.0
     special-damage: 6.0
     add-lifespan-seconds: 25

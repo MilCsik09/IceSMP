@@ -164,11 +164,11 @@ public final class MobScalingManager {
         final Location location = entity.getLocation();
         final List<String> zoneSelectors = zoneRuleSelectors(location);
         final MobTemplate template = mobTemplates.naturalTemplate(entity.getType(),
-                location.getBlock().getBiome().getKey()).orElse(null);
+                location.getBlock().getBiome().getKey(), naturalContext(location)).orElse(null);
         final Integer templateLevel = template == null ? null
                 : template.levelAt(java.util.concurrent.ThreadLocalRandom.current().nextDouble());
         MobRank rank = template == null ? MobRank.NORMAL : template.rank();
-        if (rank == MobRank.NORMAL) rank = promotedRank(spawnReason, zoneSelectors);
+        if (rank == MobRank.NORMAL) rank = promotedRank(spawnReason, zoneSelectors, location);
         final MobProgressionPolicy.Resolution resolution = MobProgressionPolicy.resolve(
                 new MobProgressionPolicy.Context(null, null, templateLevel,
                         wildernessBaseLevel(location), zoneBonusLevels(zoneSelectors),
@@ -579,20 +579,46 @@ public final class MobScalingManager {
                 Math.max(0, configManager.getInt("mob-scaling.depth.maximum-bonus", 8)));
     }
 
-    private MobRank promotedRank(final SpawnReason spawnReason, final List<String> selectors) {
+    private MobRank promotedRank(final SpawnReason spawnReason, final List<String> selectors,
+                                 final Location location) {
         if (spawnReason != SpawnReason.NATURAL) {
             return MobRank.NORMAL;
         }
         if (selectors.stream().anyMatch(selector -> selector.equals("protected-city"))) {
             return MobRank.NORMAL;
         }
+        final boolean deep = location.getWorld().getEnvironment() == org.bukkit.World.Environment.NORMAL
+                && location.getBlockY() <= configManager.getInt(
+                "mob-scaling.promotion.deep-threshold-y", 0);
+        final boolean dangerousDimension = location.getWorld().getEnvironment()
+                != org.bukkit.World.Environment.NORMAL;
+        final double contextElite = (deep ? configManager.getDouble(
+                "mob-scaling.promotion.deep-elite-bonus-percent", 0.75D) : 0.0D)
+                + (dangerousDimension ? configManager.getDouble(
+                "mob-scaling.promotion.dimension-elite-bonus-percent", 0.75D) : 0.0D)
+                + (bloodMoonManager.isActive() ? configManager.getDouble(
+                "mob-scaling.promotion.blood-moon-elite-bonus-percent", 1.0D) : 0.0D);
         final double eliteChance = clampChance(configManager.getDouble(
-                "mob-scaling.promotion.elite-percent", 1.5D));
+                "mob-scaling.promotion.elite-percent", 1.5D) + contextElite);
         final double veteranChance = clampChance(configManager.getDouble(
-                "mob-scaling.promotion.veteran-percent", 6.0D));
+                "mob-scaling.promotion.veteran-percent", 6.0D)
+                + (deep || dangerousDimension ? configManager.getDouble(
+                "mob-scaling.promotion.danger-veteran-bonus-percent", 2.0D) : 0.0D));
         final double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble(100.0D);
         if (roll < eliteChance) return MobRank.ELITE;
         return roll < eliteChance + veteranChance ? MobRank.VETERAN : MobRank.NORMAL;
+    }
+
+    private static Set<String> naturalContext(final Location location) {
+        final java.util.LinkedHashSet<String> tags = new java.util.LinkedHashSet<>();
+        final org.bukkit.World world = location.getWorld();
+        tags.add("dimension:" + world.getEnvironment().name().toLowerCase(Locale.ROOT));
+        if (world.getEnvironment() == org.bukkit.World.Environment.NORMAL && location.getBlockY() <= 0) {
+            tags.add("depth:deep");
+        }
+        if (!world.isDayTime()) tags.add("time:night");
+        if (world.hasStorm()) tags.add("weather:storm");
+        return Set.copyOf(tags);
     }
 
     private List<EliteAffix> rollAffixes(final MobTemplate template) {
