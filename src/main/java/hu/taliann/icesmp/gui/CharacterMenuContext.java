@@ -6,6 +6,8 @@ import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
+import hu.taliann.icesmp.managers.ResourceManager;
+import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
@@ -29,6 +31,9 @@ public record CharacterMenuContext(
         SinManager sinManager,
         CatalystItemFactory catalystItemFactory,
         SpellRegistry spellRegistry,
+        PetManager petManager,
+        ResourceManager resourceManager,
+        hu.taliann.icesmp.classrelic.ClassRelicService classRelicService,
         ConfigManager configManager,
         hu.taliann.icesmp.managers.RespecService respecService) {
 }

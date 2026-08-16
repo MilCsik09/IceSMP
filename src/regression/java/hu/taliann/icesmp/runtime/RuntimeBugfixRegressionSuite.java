@@ -19,6 +19,7 @@ public final class RuntimeBugfixRegressionSuite {
         spectatorClicksReachTheCommandMenu();
         corruptionIsFullyConfigurable();
         resourcePackReloadOnlyResendsEffectiveChanges();
+        prologueNetherGateKeepsExplicitOpBypass();
         System.out.println("Runtime bugfix regression suite passed.");
     }
 
@@ -59,6 +60,20 @@ public final class RuntimeBugfixRegressionSuite {
                         && listener.contains("petManager.releaseV2")
                         && !listener.contains("performCommand("),
                 "pet GUI must refresh only from async mutation completion, not immediately after command dispatch");
+        check(gui.contains("CompanionProgressView")
+                        && gui.contains("CONFIRM_RELEASE:")
+                        && gui.contains("openReleaseConfirmation")
+                        && !gui.contains("companion.typeId()"),
+                "custom companion workshop must project progression and confirm destructive release");
+        check(listener.contains("REQUEST_RELEASE:")
+                        && listener.contains("PetGUIHolder.Mode.RELEASE_CONFIRM")
+                        && listener.indexOf("openReleaseConfirmation")
+                        < listener.indexOf("petManager.releaseV2"),
+                "targeted release must open its holder-bound confirmation before mutation");
+        check(manager.contains("CompanionProgressView.expectedEntityType")
+                        && manager.contains("reconcileActivePetForm")
+                        && manager.contains("expectedReplacedEntity"),
+                "summoned companion evolution must rebuild only the fenced live projection");
 
         final String xp = read("src/main/java/hu/taliann/icesmp/listeners/PetXpListener.java");
         check(xp.contains("activePetAttribution")
@@ -158,6 +173,25 @@ public final class RuntimeBugfixRegressionSuite {
                 "hot plugin enable must force-send the already loaded snapshot");
         check(!plugin.contains("resourcePackListener.reloadAndResend();"),
                 "plugin enable must not route through config change detection");
+    }
+
+    private static void prologueNetherGateKeepsExplicitOpBypass() throws IOException {
+        final String source = read("src/main/java/hu/taliann/icesmp/listeners/PortalGuardListener.java");
+        final int netherHandler = source.indexOf("void onNetherPortalUse");
+        final int directHandler = source.indexOf("void onDirectNetherEntry");
+        final int endHandler = source.indexOf("void onEndFrameActivate");
+        check(netherHandler >= 0 && directHandler > netherHandler,
+                "Prologue Nether gate must cover portal and non-portal teleport routes");
+        final String traversal = source.substring(netherHandler, directHandler);
+        check(!traversal.contains("TERRITORY_BYPASS"),
+                "territory admin bypass must not silently bypass story progression");
+        final String netherRoutes = source.substring(netherHandler, endHandler);
+        check(netherRoutes.split("if \\(player\\.isOp\\(\\)\\) return;", -1).length - 1 == 2,
+                "explicit OP status must bypass both portal and direct-teleport Nether gates");
+        check(source.contains("event instanceof PlayerPortalEvent")
+                        && source.contains("getTo().getWorld().getEnvironment() != World.Environment.NETHER")
+                        && source.contains("netherTraversalAvailable(configManager)"),
+                "non-OP command/plugin Nether entry must fail closed while the gate is sealed");
     }
 
     private static String read(final String path) throws IOException {

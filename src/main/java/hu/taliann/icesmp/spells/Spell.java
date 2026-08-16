@@ -147,7 +147,7 @@ public interface Spell {
      * default is empty so callers can fall back to a messages.yml description.
      */
     default java.util.List<String> describe() {
-        return java.util.List.of();
+        return SpellDescriptionCatalog.describe(getId());
     }
 
     /**

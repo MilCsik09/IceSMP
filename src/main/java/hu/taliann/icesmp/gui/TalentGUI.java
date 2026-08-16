@@ -4,6 +4,7 @@ import static hu.taliann.icesmp.gui.GuiUtil.accent;
 import static hu.taliann.icesmp.gui.GuiUtil.grey;
 import static hu.taliann.icesmp.gui.GuiUtil.label;
 
+import hu.taliann.icesmp.data.FactionType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -55,11 +56,13 @@ public final class TalentGUI {
         }
 
         final TalentHolder holder = new TalentHolder(viewer.getUniqueId());
+        final FactionType faction = ClassUiAssets.faction(viewer, ctx);
         final Inventory inventory = Bukkit.createInventory(holder, SIZE,
-                ctx.messageManager().getMessage("talent-gui-title", "<dark_aqua>» Talent-fa «</dark_aqua>"));
+                ClassUiAssets.title(ClassUiAssets.Surface.TALENTS, faction,
+                        ctx.messageManager().getMessage("talent-gui-title", "<dark_aqua>» Talent-fa «</dark_aqua>")));
         holder.setInventory(inventory);
 
-        GuiUtil.fill(inventory);
+        ClassUiAssets.fill(inventory, faction);
         inventory.setItem(HEADER_SLOT, GuiUtil.icon(Material.EXPERIENCE_BOTTLE, accent("Talent-fa"),
                 List.of(
                         grey("Felül a kaszt-, alul a szakma-fa."),

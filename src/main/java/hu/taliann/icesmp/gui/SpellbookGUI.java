@@ -4,8 +4,11 @@ import static hu.taliann.icesmp.gui.GuiUtil.grey;
 
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.SpecializationType;
+import hu.taliann.icesmp.classspec.application.ClassProgressView;
+import hu.taliann.icesmp.classspec.domain.CapstoneStatus;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
@@ -48,14 +51,18 @@ public final class SpellbookGUI {
     }
 
     /** A single spellbook row: the spell, its unlock level, and whether it is unlocked. */
-    public record Entry(Spell spell, int requiredLevel, boolean unlocked) {
+    public record Entry(Spell spell, int requiredLevel, boolean unlocked, String lockReason) {
+        public Entry {
+            lockReason = lockReason == null ? "" : lockReason;
+        }
     }
 
     public static void open(final Player viewer, final AbilityCatalystListener catalyst,
                             final JobManager jobManager, final SpecializationManager specializationManager,
                             final SpellRegistry spellRegistry, final SpellMasteryManager masteryManager,
                             final ConfigManager configManager, final MessageManager messageManager,
-                            final ResourceManager resourceManager, final SpellFavoritesManager favoritesManager,
+                            final ResourceManager resourceManager, final FactionManager factionManager,
+                            final SpellFavoritesManager favoritesManager,
                             final int page, final boolean onlyUnlocked) {
         List<Entry> entries = collectEntries(viewer, jobManager, specializationManager, spellRegistry, configManager);
         if (onlyUnlocked) {
@@ -66,12 +73,15 @@ public final class SpellbookGUI {
         final int totalPages = Math.max(1, (int) Math.ceil(entries.size() / (double) PER_PAGE));
         final int safePage = Math.max(0, Math.min(page, totalPages - 1));
 
-        final Component title = messageManager.getComponent("messages.spellbook-title", "&5» Varázskönyv «");
+        final hu.taliann.icesmp.data.FactionType faction = ClassUiAssets.faction(viewer, factionManager);
+        final Component title = ClassUiAssets.title(ClassUiAssets.Surface.SPELLBOOK, faction,
+                messageManager.getComponent("messages.spellbook-title", "&5» Varázskönyv «"));
         final SpellbookHolder holder = new SpellbookHolder(viewer.getUniqueId());
         holder.setPage(safePage);
         holder.setOnlyUnlocked(onlyUnlocked);
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
+        ClassUiAssets.fill(inventory, faction);
 
         final int start = safePage * PER_PAGE;
         for (int i = 0; i < PER_PAGE && start + i < entries.size(); i++) {
@@ -112,13 +122,19 @@ public final class SpellbookGUI {
         final JobType job = jobManager.getPrimaryJob(viewer);
         if (job != null) {
             addFromSection(entries, viewer, jobManager, spellRegistry,
-                    configManager.getConfiguration().getConfigurationSection("classes." + job.getId() + ".spell-unlocks"));
+                    configManager.getConfiguration().getConfigurationSection("classes." + job.getId() + ".spell-unlocks"),
+                    "", CapstoneStatus.LOCKED);
         }
 
         final SpecializationType spec = specializationManager.getClassSpecialization(viewer);
         if (spec != null) {
+            final ClassProgressView view = specializationManager.classProgressView(viewer);
+            final CapstoneStatus capstone = view.activeSlot().map(view::loadout)
+                    .map(ClassProgressView.LoadoutView::capstoneStatus).orElse(CapstoneStatus.LOCKED);
             addFromSection(entries, viewer, jobManager, spellRegistry,
-                    configManager.getConfiguration().getConfigurationSection("specializations." + spec.getId() + ".spell-unlocks"));
+                    configManager.getConfiguration().getConfigurationSection("specializations." + spec.getId() + ".spell-unlocks"),
+                    configManager.getString("specializations." + spec.getId() + ".capstone-spell", ""),
+                    capstone);
         }
 
         entries.sort((a, b) -> {
@@ -131,7 +147,8 @@ public final class SpellbookGUI {
     }
 
     private static void addFromSection(final List<Entry> entries, final Player viewer, final JobManager jobManager,
-                                       final SpellRegistry spellRegistry, final ConfigurationSection section) {
+                                       final SpellRegistry spellRegistry, final ConfigurationSection section,
+                                       final String capstoneSpell, final CapstoneStatus capstoneStatus) {
         if (section == null) {
             return;
         }
@@ -141,7 +158,20 @@ public final class SpellbookGUI {
                 continue;
             }
             final int requiredLevel = section.getInt(spellId, Integer.MAX_VALUE);
-            entries.add(new Entry(spell, requiredLevel, jobManager.hasUnlockedSpell(viewer, spellId)));
+            final boolean unlocked = jobManager.hasUnlockedSpell(viewer, spellId);
+            final String lockReason;
+            if (unlocked) lockReason = "";
+            else if (spellId.equalsIgnoreCase(capstoneSpell)
+                    && capstoneStatus != CapstoneStatus.COMPLETED) {
+                lockReason = capstoneStatus == CapstoneStatus.LOCKED
+                        ? "Az 50. kasztszint és a végső próba szükséges."
+                        : "Teljesítsd a specializációd végső próbáját a Küldetéstáblán.";
+            } else if (jobManager.getPrimaryLevel(viewer) < requiredLevel) {
+                lockReason = "Szükséges kasztszint: " + requiredLevel + '.';
+            } else {
+                lockReason = "A Profile v2 feloldás frissítése folyamatban van.";
+            }
+            entries.add(new Entry(spell, requiredLevel, unlocked, lockReason));
         }
     }
 
@@ -185,10 +215,21 @@ public final class SpellbookGUI {
         if (rank > 0) {
             lore.add(stat("Mesterség", "★" + rank));
         }
+        if (unlocked && masteryManager.isEnabled()) {
+            if (rank >= masteryManager.getMaxRank()) {
+                lore.add(Component.text("★ Maximális spell-mastery", NamedTextColor.LIGHT_PURPLE)
+                        .decoration(TextDecoration.ITALIC, false));
+            } else {
+                lore.add(Component.text("Jobb-katt: mastery fejlesztés ("
+                                + masteryManager.getUpgradeCost(viewer, spell.getId()) + " frakcióvaluta)",
+                                NamedTextColor.LIGHT_PURPLE)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+        }
 
         lore.add(Component.empty());
         if (!unlocked) {
-            lore.add(Component.text("🔒 Szükséges szint: " + entry.requiredLevel(), NamedTextColor.RED)
+            lore.add(Component.text("🔒 " + entry.lockReason(), NamedTextColor.RED)
                     .decoration(TextDecoration.ITALIC, false));
         } else if (selected) {
             lore.add(Component.text("✔ Kiválasztva", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));

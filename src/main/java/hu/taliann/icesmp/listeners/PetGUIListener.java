@@ -47,12 +47,23 @@ public final class PetGUIListener implements Listener {
             return;
         }
         if (event.isRightClick() && action.startsWith("SELECT:")) {
-            action = "RELEASE:" + action.substring("SELECT:".length());
+            action = "REQUEST_RELEASE:" + action.substring("SELECT:".length());
         }
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
 
         if ("CLOSE".equals(action)) {
             player.closeInventory();
+            return;
+        }
+        if ("BACK".equals(action)) {
+            PetGUI.open(player, petManager, messageManager);
+            return;
+        }
+        if (action.startsWith("REQUEST_RELEASE:")) {
+            final UUID companionId = parseId(action.substring("REQUEST_RELEASE:".length()));
+            if (companionId != null) {
+                PetGUI.openReleaseConfirmation(player, petManager, messageManager, companionId);
+            }
             return;
         }
         if (action.startsWith("HINT:")) {
@@ -97,9 +108,10 @@ public final class PetGUIListener implements Listener {
             }));
             return;
         }
-        if (action.startsWith("RELEASE:")) {
-            final UUID companionId = parseId(action.substring("RELEASE:".length()));
-            if (companionId == null) return;
+        if (action.startsWith("CONFIRM_RELEASE:")) {
+            final UUID companionId = parseId(action.substring("CONFIRM_RELEASE:".length()));
+            if (companionId == null || holder.getMode() != PetGUIHolder.Mode.RELEASE_CONFIRM
+                    || !companionId.equals(holder.getCompanionId())) return;
             petManager.releaseV2(player, companionId).whenComplete((committed, failure) -> refresh(player, () ->
                     player.sendMessage(failure == null && Boolean.TRUE.equals(committed)
                             ? messageManager.get("pet-released",

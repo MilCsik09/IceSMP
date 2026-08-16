@@ -289,4 +289,6 @@ messages:
   spell-mastery-not-unlocked: '&cEzt a képességet nem oldottad fel.'
   spell-mastery-poor: '&cNincs elég frakcióvalutád (&f%s&c kellene).'
   spell-mastery-upgraded: '&aMesterség fejlesztve: &e{spell} &7(rang &f{rank}&7, ár: &f{cost}&7)'
+  spell-mastery-upgraded-gui: '&aSpell-mastery fejlesztve. Az új rang azonnal csökkenti a cooldown-t és növeli az erőt.'
+  spell-mastery-failed: '&cA spell-mastery tartós mentése sikertelen; az állapot nem változott.'
   spellbook-title: '&5» Varázskönyv «'

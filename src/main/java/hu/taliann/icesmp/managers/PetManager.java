@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
+import hu.taliann.icesmp.classspec.application.CompanionProgressView;
 import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
 import hu.taliann.icesmp.classspec.domain.ClassLoadout;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
@@ -211,7 +212,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     /**
      * Rituálé-idézés (Szentségtelen ghúl / Boszorkánymester démon): csak éjjel, a
-     * forma a pet-szinttel fejlődik — a magasabb forma új rituálét (új kelléket) kér.
+     * forma a társszinttel és a ghúl tartós mutációjával automatikusan fejlődik.
      *
      * @return null siker, különben üzenet-kulcs
      */
@@ -223,8 +224,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     private static final String DEMON_ROSTER = "demonologist.roster";
     private static final String NECRO_COURT = "necromancer.court";
-    private static final String UNHOLY_GHOUL = "unholy.ghoul";
-    private static final String GHOUL_MUTATION_STAGE = "ghoul_mutation_stage";
+    private static final String UNHOLY_GHOUL = CompanionProgressView.UNHOLY_GHOUL;
+    private static final String GHOUL_MUTATION_STAGE = CompanionProgressView.GHOUL_MUTATION_STAGE;
 
     public record PetMutationResult(boolean committed, String error) {
         public PetMutationResult { error = error == null ? "" : error; }
@@ -288,9 +289,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                     runOnCurrentPlayer(player, sessionToken, () -> {
                         if (active.companion().companionId().equals(
                                 selectedCompanionId(player).orElse(null))) {
-                            final PetRuntimeSnapshot snapshot = runtimeSnapshot(player);
-                            scheduleActivePet(player, pet -> applyBuffs(
-                                    pet, snapshot.buffLevel(), false));
+                            companionById(player, active.companion().companionId())
+                                    .ifPresent(committed -> reconcileActivePetForm(player, committed));
                         }
                         completion.complete(PetMutationResult.applied());
                     }, () -> completion.complete(PetMutationResult.appliedWithRuntimeFailure(
@@ -368,9 +368,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final int level = Math.max(1, activeCompanion(player).map(CompanionProfile::level).orElse(1));
         final EntityType form; final String formName;
         if (unholy) {
-            if (level >= configManager.getInt("pets.summon.tier3-level", 25)) { form=EntityType.ZOGLIN; formName="Förtelem"; }
-            else if (level >= configManager.getInt("pets.summon.tier2-level", 15)) { form=EntityType.WITHER_SKELETON; formName="Csontszolga"; }
-            else { form=EntityType.HUSK; formName="Ghúl"; }
+            form=ghoulForm(level); formName=ghoulFormName(form);
         } else {
             form=demonForm(level); formName=demonFormName(form);
         }
@@ -753,10 +751,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                     runOnCurrentPlayer(player,sessionToken,()->{
                         if(committedLevel>=maxLevel)AdvancementService.award(player,"pet_bond");
                         if (before.companionId().equals(selectedCompanionId(player).orElse(null))) {
-                            scheduleActivePet(player, pet -> {
-                                applyBuffs(pet, committedLevel, false);
-                                updateName(pet, committed.name(), committedLevel);
-                            });
+                            reconcileActivePetForm(player, committed);
                         }
                         player.sendMessage(messageManager.getMessage("pet-level-up","<dark_green>🐾 A társad szintet lépett: <white>{level}</white></dark_green>",Map.of("level",String.valueOf(committedLevel))));completion.complete(true);
                     },()->completion.complete(true));
@@ -1138,7 +1133,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     private EntityType resolveType(final Player player) {
-        return activeCompanion(player).map(CompanionProfile::typeId).map(this::entityType).orElse(null);
+        return activeCompanion(player).map(companion -> expectedEntityType(player, companion)).orElse(null);
     }
 
     private record PetRuntimeSnapshot(UUID ownerId, UUID companionId, String name, int level, int buffLevel,
@@ -1153,7 +1148,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                 + (Boolean.parseBoolean(companion.persistentState().getOrDefault("ritual_summoned", "false"))
                 ? Math.max(0, configManager.getInt("pets.summon.bonus-levels", 5)) : 0)
                 + (UNHOLY_GHOUL.equals(companion.namespace())
-                ? unholyMutationBonusLevels(companion) : 0);
+                ? unholyMutationBonusLevels(player, companion) : 0);
         final hu.taliann.icesmp.managers.TalentManager talents = this.talentManagerRef;
         final double talentHealthBonus = talents == null ? 0.0D
                 : Math.max(0.0D, talents.getEffectTotal(player, "max-health")
@@ -1164,6 +1159,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     private boolean adopt(final Mob mob, final PetRuntimeSnapshot snapshot) {
+        return adopt(mob, snapshot, null);
+    }
+
+    private boolean adopt(final Mob mob, final PetRuntimeSnapshot snapshot,
+                          final UUID expectedReplacedEntity) {
         mob.setPersistent(true);
         mob.setRemoveWhenFarAway(false);
         if (mob instanceof Tameable tameable) {
@@ -1202,6 +1202,10 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
                 new java.util.concurrent.atomic.AtomicBoolean(false);
         activePetCompanionIds.compute(snapshot.ownerId(), (ownerId, expectedId) -> {
             if (!snapshot.companionId().equals(expectedId)) return expectedId;
+            if (expectedReplacedEntity != null
+                    && !expectedReplacedEntity.equals(activePetEntities.get(ownerId))) {
+                return expectedId;
+            }
             activePetEntities.put(ownerId, mob.getUniqueId());
             activeOwners.add(ownerId);
             activated.set(true);
@@ -1209,6 +1213,63 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         });
         if (!activated.get()) mob.remove();
         return activated.get();
+    }
+
+    /**
+     * Rebuilds only the live projection when a durable ghoul/demon crosses an evolution tier.
+     * The logical companion id and every durable value stay unchanged.
+     */
+    private void reconcileActivePetForm(final Player player, final CompanionProfile companion) {
+        final UUID ownerId = player.getUniqueId();
+        final UUID currentEntityId = activePetEntities.get(ownerId);
+        if (currentEntityId == null
+                || !companion.companionId().equals(activePetCompanionIds.get(ownerId))) return;
+        final Entity current = Bukkit.getEntity(currentEntityId);
+        if (!(current instanceof Mob pet)) return;
+        final EntityType expectedType = expectedEntityType(player, companion);
+        final PetRuntimeSnapshot snapshot = runtimeSnapshot(player);
+        pet.getScheduler().run(plugin, task -> {
+            if (!pet.isValid() || pet.isDead()
+                    || !currentEntityId.equals(activePetEntities.get(ownerId))
+                    || !companion.companionId().equals(activePetCompanionIds.get(ownerId))) return;
+            if (expectedType == null || pet.getType() == expectedType) {
+                applyBuffs(pet, snapshot.buffLevel(), false);
+                updateName(pet, snapshot.name(), snapshot.level());
+                return;
+            }
+            final AttributeInstance oldMaximum = pet.getAttribute(Attribute.MAX_HEALTH);
+            final double healthRatio = oldMaximum == null || oldMaximum.getValue() <= 0.0D
+                    ? 1.0D : Math.max(0.0D, Math.min(1.0D, pet.getHealth() / oldMaximum.getValue()));
+            final Mob evolved;
+            try {
+                evolved = (Mob) pet.getWorld().spawn(pet.getLocation(),
+                        expectedType.getEntityClass().asSubclass(Mob.class));
+            } catch (final RuntimeException blocked) {
+                plugin.getLogger().warning("Companion evolution spawn was blocked for " + ownerId);
+                return;
+            }
+            try {
+                if (!adopt(evolved, snapshot, currentEntityId)) return;
+                final AttributeInstance evolvedMaximum = evolved.getAttribute(Attribute.MAX_HEALTH);
+                if (evolvedMaximum != null) {
+                    evolved.setHealth(Math.max(0.01D,
+                            Math.min(evolvedMaximum.getValue(), evolvedMaximum.getValue() * healthRatio)));
+                }
+                attackReady.remove(currentEntityId);
+                pet.remove();
+            } catch (final Throwable failure) {
+                activePetCompanionIds.compute(ownerId, (id, expectedCompanionId) -> {
+                    if (companion.companionId().equals(expectedCompanionId)
+                            && evolved.getUniqueId().equals(activePetEntities.get(id))) {
+                        activePetEntities.put(id, currentEntityId);
+                    }
+                    return expectedCompanionId;
+                });
+                if (evolved.isValid()) evolved.remove();
+                plugin.getLogger().warning("Companion evolution reconciliation failed for "
+                        + ownerId + ": " + failure.getMessage());
+            }
+        }, null);
     }
 
     private int levelCost(final int level) {
@@ -1370,10 +1431,77 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final ClassSpecProfileGateway gateway=profileGateway;return gateway==null?Optional.empty():gateway.activeCompanion(player.getUniqueId());
     }
 
-    private int unholyMutationBonusLevels(final CompanionProfile companion) {
-        return parseNonNegativeInt(companion.persistentState().get(GHOUL_MUTATION_STAGE))
+    private int unholyMutationBonusLevels(final Player player, final CompanionProfile companion) {
+        return Math.min(unholyMutationMaximum(player),
+                parseNonNegativeInt(companion.persistentState().get(GHOUL_MUTATION_STAGE)))
                 * Math.max(0, configManager.getInt(
                 "pets.summon.mutation-bonus-levels-per-stage", 2));
+    }
+
+    /** UI-ready companion roster derived only from the active Profile v2 loadout. */
+    public List<CompanionProgressView> companionProgression(final Player player) {
+        final UUID selected = selectedCompanionId(player).orElse(null);
+        final UUID live = activePetCompanionIds.get(player.getUniqueId());
+        return companionRoster(player).stream().map(companion -> companionProgression(player,
+                companion, companion.companionId().equals(selected),
+                companion.companionId().equals(live))).toList();
+    }
+
+    public Optional<CompanionProgressView> companionProgression(final Player player,
+                                                                 final UUID companionId) {
+        if (companionId == null) return Optional.empty();
+        final UUID selected = selectedCompanionId(player).orElse(null);
+        final UUID live = activePetCompanionIds.get(player.getUniqueId());
+        return companionById(player, companionId).map(companion -> companionProgression(player, companion,
+                companionId.equals(selected), companionId.equals(live)));
+    }
+
+    private CompanionProgressView companionProgression(final Player player,
+                                                       final CompanionProfile companion,
+                                                       final boolean selected, final boolean live) {
+        return CompanionProgressView.project(companion, selected, live,
+                configManager.getInt("pets.companion.max-level", 30),
+                configManager.getInt("pets.companion.base-xp", 10),
+                configManager.getInt("pets.companion.increment-per-level", 5),
+                configManager.getInt("pets.summon.bonus-levels", 5),
+                configManager.getInt("pets.summon.mutation-bonus-levels-per-stage", 2),
+                unholyMutationMaximum(player),
+                configManager.getInt("pets.summon.tier2-level", 15),
+                configManager.getInt("pets.summon.tier3-level", 25));
+    }
+
+    public boolean darkCompanionTheme(final Player player) {
+        return isUnholy(player) || isNecromancer(player) || isWarlock(player);
+    }
+
+    private int unholyMutationMaximum(final Player player) {
+        int maximum = Math.max(1, configManager.getInt(
+                "classes.death_knight.unholy.mutation-maximum", 3));
+        if (currentLoadout(player).map(loadout -> "torz_ghul".equals(
+                loadout.doctrineChoices().get("level_50"))).orElse(false)) {
+            maximum += Math.max(0, configManager.getInt(
+                    "classes.death_knight.unholy.twisted-extra-stage", 1));
+        }
+        return maximum;
+    }
+
+    private EntityType expectedEntityType(final Player player, final CompanionProfile companion) {
+        return entityType(CompanionProgressView.expectedEntityType(companion,
+                configManager.getInt("pets.summon.mutation-bonus-levels-per-stage", 2),
+                unholyMutationMaximum(player),
+                configManager.getInt("pets.summon.tier2-level", 15),
+                configManager.getInt("pets.summon.tier3-level", 25)));
+    }
+
+    private EntityType ghoulForm(final int level) {
+        if (level >= configManager.getInt("pets.summon.tier3-level", 25)) return EntityType.ZOGLIN;
+        if (level >= configManager.getInt("pets.summon.tier2-level", 15)) return EntityType.WITHER_SKELETON;
+        return EntityType.HUSK;
+    }
+
+    private static String ghoulFormName(final EntityType form) {
+        if (form == EntityType.ZOGLIN) return "Förtelem";
+        return form == EntityType.WITHER_SKELETON ? "Csontszolga" : "Ghúl";
     }
 
     private static int parseNonNegativeInt(final String raw) {

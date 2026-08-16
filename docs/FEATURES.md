@@ -471,9 +471,9 @@ A Felsők emlékei elvesztek, de a vérük emlékezik. A kaszt, a szakma, a megt
 
 > **Aktív és játékosok számára elérhető** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock műveletek. Mind a 13 kaszt és 35 specializáció saját, ténylegesen fogyasztott harci mechanikával fut; a 210 doctrine-választás nem puszta címke, hanem a hozzá tartozó class service viselkedését módosítja. Minden alap aktív készlet pontosan hét, a kaszt/spec által valóban feloldható képességet tartalmaz. A külön class-health réteg létezik, de a csomagolt alapbeállításban ki van kapcsolva (`health.enabled: false`).
+Kasztválasztás, XP/szint, specializáció, kasztpasszívok és admin XP/unlock műveletek. Mind a 13 kaszt és 35 specializáció saját, ténylegesen fogyasztott harci mechanikával fut; a 210 doctrine-választás nem puszta címke, hanem a hozzá tartozó class service viselkedését módosítja. Minden alap aktív készlet pontosan hét, a kaszt/spec által valóban feloldható képességet tartalmaz. A külön class-health réteg a csomagolt alapbeállításban aktív (`health.enabled: true`).
 
-- **Így találkozol vele:** `/class`, `/spec`, kaszt- és specializációs GUI. Parancs: /class (alias: /job, /kaszt); /spec (alias: /specializacio, /specialization). GUI: Kasztválasztó; Specializációk.
+- **Így találkozol vele:** `/class`, `/spec`, kasztválasztó és a frakciószínű **Kasztműhely**. A nyolcféle custom karakterfelület mind a 13 kaszt és 35 spec saját jelvényét használja. A Kasztműhely ugyanabból a Profile v2 projekcióból mutatja mindkét loadoutot, a doctrine-választásokat, a spec-mastery rangot/XP-t, a capstone-próbát, a relic/Awakening állapotot és a DARK pecsét okát; külön megerősítést kér az aktív út respecjéhez. A teljes 13/35 mechanikakatalógus elmagyarázza az aktív harci ciklust és a kézi célkijelölést; Paplovag Eskü és Pap Litánia a GUI-ból is állítható. A Spellbook leírja a spelleket és jobb klikkel mastery-t fejleszt. Parancs: /class (alias: /job, /kaszt); /spec (alias: /specializacio, /specialization).
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Választás, XP-források, szintlépés, képességfeloldás, doctrine-döntés, a spec saját producer→consumer harci ciklusa és kapcsolódó combat/craft esemény.
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; resource-pack ikonok és balance-adatok tesztelendők.
@@ -492,6 +492,10 @@ kötött `CAST_SPELLS` csúcspróbát kell teljesíteni. A 35 próbát a quest-r
 tartós teljesítése oldja fel, utána a Profile v2 capstone állapota adja a
 képesség-provenanciát. Specváltás vagy respec nem hagyhat hátra idegen
 képességet, mérőt, töltetet vagy cooldown-resetet.
+Class XP commit után az alap- és aktív specializációs spell-grant ugyanabban a
+progression-reconcile körben frissül. A capstone szintjének egyetlen csomagolt
+forrása a `class-gameplay.yml`; a level-50 grant továbbra is csak `COMPLETED`
+próbaállapotnál történik.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
@@ -738,9 +742,9 @@ A forrásban ténylegesen bekötött krónika, emlék, lore-parancs, párbeszéd
 
 > **Aktív és játékosok számára elérhető** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Pet/társ kezelés, befogás, XP, harci viselkedés, parancsok és társ-GUI.
+Pet/társ kezelés, befogás, XP, harci viselkedés, parancsok és custom Társműhely.
 
-- **Így találkozol vele:** `/pet`; Pet GUI; befogó item és játékosparancs. Parancs: /pet (alias: /companion, /tars). GUI: Társ GUI.
+- **Így találkozol vele:** `/pet`; a Profile v2-ből felépülő, class-assetes Társműhely; befogó item és játékosparancs. A GUI mutatja a szint/XP görbét, harci erőszintet, mutációt és következő formát, a végleges elengedés pedig külön megerősítést kér. Parancs: /pet (alias: /companion, /tars).
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Befogás, társlistás kiválasztás, pet parancs, combat, gazda- vagy pet-killből érkező XP és GUI-művelet.
 - **Ami még kellhet hozzá:** Nincs kötelező helyszín; az idézés betöltött, Folia-lokális oszlopokban stabil talajt és három blokk szabad testteret keres.
@@ -751,7 +755,7 @@ Pet/társ kezelés, befogás, XP, harci viselkedés, parancsok és társ-GUI.
 
 - Permission: —
 - Config: `pets.*`, benne az Istálló-kapacitás és a biztonságos spawn keresési tartománya; capture-item és kapcsolódó message/itemdefiníciók.
-- Tartós állapot: Tulajdonjog, petadat és XP tartós.
+- Tartós állapot: tulajdonjog, logikai társazonosság, szint/XP, felszerelés és mutáció Profile v2-ben tartós; az aktuális entity-forma ebből újraépíthető projekció.
 - Reload: Balance reloadolható részei következő eseménynél érvényesek; aktív pet entityk újraszinkronizálása kellhet.
 
 </details>
@@ -1034,6 +1038,7 @@ prestige státuszokat és a Season 1 idempotens átmenetét kezeli.
 - **Mitől mozdul meg:** Kizárólag a `/prologue start` vagy más, állapotot ténylegesen módosító adminfolyamat után; a friss `DORMANT` állapot teljes pass-through.
 - **Ami még kellhet hozzá:** A négy `prologue-*` runtime hook és a productionközeli staging acceptance.
 - **Fontos határ:** `DORMANT` alatt nincs Prologue XP-/contentkorlát, season/community override, Nether-pecsét vagy gate-location authority, HUD/ambient/breach és catch-up; a Prologue-tól független szerverconfig változatlanul érvényes.
+- **Aktív Nether-kapu:** lezárt állapotban territory bypass és közvetlen command/plugin teleport sem enged be normál játékost; a valódi OP-státusz explicit üzemeltetői bypass. Feloldás után a nem-OP indulási pontnak az Olethropyla kapukörzetében kell lennie.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>

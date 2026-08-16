@@ -101,6 +101,12 @@ class Finding:
 
 def expected_size(path: Path) -> tuple[int, int] | None:
     name = path.name
+    if "class_ui" in path.parts:
+        if path.parent.name == "spec_badges":
+            return (64, 64)
+        if name.startswith("class-ui-"):
+            return (176, 222)
+        return None
     if path.parent.name == "survival":
         fixed = {
             "panel.png": (252, 72),
@@ -185,7 +191,7 @@ def inspect(path: Path) -> Finding:
         dx = dy = 0.0
         verdict = "FAIL"
         notes.append("empty alpha")
-    icon = expected == (64, 64)
+    icon = expected == (64, 64) and path.parent.name == "hud"
     if icon and bbox and min(margins) < 3:
         # Alpha=1 fixed-width marker is intentionally ignored by the >=16 bbox.
         verdict = "FAIL"
@@ -235,9 +241,9 @@ def font_errors() -> list[str]:
         data = json.loads(font.read_text(encoding="utf-8"))
         for provider in data.get("providers", []):
             reference = provider.get("file")
-            if not reference or not reference.startswith("icesmp_hud:hud/"):
+            if not reference or not reference.startswith("icesmp_hud:"):
                 continue
-            target = RUNTIME / "textures" / "hud" / reference.split("/", 1)[1]
+            target = RUNTIME / "textures" / reference.split(":", 1)[1]
             if not target.is_file():
                 errors.append(f"{font.relative_to(ROOT)} -> {reference}")
     header = json.loads((RUNTIME / "font/text_header.json").read_text(encoding="utf-8"))
@@ -387,6 +393,7 @@ def main() -> int:
     parser.add_argument("--report", default="docs/HUD_ASSET_AUDIT.md")
     args = parser.parse_args()
     files = sorted((RUNTIME / "textures" / "hud").rglob("*.png"))
+    files += sorted((RUNTIME / "textures" / "class_ui").rglob("*.png"))
     findings = [inspect(path) for path in files]
     missing_fonts = font_errors()
     if missing_fonts:

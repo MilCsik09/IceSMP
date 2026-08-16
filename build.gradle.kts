@@ -21,10 +21,25 @@ val generateIceSmpSurvivalHudAssets by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/generate_icesmp_survival_hud_assets.py")
 }
 
+val generateClassUiAssets by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Regenerates the custom class UI family and 35 specialization badges."
+    inputs.files(
+        "scripts/generate_class_ui_assets.py",
+        "dev-assets/icesmp-class-ui/source/faction-ornaments-v1.png",
+        "dev-assets/icesmp-class-ui/source/specialization-sigils-v1.png",
+    )
+    outputs.dir("resource-pack/assets/icesmp_hud/textures/class_ui")
+    outputs.file("resource-pack/assets/icesmp_hud/font/class_ui.json")
+    outputs.file("resource-pack/assets/icesmp_hud/font/specialization_badge.json")
+    outputs.file("resource-pack/assets/icesmp_hud/font/class_badge.json")
+    commandLine(pythonCommand, "scripts/generate_class_ui_assets.py")
+}
+
 val generateIceSmpHudAssets by tasks.registering {
     group = "build"
     description = "Regenerates the complete first-party IceSMP HUD package."
-    dependsOn(generateIceSmpSurvivalHudAssets)
+    dependsOn(generateIceSmpSurvivalHudAssets, generateClassUiAssets)
 }
 
 val auditIceSmpHudAssets by tasks.registering(Exec::class) {
@@ -67,6 +82,7 @@ val validateIceSmpHudPackage by tasks.registering {
     inputs.files(
         "scripts/generate_icesmp_hud_assets.py",
         "scripts/generate_icesmp_survival_hud_assets.py",
+        "scripts/generate_class_ui_assets.py",
         "src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java"
     )
     doLast {

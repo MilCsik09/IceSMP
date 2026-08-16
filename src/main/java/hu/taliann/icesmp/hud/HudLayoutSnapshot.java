@@ -138,21 +138,24 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
         }
         return switch (component) {
             case CLASS_GROUP -> component(0, 32, 2, true);
-            case CLASS_ICON -> component(-7, -12, 2, true);
-            case CLASS_NAME -> component(3, 15, 2, true);
+            case CLASS_ICON -> component(-7, -10, 2, true);
+            case CLASS_NAME -> component(3, 10, 2, true);
             case FACTION -> component(0, 0, 2, false);
-            case LEVEL_TEXT -> component(-3, 15, 2, true);
-            case WALLET_FRAME -> component(0, 10, 2, true);
+            case LEVEL_TEXT -> component(-3, 10, 2, true);
+            case WALLET_FRAME -> component(0, 8, 2, true);
+            case WALLET -> component(0, 2, 2, true);
             case RESOURCE_LABEL -> component(6, 5, 1, true);
-            case RESOURCE_BAR -> component(5, -12, 2, true);
+            case RESOURCE_BAR -> component(5, -7, 2, true);
             case PRIMARY_MECHANIC -> component(2, -1, 2, true);
             case SECONDARY_MECHANIC -> component(2, 0, 2, true);
-            case CHARGES -> component(55, -91, 4, true);
-            case DK_RUNES -> component(-38, 32, 1, true);
+            case CHARGES -> component(55, -58, 4, true);
+            case DK_RUNES -> component(-38, 21, 1, true);
             case STATE_PROC -> component(-14, -1, 2, true);
-            case EVENT_TEXT -> component(-15, 9, 2, true);
+            case EVENT_TEXT -> component(-6, 6, 2, true);
             case PLAYER_GROUP -> component(0, 0, 1, true);
+            case PLAYER_ARMOR -> component(-6, -3, 2, true);
             case TARGET_GROUP -> component(264, 0, 1, true);
+            case TARGET_ICON -> component(-6, 5, 2, true);
             case PARTY_GROUP -> component(0, 82, 1, true);
             default -> HudComponentLayout.defaults();
         };

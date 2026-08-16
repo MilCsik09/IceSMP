@@ -390,11 +390,10 @@ képességeket, így harc közben nem feltétlenül kell külön tárgyra válta
 
 ### Kasztalapú életerő
 
-A kasztonként eltérő alapéleterő-rendszer jelenleg konfigurációból
-**kikapcsolt** állapotú. Ne számolj vele aktív előnyként: az életerőt most a
-vanília alap, a felszerelés és az aktív talentek módosítják. Az új túlélési HUD ettől
-függetlenül mindig a valódi jelenlegi/maximális értéket írja ki, ezért a későbbi HP-scaling
-bekapcsolásakor nem kell tíz szívre visszanormalizálnia a nagyobb életerőt.
+A kasztonként eltérő életerő- és fizikai sebzésprofil aktív. A maximális életerőt a kaszt,
+a kasztszint, a felszerelés és az aktív talentek együtt alakítják; harcon kívül a rendszer
+a konfigurált késleltetés után regenerál. A túlélési HUD mindig a valódi jelenlegi/maximális
+értéket írja ki, nem normalizálja vissza tíz szívre a nagyobb életerőt.
 
 ---
 
@@ -451,7 +450,12 @@ A **25. kasztszinttől** választhatsz specializációt. Összesen 35 irány lé
 de a menü csak a saját kasztodhoz és aktuális feltételeidhez tartozó
 lehetőségeket mutatja:
 
-`/profile` → **Specializáció**, vagy `/spec list`.
+`/profile` → **Kasztműhely**, vagy `/spec list`. A Kasztműhely egyszerre mutatja
+az I. és II. összeállítást, az aktív/tartalék/lepecsételt állapotot, valamint
+a váltás pontos tiltási okát. A szakmai specializációk külön lapot kaptak.
+Az egész karakterút ugyanazt az egyedi, frakciószínű felületcsaládot használja:
+Profil, kasztválasztó, Spellbook, képességfa, talentek, részletlapok és
+Társműhely. Minden kaszt és specializáció saját jelvényt kapott.
 
 A specializáció kijelölheti a fő szerepedet:
 
@@ -474,25 +478,43 @@ menüben, mert ott látod a jelenlegi feloldási szinteket és korlátokat.
   távol vált. Nem gyógyít, nem tölti vissza a kaszterőforrást, és nem nullázza
   a képességek várakozási idejét.
 - Egyes sötét irányok frakciót, bűnös állapotot vagy történeti kaput kérnek.
-- `/spec respec class` visszavonja a kasztspecializációt, általában
-  frakcióvalutáért.
+- A Kasztműhelyben az inaktív összeállításra kattintva válthatsz; harc vagy
+  közeli ellenség esetén a menü megmondja, miért nem engedi.
+- `/spec respec class`, illetve a Kasztműhely megerősítő képernyője visszavonja
+  az aktív kasztspecializációt, általában frakcióvalutáért.
 - A régi spechez kötött képességek lekerülnek, a hozzá kötött talentpontok
   visszatérnek.
 
 ### Doctrine, mesterség és záróképesség
 
 - A 30., 40. és 50. szinten specializációnként két doctrine közül választasz
-  a `/spec doctrine <30|40|50> <választás>` paranccsal. A doctrine a saját
+  a Kasztműhelyben vagy a `/spec doctrine <30|40|50> <választás>` paranccsal. A doctrine a saját
   mechanikádat módosítja — nem csak cím vagy kozmetika —, és az adott
   spec-slothoz tartozik.
 - Az 50. szinttől a spec-mesterség csak valódi harci használatból fejlődik;
-  céltalan vagy AFK spellspam nem számít mesterségnek.
+  céltalan vagy AFK spellspam nem számít mesterségnek. A menü külön mutatja a
+  0–10 rangot és az aktuális rangon belüli XP-haladást.
+- Az egyes képességek spell-mestersége a Spellbookban, az adott ikonon
+  **jobb kattintással** fejleszthető. A lore előre mutatja az árat és a
+  maximális rangot; a tartós mentés sikertelensége nem fogyasztja el a fejlesztést.
 - A záróképességhez előbb teljesítsd a kasztod mesterpróbáját. Ezután a
   küldetésnaplóban megjelenik a saját **specializációs csúcspróbád**: 18
   sikeres használatot kér a megadott, már ismert képességeidből.
 - A próba csak a megkövetelt aktív specializációval halad. Sikertelen,
   megszakított vagy másik spechez tartozó képesség nem növeli a számlálót.
   Teljesítéskor pontosan a saját szint-50-es záróképességed oldódik fel.
+  A Kasztműhely és a képesség-fa ezért szint helyett kifejezetten a hiányzó
+  végső próbát írja ki, ha ez tartja zárva a képességet.
+
+A Kasztműhely **Hogyan működik az utad?** lapja mind a 13 kaszt és mind a 35
+specializáció közös magját és tényleges producer→consumer harci ciklusát
+elmagyarázza. A kézi célkijelölések pontos irányítása is itt látható
+(Eskütárs, Fényjelző, Ködszál, Sárkányvér-fiola). Paplovagként az Eskü,
+Papként a Litánia három választása közvetlenül erről a lapról nyitható meg;
+nem szükséges hozzá a `/spec esku` vagy `/spec ima` parancs.
+A Doctrine-kódex mindhárom szint mindkét ágának tényleges hatását és
+rögzített állapotát megmutatja. A záróképesség- és Lélekkapocs-lap ugyanitt
+jelzi a hiányzó próbát, rezonanciát, Awakeninget vagy más pontos tiltási okot.
 
 ### Társak
 
@@ -506,9 +528,12 @@ menüben kezelheted őket:
 - `/pet name <név>` — elnevezés, szóközt tartalmazó névvel is;
 - `/pet stance <aktiv|passziv|marad>` — viselkedés (szerep: aktív vadász, passzív kísérő, őrhelyen maradó).
 
-A Vadmester Istállója alapból legfeljebb 3 befogott társat tart. A `/pet` menü
-felső sora mutatja a társlistát; egy társra kattintva tartósan kiválasztod és
-magad mellé hívod. Teli Istállóval új befogás csak elengedés után lehetséges.
+A Vadmester Istállója alapból legfeljebb 3 befogott társat tart. A custom
+**Társműhely** felső sora mutatja a társlistát; egy társra kattintva tartósan
+kiválasztod és magad mellé hívod. A fejlődési lap megmutatja a szintet, az
+XP-küszöböt, a harci erőszintet, a mutációt és a következő formát. Jobb kattal
+csak az elengedés megerősítőlapja nyílik meg; a társ a külön véglegesítő katt
+előtt nem törlődik. Teli Istállóval új befogás csak elengedés után lehetséges.
 
 A társ a te és a saját jogosult szörnyöléseiből is tapasztalatot szerezhet,
 megvédhet, és ritka Társvértet viselhet. Idézéskor a rendszer biztonságos,
@@ -528,7 +553,9 @@ Ha egy roster megtelt, az új tartós idézés még az erőforrás és a cooldow
 elköltése előtt visszautasítható; előbb engedj el vagy arass le egy régi tagot.
 A Szentségtelen Dögvész-burstje csak valóban meglévő saját ghúlt mutál: a
 fokozat korlátozott, ténylegesen erősíti a társat és újrabelépés után is
-megmarad. Ghúl nélkül nincs láthatatlan vagy elvesző mutáció.
+megmarad. A ghúl a társszint és a mutációs erő alapján automatikusan vált
+Ghúl → Csontszolga → Förtelem formára; ehhez nem kell újabb rituálé. Ghúl
+nélkül nincs láthatatlan vagy elvesző mutáció.
 
 ---
 
@@ -1110,6 +1137,11 @@ A **Kárhozat Kapuja** már a Prologue előtt is a világ része. Season 0 alatt
 a hozzá kötött felfedező- és lore-tartalom működhet, de a Kapun **nem lehet átjutni a Netherbe**.
 Saját Nether-portált továbbra sem lehet szabadon létrehozni. A Kapu állapotának romlását időnként
 a HUD vagy a fallback kijelzés stabilitásmérője és helyi események jelezhetik.
+Az aktív, még lezárt történeti kaput terület-bypass, parancsos vagy pluginből
+indított közvetlen teleport sem kerüli meg egy normál játékosnál. A valódi
+Minecraft OP-státusz explicit üzemeltetői bypass. Feloldás után a nem-OP belépésnek
+továbbra is a konfigurált Olethropyla kapukörzetből kell indulnia; a Netherből való
+visszatérés ettől függetlenül engedélyezett.
 
 A Prologue lezárása után a világ wipe nélkül lép tovább Season 1-be. A normál szezonliga ekkor
 indul el ténylegesen. Az új vagy lemaradó, 25. szint alatti karakterekhez configolható

@@ -39,11 +39,11 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
-| `spells/` | 60 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
+| `spells/` | 61 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `quest/` | 8 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
-| `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
+| `gui/` | 70 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
@@ -282,6 +282,22 @@ runtime rollout-kapcsoló. Az `IceSMPCore.enable()` a gameplay store-ok
 betöltése előtt futtatja a `ClassSpecDependencyPreflight` ellenőrzést. Aktív
 dependency enforcement mellett a hiányzó vagy verzióeltérő kötelező komponens
 fail-closed startup hibát okoz, nem félkész class runtime-ot.
+
+A játékosfelületek nem olvassák külön-külön a loadout mezőket. A
+`ClassProgressView` a `ProfileDiagnostic` és az aktuális `ClassSpecSection`
+read-only projekciója: mindkét slot, doctrine, mastery, capstone és seal egy
+snapshotban jelenik meg. A vanilla Kasztműhely ezt fogyasztja; ugyanennek a
+projekciónak kell maradnia a későbbi native kliensfelület bemenetének is, így
+a kliens nem válhat új authorityvá.
+
+Az inventory-prezentáció közös resource-pack szerződése a `ClassUiAssets`:
+nyolc képernyőtípus négy frakciótémával, 13 kasztjelvény és 35
+specializáció-jelvény. A generált bitmap font csak megjelenítés; a menük az
+aktuális Profile v2, `ResourceManager`, class-mechanika és relic service
+read-only projekciójából építik a live állapotot. A `DoctrinePresentation` és
+`SpellDescriptionCatalog` determinisztikus szöveges adapter, nem balance-
+vagy persistence-authority. A Spellbook jobb klikkes mastery-fejlesztése a
+meglévő tartós `SpellMasteryManager` tranzakciót hívja.
 
 A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
 megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil
@@ -746,6 +762,19 @@ This matrix is versioned together with `scripts/player_profile_authority_allowli
 | pets/minions and durable companion state | PlayerProfile namespace + runtime manager | `companions` and `class-spec` | live entity map | privacy filtered | root plus lifecycle hardening |
 
 Companion rosters (`beast_master.stable`, `necromancer.court`, `unholy.ghoul`, `demonologist.roster`) have exactly one authority: the durable `class-spec` loadout roster, keyed by logical companion id. A companion *kind* is an attribute of an instance (`CompanionProfile.KIND_KEY`), never the roster key, so a roster capacity is reachable by repeating a kind — a namespace with three kinds still fills four slots, and no extra kind has to be invented to reach the ceiling. Admission is one rule, `ClassSpecCatalog.admitsCompanion(loadout, namespace, capacity)`: a runtime evaluates it before the action, and `CompanionMutationRequest.capacity` makes the committed mutation re-evaluate the very same ceiling against the freshly loaded profile, so a passing pre-check can never turn into a refused mutation after the cost was paid. Gameplay runtimes never keep a parallel roster: they read the shared `ClassSpecCatalog.companionProjection(loadout, namespace)` rule, which yields entries only through the ACTIVE loadout owning the namespace — an inactive, foreign or SEALED loadout projects nothing while its durable entries stay untouched. Every binding and release commits durably first, and only a committed mutation may embody or despawn anything; a release that never commits releases nothing.
+
+`CompanionProgressView` is the read-only presentation/runtime-form boundary over
+that roster. The custom Társműhely and the live entity reconciler use the same
+level/mutation evolution rule. Tier changes replace only the rebuildable entity
+projection while retaining logical companion identity, equipment and health
+ratio; release confirmation is holder-bound and performs no mutation until the
+explicit final action.
+
+`ClassMechanicView` is a closed presentation catalogue whose class/spec keysets
+must equal the canonical 13/35 `ClassSpecCatalog`. It contains explanatory UI
+copy and interaction hints only, never combat state. The Paplovag Eskü and Pap
+Litánia setup screen calls the already existing session-scoped runtime selector;
+no new durable store or parallel authority is introduced.
 | achievements, bestiary and milestone claims | managers/PDC/YAML | `achievements` | toast/UI cache | privacy filtered | stacked progression scope |
 | kills/deaths/events/season counters | stats managers/YAML | `statistics` | scoreboard cache | privacy filtered | stacked statistics scope |
 | language/HUD/scoreboard/notification/privacy | config/PDC/managers | `preferences` | online UI state | public visibility flags/self | stacked preferences scope |

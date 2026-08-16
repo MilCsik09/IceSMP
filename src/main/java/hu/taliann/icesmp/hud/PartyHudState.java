@@ -49,7 +49,7 @@ public record PartyHudState(List<Member> members) {
                         78, 100, 62, true, true, true, false),
                 new Member(UUID.randomUUID(), "Kék", "frost", "8BE9FD",
                         44, 80, 35, false, true, true, false),
-                new Member(UUID.randomUUID(), "Sötét", "lich", "62D7CE",
+                new Member(UUID.randomUUID(), "Sötét", "lich", "A955E8",
                         20, 120, 80, false, true, false, false)));
     }
 }

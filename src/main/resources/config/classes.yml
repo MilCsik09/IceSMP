@@ -224,7 +224,6 @@ specializations:
       riptide_pull: 36
       stone_skin: 39
       gale_burst: 42
-      elemental_overload: 45
   necromancer:
     # A Nekromanta beavatása quest-hez kötött (sötét rituálé a romvárosban).
     required-quest: "necromancer_initiation"
@@ -240,7 +239,6 @@ specializations:
       death_pact: 39
       wraith_form: 42
       bone_archers: 44
-      soul_harvest: 45
   berserker:
     spell-unlocks:
       feast: 25
@@ -252,7 +250,6 @@ specializations:
       unstoppable: 37
       savage_leap: 39
       bloodbath: 42
-      berserk: 45
   guardian:
     spell-unlocks:
       bulwark: 25
@@ -264,7 +261,6 @@ specializations:
       shield_charge: 37
       aegis: 39
       retribution: 42
-      last_stand: 45
   sharpshooter:
     spell-unlocks:
       featherfoot: 25
@@ -276,7 +272,6 @@ specializations:
       high_perch: 37
       perfect_focus: 39
       spectral_volley: 42
-      masterful_shot: 45
   beast_master:
     spell-unlocks:
       friendship: 25
@@ -290,7 +285,6 @@ specializations:
       stampede: 39
       falcon_strike: 42
       wild_pack: 43
-      king_of_beasts: 45
   poisoner:
     spell-unlocks:
       venom_strike: 25
@@ -302,7 +296,6 @@ specializations:
       paralytic_strike: 37
       toxic_cloud: 39
       debilitating_poison: 42
-      deathcap: 45
   phantom:
     spell-unlocks:
       hide: 25
@@ -314,7 +307,6 @@ specializations:
       ethereal_form: 37
       phantom_grip: 39
       dread_whisper: 42
-      spectre: 45
   # Vadőr (Feral): a Druida közelharci specje — medve/párduc formák ereje,
   # karmok és vad rohamok. Néhány meglévő vad-spellt (wolf_call/panda_guard) is használ.
   feral:
@@ -327,7 +319,6 @@ specializations:
       primal_roar: 37
       survival_instincts: 39
       rampage: 42
-      the_wild_hunt: 45
   # Holdjós (Balance): a Druida távolsági specje — hold- és nap-mágia,
   # csillaghullás és gyógyító áldás. A sun_dance-t is használja.
   lunar:
@@ -339,7 +330,6 @@ specializations:
       solar_beam: 36
       starfall: 40
       lunar_blessing: 42
-      celestial_alignment: 45
   # Szentlélek (Holy): a Paplovag gyógyító/támogató specje. A guardian healing_word-öt is használja.
   holy:
     spell-unlocks:
@@ -350,7 +340,6 @@ specializations:
       aura_mastery: 36
       divine_shield: 39
       guardian_angel: 42
-      avenging_wrath: 45
   # Megtorló (Retribution): a Paplovag szent sebző specje — keresztes csapások és ítéletek.
   retribution:
     spell-unlocks:
@@ -361,7 +350,6 @@ specializations:
       zeal: 36
       divine_storm: 39
       wake_of_ashes: 42
-      final_verdict: 45
   # Vérlovag (Blood): a Halállovag tank specje — életszívás és felszívás.
   blood:
     spell-unlocks:
@@ -371,7 +359,6 @@ specializations:
       blood_mirror: 33
       vampiric_blood: 36
       bonestorm: 39
-      dancing_rune_weapon: 45
   # Fagylovag (Frost): a Halállovag fagyos sebző specje.
   bone_priest:
     # DARK-kapus gyógyító-spec (a Nekromanta-minta): Kitaszított + örök bűnös.
@@ -382,7 +369,6 @@ specializations:
       queens_lament: 33
       blood_tithe: 36
       silence_of_the_grave: 39
-      last_rites: 45
   plaguebringer:
     spell-unlocks:
       plague_cut: 25
@@ -391,7 +377,6 @@ specializations:
       miasma: 33
       festering_wounds: 36
       plague_wind: 39
-      black_death: 45
   demonologist:
     spell-unlocks:
       fel_bolt: 25
@@ -400,7 +385,6 @@ specializations:
       demon_skin: 33
       chaos_flame: 36
       sacrifice_pact: 39
-      legion: 45
   unholy:
     # DARK-kapus spec (a Nekromanta mintája): csak Kitaszított + örök bűnös veheti fel.
     spell-unlocks:
@@ -410,7 +394,6 @@ specializations:
       unholy_coil: 33
       grip_of_the_dead: 36
       epidemic: 39
-      army_of_the_dead: 45
   frost:
     spell-unlocks:
       obliterate: 25
@@ -420,7 +403,6 @@ specializations:
       remorseless_winter: 36
       chill_streak: 39
       pillar_of_frost: 42
-      breath_of_sindragosa: 45
   # Elemi (Elemental): a Sámán távolsági elemi specje.
   elemental:
     spell-unlocks:
@@ -431,7 +413,6 @@ specializations:
       elemental_blast: 33
       thunderstorm: 36
       stormkeeper: 39
-      ascendance_flame: 45
   # Erősítő (Enhancement): a Sámán elemekkel feltöltött közelharci specje.
   enhancement:
     spell-unlocks:
@@ -443,7 +424,6 @@ specializations:
       feral_spirit: 36
       sundering: 39
       earthen_weapon: 42
-      doom_winds: 45
   # Szélfutó (Windwalker): a Szerzetes kombó-alapú közelharci sebző specje.
   windwalker:
     spell-unlocks:
@@ -453,7 +433,6 @@ specializations:
       whirling_dragon_punch: 33
       storm_earth_fire: 36
       touch_of_death: 39
-      serenity: 45
   # Sörfőző (Brewmaster): a Szerzetes sör-alapú tank specje.
   brewmaster:
     spell-unlocks:
@@ -464,7 +443,6 @@ specializations:
       clash: 36
       fortifying_brew: 39
       celestial_brew: 42
-      invoke_niuzao: 45
   # Fegyelem (Discipline): a Pap pajzs/gyógyító specje.
   discipline:
     spell-unlocks:
@@ -474,7 +452,6 @@ specializations:
       pain_suppression: 33
       rapture: 36
       barrier: 39
-      evangelism: 45
   # Árnyék (Shadow): a Pap árny-sebző specje.
   shadow:
     spell-unlocks:
@@ -484,7 +461,6 @@ specializations:
       mind_sear: 33
       dispersion: 36
       void_eruption: 39
-      void_torrent: 45
   # Átok (Affliction): a Boszorkánymester tartós-sebző specje.
   affliction:
     spell-unlocks:
@@ -494,7 +470,6 @@ specializations:
       siphon_life: 33
       seed_of_corruption: 36
       soul_rot: 39
-      darkglare: 45
   # Pusztítás (Destruction): a Boszorkánymester tűz-robbantó specje.
   destruction:
     spell-unlocks:
@@ -504,7 +479,6 @@ specializations:
       rain_of_fire: 33
       shadowfury: 36
       cataclysm: 39
-      summon_infernal: 45
   # Tombolás (Havoc): a Démonvadász sebző specje.
   havoc:
     spell-unlocks:
@@ -514,7 +488,6 @@ specializations:
       vengeful_retreat: 33
       essence_break: 36
       metamorphosis_havoc: 39
-      the_hunt: 45
   # Bosszú (Vengeance): a Démonvadász tank specje.
   vengeance:
     spell-unlocks:
@@ -524,7 +497,6 @@ specializations:
       sigil_of_flame: 33
       fel_devastation: 36
       metamorphosis_veng: 39
-      fel_blade: 45
   # Perzselés (Devastation): a Sárkányidéző tűz-/azúr-sebző specje.
   devastation:
     spell-unlocks:
@@ -534,7 +506,6 @@ specializations:
       shattering_star: 33
       firestorm: 36
       dragonrage: 39
-      eternity_breath: 45
   # Megőrzés (Preservation): a Sárkányidéző gyógyító specje.
   preservation:
     spell-unlocks:
@@ -544,7 +515,6 @@ specializations:
       echo: 33
       temporal_anomaly: 36
       stasis: 39
-      rewind: 45
   # Védelmező (Guardian): a Druida medve-tank specje.
   ironbark:
     spell-unlocks:
@@ -555,7 +525,6 @@ specializations:
       bristling_fur: 36
       frenzied_regen: 39
       survival_instinct: 42
-      incarnation_bear: 45
   # Helyreállító (Restoration): a Druida természet-gyógyító specje.
   restoration:
     spell-unlocks:
@@ -566,7 +535,6 @@ specializations:
       natures_cure: 36
       wild_bloom: 39
       tranquility: 42
-      flourish: 45
   # Hullámhívó (Restoration): a Sámán víz-/szellem-gyógyító specje.
   tidal:
     spell-unlocks:
@@ -577,7 +545,6 @@ specializations:
       healing_rain: 36
       spirit_link: 39
       ancestral_guidance: 42
-      spirit_tide: 45
   # Ködszövő (Mistweaver): a Szerzetes köd-gyógyító specje.
   mistweaver:
     spell-unlocks:
@@ -588,7 +555,6 @@ specializations:
       thunder_focus_tea: 36
       essence_font: 39
       life_cocoon: 42
-      revival: 45
   # Védő (Protection): a Paplovag szent tank specje.
   protection:
     spell-unlocks:
@@ -599,7 +565,6 @@ specializations:
       consecrated_ground: 36
       ardent_defender: 39
       guardian_of_kings: 42
-      final_stand: 45
 
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
@@ -1254,11 +1219,10 @@ soulforge:
 # aránnyal skálázódnak (scale-heals, plafon: scale-heals-cap) — a heal nem
 # értéktelenedik el a nagyobb tavak mellett.
 health:
-  # A kaszt-HP-profilok és a harcon kívüli regen alapból továbbra sem élnek.
-  # Visszakapcsolás: enabled: true — a HUD már a valódi skálázott HP-t mutatja,
-  # a heal-skálázás elő van készítve. Restart nélkül,
-  # /icesmp reload vagy a config-GUI HP-kategóriája is átbillenti.
-  enabled: false
+  # A kaszt-HP-, fizikai sebzés- és harcon kívüli regen profilok alapból aktívak.
+  # A HUD a valódi skálázott HP-t mutatja; a kapcsoló restart nélkül,
+  # /icesmp reload vagy a config-GUI HP-kategóriájából is átállítható.
+  enabled: true
   display:
     # Csak resource-pack nélküli, régi megjelenési fallbackhez állítsd true-ra.
     normalize: false

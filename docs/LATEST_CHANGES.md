@@ -50,13 +50,13 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   `ScreenSize` értékéből normalizálja. A magyar feliratok négyszeresen túlmintavételezett,
   élsimított Inter SemiBold forrásból készülnek; ablak- és GUI-scale váltás nem mozdíthatja vagy
   többszörös méretűre nagyíthatja a HUD-ot.
-- **Moduláris Player Frame és HP-scaling előkészítés:** a normál vanilla szív-, páncél-, étel- és
+- **Moduláris Player Frame és aktív HP-scaling:** a normál vanilla szív-, páncél-, étel- és
   oxigénsávot pack-readiness után egy bal felső, frakciószínű Player Frame váltja. A név, frame,
   HP current/max, százalék, absorption, páncél, étel és feltételes oxigén külön editor-elem;
   a páncél maximum és százalékos sáv nélküli flat érték. A gyors, Folia-safe tick
-  külön fut a class/sidebar snapshotfrissítéstől. A
-  class-health gate továbbra is kikapcsolt, de a normalizálás már tiltott, így későbbi staging
-  aktiváláskor a HUD a valódi skálázott HP-t fogja mutatni. Hardcore-heart asset nincs felülírva.
+  külön fut a class/sidebar snapshotfrissítéstől. A class-health gate alapból aktív, a
+  normalizálás tiltott, ezért a HUD a valódi skálázott HP-t mutatja. Hardcore-heart asset nincs
+  felülírva.
 - **Target/Party Frame és tisztább class panel:** a tartós class XP-sáv kikerült, az eseménylábléc
   teljes szélességben legfeljebb három aktív eseményt mutat. A DK-rúnák saját editor-kategóriát
   kaptak. Találat után screen-space Target Frame jelenik meg: a mob saját bestiárium-, a játékos
@@ -71,6 +71,9 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   elengedhető. Az aszinkron GUI csak a tartós művelet után frissül, az idézés
   biztonságos, betöltött Folia-lokális állóhelyet keres, a pet saját ölése is ad
   companion XP-t, a halál cooldownja pedig a durable commit alatt is fail-closed.
+  A custom Társműhely már a teljes fejlődési lapot, mutációt és következő formát
+  mutatja, az elengedés külön megerősítést kér, a ghúl/démon formaváltása pedig
+  automatikusan újraépíti az élő entity-projekciót.
 - **Teljes class-integritás:** mind a 35 specializáció hét használható
   aktív képességgel, hat ténylegesen bekötött doctrine-nal és mechanikailag
   fogyasztott szint-50-es capstone-nal rendelkezik. Az új 35
@@ -78,6 +81,24 @@ A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, e
   A Druida, Pap, Sárkányidéző, Sámán, Varázsló és Halállovag hiányzó
   producer→consumer ciklusai elkészültek; a durable démon/élőholt idézések
   többé nem hoznak létre párhuzamos ideiglenes másolatot.
+- **Kasztműhely:** új, frakciószínű custom UI mutatja a két class-loadoutot,
+  a doctrine-döntéseket, a spec-mastery XP-t, a capstone-próba állapotát és a
+  DARK pecsétet. A váltás konkrét tiltási okot ad, a respec megerősítést kér,
+  a spellbook és a képesség-fa pedig külön jelzi a hiányzó végső próbát.
+  A beépített 13/35 mechanikakatalógus az aktív út valódi harci ciklusát és
+  kézi célkijelöléseit is leírja; a Paplovag Eskü és a Pap Litánia már külön
+  custom választófelületen, parancs nélkül állítható.
+- **Teljes class UI család:** a Profil, kasztválasztó, Spellbook,
+  képességfa, talentek, részletlapok, Társműhely és Kasztműhely nyolc
+  saját felületet kapott négy frakciótémával, 13 kaszt- és 35
+  specializáció-jelvénnyel. A doctrine-kódex, capstone- és relic/Awakening
+  részletlap élő runtime-állapotot mutat; a Spellbook minden spellhez
+  leírást ad, és jobb kattal tartósan fejleszti a spell-mastery-t.
+- **Prologue Nether-kapu hardening:** az aktív, még lezárt Olethropyla
+  történeti kapuját territory bypass, parancsos vagy pluginteleport sem kerüli
+  meg normál játékosnál; a valódi OP-státusz explicit üzemeltetői bypass.
+  Feloldás után a nem-OP belépés csak a konfigurált kapukörzetből legitim;
+  a Netherből való visszatérés változatlanul engedélyezett.
 - **Világesemények:** immerzív, Folia-biztos spawn-elhelyezés (távolság,
   víz- és partpuffer, nézési kúp), meteor-kráter terrain-visszaállítási
   journallal. A kereső jelöltjei most chunk-középre kerülnek, a 7 blokkos

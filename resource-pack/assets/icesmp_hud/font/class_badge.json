@@ -1,0 +1,121 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-warrior.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-evoker.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-archer.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-shaman.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-monk.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-paladin.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-demon_hunter.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-druid.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-priest.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-death_knight.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-assassin.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-warlock.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:hud/class-wizard.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

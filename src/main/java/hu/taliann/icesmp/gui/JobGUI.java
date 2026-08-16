@@ -2,6 +2,7 @@ package hu.taliann.icesmp.gui;
 
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CatalystItemFactory;
+import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
@@ -30,17 +31,21 @@ public final class JobGUI {
     }
 
     public static void openJobMenu(final Player viewer, final JobManager jobManager,
-                                   final CatalystItemFactory catalystItemFactory, final MessageManager messageManager) {
+                                   final CatalystItemFactory catalystItemFactory,
+                                   final FactionManager factionManager,
+                                   final MessageManager messageManager) {
         if (viewer == null || jobManager == null || catalystItemFactory == null || messageManager == null) {
             return;
         }
 
-        final Component title = messageManager.getComponent("messages.job-gui-title", "&3\u00bb Kasztok és Szakmák \u00ab");
+        final hu.taliann.icesmp.data.FactionType faction = ClassUiAssets.faction(viewer, factionManager);
+        final Component title = ClassUiAssets.title(ClassUiAssets.Surface.CLASS_SELECT, faction,
+                messageManager.getComponent("messages.job-gui-title", "&3\u00bb Kasztok és Szakmák \u00ab"));
         final JobGUIHolder holder = new JobGUIHolder(viewer.getUniqueId());
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
 
-        fillBackground(inventory);
+        ClassUiAssets.fill(inventory, faction);
         placeJobItems(inventory, viewer, jobManager, messageManager);
         inventory.setItem(BACK_SLOT, createBackButton(messageManager));
         inventory.setItem(CATALYST_SLOT, createCatalystButton(viewer, jobManager, catalystItemFactory, messageManager));
@@ -107,13 +112,6 @@ public final class JobGUI {
         return button;
     }
 
-    private static void fillBackground(final Inventory inventory) {
-        final ItemStack filler = createFiller();
-        for (int slot = 0; slot < SIZE; slot++) {
-            inventory.setItem(slot, filler.clone());
-        }
-    }
-
     private static void placeJobItems(final Inventory inventory, final Player viewer, final JobManager jobManager,
                                       final MessageManager messageManager) {
         final JobType[] jobTypes = JobType.values();
@@ -130,7 +128,7 @@ public final class JobGUI {
         // Selected jobs glow; the flag set matches GuiUtil.icon exactly, so it is a render-equivalent build.
         return GuiUtil.icon(
                 Material.ENCHANTED_BOOK,
-                jobType.getDisplayName(),
+                ClassUiAssets.classBadgeName(jobType),
                 resolveJobLore(jobType, primary, jobManager.getPrimaryLevel(viewer), messageManager),
                 selected);
     }
@@ -197,14 +195,4 @@ public final class JobGUI {
         return itemStack;
     }
 
-    private static ItemStack createFiller() {
-        final ItemStack itemStack = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        final ItemMeta meta = itemStack.getItemMeta();
-        meta.displayName(Component.empty());
-        meta.lore(List.of());
-        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
-        itemStack.setItemMeta(meta);
-        return itemStack;
-    }
 }
-

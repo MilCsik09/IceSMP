@@ -230,12 +230,12 @@ public final class HudManager {
      * the scoreboard — IceSMP then won't fight it (use the %icesmp_...% PlaceholderAPI placeholders).
      */
     private boolean sidebarEnabled() {
-        return configManager.getBoolean("hud.sidebar-enabled", true)
+        return configManager.getBoolean("hud.sidebar-enabled", false)
                 && PlatformCapabilities.supportsBukkitScoreboards();
     }
 
     private boolean foliaCompactFallbackEnabled(final Player player) {
-        return configManager.getBoolean("hud.sidebar-enabled", true)
+        return configManager.getBoolean("hud.sidebar-enabled", false)
                 && !PlatformCapabilities.supportsBukkitScoreboards()
                 && !iceSmpHudActive(player)
                 && !nativeHudRouted(player.getUniqueId());
@@ -1041,7 +1041,7 @@ public final class HudManager {
             case RED -> "E7683F";
             case BLUE -> "8BE9FD";
             case NEUTRAL -> "D6A74B";
-            case DARK -> "62D7CE";
+            case DARK -> "A955E8";
         };
     }
 

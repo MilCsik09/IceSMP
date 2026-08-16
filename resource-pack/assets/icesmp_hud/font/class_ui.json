@@ -1,0 +1,292 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-profile-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-profile-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-profile-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-profile-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-class_select-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-class_select-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-class_select-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-class_select-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-spellbook-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-spellbook-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-spellbook-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-spellbook-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-skill_tree-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-skill_tree-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-skill_tree-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-skill_tree-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-talents-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-talents-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-talents-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-talents-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-detail-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-detail-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-detail-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-detail-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-companion-red.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-companion-blue.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-companion-neutral.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/class-ui-companion-dark.png",
+      "ascent": 13,
+      "height": 222,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

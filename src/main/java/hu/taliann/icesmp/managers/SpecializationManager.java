@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.classspec.application.ClassSpecProfileGateway;
+import hu.taliann.icesmp.classspec.application.ClassProgressView;
 import hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy;
 import hu.taliann.icesmp.classspec.application.GateSnapshot;
 import hu.taliann.icesmp.classspec.application.GateState;
@@ -337,6 +338,99 @@ public final class SpecializationManager {
                 "professions.specialization.required-level", 25));
     }
 
+    public ClassProgressView classProgressView(final Player player) {
+        Objects.requireNonNull(player, "player");
+        final ClassSpecProfileGateway gateway = profileGateway();
+        final ProfileDiagnostic diagnostic = gateway.diagnostic(player.getUniqueId());
+        final JobType job = diagnostic.primaryClassId().map(JobType::fromId).orElse(null);
+        final long masteryExperiencePerRank = job == null ? 100L : Math.max(1L,
+                configManager.getLong("classes." + job.getId()
+                        + ".mastery.experience-per-rank", 100L));
+        return ClassProgressView.project(diagnostic,
+                gateway.currentProfile(player.getUniqueId()), getRequiredClassLevel(),
+                getSecondSpecUnlockLevel(), masteryExperiencePerRank);
+    }
+
+    public Optional<String> classSelectionBlockReason(final Player player,
+                                                      final SpecializationType specialization) {
+        if (player == null || specialization == null) return Optional.of("Ismeretlen specializáció.");
+        final ClassSpecProfileGateway gateway = profileGateway;
+        if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) {
+            return Optional.of("A karakterprofil még töltődik.");
+        }
+        if (jobManager.getPrimaryJob(player) != specialization.getParentJob()) {
+            return Optional.of("Ez a specializáció nem a jelenlegi kasztodhoz tartozik.");
+        }
+        if (jobManager.getPrimaryLevel(player) < getRequiredClassLevel()
+                && !hasMemorySpecUnlock(player)) {
+            return Optional.of("Szükséges kasztszint: " + getRequiredClassLevel() + '.');
+        }
+        final ProfileDiagnostic diagnostic = gateway.diagnostic(player.getUniqueId());
+        if (slotContaining(diagnostic, specialization).isPresent()) {
+            return Optional.of("Ezt az utat már megtanultad az egyik összeállításban.");
+        }
+        if (selectionSlot(diagnostic).isEmpty()) {
+            return Optional.of(diagnostic.secondSpecUnlocked()
+                    ? "Mindkét összeállítás foglalt. Előbb válts vissza egyet."
+                    : "A második összeállítás a(z) " + getSecondSpecUnlockLevel() + ". szinten nyílik.");
+        }
+        final GateSnapshot gates = captureGateSnapshot(player, specialization);
+        if (gates.missingReason() == null) return Optional.empty();
+        if (specialization.getRequiredFaction() != null
+                && !factionManager.isMember(player.getUniqueId(), specialization.getRequiredFaction())) {
+            return Optional.of("Szükséges frakció: "
+                    + specialization.getRequiredFaction().getDisplayName() + '.');
+        }
+        if (specialization.requiresSinner() && !sinManager.isSinner(player)) {
+            return Optional.of("Ehhez az úthoz állandó bűnös állapot szükséges.");
+        }
+        final String quest = configManager.getString(
+                "specializations." + specialization.getId() + ".required-quest", "").trim();
+        if (!quest.isEmpty() && !questManager.hasCompleted(player, quest)) {
+            return Optional.of("Előbb teljesítsd a szükséges történeti küldetést.");
+        }
+        return Optional.of("A specializáció egyik kapufeltétele még hiányzik.");
+    }
+
+    public Optional<String> classSwitchBlockReason(final Player player,
+                                                   final LoadoutSlot targetSlot) {
+        if (player == null || targetSlot == null) return Optional.of("Ismeretlen összeállítás.");
+        if (!isGameplayV2Class(player)) return Optional.of("Ehhez a kaszthoz nincs aktív loadout-rendszer.");
+        final ClassSpecProfileGateway gateway = profileGateway;
+        final ResourceManager resources = resourceManager;
+        if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) {
+            return Optional.of("A karakterprofil még töltődik.");
+        }
+        final ProfileDiagnostic diagnostic = gateway.diagnostic(player.getUniqueId());
+        if (diagnostic.activeSlot().filter(targetSlot::equals).isPresent()) {
+            return Optional.of("Ez az összeállítás már aktív.");
+        }
+        final ProfileDiagnostic.SlotDiagnostic target = diagnostic.slots().get(targetSlot);
+        if (target == null || target.status() == LoadoutStatus.EMPTY) {
+            return Optional.of("Ebben a helyben még nincs specializáció.");
+        }
+        if (target.status() == LoadoutStatus.SEALED) {
+            return Optional.of("Az összeállítás le van pecsételve; állítsd helyre a kapufeltételeit.");
+        }
+        if (target.status() != LoadoutStatus.INACTIVE) {
+            return Optional.of("Ez az összeállítás most nem aktiválható.");
+        }
+        if (resources == null) return Optional.of("A harci biztonsági ellenőrzés még nem érhető el.");
+        final long graceMillis = Math.max(1L, configManager.getLong(
+                "classes.specialization.switch-combat-grace-seconds", 8L)) * 1000L;
+        if (resources.isInCombat(player.getUniqueId(), graceMillis)) {
+            return Optional.of("Harc közben nem válthatsz összeállítást.");
+        }
+        final double radius = Math.max(1.0D, configManager.getDouble(
+                "classes.specialization.switch-safe-radius", 12.0D));
+        final boolean hostileNearby = player.getNearbyEntities(radius, radius, radius).stream()
+                .filter(LivingEntity.class::isInstance)
+                .map(LivingEntity.class::cast)
+                .anyMatch(entity -> SpellTargetingUtil.isHostileTarget(player, entity));
+        return hostileNearby ? Optional.of("Ellenség van túl közel az összeállítás-váltáshoz.")
+                : Optional.empty();
+    }
+
     public SpecializationType getClassSpecialization(final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway;
         if (player == null || gateway == null
@@ -407,24 +501,7 @@ public final class SpecializationManager {
 
     public boolean canSwitchClassSpecialization(final Player player,
                                                 final LoadoutSlot targetSlot) {
-        if (player == null || targetSlot == null || !isGameplayV2Class(player)) return false;
-        final ClassSpecProfileGateway gateway = profileGateway;
-        final ResourceManager resources = resourceManager;
-        if (gateway == null || resources == null
-                || !gateway.isSessionReady(player.getUniqueId())) return false;
-        final ProfileDiagnostic diagnostic = gateway.diagnostic(player.getUniqueId());
-        final ProfileDiagnostic.SlotDiagnostic target = diagnostic.slots().get(targetSlot);
-        if (target == null || target.status() != LoadoutStatus.INACTIVE
-                || diagnostic.activeSlot().filter(targetSlot::equals).isPresent()) return false;
-        final long graceMillis = Math.max(1L, configManager.getLong(
-                "classes.specialization.switch-combat-grace-seconds", 8L)) * 1000L;
-        if (resources.isInCombat(player.getUniqueId(), graceMillis)) return false;
-        final double radius = Math.max(1.0D, configManager.getDouble(
-                "classes.specialization.switch-safe-radius", 12.0D));
-        return player.getNearbyEntities(radius, radius, radius).stream()
-                .filter(LivingEntity.class::isInstance)
-                .map(LivingEntity.class::cast)
-                .noneMatch(entity -> SpellTargetingUtil.isHostileTarget(player, entity));
+        return classSwitchBlockReason(player, targetSlot).isEmpty();
     }
 
     public CompletionStage<Boolean> switchClassSpecializationV2(
@@ -736,25 +813,36 @@ public final class SpecializationManager {
 
     public CompletionStage<Void> reconcileClassProgression(final Player player) {
         final JobType job = player == null ? null : jobManager.getPrimaryJob(player);
-        if (job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())
-                || jobManager.getPrimaryLevel(player) < 50) {
+        if (job == null || !GameplayV2ClassPolicy.isEnabled(job.getId())) {
             return CompletableFuture.completedFuture(null);
         }
         final ClassSpecSection profile = profileGateway().currentProfile(player.getUniqueId())
                 .orElse(null);
         if (profile == null) return CompletableFuture.completedFuture(null);
         CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
-        for (final LoadoutSlot slot : LoadoutSlot.values()) {
-            final ClassLoadout loadout = profile.loadout(slot);
-            if (!ClassSpecCatalog.belongsTo(loadout.specializationId(), job.getId())
-                    || loadout.capstoneStatus() != CapstoneStatus.LOCKED) continue;
-            chain = chain.thenCompose(ignored -> profileGateway().setCapstone(
-                            player.getUniqueId(),
-                            new ClassSpecProfileGateway.CapstoneRequest(
-                                    slot, CapstoneStatus.AVAILABLE))
-                    .thenApply(result -> null));
+        if (jobManager.getPrimaryLevel(player) >= 50) {
+            for (final LoadoutSlot slot : LoadoutSlot.values()) {
+                final ClassLoadout loadout = profile.loadout(slot);
+                if (!ClassSpecCatalog.belongsTo(loadout.specializationId(), job.getId())
+                        || loadout.capstoneStatus() != CapstoneStatus.LOCKED) continue;
+                chain = chain.thenCompose(ignored -> profileGateway().setCapstone(
+                                player.getUniqueId(),
+                                new ClassSpecProfileGateway.CapstoneRequest(
+                                        slot, CapstoneStatus.AVAILABLE))
+                        .thenApply(result -> null));
+            }
         }
-        return chain.thenRun(() -> classProfileRefresh.accept(player));
+        return chain.thenCompose(ignored -> profileGateway().currentProfile(player.getUniqueId())
+                        .map(durable -> applyClassSpecializationUnlocksV2(player, durable))
+                        .orElseGet(() -> CompletableFuture.completedFuture(null)))
+                .thenRun(() -> classProfileRefresh.accept(player));
+    }
+
+    public Optional<String> capstoneTrialId(final SpecializationType specialization) {
+        if (specialization == null) return Optional.empty();
+        return TRIAL_SPECS.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(specialization.getId()))
+                .map(Map.Entry::getKey).findFirst();
     }
 
     public CompletionStage<Boolean> onQuestCompleted(final Player player,

@@ -1800,11 +1800,10 @@ A Party Frame minden tagot a saját frakciópalettájával renderel, nem a néz�
 vezetőjelzés, HP, class-resource és az offline/halott/távoli státusz kizárólag a HudManager
 immutable cache-eiből és a `PositionCache`-ből készül; nincs cross-region `Player`-olvasás.
 
-A `classes.yml` `health.enabled` kapuja továbbra is `false`: ez a változás a kijelzőt és a későbbi
-HP-scaling támogatását készíti elő, nem kapcsolja be élesben a teljes class-health/damage profilt.
-Aktiválás előtt stagingen kell ellenőrizni minden kaszt max HP-ját, direkt gyógyítását és fizikai
-sebzését. Az előkészített `health.display.normalize: false` miatt bekapcsolás után is a valódi
-current/max érték kerül a HUD-ra, nem tíz szívre visszaosztott szám.
+A `classes.yml` `health.enabled` kapuja csomagolt alapértéken `true`, ezért a teljes class-health,
+fizikai sebzés- és harcon kívüli regenerációs profil aktív. Stagingen minden kaszt max HP-ját,
+direkt gyógyítását és fizikai sebzését ellenőrizni kell. A `health.display.normalize: false` miatt
+a valódi current/max érték kerül a HUD-ra, nem tíz szívre visszaosztott szám.
 
 ### Személyes és globális layout-editor
 
