@@ -21,8 +21,9 @@ import java.util.TreeSet;
  * Config-driven WoW-style profession recipe catalog ({@code profession-recipes.yml}). Each recipe
  * belongs to a profession, requires a level, is learned either automatically at that level
  * ({@code learn: level}) or from a blueprint ({@code learn: blueprint}), consumes a list of
- * ingredients and yields a result. When the result declares an {@code affix-tier}, the crafted
- * item is rolled through {@link ItemRarityService} (so gear comes out unique).
+ * ingredients and yields a result. When the result declares an {@code affix-tier}, legacy gear is
+ * rolled through {@link ItemRarityService}; a {@code template} result instead creates the named
+ * canonical Itemization 2.0 template and may never mix the two output models.
  *
  * <p>Reloads are transactional: parsing and semantic validation build a private candidate state.
  * Readers keep the previous immutable generation until the complete candidate is published through
@@ -166,12 +167,25 @@ public final class ProfessionRecipeCatalog {
         final String canonicalTemplate = templateId == null || templateId.isBlank()
                 ? null : templateId.toLowerCase(Locale.ROOT);
         if (canonicalTemplate != null) {
+            if (uniqueResult != null || amount != 1) {
+                throw new IllegalStateException("profession-recipes." + id
+                        + ": a canonical gear result pontosan egy nem-stackelhető item lehet");
+            }
+            if ((affixTier != null && !affixTier.isBlank())
+                    || (signature != null && !signature.isBlank())
+                    || resultSection.contains("attributes")
+                    || resultSection.contains("enchant")
+                    || resultSection.contains("consumable")
+                    || resultSection.contains("potion-effects")) {
+                throw new IllegalStateException("profession-recipes." + id
+                        + ": a canonical template nem keverhető legacy result mutátorokkal");
+            }
             final hu.taliann.icesmp.itemization.ItemTemplateRegistry registry = itemTemplates;
             if (registry != null) {
                 final hu.taliann.icesmp.itemization.ItemTemplate template = registry.find(canonicalTemplate)
                         .orElseThrow(() -> new IllegalStateException("profession-recipes." + id
                                 + ": ismeretlen authored template: " + canonicalTemplate));
-                if (uniqueResult != null || amount != 1 || !template.material().equals(result.name())) {
+                if (!template.material().equals(result.name())) {
                     throw new IllegalStateException("profession-recipes." + id
                             + ": a canonical gear result nem egyezik a template material/stack szabályával");
                 }
@@ -201,9 +215,11 @@ public final class ProfessionRecipeCatalog {
         recipe.uniqueIngredients().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> inputs.add("unique:" + entry.getKey() + ':' + entry.getValue()));
-        final String output = recipe.uniqueResult() == null
-                ? "material:" + recipe.result().name()
-                : "unique:" + recipe.uniqueResult();
+        final String output = recipe.templateId() != null
+                ? "template:" + recipe.templateId()
+                : recipe.uniqueResult() == null
+                        ? "material:" + recipe.result().name()
+                        : "unique:" + recipe.uniqueResult();
         return String.join("+", inputs) + "->" + output + ':' + recipe.resultAmount();
     }
 
