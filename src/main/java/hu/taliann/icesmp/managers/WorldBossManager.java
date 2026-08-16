@@ -1,6 +1,11 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.pve.ContributionLedger;
+import hu.taliann.icesmp.pve.EncounterRewardDeliveryService;
+import hu.taliann.icesmp.pve.EncounterScalingPolicy;
+import hu.taliann.icesmp.pve.MobAbilityRuntime;
+import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -24,6 +29,10 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,10 +58,24 @@ public final class WorldBossManager {
     /** B33: a szezonzáró boss jelölője (halálakor egyedi loot-tábla gurul). */
     private final NamespacedKey finaleBossKey;
     private volatile hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
+    private volatile MobScalingManager mobScaling;
+    private volatile MobAbilityRuntime mobAbilityRuntime;
+    private volatile EncounterRewardDeliveryService rewardDelivery;
+    private volatile EncounterScalingPolicy.Snapshot encounterSnapshot;
+    private volatile ContributionLedger contributionLedger;
+    private final Set<UUID> rewardCandidates = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     public void setUniqueMaterials(
             final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         this.uniqueMaterials = uniqueMaterials;
+    }
+
+    public void setPveRuntime(final MobScalingManager mobScaling,
+                              final MobAbilityRuntime mobAbilityRuntime,
+                              final EncounterRewardDeliveryService rewardDelivery) {
+        this.mobScaling = mobScaling;
+        this.mobAbilityRuntime = mobAbilityRuntime;
+        this.rewardDelivery = rewardDelivery;
     }
 
     /**
@@ -270,6 +293,74 @@ public final class WorldBossManager {
         bossHealthFraction = (float) Math.max(0.0D, Math.min(1.0D, projected / maxHp));
     }
 
+    public void recordBossDamage(final LivingEntity boss, final UUID playerId,
+                                 final double incomingDamage) {
+        final ContributionLedger ledger = contributionLedger;
+        if (ledger == null || playerId == null || activeBossId == null
+                || boss == null || !activeBossId.equals(boss.getUniqueId())) return;
+        ledger.register(playerId); // Late join contributes, but never mutates the scaling snapshot.
+        ledger.recordDamage(playerId, Math.max(0.0D, Math.min(boss.getHealth(), incomingDamage)),
+                System.currentTimeMillis());
+        final double threshold = Math.max(1.0D, configManager.getDouble(
+                "world-events.world-boss.contribution.minimum-score", 25.0D));
+        final EncounterScalingPolicy.Snapshot snapshot = encounterSnapshot;
+        final EncounterRewardDeliveryService delivery = rewardDelivery;
+        if (snapshot != null && delivery != null
+                && ledger.contribution(playerId).score() >= threshold
+                && rewardCandidates.add(playerId)) {
+            final String componentId = configManager.getString(
+                    "world-events.world-boss.ascension-component", "osi_ereklyeszilank");
+            final int amount = Math.max(1, Math.min(8, configManager.getInt(
+                    "world-events.world-boss.ascension-component-amount", 1)
+                    + (boss.getPersistentDataContainer().getOrDefault(finaleBossKey,
+                    PersistentDataType.BYTE, (byte) 0) == (byte) 1 ? 1 : 0)));
+            delivery.reserveEligibility(playerId, snapshot.encounterId(), componentId, amount);
+        }
+    }
+
+    public void recordBossTanking(final UUID playerId, final double damage) {
+        final ContributionLedger ledger = contributionLedger;
+        if (ledger != null && playerId != null) {
+            ledger.recordTanking(playerId, Math.max(0.0D, damage), System.currentTimeMillis());
+        }
+    }
+
+    public EncounterScalingPolicy.Snapshot encounterSnapshot() { return encounterSnapshot; }
+
+    private EncounterScalingPolicy.Snapshot createEncounterSnapshot(final LivingEntity boss) {
+        final double radius = Math.max(16.0D, Math.min(512.0D, configManager.getDouble(
+                "world-events.world-boss.scaling.participant-radius", 128.0D)));
+        final double radiusSquared = radius * radius;
+        final LinkedHashSet<UUID> participants = new LinkedHashSet<>();
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final Location cached = hu.taliann.icesmp.utils.PositionCache.get(player.getUniqueId());
+            if (cached != null && cached.getWorld() == boss.getWorld()
+                    && cached.distanceSquared(boss.getLocation()) <= radiusSquared) {
+                participants.add(player.getUniqueId());
+                if (participants.size() >= ContributionLedger.MAX_PARTICIPANTS) break;
+            }
+        }
+        if (participants.isEmpty()) {
+            Bukkit.getOnlinePlayers().stream().findFirst()
+                    .ifPresent(player -> participants.add(player.getUniqueId()));
+        }
+        if (participants.isEmpty()) {
+            // A spawn path already requires an online anchor; this is a defensive fail-closed guard.
+            throw new IllegalStateException("world boss encounter has no participant snapshot");
+        }
+        final double tierReference = Math.max(1.0D, configManager.getDouble(
+                "world-events.world-boss.scaling.tier-reference-power", 250.0D));
+        final EncounterScalingPolicy.Tuning tuning = new EncounterScalingPolicy.Tuning(
+                configManager.getDouble("world-events.world-boss.scaling.player-coefficient", 0.65D),
+                configManager.getDouble("world-events.world-boss.scaling.player-exponent", 0.8D),
+                configManager.getDouble("world-events.world-boss.scaling.maximum-health-multiplier", 12.0D),
+                configManager.getDouble("world-events.world-boss.scaling.damage-per-doubling", 0.04D),
+                configManager.getDouble("world-events.world-boss.scaling.maximum-damage-multiplier", 1.18D),
+                configManager.getDouble("world-events.world-boss.scaling.combat-power-influence", 0.20D));
+        return EncounterScalingPolicy.snapshot(boss.getUniqueId(), 1, participants,
+                tierReference, tierReference, System.currentTimeMillis(), tuning);
+    }
+
     /**
      * Reserved while a spawn hops threads (set synchronously, self-heals after 10s):
      * activeBossUntil is only written at the END of the two-hop spawn chain, so without
@@ -289,6 +380,11 @@ public final class WorldBossManager {
         spawnGraceUntil = 0L;
         final java.util.UUID id = activeBossId;
         activeBossId = null;
+        final ContributionLedger ledger = contributionLedger;
+        if (ledger != null) ledger.close();
+        contributionLedger = null;
+        encounterSnapshot = null;
+        rewardCandidates.clear();
         if (id == null) {
             return;
         }
@@ -506,10 +602,24 @@ public final class WorldBossManager {
                         "A Lapforduló Őre") + " &c[Szezonboss]" : archetype.displayName)));
         boss.setCustomNameVisible(true);
 
+        final EncounterScalingPolicy.Snapshot scalingSnapshot = createEncounterSnapshot(boss);
+        encounterSnapshot = scalingSnapshot;
+        contributionLedger = new ContributionLedger(scalingSnapshot.encounterId(),
+                scalingSnapshot.createdAt(), scalingSnapshot.participants());
+        rewardCandidates.clear();
+        final MobScalingManager mobScalingRef = mobScaling;
+        if (mobScalingRef != null) {
+            final int displayLevel = Math.max(1, configManager.getInt(
+                    "world-events.world-boss.display-level", 75));
+            mobScalingRef.markEncounterMetadata(boss, displayLevel, MobRank.WORLD_BOSS,
+                    archetype == BossArchetype.RING_WARDEN ? "ring_warden" : null,
+                    archetype.name());
+        }
+
         final double finaleHealthMult = finale
                 ? Math.max(1.0D, configManager.getDouble("world-events.season-finale.boss.health-mult", 1.5D)) : 1.0D;
         final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D))
-                * archetype.healthMult * finaleHealthMult;
+                * archetype.healthMult * finaleHealthMult * scalingSnapshot.healthMultiplier();
         final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(health);
@@ -517,7 +627,8 @@ public final class WorldBossManager {
         }
         bossHealthFraction = 1.0F;
 
-        final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D)) * archetype.damageMult;
+        final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D))
+                * archetype.damageMult * scalingSnapshot.damageMultiplier();
         final AttributeInstance attackDamage = boss.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attackDamage != null) {
             attackDamage.setBaseValue(attackDamage.getBaseValue() * damageMultiplier);
@@ -532,6 +643,10 @@ public final class WorldBossManager {
         spawnLocation.getWorld().playSound(spawnLocation, archetype.sound, 2.0F, 0.6F);
 
         startPhaseTick(boss, archetype);
+        final MobAbilityRuntime abilityRuntimeRef = mobAbilityRuntime;
+        if (abilityRuntimeRef != null && archetype == BossArchetype.RING_WARDEN) {
+            abilityRuntimeRef.attach(boss);
+        }
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 finale ? "season-finale-boss-spawned" : "world-boss-spawned",
@@ -799,130 +914,93 @@ public final class WorldBossManager {
         hu.taliann.icesmp.utils.DisplayFxUtil.groundTelegraph(plugin, center, radius, 30, org.bukkit.Color.fromRGB(0xE23B3B), block);
     }
 
-    /**
-     * Pays out the boss kill: treasury reward (scaled by the archetype) + league points for
-     * the killer's faction and a temporary buff for the slayer. Called by WorldBossListener.
-     *
-     * @param boss the slain boss
-     * @param killer the slayer
-     * @param allowRewards false when the global AFK gate suppresses every payout
-     */
-    public void handleBossDeath(final LivingEntity boss, final Player killer,
-                                final boolean allowRewards) {
-        // Csak az ÉLŐ, követett bossért jár jutalom: crash után árván maradt (PDC-tages,
-        // de már nem követett) példány leölése nem fizethet dupla kasszát/liga-pontot,
-        // és nem nullázhatja az épp futó boss követését.
-        final java.util.UUID trackedId = activeBossId;
-        if (trackedId == null || !boss.getUniqueId().equals(trackedId)) {
-            return;
-        }
+    /** Contribution-gated, personal and restart-idempotent world-boss settlement. */
+    public void handleBossDeath(final LivingEntity boss, final Player killingBlow,
+                                final Predicate<UUID> rewardAllowed) {
+        final UUID trackedId = activeBossId;
+        final ContributionLedger ledger = contributionLedger;
+        final EncounterScalingPolicy.Snapshot snapshot = encounterSnapshot;
+        if (trackedId == null || boss == null || !boss.getUniqueId().equals(trackedId)
+                || ledger == null || snapshot == null) return;
         activeBossUntil = 0L;
         activeBossId = null;
+        ledger.close();
+        contributionLedger = null;
+        encounterSnapshot = null;
 
-        // The tracked lifecycle must close even when AFK protection suppresses every reward.
-        if (!allowRewards) {
-            killer.getScheduler().run(plugin, task -> killer.sendActionBar(messageManager.getMessage(
-                    "afk-reward-blocked",
-                    "<gray>⌚ AFK állapotban a világboss jutalmai nem járnak.</gray>")), null);
+        final double threshold = Math.max(1.0D, configManager.getDouble(
+                "world-events.world-boss.contribution.minimum-score", 25.0D));
+        final List<Map.Entry<UUID, ContributionLedger.Contribution>> qualified =
+                ledger.qualified(threshold, snapshot.createdAt());
+        if (qualified.isEmpty()) {
+            plugin.getLogger().warning("World boss died without a meaningful contribution winner: "
+                    + boss.getUniqueId());
             return;
         }
 
-        double rewardMult = 1.0D;
-        final String archetypeName = boss.getPersistentDataContainer().get(bossArchetypeKey, PersistentDataType.STRING);
+        final UUID leaderId = qualified.getFirst().getKey();
+        final Player leader = Bukkit.getPlayer(leaderId);
+        final String leaderName = leader == null ? "Ismeretlen hős" : leader.getName();
+        double rewardMultiplier = 1.0D;
+        final String archetypeName = boss.getPersistentDataContainer().get(
+                bossArchetypeKey, PersistentDataType.STRING);
         if (archetypeName != null) {
-            try {
-                rewardMult = BossArchetype.valueOf(archetypeName).rewardMult;
-            } catch (final IllegalArgumentException ignored) {
-                // Unknown/old archetype tag — fall back to the base reward.
-            }
+            try { rewardMultiplier = BossArchetype.valueOf(archetypeName).rewardMult; }
+            catch (final IllegalArgumentException ignored) { }
         }
+        final FactionType faction = factionManager.getChosenFaction(leaderId).orElse(null);
+        final double treasuryReward = Math.max(0.0D, configManager.getDouble(
+                "world-events.world-boss.treasury-reward", 300.0D)) * rewardMultiplier;
+        if (faction != null && treasuryReward > 0.0D) treasuryManager.deposit(faction, treasuryReward);
+        if (faction != null) seasonManager.addPoints(faction, Math.max(0,
+                configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
 
-        final FactionType faction = factionManager.getChosenFaction(
-                killer.getUniqueId()).orElse(null);
-        final double reward = Math.max(0.0D, configManager.getDouble("world-events.world-boss.treasury-reward", 300.0D)) * rewardMult;
-        if (faction != null && reward > 0.0D) {
-            treasuryManager.deposit(faction, reward);
-        }
+        final boolean finale = boss.getPersistentDataContainer().getOrDefault(
+                finaleBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+        if (finale && faction != null) seasonManager.addPoints(faction, Math.max(0,
+                configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)),
+                "world-boss");
+        final int buffTicks = Math.max(1, configManager.getInt(
+                "world-events.world-boss.buff-minutes", 10)) * 60 * 20;
+        final String componentId = configManager.getString(
+                "world-events.world-boss.ascension-component", "osi_ereklyeszilank");
+        final int componentAmount = Math.max(1, Math.min(8, configManager.getInt(
+                "world-events.world-boss.ascension-component-amount", 1) + (finale ? 1 : 0)));
+        final EncounterRewardDeliveryService delivery = rewardDelivery;
 
-        if (faction != null) {
-            seasonManager.addPoints(faction, Math.max(0,
-                    configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
-        }
-        AdvancementService.award(killer, "world_boss");
-
-        // Szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
-        // régió-szálán fut, a drop ott biztonságos) + extra liga-pont + saját broadcast.
-        if (boss.getPersistentDataContainer().getOrDefault(finaleBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1) {
-            final int rolls = Math.max(1, configManager.getInt("world-events.season-finale.boss.loot-rolls", 6));
-            for (final org.bukkit.inventory.ItemStack loot
-                    : LootTable.roll(configManager, "world-events.season-finale.boss.loot", rolls)) {
-                boss.getWorld().dropItemNaturally(boss.getLocation(), loot);
+        for (final Map.Entry<UUID, ContributionLedger.Contribution> entry : qualified) {
+            final UUID playerId = entry.getKey();
+            if (!ledger.claimSettlement(playerId)) continue;
+            final boolean allowed = rewardAllowed == null || rewardAllowed.test(playerId);
+            if (!allowed) {
+                if (delivery != null) delivery.reject(playerId, snapshot.encounterId(),
+                        componentId, componentAmount);
+                continue;
             }
-            if (faction != null) {
-                seasonManager.addPoints(faction, Math.max(0,
-                        configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)), "world-boss");
-                Bukkit.getServer().broadcast(messageManager.getMessage(
-                        "season-finale-boss-slain",
-                        "<dark_purple>📖 {player} ledöntötte a Lapforduló Őrét — a Korszakok Könyve új fejezetet nyit! A(z) {faction} extra liga-pontot nyert a záráshoz.</dark_purple>",
-                        Map.of("player", killer.getName(), "faction", faction.getDisplayName())));
-            } else {
-                Bukkit.getServer().broadcast(messageManager.getMessage(
-                        "season-finale-boss-slain-guest",
-                        "<dark_purple>📖 {player}, a Menedék vendége ledöntötte a Lapforduló Őrét — személyes jutalma jár, de frakciópont nem.</dark_purple>",
-                        Map.of("player", killer.getName())));
-            }
+            if (delivery != null) delivery.activate(playerId, snapshot.encounterId(),
+                    componentId, componentAmount);
+            final Player player = Bukkit.getPlayer(playerId);
+            if (player == null) continue;
+            player.getScheduler().run(plugin, task -> {
+                if (!isSurvivor(player)) return;
+                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
+                        buffTicks, 0, false, true, true));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,
+                        buffTicks, 0, false, true, true));
+                AdvancementService.award(player, "world_boss");
+            }, null);
         }
+        rewardCandidates.clear();
 
-        final int buffMinutes = Math.max(1, configManager.getInt("world-events.world-boss.buff-minutes", 10));
-        // Folia: the death event runs on the boss's region; buff the killer on their own region thread.
-        final int buffTicks = buffMinutes * 60 * 20;
-        // A leütő SZEMÉLYES bónusz-zsákmánya a kasszajutalom mellett —
-        // a boss egyénileg is megéri (tárgy, sosem pénz). Inventory-írás = saját régió-szál.
-        final int killerRolls = Math.max(0, configManager.getInt("world-events.world-boss.killer-loot-rolls", 2));
-        killer.getScheduler().run(plugin, task -> {
-            killer.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, buffTicks, 0, false, true, true));
-            killer.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, buffTicks, 0, false, true, true));
-            if (killerRolls > 0) {
-                for (final org.bukkit.inventory.ItemStack loot
-                        : LootTable.roll(configManager, "world-events.world-boss.killer-loot", killerRolls)) {
-                    killer.getInventory().addItem(loot).values()
-                            .forEach(left -> killer.getWorld().dropItemNaturally(killer.getLocation(), left));
-                }
-            }
-            final hu.taliann.icesmp.items.UniqueMaterialFactory materials = uniqueMaterials;
-            final String componentId = configManager.getString(
-                    "world-events.world-boss.ascension-component", "osi_ereklyeszilank");
-            final int componentAmount = Math.max(0, Math.min(8, configManager.getInt(
-                    "world-events.world-boss.ascension-component-amount", 1)));
-            if (materials != null && componentAmount > 0) {
-                final org.bukkit.inventory.ItemStack component =
-                        materials.create(componentId, componentAmount);
-                if (component != null) {
-                    killer.getInventory().addItem(component).values()
-                            .forEach(left -> killer.getWorld().dropItemNaturally(
-                                    killer.getLocation(), left));
-                } else {
-                    plugin.getLogger().severe("World boss ascension component undefined: " + componentId);
-                }
-            }
-        }, null);
-
-        if (faction == null) {
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "world-boss-slain-guest",
-                    "<gold>⚔ {player}, a Menedék vendége legyőzte a világbosst! Személyes jutalma jár, de frakciókassza- és liga-jóváírás nem.</gold>",
-                    Map.of("player", killer.getName())));
-        } else {
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "world-boss-slain",
-                    "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>",
-                    Map.of(
-                            "player", killer.getName(),
-                            "faction", faction.getDisplayName(),
-                            "reward", String.valueOf(reward),
-                            "points", String.valueOf(configManager.getInt("world-events.world-boss.season-points", 10))
-                    )
-            ));
-        }
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                faction == null ? "world-boss-slain-guest" : "world-boss-slain",
+                faction == null
+                        ? "<gold>⚔ {player} vezette a világboss elleni győzelmet! Minden érdemi résztvevő személyes jutalmat kap.</gold>"
+                        : "<gold>⚔ {player} vezette a világboss elleni győzelmet! A(z) {faction} kasszája <white>{reward}</white> kincset kapott; minden érdemi résztvevő személyes jutalmat kap.</gold>",
+                faction == null ? Map.of("player", leaderName) : Map.of(
+                        "player", leaderName, "faction", faction.getDisplayName(),
+                        "reward", String.valueOf(treasuryReward),
+                        "points", String.valueOf(configManager.getInt(
+                                "world-events.world-boss.season-points", 10)))));
     }
 }

@@ -1,0 +1,164 @@
+# IceSMP Mob/Encounter 2.0 — authored pilot content.
+# Natural vanilla mobs without a matching entry stay on the safe fallback path.
+
+mob-abilities:
+  telegraphed_lunge:
+    kind: LUNGE
+    cooldown-ticks: 120
+    telegraph-ticks: 20
+    radius: 10.0
+    power: 1.15
+    max-summons: 0
+  glacial_slam:
+    kind: GROUND_SLAM
+    cooldown-ticks: 180
+    telegraph-ticks: 30
+    radius: 4.5
+    power: 6.0
+    max-summons: 0
+    tuning: { knockback: 0.8 }
+  rime_burst:
+    kind: PROJECTILE_BURST
+    cooldown-ticks: 140
+    telegraph-ticks: 20
+    radius: 14.0
+    power: 3.0
+    max-summons: 0
+    tuning: { projectiles: 3 }
+  iceguard:
+    kind: SHIELD
+    cooldown-ticks: 240
+    telegraph-ticks: 10
+    radius: 2.0
+    power: 0.35
+    max-summons: 0
+  winter_mend:
+    kind: HEAL_PULSE
+    cooldown-ticks: 260
+    telegraph-ticks: 20
+    radius: 3.0
+    power: 0.12
+    max-summons: 0
+  call_frozen:
+    kind: SUMMON
+    cooldown-ticks: 300
+    telegraph-ticks: 30
+    radius: 5.0
+    power: 1.0
+    max-summons: 3
+
+# Source relevance is authoritative. Runtime loot may only choose rewards declared by the profile.
+mob-loot-profiles:
+  frozen_wilderness:
+    sources: [ "combat:wilderness:frozen" ]
+    rewards: [ "material:dermedt_csont", "authored:fagyott_eskukard" ]
+  deep_mine:
+    sources: [ "combat:deep_mine" ]
+    rewards: [ "material:sarkfeny_cseppko", "rune:fagy_runa" ]
+  cultist:
+    sources: [ "combat:cultist" ]
+    rewards: [ "material:runapor", "blueprint:glatziendorfi_jegtoro" ]
+  champion:
+    sources: [ "combat:champion" ]
+    rewards: [ "rune:fagy_runa", "material:folyositoszer" ]
+  world_boss:
+    sources: [ "combat:world_boss" ]
+    rewards: [ "material:osi_ereklyeszilank", "authored:glatziendorfi_jegtoro" ]
+
+mob-templates:
+  frozen_husk:
+    schema-version: 1
+    display-name: "Dermedt Kóborló"
+    entity-type: ZOMBIE
+    level: { minimum: 6, maximum: 16 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.10, damage-multiplier: 0.90, movement-multiplier: 0.90, cc-resistance: 0.10 }
+    abilities: [ "iceguard" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "fire" ]
+    loot-profile: frozen_wilderness
+    source-tags: [ "biome:snowy_plains", "region:frozen" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: frozen_husk
+    affix-pool: [ "VOLATILE", "SHIELDED", "FROSTBOUND", "FRENZIED" ]
+  frostbound_stray:
+    schema-version: 1
+    display-name: "Fagybilincs Íjász"
+    entity-type: STRAY
+    level: { minimum: 14, maximum: 26 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.95, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.15 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "fire" ]
+    loot-profile: frozen_wilderness
+    source-tags: [ "biome:snowy_taiga", "region:frozen" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: frostbound_stray
+    affix-pool: [ "VOLATILE", "SHIELDED", "FROSTBOUND", "ARCANE" ]
+  deep_vein_stalker:
+    schema-version: 1
+    display-name: "Érjáró Leselkedő"
+    entity-type: CAVE_SPIDER
+    level: { minimum: 24, maximum: 40 }
+    rank: NORMAL
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.90, damage-multiplier: 1.10, movement-multiplier: 1.15, cc-resistance: 0.10 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: deep_mine
+    source-tags: [ "depth:deep", "region:mine" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: deep_vein_stalker
+    affix-pool: [ "VOLATILE", "VAMPIRIC", "FRENZIED", "FROSTBOUND" ]
+  rime_cultist:
+    schema-version: 1
+    display-name: "Zúzmara Kultista"
+    entity-type: PILLAGER
+    level: { minimum: 22, maximum: 38 }
+    rank: VETERAN
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 1.10, damage-multiplier: 1.05, movement-multiplier: 1.05, cc-resistance: 0.20 }
+    abilities: [ "telegraphed_lunge", "rime_burst" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "holy" ]
+    loot-profile: cultist
+    source-tags: [ "event:cultist" ]
+    spawn-policy: event
+    bestiary-id: rime_cultist
+    affix-pool: [ "VOLATILE", "SHIELDED", "ARCANE", "SUMMONER" ]
+  glacier_champion:
+    schema-version: 1
+    display-name: "Jégfal Bajnoka"
+    entity-type: RAVAGER
+    level: { minimum: 42, maximum: 50 }
+    rank: CHAMPION
+    archetype: CHARGER
+    stats: { health-multiplier: 1.55, damage-multiplier: 1.10, movement-multiplier: 1.0, cc-resistance: 0.55 }
+    abilities: [ "telegraphed_lunge", "glacial_slam", "iceguard" ]
+    resistances: [ "frost", "knockback" ]
+    weaknesses: [ "fire" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion", "region:frozen" ]
+    spawn-policy: authored
+    bestiary-id: glacier_champion
+    affix-pool: [ "SHIELDED", "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+  ring_warden:
+    schema-version: 1
+    display-name: "A Gyűrűk Őre"
+    entity-type: RAVAGER
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: DEFENDER
+    stats: { health-multiplier: 2.0, damage-multiplier: 1.15, movement-multiplier: 0.95, cc-resistance: 0.80 }
+    abilities: [ "glacial_slam", "iceguard", "call_frozen" ]
+    resistances: [ "frost", "knockback" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: ring_warden
+    affix-pool: []

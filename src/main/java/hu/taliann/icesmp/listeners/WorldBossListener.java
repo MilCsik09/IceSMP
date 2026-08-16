@@ -6,9 +6,11 @@ import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.utils.MobKillUtil;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 
 /**
@@ -32,9 +34,19 @@ public final class WorldBossListener implements Listener {
 
     /** Keeps the shared HUD boss-bar in sync with the boss's health the moment it takes a hit. */
     @EventHandler(ignoreCancelled = true)
-    public void onWorldBossDamage(final EntityDamageEvent event) {
+    public void onWorldBossDamage(final EntityDamageByEntityEvent event) {
         if (event.getEntity() instanceof LivingEntity boss && worldBossManager.isWorldBoss(boss)) {
             worldBossManager.updateHealthBar(boss, event.getFinalDamage());
+            final Player contributor = playerSource(event.getDamager());
+            if (contributor != null) {
+                worldBossManager.recordBossDamage(boss, contributor.getUniqueId(),
+                        event.getFinalDamage());
+            }
+        }
+        if (event.getDamager() instanceof LivingEntity boss
+                && worldBossManager.isWorldBoss(boss)
+                && event.getEntity() instanceof Player player) {
+            worldBossManager.recordBossTanking(player.getUniqueId(), event.getFinalDamage());
         }
     }
 
@@ -44,13 +56,18 @@ public final class WorldBossListener implements Listener {
             return;
         }
 
-        final Player killer = event.getEntity().getKiller();
-        if (killer == null) {
-            return;
-        }
+        worldBossManager.handleBossDeath(event.getEntity(), event.getEntity().getKiller(),
+                playerId -> hu.taliann.icesmp.utils.GameModeCache.isKnown(playerId)
+                        && hu.taliann.icesmp.utils.GameModeCache.isSurvival(playerId)
+                        && !MobKillUtil.isAfkRewardBlocked(playerId, configManager, afkManager));
+    }
 
-        final boolean rewardsAllowed = !MobKillUtil.isAfkRewardBlocked(
-                killer.getUniqueId(), configManager, afkManager);
-        worldBossManager.handleBossDeath(event.getEntity(), killer, rewardsAllowed);
+    private static Player playerSource(final org.bukkit.entity.Entity damager) {
+        if (damager instanceof Player player) return player;
+        if (damager instanceof Projectile projectile) {
+            final ProjectileSource shooter = projectile.getShooter();
+            if (shooter instanceof Player player) return player;
+        }
+        return null;
     }
 }

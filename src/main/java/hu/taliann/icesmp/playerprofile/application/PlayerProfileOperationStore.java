@@ -33,6 +33,27 @@ public final class PlayerProfileOperationStore {
         return Optional.ofNullable(section.operations().get(requireId(operationId)));
     }
 
+    /** Bounded restart-recovery view for one operation type. */
+    public java.util.List<PlayerProfileOperation> prepared(final UUID playerId,
+                                                            final String type) {
+        return byTypeAndStatus(playerId, type, PlayerProfileOperation.Status.PREPARED);
+    }
+
+    public java.util.List<PlayerProfileOperation> byTypeAndStatus(
+            final UUID playerId, final String type,
+            final PlayerProfileOperation.Status status) {
+        final String normalizedType = requireId(type);
+        Objects.requireNonNull(status, "status");
+        final OperationSection section = PlayerProfileAuthority.current().requireSection(
+                Objects.requireNonNull(playerId, "playerId"),
+                ProfileSectionId.OPERATIONS, OperationSection.class);
+        return section.operations().values().stream()
+                .filter(operation -> operation.status() == status
+                        && operation.type().equals(normalizedType))
+                .sorted(Comparator.comparing(PlayerProfileOperation::createdAt))
+                .toList();
+    }
+
     public CompletionStage<PlayerProfileOperation> prepare(
             final UUID playerId,
             final String operationId,

@@ -921,8 +921,7 @@ public final class HudManager {
                 ? factionManager.getChosenFaction(target.targetId()).orElse(null) : null;
         final String relation;
         if (!target.player()) {
-            relation = target.rank() == TargetHudState.Rank.BOSS ? "Boss"
-                    : target.rank() == TargetHudState.Rank.ELITE ? "Elit" : "";
+            relation = target.rank().label();
         } else if (partyManager.isSameParty(viewer.getUniqueId(), target.targetId())) {
             relation = "Csapattag";
         } else {
@@ -932,8 +931,11 @@ public final class HudManager {
         }
         final String liveClass = targetHud == null || !targetHud.hasClass()
                 ? target.className() : targetHud.className();
-        final String status = liveClass.isBlank() ? relation
-                : relation + (relation.isBlank() ? "" : " • ") + liveClass;
+        final String mobStatus = target.player() ? "" : target.mobStatus();
+        final String statusBase = relation + (relation.isBlank() || mobStatus.isBlank()
+                ? "" : " • ") + mobStatus;
+        final String status = liveClass.isBlank() ? statusBase
+                : statusBase + (statusBase.isBlank() ? "" : " • ") + liveClass;
         final double health = targetSurvival == null ? target.health() : targetSurvival.health();
         final double maximumHealth = targetSurvival == null
                 ? target.maximumHealth() : targetSurvival.maximumHealth();

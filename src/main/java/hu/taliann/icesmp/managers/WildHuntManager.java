@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.PartyRewardResolver;
 import org.bukkit.Bukkit;
@@ -334,8 +335,9 @@ public final class WildHuntManager {
                 "🏹 " + beast.displayName,
                 net.kyori.adventure.text.format.NamedTextColor.DARK_RED));
         mob.setCustomNameVisible(true);
-        mobScalingManager.forceLevel(mob, Math.max(1,
-                configManager.getInt("wild-hunt.beast-level", 8)));
+        mobScalingManager.forceRankedLevel(mob, Math.max(1,
+                configManager.getInt("wild-hunt.beast-level", 8)),
+                MobRank.ELITE, null, "ASSASSIN");
         hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
         beastId = mob.getUniqueId();
         expiresAt = System.currentTimeMillis() + expireMillis();

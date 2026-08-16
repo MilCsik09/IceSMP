@@ -815,6 +815,10 @@ val mobEncounterDomainRegressionTest = registerRegression(
     "mobEncounterDomainRegressionTest",
     "Runs level 1-70 scaling, authored mob, ability, affix, encounter and contribution regressions.",
     "hu.taliann.icesmp.pve.MobEncounterDomainRegressionSuite")
+val mobRuntimeSourceRegressionTest = registerRegression(
+    "mobRuntimeSourceRegressionTest",
+    "Runs Folia, telegraph, bounded lifecycle and durable encounter reward source gates.",
+    "hu.taliann.icesmp.pve.MobRuntimeSourceRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -863,6 +867,6 @@ tasks.check {
         warlockGameplayRegressionTest, warlockProfileRegressionTest,
         wizardGameplayRegressionTest, wizardProfileRegressionTest,
         itemizationDomainRegressionTest, playerProfileLootDiversityRegressionTest,
-        mobEncounterDomainRegressionTest
+        mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest
     )
 }

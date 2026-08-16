@@ -203,6 +203,8 @@ public final class BestiaryManager {
      * (BestiaryListener, StatsCombatListener) és a GUI-megjelenítés ugyanezt a formát használja.
      */
     public static String entryId(final org.bukkit.entity.Entity entity) {
+        final String template = MobScalingManager.templateIdOf(entity);
+        if (template != null && !template.isBlank()) return template.toLowerCase(Locale.ROOT);
         final String variant = MobScalingManager.rareVariantOf(entity);
         return ((variant == null ? "" : variant + "_") + entity.getType().name())
                 .toLowerCase(Locale.ROOT);

@@ -76,8 +76,8 @@ public final class TargetHudRenderer {
             final int theme = THEMES.indexOf(state.factionTheme());
             return (char) (0xEB05 + Math.max(0, theme));
         }
-        if (state.rank() == TargetHudState.Rank.BOSS) return '\uEB0E';
-        if (state.rank() == TargetHudState.Rank.ELITE) return '\uEB0D';
+        if (state.rank().bossLike()) return '\uEB0E';
+        if (state.rank().eliteLike() || state.rank() == TargetHudState.Rank.VETERAN) return '\uEB0D';
         return switch (state.kind()) {
             case PASSIVE -> '\uEB0A';
             case NEUTRAL -> '\uEB0B';
@@ -87,7 +87,7 @@ public final class TargetHudRenderer {
 
     private static char iconGlyph(final TargetHudState state) {
         if (state.player()) return SurvivalHudRenderer.ICON_PLAYER;
-        if (state.rank() == TargetHudState.Rank.BOSS) return SurvivalHudRenderer.ICON_BOSS;
+        if (state.rank().bossLike()) return SurvivalHudRenderer.ICON_BOSS;
         return switch (state.kind()) {
             case PASSIVE -> SurvivalHudRenderer.ICON_PASSIVE;
             case NEUTRAL -> SurvivalHudRenderer.ICON_NEUTRAL;
@@ -96,8 +96,10 @@ public final class TargetHudRenderer {
     }
 
     private static TextColor mobAccent(final TargetHudState state) {
-        if (state.rank() == TargetHudState.Rank.BOSS) return TextColor.color(0xD96EF5);
-        if (state.rank() == TargetHudState.Rank.ELITE) return TextColor.color(0xE8B14E);
+        if (state.rank().bossLike()) return TextColor.color(0xD96EF5);
+        if (state.rank().eliteLike() || state.rank() == TargetHudState.Rank.VETERAN) {
+            return TextColor.color(0xE8B14E);
+        }
         return switch (state.kind()) {
             case PASSIVE -> TextColor.color(0x7DD69A);
             case NEUTRAL -> TextColor.color(0xE0BF62);

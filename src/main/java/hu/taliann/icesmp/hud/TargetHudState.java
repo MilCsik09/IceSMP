@@ -12,7 +12,23 @@ public record TargetHudState(UUID targetId, String name, Kind kind, Rank rank,
                              String status) {
 
     public enum Kind { PLAYER, PASSIVE, NEUTRAL, HOSTILE }
-    public enum Rank { NORMAL, ELITE, BOSS }
+    public enum Rank {
+        NORMAL, VETERAN, ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS;
+
+        public boolean bossLike() { return ordinal() >= MINIBOSS.ordinal(); }
+        public boolean eliteLike() { return this == ELITE || this == CHAMPION; }
+        public String label() {
+            return switch (this) {
+                case NORMAL -> "";
+                case VETERAN -> "Veterán";
+                case ELITE -> "Elit";
+                case CHAMPION -> "Bajnok";
+                case MINIBOSS -> "Miniboss";
+                case BOSS -> "Boss";
+                case WORLD_BOSS -> "Világboss";
+            };
+        }
+    }
 
     public TargetHudState {
         name = Objects.requireNonNullElse(name, "Célpont");
@@ -44,8 +60,7 @@ public record TargetHudState(UUID targetId, String name, Kind kind, Rank rank,
 
     public String typeLabel() {
         if (player()) return status.isBlank() ? "Játékos" : status;
-        if (rank == Rank.BOSS) return "Boss";
-        if (rank == Rank.ELITE) return "Elit";
+        if (rank != Rank.NORMAL) return rank.label();
         return switch (kind) {
             case PASSIVE -> "Békés";
             case NEUTRAL -> "Semleges";

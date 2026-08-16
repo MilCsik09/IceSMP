@@ -74,6 +74,7 @@ public final class DamageIndicatorListener implements Listener {
     /** A target frame teljes, owner-threaden rögzített célpont-pillanatképe. */
     public record LastTarget(UUID targetId, String targetName, TargetHudState.Kind kind,
                              TargetHudState.Rank rank, int level,
+                             String mobStatus,
                              double health, double maximumHealth,
                              String className, String resourceName,
                              int resource, int resourceMaximum, long atMillis) {
@@ -150,10 +151,8 @@ public final class DamageIndicatorListener implements Listener {
                 : Math.max(0.0D, Math.min(maximumHealth, living.getHealth() - finalDamage));
         final Integer storedLevel = mobLevel(victim);
         final int level = storedLevel == null ? 0 : Math.max(0, storedLevel);
-        final boolean worldBoss = isWorldBoss(victim);
-        final TargetHudState.Rank rank = worldBoss ? TargetHudState.Rank.BOSS
-                : level >= 20 || maximumHealth >= 80.0D
-                ? TargetHudState.Rank.ELITE : TargetHudState.Rank.NORMAL;
+        final TargetHudState.Rank rank = mobRank(victim, level, maximumHealth);
+        final String mobStatus = mobStatus(victim);
         final TargetHudState.Kind kind = targetKind(victim);
         String className = "";
         String resourceName = "";
@@ -172,7 +171,7 @@ public final class DamageIndicatorListener implements Listener {
             }
         }
         lastTargets.put(attackerId, new LastTarget(victim.getUniqueId(), name, kind, rank,
-                level, health, maximumHealth, className, resourceName,
+                level, mobStatus, health, maximumHealth, className, resourceName,
                 resource, resourceMaximum, System.currentTimeMillis()));
     }
 
@@ -194,6 +193,38 @@ public final class DamageIndicatorListener implements Listener {
                 new NamespacedKey(plugin, "world_boss"), PersistentDataType.BYTE)
                 || entity.getPersistentDataContainer().has(
                 new NamespacedKey(plugin, "dungeon_boss"), PersistentDataType.STRING);
+    }
+
+    private TargetHudState.Rank mobRank(final Entity entity, final int level,
+                                        final double maximumHealth) {
+        if (entity instanceof Player) return TargetHudState.Rank.NORMAL;
+        final String stored = entity.getPersistentDataContainer().get(
+                new NamespacedKey(plugin, "mob_rank"), PersistentDataType.STRING);
+        if (stored != null) {
+            try {
+                return TargetHudState.Rank.valueOf(stored.trim().toUpperCase(java.util.Locale.ROOT));
+            } catch (final IllegalArgumentException ignored) {
+                // Legacy/future unknown rank falls through to conservative presentation.
+            }
+        }
+        if (isWorldBoss(entity)) return TargetHudState.Rank.BOSS;
+        return level >= 20 || maximumHealth >= 80.0D
+                ? TargetHudState.Rank.ELITE : TargetHudState.Rank.NORMAL;
+    }
+
+    private String mobStatus(final Entity entity) {
+        if (entity instanceof Player) return "";
+        final String affixes = entity.getPersistentDataContainer().get(
+                new NamespacedKey(plugin, "mob_affixes"), PersistentDataType.STRING);
+        if (affixes != null && !affixes.isBlank()) {
+            return java.util.Arrays.stream(affixes.split(",")).limit(2)
+                    .map(value -> value.toLowerCase(java.util.Locale.ROOT).replace('_', ' '))
+                    .collect(java.util.stream.Collectors.joining(" • "));
+        }
+        final String archetype = entity.getPersistentDataContainer().get(
+                new NamespacedKey(plugin, "mob_archetype"), PersistentDataType.STRING);
+        return archetype == null ? "" : archetype.toLowerCase(java.util.Locale.ROOT)
+                .replace('_', ' ');
     }
 
     private static String targetName(final Entity victim) {
