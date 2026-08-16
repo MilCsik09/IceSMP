@@ -1805,7 +1805,9 @@ játékosonkénti bossbar-kimenetet használ.
 - `/hud edit` vagy `/hud edit personal`: saját layout; nem kér admin permissiont, Profile v2-be ment.
 - `/hud edit global`: szerveralap; `icesmp.admin.hud-editor` permissiont kér, configba ment.
 
-Mindkét mód izolált, élő munkamenetet nyit. A kijelölt célpont borostyán kiemelést kap. A kompakt
+Mindkét mód izolált, élő munkamenetet nyit. Megnyitáskor ugyanazokat az élő class-, Player-, Target-
+és Party-adatokat rendereli, mint normál módban; a `global` kijelölés ezért nem színezi át az egész
+HUD-ot. Csak a konkrétan kijelölt komponens vagy csoport kap borostyán kiemelést. A kompakt
 felület hat kattintható lapra oszlik: Áttekintés, Pozíció, Méret, Előnézet, Presetek és Elemek. A
 gyakori mozgatási és méretezési műveletek csak az actionbaron adnak tömör visszajelzést; a chatbe
 csak lapváltáskor kerül panel. A kattintható vezérlés és a tab completion mellett használható:
@@ -1820,12 +1822,13 @@ csak lapváltáskor kerül panel. A kattintható vezérlés és a tab completion
 - `preview faction <previous|next|guest|red|blue|neutral|dark>`;
 - `preview class <previous|next|class-id>` mind a 13 classhoz;
 - `preview state <previous|next|representative|resource|wallet|event|spec|proc|charges|dk-runes|wizard-attunement>`;
+- `preview live` visszakapcsolja az élő HUD-adatokat a layoutmódosítások elvesztése nélkül;
 - `undo`, `reset` (kiválasztott célpont), `reset all`, `save`, `cancel`.
 
 A `global` a teljes kompozíciót mozgatja és méretezi: a class panel jobb felső, a Player/Target/Party
 klaszter bal felső horgonyt használ. Az Elemek lap öt kategóriára oszlik:
 
-- Class: `frame`, `class-icon`, `class-name`, `faction`, `level-text`, `wallet-frame`, `wallet`,
+- Class: `class-group`, `frame`, `class-icon`, `class-name`, `faction`, `level-text`, `wallet-frame`, `wallet`,
   `resource-label`, `resource-bar`, `primary-mechanic`, `secondary-mechanic`, `charges`,
   `state-proc`, `detail-frame`, `detail-metrics`, `event-text`;
 - DK: `dk-runes`, teljesen függetlenül a generic `charges` elemtől;
@@ -1840,9 +1843,16 @@ A csoport mozgatása/méretezése minden gyermekére ráépül; a gyermek transz
 relatív. A class XP nem tartós HUD-komponens. Ez vanilla kliensen kattintásos, nyilas editor;
 közvetlen fogd-és-húzd drag-and-drop csak kliensmoddal lenne megvalósítható.
 
-Az előnézet kizárólag újonnan létrehozott immutable `IceSmpHudModel` fixture-t és immutable
+A jobb felső sarok vanilla státuszhatás-ikonjai számára a `class-group` tiszta alapértéke relatív
+`Y +32`; ez a teljes class panelt a buff-sáv alá tolja, miközben a bal felső Player/Target/Party
+klaszter a felső margón marad. Több buff vízszintesen terjeszkedhet, ezért ezt a védősávot ne
+kompenzáld a class panel jobbra vagy felfelé mozgatásával.
+
+Az Előnézet lap valamely faction/class/state tengelyének módosítása explicit szintetikus módot kapcsol:
+ez kizárólag újonnan létrehozott immutable `IceSmpHudModel` fixture-t és immutable
 globális/komponens-layout snapshotot renderel. Nem ír class runtime-ot, PDC-t vagy valutát; másik
-játékos preview-ja és az élő gameplay snapshot nem változik. A személyes `save` a Profile v2
+játékos preview-ja és az élő gameplay snapshot nem változik. Az `élő HUD` gomb ugyanarra a read-only
+projectionre tér vissza, amelyet normál módban lát a játékos. A személyes `save` a Profile v2
 `preferences` szekciójába csak a pillanatnyi globális alaptól eltérő mezőket írja CAS-mutatációval.
 Ezért egy nem módosított komponens követi a későbbi globális változást, a személyesen beállított mező
 viszont stabil marad restart és globális átállítás után is. Személyes módban a `reset` a kijelölt mezőt,
@@ -1860,7 +1870,15 @@ láthatósága ugyanazon a production rendererútvonalon érvényesül. A támog
 `0.90`, `1.00`, `1.15`, `1.25`, `1.40`, `1.60`, `1.80`, `2.00`, `2.20`, `2.40`, `2.60`,
 `2.80`, `3.00`, `3.25`, `3.50`; a komponens relatív mérete a globális
 mérettel szorzódik, majd a legközelebbi buildkor generált variánsra kerekül. Hibás vagy tartományon
-kívüli mező komponensenként és mezőnként biztonságos alapértékre esik vissza. A személyes
+kívüli mező komponensenként és mezőnként biztonságos alapértékre esik vissza.
+
+Tiszta v2 konfigurációban és factory reset után a globális vizuális alap `1.60×`; a Player-, Target-
+és Party-csoport relatív alapmérete `0.90×`. Ez a 2560×1440-es tervezési referenciára illeszkedik,
+de nem felbontásonkénti kézi méret: a shader saját reszponzív szorzója 720p/1080p/1440p/4K között
+arányosan korrigál. A normál felbontáspresetek ezért ugyanazt az `1.60×` kompozíciót választják,
+a `large-accessible` pedig `2.00×` értéket.
+
+A személyes
 v2 layout kizárólag `hud.layout-v2.*` Profile-kulcsokat olvas és ír; a korábbi layout-kulcsok
 szándékosan inertek, legacy migráció nincs. A játékos saját
 `/hud toggle` szekciópreferenciája ugyanebben a Profile v2 preferences-authorityban, de külön kulcson marad.

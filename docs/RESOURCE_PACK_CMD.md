@@ -72,15 +72,16 @@ keresztül kerül a klienshez.
 
 ## Technikai tudnivalók
 
-- **Méret:** 16×16 vagy 32×32 px, átlátszó háttérrel (PNG) — a teljes pack egységesen ugyanazt használja, vegyes felbontás tilos.
+- **Inventory-item mérete:** 64×64 px, átlátszó háttérrel (PNG). Ez a pack egységes item-sprite felbontása.
+- **Viselt equipment mérete:** humanoid, leggings és wings layer 64×32 px; horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy átméretezni.
 - **Fájlnév és hely:** a kész PNG az `assets/icesmp/textures/item/<modell-id>.png` útvonalra kerül; a JSON-bekötés kész, csak a PNG-t kell szállítani.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik — a vanilla textúrája jó kiindulás a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED = Perinfernicitas (láng, vörös-arany), BLUE = Cryghaliris (jég, kék-ezüst), NEUTRAL = Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK = Kitaszítottak (csont, éjfekete-lila, és a jellegzetes **hideg türkiz derengés** — a lich-szem: a Néma Királyné élőhalott-fénye a szemekben, rúnákban, élek mentén).
 
 ## Stílus-szabályok (vanilla-konzisztencia)
 
-1. **Egységes felbontás:** a felbontást a textúra-készítő választja meg (vanilla-hű 16×16 vagy részletesebb 32×32) — de a TELJES pack egységesen ugyanazt használja, vegyes felbontás tilos.
-2. **Margó:** a tárgy ne érjen a vászon széléig — a vászon ~80%-át töltse ki, középre igazítva (16-osnál ~1-2 px, 32-esnél ~3-4 px üres perem).
+1. **Egységes item-felbontás:** minden inventory-sprite 64×64 px. Az equipment UV-lapok ettől szándékosan eltérnek, mert méretüket a vanilla renderer rögzíti.
+2. **Margó:** az inventory-tárgy ne érjen a vászon széléig — a 64×64-es vászon ~80%-át töltse ki, középre igazítva, nagyjából 6–8 px üres peremmel.
 3. **Sziluett-olvashatóság:** az item egy vanilla tárgy helyén jelenik meg — első ránézésre ugyanannak a tárgy-osztálynak tűnjön (bot=bot, sisak=sisak). Kard/szerszám 45°-ban átlósan: markolat balra-le, hegy jobbra-fel.
 4. **Kontúr:** 1 px sötét körvonal a külső élen, de NEM tiszta fekete — az anyagszín legmélyebb árnyalata; a belső vonalak még lágyabbak.
 5. **Paletta-fegyelem:** anyagonként 4–8 tónus, kemény pixel-átmenetek — semmi blur, anti-aliasing vagy színátmenet; dither csak nagyon indokoltan.
@@ -89,6 +90,17 @@ keresztül kerül a klienshez.
 8. **Telítettség:** a vanilla visszafogott, földes palettája mellett a neon kiabál — izzó akcent (lich-türkiz, láng) csak kevés pixelen (2–6 fénypont).
 9. **Kicsiben is működjön:** az inventoryban ~16–32 képernyő-pixel látszik — a 2 px-nél kisebb részlet eltűnik; minden darabot kicsinyítve is ellenőrizz.
 10. **Perspektíva:** lapos sprite szemből (vagy 45°-os szerszám) — nem izometrikus/3D nézet.
+
+### Equipment UV- és használati állapotok
+
+- A head/chest/legs/feet textúrák kizárólag a saját vanilla UV-szigeteiket festhetik; az üres
+  terület maradjon teljesen átlátszó.
+- A kardok és szerszámok orientációja: markolat balra-lent, működő vég vagy hegy jobbra-fent.
+  A horgászbot item model parentje mindig `minecraft:item/handheld_rod`.
+- A bow/crossbow pull, charged, fishing cast, shield blocking és trident throwing/in-hand sprite
+  vizuálisan is különbözzön az alaptól és egymástól; pusztán más fájlnév nem számít állapotnak.
+- Regenerálás és ellenőrzés: `python3 scripts/generate_equipment_assets.py`, majd
+  `python3 scripts/audit_equipment_assets.py`.
 
 ## Globális paletta
 

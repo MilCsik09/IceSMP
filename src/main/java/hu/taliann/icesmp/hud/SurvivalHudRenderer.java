@@ -246,8 +246,8 @@ public final class SurvivalHudRenderer {
     }
 
     static boolean isHighlighted(final HudComponent component, final HudComponent highlighted) {
-        return highlighted == HudComponent.GLOBAL || highlighted == component
-                || highlighted != null && highlighted == component.parentGroup();
+        return highlighted != null && highlighted != HudComponent.GLOBAL
+                && (highlighted == component || highlighted == component.parentGroup());
     }
 
     private static char playerPanelGlyph(final String theme) {

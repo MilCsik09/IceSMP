@@ -108,7 +108,9 @@ jobs:
             --json-output build/player-profile-transition-report.json
 
       - name: Validate resource-pack bindings
-        run: python3 scripts/test_resource_pack.py
+        run: |
+          python3 scripts/test_resource_pack.py
+          python3 scripts/audit_equipment_assets.py
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4

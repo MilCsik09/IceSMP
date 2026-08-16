@@ -42,6 +42,19 @@ val auditIceSmpHudAssets by tasks.registering(Exec::class) {
     )
 }
 
+val auditEquipmentAssets by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Audits slot UV isolation, equipment palettes, hand orientation and visual item states."
+    inputs.files(
+        "scripts/generate_equipment_assets.py",
+        "scripts/audit_equipment_assets.py",
+    )
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/textures/entity/equipment"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/textures/item"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/models/item"))
+    commandLine(pythonCommand, "scripts/audit_equipment_assets.py")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -321,7 +334,7 @@ val validateIceSmpHudPackage by tasks.registering {
 val stageMergedResourcePackForR2 by tasks.registering(Exec::class) {
     group = "distribution"
     description = "Deterministically merges the immutable external base with the first-party IceSMP pack for R2."
-    dependsOn(generateIceSmpHudAssets)
+    dependsOn(generateIceSmpHudAssets, auditEquipmentAssets)
     // Resolve the Gradle property while configuring this Exec task. The former doFirst
     // action captured the Kotlin build-script object and could not be serialized by the
     // configuration cache. Gradle tracks the property read as a configuration input.
@@ -789,6 +802,7 @@ val wizardProfileRegressionTest = registerRegression(
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
+    dependsOn(auditEquipmentAssets)
     dependsOn(validateIceSmpHudPackage)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,

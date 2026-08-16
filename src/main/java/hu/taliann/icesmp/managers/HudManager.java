@@ -412,16 +412,15 @@ public final class HudManager {
         return hudEditor.previewState(player.getUniqueId(), state);
     }
 
+    public HudEditorStateMachine.Session previewLiveHud(final Player player) {
+        return hudEditor.livePreview(player.getUniqueId());
+    }
+
     public boolean refreshHudEditorPreview(final Player player) {
         final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
         if (session == null || !editorSessionEnabled(session)) return false;
-        final IceSmpHudModel model = HudPreviewCatalog.model(session.preview());
-        final SurvivalHudState survival = survivalSnapshots.getOrDefault(player.getUniqueId(),
-                PlayerHudState.preview().survival());
-        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                model, session.working(), session.selected(), true,
-                new PlayerHudState(player.getName(), model.factionTheme(), model.factionAccent(), survival),
-                TargetHudState.previewMob(), PartyHudState.preview(), survivalHudEnabled()));
+        return renderHudEditorProjection(player, session, snapshots.get(player.getUniqueId()),
+                survivalSnapshots.get(player.getUniqueId()));
     }
 
     private boolean editorSessionEnabled(final HudEditorStateMachine.Session session) {
@@ -862,14 +861,7 @@ public final class HudManager {
         final boolean playerFrameVisible = survivalHudEnabled() && survival != null;
         final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
         if (editorSessionEnabled(editorSession)) {
-            final HudLayoutSnapshot editorLayout = editorSession.working();
-            final IceSmpHudModel preview = HudPreviewCatalog.model(editorSession.preview());
-            return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
-                    preview, editorLayout, editorSession.selected(), true,
-                    new PlayerHudState(player.getName(), preview.factionTheme(),
-                            preview.factionAccent(), survival == null
-                            ? PlayerHudState.preview().survival() : survival),
-                    TargetHudState.previewMob(), PartyHudState.preview(), true));
+            return renderHudEditorProjection(player, editorSession, snapshot, survival);
         }
         if (editorSession != null) hudEditor.cancel(player.getUniqueId());
         final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
@@ -884,6 +876,37 @@ public final class HudManager {
                 snapshot == null ? null : IceSmpHudModel.from(snapshot), layout,
                 null, visible, playerState, targetHudState(player), partyHudState(player),
                 playerFrameVisible));
+    }
+
+    /**
+     * The editor opens on the exact live read projection. Synthetic class/target/party fixtures
+     * are opt-in through the Preview page and never replace gameplay state implicitly.
+     */
+    private boolean renderHudEditorProjection(final Player player,
+                                              final HudEditorStateMachine.Session session,
+                                              final HudSnapshot snapshot,
+                                              final SurvivalHudState survival) {
+        if (session.syntheticPreview()) {
+            final IceSmpHudModel preview = HudPreviewCatalog.model(session.preview());
+            final SurvivalHudState previewSurvival = survival == null
+                    ? PlayerHudState.preview().survival() : survival;
+            return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                    preview, session.working(), session.selected(), true,
+                    new PlayerHudState(player.getName(), preview.factionTheme(),
+                            preview.factionAccent(), previewSurvival),
+                    TargetHudState.previewMob(), PartyHudState.preview(), survivalHudEnabled()));
+        }
+        final boolean configured = configManager.getBoolean("hud.icesmp-hud.enabled", true);
+        final boolean classVisible = snapshot != null && isEnabled() && configured
+                && !isSectionHidden(player, SECTION_ALL) && snapshot.classHud() != null
+                && !nativeHudRouted(player.getUniqueId());
+        final PlayerHudState playerState = survival == null ? null : new PlayerHudState(
+                player.getName(), snapshot == null ? "ice" : snapshot.factionTheme(),
+                snapshot == null ? "8BE9FD" : snapshot.factionAccent(), survival);
+        return recordIceSmpHudState(player, iceSmpHudBackend.render(player,
+                snapshot == null ? null : IceSmpHudModel.from(snapshot), session.working(),
+                session.selected(), classVisible, playerState, targetHudState(player),
+                partyHudState(player), survivalHudEnabled() && survival != null));
     }
 
     private TargetHudState targetHudState(final Player viewer) {

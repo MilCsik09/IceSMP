@@ -20,7 +20,8 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     public static final int DEFAULT_X_OFFSET = 0;
     public static final int DEFAULT_Y_OFFSET = 24;
     public static final int DEFAULT_SAFE_MARGIN = 24;
-    public static final int DEFAULT_SCALE_INDEX = 2;
+    /** 2560x1440 design baseline; the shader applies its own resolution-responsive multiplier. */
+    public static final int DEFAULT_SCALE_INDEX = 6;
 
     public HudLayoutSnapshot {
         xOffsetPixels = clamp(xOffsetPixels, MIN_X_OFFSET, MAX_X_OFFSET);
@@ -123,19 +124,41 @@ public record HudLayoutSnapshot(int xOffsetPixels, int yOffsetPixels, int safeMa
     }
 
     public static boolean leftAnchored(final HudComponent component) {
-        return component != null && (component == HudComponent.PLAYER_GROUP
-                || component == HudComponent.TARGET_GROUP || component == HudComponent.PARTY_GROUP
-                || component.parentGroup() != null);
+        if (component == null) return false;
+        final HudComponent anchor = component.isGroup() ? component : component.parentGroup();
+        return anchor == HudComponent.PLAYER_GROUP || anchor == HudComponent.TARGET_GROUP
+                || anchor == HudComponent.PARTY_GROUP;
     }
 
     public static HudComponentLayout defaultComponentLayout(final HudComponent component) {
-        if (component == HudComponent.TARGET_GROUP) {
-            return new HudComponentLayout(264, 0, HudComponentLayout.DEFAULT_SCALE_INDEX, true);
+        if (component == null || component == HudComponent.GLOBAL) {
+            return HudComponentLayout.defaults();
         }
-        if (component == HudComponent.PARTY_GROUP) {
-            return new HudComponentLayout(0, 82, HudComponentLayout.DEFAULT_SCALE_INDEX, true);
-        }
-        return HudComponentLayout.defaults();
+        return switch (component) {
+            case CLASS_GROUP -> component(0, 32, 2, true);
+            case CLASS_ICON -> component(-7, -12, 2, true);
+            case CLASS_NAME -> component(3, 15, 2, true);
+            case FACTION -> component(0, 0, 2, false);
+            case LEVEL_TEXT -> component(-3, 15, 2, true);
+            case WALLET_FRAME -> component(0, 10, 2, true);
+            case RESOURCE_LABEL -> component(6, 5, 1, true);
+            case RESOURCE_BAR -> component(5, -12, 2, true);
+            case PRIMARY_MECHANIC -> component(2, -1, 2, true);
+            case SECONDARY_MECHANIC -> component(2, 0, 2, true);
+            case CHARGES -> component(55, -91, 4, true);
+            case DK_RUNES -> component(-38, 32, 1, true);
+            case STATE_PROC -> component(-14, -1, 2, true);
+            case EVENT_TEXT -> component(-15, 9, 2, true);
+            case PLAYER_GROUP -> component(0, 0, 1, true);
+            case TARGET_GROUP -> component(264, 0, 1, true);
+            case PARTY_GROUP -> component(0, 82, 1, true);
+            default -> HudComponentLayout.defaults();
+        };
+    }
+
+    private static HudComponentLayout component(final int x, final int y, final int scaleIndex,
+                                                final boolean visible) {
+        return new HudComponentLayout(x, y, scaleIndex, visible);
     }
 
     public HudLayoutSnapshot move(final int deltaX, final int deltaY) {

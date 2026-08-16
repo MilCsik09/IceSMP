@@ -8,6 +8,7 @@ import java.util.Optional;
 /** Stable ids for every independently editable first-party HUD draw group. */
 public enum HudComponent {
     GLOBAL("global", false, false),
+    CLASS_GROUP("class-group", false, false),
     FRAME("frame", true, true),
     CLASS_ICON("class-icon", true, true),
     CLASS_NAME("class-name", true, true),
@@ -82,11 +83,16 @@ public enum HudComponent {
     }
 
     public boolean isGroup() {
-        return this == PLAYER_GROUP || this == TARGET_GROUP || this == PARTY_GROUP;
+        return this == CLASS_GROUP || this == PLAYER_GROUP
+                || this == TARGET_GROUP || this == PARTY_GROUP;
     }
 
     public HudComponent parentGroup() {
         return switch (this) {
+            case FRAME, CLASS_ICON, CLASS_NAME, FACTION, LEVEL_ICON, LEVEL_TEXT,
+                    WALLET_FRAME, WALLET, RESOURCE_LABEL, RESOURCE_BAR,
+                    PRIMARY_MECHANIC, SECONDARY_MECHANIC, CHARGES, DK_RUNES,
+                    STATE_PROC, DETAIL_FRAME, DETAIL_METRICS, EVENT_ICON, EVENT_TEXT -> CLASS_GROUP;
             case PLAYER_FRAME, PLAYER_NAME, PLAYER_HEALTH_BAR, PLAYER_HEALTH_TEXT, PLAYER_HEALTH_PERCENT,
                     PLAYER_ABSORPTION,
                     PLAYER_ARMOR, PLAYER_FOOD, PLAYER_OXYGEN -> PLAYER_GROUP;

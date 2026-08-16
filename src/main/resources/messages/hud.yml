@@ -1,6 +1,7 @@
 # IceSMP üzenetek — HUD
 messages:
   hud-component-global: 'Teljes HUD'
+  hud-component-class-group: 'Kaszt HUD csoport (buff-hely)'
   hud-component-frame: 'Fő keret'
   hud-component-class-icon: 'Kaszt ikon'
   hud-component-class-name: 'Kaszt és specializáció'
@@ -82,7 +83,7 @@ messages:
   hud-editor-error-protected-visibility: '&c[HUD] Ez az életbiztonsági HUD-elem nem rejthető el.'
   hud-editor-error-missing-preset: '&c[HUD] Hiányzó felbontás/GUI-scale preset.'
   hud-editor-error-unknown-preset: '&c[HUD] Ismeretlen preset: %s'
-  hud-editor-error-usage-preview: '&c[HUD] Használat: /hud edit preview <faction|class|state> <érték>'
+  hud-editor-error-usage-preview: '&c[HUD] Használat: /hud edit preview live | <faction|class|state> <érték>'
   hud-editor-error-preview-axis: '&c[HUD] A preview tengely faction, class vagy state lehet.'
   hud-editor-error-preview-value: '&c[HUD] Ismeretlen előnézeti érték: %s'
   hud-editor-error-invalid-change: '&c[HUD] A kért módosítás ebben az editorállapotban nem alkalmazható.'
@@ -112,7 +113,9 @@ messages:
   hud-editor-button-fine-up: 'finom +'
   hud-editor-button-coarse-down: 'durva −'
   hud-editor-button-coarse-up: 'durva +'
-  hud-editor-preview: '&7Előnézet: %s / %s / %s'
+  hud-editor-preview: '&7Előnézet: &6szintetikus &f• %s / %s / %s'
+  hud-editor-preview-live: '&7Előnézet: &aélő HUD-adatok'
+  hud-editor-button-preview-live: 'élő HUD'
   hud-editor-button-undo: 'visszavonás'
   hud-editor-button-reset: 'elem reset'
   hud-editor-button-save: 'MENTÉS'

@@ -19,6 +19,7 @@ public final class HudEditorRegressionSuite {
         completedSaveCannotCloseReplacementSession();
         resetUndoApplyAndCancelAreExact();
         invalidConfigFallsBackFieldByField();
+        cleanDefaultsUseTheResponsive1440pComposition();
         everyRenderedComponentHasIndependentLayout();
         layoutAndPreviewSnapshotsAreImmutable();
         directValuesAndExpandedControlsAreBounded();
@@ -109,7 +110,8 @@ public final class HudEditorRegressionSuite {
                 "hud-editor-error-usage-preview", "hud-editor-error-preview-axis",
                 "hud-editor-error-preview-value", "hud-editor-error-invalid-change",
                 "hud-editor-values-global", "hud-editor-values-component", "hud-editor-panel",
-                "hud-editor-preview", "hud-editor-pack-required")) {
+                "hud-editor-preview", "hud-editor-preview-live",
+                "hud-editor-button-preview-live", "hud-editor-pack-required")) {
             check(!messages.getString("messages." + key, "").isBlank(),
                     "HUD editor copy is missing from messages/hud.yml: " + key);
         }
@@ -125,20 +127,31 @@ public final class HudEditorRegressionSuite {
         final UUID second = UUID.randomUUID();
         editor.start(first, HudLayoutSnapshot.defaults(), 1, "a");
         editor.start(second, HudLayoutSnapshot.defaults(), 1, "a");
+        check(!editor.session(first).orElseThrow().syntheticPreview()
+                        && !editor.session(second).orElseThrow().syntheticPreview(),
+                "an editor session must open on the same live HUD projection as normal mode");
         editor.step(first, 10);
         editor.move(first, 1, -1);
         editor.previewClass(first, "wizard");
         editor.previewState(first, "wizard-attunement");
+        check(editor.session(first).orElseThrow().syntheticPreview(),
+                "changing a preview axis must explicitly activate synthetic fixtures");
         editor.select(first, HudComponent.EVENT_TEXT);
         editor.move(first, 1, 1);
         check(editor.session(first).orElseThrow().working().xOffsetPixels() == 10
-                        && editor.session(first).orElseThrow().working().yOffsetPixels() == 6
+                        && editor.session(first).orElseThrow().working().yOffsetPixels()
+                        == HudLayoutSnapshot.DEFAULT_Y_OFFSET - 10
                         && editor.session(first).orElseThrow().working()
-                        .componentLayout(HudComponent.EVENT_TEXT).xOffsetPixels() == 10,
+                        .componentLayout(HudComponent.EVENT_TEXT).xOffsetPixels()
+                        == HudLayoutSnapshot.defaultComponentLayout(
+                        HudComponent.EVENT_TEXT).xOffsetPixels() + 10,
                 "the selected player's global and component preview layouts must update live");
         check(editor.session(second).orElseThrow().working().equals(HudLayoutSnapshot.defaults())
                         && editor.session(second).orElseThrow().preview().equals(HudPreviewSelection.defaults()),
                 "one player's editor operations must not leak into another session");
+        editor.livePreview(first);
+        check(!editor.session(first).orElseThrow().syntheticPreview(),
+                "the live-preview action must restore real HUD data without discarding layout edits");
         for (final String faction : HudPreviewSelection.FACTIONS) {
             for (final String playerClass : HudPreviewSelection.CLASSES) {
                 final var model = HudPreviewCatalog.model(
@@ -202,6 +215,37 @@ public final class HudEditorRegressionSuite {
                 "malformed component fields must fail back independently to safe defaults");
     }
 
+    private static void cleanDefaultsUseTheResponsive1440pComposition() throws Exception {
+        final HudLayoutSnapshot defaults = HudLayoutSnapshot.defaults();
+        check(defaults.scalePermille() == 1600
+                        && defaults.componentLayout(HudComponent.CLASS_GROUP)
+                        .equals(new HudComponentLayout(0, 32, 2, true))
+                        && defaults.componentLayout(HudComponent.CLASS_ICON)
+                        .equals(new HudComponentLayout(-7, -12, 2, true))
+                        && defaults.componentLayout(HudComponent.EVENT_TEXT)
+                        .equals(new HudComponentLayout(-15, 9, 2, true))
+                        && defaults.componentLayout(HudComponent.PLAYER_GROUP).scale() == 0.9D
+                        && defaults.componentLayout(HudComponent.TARGET_GROUP)
+                        .equals(new HudComponentLayout(264, 0, 1, true))
+                        && defaults.componentLayout(HudComponent.PARTY_GROUP)
+                        .equals(new HudComponentLayout(0, 82, 1, true)),
+                "factory reset must reproduce the clean 2560x1440 composition, not zeroed v2 offsets");
+        check(HudLayoutPreset.VALUES.stream()
+                        .filter(preset -> !"large-accessible".equals(preset.id()))
+                        .allMatch(preset -> preset.layout().scalePermille() == 1600)
+                        && HudLayoutPreset.find("large-accessible").orElseThrow()
+                        .layout().scalePermille() == 2000,
+                "resolution presets must retain one responsive visual baseline and a larger accessible mode");
+        final String config = read("src/main/resources/config/general.yml");
+        check(config.contains("      scale: 1.6")
+                        && config.contains("class-group: {x-offset-pixels: 0, y-offset-pixels: 32")
+                        && config.contains("class-icon: {x-offset-pixels: -7, y-offset-pixels: -12")
+                        && config.contains("player-group: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 0.9")
+                        && config.contains("target-group: {x-offset-pixels: 264, y-offset-pixels: 0, scale: 0.9")
+                        && config.contains("party-group: {x-offset-pixels: 0, y-offset-pixels: 82, scale: 0.9"),
+                "bundled config and Java factory defaults must ship the same responsive composition");
+    }
+
     private static void everyRenderedComponentHasIndependentLayout() throws Exception {
         HudLayoutSnapshot layout = HudLayoutSnapshot.defaults();
         for (final HudComponent component : HudComponent.editableValues()) {
@@ -236,6 +280,13 @@ public final class HudEditorRegressionSuite {
                         == runeMoved.effectiveComponentLayout(
                         HudComponent.PLAYER_HEALTH_BAR).yOffsetPixels() - 7,
                 "moving the player group must compose with every child without rewriting it");
+        final HudLayoutSnapshot classGrouped = grouped.move(HudComponent.CLASS_GROUP, 0, 9);
+        check(classGrouped.effectiveComponentLayout(HudComponent.FRAME).yOffsetPixels()
+                        == grouped.effectiveComponentLayout(HudComponent.FRAME).yOffsetPixels() + 9
+                        && classGrouped.effectiveComponentLayout(HudComponent.DK_RUNES).yOffsetPixels()
+                        == grouped.effectiveComponentLayout(HudComponent.DK_RUNES).yOffsetPixels() + 9
+                        && !HudLayoutSnapshot.leftAnchored(HudComponent.FRAME),
+                "the right-anchored class group must reserve the buff band for every class child");
 
         final String config = read("src/main/resources/config/general.yml");
         final String renderer = read("src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java");
@@ -318,7 +369,7 @@ public final class HudEditorRegressionSuite {
         final HudLayoutSnapshot componentLayout = layout.withComponent(HudComponent.EVENT_TEXT,
                 new HudComponentLayout(9, 12, 2, true));
         check(componentLayout.anchoredX(HudComponent.EVENT_TEXT, -214) == -197
-                        && componentLayout.shaderCode(HudComponent.EVENT_TEXT) == (7 << 9) + 231,
+                        && componentLayout.shaderCode(HudComponent.EVENT_TEXT) == (7 << 9) + 263,
                 "component X/Y/scale must be composed into its own renderer payload");
         final TextColor componentEncoded = IceSmpHudRenderer.encodeLayoutColor(
                 TextColor.color(0xF0D88D), componentLayout, HudComponent.EVENT_TEXT);
@@ -375,9 +426,17 @@ public final class HudEditorRegressionSuite {
                 "personal Profile v2 persistence and explicit global editing must stay wired");
         check(manager.contains("session.working(), session.selected(), true")
                         && renderer.contains("EDITOR_HIGHLIGHT")
-                        && renderer.contains("highlighted == HudComponent.GLOBAL || highlighted == component")
+                        && renderer.contains("highlighted != HudComponent.GLOBAL")
+                        && command.contains("/hud edit preview live")
                         && command.contains("hud-editor-category-dk"),
-                "the selected editor component must receive a distinct live-preview tint");
+                "specific editor components must receive a tint without recolouring the full live HUD");
+        check(manager.contains("if (session.syntheticPreview())")
+                        && manager.contains("IceSmpHudModel.from(snapshot)")
+                        && manager.contains("targetHudState(player)")
+                        && manager.contains("partyHudState(player)")
+                        && command.contains("session.syntheticPreview()")
+                        && messages.contains("hud-editor-preview-live"),
+                "editor startup must share normal-mode live data and keep synthetic fixtures opt-in");
     }
 
     private static void toggleSectionIdsResolveToPackagedMessageKeys() throws Exception {

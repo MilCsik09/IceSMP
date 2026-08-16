@@ -58,28 +58,32 @@ hud:
       x-offset-pixels: 0
       y-offset-pixels: 24
       safe-margin-pixels: 24
-      scale: 1.0
+      # 2560x1440 vizuális alap. A resource-pack shader ezt a tényleges képernyőmérethez
+      # reszponzívan szorozza, ezért a többi támogatott felbontás ugyanazt az arányt tartja.
+      scale: 1.6
       # Tiszta v2 séma: a Player/Target/Party csoport együtt mozgatható, az alkomponensek
       # pedig a csoportjukon belül külön pozicionálhatók, méretezhetők és elrejthetők.
       components:
+        # Felső buff-sáv: a vanilla státuszhatás-ikonoknak fenntartott hely miatt külön lejjebb tolva.
+        class-group: {x-offset-pixels: 0, y-offset-pixels: 32, scale: 1.0, visible: true}
         frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        class-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        class-name: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        class-icon: {x-offset-pixels: -7, y-offset-pixels: -12, scale: 1.0, visible: true}
+        class-name: {x-offset-pixels: 3, y-offset-pixels: 15, scale: 1.0, visible: true}
         faction: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: false}
-        level-text: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        wallet-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        level-text: {x-offset-pixels: -3, y-offset-pixels: 15, scale: 1.0, visible: true}
+        wallet-frame: {x-offset-pixels: 0, y-offset-pixels: 10, scale: 1.0, visible: true}
         wallet: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        resource-label: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        resource-bar: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        primary-mechanic: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        secondary-mechanic: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        charges: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        dk-runes: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        state-proc: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        resource-label: {x-offset-pixels: 6, y-offset-pixels: 5, scale: 0.9, visible: true}
+        resource-bar: {x-offset-pixels: 5, y-offset-pixels: -12, scale: 1.0, visible: true}
+        primary-mechanic: {x-offset-pixels: 2, y-offset-pixels: -1, scale: 1.0, visible: true}
+        secondary-mechanic: {x-offset-pixels: 2, y-offset-pixels: 0, scale: 1.0, visible: true}
+        charges: {x-offset-pixels: 55, y-offset-pixels: -91, scale: 1.25, visible: true}
+        dk-runes: {x-offset-pixels: -38, y-offset-pixels: 32, scale: 0.9, visible: true}
+        state-proc: {x-offset-pixels: -14, y-offset-pixels: -1, scale: 1.0, visible: true}
         detail-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         detail-metrics: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        event-text: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        player-group: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
+        event-text: {x-offset-pixels: -15, y-offset-pixels: 9, scale: 1.0, visible: true}
+        player-group: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 0.9, visible: true}
         player-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         player-name: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         player-health-bar: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
@@ -89,7 +93,7 @@ hud:
         player-armor: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         player-food: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         player-oxygen: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        target-group: {x-offset-pixels: 264, y-offset-pixels: 0, scale: 1.0, visible: true}
+        target-group: {x-offset-pixels: 264, y-offset-pixels: 0, scale: 0.9, visible: true}
         target-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         target-icon: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         target-name: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
@@ -98,7 +102,7 @@ hud:
         target-health-text: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         target-resource: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         target-status: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
-        party-group: {x-offset-pixels: 0, y-offset-pixels: 82, scale: 1.0, visible: true}
+        party-group: {x-offset-pixels: 0, y-offset-pixels: 82, scale: 0.9, visible: true}
         party-frame: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         party-name: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}
         party-health: {x-offset-pixels: 0, y-offset-pixels: 0, scale: 1.0, visible: true}

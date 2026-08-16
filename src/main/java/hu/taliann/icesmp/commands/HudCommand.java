@@ -298,6 +298,10 @@ public final class HudCommand implements BasicCommand {
     }
 
     private void preview(final Player player, final String[] args) {
+        if (args.length == 3 && "live".equalsIgnoreCase(args[2])) {
+            hudManager.previewLiveHud(player);
+            return;
+        }
         if (args.length < 4) {
             throw error("hud-editor-error-usage-preview");
         }
@@ -340,7 +344,7 @@ public final class HudCommand implements BasicCommand {
             case OVERVIEW -> sendOverviewPage(player, session);
             case POSITION -> sendPositionPage(player, session);
             case APPEARANCE -> sendAppearancePage(player, session);
-            case PREVIEW -> sendPreviewPage(player, session.preview());
+            case PREVIEW -> sendPreviewPage(player, session);
             case PRESETS -> sendPresetPage(player, layout);
             case COMPONENTS -> sendComponentPage(player, session);
         }
@@ -435,9 +439,14 @@ public final class HudCommand implements BasicCommand {
         }
     }
 
-    private void sendPreviewPage(final Player player, final HudPreviewSelection preview) {
-        player.sendMessage(messageManager.requiredComponent("hud-editor-preview",
-                preview.faction(), preview.playerClass(), preview.state()));
+    private void sendPreviewPage(final Player player, final HudEditorStateMachine.Session session) {
+        final HudPreviewSelection preview = session.preview();
+        player.sendMessage(session.syntheticPreview()
+                ? messageManager.requiredComponent("hud-editor-preview",
+                        preview.faction(), preview.playerClass(), preview.state())
+                : messageManager.requiredComponent("hud-editor-preview-live"));
+        player.sendMessage(button(messageManager.required("hud-editor-button-preview-live"),
+                "/hud edit preview live", !session.syntheticPreview()));
         player.sendMessage(previewAxis("hud-editor-axis-faction", preview.faction(), "faction"));
         player.sendMessage(previewAxis("hud-editor-axis-class", preview.playerClass(), "class"));
         player.sendMessage(previewAxis("hud-editor-axis-state", preview.state(), "state"));
@@ -469,8 +478,9 @@ public final class HudCommand implements BasicCommand {
         final List<HudComponent> all = HudComponent.editorTargets();
         final List<List<HudComponent>> categories = List.of(
                 all.stream().filter(component -> component == HudComponent.GLOBAL
-                        || component.parentGroup() == null && !component.isGroup()
-                        && component != HudComponent.DK_RUNES).toList(),
+                        || component == HudComponent.CLASS_GROUP
+                        || (component.parentGroup() == HudComponent.CLASS_GROUP
+                        && component != HudComponent.DK_RUNES)).toList(),
                 List.of(HudComponent.DK_RUNES),
                 all.stream().filter(component -> component == HudComponent.PLAYER_GROUP
                         || component.parentGroup() == HudComponent.PLAYER_GROUP).toList(),
@@ -670,7 +680,7 @@ public final class HudCommand implements BasicCommand {
             options.addAll(HudLayoutPreset.VALUES.stream().map(HudLayoutPreset::id).toList());
         else if (args.length == 3 && "reset".equalsIgnoreCase(args[1])) options.add("all");
         else if (args.length == 3 && "preview".equalsIgnoreCase(args[1]))
-            options.addAll(List.of("faction", "class", "state"));
+            options.addAll(List.of("live", "faction", "class", "state"));
         else if (args.length == 4 && "preview".equalsIgnoreCase(args[1])) {
             switch (args[2].toLowerCase(Locale.ROOT)) {
                 case "faction" -> {

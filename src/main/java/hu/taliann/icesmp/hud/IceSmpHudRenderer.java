@@ -105,6 +105,7 @@ public final class IceSmpHudRenderer {
     public Component render(final IceSmpHudModel model, final HudLayoutSnapshot layout,
                             final HudComponent highlighted) {
         final HudLayoutSnapshot safeLayout = layout == null ? HudLayoutSnapshot.defaults() : layout;
+        if (!safeLayout.componentLayout(HudComponent.CLASS_GROUP).visible()) return Component.empty();
         final boolean hasSupplementaryMetrics = hasSupplementaryMetrics(model);
         final boolean compactWallet = !hasSupplementaryMetrics;
         final TextComponent.Builder output = Component.text().shadowColor(ShadowColor.none());
@@ -439,8 +440,8 @@ public final class IceSmpHudRenderer {
 
     private static TextColor editorColor(final TextColor desired, final HudComponent component,
                                          final HudComponent highlighted) {
-        return highlighted == HudComponent.GLOBAL || highlighted == component
-                || highlighted != null && highlighted == component.parentGroup()
+        return highlighted != null && highlighted != HudComponent.GLOBAL
+                && (highlighted == component || highlighted == component.parentGroup())
                 ? EDITOR_HIGHLIGHT : desired;
     }
 
