@@ -16,6 +16,8 @@
 #     result:
 #       material: <MATERIAL>
 #       amount: <db>                     # alapból 1
+#       template: <item-template-id>      # canonical gear: célzott ItemTemplate → ItemInstance; amount csak 1
+#       masterwork: true                  # opcionális bounded quality/provenance jelölő canonical gearen
 #       affix-tier: crafted              # HA szerepel, a kész tárgy egyedi minőséget + affixeket kap (random)
 #       attributes: [ "<attr>:<érték>[:<slot>[:<művelet>]]", ... ]   # explicit, DETERMINISZTIKUS stat
 #         # attr: attack_damage|attack_speed|attack_knockback|max_health|armor|armor_toughness|
@@ -1186,6 +1188,17 @@ profession-recipes:
     category: "Fagyott Királyság (tervrajz)"
     result: {material: BOW, amount: 1, affix-tier: crafted, signature: kallan_szeletelo, item-model: "icesmp:kallan_szeletelo"}
     ingredients: ["BOW:1", "STRING:8", "NETHERITE_INGOT:1", "unique:vad_esszencia:3"]
+  vadvilagi_eskukard:
+    profession: armorer
+    kind: egyedi
+    level: 22
+    learn: level
+    display-name: "Vadvidéki Eskükard"
+    lore:
+    - "&7Célzott authored fegyver: csak a template roll-range-ei sorsolódnak."
+    category: "Fegyver"
+    result: {material: IRON_SWORD, amount: 1, template: vadvilagi_eskukard}
+    ingredients: ["IRON_SWORD:1", "IRON_INGOT:8", "LEATHER:2", "unique:tiszta_vasesszencia:2"]
   glatziendorfi_jegvert:
     profession: armorer
     kind: egyedi
@@ -1198,8 +1211,8 @@ profession-recipes:
     - "&7sziklaként rögzíti; az ellenség fegyverei"
     - "&7tompán koppannak rajta."
     category: "Fagyott Királyság (tervrajz)"
-    result: {material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegvert, item-model: "icesmp:glatziendorfi_jegvert"}
-    ingredients: ["NETHERITE_CHESTPLATE:1", "PACKED_ICE:16", "IRON_BLOCK:2", "unique:osi_ereklyeszilank:1"]
+    result: {material: NETHERITE_CHESTPLATE, amount: 1, template: glatziendorfi_jegvert, masterwork: true}
+    ingredients: ["NETHERITE_CHESTPLATE:1", "PACKED_ICE:16", "IRON_BLOCK:2", "unique:sarkfeny_cseppko:4", "unique:tiszta_vasesszencia:4"]
   jegsarkany_kantar:
     profession: armorer
     kind: egyedi
@@ -1537,7 +1550,7 @@ profession-recipes:
     - "&7csatabárd — ami egyszer megdermedt,"
     - "&7azt ez a fejsze megtöri."
     category: "Fagyott Királyság (tervrajz)"
-    result: {material: NETHERITE_AXE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegtoro, item-model: "icesmp:glatziendorfi_jegtoro"}
+    result: {material: NETHERITE_AXE, amount: 1, template: glatziendorfi_jegtoro, masterwork: true}
     ingredients: ["DIAMOND_AXE:1", "NETHERITE_INGOT:2", "unique:jegviragpor:3", "unique:sarkanycsont_szilank:2", "unique:folyositoszer:1"]
   miinus_haragja:
     profession: armorer

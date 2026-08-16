@@ -1119,6 +1119,7 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `factions.yml`
 - `general.yml`
 - `item-rarity.yml`
+- `item-templates.yml`
 - `loot.yml`
 - `moderation.yml`
 - `motd.yml`
@@ -1133,6 +1134,34 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `spells.yml`
 - `tablist.yml`
 - `world.yml`
+
+### Itemization 2.0 Phase 4–5 üzemeltetés
+
+- Admin authored itemadás: `/iceitem template <template-id> [darab] [játékos]`.
+  Az `admin:give` provenance miatt ez a példány salvage tiltott; ne használd production
+  economy input előállítására.
+- A balance-kulcsok az `item-templates.yml` `itemization.crafting`, `reroll`,
+  `salvage`, `gathering` és `ascension` blokkjában vannak. Identity/schema/template
+  invariáns nem kapcsolható ki configból.
+- Az `item-mutation-journal.yml` aktív rekordja normál esetben rövid életű. Restartkor
+  exact before inventory esetén abort, exact after esetén commit-cleanup történik.
+  Eltérő/mixed snapshotnál a rendszer nem találgat: konzol SEVERE + játékosüzenet után
+  az entry kézi vizsgálatra megmarad.
+- Market listing canonical itemnél csak `VALID`, duplikátummentes, `TRADEABLE`, nem
+  account-bound példányt fogad. A listing és delivery a valódi `ItemStack`-ot viszi,
+  nem épít új instance-et.
+- `itemization.legacy.market-enabled` csak a régi, nem canonical tárgy piaci policyja.
+  Legacy reroll/ascension/salvage továbbra is fail-closed; a meglévő egy-rúnás legacy
+  insert kompatibilis marad, remove/replace nem engedélyezett. Külön direct player-trade
+  authority nincs; a támogatott item-escrow út a market.
+- A crate `type: template` csak `encounter-metadata.crate-eligible: "true"`, nem
+  MYTHIC és nem account-bound template-et fogad; random-affix gear `recipe-item`
+  startupkor érvénytelen crate-definíció.
+
+Staging acceptance: (1) két gyors SHIFT+katt, (2) disconnect journal prepare és
+playerdata publish között, (3) process-kill mindkét oldalon, (4) tele inventory salvage,
+(5) market list/buy/cancel canonical+rúnás+ascended itemmel, (6) világboss component
+egyszeri delivery, (7) protected claim/WG érc nem ad ritka materialt.
 
 ### Üzenetfájlok
 

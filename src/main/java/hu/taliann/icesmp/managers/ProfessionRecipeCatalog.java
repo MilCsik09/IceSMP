@@ -41,11 +41,24 @@ public final class ProfessionRecipeCatalog {
                          String affixTier, String uniqueResult, Map<Material, Integer> ingredients,
                          Map<String, Integer> uniqueIngredients, List<String> lore,
                          String signature, hu.taliann.icesmp.data.FactionType faction,
-                         boolean lootOnly, String job, String kind) {
+                         boolean lootOnly, String job, String kind,
+                         String templateId, boolean masterwork) {
         public Recipe {
             ingredients = ingredients == null ? Map.of() : Map.copyOf(ingredients);
             uniqueIngredients = uniqueIngredients == null ? Map.of() : Map.copyOf(uniqueIngredients);
             lore = lore == null ? List.of() : List.copyOf(lore);
+        }
+
+        public Recipe(final String id, final ProfessionType profession, final int level,
+                      final boolean blueprint, final String displayName, final String category,
+                      final Material result, final int resultAmount, final String affixTier,
+                      final String uniqueResult, final Map<Material, Integer> ingredients,
+                      final Map<String, Integer> uniqueIngredients, final List<String> lore,
+                      final String signature, final hu.taliann.icesmp.data.FactionType faction,
+                      final boolean lootOnly, final String job, final String kind) {
+            this(id, profession, level, blueprint, displayName, category, result, resultAmount,
+                    affixTier, uniqueResult, ingredients, uniqueIngredients, lore, signature,
+                    faction, lootOnly, job, kind, null, false);
         }
     }
 
@@ -59,10 +72,16 @@ public final class ProfessionRecipeCatalog {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private volatile CatalogState state = CatalogState.empty();
+    private volatile hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplates;
 
     public ProfessionRecipeCatalog(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
+    }
+
+    public void setItemTemplates(
+            final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplates) {
+        this.itemTemplates = java.util.Objects.requireNonNull(itemTemplates, "itemTemplates");
     }
 
     /** Builds and validates a private candidate, then publishes the complete immutable generation. */
@@ -143,6 +162,21 @@ public final class ProfessionRecipeCatalog {
         final String affixTier = resultSection.getString("affix-tier", null);
         final List<String> lore = section.getStringList("lore");
         final String signature = resultSection.getString("signature", null);
+        final String templateId = resultSection.getString("template", null);
+        final String canonicalTemplate = templateId == null || templateId.isBlank()
+                ? null : templateId.toLowerCase(Locale.ROOT);
+        if (canonicalTemplate != null) {
+            final hu.taliann.icesmp.itemization.ItemTemplateRegistry registry = itemTemplates;
+            if (registry != null) {
+                final hu.taliann.icesmp.itemization.ItemTemplate template = registry.find(canonicalTemplate)
+                        .orElseThrow(() -> new IllegalStateException("profession-recipes." + id
+                                + ": ismeretlen authored template: " + canonicalTemplate));
+                if (uniqueResult != null || amount != 1 || !template.material().equals(result.name())) {
+                    throw new IllegalStateException("profession-recipes." + id
+                            + ": a canonical gear result nem egyezik a template material/stack szabályával");
+                }
+            }
+        }
         final hu.taliann.icesmp.data.FactionType faction =
                 hu.taliann.icesmp.data.FactionType.fromInput(section.getString("faction", null));
         final boolean lootOnly = blueprint && section.getBoolean("loot-only", false);
@@ -153,7 +187,9 @@ public final class ProfessionRecipeCatalog {
                 parsedIngredients.materials(), parsedIngredients.uniqueMaterials(), lore,
                 signature == null || signature.isBlank() ? null : signature.toLowerCase(Locale.ROOT), faction,
                 lootOnly, job == null || job.isBlank() ? null : job.toLowerCase(Locale.ROOT),
-                section.getString("kind", "hozam").toLowerCase(Locale.ROOT));
+                section.getString("kind", "hozam").toLowerCase(Locale.ROOT),
+                canonicalTemplate,
+                resultSection.getBoolean("masterwork", false));
     }
 
     /** Canonical input/output signature independent of YAML order, profession and progression metadata. */

@@ -123,7 +123,7 @@ public final class ItemDataFactory {
     }
 
     /**
-     * A 7 fokú saját létra leképezése a vanília 4 fokra. Ismeretlen id → COMMON (fail-safe:
+     * A 6 fokú saját létra leképezése a vanília 4 fokra. Ismeretlen id → COMMON (fail-safe:
      * a craft nem törhet el egy elgépelt raritás-id-től).
      */
     public static org.bukkit.inventory.ItemRarity vanillaRarityOf(final String ladderId) {
@@ -133,7 +133,7 @@ public final class ItemDataFactory {
         return switch (ladderId.toLowerCase(java.util.Locale.ROOT)) {
             case "nem_mindennapi" -> org.bukkit.inventory.ItemRarity.UNCOMMON;
             case "ritka" -> org.bukkit.inventory.ItemRarity.RARE;
-            case "epikus", "legendas", "ereklye" -> org.bukkit.inventory.ItemRarity.EPIC;
+            case "epikus", "legendas", "mitikus", "ereklye" -> org.bukkit.inventory.ItemRarity.EPIC;
             default -> org.bukkit.inventory.ItemRarity.COMMON;
         };
     }
@@ -201,6 +201,11 @@ public final class ItemDataFactory {
      * @return true, ha legalább egy módosító felkerült (ekkor a hívó hívja a hideAttributeTooltip-et)
      */
     public static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs) {
+        return applyAttributeModifiers(item, specs, true);
+    }
+
+    public static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs,
+                                                   final boolean appendStatLore) {
         if (item == null || specs == null || specs.isEmpty()) {
             return false;
         }
@@ -256,9 +261,11 @@ public final class ItemDataFactory {
         if (!any) {
             return false;
         }
-        final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
-        lore.addAll(statLore);
-        meta.lore(lore);
+        if (appendStatLore) {
+            final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+            lore.addAll(statLore);
+            meta.lore(lore);
+        }
         item.setItemMeta(meta);
         return true;
     }

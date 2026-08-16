@@ -581,6 +581,7 @@ pedig a saját műhelyfolyamataikban haladnak.
 - `/profession info` — szakmai állapot.
 - `/profession join <szakma>` — tanulás vagy váltás.
 - `/profession recipes` — a ténylegesen ismert és zárolt receptek.
+- `/profession forge` — Itemization 2.0 műhely: reroll, Stat Lock, Ascension és salvage.
 - `/szakmacel` — a szakmád heti közös célja.
 
 A teljes receptkatalógus nem része ennek a kézikönyvnek. A receptkönyv jelzi a
@@ -589,6 +590,37 @@ szolgáltatói kellék hiányzik.
 
 Craftolni csak abból a szakmából tudsz, amelyet **éppen gyakorolsz**. A korábbi
 szakmád szintje megmarad a profilodon, de a receptjei váltás után zárva vannak.
+
+### Authored felszerelés és item műhely
+
+Az authored gear nem „véletlen kardfajta”: a recept előre megmondja a template-et,
+és csak a template által felsorolt roll-range-ekben van randomness. A szakmaszint,
+tervrajz és mestermű jelző additív, plafonozott minimum-qualityt adhat. A tárgyon
+megmarad a készítő UUID-ja, a név craftkori pillanatképe, a szakma, hely/idő és a
+Mestermű jelző; egy későbbi névváltás nem írja át az eredetét.
+
+A főkézben tartott canonical tárggyal nyisd meg a `/profession forge` felületet:
+
+- **Full Reforge:** minden rollolható stat újragurul;
+- **Stat Lock:** kattints egy statra, így az változatlan marad, a többi újragurul;
+- **Quality Amplifier:** a következő reroll minimum qualityjét emeli;
+- **Stability Seal:** a reroll megtörténik, de a következő költséglépcső nem nő;
+- **Ascension:** előre megmutatott, ritka és determinisztikus fejlesztés;
+- **Salvage:** irreverzibilis, veszteséges bontás runa-/salvage alapanyagra.
+
+A gombok megmutatják a költséget és az eredményt; a tényleges művelethez
+**SHIFT+katt** kell. A reroll count, az Ascension, a rúnák és a provenance piaci
+adásvétel, relog és restart után sem nullázódik.
+
+### A pilot survival gazdasági út
+
+Egy Bányász valódi deepslate diamond/emerald ércből, napi anti-farm sapkával ritkán
+**Sarkfény-cseppkövet** talál. A Kovács ezt feldolgozott alapanyagokkal authored
+Vadvidéki Eskükarddá vagy tervrajzos Glatziendorfi gearré kovácsolja. A gear
+rerollolható, rúnázható és — trade policy szerint — a piacon eladható. A követett
+világboss személyes **Fekete Villám Szilánkja** olyan komponens, amely a Jégvért
+Ascensionjéhez kell. Az Ascension után ugyanaz az item UUID marad, és a rollok a régi
+relatív qualityn maradnak az új tartományban.
 
 ### Miért van, hogy egy recept ugyanannyit ad, mint a műhelyasztal?
 
@@ -712,6 +744,13 @@ A biztonságos vidékektől távolodva a szörnyek szintje emelkedhet. Erősebbe
 de több kaszt-XP-t és jobb zsákmányt adhatnak. A spawnerből származó mobok
 nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a
 skálázást és jutalmat.
+
+Az authored harci felszerelés enyhén figyelembe veszi a szintedet, kasztodat,
+specializációdat, jelenlegi gear-statisztikáidat, üres felszereléshelyedet és a
+forrást. Ez nem személyes kívánságlista: más buildhez vagy kaszthoz való,
+piacon értékes darab továbbra is eshet. A közelmúlt ismétlődése csak finoman
+módosítja a súlyokat, és nem garantál rövid úton Mitikus tárgyat; az előzmény
+kilépéssel vagy szerver-újraindítással sem nullázódik.
 
 ### Szezonális liga
 

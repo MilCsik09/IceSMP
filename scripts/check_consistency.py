@@ -779,7 +779,7 @@ except Exception as e:
 # levezethető — a hozam-arány emberi szabály marad, azt itt SEM állítjuk.
 try:
     _KINDS = {"gyakorlo", "hozam", "egyedi", "lanc", "ritkasag"}
-    _FUNC = ("affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects")
+    _FUNC = ("template", "affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects")
     _GYAKORLO_MAX_LEVEL = 15
     # Boss/esemény-kötött alapanyagok: csak ezek kapuzhatnak ritkaság-receptet.
     _BOSS_UNIQUES = {
@@ -810,6 +810,7 @@ try:
 
     _recipes = (configs.get("profession-recipes.yml") or {}).get("profession-recipes") or {}
     _materials = (configs.get("profession-materials.yml") or {}).get("profession-materials") or {}
+    _templates = (configs.get("item-templates.yml") or {}).get("item-templates") or {}
 
     def _inputs(_rec):
         """(anyag -> darab, unique -> darab) a hozzávaló-listából."""
@@ -836,6 +837,16 @@ try:
         _kind = _rec.get("kind")
         _plain, _uniq = _inputs(_rec)
         _amount = int(_res.get("amount", 1))
+        _template_id = _res.get("template")
+        if _template_id:
+            _template = _templates.get(_template_id)
+            if not isinstance(_template, dict):
+                fail(f"recept-fajta: '{_rid}' ismeretlen authored template-et ad: '{_template_id}'")
+            elif (_res.get("unique") or _amount != 1
+                  or str(_res.get("material", "")).upper()
+                  != str(_template.get("material", "")).upper()):
+                fail(f"recept-fajta: '{_rid}' canonical result material/stack eltér a "
+                     f"'{_template_id}' template-től")
         if _kind not in _KINDS:
             fail(f"recept-fajta: '{_rid}' kind='{_kind}' — a megengedettek: {sorted(_KINDS)}")
             continue

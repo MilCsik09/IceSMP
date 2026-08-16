@@ -48,6 +48,12 @@ public final class WorldBossManager {
     private final NamespacedKey bossArchetypeKey;
     /** B33: a szezonzáró boss jelölője (halálakor egyedi loot-tábla gurul). */
     private final NamespacedKey finaleBossKey;
+    private volatile hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
+
+    public void setUniqueMaterials(
+            final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
+        this.uniqueMaterials = uniqueMaterials;
+    }
 
     /**
      * The boss roster. Each archetype is a distinct mob with its own theme, stat
@@ -881,6 +887,22 @@ public final class WorldBossManager {
                         : LootTable.roll(configManager, "world-events.world-boss.killer-loot", killerRolls)) {
                     killer.getInventory().addItem(loot).values()
                             .forEach(left -> killer.getWorld().dropItemNaturally(killer.getLocation(), left));
+                }
+            }
+            final hu.taliann.icesmp.items.UniqueMaterialFactory materials = uniqueMaterials;
+            final String componentId = configManager.getString(
+                    "world-events.world-boss.ascension-component", "osi_ereklyeszilank");
+            final int componentAmount = Math.max(0, Math.min(8, configManager.getInt(
+                    "world-events.world-boss.ascension-component-amount", 1)));
+            if (materials != null && componentAmount > 0) {
+                final org.bukkit.inventory.ItemStack component =
+                        materials.create(componentId, componentAmount);
+                if (component != null) {
+                    killer.getInventory().addItem(component).values()
+                            .forEach(left -> killer.getWorld().dropItemNaturally(
+                                    killer.getLocation(), left));
+                } else {
+                    plugin.getLogger().severe("World boss ascension component undefined: " + componentId);
                 }
             }
         }, null);

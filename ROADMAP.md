@@ -258,6 +258,9 @@ nyilvános felületre.
 
 ### C — PvE Depth
 
+- ⬜ `MobTemplate` + hibrid 1–50 progression, ahol az explicit encounter/zóna
+  felülírja, a távolság/mélység/territory pedig survival-wilderness fallback;
+  általános vadon hard cap 70.
 - ⬜ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
   mobonként, spawnkor rögzített döntéssel és bounded élettartammal.
 - ⬜ Eseményvezérelt boss contribution ledger sebzés, gyógyítás, tankolás
@@ -269,13 +272,23 @@ nyilvános felületre.
 **Kapunyitás D/E felé:** minden idézett entitás életciklusa rendezett,
 a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
 
-### D — Profession és item economy
+### D — Survival itemizáció, profession és piac
 
 - ⬜ A 16 profession-specializáció tényleges passzívjai és fizetős respec.
-- ⬜ Veszteséges salvage szigorú tiltólistával.
-- ⬜ `ItemIdentityService` és bounded item history, csak fontos
-  mérföldkövekkel.
-- ⬜ Rúna 2.0 UX: előnézet, kódex és rúnapor-salvage; több foglalat nélkül.
+- ✅ Controlled reroll (Full Reforge, Stat Lock, Quality Amplifier, Stability Seal),
+  deterministic authored ascension és veszteséges salvage szigorú legacy/admin/
+  bind tiltással, bounded költséggörbével és item-mutation WAL recoveryvel.
+- ✅ Az authored `ItemTemplate`/`ItemInstance`/`ItemIdentityService`, 0–2 rúnahely,
+  signature/set fogyasztó és build-aware, restartbiztos soft-diversity alap
+  elkészült; a Phase 4–5 pure-domain regresszió és consistency kapu zöld, a teljes
+  Java 21 Gradle + Folia staging identity/migration/death/market runtime acceptance
+  továbbra is kötelező release-gate.
+- ✅ Az első, szándékosan kicsi survival vertical slice 6 authored template-re épül:
+  vanilla mining → Sarkfény-cseppkő → profession craft → reroll/rúna/piac →
+  világboss-komponens → ugyanazon UUID-val ascension. A 30–40 darabos katalógusbővítés
+  csak a pilot runtime/balance elfogadása után következhet.
+- ◇ Rúna 2.0: a canonical instance 0–2 socketes insert/change állapota és lifecycle-
+  API-ja kész; a külön remove/replace UX és kódex még nyitott.
 - ⬜ Crafting order piactér escrow-val és naplózott settlementtel.
 
 **Kapunyitás E felé:** a tárgyazonosság másolás, újraindítás és

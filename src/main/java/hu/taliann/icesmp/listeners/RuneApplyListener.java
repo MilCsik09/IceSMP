@@ -25,26 +25,30 @@ import java.util.Map;
 /**
  * B26 — rúna-felhelyezés: a játékos a KURZORÁN tartott rúnát (unique material,
  * id: {@code runa_*}) rákattintja a táskájában lévő fegyverre/páncélra — a cél
- * PDC-jébe kerül a {@code rune_effect} (a hatás-listener ezt olvassa), a lore
- * egy rúna-sort kap, a rúna elfogy. Tárgyanként EGY rúna (nem cserélhető —
- * a döntés súlya a lore-hoz illik). A cél-típusokat a crafting.yml
+ * állapotába kerül a rúna, a lore egy rúna-sort kap, a rúna elfogy. A canonical
+ * Itemization 2.0 tárgyak a template 0–2 socketét használják; a legacy tárgyak
+ * kompatibilitási okból továbbra is egyetlen {@code rune_effect} PDC-t visznek.
+ * A cél-típusokat a crafting.yml
  * {@code runes.<id>.applies} listája szabja meg (weapon/bow/chest).
  * Folia: az InventoryClickEvent a játékos saját régió-szálán fut.
  */
 public final class RuneApplyListener implements Listener {
 
-    /** A felrúnázott tárgy PDC-kulcsa (értéke a rúna-id) — a hatás-listener is ezt olvassa. */
+    /** Legacy/projekciós PDC-kulcs; új tárgyon az ItemInstance rune-state az authority. */
     public static final NamespacedKey RUNE_PDC_KEY = NamespacedKey.fromString("icesmp:rune_effect");
 
     private final UniqueMaterialFactory uniqueMaterials;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
 
     public RuneApplyListener(final UniqueMaterialFactory uniqueMaterials,
-                             final ConfigManager configManager, final MessageManager messageManager) {
+                             final ConfigManager configManager, final MessageManager messageManager,
+                             final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService) {
         this.uniqueMaterials = uniqueMaterials;
         this.configManager = configManager;
         this.messageManager = messageManager;
+        this.itemIdentityService = itemIdentityService;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -65,6 +69,35 @@ public final class RuneApplyListener implements Listener {
             return; // nem cél-tárgy: hagyjuk a normál inventory-műveletet futni
         }
         event.setCancelled(true);
+        final hu.taliann.icesmp.itemization.ItemIdentityService.RuneMutation mutation =
+                itemIdentityService.applyRune(target, runeId, System.currentTimeMillis());
+        if (mutation.status()
+                != hu.taliann.icesmp.itemization.ItemIdentityService.RuneMutationStatus.NOT_MANAGED) {
+            if (!mutation.applied()) {
+                final String key = switch (mutation.status()) {
+                    case NO_SOCKET -> "rune-managed-no-socket";
+                    case SOCKETS_FULL, DUPLICATE_RUNE -> "rune-managed-full";
+                    default -> "rune-managed-invalid";
+                };
+                final String message = switch (mutation.status()) {
+                    case NO_SOCKET -> "<red>◆ Ezen a tárgyon nincs rúnahely.</red>";
+                    case SOCKETS_FULL, DUPLICATE_RUNE ->
+                            "<red>◆ Ezen a tárgyon nincs szabad, használható rúnahely.</red>";
+                    default -> "<red>◆ A tárgy identitása hibás vagy migrációra vár; a rúna nem veszett el.</red>";
+                };
+                player.sendMessage(messageManager.getMessage(key, message));
+                player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.5F, 0.6F);
+                return;
+            }
+            updateManagedLore(target, mutation, runeId);
+            itemIdentityService.refreshPresentation(target, mutation.template(), mutation.instance());
+            consumeCursor(event, cursor);
+            player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.9F, 1.2F);
+            player.sendMessage(messageManager.getMessage("rune-applied",
+                    "<aqua>◆ A rúna a tárgyba égett: <white>{rune}</white> — a Mélység Népe bólint.</aqua>",
+                    Map.of("rune", uniqueMaterials.displayName(runeId))));
+            return;
+        }
         final ItemMeta meta = target.getItemMeta();
         if (meta == null) {
             return;
@@ -86,12 +119,40 @@ public final class RuneApplyListener implements Listener {
         // A kurzor-fogyasztást explicit setCursor-ral rögzítjük: a cancel-elt event után a
         // kliens a szerver-oldali kurzort kapja vissza — az in-place mutáció önmagában nem
         // minden Paper-verzión propagál (végtelen rúna-dupe lenne).
-        cursor.setAmount(cursor.getAmount() - 1);
-        event.getView().setCursor(cursor.getAmount() <= 0 ? null : cursor);
+        consumeCursor(event, cursor);
         player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.9F, 1.2F);
         player.sendMessage(messageManager.getMessage("rune-applied",
                 "<aqua>◆ A rúna a tárgyba égett: <white>{rune}</white> — a Mélység Népe bólint.</aqua>",
                 Map.of("rune", uniqueMaterials.displayName(runeId))));
+    }
+
+    private void updateManagedLore(
+            final ItemStack target,
+            final hu.taliann.icesmp.itemization.ItemIdentityService.RuneMutation mutation,
+            final String runeId) {
+        final ItemMeta meta = target.getItemMeta();
+        final List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
+        final net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plain =
+                net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
+        for (int index = 0; index < lore.size(); index++) {
+            if (plain.serialize(lore.get(index)).startsWith("◆ Rúnahely:")) {
+                lore.set(index, Component.text("◆ Rúnahely: " + mutation.instance().runes().size()
+                                + "/" + mutation.template().runeSocketCountAt(
+                                mutation.instance().ascension().stageId()), NamedTextColor.AQUA)
+                        .decoration(TextDecoration.ITALIC, false));
+                break;
+            }
+        }
+        lore.add(Component.text("◆ " + configManager.getString(
+                        "runes." + runeId + ".display", uniqueMaterials.displayName(runeId)),
+                        NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
+        target.setItemMeta(meta);
+    }
+
+    private static void consumeCursor(final InventoryClickEvent event, final ItemStack cursor) {
+        cursor.setAmount(cursor.getAmount() - 1);
+        event.getView().setCursor(cursor.getAmount() <= 0 ? null : cursor);
     }
 
     /** A rúna cél-típus szabálya (crafting.yml runes.<id>.applies: weapon|bow|chest). */

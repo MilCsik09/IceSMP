@@ -54,8 +54,8 @@ crates:
       - { type: unique-item, weight: 14.0, id: emlekszilank, amount: 6, description: "&d6× Opálos Emlékszilánk" }
       - { type: unique-item, weight: 10.0, id: vad_esszencia, amount: 3, description: "&23× Vad Esszencia" }
       - { type: unique-item, weight: 8.0, id: arnyekpor, amount: 3, description: "&83× Árnyékpor" }
-      - { type: recipe-item, weight: 12.0, id: tarnasz_csakany_recept, amount: 1, description: "&bAffixes Tárnász Csákány" }
-      - { type: recipe-item, weight: 10.0, id: gyemant_kard, amount: 1, description: "&bAffixes Szilánkfény Penge" }
+      - { type: unique-item, weight: 12.0, id: sarkfeny_cseppko, amount: 1, description: "&bSarkfény-cseppkő" }
+      - { type: unique-item, weight: 10.0, id: tiszta_vasesszencia, amount: 6, description: "&f6× Tiszta Vasesszencia" }
       - { type: random-blueprint, weight: 16.0, min-level: 35, max-level: 44, description: "&bVéletlen haladó tervrajz" }
       - { type: item, weight: 6.0, material: ENCHANTED_GOLDEN_APPLE, amount: 1, description: "&6Bűvös aranyalma" }
       - { type: currency, weight: 16.0, currency: NEUTRAL, amount: 900, description: "&e900 Creutzér" }
@@ -76,9 +76,9 @@ crates:
     opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 1.0, pitch: 0.95 }
     broadcast: { enabled: false, message: "&6[Láda] &f{player} &ekinyitotta: &6{crate} &7({amount}×)" }
     rewards:
-      - { type: recipe-item, weight: 12.0, id: gyemant_mellvert, amount: 1, description: "&bAffixes Prizmavért" }
-      - { type: recipe-item, weight: 10.0, id: haromagu_szigony, amount: 1, description: "&bAffixes Hullámtörő Szigony" }
-      - { type: recipe-item, weight: 8.0, id: runakovacsolt_penge, amount: 1, description: "&dAffixes Rúnakovácsolt Penge" }
+      - { type: unique-item, weight: 12.0, id: sarkfeny_cseppko, amount: 2, description: "&b2× Sarkfény-cseppkő" }
+      - { type: unique-item, weight: 10.0, id: vad_esszencia, amount: 4, description: "&24× Vad Esszencia" }
+      - { type: blueprint, weight: 8.0, id: runakovacsolt_penge, amount: 1, description: "&dRúnakovácsolt Penge tervrajza" }
       - { type: unique-item, weight: 10.0, id: osi_ereklyeszilank, amount: 1, description: "&cFekete Villám Szilánk" }
       - { type: unique-item, weight: 12.0, id: szorny_mag, amount: 5, description: "&55× Szörny Mag" }
       - { type: random-blueprint, weight: 18.0, min-level: 40, max-level: 48, description: "&bVéletlen mester tervrajz" }
@@ -101,9 +101,9 @@ crates:
     opening-sound: { sound: "minecraft:ui.toast.challenge_complete", volume: 1.0, pitch: 0.75 }
     broadcast: { enabled: true, message: "&5[Láda] &f{player} &dkinyitotta: &5{crate} &7({amount}×)" }
     rewards:
-      - { type: recipe-item, weight: 12.0, id: ereklye_penge, amount: 1, description: "&5Affixes Villámszilánk Pengéje" }
-      - { type: recipe-item, weight: 10.0, id: melytengeri_ereklyeszigony, amount: 1, description: "&3Affixes Mélytengeri Villámszigony" }
-      - { type: recipe-item, weight: 10.0, id: szornyvert_mellveny, amount: 1, description: "&5Affixes Szörnyvért Mellvény" }
+      - { type: blueprint, weight: 12.0, id: ereklye_penge, amount: 1, description: "&5Villámszilánk Pengéje tervrajza" }
+      - { type: blueprint, weight: 10.0, id: melytengeri_ereklyeszigony, amount: 1, description: "&3Mélytengeri Villámszigony tervrajza" }
+      - { type: blueprint, weight: 10.0, id: szornyvert_mellveny, amount: 1, description: "&5Szörnyvért Mellvény tervrajza" }
       - { type: random-blueprint, weight: 22.0, min-level: 45, max-level: 50, include-loot-only: true, description: "&5Véletlen ősi/boss tervrajz" }
       - { type: random-blueprint, weight: 10.0, min-level: 40, max-level: 50, description: "&bVéletlen nagymester tervrajz" }
       - { type: unique-item, weight: 12.0, id: osi_ereklyeszilank, amount: 2, description: "&c2× Fekete Villám Szilánk" }
@@ -131,9 +131,10 @@ crates:
       - { type: unique-item, weight: 10.0, id: kemenyfa_gerenda, amount: 8, description: "&e8× Keményfa Gerenda" }
       - { type: unique-item, weight: 10.0, id: runapor, amount: 8, description: "&b8× Rúnapor" }
       - { type: unique-item, weight: 8.0, id: gyogy_kivonat, amount: 8, description: "&a8× Gyógy-kivonat" }
-      - { type: recipe-item, weight: 10.0, id: tarnasz_csakany_recept, amount: 1, description: "&bAffixes Tárnász Csákány" }
-      - { type: recipe-item, weight: 10.0, id: gyemant_fejsze, amount: 1, description: "&bAffixes Prizmaél Fejsze" }
-      - { type: recipe-item, weight: 8.0, id: bastya_pajzs_recept, amount: 1, description: "&6Affixes Bástya Pajzs" }
+      - { type: unique-item, weight: 10.0, id: folyositoszer, amount: 2, description: "&f2× Folyósítószer" }
+      - { type: unique-item, weight: 10.0, id: sarkfeny_cseppko, amount: 2, description: "&b2× Sarkfény-cseppkő" }
+      - { type: template, weight: 2.0, id: vadvilagi_eskukard, description: "&9Authored Vadvidéki Eskükard" }
+      - { type: unique-item, weight: 8.0, id: runapor, amount: 12, description: "&b12× Rúnapor" }
       - { type: random-blueprint, weight: 14.0, min-level: 30, max-level: 48, description: "&bVéletlen mesterség-tervrajz" }
       - { type: currency, weight: 8.0, currency: NEUTRAL, amount: 1400, description: "&e1400 Creutzér" }
 
@@ -153,7 +154,7 @@ crates:
     broadcast: { enabled: false, message: "&b[Láda] &f{player} &7kinyitotta: &b{crate} &7({amount}×)" }
     rewards:
       - { type: recipe-item, weight: 10.0, id: melyseg_kulcsa, amount: 1, description: "&3A Mélység Kulcsa" }
-      - { type: recipe-item, weight: 8.0, id: melytengeri_ereklyeszigony, amount: 1, description: "&bMélytengeri Ereklyeszigony" }
+      - { type: blueprint, weight: 8.0, id: melytengeri_ereklyeszigony, amount: 1, description: "&bMélytengeri Ereklyeszigony tervrajza" }
       - { type: unique-item, weight: 12.0, id: melysegi_borostyan, amount: 4, description: "&64× Mélységi Borostyán" }
       - { type: unique-item, weight: 12.0, id: sarkanycsont_szilank, amount: 4, description: "&f4× Sárkánycsont-szilánk" }
       - { type: unique-item, weight: 10.0, id: gyongyhaz_pikkely, amount: 5, description: "&b5× Gyöngyház-pikkely" }
@@ -178,11 +179,11 @@ crates:
     opening-sound: { sound: "minecraft:entity.iron_golem.attack", volume: 0.75, pitch: 0.85 }
     broadcast: { enabled: false, message: "&c[Láda] &f{player} &7kinyitotta: &c{crate} &7({amount}×)" }
     rewards:
-      - { type: recipe-item, weight: 12.0, id: gyemant_kard, amount: 1, description: "&bAffixes Szilánkfény Penge" }
-      - { type: recipe-item, weight: 10.0, id: bastya_pajzs_recept, amount: 1, description: "&6Affixes Bástya Pajzs" }
-      - { type: recipe-item, weight: 8.0, id: vaskard, amount: 1, description: "&fAffixes Vasököl Pengéje" }
-      - { type: recipe-item, weight: 10.0, id: sarkanycsont_pajzs, amount: 1, description: "&fSárkánycsont Pajzs" }
-      - { type: recipe-item, weight: 8.0, id: runakovacsolt_penge, amount: 1, description: "&dAffixes Rúnakovácsolt Penge" }
+      - { type: unique-item, weight: 12.0, id: tiszta_vasesszencia, amount: 8, description: "&f8× Tiszta Vasesszencia" }
+      - { type: unique-item, weight: 10.0, id: runapor, amount: 8, description: "&b8× Rúnapor" }
+      - { type: unique-item, weight: 8.0, id: folyositoszer, amount: 2, description: "&f2× Folyósítószer" }
+      - { type: unique-item, weight: 10.0, id: sarkanycsont_szilank, amount: 2, description: "&f2× Sárkánycsont-szilánk" }
+      - { type: blueprint, weight: 8.0, id: runakovacsolt_penge, amount: 1, description: "&dRúnakovácsolt Penge tervrajza" }
       - { type: unique-item, weight: 10.0, id: fonixpihe, amount: 2, description: "&c2× Főnixpihe" }
       - { type: unique-item, weight: 10.0, id: sarkanycsont_szilank, amount: 4, description: "&f4× Sárkánycsont-szilánk" }
       - { type: random-blueprint, weight: 18.0, profession: armorer, min-level: 35, max-level: 48, description: "&6Véletlen hadi tervrajz" }

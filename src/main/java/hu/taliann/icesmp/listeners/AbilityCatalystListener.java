@@ -119,6 +119,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile ClassSpecProfileGateway profileGateway;
     private final Map<JobType, ClassCastHook> classHooks = new ConcurrentHashMap<>();
     private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
+    private volatile hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
     private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
 
     private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();
@@ -162,6 +163,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     public void setQuestManager(final hu.taliann.icesmp.managers.QuestManager manager) {
         questManager = java.util.Objects.requireNonNull(manager, "manager");
+    }
+
+    public void setItemIdentityService(final hu.taliann.icesmp.itemization.ItemIdentityService service) {
+        itemIdentityService = java.util.Objects.requireNonNull(service, "service");
     }
 
     private static ClassCastHook standardHook(final java.util.function.BiPredicate<Player, Spell> gate,
@@ -535,13 +540,21 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
         final double classBonusPercent = hook == null ? 0.0D : hook.power().bonusPercent(player, selected);
+        final hu.taliann.icesmp.itemization.ItemIdentityService identity = itemIdentityService;
+        final double gearPowerPoints = identity == null ? 0.0D : identity.equippedAbilityPower(player);
+        final double gearPowerMultiplier = hu.taliann.icesmp.itemization.ItemStatScaling
+                .abilityPowerMultiplier(
+                        gearPowerPoints,
+                        configManager.getDouble("itemization.stats.ability-power-percent-per-point", 1.0D),
+                        configManager.getDouble("itemization.stats.ability-power-max-percent", 50.0D));
         final double powerCap = Math.max(1.0D,
                 configManager.getDouble("spells.total-power-cap", 1.75D));
         final double power = Math.min(powerCap,
                 masteryManager.getPowerMultiplier(player, selected.getId())
                         * dynamicPowerMultiplier(player)
                         * (1.0D + chainBonusPercent / 100.0D)
-                        * (1.0D + classBonusPercent / 100.0D));
+                        * (1.0D + classBonusPercent / 100.0D)
+                        * gearPowerMultiplier);
 
         final CostReservation reservation = reserveCost(player, selected, useResource);
         final CastOutcome outcome;

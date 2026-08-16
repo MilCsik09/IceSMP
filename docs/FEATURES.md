@@ -559,7 +559,7 @@ Regisztrált spellkatalógus, célzás, költség, cooldown, projectile/state ke
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz és szakmai GUI.
-A receptkatalógus 376 receptet tartalmaz, és minden recept kimondja a **fajtáját**
+A receptkatalógus 377 receptet tartalmaz, és minden recept kimondja a **fajtáját**
 (gyakorló / hozam / egyedi / lánc / ritkaság); a fajta szabja meg, mit adhat a
 vanília fölé, és ezt gépi kapu tartja fenn.
 
@@ -618,11 +618,34 @@ Szakmai receptkönyv, craft-korlátok, blueprint-feloldás, katalizátorvédelem
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Adatvezérelt ritkaság, egyedi anyag, item-provenance, rúnázás, signature enchantok és tárgyvédelmek.
+Az Itemization 2.0 stabil template- és példányazonosságot, hatfokú ritkaságot,
+normalizált roll qualityt, 0–2 rúnahelyet, signature/set fogyasztókat és bounded,
+UUID-authority crafter provenance-t ad. A `/profession forge` vanilla GUI Full
+Reforge, egy authored rollra alkalmazható Stat Lock, quality-padlót emelő Amplifier,
+költséglépcsőt megőrző Stability Seal, determinisztikus Ascension és veszteséges
+salvage előnézetet kínál. Reroll, rúnacsere és ascension közben az item UUID-ja nem
+változik; az ismételt reroll költséglépcsője magával az itemmel utazik.
 
-- **Így találkozol vele:** Craft, loot, itemhasználat, anvil/rúna esemény; admin itemadás.
+Az ascension csak explicit stage-et definiáló template-nél működik. Az új rollérték
+a régi normalizált qualityt viszi át az új authored tartományba, nem sorsol újra;
+közben item level, fixed/rolled budget, követelmény, rune socket, lore/model és
+Signature-fokozat változhat. A pilotban a magasabb Signature-fokozat additív,
+configolt erősítést kap, nem kontrollálatlan multiplikatív szorzót.
+
+A régi random-affix, egyrúnás, relikvia- és custom tárgyak felismerhetők maradnak.
+Az ismeretlen eredetű legacy gear nem rerollolható, nem ascendelhető és nem salvage-
+elhető automatikusan; piaci engedélye külön config-policy. A combat authored gear
+engedélyezésekor a normál gear producer nem esik vissza új legacy random-affix gearre,
+a crate parser pedig ilyen receptjutalmat elutasítja.
+Az eddigi legacy egy-rúnás insert kompatibilitás megmarad, de canonical remove/replace
+nem fut rajta. Külön, kétoldalú közvetlen player-trade rendszer nincs a repóban; az
+ellenőrzött ItemInstance-átruházási authority ebben a körben a WAL-os market.
+
+- **Így találkozol vele:** `/profession recipes`, `/profession forge`, mining,
+  combat/world-boss loot, rúnázás, `/market`; admin: `/iceitem template <id>`.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
-- **Mitől mozdul meg:** Item létrehozása, frissítése, craftja, lootja és használata.
+- **Mitől mozdul meg:** Item létrehozása, craftja, rerollja, rúnázása, piaci
+  escrow-ja, salvage-e és authored ascensionje.
 - **Ami még kellhet hozzá:** Resource-pack `ITEM_MODEL` mappingek, lootforrások és displaynevek ellenőrzendők.
 - **Fontos határ:** Meglévő, régi metadata-s itemek migrációját production mintán kell tesztelni.
 
@@ -630,8 +653,14 @@ Adatvezérelt ritkaság, egyedi anyag, item-provenance, rúnázás, signature en
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `item-rarity.*`, `dev-items.*`, crafting-, rune- és signature-item definíciók.
-- Tartós állapot: Az itemadat magában az itemben és egyes dev-item state-ekben tartós.
+- Config: `itemization.*`, `item-templates.*`, `item-sets.*`, `item-rarity.*`, `dev-items.*`, crafting-, rune- és signature-item definíciók.
+- Tartós állapot: A canonical példányadat, reroll count/költséglépcső, receipt-lista,
+  rune/ascension/provenance az itemben van. A bounded loot-diverzitási előzmény a
+  PlayerProfile v2 statisztikai szekciójában, a ritka mining napi anti-farm budgetje
+  a Profile v2 economy extensionben marad reconnect és restart után is.
+- Tranzakció: `item-mutation-journal.yml` exact before/after inventory snapshotot
+  készít payment előtt; playerdata publish után a receiptet tartalmazó candidate és
+  az elfogyasztott anyagok egy snapshotként recoveryzhetők.
 - Reload: Definíciók részben reloadolhatók; meglévő itemek frissítő listeneren vagy újrageneráláskor változnak.
 
 </details>
@@ -1075,7 +1104,11 @@ Szezonállapot, jutalmak, történetmesélés, finálé, monumentum, holiday, am
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és undead segédszabályok.
+Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és undead
+segédszabályok. A combat gear-sor releváns forrásnál authored Itemization 2.0
+template-et választ: level/class/spec/build/üres slot/forrás legfeljebb 1,5× súlyt
+adhat, az utolsó legfeljebb 32 drop pedig csak enyhe, nem garantált diverzitási
+korrekciót végez. A más kasztnak való, kereskedhető tárgyak súlya pozitív marad.
 
 - **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium (kattintható kategória-főoldal + lapozható lajstrom: ismert bejegyzések ikonnal, ismeretlenek „???" sziluettként, teljesítmény-%-kal). A szörny-bejegyzések faj-szintű mélységet kapnak: elejtés-számláló, első-elejtés dátum és kill-alapú tudás-fokozatok (kódex-jegyzet → zsákmány-jegyzet → mestervadász), a világbossok archetípusonként (nem vanilla-fajonként) kerülnek a lajstromba. Külső kijelzéshez: `%icesmp_bestiary_<kategória>%` és `_total` placeholderek.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
@@ -1087,8 +1120,8 @@ Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.*`, `loot.*`, mob-, bestiary- (mérföldkövek, `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`), scaling- és miniondefiníciók.
-- Tartós állapot: Bestiárium progress és egyes loot/event state-ek tartósak; mob entity runtime.
+- Config: `world.*`, `loot.*`, `itemization.loot.*`, mob-, bestiary- (mérföldkövek, `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`), scaling- és miniondefiníciók.
+- Tartós állapot: Bestiárium progress, bounded authored-loot előzmény és egyes loot/event state-ek tartósak; mob entity runtime.
 - Reload: Loot/balance reloadolható; már spawnolt mobok nem feltétlenül változnak visszamenőleg.
 
 </details>

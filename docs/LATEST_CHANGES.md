@@ -25,6 +25,32 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 ## Augusztus eleji integrációs hullám (staging előtt)
 
+### Itemization 2.0 Phase 4–5 — survival economy pilot
+
+- Hat authored template fölött elkészült a controlled reroll: Full Reforge, egyetlen
+  authored Stat Lock, Quality Amplifier, Stability Seal, bounded és itemmel utazó
+  költséglépcső.
+- Az explicit ascension stage-ek nem rerollolnak: a normalizált qualityt viszik át az
+  új roll-range-re, az UUID/provenance/rúnák megtartásával. A Glatziendorfi Jégvért
+  BASE→AWAKENED→ASCENDED pilotot és valós Signature-tier scalinget kapott.
+- A veszteséges salvage legacy/admin/account-bound/forbidden itemnél fail-closed;
+  outputja a reroll/rúna ökoszisztémába tér vissza, a gépi invariant pedig tiltja, hogy
+  a becsült output meghaladja a konzervatív inputértéket.
+- A Bányász vanilla deepslate érctörésből, protection/regen/AFK és napi Profile v2
+  budget mellett Sarkfény-cseppkövet találhat. Három profession gear recept már
+  közvetlenül canonical `ItemTemplate → ItemInstance`, bounded crafter provenance-szel.
+- A követett világboss személyes Fekete Villám Szilánkot ad az ascensionhöz. A market
+  megőrzi a teljes instance-et és elutasítja a malformed/duplicate/policy-sértő itemet.
+  A crate authored template rewardot támogat, és a bundled config többé nem oszt
+  legacy random-affix geart.
+- A `/profession forge` előnézeti GUI minden költséget és irreverzibilis következményt
+  mutat, SHIFT megerősítést kér. A szűk item-mutation WAL exact before/after snapshotból
+  recoveryzik; mixed állapotnál fail-closed admin review marad.
+
+> A pure-domain regresszió és a consistency/YAML kapuk zöldre hozhatók lokálisan. A
+> teljes Java 21 Gradle gate és Folia process-kill/runtime acceptance továbbra is staging
+> gate; a wrapper-disztribúció letöltését a jelenlegi izolált környezet hálózata blokkolja.
+
 A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
 
 - **Kaszt-kifizetés visszajelzés:** a kaszt-magok eddig is emelték a képességek

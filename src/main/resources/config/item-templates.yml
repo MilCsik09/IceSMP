@@ -1,0 +1,323 @@
+# IceSMP konfiguráció — authored Itemization 2.0 template-ek.
+# A template identitása és forrása fix; kizárólag a rolled-stats tartományai sorsolódnak.
+itemization:
+  stats:
+    # Egy Képességerő pont ennyi százalékot ad a cast nagyságához; élőben újratölthető.
+    ability-power-percent-per-point: 1.0
+    # A felszerelésből származó teljes Képességerő-bónusz plafonja.
+    ability-power-max-percent: 50.0
+  loot:
+    # Az authored combat gear fokozatosan leváltja a régi generikus random-affix gear sort.
+    enabled: true
+    # A level/class/spec/build/slot/source együttes előnye sem lépheti túl ezt a szorzót.
+    max-personalization-multiplier: 1.5
+    # Ennyi legutóbbi authored combat drop vesz részt a soft-diversity súlyozásban (1–32).
+    history-window: 24
+    # Ismétlődő template-enkénti enyhe súlybüntetés.
+    repeated-template-penalty: 0.12
+    # Azonos rarity/slot/family előzményenkénti enyhe súlybüntetés.
+    repeated-category-penalty: 0.035
+    # Régen nem látott rarity/slot/family kategóriánkénti enyhe súlybónusz.
+    unseen-category-boost: 0.04
+  crafting:
+    # Additív, plafonozott quality-padló; nem szorozza a tárgy teljes stat-budgetjét.
+    base-minimum-quality: 0.10
+    quality-per-profession-level: 0.003
+    maximum-level-contribution: 0.20
+    blueprint-quality-bonus: 0.05
+    masterwork-quality-bonus: 0.15
+  reroll:
+    base-material: runapor
+    base-amount: 2
+    growth: 1.55
+    maximum-amount: 32
+    stat-lock-extra-material: folyositoszer
+    stat-lock-extra-amount: 1
+    quality-amplifier-material: sarkfeny_cseppko
+    quality-amplifier-floor: 0.65
+    stability-material: viaszpecset
+  salvage:
+    base-dust: 1
+    per-rarity-dust: 1
+    rune-dust-per-rune: 1
+    signature-dust: 1
+    maximum-dust: 8
+    output-map:
+      salvage_dust: runapor
+      rune_dust: runapor
+      signature_dust: folyositoszer
+  gathering:
+    rare-mining:
+      enabled: true
+      material-id: sarkfeny_cseppko
+      chance: 0.0125
+      daily-cap: 3
+      source-blocks: [ DEEPSLATE_DIAMOND_ORE, DEEPSLATE_EMERALD_ORE ]
+      minimum-y: -64
+      maximum-y: 16
+  ascension:
+    glatziendorfi_jegvert:
+      awakened:
+        materials: { sarkfeny_cseppko: 4, tiszta_vasesszencia: 6, osi_ereklyeszilank: 1, runapor: 8 }
+      ascended:
+        materials: { sarkfeny_cseppko: 8, tiszta_vasesszencia: 12, osi_ereklyeszilank: 2, runapor: 16 }
+  legacy:
+    # Legacy random-affix gear tovább használható/kereskedhető, de nem rerollolható,
+    # nem ascendelhető és nem salvage-elhető automatikusan.
+    market-enabled: true
+
+item-sets:
+  glatziendorfi_jegorseg:
+    display-name: "Glatziendorfi Jégőrség"
+    tiers:
+      2:
+        fixed-stats:
+          ability_power: 2.0
+
+item-templates:
+  glatziendorfi_jegvert:
+    schema: 1
+    version: 1
+    display-name: "Glatziendorfi Jégvért"
+    lore:
+      - "Oly nehéz és fagyos, hogy viselőjét sziklaként tartja."
+    rarity: epic
+    item-level: 32
+    family: armor
+    slot: chest
+    material: NETHERITE_CHESTPLATE
+    item-model: "icesmp:glatziendorfi_jegvert"
+    equipment-asset: "icesmp:glatziendorfi_jegvert"
+    level-requirement: 28
+    base-armor: 1.0
+    fixed-stats:
+      armor_toughness: 1.0
+    rolled-stats:
+      max_health: { min: 2.0, max: 5.0 }
+      movement_speed: { min: 0.002, max: 0.008 }
+    rune-sockets: 1
+    signature-effect: glatziendorfi_jegvert
+    set-id: glatziendorfi_jegorseg
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "profession:armorer", "region:glatziendorf" ]
+    region-tags: [ glatziendorf ]
+    gathering-tags: [ "mining:frost_ore", "hunting:dragon_scale" ]
+    crafting-tags: [ "armorer:masterwork", "processing:frost_forging" ]
+    encounter-metadata:
+      primary-source: "Glatziendorf páncélkovácsai"
+    ascension-path: [ awakened, ascended ]
+    ascension-stages:
+      awakened:
+        item-level: 40
+        level-requirement: 34
+        fixed-stats: { armor_toughness: 2.0 }
+        rolled-stats:
+          max_health: { min: 4.0, max: 8.0 }
+          movement_speed: { min: 0.004, max: 0.012 }
+        rune-sockets: 2
+        signature-tier: 2
+        lore: [ "A sarkfény felébresztette a páncélba fagyott esküt." ]
+      ascended:
+        item-level: 48
+        level-requirement: 42
+        fixed-stats: { armor_toughness: 3.5 }
+        rolled-stats:
+          max_health: { min: 6.0, max: 11.0 }
+          movement_speed: { min: 0.006, max: 0.016 }
+        rune-sockets: 2
+        signature-tier: 3
+        lore: [ "Ugyanaz a vért, amelyet a jégőrség legendája teljesített ki." ]
+
+  glatziendorfi_jegtoro:
+    schema: 1
+    version: 1
+    display-name: "Glatziendorfi Jégtörő"
+    lore:
+      - "A Jégmezők sárkányainak pikkelyeivel megerősített fegyver."
+    rarity: legendary
+    item-level: 34
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_AXE
+    item-model: "icesmp:glatziendorfi_jegtoro"
+    level-requirement: 30
+    base-damage: 1.0
+    fixed-stats:
+      ability_power: 2.0
+    rolled-stats:
+      attack_damage: { min: 0.5, max: 2.0 }
+      attack_speed: { min: 0.05, max: 0.25 }
+    rune-sockets: 2
+    signature-effect: glatziendorfi_jegtoro
+    set-id: glatziendorfi_jegorseg
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "profession:lumberjack", "region:glatziendorf" ]
+    region-tags: [ glatziendorf ]
+    gathering-tags: [ "logging:frostwood", "hunting:dragon_scale" ]
+    crafting-tags: [ "weaponsmith:masterwork", "processing:frost_forging" ]
+    encounter-metadata:
+      primary-source: "Glatziendorf jégkovácsai"
+    ascension-path: [ awakened, ascended ]
+    ascension-stages:
+      awakened:
+        item-level: 42
+        level-requirement: 36
+        fixed-stats: { ability_power: 3.0 }
+        rolled-stats:
+          attack_damage: { min: 1.0, max: 3.0 }
+          attack_speed: { min: 0.08, max: 0.32 }
+        rune-sockets: 2
+        signature-tier: 2
+      ascended:
+        item-level: 50
+        level-requirement: 44
+        fixed-stats: { ability_power: 4.0 }
+        rolled-stats:
+          attack_damage: { min: 1.5, max: 4.0 }
+          attack_speed: { min: 0.10, max: 0.40 }
+        rune-sockets: 2
+        signature-tier: 3
+
+  vadvilagi_eskukard:
+    schema: 1
+    version: 1
+    display-name: "Vadvidéki Eskükard"
+    lore:
+      - "A határvidék őrei kézről kézre adják, ha új őr áll a helyükre."
+    rarity: rare
+    item-level: 18
+    family: weapon
+    slot: main-hand
+    material: IRON_SWORD
+    level-requirement: 12
+    class-restrictions: [ warrior, paladin, death_knight ]
+    specialization-restrictions: [ berserker, guardian, retribution, protection, blood, frost ]
+    base-damage: 1.0
+    rolled-stats:
+      attack_damage: { min: 0.25, max: 1.25 }
+      max_health: { min: 0.5, max: 2.0 }
+    rune-sockets: 1
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: materials
+    source-tags: [ "combat:wilderness", "profession:armorer" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "hunting:hide", "mining:iron" ]
+    crafting-tags: [ "armorer:standard", "salvage:weapon" ]
+    encounter-metadata:
+      primary-source: "Vadvidéki ellenfelek"
+      crate-eligible: "true"
+
+  hamuszeli_vadaszij:
+    schema: 1
+    version: 1
+    display-name: "Hamuszéli Vadászíj"
+    lore:
+      - "Füstszagú idegén még ott rezeg az utolsó hajtás emléke."
+    rarity: uncommon
+    item-level: 16
+    family: weapon
+    slot: main-hand
+    material: BOW
+    level-requirement: 10
+    class-restrictions: [ archer, druid ]
+    specialization-restrictions: [ sharpshooter, beast_master, feral ]
+    fixed-stats:
+      ability_power: 1.0
+    rolled-stats:
+      movement_speed: { min: 0.001, max: 0.004 }
+    rune-sockets: 1
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: materials
+    source-tags: [ "combat:wilderness" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "logging:hardwood", "hunting:sinew" ]
+    crafting-tags: [ "salvage:weapon" ]
+    encounter-metadata:
+      primary-source: "Vadvidéki ellenfelek"
+
+  ostromtoro_mellvert:
+    schema: 1
+    version: 1
+    display-name: "Ostromtörő Mellvért"
+    lore:
+      - "Horpadásai olyan csatákról mesélnek, amelyeknek nem maradt krónikása."
+    rarity: epic
+    item-level: 31
+    family: armor
+    slot: chest
+    material: DIAMOND_CHESTPLATE
+    level-requirement: 25
+    base-armor: 1.0
+    fixed-stats:
+      armor_toughness: 1.0
+    rolled-stats:
+      max_health: { min: 2.0, max: 4.5 }
+      armor: { min: 0.5, max: 1.5 }
+    rune-sockets: 2
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "combat:boss" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "mining:diamond", "hunting:boss_trophy" ]
+    crafting-tags: [ "salvage:armor" ]
+    encounter-metadata:
+      primary-source: "Világbossok és inváziós bajnokok"
+    ascension-path: [ awakened ]
+    ascension-stages:
+      awakened:
+        item-level: 39
+        level-requirement: 33
+        fixed-stats: { armor_toughness: 2.0 }
+        rolled-stats:
+          max_health: { min: 4.0, max: 7.0 }
+          armor: { min: 1.0, max: 2.5 }
+        rune-sockets: 2
+        signature-tier: 0
+
+  csillagvesz_ritualbot:
+    schema: 1
+    version: 1
+    display-name: "Csillagvész Rituálbot"
+    lore:
+      - "A belefagyott fény nem melegít, de válaszol a kimondott nevekre."
+    rarity: legendary
+    item-level: 34
+    family: weapon
+    slot: main-hand
+    material: BLAZE_ROD
+    level-requirement: 28
+    class-restrictions: [ wizard, priest, warlock, evoker, shaman ]
+    specialization-restrictions: [ elementalist, necromancer, discipline, shadow, affliction, destruction, devastation, elemental, tidal ]
+    fixed-stats:
+      ability_power: 3.0
+    rolled-stats:
+      max_health: { min: 1.0, max: 3.0 }
+      movement_speed: { min: 0.001, max: 0.006 }
+    rune-sockets: 2
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "combat:boss" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "hunting:boss_essence", "gathering:star_fragment" ]
+    crafting-tags: [ "salvage:focus" ]
+    encounter-metadata:
+      primary-source: "Világbossok és inváziós bajnokok"
+    ascension-path: [ awakened ]
+    ascension-stages:
+      awakened:
+        item-level: 43
+        level-requirement: 36
+        fixed-stats: { ability_power: 5.0 }
+        rolled-stats:
+          max_health: { min: 2.0, max: 5.0 }
+          movement_speed: { min: 0.003, max: 0.010 }
+        rune-sockets: 2
+        signature-tier: 0

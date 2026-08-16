@@ -112,6 +112,14 @@ public final class ConfigMenuHelp {
             case "signature.szarvas.cooldown-seconds" -> "A Szellemszarvas signature képesség két használata közti cooldown másodpercben.";
             case "signature.agyar.damage-mult" -> "Az Agyar signature támadás kimenő sebzésének szorzója. 1.5 = 50%-kal nagyobb sebzés.";
             case "signature.jegvert.damage-mult" -> "A Jégvért viselőjére érkező releváns sebzés megtartott része. 0.8 = 20% csökkentés.";
+            case "itemization.stats.ability-power-percent-per-point" -> "Egy érvényes, felszerelt Itemization 2.0 tárgy egy Képességerő pontja ennyi százalékkal növeli a cast nagyságát.";
+            case "itemization.stats.ability-power-max-percent" -> "A felszerelt Itemization 2.0 tárgyakból összesen kapható Képességerő százalékos plafonja.";
+            case "itemization.loot.enabled" -> "A combat loot generikus random-affix gear sorát releváns forrásnál authored Itemization 2.0 tárgyra cseréli.";
+            case "itemization.loot.max-personalization-multiplier" -> "A level, class, spec, build, slot és forrás együtt sem emelheti egy jelölt súlyát e szorzó fölé; legfeljebb 1.5.";
+            case "itemization.loot.history-window" -> "Az utolsó ennyi authored combat drop rarity/slot/family/template adata vesz részt a soft-diverzitásban. Profilban marad reconnect és restart után is.";
+            case "itemization.loot.repeated-template-penalty" -> "Minden közelmúltbeli azonos template enyhén osztja az újabb példány súlyát; nem tiltja ki a tárgyat.";
+            case "itemization.loot.repeated-category-penalty" -> "Minden közelmúltbeli azonos rarity, slot vagy family enyhén csökkenti a kategória súlyát.";
+            case "itemization.loot.unseen-category-boost" -> "A diverzitási ablakban nem látott rarity, slot vagy family kategóriánként kapott enyhe súlybónusz; nem garantál Mitikust.";
 
             case "relics.enabled" -> "Globálisan engedélyezi a relikvia-regisztert, relikviaparancsokat, triggerek és tulajdonkezelés aktív használatát.";
             case "relics.inactivity.expiry-days" -> "Ennyi inaktív nap után szabadulhat fel egy normál, birtokolt relikvia a konfigurált lejárási szabály szerint.";

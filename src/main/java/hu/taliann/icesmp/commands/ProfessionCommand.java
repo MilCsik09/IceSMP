@@ -35,18 +35,21 @@ public final class ProfessionCommand implements BasicCommand {
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener recipeBook;
     private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory;
+    private final hu.taliann.icesmp.gui.ItemForgeGUI itemForge;
 
     public ProfessionCommand(final JavaPlugin plugin, final ProfessionManager professionManager,
                              final MessageManager messageManager,
                              final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener recipeBook,
                              final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
-                             final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory) {
+                             final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory,
+                             final hu.taliann.icesmp.gui.ItemForgeGUI itemForge) {
         this.plugin = plugin;
         this.professionManager = professionManager;
         this.messageManager = messageManager;
         this.recipeBook = recipeBook;
         this.recipeCatalog = recipeCatalog;
         this.blueprintFactory = blueprintFactory;
+        this.itemForge = itemForge;
     }
 
     @Override
@@ -63,6 +66,7 @@ public final class ProfessionCommand implements BasicCommand {
             case "info" -> handleInfo(sender);
             case "list" -> handleList(sender);
             case "recipes", "receptek", "book" -> handleRecipes(sender);
+            case "forge", "muhely", "műhely" -> handleForge(sender);
             case "blueprint", "tervrajz" -> handleBlueprint(sender, args);
             case "set" -> handleSet(sender, args);
             case "clear" -> handleClear(sender, args);
@@ -123,6 +127,15 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
         recipeBook.open(player);
+    }
+
+    private void handleForge(final CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only",
+                    "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        itemForge.open(player);
     }
 
     /** Admin: hands a blueprint item for a recipe to a player (so NPC shops / rewards can distribute it). */
@@ -356,6 +369,7 @@ public final class ProfessionCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("profession-help-info", "&e/profession info &7- Szakmáid és szintjeid."));
         sender.sendMessage(messageManager.get("profession-help-list", "&e/profession list &7- Elérhető szakmák kategóriánként."));
         sender.sendMessage(messageManager.get("profession-help-recipes", "&e/profession recipes &7- Recept-könyv (tanult/zárolt receptek, craftolás)."));
+        sender.sendMessage(messageManager.get("profession-help-forge", "&e/profession forge &7- Reroll, Stat Lock, Ascension és salvage műhely."));
         if (sender.hasPermission(ADMIN_PERMISSION)) {
             sender.sendMessage(messageManager.get("profession-help-blueprint", "&e/profession blueprint <játékos> <recept-id> &7- Tervrajz átadása (Admin)."));
             sender.sendMessage(messageManager.get("profession-help-set", "&e/profession set <játékos> <szakma> &7- Szakma beállítása (Admin)."));
@@ -368,8 +382,8 @@ public final class ProfessionCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> subcommands = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("join", "info", "list", "recipes", "blueprint", "set", "clear", "addxp")
-                : List.of("join", "info", "list", "recipes");
+                ? List.of("join", "info", "list", "recipes", "forge", "blueprint", "set", "clear", "addxp")
+                : List.of("join", "info", "list", "recipes", "forge");
 
         final String subcommand = prefixAt(args, 0);
         final boolean subcommandComplete = subcommands.contains(subcommand);

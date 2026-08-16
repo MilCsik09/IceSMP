@@ -803,6 +803,14 @@ val wizardProfileRegressionTest = registerRegression(
     "wizardProfileRegressionTest",
     "Runs Profile v2 Wizard allowlist, DARK gate, court-authority and slot-isolation regressions.",
     "hu.taliann.icesmp.wizard.WizardProfileRegressionSuite")
+val itemizationDomainRegressionTest = registerRegression(
+    "itemizationDomainRegressionTest",
+    "Runs canonical item template, identity, roll-quality, history, set and soft-diversity regressions.",
+    "hu.taliann.icesmp.itemization.ItemizationDomainRegressionSuite")
+val playerProfileLootDiversityRegressionTest = registerRegression(
+    "playerProfileLootDiversityRegressionTest",
+    "Runs durable, bounded and idempotent Itemization 2.0 loot diversity regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileLootDiversityStoreRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -849,6 +857,7 @@ tasks.check {
         deathKnightGameplayRegressionTest, deathKnightProfileRegressionTest,
         assassinGameplayRegressionTest, assassinProfileRegressionTest,
         warlockGameplayRegressionTest, warlockProfileRegressionTest,
-        wizardGameplayRegressionTest, wizardProfileRegressionTest
+        wizardGameplayRegressionTest, wizardProfileRegressionTest,
+        itemizationDomainRegressionTest, playerProfileLootDiversityRegressionTest
     )
 }

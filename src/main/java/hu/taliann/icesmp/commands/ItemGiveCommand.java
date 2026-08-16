@@ -28,20 +28,21 @@ import java.util.Locale;
  * <ul>
  *   <li><b>unique:</b> profession-materials.yml unique anyagok ({@code UniqueMaterialFactory}
  *       — pl. emlekszilank, suttogas_meghivo, runapor);</li>
- *   <li><b>recept:</b> a recept-katalógus EREDMÉNY-tárgya a teljes stamp-lánccal
- *       (signature-PDC, custom enchant, crafted-by, affix-roll — {@code buildResult});</li>
+ *   <li><b>template:</b> új canonical authored instance admin provenance-szel;</li>
+ *   <li><b>recept:</b> a recept-katalógus EREDMÉNY-tárgya; canonical gear esetén
+ *       admin provenance-szel, legacy eredménynél a meglévő stamp-lánccal;</li>
  *   <li><b>relikvia:</b> RelicManager.giveRelic force-móddal (tulajdon-átírással);</li>
  *   <li><b>tervrajz:</b> a recept tervrajz-itemje ({@code BlueprintItemFactory}).</li>
  *   <li><b>dev:</b> örökös, tulajdonoshoz kötött DEV item ({@code DevItemManager}).</li>
  * </ul>
- * Használat: {@code /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]} —
+ * Használat: {@code /iceitem <unique|template|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]} —
  * játékos nélkül a kiadó kapja. Jog: {@code icesmp.admin.item}. Folia: másik játékosnak
  * adáskor a CÉL saját régió-schedulerén fut az inventory-írás.
  */
 public final class ItemGiveCommand implements BasicCommand {
 
     public static final String PERMISSION = "icesmp.admin.item";
-    private static final List<String> TYPES = List.of("unique", "recept", "relikvia", "tervrajz", "erszeny", "dev");
+    private static final List<String> TYPES = List.of("unique", "template", "recept", "relikvia", "tervrajz", "erszeny", "dev");
 
     private final JavaPlugin plugin;
     private final UniqueMaterialFactory uniqueMaterials;
@@ -52,6 +53,8 @@ public final class ItemGiveCommand implements BasicCommand {
     private final MessageManager messageManager;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory;
     private final DevItemManager devItemManager;
+    private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentity;
+    private final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplates;
 
     public ItemGiveCommand(final JavaPlugin plugin, final UniqueMaterialFactory uniqueMaterials,
                            final ProfessionRecipeCatalog catalog,
@@ -59,7 +62,9 @@ public final class ItemGiveCommand implements BasicCommand {
                            final RelicManager relicManager, final BlueprintItemFactory blueprintFactory,
                            final MessageManager messageManager,
                            final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory,
-                           final DevItemManager devItemManager) {
+                           final DevItemManager devItemManager,
+                           final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentity,
+                           final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplates) {
         this.plugin = plugin;
         this.uniqueMaterials = uniqueMaterials;
         this.catalog = catalog;
@@ -69,6 +74,8 @@ public final class ItemGiveCommand implements BasicCommand {
         this.messageManager = messageManager;
         this.moneyPouchFactory = moneyPouchFactory;
         this.devItemManager = devItemManager;
+        this.itemIdentity = itemIdentity;
+        this.itemTemplates = itemTemplates;
     }
 
     @Override
@@ -80,7 +87,7 @@ public final class ItemGiveCommand implements BasicCommand {
         }
         if (args.length < 2) {
             sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|template|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
             return;
         }
         final String type = args[0].toLowerCase(Locale.ROOT);
@@ -128,6 +135,20 @@ public final class ItemGiveCommand implements BasicCommand {
                     }
                 }, null);
             }
+            case "template" -> {
+                if (itemTemplates.find(id).isEmpty()) {
+                    sender.sendMessage(messageManager.get("admin.iceitem.unknown-id",
+                            "&cIsmeretlen azonosító: &f%s &7(tab-complete segít)", id));
+                    return;
+                }
+                target.getScheduler().run(plugin, task -> {
+                    for (int index = 0; index < give; index++) {
+                        giveStack(target, itemIdentity.create(id, "admin:give",
+                                sender.getName(), null));
+                    }
+                    confirm(sender, target, "Authored template: " + id, give);
+                }, null);
+            }
             case "erszeny" -> {
                 // Kopott erszény: az <id> itt az ÖSSZEG, a [darab] az erszények száma,
                 // a valuta erszényenként véletlen (a mob-drop/horgász-lelet útjával azonos).
@@ -161,7 +182,10 @@ public final class ItemGiveCommand implements BasicCommand {
                 target.getScheduler().run(plugin, task -> {
                     // darab = ennyi CRAFT-eredmény (affix-roll példányonként, mint kézi craftnál).
                     for (int i = 0; i < give; i++) {
-                        final ItemStack stack = recipeBookListener.buildResult(target, recipe);
+                        final ItemStack stack = recipe.templateId() == null
+                                ? recipeBookListener.buildResult(target, recipe)
+                                : itemIdentity.create(recipe.templateId(), "admin:give",
+                                sender.getName(), null);
                         if (stack == null) {
                             sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.build-failed",
                                     "&cA recept eredménye nem építhető fel: &f%s", id));
@@ -225,7 +249,7 @@ public final class ItemGiveCommand implements BasicCommand {
                 }, null);
             }
             default -> sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|template|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
         }
     }
 
@@ -266,6 +290,7 @@ public final class ItemGiveCommand implements BasicCommand {
             final String type = args[0].toLowerCase(Locale.ROOT);
             return switch (type) {
                 case "unique" -> filter(uniqueMaterials.allIds(), args[1]);
+                case "template" -> filter(new ArrayList<>(itemTemplates.snapshot().keySet()), args[1]);
                 case "erszeny" -> filter(List.of("10", "25", "50", "100"), args[1]);
                 case "recept", "tervrajz" -> filter(catalog.allIds(), args[1]);
                 case "relikvia" -> filter(relicManager.getDefinitions().stream()

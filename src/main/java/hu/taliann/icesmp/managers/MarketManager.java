@@ -5,6 +5,9 @@ import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.TransactionJournal;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.itemization.ItemIdentityService;
+import hu.taliann.icesmp.itemization.ItemInstance;
+import hu.taliann.icesmp.itemization.ItemTemplate;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -69,6 +72,17 @@ public final class MarketManager implements PersistentStore {
                               Map<CurrencyType, Double> averagePriceByCurrency,
                               Transaction biggestRecentSale, int recentSaleCount) { }
 
+    public record ItemMetadata(String templateId, hu.taliann.icesmp.itemization.ItemRarity rarity,
+                               int itemLevel, ItemTemplate.Slot slot, Set<String> classRestrictions,
+                               String signatureEffectId, int socketCount, String ascensionState) { }
+
+    public record ItemFilter(String templateId,
+                             hu.taliann.icesmp.itemization.ItemRarity rarity,
+                             Integer minimumItemLevel, Integer maximumItemLevel,
+                             ItemTemplate.Slot slot, String classId,
+                             String signatureEffectId, Integer minimumSocketCount,
+                             String ascensionState) { }
+
     private enum TakeEvidence { TAGGED_PRESENT, ORIGINAL_PRESENT, ABSENT, AMBIGUOUS }
 
     private record DeliveryEvidence(int expectedAmount, int taggedAmount, boolean invalid) {
@@ -95,6 +109,7 @@ public final class MarketManager implements PersistentStore {
     private final FactionManager factionManager;
     private final FactionRelationManager relationManager;
     private final MessageManager messageManager;
+    private final ItemIdentityService itemIdentity;
     private final File storageFile;
     private final TransactionJournal journal;
     private final Map<UUID, Listing> listings = new ConcurrentHashMap<>();
@@ -112,13 +127,15 @@ public final class MarketManager implements PersistentStore {
                          final CurrencyManager currencyManager,
                          final FactionManager factionManager,
                          final FactionRelationManager relationManager,
-                         final MessageManager messageManager) {
+                         final MessageManager messageManager,
+                         final ItemIdentityService itemIdentity) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.relationManager = relationManager;
         this.messageManager = messageManager;
+        this.itemIdentity = itemIdentity;
         this.storageFile = new File(plugin.getDataFolder(), "market.yml");
         this.journal = new TransactionJournal(
                 new File(plugin.getDataFolder(), "market-journal.yml"), plugin.getLogger());
@@ -288,6 +305,41 @@ public final class MarketManager implements PersistentStore {
                 .sorted(Comparator.comparingLong(Listing::createdAt).reversed()).toList();
     }
 
+    public ItemMetadata metadataOf(final Listing listing) {
+        if (listing == null) return null;
+        final ItemIdentityService.Inspection inspection = itemIdentity.inspect(listing.item());
+        if (inspection.status() != ItemIdentityService.Status.VALID) return null;
+        final ItemInstance instance = inspection.instance();
+        final ItemTemplate template = inspection.template();
+        return new ItemMetadata(template.templateId(), template.rarity(), instance.itemLevel(),
+                template.slot(), template.classRestrictions(), template.signatureEffectId(),
+                template.runeSocketCountAt(instance.ascension().stageId()),
+                instance.ascension().stageId());
+    }
+
+    public List<Listing> filterListings(final ItemFilter filter) {
+        if (filter == null) return getListingsSorted();
+        return getListingsSorted().stream().filter(listing -> {
+            final ItemMetadata item = metadataOf(listing);
+            if (item == null) return false;
+            return (filter.templateId() == null || filter.templateId().isBlank()
+                    || item.templateId().equalsIgnoreCase(filter.templateId()))
+                    && (filter.rarity() == null || item.rarity() == filter.rarity())
+                    && (filter.minimumItemLevel() == null || item.itemLevel() >= filter.minimumItemLevel())
+                    && (filter.maximumItemLevel() == null || item.itemLevel() <= filter.maximumItemLevel())
+                    && (filter.slot() == null || item.slot() == filter.slot())
+                    && (filter.classId() == null || filter.classId().isBlank()
+                    || item.classRestrictions().isEmpty()
+                    || item.classRestrictions().contains(filter.classId().toLowerCase(java.util.Locale.ROOT)))
+                    && (filter.signatureEffectId() == null || filter.signatureEffectId().isBlank()
+                    || item.signatureEffectId().equalsIgnoreCase(filter.signatureEffectId()))
+                    && (filter.minimumSocketCount() == null
+                    || item.socketCount() >= filter.minimumSocketCount())
+                    && (filter.ascensionState() == null || filter.ascensionState().isBlank()
+                    || item.ascensionState().equalsIgnoreCase(filter.ascensionState()));
+        }).toList();
+    }
+
     public long countListingsOf(final UUID seller) {
         return listings.values().stream()
                 .filter(listing -> !unconfirmedListings.contains(listing.id()))
@@ -320,6 +372,22 @@ public final class MarketManager implements PersistentStore {
                                          final double buyOut) {
         final ItemStack held = seller.getInventory().getItemInMainHand();
         if (held.getType().isAir()) return "market-no-item";
+        final ItemIdentityService.Inspection authored = itemIdentity.inspect(held);
+        if (authored.status() != ItemIdentityService.Status.NOT_MANAGED) {
+            if (authored.status() != ItemIdentityService.Status.VALID) {
+                return "market-item-identity-invalid";
+            }
+            if (authored.template().tradePolicy() != ItemTemplate.TradePolicy.TRADEABLE
+                    || authored.template().bindPolicy() == ItemTemplate.BindPolicy.ACCOUNT) {
+                return "market-item-policy-blocked";
+            }
+            final ItemIdentityService.DuplicateReport duplicates = itemIdentity.inspectDuplicates(
+                    java.util.Arrays.asList(seller.getInventory().getContents()));
+            if (!duplicates.clean()) return "market-item-duplicate";
+        } else if (itemIdentity.classifyLegacy(held) != ItemIdentityService.LegacyKind.NONE
+                && !configManager.getBoolean("itemization.legacy.market-enabled", true)) {
+            return "market-legacy-blocked";
+        }
         if (!configManager.getBoolean("market.allow-relic-listing", false)
                 && held.hasItemMeta()
                 && held.getItemMeta().getPersistentDataContainer().has(
@@ -379,6 +447,8 @@ public final class MarketManager implements PersistentStore {
         if (listing == null) return BuyOutcome.error("market-listing-gone");
         if (listing.auction()) return BuyOutcome.error("market-auction-use-bid");
         if (listing.seller().equals(buyer.getUniqueId())) return BuyOutcome.error("market-own-listing");
+        final String transferError = validateCanonicalTransfer(listing.item(), buyer, true);
+        if (transferError != null) return BuyOutcome.error(transferError);
         final double buyerCost = getEffectivePrice(buyer, listing);
         if (currencyManager.getBalance(buyer.getUniqueId(), listing.currency()) < buyerCost) {
             return BuyOutcome.error("market-insufficient-balance");
@@ -454,6 +524,8 @@ public final class MarketManager implements PersistentStore {
         if (listing == null || !listing.auction()) return BidOutcome.error("market-listing-gone");
         if (System.currentTimeMillis() >= listing.endsAt()) return BidOutcome.error("market-auction-ended");
         if (listing.seller().equals(bidder.getUniqueId())) return BidOutcome.error("market-own-listing");
+        final String transferError = validateCanonicalTransfer(listing.item(), bidder, true);
+        if (transferError != null) return BidOutcome.error(transferError);
         if (!Double.isFinite(amount)) return BidOutcome.error("market-bid-too-low");
         final boolean boughtOut = listing.hasBuyOut() && amount >= listing.buyOut();
         if (bidder.getUniqueId().equals(listing.highestBidder()) && !boughtOut) {
@@ -586,6 +658,31 @@ public final class MarketManager implements PersistentStore {
             pendingDeliveries.remove(player.getUniqueId());
             return 0;
         }
+        for (final ItemStack item : items) {
+            final String transferError = validateCanonicalTransfer(item, null, false);
+            if (transferError != null) {
+                player.sendMessage(messageManager.getMessage(transferError,
+                        "<red>A piaci tárgy identitása vagy egyedisége nem ellenőrizhető; az átvétel függőben maradt.</red>"));
+                return 0;
+            }
+        }
+        final ArrayList<ItemStack> combined = new ArrayList<>(
+                java.util.Arrays.asList(player.getInventory().getContents()));
+        combined.addAll(items);
+        for (final ItemStack item : combined) {
+            final ItemIdentityService.Inspection inspection = itemIdentity.inspect(item);
+            if (inspection.status() != ItemIdentityService.Status.NOT_MANAGED
+                    && inspection.status() != ItemIdentityService.Status.VALID) {
+                player.sendMessage(messageManager.getMessage("market-item-identity-invalid",
+                        "<red>Hibás canonical item identity miatt a piaci átvétel függőben maradt.</red>"));
+                return 0;
+            }
+        }
+        if (!itemIdentity.inspectDuplicates(combined).clean()) {
+            player.sendMessage(messageManager.getMessage("market-item-duplicate",
+                    "<red>Duplikált item UUID miatt a piaci átvétel függőben maradt.</red>"));
+            return 0;
+        }
         if (!storageHealthy() || !playerSaveSupported) return 0;
 
         final TransactionJournal.Entry entry = journal.create(TYPE_DELIVER);
@@ -630,6 +727,36 @@ public final class MarketManager implements PersistentStore {
             persistPlayer(player);
         }
         return items.size();
+    }
+
+    private String validateCanonicalTransfer(final ItemStack item, final Player recipient,
+                                             final boolean enforceTradePolicy) {
+        final ItemIdentityService.Inspection authored = itemIdentity.inspect(item);
+        if (authored.status() == ItemIdentityService.Status.NOT_MANAGED) return null;
+        if (authored.status() != ItemIdentityService.Status.VALID) {
+            return "market-item-identity-invalid";
+        }
+        if (enforceTradePolicy && (authored.template().tradePolicy()
+                != ItemTemplate.TradePolicy.TRADEABLE
+                || authored.template().bindPolicy() == ItemTemplate.BindPolicy.ACCOUNT)) {
+            return "market-item-policy-blocked";
+        }
+        if (recipient != null) {
+            final ArrayList<ItemStack> combined = new ArrayList<>(
+                    java.util.Arrays.asList(recipient.getInventory().getContents()));
+            combined.add(item);
+            for (final ItemStack candidate : combined) {
+                final ItemIdentityService.Inspection inspection = itemIdentity.inspect(candidate);
+                if (inspection.status() != ItemIdentityService.Status.NOT_MANAGED
+                        && inspection.status() != ItemIdentityService.Status.VALID) {
+                    return "market-item-identity-invalid";
+                }
+            }
+            if (!itemIdentity.inspectDuplicates(combined).clean()) {
+                return "market-item-duplicate";
+            }
+        }
+        return null;
     }
 
     public synchronized int cancelListings(final Player player) {

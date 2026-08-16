@@ -67,6 +67,8 @@ crafting-restrictions:
 # ===== Signature-item perkek (K2/K3/K4 — frakció-kapus craftolt tárgyak) =====
 # Minden kulcs élőben olvasódik (/icesmp reload után restart nélkül él).
 signature:
+  # Canonical ascension Signature-fokozatonkénti additív módosítása (nem multiplikatív power creep).
+  itemization-tier-bonus: 0.03
   # Bootstrap-regisztrált EGYEDI enchantok a signature itemeken (Jégfog, Vihartűz,
   # Vérszomj, Fagypáncél, Főnixtoll, Érc-érzék, Bokic Kegye) — a magyar nevük valódi
   # enchant-sorként jelenik meg a tooltipben (kliens-mod és resource pack nélkül).
@@ -149,7 +151,10 @@ signature:
 
 # ===== B26 — Rúna-kovácsolás: hatás-értékek (élő kulcsok, /icesmp reload) =====
 # A rúna unique-materialként készül (profession-materials + recept), felhelyezés:
-# a kurzoron tartott rúnát kattintsd a cél-tárgyra. Tárgyanként EGY rúna, nem cserélhető.
+# a kurzoron tartott rúnát kattintsd a cél-tárgyra. A canonical ItemInstance a
+# template aktuális 0–2 socketét használja; a legacy tárgy kompatibilitásból egyetlen,
+# ezen az insert-UX-on nem cserélhető rúnát tarthat. A canonical remove/replace domain-API
+# identity-stabil, a külön játékosfelülete későbbi kapu.
 runes:
   runa_elek:
     display: "Él Rúnája"

@@ -71,6 +71,7 @@ public final class SignatureItemListener implements Listener {
     private final NamespacedKey pierceKey;
     private final NamespacedKey kantarAppliedKey;
     private final NamespacedKey kantarSpeedKey;
+    private final NamespacedKey signatureTierKey;
 
     public SignatureItemListener(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager,
@@ -87,6 +88,7 @@ public final class SignatureItemListener implements Listener {
         this.pierceKey = new NamespacedKey(plugin, "sig_pierce");
         this.kantarAppliedKey = new NamespacedKey(plugin, "sig_kantar");
         this.kantarSpeedKey = new NamespacedKey(plugin, "sig_kantar_speed");
+        this.signatureTierKey = new NamespacedKey(plugin, "signature_tier");
         this.slowArrowKey = new NamespacedKey(plugin, "sig_jegfog");
         this.igniteArrowKey = new NamespacedKey(plugin, "sig_vihartuz");
         this.eclipseArrowKey = new NamespacedKey(plugin, "sig_napfogyatkozas");
@@ -186,7 +188,11 @@ public final class SignatureItemListener implements Listener {
         if (JEGTORO.equals(meleeSig)) {
             if (event.getEntity() instanceof org.bukkit.entity.LivingEntity struck
                     && struck.hasPotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS)) {
-                final double bonus = Math.max(0.0D, configManager.getDouble("signature.jegtoro.slowed-bonus", 0.25D));
+                final int tier = signatureTier(attacker.getInventory().getItemInMainHand());
+                final double bonus = Math.max(0.0D,
+                        configManager.getDouble("signature.jegtoro.slowed-bonus", 0.25D)
+                                + (tier - 1) * Math.max(0.0D, configManager.getDouble(
+                                "signature.itemization-tier-bonus", 0.03D)));
                 event.setDamage(event.getDamage() * (1.0D + bonus));
             }
             return;
@@ -283,8 +289,11 @@ public final class SignatureItemListener implements Listener {
         }
         final String chest = idOf(player.getInventory().getChestplate());
         if (JEGVERT.equals(chest)) {
+            final int tier = signatureTier(player.getInventory().getChestplate());
             final double mult = Math.min(1.0D, Math.max(0.0D,
-                    configManager.getDouble("signature.jegvert.damage-mult", 0.8D)));
+                    configManager.getDouble("signature.jegvert.damage-mult", 0.8D)
+                            - (tier - 1) * Math.max(0.0D, configManager.getDouble(
+                            "signature.itemization-tier-bonus", 0.03D))));
             event.setDamage(event.getDamage() * mult);
             return;
         }
@@ -299,6 +308,13 @@ public final class SignatureItemListener implements Listener {
                 || cause == EntityDamageEvent.DamageCause.FIRE_TICK
                 || cause == EntityDamageEvent.DamageCause.LAVA
                 || cause == EntityDamageEvent.DamageCause.HOT_FLOOR;
+    }
+
+    private int signatureTier(final ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return 1;
+        final Integer tier = item.getItemMeta().getPersistentDataContainer().get(
+                signatureTierKey, PersistentDataType.INTEGER);
+        return tier == null ? 1 : Math.max(1, Math.min(16, tier));
     }
 
     @EventHandler(ignoreCancelled = true)

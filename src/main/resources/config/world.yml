@@ -101,6 +101,9 @@ world-events:
     force-duration-minutes: 10
     force-night: true
   world-boss:
+    # Itemization 2.0: a követett boss egyszeri, személyes ascension-komponense.
+    ascension-component: osi_ereklyeszilank
+    ascension-component-amount: 1
     enabled: true
     check-interval-minutes: 90
     chance-percent: 35
