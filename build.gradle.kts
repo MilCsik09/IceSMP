@@ -811,6 +811,10 @@ val playerProfileLootDiversityRegressionTest = registerRegression(
     "playerProfileLootDiversityRegressionTest",
     "Runs durable, bounded and idempotent Itemization 2.0 loot diversity regressions.",
     "hu.taliann.icesmp.playerprofile.application.PlayerProfileLootDiversityStoreRegressionSuite")
+val mobEncounterDomainRegressionTest = registerRegression(
+    "mobEncounterDomainRegressionTest",
+    "Runs level 1-70 scaling, authored mob, ability, affix, encounter and contribution regressions.",
+    "hu.taliann.icesmp.pve.MobEncounterDomainRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -858,6 +862,7 @@ tasks.check {
         assassinGameplayRegressionTest, assassinProfileRegressionTest,
         warlockGameplayRegressionTest, warlockProfileRegressionTest,
         wizardGameplayRegressionTest, wizardProfileRegressionTest,
-        itemizationDomainRegressionTest, playerProfileLootDiversityRegressionTest
+        itemizationDomainRegressionTest, playerProfileLootDiversityRegressionTest,
+        mobEncounterDomainRegressionTest
     )
 }
