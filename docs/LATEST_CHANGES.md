@@ -69,6 +69,9 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
   encounter görbét és 2048-as runtime-state capet ellenőrzi. A feature branch minden
   forrásváltozását exact commiton futó Java 21 Gradle CI ellenőrzi. A
   productionközeli Folia/process-kill és multiplayer balance külön staging gate marad.
+- A runtime source-contract már nem a régi, hatdarabos pilotot rögzíti: a recovery
+  többes receipt-witnesst fail-closed kezel, a systemic mobkatalógust pedig a reviewolt
+  15–25-ös tartományban tartja.
 
 ### Itemization 2.0 Phase 4–5 — survival economy pilot
 
