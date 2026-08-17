@@ -12,6 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 
 /**
  * Records bounded boss contribution and settles every eligible participant through
@@ -60,6 +61,22 @@ public final class WorldBossListener implements Listener {
                 playerId -> hu.taliann.icesmp.utils.GameModeCache.isKnown(playerId)
                         && hu.taliann.icesmp.utils.GameModeCache.isSurvival(playerId)
                         && !MobKillUtil.isAfkRewardBlocked(playerId, configManager, afkManager));
+    }
+
+    /**
+     * Paper exposes every non-player removal cause, including plugin despawn, unload and discard.
+     * Death has its own settlement path above; every other live world-boss removal is an abort and
+     * must execute the same manager cleanup used by shutdown instead of leaving encounter state.
+     */
+    @EventHandler
+    public void onEntityRemoved(final EntityRemoveEvent event) {
+        if (event.getCause() == EntityRemoveEvent.Cause.DEATH
+                || !(event.getEntity() instanceof LivingEntity boss)
+                || !worldBossManager.isWorldBoss(boss)
+                || !worldBossManager.isBossActive()) {
+            return;
+        }
+        worldBossManager.shutdown();
     }
 
     private static Player playerSource(final org.bukkit.entity.Entity damager) {
