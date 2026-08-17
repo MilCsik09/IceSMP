@@ -19,17 +19,26 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /** PlayerProfile receipt + playerdata witness boundary for physical personal encounter rewards. */
 public final class EncounterRewardDeliveryService implements Listener {
     public static final String OPERATION_TYPE = "encounter-personal-reward";
     public static final String ELIGIBILITY_TYPE = "encounter-reward-eligibility";
+    private static final int ABORT_HISTORY_LIMIT = 128;
+    private static volatile EncounterRewardDeliveryService activeInstance;
+
+    private record EligibilitySpec(String materialId, int amount) { }
 
     private final JavaPlugin plugin;
     private final UniqueMaterialFactory materials;
     private final MessageManager messages;
     private final PlayerProfileOperationStore operations = new PlayerProfileOperationStore();
     private final NamespacedKey receiptKey;
+    private final Map<UUID, Map<UUID, EligibilitySpec>> preparedEligibility = new ConcurrentHashMap<>();
+    private final Set<UUID> abortedEncounters = ConcurrentHashMap.newKeySet();
+    private final ConcurrentLinkedDeque<UUID> abortedOrder = new ConcurrentLinkedDeque<>();
 
     public EncounterRewardDeliveryService(final JavaPlugin plugin,
                                           final UniqueMaterialFactory materials,
@@ -38,6 +47,16 @@ public final class EncounterRewardDeliveryService implements Listener {
         this.materials = materials;
         this.messages = messages;
         this.receiptKey = new NamespacedKey(plugin, "encounter_reward_receipt");
+        activeInstance = this;
+    }
+
+    /**
+     * WorldBossManager owns the single active encounter; this narrow lifecycle hook lets a removal
+     * listener reject all still-PREPARED eligibility without creating a second persistence authority.
+     */
+    public static void abortPreparedEncounter(final UUID encounterId) {
+        final EncounterRewardDeliveryService service = activeInstance;
+        if (service != null && encounterId != null) service.abortEncounter(encounterId);
     }
 
     public void queue(final Player player, final UUID encounterId,
@@ -51,20 +70,31 @@ public final class EncounterRewardDeliveryService implements Listener {
                                    final String materialId, final int amount) {
         if (playerId == null || encounterId == null || materialId == null
                 || materialId.isBlank() || amount < 1 || amount > 64) return;
+        preparedEligibility.computeIfAbsent(encounterId, ignored -> new ConcurrentHashMap<>())
+                .put(playerId, new EligibilitySpec(materialId, amount));
         operations.prepare(playerId, eligibilityId(encounterId), ELIGIBILITY_TYPE,
                         fingerprint(materialId, amount), Map.of("material", materialId,
                                 "amount", Integer.toString(amount),
                                 "encounter", encounterId.toString()))
-                .exceptionally(failure -> {
-                    plugin.getLogger().warning("Encounter eligibility reservation failed for "
-                            + playerId + '/' + encounterId + ": " + failure.getMessage());
-                    return null;
+                .whenComplete((operation, failure) -> {
+                    if (failure != null) {
+                        forgetEligibility(playerId, encounterId);
+                        plugin.getLogger().warning("Encounter eligibility reservation failed for "
+                                + playerId + '/' + encounterId + ": " + failure.getMessage());
+                        return;
+                    }
+                    // A remove/abort can race the durable prepare callback. The bounded abort
+                    // history makes the later callback fail closed instead of resurrecting PREPARED.
+                    if (abortedEncounters.contains(encounterId)) {
+                        reject(playerId, encounterId, materialId, amount);
+                    }
                 });
     }
 
     public void activate(final UUID playerId, final UUID encounterId,
                          final String materialId, final int amount) {
         if (playerId == null || encounterId == null) return;
+        abortedEncounters.remove(encounterId);
         operations.prepare(playerId, eligibilityId(encounterId), ELIGIBILITY_TYPE,
                         fingerprint(materialId, amount), Map.of("material", materialId,
                                 "amount", Integer.toString(amount),
@@ -73,6 +103,7 @@ public final class EncounterRewardDeliveryService implements Listener {
                         eligibilityId(encounterId), ELIGIBILITY_TYPE,
                         fingerprint(materialId, amount)))
                 .whenComplete((operation, failure) -> {
+                    forgetEligibility(playerId, encounterId);
                     if (failure != null) {
                         plugin.getLogger().warning("Encounter eligibility activation failed for "
                                 + playerId + '/' + encounterId + ": " + failure.getMessage());
@@ -86,6 +117,9 @@ public final class EncounterRewardDeliveryService implements Listener {
 
     public void reject(final UUID playerId, final UUID encounterId,
                        final String materialId, final int amount) {
+        if (playerId == null || encounterId == null || materialId == null
+                || materialId.isBlank() || amount < 1 || amount > 64) return;
+        forgetEligibility(playerId, encounterId);
         operations.prepare(playerId, eligibilityId(encounterId), ELIGIBILITY_TYPE,
                         fingerprint(materialId, amount), Map.of("material", materialId,
                                 "amount", Integer.toString(amount),
@@ -94,6 +128,35 @@ public final class EncounterRewardDeliveryService implements Listener {
                         eligibilityId(encounterId), ELIGIBILITY_TYPE,
                         fingerprint(materialId, amount)))
                 .exceptionally(failure -> null);
+    }
+
+    private void abortEncounter(final UUID encounterId) {
+        rememberAbort(encounterId);
+        final Map<UUID, EligibilitySpec> candidates = preparedEligibility.remove(encounterId);
+        if (candidates == null || candidates.isEmpty()) return;
+        candidates.forEach((playerId, spec) -> operations.rollback(playerId,
+                        eligibilityId(encounterId), ELIGIBILITY_TYPE,
+                        fingerprint(spec.materialId(), spec.amount()))
+                .exceptionally(failure -> {
+                    plugin.getLogger().warning("Encounter eligibility abort failed for "
+                            + playerId + '/' + encounterId + ": " + failure.getMessage());
+                    return null;
+                }));
+    }
+
+    private void rememberAbort(final UUID encounterId) {
+        if (abortedEncounters.add(encounterId)) abortedOrder.addLast(encounterId);
+        while (abortedOrder.size() > ABORT_HISTORY_LIMIT) {
+            final UUID oldest = abortedOrder.pollFirst();
+            if (oldest != null) abortedEncounters.remove(oldest);
+        }
+    }
+
+    private void forgetEligibility(final UUID playerId, final UUID encounterId) {
+        final Map<UUID, EligibilitySpec> candidates = preparedEligibility.get(encounterId);
+        if (candidates == null) return;
+        candidates.remove(playerId);
+        if (candidates.isEmpty()) preparedEligibility.remove(encounterId, candidates);
     }
 
     private void queueDelivery(final Player player, final UUID encounterId,
@@ -277,7 +340,6 @@ public final class EncounterRewardDeliveryService implements Listener {
     }
 
     private void stripReceipt(final Player player, final String operationId) {
-        boolean changed = false;
         final var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.getSize(); slot++) {
             final ItemStack item = inventory.getItem(slot);
@@ -286,11 +348,6 @@ public final class EncounterRewardDeliveryService implements Listener {
             meta.getPersistentDataContainer().remove(receiptKey);
             item.setItemMeta(meta);
             inventory.setItem(slot, item);
-            changed = true;
-        }
-        if (changed) {
-            // The caller persists after a successful commit. Keeping this helper side-effect-only
-            // avoids a second commit boundary while still covering armor/offhand player slots.
         }
     }
 
