@@ -13,6 +13,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -30,12 +31,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Owner-thread equipment sampler with an immutable cross-region encounter cache. */
 public final class EquippedCombatPowerService implements Listener {
+    private static final long PERIODIC_REFRESH_TICKS = 40L;
+
     private record Candidate(UUID itemId, EquippedCombatPowerModel.GearSignal signal) { }
 
     private final JavaPlugin plugin;
     private final ItemIdentityService identities;
     private final JobManager jobs;
     private final Map<UUID, Double> cache = new ConcurrentHashMap<>();
+    private final Map<UUID, UUID> refreshLoops = new ConcurrentHashMap<>();
 
     public EquippedCombatPowerService(final JavaPlugin plugin,
                                       final ItemIdentityService identities,
@@ -47,8 +51,10 @@ public final class EquippedCombatPowerService implements Listener {
 
     /** Safe from another region: only reads the last owner-thread projection. */
     public double powerOf(final UUID playerId, final double fallback) {
-        final double value = cache.getOrDefault(playerId, fallback);
-        return Double.isFinite(value) ? Math.max(1.0D, Math.min(10_000.0D, value)) : fallback;
+        final double safeFallback = Double.isFinite(fallback)
+                ? Math.max(1.0D, Math.min(10_000.0D, fallback)) : 1.0D;
+        final double value = cache.getOrDefault(playerId, safeFallback);
+        return Double.isFinite(value) ? Math.max(1.0D, Math.min(10_000.0D, value)) : safeFallback;
     }
 
     public void refresh(final Player player) {
@@ -91,14 +97,45 @@ public final class EquippedCombatPowerService implements Listener {
     }
 
     private void refreshNextTick(final Player player) {
-        player.getScheduler().runDelayed(plugin, task -> refresh(player), null, 1L);
+        try {
+            player.getScheduler().runDelayed(plugin, task -> refresh(player),
+                    () -> cache.remove(player.getUniqueId()), 1L);
+        } catch (final RuntimeException rejected) {
+            cache.remove(player.getUniqueId());
+        }
+    }
+
+    /**
+     * Event hooks give near-immediate updates, while this owner-thread sampler closes mutation
+     * paths that Bukkit has no reliable event for (/clear, plugin armor edits, scripted rerolls,
+     * ascension/rune updates). It never reads a Player from another region.
+     */
+    private void ensureRefreshLoop(final Player player) {
+        final UUID playerId = player.getUniqueId();
+        final UUID token = UUID.randomUUID();
+        if (refreshLoops.putIfAbsent(playerId, token) != null) return;
+        try {
+            player.getScheduler().runAtFixedRate(plugin, task -> refresh(player), () -> {
+                refreshLoops.remove(playerId, token);
+                cache.remove(playerId);
+            }, PERIODIC_REFRESH_TICKS, PERIODIC_REFRESH_TICKS);
+        } catch (final RuntimeException rejected) {
+            refreshLoops.remove(playerId, token);
+            cache.remove(playerId);
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onJoin(final PlayerJoinEvent event) { refreshNextTick(event.getPlayer()); }
+    public void onJoin(final PlayerJoinEvent event) {
+        refreshNextTick(event.getPlayer());
+        ensureRefreshLoop(event.getPlayer());
+    }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onRespawn(final PlayerRespawnEvent event) { refreshNextTick(event.getPlayer()); }
+    public void onRespawn(final PlayerRespawnEvent event) {
+        refreshNextTick(event.getPlayer());
+        ensureRefreshLoop(event.getPlayer());
+    }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onClick(final InventoryClickEvent event) {
@@ -125,8 +162,15 @@ public final class EquippedCombatPowerService implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
+    public void onBreak(final PlayerItemBreakEvent event) { refreshNextTick(event.getPlayer()); }
+
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(final PlayerDeathEvent event) { cache.remove(event.getPlayer().getUniqueId()); }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onQuit(final PlayerQuitEvent event) { cache.remove(event.getPlayer().getUniqueId()); }
+    public void onQuit(final PlayerQuitEvent event) {
+        final UUID playerId = event.getPlayer().getUniqueId();
+        refreshLoops.remove(playerId);
+        cache.remove(playerId);
+    }
 }
