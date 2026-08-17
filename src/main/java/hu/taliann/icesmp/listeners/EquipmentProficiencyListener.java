@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Cancellable equip gates plus a fail-closed catch-all for plugin/right-click mutations. */
+/** Cancellable armor equip gates plus a fail-closed catch-all for every equipment mutation. */
 public final class EquipmentProficiencyListener implements Listener {
     private static final long FEEDBACK_COOLDOWN_MILLIS = 1_500L;
 
@@ -49,9 +49,7 @@ public final class EquipmentProficiencyListener implements Listener {
         if (event.getSlotType() == InventoryType.SlotType.ARMOR) {
             targetSlot = armorSlot(event.getRawSlot());
             candidate = event.getCursor();
-            if (event.getHotbarButton() >= 0) {
-                candidate = player.getInventory().getItem(event.getHotbarButton());
-            }
+            if (event.getHotbarButton() >= 0) candidate = player.getInventory().getItem(event.getHotbarButton());
         } else if (event.isShiftClick()
                 && event.getView().getTopInventory().getType() == InventoryType.CRAFTING) {
             candidate = event.getCurrentItem();
@@ -92,6 +90,12 @@ public final class EquipmentProficiencyListener implements Listener {
         notify(player, denial.decision());
     }
 
+    /**
+     * Paper's equipment event is the common catch-all for right click, dispenser, hotbar/main-hand
+     * and off-hand changes. Every represented slot schedules the same reconciliation; only armor
+     * family denials are physically rehomed. Weapons/offhands may remain physically present but are
+     * attribute/effect-suppressed by the central authority when inactive.
+     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEquipmentChanged(
             final io.papermc.paper.event.entity.EntityEquipmentChangedEvent event) {
@@ -123,34 +127,26 @@ public final class EquipmentProficiencyListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onRespawn(final PlayerRespawnEvent event) {
-        scheduleReconcile(event.getPlayer(), 1L);
-    }
+    public void onRespawn(final PlayerRespawnEvent event) { scheduleReconcile(event.getPlayer(), 1L); }
 
     @EventHandler
-    public void onQuit(final PlayerQuitEvent event) {
-        clear(event.getPlayer());
-    }
+    public void onQuit(final PlayerQuitEvent event) { clear(event.getPlayer()); }
 
     @EventHandler
-    public void onKick(final PlayerKickEvent event) {
-        clear(event.getPlayer());
-    }
+    public void onKick(final PlayerKickEvent event) { clear(event.getPlayer()); }
 
     private Denial denial(final Player player, final ItemStack item,
                           final ItemTemplate.Slot targetSlot) {
         final ItemIdentityService.Inspection inspection = identities.inspect(item);
         if (inspection.status() != ItemIdentityService.Status.VALID
                 || !inspection.template().isArmorFamilyEquipment()) return null;
-        final EquipmentProficiencyPolicy.Decision decision =
-                proficiency.decision(player, inspection.template());
+        final EquipmentProficiencyPolicy.Decision decision = proficiency.decision(player, inspection.template());
         if (targetSlot != null && inspection.template().slot() != targetSlot) {
             return new Denial(inspection, new EquipmentProficiencyPolicy.Decision(
                     EquipmentProficiencyPolicy.Status.INVALID_TEMPLATE,
                     inspection.template().armorFamily(), decision.classFamily()));
         }
-        return proficiency.profileReady(player) && decision.allowed()
-                ? null : new Denial(inspection, decision);
+        return proficiency.profileReady(player) && decision.allowed() ? null : new Denial(inspection, decision);
     }
 
     private void rehome(final Player player, final org.bukkit.inventory.EquipmentSlot slot,
@@ -212,6 +208,8 @@ public final class EquipmentProficiencyListener implements Listener {
             case CHEST -> ItemTemplate.Slot.CHEST;
             case LEGS -> ItemTemplate.Slot.LEGS;
             case FEET -> ItemTemplate.Slot.FEET;
+            case HAND -> ItemTemplate.Slot.MAIN_HAND;
+            case OFF_HAND -> ItemTemplate.Slot.OFF_HAND;
             default -> null;
         };
     }

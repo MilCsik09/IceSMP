@@ -95,13 +95,13 @@ public final class EquippedCombatPowerService implements Listener {
                 jobs.getPrimaryLevel(player), unique));
     }
 
+    /** Candidate admission is delegated to the shared active-equipment authority. */
     private void add(final List<Candidate> result, final Player player, final ItemStack item,
                      final ItemTemplate.Slot equippedSlot) {
+        if (!proficiency.isActive(player, item, equippedSlot)) return;
         final ItemIdentityService.Inspection inspection = identities.inspect(item);
         if (inspection.status() != ItemIdentityService.Status.VALID) return;
         final ItemTemplate template = inspection.template();
-        if (!fits(template.slot(), equippedSlot)) return;
-        if (!proficiency.canUse(player, template)) return;
         final ItemInstance instance = inspection.instance();
         final String stage = instance.ascension().stageId();
         final HashMap<String, Double> rolls = new HashMap<>();
@@ -127,7 +127,7 @@ public final class EquippedCombatPowerService implements Listener {
 
     /**
      * Applies only the Bukkit-attribute set stats. ability_power remains a cast-time canonical
-     * stat consumer; both projections count the same valid, slot-correct, non-duplicate identities.
+     * stat consumer; both projections count the same ACTIVE, non-duplicate identities.
      */
     private void applySetAttributes(final Player player, final List<Candidate> unique) {
         final ItemTemplateRegistry registry = ItemTemplateRegistry.current();
@@ -164,8 +164,6 @@ public final class EquippedCombatPowerService implements Listener {
         final AttributeModifier existing = instance.getModifier(key);
         if (existing != null) instance.removeModifier(existing);
         if (!Double.isFinite(rawAmount) || rawAmount == 0.0D) return;
-        // Authored ItemSetDefinition already validates finite non-zero values; this is a second
-        // runtime bound so a bad hot-reload cannot produce absurd vanilla attributes.
         final double amount = switch (statId) {
             case "max_health" -> Math.max(-1000.0D, Math.min(1000.0D, rawAmount));
             case "armor", "armor_toughness" -> Math.max(-100.0D, Math.min(100.0D, rawAmount));
@@ -173,8 +171,7 @@ public final class EquippedCombatPowerService implements Listener {
             default -> 0.0D;
         };
         if (amount == 0.0D) return;
-        instance.addTransientModifier(new AttributeModifier(
-                key, amount, AttributeModifier.Operation.ADD_NUMBER));
+        instance.addTransientModifier(new AttributeModifier(key, amount, AttributeModifier.Operation.ADD_NUMBER));
     }
 
     private void clearSetAttributes(final Player player) {
@@ -195,11 +192,6 @@ public final class EquippedCombatPowerService implements Listener {
         }
     }
 
-    private static boolean fits(final ItemTemplate.Slot authored, final ItemTemplate.Slot equipped) {
-        return authored == equipped || (equipped == ItemTemplate.Slot.MAIN_HAND
-                && authored == ItemTemplate.Slot.TWO_HAND);
-    }
-
     private void refreshNextTick(final Player player) {
         try {
             player.getScheduler().runDelayed(plugin, task -> refresh(player),
@@ -216,14 +208,10 @@ public final class EquippedCombatPowerService implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onJoin(final PlayerJoinEvent event) {
-        refreshNextTick(event.getPlayer());
-    }
+    public void onJoin(final PlayerJoinEvent event) { refreshNextTick(event.getPlayer()); }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onRespawn(final PlayerRespawnEvent event) {
-        refreshNextTick(event.getPlayer());
-    }
+    public void onRespawn(final PlayerRespawnEvent event) { refreshNextTick(event.getPlayer()); }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onClick(final InventoryClickEvent event) {
