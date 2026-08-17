@@ -7,7 +7,9 @@ import hu.taliann.icesmp.pve.EncounterScalingPolicy;
 import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.pve.MobAbilityRuntime;
 import hu.taliann.icesmp.pve.MobRank;
+import hu.taliann.icesmp.utils.GameModeCache;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.PositionCache;
 import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -40,13 +42,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * World bosses: periodically a boss-grade guardian
- * spawns near a random adventurer. Slaying it rewards the killer's faction
- * treasury, grants league points and buffs the slayer. The spawn attempt is
+ * spawns near a random adventurer. Slaying it rewards the contribution leader's faction
+ * treasury, grants league points and gives qualified players personal rewards. The spawn attempt is
  * rolled on the global world-events tick, but the actual entity spawn runs on
  * the owning region's scheduler (Folia-correct); the despawn timer uses the
  * boss's per-entity scheduler.
  */
 public final class WorldBossManager {
+
+    private static final double MAX_WORLD_BOSS_HEALTH = 4096.0D;
+    private static final double MAX_WORLD_BOSS_DAMAGE = 80.0D;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -159,7 +164,6 @@ public final class WorldBossManager {
     private volatile String activeBossName = "";
     private volatile String activeBossArchetype = "";
     private volatile boolean bossEnraged;
-
 
     /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
     private volatile MajorEventGate eventGate;
@@ -350,28 +354,19 @@ public final class WorldBossManager {
     public EncounterScalingPolicy.Snapshot encounterSnapshot() { return encounterSnapshot; }
 
     private EncounterScalingPolicy.Snapshot createEncounterSnapshot(final LivingEntity boss) {
-        final double radius = Math.max(16.0D, Math.min(512.0D, configManager.getDouble(
-                "world-events.world-boss.scaling.participant-radius", 128.0D)));
-        final double radiusSquared = radius * radius;
-        final LinkedHashSet<UUID> participants = new LinkedHashSet<>();
-        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            final Location cached = hu.taliann.icesmp.utils.PositionCache.get(player.getUniqueId());
-            if (cached != null && cached.getWorld() == boss.getWorld()
-                    && cached.distanceSquared(boss.getLocation()) <= radiusSquared) {
-                participants.add(player.getUniqueId());
-                if (participants.size() >= ContributionLedger.MAX_PARTICIPANTS) break;
-            }
-        }
+        final double radius = finiteBounded(configManager.getDouble(
+                "world-events.world-boss.scaling.participant-radius", 128.0D),
+                128.0D, 16.0D, 512.0D);
+        final LinkedHashSet<UUID> participants = new LinkedHashSet<>(PositionCache.nearbyPlayerIds(
+                boss.getLocation(), radius,
+                playerId -> GameModeCache.isKnown(playerId) && GameModeCache.isSurvival(playerId),
+                ContributionLedger.MAX_PARTICIPANTS));
         if (participants.isEmpty()) {
-            Bukkit.getOnlinePlayers().stream().findFirst()
-                    .ifPresent(player -> participants.add(player.getUniqueId()));
+            throw new IllegalStateException("world boss encounter has no same-world survival participant snapshot");
         }
-        if (participants.isEmpty()) {
-            // A spawn path already requires an online anchor; this is a defensive fail-closed guard.
-            throw new IllegalStateException("world boss encounter has no participant snapshot");
-        }
-        final double tierReference = Math.max(1.0D, configManager.getDouble(
-                "world-events.world-boss.scaling.tier-reference-power", 250.0D));
+        final double tierReference = finiteBounded(configManager.getDouble(
+                "world-events.world-boss.scaling.tier-reference-power", 250.0D),
+                250.0D, 1.0D, 10_000.0D);
         final EquippedCombatPowerService powerService = equippedCombatPower;
         final double averageCombatPower = participants.stream()
                 .mapToDouble(playerId -> powerService == null
@@ -399,9 +394,14 @@ public final class WorldBossManager {
     /**
      * Despawns the active world boss on plugin disable so the persistent, buffed
      * boss does not survive a reload as an unmanaged orphan (and a fresh boss can
-     * spawn cleanly next start). Best-effort direct removal.
+     * spawn cleanly next start). Best-effort direct removal. Every abort path rejects
+     * still-PREPARED reward eligibility before dropping the encounter references.
      */
     public void shutdown() {
+        final EncounterScalingPolicy.Snapshot snapshot = encounterSnapshot;
+        if (snapshot != null) {
+            EncounterRewardDeliveryService.abortPreparedEncounter(snapshot.encounterId());
+        }
         activeBossUntil = 0L;
         nextAttemptAt = 0L;
         spawnGraceUntil = 0L;
@@ -412,6 +412,7 @@ public final class WorldBossManager {
         contributionLedger = null;
         encounterSnapshot = null;
         rewardCandidates.clear();
+        clearDisplayState();
         if (id == null) {
             return;
         }
@@ -432,14 +433,11 @@ public final class WorldBossManager {
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.check-interval-minutes", 90L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
 
-        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
         final MajorEventGate gateRef = eventGate;
         if (gateRef != null && !gateRef.mayStartNaturally("world-boss")) {
             return;
         }
 
-        // A végítélet-hét alatt a spawn-esély napi szorzóval nő (finálé-eszkaláció);
-        // a valós évszak finom szorzója (season-modifiers.<evszak>.world-boss).
         final SeasonFinaleManager finaleRef = seasonFinale;
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final SeasonalModifierService seasonalRef = seasonalModifiers;
@@ -455,7 +453,6 @@ public final class WorldBossManager {
             return;
         }
 
-        // Hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
         final EventSpawnPointManager pointsRef = spawnPointManager;
         final Location fixedAnchor = pointsRef == null ? null : pointsRef.resolveAnchorLocation("world-boss");
         if (fixedAnchor != null) {
@@ -463,12 +460,9 @@ public final class WorldBossManager {
             return;
         }
 
-        // Horgony-rotáció: ne mindig ugyanannak a játékosnak a nyakára szülessen a boss.
         final List<? extends Player> candidates = online.stream()
                 .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
         final Player anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
-        // Szándékosan nincs kegyelem-mechanika: se gyengébb boss (farmolható),
-        // se buff — az ismétlődés ellen a horgony-rotáció + a fenti hely-horgony véd.
         lastAnchorId = anchor.getUniqueId();
         triggerSpawnNear(anchor);
     }
@@ -505,13 +499,8 @@ public final class WorldBossManager {
      * Admin override: spawns a world boss immediately near the given anchor
      * (or a random online player if {@code anchor} is null). Safe to call from a
      * command; pass the issuing admin as anchor so the location read is region-local.
-     *
-     * @param anchor preferred anchor player (may be null)
-     * @return true if a boss spawn was scheduled (false if one is already active or nobody is online)
      */
     public synchronized boolean forceSpawn(final Player anchor) {
-        // synchronized: két egyidejű admin-hívás ne juthasson át együtt az active/grace
-        // ellenőrzésen (dupla boss) — ugyanaz a minta, mint WildHunt/Treasure forceStart.
         if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
@@ -529,13 +518,7 @@ public final class WorldBossManager {
         return true;
     }
 
-    /**
-     * B33 — a szezonzáró boss spawnja egy KONKRÉT (főváros melletti) ponton: a spawn-guard
-     * kihagyásával (a finálé-boss szándékosan a városfalaknál jelenik meg), emelt élettel
-     * és finálé-jelölővel (halálakor egyedi loot-tábla). A SeasonFinaleManager hívja.
-     *
-     * @return true, ha a spawn ütemezve lett (nincs élő boss / spawn-grace)
-     */
+    /** B33 — szezonzáró boss spawnja egy konkrét főváros melletti ponton. */
     public synchronized boolean forceFinaleSpawn(final Location approx, final long lifetimeMinutes) {
         if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
@@ -547,14 +530,10 @@ public final class WorldBossManager {
     }
 
     private synchronized void triggerSpawnNear(final Player anchor) {
-        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick és
-        // egy egyidejű admin-hívás közül csak az első juthat át.
         if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return;
         }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
-        // Folia: read the anchor's location on its OWN region thread first (it may be in a
-        // different region than the caller), then hop to the spawn location's region.
         anchor.getScheduler().run(plugin, task -> {
             final Location origin = anchor.getLocation().clone();
             final long lifetimeMinutes = Math.max(1L,
@@ -578,36 +557,45 @@ public final class WorldBossManager {
 
     private void spawnBoss(final Location approx, final long lifetimeMinutes, final boolean finale) {
         if (approx.getWorld() == null) {
+            spawnGraceUntil = 0L;
             return;
         }
         final int highestY = approx.getWorld().getHighestBlockYAt(approx.getBlockX(), approx.getBlockZ());
         final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
                 highestY + 1.0D, approx.getBlockZ() + 0.5D);
 
-        // Placement rules (config: world-events.spawn-rules.world-boss): never inside a
-        // town/claim/WG region, never on a water surface. Skipping leaves activeBossUntil
-        // unset; the 10s spawn-grace self-heals and the next interval rolls a fresh spot.
-        // Finálé-mód: a guard KIMARAD — a szezonboss szándékosan a főváros falainál áll.
         final EventSpawnGuard guard = spawnGuard;
         if (!finale && guard != null && (guard.isBlocked("world-boss", spawnLocation)
                 || guard.isUnsafeSurface("world-boss", approx.getWorld(), approx.getBlockX(), approx.getBlockZ()))) {
+            spawnGraceUntil = 0L;
             return;
         }
 
-        // Pick a random archetype from the roster (variety/rotation).
         final BossArchetype archetype = BossArchetype.values()[ThreadLocalRandom.current().nextInt(BossArchetype.values().length)];
 
         final Class<? extends Entity> entityClass = archetype.entityType.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
+            spawnGraceUntil = 0L;
             plugin.getLogger().warning("World boss archetype entity-type is not a mob; skipping spawn.");
             return;
         }
 
         final Mob boss = (Mob) spawnLocation.getWorld().spawn(spawnLocation, entityClass.asSubclass(Mob.class));
-        // No overworld zombification (would orphan the PDC-tag) / no daylight burn.
         EventSpawnGuard.prepare(boss);
-        // A display-tükrök az isBossActive()-kapu (activeBossUntil) ELŐTT íródnak: másik
-        // régió-szál olvasója így nem láthat friss kaput az előző boss nevével/fázisával.
+
+        // Build the immutable participant/power snapshot before publishing any active-boss state.
+        // No arbitrary online-player fallback is allowed: a fixed/admin spawn without an eligible
+        // same-world survival participant fails closed rather than scaling from another dimension.
+        final EncounterScalingPolicy.Snapshot scalingSnapshot;
+        try {
+            scalingSnapshot = createEncounterSnapshot(boss);
+        } catch (final RuntimeException invalidSnapshot) {
+            plugin.getLogger().warning("World boss spawn aborted: " + invalidSnapshot.getMessage());
+            if (boss.isValid()) boss.remove();
+            spawnGraceUntil = 0L;
+            return;
+        }
+
         activeBossName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
                 .serialize(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
                         .legacyAmpersand().deserialize(archetype.displayName));
@@ -616,6 +604,11 @@ public final class WorldBossManager {
         bossHealthFraction = 1.0F;
         activeBossId = boss.getUniqueId();
         activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
+        encounterSnapshot = scalingSnapshot;
+        contributionLedger = new ContributionLedger(scalingSnapshot.encounterId(),
+                scalingSnapshot.createdAt(), scalingSnapshot.participants());
+        rewardCandidates.clear();
+
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
         boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());
         if (finale) {
@@ -629,11 +622,6 @@ public final class WorldBossManager {
                         "A Lapforduló Őre") + " &c[Szezonboss]" : archetype.displayName)));
         boss.setCustomNameVisible(true);
 
-        final EncounterScalingPolicy.Snapshot scalingSnapshot = createEncounterSnapshot(boss);
-        encounterSnapshot = scalingSnapshot;
-        contributionLedger = new ContributionLedger(scalingSnapshot.encounterId(),
-                scalingSnapshot.createdAt(), scalingSnapshot.participants());
-        rewardCandidates.clear();
         final MobScalingManager mobScalingRef = mobScaling;
         if (mobScalingRef != null) {
             final int displayLevel = Math.max(1, configManager.getInt(
@@ -644,9 +632,12 @@ public final class WorldBossManager {
         }
 
         final double finaleHealthMult = finale
-                ? Math.max(1.0D, configManager.getDouble("world-events.season-finale.boss.health-mult", 1.5D)) : 1.0D;
-        final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D))
-                * archetype.healthMult * finaleHealthMult * scalingSnapshot.healthMultiplier();
+                ? finiteBounded(configManager.getDouble("world-events.season-finale.boss.health-mult", 1.5D),
+                1.5D, 1.0D, 10.0D) : 1.0D;
+        final double baseHealth = finiteBounded(configManager.getDouble(
+                "world-events.world-boss.health", 300.0D), 300.0D, 20.0D, MAX_WORLD_BOSS_HEALTH);
+        final double health = Math.min(MAX_WORLD_BOSS_HEALTH,
+                baseHealth * archetype.healthMult * finaleHealthMult * scalingSnapshot.healthMultiplier());
         final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(health);
@@ -654,14 +645,16 @@ public final class WorldBossManager {
         }
         bossHealthFraction = 1.0F;
 
-        final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D))
+        final double configuredDamageMult = finiteBounded(configManager.getDouble(
+                "world-events.world-boss.damage-multiplier", 2.0D), 2.0D, 0.1D, 20.0D);
+        final double damageMultiplier = configuredDamageMult
                 * archetype.damageMult * scalingSnapshot.damageMultiplier();
         final AttributeInstance attackDamage = boss.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attackDamage != null) {
-            attackDamage.setBaseValue(attackDamage.getBaseValue() * damageMultiplier);
+            attackDamage.setBaseValue(Math.min(MAX_WORLD_BOSS_DAMAGE,
+                    Math.max(0.0D, attackDamage.getBaseValue() * damageMultiplier)));
         }
 
-        // Archetype self-buff (e.g. fire immunity for the magma boss), for the boss's lifetime.
         if (archetype.selfBuff != null) {
             boss.addPotionEffect(new PotionEffect(archetype.selfBuff, (int) (lifetimeMinutes * 60L * 20L), 0, false, false, true));
         }
@@ -687,11 +680,12 @@ public final class WorldBossManager {
                 )
         ));
 
-        // Per-entity despawn timer (retires automatically if the boss dies first).
         boss.getScheduler().runDelayed(plugin, task -> {
-            if (boss.isValid()) {
-                boss.remove();
-                activeBossUntil = 0L;
+            if (boss.isValid() && activeBossId != null
+                    && activeBossId.equals(boss.getUniqueId())) {
+                // Run the same abort contract as unload/admin/plugin removal before deleting the entity.
+                shutdown();
+                if (boss.isValid()) boss.remove();
                 Bukkit.getServer().broadcast(messageManager.getMessage(
                         "world-boss-despawned",
                         "<gray>👹 A világboss elvonult — senki sem merte legyőzni.</gray>"
@@ -701,15 +695,13 @@ public final class WorldBossManager {
     }
 
     /**
-     * Drives the boss's phases on its OWN region scheduler (Folia-correct): once below
-     * half health it enrages (permanent strength + speed), and every tick it applies its
-     * signature aura debuff to nearby survivors and emits themed particles. The task
-     * auto-retires when the boss is removed; it also self-cancels if the boss is invalid.
+     * Drives the boss's phases on its OWN region scheduler (Folia-correct).
      */
     private void startPhaseTick(final Mob boss, final BossArchetype archetype) {
         final AtomicBoolean enraged = new AtomicBoolean(false);
         final AtomicInteger ticks = new AtomicInteger();
-        final double radius = Math.max(4.0D, configManager.getDouble("world-events.world-boss.aura-radius", 12.0D));
+        final double radius = finiteBounded(configManager.getDouble(
+                "world-events.world-boss.aura-radius", 12.0D), 12.0D, 4.0D, 64.0D);
         boss.getScheduler().runAtFixedRate(plugin, task -> {
             if (!boss.isValid()) {
                 task.cancel();
@@ -732,8 +724,6 @@ public final class WorldBossManager {
                         "<dark_red>👹 A világboss feldühödött — második fázis!</dark_red>"));
             }
 
-            // Signature aura: debuff nearby survivors. Folia: a nearby player can belong to a
-            // neighbouring region, so mutate it on its own scheduler unless we own it.
             for (final Entity nearby : boss.getNearbyEntities(radius, radius, radius)) {
                 if (nearby instanceof Player player) {
                     final PotionEffect aura = new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true);
@@ -752,8 +742,6 @@ public final class WorldBossManager {
             }
             hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
 
-            // Every ~8s (every 4th tick) the boss uses its signature special — a telegraphed mechanic
-            // players must react to, so it is more than a stat-buffed mob.
             if (ticks.incrementAndGet() % 4 == 0) {
                 fireSpecial(boss, archetype, enraged.get());
             }
@@ -779,16 +767,12 @@ public final class WorldBossManager {
         }
     }
 
-    /**
-     * Fires the archetype's signature special on the boss's own region thread (Folia-safe; all touched
-     * entities are region-local nearby). SLAM = telegraphed ring around the boss; ZONE = a telegraphed
-     * spot on a random nearby survivor; SUMMON = a few buffed adds. Telegraph (particles + sound) lands
-     * first, then the effect after a short delay, so players can react.
-     */
     private void fireSpecial(final Mob boss, final BossArchetype archetype, final boolean enraged) {
         final org.bukkit.World world = boss.getWorld();
-        final double damage = Math.max(1.0D, configManager.getDouble("world-events.world-boss.special-damage", 6.0D))
-                * (enraged ? 1.5D : 1.0D);
+        final double baseSpecialDamage = finiteBounded(configManager.getDouble(
+                "world-events.world-boss.special-damage", 6.0D), 6.0D, 1.0D, MAX_WORLD_BOSS_DAMAGE);
+        final double damage = Math.min(MAX_WORLD_BOSS_DAMAGE,
+                baseSpecialDamage * (enraged ? 1.5D : 1.0D));
 
         switch (archetype.special) {
             case SLAM -> {
@@ -800,12 +784,8 @@ public final class WorldBossManager {
                 world.playSound(center, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.6F);
                 emitFx("boss-slam-telegraph", center, 5.0D, 30);
                 boss.getScheduler().runDelayed(plugin, t -> {
-                    if (!boss.isValid()) {
-                        return;
-                    }
+                    if (!boss.isValid()) return;
                     hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
-                    // Folia: hit players region-safely — direct (with the boss as damager) when we own
-                    // them, otherwise hopped to their scheduler (damager omitted cross-region).
                     for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {
                         if (nearby instanceof Player player) {
                             if (Bukkit.isOwnedByCurrentRegion(player)) {
@@ -828,18 +808,13 @@ public final class WorldBossManager {
             case ZONE -> {
                 final java.util.List<Player> survivors = new java.util.ArrayList<>();
                 for (final Entity nearby : boss.getNearbyEntities(20.0D, 20.0D, 20.0D)) {
-                    // A telegráf-célpont kiválasztása a boss szálán fut — idegen régió játékosát
-                    // nem olvassuk (gamemode/pozíció), ugyanúgy kapuzva, mint a becsapódás-ág.
                     if (nearby instanceof Player player && Bukkit.isOwnedByCurrentRegion(player)
                             && isSurvivor(player)) {
                         survivors.add(player);
                     }
                 }
-                if (survivors.isEmpty()) {
-                    return;
-                }
-                final Player zoneTarget = survivors.get(
-                        ThreadLocalRandom.current().nextInt(survivors.size()));
+                if (survivors.isEmpty()) return;
+                final Player zoneTarget = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size()));
                 final UUID zoneTargetId = zoneTarget.getUniqueId();
                 final Location spot = zoneTarget.getLocation().clone();
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
@@ -849,12 +824,8 @@ public final class WorldBossManager {
                 world.playSound(spot, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.8F);
                 emitFx("boss-zone-telegraph", spot, 3.0D, 30);
                 boss.getScheduler().runDelayed(plugin, t -> {
-                    if (!boss.isValid()) {
-                        return;
-                    }
+                    if (!boss.isValid()) return;
                     hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
-                    // Folia: same region-safe hit pattern as SLAM; the zone check runs on the
-                    // target's own thread so its location read is always safe.
                     for (final Entity nearby : boss.getNearbyEntities(28.0D, 28.0D, 28.0D)) {
                         if (nearby instanceof Player player) {
                             final PotionEffect zoneDebuff = new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true);
@@ -883,27 +854,22 @@ public final class WorldBossManager {
             }
             case SUMMON -> {
                 final Location at = boss.getLocation();
-                final int count = 2 + (enraged ? 1 : 0);
+                final int count = Math.min(3, 2 + (enraged ? 1 : 0));
                 final long addLifespanTicks = Math.max(10L, configManager.getLong("world-events.world-boss.add-lifespan-seconds", 25L)) * 20L;
-                // Telegraph cue distinct from SLAM/ZONE's warning tone, so players learn to
-                // recognize "adds incoming" purely by ear.
                 world.playSound(at, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.5F, 1.0F);
                 emitFx("boss-summon", at, 0.0D, 40);
                 for (int i = 0; i < count; i++) {
                     final Location spot = at.clone().add(
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
                     final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
-                    EventSpawnGuard.prepare(add); // daytime SUMMON adds must not burn away instantly
+                    EventSpawnGuard.prepare(add);
                     add.getPersistentDataContainer().set(
                             hu.taliann.icesmp.factions.FactionCombatMarkers.EVENT_MOB,
                             PersistentDataType.BYTE, (byte) 1);
                     add.setGlowing(true);
                     add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, (int) addLifespanTicks, 0, false, false, false));
-                    // Bounded lifespan so summoned adds never accumulate / outlive the fight (on the add's own scheduler).
                     add.getScheduler().runDelayed(plugin, task -> {
-                        if (add.isValid()) {
-                            add.remove();
-                        }
+                        if (add.isValid()) add.remove();
                     }, null, addLifespanTicks);
                 }
                 world.playSound(at, archetype.sound, 1.5F, 0.8F);
@@ -911,19 +877,8 @@ public final class WorldBossManager {
         }
     }
 
-    /** Points evenly spaced around a telegraph ring's circumference (visual clarity of the "particle cloud" style). */
     private static final int TELEGRAPH_RING_POINTS = 24;
 
-    /**
-     * Telegraphs an impending impact zone by tracing its EDGE with evenly-spaced particles
-     * (a crisp ring players can read at a glance) rather than only a scattered cloud over the
-     * whole area — the ring boundary is what tells a player "stand outside this" at a glance.
-     *
-     * @param world the boss's world (region-local; called only from the boss's own thread)
-     * @param particle the archetype's signature particle
-     * @param center the impact zone's center (boss location for SLAM, target spot for ZONE)
-     * @param radius the impact zone radius in blocks
-     */
     private static void spawnTelegraphRing(final org.bukkit.World world, final Particle particle,
                                            final Location center, final double radius) {
         for (int i = 0; i < TELEGRAPH_RING_POINTS; i++) {
@@ -933,12 +888,6 @@ public final class WorldBossManager {
         }
     }
 
-    /**
-     * DisplayFx-telegraph a particle-gyűrű mellé: a veszélyzóna talaján egy lapos, piros, izzó lap,
-     * amely a 30-tick figyelmeztetés alatt kicsiről a teljes sugárig nő — a becsapódásig kitölti a
-     * zónát, így a „lépj ki" pillanatok alatt olvasható. A boss régió-szálán hívjuk (a spawn a
-     * DisplayFxUtil-ban régió-schedulerre kerül, a lap nem-perzisztens + FX-tagelt).
-     */
     private void telegraphFloor(final Location center, final double radius) {
         if (!configManager.getBoolean("display-fx.boss-telegraph.enabled", true)) {
             return;
@@ -963,12 +912,15 @@ public final class WorldBossManager {
         ledger.close();
         contributionLedger = null;
         encounterSnapshot = null;
+        clearDisplayState();
 
         final double threshold = Math.max(1.0D, configManager.getDouble(
                 "world-events.world-boss.contribution.minimum-score", 25.0D));
         final List<Map.Entry<UUID, ContributionLedger.Contribution>> qualified =
                 ledger.qualified(threshold, snapshot.createdAt());
         if (qualified.isEmpty()) {
+            EncounterRewardDeliveryService.abortPreparedEncounter(snapshot.encounterId());
+            rewardCandidates.clear();
             plugin.getLogger().warning("World boss died without a meaningful contribution winner: "
                     + boss.getUniqueId());
             return;
@@ -1003,6 +955,15 @@ public final class WorldBossManager {
         final int componentAmount = Math.max(1, Math.min(8, configManager.getInt(
                 "world-events.world-boss.ascension-component-amount", 1) + (finale ? 1 : 0)));
         final EncounterRewardDeliveryService delivery = rewardDelivery;
+        final Set<UUID> qualifiedIds = qualified.stream().map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        if (delivery != null) {
+            for (final UUID candidate : Set.copyOf(rewardCandidates)) {
+                if (!qualifiedIds.contains(candidate)) {
+                    delivery.reject(candidate, snapshot.encounterId(), componentId, componentAmount);
+                }
+            }
+        }
 
         for (final Map.Entry<UUID, ContributionLedger.Contribution> entry : qualified) {
             final UUID playerId = entry.getKey();
@@ -1038,5 +999,18 @@ public final class WorldBossManager {
                         "reward", String.valueOf(treasuryReward),
                         "points", String.valueOf(configManager.getInt(
                                 "world-events.world-boss.season-points", 10)))));
+    }
+
+    private void clearDisplayState() {
+        activeBossName = "";
+        activeBossArchetype = "";
+        bossHealthFraction = 0.0F;
+        bossEnraged = false;
+    }
+
+    private static double finiteBounded(final double configured, final double fallback,
+                                        final double minimum, final double maximum) {
+        final double value = Double.isFinite(configured) ? configured : fallback;
+        return Math.max(minimum, Math.min(maximum, value));
     }
 }
