@@ -756,6 +756,7 @@ public final class IceSMPCore {
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
+            hu.taliann.icesmp.pve.EquippedCombatPowerService.refreshAfterMutation(player);
         });
         this.clientBridge = new hu.taliann.icesmp.client.IceSmpClientBridge(plugin, configManager);
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
@@ -2090,7 +2091,7 @@ public final class IceSMPCore {
         // a HUD célpont-sora pedig ezt a listenert olvassa.
         final hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators =
                 new hu.taliann.icesmp.listeners.DamageIndicatorListener(plugin, configManager,
-                        abilityCatalystListener, resourceManager, jobManager);
+                        abilityCatalystListener, resourceManager, jobManager, mobTemplateRegistry);
         pluginManager.registerEvents(damageIndicators, plugin);
         hudManager.setDamageIndicators(damageIndicators);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DeathRecapListener(configManager, messageManager), plugin);

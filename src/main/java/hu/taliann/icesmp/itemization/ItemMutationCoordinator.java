@@ -2,6 +2,7 @@ package hu.taliann.icesmp.itemization;
 
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.storage.ItemMutationJournal;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.configuration.ConfigurationSection;
@@ -35,6 +36,20 @@ public final class ItemMutationCoordinator implements Listener {
                           ItemTemplate template, Map<String, Integer> costs,
                           String resultSummary) {
         public Preview { costs = Map.copyOf(costs == null ? Map.of() : costs); }
+    }
+
+    public record RunePreview(boolean allowed, String errorKey, ItemInstance instance,
+                              ItemTemplate template, RuneMutationPolicy.Action action,
+                              int socketIndex, String currentRune, String newRune,
+                              Map<String, Integer> costs, String oldRunePolicy,
+                              String resultSummary) {
+        public RunePreview {
+            currentRune = currentRune == null ? "" : currentRune;
+            newRune = newRune == null ? "" : newRune;
+            costs = Map.copyOf(costs == null ? Map.of() : costs);
+            oldRunePolicy = oldRunePolicy == null ? "" : oldRunePolicy;
+            resultSummary = resultSummary == null ? "" : resultSummary;
+        }
     }
 
     public record Outcome(boolean success, String messageKey, ItemInstance result) { }
@@ -142,8 +157,23 @@ public final class ItemMutationCoordinator implements Listener {
      */
     public void executeRune(final Player player, final int targetSlot, final String runeId,
                             final Consumer<Outcome> callback) {
-        if (player == null || runeId == null || runeId.isBlank()) {
+        executeRuneMutation(player, targetSlot, RuneMutationPolicy.Action.INSERT,
+                -1, runeId, callback);
+    }
+
+    /** Insert, remove and replace share one exact before/after inventory journal entry. */
+    public void executeRuneMutation(final Player player, final int targetSlot,
+                                    final RuneMutationPolicy.Action action,
+                                    final int socketIndex, final String runeId,
+                                    final Consumer<Outcome> callback) {
+        if (callback == null) return;
+        if (player == null || action == null) {
             callback.accept(new Outcome(false, "rune-managed-invalid", null));
+            return;
+        }
+        if (action != RuneMutationPolicy.Action.REMOVE
+                && (runeId == null || runeId.isBlank())) {
+            callback.accept(new Outcome(false, "rune-managed-new-rune-required", null));
             return;
         }
         if (!inFlight.add(player.getUniqueId())) {
@@ -152,7 +182,8 @@ public final class ItemMutationCoordinator implements Listener {
         }
         final Plan plan;
         try {
-            plan = buildRunePlan(player, targetSlot, ItemStatCatalog.normalizeId(runeId));
+            plan = buildRunePlan(player, targetSlot, action, socketIndex,
+                    runeId == null || runeId.isBlank() ? "" : ItemStatCatalog.normalizeId(runeId));
         } catch (final RunePlanFailure failure) {
             inFlight.remove(player.getUniqueId());
             callback.accept(new Outcome(false, failure.messageKey, failure.instance));
@@ -164,6 +195,85 @@ public final class ItemMutationCoordinator implements Listener {
             return;
         }
         publishPlan(player, plan, callback);
+    }
+
+    public RunePreview previewRune(final Player player, final int targetSlot,
+                                   final RuneMutationPolicy.Action action,
+                                   final int socketIndex, final String requestedRuneId) {
+        if (player == null || action == null) {
+            return runeDenied("rune-managed-invalid", null, null, action, socketIndex);
+        }
+        if (!journal.entriesFor(player.getUniqueId()).isEmpty()) {
+            return runeDenied("itemization-operation-pending", null, null, action, socketIndex);
+        }
+        final ItemStack[] contents = player.getInventory().getContents();
+        if (targetSlot < 0 || targetSlot >= contents.length) {
+            return runeDenied("rune-managed-invalid", null, null, action, socketIndex);
+        }
+        final ItemIdentityService.Inspection inspection = identity.inspect(contents[targetSlot]);
+        if (inspection.status() != ItemIdentityService.Status.VALID) {
+            return runeDenied(inspection.status() == ItemIdentityService.Status.NOT_MANAGED
+                            ? "itemization-not-managed" : "rune-managed-invalid",
+                    inspection.instance(), inspection.template(), action, socketIndex);
+        }
+        if (!identity.inspectDuplicates(Arrays.asList(contents)).clean()) {
+            return runeDenied("itemization-duplicate", inspection.instance(),
+                    inspection.template(), action, socketIndex);
+        }
+        final String configuredPolicy = config.getString(
+                "itemization.runes.old-rune-policy", "destroy");
+        final String oldPolicy = configuredPolicy == null ? ""
+                : configuredPolicy.trim().toLowerCase(Locale.ROOT);
+        if (!"destroy".equals(oldPolicy)) {
+            return runeDenied("rune-managed-policy-invalid", inspection.instance(),
+                    inspection.template(), action, socketIndex);
+        }
+        String newRune = requestedRuneId == null ? "" : requestedRuneId.trim();
+        if (newRune.isBlank() && action == RuneMutationPolicy.Action.REPLACE) {
+            newRune = materials.idOf(player.getInventory().getItemInOffHand());
+        }
+        if (!newRune.isBlank()) newRune = ItemStatCatalog.normalizeId(newRune);
+        if (action != RuneMutationPolicy.Action.REMOVE && !newRune.startsWith("runa_")) {
+            return runeDenied("rune-managed-new-rune-required", inspection.instance(),
+                    inspection.template(), action, socketIndex);
+        }
+        final int capacity = inspection.template().runeSocketCountAt(
+                inspection.instance().ascension().stageId());
+        final RuneMutationPolicy.Result transition;
+        try {
+            transition = RuneMutationPolicy.apply(inspection.instance().runes(), capacity,
+                    action, socketIndex, newRune);
+        } catch (final IllegalArgumentException invalid) {
+            final String key = capacity == 0 ? "rune-managed-no-socket"
+                    : action == RuneMutationPolicy.Action.INSERT
+                    ? "rune-managed-full" : "rune-managed-socket-invalid";
+            return runeDenied(key, inspection.instance(), inspection.template(), action, socketIndex);
+        }
+        final LinkedHashMap<String, Integer> costs = new LinkedHashMap<>();
+        try {
+            if (action != RuneMutationPolicy.Action.REMOVE) mergeCost(costs, newRune, 1);
+            if (action == RuneMutationPolicy.Action.REMOVE) {
+                mergeConfiguredRuneCost(costs, "itemization.runes.remove");
+            } else if (action == RuneMutationPolicy.Action.REPLACE) {
+                mergeConfiguredRuneCost(costs, "itemization.runes.replace");
+            }
+        } catch (final IllegalArgumentException invalidCost) {
+            return runeDenied("rune-managed-policy-invalid", inspection.instance(),
+                    inspection.template(), action, socketIndex);
+        }
+        final String summary = switch (action) {
+            case INSERT -> "Új rúna: " + newRune;
+            case REMOVE -> "Eltávolítás: " + transition.removedRune() + " • a régi rúna megsemmisül";
+            case REPLACE -> transition.removedRune() + " → " + newRune
+                    + " • a régi rúna megsemmisül";
+        };
+        if (!hasCosts(contents, costs)) {
+            return new RunePreview(false, "itemization-insufficient-materials",
+                    inspection.instance(), inspection.template(), action, socketIndex,
+                    transition.removedRune(), newRune, costs, oldPolicy, summary);
+        }
+        return new RunePreview(true, "", inspection.instance(), inspection.template(), action,
+                socketIndex, transition.removedRune(), newRune, costs, oldPolicy, summary);
     }
 
     private void publishPlan(final Player player, final Plan plan,
@@ -190,8 +300,10 @@ public final class ItemMutationCoordinator implements Listener {
                     try {
                         player.getInventory().setContents(cloneContents(plan.afterInventory()));
                         player.saveData();
+                        EquippedCombatPowerService.refreshAfterMutation(player);
                     } catch (final RuntimeException persistenceFailure) {
                         player.getInventory().setContents(cloneContents(plan.beforeInventory()));
+                        EquippedCombatPowerService.refreshAfterMutation(player);
                         try { player.saveData(); } catch (final RuntimeException rollbackFailure) {
                             persistenceFailure.addSuppressed(rollbackFailure);
                         }
@@ -234,6 +346,7 @@ public final class ItemMutationCoordinator implements Listener {
                 }
             }
         }
+        EquippedCombatPowerService.refreshAfterMutation(player);
     }
 
     private Preview rerollPreview(final ItemInstance item, final ItemTemplate template,
@@ -346,39 +459,39 @@ public final class ItemMutationCoordinator implements Listener {
         return new Plan(operationId, operation, preview.instance(), candidate, before, after);
     }
 
-    private Plan buildRunePlan(final Player player, final int targetSlot, final String runeId) {
-        if (!journal.entriesFor(player.getUniqueId()).isEmpty()) {
-            throw new RunePlanFailure("itemization-operation-pending", null);
-        }
+    private Plan buildRunePlan(final Player player, final int targetSlot,
+                               final RuneMutationPolicy.Action action,
+                               final int socketIndex, final String runeId) {
+        final RunePreview preview = previewRune(player, targetSlot, action, socketIndex, runeId);
+        if (!preview.allowed()) throw new RunePlanFailure(preview.errorKey(), preview.instance());
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
-        if (targetSlot < 0 || targetSlot >= before.length) {
-            throw new RunePlanFailure("rune-managed-invalid", null);
-        }
-        final ItemIdentityService.Inspection inspection = identity.inspect(before[targetSlot]);
-        if (inspection.status() != ItemIdentityService.Status.VALID) {
-            throw new RunePlanFailure(inspection.status() == ItemIdentityService.Status.NOT_MANAGED
-                    ? "itemization-not-managed" : "rune-managed-invalid", inspection.instance());
-        }
-        if (!identity.inspectDuplicates(Arrays.asList(before)).clean()) {
-            throw new RunePlanFailure("itemization-duplicate", inspection.instance());
-        }
         final ItemStack[] after = cloneContents(before);
-        if (!consumeCosts(after, Map.of(runeId, 1))) {
-            throw new RunePlanFailure("itemization-insufficient-materials", inspection.instance());
+        if (!consumeCosts(after, preview.costs())) {
+            throw new RunePlanFailure("itemization-insufficient-materials", preview.instance());
         }
-        final ItemIdentityService.RuneMutation mutation = identity.applyRune(
-                after[targetSlot], runeId, System.currentTimeMillis());
-        if (!mutation.applied()) {
-            final String key = switch (mutation.status()) {
-                case NO_SOCKET -> "rune-managed-no-socket";
-                case SOCKETS_FULL, DUPLICATE_RUNE -> "rune-managed-full";
-                default -> "rune-managed-invalid";
-            };
-            throw new RunePlanFailure(key, mutation.instance());
-        }
-        after[targetSlot] = identity.render(mutation.template(), mutation.instance());
-        return new Plan(UUID.randomUUID(), Operation.RUNE, inspection.instance(), mutation.instance(),
+        final RuneMutationPolicy.Result transition = RuneMutationPolicy.apply(
+                preview.instance().runes(), preview.template().runeSocketCountAt(
+                        preview.instance().ascension().stageId()), action, socketIndex,
+                preview.newRune());
+        final UUID operationId = UUID.randomUUID();
+        final ItemInstance candidate = mutations.changeRunes(preview.template(), preview.instance(),
+                operationId, transition.runes(), System.currentTimeMillis());
+        after[targetSlot] = identity.render(preview.template(), candidate);
+        return new Plan(operationId, Operation.RUNE, preview.instance(), candidate,
                 before, after);
+    }
+
+    private RunePreview runeDenied(final String key, final ItemInstance instance,
+                                   final ItemTemplate template,
+                                   final RuneMutationPolicy.Action action,
+                                   final int socketIndex) {
+        return new RunePreview(false, key, instance, template, action, socketIndex,
+                "", "", Map.of(), "", "");
+    }
+
+    private void mergeConfiguredRuneCost(final Map<String, Integer> costs, final String path) {
+        mergeCost(costs, config.getString(path + ".material", "runapor"),
+                Math.max(1, Math.min(64, config.getInt(path + ".amount", 1))));
     }
 
     private static final class RunePlanFailure extends RuntimeException {

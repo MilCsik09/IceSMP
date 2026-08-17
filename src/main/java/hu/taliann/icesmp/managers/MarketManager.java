@@ -8,6 +8,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.itemization.ItemIdentityService;
 import hu.taliann.icesmp.itemization.ItemInstance;
 import hu.taliann.icesmp.itemization.ItemTemplate;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -435,13 +436,16 @@ public final class MarketManager implements PersistentStore {
         seller.getInventory().setItemInMainHand(tagged);
         if (!persistPlayer(seller)) {
             seller.getInventory().setItemInMainHand(original);
+            EquippedCombatPowerService.refreshAfterMutation(seller);
             journal.complete(entry);
             return "market-playerdata-unavailable";
         }
 
         seller.getInventory().setItemInMainHand(null);
+        EquippedCombatPowerService.refreshAfterMutation(seller);
         if (!persistPlayer(seller)) {
             seller.getInventory().setItemInMainHand(tagged);
+            EquippedCombatPowerService.refreshAfterMutation(seller);
             plugin.getLogger().warning("Piaci listázás playerdata eltávolítása bizonytalan; "
                     + "a tárgy markerrel a játékosnál marad, a napló recoveryre vár: " + entry.id());
             return "market-playerdata-unavailable";
@@ -733,6 +737,7 @@ public final class MarketManager implements PersistentStore {
                 return 0;
             }
         }
+        EquippedCombatPowerService.refreshAfterMutation(player);
         if (!persistPlayer(player)) {
             plugin.getLogger().warning("A piaci kézbesítés tárgy-oldala nem lett azonnal tartós ("
                     + entry.id() + "); a napló nyitva marad.");

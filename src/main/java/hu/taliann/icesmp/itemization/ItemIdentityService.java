@@ -214,8 +214,17 @@ public final class ItemIdentityService {
             }
         }
         if (template.runeSocketCountAt(stageId) > 0) {
-            lore.add(Component.text("◆ Rúnahely: " + instance.runes().size() + "/" + template.runeSocketCountAt(stageId),
+            final int runeCapacity = template.runeSocketCountAt(stageId);
+            lore.add(Component.text("◆ Rúnahely: " + instance.runes().size() + "/" + runeCapacity,
                     NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
+            for (int socket = 0; socket < runeCapacity; socket++) {
+                final String rune = socket < instance.runes().size()
+                        ? displayRune(instance.runes().get(socket)) : "üres";
+                lore.add(Component.text((socket < instance.runes().size() ? "  ◆ " : "  ◇ ")
+                                + (socket + 1) + ". foglalat: " + rune,
+                        socket < instance.runes().size() ? NamedTextColor.AQUA : NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
         }
         if (!template.setId().isBlank()) {
             final ItemSetDefinition set = templates.requireSet(template.setId());
@@ -342,6 +351,15 @@ public final class ItemIdentityService {
     public Optional<ItemInstance> instanceOf(final ItemStack item) {
         final Inspection inspection = inspect(item);
         return inspection.readable() ? Optional.of(inspection.instance()) : Optional.empty();
+    }
+
+    private static String displayRune(final String runeId) {
+        final String normalized = ItemStatCatalog.normalizeId(runeId);
+        final String withoutPrefix = normalized.startsWith("runa_")
+                ? normalized.substring("runa_".length()) : normalized;
+        if (withoutPrefix.isBlank()) return normalized;
+        final String display = withoutPrefix.replace('_', ' ');
+        return Character.toUpperCase(display.charAt(0)) + display.substring(1);
     }
 
     public List<String> runesOf(final ItemStack item) {

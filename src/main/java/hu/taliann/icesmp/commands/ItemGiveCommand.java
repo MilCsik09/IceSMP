@@ -7,6 +7,7 @@ import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
 import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.RelicManager;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -257,6 +258,7 @@ public final class ItemGiveCommand implements BasicCommand {
     private static void giveStack(final Player target, final ItemStack stack) {
         target.getInventory().addItem(stack).values()
                 .forEach(left -> target.getWorld().dropItemNaturally(target.getLocation(), left));
+        EquippedCombatPowerService.refreshAfterMutation(target);
     }
 
     private void confirm(final CommandSender sender, final Player target,

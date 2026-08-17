@@ -36,6 +36,15 @@ itemization:
     quality-amplifier-material: sarkfeny_cseppko
     quality-amplifier-floor: 0.65
     stability-material: viaszpecset
+  runes:
+    # Canonical policy: remove/replace után a régi rúna nem jár vissza; ez economy sink.
+    old-rune-policy: destroy
+    remove:
+      material: runapor
+      amount: 1
+    replace:
+      material: runapor
+      amount: 2
   salvage:
     base-dust: 1
     per-rarity-dust: 1

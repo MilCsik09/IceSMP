@@ -78,3 +78,6 @@ messages:
   rune-managed-no-socket: '<red>◆ Ezen a tárgyon nincs rúnahely.</red>'
   rune-managed-full: '<red>◆ Ezen a tárgyon nincs szabad, használható rúnahely.</red>'
   rune-managed-invalid: '<red>◆ A tárgy identitása hibás vagy migrációra vár; a rúna nem veszett el.</red>'
+  rune-managed-socket-invalid: '<red>◆ A kiválasztott rúnafoglalat üres vagy nem létezik.</red>'
+  rune-managed-new-rune-required: '<red>◆ Cseréhez tarts egy új canonical rúnát a mellékkézben.</red>'
+  rune-managed-policy-invalid: '<red>◆ A régi rúna kezelési policyje hibás; a művelet biztonságosan leállt.</red>'

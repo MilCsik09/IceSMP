@@ -127,9 +127,9 @@
       "reason": "Combat UI throttle/last-target display state; session only."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/TargetFrameTracker.java|private final Map<UUID, Selection> selections = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
-      "reason": "Combat UI throttle/last-target display state; session only."
+      "reason": "Bounded Target Frame generation and selected-entity coordination; immutable session projection only."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java|private final ConcurrentHashMap<UUID, Long> lastFallbackWarning = new ConcurrentHashMap<>();",

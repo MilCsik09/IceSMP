@@ -6,6 +6,7 @@ import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.ItemRarityService;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -193,6 +194,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), overflow);
         }
+        EquippedCombatPowerService.refreshAfterMutation(player);
         // WoW-stílusú skill-up: a craft szakma-XP-t ad — a szintedhez közeli recept a teljes
         // értéket, a rég kinőtt („szürke”) recept semmit (fele-út: fél XP). Élő kulcsok.
         final int playerLevel = professionManager.getLevel(player, recipe.profession());

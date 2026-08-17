@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /** Immutable combat-target projection; no live entity is read while composing the HUD. */
-public record TargetHudState(UUID targetId, String name, Kind kind, Rank rank,
+public record TargetHudState(UUID targetId, String templateId, String name, Kind kind, Rank rank,
                              String factionTheme, String factionAccent, int level,
                              double health, double maximumHealth,
                              String resourceName, int resource, int resourceMaximum,
@@ -31,6 +31,7 @@ public record TargetHudState(UUID targetId, String name, Kind kind, Rank rank,
     }
 
     public TargetHudState {
+        templateId = Objects.requireNonNullElse(templateId, "");
         name = Objects.requireNonNullElse(name, "Célpont");
         kind = kind == null ? Kind.HOSTILE : kind;
         rank = rank == null ? Rank.NORMAL : rank;
@@ -70,13 +71,13 @@ public record TargetHudState(UUID targetId, String name, Kind kind, Rank rank,
     }
 
     public static TargetHudState previewPlayer() {
-        return new TargetHudState(UUID.randomUUID(), "Frakciótag", Kind.PLAYER, Rank.NORMAL,
+        return new TargetHudState(UUID.randomUUID(), "", "Frakciótag", Kind.PLAYER, Rank.NORMAL,
                 "ember", "E7683F", 42, 82, 100,
                 "Düh", 72, 100, "Szövetséges • Harcos");
     }
 
     public static TargetHudState previewMob() {
-        return new TargetHudState(UUID.randomUUID(), "Csontváz őr", Kind.HOSTILE, Rank.ELITE,
+        return new TargetHudState(UUID.randomUUID(), "fagyott_csontor", "Csontváz őr", Kind.HOSTILE, Rank.ELITE,
                 "ice", "D65A55", 18, 145, 220, "", 0, 0, "Elit");
     }
 

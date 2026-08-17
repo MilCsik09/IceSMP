@@ -3,6 +3,7 @@ package hu.taliann.icesmp.gui;
 import hu.taliann.icesmp.itemization.ItemInstance;
 import hu.taliann.icesmp.itemization.ItemMutationCoordinator;
 import hu.taliann.icesmp.itemization.ItemStatCatalog;
+import hu.taliann.icesmp.itemization.RuneMutationPolicy;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -31,6 +32,10 @@ public final class ItemForgeGUI implements Listener {
     private static final int SLOT_SALVAGE = 26;
     private static final int SLOT_AMPLIFIER = 30;
     private static final int SLOT_STABILITY = 32;
+    private static final int SLOT_RUNE_1 = 9;
+    private static final int SLOT_RUNE_2 = 10;
+    private static final int SLOT_RUNE_REMOVE = 15;
+    private static final int SLOT_RUNE_REPLACE = 16;
     private static final List<Integer> STAT_SLOTS = List.of(
             18, 19, 20, 21, 23, 27, 28, 29, 31, 33, 34,
             35, 36, 37, 38, 39, 40, 41, 42, 43, 44);
@@ -42,17 +47,20 @@ public final class ItemForgeGUI implements Listener {
         this.messages = messages;
     }
 
-    public void open(final Player player) { open(player, "", false, false); }
+    public void open(final Player player) {
+        open(player, "", false, false, player.getInventory().getHeldItemSlot(), 0);
+    }
 
     private void open(final Player player, final String lockedStat,
-                      final boolean amplifier, final boolean stability) {
+                      final boolean amplifier, final boolean stability,
+                      final int targetSlot, final int runeSocket) {
         final ItemForgeHolder holder = new ItemForgeHolder(player.getUniqueId(), lockedStat,
-                amplifier, stability);
+                amplifier, stability, targetSlot, runeSocket);
         final Inventory inventory = Bukkit.createInventory(holder, 45,
                 messages.getMessage("itemization-forge-title", "<dark_aqua>Item műhely</dark_aqua>"));
         holder.inventory(inventory);
-        final ItemStack held = player.getInventory().getItemInMainHand();
-        inventory.setItem(SLOT_ITEM, held.getType().isAir()
+        final ItemStack held = player.getInventory().getItem(targetSlot);
+        inventory.setItem(SLOT_ITEM, held == null || held.getType().isAir()
                 ? button(Material.BARRIER, "Nincs tárgy a főkézben", List.of()) : held.clone());
 
         final ItemMutationCoordinator.Options options = new ItemMutationCoordinator.Options(
@@ -75,6 +83,24 @@ public final class ItemForgeGUI implements Listener {
         inventory.setItem(SLOT_STABILITY, button(stability ? Material.LIME_DYE : Material.GRAY_DYE,
                 "Stability Seal: " + (stability ? "BE" : "KI"),
                 List.of("A reroll nem növeli a következő költséglépcsőt.")));
+
+        final ItemMutationCoordinator.RunePreview remove = coordinator.previewRune(player,
+                targetSlot, RuneMutationPolicy.Action.REMOVE, runeSocket, "");
+        final ItemMutationCoordinator.RunePreview replace = coordinator.previewRune(player,
+                targetSlot, RuneMutationPolicy.Action.REPLACE, runeSocket, "");
+        final ItemInstance runeItem = remove.instance() != null ? remove.instance() : replace.instance();
+        for (int socket = 0; socket < 2; socket++) {
+            final boolean occupied = runeItem != null && socket < runeItem.runes().size();
+            final String rune = occupied ? runeItem.runes().get(socket) : "üres";
+            inventory.setItem(socket == 0 ? SLOT_RUNE_1 : SLOT_RUNE_2,
+                    button(socket == runeSocket ? Material.LAPIS_LAZULI : Material.AMETHYST_SHARD,
+                            (socket + 1) + ". rúnafoglalat: " + rune,
+                            List.of(socket == runeSocket ? "KIJELÖLVE" : "Katt: foglalat kijelölése")));
+        }
+        inventory.setItem(SLOT_RUNE_REMOVE, runeButton(Material.SHEARS,
+                "Rúna eltávolítása", remove));
+        inventory.setItem(SLOT_RUNE_REPLACE, runeButton(Material.SMITHING_TABLE,
+                "Rúna cseréje", replace));
 
         if (reroll.instance() != null && reroll.template() != null) {
             int statIndex = 0;
@@ -99,11 +125,18 @@ public final class ItemForgeGUI implements Listener {
                 || event.getClickedInventory() != event.getView().getTopInventory()) return;
         final int slot = event.getSlot();
         if (slot == SLOT_AMPLIFIER) {
-            open(player, holder.lockedStat(), !holder.amplifier(), holder.stability());
+            open(player, holder.lockedStat(), !holder.amplifier(), holder.stability(),
+                    holder.targetSlot(), holder.runeSocket());
             return;
         }
         if (slot == SLOT_STABILITY) {
-            open(player, holder.lockedStat(), holder.amplifier(), !holder.stability());
+            open(player, holder.lockedStat(), holder.amplifier(), !holder.stability(),
+                    holder.targetSlot(), holder.runeSocket());
+            return;
+        }
+        if (slot == SLOT_RUNE_1 || slot == SLOT_RUNE_2) {
+            open(player, holder.lockedStat(), holder.amplifier(), holder.stability(),
+                    holder.targetSlot(), slot == SLOT_RUNE_1 ? 0 : 1);
             return;
         }
         final int statIndex = STAT_SLOTS.indexOf(slot);
@@ -118,10 +151,20 @@ public final class ItemForgeGUI implements Listener {
                     if (statIndex < stats.size()) {
                         final String stat = stats.get(statIndex);
                         open(player, stat.equals(holder.lockedStat()) ? "" : stat,
-                                holder.amplifier(), holder.stability());
+                                holder.amplifier(), holder.stability(), holder.targetSlot(),
+                                holder.runeSocket());
                     }
                 }
             }
+            return;
+        }
+        final RuneMutationPolicy.Action runeAction = switch (slot) {
+            case SLOT_RUNE_REMOVE -> RuneMutationPolicy.Action.REMOVE;
+            case SLOT_RUNE_REPLACE -> RuneMutationPolicy.Action.REPLACE;
+            default -> null;
+        };
+        if (runeAction != null) {
+            executeRune(player, holder, runeAction, event.isShiftClick());
             return;
         }
         final ItemMutationCoordinator.Operation operation = switch (slot) {
@@ -153,6 +196,30 @@ public final class ItemForgeGUI implements Listener {
         });
     }
 
+    private void executeRune(final Player player, final ItemForgeHolder holder,
+                             final RuneMutationPolicy.Action action, final boolean confirmed) {
+        if (!confirmed) {
+            player.sendMessage(messages.get("itemization-confirm-shift",
+                    "&eA művelet és a feltüntetett költség megerősítéséhez SHIFT+katt szükséges."));
+            return;
+        }
+        final ItemMutationCoordinator.RunePreview preview = coordinator.previewRune(player,
+                holder.targetSlot(), action, holder.runeSocket(), "");
+        if (!preview.allowed()) {
+            player.sendMessage(messages.get(preview.errorKey(),
+                    "&cA rúnaművelet nem hajtható végre biztonságosan."));
+            return;
+        }
+        player.closeInventory();
+        coordinator.executeRuneMutation(player, holder.targetSlot(), action,
+                holder.runeSocket(), preview.newRune(), outcome -> {
+                    player.sendMessage(messages.get(outcome.messageKey(), outcome.success()
+                            ? "&aA rúnaművelet tartósan lezárult."
+                            : "&cA rúnaművelet biztonságosan meghiúsult."));
+                    if (player.isOnline()) open(player);
+                });
+    }
+
     @EventHandler
     public void onDrag(final InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder() instanceof ItemForgeHolder) {
@@ -170,6 +237,20 @@ public final class ItemForgeGUI implements Listener {
             preview.costs().forEach((id, amount) -> lore.add("• " + id + " ×" + amount));
         }
         if (irreversible) lore.add("SHIFT+katt: végrehajtás (irreverzibilis)");
+        return button(preview.allowed() ? material : Material.BARRIER, name, lore);
+    }
+
+    private static ItemStack runeButton(final Material material, final String name,
+                                        final ItemMutationCoordinator.RunePreview preview) {
+        final ArrayList<String> lore = new ArrayList<>();
+        lore.add(preview.allowed() ? preview.resultSummary()
+                : "Nem elérhető: " + preview.errorKey());
+        if (!preview.costs().isEmpty()) {
+            lore.add("Költség:");
+            preview.costs().forEach((id, amount) -> lore.add("• " + id + " ×" + amount));
+        }
+        lore.add("Régi rúna policy: megsemmisül");
+        lore.add("SHIFT+katt: végrehajtás (irreverzibilis)");
         return button(preview.allowed() ? material : Material.BARRIER, name, lore);
     }
 

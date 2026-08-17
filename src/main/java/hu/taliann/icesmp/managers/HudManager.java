@@ -17,6 +17,7 @@ import hu.taliann.icesmp.hud.PartyHudState;
 import hu.taliann.icesmp.hud.PlayerHudState;
 import hu.taliann.icesmp.hud.SurvivalHudState;
 import hu.taliann.icesmp.hud.TargetHudState;
+import hu.taliann.icesmp.hud.TargetFrameTracker;
 import hu.taliann.icesmp.utils.PlatformCapabilities;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -697,6 +698,8 @@ public final class HudManager {
         refreshBossBarState();
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> {
+                final hu.taliann.icesmp.listeners.DamageIndicatorListener indicators = damageIndicators;
+                if (indicators != null) indicators.sampleTarget(player);
                 final HudSnapshot snapshot = buildSnapshot(player);
                 snapshots.put(player.getUniqueId(), snapshot);
                 final ClientHudRoute route = clientHudRoute;
@@ -911,8 +914,7 @@ public final class HudManager {
         if (indicators == null || !configManager.getBoolean("hud.icesmp-hud.target-frame.enabled", true)) {
             return null;
         }
-        final hu.taliann.icesmp.listeners.DamageIndicatorListener.LastTarget target =
-                indicators.lastTarget(viewer.getUniqueId());
+        final TargetFrameTracker.Snapshot target = indicators.lastTarget(viewer);
         if (target == null) return null;
         final HudSnapshot targetHud = target.player() ? snapshots.get(target.targetId()) : null;
         final SurvivalHudState targetSurvival = target.player()
@@ -945,7 +947,8 @@ public final class HudManager {
         final int resourceMaximum = targetHud == null
                 ? target.resourceMaximum() : targetHud.resourceMax();
         final int level = targetHud == null ? target.level() : targetHud.classLevel();
-        return new TargetHudState(target.targetId(), target.targetName(), target.kind(), target.rank(),
+        return new TargetHudState(target.targetId(), target.templateId(), target.targetName(),
+                target.kind(), target.rank(),
                 factionTheme(faction), factionAccent(faction), level,
                 health, maximumHealth, resourceName,
                 resource, resourceMaximum, status);
@@ -1296,8 +1299,7 @@ public final class HudManager {
         if (indicators == null) {
             return null;
         }
-        final hu.taliann.icesmp.listeners.DamageIndicatorListener.LastTarget target =
-                indicators.lastTarget(viewer.getUniqueId());
+        final TargetFrameTracker.Snapshot target = indicators.lastTarget(viewer);
         if (target == null) {
             return null;
         }

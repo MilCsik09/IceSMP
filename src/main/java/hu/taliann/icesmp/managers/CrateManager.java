@@ -21,6 +21,7 @@ import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileCrateStore;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -1811,6 +1812,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         }
         player.getInventory().addItem(item).values().forEach(left ->
                 player.getWorld().dropItemNaturally(player.getLocation(), left));
+        EquippedCombatPowerService.refreshAfterMutation(player);
     }
 
     private void giveRecoveryKeys(final Player player, final CrateRecoveryLedger.Recovery recovery) {

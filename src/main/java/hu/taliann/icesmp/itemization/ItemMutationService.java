@@ -125,10 +125,27 @@ public final class ItemMutationService {
         if (normalized.size() > template.runeSocketCountAt(before.ascension().stageId())) {
             throw new IllegalArgumentException("rune capacity exceeded");
         }
+        final String detail = runeChangeDetail(before.runes(), normalized);
         return before.withMutation(before.rolls(), normalized, before.ascension(), before.itemLevel(),
                 before.mutation().afterMutation(operationId),
                 new ItemHistoryEvent(ItemHistoryEvent.Type.RUNE_CHANGED, occurredAt,
-                        String.join(",", normalized)));
+                        detail));
+    }
+
+    private static String runeChangeDetail(final List<String> before, final List<String> after) {
+        if (after.size() > before.size()) {
+            return "insert:" + after.stream().filter(rune -> !before.contains(rune)).findFirst().orElse("");
+        }
+        if (after.size() < before.size()) {
+            return "remove:" + before.stream().filter(rune -> !after.contains(rune)).findFirst().orElse("");
+        }
+        final ArrayList<String> changes = new ArrayList<>();
+        for (int index = 0; index < before.size(); index++) {
+            if (!before.get(index).equals(after.get(index))) {
+                changes.add(before.get(index) + "->" + after.get(index));
+            }
+        }
+        return changes.isEmpty() ? "unchanged" : "replace:" + String.join(",", changes);
     }
 
     /** Supports decimal, integer-rounded and negative ranges; clamp is always final. */

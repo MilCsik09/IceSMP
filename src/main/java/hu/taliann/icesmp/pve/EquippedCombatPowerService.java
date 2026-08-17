@@ -33,13 +33,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Owner-thread equipment sampler with an immutable cross-region encounter cache. */
 public final class EquippedCombatPowerService implements Listener {
-    private static final long PERIODIC_REFRESH_TICKS = 40L;
+    private static volatile EquippedCombatPowerService activeInstance;
 
     private record Candidate(UUID itemId, String setId, EquippedCombatPowerModel.GearSignal signal) { }
 
@@ -47,7 +46,6 @@ public final class EquippedCombatPowerService implements Listener {
     private final ItemIdentityService identities;
     private final JobManager jobs;
     private final Map<UUID, Double> cache = new ConcurrentHashMap<>();
-    private final Set<UUID> refreshLoops = ConcurrentHashMap.newKeySet();
     private final Map<String, NamespacedKey> setModifierKeys;
 
     public EquippedCombatPowerService(final JavaPlugin plugin,
@@ -61,6 +59,7 @@ public final class EquippedCombatPowerService implements Listener {
                 "armor", new NamespacedKey(plugin, "item_set_armor"),
                 "armor_toughness", new NamespacedKey(plugin, "item_set_armor_toughness"),
                 "movement_speed", new NamespacedKey(plugin, "item_set_movement_speed"));
+        activeInstance = this;
     }
 
     /** Safe from another region: only reads the last owner-thread projection. */
@@ -192,35 +191,20 @@ public final class EquippedCombatPowerService implements Listener {
         }
     }
 
-    /**
-     * Event hooks give near-immediate updates, while this owner-thread sampler closes mutation
-     * paths that Bukkit has no reliable event for (/clear, plugin armor edits, scripted rerolls,
-     * ascension/rune updates). It never reads a Player from another region.
-     */
-    private void ensureRefreshLoop(final Player player) {
-        final UUID playerId = player.getUniqueId();
-        if (!refreshLoops.add(playerId)) return;
-        try {
-            player.getScheduler().runAtFixedRate(plugin, task -> refresh(player), () -> {
-                refreshLoops.remove(playerId);
-                cache.remove(playerId);
-            }, PERIODIC_REFRESH_TICKS, PERIODIC_REFRESH_TICKS);
-        } catch (final RuntimeException rejected) {
-            refreshLoops.remove(playerId);
-            cache.remove(playerId);
-        }
+    /** Explicit hook for plugin-owned inventory mutations that do not emit a Bukkit event. */
+    public static void refreshAfterMutation(final Player player) {
+        final EquippedCombatPowerService service = activeInstance;
+        if (service != null) service.refreshNextTick(player);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(final PlayerJoinEvent event) {
         refreshNextTick(event.getPlayer());
-        ensureRefreshLoop(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRespawn(final PlayerRespawnEvent event) {
         refreshNextTick(event.getPlayer());
-        ensureRefreshLoop(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -259,7 +243,6 @@ public final class EquippedCombatPowerService implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(final PlayerQuitEvent event) {
         final UUID playerId = event.getPlayer().getUniqueId();
-        refreshLoops.remove(playerId);
         cache.remove(playerId);
         clearSetAttributes(event.getPlayer());
     }

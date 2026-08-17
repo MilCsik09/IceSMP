@@ -477,6 +477,18 @@ val iceSmpHudRegressionTest = registerRegression(
     "iceSmpHudRegressionTest",
     "Runs first-party HUD fixed-layout, wallet, readiness and authority regressions.",
     "hu.taliann.icesmp.hud.IceSmpHudRegressionSuite")
+val targetFrameRegressionTest = registerRegression(
+    "targetFrameRegressionTest",
+    "Runs behavioral canonical Target Frame selection, metadata and lifecycle regressions.",
+    "hu.taliann.icesmp.hud.TargetFrameRegressionSuite")
+val runeLifecycleRegressionTest = registerRegression(
+    "runeLifecycleRegressionTest",
+    "Runs behavioral rune insert, remove, replace, identity and recovery regressions.",
+    "hu.taliann.icesmp.itemization.RuneLifecycleRegressionSuite")
+val hardeningClosureRegressionTest = registerRegression(
+    "hardeningClosureRegressionTest",
+    "Runs final CombatPower, set, boss, reward, contribution and ability closure regressions.",
+    "hu.taliann.icesmp.pve.HardeningClosureRegressionSuite")
 val hudEditorRegressionTest = registerRegression(
     "hudEditorRegressionTest",
     "Runs first-party HUD editor gate, isolation, layout, shader and authority regressions.",
@@ -848,7 +860,9 @@ tasks.check {
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
-        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, hudEditorRegressionTest,
+        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, targetFrameRegressionTest,
+        runeLifecycleRegressionTest, hardeningClosureRegressionTest,
+        hudEditorRegressionTest,
         playerProfileHudLayoutRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest, targetRegistryRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
