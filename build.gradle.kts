@@ -489,6 +489,9 @@ val hardeningClosureRegressionTest = registerRegression(
     "hardeningClosureRegressionTest",
     "Runs final CombatPower, set, boss, reward, contribution and ability closure regressions.",
     "hu.taliann.icesmp.pve.HardeningClosureRegressionSuite")
+hardeningClosureRegressionTest.configure {
+    dependsOn(targetFrameRegressionTest, runeLifecycleRegressionTest)
+}
 val hudEditorRegressionTest = registerRegression(
     "hudEditorRegressionTest",
     "Runs first-party HUD editor gate, isolation, layout, shader and authority regressions.",

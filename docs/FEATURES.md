@@ -623,7 +623,9 @@ normalizált roll qualityt, 0–2 rúnahelyet, signature/set fogyasztókat és b
 UUID-authority crafter provenance-t ad. A `/profession forge` vanilla GUI Full
 Reforge, egy authored rollra alkalmazható Stat Lock, quality-padlót emelő Amplifier,
 költséglépcsőt megőrző Stability Seal, determinisztikus Ascension és veszteséges
-salvage előnézetet kínál. Reroll, rúnacsere és ascension közben az item UUID-ja nem
+salvage előnézetet kínál. A Forge kiválasztott socketes rúna-remove és egyetlen
+WAL-műveletként végrehajtott old→new replace előnézetet is ad; a régi rúna a bundled
+`destroy` policy szerint megsemmisül. Reroll, rúnacsere és ascension közben az item UUID-ja nem
 változik; az ismételt reroll költséglépcsője magával az itemmel utazik.
 
 A jelenlegi systemic survival katalógus 48 authored template, 15 registry-bekötött
@@ -665,7 +667,8 @@ ellenőrzött ItemInstance-átruházási authority ebben a körben a WAL-os mark
   a Profile v2 economy extensionben marad reconnect és restart után is.
 - Tranzakció: `item-mutation-journal.yml` exact before/after inventory snapshotot
   készít payment előtt; playerdata publish után a receiptet tartalmazó candidate és
-  az elfogyasztott anyagok egy snapshotként recoveryzhetők.
+  az elfogyasztott anyagok egy snapshotként recoveryzhetők. Insert/remove/replace ugyanazt
+  a boundaryt használja; mixed rune/payment witness nem automatikusan rendeződik.
 - Reload: Definíciók részben reloadolhatók; meglévő itemek frissítő listeneren vagy újrageneráláskor változnak.
 
 </details>

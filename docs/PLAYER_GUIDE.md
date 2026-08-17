@@ -110,7 +110,8 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
   kap, az oxigén pedig csak fogyó levegőnél jelenik meg. A frame, név, HP-sáv, HP-szöveg,
   százalék, pajzs, páncél, étel és oxigén külön editor-komponens; a Player Frame csoporttal
   együtt is mozgathatók. Pack nélkül a vanilla kijelzők maradnak láthatók.
-- Ha megütsz egy mobot vagy játékost, a Player Frame mellett jelenik meg a **Target Frame**.
+- Ha egy mobra vagy játékosra nézel a beállított hatótávon belül, a Player Frame mellett
+  jelenik meg a **Target Frame**.
   A mobok bestiárium-stílusú, a játékosok frakciószínű keretet kapnak. A név, szint,
   current/max HP, százalék, rang/státusz, valamint játékosnál a class resource is látszik.
   A kijelzés nem hoz létre követő feliratot a mob testén, ezért az eredeti nametag nem tűnik el.
@@ -581,7 +582,8 @@ pedig a saját műhelyfolyamataikban haladnak.
 - `/profession info` — szakmai állapot.
 - `/profession join <szakma>` — tanulás vagy váltás.
 - `/profession recipes` — a ténylegesen ismert és zárolt receptek.
-- `/profession forge` — Itemization 2.0 műhely: reroll, Stat Lock, Ascension és salvage.
+- `/profession forge` — Itemization 2.0 műhely: reroll, Stat Lock, rúna remove/replace,
+  Ascension és salvage.
 - `/szakmacel` — a szakmád heti közös célja.
 
 A teljes receptkatalógus nem része ennek a kézikönyvnek. A receptkönyv jelzi a
@@ -611,6 +613,10 @@ A főkézben tartott canonical tárggyal nyisd meg a `/profession forge` felüle
 - **Quality Amplifier:** a következő reroll minimum qualityjét emeli;
 - **Stability Seal:** a reroll megtörténik, de a következő költséglépcső nem nő;
 - **Ascension:** előre megmutatott, ritka és determinisztikus fejlesztés;
+- **Rúna eltávolítása:** válassz foglalatot; a költség kifizetése után a régi rúna
+  megsemmisül;
+- **Rúna cseréje:** válassz foglalatot és tarts új canonical rúnát a mellékkézben;
+  az old→new csere egyetlen atomikus művelet;
 - **Salvage:** irreverzibilis, veszteséges bontás runa-/salvage alapanyagra.
 
 A gombok megmutatják a költséget és az eredményt; a tényleges művelethez

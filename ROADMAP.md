@@ -286,15 +286,16 @@ a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
   bind tiltással, bounded költséggörbével és item-mutation WAL recoveryvel.
 - ✅ Az authored `ItemTemplate`/`ItemInstance`/`ItemIdentityService`, 0–2 rúnahely,
   signature/set fogyasztó és build-aware, restartbiztos soft-diversity alap
-  elkészült; a Phase 4–5 pure-domain regresszió és consistency kapu zöld, a teljes
-  Java 21 Gradle + Folia staging identity/migration/death/market runtime acceptance
-  továbbra is kötelező release-gate.
-- ✅ Az első, szándékosan kicsi survival vertical slice 6 authored template-re épül:
+  elkészült; a Phase 4–5 pure-domain regresszió és consistency kapu zöld. Az exact
+  Java 21 Gradle CI forráskapu, a Folia staging identity/migration/death/market
+  runtime acceptance külön kötelező release-gate.
+- ✅ Az első survival vertical slice a jelenlegi 48 authored template-es systemic
+  katalógusban is megmarad:
   vanilla mining → Sarkfény-cseppkő → profession craft → reroll/rúna/piac →
-  világboss-komponens → ugyanazon UUID-val ascension. A 30–40 darabos katalógusbővítés
-  csak a pilot runtime/balance elfogadása után következhet.
-- ◇ Rúna 2.0: a canonical instance 0–2 socketes insert/change állapota és lifecycle-
-  API-ja kész; a külön remove/replace UX és kódex még nyitott.
+  világboss-komponens → ugyanazon UUID-val ascension.
+- ✅ Rúna 2.0: canonical insert, kiválasztott socketes remove és atomikus replace
+  ugyanazon whole-inventory mutation WAL-on fut. A Forge előnézet/költség/SHIFT
+  megerősítést ad; a régi rúna explicit `destroy` economy-sink policyt követ.
 - ⬜ Crafting order piactér escrow-val és naplózott settlementtel.
 
 **Kapunyitás E felé:** a tárgyazonosság másolás, újraindítás és

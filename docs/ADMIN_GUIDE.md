@@ -1141,8 +1141,9 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - Admin authored itemadás: `/iceitem template <template-id> [darab] [játékos]`.
   Az `admin:give` provenance miatt ez a példány salvage tiltott; ne használd production
   economy input előállítására.
-- A balance-kulcsok az `item-templates.yml` `itemization.crafting`, `reroll`,
-  `salvage`, `gathering` és `ascension` blokkjában vannak. Identity/schema/template
+- A balance-kulcsok az `item-templates.yml` `itemization.crafting`, `reroll`, `runes`,
+  `salvage`, `gathering` és `ascension` blokkjában vannak. A bundled rune policy
+  `old-rune-policy: destroy`; remove/replace költsége külön állítható. Identity/schema/template
   invariáns nem kapcsolható ki configból.
 - Bundled baseline: 48 authored template, 15 Signature-fogyasztó, 3 set, 7 ascendable,
   10 rúna és 15 canonical gear-recept. A `scripts/test_progression_balance.py` ezt,
@@ -1158,14 +1159,31 @@ A részletes persistence-, recovery- és shutdown-folyamat:
   Legacy reroll/ascension/salvage továbbra is fail-closed; a meglévő egy-rúnás legacy
   insert kompatibilis marad, remove/replace nem engedélyezett. Külön direct player-trade
   authority nincs; a támogatott item-escrow út a market.
+- Canonical rune insert, kiválasztott socketes remove és atomic replace ugyanazon
+  `item-mutation-journal.yml` whole-inventory before/after boundaryn fut. A Forge a
+  jelenlegi/új rúnát, költséget és a régi rúna megsemmisülését SHIFT megerősítés előtt mutatja.
 - A crate `type: template` csak `encounter-metadata.crate-eligible: "true"`, nem
   MYTHIC és nem account-bound template-et fogad; random-affix gear `recipe-item`
   startupkor érvénytelen crate-definíció.
 
-Staging acceptance: (1) két gyors SHIFT+katt, (2) disconnect journal prepare és
-playerdata publish között, (3) process-kill mindkét oldalon, (4) tele inventory salvage,
-(5) market list/buy/cancel canonical+rúnás+ascended itemmel, (6) világboss component
-egyszeri delivery, (7) protected claim/WG érc nem ad ritka materialt.
+Staging acceptance — ezeket CI alapján ne pipáld ki:
+
+- **Process-kill:** külön reroll, rune insert/remove/replace és ascension közben állítsd le
+  a processt prepare előtt/után, inventory publish után és journal commit előtt/után;
+  boss rewardnál PREPARED eligibility és már materializált physical witness mellett is.
+  Restart után exact-before abort, exact-after commit, mixed manual review legyen.
+- **Full inventory:** mining reward, boss reward, rune remove/replace és craft output;
+  nincs world-dropos item loss, ingyenes mutation vagy duplikált delivery.
+- **Disconnect:** boss fight, contribution threshold elérése, reward settlement és minden
+  item mutation közben; reconnect után ugyanaz az item UUID/revision és legfeljebb egy reward.
+- **Gazdasági walkthrough:** mining → processing/craft → reroll/Stat Lock → rune
+  insert/remove/replace → market list/buy/cancel → boss component → ascension → salvage;
+  rögzítsd az UUID-t, provenance-t, qualityt, rune state-et és market roundtripot.
+- **50–60 játékos:** MSPT/TPS, CPU, heap/allocation, scheduler queue, ability-state,
+  contribution-state, encounter snapshot és Profile persistence latency mérése kötelező.
+- **Gameplay/balance:** Normal/Veteran/Elite/world-boss TTK, healer/tank contribution,
+  telegráf olvashatóság, mining supply, reroll- és ascension-költség. Ezek balance gate-ek,
+  nem automatizált PASS állítások.
 
 Phase 5.5 recovery policy: az item mutation boot/join audit csak exact-before állapotot
 abortál és exact-after állapotot commitol; `before == after` vagy mixed snapshot kézi
@@ -1658,7 +1676,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | HUD-01 Player Frame parity | Tesztelő | packos vanilla kliens; teljes/részleges/kritikus és 20 föletti max HP, absorption, 0/20/30+ armor, food, szárazföld és víz alatti air | current/max HP és százalék pontos; absorption külön; armor kizárólag flat érték, maximum vagy skálázott sáv nélkül; O2 csak fogyáskor jelenik meg; vanilla normál sprite nem duplázódik | pack/HUD rollout stop | `hud/HUD-01/` |
 | [ ] | HUD-02 Reszponzív routing | Fejlesztő | pack elfogadás/elutasítás; `/hud mind`; NATIVE_HUD kliens; 720p/1080p/1440p/4K és több GUI scale | pack nélkül vanilla survival kijelzés; packkal Player Frame megmarad; class panel routing szerint pontosan egyszer látszik; bal/jobb felső margó stabil, bossbar/actionbar/hotbar szabad | HUD rollout stop | `hud/HUD-02/` |
 | [ ] | HUD-03 Editor-szétválasztás | Tesztelő | `/hud edit`; Class, DK, Player, Target és Party kategória; csoport és gyermek mozgatása | minden v2 komponens megnyitható hiba nélkül; a csoport együtt, a gyermek relatívan mozog; DK-rúna nem mozdít generic charge-ot; mentés `hud.layout-v2.*` kulcsra történik | HUD rollout stop | `hud/HUD-03/` |
-| [ ] | HUD-04 Target Frame | Tesztelő | passzív/semleges/hostile/elit/boss mob, nametagelt pók, classos játékos; melee/lövedék; death/quit; 1–30 mp expiry | mob/player eltérő frame; pontos találat utáni HP, játékosnál élő HP/resource; az eredeti név változatlan; nincs követő vitals-TextDisplay; új ütés hosszabbít, expiry/death/quit eltávolít | `hud.icesmp-hud.target-frame.enabled: false` | `hud/HUD-04/` |
+| [ ] | HUD-04 Target Frame | Tesztelő | passzív/semleges/hostile/Veteran/Elite/Champion/world-boss és vanilla fallback mob, nametagelt pók, classos játékos; 3–64 blokk; target switch; LOS/range/death/despawn/world change/quit | szemirányú target canonical template/rank/level/HP adatot mutat; malformed/stale PDC fail-closed fallback; playernél élő HP/resource; nincs stale frame vagy vitals-TextDisplay | `hud.icesmp-hud.target-frame.enabled: false` | `hud/HUD-04/` |
 | [ ] | HUD-05 Party/event layout | Tesztelő | vegyes frakciójú 5 fős party; leader/dead/range/quit; 0–4 párhuzamos esemény | saját Player Frame alatt max négy sor, minden tag saját frakciószíne, HP/resource/státusz pontos; class footer max három eseményt teljesen mutat; nincs tartós class XP-sáv | `party.hud-enabled: false` | `hud/HUD-05/` |
 
 ### Kliens-bridge (protokoll-alap)
@@ -1860,16 +1878,18 @@ panelt, hogy ne maradjon látható HP nélkül a játékos.
 
 - `hud.icesmp-hud.survival.refresh-ticks`: külön survival mintavételi periódus; alapból 2 tick,
   módosítása restartot igényel;
-- `hud.icesmp-hud.target-frame.enabled`: a találat utáni screen-space Target Frame főkapcsolója;
-- `hud.icesmp-hud.target-frame.expire-seconds`: a legutóbbi találat utáni megjelenítés 1–30
-  másodperc között, alapból 10;
+- `hud.icesmp-hud.target-frame.enabled`: a szemirányú screen-space Target Frame főkapcsolója;
+- `hud.icesmp-hud.target-frame.range`: bounded raytrace hatótáv 3–64 blokk között, alapból 24;
+- `hud.icesmp-hud.target-frame.expire-seconds`: az entity-owner snapshot felső életkora 1–30
+  másodperc között, alapból 10; target/LOS elvesztése ettől függetlenül azonnal ürít;
 - `party.hud-enabled`: a legfeljebb négy másik party-tagot mutató frame-ek főkapcsolója.
 
-A Target Frame nem világbeli nametag és nem `TextDisplay`. A találat a megsebzett entitás saját
-region-threadjén immutable snapshotot készít. Mobnál ebből jelenik meg a név, szint, rang/típus és
-találat utáni HP; játékosnál a HUD tick folyamatosan frissített, szálbiztos snapshotja felülírja
-a HP/resource/class/szint adatot. A mob eredeti `customName` értékét a rendszer soha nem módosítja.
-Death, quit és lejárat eltávolítja a target snapshotot; tartós kijelzőentitás nem maradhat vissza.
+A Target Frame nem világbeli nametag és nem `TextDisplay`. A néző owner-threadjén bounded,
+blokk-LOS-os raytrace választ; a célpont saját region-threadje immutable canonical snapshotot
+publikál. Mobnál ebből jelenik meg a template név, level, rank/affix és HP; játékosnál a HUD tick
+szálbiztos snapshotja felülírja a HP/resource/class/szint adatot. A mob eredeti `customName`
+értékét a rendszer soha nem módosítja. Target switch, LOS/range, death, despawn, world change,
+quit és lejárat eltávolítja a target snapshotot; tartós kijelzőentitás nem maradhat vissza.
 A rövid, egy másodperces sebzésszámok ettől függetlenül megmaradnak.
 
 A Party Frame minden tagot a saját frakciópalettájával renderel, nem a néző színével. A

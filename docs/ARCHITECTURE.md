@@ -163,7 +163,11 @@ main/offhand és négy armor slot valid, UUID-duplikátummentes canonical itemje
 majd immutable cache-t publikál a cross-region boss-snapshotnak. A
 `EquippedCombatPowerModel` tényleges statot, item levelt, Signature-tier kontextust, szettet és
 rúnát ad a bounded `CombatPowerEstimator`-nak; malformed/stale/rossz slot fail-closed kimarad.
-Ez belső telemetry/snapshot input, nem publikus gear score és nem loot-authority.
+Az invalidálás inventory/equipment eseményvezérelt; a plugin saját mutation-, craft-, market-,
+crate- és admin inventory útjai explicit owner-thread refresh hookot hívnak. Nincs periodikus
+equipment polling. A set transient modifier stabil `NamespacedKey`-t használ, és refreshkor
+eltávolítja az előző példányt az új hozzáadása előtt. Ez belső telemetry/snapshot input, nem
+publikus gear score és nem loot-authority.
 
 Az ability runtime eseményvezérelt, legfeljebb 2048 aktív state-et tart, minden mobot
 a saját entity schedulerén kezel, a location-hatásokat region schedulerre adja át.
@@ -184,6 +188,9 @@ Az item mutation crash policy közös exact snapshot-mátrixot használ reroll/r
 művelethez: prepare előtti/utáni exact-before abort, inventory publish utáni exact-after
 commit, mixed state kézi review. Az encounter reward PREPARED receiptje nulla markernél
 kézbesít, egy exact markernél commitol, több markernél fail-closed kézi vizsgálat.
+Rúnánál az insert, a kiválasztott foglalat remove-ja és az old→new replace egyaránt egyetlen
+whole-inventory before/after WAL-bejegyzés. A replace nem két egymás utáni mutation;
+UUID-t, provenance-t, ascensiont és a másik rúnát ugyanabban az immutable candidate-ben őrzi.
 
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
@@ -1308,17 +1315,22 @@ class health-scaling gate later does not require another HUD protocol or asset c
 Az armor flat számként, maximum és százalékos sáv nélkül rajzolódik; a food és conditional oxygen
 egymástól független fixed-width draw group. Az oxygen csak `air < maximumAir` esetén jelenik meg.
 
-### Eseményvezérelt Target Frame
+### Canonical Target Frame producer
 
-`DamageIndicatorListener` a nem törölt, pozitív játékos-sebzés MONITOR eseményén, a sérült
-entitás owner-threadjén rögzíti a név/típus/rang/szint és a találat után projektált current/max HP
-immutable snapshotját. A `HudManager` ezt screen-space `TargetHudState`-té alakítja. Játékos
-célpontnál a célpont saját HUD tickjének immutable health/resource snapshotja frissíti az adatot;
-cross-region live `Player`-olvasás nincs. A mob eredeti nevét a rendszer nem írja.
+A `HudManager` minden néző saját owner-threadjén bounded, blokk-LOS-t tisztelő szemirányú
+raytrace mintát kér a `DamageIndicatorListener`-től. Nincs world/entity-list scan. A kiválasztott
+entity a saját schedulerén publikál immutable `TargetFrameTracker.Snapshot`-ot; a generációs
+token elutasítja a későn visszaérő target callbacket. Canonical Mob 2.0 célpontnál a már felírt
+`mob_template`, `mob_level`, `mob_rank`, `mob_archetype` és legfeljebb két valid affix az
+authority: a HUD nem számol külön moblevelt. Stale template vagy malformed PDC vanilla fallbackre,
+0-s ismeretlen levelre és `NORMAL` rangra zár, nem talál ki Elite státuszt.
 
-Nincs online-player × nearby-entity poll, cross-region world scan vagy tartós vitals-entity.
-Lejárat, death és quit törli a target snapshotot. Egyedül a rövid életű floating damage-number
-marad `TextDisplay`; saját entity schedulerén egy másodperc után eltávolítja magát.
+A snapshotból készül a közös screen-space `TargetHudState`, amelyet a first-party resource-pack
+HUD renderel; külön Fabric target-authority nincs. Player targetnél a célpont saját HUD tickjének
+immutable health/resource snapshotja frissíti az adatot, cross-region live `Player`-olvasás nélkül.
+No target/LOS, target switch, range, death, despawn, world change, disconnect és expiry ugyanazt
+a bounded clear contractot használja. A mob eredeti neve változatlan; egyedül a rövid életű
+floating damage-number marad `TextDisplay`.
 
 ## Client Bridge — az IceSMP Client protokoll-alapja
 

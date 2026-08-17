@@ -25,6 +25,31 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 ## Augusztus eleji integrációs hullám (staging előtt)
 
+### PR #127 final source closure
+
+- A Target Frame most teljes runtime producerláncot kapott: player-owner bounded,
+  blokk-LOS-os raytrace → target-entity owner scheduler → immutable canonical metadata
+  snapshot → `TargetHudState` → közös first-party HUD renderer. MobTemplate ID/név,
+  level, rank, HP és legfeljebb két valid affix a Mob 2.0 runtime PDC authorityból jön;
+  stale/malformed adat vanilla fallbackre zár. Generációs token és egységes clear contract
+  védi a target switch, death, despawn, range/LOS, world change és disconnect útját.
+- A canonical rúnák insert/remove/replace lifecycle-ja lezárult. A Forge socketet választ,
+  previewt, költséget és SHIFT megerősítést mutat; replace egyetlen old→new mutation,
+  nem két crash-érzékeny lépés. Mindhárom művelet whole-inventory WAL-on fut, az item UUID,
+  provenance, ascension és másik rúna megmarad. A régi rúna explicit `destroy` sink.
+- A CombatPower equipment polling megszűnt. Inventory/equipment események és a plugin saját
+  item mutation, craft, market, crate, invsee és admin-give útjai explicit owner-thread
+  refresh hookot használnak. A set transient modifierek stabil kulccsal remove-before-add
+  lifecycle-t követnek; duplicate UUID és invalid slot továbbra is fail-closed.
+- Új behavioral regresszió védi a Target Frame generáció/clear/metadata/range szerződését,
+  a rune insert/remove/replace identity/receipt/recovery útját, továbbá a CombatPower,
+  set, world-boss cleanup, reward witness, contribution anti-padding és 2048-as atomic
+  ability-bound hardeninget.
+- A `100 000` mintás progression harness továbbra is statistical/Monte Carlo formula-
+  és balance-regresszió, nem multiplayer load test. Valódi Folia process-kill, full inventory,
+  disconnect, 50–60 játékos, TTK/healing/telegraph és mining/economy walkthrough külön
+  **STAGING REQUIRED**; ezekre a CI nem ad PASS minősítést.
+
 ### Itemization 2.0 Phase 5.5 hardening
 
 - A mutation journal most hard-bounded és egy játékoshoz egyszerre egy pending műveletet
@@ -54,8 +79,9 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
   és 7 Elite affixet ad. Egy elit spawnkor legfeljebb két valid affixet kap; a veszélyes
   ability vanilla partikula/hang telegráfja megelőzi a sebzést.
 - Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rank-scalinget
-  használnak. A Target Frame rankot és rövid affix státuszt mutat, a Bestiary authored
-  template ID-t ismer fel; vanilla fallback megmarad.
+  használnak. A Target Frame runtime producere canonical template ID-t, levelt, rankot,
+  HP-t és rövid affix státuszt vetít; a Bestiary authored template ID-t ismer fel,
+  vanilla fallback megmarad.
 - A világboss startkor diminishing player-count snapshotot készít, ezért a HP nem
   ugrál late join/death/disconnect miatt. A snapshot a hat felszerelési slot owner-threaden
   frissített, bounded CombatPower-cache-ét használja, nem rarityt vagy neutral referenciát
