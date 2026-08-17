@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** Dependency-free progression, authored-content and encounter regressions. */
+/** Dependency-free behavioral progression, authored-content and encounter regressions. */
 public final class MobEncounterDomainRegressionSuite {
     private static int assertions;
 
@@ -21,7 +21,7 @@ public final class MobEncounterDomainRegressionSuite {
         combatPowerRemainsAContextEstimate();
         equippedCombatPowerTracksLiveCanonicalGear();
         encounterRewardFaultMatrixIsFailClosed();
-        System.out.println("Mob/Encounter domain regression suite passed. assertions=" + assertions);
+        System.out.println("Mob/Encounter behavioral domain regression suite passed. assertions=" + assertions);
     }
 
     private static void progressionCoversOneToSeventyWithSeparateCurves() {
@@ -38,6 +38,15 @@ public final class MobEncounterDomainRegressionSuite {
             previousHealth = stats.maximumHealth();
             previousDamage = stats.attackDamage();
         }
+        final var levelOne = MobProgressionPolicy.scale(20.0D, 4.0D, 1,
+                1.0D, 1.0D, tuning);
+        check(close(levelOne.healthMultiplier(), 1.0D) && close(levelOne.damageMultiplier(), 1.0D),
+                "level one uses baseline multipliers");
+        final var levelFifty = MobProgressionPolicy.scale(20.0D, 4.0D, 50,
+                1.0D, 1.0D, tuning);
+        check(close(levelFifty.healthMultiplier(), Math.min(8.0D, 1.0D + 49.0D * 0.08D))
+                        && close(levelFifty.damageMultiplier(), Math.min(3.0D, 1.0D + 49.0D * 0.025D)),
+                "level fifty follows the authored HP/damage formulas");
         final var cap = MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
                 null, null, null, 50, 20, 20, 20, 20, false), tuning);
         check(cap.level() == 70 && cap.capped(), "generic survival progression hard-caps at 70");
@@ -46,6 +55,9 @@ public final class MobEncounterDomainRegressionSuite {
         check(authoredBoss.level() == 90
                         && authoredBoss.source() == MobProgressionPolicy.Source.ENCOUNTER_OVERRIDE,
                 "authored boss display level may exceed the survival cap");
+        final var bossCap = MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
+                999, null, null, 1, 0, 0, 0, 0, true), tuning);
+        check(bossCap.level() == 200 && bossCap.capped(), "authored boss level hard-caps at 200");
     }
 
     private static void hybridPrecedenceAndBonusesAreBounded() {
@@ -71,6 +83,11 @@ public final class MobEncounterDomainRegressionSuite {
         check(authored.level() == 20
                         && authored.source() == MobProgressionPolicy.Source.AUTHORED_LOCATION,
                 "authored location outranks template and geographic modifiers");
+        final var encounter = MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
+                42, 18, 40, 50, 9, 9, 9, 2, false), tuning);
+        check(encounter.level() == 44
+                        && encounter.source() == MobProgressionPolicy.Source.ENCOUNTER_OVERRIDE,
+                "encounter override outranks authored location and template before context bonuses");
         final var bloodMoon = MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
                 null, null, null, 48, 0, 0, 0, 5, false), tuning);
         check(bloodMoon.level() == 53, "blood moon/event bonus can enter the 51-70 danger band");
@@ -114,40 +131,49 @@ public final class MobEncounterDomainRegressionSuite {
     private static void encounterSnapshotUsesDiminishingStableScaling() {
         final EncounterScalingPolicy.Tuning tuning = EncounterScalingPolicy.Tuning.defaults();
         final UUID encounter = UUID.fromString("00000000-0000-0000-0000-000000006001");
-        final var one = EncounterScalingPolicy.snapshot(encounter, 1, players(1),
-                100.0D, 100.0D, 1L, tuning);
-        final var two = EncounterScalingPolicy.snapshot(encounter, 1, players(2),
-                100.0D, 100.0D, 1L, tuning);
+        for (final int count : List.of(1, 2, 5, 10, 60, 128)) {
+            final var snapshot = EncounterScalingPolicy.snapshot(encounter, 1, players(count),
+                    100.0D, 100.0D, 1L, tuning);
+            final double expectedHealth = Math.min(12.0D,
+                    1.0D + 0.65D * Math.pow(count - 1.0D, 0.8D));
+            final double expectedDamage = Math.min(1.18D,
+                    1.0D + 0.04D * (Math.log(count) / Math.log(2.0D)));
+            check(close(snapshot.healthMultiplier(), expectedHealth),
+                    "encounter HP formula matches at " + count + " players");
+            check(close(snapshot.damageMultiplier(), expectedDamage),
+                    "encounter damage formula matches at " + count + " players");
+            check(snapshot.mechanicRateMultiplier() >= 1.0D
+                            && snapshot.mechanicRateMultiplier() <= 1.5D,
+                    "mechanic rate remains within 1.0-1.5x at " + count + " players");
+            check(snapshot.participants().size() == count,
+                    "start snapshot is immutable-sized at " + count + " players");
+        }
         final var five = EncounterScalingPolicy.snapshot(encounter, 1, players(5),
                 100.0D, 100.0D, 1L, tuning);
-        final var crowd = EncounterScalingPolicy.snapshot(encounter, 1, players(40),
-                100.0D, 100.0D, 1L, tuning);
-        check(close(one.healthMultiplier(), 1.0D), "one player keeps baseline health");
-        check(two.healthMultiplier() > 1.5D && two.healthMultiplier() < 1.8D,
-                "two-player health is diminishing, not linear");
-        check(five.healthMultiplier() < 5.0D && five.healthMultiplier() > two.healthMultiplier(),
+        check(five.healthMultiplier() < 5.0D,
                 "five-player health remains below linear scaling");
-        check(crowd.healthMultiplier() <= tuning.maximumHealthMultiplier(),
-                "large encounter scaling is bounded");
         check(five.damageMultiplier() < 1.15D,
                 "party size only nudges boss damage and avoids one-shot scaling");
-        check(five.participants().size() == 5,
-                "disconnect, death or late join cannot mutate the immutable start snapshot");
+        expectFailure(() -> EncounterScalingPolicy.snapshot(encounter, 1, players(129),
+                100.0D, 100.0D, 1L, tuning), "participant snapshot rejects more than 128 players");
     }
 
     private static void contributionIsBoundedMeaningfulAndIdempotent() {
         final UUID encounter = UUID.fromString("00000000-0000-0000-0000-000000006101");
         final UUID player = UUID.fromString("00000000-0000-0000-0000-000000006102");
         final UUID ally = UUID.fromString("00000000-0000-0000-0000-000000006103");
+        final UUID bystander = UUID.fromString("00000000-0000-0000-0000-000000006104");
         final ContributionLedger ledger = new ContributionLedger(encounter, 1_000L, Set.of(player));
         check(!ledger.recordDamage(player, 50.0D, 999L),
                 "pre-combat padding is rejected");
+        check(!ledger.recordSupport(ally, bystander, 20.0D, 1_050L),
+                "support on a nonparticipant/inactive target is rejected");
         check(ledger.recordDamage(player, 120.0D, 1_100L), "boss damage contributes");
         check(ledger.recordTanking(player, 40.0D, 1_150L), "tanking contributes at lower weight");
         check(!ledger.recordSupport(player, player, 500.0D, 1_200L),
                 "self-heal/support farming is rejected");
         check(ledger.recordSupport(ally, player, 20.0D, 1_250L),
-                "real ally support can contribute");
+                "real support to an encounter-active ally can contribute");
         check(ledger.qualified(100.0D, 1_000L).size() == 1,
                 "meaningful threshold excludes AFK and token support");
         check(ledger.claimSettlement(player) && !ledger.claimSettlement(player),
@@ -218,11 +244,15 @@ public final class MobEncounterDomainRegressionSuite {
         check(EncounterRewardRecoveryPolicy.decide(
                         EncounterRewardRecoveryPolicy.ReceiptState.PREPARED, 2)
                         == EncounterRewardRecoveryPolicy.Decision.MANUAL_REVIEW,
-                "duplicate reward witnesses fail closed");
+                "duplicate prepared reward witnesses fail closed");
         check(EncounterRewardRecoveryPolicy.decide(
                         EncounterRewardRecoveryPolicy.ReceiptState.COMMITTED, 1)
                         == EncounterRewardRecoveryPolicy.Decision.CLEANUP_ONLY,
                 "committed reward retry only cleans its marker");
+        check(EncounterRewardRecoveryPolicy.decide(
+                        EncounterRewardRecoveryPolicy.ReceiptState.COMMITTED, 2)
+                        == EncounterRewardRecoveryPolicy.Decision.MANUAL_REVIEW,
+                "duplicate committed reward witnesses also fail closed");
     }
 
     private static Set<UUID> players(final int count) {
