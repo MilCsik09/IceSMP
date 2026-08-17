@@ -82,6 +82,8 @@ public final class ItemIdentityService {
         }
     }
 
+    private record EquippedAbilityCandidate(UUID itemId, ItemInstance instance, ItemTemplate template) { }
+
     private final ItemTemplateRegistry templates;
     private final NamespacedKey schemaKey;
     private final NamespacedKey uuidKey;
@@ -440,30 +442,52 @@ public final class ItemIdentityService {
         return value;
     }
 
+    /**
+     * Canonical equipped ability power is slot-aware and duplicate-safe. A copied UUID, stale
+     * revision, invalid checksum or wrong-slot item contributes neither direct power nor a set piece.
+     */
     public double equippedAbilityPower(final Player player) {
         if (player == null) return 0.0D;
-        final ArrayList<ItemStack> equipment = new ArrayList<>();
-        equipment.add(player.getInventory().getItemInMainHand());
-        equipment.add(player.getInventory().getItemInOffHand());
-        java.util.Collections.addAll(equipment, player.getInventory().getArmorContents());
+        final ArrayList<EquippedAbilityCandidate> candidates = new ArrayList<>(6);
+        addAbilityCandidate(candidates, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
+        addAbilityCandidate(candidates, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
+        addAbilityCandidate(candidates, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
+        addAbilityCandidate(candidates, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
+        addAbilityCandidate(candidates, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
+        addAbilityCandidate(candidates, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
+        final LinkedHashMap<UUID, Integer> counts = new LinkedHashMap<>();
+        for (final EquippedAbilityCandidate candidate : candidates) {
+            counts.merge(candidate.itemId(), 1, Integer::sum);
+        }
         double total = 0.0D;
         final LinkedHashMap<String, Integer> setPieces = new LinkedHashMap<>();
-        for (final ItemStack item : equipment) {
-            final Inspection inspection = inspect(item);
-            if (inspection.status() != Status.VALID) continue;
-            total += inspection.template().fixedStatsAt(inspection.instance().ascension().stageId())
+        for (final EquippedAbilityCandidate candidate : candidates) {
+            if (counts.getOrDefault(candidate.itemId(), 0) != 1) continue;
+            final ItemTemplate template = candidate.template();
+            final ItemInstance instance = candidate.instance();
+            total += template.fixedStatsAt(instance.ascension().stageId())
                     .getOrDefault("ability_power", 0.0D);
-            final ItemInstance.Roll roll = inspection.instance().rolls().get("ability_power");
+            final ItemInstance.Roll roll = instance.rolls().get("ability_power");
             if (roll != null) total += roll.value();
-            if (!inspection.template().setId().isBlank()) {
-                setPieces.merge(inspection.template().setId(), 1, Integer::sum);
-            }
+            if (!template.setId().isBlank()) setPieces.merge(template.setId(), 1, Integer::sum);
         }
         for (final Map.Entry<String, Integer> entry : setPieces.entrySet()) {
             total += templates.requireSet(entry.getKey()).activeStats(entry.getValue())
                     .getOrDefault("ability_power", 0.0D);
         }
         return total;
+    }
+
+    private void addAbilityCandidate(final List<EquippedAbilityCandidate> result, final ItemStack item,
+                                     final ItemTemplate.Slot equippedSlot) {
+        final Inspection inspection = inspect(item);
+        if (inspection.status() != Status.VALID) return;
+        final ItemTemplate.Slot authored = inspection.template().slot();
+        final boolean fits = authored == equippedSlot || (equippedSlot == ItemTemplate.Slot.MAIN_HAND
+                && authored == ItemTemplate.Slot.TWO_HAND);
+        if (!fits) return;
+        result.add(new EquippedAbilityCandidate(inspection.instance().itemId(),
+                inspection.instance(), inspection.template()));
     }
 
     private void applyStats(final ItemStack item, final ItemTemplate template, final ItemInstance instance) {
