@@ -48,6 +48,7 @@ public final class ItemGiveCommand implements BasicCommand {
     private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentity;
     private final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplates;
     private final hu.taliann.icesmp.itemization.ItemTransformationPolicy transformations;
+    private final hu.taliann.icesmp.itemization.EquipmentProficiencyService proficiency;
 
     public ItemGiveCommand(final JavaPlugin plugin, final UniqueMaterialFactory uniqueMaterials,
                            final ProfessionRecipeCatalog catalog,
@@ -58,7 +59,8 @@ public final class ItemGiveCommand implements BasicCommand {
                            final DevItemManager devItemManager,
                            final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentity,
                            final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplates,
-                           final hu.taliann.icesmp.itemization.ItemTransformationPolicy transformations) {
+                           final hu.taliann.icesmp.itemization.ItemTransformationPolicy transformations,
+                           final hu.taliann.icesmp.itemization.EquipmentProficiencyService proficiency) {
         this.plugin = plugin;
         this.uniqueMaterials = uniqueMaterials;
         this.catalog = catalog;
@@ -71,6 +73,7 @@ public final class ItemGiveCommand implements BasicCommand {
         this.itemIdentity = itemIdentity;
         this.itemTemplates = itemTemplates;
         this.transformations = transformations;
+        this.proficiency = proficiency;
     }
 
     @Override
@@ -302,7 +305,22 @@ public final class ItemGiveCommand implements BasicCommand {
                     classification.domain().name(), inspection.status().name(), template, uuid));
             sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.inspect-detail",
                     "&7Diagnózis: &f%s", inspection.diagnostic()));
-            if (classification.domain() == hu.taliann.icesmp.itemization.ItemTransformationPolicy.Domain.CANONICAL_MMO_GEAR) {
+            if (inspection.status()
+                    == hu.taliann.icesmp.itemization.ItemIdentityService.Status.VALID) {
+                final var authored = inspection.template();
+                final var decision = proficiency.decision(target, authored);
+                final String family = authored.armorFamily() == null
+                        ? "-" : authored.armorFamily().name();
+                sendFromTargetThread(sender, target, messageManager.get(
+                        "admin.iceitem.inspect-equipment",
+                        "&7ArmorFamily=&f%s &8| &7class restriction=&f%s &8| &7can-equip=&f%s &8| &7validation=&fVALID",
+                        family, authored.classRestrictions().isEmpty()
+                                ? "family-wide" : String.join(",", authored.classRestrictions()),
+                        decision.allowed() && (!authored.isArmorFamilyEquipment()
+                                || proficiency.profileReady(target))));
+            }
+            if (classification.domain()
+                    == hu.taliann.icesmp.itemization.ItemTransformationPolicy.Domain.CANONICAL_MMO_GEAR) {
                 final String stationPolicy = java.util.stream.Stream.of(
                                 hu.taliann.icesmp.itemization.ItemTransformationPolicy.Transformation.VANILLA_CRAFT_INPUT,
                                 hu.taliann.icesmp.itemization.ItemTransformationPolicy.Transformation.ANVIL_RENAME,

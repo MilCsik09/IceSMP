@@ -126,12 +126,21 @@ public final class BukkitClassSpecSectionSessionBridge {
                 if (gateResult.status() != ProfileMutationResult.Status.NO_CHANGE && !gateResult.committed()) {gateway.blockSession(id, "DARK gate reconciliation blocked login: " + gateResult.detail());return;}
                 final var durable = gateway.currentProfile(id).orElse(null);
                 if (durable == null) {gateway.blockSession(id, "Class-spec section disappeared before runtime activation");return;}
-                if (gateResult.committed()) {gateway.completeSessionActivation(id, token);return;}
+                if (gateResult.committed()) {
+                    gateway.completeSessionActivation(id, token);
+                    hu.taliann.icesmp.itemization.EquipmentProficiencyService
+                            .reconcileAfterClassChange(online);
+                    return;
+                }
                 runtime.profileCommitted(id, token, durable, durable, ClassSpecRuntimePort.MutationKind.GATE_RECONCILE)
                         .whenComplete((runtimeIgnored, runtimeFailure) -> {
                             if (!sessions.isCurrent(id, token)) return;
                             if (runtimeFailure != null) gateway.blockSession(id, "PlayerProfile runtime rebuild failed: " + message(runtimeFailure));
-                            else gateway.completeSessionActivation(id, token);
+                            else {
+                                gateway.completeSessionActivation(id, token);
+                                hu.taliann.icesmp.itemization.EquipmentProficiencyService
+                                        .reconcileAfterClassChange(online);
+                            }
                         });
             });
         }, () -> {if (sessions.isCurrent(id, token)) gateway.blockSession(id, "Player scheduler rejected PlayerProfile activation");});

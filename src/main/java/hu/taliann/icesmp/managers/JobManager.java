@@ -70,6 +70,11 @@ public final class JobManager implements PlayerStateCleanup {
 
     public boolean hasPrimaryJob(final Player player) { return getPrimaryJob(player) != null; }
 
+    public boolean isProfileReady(final Player player) {
+        final ClassSpecProfileGateway gateway = profileGateway;
+        return player != null && gateway != null && gateway.isSessionReady(player.getUniqueId());
+    }
+
     public JobType getPrimaryJob(final Player player) {
         final ClassSpecProfileGateway gateway = profileGateway;
         if (gateway == null || !gateway.isSessionReady(player.getUniqueId())) return null;

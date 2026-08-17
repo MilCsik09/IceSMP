@@ -11,11 +11,14 @@ public final class EquippedCombatPowerModel {
     public record GearSignal(ItemTemplate.Slot slot, int itemLevel, ItemRarity rarity,
                              double baseDamage, double baseArmor,
                              Map<String, Double> fixedStats, Map<String, Double> rolledStats,
-                             int runeCount, int signatureTier, String setId) {
+                             int runeCount, int signatureTier, String setId,
+                             double armorCoefficient, double normalizedBudget) {
         public GearSignal {
             if (slot == null || rarity == null || itemLevel < 1 || itemLevel > 1_000
                     || !Double.isFinite(baseDamage) || baseDamage < 0.0D
-                    || !Double.isFinite(baseArmor) || baseArmor < 0.0D) {
+                    || !Double.isFinite(baseArmor) || baseArmor < 0.0D
+                    || !Double.isFinite(armorCoefficient) || armorCoefficient <= 0.0D
+                    || !Double.isFinite(normalizedBudget) || normalizedBudget < 0.0D) {
                 throw new IllegalArgumentException("invalid equipped gear signal");
             }
             fixedStats = Map.copyOf(fixedStats == null ? Map.of() : fixedStats);
@@ -23,6 +26,16 @@ public final class EquippedCombatPowerModel {
             runeCount = Math.max(0, Math.min(2, runeCount));
             signatureTier = Math.max(0, Math.min(16, signatureTier));
             setId = setId == null ? "" : setId;
+            normalizedBudget = Math.min(4.0D, normalizedBudget);
+        }
+
+        public GearSignal(final ItemTemplate.Slot slot, final int itemLevel,
+                          final ItemRarity rarity, final double baseDamage,
+                          final double baseArmor, final Map<String, Double> fixedStats,
+                          final Map<String, Double> rolledStats, final int runeCount,
+                          final int signatureTier, final String setId) {
+            this(slot, itemLevel, rarity, baseDamage, baseArmor, fixedStats, rolledStats,
+                    runeCount, signatureTier, setId, 1.0D, 0.0D);
         }
     }
 
@@ -39,15 +52,16 @@ public final class EquippedCombatPowerModel {
         final java.util.HashMap<String, Integer> setPieces = new java.util.HashMap<>();
         for (final GearSignal gear : List.copyOf(equipped == null ? List.of() : equipped)) {
             damage += bounded(gear.baseDamage(), 0.0D, 200.0D);
-            armor += bounded(gear.baseArmor(), 0.0D, 100.0D);
+            armor += bounded(gear.baseArmor(), 0.0D, 100.0D) / gear.armorCoefficient();
             health += stat(gear, "max_health");
             damage += stat(gear, "attack_damage");
-            armor += stat(gear, "armor");
+            armor += stat(gear, "armor") / gear.armorCoefficient();
             abilityPower += stat(gear, "ability_power");
             runes += gear.runeCount();
             context += Math.min(0.24D, gear.signatureTier() * 0.06D);
             context += Math.min(0.08D, gear.rarity().ordinal() * 0.012D);
             context += Math.min(0.08D, gear.itemLevel() / 1_000.0D);
+            context += Math.min(0.12D, gear.normalizedBudget() * 0.04D);
             if (!gear.setId().isBlank()) setPieces.merge(gear.setId(), 1, Integer::sum);
         }
         for (final int pieces : setPieces.values()) setTiers += Math.min(4, pieces / 2);

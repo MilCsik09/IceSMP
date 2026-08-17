@@ -96,10 +96,12 @@ public final class ItemIdentityService {
     private final NamespacedKey abilityPowerKey;
     private final NamespacedKey signatureProjectionKey;
     private final NamespacedKey signatureTierProjectionKey;
+    private final NamespacedKey equipmentSuppressedKey;
     private final NamespacedKey legacyRarityKey;
     private final NamespacedKey legacyRuneKey;
     private final NamespacedKey relicKey;
     private volatile Function<ItemStack, String> canonicalStateValidator = item -> "";
+    private volatile EquipmentProficiencyService equipmentProficiencyService;
 
     public ItemIdentityService(final JavaPlugin plugin, final ItemTemplateRegistry templates) {
         this.templates = java.util.Objects.requireNonNull(templates, "templates");
@@ -112,6 +114,7 @@ public final class ItemIdentityService {
         this.abilityPowerKey = new NamespacedKey(plugin, "ability_power");
         this.signatureProjectionKey = new NamespacedKey(plugin, "signature_item");
         this.signatureTierProjectionKey = new NamespacedKey(plugin, "signature_tier");
+        this.equipmentSuppressedKey = new NamespacedKey(plugin, "equipment_suppressed");
         this.legacyRarityKey = new NamespacedKey(plugin, "masterwork_quality");
         this.legacyRuneKey = new NamespacedKey(plugin, "rune_effect");
         this.relicKey = new NamespacedKey(plugin, "relic_id");
@@ -196,6 +199,10 @@ public final class ItemIdentityService {
         final ArrayList<Component> lore = new ArrayList<>();
         lore.add(Component.text(template.rarity().displayName() + " • Tárgyszint " + instance.itemLevel(),
                 color(template.rarity())).decoration(TextDecoration.ITALIC, false));
+        if (template.isArmorFamilyEquipment()) {
+            lore.add(Component.text("Páncéltípus: " + template.armorFamily().displayName(),
+                    NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+        }
         final String stageId = instance.ascension().stageId();
         if (template.levelRequirementAt(stageId) > 0) {
             lore.add(Component.text("Követelmény: " + template.levelRequirementAt(stageId) + ". szint",
@@ -282,6 +289,10 @@ public final class ItemIdentityService {
 
     public void setCanonicalStateValidator(final Function<ItemStack, String> validator) {
         canonicalStateValidator = java.util.Objects.requireNonNull(validator, "validator");
+    }
+
+    public void setEquipmentProficiencyService(final EquipmentProficiencyService service) {
+        equipmentProficiencyService = java.util.Objects.requireNonNull(service, "service");
     }
 
     public Inspection inspect(final ItemStack item) {
@@ -503,6 +514,8 @@ public final class ItemIdentityService {
         for (final EquippedAbilityCandidate candidate : candidates) {
             if (counts.getOrDefault(candidate.itemId(), 0) != 1) continue;
             final ItemTemplate template = candidate.template();
+            final EquipmentProficiencyService proficiency = equipmentProficiencyService;
+            if (proficiency == null || !proficiency.canUse(player, template)) continue;
             final ItemInstance instance = candidate.instance();
             total += template.fixedStatsAt(instance.ascension().stageId())
                     .getOrDefault("ability_power", 0.0D);
@@ -547,6 +560,34 @@ public final class ItemIdentityService {
             meta.getPersistentDataContainer().set(abilityPowerKey, PersistentDataType.DOUBLE, abilityPower);
             item.setItemMeta(meta);
         }
+    }
+
+    public void setEquipmentSuppressed(final ItemStack item, final ItemTemplate template,
+                                       final ItemInstance instance, final boolean suppressed) {
+        if (item == null || template == null || instance == null) return;
+        if (suppressed) {
+            final ItemMeta meta = item.getItemMeta();
+            // Canonical ItemTemplate owns the whole attribute component. An explicit empty
+            // component suppresses both authored modifiers and backing-Material defaults.
+            meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create());
+            meta.getPersistentDataContainer().remove(abilityPowerKey);
+            meta.getPersistentDataContainer().set(equipmentSuppressedKey,
+                    PersistentDataType.BYTE, (byte) 1);
+            item.setItemMeta(meta);
+            ItemDataFactory.hideAttributeTooltip(item);
+            return;
+        }
+        applyStats(item, template, instance);
+        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(equipmentSuppressedKey);
+        item.setItemMeta(meta);
+        refreshPresentation(item, template, instance);
+    }
+
+    public boolean isEquipmentSuppressed(final ItemStack item) {
+        return item != null && item.hasItemMeta()
+                && item.getItemMeta().getPersistentDataContainer().has(
+                equipmentSuppressedKey, PersistentDataType.BYTE);
     }
 
     private void writeIdentity(final ItemStack item, final ItemTemplate template,

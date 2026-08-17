@@ -130,6 +130,8 @@ public final class JobGUIListener implements Listener {
         jobManager.setPrimaryJobV2(player, selectedJob)
                 .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
                     if (failure == null && Boolean.TRUE.equals(selected)) {
+                        hu.taliann.icesmp.itemization.EquipmentProficiencyService
+                                .reconcileAfterClassChange(player);
                         EquippedCombatPowerService.refreshAfterMutation(player);
                         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP,
                                 1.0F, 1.0F);

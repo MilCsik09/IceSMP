@@ -1,5 +1,15 @@
 # IceSMP üzenetek — system alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
+  equipment:
+    proficiency:
+      no-class: '&cAz authored MMORPG felszereléshez előbb válassz kasztot.'
+      wrong-family: '&cA kasztod nem tud %s felszerelést viselni.'
+      class-restricted: '&cEzt a felszerelést a kasztod nem használhatja.'
+      spec-restricted: '&cEzt a felszerelést az aktív specializációd nem használhatja.'
+      invalid: '&cEz a canonical felszerelés jelenleg nem aktiválható.'
+  admin:
+    iceitem:
+      inspect-equipment: '&7ArmorFamily=&f%s &8| &7class restriction=&f%s &8| &7can-equip=&f%s &8| &7validation=&fVALID'
   ability-activated: '&dKépesség aktiválva!'
   ability-cooldown: '&cA képesség töltődik: &f%s &cmp maradék'
   honor-eye-activated: '&dBecsületszem: &bA bűnösök &dfelfedve!'

@@ -5,6 +5,8 @@ import hu.taliann.icesmp.itemization.ItemInstance;
 import hu.taliann.icesmp.itemization.ItemSetDefinition;
 import hu.taliann.icesmp.itemization.ItemTemplate;
 import hu.taliann.icesmp.itemization.ItemTemplateRegistry;
+import hu.taliann.icesmp.itemization.EquipmentBudgetModel;
+import hu.taliann.icesmp.itemization.EquipmentProficiencyService;
 import hu.taliann.icesmp.managers.JobManager;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -45,15 +47,18 @@ public final class EquippedCombatPowerService implements Listener {
     private final JavaPlugin plugin;
     private final ItemIdentityService identities;
     private final JobManager jobs;
+    private final EquipmentProficiencyService proficiency;
     private final Map<UUID, Double> cache = new ConcurrentHashMap<>();
     private final Map<String, NamespacedKey> setModifierKeys;
 
     public EquippedCombatPowerService(final JavaPlugin plugin,
                                       final ItemIdentityService identities,
-                                      final JobManager jobs) {
+                                      final JobManager jobs,
+                                      final EquipmentProficiencyService proficiency) {
         this.plugin = plugin;
         this.identities = identities;
         this.jobs = jobs;
+        this.proficiency = proficiency;
         this.setModifierKeys = Map.of(
                 "max_health", new NamespacedKey(plugin, "item_set_max_health"),
                 "armor", new NamespacedKey(plugin, "item_set_armor"),
@@ -73,12 +78,12 @@ public final class EquippedCombatPowerService implements Listener {
     public void refresh(final Player player) {
         if (player == null || !player.isOnline()) return;
         final ArrayList<Candidate> candidates = new ArrayList<>(6);
-        add(candidates, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
-        add(candidates, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
-        add(candidates, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
-        add(candidates, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
-        add(candidates, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
-        add(candidates, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
+        add(candidates, player, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
+        add(candidates, player, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
+        add(candidates, player, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
+        add(candidates, player, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
+        add(candidates, player, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
+        add(candidates, player, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
         final HashMap<UUID, Integer> counts = new HashMap<>();
         for (final Candidate candidate : candidates) counts.merge(candidate.itemId(), 1, Integer::sum);
         final List<Candidate> uniqueCandidates = candidates.stream()
@@ -90,21 +95,34 @@ public final class EquippedCombatPowerService implements Listener {
                 jobs.getPrimaryLevel(player), unique));
     }
 
-    private void add(final List<Candidate> result, final ItemStack item,
+    private void add(final List<Candidate> result, final Player player, final ItemStack item,
                      final ItemTemplate.Slot equippedSlot) {
         final ItemIdentityService.Inspection inspection = identities.inspect(item);
         if (inspection.status() != ItemIdentityService.Status.VALID) return;
         final ItemTemplate template = inspection.template();
         if (!fits(template.slot(), equippedSlot)) return;
+        if (!proficiency.canUse(player, template)) return;
         final ItemInstance instance = inspection.instance();
         final String stage = instance.ascension().stageId();
         final HashMap<String, Double> rolls = new HashMap<>();
         instance.rolls().forEach((id, roll) -> rolls.put(id, roll.value()));
+        double armorCoefficient = 1.0D;
+        double normalizedBudget = 0.0D;
+        final ItemTemplateRegistry registry = ItemTemplateRegistry.current();
+        if (template.isArmorFamilyEquipment() && registry != null) {
+            final var profile = registry.requireFamilyProfile(template.armorFamily());
+            final EquipmentBudgetModel.Budget budget = EquipmentBudgetModel.rolled(
+                    template, profile, stage, rolls);
+            armorCoefficient = profile.baseArmorCoefficient();
+            normalizedBudget = budget.expectedTierBudget() <= 0.0D ? 0.0D
+                    : budget.normalizedTotal() / budget.expectedTierBudget();
+        }
         result.add(new Candidate(instance.itemId(), template.setId(),
                 new EquippedCombatPowerModel.GearSignal(
                         template.slot(), instance.itemLevel(), template.rarity(), template.baseDamage(),
                         template.baseArmor(), template.fixedStatsAt(stage), rolls,
-                        instance.runes().size(), template.signatureTierAt(stage), template.setId())));
+                        instance.runes().size(), template.signatureTierAt(stage), template.setId(),
+                        armorCoefficient, normalizedBudget)));
     }
 
     /**

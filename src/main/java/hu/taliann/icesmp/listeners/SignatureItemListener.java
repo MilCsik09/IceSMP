@@ -65,6 +65,8 @@ public final class SignatureItemListener implements Listener {
     private final hu.taliann.icesmp.managers.GatheringBuffManager gatheringBuffManager;
     private final hu.taliann.icesmp.managers.CurrencyManager currencyManager;
     private final hu.taliann.icesmp.managers.TerritoryManager territoryManager;
+    private final hu.taliann.icesmp.itemization.EquipmentProficiencyService proficiency;
+    private final hu.taliann.icesmp.itemization.ItemIdentityService identities;
     private final PlayerProfileCooldownStore cooldownStore = new PlayerProfileCooldownStore();
     private final Set<UUID> spiritStagStarts = ConcurrentHashMap.newKeySet();
     private final NamespacedKey signatureKey;
@@ -77,13 +79,17 @@ public final class SignatureItemListener implements Listener {
                                  final MessageManager messageManager,
                                  final hu.taliann.icesmp.managers.GatheringBuffManager gatheringBuffManager,
                                  final hu.taliann.icesmp.managers.CurrencyManager currencyManager,
-                                 final hu.taliann.icesmp.managers.TerritoryManager territoryManager) {
+                                 final hu.taliann.icesmp.managers.TerritoryManager territoryManager,
+                                 final hu.taliann.icesmp.itemization.EquipmentProficiencyService proficiency,
+                                 final hu.taliann.icesmp.itemization.ItemIdentityService identities) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.gatheringBuffManager = gatheringBuffManager;
         this.currencyManager = currencyManager;
         this.territoryManager = territoryManager;
+        this.proficiency = proficiency;
+        this.identities = identities;
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
         this.pierceKey = new NamespacedKey(plugin, "sig_pierce");
         this.kantarAppliedKey = new NamespacedKey(plugin, "sig_kantar");
@@ -133,9 +139,24 @@ public final class SignatureItemListener implements Listener {
         return item.getItemMeta().getPersistentDataContainer().get(signatureKey, PersistentDataType.STRING);
     }
 
+    private String activeId(final Player player, final ItemStack item,
+                            final hu.taliann.icesmp.itemization.ItemTemplate.Slot slot) {
+        final String signature = idOf(item);
+        if (signature == null) return null;
+        final var inspection = identities.inspect(item);
+        if (inspection.status()
+                == hu.taliann.icesmp.itemization.ItemIdentityService.Status.NOT_MANAGED) {
+            return signature;
+        }
+        return proficiency.isActive(player, item, slot) ? signature : null;
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onShoot(final EntityShootBowEvent event) {
-        final String sig = idOf(event.getBow());
+        final String sig = event.getEntity() instanceof Player player
+                ? activeId(player, event.getBow(),
+                hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND)
+                : idOf(event.getBow());
         if (KALLAN_BOW.equals(sig)) {
             final double mult = Math.max(1.0D, configManager.getDouble("signature.kallan.arrow-velocity-mult", 1.5D));
             final Entity projectile = event.getProjectile();
@@ -175,7 +196,8 @@ public final class SignatureItemListener implements Listener {
         if (!(event.getDamager() instanceof Player attacker)) {
             return;
         }
-        final String meleeSig = idOf(attacker.getInventory().getItemInMainHand());
+        final String meleeSig = activeId(attacker, attacker.getInventory().getItemInMainHand(),
+                hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND);
         if (hu.taliann.icesmp.listeners.CapitalLawListener.SETAPALCA.equals(meleeSig)) {
             if (configManager.getBoolean("signature.setapalca.capital-only", true)
                     && !isNeutralCapital(attacker.getLocation())) {
@@ -236,7 +258,9 @@ public final class SignatureItemListener implements Listener {
             return;
         }
         final ItemStack weapon = attacker.getInventory().getItemInMainHand();
-        if (!AGYAR.equals(idOf(weapon)) || !hasEnchant(weapon, "verszomj")) {
+        if (!AGYAR.equals(activeId(attacker, weapon,
+                hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND))
+                || !hasEnchant(weapon, "verszomj")) {
             return;
         }
         final double ratio = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-lifesteal", 0.1D));
@@ -287,7 +311,8 @@ public final class SignatureItemListener implements Listener {
                 || event.getCause() == EntityDamageEvent.DamageCause.VOID) {
             return;
         }
-        final String chest = idOf(player.getInventory().getChestplate());
+        final String chest = activeId(player, player.getInventory().getChestplate(),
+                hu.taliann.icesmp.itemization.ItemTemplate.Slot.CHEST);
         if (JEGVERT.equals(chest)) {
             final int tier = signatureTier(player.getInventory().getChestplate());
             final double mult = Math.min(1.0D, Math.max(0.0D,
@@ -361,7 +386,8 @@ public final class SignatureItemListener implements Listener {
             return;
         }
         final ItemStack tool = player.getInventory().getItemInMainHand();
-        if (!CSAKANY.equals(idOf(tool))) {
+        if (!CSAKANY.equals(activeId(player, tool,
+                hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND))) {
             return;
         }
         final org.bukkit.block.Block block = event.getBlock();
