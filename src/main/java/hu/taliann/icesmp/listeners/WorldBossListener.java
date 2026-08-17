@@ -3,6 +3,7 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.AfkManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
+import hu.taliann.icesmp.pve.EncounterRewardDeliveryService;
 import hu.taliann.icesmp.utils.MobKillUtil;
 import hu.taliann.icesmp.utils.PositionCache;
 import org.bukkit.Location;
@@ -47,6 +48,8 @@ public final class WorldBossListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCreatureSpawn(final CreatureSpawnEvent event) {
+        // World bosses are authored CUSTOM spawns. Avoid scheduling validation work for natural mobs.
+        if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM) return;
         final LivingEntity entity = event.getEntity();
         entity.getScheduler().runDelayed(plugin, task -> validateParticipantSnapshot(entity), null, 1L);
     }
@@ -121,6 +124,10 @@ public final class WorldBossListener implements Listener {
                 || !worldBossManager.isWorldBoss(boss)
                 || !worldBossManager.isBossActive()) {
             return;
+        }
+        final var snapshot = worldBossManager.encounterSnapshot();
+        if (snapshot != null) {
+            EncounterRewardDeliveryService.abortPreparedEncounter(snapshot.encounterId());
         }
         worldBossManager.shutdown();
     }
