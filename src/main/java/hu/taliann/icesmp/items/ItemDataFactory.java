@@ -168,6 +168,10 @@ public final class ItemDataFactory {
      * bármilyen egyedi módosítót adnánk hozzá. Az ELSŐ explicit módosító felülírja a tárgy teljes
      * {@code attribute_modifiers} komponensét — enélkül a vaskard elveszítené a +6 sebzését, és csak
      * a rátett bónusz maradna. Idempotens: ha már van explicit lista, nem nyúl hozzá.
+     *
+     * <p>Ez kizárólag NON-CANONICAL/BASIC/custom utility út. Az Itemization 2.0 canonical itemek
+     * saját explicit attribute componentet birtokolnak, ezért azok a
+     * {@link #applyCanonicalAttributeModifiers(ItemStack, List, boolean)} útvonalat használják.</p>
      */
     public static void seedDefaultAttributeModifiers(final ItemStack item, final ItemMeta meta) {
         if (item == null) {
@@ -206,6 +210,31 @@ public final class ItemDataFactory {
 
     public static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs,
                                                    final boolean appendStatLore) {
+        return applyAttributeModifiers(item, specs, appendStatLore, true);
+    }
+
+    /**
+     * Canonical Itemization attribute ownership. A backing Material attribútumai SOHA nem kerülnek
+     * át az explicit componentbe; még a nulla-stat canonical item is explicit üres componentet kap,
+     * így a leather/chain/iron/diamond/netherite vagy fegyver backing nem tud gameplayt szivárogtatni.
+     */
+    public static boolean applyCanonicalAttributeModifiers(final ItemStack item, final List<String> specs,
+                                                            final boolean appendStatLore) {
+        if (item == null) {
+            return false;
+        }
+        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create());
+        item.setItemMeta(meta);
+        return applyAttributeModifiers(item, specs, appendStatLore, false);
+    }
+
+    private static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs,
+                                                    final boolean appendStatLore,
+                                                    final boolean seedMaterialDefaults) {
         if (item == null || specs == null || specs.isEmpty()) {
             return false;
         }
@@ -252,7 +281,9 @@ public final class ItemDataFactory {
             if (modifierKey == null) {
                 continue;
             }
-            seedDefaultAttributeModifiers(item, meta);
+            if (seedMaterialDefaults) {
+                seedDefaultAttributeModifiers(item, meta);
+            }
             meta.addAttributeModifier(attribute, new AttributeModifier(modifierKey, amount, operation, slot));
             statLore.add(statLine(parts[0].trim().toLowerCase(Locale.ROOT), amount, operation));
             any = true;

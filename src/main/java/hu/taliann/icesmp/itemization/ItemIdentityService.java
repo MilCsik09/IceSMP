@@ -494,17 +494,19 @@ public final class ItemIdentityService {
 
     /**
      * Canonical equipped ability power is slot-aware and duplicate-safe. A copied UUID, stale
-     * revision, invalid checksum or wrong-slot item contributes neither direct power nor a set piece.
+     * revision, invalid checksum, suppression or wrong-slot/family item contributes neither direct
+     * power nor a set piece. Activity is delegated to EquipmentProficiencyService, the shared
+     * active-equipment authority used by every runtime consumer.
      */
     public double equippedAbilityPower(final Player player) {
         if (player == null) return 0.0D;
         final ArrayList<EquippedAbilityCandidate> candidates = new ArrayList<>(6);
-        addAbilityCandidate(candidates, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
-        addAbilityCandidate(candidates, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
-        addAbilityCandidate(candidates, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
-        addAbilityCandidate(candidates, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
-        addAbilityCandidate(candidates, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
-        addAbilityCandidate(candidates, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
+        addAbilityCandidate(candidates, player, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
+        addAbilityCandidate(candidates, player, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
+        addAbilityCandidate(candidates, player, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
+        addAbilityCandidate(candidates, player, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
+        addAbilityCandidate(candidates, player, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
+        addAbilityCandidate(candidates, player, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
         final LinkedHashMap<UUID, Integer> counts = new LinkedHashMap<>();
         for (final EquippedAbilityCandidate candidate : candidates) {
             counts.merge(candidate.itemId(), 1, Integer::sum);
@@ -514,8 +516,6 @@ public final class ItemIdentityService {
         for (final EquippedAbilityCandidate candidate : candidates) {
             if (counts.getOrDefault(candidate.itemId(), 0) != 1) continue;
             final ItemTemplate template = candidate.template();
-            final EquipmentProficiencyService proficiency = equipmentProficiencyService;
-            if (proficiency == null || !proficiency.canUse(player, template)) continue;
             final ItemInstance instance = candidate.instance();
             total += template.fixedStatsAt(instance.ascension().stageId())
                     .getOrDefault("ability_power", 0.0D);
@@ -530,14 +530,12 @@ public final class ItemIdentityService {
         return total;
     }
 
-    private void addAbilityCandidate(final List<EquippedAbilityCandidate> result, final ItemStack item,
-                                     final ItemTemplate.Slot equippedSlot) {
+    private void addAbilityCandidate(final List<EquippedAbilityCandidate> result, final Player player,
+                                     final ItemStack item, final ItemTemplate.Slot equippedSlot) {
+        final EquipmentProficiencyService proficiency = equipmentProficiencyService;
+        if (proficiency == null || !proficiency.isActive(player, item, equippedSlot)) return;
         final Inspection inspection = inspect(item);
         if (inspection.status() != Status.VALID) return;
-        final ItemTemplate.Slot authored = inspection.template().slot();
-        final boolean fits = authored == equippedSlot || (equippedSlot == ItemTemplate.Slot.MAIN_HAND
-                && authored == ItemTemplate.Slot.TWO_HAND);
-        if (!fits) return;
         result.add(new EquippedAbilityCandidate(inspection.instance().itemId(),
                 inspection.instance(), inspection.template()));
     }
@@ -554,27 +552,37 @@ public final class ItemIdentityService {
             if ("ability_power".equals(entry.getKey())) abilityPower += entry.getValue();
             else attributes.add(entry.getKey() + ':' + entry.getValue());
         }
-        ItemDataFactory.applyAttributeModifiers(item, attributes, false);
+        ItemDataFactory.applyCanonicalAttributeModifiers(item, attributes, false);
+        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
         if (abilityPower != 0.0D) {
-            final ItemMeta meta = item.getItemMeta();
             meta.getPersistentDataContainer().set(abilityPowerKey, PersistentDataType.DOUBLE, abilityPower);
-            item.setItemMeta(meta);
         }
+        item.setItemMeta(meta);
+    }
+
+    /**
+     * Managed-but-invalid equipment is gameplay-inert even when its backing Material would normally
+     * provide vanilla combat attributes. This does not rewrite identity/version/checksum state; a
+     * later successful migration or template reload can therefore reconcile and reactivate it.
+     */
+    public void suppressManagedInvalid(final ItemStack item) {
+        if (item == null || item.getType().isAir()) return;
+        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create());
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
+        meta.getPersistentDataContainer().set(equipmentSuppressedKey,
+                PersistentDataType.BYTE, (byte) 1);
+        item.setItemMeta(meta);
+        ItemDataFactory.hideAttributeTooltip(item);
     }
 
     public void setEquipmentSuppressed(final ItemStack item, final ItemTemplate template,
                                        final ItemInstance instance, final boolean suppressed) {
         if (item == null || template == null || instance == null) return;
         if (suppressed) {
-            final ItemMeta meta = item.getItemMeta();
-            // Canonical ItemTemplate owns the whole attribute component. An explicit empty
-            // component suppresses both authored modifiers and backing-Material defaults.
-            meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create());
-            meta.getPersistentDataContainer().remove(abilityPowerKey);
-            meta.getPersistentDataContainer().set(equipmentSuppressedKey,
-                    PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
-            ItemDataFactory.hideAttributeTooltip(item);
+            suppressManagedInvalid(item);
             return;
         }
         applyStats(item, template, instance);
