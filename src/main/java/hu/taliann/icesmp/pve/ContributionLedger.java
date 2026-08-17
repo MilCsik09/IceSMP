@@ -19,6 +19,11 @@ public final class ContributionLedger {
         public double score() {
             return damage + tanking * 0.55D + support * 0.7D + objectives * 100.0D;
         }
+
+        /** Activity produced by the encounter itself, excluding support credited by another player. */
+        public boolean encounterActive() {
+            return damage > 0.0D || tanking > 0.0D || objectives > 0;
+        }
     }
 
     private final UUID encounterId;
@@ -55,10 +60,16 @@ public final class ContributionLedger {
         return add(playerId, 0.0D, amount, 0.0D, 0, atMillis);
     }
 
-    /** Self-support is deliberately rejected so self-heal padding never creates rewards. */
+    /**
+     * Support is credited only for a different player who has already produced encounter-owned
+     * activity. This rejects pre-combat/unrelated healing while still allowing a healer to
+     * late-register once their ally is demonstrably participating in the boss encounter.
+     */
     public synchronized boolean recordSupport(final UUID actor, final UUID target,
                                               final double amount, final long atMillis) {
-        if (actor == null || actor.equals(target)) return false;
+        if (actor == null || target == null || actor.equals(target)) return false;
+        final Contribution targetContribution = entries.get(target);
+        if (targetContribution == null || !targetContribution.encounterActive()) return false;
         return add(actor, 0.0D, 0.0D, amount, 0, atMillis);
     }
 
