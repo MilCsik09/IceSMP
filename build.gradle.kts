@@ -69,6 +69,18 @@ val progressionBalanceRegressionTest by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/test_progression_balance.py")
 }
 
+val equipment2ReportRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates the deterministic Equipment 2.0 migration, budget and handoff report."
+    inputs.files(
+        "scripts/generate_equipment_2_report.py",
+        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/profession-recipes.yml",
+        "docs/development/equipment-2-handoff.json",
+    )
+    commandLine(pythonCommand, "scripts/generate_equipment_2_report.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -840,6 +852,10 @@ val vanillaCraftingBoundaryRegressionTest = registerRegression(
     "vanillaCraftingBoundaryRegressionTest",
     "Runs vanilla/basic/canonical/legacy transformation and laundering regressions.",
     "hu.taliann.icesmp.itemization.VanillaCraftingBoundaryRegressionSuite")
+val equipmentDomainRegressionTest = registerRegression(
+    "equipmentDomainRegressionTest",
+    "Runs Equipment 2.0 class-family, budget, BASIC boundary and bypass regressions.",
+    "hu.taliann.icesmp.itemization.EquipmentDomainRegressionSuite")
 val playerProfileLootDiversityRegressionTest = registerRegression(
     "playerProfileLootDiversityRegressionTest",
     "Runs durable, bounded and idempotent Itemization 2.0 loot diversity regressions.",
@@ -858,6 +874,7 @@ tasks.check {
     dependsOn(auditEquipmentAssets)
     dependsOn(validateIceSmpHudPackage)
     dependsOn(progressionBalanceRegressionTest)
+    dependsOn(equipment2ReportRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
@@ -902,7 +919,8 @@ tasks.check {
         assassinGameplayRegressionTest, assassinProfileRegressionTest,
         warlockGameplayRegressionTest, warlockProfileRegressionTest,
         wizardGameplayRegressionTest, wizardProfileRegressionTest,
-        itemizationDomainRegressionTest, vanillaCraftingBoundaryRegressionTest, playerProfileLootDiversityRegressionTest,
+        itemizationDomainRegressionTest, vanillaCraftingBoundaryRegressionTest,
+        equipmentDomainRegressionTest, playerProfileLootDiversityRegressionTest,
         mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest
     )
 }

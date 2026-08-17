@@ -79,6 +79,14 @@ public final class RuneLifecycleRegressionSuite {
         expectFailure(() -> RuneMutationPolicy.apply(List.of("runa_fagy"), 2,
                 RuneMutationPolicy.Action.REPLACE, 0, "runa_fagy"),
                 "replace rejects a no-op candidate");
+        expectFailure(() -> RuneMutationPolicy.apply(List.of(), 2,
+                        RuneMutationPolicy.Action.INSERT, 0, "runa_fagy", ArmorFamily.CLOTH,
+                        (rune, family) -> family != ArmorFamily.CLOTH),
+                "optional family compatibility hook can fail closed");
+        check(RuneMutationPolicy.apply(List.of(), 2, RuneMutationPolicy.Action.INSERT,
+                        0, "runa_fagy", ArmorFamily.PLATE,
+                        RuneMutationPolicy.unrestrictedFamilies()).runes().equals(List.of("runa_fagy")),
+                "bundled runes remain family-unrestricted");
     }
 
     private static void everyRuneActionUsesTheExactSnapshotRecoveryContract() {

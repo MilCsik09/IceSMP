@@ -1,0 +1,1583 @@
+{
+  "ascension": {
+    "family_stable_templates": [
+      "glatziendorfi_jegvert",
+      "glatziendorfi_jegtoro",
+      "ostromtoro_mellvert",
+      "csillagvesz_ritualbot",
+      "sarkanycsont_ij",
+      "kallan_szeletelo",
+      "napfogyatkozas_fokusz"
+    ],
+    "template_count": 7
+  },
+  "authority": {
+    "armor_template_count": 18,
+    "basic_survival_gear_exempt": true,
+    "class_families": {
+      "CLOTH": [
+        "priest",
+        "warlock",
+        "wizard"
+      ],
+      "LEATHER": [
+        "monk",
+        "demon_hunter",
+        "druid",
+        "assassin"
+      ],
+      "MAIL": [
+        "archer",
+        "shaman",
+        "evoker"
+      ],
+      "PLATE": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ]
+    },
+    "family_distribution": {
+      "CLOTH": 3,
+      "LEATHER": 2,
+      "MAIL": 5,
+      "PLATE": 8
+    },
+    "material_is_not_armor_family": true,
+    "template_count": 48
+  },
+  "budget_report": [
+    {
+      "defensive_budget": 6.95,
+      "exception_reason": "A jégőrségi signature mellvért kis mozgás-rollja authored különlegesség.",
+      "expected_tier_budget": 7.592,
+      "family": "PLATE",
+      "item_level": 32,
+      "normalized_to_expected": 2.0526,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 23.6741,
+      "rarity": "EPIC",
+      "status": "EXPLICIT_EXCEPTION",
+      "template_id": "glatziendorfi_jegvert",
+      "total_normalized_budget": 15.5833,
+      "utility_budget": 0.6
+    },
+    {
+      "defensive_budget": 8.775,
+      "exception_reason": "",
+      "expected_tier_budget": 7.436,
+      "family": "PLATE",
+      "item_level": 31,
+      "normalized_to_expected": 1.9668,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 23.5944,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "ostromtoro_mellvert",
+      "total_normalized_budget": 14.625,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 0.0,
+      "exception_reason": "",
+      "expected_tier_budget": 2.0451,
+      "family": "LEATHER",
+      "item_level": 11,
+      "normalized_to_expected": 0.6706,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 20.0,
+      "rarity": "UNCOMMON",
+      "status": "VERIFIED",
+      "template_id": "utjaro_csizma",
+      "total_normalized_budget": 1.3714,
+      "utility_budget": 0.48
+    },
+    {
+      "defensive_budget": 2.225,
+      "exception_reason": "A csontvarrás tartósabb support Cloth identitást ad, nem armor rangsort.",
+      "expected_tier_budget": 4.272,
+      "family": "CLOTH",
+      "item_level": 13,
+      "normalized_to_expected": 2.0833,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 21.9054,
+      "rarity": "RARE",
+      "status": "EXPLICIT_EXCEPTION",
+      "template_id": "csontvarro_kopeny",
+      "total_normalized_budget": 8.9,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 5.45,
+      "exception_reason": "",
+      "expected_tier_budget": 5.424,
+      "family": "PLATE",
+      "item_level": 21,
+      "normalized_to_expected": 1.6747,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 22.8083,
+      "rarity": "RARE",
+      "status": "VERIFIED",
+      "template_id": "melysegi_borostyan_mellvert",
+      "total_normalized_budget": 9.0833,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 1.2,
+      "exception_reason": "",
+      "expected_tier_budget": 3.2794,
+      "family": "LEATHER",
+      "item_level": 24,
+      "normalized_to_expected": 2.1956,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 20.1333,
+      "rarity": "RARE",
+      "status": "VERIFIED",
+      "template_id": "vadorzo_csizma",
+      "total_normalized_budget": 7.2,
+      "utility_budget": 0.84
+    },
+    {
+      "defensive_budget": 4.1,
+      "exception_reason": "",
+      "expected_tier_budget": 6.144,
+      "family": "MAIL",
+      "item_level": 26,
+      "normalized_to_expected": 1.6683,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 23.2091,
+      "rarity": "RARE",
+      "status": "VERIFIED",
+      "template_id": "csontenyv_pancel",
+      "total_normalized_budget": 10.25,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 3.9,
+      "exception_reason": "",
+      "expected_tier_budget": 4.4169,
+      "family": "PLATE",
+      "item_level": 29,
+      "normalized_to_expected": 1.4716,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 22.0,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "sarkfeny_sisak",
+      "total_normalized_budget": 6.5,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 1.75,
+      "exception_reason": "",
+      "expected_tier_budget": 7.28,
+      "family": "CLOTH",
+      "item_level": 30,
+      "normalized_to_expected": 2.1487,
+      "offensive_budget": 2.5,
+      "physical_effective_health_signal": 22.5,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "aranyfust_kopeny",
+      "total_normalized_budget": 15.6429,
+      "utility_budget": 0.6
+    },
+    {
+      "defensive_budget": 2.45,
+      "exception_reason": "",
+      "expected_tier_budget": 9.52,
+      "family": "CLOTH",
+      "item_level": 40,
+      "normalized_to_expected": 2.407,
+      "offensive_budget": 3.75,
+      "physical_effective_health_signal": 23.5,
+      "rarity": "LEGENDARY",
+      "status": "VERIFIED",
+      "template_id": "fonixpihe_kopeny",
+      "total_normalized_budget": 22.9143,
+      "utility_budget": 0.96
+    },
+    {
+      "defensive_budget": 2.0,
+      "exception_reason": "",
+      "expected_tier_budget": 4.9005,
+      "family": "PLATE",
+      "item_level": 34,
+      "normalized_to_expected": 0.6802,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 20.1481,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "melyseg_orseg_sisak",
+      "total_normalized_budget": 3.3333,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 2.45,
+      "exception_reason": "",
+      "expected_tier_budget": 8.216,
+      "family": "PLATE",
+      "item_level": 36,
+      "normalized_to_expected": 0.497,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 23.5,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "melyseg_orseg_mellvert",
+      "total_normalized_budget": 4.0833,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 2.5,
+      "exception_reason": "",
+      "expected_tier_budget": 6.6092,
+      "family": "PLATE",
+      "item_level": 35,
+      "normalized_to_expected": 0.6304,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 20.0,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "melyseg_orseg_labvert",
+      "total_normalized_budget": 4.1667,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 0.0,
+      "exception_reason": "A teljes set mobilitási darabja; a többi piece hordozza a Plate védelmi súlyt.",
+      "expected_tier_budget": 4.4262,
+      "family": "PLATE",
+      "item_level": 34,
+      "normalized_to_expected": 0.9037,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 20.0,
+      "rarity": "EPIC",
+      "status": "EXPLICIT_EXCEPTION",
+      "template_id": "melyseg_orseg_bakancs",
+      "total_normalized_budget": 4.0,
+      "utility_budget": 0.6
+    },
+    {
+      "defensive_budget": 0.0,
+      "exception_reason": "",
+      "expected_tier_budget": 4.9972,
+      "family": "MAIL",
+      "item_level": 35,
+      "normalized_to_expected": 1.1582,
+      "offensive_budget": 1.25,
+      "physical_effective_health_signal": 20.0,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "viharjaro_sisak",
+      "total_normalized_budget": 5.7879,
+      "utility_budget": 0.54
+    },
+    {
+      "defensive_budget": 1.925,
+      "exception_reason": "",
+      "expected_tier_budget": 8.372,
+      "family": "MAIL",
+      "item_level": 37,
+      "normalized_to_expected": 1.4797,
+      "offensive_budget": 2.5,
+      "physical_effective_health_signal": 22.75,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "viharjaro_mellvert",
+      "total_normalized_budget": 12.3883,
+      "utility_budget": 0.0
+    },
+    {
+      "defensive_budget": 0.0,
+      "exception_reason": "",
+      "expected_tier_budget": 6.7371,
+      "family": "MAIL",
+      "item_level": 36,
+      "normalized_to_expected": 0.3958,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 20.0,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "viharjaro_labvert",
+      "total_normalized_budget": 2.6667,
+      "utility_budget": 0.72
+    },
+    {
+      "defensive_budget": 0.0,
+      "exception_reason": "",
+      "expected_tier_budget": 4.5136,
+      "family": "MAIL",
+      "item_level": 35,
+      "normalized_to_expected": 0.7877,
+      "offensive_budget": 0.0,
+      "physical_effective_health_signal": 20.0,
+      "rarity": "EPIC",
+      "status": "VERIFIED",
+      "template_id": "viharjaro_bakancs",
+      "total_normalized_budget": 3.5556,
+      "utility_budget": 0.96
+    }
+  ],
+  "migration": [
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "A jégőrségi signature mellvért kis mozgás-rollja authored különlegesség.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:CHEST:armor,armor_toughness,max_health,movement_speed",
+      "slot": "CHEST",
+      "template_id": "glatziendorfi_jegvert"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,attack_damage,attack_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "glatziendorfi_jegtoro"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:attack_damage,max_health",
+      "slot": "MAIN-HAND",
+      "template_id": "vadvilagi_eskukard"
+    },
+    {
+      "allowed_classes": [
+        "archer",
+        "druid"
+      ],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "hamuszeli_vadaszij"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:CHEST:armor,armor_toughness,max_health",
+      "slot": "CHEST",
+      "template_id": "ostromtoro_mellvert"
+    },
+    {
+      "allowed_classes": [
+        "wizard",
+        "priest",
+        "warlock",
+        "evoker",
+        "shaman"
+      ],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,max_health,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "csillagvesz_ritualbot"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:attack_damage",
+      "slot": "MAIN-HAND",
+      "template_id": "kovacstanonc_penge"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "borkeretes_ij"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,max_health",
+      "slot": "MAIN-HAND",
+      "template_id": "mohas_fokusz"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "ARMOR:OFF-HAND:armor",
+      "slot": "OFF-HAND",
+      "template_id": "tarnapajzs"
+    },
+    {
+      "allowed_classes": [
+        "monk",
+        "demon_hunter",
+        "druid",
+        "assassin"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "LEATHER",
+      "old_role": "ARMOR:FEET:movement_speed",
+      "slot": "FEET",
+      "template_id": "utjaro_csizma"
+    },
+    {
+      "allowed_classes": [
+        "priest",
+        "warlock",
+        "wizard"
+      ],
+      "balance_adjustment": "A csontvarrás tartósabb support Cloth identitást ad, nem armor rangsort.",
+      "new_armor_family": "CLOTH",
+      "old_role": "ARMOR:CHEST:armor,max_health",
+      "slot": "CHEST",
+      "template_id": "csontvarro_kopeny"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "holdfeny_bot"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:TWO-HAND:attack_damage,attack_speed",
+      "slot": "TWO-HAND",
+      "template_id": "viharkvarc_pallos"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:CHEST:armor,max_health",
+      "slot": "CHEST",
+      "template_id": "melysegi_borostyan_mellvert"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:attack_damage,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "szelvago_ij"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,max_health",
+      "slot": "MAIN-HAND",
+      "template_id": "nema_kristaly_fokusz"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,attack_damage",
+      "slot": "MAIN-HAND",
+      "template_id": "parazs_kard"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "ARMOR:OFF-HAND:armor,armor_toughness",
+      "slot": "OFF-HAND",
+      "template_id": "gyongyhaz_pajzs"
+    },
+    {
+      "allowed_classes": [
+        "monk",
+        "demon_hunter",
+        "druid",
+        "assassin"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "LEATHER",
+      "old_role": "ARMOR:FEET:armor,movement_speed",
+      "slot": "FEET",
+      "template_id": "vadorzo_csizma"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,attack_damage,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "holdsarlo"
+    },
+    {
+      "allowed_classes": [
+        "archer",
+        "shaman",
+        "evoker"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "MAIL",
+      "old_role": "ARMOR:CHEST:armor,max_health",
+      "slot": "CHEST",
+      "template_id": "csontenyv_pancel"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,attack_damage",
+      "slot": "MAIN-HAND",
+      "template_id": "viharszovo_bot"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:HEAD:armor_toughness,max_health",
+      "slot": "HEAD",
+      "template_id": "sarkfeny_sisak"
+    },
+    {
+      "allowed_classes": [
+        "priest",
+        "warlock",
+        "wizard"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "CLOTH",
+      "old_role": "ARMOR:CHEST:ability_power,max_health,movement_speed",
+      "slot": "CHEST",
+      "template_id": "aranyfust_kopeny"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:TWO-HAND:attack_damage,max_health",
+      "slot": "TWO-HAND",
+      "template_id": "kapuparazs_pallos"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:attack_damage,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "elsocsend_penge"
+    },
+    {
+      "allowed_classes": [
+        "priest",
+        "warlock",
+        "wizard"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "CLOTH",
+      "old_role": "ARMOR:CHEST:ability_power,max_health,movement_speed",
+      "slot": "CHEST",
+      "template_id": "fonixpihe_kopeny"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:attack_damage,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "sarkanycsont_ij"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "TOOL:MAIN-HAND:attack_damage",
+      "slot": "MAIN-HAND",
+      "template_id": "vasmuvek_csakanya"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "TOOL:MAIN-HAND:movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "bokic_horgaszbot"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "ACCESSORY:ACCESSORY:max_health",
+      "slot": "ACCESSORY",
+      "template_id": "smaragdko_bankbetet"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "ACCESSORY:ACCESSORY:movement_speed",
+      "slot": "ACCESSORY",
+      "template_id": "szellemszarvas_bubaj"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:attack_damage,attack_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "kallan_szeletelo"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "ACCESSORY:ACCESSORY:max_health",
+      "slot": "ACCESSORY",
+      "template_id": "jegsarkany_kantar"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,attack_damage",
+      "slot": "MAIN-HAND",
+      "template_id": "pyralingradi_tuzkopo"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:attack_damage,max_health",
+      "slot": "MAIN-HAND",
+      "template_id": "verszavanna_agyara"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:TWO-HAND:attack_damage",
+      "slot": "TWO-HAND",
+      "template_id": "miinus_haragja"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,attack_damage",
+      "slot": "MAIN-HAND",
+      "template_id": "zhoris_langnyelve"
+    },
+    {
+      "allowed_classes": [],
+      "balance_adjustment": "Nem armor slot; fake ArmorFamily nélkül marad.",
+      "new_armor_family": null,
+      "old_role": "WEAPON:MAIN-HAND:ability_power,max_health,movement_speed",
+      "slot": "MAIN-HAND",
+      "template_id": "napfogyatkozas_fokusz"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:HEAD:armor",
+      "slot": "HEAD",
+      "template_id": "melyseg_orseg_sisak"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:CHEST:max_health",
+      "slot": "CHEST",
+      "template_id": "melyseg_orseg_mellvert"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:LEGS:armor_toughness",
+      "slot": "LEGS",
+      "template_id": "melyseg_orseg_labvert"
+    },
+    {
+      "allowed_classes": [
+        "warrior",
+        "paladin",
+        "death_knight"
+      ],
+      "balance_adjustment": "A teljes set mobilitási darabja; a többi piece hordozza a Plate védelmi súlyt.",
+      "new_armor_family": "PLATE",
+      "old_role": "ARMOR:FEET:movement_speed",
+      "slot": "FEET",
+      "template_id": "melyseg_orseg_bakancs"
+    },
+    {
+      "allowed_classes": [
+        "archer",
+        "shaman",
+        "evoker"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "MAIL",
+      "old_role": "ARMOR:HEAD:ability_power,movement_speed",
+      "slot": "HEAD",
+      "template_id": "viharjaro_sisak"
+    },
+    {
+      "allowed_classes": [
+        "archer",
+        "shaman",
+        "evoker"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "MAIL",
+      "old_role": "ARMOR:CHEST:ability_power,max_health",
+      "slot": "CHEST",
+      "template_id": "viharjaro_mellvert"
+    },
+    {
+      "allowed_classes": [
+        "archer",
+        "shaman",
+        "evoker"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "MAIL",
+      "old_role": "ARMOR:LEGS:movement_speed",
+      "slot": "LEGS",
+      "template_id": "viharjaro_labvert"
+    },
+    {
+      "allowed_classes": [
+        "archer",
+        "shaman",
+        "evoker"
+      ],
+      "balance_adjustment": "Family profile szerint auditált; authored statok megtartva.",
+      "new_armor_family": "MAIL",
+      "old_role": "ARMOR:FEET:movement_speed",
+      "slot": "FEET",
+      "template_id": "viharjaro_bakancs"
+    }
+  ],
+  "professions_2_handoff": {
+    "canonical_recipe_count": 15,
+    "ownership_policy_finalized": false,
+    "recipes": [
+      {
+        "armor_family": null,
+        "current_materials": [
+          "IRON_SWORD:1",
+          "IRON_INGOT:8",
+          "LEATHER:2",
+          "unique:tiszta_vasesszencia:2"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "vadvilagi_eskukard",
+        "recipe_id": "vadvilagi_eskukard"
+      },
+      {
+        "armor_family": "PLATE",
+        "current_materials": [
+          "NETHERITE_CHESTPLATE:1",
+          "PACKED_ICE:16",
+          "IRON_BLOCK:2",
+          "unique:sarkfeny_cseppko:4",
+          "unique:tiszta_vasesszencia:4"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": true,
+        "migration_complexity": "HIGH",
+        "output_template": "glatziendorfi_jegvert",
+        "recipe_id": "glatziendorfi_jegvert"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "DIAMOND_AXE:1",
+          "NETHERITE_INGOT:2",
+          "unique:jegviragpor:3",
+          "unique:sarkanycsont_szilank:2",
+          "unique:folyositoszer:1"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "glatziendorfi_jegtoro",
+        "recipe_id": "glatziendorfi_jegtoro"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "COBBLESTONE:2",
+          "STICK:1"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "kovacstanonc_penge",
+        "recipe_id": "item2_kovacstanonc_penge"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "IRON_INGOT:3",
+          "OAK_PLANKS:6",
+          "unique:tiszta_vasesszencia:1"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "tarnapajzs",
+        "recipe_id": "item2_tarnapajzs"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "IRON_INGOT:6",
+          "unique:viharkvarc:2",
+          "unique:tiszta_vasesszencia:2"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "viharkvarc_pallos",
+        "recipe_id": "item2_viharkvarc_pallos"
+      },
+      {
+        "armor_family": "PLATE",
+        "current_materials": [
+          "IRON_INGOT:8",
+          "unique:melysegi_borostyan:3",
+          "unique:tiszta_vasesszencia:2"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": true,
+        "migration_complexity": "HIGH",
+        "output_template": "melysegi_borostyan_mellvert",
+        "recipe_id": "item2_borostyan_tarnavert"
+      },
+      {
+        "armor_family": "PLATE",
+        "current_materials": [
+          "DIAMOND:5",
+          "unique:sarkfeny_cseppko:3",
+          "unique:folyositoszer:1"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": true,
+        "migration_complexity": "HIGH",
+        "output_template": "sarkfeny_sisak",
+        "recipe_id": "item2_sarkfeny_sisak"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "SHIELD:1",
+          "unique:gyongyhaz_pikkely:4",
+          "unique:tiszta_vasesszencia:1"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "gyongyhaz_pajzs",
+        "recipe_id": "item2_gyongyhaz_pajzs"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "BLAZE_ROD:1",
+          "unique:holdezust_huzal:2",
+          "unique:runapor:2"
+        ],
+        "current_profession": "enchanter",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "holdfeny_bot",
+        "recipe_id": "item2_holdfeny_bot"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "unique:nema_kristaly:3",
+          "unique:holdezust_huzal:3",
+          "unique:runapor:4"
+        ],
+        "current_profession": "enchanter",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "nema_kristaly_fokusz",
+        "recipe_id": "item2_nema_kristaly_fokusz"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "TRIDENT:1",
+          "unique:viharkvarc:4",
+          "unique:runapor:5"
+        ],
+        "current_profession": "enchanter",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "viharszovo_bot",
+        "recipe_id": "item2_viharszovo_bot"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "unique:sarkanycsont_szilank:6",
+          "unique:kemenyfa_gerenda:3",
+          "unique:szavannafu_kotel:3"
+        ],
+        "current_profession": "lumberjack",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "sarkanycsont_ij",
+        "recipe_id": "item2_sarkanycsont_ij"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "NETHERITE_INGOT:2",
+          "unique:melysegi_borostyan:4",
+          "unique:tiszta_vasesszencia:5"
+        ],
+        "current_profession": "miner",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "vasmuvek_csakanya",
+        "recipe_id": "item2_vasmuvek_csakanya"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "FISHING_ROD:1",
+          "unique:gyongyhaz_pikkely:5",
+          "unique:kemenyfa_gerenda:2"
+        ],
+        "current_profession": "fisherman",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "bokic_horgaszbot",
+        "recipe_id": "item2_bokic_horgaszbot"
+      }
+    ]
+  },
+  "resource_pack_handoff": {
+    "armor_custom_asset_coverage": "1/18",
+    "inventory": [
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "icesmp:glatziendorfi_jegvert",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "glatziendorfi_jegvert"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "icesmp:glatziendorfi_jegtoro",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "glatziendorfi_jegtoro"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:iron_sword",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "vadvilagi_eskukard"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [
+          "archer",
+          "druid"
+        ],
+        "current_asset": "minecraft:bow",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "hamuszeli_vadaszij"
+      },
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:diamond_chestplate",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "ostromtoro_mellvert"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [
+          "wizard",
+          "priest",
+          "warlock",
+          "evoker",
+          "shaman"
+        ],
+        "current_asset": "minecraft:blaze_rod",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "csillagvesz_ritualbot"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:stone_sword",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "kovacstanonc_penge"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:bow",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "borkeretes_ij"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:amethyst_shard",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "mohas_fokusz"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:shield",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "OFF-HAND",
+        "template_id": "tarnapajzs"
+      },
+      {
+        "armor_family": "LEATHER",
+        "class_restriction": [
+          "monk",
+          "demon_hunter",
+          "druid",
+          "assassin"
+        ],
+        "current_asset": "minecraft:leather_boots",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "FEET",
+        "template_id": "utjaro_csizma"
+      },
+      {
+        "armor_family": "CLOTH",
+        "class_restriction": [
+          "priest",
+          "warlock",
+          "wizard"
+        ],
+        "current_asset": "minecraft:leather_chestplate",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "csontvarro_kopeny"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:blaze_rod",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "holdfeny_bot"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:iron_sword",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "TWO-HAND",
+        "template_id": "viharkvarc_pallos"
+      },
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:iron_chestplate",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "melysegi_borostyan_mellvert"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:crossbow",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "szelvago_ij"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:echo_shard",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "nema_kristaly_fokusz"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:diamond_sword",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "parazs_kard"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:shield",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "OFF-HAND",
+        "template_id": "gyongyhaz_pajzs"
+      },
+      {
+        "armor_family": "LEATHER",
+        "class_restriction": [
+          "monk",
+          "demon_hunter",
+          "druid",
+          "assassin"
+        ],
+        "current_asset": "minecraft:chainmail_boots",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "FEET",
+        "template_id": "vadorzo_csizma"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:golden_hoe",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "holdsarlo"
+      },
+      {
+        "armor_family": "MAIL",
+        "class_restriction": [
+          "archer",
+          "shaman",
+          "evoker"
+        ],
+        "current_asset": "minecraft:chainmail_chestplate",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "csontenyv_pancel"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:trident",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "viharszovo_bot"
+      },
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:diamond_helmet",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "HEAD",
+        "template_id": "sarkfeny_sisak"
+      },
+      {
+        "armor_family": "CLOTH",
+        "class_restriction": [
+          "priest",
+          "warlock",
+          "wizard"
+        ],
+        "current_asset": "minecraft:golden_chestplate",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "aranyfust_kopeny"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:netherite_sword",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "TWO-HAND",
+        "template_id": "kapuparazs_pallos"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:netherite_sword",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "elsocsend_penge"
+      },
+      {
+        "armor_family": "CLOTH",
+        "class_restriction": [
+          "priest",
+          "warlock",
+          "wizard"
+        ],
+        "current_asset": "minecraft:elytra",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "fonixpihe_kopeny"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:bow",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "sarkanycsont_ij"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:netherite_pickaxe",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "vasmuvek_csakanya"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:fishing_rod",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "bokic_horgaszbot"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:emerald",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "ACCESSORY",
+        "template_id": "smaragdko_bankbetet"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:rabbit_foot",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "ACCESSORY",
+        "template_id": "szellemszarvas_bubaj"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:netherite_axe",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "kallan_szeletelo"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:saddle",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "ACCESSORY",
+        "template_id": "jegsarkany_kantar"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:crossbow",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "pyralingradi_tuzkopo"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:netherite_sword",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "verszavanna_agyara"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:netherite_axe",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "TWO-HAND",
+        "template_id": "miinus_haragja"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:blaze_rod",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "zhoris_langnyelve"
+      },
+      {
+        "armor_family": null,
+        "class_restriction": [],
+        "current_asset": "minecraft:echo_shard",
+        "missing_equipment_asset": false,
+        "needs_redesign": false,
+        "orientation_fit_review_required": false,
+        "slot": "MAIN-HAND",
+        "template_id": "napfogyatkozas_fokusz"
+      },
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:diamond_helmet",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "HEAD",
+        "template_id": "melyseg_orseg_sisak"
+      },
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:diamond_chestplate",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "melyseg_orseg_mellvert"
+      },
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:diamond_leggings",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "LEGS",
+        "template_id": "melyseg_orseg_labvert"
+      },
+      {
+        "armor_family": "PLATE",
+        "class_restriction": [
+          "warrior",
+          "paladin",
+          "death_knight"
+        ],
+        "current_asset": "minecraft:diamond_boots",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "FEET",
+        "template_id": "melyseg_orseg_bakancs"
+      },
+      {
+        "armor_family": "MAIL",
+        "class_restriction": [
+          "archer",
+          "shaman",
+          "evoker"
+        ],
+        "current_asset": "minecraft:leather_helmet",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "HEAD",
+        "template_id": "viharjaro_sisak"
+      },
+      {
+        "armor_family": "MAIL",
+        "class_restriction": [
+          "archer",
+          "shaman",
+          "evoker"
+        ],
+        "current_asset": "minecraft:leather_chestplate",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "CHEST",
+        "template_id": "viharjaro_mellvert"
+      },
+      {
+        "armor_family": "MAIL",
+        "class_restriction": [
+          "archer",
+          "shaman",
+          "evoker"
+        ],
+        "current_asset": "minecraft:leather_leggings",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "LEGS",
+        "template_id": "viharjaro_labvert"
+      },
+      {
+        "armor_family": "MAIL",
+        "class_restriction": [
+          "archer",
+          "shaman",
+          "evoker"
+        ],
+        "current_asset": "minecraft:leather_boots",
+        "missing_equipment_asset": true,
+        "needs_redesign": true,
+        "orientation_fit_review_required": true,
+        "slot": "FEET",
+        "template_id": "viharjaro_bakancs"
+      }
+    ]
+  },
+  "schema": 1,
+  "sets": {
+    "glatziendorfi_jegorseg": [
+      "PLATE"
+    ],
+    "melyseg_orseg": [
+      "PLATE"
+    ],
+    "viharjaro": [
+      "MAIL"
+    ]
+  }
+}
