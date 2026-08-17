@@ -81,8 +81,7 @@ public final class MobAbilityRuntime implements Listener {
     }
 
     public void attach(final LivingEntity entity) {
-        if (!(entity instanceof Mob mob) || !mob.isValid()
-                || states.containsKey(mob.getUniqueId()) || states.size() >= MAX_ACTIVE_MOBS) return;
+        if (!(entity instanceof Mob mob) || !mob.isValid()) return;
         final String templateId = scaling.getTemplateId(mob);
         final MobTemplate template = templates.find(templateId).orElse(null);
         final ArrayList<MobAbilityDefinition> definitions = new ArrayList<>();
@@ -98,7 +97,7 @@ public final class MobAbilityRuntime implements Listener {
         }
         if (definitions.isEmpty() && affixes.isEmpty()) return;
         final RuntimeState state = new RuntimeState();
-        if (states.putIfAbsent(mob.getUniqueId(), state) != null) return;
+        if (!registerState(mob.getUniqueId(), state)) return;
         try {
             mob.getScheduler().runAtFixedRate(plugin,
                     task -> tick(mob, definitions, state),
@@ -106,6 +105,15 @@ public final class MobAbilityRuntime implements Listener {
                     RUNTIME_STEP_TICKS, RUNTIME_STEP_TICKS);
         } catch (final RuntimeException rejected) {
             states.remove(mob.getUniqueId(), state);
+        }
+    }
+
+    /** Serialises producer admission so concurrent Folia regions cannot overshoot the hard cap. */
+    private boolean registerState(final UUID mobId, final RuntimeState state) {
+        synchronized (states) {
+            if (states.containsKey(mobId) || states.size() >= MAX_ACTIVE_MOBS) return false;
+            states.put(mobId, state);
+            return true;
         }
     }
 
