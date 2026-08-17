@@ -455,7 +455,7 @@ public final class ItemizationDomainRegressionSuite {
                 2, 2, "", "", List.of("Awakened"));
         return new ItemTemplate("mutation_template", ItemTemplate.CURRENT_SCHEMA, 1,
                 "Mutation", List.of(), ItemRarity.LEGENDARY, 30, ItemTemplate.Family.WEAPON,
-                ItemTemplate.Slot.MAIN_HAND, "NETHERITE_AXE", "", "", 20,
+                null, "", ItemTemplate.Slot.MAIN_HAND, "NETHERITE_AXE", "", "", 20,
                 Set.of(), Set.of(), Set.of(), 0.0D, 0.0D,
                 Map.of("ability_power", 2.0D), baseRolls, 1,
                 "glatziendorfi_jegtoro", "", ItemTemplate.BindPolicy.NONE,
