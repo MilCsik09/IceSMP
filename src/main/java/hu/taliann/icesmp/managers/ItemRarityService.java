@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Legacy/random-affix rarity authority. Canonical Itemization identity is a hard boundary: managed
- * gear never receives or contributes legacy affixes; BASIC/non-managed gear keeps this system.
+ * Legacy/random-affix rarity authority. Any canonical identity footprint, including a malformed
+ * partial identity, is a hard boundary: managed gear never receives or contributes legacy affixes.
  */
 public final class ItemRarityService {
 
@@ -51,14 +51,20 @@ public final class ItemRarityService {
     private final ConfigManager configManager;
     private final NamespacedKey qualityKey;
     private final NamespacedKey spellPowerKey;
-    private final NamespacedKey managedSchemaKey;
+    private final List<NamespacedKey> managedIdentityKeys;
 
     public ItemRarityService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.qualityKey = new NamespacedKey(plugin, "masterwork_quality");
         this.spellPowerKey = new NamespacedKey(plugin, "spell_power");
-        this.managedSchemaKey = new NamespacedKey(plugin, "item_schema");
+        this.managedIdentityKeys = List.of(
+                new NamespacedKey(plugin, "item_schema"),
+                new NamespacedKey(plugin, "item_uuid"),
+                new NamespacedKey(plugin, "item_template"),
+                new NamespacedKey(plugin, "item_template_version"),
+                new NamespacedKey(plugin, "item_instance"),
+                new NamespacedKey(plugin, "item_integrity"));
     }
 
     /** Legacy Varázserő is inert on every identity-managed canonical item, valid or invalid. */
@@ -71,8 +77,12 @@ public final class ItemRarityService {
     }
 
     private boolean isCanonicalManaged(final ItemStack item) {
-        return item != null && item.hasItemMeta()
-                && item.getItemMeta().getPersistentDataContainer().has(managedSchemaKey);
+        if (item == null || !item.hasItemMeta()) return false;
+        final var pdc = item.getItemMeta().getPersistentDataContainer();
+        for (final NamespacedKey key : managedIdentityKeys) {
+            if (pdc.has(key)) return true;
+        }
+        return false;
     }
 
     public boolean isEnabled() {
