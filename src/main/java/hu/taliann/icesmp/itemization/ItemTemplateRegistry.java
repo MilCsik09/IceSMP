@@ -23,6 +23,8 @@ public final class ItemTemplateRegistry {
         }
     }
 
+    private static volatile ItemTemplateRegistry activeInstance;
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private volatile Snapshot snapshot = Snapshot.empty();
@@ -30,6 +32,12 @@ public final class ItemTemplateRegistry {
     public ItemTemplateRegistry(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
         this.configManager = java.util.Objects.requireNonNull(configManager, "configManager");
+        activeInstance = this;
+    }
+
+    /** Runtime read-only registry seam for owner-thread set-bonus projection. */
+    public static ItemTemplateRegistry current() {
+        return activeInstance;
     }
 
     public synchronized void load() {
