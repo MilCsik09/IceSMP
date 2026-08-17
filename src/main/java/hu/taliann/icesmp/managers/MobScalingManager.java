@@ -44,6 +44,8 @@ public final class MobScalingManager {
     }
 
     private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
+    private static final double HARD_MAX_HEALTH = 4096.0D;
+    private static final double HARD_MAX_DAMAGE = 80.0D;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -96,8 +98,8 @@ public final class MobScalingManager {
 
     public void load() {
         enabled = configManager.getBoolean("mob-scaling.enabled", true);
-        blocksPerLevel = Math.max(1.0D,
-                configManager.getDouble("mob-scaling.blocks-per-level", 500.0D));
+        blocksPerLevel = finitePositive(
+                configManager.getDouble("mob-scaling.blocks-per-level", 500.0D), 500.0D);
         progressionTuning = new MobProgressionPolicy.Tuning(
                 Math.max(1, configManager.getInt("mob-scaling.normal-max-level", 50)),
                 Math.max(1, configManager.getInt("mob-scaling.hard-cap-level", 70)),
@@ -279,8 +281,9 @@ public final class MobScalingManager {
             final MobProgressionPolicy.ScaledStats scaled = MobProgressionPolicy.scale(
                     maxHealth.getBaseValue() * templateHealth, 0.0D, level,
                     rankHealth, rankDamage * templateDamage, progressionTuning);
-            final double health = Math.min(configManager.getDouble(
-                    "mob-scaling.maximum-absolute-health", 4096.0D), scaled.maximumHealth());
+            final double health = Math.min(absoluteCap(
+                    "mob-scaling.maximum-absolute-health", HARD_MAX_HEALTH, HARD_MAX_HEALTH),
+                    scaled.maximumHealth());
             maxHealth.setBaseValue(health);
             entity.setHealth(Math.min(health, maxHealth.getValue()));
         }
@@ -290,8 +293,9 @@ public final class MobScalingManager {
             final MobProgressionPolicy.ScaledStats scaled = MobProgressionPolicy.scale(
                     1.0D, attackDamage.getBaseValue() * templateDamage, level,
                     rankHealth, rankDamage, progressionTuning);
-            attackDamage.setBaseValue(Math.min(configManager.getDouble(
-                    "mob-scaling.maximum-absolute-damage", 80.0D), scaled.attackDamage()));
+            attackDamage.setBaseValue(Math.min(absoluteCap(
+                    "mob-scaling.maximum-absolute-damage", HARD_MAX_DAMAGE, HARD_MAX_DAMAGE),
+                    scaled.attackDamage()));
         }
         if (template != null) {
             final AttributeInstance movement = entity.getAttribute(Attribute.MOVEMENT_SPEED);
@@ -531,8 +535,8 @@ public final class MobScalingManager {
         if (configManager.getBoolean("mob-scaling.zone-ramp.enabled", true)) {
             final double edgeDistance = territoryManager.distanceFromNearestSafeZoneEdge(location);
             if (edgeDistance >= 0.0D) {
-                final double rampBlocks = Math.max(1.0D,
-                        configManager.getDouble("mob-scaling.zone-ramp.blocks-per-level", 250.0D));
+                final double rampBlocks = finitePositive(configManager.getDouble(
+                        "mob-scaling.zone-ramp.blocks-per-level", 250.0D), 250.0D);
                 return Math.min(normalLevel, 1 + (int) (edgeDistance / rampBlocks));
             }
         }
@@ -643,8 +647,22 @@ public final class MobScalingManager {
     }
 
     private double rankMultiplier(final MobRank rank, final String field, final double fallback) {
-        return Math.max(0.0D, configManager.getDouble("mob-scaling.ranks."
-                + rank.name().toLowerCase(Locale.ROOT) + '.' + field, fallback));
+        final double configured = configManager.getDouble("mob-scaling.ranks."
+                + rank.name().toLowerCase(Locale.ROOT) + '.' + field, fallback);
+        if (!Double.isFinite(configured)) return fallback;
+        final double maximum = field.startsWith("health") ? 50.0D : 20.0D;
+        final double minimum = field.startsWith("health") ? 0.1D : 0.0D;
+        return Math.max(minimum, Math.min(maximum, configured));
+    }
+
+    private double absoluteCap(final String path, final double fallback, final double hardMaximum) {
+        final double configured = configManager.getDouble(path, fallback);
+        if (!Double.isFinite(configured) || configured <= 0.0D) return fallback;
+        return Math.min(hardMaximum, configured);
+    }
+
+    private static double finitePositive(final double configured, final double fallback) {
+        return Double.isFinite(configured) && configured > 0.0D ? configured : fallback;
     }
 
     private static double rankHealthFallback(final MobRank rank) {
@@ -701,6 +719,7 @@ public final class MobScalingManager {
     }
 
     private static double clampChance(final double chance) {
+        if (!Double.isFinite(chance)) return 0.0D;
         return Math.max(0.0D, Math.min(100.0D, chance));
     }
 
@@ -720,8 +739,7 @@ public final class MobScalingManager {
      * A spawn-event a mob régió-szálán fut — az effekt-adás biztonságos.
      */
     private void maybeMakeRareVariant(final LivingEntity entity) {
-        final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("rare-variant.chance-percent", 1.5D)));
+        final double chance = clampChance(configManager.getDouble("rare-variant.chance-percent", 1.5D));
         if (chance <= 0.0D
                 || java.util.concurrent.ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
             return;
