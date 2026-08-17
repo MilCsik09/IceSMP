@@ -85,9 +85,9 @@ public final class MobEncounterDomainRegressionSuite {
                 "authored location outranks template and geographic modifiers");
         final var encounter = MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
                 42, 18, 40, 50, 9, 9, 9, 2, false), tuning);
-        check(encounter.level() == 44
+        check(encounter.level() == 42 && encounter.appliedBonus() == 0
                         && encounter.source() == MobProgressionPolicy.Source.ENCOUNTER_OVERRIDE,
-                "encounter override outranks authored location and template before context bonuses");
+                "encounter override is authoritative and ignores lower geographic/context layers");
         final var bloodMoon = MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
                 null, null, null, 48, 0, 0, 0, 5, false), tuning);
         check(bloodMoon.level() == 53, "blood moon/event bonus can enter the 51-70 danger band");
