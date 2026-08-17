@@ -1166,6 +1166,31 @@ A részletes persistence-, recovery- és shutdown-folyamat:
   MYTHIC és nem account-bound template-et fogad; random-affix gear `recipe-item`
   startupkor érvénytelen crate-definíció.
 
+### Equipment 2.0 üzemeltetés
+
+- Authority: `item-templates.yml` → `itemization.equipment.family-profiles` és az armor
+  sablonok `armor-family` mezője. Reload csak teljesen valid immutable snapshotot publikál;
+  hiba esetén az előző marad aktív.
+- Canonical mapping: Priest/Warlock/Wizard=CLOTH; Monk/Demon Hunter/Druid/Assassin=LEATHER;
+  Archer/Shaman/Evoker=MAIL; Warrior/Paladin/Death Knight=PLATE. Spec-váltás nem változtatja.
+- `/iceitem inspect [játékos]` a familyt, explicit class restrictiont, can-equip döntést
+  és a template-validáció állapotát is mutatja. Admin give más family játékosnak inventoryba
+  engedélyezett; a tényleges equip ugyanazon a kapun bukik.
+- Market family filter: `/market search @cloth|@leather|@mail|@plate`. Listázást és vételt
+  az eladó/vevő proficiencyje nem tiltja.
+- A `scripts/generate_equipment_2_report.py --check` ellenőrzi a 48 template-et, 18 armor
+  mappinget, 3 setet, 7 ascension utat, 15 canonical receptet, normalized budgetet és a
+  Profession/RP handoffot. A követett output: `docs/development/equipment-2-handoff.json`.
+- Template schema 2, de a template-version változatlan. ArmorFamily template property,
+  ezért a régi ItemInstance UUID/provenance/roll/rúna/ascension állapota nem íródik át.
+
+Stagingen külön próbáld: click/shift/number-key/drag/right-click/replace/dispenser,
+invsee/admin mutation, reconnect, death/keepInventory, class reset/váltás, full inventory,
+market roundtrip és mindhárom set. Wrong-family állapotban a fixed/rolled attribútum,
+backing Material default, set, Signature, rune és CombatPower mind maradjon OFF; az item
+ne essen a földre és ne duplikálódjon. A forrás-regresszió nem helyettesíti ezt a Folia
+acceptance-et.
+
 Staging acceptance — ezeket CI alapján ne pipáld ki:
 
 - **Process-kill:** külön reroll, rune insert/remove/replace és ascension közben állítsd le

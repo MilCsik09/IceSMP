@@ -641,6 +641,18 @@ Signature Effect, 3 szett, 7 explicit ascension-út és 10 valós rúna. A 392 r
 15 gear-recept canonical `ItemTemplate → ItemInstance`; ezek szint, blueprint és
 masterwork quality-padlót adhatnak, de nem változtatják meg a template stat-budgetjét.
 
+Az Equipment 2.0 a 18 valódi armor-slot sablont explicit családba sorolja: 3 CLOTH,
+2 LEATHER, 5 MAIL és 8 PLATE. A 13 kaszt familyje fix, a specialization nem írja át.
+Azonos tierben a family nem rangsor: Cloth ability/resource/utility, Leather
+mobility/crit/sustain, Mail hybrid/resistance, Plate armor/HP/mitigation budgetet
+hangsúlyoz. Csak a katalógusban tényleges consumerrel rendelkező stat használható.
+
+Wrong-family authored gear birtokolható, rúnázható, listázható és megvehető; csak a
+viselése tiltott. Tiltott vagy no-class equip nem ad fixed/rolled statot, setet,
+Signature-t, rúnahatást vagy CombatPowert. A market ArmorFamily szerint szűrhető
+(`@cloth`, `@leather`, `@mail`, `@plate`), a loot saját familyt preferál, de az eddigi
+1.5× cap és a bounded soft-diversity miatt más family trade-dropja sem tűnik el.
+
 Az ascension csak explicit stage-et definiáló template-nél működik. Az új rollérték
 a régi normalizált qualityt viszi át az új authored tartományba, nem sorsol újra;
 közben item level, fixed/rolled budget, követelmény, rune socket, lore/model és

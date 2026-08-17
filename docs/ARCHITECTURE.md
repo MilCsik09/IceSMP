@@ -38,7 +38,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 |--------|-------:|--------|
 | `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 123 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
+| `listeners/` | 124 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 60 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
@@ -386,10 +386,44 @@ break a Bukkit állapotot követi; canonical gearhez azonban vanilla enchant nem
 üres default whitelist mellett. Töréskor az item megsemmisül, a meglévő equipment refresh
 eltávolítja CombatPower/set hatását. Külön repair economy nem része ennek a foundationnek.
 
-Future contract: `Material != ArmorFamily`. A CLOTH/LEATHER/MAIL/PLATE kizárólag későbbi
-canonical `ItemTemplate.armorFamily` metadata lehet; például az `IRON_CHESTPLATE` jelenleg
-BASIC gear, nem implicit PLATE. Netherite kiváló survival material marad, és később lehet
-Plate/Mail alloy, Masterwork vagy Ascension reagent, de nem MMORPG endgame authority.
+Az Equipment 2.0 megvalósította a `Material != ArmorFamily` contractot. A
+CLOTH/LEATHER/MAIL/PLATE az `ItemTemplate.armorFamily` explicit metadata; például az
+`IRON_CHESTPLATE` BASIC gear, nem implicit PLATE. Netherite kiváló survival material
+marad, és később lehet Plate/Mail alloy, Masterwork vagy Ascension reagent, de nem
+MMORPG endgame authority.
+
+### 3.8.3 Equipment 2.0 authority
+
+Az immutable `EquipmentProficiencyPolicy` a 13 `JobType` mindegyikéhez pontosan egy
+familyt rendel; a specialization a szülő kaszt familyjét örökli. Döntési sorrend:
+explicit class restriction → explicit spec restriction → ArmorFamily proficiency.
+No-class canonical armor DENY, de a `BASIC_SURVIVAL_GEAR` soha nem lép ebbe a policyba.
+
+Az armor family csak HEAD/CHEST/LEGS/FEET sloton érvényes. A schema v2 hiányzó,
+érvénytelen vagy nem armor slotra tett familyt, class-family konfliktust, mixed-family
+setet és family-idegen spec restrictiont startupkor elutasít. Az instance nem duplikálja
+a familyt: `ItemInstance → templateId → ItemTemplate` marad az authority. A template
+verziók nem változtak, ezért a meglévő UUID/provenance/roll/rúna/ascension példányok
+deterministikusan ugyanarra a most family-aware sablonra oldódnak fel.
+
+Az equip hot path O(1) profil-cache + template lookup. Click, shift/number-key, drag,
+right-click/plugin mutation, armor dispenser, join és respawn út közös listenerre jut.
+Tiltott állapotban az item nem vész el: lehetőség szerint inventoryba kerül, tele
+inventorynál a slotban marad explicit suppressed állapotban. A suppression eltávolítja
+az authored és backing-Material attribute komponenst; a set, Signature, rune,
+ability-power és CombatPower fogyasztó külön is ugyanazt a proficiency authorityt
+kérdezi. Class-váltás, Profile v2 aktiváció és config reload owner-thread reconcile-t
+ütemez; nincs disk I/O vagy YAML parse az inventory eseményben.
+
+Az `ArmorFamilyProfile` az item-level authorityt nem helyettesíti: offensive/defensive/
+utility share-eket, base-armor coefficientet és valódi consumerrel rendelkező preferred/
+disfavored statokat ad. A `EquipmentBudgetModel` reportol, nem auto-fixel. A flat Armor
+flat érték marad; nincs publikus gear score, current/max armor vagy family armor cap.
+Az internal CombatPower a family coefficienttel normalizálja az armor jelet, ezért a
+Plate nem kap automatikus fölényt a Cloth fölött.
+
+A géppel generált migráció-, balance-, Profession 2.0- és Resource Pack 2.0-handoff:
+[`development/equipment-2-handoff.json`](development/equipment-2-handoff.json).
 
 ### 3.9 Territórium-zónák és zóna-védelem
 
@@ -724,7 +758,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 902 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
+- **Méret:** 931 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
   Csomag-megoszlás: listeners 121, managers 125, commands 95, spells 60, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 8, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a

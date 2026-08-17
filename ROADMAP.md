@@ -301,10 +301,15 @@ a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
   ugyanazon whole-inventory mutation WAL-on fut. A Forge előnézet/költség/SHIFT
   megerősítést ad; a régi rúna explicit `destroy` economy-sink policyt követ.
 - ⬜ Crafting order piactér escrow-val és naplózott settlementtel.
-- ⬜ Equipment 2.0: külön `armorFamily` metadata és CLOTH/LEATHER/MAIL/PLATE
-  stat-budget/proficiency; a Bukkit `Material` nem armor-family authority.
+- ✅ Equipment 2.0 foundation: canonical `ArmorFamily` (CLOTH/LEATHER/MAIL/PLATE),
+  13 kasztos proficiency authority, 48 sablonos migráció, equip/suppression lifecycle,
+  family-aware loot/market/CombatPower és validálható stat-budget profil. A Bukkit
+  `Material` továbbra sem armor-family authority.
 - ⬜ Profession 2.0 feldolgozási láncok (fiber→cloth, hide→leather,
-  leather+metal→mail, ore/alloy→plate) és equipment resource-pack rework.
+  leather+metal→mail, ore/alloy→plate), a 392 recept ownership/migration auditja,
+  family salvage, Masterwork és profession-specializáció.
+- ⬜ Equipment Resource Pack 2.0: a family vizuális katalógus, hiányzó equipment
+  assetek, slot-fit/orientation és a handoff inventoryban jelölt redesignok.
 
 **Kapunyitás E felé:** a tárgyazonosság másolás, újraindítás és
 inventoryhiba után is bizonyítható; nincs új pénzforrás.

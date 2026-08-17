@@ -583,6 +583,24 @@ Az armor trim és rename canonical tárgyon jelenleg szintén blokkolt, mert a c
 változásnak is meg kell őriznie és journalolnia kell az UUID/PDC/checksum állapotot.
 Netherite továbbra is kiváló survival material, de önmagában nem IceSMP endgame rang.
 
+### Páncélcsaládok az authored felszerelésen
+
+A különleges IceSMP páncél tooltipje `Páncéltípus` sort mutat. Minden kaszt egyetlen
+családot visel:
+
+| Család | Kasztok | Fő karakter |
+|---|---|---|
+| Szövet (CLOTH) | Pap, Boszorkánymester, Varázsló | képesség, erőforrás, utility/support |
+| Bőr (LEATHER) | Szerzetes, Démonvadász, Druida, Orgyilkos | mobilitás, crit, sustain |
+| Sodrony (MAIL) | Íjász, Sámán, Sárkányidéző | hybrid támadás, ellenállás, sustain |
+| Lemez (PLATE) | Harcos, Paplovag, Halállovag | armor, életerő, mitigation |
+
+Ez kizárólag a canonical MMORPG felszerelés szabálya. Varázslóként továbbra is
+felvehetsz normál vanilla vas-, gyémánt- vagy netherite páncélt: a survival szabad.
+Másik family authored tárgyát is megtarthatod, fejlesztheted és eladhatod; felszerelni
+nem tudod. Sikertelen equipnél a tárgy nem fogy el, és rövid magyar actionbar jelzi az
+okot. Kasztválasztás előtt a canonical armor nem aktív.
+
 Két fő szakmai helyed van:
 
 - **egy gyűjtögető szakma:** Bányász, Gyógynövényész vagy Favágó;
