@@ -13,7 +13,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,10 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-/** Durable one-player inventory boundary for reroll, ascension and salvage. */
+/** Durable one-player inventory boundary for reroll, rune, ascension and salvage. */
 public final class ItemMutationCoordinator implements Listener {
 
-    public enum Operation { REROLL, ASCEND, SALVAGE }
+    public enum Operation { REROLL, RUNE, ASCEND, SALVAGE }
 
     public record Options(String lockedStat, boolean qualityAmplifier, boolean stabilitySeal) { }
 
@@ -43,6 +42,8 @@ public final class ItemMutationCoordinator implements Listener {
     private record Plan(UUID operationId, Operation operation, ItemInstance before,
                         ItemInstance after, ItemStack[] beforeInventory,
                         ItemStack[] afterInventory) { }
+
+    private static volatile ItemMutationCoordinator activeInstance;
 
     private final JavaPlugin plugin;
     private final ConfigManager config;
@@ -66,6 +67,12 @@ public final class ItemMutationCoordinator implements Listener {
         this.journal = new ItemMutationJournal(plugin, new File(plugin.getDataFolder(),
                 "item-mutation-journal.yml"), plugin.getLogger());
         this.journal.load();
+        activeInstance = this;
+    }
+
+    /** Runtime wiring seam for the legacy listener constructor; the plugin owns exactly one coordinator. */
+    public static ItemMutationCoordinator current() {
+        return activeInstance;
     }
 
     public Preview preview(final Player player, final Operation operation, final Options options) {
@@ -88,6 +95,8 @@ public final class ItemMutationCoordinator implements Listener {
         final ItemTemplate template = inspection.template();
         final Preview result = switch (operation) {
             case REROLL -> rerollPreview(item, template, options);
+            case RUNE -> new Preview(false, "itemization-rune-target-required", item, template,
+                    Map.of(), "A rúna cél-slothoz kötött művelet");
             case ASCEND -> ascendPreview(item, template);
             case SALVAGE -> salvagePreview(item, template);
         };
@@ -100,6 +109,10 @@ public final class ItemMutationCoordinator implements Listener {
 
     public void execute(final Player player, final Operation operation, final Options options,
                         final Consumer<Outcome> callback) {
+        if (operation == Operation.RUNE) {
+            callback.accept(new Outcome(false, "itemization-rune-target-required", null));
+            return;
+        }
         if (!inFlight.add(player.getUniqueId())) {
             callback.accept(new Outcome(false, "itemization-operation-pending", null));
             return;
@@ -119,8 +132,44 @@ public final class ItemMutationCoordinator implements Listener {
             callback.accept(new Outcome(false, "itemization-candidate-failed", preview.instance()));
             return;
         }
+        publishPlan(player, plan, callback);
+    }
+
+    /**
+     * Canonical rune insertion uses the exact same whole-inventory WAL as reroll/ascension.
+     * The caller first re-homes the cursor stack into player storage and persists it, so both the
+     * rune payment and target item are represented by the journal's exact before/after snapshots.
+     */
+    public void executeRune(final Player player, final int targetSlot, final String runeId,
+                            final Consumer<Outcome> callback) {
+        if (player == null || runeId == null || runeId.isBlank()) {
+            callback.accept(new Outcome(false, "rune-managed-invalid", null));
+            return;
+        }
+        if (!inFlight.add(player.getUniqueId())) {
+            callback.accept(new Outcome(false, "itemization-operation-pending", null));
+            return;
+        }
+        final Plan plan;
+        try {
+            plan = buildRunePlan(player, targetSlot, ItemStatCatalog.normalizeId(runeId));
+        } catch (final RunePlanFailure failure) {
+            inFlight.remove(player.getUniqueId());
+            callback.accept(new Outcome(false, failure.messageKey, failure.instance));
+            return;
+        } catch (final RuntimeException failure) {
+            inFlight.remove(player.getUniqueId());
+            plugin.getLogger().warning("Rune mutation candidate rejected: " + failure.getMessage());
+            callback.accept(new Outcome(false, "rune-managed-invalid", null));
+            return;
+        }
+        publishPlan(player, plan, callback);
+    }
+
+    private void publishPlan(final Player player, final Plan plan,
+                             final Consumer<Outcome> callback) {
         final ItemMutationJournal.Entry entry = new ItemMutationJournal.Entry(plan.operationId(),
-                player.getUniqueId(), operation.name(), plan.before().itemId(),
+                player.getUniqueId(), plan.operation().name(), plan.before().itemId(),
                 ItemMutationJournal.encodeInventory(plan.beforeInventory()),
                 ItemMutationJournal.encodeInventory(plan.afterInventory()), System.currentTimeMillis());
         journal.prepare(entry).whenComplete((prepared, failure) ->
@@ -292,8 +341,55 @@ public final class ItemMutationCoordinator implements Listener {
                     }
                 }
             }
+            case RUNE -> throw new IllegalStateException("RUNE_REQUIRES_TARGET");
         }
         return new Plan(operationId, operation, preview.instance(), candidate, before, after);
+    }
+
+    private Plan buildRunePlan(final Player player, final int targetSlot, final String runeId) {
+        if (!journal.entriesFor(player.getUniqueId()).isEmpty()) {
+            throw new RunePlanFailure("itemization-operation-pending", null);
+        }
+        final ItemStack[] before = cloneContents(player.getInventory().getContents());
+        if (targetSlot < 0 || targetSlot >= before.length) {
+            throw new RunePlanFailure("rune-managed-invalid", null);
+        }
+        final ItemIdentityService.Inspection inspection = identity.inspect(before[targetSlot]);
+        if (inspection.status() != ItemIdentityService.Status.VALID) {
+            throw new RunePlanFailure(inspection.status() == ItemIdentityService.Status.NOT_MANAGED
+                    ? "itemization-not-managed" : "rune-managed-invalid", inspection.instance());
+        }
+        if (!identity.inspectDuplicates(Arrays.asList(before)).clean()) {
+            throw new RunePlanFailure("itemization-duplicate", inspection.instance());
+        }
+        final ItemStack[] after = cloneContents(before);
+        if (!consumeCosts(after, Map.of(runeId, 1))) {
+            throw new RunePlanFailure("itemization-insufficient-materials", inspection.instance());
+        }
+        final ItemIdentityService.RuneMutation mutation = identity.applyRune(
+                after[targetSlot], runeId, System.currentTimeMillis());
+        if (!mutation.applied()) {
+            final String key = switch (mutation.status()) {
+                case NO_SOCKET -> "rune-managed-no-socket";
+                case SOCKETS_FULL, DUPLICATE_RUNE -> "rune-managed-full";
+                default -> "rune-managed-invalid";
+            };
+            throw new RunePlanFailure(key, mutation.instance());
+        }
+        after[targetSlot] = identity.render(mutation.template(), mutation.instance());
+        return new Plan(UUID.randomUUID(), Operation.RUNE, inspection.instance(), mutation.instance(),
+                before, after);
+    }
+
+    private static final class RunePlanFailure extends RuntimeException {
+        private final String messageKey;
+        private final ItemInstance instance;
+
+        private RunePlanFailure(final String messageKey, final ItemInstance instance) {
+            super(messageKey);
+            this.messageKey = messageKey;
+            this.instance = instance;
+        }
     }
 
     private boolean consumeCosts(final ItemStack[] contents, final Map<String, Integer> costs) {
