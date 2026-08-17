@@ -42,28 +42,46 @@ public final class PositionCache {
     /** Cross-region-safe nearby-player list using only owner-thread-maintained mirrors. */
     public static java.util.List<UUID> nearbyPlayerIds(final UUID sourceId, final double radius) {
         final Location source = get(sourceId);
-        if (source == null || source.getWorld() == null || radius < 0.0D) {
+        return nearbyPlayerIds(source, radius, id -> true, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Cross-region-safe bounded nearby-player snapshot around an arbitrary world location.
+     * Callers can apply cache-only eligibility predicates (for example GameModeCache) without
+     * touching a foreign-region Player object. Stale/unloaded-world entries fail closed.
+     */
+    public static java.util.List<UUID> nearbyPlayerIds(final Location source, final double radius,
+                                                       final Predicate<UUID> filter,
+                                                       final int maximumResults) {
+        if (source == null || radius < 0.0D || !Double.isFinite(radius)
+                || filter == null || maximumResults < 1) {
             return java.util.List.of();
         }
+        final org.bukkit.World sourceWorld;
+        try {
+            sourceWorld = source.getWorld();
+        } catch (final Exception unloadedWorld) {
+            return java.util.List.of();
+        }
+        if (sourceWorld == null) return java.util.List.of();
         final double radiusSquared = radius * radius;
-        final java.util.List<UUID> nearby = new java.util.ArrayList<>();
+        final java.util.ArrayList<UUID> nearby = new java.util.ArrayList<>(
+                Math.min(maximumResults, 128));
         for (final Map.Entry<UUID, Location> entry : POSITIONS.entrySet()) {
-            if (entry.getKey().equals(sourceId)) {
-                continue;
-            }
+            if (!filter.test(entry.getKey())) continue;
             final Location candidate = entry.getValue();
             try {
-                // Kiürült world-referencia getWorld()-je kivételt dob, nem null-t ad —
-                // egyetlen elavult bejegyzés nem viheti el a teljes lekérdezést.
-                if (candidate.getWorld() != null && candidate.getWorld().getUID().equals(source.getWorld().getUID())
+                final org.bukkit.World candidateWorld = candidate.getWorld();
+                if (candidateWorld != null && candidateWorld.getUID().equals(sourceWorld.getUID())
                         && candidate.distanceSquared(source) <= radiusSquared) {
                     nearby.add(entry.getKey());
+                    if (nearby.size() >= maximumResults) break;
                 }
             } catch (final Exception unloadedWorld) {
-                // fail-open: a hibás bejegyzés kimarad, a többi jelölt feldolgozása folytatódik
+                // Stale mirror entries are ignored; no Bukkit Player access or cross-region hop.
             }
         }
-        return nearby;
+        return java.util.List.copyOf(nearby);
     }
 
     /** Cross-region-safe nearby-player query using only owner-thread-maintained mirrors. */
