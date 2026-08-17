@@ -25,7 +25,7 @@ public final class ItemMutationJournal {
 
     private static final int MAX_PENDING_OPERATIONS = 256;
     private static final int MAX_ENCODED_SLOT_LENGTH = 1_048_576;
-    private static final Set<String> OPERATION_TYPES = Set.of("REROLL", "ASCEND", "SALVAGE");
+    private static final Set<String> OPERATION_TYPES = Set.of("REROLL", "RUNE", "ASCEND", "SALVAGE");
 
     public record Entry(UUID operationId, UUID playerId, String type, UUID itemId,
                         List<String> beforeInventory, List<String> afterInventory,
