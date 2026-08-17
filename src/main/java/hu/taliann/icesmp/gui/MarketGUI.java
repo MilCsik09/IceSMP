@@ -50,7 +50,7 @@ public final class MarketGUI {
                             final int page, final String filter) {
         final List<MarketManager.Listing> listings = new ArrayList<>();
         for (final MarketManager.Listing listing : marketManager.getListingsSorted()) {
-            if (matchesFilter(listing, filter)) {
+            if (matchesFilter(marketManager, listing, filter)) {
                 listings.add(listing);
             }
         }
@@ -86,12 +86,27 @@ public final class MarketGUI {
         viewer.openInventory(inventory);
     }
 
-    private static boolean matchesFilter(final MarketManager.Listing listing, final String filter) {
+    private static boolean matchesFilter(final MarketManager marketManager,
+                                         final MarketManager.Listing listing,
+                                         final String filter) {
         if (filter == null || filter.isBlank()) {
             return true;
         }
         final String needle = filter.toLowerCase(java.util.Locale.ROOT);
         final ItemStack item = listing.item();
+        if (needle.startsWith("@")) {
+            final hu.taliann.icesmp.itemization.ArmorFamily family = switch (needle) {
+                case "@cloth", "@szövet" -> hu.taliann.icesmp.itemization.ArmorFamily.CLOTH;
+                case "@leather", "@bőr" -> hu.taliann.icesmp.itemization.ArmorFamily.LEATHER;
+                case "@mail", "@sodrony" -> hu.taliann.icesmp.itemization.ArmorFamily.MAIL;
+                case "@plate", "@lemez" -> hu.taliann.icesmp.itemization.ArmorFamily.PLATE;
+                default -> null;
+            };
+            if (family != null) {
+                final MarketManager.ItemMetadata metadata = marketManager.metadataOf(listing);
+                return metadata != null && metadata.armorFamily() == family;
+            }
+        }
         // Ereklye-börze: a "@ereklye" szűrő a PDC-tages (unique anyag / relikvia)
         // tételekre szűkít — a szilánk-kereskedelem külön csatornája.
         if ("@ereklye".equals(needle)) {

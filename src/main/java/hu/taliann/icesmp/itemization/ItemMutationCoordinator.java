@@ -75,6 +75,8 @@ public final class ItemMutationCoordinator implements Listener {
     private final ItemSalvageService salvage = new ItemSalvageService();
     private final ItemMutationJournal journal;
     private final Set<UUID> inFlight = ConcurrentHashMap.newKeySet();
+    private volatile RuneMutationPolicy.FamilyCompatibility runeFamilyCompatibility =
+            RuneMutationPolicy.unrestrictedFamilies();
 
     public ItemMutationCoordinator(final JavaPlugin plugin, final ConfigManager config,
                                    final ItemIdentityService identity,
@@ -94,6 +96,12 @@ public final class ItemMutationCoordinator implements Listener {
     /** Runtime wiring seam for the legacy listener constructor; the plugin owns exactly one coordinator. */
     public static ItemMutationCoordinator current() {
         return activeInstance;
+    }
+
+    /** Future Profession/loot hook; no bundled rune is family-restricted in Equipment 2.0. */
+    public void setRuneFamilyCompatibility(
+            final RuneMutationPolicy.FamilyCompatibility compatibility) {
+        runeFamilyCompatibility = java.util.Objects.requireNonNull(compatibility, "compatibility");
     }
 
     public Preview preview(final Player player, final Operation operation, final Options options) {
@@ -248,7 +256,8 @@ public final class ItemMutationCoordinator implements Listener {
         final RuneMutationPolicy.Result transition;
         try {
             transition = RuneMutationPolicy.apply(inspection.instance().runes(), capacity,
-                    action, socketIndex, newRune);
+                    action, socketIndex, newRune, inspection.template().armorFamily(),
+                    runeFamilyCompatibility);
         } catch (final IllegalArgumentException invalid) {
             final String key = capacity == 0 ? "rune-managed-no-socket"
                     : action == RuneMutationPolicy.Action.INSERT
@@ -607,7 +616,7 @@ public final class ItemMutationCoordinator implements Listener {
         final RuneMutationPolicy.Result transition = RuneMutationPolicy.apply(
                 preview.instance().runes(), preview.template().runeSocketCountAt(
                         preview.instance().ascension().stageId()), action, socketIndex,
-                preview.newRune());
+                preview.newRune(), preview.template().armorFamily(), runeFamilyCompatibility);
         final UUID operationId = UUID.randomUUID();
         final ItemInstance candidate = mutations.changeRunes(preview.template(), preview.instance(),
                 operationId, transition.runes(), System.currentTimeMillis());

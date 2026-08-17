@@ -64,7 +64,7 @@ messages:
   market-no-item: '&cNincs tárgy a kezedben.'
   market-outbid-notice: '&cTúllicitáltak (&f{item}&c) — a zárolt licited visszakerült a bankodba.'
   market-own-listing: '&cA saját tételedet nem veheted meg (visszavonás: /market cancel).'
-  market-search-usage: '&cHasználat: /market search <szöveg>'
+  market-search-usage: '&cHasználat: /market search <szöveg|@cloth|@leather|@mail|@plate>'
   market-sell-success: '&aTárgy listázva a piacon: &f%s %s &7(visszavonás: /market cancel).'
   market-sell-usage: '&cHasználat: /market sell <ár> [valuta]'
   market-sold-notice: '&aEladtad egy tárgyadat a piacon &f{buyer}&a részére — a bevétel a bankodba került.'

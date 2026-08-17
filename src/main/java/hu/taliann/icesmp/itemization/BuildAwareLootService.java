@@ -98,6 +98,13 @@ public final class BuildAwareLootService {
         }
         if (!context.classId().isBlank()
                 && template.classRestrictions().contains(context.classId())) relevance += 0.10D;
+        final hu.taliann.icesmp.data.JobType playerClass =
+                hu.taliann.icesmp.data.JobType.fromId(context.classId());
+        if (template.isArmorFamilyEquipment() && playerClass != null
+                && EquipmentProficiencyPolicy.familyOf(playerClass) == template.armorFamily()) {
+            // Strongest single build signal, still bounded by the existing global 1.5x cap.
+            relevance += 0.18D;
+        }
         if (!context.specializationId().isBlank()
                 && template.specializationRestrictions().contains(context.specializationId())) relevance += 0.10D;
         if (context.preferredSlot() != ItemTemplate.Slot.NONE
@@ -135,6 +142,9 @@ public final class BuildAwareLootService {
     private static Set<String> signals(final ItemTemplate template) {
         final LinkedHashSet<String> signals = new LinkedHashSet<>();
         signals.add("family:" + template.family().name().toLowerCase(Locale.ROOT));
+        if (template.armorFamily() != null) {
+            signals.add("armor-family:" + template.armorFamily().id());
+        }
         signals.add("slot:" + template.slot().name().toLowerCase(Locale.ROOT));
         template.fixedStats().keySet().forEach(stat -> signals.add("stat:" + stat));
         template.rolledStats().keySet().forEach(stat -> signals.add("stat:" + stat));
