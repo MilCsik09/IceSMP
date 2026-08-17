@@ -13,13 +13,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.data.SpecializationType;
 
 public final class ItemTemplateRegistry {
 
     private record Snapshot(Map<String, ItemTemplate> templates,
-                            Map<String, ItemSetDefinition> sets) {
+                            Map<String, ItemSetDefinition> sets,
+                            Map<ArmorFamily, ArmorFamilyProfile> familyProfiles) {
         private static Snapshot empty() {
-            return new Snapshot(Map.of(), Map.of());
+            return new Snapshot(Map.of(), Map.of(), Map.of());
         }
     }
 
@@ -44,12 +47,14 @@ public final class ItemTemplateRegistry {
         final ConfigurationSection root = configManager.getConfiguration() == null ? null
                 : configManager.getConfiguration().getConfigurationSection("item-templates");
         if (root == null) {
-            snapshot = Snapshot.empty();
-            plugin.getLogger().warning("item-templates.yml: hiányzik az item-templates gyökér.");
-            return;
+            throw new IllegalStateException("item-templates.yml: hiányzik az item-templates gyökér; "
+                    + "az előző immutable Equipment 2.0 snapshot marad aktív");
         }
         final Map<String, ItemSetDefinition> loadedSets = parseSets(
                 configManager.getConfiguration().getConfigurationSection("item-sets"));
+        final Map<ArmorFamily, ArmorFamilyProfile> loadedProfiles = parseFamilyProfiles(
+                configManager.getConfiguration().getConfigurationSection(
+                        "itemization.equipment.family-profiles"));
         final LinkedHashMap<String, ItemTemplate> loaded = new LinkedHashMap<>();
         final ArrayList<String> errors = new ArrayList<>();
         for (final String rawId : root.getKeys(false)) {
@@ -75,11 +80,25 @@ public final class ItemTemplateRegistry {
                 throw new IllegalStateException("Hibás item template katalógus: " + template.templateId()
                         + ": ismeretlen set ID: " + template.setId());
             }
+            validateRestrictions(template);
+            if (template.isArmorFamilyEquipment()) {
+                for (final EquipmentCatalogValidator.Finding finding
+                        : EquipmentCatalogValidator.validate(template,
+                        loadedProfiles.get(template.armorFamily()))) {
+                    if (finding.severity() == EquipmentCatalogValidator.Severity.ERROR) {
+                        throw new IllegalStateException(finding.templateId() + ": " + finding.detail());
+                    }
+                    plugin.getLogger().warning("Equipment 2.0 audit [" + finding.code() + "] "
+                            + finding.templateId() + ": " + finding.detail());
+                }
+            }
         }
-        snapshot = new Snapshot(Map.copyOf(loaded), loadedSets);
+        validateSets(loaded, loadedSets);
+        snapshot = new Snapshot(Map.copyOf(loaded), loadedSets, loadedProfiles);
         hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
                 "Itemization 2.0: " + loaded.size() + " authored template és "
-                        + loadedSets.size() + " set betöltve.");
+                        + loadedSets.size() + " set, valamint " + loadedProfiles.size()
+                        + " Equipment 2.0 family profil betöltve.");
     }
 
     public Optional<ItemTemplate> find(final String templateId) {
@@ -107,6 +126,16 @@ public final class ItemTemplateRegistry {
 
     public Map<String, ItemSetDefinition> setSnapshot() {
         return snapshot.sets();
+    }
+
+    public ArmorFamilyProfile requireFamilyProfile(final ArmorFamily family) {
+        final ArmorFamilyProfile profile = snapshot.familyProfiles().get(family);
+        if (profile == null) throw new IllegalArgumentException("missing armor family profile: " + family);
+        return profile;
+    }
+
+    public Map<ArmorFamily, ArmorFamilyProfile> familyProfileSnapshot() {
+        return snapshot.familyProfiles();
     }
 
     private static Map<String, ItemSetDefinition> parseSets(final ConfigurationSection root) {
@@ -153,6 +182,8 @@ public final class ItemTemplateRegistry {
                 ItemRarity.parse(section.getString("rarity", "kozonseges")),
                 section.getInt("item-level", 1),
                 enumValue(ItemTemplate.Family.class, section.getString("family", "other")),
+                ArmorFamily.parse(section.getString("armor-family", "")),
+                section.getString("family-exception", ""),
                 enumValue(ItemTemplate.Slot.class, section.getString("slot", "none")),
                 material.name(),
                 section.getString("item-model", ""),
@@ -178,6 +209,73 @@ public final class ItemTemplateRegistry {
                 strings(section.getConfigurationSection("encounter-metadata")),
                 section.getStringList("ascension-path"),
                 ascensionStages(section.getConfigurationSection("ascension-stages")));
+    }
+
+    private static Map<ArmorFamily, ArmorFamilyProfile> parseFamilyProfiles(
+            final ConfigurationSection root) {
+        if (root == null) throw new IllegalArgumentException("missing Equipment 2.0 family profiles");
+        final java.util.EnumMap<ArmorFamily, ArmorFamilyProfile> result =
+                new java.util.EnumMap<>(ArmorFamily.class);
+        for (final String raw : root.getKeys(false)) {
+            final ArmorFamily family = ArmorFamily.parse(raw);
+            final ConfigurationSection section = root.getConfigurationSection(raw);
+            if (section == null) throw new IllegalArgumentException("invalid armor family profile: " + raw);
+            final ArmorFamilyProfile profile = new ArmorFamilyProfile(family,
+                    section.getDouble("base-armor-coefficient"),
+                    section.getDouble("budget.offensive"),
+                    section.getDouble("budget.defensive"),
+                    section.getDouble("budget.utility"),
+                    ids(section.getStringList("preferred-stats")),
+                    ids(section.getStringList("disfavored-stats")));
+            if (result.putIfAbsent(family, profile) != null) {
+                throw new IllegalArgumentException("duplicate armor family profile: " + family);
+            }
+        }
+        if (result.size() != ArmorFamily.values().length) {
+            throw new IllegalArgumentException("all four armor family profiles are required");
+        }
+        return Map.copyOf(result);
+    }
+
+    private static void validateRestrictions(final ItemTemplate template) {
+        for (final String classId : template.classRestrictions()) {
+            final JobType job = JobType.fromId(classId);
+            if (job == null) throw new IllegalArgumentException(template.templateId()
+                    + ": unknown class restriction: " + classId);
+            if (template.isArmorFamilyEquipment()
+                    && EquipmentProficiencyPolicy.familyOf(job) != template.armorFamily()) {
+                throw new IllegalArgumentException(template.templateId()
+                        + ": class restriction conflicts with armor family: " + classId);
+            }
+        }
+        for (final String specId : template.specializationRestrictions()) {
+            final SpecializationType specialization = SpecializationType.fromId(specId);
+            if (specialization == null) throw new IllegalArgumentException(template.templateId()
+                    + ": unknown specialization restriction: " + specId);
+            if (!template.classRestrictions().isEmpty()
+                    && !template.classRestrictions().contains(specialization.getParentJob().getId())) {
+                throw new IllegalArgumentException(template.templateId()
+                        + ": specialization restriction is outside the class restriction: " + specId);
+            }
+            if (template.isArmorFamilyEquipment()
+                    && EquipmentProficiencyPolicy.familyOf(specialization.getParentJob())
+                    != template.armorFamily()) {
+                throw new IllegalArgumentException(template.templateId()
+                        + ": specialization restriction conflicts with armor family: " + specId);
+            }
+        }
+    }
+
+    private static void validateSets(final Map<String, ItemTemplate> templates,
+                                     final Map<String, ItemSetDefinition> sets) {
+        for (final String setId : sets.keySet()) {
+            final Set<ArmorFamily> armorFamilies = templates.values().stream()
+                    .filter(template -> setId.equals(template.setId()) && template.isArmorFamilyEquipment())
+                    .map(ItemTemplate::armorFamily).collect(java.util.stream.Collectors.toSet());
+            if (armorFamilies.size() > 1) {
+                throw new IllegalArgumentException("mixed armor-family set is forbidden: " + setId);
+            }
+        }
     }
 
     private static Map<String, Double> doubles(final ConfigurationSection section) {
