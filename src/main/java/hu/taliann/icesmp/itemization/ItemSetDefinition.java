@@ -7,7 +7,9 @@ import java.util.Map;
 public record ItemSetDefinition(String setId, String displayName,
                                 Map<Integer, Map<String, Double>> tierStats) {
 
-    private static final java.util.Set<String> SET_STAT_CONSUMERS = java.util.Set.of("ability_power");
+    /** Only stats with a concrete runtime consumer may appear in authored set tiers. */
+    private static final java.util.Set<String> SET_STAT_CONSUMERS = java.util.Set.of(
+            "ability_power", "max_health", "armor", "armor_toughness", "movement_speed");
 
     public ItemSetDefinition {
         setId = ItemStatCatalog.normalizeId(setId);
