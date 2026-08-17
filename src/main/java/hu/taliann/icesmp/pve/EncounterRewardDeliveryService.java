@@ -15,7 +15,9 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** PlayerProfile receipt + playerdata witness boundary for physical personal encounter rewards. */
@@ -235,20 +237,36 @@ public final class EncounterRewardDeliveryService implements Listener {
     }
 
     private void cleanupCommittedMarkers(final Player player) {
-        for (final ItemStack item : player.getInventory().getStorageContents()) {
+        final Set<String> receipts = new LinkedHashSet<>();
+        for (final ItemStack item : player.getInventory().getContents()) {
             final String receipt = receipt(item);
-            if (receipt == null) continue;
-            final var operation = operations.read(player.getUniqueId(), receipt).orElse(null);
-            if (operation != null && operation.status() == PlayerProfileOperation.Status.PREPARED) {
+            if (receipt != null) receipts.add(receipt);
+        }
+        for (final String receipt : receipts) {
+            final PlayerProfileOperation operation = operations.read(
+                    player.getUniqueId(), receipt).orElse(null);
+            if (operation == null || !OPERATION_TYPE.equals(operation.type())) continue;
+            final EncounterRewardRecoveryPolicy.ReceiptState state = switch (operation.status()) {
+                case PREPARED -> EncounterRewardRecoveryPolicy.ReceiptState.PREPARED;
+                case COMMITTED -> EncounterRewardRecoveryPolicy.ReceiptState.COMMITTED;
+                default -> null;
+            };
+            if (state == null) continue;
+            final EncounterRewardRecoveryPolicy.Decision decision =
+                    EncounterRewardRecoveryPolicy.decide(state, receiptCount(player, receipt));
+            if (decision == EncounterRewardRecoveryPolicy.Decision.MANUAL_REVIEW) {
+                plugin.getLogger().severe("Ambiguous duplicate encounter reward witnesses for "
+                        + player.getUniqueId() + '/' + receipt);
+            } else if (decision == EncounterRewardRecoveryPolicy.Decision.COMMIT_WITNESS) {
                 commit(player, operation);
-            } else if (operation != null && operation.status() == PlayerProfileOperation.Status.COMMITTED) {
+            } else if (decision == EncounterRewardRecoveryPolicy.Decision.CLEANUP_ONLY) {
                 stripReceipt(player, receipt);
             }
         }
     }
 
     private int receiptCount(final Player player, final String operationId) {
-        return (int) Arrays.stream(player.getInventory().getStorageContents())
+        return (int) Arrays.stream(player.getInventory().getContents())
                 .filter(item -> operationId.equals(receipt(item))).count();
     }
 
@@ -259,16 +277,21 @@ public final class EncounterRewardDeliveryService implements Listener {
     }
 
     private void stripReceipt(final Player player, final String operationId) {
-        final ItemStack[] contents = player.getInventory().getStorageContents();
         boolean changed = false;
-        for (final ItemStack item : contents) {
+        final var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            final ItemStack item = inventory.getItem(slot);
             if (!operationId.equals(receipt(item))) continue;
             final var meta = item.getItemMeta();
             meta.getPersistentDataContainer().remove(receiptKey);
             item.setItemMeta(meta);
+            inventory.setItem(slot, item);
             changed = true;
         }
-        if (changed) player.getInventory().setStorageContents(contents);
+        if (changed) {
+            // The caller persists after a successful commit. Keeping this helper side-effect-only
+            // avoids a second commit boundary while still covering armor/offhand player slots.
+        }
     }
 
     private static boolean canFit(final Player player, final ItemStack incoming) {
