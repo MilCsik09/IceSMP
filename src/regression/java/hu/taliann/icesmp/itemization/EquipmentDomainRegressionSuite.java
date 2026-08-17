@@ -24,8 +24,14 @@ public final class EquipmentDomainRegressionSuite {
         specializationsNeverChangeFamily();
         schemaAndRestrictionPrecedenceFailClosed();
         vanillaBasicArmorRemainsClassAgnostic();
+        activeEquipmentStateMachineFailsClosed();
+        invalidIdentityMatrixIsGameplayInert();
+        classSpecAndReconnectTransitionsReevaluate();
+        combinedConsumerMatrixUsesOneAuthority();
         referenceBuildsRemainComparable();
         familyAwareLootPrefersWithoutEliminatingTradeDrops();
+        backingAttributeOwnershipIsCanonical();
+        allTenRuneRuntimeConsumersAreGuarded();
         runtimeConsumersHaveFailClosedGates();
         System.out.println("Equipment 2.0 regression suite passed: " + assertions + " assertions.");
     }
@@ -76,7 +82,7 @@ public final class EquipmentDomainRegressionSuite {
         final ItemTemplate weapon = template("open_weapon", ItemTemplate.Family.WEAPON,
                 null, ItemTemplate.Slot.MAIN_HAND, Map.of("attack_damage", 1.0D), Set.of());
         check(EquipmentProficiencyPolicy.decide(null, null, weapon).allowed(),
-                "unrestricted non-armor does not inherit armor proficiency");
+                "pure restriction policy leaves unrestricted non-armor open; runtime readiness is separate");
     }
 
     private static void vanillaBasicArmorRemainsClassAgnostic() {
@@ -88,6 +94,100 @@ public final class EquipmentDomainRegressionSuite {
             check(ItemTransformationPolicy.isBasicSurvivalGear(Material.NETHERITE_BOOTS),
                     "netherite armor remains BASIC survival gear");
         }
+        check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.NOT_MANAGED,
+                        true, false, false, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.NOT_MANAGED,
+                "BASIC/NOT_MANAGED is explicitly outside the MMO active-equipment gate");
+    }
+
+    /** Behavioral contract for the shared active-equipment state machine, independent of Bukkit events. */
+    private static void activeEquipmentStateMachineFailsClosed() {
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.ACTIVE,
+                "valid own-family canonical equipment is ACTIVE");
+        check(activity(ItemIdentityService.Status.VALID, false, false, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.SLOT_MISMATCH,
+                "wrong physical slot is inactive");
+        check(activity(ItemIdentityService.Status.VALID, true, true, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.DUPLICATE_UUID,
+                "duplicate equipped UUID fails closed");
+        check(activity(ItemIdentityService.Status.VALID, true, false, false, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.PROFILE_NOT_READY,
+                "profile-not-ready canonical gear is inactive");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
+                "wrong-family/class/spec canonical gear is inactive");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true)
+                        == EquipmentProficiencyService.ActivityStatus.SUPPRESSED,
+                "suppression marker is authoritative at runtime");
+    }
+
+    private static void invalidIdentityMatrixIsGameplayInert() {
+        for (final ItemIdentityService.Status invalid : List.of(
+                ItemIdentityService.Status.MALFORMED,
+                ItemIdentityService.Status.INTEGRITY_MISMATCH,
+                ItemIdentityService.Status.TEMPLATE_MISSING,
+                ItemIdentityService.Status.TEMPLATE_VERSION_STALE,
+                ItemIdentityService.Status.TEMPLATE_MISMATCH,
+                ItemIdentityService.Status.POLICY_VIOLATION)) {
+            check(activity(invalid, true, false, true, true, false)
+                            == EquipmentProficiencyService.ActivityStatus.INVALID_IDENTITY,
+                    invalid + " is gameplay-inert");
+        }
+    }
+
+    private static void classSpecAndReconnectTransitionsReevaluate() {
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.ACTIVE,
+                "Warrior own-family PLATE starts active");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
+                "Warrior -> Wizard class change turns the same PLATE inactive");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.ACTIVE,
+                "Wizard -> Warrior re-evaluation can reactivate without permanent suppression state");
+        check(activity(ItemIdentityService.Status.VALID, true, false, false, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.PROFILE_NOT_READY,
+                "reconnect before PlayerProfile readiness is fail-closed");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.ACTIVE,
+                "reconnect activation re-evaluates after PlayerProfile becomes ready");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
+                "spec restriction change uses the same re-evaluation state");
+    }
+
+    /**
+     * Same wrong-family/invalid state must be zero across all canonical gameplay consumers.
+     * BASIC is intentionally excluded from this predicate because vanilla/legacy policy owns it.
+     */
+    private static void combinedConsumerMatrixUsesOneAuthority() {
+        final List<String> consumers = List.of("backing-attribute", "fixed", "rolled", "set",
+                "signature", "rune", "curse", "magic-resistance", "combat-power", "loot-tags");
+        final var active = EquipmentProficiencyService.ActivityStatus.ACTIVE;
+        final var wrongFamily = EquipmentProficiencyService.ActivityStatus.RESTRICTED;
+        final var invalid = EquipmentProficiencyService.ActivityStatus.INVALID_IDENTITY;
+        final var duplicate = EquipmentProficiencyService.ActivityStatus.DUPLICATE_UUID;
+        final var suppressed = EquipmentProficiencyService.ActivityStatus.SUPPRESSED;
+        for (final String consumer : consumers) {
+            check(canonicalContributes(active), consumer + " is ON for valid canonical equipment");
+            check(!canonicalContributes(wrongFamily), consumer + " is OFF for wrong-family canonical equipment");
+            check(!canonicalContributes(invalid), consumer + " is OFF for managed-invalid canonical equipment");
+            check(!canonicalContributes(duplicate), consumer + " is OFF for duplicate UUID equipment");
+            check(!canonicalContributes(suppressed), consumer + " is OFF while suppressed");
+        }
+    }
+
+    private static boolean canonicalContributes(final EquipmentProficiencyService.ActivityStatus status) {
+        return status == EquipmentProficiencyService.ActivityStatus.ACTIVE;
+    }
+
+    private static EquipmentProficiencyService.ActivityStatus activity(
+            final ItemIdentityService.Status identityStatus, final boolean slotMatches,
+            final boolean duplicateUuid, final boolean profileReady,
+            final boolean restrictionsAllowed, final boolean suppressed) {
+        return EquipmentProficiencyService.decideActivity(identityStatus, slotMatches, duplicateUuid,
+                profileReady, restrictionsAllowed, suppressed);
     }
 
     private static void referenceBuildsRemainComparable() {
@@ -166,6 +266,45 @@ public final class EquipmentDomainRegressionSuite {
                 "seeded loot statistics prefer own family without deterministic personal loot");
     }
 
+    /** Wiring assertions complement the behavioral state-machine proof above. */
+    private static void backingAttributeOwnershipIsCanonical() throws Exception {
+        final String factory = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java"));
+        final String identity = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java"));
+        final String rarity = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/ItemRarityService.java"));
+        check(factory.contains("applyCanonicalAttributeModifiers"),
+                "canonical attribute path is explicit");
+        check(factory.contains("applyAttributeModifiers(item, specs, appendStatLore, false)"),
+                "canonical attribute path disables Material default seeding");
+        check(factory.contains("meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create())"),
+                "canonical zero-stat/suppressed path owns an explicit empty attribute component");
+        check(identity.contains("ItemDataFactory.applyCanonicalAttributeModifiers"),
+                "ItemIdentity render uses canonical attribute ownership");
+        check(rarity.contains("isCanonicalManaged(base)"),
+                "legacy rarity/affix roll cannot contaminate canonical identity");
+        check(rarity.contains("item.getType().isAir() || !item.hasItemMeta() || isCanonicalManaged(item)"),
+                "legacy spell_power contributes zero on managed canonical identity");
+    }
+
+    private static void allTenRuneRuntimeConsumersAreGuarded() throws Exception {
+        final String runes = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/RuneEffectListener.java"));
+        final String greed = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/MobMoneyDropListener.java"));
+        for (final String rune : List.of("runa_elek", "runa_visszhang", "runa_lang", "runa_fagy",
+                "runa_suly", "runa_zapor", "runa_vadasz", "runa_bastya", "runa_oltalom")) {
+            check(runes.contains(rune), rune + " runtime consumer is present");
+        }
+        check(runes.contains("proficiency.isActive(player, item, slot)"),
+                "nine central rune effects use active-equipment authority");
+        check(greed.contains("EquipmentProficiencyService.allowsGameplayContribution"),
+                "runa_moho main-hand bonus uses active-equipment authority");
+        check(greed.contains("itemIdentityService.hasRune(hand, \"runa_moho\")"),
+                "runa_moho remains the tenth audited runtime consumer");
+    }
+
     private static void runtimeConsumersHaveFailClosedGates() throws Exception {
         final String combatPower = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java"));
@@ -175,25 +314,60 @@ public final class EquipmentDomainRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/listeners/RuneEffectListener.java"));
         final String lifecycle = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/EquipmentProficiencyListener.java"));
+        final String curse = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/CursedGearService.java"));
+        final String curseListener = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/CursedGearListener.java"));
+        final String resistance = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/SpellDamageListener.java"));
+        final String loot = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/MobLootListener.java"));
+        final String authority = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java"));
+        final String identity = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java"));
         final String market = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/MarketManager.java"));
         final String marketGui = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/gui/MarketGUI.java"));
-        check(combatPower.contains("proficiency.canUse(player, template)"),
-                "CombatPower suppresses incompatible canonical gear");
+
+        check(combatPower.contains("proficiency.isActive(player, item, equippedSlot)"),
+                "CombatPower delegates candidate admission to active-equipment authority");
         check(signature.contains("proficiency.isActive(player, item, slot)"),
-                "Signature effects use the proficiency authority");
+                "equipped Signature effects use active-equipment authority");
+        check(signature.contains("activeId(player, player.getInventory().getItemInMainHand()")
+                        && signature.contains("activeId(player, player.getInventory().getItemInOffHand()"),
+                "fishing Signature consumers no longer use physical PDC-only activation");
         check(runes.contains("proficiency.isActive(player, item, slot)"),
-                "rune effects use the proficiency authority");
+                "central rune effects use active-equipment authority");
+        check(curse.contains("EquipmentProficiencyService.allowsGameplayContribution"),
+                "curse contribution uses BASIC-aware active-equipment authority");
+        check(curseListener.contains("isActiveCurse(player, event.getCurrentItem(), currentSlot)"),
+                "curse removal lock cannot softlock inactive wrong-family gear");
+        check(!curseListener.contains("dropItemNaturally(player.getLocation(), overflow)"),
+                "curse confirmation overflow no longer world-drops a cloned equipped item");
+        check(resistance.contains("EquipmentProficiencyService.allowsGameplayContribution"),
+                "magic/rune resistance is active-equipment guarded");
+        check(loot.contains("EquipmentProficiencyService.isCanonicalActive"),
+                "loot build tags accept only ACTIVE canonical equipment");
+        check(authority.contains("duplicateEquippedIds(player)"),
+                "active authority fails closed on duplicate equipped UUIDs");
+        check(authority.contains("identities.suppressManagedInvalid(item)"),
+                "managed-invalid physical equipment is explicitly attribute-suppressed");
+        check(identity.contains("meta.getPersistentDataContainer().set(equipmentSuppressedKey"),
+                "suppression is represented in runtime item state");
         for (final String route : List.of("InventoryClickEvent", "InventoryDragEvent",
                 "BlockDispenseArmorEvent", "EntityEquipmentChangedEvent", "PlayerJoinEvent",
                 "PlayerRespawnEvent")) {
             check(lifecycle.contains(route), route + " is covered by equip reconciliation");
         }
-        check(lifecycle.contains("setEquipmentSuppressed"),
-                "post-mutation bypasses are suppressed before reconciliation");
-        check(market.contains("ArmorFamily armorFamily")
-                        && market.contains("filter.armorFamily()"),
+        check(lifecycle.contains("case HAND -> ItemTemplate.Slot.MAIN_HAND")
+                        && lifecycle.contains("case OFF_HAND -> ItemTemplate.Slot.OFF_HAND"),
+                "main/off-hand mutations also trigger active-equipment reconciliation");
+        check(authority.contains("reconcileSlot(player, player.getInventory().getItemInMainHand()")
+                        && authority.contains("reconcileSlot(player, player.getInventory().getItemInOffHand()"),
+                "reconcile covers all six equipment slots without polling");
+        check(market.contains("ArmorFamily armorFamily") && market.contains("filter.armorFamily()"),
                 "market metadata and structured filters expose ArmorFamily");
         for (final String familyFilter : List.of("@cloth", "@leather", "@mail", "@plate")) {
             check(marketGui.contains(familyFilter), familyFilter + " market filter is available");
