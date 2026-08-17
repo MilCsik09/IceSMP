@@ -25,6 +25,8 @@ public final class ProfessionRecipeAuditRegressionSuite {
     private static final List<String> FUNCTIONAL_KEYS =
             List.of("template", "affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects");
     private static final int GYAKORLO_MAX_LEVEL = 15;
+    private static final int EXPECTED_RECIPE_COUNT = 392;
+    private static final int EXPECTED_CANONICAL_GEAR_COUNT = 15;
     /** A vanília MAGA is ugyanígy duplikálja ezt a tárgyat — a katalógusból ez nem látszik. */
     private static final Set<String> VANILLA_DUPLICATION = Set.of("kovacsmesteri_sablon");
 
@@ -41,6 +43,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
         check(root != null, "profession recipe root exists");
         final Set<String> ids = new TreeSet<>(root.getKeys(false));
         final Set<String> fingerprints = new HashSet<>();
+        int canonicalGearCount = 0;
         for (final String id : ids) {
             final ConfigurationSection section = root.getConfigurationSection(id);
             check(section != null, "recipe section: " + id);
@@ -82,6 +85,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
                 check(functional, "kind=egyedi carries a functional component: " + id);
             }
             if (template != null) {
+                canonicalGearCount++;
                 check(!template.isBlank(), "canonical gear template id is non-empty: " + id);
                 check(unique == null && Math.max(1, result.getInt("amount", 1)) == 1,
                         "canonical gear is a single non-unique stack: " + id);
@@ -126,6 +130,11 @@ public final class ProfessionRecipeAuditRegressionSuite {
                 check(model != null && !model.isBlank(), "unique profession output has icon: " + unique);
             }
         }
+        check(ids.size() == EXPECTED_RECIPE_COUNT,
+                "authored profession recipe count remains " + EXPECTED_RECIPE_COUNT + ", got " + ids.size());
+        check(canonicalGearCount == EXPECTED_CANONICAL_GEAR_COUNT,
+                "canonical profession gear recipe count remains " + EXPECTED_CANONICAL_GEAR_COUNT
+                        + ", got " + canonicalGearCount);
         check(new ArrayList<>(ids).equals(ids.stream().sorted().toList()), "deterministic recipe order");
 
         final Map<Material, Integer> mutableIngredients = new HashMap<>();
@@ -184,6 +193,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
                         && bookListener.contains("uniqueMaterials.idOf(item)"),
                 "catalog custom ingredients require canonical unique-item identity");
         System.out.println("PROFESSION_RECIPE_AUDIT recipes=" + ids.size()
+                + " canonical_gear=" + canonicalGearCount
                 + " semantic_duplicates=0 key_duplicates=0 atomic_reload=true");
         System.out.println("Profession recipe audit regression suite passed.");
     }
