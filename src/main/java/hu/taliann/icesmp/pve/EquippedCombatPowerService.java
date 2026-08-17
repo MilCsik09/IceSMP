@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,7 +40,7 @@ public final class EquippedCombatPowerService implements Listener {
     private final ItemIdentityService identities;
     private final JobManager jobs;
     private final Map<UUID, Double> cache = new ConcurrentHashMap<>();
-    private final Map<UUID, UUID> refreshLoops = new ConcurrentHashMap<>();
+    private final Set<UUID> refreshLoops = ConcurrentHashMap.newKeySet();
 
     public EquippedCombatPowerService(final JavaPlugin plugin,
                                       final ItemIdentityService identities,
@@ -112,15 +113,14 @@ public final class EquippedCombatPowerService implements Listener {
      */
     private void ensureRefreshLoop(final Player player) {
         final UUID playerId = player.getUniqueId();
-        final UUID token = UUID.randomUUID();
-        if (refreshLoops.putIfAbsent(playerId, token) != null) return;
+        if (!refreshLoops.add(playerId)) return;
         try {
             player.getScheduler().runAtFixedRate(plugin, task -> refresh(player), () -> {
-                refreshLoops.remove(playerId, token);
+                refreshLoops.remove(playerId);
                 cache.remove(playerId);
             }, PERIODIC_REFRESH_TICKS, PERIODIC_REFRESH_TICKS);
         } catch (final RuntimeException rejected) {
-            refreshLoops.remove(playerId, token);
+            refreshLoops.remove(playerId);
             cache.remove(playerId);
         }
     }
