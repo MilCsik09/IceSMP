@@ -101,9 +101,13 @@ public final class RuneLifecycleRegressionSuite {
                             == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
                     action + " mixed item/payment witness fails closed");
         }
-        check(ItemMutationRecoveryPolicy.decide(before, before, before)
+        final List<String> benignNoop = List.of("-", "-");
+        check(ItemMutationRecoveryPolicy.decide(benignNoop, benignNoop, benignNoop)
                         == ItemMutationRecoveryPolicy.Decision.ABORT_BEFORE,
-                "benign before==after witness is safely abortable rather than manual-review dead-end");
+                "production-shaped benign before==after witness is safely abortable rather than manual-review dead-end");
+        check(ItemMutationRecoveryPolicy.decide(before, before, before)
+                        == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
+                "malformed synthetic equal witness remains fail-closed");
     }
 
     private static void cursorRehomeIsAllOrNothing() {
