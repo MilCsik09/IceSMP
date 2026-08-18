@@ -1,31 +1,56 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import json
-ROOT=Path(__file__).resolve().parents[1]
-paths=[ROOT/'docs/development/professions-2-recipe-migration.json',
-       ROOT/'docs/development/professions-2-economy-graph.json',
-       ROOT/'docs/development/professions-2-rp-handoff.json']
-for p in paths:
-    assert json.loads(p.read_text(encoding='utf-8')).get('schema')==2, p
-mig=json.loads(paths[0].read_text(encoding='utf-8'))
-assert mig['baseline_recipe_count']==392
-assert mig['effective_recipe_count']==407
-assert mig['canonical_recipe_count']==18
-assert mig['category_summary']['EQUIPMENT']==18
-assert len(mig['recipes'])==407
-assert all('economy_category' in row for row in mig['recipes'])
-g=json.loads(paths[1].read_text(encoding='utf-8'))
-assert not g['dead_managed_materials'] and not g['cycles']
-assert g['mail_mixed_dependency_verified']
-assert set(g['family_distribution'])=={'CLOTH','LEATHER','MAIL','PLATE'}
-assert all(g['family_distribution'][f]>0 for f in g['family_distribution'])
-assert set(g['salvage_reclamation_sinks_verified'])=={'szovet_foszlany','bor_hulladek','lanc_toredek','femhulladek'}
-nodes={n['id']:n for n in g['material_nodes']}
-for scrap in g['salvage_reclamation_sinks_verified']:
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+paths = [
+    ROOT / 'docs/development/professions-2-recipe-migration.json',
+    ROOT / 'docs/development/professions-2-economy-graph.json',
+    ROOT / 'docs/development/professions-2-rp-handoff.json',
+]
+for path in paths:
+    assert json.loads(path.read_text(encoding='utf-8')).get('schema') == 2, path
+
+migration = json.loads(paths[0].read_text(encoding='utf-8'))
+assert migration['baseline_recipe_count'] == 392
+assert migration['effective_recipe_count'] == 407
+assert migration['canonical_recipe_count'] == 18
+assert migration['category_summary']['EQUIPMENT'] == 18
+assert len(migration['recipes']) == 407
+assert all('economy_category' in row for row in migration['recipes'])
+
+graph = json.loads(paths[1].read_text(encoding='utf-8'))
+assert not graph['dead_managed_materials'] and not graph['cycles']
+assert graph['mail_mixed_dependency_verified']
+assert set(graph['family_distribution']) == {'CLOTH', 'LEATHER', 'MAIL', 'PLATE'}
+assert all(graph['family_distribution'][family] > 0
+           for family in graph['family_distribution'])
+expected_scraps = {'szovet_foszlany', 'bor_hulladek', 'lanc_toredek', 'femhulladek'}
+assert set(graph['salvage_reclamation_sinks_verified']) == expected_scraps
+nodes = {node['id']: node for node in graph['material_nodes']}
+for scrap in expected_scraps:
     assert nodes[scrap]['consumer_recipes'], scrap
-listener=(ROOT/'src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java').read_text(encoding='utf-8')
-tx=listener.index('craftTransaction.apply(player, recipe, batches, outputs)')
-award=listener.index('AdvancementService.award(player, "masterwork")')
-assert award>tx
+
+listener = (ROOT / 'src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java').read_text(encoding='utf-8')
+tx_index = listener.index('craftTransaction.apply(player, recipe, batches, outputs)')
+award_index = listener.index('AdvancementService.award(player, "masterwork")')
+assert award_index > tx_index
 assert 'dropItemNaturally(player.getLocation(), overflow)' not in listener
+
+transaction = (ROOT / 'src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java').read_text(encoding='utf-8')
+assert 'player.saveData();' in transaction
+assert 'PERSISTENCE_FAILED' in transaction
+assert 'inventory.setStorageContents(cloneContents(before));' in transaction
+assert 'dropItemNaturally' not in transaction
+
+salvage = (ROOT / 'src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java').read_text(encoding='utf-8')
+assert 'familyScrapId' in salvage
+assert 'ProfessionEconomyTelemetry.global().recordSalvage' not in salvage
+
+root_config = yaml.safe_load((ROOT / 'src/main/resources/config.yml').read_text(encoding='utf-8')) or {}
+delivery = (((root_config.get('itemization') or {}).get('salvage') or {}).get('output-map') or {})
+for scrap in expected_scraps:
+    assert delivery.get(scrap) == scrap, (scrap, delivery.get(scrap))
+
 print('Professions 2.0 reports/hardening: OK')

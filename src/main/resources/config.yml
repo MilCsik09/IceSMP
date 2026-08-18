@@ -15,6 +15,16 @@ resource-pack:
   override-sha1: ""
   prompt: "&bAz IceSMP egyedi modelljeihez és felületéhez szükséges resource pack."
 
+# ===== Professions 2.0 — family salvage delivery =====
+# A salvage domain output-keyjei stabil profession material ID-k; nincs runapor fallback.
+itemization:
+  salvage:
+    output-map:
+      szovet_foszlany: szovet_foszlany
+      bor_hulladek: bor_hulladek
+      lanc_toredek: lanc_toredek
+      femhulladek: femhulladek
+
 # ===== Season 0 / Prologue — Olethropyla =====
 # Nincsenek map-koordináták a kódban: az anchorokat az /events spawnpoint rendszerrel
 # kell felvenni (prologue-gate, prologue-gathering, prologue-breach, prologue-boss).

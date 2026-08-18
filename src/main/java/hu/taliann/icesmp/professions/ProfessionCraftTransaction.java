@@ -8,18 +8,26 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Owner-thread inventory transaction for profession processing/crafting.
  * All input removal and output placement is planned against a clone first; full inventory or
- * missing input leaves the live inventory untouched. No fallback world-drop is used.
+ * missing input leaves the live inventory untouched. The committed snapshot is immediately
+ * persisted through the player's canonical data store; persistence failure rolls the live
+ * inventory back to the exact pre-craft snapshot. No fallback world-drop is used.
  */
 public final class ProfessionCraftTransaction {
 
-    public enum Status { APPLIED, MISSING_INGREDIENTS, INVENTORY_FULL, INVALID_BATCH }
+    public enum Status {
+        APPLIED,
+        MISSING_INGREDIENTS,
+        INVENTORY_FULL,
+        INVALID_BATCH,
+        PERSISTENCE_FAILED
+    }
+
     public record Result(Status status, int batches) {
         public boolean applied() { return status == Status.APPLIED; }
     }
@@ -37,21 +45,22 @@ public final class ProfessionCraftTransaction {
         if (batches < 1 || batches > 64 || outputs == null || outputs.isEmpty()) {
             return new Result(Status.INVALID_BATCH, 0);
         }
+
         final PlayerInventory inventory = player.getInventory();
-        final ItemStack[] live = inventory.getStorageContents();
-        final ItemStack[] working = new ItemStack[live.length];
-        for (int i = 0; i < live.length; i++) {
-            working[i] = live[i] == null ? null : live[i].clone();
-        }
+        final ItemStack[] before = cloneContents(inventory.getStorageContents());
+        final ItemStack[] working = cloneContents(before);
+
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
             final long requested = (long) entry.getValue() * batches;
-            if (requested > Integer.MAX_VALUE || !consumePlain(working, entry.getKey(), (int) requested)) {
+            if (requested > Integer.MAX_VALUE
+                    || !consumePlain(working, entry.getKey(), (int) requested)) {
                 return new Result(Status.MISSING_INGREDIENTS, 0);
             }
         }
         for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {
             final long requested = (long) entry.getValue() * batches;
-            if (requested > Integer.MAX_VALUE || !consumeUnique(working, entry.getKey(), (int) requested)) {
+            if (requested > Integer.MAX_VALUE
+                    || !consumeUnique(working, entry.getKey(), (int) requested)) {
                 return new Result(Status.MISSING_INGREDIENTS, 0);
             }
         }
@@ -59,21 +68,38 @@ public final class ProfessionCraftTransaction {
             if (raw == null || raw.getType().isAir() || raw.getAmount() <= 0) {
                 return new Result(Status.INVALID_BATCH, 0);
             }
-            final ItemStack output = raw.clone();
-            if (!insert(working, output)) {
+            if (!insert(working, raw.clone())) {
                 return new Result(Status.INVENTORY_FULL, 0);
             }
         }
-        inventory.setStorageContents(working);
-        return new Result(Status.APPLIED, batches);
+
+        try {
+            inventory.setStorageContents(cloneContents(working));
+            player.saveData();
+            return new Result(Status.APPLIED, batches);
+        } catch (final RuntimeException persistenceFailure) {
+            try {
+                inventory.setStorageContents(cloneContents(before));
+                player.saveData();
+            } catch (final RuntimeException rollbackFailure) {
+                persistenceFailure.addSuppressed(rollbackFailure);
+                throw new IllegalStateException(
+                        "profession craft persistence rollback failed", persistenceFailure);
+            }
+            return new Result(Status.PERSISTENCE_FAILED, 0);
+        }
     }
 
-    private boolean consumePlain(final ItemStack[] contents, final Material material, final int amount) {
+    private boolean consumePlain(final ItemStack[] contents, final Material material,
+                                 final int amount) {
         int available = 0;
         for (final ItemStack item : contents) {
-            if (PlainIngredients.matches(item, material, uniqueMaterials)) available += item.getAmount();
+            if (PlainIngredients.matches(item, material, uniqueMaterials)) {
+                available += item.getAmount();
+            }
         }
         if (available < amount) return false;
+
         int remaining = amount;
         for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
             final ItemStack item = contents[slot];
@@ -89,9 +115,12 @@ public final class ProfessionCraftTransaction {
     private boolean consumeUnique(final ItemStack[] contents, final String id, final int amount) {
         int available = 0;
         for (final ItemStack item : contents) {
-            if (item != null && id.equals(uniqueMaterials.idOf(item))) available += item.getAmount();
+            if (item != null && id.equals(uniqueMaterials.idOf(item))) {
+                available += item.getAmount();
+            }
         }
         if (available < amount) return false;
+
         int remaining = amount;
         for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
             final ItemStack item = contents[slot];
@@ -110,12 +139,22 @@ public final class ProfessionCraftTransaction {
         return clone;
     }
 
+    private static ItemStack[] cloneContents(final ItemStack[] source) {
+        final ItemStack[] result = new ItemStack[source.length];
+        for (int slot = 0; slot < source.length; slot++) {
+            result[slot] = source[slot] == null ? null : source[slot].clone();
+        }
+        return result;
+    }
+
     private static boolean insert(final ItemStack[] contents, final ItemStack output) {
         int remaining = output.getAmount();
         for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
             final ItemStack current = contents[slot];
             if (current == null || !current.isSimilar(output)) continue;
-            final int room = Math.max(0, Math.min(current.getMaxStackSize(), output.getMaxStackSize()) - current.getAmount());
+            final int room = Math.max(0,
+                    Math.min(current.getMaxStackSize(), output.getMaxStackSize())
+                            - current.getAmount());
             if (room <= 0) continue;
             final int moved = Math.min(room, remaining);
             contents[slot] = withAmount(current, current.getAmount() + moved);
