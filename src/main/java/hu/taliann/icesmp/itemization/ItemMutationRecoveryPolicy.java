@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.itemization;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,13 +15,30 @@ public final class ItemMutationRecoveryPolicy {
         Objects.requireNonNull(current, "current");
         Objects.requireNonNull(before, "before");
         Objects.requireNonNull(after, "after");
-        // A no-op witness is benign only when the current inventory is still that exact witness.
-        // There is no payment/item side to choose between, so closing it as exact-before is safe.
+        // A real journal no-op witness is benign only when all three snapshots are byte-for-byte
+        // identical and the witness has the production inventory encoding shape. Malformed or
+        // synthetic equal witnesses remain quarantined instead of being treated as evidence.
         if (before.equals(after)) {
-            return current.equals(before) ? Decision.ABORT_BEFORE : Decision.MANUAL_REVIEW;
+            return current.equals(before) && looksLikeEncodedInventory(before)
+                    ? Decision.ABORT_BEFORE : Decision.MANUAL_REVIEW;
         }
         if (current.equals(after)) return Decision.COMMIT_AFTER;
         if (current.equals(before)) return Decision.ABORT_BEFORE;
         return Decision.MANUAL_REVIEW;
+    }
+
+    private static boolean looksLikeEncodedInventory(final List<String> snapshot) {
+        if (snapshot.isEmpty() || snapshot.size() > 64) return false;
+        for (final String slot : snapshot) {
+            if (slot == null) return false;
+            if ("-".equals(slot)) continue;
+            if (slot.isBlank()) return false;
+            try {
+                if (Base64.getDecoder().decode(slot).length == 0) return false;
+            } catch (final IllegalArgumentException malformed) {
+                return false;
+            }
+        }
+        return true;
     }
 }

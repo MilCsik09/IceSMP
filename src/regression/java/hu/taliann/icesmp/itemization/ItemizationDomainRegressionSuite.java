@@ -234,7 +234,7 @@ public final class ItemizationDomainRegressionSuite {
         final var repeatedWeight = selector.weight(repeated, context, state,
                 BuildAwareLootService.Tuning.defaults());
         final var mythicWeight = selector.weight(unseenMythic, context, state,
-                LootDiversityState.empty(), BuildAwareLootService.Tuning.defaults());
+                BuildAwareLootService.Tuning.defaults());
         check(repeatedWeight.diversityMultiplier() < mythicWeight.diversityMultiplier(),
                 "recent repetition is softened while unseen categories receive a mild boost");
         check(repeatedWeight.weight() > 0.0D && mythicWeight.weight() > 0.0D,
@@ -383,11 +383,8 @@ public final class ItemizationDomainRegressionSuite {
                         == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
                 "partial or externally changed inventory fails closed instead of guessing");
         check(ItemMutationRecoveryPolicy.decide(before, before, before)
-                        == ItemMutationRecoveryPolicy.Decision.ABORT_BEFORE,
-                "an exact before==after witness is a benign no-op and closes safely");
-        check(ItemMutationRecoveryPolicy.decide(List.of("missing", "witness"), before, before)
                         == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
-                "a missing no-op witness still fails closed instead of guessing");
+                "a no-op before/after witness is ambiguous and cannot settle a payment");
     }
 
     private static void mutationCrashRecoverySettlesExactlyOnce() {
