@@ -596,6 +596,13 @@ vanília fölé, és ezt gépi kapu tartja fenn.
 
 Szakmai receptkönyv, craft-korlátok, blueprint-feloldás, katalizátorvédelem és masterwork craft.
 
+A Vanilla Crafting Boundary megőrzi a survival sandboxot: building block, workstation,
+storage, redstone, transport, food, vanilla tool és basic combat gear szabadon craftolható,
+enchantolható és javítható. Ezek nem kapnak automatikusan template-et, UUID-t, rollt,
+Signature-t, runát, setet vagy Ascensiont. Canonical IceSMP gear csak explicit profession,
+loot, boss, event, blueprint, quest vagy admin producerből jön létre; vanilla recept,
+üllő, smithing, enchanting és grindstone nem moshatja le vagy írhatja át az identityt.
+
 - **Így találkozol vele:** Crafting események, blueprint item, szakmai receptkönyv GUI. GUI: Szakmai receptkönyv.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Craft-előkészítés/befejezés, blueprint használat és item-validáció.
@@ -606,7 +613,8 @@ Szakmai receptkönyv, craft-korlátok, blueprint-feloldás, katalizátorvédelem
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `crafting.*`, `profession-recipes.*`, `profession-materials.*`, itemdefiníciók.
+- Config: `crafting.*`, `itemization.vanilla-boundary.*`, `profession-recipes.*`,
+  `profession-materials.*`, itemdefiníciók.
 - Tartós állapot: Blueprint/unlock és szakmai állapot tartós; craft tranzakció eseményalapú.
 - Reload: Receptcache célzottan reloadolható; strukturális registry-váltás restartot igényelhet.
 

@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleSupplier;
+import java.util.function.Function;
 
 public final class ItemIdentityService {
 
@@ -39,7 +40,8 @@ public final class ItemIdentityService {
         INTEGRITY_MISMATCH,
         TEMPLATE_MISSING,
         TEMPLATE_VERSION_STALE,
-        TEMPLATE_MISMATCH
+        TEMPLATE_MISMATCH,
+        POLICY_VIOLATION
     }
 
     public enum LegacyKind {
@@ -97,6 +99,7 @@ public final class ItemIdentityService {
     private final NamespacedKey legacyRarityKey;
     private final NamespacedKey legacyRuneKey;
     private final NamespacedKey relicKey;
+    private volatile Function<ItemStack, String> canonicalStateValidator = item -> "";
 
     public ItemIdentityService(final JavaPlugin plugin, final ItemTemplateRegistry templates) {
         this.templates = java.util.Objects.requireNonNull(templates, "templates");
@@ -277,7 +280,25 @@ public final class ItemIdentityService {
         ItemDataFactory.applyRarity(item, ItemDataFactory.vanillaRarityOf(template.rarity().id()));
     }
 
+    public void setCanonicalStateValidator(final Function<ItemStack, String> validator) {
+        canonicalStateValidator = java.util.Objects.requireNonNull(validator, "validator");
+    }
+
     public Inspection inspect(final ItemStack item) {
+        final Inspection identity = inspectIdentity(item);
+        if (identity.status() != Status.VALID) return identity;
+        final String violation;
+        try {
+            violation = canonicalStateValidator.apply(item);
+        } catch (final RuntimeException invalidPolicy) {
+            return new Inspection(Status.POLICY_VIOLATION, identity.instance(), identity.template(),
+                    "canonical state validator hiba: " + invalidPolicy.getMessage());
+        }
+        return violation == null || violation.isBlank() ? identity
+                : new Inspection(Status.POLICY_VIOLATION, identity.instance(), identity.template(), violation);
+    }
+
+    Inspection inspectIdentity(final ItemStack item) {
         if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
             return new Inspection(Status.NOT_MANAGED, null, null, "nincs item identity");
         }

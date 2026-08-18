@@ -1192,6 +1192,68 @@ játékosnak egyszerre csak egy pending mutationje lehet. A soft-diversity 32 el
 bounded, ordering/reconnect/restart regresszióval; a mining daily budget napváltása és
 corrupt state-je fail-closed. Ettől a valódi process-kill/Folia acceptance még release-gate.
 
+### Vanilla Crafting Boundary üzemeltetés
+
+Az item-domainok:
+
+- `VANILLA_SURVIVAL`: infrastruktúra, food, utility és standard tool; nincs MMO metadata.
+- `BASIC_SURVIVAL_GEAR`: vanilla armor/fegyver/íj/pajzs; használható és vanilla módon
+  enchantolható/javítható, de nem canonical és nem salvage-input.
+- `CANONICAL_MMO_GEAR`: valid `ItemTemplate` + `ItemInstance` UUID/checksum/provenance;
+  csak explicit IceSMP producer és journalolt mutation írhatja.
+- `LEGACY`: felismerhető régi metadata; mozgatható/eldobható, de vanilla állomáson nem
+  alakítható és nem konvertálódik automatikusan canonical tárggyá.
+
+`/iceitem inspect [játékos]` a cél főkéz-tárgyának domaint, identity státuszát,
+template-jét, UUID-ját, diagnosztikáját és canonical station policyját mutatja. A
+`POLICY_VIOLATION` tiltott közvetlen/stored enchantot jelent; ne javítsd közvetlen
+`ItemMeta` írással. Különítsd el az itemet, rögzítsd a payload/checksum/UUID adatot,
+és az eredeti producer vagy mutation history alapján vizsgáld.
+
+Konfiguráció: `crafting.yml` → `itemization.vanilla-boundary`. A basic gear flag,
+feedback cooldown, canonical rename/trim/repair/smithing/grindstone/enchanting policy,
+explicit enchant whitelist és durability mód a Config GUI Itemization kategóriájában
+is látható. Reload immutable snapshotot cserél atomikusan, inventoryt nem ír át. Unknown
+enchant/enum, ellentmondó vagy hibás érték canonical tárgynál fail-closed. A station
+boolean engedélyezése önmagában nem enged közvetlen vanilla meta-mutatást: amíg nincs
+`ItemMutationCoordinator` adapter, az eredmény továbbra is blokkolt.
+
+Állomás-audit:
+
+| Felület | Vanilla/basic | Canonical/legacy |
+|---|---|---|
+| 2×2/table/crafter/custom recipe, recipe book, shift-click | vanilla működés | input és canonical output blokkolt |
+| furnace/blast/smoker/campfire/stonecutter | vanilla működés | input blokkolt |
+| anvil rename/material/item repair/enchant merge | vanilla működés | default blokkolt; két UUID nem olvad össze |
+| netherite smithing | basic gear működik | blokkolt |
+| armor trim | basic gear működik | default blokkolt, journalolt identity-safe adapterig |
+| enchanting table / enchanted book | vanilla/basic működik | default üres whitelist, tiltott state karantén |
+| grindstone | vanilla/basic működik | blokkolt |
+| durability / break | vanilla | vanilla wear; break után equipment refresh |
+
+A commit guard a result slotot inventory-típustól függetlenül ellenőrzi, ezért normal,
+shift, number-key/hotbar és repeated click nem kerülheti meg a prepare tiltást. Drag,
+held/swap/interact/direct attack és armor-dispenser út runtime illegal-enchant ellenőrzést
+kap. Prepare eseményből nincs profilfetch, disk I/O vagy teljes receptscan.
+
+Gazdasági határ: a canonical salvage service eleve valid template/instance inputot kér;
+a központi policy VANILLA/BASIC → salvage és profession conversion esetén is DENY.
+Villager trade és structure/dungeon/fishing/mob equipment loot vanilla/basic marad,
+nem kap automatikus rarityt vagy template-et. Canonical villager output és canonical
+trade-input fogyasztás blokkolt; librarian könyv BASIC gearen használható. A market az
+identity inspectet használja, ezért malformed/stale/policy-violating canonical item nem
+listázható. Zombify/cure discount és vanilla enchanted diamond gear nem canonical producer;
+teljes villager economy rework későbbi scope.
+
+Runtime acceptance: próbáld canonical inputtal a craft, repair recipe, anvil material,
+canonical+canonical merge, smithing upgrade/trim, illegal enchant és grindstone utat;
+ismételd shift-clickkel, tele inventoryval, disconnect/reload mellett, majd market listtel.
+Elvárt: nincs output/item loss/UUID-clone/checksum-regeneration, rövid magyar actionbar
+érkezik, az eredeti item változatlan. A vanilla/basic ellenpróbák minden állomáson működnek.
+
+Future boundary: `Material != ArmorFamily`; a CLOTH/LEATHER/MAIL/PLATE, Profession 2.0
+anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
+
 ### Mob/Encounter 2.0 üzemeltetés
 
 - `world.yml` `mob-scaling.*`: normál maximum `50`, általános hard cap `70`, authored

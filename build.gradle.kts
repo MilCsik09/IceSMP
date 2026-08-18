@@ -836,6 +836,10 @@ val itemizationDomainRegressionTest = registerRegression(
     "itemizationDomainRegressionTest",
     "Runs canonical item template, identity, roll-quality, history, set and soft-diversity regressions.",
     "hu.taliann.icesmp.itemization.ItemizationDomainRegressionSuite")
+val vanillaCraftingBoundaryRegressionTest = registerRegression(
+    "vanillaCraftingBoundaryRegressionTest",
+    "Runs vanilla/basic/canonical/legacy transformation and laundering regressions.",
+    "hu.taliann.icesmp.itemization.VanillaCraftingBoundaryRegressionSuite")
 val playerProfileLootDiversityRegressionTest = registerRegression(
     "playerProfileLootDiversityRegressionTest",
     "Runs durable, bounded and idempotent Itemization 2.0 loot diversity regressions.",
@@ -898,7 +902,7 @@ tasks.check {
         assassinGameplayRegressionTest, assassinProfileRegressionTest,
         warlockGameplayRegressionTest, warlockProfileRegressionTest,
         wizardGameplayRegressionTest, wizardProfileRegressionTest,
-        itemizationDomainRegressionTest, playerProfileLootDiversityRegressionTest,
+        itemizationDomainRegressionTest, vanillaCraftingBoundaryRegressionTest, playerProfileLootDiversityRegressionTest,
         mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest
     )
 }

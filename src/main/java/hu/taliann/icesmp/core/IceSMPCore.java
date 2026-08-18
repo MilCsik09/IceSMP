@@ -233,6 +233,7 @@ public final class IceSMPCore {
     private final ItemRarityService itemRarityService;
     private final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplateRegistry;
     private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
+    private final hu.taliann.icesmp.itemization.ItemTransformationPolicy itemTransformationPolicy;
     private final hu.taliann.icesmp.itemization.ItemMutationCoordinator itemMutationCoordinator;
     private final hu.taliann.icesmp.gui.ItemForgeGUI itemForgeGUI;
     private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog professionRecipeCatalog;
@@ -425,6 +426,8 @@ public final class IceSMPCore {
         this.itemRarityService = new ItemRarityService(plugin, configManager);
         this.itemTemplateRegistry = new hu.taliann.icesmp.itemization.ItemTemplateRegistry(plugin, configManager);
         this.itemIdentityService = new hu.taliann.icesmp.itemization.ItemIdentityService(plugin, itemTemplateRegistry);
+        this.itemTransformationPolicy = new hu.taliann.icesmp.itemization.ItemTransformationPolicy(
+                plugin, configManager, itemIdentityService);
         this.professionRecipeCatalog = new hu.taliann.icesmp.managers.ProfessionRecipeCatalog(plugin, configManager);
         this.professionRecipeCatalog.setItemTemplates(itemTemplateRegistry);
         this.blueprintItemFactory = new hu.taliann.icesmp.items.BlueprintItemFactory(plugin, professionRecipeCatalog);
@@ -1883,7 +1886,8 @@ public final class IceSMPCore {
                 List.of("iitem", "icegive"),
                 new hu.taliann.icesmp.commands.ItemGiveCommand(plugin, uniqueMaterialFactory, professionRecipeCatalog,
                         professionRecipeBookListener, relicManager, blueprintItemFactory, messageManager,
-                        moneyPouchItemFactory, devItemManager, itemIdentityService, itemTemplateRegistry));
+                        moneyPouchItemFactory, devItemManager, itemIdentityService, itemTemplateRegistry,
+                        itemTransformationPolicy));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -1933,6 +1937,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(mobAbilityRuntime, plugin);
         pluginManager.registerEvents(equippedCombatPowerService, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.VanillaCraftingBoundaryListener(
+                itemTransformationPolicy, messageManager), plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
         pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager, afkManager), plugin);
         final ProfessionXpListener professionXpListener = new ProfessionXpListener(professionManager, configManager, talentManager, afkManager);

@@ -192,9 +192,23 @@ public final class ProfessionRecipeAuditRegressionSuite {
         check(bookListener.contains("recipe.uniqueIngredients().entrySet()")
                         && bookListener.contains("uniqueMaterials.idOf(item)"),
                 "catalog custom ingredients require canonical unique-item identity");
+        final String boundary = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/VanillaCraftingBoundaryListener.java"));
+        check(boundary.contains("Transformation.VANILLA_RECIPE_OUTPUT")
+                        && boundary.contains("onCrafter(final CrafterCraftEvent")
+                        && boundary.contains("onCook(final BlockCookEvent"),
+                "canonical custom recipe output collision is blocked on player, crafter and cook paths");
+        final String professionConfig = Files.readString(
+                Path.of("src/main/resources/config/professions.yml"));
+        check(professionConfig.contains("legacy-masterworks: false"),
+                "legacy Bukkit canonical-lookalike recipes remain disabled");
+        final String identity = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java"));
+        check(identity.contains("POLICY_VIOLATION") && identity.contains("canonicalStateValidator.apply(item)"),
+                "command/plugin enchant laundering participates in canonical identity inspection");
         System.out.println("PROFESSION_RECIPE_AUDIT recipes=" + ids.size()
                 + " canonical_gear=" + canonicalGearCount
-                + " semantic_duplicates=0 key_duplicates=0 atomic_reload=true");
+                + " semantic_duplicates=0 key_duplicates=0 atomic_reload=true boundary_collisions=0");
         System.out.println("Profession recipe audit regression suite passed.");
     }
 

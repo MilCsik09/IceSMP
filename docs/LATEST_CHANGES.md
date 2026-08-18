@@ -25,6 +25,25 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 ## Augusztus eleji integrációs hullám (staging előtt)
 
+### Vanilla Crafting Boundary — stacked foundation
+
+- A normál Minecraft crafting és a wood→netherite survival tool/basic gear út újra
+  szabad; a korábbi profession craft-gate defaultból ki van kapcsolva.
+- Az új `ItemTransformationPolicy` VANILLA_SURVIVAL, BASIC_SURVIVAL_GEAR,
+  CANONICAL_MMO_GEAR és LEGACY domainre oszt, és egy helyen dönt crafting, cook,
+  stonecutter, anvil, smithing, trim, enchanting, grindstone, villager és durability ügyben.
+- Canonical/legacy inputból vanilla output, két canonical UUID anvil merge-je,
+  netherite upgrade, repair, grindstone és tiltott enchant fail-closed. A prepare és
+  committed result-slot kapu shift/hotbar/repeated interakciót is ellenőriz.
+- Canonical rename és trim default blokkolt: konfigurálható policy-jelzésük sem írhat
+  közvetlen ItemMetát, csak későbbi WAL-os mutation adapter oldhatja fel.
+- Az identity inspect `POLICY_VIOLATION` állapotban felismeri a command/plugin/loot úton
+  felkerült, whitelistán kívüli enchantot; market és CombatPower nem fogadja csendben.
+- Vanilla/basic gear nem canonical salvage vagy profession conversion input. Villager
+  és vanilla loot basic marad, Netherite survival material, nem MMORPG BiS authority.
+- Equipment 2.0, Profession 2.0, CLOTH/LEATHER/MAIL/PLATE és a hozzájuk tartozó resource
+  pack külön jövőbeli scope; `Material` nem `ArmorFamily`.
+
 ### PR #127 final source closure
 
 - A Target Frame most teljes runtime producerláncot kapott: player-owner bounded,

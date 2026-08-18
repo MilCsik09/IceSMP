@@ -38,7 +38,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 |--------|-------:|--------|
 | `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 122 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
+| `listeners/` | 123 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 60 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
@@ -356,6 +356,40 @@ ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jele
 A class/spec integráció teljes helyi próbája a `runFolia` feladattal fut: ugyanazt a lockolt
 Folia 1.21.11 build 14-et és a lockolt pluginverziókat használja, mint a production cél, és előkészíti az egyetlen
 IceSMP + külső composite packot. A sima `runServer` nem production-helyettesítő.
+
+### 3.8.2 Vanilla Crafting Boundary
+
+Az `ItemTransformationPolicy` az egyetlen authority az item-domain és a vanilla
+transzformáció döntésére. A listenerek csak Paper-eseményt fordítanak policy inputtá;
+nem tarthatnak saját állomásspecifikus szabálykészletet. A besorolás O(1) Material/PDC
+lookup, a config immutable generációs snapshot, ezért a prepare hot path nem kér
+PlayerProfile-t, nem olvas fájlt és nem scannel receptkatalógust.
+
+| Input | Művelet | Output | Identity-következmény | Döntés |
+|---|---|---|---|---|
+| VANILLA_SURVIVAL | vanilla craft/cook/stonecut | vanilla | nincs MMO identity | engedélyezett |
+| BASIC_SURVIVAL_GEAR | craft/enchant/repair/smithing/grindstone | basic gear | továbbra sincs ItemInstance | engedélyezett |
+| CANONICAL_MMO_GEAR | crafting input, repair, enchant, netherite upgrade, grindstone | vanilla vagy módosított item | UUID/PDC/checksum lemosódhatna | blokkolt |
+| CANONICAL_MMO_GEAR | rune/reroll/ascension/salvage | canonical | exact before/after állapot | `ItemMutationCoordinator` + WAL kötelező |
+| CANONICAL_MMO_GEAR | rename/trim | canonical cosmetic | serialized meta/checksum változna | default blokkolt; csak journalolt adapterrel támogatható |
+| LEGACY | bármely vanilla transzformáció | bizonytalan | legacy marker részben vagy egészben eltűnhet | blokkolt |
+
+A valid canonical item runtime-validátora az explicit whitelistán kívüli közvetlen és
+stored enchantot `POLICY_VIOLATION` állapotnak minősíti. Így a command/plugin/loot eredetű
+tiltott enchantot az inspect, a felszerelés- és market-authority sem fogadja el csendben.
+Malformed PDC, stale checksum, invalid template és duplicate UUID továbbra is a meglévő
+identity/CombatPower kapukon zár. Container move, drop és death nem transzformáció; ezek
+engedettek, hogy a hibás tárgy elkülöníthető legyen.
+
+A durability jelenlegi szerződése minden domainben vanilla: wear, Unbreaking/Mending és
+break a Bukkit állapotot követi; canonical gearhez azonban vanilla enchant nem adható az
+üres default whitelist mellett. Töréskor az item megsemmisül, a meglévő equipment refresh
+eltávolítja CombatPower/set hatását. Külön repair economy nem része ennek a foundationnek.
+
+Future contract: `Material != ArmorFamily`. A CLOTH/LEATHER/MAIL/PLATE kizárólag későbbi
+canonical `ItemTemplate.armorFamily` metadata lehet; például az `IRON_CHESTPLATE` jelenleg
+BASIC gear, nem implicit PLATE. Netherite kiváló survival material marad, és később lehet
+Plate/Mail alloy, Masterwork vagy Ascension reagent, de nem MMORPG endgame authority.
 
 ### 3.9 Territórium-zónák és zóna-védelem
 

@@ -565,6 +565,24 @@ egy teljes, később elavuló táblázat.
 *A Káosz Korát nem csak hősök élik túl. Kell valaki, aki kivágja a gerendát,
 megfőzi az ellenszert és újraélezi a pengét.*
 
+### A normál Minecraft crafting nincs letiltva
+
+Ez továbbra is Minecraft survival. Profession nélkül is építhetsz, bányászhatsz,
+farmolhatsz, redstone-ozhatsz, készíthetsz csákányt, alap páncélt vagy fegyvert, és
+használhatod a crafting table-t, furnace-t, enchanting table-t, anvilt, smithing table-t
+és grindstone-t. A wood→stone→iron→diamond→netherite tool progression változatlan.
+
+A vanilla páncél, kard, íj, pajzs és más alap harci tárgy **Survival felszerelés**:
+craftolható, lootolható, enchantolható, javítható és használható, de nem kap IceSMP
+rollokat, Signature-t, rúnát, szettet vagy Ascensiont. A különleges canonical IceSMP
+MMORPG felszerelést ezzel szemben saját profession/loot/boss/event/quest út készíti és
+a `/profession forge` fejleszti. Ilyen tárgyat vanilla recept, üllő, smithing vagy
+grindstone nem alakíthat át; a rövid actionbar üzenet elmagyarázza a tiltás okát.
+
+Az armor trim és rename canonical tárgyon jelenleg szintén blokkolt, mert a cosmetic
+változásnak is meg kell őriznie és journalolnia kell az UUID/PDC/checksum állapotot.
+Netherite továbbra is kiváló survival material, de önmagában nem IceSMP endgame rang.
+
 Két fő szakmai helyed van:
 
 - **egy gyűjtögető szakma:** Bányász, Gyógynövényész vagy Favágó;
