@@ -1,7 +1,6 @@
 package hu.taliann.icesmp.professions;
 
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
-import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.utils.PlainIngredients;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -17,6 +16,9 @@ import java.util.Map;
  * missing input leaves the live inventory untouched. The committed snapshot is immediately
  * persisted through the player's canonical data store; persistence failure rolls the live
  * inventory back to the exact pre-craft snapshot. No fallback world-drop is used.
+ *
+ * <p>The caller supplies the same {@link ProfessionEffectiveCraftPlan} used by preview/preflight;
+ * this class never recomputes specialization arithmetic independently.</p>
  */
 public final class ProfessionCraftTransaction {
 
@@ -38,35 +40,30 @@ public final class ProfessionCraftTransaction {
         this.uniqueMaterials = java.util.Objects.requireNonNull(uniqueMaterials, "uniqueMaterials");
     }
 
-    public Result apply(final Player player, final ProfessionRecipeCatalog.Recipe recipe,
-                        final int batches, final List<ItemStack> outputs) {
+    public Result apply(final Player player, final ProfessionEffectiveCraftPlan plan,
+                        final List<ItemStack> rawPerBatchOutputs) {
         java.util.Objects.requireNonNull(player, "player");
-        java.util.Objects.requireNonNull(recipe, "recipe");
-        if (batches < 1 || batches > 64 || outputs == null || outputs.isEmpty()) {
+        java.util.Objects.requireNonNull(plan, "plan");
+        final List<ItemStack> outputs = plan.effectiveOutputs(rawPerBatchOutputs);
+        if (plan.batches() < 1 || plan.batches() > 64 || outputs.isEmpty()) {
             return new Result(Status.INVALID_BATCH, 0);
         }
 
         final PlayerInventory inventory = player.getInventory();
         final ItemStack[] before = cloneContents(inventory.getStorageContents());
         final ItemStack[] working = cloneContents(before);
-        final ProfessionSpecializationEconomyPolicy.Effect specialization =
-                ProfessionSpecializationEconomyPolicy.effectFor(player, recipe);
 
-        for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            final long requested = specialization.adjustInput((long) entry.getValue() * batches);
-            if (requested > Integer.MAX_VALUE
-                    || !consumePlain(working, entry.getKey(), (int) requested)) {
+        for (final Map.Entry<Material, Integer> entry : plan.materialInputs().entrySet()) {
+            if (!consumePlain(working, entry.getKey(), entry.getValue())) {
                 return new Result(Status.MISSING_INGREDIENTS, 0);
             }
         }
-        for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {
-            final long requested = specialization.adjustInput((long) entry.getValue() * batches);
-            if (requested > Integer.MAX_VALUE
-                    || !consumeUnique(working, entry.getKey(), (int) requested)) {
+        for (final Map.Entry<String, Integer> entry : plan.uniqueInputs().entrySet()) {
+            if (!consumeUnique(working, entry.getKey(), entry.getValue())) {
                 return new Result(Status.MISSING_INGREDIENTS, 0);
             }
         }
-        for (final ItemStack raw : specialization.adjustOutputs(recipe, outputs)) {
+        for (final ItemStack raw : outputs) {
             if (raw == null || raw.getType().isAir() || raw.getAmount() <= 0) {
                 return new Result(Status.INVALID_BATCH, 0);
             }
@@ -78,7 +75,7 @@ public final class ProfessionCraftTransaction {
         try {
             inventory.setStorageContents(cloneContents(working));
             player.saveData();
-            return new Result(Status.APPLIED, batches);
+            return new Result(Status.APPLIED, plan.batches());
         } catch (final RuntimeException persistenceFailure) {
             try {
                 inventory.setStorageContents(cloneContents(before));
