@@ -203,6 +203,14 @@ public final class ConfigMenuGUI {
                 Entry.number("signature.agyar.damage-mult", "Agyar sebzés-szorzó", 0.05, 1, 5),
                 Entry.number("signature.jegvert.damage-mult", "Jégvért bejövő-szorzó", 0.05, 0, 1))));
         categories.put("itemization", new Category("itemization", "Itemization 2.0", Material.NETHERITE_CHESTPLATE, List.of(
+                Entry.toggle("itemization.vanilla-boundary.basic-survival-gear", "Basic survival gear domain"),
+                Entry.integer("itemization.vanilla-boundary.feedback-cooldown-seconds", "Station-hint cooldown (mp)", 1, 0, 30),
+                Entry.toggle("itemization.vanilla-boundary.canonical.rename", "Canonical rename policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.armor-trim", "Canonical armor trim policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.vanilla-repair", "Canonical vanilla repair policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.smithing-upgrade", "Canonical smithing policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.grindstone", "Canonical grindstone policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.enchanting", "Canonical enchant policy"),
                 Entry.number("itemization.stats.ability-power-percent-per-point", "Képességerő pontszorzó (%)", 0.1, 0, 100),
                 Entry.number("itemization.stats.ability-power-max-percent", "Képességerő gear-plafon (%)", 1, 0, 1000),
                 Entry.toggle("itemization.loot.enabled", "Authored combat loot"),

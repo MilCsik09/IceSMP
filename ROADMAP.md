@@ -280,6 +280,10 @@ a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
 
 ### D — Survival itemizáció, profession és piac
 
+- ✅ Vanilla Crafting Boundary foundation: a normál survival crafting, tool- és
+  basic gear progression szabad; a canonical MMORPG itemek crafting/anvil/smithing/
+  enchanting/grindstone identity-laundering útjai központi, fail-closed policy alatt
+  állnak. A vanilla/basic gear nem canonical salvage- vagy profession-input.
 - ⬜ A 16 profession-specializáció tényleges passzívjai és fizetős respec.
 - ✅ Controlled reroll (Full Reforge, Stat Lock, Quality Amplifier, Stability Seal),
   deterministic authored ascension és veszteséges salvage szigorú legacy/admin/
@@ -297,6 +301,10 @@ a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
   ugyanazon whole-inventory mutation WAL-on fut. A Forge előnézet/költség/SHIFT
   megerősítést ad; a régi rúna explicit `destroy` economy-sink policyt követ.
 - ⬜ Crafting order piactér escrow-val és naplózott settlementtel.
+- ⬜ Equipment 2.0: külön `armorFamily` metadata és CLOTH/LEATHER/MAIL/PLATE
+  stat-budget/proficiency; a Bukkit `Material` nem armor-family authority.
+- ⬜ Profession 2.0 feldolgozási láncok (fiber→cloth, hide→leather,
+  leather+metal→mail, ore/alloy→plate) és equipment resource-pack rework.
 
 **Kapunyitás E felé:** a tárgyazonosság másolás, újraindítás és
 inventoryhiba után is bizonyítható; nincs új pénzforrás.

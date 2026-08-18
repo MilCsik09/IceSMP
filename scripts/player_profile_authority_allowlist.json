@@ -517,6 +517,11 @@
       "reason": "Transient per-session client payload signature used only to suppress unchanged spellbook messages; cleared on resync, disconnect and bridge shutdown."
     },
     {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/VanillaCraftingBoundaryListener.java|private final Map<UUID, Long> feedback = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Bounded player-feedback cooldown only; it carries no gameplay authority, is removed on quit/kick, and the listener instance is discarded on disable."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/pve/ContributionLedger.java|private final Map<UUID, Contribution> entries = new LinkedHashMap<>();",
       "category": "RUNTIME",
       "reason": "Bounded encounter-only contribution evidence keyed by participant UUID; it is never persisted, rejects post-close writes and is discarded when the transient boss encounter settles or shuts down. Durable personal reward eligibility lives in PlayerProfile v2 OPERATIONS receipts."
