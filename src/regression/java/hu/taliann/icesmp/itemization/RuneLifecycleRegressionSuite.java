@@ -1,7 +1,10 @@
 package hu.taliann.icesmp.itemization;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -9,8 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-/** Behavioral rune socket, cursor atomicity, identity, receipt and crash-recovery regression. */
+/** Behavioral rune socket, cursor atomicity, mutation lifecycle and recovery regression. */
 public final class RuneLifecycleRegressionSuite {
     private static int assertions;
 
@@ -21,6 +25,8 @@ public final class RuneLifecycleRegressionSuite {
         invalidTransitionsFailClosed();
         everyRuneActionUsesTheExactSnapshotRecoveryContract();
         cursorRehomeIsAllOrNothing();
+        schedulerRejectionReleasesTransientLock();
+        mutationRenderPreservesOnlyPhysicalWear();
         System.out.println("Rune lifecycle regression suite passed. assertions=" + assertions);
     }
 
@@ -106,8 +112,6 @@ public final class RuneLifecycleRegressionSuite {
     }
 
     private static void cursorRehomeIsAllOrNothing() {
-        // P0 reproducer: 63/64 partial stack + every other storage slot full + cursor 64.
-        // Preflight must reject before Bukkit can partially merge one item.
         final ItemStack[] full = filledStorage();
         full[0] = new ItemStack(Material.PAPER, 63);
         final FakeAdapter rejected = new FakeAdapter(full, new ItemStack(Material.PAPER, 64), false);
@@ -119,7 +123,6 @@ public final class RuneLifecycleRegressionSuite {
         check(rejected.cursor != null && rejected.cursor.getAmount() == 64,
                 "failed partial-stack rehome leaves the complete cursor stack");
 
-        // Exactly one empty 64-stack slot: all carried items fit and the cursor is cleared.
         final ItemStack[] exact = filledStorage();
         exact[7] = null;
         final FakeAdapter accepted = new FakeAdapter(exact, new ItemStack(Material.PAPER, 64), false);
@@ -128,7 +131,6 @@ public final class RuneLifecycleRegressionSuite {
         check(accepted.cursor == null && accepted.count(Material.PAPER) == 64,
                 "successful rehome clears cursor only after the full storage transfer");
 
-        // Persistence failure after the in-memory add must restore both storage and cursor exactly.
         final ItemStack[] saveFailureStorage = filledStorage();
         saveFailureStorage[12] = null;
         final FakeAdapter saveFailure = new FakeAdapter(saveFailureStorage,
@@ -142,6 +144,49 @@ public final class RuneLifecycleRegressionSuite {
                 "persistence failure restores the cursor pre-state");
         check(saveFailure.persistCalls == 2,
                 "persistence failure performs one best-effort durable rollback save");
+    }
+
+    private static void schedulerRejectionReleasesTransientLock() {
+        final UUID playerId = UUID.fromString("00000000-0000-0000-0000-0000000008aa");
+        final Set<UUID> locks = ConcurrentHashMap.newKeySet();
+        locks.add(playerId);
+        ItemMutationCoordinator.runGuarded(
+                () -> { throw new IllegalStateException("simulated entity scheduler rejection"); },
+                () -> locks.remove(playerId));
+        check(!locks.contains(playerId),
+                "direct scheduler rejection executes the retired cleanup and cannot leak inFlight");
+
+        locks.add(playerId);
+        ItemMutationCoordinator.runGuarded(() -> locks.remove(playerId),
+                () -> locks.remove(playerId));
+        check(!locks.contains(playerId),
+                "entity-retirement cleanup is idempotent and a reconnect can acquire a new operation lock");
+    }
+
+    private static void mutationRenderPreservesOnlyPhysicalWear() {
+        final ItemStack previous = new ItemStack(Material.IRON_SWORD);
+        final ItemMeta previousMeta = previous.getItemMeta();
+        final Damageable damaged = (Damageable) previousMeta;
+        damaged.setDamage(47);
+        previousMeta.setUnbreakable(true); // deliberately illegal/stale metadata must not be laundered.
+        previousMeta.lore(List.of(Component.text("STALE-LORE")));
+        previous.setItemMeta(previousMeta);
+
+        for (final String mutation : List.of("reroll", "rune", "ascension")) {
+            final ItemStack freshRender = new ItemStack(Material.IRON_SWORD);
+            final ItemMeta freshMeta = freshRender.getItemMeta();
+            freshMeta.lore(List.of(Component.text("AUTHORED-" + mutation)));
+            freshRender.setItemMeta(freshMeta);
+            final ItemStack preserved = CanonicalPhysicalState.preserve(previous, freshRender);
+            final ItemMeta preservedMeta = preserved.getItemMeta();
+            check(((Damageable) preservedMeta).getDamage() == 47,
+                    mutation + " preserves damage and cannot repair canonical gear for free");
+            check(!preservedMeta.isUnbreakable(),
+                    mutation + " does not copy stale physical ItemMeta wholesale");
+            check(preservedMeta.lore() != null
+                            && preservedMeta.lore().equals(List.of(Component.text("AUTHORED-" + mutation))),
+                    mutation + " keeps the freshly authored lore/metadata projection");
+        }
     }
 
     private static ItemStack[] filledStorage() {

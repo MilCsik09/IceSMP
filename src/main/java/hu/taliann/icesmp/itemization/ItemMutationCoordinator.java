@@ -10,6 +10,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -29,6 +31,10 @@ import java.util.function.Consumer;
 public final class ItemMutationCoordinator implements Listener {
 
     public enum Operation { REROLL, RUNE, ASCEND, SALVAGE }
+
+    public enum ResolutionWitness { BEFORE, AFTER }
+
+    public record ResolutionOutcome(boolean success, String messageKey, boolean alreadyResolved) { }
 
     public record Options(String lockedStat, boolean qualityAmplifier, boolean stabilitySeal) { }
 
@@ -283,7 +289,7 @@ public final class ItemMutationCoordinator implements Listener {
                 ItemMutationJournal.encodeInventory(plan.beforeInventory()),
                 ItemMutationJournal.encodeInventory(plan.afterInventory()), System.currentTimeMillis());
         journal.prepare(entry).whenComplete((prepared, failure) ->
-                player.getScheduler().run(plugin, task -> {
+                schedulePlayer(player, () -> {
                     if (failure != null || !Boolean.TRUE.equals(prepared) || !player.isOnline()) {
                         inFlight.remove(player.getUniqueId());
                         callback.accept(new Outcome(false, "itemization-journal-failed", plan.before()));
@@ -314,22 +320,35 @@ public final class ItemMutationCoordinator implements Listener {
                         return;
                     }
                     journal.complete(entry.operationId()).whenComplete((completed, journalFailure) ->
-                            player.getScheduler().run(plugin, done -> {
+                            schedulePlayer(player, () -> {
                                 inFlight.remove(player.getUniqueId());
                                 callback.accept(new Outcome(true,
                                         Boolean.TRUE.equals(completed) && journalFailure == null
                                                 ? "itemization-operation-success"
                                                 : "itemization-recovery-pending", plan.after()));
                             }, () -> inFlight.remove(player.getUniqueId())));
-                }, () -> inFlight.remove(player.getUniqueId())));
+                }, () -> inFlight.remove(player.getUniqueId()))));
     }
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
+        // Transient locks never survive an entity retirement/disconnect. Durable WAL is recovered below.
+        inFlight.remove(player.getUniqueId());
         final List<ItemMutationJournal.Entry> entries = journal.entriesFor(player.getUniqueId());
         if (entries.isEmpty()) return;
-        player.getScheduler().run(plugin, task -> recover(player, entries), null);
+        schedulePlayer(player, () -> recover(player, entries),
+                () -> inFlight.remove(player.getUniqueId()));
+    }
+
+    @EventHandler
+    public void onQuit(final PlayerQuitEvent event) {
+        inFlight.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onKick(final PlayerKickEvent event) {
+        inFlight.remove(event.getPlayer().getUniqueId());
     }
 
     private void recover(final Player player, final List<ItemMutationJournal.Entry> entries) {
@@ -347,6 +366,76 @@ public final class ItemMutationCoordinator implements Listener {
             }
         }
         EquippedCombatPowerService.refreshAfterMutation(player);
+    }
+
+    /**
+     * Explicit audited resolution for a true mixed/missing-witness recovery state.
+     * The command never rewrites inventory: it closes the WAL only if the live player inventory is
+     * byte-for-byte equal to the admin-selected BEFORE or AFTER witness.
+     */
+    public void resolveManual(final Player player, final UUID operationId,
+                              final ResolutionWitness witness, final String actor,
+                              final Consumer<ResolutionOutcome> callback) {
+        if (player == null || operationId == null || witness == null || callback == null) return;
+        final ItemMutationJournal.Entry entry = journal.find(operationId).orElse(null);
+        if (entry == null) {
+            plugin.getLogger().info("Item mutation recovery resolution idempotent no-op: op="
+                    + operationId + " actor=" + safeActor(actor));
+            callback.accept(new ResolutionOutcome(true,
+                    "itemization-recovery-already-resolved", true));
+            return;
+        }
+        if (!entry.playerId().equals(player.getUniqueId())) {
+            callback.accept(new ResolutionOutcome(false,
+                    "itemization-recovery-wrong-player", false));
+            return;
+        }
+        final List<String> current = ItemMutationJournal.encodeInventory(
+                player.getInventory().getContents());
+        final List<String> selected = witness == ResolutionWitness.BEFORE
+                ? entry.beforeInventory() : entry.afterInventory();
+        if (!current.equals(selected)) {
+            plugin.getLogger().warning("Item mutation recovery resolution rejected: op="
+                    + operationId + " player=" + player.getUniqueId() + " actor="
+                    + safeActor(actor) + " witness=" + witness + " reason=current-mismatch");
+            callback.accept(new ResolutionOutcome(false,
+                    "itemization-recovery-witness-mismatch", false));
+            return;
+        }
+        journal.complete(operationId).whenComplete((completed, failure) ->
+                schedulePlayer(player, () -> {
+                    if (failure != null || !Boolean.TRUE.equals(completed)) {
+                        callback.accept(new ResolutionOutcome(false,
+                                "itemization-recovery-journal-failed", false));
+                        return;
+                    }
+                    plugin.getLogger().info("Item mutation recovery resolved: op=" + operationId
+                            + " player=" + player.getUniqueId() + " actor=" + safeActor(actor)
+                            + " witness=" + witness);
+                    EquippedCombatPowerService.refreshAfterMutation(player);
+                    callback.accept(new ResolutionOutcome(true,
+                            "itemization-recovery-resolved", false));
+                }, () -> inFlight.remove(player.getUniqueId()))));
+    }
+
+    private static String safeActor(final String actor) {
+        return actor == null || actor.isBlank() ? "unknown" : actor.replaceAll("[^A-Za-z0-9_.-]", "_");
+    }
+
+    /**
+     * Scheduler rejection/retirement must execute the same cleanup path as an accepted task's
+     * retired callback. Package-private for a behavioral failure-injection regression.
+     */
+    static void runGuarded(final Runnable submit, final Runnable retired) {
+        try {
+            submit.run();
+        } catch (final RuntimeException rejected) {
+            retired.run();
+        }
+    }
+
+    private void schedulePlayer(final Player player, final Runnable action, final Runnable retired) {
+        runGuarded(() -> player.getScheduler().run(plugin, task -> action.run(), retired), retired);
     }
 
     private Preview rerollPreview(final ItemInstance item, final ItemTemplate template,
@@ -431,14 +520,16 @@ public final class ItemMutationCoordinator implements Listener {
                         () -> ThreadLocalRandom.current().nextDouble());
                 if (!result.applied()) throw new IllegalStateException(result.status().name());
                 candidate = result.candidate();
-                after[heldSlot] = identity.render(preview.template(), candidate);
+                after[heldSlot] = CanonicalPhysicalState.preserve(before[heldSlot],
+                        identity.render(preview.template(), candidate));
             }
             case ASCEND -> {
                 final ItemMutationService.Result result = mutations.ascend(preview.template(), preview.instance(),
                         new ItemMutationService.AscensionRequest(operationId, System.currentTimeMillis()));
                 if (!result.applied()) throw new IllegalStateException(result.status().name());
                 candidate = result.candidate();
-                after[heldSlot] = identity.render(preview.template(), candidate);
+                after[heldSlot] = CanonicalPhysicalState.preserve(before[heldSlot],
+                        identity.render(preview.template(), candidate));
             }
             case SALVAGE -> {
                 after[heldSlot] = null;
@@ -476,7 +567,8 @@ public final class ItemMutationCoordinator implements Listener {
         final UUID operationId = UUID.randomUUID();
         final ItemInstance candidate = mutations.changeRunes(preview.template(), preview.instance(),
                 operationId, transition.runes(), System.currentTimeMillis());
-        after[targetSlot] = identity.render(preview.template(), candidate);
+        after[targetSlot] = CanonicalPhysicalState.preserve(before[targetSlot],
+                identity.render(preview.template(), candidate));
         return new Plan(operationId, Operation.RUNE, preview.instance(), candidate,
                 before, after);
     }

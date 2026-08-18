@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -95,6 +96,11 @@ public final class ItemMutationJournal {
 
     public synchronized List<Entry> entriesFor(final UUID playerId) {
         return entries.values().stream().filter(entry -> entry.playerId().equals(playerId)).toList();
+    }
+
+    /** Exact operation lookup used by the audited admin resolution path. */
+    public synchronized Optional<Entry> find(final UUID operationId) {
+        return Optional.ofNullable(entries.get(operationId));
     }
 
     public CompletionStage<Boolean> prepare(final Entry entry) {

@@ -14,7 +14,11 @@ public final class ItemMutationRecoveryPolicy {
         Objects.requireNonNull(current, "current");
         Objects.requireNonNull(before, "before");
         Objects.requireNonNull(after, "after");
-        if (before.equals(after)) return Decision.MANUAL_REVIEW;
+        // A no-op witness is benign only when the current inventory is still that exact witness.
+        // There is no payment/item side to choose between, so closing it as exact-before is safe.
+        if (before.equals(after)) {
+            return current.equals(before) ? Decision.ABORT_BEFORE : Decision.MANUAL_REVIEW;
+        }
         if (current.equals(after)) return Decision.COMMIT_AFTER;
         if (current.equals(before)) return Decision.ABORT_BEFORE;
         return Decision.MANUAL_REVIEW;
