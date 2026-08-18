@@ -732,6 +732,24 @@ val professionRecipeAuditRegressionTest = registerRegression(
     "professionRecipeAuditRegressionTest",
     "Validates deterministic profession recipes, semantic uniqueness and reload cleanup.",
     "hu.taliann.icesmp.professions.ProfessionRecipeAuditRegressionSuite")
+val professions2RegressionTest = registerRegression(
+    "professions2RegressionTest",
+    "Runs deterministic Masterwork and Professions 2.0 economy contracts.",
+    "hu.taliann.icesmp.professions.Professions2RegressionSuite")
+val professions2ReportRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates Professions 2.0 recipe migration and economy graph reports."
+    inputs.files("scripts/check_professions_2_reports.py", "docs/development/professions-2-recipe-migration.json",
+        "docs/development/professions-2-economy-graph.json", "docs/development/professions-2-rp-handoff.json")
+    commandLine(pythonCommand, "scripts/check_professions_2_reports.py")
+}
+val professions2EconomyRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Runs the seeded Professions 2.0 economy sanity harness."
+    inputs.files("scripts/test_professions_2_economy.py", "src/main/resources/config/professions-2.yml",
+        "src/main/resources/config/profession-recipes.yml", "src/main/resources/config/professions.yml")
+    commandLine(pythonCommand, "scripts/test_professions_2_economy.py")
+}
 val runtimeHardeningRegressionTest = registerRegression(
     "runtimeHardeningRegressionTest",
     "Runs 2D claim, vanish retracking and DARK mob lifecycle regressions.",
@@ -875,6 +893,8 @@ tasks.check {
     dependsOn(validateIceSmpHudPackage)
     dependsOn(progressionBalanceRegressionTest)
     dependsOn(equipment2ReportRegressionTest)
+    dependsOn(professions2ReportRegressionTest)
+    dependsOn(professions2EconomyRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
@@ -903,7 +923,7 @@ tasks.check {
         prologueRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
         clientProtocolRegressionTest,
-        professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,
+        professionRecipeAuditRegressionTest, professions2RegressionTest, inventoryReadWriteRegressionTest,
         donationChestDurabilityRegressionTest,
         operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest,
         warriorGameplayRegressionTest, warriorProfileRegressionTest,
