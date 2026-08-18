@@ -327,13 +327,12 @@ public final class ItemMutationCoordinator implements Listener {
                                                 ? "itemization-operation-success"
                                                 : "itemization-recovery-pending", plan.after()));
                             }, () -> inFlight.remove(player.getUniqueId())));
-                }, () -> inFlight.remove(player.getUniqueId()))));
+                }, () -> inFlight.remove(player.getUniqueId())));
     }
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
-        // Transient locks never survive an entity retirement/disconnect. Durable WAL is recovered below.
         inFlight.remove(player.getUniqueId());
         final List<ItemMutationJournal.Entry> entries = journal.entriesFor(player.getUniqueId());
         if (entries.isEmpty()) return;
@@ -368,11 +367,6 @@ public final class ItemMutationCoordinator implements Listener {
         EquippedCombatPowerService.refreshAfterMutation(player);
     }
 
-    /**
-     * Explicit audited resolution for a true mixed/missing-witness recovery state.
-     * The command never rewrites inventory: it closes the WAL only if the live player inventory is
-     * byte-for-byte equal to the admin-selected BEFORE or AFTER witness.
-     */
     public void resolveManual(final Player player, final UUID operationId,
                               final ResolutionWitness witness, final String actor,
                               final Consumer<ResolutionOutcome> callback) {
@@ -415,17 +409,13 @@ public final class ItemMutationCoordinator implements Listener {
                     EquippedCombatPowerService.refreshAfterMutation(player);
                     callback.accept(new ResolutionOutcome(true,
                             "itemization-recovery-resolved", false));
-                }, () -> inFlight.remove(player.getUniqueId()))));
+                }, () -> inFlight.remove(player.getUniqueId())));
     }
 
     private static String safeActor(final String actor) {
         return actor == null || actor.isBlank() ? "unknown" : actor.replaceAll("[^A-Za-z0-9_.-]", "_");
     }
 
-    /**
-     * Scheduler rejection/retirement must execute the same cleanup path as an accepted task's
-     * retired callback. Package-private for a behavioral failure-injection regression.
-     */
     static void runGuarded(final Runnable submit, final Runnable retired) {
         try {
             submit.run();
