@@ -8,7 +8,7 @@ on:
     branches:
       - feature/equipment-2
     paths:
-      - 'scripts/apply_professions_2_rework.py.gz.b64'
+      - 'scripts/apply_professions_2_rework.py.gz.part-*'
 
 permissions:
   contents: write
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 -d scripts/apply_professions_2_rework.py.gz.b64 | gzip -dc > scripts/apply_professions_2_rework.py
+          cat scripts/apply_professions_2_rework.py.gz.part-* | gzip -dc > scripts/apply_professions_2_rework.py
           chmod +x scripts/apply_professions_2_rework.py
           python -m py_compile scripts/apply_professions_2_rework.py
 
@@ -60,7 +60,7 @@ jobs:
           git config user.name 'IceSMP Professions 2.0 Bot'
           git config user.email 'actions@users.noreply.github.com'
 
-          git rm -f scripts/apply_professions_2_rework.py.gz.b64 .github/workflows/professions-2-bootstrap.yml
+          git rm -f scripts/apply_professions_2_rework.py.gz.part-* .github/workflows/professions-2-bootstrap.yml
           git add scripts/apply_professions_2_rework.py \
             src/main/java/hu/taliann/icesmp/managers/ConfigManager.java \
             src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java \
