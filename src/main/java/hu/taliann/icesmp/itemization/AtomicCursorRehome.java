@@ -23,6 +23,19 @@ public final class AtomicCursorRehome {
         void persist();
     }
 
+    /**
+     * Bukkit-independent transactional execution seam. Production {@link #rehome(Adapter, ItemStack)}
+     * delegates to this exact algorithm; regression fixtures may exercise partial-commit and
+     * persistence-failure behavior without bootstrapping a Paper registry.
+     */
+    interface AtomicStep {
+        boolean preflight();
+        boolean addAll();
+        void clearCursor();
+        void restoreMemory();
+        void persist();
+    }
+
     private AtomicCursorRehome() { }
 
     public static boolean rehome(final Adapter adapter, final ItemStack carried) {
@@ -32,28 +45,58 @@ public final class AtomicCursorRehome {
 
         final ItemStack[] beforeStorage = cloneContents(adapter.storageContents());
         final ItemStack beforeCursor = cloneOrNull(adapter.cursor());
-        if (!canFitAll(beforeStorage, carried)) return false;
+        return executeAtomic(new AtomicStep() {
+            @Override
+            public boolean preflight() {
+                return canFitAll(beforeStorage, carried);
+            }
 
-        final Map<Integer, ItemStack> leftovers;
+            @Override
+            public boolean addAll() {
+                final Map<Integer, ItemStack> leftovers = adapter.add(carried.clone());
+                return leftovers == null || leftovers.isEmpty();
+            }
+
+            @Override
+            public void clearCursor() {
+                adapter.setCursor(null);
+            }
+
+            @Override
+            public void restoreMemory() {
+                adapter.restoreStorage(cloneContents(beforeStorage));
+                adapter.setCursor(cloneOrNull(beforeCursor));
+            }
+
+            @Override
+            public void persist() {
+                adapter.persist();
+            }
+        });
+    }
+
+    static boolean executeAtomic(final AtomicStep step) {
+        Objects.requireNonNull(step, "step");
+        if (!step.preflight()) return false;
+
         try {
-            leftovers = adapter.add(carried.clone());
-        } catch (final RuntimeException addFailure) {
-            rollbackMemory(adapter, beforeStorage, beforeCursor, addFailure);
+            if (!step.addAll()) {
+                restore(step, null);
+                return false;
+            }
+            step.clearCursor();
+        } catch (final RuntimeException mutationFailure) {
+            restore(step, mutationFailure);
             return false;
         }
-        if (leftovers != null && !leftovers.isEmpty()) {
-            rollbackMemory(adapter, beforeStorage, beforeCursor, null);
-            return false;
-        }
 
-        adapter.setCursor(null);
         try {
-            adapter.persist();
+            step.persist();
             return true;
         } catch (final RuntimeException persistenceFailure) {
-            rollbackMemory(adapter, beforeStorage, beforeCursor, persistenceFailure);
+            restore(step, persistenceFailure);
             try {
-                adapter.persist();
+                step.persist();
             } catch (final RuntimeException rollbackPersistenceFailure) {
                 persistenceFailure.addSuppressed(rollbackPersistenceFailure);
             }
@@ -84,11 +127,9 @@ public final class AtomicCursorRehome {
         return result;
     }
 
-    private static void rollbackMemory(final Adapter adapter, final ItemStack[] storage,
-                                       final ItemStack cursor, final RuntimeException primary) {
+    private static void restore(final AtomicStep step, final RuntimeException primary) {
         try {
-            adapter.restoreStorage(cloneContents(storage));
-            adapter.setCursor(cloneOrNull(cursor));
+            step.restoreMemory();
         } catch (final RuntimeException rollbackFailure) {
             if (primary != null) rollbackFailure.addSuppressed(primary);
             throw new IllegalStateException("Atomic cursor rehome rollback failed", rollbackFailure);
