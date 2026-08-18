@@ -1485,3 +1485,10 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 <sub>Dokumentációs snapshot: 2026-07-30 · release `4643ab535…` · deployed mapping:
 `775d9e247…` (`HIGH_CONFIDENCE`, nem `EXACT`).</sub>
+
+## Professions 2.0 economy
+- Meaningful raw → refined → component → craft chains for textile, leather, hybrid mail and forged plate.
+- Cross-profession MAIL dependency and selected high-tier combat components.
+- Targeted canonical crafting, bounded non-guaranteed Masterwork, family-aware lossy salvage and player-market-ready material metadata.
+- Shift-click batch processing for stackable processing recipes with all-or-nothing inventory capacity checks.
+- Machine-readable migration, producer/consumer and resource-pack handoff reports.

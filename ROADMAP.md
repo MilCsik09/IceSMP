@@ -592,3 +592,11 @@ entity cleanup és boss-victory persistence race hardeningjét is lezárta.
 
 A Prologue scope-on kívül marad a Season 2 End-nyitás, az Első Csend
 magyarázata és a Néma Királynő végjátéka; ezek nem #121 hiányosságok.
+
+## Professions 2.0 — source closure
+- Survival gathering remains vanilla-world activity; Professions 2.0 adds processing/economy, not static gathering nodes.
+- CLOTH/LEATHER/MAIL/PLATE production is stacked on Equipment 2.0. ArmorFamily/class proficiency are not redefined here.
+- Recipe migration/report authority: `docs/development/professions-2-recipe-migration.json`.
+- Economy graph/dead-content authority: `docs/development/professions-2-economy-graph.json`.
+- Runtime staging remains required for multiplayer throughput, real market prices, disconnect/packet-sync and 50–60-player balance.
+- Equipment Resource Pack 2.0 and crafting-order escrow marketplace remain future stacked scopes.

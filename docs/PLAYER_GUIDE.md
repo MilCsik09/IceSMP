@@ -1233,3 +1233,17 @@ A nyitó korszak végének történeti részleteit ez az útmutató szándékosa
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
+
+## Professions 2.0 — mit csináljak?
+A szakmád most gazdasági szerep. A nyersanyag továbbra is valódi Minecraft-tevékenységből jön: bányászol, vadászol, gyűjtesz, halászol és farmolsz. A receptkönyvben a **Feldolgozás** receptek nyers alapanyagból olyan komponenseket készítenek, amelyekre más játékosoknak is szükségük lehet.
+
+- **CLOTH:** rost/fonal → Szőtt Posztó → Rúnaszőtt Posztó → canonical szövet gear.
+- **LEATHER:** bőr → Cserzett Bőr → Erősített Bőr → canonical bőr gear.
+- **MAIL:** könnyű fémhuzal **és** cserzett bőr → Sodrott Láncszem → canonical sodrony gear. Ez szándékosan több szakmát köt össze.
+- **PLATE:** survival fém + meglévő ötvözet → Edzett Ötvözet → Kovácsolt Lemez → canonical lemez gear.
+
+A **Mestermű** nem külön rarity és nem garantált tökéletes roll. Magasabb szakmaszint javítja a quality floor-t, a kijelölt mestermű-recepteknél pedig ritka, korlátozott extra esélyt ad. A tárgy template-je ugyanaz marad, a készítő és a Mestermű-jelölés az ItemInstance eredetében látszik.
+
+Stackelhető feldolgozásnál normál kattintás 1 craft, **Shift+kattintás 5-ös batch**. Ha nincs hely az összes outputnak, semmi nem fogy el. Canonical gear nem batch-elődik.
+
+Salvage veszteséges visszaforgatás. CLOTH textilfoszlányt, LEATHER bőrhulladékot, MAIL lánctöredéket, PLATE fémhulladékot adhat; boss-komponenst nem kapsz automatikusan vissza. A rúnázás/reforge/ascension továbbra is az Itemization saját canonical rendszerét használja.
