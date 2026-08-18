@@ -63,6 +63,8 @@ public final class ConfigManager {
             "afk", "moderation", "item-rarity", "item-templates", "mob-templates", "loot", "motd", "profession-materials",
             "profession-recipes", "professions-2", "sit", "tablist", "dev-items", "client"
     };
+    private static final List<String> MANAGED_FAMILY_SALVAGE_OUTPUTS = List.of(
+            "szovet_foszlany", "bor_hulladek", "lanc_toredek", "femhulladek");
 
     private static volatile ConfigManager active;
 
@@ -110,23 +112,59 @@ public final class ConfigManager {
      */
     public synchronized void load() {
         final YamlConfiguration base = loadBaseConfiguration();
-        final YamlConfiguration effective = new YamlConfiguration();
-        mergeInto(effective, base);
+        final YamlConfiguration effective = mergedConfiguration(base, pluginRootConfiguration());
+        validateManagedSalvageMappings(effective);
 
-        plugin.reloadConfig();
         final Set<String> overridePaths = new HashSet<>();
         for (final String key : plugin.getConfig().getKeys(true)) {
             if (!plugin.getConfig().isConfigurationSection(key)) {
                 overridePaths.add(key);
             }
         }
-        mergeInto(effective, plugin.getConfig());
 
         final long previousGeneration = liveSnapshot.generation();
         final long nextGeneration = previousGeneration == Long.MAX_VALUE
                 ? Long.MAX_VALUE : previousGeneration + 1L;
         liveSnapshot = new ConfigSnapshot(effective, base, overridePaths,
                 nextGeneration, overrideFingerprint());
+    }
+
+    private FileConfiguration pluginRootConfiguration() {
+        plugin.reloadConfig();
+        return plugin.getConfig();
+    }
+
+    /** Shared production merge seam; package-private so the regression gate exercises this logic. */
+    static YamlConfiguration mergedConfiguration(final ConfigurationSection base,
+                                                  final ConfigurationSection overrides) {
+        final YamlConfiguration effective = new YamlConfiguration();
+        if (base != null) mergeInto(effective, base);
+        if (overrides != null) mergeInto(effective, overrides);
+        return effective;
+    }
+
+    /**
+     * Managed family salvage may be operator-overridden, but it may never silently disappear or
+     * resolve to a non-authored economy material. Missing defaults therefore abort config publish
+     * before mutation code can fall back to an unrelated valuable currency.
+     */
+    static void validateManagedSalvageMappings(final ConfigurationSection effective) {
+        if (effective == null) {
+            throw new IllegalStateException("effective configuration is unavailable");
+        }
+        for (final String output : MANAGED_FAMILY_SALVAGE_OUTPUTS) {
+            final String path = "itemization.salvage.output-map." + output;
+            final String mapped = effective.getString(path, "").trim().toLowerCase(java.util.Locale.ROOT);
+            if (mapped.isBlank()) {
+                throw new IllegalStateException(path + ": missing managed salvage output mapping");
+            }
+            final ConfigurationSection definition = effective.getConfigurationSection(
+                    "profession-materials." + mapped);
+            if (definition == null || !definition.getBoolean("economy-managed", false)) {
+                throw new IllegalStateException(path + ": mapped output is not an economy-managed profession material: "
+                        + mapped);
+            }
+        }
     }
 
     private YamlConfiguration loadBaseConfiguration() {
