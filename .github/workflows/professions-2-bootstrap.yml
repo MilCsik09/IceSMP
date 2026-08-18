@@ -4,19 +4,25 @@ on:
   push:
     branches:
       - feature/professions-2
+  pull_request:
+    branches:
+      - feature/equipment-2
+    paths:
+      - 'scripts/apply_professions_2_rework.py.gz.b64'
 
 permissions:
   contents: write
 
 jobs:
   apply-professions-2:
-    if: contains(github.event.head_commit.message, '[professions-2-bootstrap]')
+    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[professions-2-bootstrap]')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout child branch
+      - name: Checkout exact child head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Set up Python 3.12

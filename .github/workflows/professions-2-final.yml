@@ -4,30 +4,38 @@ on:
   push:
     branches:
       - feature/professions-2
+  pull_request:
+    branches:
+      - feature/equipment-2
 
 permissions:
   contents: read
 
 jobs:
   exact-head:
-    if: contains(github.event.head_commit.message, '[professions-2-final]')
+    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[professions-2-final]')
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
-      - name: Checkout tested commit
+      - name: Checkout exact child head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Verify exact child and parent heads
         shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          SYNTHETIC_MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha || '' }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
           git fetch origin feature/equipment-2:refs/remotes/origin/feature/equipment-2
-          echo "PROFESSIONS_2_HEAD=${GITHUB_SHA}"
+          echo "PROFESSIONS_2_HEAD=${EXPECTED_HEAD}"
           echo "EQUIPMENT_2_PARENT=$(git rev-parse refs/remotes/origin/feature/equipment-2)"
+          echo "SYNTHETIC_MERGE_SHA=${SYNTHETIC_MERGE_SHA}"
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
