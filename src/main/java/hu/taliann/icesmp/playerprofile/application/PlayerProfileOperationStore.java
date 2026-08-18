@@ -3,6 +3,7 @@ package hu.taliann.icesmp.playerprofile.application;
 import hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.OperationSection;
+import hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -170,8 +171,7 @@ public final class PlayerProfileOperationStore {
                         .toList());
         terminal.sort(Comparator.comparing(PlayerProfileOperation::updatedAt));
         if (terminal.isEmpty()) {
-            throw new IllegalStateException(
-                    "operation section is full of recoverable PREPARED operations");
+            throw new PlayerProfileTransactionManager.LedgerSaturated();
         }
         operations.remove(terminal.getFirst().operationId());
         return operations;
