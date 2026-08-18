@@ -7,6 +7,7 @@ import hu.taliann.icesmp.managers.BlockRegenService;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileDailyBudgetStore;
+import hu.taliann.icesmp.progression.BlockRewardOriginTracker;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -75,6 +76,7 @@ public final class RareGatheringListener implements Listener {
                 .containsEnchantment(Enchantment.SILK_TOUCH)
                 || (afk != null && config.getBoolean("afk.block-rewards", true)
                 && afk.isAfk(player.getUniqueId()))
+                || !BlockRewardOriginTracker.isRewardEligible(event.getBlock())
                 || regen.isPending(event.getBlock()) || regen.isRestoredShielded(event.getBlock())) {
             return;
         }
