@@ -2,10 +2,12 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.GatheringBuffManager;
 import hu.taliann.icesmp.managers.GatheringBuffManager.GatheringBuff;
+import hu.taliann.icesmp.progression.BlockRewardOriginTracker;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -33,10 +35,6 @@ public final class GatheringBuffListener implements Listener {
     }
 
     /** Mining rush → bonus ore drops; harvest hour → bonus mature-crop drops. */
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final Player player = event.getPlayer();
@@ -45,6 +43,9 @@ public final class GatheringBuffListener implements Listener {
         }
 
         final Block block = event.getBlock();
+        if (!BlockRewardOriginTracker.isRewardEligible(block)) {
+            return;
+        }
         final GatheringBuff active = gatheringBuffManager.getActive();
         final boolean isOre = active == GatheringBuff.MINING_RUSH && block.getType().name().endsWith("_ORE");
         final boolean isCrop = active == GatheringBuff.HARVEST_HOUR && isMatureCrop(block);
@@ -52,12 +53,16 @@ public final class GatheringBuffListener implements Listener {
             return;
         }
 
+        final ItemStack tool = player.getInventory().getItemInMainHand();
+        // Silk Touch already materializes the ore block itself. A second getDrops(tool) pass would
+        // deterministically duplicate the placeable ore and turn MINING_RUSH into an infinite loop.
+        if (isOre && tool.containsEnchantment(Enchantment.SILK_TOUCH)) {
+            return;
+        }
         if (ThreadLocalRandom.current().nextDouble() >= gatheringBuffManager.bonusDropChance(active)) {
             return;
         }
 
-        // Re-drop the block's natural yield once more as a bonus (respects the tool used).
-        final ItemStack tool = player.getInventory().getItemInMainHand();
         final Location at = block.getLocation().add(0.5D, 0.5D, 0.5D);
         for (final ItemStack drop : block.getDrops(tool)) {
             if (drop != null && !drop.getType().isAir()) {
@@ -67,10 +72,6 @@ public final class GatheringBuffListener implements Listener {
     }
 
     /** Fishing frenzy → a chance to reel in a second copy of the catch. */
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH
