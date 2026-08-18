@@ -1,11 +1,16 @@
 package hu.taliann.icesmp.itemization;
 
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** Behavioral rune socket, identity, receipt and crash-recovery regression. */
+/** Behavioral rune socket, cursor atomicity, identity, receipt and crash-recovery regression. */
 public final class RuneLifecycleRegressionSuite {
     private static int assertions;
 
@@ -15,6 +20,7 @@ public final class RuneLifecycleRegressionSuite {
         insertRemoveReplacePreserveCanonicalState();
         invalidTransitionsFailClosed();
         everyRuneActionUsesTheExactSnapshotRecoveryContract();
+        cursorRehomeIsAllOrNothing();
         System.out.println("Rune lifecycle regression suite passed. assertions=" + assertions);
     }
 
@@ -96,6 +102,114 @@ public final class RuneLifecycleRegressionSuite {
                             ItemMutationFaultMatrix.FailurePoint.MIXED_INVENTORY, before, after))
                             == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW,
                     action + " mixed item/payment witness fails closed");
+        }
+    }
+
+    private static void cursorRehomeIsAllOrNothing() {
+        // P0 reproducer: 63/64 partial stack + every other storage slot full + cursor 64.
+        // Preflight must reject before Bukkit can partially merge one item.
+        final ItemStack[] full = filledStorage();
+        full[0] = new ItemStack(Material.PAPER, 63);
+        final FakeAdapter rejected = new FakeAdapter(full, new ItemStack(Material.PAPER, 64), false);
+        final ItemStack[] rejectedBefore = AtomicCursorRehome.cloneContents(rejected.storage);
+        check(!AtomicCursorRehome.rehome(rejected, rejected.cursor),
+                "partial-stack/full-inventory rune rehome fails atomically");
+        check(Arrays.equals(rejectedBefore, rejected.storage),
+                "failed partial-stack rehome leaves storage ItemStack-equivalent");
+        check(rejected.cursor != null && rejected.cursor.getAmount() == 64,
+                "failed partial-stack rehome leaves the complete cursor stack");
+
+        // Exactly one empty 64-stack slot: all carried items fit and the cursor is cleared.
+        final ItemStack[] exact = filledStorage();
+        exact[7] = null;
+        final FakeAdapter accepted = new FakeAdapter(exact, new ItemStack(Material.PAPER, 64), false);
+        check(AtomicCursorRehome.rehome(accepted, accepted.cursor),
+                "exactly sufficient storage rehomes the complete cursor stack");
+        check(accepted.cursor == null && accepted.count(Material.PAPER) == 64,
+                "successful rehome clears cursor only after the full storage transfer");
+
+        // Persistence failure after the in-memory add must restore both storage and cursor exactly.
+        final ItemStack[] saveFailureStorage = filledStorage();
+        saveFailureStorage[12] = null;
+        final FakeAdapter saveFailure = new FakeAdapter(saveFailureStorage,
+                new ItemStack(Material.PAPER, 64), true);
+        final ItemStack[] saveFailureBefore = AtomicCursorRehome.cloneContents(saveFailure.storage);
+        check(!AtomicCursorRehome.rehome(saveFailure, saveFailure.cursor),
+                "saveData-equivalent failure rejects the rehome");
+        check(Arrays.equals(saveFailureBefore, saveFailure.storage),
+                "persistence failure rolls storage back to its exact pre-state");
+        check(saveFailure.cursor != null && saveFailure.cursor.getAmount() == 64,
+                "persistence failure restores the cursor pre-state");
+        check(saveFailure.persistCalls == 2,
+                "persistence failure performs one best-effort durable rollback save");
+    }
+
+    private static ItemStack[] filledStorage() {
+        final ItemStack[] result = new ItemStack[36];
+        for (int slot = 0; slot < result.length; slot++) {
+            result[slot] = new ItemStack(Material.COBBLESTONE, 64);
+        }
+        return result;
+    }
+
+    private static final class FakeAdapter implements AtomicCursorRehome.Adapter {
+        private ItemStack[] storage;
+        private ItemStack cursor;
+        private final boolean failFirstPersist;
+        private int persistCalls;
+
+        private FakeAdapter(final ItemStack[] storage, final ItemStack cursor,
+                            final boolean failFirstPersist) {
+            this.storage = AtomicCursorRehome.cloneContents(storage);
+            this.cursor = cursor == null ? null : cursor.clone();
+            this.failFirstPersist = failFirstPersist;
+        }
+
+        @Override public ItemStack[] storageContents() { return storage; }
+
+        @Override
+        public Map<Integer, ItemStack> add(final ItemStack added) {
+            int remaining = added.getAmount();
+            for (int slot = 0; slot < storage.length && remaining > 0; slot++) {
+                final ItemStack current = storage[slot];
+                if (current == null || !current.isSimilar(added)
+                        || current.getAmount() >= current.getMaxStackSize()) continue;
+                final int move = Math.min(remaining, current.getMaxStackSize() - current.getAmount());
+                current.setAmount(current.getAmount() + move);
+                remaining -= move;
+            }
+            for (int slot = 0; slot < storage.length && remaining > 0; slot++) {
+                if (storage[slot] != null) continue;
+                final ItemStack next = added.clone();
+                final int move = Math.min(remaining, next.getMaxStackSize());
+                next.setAmount(move);
+                storage[slot] = next;
+                remaining -= move;
+            }
+            if (remaining == 0) return Map.of();
+            final ItemStack leftover = added.clone();
+            leftover.setAmount(remaining);
+            final Map<Integer, ItemStack> result = new LinkedHashMap<>();
+            result.put(0, leftover);
+            return result;
+        }
+
+        @Override public void restoreStorage(final ItemStack[] snapshot) {
+            storage = AtomicCursorRehome.cloneContents(snapshot);
+        }
+        @Override public ItemStack cursor() { return cursor; }
+        @Override public void setCursor(final ItemStack next) { cursor = next == null ? null : next.clone(); }
+        @Override public void persist() {
+            persistCalls++;
+            if (failFirstPersist && persistCalls == 1) throw new IllegalStateException("simulated saveData failure");
+        }
+
+        private int count(final Material material) {
+            int total = 0;
+            for (final ItemStack item : storage) {
+                if (item != null && item.getType() == material) total += item.getAmount();
+            }
+            return total;
         }
     }
 

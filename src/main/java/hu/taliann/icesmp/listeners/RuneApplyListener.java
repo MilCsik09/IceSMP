@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.itemization.AtomicCursorRehome;
 import hu.taliann.icesmp.itemization.ItemMutationCoordinator;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -90,9 +91,9 @@ public final class RuneApplyListener implements Listener {
                 managedFailure(player, "rune-managed-invalid");
                 return;
             }
-            // Re-home the complete carried stack before the durable mutation. After this save the
-            // payment itself is ordinary playerdata, so a crash cannot lose/duplicate a cursor rune.
-            if (!rehomeCursor(player, event, cursor, runeId)) {
+            // Bukkit addItem may partially merge before reporting leftovers. AtomicCursorRehome
+            // preflights capacity and restores an exact storage/cursor snapshot on every failure.
+            if (!rehomeCursor(player, event, cursor)) {
                 player.sendMessage(messageManager.getMessage("rune-managed-rehome-failed",
                         "<red>◆ A rúna biztonságos eltárolása meghiúsult; semmi nem változott.</red>"));
                 return;
@@ -140,34 +141,38 @@ public final class RuneApplyListener implements Listener {
     }
 
     private boolean rehomeCursor(final Player player, final InventoryClickEvent event,
-                                 final ItemStack cursor, final String runeId) {
-        final ItemStack carried = cursor.clone();
-        if (!player.getInventory().addItem(carried).isEmpty()) return false;
-        event.getView().setCursor(null);
-        try {
-            player.saveData();
-            return true;
-        } catch (final RuntimeException saveFailure) {
-            removeUnique(player, runeId, carried.getAmount());
-            event.getView().setCursor(cursor.clone());
-            try { player.saveData(); } catch (final RuntimeException rollbackFailure) {
-                saveFailure.addSuppressed(rollbackFailure);
+                                 final ItemStack cursor) {
+        return AtomicCursorRehome.rehome(new AtomicCursorRehome.Adapter() {
+            @Override
+            public ItemStack[] storageContents() {
+                return player.getInventory().getStorageContents();
             }
-            return false;
-        }
-    }
 
-    private void removeUnique(final Player player, final String runeId, final int amount) {
-        int remaining = amount;
-        final ItemStack[] contents = player.getInventory().getStorageContents();
-        for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
-            final ItemStack item = contents[slot];
-            if (item == null || !runeId.equals(uniqueMaterials.idOf(item))) continue;
-            final int take = Math.min(remaining, item.getAmount());
-            remaining -= take;
-            if (take == item.getAmount()) player.getInventory().setItem(slot, null);
-            else item.setAmount(item.getAmount() - take);
-        }
+            @Override
+            public Map<Integer, ItemStack> add(final ItemStack stack) {
+                return player.getInventory().addItem(stack);
+            }
+
+            @Override
+            public void restoreStorage(final ItemStack[] snapshot) {
+                player.getInventory().setStorageContents(snapshot);
+            }
+
+            @Override
+            public ItemStack cursor() {
+                return event.getView().getCursor();
+            }
+
+            @Override
+            public void setCursor(final ItemStack next) {
+                event.getView().setCursor(next);
+            }
+
+            @Override
+            public void persist() {
+                player.saveData();
+            }
+        }, cursor);
     }
 
     private void managedFailure(final Player player, final String key) {
