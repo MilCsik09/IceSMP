@@ -1,0 +1,141 @@
+{
+  "authority": "Equipment 2.0 ArmorFamily remains canonical",
+  "items": [
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "armorer",
+      "recipe_id": "vadvilagi_eskukard",
+      "template_id": "vadvilagi_eskukard",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": "PLATE",
+      "crafting_source": "profession:craft",
+      "material_theme": "forged alloy plate",
+      "profession": "armorer",
+      "recipe_id": "glatziendorfi_jegvert",
+      "template_id": "glatziendorfi_jegvert",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "armorer",
+      "recipe_id": "glatziendorfi_jegtoro",
+      "template_id": "glatziendorfi_jegtoro",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "armorer",
+      "recipe_id": "item2_kovacstanonc_penge",
+      "template_id": "kovacstanonc_penge",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "armorer",
+      "recipe_id": "item2_tarnapajzs",
+      "template_id": "tarnapajzs",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "armorer",
+      "recipe_id": "item2_viharkvarc_pallos",
+      "template_id": "viharkvarc_pallos",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": "PLATE",
+      "crafting_source": "profession:craft",
+      "material_theme": "forged alloy plate",
+      "profession": "armorer",
+      "recipe_id": "item2_borostyan_tarnavert",
+      "template_id": "melysegi_borostyan_mellvert",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": "PLATE",
+      "crafting_source": "profession:craft",
+      "material_theme": "forged alloy plate",
+      "profession": "armorer",
+      "recipe_id": "item2_sarkfeny_sisak",
+      "template_id": "sarkfeny_sisak",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "armorer",
+      "recipe_id": "item2_gyongyhaz_pajzs",
+      "template_id": "gyongyhaz_pajzs",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "enchanter",
+      "recipe_id": "item2_holdfeny_bot",
+      "template_id": "holdfeny_bot",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "enchanter",
+      "recipe_id": "item2_nema_kristaly_fokusz",
+      "template_id": "nema_kristaly_fokusz",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "enchanter",
+      "recipe_id": "item2_viharszovo_bot",
+      "template_id": "viharszovo_bot",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "lumberjack",
+      "recipe_id": "item2_sarkanycsont_ij",
+      "template_id": "sarkanycsont_ij",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "miner",
+      "recipe_id": "item2_vasmuvek_csakanya",
+      "template_id": "vasmuvek_csakanya",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": null,
+      "crafting_source": "profession:craft",
+      "material_theme": "authored utility/weapon",
+      "profession": "fisherman",
+      "recipe_id": "item2_bokic_horgaszbot",
+      "template_id": "bokic_horgaszbot",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    }
+  ],
+  "schema": 2
+}
