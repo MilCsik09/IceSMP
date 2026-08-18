@@ -195,8 +195,6 @@ def scan(root: Path) -> list[dict[str, object]]:
                         "line": number,
                         "symbol": symbol,
                     })
-        # Line-local rules miss files whose YAML calls and player-UUID handling sit on
-        # different lines, so player-keyed durable YAML could hide from the gate entirely.
         if FILE_YAML_PATTERN.search(text) and FILE_PLAYER_ID_PATTERN.search(text):
             key = f"PLAYER_YAML|{rel}|{FILE_YAML_SYMBOL}"
             findings.setdefault(key, {
@@ -259,6 +257,11 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
             "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
         )
 
+    if kind == "PLAYER_PDC" and "getchunk().getpersistentdatacontainer" in lower_symbol:
+        return "GLOBAL_AGGREGATE_REFERENCE", (
+            "Chunk-owned durable world/block provenance is not player-owned profile state."
+        )
+
     if kind == "PLAYER_PDC" and (
         receiver in item_receivers
         or receiver.endswith("meta")
@@ -319,140 +322,106 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
             "Player-shaped direct persistence requires explicit shared-aggregate evidence."
         )
 
-    if kind == "PLAYER_PDC":
-        return "TRANSITION", (
-            "PDC receiver could not be proven item/entity metadata; fail closed."
-        )
-
-    return "TRANSITION", "Unclassified persistent player-state finding; fail closed."
+    return "TRANSITION", "Unclassified persistence-shaped finding; fail closed."
 
 
-def _load_override_payload(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {"version": 2, "allowed_categories": ALLOWED_CATEGORIES, "entries": []}
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError("authority override file must be an object")
-    return payload
+def fingerprint(finding: dict[str, object]) -> str:
+    payload = "\n".join((str(finding["kind"]), str(finding["path"]), str(finding["symbol"])))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:20]
 
 
-def audit(root: Path, allow_path: Path) -> dict[str, Any]:
+def load_overrides(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    rows = data.get("overrides", [])
+    if not isinstance(rows, list):
+        raise SystemExit("override file requires an 'overrides' list")
+    result: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise SystemExit("each override must be an object")
+        key = row.get("key")
+        category = row.get("category")
+        reason = str(row.get("reason", "")).strip()
+        digest = row.get("fingerprint")
+        if not isinstance(key, str) or not key:
+            raise SystemExit("override key must be non-empty")
+        if category not in ALLOWED_CATEGORIES or category == "TRANSITION":
+            raise SystemExit(f"invalid override category for {key}: {category}")
+        if not reason:
+            raise SystemExit(f"override reason is required for {key}")
+        if not isinstance(digest, str) or not digest:
+            raise SystemExit(f"override fingerprint is required for {key}")
+        if key in result:
+            raise SystemExit(f"duplicate override key: {key}")
+        result[key] = row
+    return result
+
+
+def audit(root: Path, override_path: Path) -> dict[str, object]:
     findings = scan(root)
-    payload = _load_override_payload(allow_path)
-    allowed_categories = payload.get("allowed_categories", ALLOWED_CATEGORIES)
-    overrides: dict[str, dict[str, str]] = {}
-    invalid: list[dict[str, object]] = []
-    for raw in payload.get("entries", []):
-        if not isinstance(raw, dict):
-            invalid.append({"entry": raw, "reason": "override is not an object"})
-            continue
-        key = str(raw.get("key", ""))
-        category = str(raw.get("category", ""))
-        reason = str(raw.get("reason", ""))
-        if not key or category not in allowed_categories or category == "TRANSITION" or not reason:
-            invalid.append(raw)
-            continue
-        if key in overrides:
-            invalid.append({"key": key, "reason": "duplicate override"})
-            continue
-        overrides[key] = {"key": key, "category": category, "reason": reason}
-
-    current = {str(finding["key"]): finding for finding in findings}
-    stale = [entry for key, entry in overrides.items() if key not in current]
-    entries: list[dict[str, object]] = []
-    unknown: list[dict[str, object]] = []
-    transitions: list[dict[str, object]] = []
+    overrides = load_overrides(override_path)
+    classified = []
+    unknown_overrides = set(overrides)
+    invalid_overrides: list[str] = []
     for finding in findings:
-        key = str(finding["key"])
-        override = overrides.get(key)
+        category, reason = classify_finding(finding)
+        override = overrides.get(str(finding["key"]))
         if override is not None:
-            category = override["category"]
-            reason = override["reason"]
-            source = "override"
-        else:
-            category, reason = classify_finding(finding)
-            source = "classifier"
-        entry = {
-            **finding,
-            "category": category,
-            "reason": reason,
-            "classification_source": source,
-        }
-        if category not in allowed_categories or not reason:
-            unknown.append(entry)
-        if category == "TRANSITION":
-            transitions.append(entry)
-        entries.append(entry)
-
-    categories = Counter(str(entry["category"]) for entry in entries)
-    return {
-        "finding_count": len(findings),
-        "category_counts": dict(sorted(categories.items())),
-        "unknown": unknown,
-        "stale": stale,
-        "invalid": invalid,
-        "transitions": transitions,
-        "transition_count": len(transitions),
-        "override_count": len(overrides),
-        "fingerprint": hashlib.sha256(
-            "\n".join(sorted(current)).encode("utf-8")
-        ).hexdigest(),
+            unknown_overrides.discard(str(finding["key"]))
+            current = fingerprint(finding)
+            if override.get("fingerprint") != current:
+                invalid_overrides.append(str(finding["key"]))
+            else:
+                category = str(override["category"])
+                reason = str(override["reason"])
+        classified.append({**finding, "category": category, "reason": reason,
+                           "fingerprint": fingerprint(finding)})
+    categories = Counter(str(row["category"]) for row in classified)
+    transitions = [row for row in classified if row["category"] == "TRANSITION"]
+    result = {
+        "schema": 2,
+        "findings": classified,
+        "summary": {
+            "findings": len(classified),
+            "categories": dict(sorted(categories.items())),
+            "transitionCount": len(transitions),
+            "unknownOverrideCount": len(unknown_overrides),
+            "invalidOverrideCount": len(invalid_overrides),
+        },
+        "unknownOverrides": sorted(unknown_overrides),
+        "invalidOverrides": sorted(invalid_overrides),
     }
+    return result
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=".")
-    parser.add_argument("--allowlist", default="scripts/player_profile_authority_allowlist.json")
+    parser.add_argument("--override-file", default="config/player-profile-authority-overrides.json")
     parser.add_argument("--write-report")
-    parser.add_argument("--update-allowlist", action="store_true")
-    parser.add_argument("--reclassify-transitions", action="store_true")
-    parser.add_argument("--reclassify-all", action="store_true")
     args = parser.parse_args()
-
     root = Path(args.root).resolve()
-    allow_path = root / args.allowlist
-    if args.update_allowlist:
-        payload = _load_override_payload(allow_path)
-        payload["version"] = 2
-        payload["allowed_categories"] = ALLOWED_CATEGORIES
-        payload["entries"] = payload.get("entries", [])
-        allow_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
-
-    report = audit(root, allow_path)
+    report = audit(root, root / args.override_file)
     if args.write_report:
-        output = root / args.write_report
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
-
-    print(
-        "PlayerProfile authority guard: "
-        f"{report['finding_count']} findings, {len(report['unknown'])} unknown, "
-        f"{len(report['stale'])} stale overrides, {len(report['invalid'])} invalid overrides, "
-        f"{report['transition_count']} transition"
-    )
+        out = Path(args.write_report)
+        if not out.is_absolute():
+            out = root / out
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    summary = report["summary"]
+    print("PlayerProfile authority guard: "
+          f"{summary['findings']} findings, {summary['unknownOverrideCount']} unknown, "
+          f"{summary['invalidOverrideCount']} stale overrides, "
+          f"{summary['transitionCount']} transition")
     print("Authority categories: " + ", ".join(
-        f"{category}={count}"
-        for category, count in report["category_counts"].items()
-    ))
-    for label, items in (
-        ("UNKNOWN", report["unknown"]),
-        ("STALE", report["stale"]),
-        ("INVALID", report["invalid"]),
-        ("TRANSITION", report["transitions"]),
-    ):
-        for item in items[:100]:
-            print(f"{label}: {item.get('key', item)}")
-    return 1 if (
-        report["unknown"] or report["stale"] or report["invalid"]
-        or report["transitions"]
-    ) else 0
+        f"{key}={value}" for key, value in summary["categories"].items()))
+    for row in report["findings"]:
+        if row["category"] == "TRANSITION":
+            print(f"TRANSITION: {row['key']}")
+    return 1 if (summary["transitionCount"] or summary["unknownOverrideCount"]
+                 or summary["invalidOverrideCount"]) else 0
 
 
 if __name__ == "__main__":
