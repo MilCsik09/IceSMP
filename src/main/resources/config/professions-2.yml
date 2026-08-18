@@ -5,6 +5,13 @@ professions:
     maximum-chance: 0.18
   economy:
     recipe-aliases: {}
+itemization:
+  salvage:
+    output-map:
+      szovet_foszlany: szovet_foszlany
+      bor_hulladek: bor_hulladek
+      lanc_toredek: lanc_toredek
+      femhulladek: femhulladek
 profession-materials:
   szott_poszto:
     material: WHITE_WOOL
