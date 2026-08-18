@@ -135,6 +135,33 @@
       "recipe_id": "item2_bokic_horgaszbot",
       "template_id": "bokic_horgaszbot",
       "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": "CLOTH",
+      "crafting_source": "profession:craft",
+      "material_theme": "woven arcane textile",
+      "profession": "armorer",
+      "recipe_id": "p2_fonixpihe_kopeny",
+      "template_id": "fonixpihe_kopeny",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": "LEATHER",
+      "crafting_source": "profession:craft",
+      "material_theme": "treated reinforced hide",
+      "profession": "armorer",
+      "recipe_id": "p2_vadorzo_csizma",
+      "template_id": "vadorzo_csizma",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
+    },
+    {
+      "armor_family": "MAIL",
+      "crafting_source": "profession:craft",
+      "material_theme": "hybrid leather and light rings",
+      "profession": "armorer",
+      "recipe_id": "p2_csontenyv_pancel",
+      "template_id": "csontenyv_pancel",
+      "visual_theme_hint": "preserve authored template silhouette; Professions 2.0 adds no new equipment asset"
     }
   ],
   "schema": 2

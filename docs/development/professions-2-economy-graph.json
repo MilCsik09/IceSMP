@@ -170,14 +170,58 @@
       "slot": "main-hand",
       "status": "VERIFIED",
       "template_id": "bokic_horgaszbot"
+    },
+    {
+      "armor_family": "CLOTH",
+      "migration_action": "ADD",
+      "new_owner": "armorer",
+      "old_owner": null,
+      "processing_dependency": [
+        "runaszott_poszto",
+        "fonixpihe"
+      ],
+      "recipe_id": "p2_fonixpihe_kopeny",
+      "slot": "chest",
+      "status": "VERIFIED",
+      "template_id": "fonixpihe_kopeny"
+    },
+    {
+      "armor_family": "LEATHER",
+      "migration_action": "ADD",
+      "new_owner": "armorer",
+      "old_owner": null,
+      "processing_dependency": [
+        "erositett_bor"
+      ],
+      "recipe_id": "p2_vadorzo_csizma",
+      "slot": "feet",
+      "status": "VERIFIED",
+      "template_id": "vadorzo_csizma"
+    },
+    {
+      "armor_family": "MAIL",
+      "migration_action": "ADD",
+      "new_owner": "armorer",
+      "old_owner": null,
+      "processing_dependency": [
+        "cserzett_bor",
+        "sodrott_lancszem"
+      ],
+      "recipe_id": "p2_csontenyv_pancel",
+      "slot": "chest",
+      "status": "VERIFIED",
+      "template_id": "csontenyv_pancel"
     }
   ],
   "cycles": [],
   "dead_managed_materials": [],
   "family_distribution": {
+    "CLOTH": 1,
+    "LEATHER": 1,
+    "MAIL": 1,
     "PLATE": 3
   },
-  "mail_mixed_dependency_verified": false,
+  "mail_mixed_dependency_verified": true,
   "material_nodes": [
     {
       "consumer_recipes": [
@@ -290,13 +334,15 @@
       "tier": "LEGACY"
     },
     {
-      "consumer_recipes": [],
+      "consumer_recipes": [
+        "p2_bor_reclamation"
+      ],
       "economy_managed": true,
       "id": "bor_hulladek",
       "processing_state": "SALVAGE",
       "producer_recipes": [],
       "sinks": [
-        "upgrade-service",
+        "reclamation",
         "market"
       ],
       "sources": [
@@ -326,6 +372,7 @@
     },
     {
       "consumer_recipes": [
+        "p2_csontenyv_pancel",
         "p2_erositett_bor",
         "p2_sodrott_lancszem"
       ],
@@ -333,6 +380,7 @@
       "id": "cserzett_bor",
       "processing_state": "REFINED",
       "producer_recipes": [
+        "p2_bor_reclamation",
         "p2_cserzett_bor"
       ],
       "sinks": [
@@ -447,7 +495,8 @@
       "id": "edzett_otvozet",
       "processing_state": "REFINED",
       "producer_recipes": [
-        "p2_edzett_otvozet"
+        "p2_edzett_otvozet",
+        "p2_fem_reclamation"
       ],
       "sinks": [
         "plate-processing",
@@ -557,7 +606,9 @@
       "tier": "LEGACY"
     },
     {
-      "consumer_recipes": [],
+      "consumer_recipes": [
+        "p2_vadorzo_csizma"
+      ],
       "economy_managed": true,
       "id": "erositett_bor",
       "processing_state": "COMPONENT",
@@ -616,13 +667,15 @@
       "tier": "LEGACY"
     },
     {
-      "consumer_recipes": [],
+      "consumer_recipes": [
+        "p2_fem_reclamation"
+      ],
       "economy_managed": true,
       "id": "femhulladek",
       "processing_state": "SALVAGE",
       "producer_recipes": [],
       "sinks": [
-        "upgrade-service",
+        "reclamation",
         "market"
       ],
       "sources": [
@@ -654,7 +707,8 @@
       "id": "finom_huzal",
       "processing_state": "REFINED",
       "producer_recipes": [
-        "p2_finom_huzal"
+        "p2_finom_huzal",
+        "p2_lanc_reclamation"
       ],
       "sinks": [
         "mail-processing",
@@ -705,6 +759,7 @@
         "fonixpihe_agyas",
         "fonixtoll_tekercs",
         "napfogyatkozas",
+        "p2_fonixpihe_kopeny",
         "viharjaro_csizma"
       ],
       "economy_managed": false,
@@ -716,6 +771,7 @@
         "recipe:fonixpihe_agyas",
         "recipe:fonixtoll_tekercs",
         "recipe:napfogyatkozas",
+        "recipe:p2_fonixpihe_kopeny",
         "recipe:viharjaro_csizma"
       ],
       "sources": [],
@@ -1107,13 +1163,15 @@
       "tier": "LEGACY"
     },
     {
-      "consumer_recipes": [],
+      "consumer_recipes": [
+        "p2_lanc_reclamation"
+      ],
       "economy_managed": true,
       "id": "lanc_toredek",
       "processing_state": "SALVAGE",
       "producer_recipes": [],
       "sinks": [
-        "upgrade-service",
+        "reclamation",
         "market"
       ],
       "sources": [
@@ -1696,6 +1754,7 @@
       "id": "runapor",
       "processing_state": "LEGACY",
       "producer_recipes": [
+        "p2_szovet_reclamation",
         "runapor_fokozott_orles",
         "runapor_orles"
       ],
@@ -1728,13 +1787,16 @@
         "recipe:vegtelen_tomus"
       ],
       "sources": [
+        "recipe:p2_szovet_reclamation",
         "recipe:runapor_fokozott_orles",
         "recipe:runapor_orles"
       ],
       "tier": "LEGACY"
     },
     {
-      "consumer_recipes": [],
+      "consumer_recipes": [
+        "p2_fonixpihe_kopeny"
+      ],
       "economy_managed": true,
       "id": "runaszott_poszto",
       "processing_state": "COMPONENT",
@@ -1801,7 +1863,9 @@
       "tier": "LEGACY"
     },
     {
-      "consumer_recipes": [],
+      "consumer_recipes": [
+        "p2_csontenyv_pancel"
+      ],
       "economy_managed": true,
       "id": "sodrott_lancszem",
       "processing_state": "COMPONENT",
@@ -1931,13 +1995,15 @@
       "tier": "REFINED"
     },
     {
-      "consumer_recipes": [],
+      "consumer_recipes": [
+        "p2_szovet_reclamation"
+      ],
       "economy_managed": true,
       "id": "szovet_foszlany",
       "processing_state": "SALVAGE",
       "producer_recipes": [],
       "sinks": [
-        "upgrade-service",
+        "reclamation",
         "market"
       ],
       "sources": [
@@ -2264,24 +2330,89 @@
   ],
   "new_processing_edges": [
     {
+      "from": "bor_hulladek",
+      "recipe": "p2_bor_reclamation",
+      "to": "cserzett_bor"
+    },
+    {
       "from": "cserzett_bor",
+      "recipe": "p2_csontenyv_pancel",
+      "to": "csontenyv_pancel"
+    },
+    {
+      "from": "cserzett_bor",
+      "recipe": "p2_erositett_bor",
       "to": "erositett_bor"
     },
     {
+      "from": "cserzett_bor",
+      "recipe": "p2_sodrott_lancszem",
+      "to": "sodrott_lancszem"
+    },
+    {
       "from": "edzett_otvozet",
+      "recipe": "p2_kovacsolt_lemez",
       "to": "kovacsolt_lemez"
     },
     {
-      "from": "szott_poszto",
-      "to": "runaszott_poszto"
+      "from": "erositett_bor",
+      "recipe": "p2_vadorzo_csizma",
+      "to": "vadorzo_csizma"
     },
     {
-      "from": "cserzett_bor",
-      "to": "sodrott_lancszem"
+      "from": "femhulladek",
+      "recipe": "p2_fem_reclamation",
+      "to": "edzett_otvozet"
     },
     {
       "from": "finom_huzal",
+      "recipe": "p2_sodrott_lancszem",
       "to": "sodrott_lancszem"
+    },
+    {
+      "from": "fonixpihe",
+      "recipe": "p2_fonixpihe_kopeny",
+      "to": "fonixpihe_kopeny"
+    },
+    {
+      "from": "lanc_toredek",
+      "recipe": "p2_lanc_reclamation",
+      "to": "finom_huzal"
+    },
+    {
+      "from": "rezgo_rez_otvozet",
+      "recipe": "p2_edzett_otvozet",
+      "to": "edzett_otvozet"
+    },
+    {
+      "from": "runapor",
+      "recipe": "p2_runaszott_poszto",
+      "to": "runaszott_poszto"
+    },
+    {
+      "from": "runaszott_poszto",
+      "recipe": "p2_fonixpihe_kopeny",
+      "to": "fonixpihe_kopeny"
+    },
+    {
+      "from": "sodrott_lancszem",
+      "recipe": "p2_csontenyv_pancel",
+      "to": "csontenyv_pancel"
+    },
+    {
+      "from": "szott_poszto",
+      "recipe": "p2_runaszott_poszto",
+      "to": "runaszott_poszto"
+    },
+    {
+      "from": "szovet_foszlany",
+      "recipe": "p2_szovet_reclamation",
+      "to": "runapor"
+    },
+    {
+      "from": "vad_esszencia",
+      "recipe": "p2_erositett_bor",
+      "to": "erositett_bor"
     }
   ],
   "north_star": "survival_gathering -> processing -> crafting -> equipment/utility -> use/trade/salvage -> upgrade -> market",
@@ -2289,6 +2420,7 @@
     {
       "consumes": [
         "arnyekpor",
+        "bor_hulladek",
         "cserzett_bor",
         "desztillalt_esoviz",
         "ecet_eszencia",
@@ -2324,6 +2456,8 @@
         "edzett_otvozet",
         "edzoolaj",
         "elso_csend_szilankja",
+        "erositett_bor",
+        "femhulladek",
         "finom_huzal",
         "folyositoszer",
         "fonixpihe",
@@ -2332,6 +2466,7 @@
         "jegviragpor",
         "karhozat_parazs",
         "kovacsolt_lemez",
+        "lanc_toredek",
         "lelekhamu",
         "melysegi_borostyan",
         "nema_kristaly",
@@ -2343,8 +2478,10 @@
         "rezgo_rez_otvozet",
         "runakreta",
         "runapor",
+        "runaszott_poszto",
         "sarkanycsont_szilank",
         "sarkfeny_cseppko",
+        "sodrott_lancszem",
         "szorny_mag",
         "tiszta_vasesszencia",
         "vad_esszencia",
@@ -2409,6 +2546,7 @@
         "sarkfeny_cseppko",
         "szorny_mag",
         "szott_poszto",
+        "szovet_foszlany",
         "tiszta_vasesszencia",
         "viaszgyertya",
         "viaszpecset",
@@ -2530,6 +2668,12 @@
       ],
       "profession": "miner"
     }
+  ],
+  "salvage_reclamation_sinks_verified": [
+    "szovet_foszlany",
+    "bor_hulladek",
+    "lanc_toredek",
+    "femhulladek"
   ],
   "schema": 2
 }

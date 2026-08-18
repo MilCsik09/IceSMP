@@ -2244,3 +2244,6 @@ Kézi elfogadási minimum:
 - Material/recipe reload fail-closed: hiányzó unique ID, rossz level/amount, semantic duplicate vagy managed processing cycle esetén az új generáció nem publikálható.
 
 Balance-változtatást a seedelt harness után is stagingen kell igazolni. Ne állíts be NPC buy/sell hurkot, amely crafttal profitot termel; high-value komponens korlátlan vendorforrása tiltott policy.
+
+### Professions 2.0 hardening gate
+A `scripts/check_professions_2_reports.py` ellenőrzi a 392 baseline recept teljes kategorizálását, a 18 canonical recipe-t, a négy ArmorFamily craft-végpontot, a MAIL mixed dependencyt, a salvage scrap valódi sinkeket és a post-commit Masterwork advancement sorrendet.

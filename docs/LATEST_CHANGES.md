@@ -662,3 +662,5 @@ kapu, nem CI-állítás.
 - Craft inventory commit all-or-nothing, batch-aware és full-inventory esetben nem dob tárgyat a világba.
 - Salvage family-aware, veszteséges és nem állítja elő újra az eredeti boss komponenst.
 - Új economy graph, migration report, RP handoff és seedelt sanity harness készült. Runtime/player-market végleges balansz staging-required.
+
+- Professions 2.0 adversarial closure: meglévő Equipment 2.0 template-ekkel létrejött CLOTH/LEATHER/MAIL craft-végpont, family-salvage reclamation sink, és a Masterwork achievement csak sikeres inventory commit után jár.

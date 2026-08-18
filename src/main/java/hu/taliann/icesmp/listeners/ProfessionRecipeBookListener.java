@@ -205,6 +205,10 @@ public final class ProfessionRecipeBookListener implements Listener {
             return;
         }
         EquippedCombatPowerService.refreshAfterMutation(player);
+        // Masterwork achievement is post-commit: failed inventory/material preflight grants nothing.
+        if (masterworkCount > 0) {
+            hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
+        }
         // WoW-stílusú skill-up: a craft szakma-XP-t ad — a szintedhez közeli recept a teljes
         // értéket, a rég kinőtt („szürke”) recept semmit (fele-út: fél XP). Élő kulcsok.
         final int playerLevel = professionManager.getLevel(player, recipe.profession());
@@ -354,9 +358,6 @@ public final class ProfessionRecipeBookListener implements Listener {
                             () -> java.util.concurrent.ThreadLocalRandom.current().nextDouble());
                 }
                 final ItemStack rendered = identity.render(template, instance);
-                if (professionCraft && instance.origin().masterwork()) {
-                    hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
-                }
                 return rendered;
             } catch (final RuntimeException invalid) {
                 plugin.getLogger().severe("Canonical profession result failed for " + recipe.id()

@@ -1247,3 +1247,6 @@ A **Mestermű** nem külön rarity és nem garantált tökéletes roll. Magasabb
 Stackelhető feldolgozásnál normál kattintás 1 craft, **Shift+kattintás 5-ös batch**. Ha nincs hely az összes outputnak, semmi nem fogy el. Canonical gear nem batch-elődik.
 
 Salvage veszteséges visszaforgatás. CLOTH textilfoszlányt, LEATHER bőrhulladékot, MAIL lánctöredéket, PLATE fémhulladékot adhat; boss-komponenst nem kapsz automatikusan vissza. A rúnázás/reforge/ascension továbbra is az Itemization saját canonical rendszerét használja.
+
+### Hogyan lesz a feldolgozott anyagból páncél?
+A Kovács (Armorer) rakja össze a végső canonical páncélt, de nem önellátó: a CLOTH textilhez Bűvölő, a LEATHER kezelt bőrhöz Alkimista munka kell, a MAIL pedig kezelt bőrt és sodronyt is kér. A salvage maradék visszaforgatható, de mindig veszteséggel.

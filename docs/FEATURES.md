@@ -1492,3 +1492,6 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 - Targeted canonical crafting, bounded non-guaranteed Masterwork, family-aware lossy salvage and player-market-ready material metadata.
 - Shift-click batch processing for stackable processing recipes with all-or-nothing inventory capacity checks.
 - Machine-readable migration, producer/consumer and resource-pack handoff reports.
+
+### Professions 2.0 family crafting
+A négy Equipment 2.0 family mind rendelkezik profession craft végponttal: CLOTH, LEATHER, MAIL és PLATE. A salvage-family maradékoknak valós, veszteséges visszanyerési sinkjük van; boss-komponens nem állítható vissza salvage-ből.

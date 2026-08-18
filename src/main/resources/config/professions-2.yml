@@ -135,7 +135,7 @@ profession-materials:
     source-types:
     - salvage:cloth
     sink-types:
-    - upgrade-service
+    - reclamation
     - market
     economy-managed: true
     lore:
@@ -148,7 +148,7 @@ profession-materials:
     source-types:
     - salvage:leather
     sink-types:
-    - upgrade-service
+    - reclamation
     - market
     economy-managed: true
     lore:
@@ -161,7 +161,7 @@ profession-materials:
     source-types:
     - salvage:mail
     sink-types:
-    - upgrade-service
+    - reclamation
     - market
     economy-managed: true
     lore:
@@ -174,7 +174,7 @@ profession-materials:
     source-types:
     - salvage:plate
     sink-types:
-    - upgrade-service
+    - reclamation
     - market
     economy-managed: true
     lore:
@@ -447,3 +447,151 @@ profession-recipes:
     economy-managed: true
     batchable: false
     batch-limit: 1
+  p2_fonixpihe_kopeny:
+    profession: armorer
+    kind: equipment
+    economy-category: EQUIPMENT
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: false
+    batch-limit: 1
+    processing-dependencies:
+    - runaszott_poszto
+    - fonixpihe
+    level: 40
+    learn: level
+    display-name: Főnixpihe Köpeny
+    category: Equipment 2.0 • CLOTH
+    result:
+      template: fonixpihe_kopeny
+      amount: 1
+      masterwork: true
+    ingredients:
+    - unique:runaszott_poszto:3
+    - unique:fonixpihe:2
+    - GOLD_INGOT:1
+  p2_vadorzo_csizma:
+    profession: armorer
+    kind: equipment
+    economy-category: EQUIPMENT
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: false
+    batch-limit: 1
+    processing-dependencies:
+    - erositett_bor
+    level: 24
+    learn: level
+    display-name: Vadőrző Csizma
+    category: Equipment 2.0 • LEATHER
+    result:
+      template: vadorzo_csizma
+      amount: 1
+      masterwork: true
+    ingredients:
+    - unique:erositett_bor:2
+    - STRING:2
+  p2_csontenyv_pancel:
+    profession: armorer
+    kind: equipment
+    economy-category: EQUIPMENT
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: false
+    batch-limit: 1
+    processing-dependencies:
+    - cserzett_bor
+    - sodrott_lancszem
+    level: 28
+    learn: level
+    display-name: Csontenyv Páncél
+    category: Equipment 2.0 • MAIL
+    result:
+      template: csontenyv_pancel
+      amount: 1
+      masterwork: true
+    ingredients:
+    - unique:cserzett_bor:1
+    - unique:sodrott_lancszem:3
+    - BONE:4
+  p2_szovet_reclamation:
+    profession: enchanter
+    kind: service
+    economy-category: UPGRADE_SERVICE
+    material-tier: COMMON
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    processing-dependencies:
+    - szovet_foszlany
+    level: 20
+    learn: level
+    display-name: Szövetfoszlány visszanyerés
+    category: Salvage • Visszanyerés
+    result:
+      unique: runapor
+      amount: 1
+    ingredients:
+    - unique:szovet_foszlany:6
+    - AMETHYST_SHARD:1
+  p2_bor_reclamation:
+    profession: alchemist
+    kind: service
+    economy-category: UPGRADE_SERVICE
+    material-tier: COMMON
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    processing-dependencies:
+    - bor_hulladek
+    level: 20
+    learn: level
+    display-name: Bőrhulladék visszanyerés
+    category: Salvage • Visszanyerés
+    result:
+      unique: cserzett_bor
+      amount: 1
+    ingredients:
+    - unique:bor_hulladek:6
+    - SUGAR:1
+  p2_lanc_reclamation:
+    profession: armorer
+    kind: service
+    economy-category: UPGRADE_SERVICE
+    material-tier: COMMON
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    processing-dependencies:
+    - lanc_toredek
+    level: 22
+    learn: level
+    display-name: Lánctöredék visszanyerés
+    category: Salvage • Visszanyerés
+    result:
+      unique: finom_huzal
+      amount: 1
+    ingredients:
+    - unique:lanc_toredek:8
+    - COPPER_INGOT:1
+  p2_fem_reclamation:
+    profession: armorer
+    kind: service
+    economy-category: UPGRADE_SERVICE
+    material-tier: COMMON
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    processing-dependencies:
+    - femhulladek
+    level: 24
+    learn: level
+    display-name: Fémhulladék visszanyerés
+    category: Salvage • Visszanyerés
+    result:
+      unique: edzett_otvozet
+      amount: 1
+    ingredients:
+    - unique:femhulladek:10
+    - COPPER_INGOT:1
+    - COAL:2
