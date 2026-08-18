@@ -384,20 +384,70 @@ public final class ItemMutationCoordinator implements Listener {
                     "itemization-recovery-wrong-player", false));
             return;
         }
+        if (!inFlight.add(player.getUniqueId())) {
+            callback.accept(new ResolutionOutcome(false,
+                    "itemization-operation-pending", false));
+            return;
+        }
+        schedulePlayer(player, () -> resolveManualOnOwner(player, entry, witness, actor, callback),
+                () -> {
+                    inFlight.remove(player.getUniqueId());
+                    callback.accept(new ResolutionOutcome(false,
+                            "itemization-recovery-scheduler-retired", false));
+                });
+    }
+
+    private void resolveManualOnOwner(final Player player, final ItemMutationJournal.Entry entry,
+                                      final ResolutionWitness witness, final String actor,
+                                      final Consumer<ResolutionOutcome> callback) {
+        final UUID operationId = entry.operationId();
         final List<String> current = ItemMutationJournal.encodeInventory(
                 player.getInventory().getContents());
         final List<String> selected = witness == ResolutionWitness.BEFORE
                 ? entry.beforeInventory() : entry.afterInventory();
-        if (!current.equals(selected)) {
+        final ItemMutationRecoveryPolicy.Decision decision = ItemMutationRecoveryPolicy.decide(
+                current, entry.beforeInventory(), entry.afterInventory());
+        if ((decision == ItemMutationRecoveryPolicy.Decision.ABORT_BEFORE
+                && witness != ResolutionWitness.BEFORE)
+                || (decision == ItemMutationRecoveryPolicy.Decision.COMMIT_AFTER
+                && witness != ResolutionWitness.AFTER)) {
+            inFlight.remove(player.getUniqueId());
             plugin.getLogger().warning("Item mutation recovery resolution rejected: op="
                     + operationId + " player=" + player.getUniqueId() + " actor="
-                    + safeActor(actor) + " witness=" + witness + " reason=current-mismatch");
+                    + safeActor(actor) + " witness=" + witness + " decision=" + decision);
             callback.accept(new ResolutionOutcome(false,
                     "itemization-recovery-witness-mismatch", false));
             return;
         }
+
+        if (decision == ItemMutationRecoveryPolicy.Decision.MANUAL_REVIEW) {
+            final ItemStack[] rollback = cloneContents(player.getInventory().getContents());
+            final ItemStack[] resolved;
+            try {
+                resolved = ItemMutationJournal.decodeInventory(selected);
+                player.getInventory().setContents(cloneContents(resolved));
+                player.saveData();
+                EquippedCombatPowerService.refreshAfterMutation(player);
+            } catch (final RuntimeException persistenceFailure) {
+                player.getInventory().setContents(rollback);
+                EquippedCombatPowerService.refreshAfterMutation(player);
+                try { player.saveData(); } catch (final RuntimeException rollbackFailure) {
+                    persistenceFailure.addSuppressed(rollbackFailure);
+                }
+                inFlight.remove(player.getUniqueId());
+                plugin.getLogger().severe("Item mutation manual resolution persistence failed: op="
+                        + operationId + " player=" + player.getUniqueId() + " actor="
+                        + safeActor(actor) + " witness=" + witness + " error="
+                        + persistenceFailure.getMessage());
+                callback.accept(new ResolutionOutcome(false,
+                        "itemization-recovery-persistence-failed", false));
+                return;
+            }
+        }
+
         journal.complete(operationId).whenComplete((completed, failure) ->
                 schedulePlayer(player, () -> {
+                    inFlight.remove(player.getUniqueId());
                     if (failure != null || !Boolean.TRUE.equals(completed)) {
                         callback.accept(new ResolutionOutcome(false,
                                 "itemization-recovery-journal-failed", false));
@@ -405,11 +455,15 @@ public final class ItemMutationCoordinator implements Listener {
                     }
                     plugin.getLogger().info("Item mutation recovery resolved: op=" + operationId
                             + " player=" + player.getUniqueId() + " actor=" + safeActor(actor)
-                            + " witness=" + witness);
+                            + " witness=" + witness + " previous=" + decision);
                     EquippedCombatPowerService.refreshAfterMutation(player);
                     callback.accept(new ResolutionOutcome(true,
                             "itemization-recovery-resolved", false));
-                }, () -> inFlight.remove(player.getUniqueId())));
+                }, () -> {
+                    inFlight.remove(player.getUniqueId());
+                    callback.accept(new ResolutionOutcome(false,
+                            "itemization-recovery-scheduler-retired", false));
+                }));
     }
 
     private static String safeActor(final String actor) {
