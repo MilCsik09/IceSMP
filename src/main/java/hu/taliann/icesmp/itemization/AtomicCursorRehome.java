@@ -106,16 +106,26 @@ public final class AtomicCursorRehome {
 
     static boolean canFitAll(final ItemStack[] storage, final ItemStack incoming) {
         if (storage == null || incoming == null || incoming.getType().isAir()) return false;
-        int capacity = 0;
+        int mergeCapacity = 0;
+        int emptySlots = 0;
         for (final ItemStack current : storage) {
             if (current == null || current.getType().isAir()) {
-                capacity += incoming.getMaxStackSize();
+                emptySlots++;
             } else if (current.isSimilar(incoming) && current.getAmount() < current.getMaxStackSize()) {
-                capacity += current.getMaxStackSize() - current.getAmount();
+                mergeCapacity += current.getMaxStackSize() - current.getAmount();
             }
-            if (capacity >= incoming.getAmount()) return true;
         }
-        return false;
+        return hasCapacity(incoming.getAmount(), mergeCapacity, emptySlots,
+                Math.max(1, incoming.getMaxStackSize()));
+    }
+
+    static boolean hasCapacity(final int incomingAmount, final int mergeCapacity,
+                               final int emptySlots, final int maxStackSize) {
+        if (incomingAmount <= 0 || mergeCapacity < 0 || emptySlots < 0 || maxStackSize <= 0) {
+            return false;
+        }
+        final long capacity = (long) mergeCapacity + (long) emptySlots * maxStackSize;
+        return capacity >= incomingAmount;
     }
 
     static ItemStack[] cloneContents(final ItemStack[] source) {
