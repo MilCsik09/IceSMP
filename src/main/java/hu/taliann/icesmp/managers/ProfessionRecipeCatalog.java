@@ -129,8 +129,8 @@ public final class ProfessionRecipeCatalog {
             nextEconomy.put(recipe.id(), economy);
             nextByProfession.computeIfAbsent(recipe.profession(), ignored -> new ArrayList<>()).add(recipe);
             nextByOutput.computeIfAbsent(outputKey(recipe), ignored -> new ArrayList<>()).add(recipe);
-            if (recipe.templateId() != null && itemTemplates != null) {
-                final var template = itemTemplates.require(recipe.templateId());
+            if (recipe.templateId() != null) {
+                final var template = requireTemplate(recipe.id(), recipe.templateId());
                 if (template.armorFamily() != null) {
                     nextByFamily.computeIfAbsent(template.armorFamily(), ignored -> new ArrayList<>()).add(recipe);
                 }
@@ -160,10 +160,9 @@ public final class ProfessionRecipeCatalog {
         if (uniqueResult != null && !materialRegistry.isDefined(uniqueResult)) {
             throw new IllegalStateException("profession-recipes." + id + ": unknown unique result: " + uniqueResult);
         }
-        final Material result = uniqueResult != null
-                ? materialRegistry.require(uniqueResult).icon()
-                : ConfigMaterialResolver.match(resultSection.getString("material", ""));
-        if (result == null || result.isAir()) throw new IllegalStateException("profession-recipes." + id + ": invalid result");
+        final String templateRaw = resultSection.getString("template", null);
+        final String templateId = templateRaw == null || templateRaw.isBlank() ? null : normalizeId(templateRaw);
+        final Material result = resolveResultMaterial(id, resultSection, uniqueResult, templateId);
         final int amount = resultSection.getInt("amount", 1);
         if (amount < 1 || amount > 4096) {
             throw new IllegalStateException("profession-recipes." + id + ": invalid result amount " + amount);
@@ -181,9 +180,9 @@ public final class ProfessionRecipeCatalog {
         final String affixTier = affixTierRaw == null || affixTierRaw.isBlank() ? null : normalizeId(affixTierRaw);
         final String signatureRaw = resultSection.getString("signature", null);
         final String signature = signatureRaw == null || signatureRaw.isBlank() ? null : normalizeId(signatureRaw);
-        final String templateRaw = resultSection.getString("template", null);
-        final String templateId = templateRaw == null || templateRaw.isBlank() ? null : normalizeId(templateRaw);
-        if (templateId != null) validateCanonicalTemplate(id, resultSection, result, amount, uniqueResult, templateId, affixTier, signature);
+        if (templateId != null) {
+            validateCanonicalTemplate(id, resultSection, result, amount, uniqueResult, templateId, affixTier, signature);
+        }
         final hu.taliann.icesmp.data.FactionType faction =
                 hu.taliann.icesmp.data.FactionType.fromInput(section.getString("faction", null));
         final boolean lootOnly = blueprint && section.getBoolean("loot-only", false);
@@ -194,6 +193,48 @@ public final class ProfessionRecipeCatalog {
                 jobRaw == null || jobRaw.isBlank() ? null : normalizeId(jobRaw),
                 section.getString("kind", "hozam").toLowerCase(Locale.ROOT),
                 templateId, resultSection.getBoolean("masterwork", false));
+    }
+
+    private Material resolveResultMaterial(final String id, final ConfigurationSection resultSection,
+                                           final String uniqueResult, final String templateId) {
+        if (templateId != null) {
+            if (uniqueResult != null) {
+                throw new IllegalStateException("profession-recipes." + id
+                        + ": canonical template result cannot also declare unique");
+            }
+            final var template = requireTemplate(id, templateId);
+            final Material templateMaterial = ConfigMaterialResolver.match(template.material());
+            if (templateMaterial == null || templateMaterial.isAir()) {
+                throw new IllegalStateException("profession-recipes." + id
+                        + ": authored template has invalid backing material: " + template.material());
+            }
+            if (resultSection.contains("material")) {
+                final Material explicit = ConfigMaterialResolver.match(resultSection.getString("material", ""));
+                if (explicit == null || explicit.isAir() || explicit != templateMaterial) {
+                    throw new IllegalStateException("profession-recipes." + id + ": template material mismatch");
+                }
+            }
+            return templateMaterial;
+        }
+        final Material result = uniqueResult != null
+                ? materialRegistry.require(uniqueResult).icon()
+                : ConfigMaterialResolver.match(resultSection.getString("material", ""));
+        if (result == null || result.isAir()) {
+            throw new IllegalStateException("profession-recipes." + id + ": invalid result");
+        }
+        return result;
+    }
+
+    private hu.taliann.icesmp.itemization.ItemTemplate requireTemplate(final String recipeId,
+                                                                       final String templateId) {
+        final var registry = itemTemplates;
+        if (registry == null) {
+            throw new IllegalStateException("profession-recipes." + recipeId
+                    + ": canonical template registry is not initialized");
+        }
+        return registry.find(templateId).orElseThrow(() ->
+                new IllegalStateException("profession-recipes." + recipeId
+                        + ": unknown authored template: " + templateId));
     }
 
     private void validateCanonicalTemplate(final String id, final ConfigurationSection resultSection,
@@ -207,10 +248,7 @@ public final class ProfessionRecipeCatalog {
                 || resultSection.contains("potion-effects")) {
             throw new IllegalStateException("profession-recipes." + id + ": canonical template cannot mix legacy mutators");
         }
-        final var registry = itemTemplates;
-        if (registry == null) return;
-        final var template = registry.find(templateId).orElseThrow(() ->
-                new IllegalStateException("profession-recipes." + id + ": unknown authored template: " + templateId));
+        final var template = requireTemplate(id, templateId);
         if (!template.material().equals(result.name())) {
             throw new IllegalStateException("profession-recipes." + id + ": template material mismatch");
         }
