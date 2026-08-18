@@ -38,6 +38,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
             try {
                 verifyExplicitEmptyAttributes();
+                verifyEquipmentRuntimeStates(identity);
                 verifyActualInventoryAtomicity();
                 verifyMutationPhysicalState(identity);
                 verifyCatalogPositiveLoad(catalog);
@@ -85,6 +86,76 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final var suppressedData = suppressed.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
         check(suppressedData != null && suppressedData.modifiers().isEmpty(),
                 "managed-invalid suppression must leave zero combat modifiers");
+    }
+
+    /**
+     * Final P1-009 matrix on real Paper ItemStacks. The pure admission state machine and the same
+     * suppression/reactivation methods used by equipment reconciliation are exercised together so
+     * backing Material defaults cannot masquerade as an active canonical contribution.
+     */
+    private static void verifyEquipmentRuntimeStates(final ItemIdentityService identity) {
+        final ItemStack canonical = identity.create("glatziendorfi_jegvert",
+                "runtime:equipment", "paper", null);
+        final ItemIdentityService.Inspection inspection = identity.inspect(canonical);
+        check(inspection.status() == ItemIdentityService.Status.VALID,
+                "equipment probe canonical item must start VALID");
+        check(canonical.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS),
+                "canonical render must explicitly own ATTRIBUTE_MODIFIERS");
+        final var activeData = canonical.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        check(activeData != null && !activeData.modifiers().isEmpty(),
+                "authored armor probe must expose canonical modifiers before suppression");
+        final var activeModifiers = List.copyOf(activeData.modifiers());
+
+        check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.VALID,
+                        true, false, true, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
+                "wrong-family/class restriction must be runtime-inert");
+        identity.setEquipmentSuppressed(canonical, inspection.template(), inspection.instance(), true);
+        check(identity.isEquipmentSuppressed(canonical),
+                "restricted canonical item must carry runtime suppression state");
+        final var restricted = canonical.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        check(canonical.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS)
+                        && restricted != null && restricted.modifiers().isEmpty(),
+                "wrong-family/restricted canonical item must have zero effective modifiers");
+        check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.VALID,
+                        true, false, true, true, true)
+                        == EquipmentProficiencyService.ActivityStatus.SUPPRESSED,
+                "suppression marker must remain authoritative until reconciliation reactivates");
+
+        identity.setEquipmentSuppressed(canonical, inspection.template(), inspection.instance(), false);
+        check(!identity.isEquipmentSuppressed(canonical),
+                "valid reconciliation must remove the transient suppression marker");
+        final var reactivated = canonical.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        check(reactivated != null && activeModifiers.equals(List.copyOf(reactivated.modifiers())),
+                "reactivation must restore exactly the canonical modifier projection");
+        check(identity.inspect(canonical).status() == ItemIdentityService.Status.VALID,
+                "suppression/reactivation must not rewrite canonical identity/checksum state");
+
+        final ItemStack invalid = canonical.clone();
+        invalid.setAmount(2);
+        check(identity.inspect(invalid).status() == ItemIdentityService.Status.TEMPLATE_MISMATCH,
+                "managed-invalid runtime fixture must be rejected by canonical identity");
+        check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.TEMPLATE_MISMATCH,
+                        true, false, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.INVALID_IDENTITY,
+                "managed-invalid canonical item must fail closed before proficiency contribution");
+        identity.suppressManagedInvalid(invalid);
+        final var invalidData = invalid.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        check(identity.isEquipmentSuppressed(invalid)
+                        && invalid.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS)
+                        && invalidData != null && invalidData.modifiers().isEmpty(),
+                "managed-invalid canonical item must be physically attribute-inert");
+
+        final ItemStack basic = new ItemStack(Material.IRON_SWORD);
+        check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.NOT_MANAGED,
+                        true, false, false, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.NOT_MANAGED,
+                "BASIC/not-managed item must stay outside the MMO activity gate");
+        check(!basic.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS),
+                "BASIC vanilla control must retain implicit Material attribute ownership");
+        final var basicDefaults = basic.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        check(basicDefaults != null && !basicDefaults.modifiers().isEmpty(),
+                "BASIC vanilla control must still expose backing Material defaults");
     }
 
     private static void verifyActualInventoryAtomicity() {
