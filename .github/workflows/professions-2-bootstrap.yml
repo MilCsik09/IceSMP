@@ -1,0 +1,87 @@
+name: Professions 2.0 Bootstrap
+
+on:
+  push:
+    branches:
+      - feature/professions-2
+
+permissions:
+  contents: write
+
+jobs:
+  apply-professions-2:
+    if: contains(github.event.head_commit.message, '[professions-2-bootstrap]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout child branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install generator dependency
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0'
+
+      - name: Materialize deterministic rework generator
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d scripts/apply_professions_2_rework.py.gz.b64 | gzip -dc > scripts/apply_professions_2_rework.py
+          chmod +x scripts/apply_professions_2_rework.py
+          python -m py_compile scripts/apply_professions_2_rework.py
+
+      - name: Apply Professions 2.0 source migration
+        run: python scripts/apply_professions_2_rework.py
+
+      - name: Validate generated economy reports before publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/check_professions_2_reports.py
+          python scripts/test_professions_2_economy.py
+
+      - name: Publish logical Professions 2.0 commits
+        shell: bash
+        env:
+          TARGET_BRANCH: feature/professions-2
+        run: |
+          set -euo pipefail
+          git config user.name 'IceSMP Professions 2.0 Bot'
+          git config user.email 'actions@users.noreply.github.com'
+
+          git rm -f scripts/apply_professions_2_rework.py.gz.b64 .github/workflows/professions-2-bootstrap.yml
+          git add scripts/apply_professions_2_rework.py \
+            src/main/java/hu/taliann/icesmp/managers/ConfigManager.java \
+            src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java \
+            src/main/java/hu/taliann/icesmp/professions/ProfessionMaterialRegistry.java \
+            src/main/java/hu/taliann/icesmp/professions/ProfessionCraftQualityPolicy.java \
+            src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java \
+            src/main/java/hu/taliann/icesmp/professions/ProfessionEconomyTelemetry.java
+          git commit -m 'feat(professions): bevezeti a processing és economy authorityt'
+
+          git add src/main/resources/config/professions-2.yml \
+            docs/development/professions-2-recipe-migration.json \
+            docs/development/professions-2-economy-graph.json \
+            docs/development/professions-2-rp-handoff.json
+          git commit -m 'feat(professions): migrálja a recipe és equipment crafting láncokat'
+
+          git add src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java \
+            src/main/java/hu/taliann/icesmp/gui/ProfessionRecipeGUI.java \
+            src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java
+          git commit -m 'fix(professions): hardeneli a craft és salvage boundarykat'
+
+          git add build.gradle.kts \
+            src/regression/java/hu/taliann/icesmp/professions/Professions2RegressionSuite.java \
+            scripts/check_professions_2_reports.py scripts/test_professions_2_economy.py
+          git commit -m 'test(professions): lefedi a progression és economy contractot'
+
+          git add ROADMAP.md docs/ARCHITECTURE.md docs/FEATURES.md docs/PLAYER_GUIDE.md docs/ADMIN_GUIDE.md docs/LATEST_CHANGES.md
+          git commit -m 'docs(professions): dokumentálja a Professions 2.0 és RP handoffot [professions-2-bootstrap-complete]'
+
+          test -z "$(git status --porcelain)"
+          git push origin HEAD:${TARGET_BRANCH}
