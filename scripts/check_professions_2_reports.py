@@ -41,8 +41,8 @@ assert 'dropItemNaturally(player.getLocation(), overflow)' not in listener
 transaction = (ROOT / 'src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java').read_text(encoding='utf-8')
 assert 'player.saveData();' in transaction
 assert 'PERSISTENCE_FAILED' in transaction
-assert 'inventory.setStorageContents(cloneContents(before));' in transaction
 assert 'ProfessionSpecializationEconomyPolicy.effectFor(player, recipe)' in transaction
+assert 'inventory.setStorageContents(cloneContents(before));' in transaction
 assert 'dropItemNaturally' not in transaction
 
 salvage = (ROOT / 'src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java').read_text(encoding='utf-8')
