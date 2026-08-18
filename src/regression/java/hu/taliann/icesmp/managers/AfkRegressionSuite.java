@@ -133,10 +133,11 @@ public final class AfkRegressionSuite {
         expect(mobLoot.contains("killer != null && hu.taliann.icesmp.utils.MobKillUtil.isAfkRewardBlocked"),
                 "boss-tier generic loot can bypass the shared reward gate");
         expect(mobKill.contains("isAfkRewardBlocked"), "shared reward gate lost global AFK wiring");
-        expect(worldBossListener.contains("rewardsAllowed = !MobKillUtil.isAfkRewardBlocked"),
+        expect(worldBossListener.contains("!MobKillUtil.isAfkRewardBlocked(playerId"),
                 "world-boss rewards do not consume the shared AFK gate");
-        expect(worldBossManager.contains("if (!allowRewards)"),
-                "world-boss lifecycle cannot close without paying rewards");
+        expect(worldBossManager.contains("rewardAllowed.test(playerId)")
+                        && worldBossManager.contains("delivery.reject(playerId"),
+                "world-boss lifecycle cannot close while suppressing one ineligible reward");
         expect(core.contains("wildHuntManager.setAfkManager(afkManager)"),
                 "Wild Hunt AFK manager is not wired by the core");
         expect(wildHuntManager.contains("setAfkManager"),

@@ -258,24 +258,44 @@ nyilvános felületre.
 
 ### C — PvE Depth
 
-- ⬜ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
+- ✅ `MobTemplate` + hibrid 1–50 progression, ahol az explicit encounter/zóna
+  felülírja, a távolság/mélység/territory pedig survival-wilderness fallback;
+  általános vadon hard cap 70. A rendszer 18 authored template-et, vanilla fallbacket,
+  12 archetype-vokabulárt és külön bounded HP/damage görbét ad.
+- ✅ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
   mobonként, spawnkor rögzített döntéssel és bounded élettartammal.
-- ⬜ Eseményvezérelt boss contribution ledger sebzés, gyógyítás, tankolás
-  és mechanikai részvétel alapján.
+- ✅ Eseményvezérelt, legfeljebb 128 résztvevős boss contribution ledger sebzés,
+  támogatás, tankolás és objective API-val; a világboss start-snapshotból skálázódik,
+  a személyes komponens receipt-alapúan idempotens és tele inventorynál függőben marad.
 - ⬜ Személyes harci összefoglaló; nyilvános DPS-szégyenfal nélkül.
-- ⬜ Bestiárium 2.0 többszintű kutatással és információs/kozmetikai
-  jutalmakkal.
+- ✅ Bestiárium authored rang/archetípus → ability/resistance → loot-profile
+  tudáslépcsőkkel; pontos drop rate nélkül. Kozmetikai jutalomkatalógus későbbi scope.
+
+**Release-gate:** a dependency-free domain/source regresszió nem helyettesíti az
+exact Java 21 CI-t és a 50–60 fős Folia staging playtestet (region-hop, late join,
+disconnect, full inventory, boss despawn/restart, képesség-telegráf olvashatóság).
 
 **Kapunyitás D/E felé:** minden idézett entitás életciklusa rendezett,
 a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
 
-### D — Profession és item economy
+### D — Survival itemizáció, profession és piac
 
 - ⬜ A 16 profession-specializáció tényleges passzívjai és fizetős respec.
-- ⬜ Veszteséges salvage szigorú tiltólistával.
-- ⬜ `ItemIdentityService` és bounded item history, csak fontos
-  mérföldkövekkel.
-- ⬜ Rúna 2.0 UX: előnézet, kódex és rúnapor-salvage; több foglalat nélkül.
+- ✅ Controlled reroll (Full Reforge, Stat Lock, Quality Amplifier, Stability Seal),
+  deterministic authored ascension és veszteséges salvage szigorú legacy/admin/
+  bind tiltással, bounded költséggörbével és item-mutation WAL recoveryvel.
+- ✅ Az authored `ItemTemplate`/`ItemInstance`/`ItemIdentityService`, 0–2 rúnahely,
+  signature/set fogyasztó és build-aware, restartbiztos soft-diversity alap
+  elkészült; a Phase 4–5 pure-domain regresszió és consistency kapu zöld. Az exact
+  Java 21 Gradle CI forráskapu, a Folia staging identity/migration/death/market
+  runtime acceptance külön kötelező release-gate.
+- ✅ Az első survival vertical slice a jelenlegi 48 authored template-es systemic
+  katalógusban is megmarad:
+  vanilla mining → Sarkfény-cseppkő → profession craft → reroll/rúna/piac →
+  világboss-komponens → ugyanazon UUID-val ascension.
+- ✅ Rúna 2.0: canonical insert, kiválasztott socketes remove és atomikus replace
+  ugyanazon whole-inventory mutation WAL-on fut. A Forge előnézet/költség/SHIFT
+  megerősítést ad; a régi rúna explicit `destroy` economy-sink policyt követ.
 - ⬜ Crafting order piactér escrow-val és naplózott settlementtel.
 
 **Kapunyitás E felé:** a tárgyazonosság másolás, újraindítás és

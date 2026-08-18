@@ -110,7 +110,8 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
   kap, az oxigén pedig csak fogyó levegőnél jelenik meg. A frame, név, HP-sáv, HP-szöveg,
   százalék, pajzs, páncél, étel és oxigén külön editor-komponens; a Player Frame csoporttal
   együtt is mozgathatók. Pack nélkül a vanilla kijelzők maradnak láthatók.
-- Ha megütsz egy mobot vagy játékost, a Player Frame mellett jelenik meg a **Target Frame**.
+- Ha egy mobra vagy játékosra nézel a beállított hatótávon belül, a Player Frame mellett
+  jelenik meg a **Target Frame**.
   A mobok bestiárium-stílusú, a játékosok frakciószínű keretet kapnak. A név, szint,
   current/max HP, százalék, rang/státusz, valamint játékosnál a class resource is látszik.
   A kijelzés nem hoz létre követő feliratot a mob testén, ezért az eredeti nametag nem tűnik el.
@@ -581,6 +582,8 @@ pedig a saját műhelyfolyamataikban haladnak.
 - `/profession info` — szakmai állapot.
 - `/profession join <szakma>` — tanulás vagy váltás.
 - `/profession recipes` — a ténylegesen ismert és zárolt receptek.
+- `/profession forge` — Itemization 2.0 műhely: reroll, Stat Lock, rúna remove/replace,
+  Ascension és salvage.
 - `/szakmacel` — a szakmád heti közös célja.
 
 A teljes receptkatalógus nem része ennek a kézikönyvnek. A receptkönyv jelzi a
@@ -589,6 +592,52 @@ szolgáltatói kellék hiányzik.
 
 Craftolni csak abból a szakmából tudsz, amelyet **éppen gyakorolsz**. A korábbi
 szakmád szintje megmarad a profilodon, de a receptjei váltás után zárva vannak.
+
+### Authored felszerelés és item műhely
+
+Az authored gear nem „véletlen kardfajta”: a recept előre megmondja a template-et,
+és csak a template által felsorolt roll-range-ekben van randomness. A szakmaszint,
+tervrajz és mestermű jelző additív, plafonozott minimum-qualityt adhat. A tárgyon
+megmarad a készítő UUID-ja, a név craftkori pillanatképe, a szakma, hely/idő és a
+Mestermű jelző; egy későbbi névváltás nem írja át az eredetét.
+
+A jelenlegi 48 tárgyas katalógus starter, mid-game és high-end felszerelést, három
+szettet, valamint mining/fishing/hunting/farming, profession, wilderness, event és
+boss forrásokat köt össze. A tíz rúna közül a Súly nagy célpont ellen, az Oltalom
+alacsony életerőn, a Vadász pedig nem játékos célpontra lőve ad bounded előnyt.
+
+A főkézben tartott canonical tárggyal nyisd meg a `/profession forge` felületet:
+
+- **Full Reforge:** minden rollolható stat újragurul;
+- **Stat Lock:** kattints egy statra, így az változatlan marad, a többi újragurul;
+- **Quality Amplifier:** a következő reroll minimum qualityjét emeli;
+- **Stability Seal:** a reroll megtörténik, de a következő költséglépcső nem nő;
+- **Ascension:** előre megmutatott, ritka és determinisztikus fejlesztés;
+- **Rúna eltávolítása:** válassz foglalatot; a költség kifizetése után a régi rúna
+  megsemmisül;
+- **Rúna cseréje:** válassz foglalatot és tarts új canonical rúnát a mellékkézben;
+  az old→new csere egyetlen atomikus művelet;
+- **Salvage:** irreverzibilis, veszteséges bontás runa-/salvage alapanyagra.
+
+A gombok megmutatják a költséget és az eredményt; a tényleges művelethez
+**SHIFT+katt** kell. A reroll count, az Ascension, a rúnák és a provenance piaci
+adásvétel, relog és restart után sem nullázódik.
+
+### A pilot survival gazdasági út
+
+Egy Bányász valódi vanilla érctörésből, közös napi anti-farm sapkával ritkán
+**Sarkfény-cseppkövet, Viharkvarcot, Mélységi Borostyánt, Néma Kristályt** vagy a
+Netherben **Kárhozat Parazsát** talál. Silk Touch, regenerált/pajzsolt blokk, AFK,
+védett régió és tele inventory nem termel ritka jutalmat. A Kovács ezt feldolgozott alapanyagokkal authored
+Vadvidéki Eskükarddá vagy tervrajzos Glatziendorfi gearré kovácsolja. A gear
+rerollolható, rúnázható és — trade policy szerint — a piacon eladható. A követett
+világboss személyes **Fekete Villám Szilánkja** olyan komponens, amely a Jégvért
+Ascensionjéhez kell. Az Ascension után ugyanaz az item UUID marad, és a rollok a régi
+relatív qualityn maradnak az új tartományban.
+
+A Bestiárium első elejtés után mutatja az authored mob rangját és archetípusát;
+további elejtésekkel képesség-/ellenállás-jegyek, majd a forrásprofil nyílik meg.
+Pontos drop rate-et nem spoilerez.
 
 ### Miért van, hogy egy recept ugyanannyit ad, mint a műhelyasztal?
 
@@ -683,7 +732,7 @@ A nagy harci események alapból nem torlódnak egymásra.
 | Jelenség | Mit jelent neked? |
 |---|---|
 | Vérhold | erősebb éjszakai ellenfelek, nagyobb kockázat és jutalom |
-| Világboss | közösségi nagy ellenfél, jelzett támadásokkal |
+| Világboss | közösségi nagy ellenfél, jelzett támadásokkal és személyes contribution-jutalommal |
 | Invázió | hullámokban érkező, megerősített szörnyek |
 | Vad Hajsza | kóbor elit fenevad és személyes jutalom |
 | Kereskedő-karaván | időleges, rotáló ritka kínálat |
@@ -708,10 +757,33 @@ meteor vagy kíséret tényleges indulását a szerver eseményüzenete és az
 
 ### A világ nehézsége
 
-A biztonságos vidékektől távolodva a szörnyek szintje emelkedhet. Erősebbek,
-de több kaszt-XP-t és jobb zsákmányt adhatnak. A spawnerből származó mobok
-nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a
-skálázást és jutalmat.
+A biztonságos vidékektől távolodva a szörnyek szintje emelkedhet. A normál vadon
+Lv. 1–50 között halad; a territory, biome, föld alatti mélység, dimenzió, Vérhold
+vagy más event együtt legfeljebb az általános Lv. 70 survival capig emelheti.
+Authored rom, dungeon vagy boss saját szintet írhat elő; 70 fölötti szint nem a
+végtelen távolsági skála, hanem külön boss/encounter tartalom. A HP gyorsabban,
+a sebzés óvatosabban nő, így a magas szint nem automatikus előjel nélküli one-shot.
+
+A **Veterán** erősebb alapellenfél, az **Elit** legfeljebb két, a neve mellett
+röviden jelzett affixet kaphat; a Bajnok/Miniboss/Boss saját mechanikákat használhat.
+Charge, slam, lövedéksorozat vagy zóna előtt vanilla kliensen is hang/részecske
+telegráf látható — ezt figyeld, ne csak a nametaget. A spawnerből származó mobok
+nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a skálázást
+és jutalmat.
+
+Világbossnál nem csak a killing blow számít. Érdemi bosssebzés, tankolás és a
+támogatott encounter-célok contributiont adnak; AFK, önmagadon farmolt heal vagy
+harc előtti padding nem. A boss HP-ja a harc eleji résztvevő-snapshot alapján,
+csökkenő hozadékkal skálázódik, ezért ki-/belépéssel nem ugráltatható. A küszöböt
+elérő játékos személyes ascension komponenst kap. Ha tele az inventoryd, a jutalom
+nem esik a földre: felszabadított hellyel a következő reconnectkor újrapróbálható.
+
+Az authored harci felszerelés enyhén figyelembe veszi a szintedet, kasztodat,
+specializációdat, jelenlegi gear-statisztikáidat, üres felszereléshelyedet és a
+forrást. Ez nem személyes kívánságlista: más buildhez vagy kaszthoz való,
+piacon értékes darab továbbra is eshet. A közelmúlt ismétlődése csak finoman
+módosítja a súlyokat, és nem garantál rövid úton Mitikus tárgyat; az előzmény
+kilépéssel vagy szerver-újraindítással sem nullázódik.
 
 ### Szezonális liga
 

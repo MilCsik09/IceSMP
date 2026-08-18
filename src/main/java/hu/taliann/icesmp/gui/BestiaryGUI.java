@@ -68,7 +68,7 @@ public final class BestiaryGUI {
         holder.setInventory(inventory);
         inventory.setItem(10, categoryIcon(Material.IRON_SWORD, BestiaryManager.Category.MOBS,
                 bestiaryManager.count(player, BestiaryManager.Category.MOBS),
-                BestiaryManager.knownMonsterTypes().size(),
+                bestiaryManager.knownMobEntryCount(),
                 "Megölt szörny-FAJOK — minden faj első", "elejtése új bejegyzés."));
         inventory.setItem(12, categoryIcon(Material.CRAFTING_TABLE, BestiaryManager.Category.RECIPES,
                 bestiaryManager.count(player, BestiaryManager.Category.RECIPES),
@@ -137,6 +137,16 @@ public final class BestiaryGUI {
                     rows.put(id, new Entry(id, spawnEgg(type),
                             Component.translatable(type.translationKey()), collected.contains(id)));
                 }
+                bestiaryManager.mobTemplates().forEach((id, template) -> {
+                    final EntityType type;
+                    try {
+                        type = EntityType.valueOf(template.entityType());
+                    } catch (final IllegalArgumentException invalid) {
+                        return;
+                    }
+                    rows.put(id, new Entry(id, spawnEgg(type),
+                            Component.text(template.displayName()), collected.contains(id)));
+                });
                 // A ritka variánsok gyűjtött extrák: nem részei a nevezőnek, nincs ???-soruk.
                 for (final String id : collected) {
                     if (!rows.containsKey(id)) {
@@ -203,6 +213,24 @@ public final class BestiaryGUI {
             if (!note.isBlank()) {
                 lore.add(Component.text("„" + note + "”", NamedTextColor.DARK_AQUA)
                         .decoration(TextDecoration.ITALIC, true));
+            }
+            final hu.taliann.icesmp.pve.MobTemplate template =
+                    bestiaryManager.mobTemplate(entry.id());
+            if (template != null && tier >= 1) {
+                lore.add(GuiUtil.grey("Rang: " + template.rank().name()
+                        + " • Archetípus: " + template.archetype().name()));
+            }
+            if (template != null && tier >= 2) {
+                lore.add(GuiUtil.grey("Képességjelek: " + String.join(", ", template.abilityIds())));
+                if (!template.resistances().isEmpty()) {
+                    lore.add(GuiUtil.grey("Ellenállás: " + String.join(", ", template.resistances())));
+                }
+                if (!template.weaknesses().isEmpty()) {
+                    lore.add(GuiUtil.grey("Gyengeség: " + String.join(", ", template.weaknesses())));
+                }
+            }
+            if (template != null && tier >= 3) {
+                lore.add(GuiUtil.grey("Forrásprofil: " + template.lootProfile()));
             }
             if (tier >= 2) {
                 lore.add(GuiUtil.grey("Zsákmány-jegyzet: a Káoszkor erős példányai"));

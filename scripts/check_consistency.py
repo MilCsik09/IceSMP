@@ -58,6 +58,53 @@ for path in sorted(glob.glob(os.path.join(CFG, "*.yml"))):
     except yaml.YAMLError as e:
         fail(f"YAML parse-hiba: {name}: {str(e).splitlines()[0]}")
 
+# ---------- 1b. Mob/Encounter 2.0 authored catalog ----------
+_mob_doc = configs.get("mob-templates.yml", {}) or {}
+_mob_abilities = _mob_doc.get("mob-abilities", {}) or {}
+_mob_loot = _mob_doc.get("mob-loot-profiles", {}) or {}
+_mob_templates = _mob_doc.get("mob-templates", {}) or {}
+_mob_ranks = {"NORMAL", "VETERAN", "ELITE", "CHAMPION", "MINIBOSS", "BOSS", "WORLD_BOSS"}
+_mob_archetypes = {"BRUISER", "CHARGER", "SKIRMISHER", "RANGED", "ARTILLERY",
+                   "DEFENDER", "SUPPORT", "HEALER", "SUMMONER", "ASSASSIN",
+                   "CONTROLLER", "FLYING"}
+_mob_ability_kinds = {"LUNGE", "GROUND_SLAM", "PROJECTILE_BURST", "SHIELD",
+                      "HEAL_PULSE", "SUMMON"}
+if not 4 <= len(_mob_abilities) <= 64:
+    fail(f"mob-abilities katalógus mérete {len(_mob_abilities)}; elvárt 4-64")
+if not 4 <= len(_mob_templates) <= 256:
+    fail(f"mob-templates katalógus mérete {len(_mob_templates)}; elvárt 4-256")
+_normalized_mob_ids = {}
+_bestiary_ids = set()
+for _aid, _ability in _mob_abilities.items():
+    if not isinstance(_ability, dict) or str(_ability.get("kind", "")).upper() not in _mob_ability_kinds:
+        fail(f"mob-ability '{_aid}' kind érvénytelen")
+    if str(_ability.get("kind", "")).upper() in {"LUNGE", "GROUND_SLAM", "PROJECTILE_BURST", "SUMMON"} \
+            and int(_ability.get("telegraph-ticks", 0)) < 10:
+        fail(f"mob-ability '{_aid}' veszélyes, de nincs olvasható telegraph")
+for _mid, _template in _mob_templates.items():
+    _normalized = str(_mid).lower().replace("-", "_")
+    if _normalized in _normalized_mob_ids:
+        fail(f"MobTemplate normalizált duplicate: '{_normalized_mob_ids[_normalized]}' / '{_mid}'")
+    _normalized_mob_ids[_normalized] = _mid
+    if not isinstance(_template, dict):
+        fail(f"MobTemplate '{_mid}' nem mapping")
+        continue
+    if str(_template.get("rank", "")).upper() not in _mob_ranks:
+        fail(f"MobTemplate '{_mid}' rank érvénytelen")
+    if str(_template.get("archetype", "")).upper() not in _mob_archetypes:
+        fail(f"MobTemplate '{_mid}' archetype érvénytelen")
+    for _ability_id in _template.get("abilities", []) or []:
+        if _ability_id not in _mob_abilities:
+            fail(f"MobTemplate '{_mid}' hiányzó abilityre hivatkozik: '{_ability_id}'")
+    if _template.get("loot-profile") not in _mob_loot:
+        fail(f"MobTemplate '{_mid}' loot profile érvénytelen: '{_template.get('loot-profile')}'")
+    _bestiary = str(_template.get("bestiary-id", "")).strip().lower()
+    if not _bestiary or _bestiary in _bestiary_ids:
+        fail(f"MobTemplate '{_mid}' Bestiary ID hiányzik vagy duplicate: '{_bestiary}'")
+    _bestiary_ids.add(_bestiary)
+    if len(set(_template.get("affix-pool", []) or [])) > 7:
+        fail(f"MobTemplate '{_mid}' affix pool túllépi a 7 canonical affixet")
+
 # ---------- 2. quest-integritás ----------
 qroot = configs.get("quests.yml", {})
 quests = qroot.get("quests", {}) if isinstance(qroot, dict) else {}
@@ -779,7 +826,7 @@ except Exception as e:
 # levezethető — a hozam-arány emberi szabály marad, azt itt SEM állítjuk.
 try:
     _KINDS = {"gyakorlo", "hozam", "egyedi", "lanc", "ritkasag"}
-    _FUNC = ("affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects")
+    _FUNC = ("template", "affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects")
     _GYAKORLO_MAX_LEVEL = 15
     # Boss/esemény-kötött alapanyagok: csak ezek kapuzhatnak ritkaság-receptet.
     _BOSS_UNIQUES = {
@@ -796,7 +843,8 @@ try:
     # A rúnák fogyasztója a rúna-felhelyezés (nem recept-hozzávaló) — nem zsákutca.
     # A suttogas_meghivo esemeny-belepo (WhisperListener), nem craft-alapanyag.
     _RUNE_SINKS = {"runa_elek", "runa_zapor", "runa_bastya", "runa_lang",
-                   "runa_fagy", "runa_moho", "runa_visszhang", "suttogas_meghivo"}
+                   "runa_fagy", "runa_moho", "runa_visszhang", "runa_suly",
+                   "runa_oltalom", "runa_vadasz", "suttogas_meghivo"}
     # Vanillában visszaalakítható blokk↔item párok: a katalógus nem láthatja, hogy a
     # kimenet a bemenetté alakítható vissza, ezért a hurok-detektornak meg kell mondani.
     _REVERSIBLE = {
@@ -810,6 +858,7 @@ try:
 
     _recipes = (configs.get("profession-recipes.yml") or {}).get("profession-recipes") or {}
     _materials = (configs.get("profession-materials.yml") or {}).get("profession-materials") or {}
+    _templates = (configs.get("item-templates.yml") or {}).get("item-templates") or {}
 
     def _inputs(_rec):
         """(anyag -> darab, unique -> darab) a hozzávaló-listából."""
@@ -836,6 +885,16 @@ try:
         _kind = _rec.get("kind")
         _plain, _uniq = _inputs(_rec)
         _amount = int(_res.get("amount", 1))
+        _template_id = _res.get("template")
+        if _template_id:
+            _template = _templates.get(_template_id)
+            if not isinstance(_template, dict):
+                fail(f"recept-fajta: '{_rid}' ismeretlen authored template-et ad: '{_template_id}'")
+            elif (_res.get("unique") or _amount != 1
+                  or str(_res.get("material", "")).upper()
+                  != str(_template.get("material", "")).upper()):
+                fail(f"recept-fajta: '{_rid}' canonical result material/stack eltér a "
+                     f"'{_template_id}' template-től")
         if _kind not in _KINDS:
             fail(f"recept-fajta: '{_rid}' kind='{_kind}' — a megengedettek: {sorted(_KINDS)}")
             continue

@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TransientEntities;
 import net.kyori.adventure.text.Component;
@@ -324,8 +325,9 @@ public final class CultistEventManager {
         mob.customName(Component.text("🕯 " + name,
                 NamedTextColor.DARK_PURPLE));
         mob.setCustomNameVisible(true);
-        mobScalingManager.forceLevel(mob, Math.max(1,
-                configManager.getInt("cultists.mob-level", 5)));
+        mobScalingManager.forceRankedLevel(mob, Math.max(1,
+                configManager.getInt("cultists.mob-level", 5)),
+                MobRank.VETERAN, null, "SKIRMISHER");
         TransientEntities.register(plugin, mob);
         cultists.add(mob.getUniqueId());
     }

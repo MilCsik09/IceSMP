@@ -14,6 +14,7 @@ import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -641,6 +642,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         for (final ItemStack leftover : leftovers.values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), leftover);
         }
+        EquippedCombatPowerService.refreshAfterMutation(player);
     }
 
     private static TargetSlot mapSlot(final InvseeHolder.View view, final int rawSlot) {
@@ -677,6 +679,9 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             }
             case OFFHAND -> target.getInventory().setItemInOffHand(value);
             case ENDER -> target.getEnderChest().setItem(slot.index, value);
+        }
+        if (slot.kind != TargetSlot.Kind.ENDER) {
+            EquippedCombatPowerService.refreshAfterMutation(target);
         }
     }
 

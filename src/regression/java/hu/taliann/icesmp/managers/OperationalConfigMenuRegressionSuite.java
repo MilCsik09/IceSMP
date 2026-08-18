@@ -35,10 +35,10 @@ public final class OperationalConfigMenuRegressionSuite {
     @SuppressWarnings("unchecked")
     private static void verifiesCatalogAndPackagedKeys() throws Exception {
         check(OperationalConfigMenuGUI.categoryCount() == 5, "source catalog category count changed");
-        check(OperationalConfigMenuGUI.entryCount() == 106, "source catalog entry count changed");
+        check(OperationalConfigMenuGUI.entryCount() == 107, "source catalog entry count changed");
         check(TransactionalOperationalConfigMenuGUI.categoryCount() == 4,
                 "canonical operational view must hide duplicate moderation category");
-        check(TransactionalOperationalConfigMenuGUI.entryCount() == 95,
+        check(TransactionalOperationalConfigMenuGUI.entryCount() == 96,
                 "canonical operational entry count changed unexpectedly");
 
         final YamlConfiguration merged = new YamlConfiguration();
@@ -65,6 +65,9 @@ public final class OperationalConfigMenuRegressionSuite {
     }
 
     private static void verifiesRuntimeAlignedRanges() {
+        check(minimum("hud.icesmp-hud.target-frame.range") == 3.0D
+                        && maximum("hud.icesmp-hud.target-frame.range") == 64.0D,
+                "Target Frame raytrace range must match the runtime clamp");
         check(minimum("currency.exchange-rate") == 0.01D, "fixed exchange-rate minimum mismatch");
         check(minimum("currency.dynamic-exchange.min-multiplier") == 0.01D, "dynamic exchange floor mismatch");
         check(minimum("currency.economy-event.min-multiplier") == 1.0D, "positive shock floor mismatch");
@@ -76,6 +79,12 @@ public final class OperationalConfigMenuRegressionSuite {
         final ConfigMenuGUI.Entry entry = OperationalConfigMenuGUI.findEntry(key);
         check(entry != null, "missing operational entry: " + key);
         return entry.min();
+    }
+
+    private static double maximum(final String key) {
+        final ConfigMenuGUI.Entry entry = OperationalConfigMenuGUI.findEntry(key);
+        check(entry != null, "missing operational entry: " + key);
+        return entry.max();
     }
 
     private static void verifiesStagedBatchValidation() {

@@ -127,9 +127,9 @@
       "reason": "Combat UI throttle/last-target display state; session only."
     },
     {
-      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java|private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();",
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/TargetFrameTracker.java|private final Map<UUID, Selection> selections = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
-      "reason": "Combat UI throttle/last-target display state; session only."
+      "reason": "Bounded Target Frame generation and selected-entity coordination; immutable session projection only."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java|private final ConcurrentHashMap<UUID, Long> lastFallbackWarning = new ConcurrentHashMap<>();",
@@ -515,6 +515,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java|private final ConcurrentHashMap<UUID, String> lastSpellbookSignature = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient per-session client payload signature used only to suppress unchanged spellbook messages; cleared on resync, disconnect and bridge shutdown."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/pve/ContributionLedger.java|private final Map<UUID, Contribution> entries = new LinkedHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Bounded encounter-only contribution evidence keyed by participant UUID; it is never persisted, rejects post-close writes and is discarded when the transient boss encounter settles or shuts down. Durable personal reward eligibility lives in PlayerProfile v2 OPERATIONS receipts."
     }
   ]
 }

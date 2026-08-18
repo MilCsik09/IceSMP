@@ -38,18 +38,21 @@ public final class MobMoneyDropListener implements Listener {
     private final MobScalingManager mobScalingManager;
     private final MoneyPouchItemFactory pouchFactory;
     private final hu.taliann.icesmp.managers.AfkManager afkManager;
+    private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
     private final org.bukkit.NamespacedKey spawnerMobKey;
 
     public MobMoneyDropListener(final org.bukkit.plugin.java.JavaPlugin plugin,
                                 final ConfigManager configManager,
                                 final MobScalingManager mobScalingManager,
                                 final MoneyPouchItemFactory pouchFactory,
-                                final hu.taliann.icesmp.managers.AfkManager afkManager) {
+                                final hu.taliann.icesmp.managers.AfkManager afkManager,
+                                final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.pouchFactory = pouchFactory;
         this.afkManager = afkManager;
+        this.itemIdentityService = itemIdentityService;
         this.spawnerMobKey = new org.bukkit.NamespacedKey(plugin, "spawner_mob");
     }
 
@@ -106,7 +109,7 @@ public final class MobMoneyDropListener implements Listener {
         // az ő ütemezőjén fut, a drop pedig a hely régió-ütemezőjén (a drop-listát az event
         // lefutása után már nem lehet módosítani).
         kill.runOnKiller(plugin, killer -> {
-            if (!"runa_moho".equals(RuneEffectListener.runeOf(killer.getInventory().getItemInMainHand()))) {
+            if (!itemIdentityService.hasRune(killer.getInventory().getItemInMainHand(), "runa_moho")) {
                 return;
             }
             final ItemStack pouch = payout(kill, amount);

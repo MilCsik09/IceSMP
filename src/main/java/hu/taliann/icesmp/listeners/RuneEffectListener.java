@@ -14,6 +14,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 
 /**
  * B26 — rúna-hatások, SZŰK közös hook-pontokon (nem spellenként szórva):
@@ -32,11 +33,16 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class RuneEffectListener implements Listener {
 
     private final ConfigManager configManager;
+    private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
+    private static final org.bukkit.NamespacedKey RUNE_LIST_PDC_KEY =
+            org.bukkit.NamespacedKey.fromString("icesmp:rune_effects");
     /** E7 — setter-injektált: Varázsló rúnaíró affinitás (dupla rúna-hatás). */
     private volatile hu.taliann.icesmp.managers.JobManager jobManager;
 
-    public RuneEffectListener(final ConfigManager configManager) {
+    public RuneEffectListener(final ConfigManager configManager,
+                              final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService) {
         this.configManager = configManager;
+        this.itemIdentityService = itemIdentityService;
     }
 
     public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
@@ -53,35 +59,43 @@ public final class RuneEffectListener implements Listener {
     }
 
     /** A tárgyra vésett rúna id-ja (null, ha nincs). */
-    public static String runeOf(final ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
-            return null;
-        }
-        return item.getItemMeta().getPersistentDataContainer()
-                .get(RuneApplyListener.RUNE_PDC_KEY, PersistentDataType.STRING);
+    public List<String> runesOf(final ItemStack item) {
+        return itemIdentityService.runesOf(item);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onMelee(final EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player attacker) {
-            final String rune = runeOf(attacker.getInventory().getItemInMainHand());
-            if (rune != null && event.getEntity() instanceof LivingEntity victim) {
-                applyWeaponRune(rune, event, victim, affinity(attacker));
+            final List<String> runes = runesOf(attacker.getInventory().getItemInMainHand());
+            if (!runes.isEmpty() && event.getEntity() instanceof LivingEntity victim) {
+                for (final String rune : runes) applyWeaponRune(rune, event, victim, affinity(attacker));
             }
         } else if (event.getDamager() instanceof Projectile projectile) {
-            final String rune = projectile.getPersistentDataContainer()
-                    .get(RuneApplyListener.RUNE_PDC_KEY, PersistentDataType.STRING);
-            if ("runa_zapor".equals(rune)) {
+            final String runes = projectile.getPersistentDataContainer()
+                    .get(RUNE_LIST_PDC_KEY, PersistentDataType.STRING);
+            if (runes != null && java.util.Arrays.asList(runes.split(",")).contains("runa_zapor")) {
                 final double bonus = pct("runes.runa_zapor.projectile-damage-percent", 7.0D);
+                event.setDamage(event.getDamage() * (1.0D + bonus / 100.0D));
+            }
+            if (runes != null && java.util.Arrays.asList(runes.split(",")).contains("runa_vadasz")
+                    && event.getEntity() instanceof LivingEntity living
+                    && !(living instanceof Player)) {
+                final double bonus = pct("runes.runa_vadasz.monster-damage-percent", 5.0D);
                 event.setDamage(event.getDamage() * (1.0D + bonus / 100.0D));
             }
         }
         // runa_bastya: a sértett játékos mellvértje csillapít
         if (event.getEntity() instanceof Player victim) {
-            final String rune = runeOf(victim.getInventory().getChestplate());
-            if ("runa_bastya".equals(rune)) {
+            if (runesOf(victim.getInventory().getChestplate()).contains("runa_bastya")) {
                 final double reduction = pct("runes.runa_bastya.damage-reduction-percent", 4.0D) * affinity(victim);
                 event.setDamage(Math.max(0.0D, event.getDamage() * (1.0D - reduction / 100.0D)));
+            }
+            if (runesOf(victim.getInventory().getChestplate()).contains("runa_oltalom")
+                    && victim.getHealth() <= victim.getMaxHealth() * 0.35D) {
+                final double reduction = pct(
+                        "runes.runa_oltalom.low-health-reduction-percent", 6.0D) * affinity(victim);
+                event.setDamage(Math.max(0.0D,
+                        event.getDamage() * (1.0D - Math.min(40.0D, reduction) / 100.0D)));
             }
         }
     }
@@ -114,6 +128,14 @@ public final class RuneEffectListener implements Listener {
                             configManager.getInt("runes.runa_fagy.slow-ticks", 40), 0, false, true));
                 }
             }
+            case "runa_suly" -> {
+                if (victim.getMaxHealth() >= configManager.getDouble(
+                        "runes.runa_suly.minimum-target-health", 40.0D)) {
+                    final double bonus = pct("runes.runa_suly.large-target-damage-percent", 4.0D)
+                            * affinity;
+                    event.setDamage(event.getDamage() * (1.0D + bonus / 100.0D));
+                }
+            }
             default -> { }
         }
     }
@@ -124,10 +146,10 @@ public final class RuneEffectListener implements Listener {
         if (!(event.getEntity() instanceof Player)) {
             return;
         }
-        final String rune = runeOf(event.getBow());
-        if ("runa_zapor".equals(rune) && event.getProjectile() instanceof Projectile projectile) {
+        final List<String> runes = runesOf(event.getBow());
+        if (!runes.isEmpty() && event.getProjectile() instanceof Projectile projectile) {
             projectile.getPersistentDataContainer().set(
-                    RuneApplyListener.RUNE_PDC_KEY, PersistentDataType.STRING, rune);
+                    RUNE_LIST_PDC_KEY, PersistentDataType.STRING, String.join(",", runes));
         }
     }
 

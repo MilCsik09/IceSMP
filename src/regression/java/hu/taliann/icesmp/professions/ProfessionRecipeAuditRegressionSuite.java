@@ -23,8 +23,10 @@ public final class ProfessionRecipeAuditRegressionSuite {
     private static final Set<String> KINDS =
             Set.of("gyakorlo", "hozam", "egyedi", "lanc", "ritkasag");
     private static final List<String> FUNCTIONAL_KEYS =
-            List.of("affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects");
+            List.of("template", "affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects");
     private static final int GYAKORLO_MAX_LEVEL = 15;
+    private static final int EXPECTED_RECIPE_COUNT = 392;
+    private static final int EXPECTED_CANONICAL_GEAR_COUNT = 15;
     /** A vanília MAGA is ugyanígy duplikálja ezt a tárgyat — a katalógusból ez nem látszik. */
     private static final Set<String> VANILLA_DUPLICATION = Set.of("kovacsmesteri_sablon");
 
@@ -41,6 +43,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
         check(root != null, "profession recipe root exists");
         final Set<String> ids = new TreeSet<>(root.getKeys(false));
         final Set<String> fingerprints = new HashSet<>();
+        int canonicalGearCount = 0;
         for (final String id : ids) {
             final ConfigurationSection section = root.getConfigurationSection(id);
             check(section != null, "recipe section: " + id);
@@ -49,6 +52,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
             final ProfessionIngredientParser.ParsedIngredients parsed =
                     ProfessionIngredientParser.parse(section.getStringList("ingredients"));
             final String unique = result.getString("unique", null);
+            final String template = result.getString("template", null);
             final Material material = unique == null ? Material.matchMaterial(result.getString("material", "")) : Material.PAPER;
             check(material != null, "valid output material: " + id);
             final ProfessionType profession = ProfessionType.fromId(section.getString("profession", ""));
@@ -61,7 +65,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
                     parsed.materials(), parsed.uniqueMaterials(), section.getStringList("lore"),
                     result.getString("signature", null), FactionType.fromInput(section.getString("faction", null)),
                     section.getBoolean("loot-only", false), section.getString("job", null),
-                    section.getString("kind", "hozam"));
+                    section.getString("kind", "hozam"), template, result.getBoolean("masterwork", false));
             final String fingerprint = ProfessionRecipeCatalog.semanticFingerprint(recipe);
             check(fingerprints.add(fingerprint), "semantic duplicate: " + id + " -> " + fingerprint);
 
@@ -79,6 +83,16 @@ public final class ProfessionRecipeAuditRegressionSuite {
                     }
                 }
                 check(functional, "kind=egyedi carries a functional component: " + id);
+            }
+            if (template != null) {
+                canonicalGearCount++;
+                check(!template.isBlank(), "canonical gear template id is non-empty: " + id);
+                check(unique == null && Math.max(1, result.getInt("amount", 1)) == 1,
+                        "canonical gear is a single non-unique stack: " + id);
+                check(!result.contains("affix-tier") && !result.contains("signature")
+                                && !result.contains("attributes") && !result.contains("enchant")
+                                && !result.contains("consumable") && !result.contains("potion-effects"),
+                        "canonical gear does not mix legacy result mutators: " + id);
             }
             if ("ritkasag".equals(kind)) {
                 check(Math.max(1, result.getInt("amount", 1)) == 1,
@@ -116,6 +130,11 @@ public final class ProfessionRecipeAuditRegressionSuite {
                 check(model != null && !model.isBlank(), "unique profession output has icon: " + unique);
             }
         }
+        check(ids.size() == EXPECTED_RECIPE_COUNT,
+                "authored profession recipe count remains " + EXPECTED_RECIPE_COUNT + ", got " + ids.size());
+        check(canonicalGearCount == EXPECTED_CANONICAL_GEAR_COUNT,
+                "canonical profession gear recipe count remains " + EXPECTED_CANONICAL_GEAR_COUNT
+                        + ", got " + canonicalGearCount);
         check(new ArrayList<>(ids).equals(ids.stream().sorted().toList()), "deterministic recipe order");
 
         final Map<Material, Integer> mutableIngredients = new HashMap<>();
@@ -135,6 +154,18 @@ public final class ProfessionRecipeAuditRegressionSuite {
         check(immutableRecipe.uniqueIngredients().equals(Map.of("audit_token", 1)),
                 "recipe unique ingredients are defensively copied");
         check(immutableRecipe.lore().equals(List.of("audit")), "recipe lore is defensively copied");
+
+        final ProfessionRecipeCatalog.Recipe canonicalA = new ProfessionRecipeCatalog.Recipe(
+                "canonical_a", ProfessionType.ARMORER, 1, false, "A", "Audit",
+                Material.IRON_SWORD, 1, null, null, Map.of(Material.STICK, 1), Map.of(),
+                List.of(), null, null, false, null, "egyedi", "template_a", false);
+        final ProfessionRecipeCatalog.Recipe canonicalB = new ProfessionRecipeCatalog.Recipe(
+                "canonical_b", ProfessionType.ARMORER, 1, false, "B", "Audit",
+                Material.IRON_SWORD, 1, null, null, Map.of(Material.STICK, 1), Map.of(),
+                List.of(), null, null, false, null, "egyedi", "template_b", false);
+        check(!ProfessionRecipeCatalog.semanticFingerprint(canonicalA)
+                        .equals(ProfessionRecipeCatalog.semanticFingerprint(canonicalB)),
+                "canonical templates have distinct semantic output identities");
 
         final String manager = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeManager.java"));
         check(manager.indexOf("clearRegisteredRecipes();") < manager.indexOf("if (!isEnabled())"),
@@ -162,6 +193,7 @@ public final class ProfessionRecipeAuditRegressionSuite {
                         && bookListener.contains("uniqueMaterials.idOf(item)"),
                 "catalog custom ingredients require canonical unique-item identity");
         System.out.println("PROFESSION_RECIPE_AUDIT recipes=" + ids.size()
+                + " canonical_gear=" + canonicalGearCount
                 + " semantic_duplicates=0 key_duplicates=0 atomic_reload=true");
         System.out.println("Profession recipe audit regression suite passed.");
     }

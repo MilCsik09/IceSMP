@@ -1,10 +1,21 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.data.SpecializationType;
+import hu.taliann.icesmp.itemization.BuildAwareLootService;
+import hu.taliann.icesmp.itemization.ItemIdentityService;
+import hu.taliann.icesmp.itemization.ItemInstance;
+import hu.taliann.icesmp.itemization.ItemTemplate;
+import hu.taliann.icesmp.itemization.ItemTemplateRegistry;
+import hu.taliann.icesmp.itemization.LootDiversityState;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.ItemRarityService;
+import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileLootDiversityStore;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -13,19 +24,22 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 /**
- * WoW-style mob loot: slain mobs have a chance to drop a unique, random-attribute gear item
- * (rolled by {@link ItemRarityService}). The tier balances the source — ordinary mobs roll
- * the weaker {@code drop} tier, while world bosses / invasion champions / wild-hunt beasts roll
- * the {@code boss} tier, on par with profession crafts. Config: {@code loot} (loot.yml).
+ * Survival combat loot: material rows stay source-authored, while gear rows use canonical
+ * Itemization 2.0 templates whenever that authority is enabled. Legacy random-affix generation
+ * remains available only behind the explicit config-disabled compatibility path.
  */
 public final class MobLootListener implements Listener {
 
@@ -41,13 +55,27 @@ public final class MobLootListener implements Listener {
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory;
     private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
+    private final JavaPlugin plugin;
+    private final ItemTemplateRegistry itemTemplates;
+    private final ItemIdentityService itemIdentity;
+    private final JobManager jobManager;
+    private final SpecializationManager specializationManager;
+    private final BuildAwareLootService authoredLoot = new BuildAwareLootService();
+    private final PlayerProfileLootDiversityStore lootDiversity =
+            new PlayerProfileLootDiversityStore();
 
-    public MobLootListener(final ConfigManager configManager, final ItemRarityService affixService,
+    public MobLootListener(final JavaPlugin plugin, final ConfigManager configManager,
+                           final ItemRarityService affixService,
                            final WorldBossManager worldBossManager, final InvasionManager invasionManager,
                            final WildHuntManager wildHuntManager,
                            final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory,
                            final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
-                           final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
+                           final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
+                           final ItemTemplateRegistry itemTemplates,
+                           final ItemIdentityService itemIdentity,
+                           final JobManager jobManager,
+                           final SpecializationManager specializationManager) {
+        this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
         this.configManager = configManager;
         this.affixService = affixService;
         this.worldBossManager = worldBossManager;
@@ -56,6 +84,11 @@ public final class MobLootListener implements Listener {
         this.blueprintFactory = blueprintFactory;
         this.recipeCatalog = recipeCatalog;
         this.uniqueMaterials = uniqueMaterials;
+        this.itemTemplates = java.util.Objects.requireNonNull(itemTemplates, "itemTemplates");
+        this.itemIdentity = java.util.Objects.requireNonNull(itemIdentity, "itemIdentity");
+        this.jobManager = java.util.Objects.requireNonNull(jobManager, "jobManager");
+        this.specializationManager = java.util.Objects.requireNonNull(
+                specializationManager, "specializationManager");
     }
 
     /** A kill-előszűrő AFK-fékéhez (setterrel, mint a másik két opcionális manager itt). */
@@ -76,7 +109,7 @@ public final class MobLootListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
-        if (!configManager.getBoolean("loot.enabled", true) || !affixService.isEnabled()) {
+        if (!configManager.getBoolean("loot.enabled", true)) {
             return;
         }
         final LivingEntity entity = event.getEntity();
@@ -178,6 +211,10 @@ public final class MobLootListener implements Listener {
             table.add(entry);
         }
         if (table.isEmpty()) {
+            if (configManager.getBoolean("itemization.loot.enabled", true)) {
+                scheduleAuthoredGear(path, source);
+                return null;
+            }
             final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
             return base == null ? null : affixService.roll(new ItemStack(base), tier, true);
         }
@@ -222,6 +259,11 @@ public final class MobLootListener implements Listener {
                     return null;
                 }
                 final ItemStack item = new ItemStack(material);
+                if (item.getMaxStackSize() == 1
+                        && configManager.getBoolean("itemization.loot.enabled", true)) {
+                    scheduleAuthoredGear(path, source);
+                    return null;
+                }
                 final ItemMeta meta = item.getItemMeta();
                 if (meta != null) {
                     meta.displayName(LEGACY.deserialize(String.valueOf(chosen.get("name")))
@@ -255,10 +297,127 @@ public final class MobLootListener implements Listener {
                 return rolledNamed;
             }
             default -> {
+                if (configManager.getBoolean("itemization.loot.enabled", true)) {
+                    scheduleAuthoredGear(path, source);
+                    return null;
+                }
                 final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
                 return base == null ? null : affixService.roll(new ItemStack(base), tier, true);
             }
         }
+    }
+
+    private boolean scheduleAuthoredGear(final String path, final LivingEntity source) {
+        if (!configManager.getBoolean("itemization.loot.enabled", true)) return false;
+        final Player killer = source.getKiller();
+        if (killer == null) return false;
+        final String sourceTag = path.contains("boss") ? "combat:boss"
+                : path.contains("cultist") ? "combat:event" : "combat:wilderness";
+        final List<ItemTemplate> candidates = itemTemplates.snapshot().values().stream()
+                .filter(template -> isGear(template)
+                        && (template.sourceTags().contains(sourceTag)
+                        || template.sourceTags().contains("combat:any")))
+                .toList();
+        if (candidates.isEmpty()) return false;
+        final UUID playerId = killer.getUniqueId();
+        try {
+            lootDiversity.current(playerId);
+        } catch (final RuntimeException profileUnavailable) {
+            return false;
+        }
+        final String sourceId = source.getType().name().toLowerCase(Locale.ROOT);
+        return killer.getScheduler().run(plugin, task -> {
+            if (!killer.isOnline()) return;
+            final LootDiversityState history;
+            try {
+                history = lootDiversity.current(playerId);
+            } catch (final RuntimeException profileUnavailable) {
+                return;
+            }
+            final JobType job = jobManager.getPrimaryJob(killer);
+            final SpecializationType specialization =
+                    specializationManager.getClassSpecialization(killer);
+            final BuildAwareLootService.Context context = new BuildAwareLootService.Context(
+                    Math.max(0, jobManager.getPrimaryLevel(killer)),
+                    job == null ? "" : job.getId(),
+                    specialization == null ? "" : specialization.getId(),
+                    currentBuildTags(killer), preferredEmptySlot(killer), Set.of(sourceTag));
+            final BuildAwareLootService.Selection selection = authoredLoot.select(
+                    candidates, context, history, liveLootTuning(),
+                    ThreadLocalRandom.current().nextDouble()).orElse(null);
+            if (selection == null) return;
+            final ItemTemplate template = selection.template();
+            final UUID itemId = UUID.randomUUID();
+            final ItemInstance instance = itemIdentity.rollInstance(template, itemId,
+                    sourceTag, sourceId, null, System.currentTimeMillis(),
+                    () -> ThreadLocalRandom.current().nextDouble());
+            final ItemStack drop = itemIdentity.render(template, instance);
+            killer.getWorld().dropItemNaturally(killer.getLocation(), drop);
+            lootDiversity.record(playerId, LootDiversityState.Drop.of(itemId, template))
+                    .whenComplete((recorded, failure) -> {
+                        if (failure != null) {
+                            LOGGER.warning("Itemization loot diversity receipt failed for "
+                                    + playerId + ": " + failure.getMessage());
+                        }
+                    });
+        }, null) != null;
+    }
+
+    private BuildAwareLootService.Tuning liveLootTuning() {
+        return new BuildAwareLootService.Tuning(
+                bounded(configManager.getDouble(
+                        "itemization.loot.max-personalization-multiplier", 1.5D), 1.0D, 1.5D),
+                Math.max(1, Math.min(LootDiversityState.MAX_DROPS, configManager.getInt(
+                        "itemization.loot.history-window", 24))),
+                bounded(configManager.getDouble(
+                        "itemization.loot.repeated-template-penalty", 0.12D), 0.0D, 0.25D),
+                bounded(configManager.getDouble(
+                        "itemization.loot.repeated-category-penalty", 0.035D), 0.0D, 0.10D),
+                bounded(configManager.getDouble(
+                        "itemization.loot.unseen-category-boost", 0.04D), 0.0D, 0.10D));
+    }
+
+    private Set<String> currentBuildTags(final Player player) {
+        final LinkedHashSet<String> tags = new LinkedHashSet<>();
+        final ArrayList<ItemStack> equipped = new ArrayList<>();
+        equipped.add(player.getInventory().getItemInMainHand());
+        equipped.add(player.getInventory().getItemInOffHand());
+        for (final ItemStack armor : player.getInventory().getArmorContents()) equipped.add(armor);
+        for (final ItemStack item : equipped) {
+            final ItemIdentityService.Inspection inspection = itemIdentity.inspect(item);
+            if (inspection.status() != ItemIdentityService.Status.VALID) continue;
+            final String stage = inspection.instance().ascension().stageId();
+            inspection.template().fixedStatsAt(stage).keySet()
+                    .forEach(stat -> tags.add("stat:" + stat));
+            inspection.template().rolledStatsAt(stage).keySet()
+                    .forEach(stat -> tags.add("stat:" + stat));
+        }
+        return Set.copyOf(tags);
+    }
+
+    private static ItemTemplate.Slot preferredEmptySlot(final Player player) {
+        if (empty(player.getInventory().getHelmet())) return ItemTemplate.Slot.HEAD;
+        if (empty(player.getInventory().getChestplate())) return ItemTemplate.Slot.CHEST;
+        if (empty(player.getInventory().getLeggings())) return ItemTemplate.Slot.LEGS;
+        if (empty(player.getInventory().getBoots())) return ItemTemplate.Slot.FEET;
+        if (empty(player.getInventory().getItemInMainHand())) return ItemTemplate.Slot.MAIN_HAND;
+        if (empty(player.getInventory().getItemInOffHand())) return ItemTemplate.Slot.OFF_HAND;
+        return ItemTemplate.Slot.NONE;
+    }
+
+    private static boolean empty(final ItemStack item) {
+        return item == null || item.getType().isAir();
+    }
+
+    private static boolean isGear(final ItemTemplate template) {
+        return template.slot() != ItemTemplate.Slot.NONE
+                && template.family() != ItemTemplate.Family.MATERIAL
+                && template.family() != ItemTemplate.Family.CONSUMABLE;
+    }
+
+    private static double bounded(final double value, final double minimum, final double maximum) {
+        if (!Double.isFinite(value)) return minimum;
+        return Math.max(minimum, Math.min(maximum, value));
     }
 
     private static int toInt(final Object value, final int fallback) {

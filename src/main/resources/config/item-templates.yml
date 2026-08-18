@@ -1,0 +1,973 @@
+# IceSMP konfiguráció — authored Itemization 2.0 template-ek.
+# A template identitása és forrása fix; kizárólag a rolled-stats tartományai sorsolódnak.
+itemization:
+  stats:
+    # Egy Képességerő pont ennyi százalékot ad a cast nagyságához; élőben újratölthető.
+    ability-power-percent-per-point: 1.0
+    # A felszerelésből származó teljes Képességerő-bónusz plafonja.
+    ability-power-max-percent: 50.0
+  loot:
+    # Az authored combat gear fokozatosan leváltja a régi generikus random-affix gear sort.
+    enabled: true
+    # A level/class/spec/build/slot/source együttes előnye sem lépheti túl ezt a szorzót.
+    max-personalization-multiplier: 1.5
+    # Ennyi legutóbbi authored combat drop vesz részt a soft-diversity súlyozásban (1–32).
+    history-window: 24
+    # Ismétlődő template-enkénti enyhe súlybüntetés.
+    repeated-template-penalty: 0.12
+    # Azonos rarity/slot/family előzményenkénti enyhe súlybüntetés.
+    repeated-category-penalty: 0.035
+    # Régen nem látott rarity/slot/family kategóriánkénti enyhe súlybónusz.
+    unseen-category-boost: 0.04
+  crafting:
+    # Additív, plafonozott quality-padló; nem szorozza a tárgy teljes stat-budgetjét.
+    base-minimum-quality: 0.10
+    quality-per-profession-level: 0.003
+    maximum-level-contribution: 0.20
+    blueprint-quality-bonus: 0.05
+    masterwork-quality-bonus: 0.15
+  reroll:
+    base-material: runapor
+    base-amount: 2
+    growth: 1.55
+    maximum-amount: 32
+    stat-lock-extra-material: folyositoszer
+    stat-lock-extra-amount: 1
+    quality-amplifier-material: sarkfeny_cseppko
+    quality-amplifier-floor: 0.65
+    stability-material: viaszpecset
+  runes:
+    # Canonical policy: remove/replace után a régi rúna nem jár vissza; ez economy sink.
+    old-rune-policy: destroy
+    remove:
+      material: runapor
+      amount: 1
+    replace:
+      material: runapor
+      amount: 2
+  salvage:
+    base-dust: 1
+    per-rarity-dust: 1
+    rune-dust-per-rune: 1
+    signature-dust: 1
+    maximum-dust: 8
+    output-map:
+      salvage_dust: runapor
+      rune_dust: runapor
+      signature_dust: folyositoszer
+  gathering:
+    rare-mining:
+      enabled: true
+      # Egy block legfeljebb egy ritka anyagot ad; a lista összesített esélye és a
+      # Profile v2 napi budget is bounded. Silk Touch, regen-pajzs és AFK nem jutalmaz.
+      daily-cap: 6
+      resources:
+        sarkfeny_cseppko:
+          chance: 0.0060
+          source-blocks: [ DEEPSLATE_DIAMOND_ORE, DEEPSLATE_EMERALD_ORE ]
+          minimum-y: -64
+          maximum-y: 16
+          environment: NORMAL
+        viharkvarc:
+          chance: 0.0045
+          source-blocks: [ DEEPSLATE_REDSTONE_ORE, DEEPSLATE_COPPER_ORE ]
+          minimum-y: -64
+          maximum-y: 8
+          environment: NORMAL
+        melysegi_borostyan:
+          chance: 0.0035
+          source-blocks: [ DEEPSLATE_GOLD_ORE, DEEPSLATE_LAPIS_ORE ]
+          minimum-y: -64
+          maximum-y: 0
+          environment: NORMAL
+        nema_kristaly:
+          chance: 0.0020
+          source-blocks: [ DEEPSLATE_LAPIS_ORE, DEEPSLATE_DIAMOND_ORE ]
+          minimum-y: -64
+          maximum-y: -24
+          environment: NORMAL
+        karhozat_parazs:
+          chance: 0.0015
+          source-blocks: [ NETHER_GOLD_ORE, ANCIENT_DEBRIS ]
+          minimum-y: 8
+          maximum-y: 96
+          environment: NETHER
+  ascension:
+    glatziendorfi_jegvert:
+      awakened:
+        materials: { sarkfeny_cseppko: 4, tiszta_vasesszencia: 6, osi_ereklyeszilank: 1, runapor: 8 }
+      ascended:
+        materials: { sarkfeny_cseppko: 8, tiszta_vasesszencia: 12, osi_ereklyeszilank: 2, runapor: 16 }
+    glatziendorfi_jegtoro:
+      awakened:
+        materials: { sarkfeny_cseppko: 5, viharkvarc: 4, osi_ereklyeszilank: 1, runapor: 10 }
+      ascended:
+        materials: { sarkfeny_cseppko: 9, viharkvarc: 8, osi_ereklyeszilank: 2, runapor: 18 }
+    ostromtoro_mellvert:
+      awakened:
+        materials: { melysegi_borostyan: 5, tiszta_vasesszencia: 8, osi_ereklyeszilank: 1, runapor: 8 }
+    csillagvesz_ritualbot:
+      awakened:
+        materials: { nema_kristaly: 4, holdezust_huzal: 6, osi_ereklyeszilank: 1, runapor: 10 }
+    kallan_szeletelo:
+      awakened:
+        materials: { sarkanycsont_szilank: 6, sarkfeny_cseppko: 6, osi_ereklyeszilank: 1, runapor: 12 }
+    sarkanycsont_ij:
+      awakened:
+        materials: { sarkanycsont_szilank: 8, szavannafu_kotel: 5, osi_ereklyeszilank: 1, runapor: 12 }
+    napfogyatkozas_fokusz:
+      awakened:
+        materials: { nema_kristaly: 6, karhozat_parazs: 3, osi_ereklyeszilank: 2, runapor: 16 }
+  legacy:
+    # Legacy random-affix gear tovább használható/kereskedhető, de nem rerollolható,
+    # nem ascendelhető és nem salvage-elhető automatikusan.
+    market-enabled: true
+
+item-sets:
+  glatziendorfi_jegorseg:
+    display-name: "Glatziendorfi Jégőrség"
+    tiers:
+      2:
+        fixed-stats:
+          ability_power: 2.0
+  melyseg_orseg:
+    display-name: "A Mélység Őrsége"
+    tiers:
+      2:
+        fixed-stats: { armor: 1.0 }
+      4:
+        fixed-stats: { max_health: 3.0 }
+  viharjaro:
+    display-name: "Viharjáró Öltözet"
+    tiers:
+      2:
+        fixed-stats: { movement_speed: 0.006 }
+      4:
+        fixed-stats: { ability_power: 3.0 }
+
+item-templates:
+  glatziendorfi_jegvert:
+    schema: 1
+    version: 1
+    display-name: "Glatziendorfi Jégvért"
+    lore:
+      - "Oly nehéz és fagyos, hogy viselőjét sziklaként tartja."
+    rarity: epic
+    item-level: 32
+    family: armor
+    slot: chest
+    material: NETHERITE_CHESTPLATE
+    item-model: "icesmp:glatziendorfi_jegvert"
+    equipment-asset: "icesmp:glatziendorfi_jegvert"
+    level-requirement: 28
+    base-armor: 1.0
+    fixed-stats:
+      armor_toughness: 1.0
+    rolled-stats:
+      max_health: { min: 2.0, max: 5.0 }
+      movement_speed: { min: 0.002, max: 0.008 }
+    rune-sockets: 1
+    signature-effect: glatziendorfi_jegvert
+    set-id: glatziendorfi_jegorseg
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "profession:armorer", "region:glatziendorf" ]
+    region-tags: [ glatziendorf ]
+    gathering-tags: [ "mining:frost_ore", "hunting:dragon_scale" ]
+    crafting-tags: [ "armorer:masterwork", "processing:frost_forging" ]
+    encounter-metadata:
+      primary-source: "Glatziendorf páncélkovácsai"
+    ascension-path: [ awakened, ascended ]
+    ascension-stages:
+      awakened:
+        item-level: 40
+        level-requirement: 34
+        fixed-stats: { armor_toughness: 2.0 }
+        rolled-stats:
+          max_health: { min: 4.0, max: 8.0 }
+          movement_speed: { min: 0.004, max: 0.012 }
+        rune-sockets: 2
+        signature-tier: 2
+        lore: [ "A sarkfény felébresztette a páncélba fagyott esküt." ]
+      ascended:
+        item-level: 48
+        level-requirement: 42
+        fixed-stats: { armor_toughness: 3.5 }
+        rolled-stats:
+          max_health: { min: 6.0, max: 11.0 }
+          movement_speed: { min: 0.006, max: 0.016 }
+        rune-sockets: 2
+        signature-tier: 3
+        lore: [ "Ugyanaz a vért, amelyet a jégőrség legendája teljesített ki." ]
+
+  glatziendorfi_jegtoro:
+    schema: 1
+    version: 1
+    display-name: "Glatziendorfi Jégtörő"
+    lore:
+      - "A Jégmezők sárkányainak pikkelyeivel megerősített fegyver."
+    rarity: legendary
+    item-level: 34
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_AXE
+    item-model: "icesmp:glatziendorfi_jegtoro"
+    level-requirement: 30
+    base-damage: 1.0
+    fixed-stats:
+      ability_power: 2.0
+    rolled-stats:
+      attack_damage: { min: 0.5, max: 2.0 }
+      attack_speed: { min: 0.05, max: 0.25 }
+    rune-sockets: 2
+    signature-effect: glatziendorfi_jegtoro
+    set-id: glatziendorfi_jegorseg
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "profession:lumberjack", "region:glatziendorf" ]
+    region-tags: [ glatziendorf ]
+    gathering-tags: [ "logging:frostwood", "hunting:dragon_scale" ]
+    crafting-tags: [ "weaponsmith:masterwork", "processing:frost_forging" ]
+    encounter-metadata:
+      primary-source: "Glatziendorf jégkovácsai"
+    ascension-path: [ awakened, ascended ]
+    ascension-stages:
+      awakened:
+        item-level: 42
+        level-requirement: 36
+        fixed-stats: { ability_power: 3.0 }
+        rolled-stats:
+          attack_damage: { min: 1.0, max: 3.0 }
+          attack_speed: { min: 0.08, max: 0.32 }
+        rune-sockets: 2
+        signature-tier: 2
+      ascended:
+        item-level: 50
+        level-requirement: 44
+        fixed-stats: { ability_power: 4.0 }
+        rolled-stats:
+          attack_damage: { min: 1.5, max: 4.0 }
+          attack_speed: { min: 0.10, max: 0.40 }
+        rune-sockets: 2
+        signature-tier: 3
+
+  vadvilagi_eskukard:
+    schema: 1
+    version: 1
+    display-name: "Vadvidéki Eskükard"
+    lore:
+      - "A határvidék őrei kézről kézre adják, ha új őr áll a helyükre."
+    rarity: rare
+    item-level: 18
+    family: weapon
+    slot: main-hand
+    material: IRON_SWORD
+    level-requirement: 12
+    class-restrictions: [ warrior, paladin, death_knight ]
+    specialization-restrictions: [ berserker, guardian, retribution, protection, blood, frost ]
+    base-damage: 1.0
+    rolled-stats:
+      attack_damage: { min: 0.25, max: 1.25 }
+      max_health: { min: 0.5, max: 2.0 }
+    rune-sockets: 1
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: materials
+    source-tags: [ "combat:wilderness", "profession:armorer" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "hunting:hide", "mining:iron" ]
+    crafting-tags: [ "armorer:standard", "salvage:weapon" ]
+    encounter-metadata:
+      primary-source: "Vadvidéki ellenfelek"
+      crate-eligible: "true"
+
+  hamuszeli_vadaszij:
+    schema: 1
+    version: 1
+    display-name: "Hamuszéli Vadászíj"
+    lore:
+      - "Füstszagú idegén még ott rezeg az utolsó hajtás emléke."
+    rarity: uncommon
+    item-level: 16
+    family: weapon
+    slot: main-hand
+    material: BOW
+    level-requirement: 10
+    class-restrictions: [ archer, druid ]
+    specialization-restrictions: [ sharpshooter, beast_master, feral ]
+    fixed-stats:
+      ability_power: 1.0
+    rolled-stats:
+      movement_speed: { min: 0.001, max: 0.004 }
+    rune-sockets: 1
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: materials
+    source-tags: [ "combat:wilderness" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "logging:hardwood", "hunting:sinew" ]
+    crafting-tags: [ "salvage:weapon" ]
+    encounter-metadata:
+      primary-source: "Vadvidéki ellenfelek"
+
+  ostromtoro_mellvert:
+    schema: 1
+    version: 1
+    display-name: "Ostromtörő Mellvért"
+    lore:
+      - "Horpadásai olyan csatákról mesélnek, amelyeknek nem maradt krónikása."
+    rarity: epic
+    item-level: 31
+    family: armor
+    slot: chest
+    material: DIAMOND_CHESTPLATE
+    level-requirement: 25
+    base-armor: 1.0
+    fixed-stats:
+      armor_toughness: 1.0
+    rolled-stats:
+      max_health: { min: 2.0, max: 4.5 }
+      armor: { min: 0.5, max: 1.5 }
+    rune-sockets: 2
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "combat:boss" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "mining:diamond", "hunting:boss_trophy" ]
+    crafting-tags: [ "salvage:armor" ]
+    encounter-metadata:
+      primary-source: "Világbossok és inváziós bajnokok"
+    ascension-path: [ awakened ]
+    ascension-stages:
+      awakened:
+        item-level: 39
+        level-requirement: 33
+        fixed-stats: { armor_toughness: 2.0 }
+        rolled-stats:
+          max_health: { min: 4.0, max: 7.0 }
+          armor: { min: 1.0, max: 2.5 }
+        rune-sockets: 2
+        signature-tier: 0
+
+  csillagvesz_ritualbot:
+    schema: 1
+    version: 1
+    display-name: "Csillagvész Rituálbot"
+    lore:
+      - "A belefagyott fény nem melegít, de válaszol a kimondott nevekre."
+    rarity: legendary
+    item-level: 34
+    family: weapon
+    slot: main-hand
+    material: BLAZE_ROD
+    level-requirement: 28
+    class-restrictions: [ wizard, priest, warlock, evoker, shaman ]
+    specialization-restrictions: [ elementalist, necromancer, discipline, shadow, affliction, destruction, devastation, elemental, tidal ]
+    fixed-stats:
+      ability_power: 3.0
+    rolled-stats:
+      max_health: { min: 1.0, max: 3.0 }
+      movement_speed: { min: 0.001, max: 0.006 }
+    rune-sockets: 2
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags: [ "combat:boss" ]
+    region-tags: [ wilderness ]
+    gathering-tags: [ "hunting:boss_essence", "gathering:star_fragment" ]
+    crafting-tags: [ "salvage:focus" ]
+    encounter-metadata:
+      primary-source: "Világbossok és inváziós bajnokok"
+    ascension-path: [ awakened ]
+    ascension-stages:
+      awakened:
+        item-level: 43
+        level-requirement: 36
+        fixed-stats: { ability_power: 5.0 }
+        rolled-stats:
+          max_health: { min: 2.0, max: 5.0 }
+          movement_speed: { min: 0.003, max: 0.010 }
+        rune-sockets: 2
+        signature-tier: 0
+
+  # --- Starter survival/craft pool (Lv. 6–15) ---
+  kovacstanonc_penge:
+    schema: 1
+    display-name: "Kovácstanonc Pengéje"
+    rarity: common
+    item-level: 6
+    family: weapon
+    slot: main-hand
+    material: STONE_SWORD
+    base-damage: 0.5
+    rolled-stats: { attack_damage: { min: 0.1, max: 0.5 } }
+    rune-sockets: 0
+    source-tags: [ "profession:armorer" ]
+    crafting-tags: [ "armorer:starter" ]
+  borkeretes_ij:
+    schema: 1
+    display-name: "Bőrkeretes Íj"
+    rarity: common
+    item-level: 7
+    family: weapon
+    slot: main-hand
+    material: BOW
+    rolled-stats: { movement_speed: { min: 0.001, max: 0.003 } }
+    source-tags: [ "profession:lumberjack", "combat:wilderness" ]
+    gathering-tags: [ "logging:oak", "hunting:sinew" ]
+  mohas_fokusz:
+    schema: 1
+    display-name: "Mohás Fókusz"
+    rarity: uncommon
+    item-level: 8
+    family: weapon
+    slot: main-hand
+    material: AMETHYST_SHARD
+    fixed-stats: { ability_power: 1.0 }
+    rolled-stats: { max_health: { min: 0.5, max: 1.5 } }
+    source-tags: [ "profession:enchanter", "combat:wilderness" ]
+    gathering-tags: [ "farming:herbs" ]
+  tarnapajzs:
+    schema: 1
+    display-name: "Tárnapajzs"
+    rarity: uncommon
+    item-level: 10
+    family: armor
+    slot: off-hand
+    material: SHIELD
+    base-armor: 0.5
+    rolled-stats: { armor: { min: 0.25, max: 0.75 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer" ]
+    gathering-tags: [ "mining:iron" ]
+  utjaro_csizma:
+    schema: 1
+    display-name: "Útjáró Csizma"
+    rarity: uncommon
+    item-level: 11
+    family: armor
+    slot: feet
+    material: LEATHER_BOOTS
+    rolled-stats: { movement_speed: { min: 0.002, max: 0.006 } }
+    source-tags: [ "profession:armorer", "combat:wilderness" ]
+    gathering-tags: [ "hunting:hide" ]
+  csontvarro_kopeny:
+    schema: 1
+    display-name: "Csontvarró Köpeny"
+    rarity: rare
+    item-level: 13
+    family: armor
+    slot: chest
+    material: LEATHER_CHESTPLATE
+    rolled-stats: { max_health: { min: 1.0, max: 2.5 }, armor: { min: 0.2, max: 0.8 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer", "combat:wilderness" ]
+    gathering-tags: [ "hunting:bone", "hunting:hide" ]
+  holdfeny_bot:
+    schema: 1
+    display-name: "Holdfény Bot"
+    rarity: rare
+    item-level: 15
+    family: weapon
+    slot: main-hand
+    material: BLAZE_ROD
+    fixed-stats: { ability_power: 2.0 }
+    rolled-stats: { movement_speed: { min: 0.001, max: 0.004 } }
+    rune-sockets: 1
+    source-tags: [ "profession:enchanter" ]
+    gathering-tags: [ "farming:moon_herb", "fishing:pearl" ]
+
+  # --- Mid-game systemic pool (Lv. 18–30) ---
+  viharkvarc_pallos:
+    schema: 1
+    display-name: "Viharkvarc Pallos"
+    rarity: rare
+    item-level: 20
+    family: weapon
+    slot: two-hand
+    material: IRON_SWORD
+    base-damage: 1.5
+    rolled-stats: { attack_damage: { min: 0.5, max: 1.8 }, attack_speed: { min: 0.02, max: 0.12 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer" ]
+    gathering-tags: [ "mining:viharkvarc" ]
+  melysegi_borostyan_mellvert:
+    schema: 1
+    display-name: "Borostyán Tárnavért"
+    rarity: rare
+    item-level: 21
+    family: armor
+    slot: chest
+    material: IRON_CHESTPLATE
+    base-armor: 1.0
+    rolled-stats: { max_health: { min: 1.5, max: 3.5 }, armor: { min: 0.5, max: 1.2 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer" ]
+    gathering-tags: [ "mining:melysegi_borostyan" ]
+  szelvago_ij:
+    schema: 1
+    display-name: "Szélvágó Íj"
+    rarity: rare
+    item-level: 22
+    family: weapon
+    slot: main-hand
+    material: CROSSBOW
+    rolled-stats: { attack_damage: { min: 0.3, max: 1.1 }, movement_speed: { min: 0.002, max: 0.006 } }
+    rune-sockets: 1
+    source-tags: [ "profession:lumberjack", "combat:wilderness" ]
+    gathering-tags: [ "logging:hardwood", "hunting:sinew" ]
+  nema_kristaly_fokusz:
+    schema: 1
+    display-name: "Néma Kristályfókusz"
+    rarity: epic
+    item-level: 24
+    family: weapon
+    slot: main-hand
+    material: ECHO_SHARD
+    fixed-stats: { ability_power: 3.0 }
+    rolled-stats: { max_health: { min: 1.0, max: 3.0 } }
+    rune-sockets: 1
+    source-tags: [ "profession:enchanter", "combat:deep" ]
+    gathering-tags: [ "mining:nema_kristaly" ]
+  parazs_kard:
+    schema: 1
+    display-name: "Parázsél"
+    rarity: epic
+    item-level: 25
+    family: weapon
+    slot: main-hand
+    material: DIAMOND_SWORD
+    base-damage: 1.0
+    rolled-stats: { attack_damage: { min: 0.6, max: 2.0 }, ability_power: { min: 1.0, max: 3.0 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer", "combat:event" ]
+    gathering-tags: [ "mining:karhozat_parazs" ]
+  gyongyhaz_pajzs:
+    schema: 1
+    display-name: "Gyöngyház Pajzs"
+    rarity: rare
+    item-level: 23
+    family: armor
+    slot: off-hand
+    material: SHIELD
+    base-armor: 1.0
+    rolled-stats: { armor_toughness: { min: 0.5, max: 1.5 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer" ]
+    gathering-tags: [ "fishing:gyongyhaz_pikkely" ]
+  vadorzo_csizma:
+    schema: 1
+    display-name: "Vadőrző Csizma"
+    rarity: rare
+    item-level: 24
+    family: armor
+    slot: feet
+    material: CHAINMAIL_BOOTS
+    rolled-stats: { movement_speed: { min: 0.004, max: 0.010 }, armor: { min: 0.3, max: 0.9 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer", "combat:wilderness" ]
+    gathering-tags: [ "hunting:hide" ]
+  holdsarlo:
+    schema: 1
+    display-name: "Holdsarló"
+    rarity: epic
+    item-level: 27
+    family: weapon
+    slot: main-hand
+    material: GOLDEN_HOE
+    fixed-stats: { ability_power: 2.0 }
+    rolled-stats: { attack_damage: { min: 0.5, max: 1.8 }, movement_speed: { min: 0.002, max: 0.006 } }
+    rune-sockets: 2
+    source-tags: [ "combat:event", "profession:enchanter" ]
+    gathering-tags: [ "farming:moon_herb" ]
+  csontenyv_pancel:
+    schema: 1
+    display-name: "Csontenyv Páncél"
+    rarity: rare
+    item-level: 26
+    family: armor
+    slot: chest
+    material: CHAINMAIL_CHESTPLATE
+    rolled-stats: { max_health: { min: 2.0, max: 4.0 }, armor: { min: 0.5, max: 1.5 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer" ]
+    gathering-tags: [ "hunting:bone" ]
+  viharszovo_bot:
+    schema: 1
+    display-name: "Viharszövő Bot"
+    rarity: epic
+    item-level: 28
+    family: weapon
+    slot: main-hand
+    material: TRIDENT
+    fixed-stats: { ability_power: 3.0 }
+    rolled-stats: { attack_damage: { min: 0.4, max: 1.4 } }
+    rune-sockets: 2
+    source-tags: [ "profession:enchanter", "combat:event" ]
+    gathering-tags: [ "mining:viharkvarc", "fishing:storm" ]
+  sarkfeny_sisak:
+    schema: 1
+    display-name: "Sarkfény Sisak"
+    rarity: epic
+    item-level: 29
+    family: armor
+    slot: head
+    material: DIAMOND_HELMET
+    rolled-stats: { max_health: { min: 1.0, max: 3.0 }, armor_toughness: { min: 0.5, max: 1.5 } }
+    rune-sockets: 1
+    source-tags: [ "profession:armorer" ]
+    gathering-tags: [ "mining:sarkfeny_cseppko" ]
+  aranyfust_kopeny:
+    schema: 1
+    display-name: "Aranyfüst Köpeny"
+    rarity: epic
+    item-level: 30
+    family: armor
+    slot: chest
+    material: GOLDEN_CHESTPLATE
+    fixed-stats: { ability_power: 2.0 }
+    rolled-stats: { max_health: { min: 1.5, max: 3.5 }, movement_speed: { min: 0.002, max: 0.008 } }
+    rune-sockets: 2
+    source-tags: [ "profession:armorer", "combat:event" ]
+    gathering-tags: [ "mining:gold" ]
+
+  # --- High-end named pool (Lv. 32–50); signature listeners already consume these IDs. ---
+  kapuparazs_pallos:
+    schema: 1
+    display-name: "Kapuparázs Pallos"
+    rarity: legendary
+    item-level: 38
+    family: weapon
+    slot: two-hand
+    material: NETHERITE_SWORD
+    base-damage: 2.0
+    rolled-stats: { attack_damage: { min: 1.0, max: 3.5 }, max_health: { min: 1.0, max: 3.0 } }
+    rune-sockets: 2
+    source-tags: [ "combat:boss", "profession:armorer" ]
+    gathering-tags: [ "mining:karhozat_parazs" ]
+  elsocsend_penge:
+    schema: 1
+    display-name: "Az Első Csend Pengéje"
+    rarity: mythic
+    item-level: 50
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_SWORD
+    base-damage: 2.5
+    rolled-stats: { attack_damage: { min: 1.5, max: 4.0 }, movement_speed: { min: 0.004, max: 0.010 } }
+    rune-sockets: 2
+    bind-policy: on-pickup
+    trade-policy: bound-only
+    salvage-policy: forbidden
+    source-tags: [ "combat:world_boss" ]
+    gathering-tags: [ "event:elso_csend_szilankja" ]
+  fonixpihe_kopeny:
+    schema: 1
+    display-name: "Főnixpihe Köpeny"
+    rarity: legendary
+    item-level: 40
+    family: armor
+    slot: chest
+    material: ELYTRA
+    fixed-stats: { ability_power: 3.0 }
+    rolled-stats: { max_health: { min: 2.0, max: 5.0 }, movement_speed: { min: 0.004, max: 0.012 } }
+    rune-sockets: 2
+    signature-effect: fonix_tollkopeny
+    source-tags: [ "combat:event", "profession:armorer" ]
+    gathering-tags: [ "hunting:fonixpihe" ]
+  sarkanycsont_ij:
+    schema: 1
+    display-name: "Sárkánycsont Íj"
+    rarity: legendary
+    item-level: 39
+    family: weapon
+    slot: main-hand
+    material: BOW
+    rolled-stats: { attack_damage: { min: 1.0, max: 3.0 }, movement_speed: { min: 0.003, max: 0.009 } }
+    rune-sockets: 2
+    signature-effect: sarkanycsont_ij
+    source-tags: [ "profession:lumberjack", "combat:boss" ]
+    gathering-tags: [ "hunting:sarkanycsont_szilank" ]
+    ascension-path: [ awakened ]
+    ascension-stages:
+      awakened:
+        item-level: 48
+        level-requirement: 42
+        rolled-stats: { attack_damage: { min: 2.0, max: 4.5 }, movement_speed: { min: 0.006, max: 0.014 } }
+        rune-sockets: 2
+        signature-tier: 2
+  vasmuvek_csakanya:
+    schema: 1
+    display-name: "Vasművek Csákánya"
+    rarity: legendary
+    item-level: 36
+    family: tool
+    slot: main-hand
+    material: NETHERITE_PICKAXE
+    rolled-stats: { attack_damage: { min: 0.5, max: 2.0 } }
+    rune-sockets: 1
+    signature-effect: vasmuvek_csakanya
+    source-tags: [ "profession:miner" ]
+    gathering-tags: [ "mining:masterwork" ]
+  bokic_horgaszbot:
+    schema: 1
+    display-name: "Bokic Öreg Horgászbotja"
+    rarity: legendary
+    item-level: 35
+    family: tool
+    slot: main-hand
+    material: FISHING_ROD
+    rolled-stats: { movement_speed: { min: 0.002, max: 0.008 } }
+    rune-sockets: 1
+    signature-effect: bokic_horgaszbot
+    source-tags: [ "profession:fisherman" ]
+    gathering-tags: [ "fishing:rare" ]
+  smaragdko_bankbetet:
+    schema: 1
+    display-name: "Smaragdkő Bankbetét"
+    rarity: epic
+    item-level: 32
+    family: accessory
+    slot: accessory
+    material: EMERALD
+    fixed-stats: { max_health: 2.0 }
+    signature-effect: smaragdko_bankbetet
+    salvage-policy: forbidden
+    source-tags: [ "profession:enchanter", "market:bank" ]
+    gathering-tags: [ "mining:emerald" ]
+  szellemszarvas_bubaj:
+    schema: 1
+    display-name: "Szellemszarvas Bűbáj"
+    rarity: legendary
+    item-level: 37
+    family: accessory
+    slot: accessory
+    material: RABBIT_FOOT
+    rolled-stats: { movement_speed: { min: 0.004, max: 0.012 } }
+    signature-effect: szellemszarvas_bubaj
+    source-tags: [ "combat:wilderness", "profession:enchanter" ]
+    gathering-tags: [ "hunting:rare" ]
+  kallan_szeletelo:
+    schema: 1
+    display-name: "Kallan Szeletelője"
+    rarity: legendary
+    item-level: 41
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_AXE
+    base-damage: 2.0
+    rolled-stats: { attack_damage: { min: 1.0, max: 3.5 }, attack_speed: { min: 0.06, max: 0.22 } }
+    rune-sockets: 2
+    signature-effect: kallan_szeletelo
+    source-tags: [ "combat:boss", "profession:armorer" ]
+    gathering-tags: [ "hunting:sarkanycsont_szilank" ]
+    ascension-path: [ awakened ]
+    ascension-stages:
+      awakened:
+        item-level: 49
+        level-requirement: 43
+        rolled-stats: { attack_damage: { min: 2.0, max: 5.0 }, attack_speed: { min: 0.10, max: 0.30 } }
+        rune-sockets: 2
+        signature-tier: 2
+  jegsarkany_kantar:
+    schema: 1
+    display-name: "Jégsárkány Kantar"
+    rarity: legendary
+    item-level: 38
+    family: accessory
+    slot: accessory
+    material: SADDLE
+    fixed-stats: { max_health: 3.0 }
+    signature-effect: jegsarkany_kantar
+    salvage-policy: forbidden
+    source-tags: [ "combat:boss" ]
+    gathering-tags: [ "hunting:dragon_scale" ]
+  pyralingradi_tuzkopo:
+    schema: 1
+    display-name: "Pyralingradi Tűzköpő"
+    rarity: legendary
+    item-level: 42
+    family: weapon
+    slot: main-hand
+    material: CROSSBOW
+    fixed-stats: { ability_power: 3.0 }
+    rolled-stats: { attack_damage: { min: 1.0, max: 3.0 } }
+    rune-sockets: 2
+    signature-effect: pyralingradi_tuzkopo
+    source-tags: [ "combat:event", "profession:armorer" ]
+    gathering-tags: [ "mining:karhozat_parazs" ]
+  verszavanna_agyara:
+    schema: 1
+    display-name: "Vérszavanna Agyara"
+    rarity: legendary
+    item-level: 40
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_SWORD
+    rolled-stats: { attack_damage: { min: 1.0, max: 3.2 }, max_health: { min: 1.0, max: 3.0 } }
+    rune-sockets: 2
+    signature-effect: verszavanna_agyara
+    source-tags: [ "combat:wilderness", "profession:armorer" ]
+    gathering-tags: [ "hunting:elite" ]
+  miinus_haragja:
+    schema: 1
+    display-name: "Míínus Haragja"
+    rarity: mythic
+    item-level: 48
+    family: weapon
+    slot: two-hand
+    material: NETHERITE_AXE
+    base-damage: 3.0
+    rolled-stats: { attack_damage: { min: 2.0, max: 5.0 } }
+    rune-sockets: 2
+    signature-effect: miinus_haragja
+    source-tags: [ "combat:world_boss" ]
+    gathering-tags: [ "event:osi_ereklyeszilank" ]
+  zhoris_langnyelve:
+    schema: 1
+    display-name: "Zhoris Lángnyelve"
+    rarity: legendary
+    item-level: 43
+    family: weapon
+    slot: main-hand
+    material: BLAZE_ROD
+    fixed-stats: { ability_power: 5.0 }
+    rolled-stats: { attack_damage: { min: 0.8, max: 2.5 } }
+    rune-sockets: 2
+    signature-effect: zhoris_langnyelve
+    source-tags: [ "combat:event", "profession:enchanter" ]
+    gathering-tags: [ "mining:karhozat_parazs" ]
+  napfogyatkozas_fokusz:
+    schema: 1
+    display-name: "Napfogyatkozás Fókusza"
+    rarity: mythic
+    item-level: 46
+    family: weapon
+    slot: main-hand
+    material: ECHO_SHARD
+    fixed-stats: { ability_power: 6.0 }
+    rolled-stats: { max_health: { min: 2.0, max: 5.0 }, movement_speed: { min: 0.003, max: 0.010 } }
+    rune-sockets: 2
+    signature-effect: napfogyatkozas
+    source-tags: [ "combat:world_boss", "profession:enchanter" ]
+    gathering-tags: [ "mining:nema_kristaly" ]
+    ascension-path: [ awakened ]
+    ascension-stages:
+      awakened:
+        item-level: 55
+        level-requirement: 48
+        fixed-stats: { ability_power: 9.0 }
+        rolled-stats: { max_health: { min: 4.0, max: 8.0 }, movement_speed: { min: 0.006, max: 0.016 } }
+        rune-sockets: 2
+        signature-tier: 2
+
+  # --- Two four-piece survival sets ---
+  melyseg_orseg_sisak:
+    schema: 1
+    display-name: "Mélységőr Sisak"
+    rarity: epic
+    item-level: 34
+    family: armor
+    slot: head
+    material: DIAMOND_HELMET
+    rolled-stats: { armor: { min: 0.5, max: 1.5 } }
+    rune-sockets: 1
+    set-id: melyseg_orseg
+    source-tags: [ "profession:armorer", "combat:deep" ]
+    gathering-tags: [ "mining:melysegi_borostyan" ]
+  melyseg_orseg_mellvert:
+    schema: 1
+    display-name: "Mélységőr Mellvért"
+    rarity: epic
+    item-level: 36
+    family: armor
+    slot: chest
+    material: DIAMOND_CHESTPLATE
+    rolled-stats: { max_health: { min: 2.0, max: 5.0 } }
+    rune-sockets: 2
+    set-id: melyseg_orseg
+    source-tags: [ "profession:armorer", "combat:deep" ]
+    gathering-tags: [ "mining:melysegi_borostyan" ]
+  melyseg_orseg_labvert:
+    schema: 1
+    display-name: "Mélységőr Lábvért"
+    rarity: epic
+    item-level: 35
+    family: armor
+    slot: legs
+    material: DIAMOND_LEGGINGS
+    rolled-stats: { armor_toughness: { min: 0.5, max: 1.5 } }
+    rune-sockets: 1
+    set-id: melyseg_orseg
+    source-tags: [ "profession:armorer", "combat:deep" ]
+    gathering-tags: [ "mining:melysegi_borostyan" ]
+  melyseg_orseg_bakancs:
+    schema: 1
+    display-name: "Mélységőr Bakancs"
+    rarity: epic
+    item-level: 34
+    family: armor
+    slot: feet
+    material: DIAMOND_BOOTS
+    rolled-stats: { movement_speed: { min: 0.002, max: 0.008 } }
+    rune-sockets: 1
+    set-id: melyseg_orseg
+    source-tags: [ "profession:armorer", "combat:deep" ]
+    gathering-tags: [ "mining:melysegi_borostyan" ]
+  viharjaro_sisak:
+    schema: 1
+    display-name: "Viharjáró Csuklya"
+    rarity: epic
+    item-level: 35
+    family: armor
+    slot: head
+    material: LEATHER_HELMET
+    fixed-stats: { ability_power: 1.0 }
+    rolled-stats: { movement_speed: { min: 0.002, max: 0.007 } }
+    rune-sockets: 1
+    set-id: viharjaro
+    source-tags: [ "profession:armorer", "combat:event" ]
+    gathering-tags: [ "mining:viharkvarc" ]
+  viharjaro_mellvert:
+    schema: 1
+    display-name: "Viharjáró Kabát"
+    rarity: epic
+    item-level: 37
+    family: armor
+    slot: chest
+    material: LEATHER_CHESTPLATE
+    fixed-stats: { ability_power: 2.0 }
+    rolled-stats: { max_health: { min: 1.5, max: 4.0 } }
+    rune-sockets: 2
+    set-id: viharjaro
+    source-tags: [ "profession:armorer", "combat:event" ]
+    gathering-tags: [ "mining:viharkvarc" ]
+  viharjaro_labvert:
+    schema: 1
+    display-name: "Viharjáró Nadrág"
+    rarity: epic
+    item-level: 36
+    family: armor
+    slot: legs
+    material: LEATHER_LEGGINGS
+    rolled-stats: { movement_speed: { min: 0.003, max: 0.009 } }
+    rune-sockets: 1
+    set-id: viharjaro
+    source-tags: [ "profession:armorer", "combat:event" ]
+    gathering-tags: [ "mining:viharkvarc" ]
+  viharjaro_bakancs:
+    schema: 1
+    display-name: "Viharjáró Bakancs"
+    rarity: epic
+    item-level: 35
+    family: armor
+    slot: feet
+    material: LEATHER_BOOTS
+    rolled-stats: { movement_speed: { min: 0.004, max: 0.012 } }
+    rune-sockets: 1
+    set-id: viharjaro
+    source-tags: [ "profession:armorer", "combat:event" ]
+    gathering-tags: [ "mining:viharkvarc" ]

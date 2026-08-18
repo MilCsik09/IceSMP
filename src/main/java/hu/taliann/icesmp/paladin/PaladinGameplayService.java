@@ -77,6 +77,12 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
     private final TargetRegistry beaconLinks = new TargetRegistry();
 
     private volatile ResourceManager combatTracker;
+    private volatile hu.taliann.icesmp.managers.WorldBossManager worldBossManager;
+
+    public void setWorldBossManager(
+            final hu.taliann.icesmp.managers.WorldBossManager worldBossManager) {
+        this.worldBossManager = worldBossManager;
+    }
 
     public PaladinGameplayService(final JavaPlugin plugin,
                                   final ConfigManager config,
@@ -227,9 +233,9 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
                 clearBeacon(playerId);
                 return;
             }
-            healPlayer(ally, echo, regen);
+            healPlayer(playerId, ally, echo, regen);
         }, () -> clearBeacon(playerId));
-        if (selfEcho) healPlayer(player, echo / 2.0D, false);
+        if (selfEcho) healPlayer(playerId, player, echo / 2.0D, false);
         if (isInCombat(playerId)) {
             specs.contributeClassMastery(player, JobType.PALADIN,
                     config.getInt("classes.paladin.mastery.beacon-xp", 4));
@@ -251,7 +257,7 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
                             0, false, true, true));
                 }
                 if ("szent_haboru".equals(doctrine(playerId, 50))) {
-                    healPlayer(player, config.getDouble(
+                    healPlayer(playerId, player, config.getDouble(
                             "classes.paladin.verdict.holy-war-heal", 4.0D), false);
                 }
                 if (isInCombat(playerId)) {
@@ -510,14 +516,19 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
         }
     }
 
-    private static void healPlayer(final Player target, final double amount, final boolean regen) {
+    private void healPlayer(final UUID actor, final Player target, final double amount,
+                            final boolean regen) {
         final double maxHealth = maxHealth(target);
-        final double after = Math.min(maxHealth, target.getHealth() + Math.max(0.0D, amount));
-        if (after > target.getHealth()) target.setHealth(after);
+        final double before = target.getHealth();
+        final double after = Math.min(maxHealth, before + Math.max(0.0D, amount));
+        if (after > before) target.setHealth(after);
         if (regen) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
                     60, 0, false, true, true));
         }
+        final var boss = worldBossManager;
+        if (boss != null) boss.recordBossSupport(actor, target.getUniqueId(),
+                Math.max(0.0D, after - before));
     }
 
     private PaladinCombatState state(final UUID id) {

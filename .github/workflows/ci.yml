@@ -13,6 +13,7 @@ on:
     branches:
       - master
       - staging
+      - feature/itemization-progression-2
     paths-ignore:
       - "**/*.md"
   workflow_dispatch:
@@ -192,6 +193,10 @@ jobs:
           grep -F "Warlock profile regression suite passed." gradle-build.log
           grep -F "Wizard gameplay regression suite passed." gradle-build.log
           grep -F "Wizard profile regression suite passed." gradle-build.log
+          grep -F "Itemization domain regression suite passed." gradle-build.log
+          grep -F "PlayerProfile loot diversity regression suite passed." gradle-build.log
+          grep -F "Mob/Encounter behavioral domain regression suite passed." gradle-build.log
+          grep -F "Mob runtime source regression suite passed." gradle-build.log
 
       - name: Run full repository consistency
         run: python3 scripts/check_consistency.py

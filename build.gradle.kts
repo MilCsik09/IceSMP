@@ -55,6 +55,20 @@ val auditEquipmentAssets by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_equipment_assets.py")
 }
 
+val progressionBalanceRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Runs the Itemization/Mob 2.0 economy, Monte Carlo and bounded-load gate."
+    inputs.files(
+        "scripts/test_progression_balance.py",
+        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/crafting.yml",
+        "src/main/resources/config/profession-recipes.yml",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+    )
+    commandLine(pythonCommand, "scripts/test_progression_balance.py")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -463,6 +477,21 @@ val iceSmpHudRegressionTest = registerRegression(
     "iceSmpHudRegressionTest",
     "Runs first-party HUD fixed-layout, wallet, readiness and authority regressions.",
     "hu.taliann.icesmp.hud.IceSmpHudRegressionSuite")
+val targetFrameRegressionTest = registerRegression(
+    "targetFrameRegressionTest",
+    "Runs behavioral canonical Target Frame selection, metadata and lifecycle regressions.",
+    "hu.taliann.icesmp.hud.TargetFrameRegressionSuite")
+val runeLifecycleRegressionTest = registerRegression(
+    "runeLifecycleRegressionTest",
+    "Runs behavioral rune insert, remove, replace, identity and recovery regressions.",
+    "hu.taliann.icesmp.itemization.RuneLifecycleRegressionSuite")
+val hardeningClosureRegressionTest = registerRegression(
+    "hardeningClosureRegressionTest",
+    "Runs final CombatPower, set, boss, reward, contribution and ability closure regressions.",
+    "hu.taliann.icesmp.pve.HardeningClosureRegressionSuite")
+hardeningClosureRegressionTest.configure {
+    dependsOn(targetFrameRegressionTest, runeLifecycleRegressionTest)
+}
 val hudEditorRegressionTest = registerRegression(
     "hudEditorRegressionTest",
     "Runs first-party HUD editor gate, isolation, layout, shader and authority regressions.",
@@ -803,11 +832,28 @@ val wizardProfileRegressionTest = registerRegression(
     "wizardProfileRegressionTest",
     "Runs Profile v2 Wizard allowlist, DARK gate, court-authority and slot-isolation regressions.",
     "hu.taliann.icesmp.wizard.WizardProfileRegressionSuite")
+val itemizationDomainRegressionTest = registerRegression(
+    "itemizationDomainRegressionTest",
+    "Runs canonical item template, identity, roll-quality, history, set and soft-diversity regressions.",
+    "hu.taliann.icesmp.itemization.ItemizationDomainRegressionSuite")
+val playerProfileLootDiversityRegressionTest = registerRegression(
+    "playerProfileLootDiversityRegressionTest",
+    "Runs durable, bounded and idempotent Itemization 2.0 loot diversity regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileLootDiversityStoreRegressionSuite")
+val mobEncounterDomainRegressionTest = registerRegression(
+    "mobEncounterDomainRegressionTest",
+    "Runs level 1-70 scaling, authored mob, ability, affix, encounter and contribution regressions.",
+    "hu.taliann.icesmp.pve.MobEncounterDomainRegressionSuite")
+val mobRuntimeSourceRegressionTest = registerRegression(
+    "mobRuntimeSourceRegressionTest",
+    "Runs Folia, telegraph, bounded lifecycle and durable encounter reward source gates.",
+    "hu.taliann.icesmp.pve.MobRuntimeSourceRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
     dependsOn(auditEquipmentAssets)
     dependsOn(validateIceSmpHudPackage)
+    dependsOn(progressionBalanceRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
@@ -817,7 +863,9 @@ tasks.check {
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
-        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, hudEditorRegressionTest,
+        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, targetFrameRegressionTest,
+        runeLifecycleRegressionTest, hardeningClosureRegressionTest,
+        hudEditorRegressionTest,
         playerProfileHudLayoutRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest, targetRegistryRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
@@ -849,6 +897,8 @@ tasks.check {
         deathKnightGameplayRegressionTest, deathKnightProfileRegressionTest,
         assassinGameplayRegressionTest, assassinProfileRegressionTest,
         warlockGameplayRegressionTest, warlockProfileRegressionTest,
-        wizardGameplayRegressionTest, wizardProfileRegressionTest
+        wizardGameplayRegressionTest, wizardProfileRegressionTest,
+        itemizationDomainRegressionTest, playerProfileLootDiversityRegressionTest,
+        mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest
     )
 }

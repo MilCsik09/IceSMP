@@ -488,6 +488,9 @@ public final class BlockRegenService implements PersistentStore, Listener {
                 defer(record, RETRY_MILLIS);
                 return;
             }
+            // The regenerated physical block is not a new natural resource source. Persist this
+            // witness in the existing chunk-PDC origin authority before the WAL record closes.
+            hu.taliann.icesmp.progression.BlockRewardOriginTracker.markSynthetic(target);
             invalidRecordLogged.remove(record.id());
             restoreFailureLogged.remove(record.id());
             applyRestoreEffects(world, location, data);

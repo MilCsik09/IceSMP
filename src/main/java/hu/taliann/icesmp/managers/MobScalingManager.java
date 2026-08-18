@@ -1,5 +1,10 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.pve.EliteAffix;
+import hu.taliann.icesmp.pve.MobProgressionPolicy;
+import hu.taliann.icesmp.pve.MobRank;
+import hu.taliann.icesmp.pve.MobTemplate;
+import hu.taliann.icesmp.pve.MobTemplateRegistry;
 import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -15,6 +20,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.EnumSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -37,12 +44,19 @@ public final class MobScalingManager {
     }
 
     private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
+    private static final double HARD_MAX_HEALTH = 4096.0D;
+    private static final double HARD_MAX_DAMAGE = 80.0D;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final BloodMoonManager bloodMoonManager;
     private final TerritoryManager territoryManager;
+    private final MobTemplateRegistry mobTemplates;
     private final NamespacedKey mobLevelKey;
+    private final NamespacedKey mobTemplateKey;
+    private final NamespacedKey mobRankKey;
+    private final NamespacedKey mobArchetypeKey;
+    private final NamespacedKey mobAffixesKey;
     private final NamespacedKey territoryBurnManagedKey;
     private final NamespacedKey territoryBurnBaselineKey;
     private final NamespacedKey territoryZombificationManagedKey;
@@ -52,10 +66,8 @@ public final class MobScalingManager {
     private final Set<SpawnReason> ignoredSpawnReasons = EnumSet.noneOf(SpawnReason.class);
 
     private boolean enabled;
-    private int blocksPerLevel;
-    private int maxLevel;
-    private double healthPerLevel;
-    private double damagePerLevel;
+    private double blocksPerLevel;
+    private MobProgressionPolicy.Tuning progressionTuning = MobProgressionPolicy.Tuning.defaults();
     private boolean hostileOnly;
     private boolean nameEnabled;
     private boolean nameVisible;
@@ -63,12 +75,19 @@ public final class MobScalingManager {
     private NamedTextColor nameColor;
 
     public MobScalingManager(final JavaPlugin plugin, final ConfigManager configManager,
-                             final BloodMoonManager bloodMoonManager, final TerritoryManager territoryManager) {
+                             final BloodMoonManager bloodMoonManager,
+                             final TerritoryManager territoryManager,
+                             final MobTemplateRegistry mobTemplates) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.bloodMoonManager = bloodMoonManager;
         this.territoryManager = territoryManager;
+        this.mobTemplates = mobTemplates;
         this.mobLevelKey = new NamespacedKey(plugin, "mob_level");
+        this.mobTemplateKey = new NamespacedKey(plugin, "mob_template");
+        this.mobRankKey = new NamespacedKey(plugin, "mob_rank");
+        this.mobArchetypeKey = new NamespacedKey(plugin, "mob_archetype");
+        this.mobAffixesKey = new NamespacedKey(plugin, "mob_affixes");
         this.territoryBurnManagedKey = new NamespacedKey(plugin, "territory_no_daylight_burn");
         this.territoryBurnBaselineKey = new NamespacedKey(plugin, "territory_no_daylight_burn_baseline");
         this.territoryZombificationManagedKey = new NamespacedKey(plugin, "territory_no_zombification");
@@ -79,10 +98,16 @@ public final class MobScalingManager {
 
     public void load() {
         enabled = configManager.getBoolean("mob-scaling.enabled", true);
-        blocksPerLevel = Math.max(1, configManager.getInt("mob-scaling.blocks-per-level", 1000));
-        maxLevel = Math.max(1, configManager.getInt("mob-scaling.max-level", 10));
-        healthPerLevel = Math.max(0.0D, configManager.getDouble("mob-scaling.health-per-level", 2.0D));
-        damagePerLevel = Math.max(0.0D, configManager.getDouble("mob-scaling.damage-per-level", 1.0D));
+        blocksPerLevel = finitePositive(
+                configManager.getDouble("mob-scaling.blocks-per-level", 500.0D), 500.0D);
+        progressionTuning = new MobProgressionPolicy.Tuning(
+                Math.max(1, configManager.getInt("mob-scaling.normal-max-level", 50)),
+                Math.max(1, configManager.getInt("mob-scaling.hard-cap-level", 70)),
+                Math.max(1, configManager.getInt("mob-scaling.authored-boss-cap-level", 200)),
+                configManager.getDouble("mob-scaling.curves.health-per-level", 0.08D),
+                configManager.getDouble("mob-scaling.curves.damage-per-level", 0.025D),
+                configManager.getDouble("mob-scaling.curves.maximum-health-multiplier", 8.0D),
+                configManager.getDouble("mob-scaling.curves.maximum-damage-multiplier", 3.0D));
         hostileOnly = configManager.getBoolean("mob-scaling.hostile-only", true);
         nameEnabled = configManager.getBoolean("mob-scaling.name.enabled", true);
         // Egyértelmű név: always-visible (true = falakon át/messziről is látszik; false =
@@ -105,7 +130,9 @@ public final class MobScalingManager {
         }
 
         if (enabled) {
-            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Mob scaling enabled: 1 level per " + blocksPerLevel + " blocks, max level " + maxLevel + ".");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
+                    "Mob 2.0 scaling enabled: normal 1-" + progressionTuning.normalMaximum()
+                            + ", survival cap " + progressionTuning.hardCap() + ".");
         } else {
             hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Mob scaling is disabled in config.");
         }
@@ -136,25 +163,26 @@ public final class MobScalingManager {
             return;
         }
 
-        // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and a
-        // territórium mob-szabálya (territory.mob-rules — pl. Kárhozat-zóna, DARK-földek)
-        // adds its own danger bonus on top.
-        // Egyetlen zóna-lookup spawnonként — a szelektor-listát mindkét fogyasztó megkapja.
-        final java.util.List<String> zoneSelectors = zoneRuleSelectors(entity.getLocation());
-        // A vérhold/zóna-bónusz átlépheti a max-level-t, de az abszolút plafon fogja:
-        // a "max 10" invariánst a bónuszok legfeljebb hard-cap-level-ig (15) tolhatják.
-        final int level = Math.min(
-                Math.max(1, configManager.getInt("mob-scaling.hard-cap-level", 15)),
-                resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
-                        + zoneBonusLevels(zoneSelectors));
-        if (level < 1) {
-            return;
-        }
+        final Location location = entity.getLocation();
+        final List<String> zoneSelectors = zoneRuleSelectors(location);
+        final MobTemplate template = mobTemplates.naturalTemplate(entity.getType(),
+                location.getBlock().getBiome().getKey(), naturalContext(location)).orElse(null);
+        final Integer templateLevel = template == null ? null
+                : template.levelAt(java.util.concurrent.ThreadLocalRandom.current().nextDouble());
+        MobRank rank = template == null ? MobRank.NORMAL : template.rank();
+        if (rank == MobRank.NORMAL) rank = promotedRank(spawnReason, zoneSelectors, location);
+        final MobProgressionPolicy.Resolution resolution = MobProgressionPolicy.resolve(
+                new MobProgressionPolicy.Context(null, null, templateLevel,
+                        wildernessBaseLevel(location), zoneBonusLevels(zoneSelectors),
+                        biomeBonusLevels(location), depthBonusLevels(location),
+                        bloodMoonManager.getBonusMobLevels(), false), progressionTuning);
+        final List<EliteAffix> affixes = rank == MobRank.ELITE
+                ? rollAffixes(template) : List.of();
 
         // Ritka variáns sorsolása CSAK ténylegesen szintezett mobra (a szint-kapu
         // után, hogy a jelöletlen mob ne kapjon variáns-tageket).
         maybeMakeRareVariant(entity);
-        applyLevel(entity, level);
+        applyLevel(entity, resolution.level(), rank, template, affixes);
     }
 
     /**
@@ -166,28 +194,117 @@ public final class MobScalingManager {
      * @param level the level to apply (≥ 1)
      */
     public void forceLevel(final LivingEntity entity, final int level) {
-        if (entity == null || level < 1 || entity.getPersistentDataContainer().has(mobLevelKey, PersistentDataType.INTEGER)) {
-            return;
-        }
-        applyLevel(entity, level);
+        forceRankedLevel(entity, level, MobRank.NORMAL, null, null);
     }
 
-    private void applyLevel(final LivingEntity entity, final int level) {
+    /**
+     * Applies an event-owned rank at spawn time, before any attribute mutation has been
+     * published. Rank multipliers, optional authored abilities and the bounded elite-affix
+     * roll therefore share the same canonical application step.
+     */
+    public void forceRankedLevel(final LivingEntity entity, final int level,
+                                 final MobRank rank, final String templateId,
+                                 final String archetypeId) {
+        if (entity == null || level < 1 || rank == null || entity.getPersistentDataContainer()
+                .has(mobLevelKey, PersistentDataType.INTEGER)) return;
+        final MobTemplate template = templateId == null || templateId.isBlank()
+                ? null : mobTemplates.require(templateId);
+        if (template != null && !template.entityType().equals(entity.getType().name())) {
+            throw new IllegalArgumentException("MobTemplate entity mismatch: "
+                    + template.mobId() + '/' + entity.getType());
+        }
+        final int boundedLevel = Math.min(rank.bossLike()
+                ? progressionTuning.authoredBossCap() : progressionTuning.hardCap(), level);
+        final List<EliteAffix> affixes = rank == MobRank.ELITE
+                ? rollAffixes(template) : List.of();
+        applyLevel(entity, boundedLevel, rank, template, affixes);
+        if (template == null && archetypeId != null && !archetypeId.isBlank()) {
+            entity.getPersistentDataContainer().set(mobArchetypeKey,
+                    PersistentDataType.STRING, archetypeId.trim().toUpperCase(Locale.ROOT));
+        }
+    }
+
+    /** Applies one explicit authored template; boss overrides may display above level 70. */
+    public void forceTemplate(final LivingEntity entity, final String templateId,
+                              final Integer explicitLevel) {
+        if (entity == null || entity.getPersistentDataContainer()
+                .has(mobLevelKey, PersistentDataType.INTEGER)) return;
+        final MobTemplate template = mobTemplates.require(templateId);
+        final int requested = explicitLevel == null
+                ? template.levelAt(0.5D) : explicitLevel;
+        final int level = MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
+                requested, null, null, 1, 0, 0, 0, 0,
+                template.rank().bossLike()), progressionTuning).level();
+        applyLevel(entity, level, template.rank(), template, List.of());
+    }
+
+    /** Metadata-only seam for encounter engines that own their own dynamic attribute snapshot. */
+    public void markEncounterMetadata(final LivingEntity entity, final int level,
+                                      final MobRank rank, final String templateId,
+                                      final String archetypeId) {
+        if (entity == null || level < 1 || rank == null) return;
+        final var pdc = entity.getPersistentDataContainer();
+        pdc.set(mobLevelKey, PersistentDataType.INTEGER, level);
+        pdc.set(mobRankKey, PersistentDataType.STRING, rank.name());
+        if (templateId != null && !templateId.isBlank()) {
+            final MobTemplate template = mobTemplates.require(templateId);
+            pdc.set(mobTemplateKey, PersistentDataType.STRING, template.mobId());
+            pdc.set(mobArchetypeKey, PersistentDataType.STRING, template.archetype().name());
+        } else if (archetypeId != null && !archetypeId.isBlank()) {
+            pdc.set(mobArchetypeKey, PersistentDataType.STRING,
+                    archetypeId.trim().toUpperCase(Locale.ROOT));
+        }
+    }
+
+    private void applyLevel(final LivingEntity entity, final int level, final MobRank rank,
+                            final MobTemplate template, final List<EliteAffix> affixes) {
         entity.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+        entity.getPersistentDataContainer().set(mobRankKey, PersistentDataType.STRING, rank.name());
+        if (template != null) {
+            entity.getPersistentDataContainer().set(mobTemplateKey, PersistentDataType.STRING,
+                    template.mobId());
+            entity.getPersistentDataContainer().set(mobArchetypeKey, PersistentDataType.STRING,
+                    template.archetype().name());
+        }
+        if (!affixes.isEmpty()) {
+            entity.getPersistentDataContainer().set(mobAffixesKey, PersistentDataType.STRING,
+                    String.join(",", affixes.stream().map(Enum::name).toList()));
+        }
+
+        final double templateHealth = template == null ? 1.0D : template.stats().healthMultiplier();
+        final double templateDamage = template == null ? 1.0D : template.stats().damageMultiplier();
+        final double rankHealth = rankMultiplier(rank, "health-multiplier", rankHealthFallback(rank));
+        final double rankDamage = rankMultiplier(rank, "damage-multiplier", rankDamageFallback(rank));
 
         final AttributeInstance maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
-            maxHealth.setBaseValue(maxHealth.getBaseValue() + (level * healthPerLevel));
-            entity.setHealth(maxHealth.getValue());
+            final MobProgressionPolicy.ScaledStats scaled = MobProgressionPolicy.scale(
+                    maxHealth.getBaseValue() * templateHealth, 0.0D, level,
+                    rankHealth, rankDamage * templateDamage, progressionTuning);
+            final double health = Math.min(absoluteCap(
+                    "mob-scaling.maximum-absolute-health", HARD_MAX_HEALTH, HARD_MAX_HEALTH),
+                    scaled.maximumHealth());
+            maxHealth.setBaseValue(health);
+            entity.setHealth(Math.min(health, maxHealth.getValue()));
         }
 
         final AttributeInstance attackDamage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attackDamage != null) {
-            attackDamage.setBaseValue(attackDamage.getBaseValue() + (level * damagePerLevel));
+            final MobProgressionPolicy.ScaledStats scaled = MobProgressionPolicy.scale(
+                    1.0D, attackDamage.getBaseValue() * templateDamage, level,
+                    rankHealth, rankDamage, progressionTuning);
+            attackDamage.setBaseValue(Math.min(absoluteCap(
+                    "mob-scaling.maximum-absolute-damage", HARD_MAX_DAMAGE, HARD_MAX_DAMAGE),
+                    scaled.attackDamage()));
+        }
+        if (template != null) {
+            final AttributeInstance movement = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+            if (movement != null) movement.setBaseValue(Math.min(1.0D,
+                    movement.getBaseValue() * template.stats().movementMultiplier()));
         }
 
         if (nameEnabled) {
-            applyLevelName(entity, level);
+            applyLevelName(entity, level, rank, template, affixes);
         }
     }
 
@@ -198,6 +315,45 @@ public final class MobScalingManager {
         }
 
         return entity.getPersistentDataContainer().getOrDefault(mobLevelKey, PersistentDataType.INTEGER, 0);
+    }
+
+    public MobRank getRank(final LivingEntity entity) {
+        if (entity == null) return MobRank.NORMAL;
+        try {
+            return MobRank.parse(entity.getPersistentDataContainer().getOrDefault(
+                    mobRankKey, PersistentDataType.STRING, MobRank.NORMAL.name()));
+        } catch (final IllegalArgumentException ignored) {
+            return MobRank.NORMAL;
+        }
+    }
+
+    public String getTemplateId(final LivingEntity entity) {
+        return entity == null ? null : entity.getPersistentDataContainer()
+                .get(mobTemplateKey, PersistentDataType.STRING);
+    }
+
+    public String getArchetypeId(final LivingEntity entity) {
+        return entity == null ? null : entity.getPersistentDataContainer()
+                .get(mobArchetypeKey, PersistentDataType.STRING);
+    }
+
+    public List<EliteAffix> getAffixes(final LivingEntity entity) {
+        if (entity == null) return List.of();
+        final String encoded = entity.getPersistentDataContainer()
+                .get(mobAffixesKey, PersistentDataType.STRING);
+        if (encoded == null || encoded.isBlank()) return List.of();
+        try {
+            return EliteAffix.validate(java.util.Arrays.stream(encoded.split(","))
+                    .map(EliteAffix::parse).toList());
+        } catch (final IllegalArgumentException malformed) {
+            return List.of();
+        }
+    }
+
+    public static String templateIdOf(final org.bukkit.entity.Entity entity) {
+        if (entity == null) return null;
+        return entity.getPersistentDataContainer().get(
+                NamespacedKey.fromString("icesmp:mob_template"), PersistentDataType.STRING);
     }
 
     /**
@@ -353,34 +509,218 @@ public final class MobScalingManager {
             return 0;
         }
 
+        final List<String> selectors = zoneRuleSelectors(location);
+        return MobProgressionPolicy.resolve(new MobProgressionPolicy.Context(
+                null, null, null, wildernessBaseLevel(location),
+                zoneBonusLevels(selectors), biomeBonusLevels(location),
+                depthBonusLevels(location), bloodMoonManager.getBonusMobLevels(),
+                false), progressionTuning).level();
+    }
+
+    private int wildernessBaseLevel(final Location location) {
+        if (location == null || location.getWorld() == null) return 1;
+
         final Location spawn = location.getWorld().getSpawnLocation();
         final double deltaX = location.getX() - spawn.getX();
         final double deltaZ = location.getZ() - spawn.getZ();
         final double distance = Math.sqrt((deltaX * deltaX) + (deltaZ * deltaZ));
-        final int normalLevel = (int) Math.min(maxLevel, distance / blocksPerLevel);
+        final int normalLevel = MobProgressionPolicy.wildernessLevel(distance,
+                blocksPerLevel, progressionTuning.normalMaximum());
 
         // Zóna-rámpa: a biztonságos territórium-zónák (városok) pereme
         // körül a szint a zónától KIFELÉ nő egyenletesen, amíg el nem éri a táv-alapú
         // "normál" szintet — így a 11-14k-ra épült fővárosok környéke sem Lvl 10-es
         // azonnal. A zóna belsejében 0. Élő kulcsok; a doom-gate/dungeon nem számít
         // biztonságos zónának (ott a mob-rules bónusz él).
-        if (normalLevel > 0 && configManager.getBoolean("mob-scaling.zone-ramp.enabled", true)) {
+        if (configManager.getBoolean("mob-scaling.zone-ramp.enabled", true)) {
             final double edgeDistance = territoryManager.distanceFromNearestSafeZoneEdge(location);
             if (edgeDistance >= 0.0D) {
-                final double rampBlocks = Math.max(1.0D,
-                        configManager.getDouble("mob-scaling.zone-ramp.blocks-per-level", 250.0D));
-                return Math.min(normalLevel, (int) (edgeDistance / rampBlocks));
+                final double rampBlocks = finitePositive(configManager.getDouble(
+                        "mob-scaling.zone-ramp.blocks-per-level", 250.0D), 250.0D);
+                return Math.min(normalLevel, 1 + (int) (edgeDistance / rampBlocks));
             }
         }
         return normalLevel;
     }
 
-    private void applyLevelName(final LivingEntity entity, final int level) {
+    private void applyLevelName(final LivingEntity entity, final int level, final MobRank rank,
+                                final MobTemplate template, final List<EliteAffix> affixes) {
         final String prefixText = namePrefix == null ? "" : namePrefix.replace("%level%", String.valueOf(level));
         final Component name = SECTION_SERIALIZER.deserialize(TextUtil.color(prefixText))
-                .append(Component.translatable(entity.getType()).color(nameColor));
+                .append(Component.text(template == null ? "" : template.displayName())
+                        .color(nameColor))
+                .append(template == null ? Component.translatable(entity.getType()).color(nameColor)
+                        : Component.empty())
+                .append(rank == MobRank.NORMAL ? Component.empty()
+                        : Component.text(" [" + rankLabel(rank) + "]", rankColor(rank)))
+                .append(affixes.isEmpty() ? Component.empty()
+                        : Component.text(" • " + String.join("/", affixes.stream()
+                        .map(MobScalingManager::affixLabel).toList()), NamedTextColor.LIGHT_PURPLE));
         entity.customName(name);
         entity.setCustomNameVisible(nameVisible);
+    }
+
+    private int biomeBonusLevels(final Location location) {
+        if (location == null || location.getWorld() == null) return 0;
+        final String biome = location.getBlock().getBiome().getKey().getKey();
+        final int biomeBonus = Math.max(0, configManager.getInt(
+                "mob-scaling.biome-bonuses." + biome, "deep_dark".equals(biome) ? 8 : 0));
+        final String dimension = location.getWorld().getEnvironment().name()
+                .toLowerCase(Locale.ROOT);
+        final int dimensionBonus = Math.max(0, configManager.getInt(
+                "mob-scaling.dimension-bonuses." + dimension, 0));
+        return Math.max(biomeBonus, dimensionBonus);
+    }
+
+    private int depthBonusLevels(final Location location) {
+        if (location == null || location.getWorld() == null
+                || location.getWorld().getEnvironment() != org.bukkit.World.Environment.NORMAL) {
+            return 0;
+        }
+        return MobProgressionPolicy.depthBonus(location.getBlockY(),
+                configManager.getInt("mob-scaling.depth.start-y", 32),
+                Math.max(1, configManager.getInt("mob-scaling.depth.blocks-per-level", 16)),
+                Math.max(0, configManager.getInt("mob-scaling.depth.maximum-bonus", 8)));
+    }
+
+    private MobRank promotedRank(final SpawnReason spawnReason, final List<String> selectors,
+                                 final Location location) {
+        if (spawnReason != SpawnReason.NATURAL) {
+            return MobRank.NORMAL;
+        }
+        if (selectors.stream().anyMatch(selector -> selector.equals("protected-city"))) {
+            return MobRank.NORMAL;
+        }
+        final boolean deep = location.getWorld().getEnvironment() == org.bukkit.World.Environment.NORMAL
+                && location.getBlockY() <= configManager.getInt(
+                "mob-scaling.promotion.deep-threshold-y", 0);
+        final boolean dangerousDimension = location.getWorld().getEnvironment()
+                != org.bukkit.World.Environment.NORMAL;
+        final double contextElite = (deep ? configManager.getDouble(
+                "mob-scaling.promotion.deep-elite-bonus-percent", 0.75D) : 0.0D)
+                + (dangerousDimension ? configManager.getDouble(
+                "mob-scaling.promotion.dimension-elite-bonus-percent", 0.75D) : 0.0D)
+                + (bloodMoonManager.isActive() ? configManager.getDouble(
+                "mob-scaling.promotion.blood-moon-elite-bonus-percent", 1.0D) : 0.0D);
+        final double eliteChance = clampChance(configManager.getDouble(
+                "mob-scaling.promotion.elite-percent", 1.5D) + contextElite);
+        final double veteranChance = clampChance(configManager.getDouble(
+                "mob-scaling.promotion.veteran-percent", 6.0D)
+                + (deep || dangerousDimension ? configManager.getDouble(
+                "mob-scaling.promotion.danger-veteran-bonus-percent", 2.0D) : 0.0D));
+        final double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble(100.0D);
+        if (roll < eliteChance) return MobRank.ELITE;
+        return roll < eliteChance + veteranChance ? MobRank.VETERAN : MobRank.NORMAL;
+    }
+
+    private static Set<String> naturalContext(final Location location) {
+        final java.util.LinkedHashSet<String> tags = new java.util.LinkedHashSet<>();
+        final org.bukkit.World world = location.getWorld();
+        tags.add("dimension:" + world.getEnvironment().name().toLowerCase(Locale.ROOT));
+        if (world.getEnvironment() == org.bukkit.World.Environment.NORMAL && location.getBlockY() <= 0) {
+            tags.add("depth:deep");
+        }
+        if (!world.isDayTime()) tags.add("time:night");
+        if (world.hasStorm()) tags.add("weather:storm");
+        return Set.copyOf(tags);
+    }
+
+    private List<EliteAffix> rollAffixes(final MobTemplate template) {
+        final ArrayList<EliteAffix> pool = new ArrayList<>(template == null
+                ? List.of(EliteAffix.VOLATILE, EliteAffix.VAMPIRIC, EliteAffix.SHIELDED,
+                EliteAffix.FRENZIED, EliteAffix.FROSTBOUND)
+                : template.affixPool());
+        if (pool.isEmpty()) return List.of();
+        Collections.shuffle(pool, java.util.concurrent.ThreadLocalRandom.current());
+        final int requested = pool.size() > 1 && java.util.concurrent.ThreadLocalRandom.current()
+                .nextDouble(100.0D) < clampChance(configManager.getDouble(
+                "mob-scaling.promotion.second-affix-percent", 20.0D)) ? 2 : 1;
+        if (requested == 1) return List.of(pool.getFirst());
+        for (int index = 1; index < pool.size(); index++) {
+            try {
+                return EliteAffix.validate(List.of(pool.getFirst(), pool.get(index)));
+            } catch (final IllegalArgumentException ignored) {
+                // Try another bounded candidate; unsafe combinations never reach runtime.
+            }
+        }
+        return List.of(pool.getFirst());
+    }
+
+    private double rankMultiplier(final MobRank rank, final String field, final double fallback) {
+        final double configured = configManager.getDouble("mob-scaling.ranks."
+                + rank.name().toLowerCase(Locale.ROOT) + '.' + field, fallback);
+        if (!Double.isFinite(configured)) return fallback;
+        final double maximum = field.startsWith("health") ? 50.0D : 20.0D;
+        final double minimum = field.startsWith("health") ? 0.1D : 0.0D;
+        return Math.max(minimum, Math.min(maximum, configured));
+    }
+
+    private double absoluteCap(final String path, final double fallback, final double hardMaximum) {
+        final double configured = configManager.getDouble(path, fallback);
+        if (!Double.isFinite(configured) || configured <= 0.0D) return fallback;
+        return Math.min(hardMaximum, configured);
+    }
+
+    private static double finitePositive(final double configured, final double fallback) {
+        return Double.isFinite(configured) && configured > 0.0D ? configured : fallback;
+    }
+
+    private static double rankHealthFallback(final MobRank rank) {
+        return switch (rank) {
+            case NORMAL -> 1.0D;
+            case VETERAN -> 1.35D;
+            case ELITE -> 1.85D;
+            case CHAMPION -> 2.4D;
+            case MINIBOSS -> 3.2D;
+            case BOSS -> 4.0D;
+            case WORLD_BOSS -> 5.0D;
+        };
+    }
+
+    private static double rankDamageFallback(final MobRank rank) {
+        return switch (rank) {
+            case NORMAL -> 1.0D;
+            case VETERAN -> 1.08D;
+            case ELITE -> 1.15D;
+            case CHAMPION -> 1.22D;
+            case MINIBOSS -> 1.28D;
+            case BOSS, WORLD_BOSS -> 1.35D;
+        };
+    }
+
+    private static NamedTextColor rankColor(final MobRank rank) {
+        return rank.bossLike() ? NamedTextColor.DARK_PURPLE
+                : rank == MobRank.ELITE ? NamedTextColor.GOLD
+                : NamedTextColor.YELLOW;
+    }
+
+    private static String rankLabel(final MobRank rank) {
+        return switch (rank) {
+            case NORMAL -> "Normál";
+            case VETERAN -> "Veterán";
+            case ELITE -> "Elit";
+            case CHAMPION -> "Bajnok";
+            case MINIBOSS -> "Miniboss";
+            case BOSS -> "Boss";
+            case WORLD_BOSS -> "Világboss";
+        };
+    }
+
+    private static String affixLabel(final EliteAffix affix) {
+        return switch (affix) {
+            case VOLATILE -> "Kitörő";
+            case VAMPIRIC -> "Vérszívó";
+            case SHIELDED -> "Pajzsos";
+            case FRENZIED -> "Őrjöngő";
+            case FROSTBOUND -> "Fagybilincs";
+            case ARCANE -> "Rúnás";
+            case SUMMONER -> "Idéző";
+        };
+    }
+
+    private static double clampChance(final double chance) {
+        if (!Double.isFinite(chance)) return 0.0D;
+        return Math.max(0.0D, Math.min(100.0D, chance));
     }
 
     private NamedTextColor resolveColor(final String rawColor) {
@@ -399,8 +739,7 @@ public final class MobScalingManager {
      * A spawn-event a mob régió-szálán fut — az effekt-adás biztonságos.
      */
     private void maybeMakeRareVariant(final LivingEntity entity) {
-        final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("rare-variant.chance-percent", 1.5D)));
+        final double chance = clampChance(configManager.getDouble("rare-variant.chance-percent", 1.5D));
         if (chance <= 0.0D
                 || java.util.concurrent.ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
             return;

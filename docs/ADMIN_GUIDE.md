@@ -1119,9 +1119,11 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `factions.yml`
 - `general.yml`
 - `item-rarity.yml`
+- `item-templates.yml`
 - `loot.yml`
 - `moderation.yml`
 - `motd.yml`
+- `mob-templates.yml`
 - `pets.yml`
 - `profession-materials.yml`
 - `profession-recipes.yml`
@@ -1133,6 +1135,98 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 - `spells.yml`
 - `tablist.yml`
 - `world.yml`
+
+### Itemization 2.0 Phase 4–5 üzemeltetés
+
+- Admin authored itemadás: `/iceitem template <template-id> [darab] [játékos]`.
+  Az `admin:give` provenance miatt ez a példány salvage tiltott; ne használd production
+  economy input előállítására.
+- A balance-kulcsok az `item-templates.yml` `itemization.crafting`, `reroll`, `runes`,
+  `salvage`, `gathering` és `ascension` blokkjában vannak. A bundled rune policy
+  `old-rune-policy: destroy`; remove/replace költsége külön állítható. Identity/schema/template
+  invariáns nem kapcsolható ki configból.
+- Bundled baseline: 48 authored template, 15 Signature-fogyasztó, 3 set, 7 ascendable,
+  10 rúna és 15 canonical gear-recept. A `scripts/test_progression_balance.py` ezt,
+  valamint 100 000 mintás roll/promotion és encounter/economy cap regressziót ellenőriz.
+- Az `item-mutation-journal.yml` aktív rekordja normál esetben rövid életű. Restartkor
+  exact before inventory esetén abort, exact after esetén commit-cleanup történik.
+  Eltérő/mixed snapshotnál a rendszer nem találgat: konzol SEVERE + játékosüzenet után
+  az entry kézi vizsgálatra megmarad.
+- Market listing canonical itemnél csak `VALID`, duplikátummentes, `TRADEABLE`, nem
+  account-bound példányt fogad. A listing és delivery a valódi `ItemStack`-ot viszi,
+  nem épít új instance-et.
+- `itemization.legacy.market-enabled` csak a régi, nem canonical tárgy piaci policyja.
+  Legacy reroll/ascension/salvage továbbra is fail-closed; a meglévő egy-rúnás legacy
+  insert kompatibilis marad, remove/replace nem engedélyezett. Külön direct player-trade
+  authority nincs; a támogatott item-escrow út a market.
+- Canonical rune insert, kiválasztott socketes remove és atomic replace ugyanazon
+  `item-mutation-journal.yml` whole-inventory before/after boundaryn fut. A Forge a
+  jelenlegi/új rúnát, költséget és a régi rúna megsemmisülését SHIFT megerősítés előtt mutatja.
+- A crate `type: template` csak `encounter-metadata.crate-eligible: "true"`, nem
+  MYTHIC és nem account-bound template-et fogad; random-affix gear `recipe-item`
+  startupkor érvénytelen crate-definíció.
+
+Staging acceptance — ezeket CI alapján ne pipáld ki:
+
+- **Process-kill:** külön reroll, rune insert/remove/replace és ascension közben állítsd le
+  a processt prepare előtt/után, inventory publish után és journal commit előtt/után;
+  boss rewardnál PREPARED eligibility és már materializált physical witness mellett is.
+  Restart után exact-before abort, exact-after commit, mixed manual review legyen.
+- **Full inventory:** mining reward, boss reward, rune remove/replace és craft output;
+  nincs world-dropos item loss, ingyenes mutation vagy duplikált delivery.
+- **Disconnect:** boss fight, contribution threshold elérése, reward settlement és minden
+  item mutation közben; reconnect után ugyanaz az item UUID/revision és legfeljebb egy reward.
+- **Gazdasági walkthrough:** mining → processing/craft → reroll/Stat Lock → rune
+  insert/remove/replace → market list/buy/cancel → boss component → ascension → salvage;
+  rögzítsd az UUID-t, provenance-t, qualityt, rune state-et és market roundtripot.
+- **50–60 játékos:** MSPT/TPS, CPU, heap/allocation, scheduler queue, ability-state,
+  contribution-state, encounter snapshot és Profile persistence latency mérése kötelező.
+- **Gameplay/balance:** Normal/Veteran/Elite/world-boss TTK, healer/tank contribution,
+  telegráf olvashatóság, mining supply, reroll- és ascension-költség. Ezek balance gate-ek,
+  nem automatizált PASS állítások.
+
+Phase 5.5 recovery policy: az item mutation boot/join audit csak exact-before állapotot
+abortál és exact-after állapotot commitol; `before == after` vagy mixed snapshot kézi
+review. A journal legfeljebb 256 műveletet és slotonként 1 MiB payloadot fogad, egy
+játékosnak egyszerre csak egy pending mutationje lehet. A soft-diversity 32 elemre
+bounded, ordering/reconnect/restart regresszióval; a mining daily budget napváltása és
+corrupt state-je fail-closed. Ettől a valódi process-kill/Folia acceptance még release-gate.
+
+### Mob/Encounter 2.0 üzemeltetés
+
+- `world.yml` `mob-scaling.*`: normál maximum `50`, általános hard cap `70`, authored
+  boss cap `200`. Default görbe: HP `min(8, 1+(level-1)×0.08)`, damage
+  `min(3, 1+(level-1)×0.025)`; külön abszolút health/damage cap védi a hibás inputot.
+- Precedencia: encounter override → authored location → MobTemplate → wilderness
+  distance, majd territory/biome-or-dimension/depth/event bónusz. A safe-zone ramp
+  megmarad; claim önmagában nem tesz minden területet biztonságossá.
+- `mob-templates.yml`: ability-, loot-profile- és a 18 MobTemplate-authority.
+  Duplicate ID, invalid entity/rank/archetype, missing ability/loot vagy Bestiary ID
+  ütközés startupkor fail-fast. Vanilla fallbackhez nem kell minden mobot authoredolni.
+- A natural promotion csak `NATURAL` spawnnál sorsol Veteran/Elite rankot;
+  protected-city selectorban nem. Mélység, Nether/End és Vérhold kis bounded bónuszt
+  ad; Elite legfeljebb két valid affixet kap.
+- Az ability runtime globális scan helyett entity scheduler tickeket használ, legfeljebb
+  2048 aktív state-tel. Telegraph, cooldown, summon-darab és summon-lifespan bounded;
+  disable/death/despawn cleanup kötelező, terrain damage nincs.
+- Világboss scaling: `1 + player-coefficient × (n-1)^player-exponent`, default
+  `0.65`/`0.8`, max HP-szorzó `12`; damage per doubling `0.04`, max `1.18`.
+  A snapshot startkor rögzül, late join nem skáláz újra. A power-inputot az
+  `EquippedCombatPowerService` owner-thread cache adja; malformed/stale/duplikált vagy
+  rossz slotú item kimarad.
+- Contribution minimum default `25`. A ledger max. 128 résztvevő, pre-combat és
+  self-support nem számít, Monk/Paladin ally heal/shield és bounded telegráf-objective
+  számít, personal settlement egyszer claimelhető. A reward Profile v2
+  operation receipt; full inventorynál nincs world drop. Restartkor COMMITTED
+  eligibility kézbesíthető, PREPARED jelölt exact-before rollback.
+
+Mob 2.0 staging acceptance: (1) Lv. 1/10/25/50/70 és cap, (2) távolság + mélység +
+Deep Dark + territory + Vérhold, (3) Veteran/Elite max. két affix, (4) mind a 18 authored
+template és vanilla fallback, (5) telegráf/cast/caster death/target death/region hop/
+disable, (6) 1/2/5/40 fős boss snapshot, late join/death/disconnect, (7) contribution,
+AFK és duplicate settlement, (8) tele inventory + reconnect/restart delivery, (9)
+50–60 online játékos melletti profiler-felvétel. Ments JAR SHA-256-ot, config snapshotot,
+boss encounter ID-t és az érintett Profile operation receiptet.
 
 ### Üzenetfájlok
 
@@ -1582,7 +1676,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | HUD-01 Player Frame parity | Tesztelő | packos vanilla kliens; teljes/részleges/kritikus és 20 föletti max HP, absorption, 0/20/30+ armor, food, szárazföld és víz alatti air | current/max HP és százalék pontos; absorption külön; armor kizárólag flat érték, maximum vagy skálázott sáv nélkül; O2 csak fogyáskor jelenik meg; vanilla normál sprite nem duplázódik | pack/HUD rollout stop | `hud/HUD-01/` |
 | [ ] | HUD-02 Reszponzív routing | Fejlesztő | pack elfogadás/elutasítás; `/hud mind`; NATIVE_HUD kliens; 720p/1080p/1440p/4K és több GUI scale | pack nélkül vanilla survival kijelzés; packkal Player Frame megmarad; class panel routing szerint pontosan egyszer látszik; bal/jobb felső margó stabil, bossbar/actionbar/hotbar szabad | HUD rollout stop | `hud/HUD-02/` |
 | [ ] | HUD-03 Editor-szétválasztás | Tesztelő | `/hud edit`; Class, DK, Player, Target és Party kategória; csoport és gyermek mozgatása | minden v2 komponens megnyitható hiba nélkül; a csoport együtt, a gyermek relatívan mozog; DK-rúna nem mozdít generic charge-ot; mentés `hud.layout-v2.*` kulcsra történik | HUD rollout stop | `hud/HUD-03/` |
-| [ ] | HUD-04 Target Frame | Tesztelő | passzív/semleges/hostile/elit/boss mob, nametagelt pók, classos játékos; melee/lövedék; death/quit; 1–30 mp expiry | mob/player eltérő frame; pontos találat utáni HP, játékosnál élő HP/resource; az eredeti név változatlan; nincs követő vitals-TextDisplay; új ütés hosszabbít, expiry/death/quit eltávolít | `hud.icesmp-hud.target-frame.enabled: false` | `hud/HUD-04/` |
+| [ ] | HUD-04 Target Frame | Tesztelő | passzív/semleges/hostile/Veteran/Elite/Champion/world-boss és vanilla fallback mob, nametagelt pók, classos játékos; 3–64 blokk; target switch; LOS/range/death/despawn/world change/quit | szemirányú target canonical template/rank/level/HP adatot mutat; malformed/stale PDC fail-closed fallback; playernél élő HP/resource; nincs stale frame vagy vitals-TextDisplay | `hud.icesmp-hud.target-frame.enabled: false` | `hud/HUD-04/` |
 | [ ] | HUD-05 Party/event layout | Tesztelő | vegyes frakciójú 5 fős party; leader/dead/range/quit; 0–4 párhuzamos esemény | saját Player Frame alatt max négy sor, minden tag saját frakciószíne, HP/resource/státusz pontos; class footer max három eseményt teljesen mutat; nincs tartós class XP-sáv | `party.hud-enabled: false` | `hud/HUD-05/` |
 
 ### Kliens-bridge (protokoll-alap)
@@ -1784,16 +1878,18 @@ panelt, hogy ne maradjon látható HP nélkül a játékos.
 
 - `hud.icesmp-hud.survival.refresh-ticks`: külön survival mintavételi periódus; alapból 2 tick,
   módosítása restartot igényel;
-- `hud.icesmp-hud.target-frame.enabled`: a találat utáni screen-space Target Frame főkapcsolója;
-- `hud.icesmp-hud.target-frame.expire-seconds`: a legutóbbi találat utáni megjelenítés 1–30
-  másodperc között, alapból 10;
+- `hud.icesmp-hud.target-frame.enabled`: a szemirányú screen-space Target Frame főkapcsolója;
+- `hud.icesmp-hud.target-frame.range`: bounded raytrace hatótáv 3–64 blokk között, alapból 24;
+- `hud.icesmp-hud.target-frame.expire-seconds`: az entity-owner snapshot felső életkora 1–30
+  másodperc között, alapból 10; target/LOS elvesztése ettől függetlenül azonnal ürít;
 - `party.hud-enabled`: a legfeljebb négy másik party-tagot mutató frame-ek főkapcsolója.
 
-A Target Frame nem világbeli nametag és nem `TextDisplay`. A találat a megsebzett entitás saját
-region-threadjén immutable snapshotot készít. Mobnál ebből jelenik meg a név, szint, rang/típus és
-találat utáni HP; játékosnál a HUD tick folyamatosan frissített, szálbiztos snapshotja felülírja
-a HP/resource/class/szint adatot. A mob eredeti `customName` értékét a rendszer soha nem módosítja.
-Death, quit és lejárat eltávolítja a target snapshotot; tartós kijelzőentitás nem maradhat vissza.
+A Target Frame nem világbeli nametag és nem `TextDisplay`. A néző owner-threadjén bounded,
+blokk-LOS-os raytrace választ; a célpont saját region-threadje immutable canonical snapshotot
+publikál. Mobnál ebből jelenik meg a template név, level, rank/affix és HP; játékosnál a HUD tick
+szálbiztos snapshotja felülírja a HP/resource/class/szint adatot. A mob eredeti `customName`
+értékét a rendszer soha nem módosítja. Target switch, LOS/range, death, despawn, world change,
+quit és lejárat eltávolítja a target snapshotot; tartós kijelzőentitás nem maradhat vissza.
 A rövid, egy másodperces sebzésszámok ettől függetlenül megmaradnak.
 
 A Party Frame minden tagot a saját frakciópalettájával renderel, nem a néző színével. A

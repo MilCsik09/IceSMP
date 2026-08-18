@@ -25,6 +25,106 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 ## Augusztus eleji integrációs hullám (staging előtt)
 
+### PR #127 final source closure
+
+- A Target Frame most teljes runtime producerláncot kapott: player-owner bounded,
+  blokk-LOS-os raytrace → target-entity owner scheduler → immutable canonical metadata
+  snapshot → `TargetHudState` → közös first-party HUD renderer. MobTemplate ID/név,
+  level, rank, HP és legfeljebb két valid affix a Mob 2.0 runtime PDC authorityból jön;
+  stale/malformed adat vanilla fallbackre zár. Generációs token és egységes clear contract
+  védi a target switch, death, despawn, range/LOS, world change és disconnect útját.
+- A canonical rúnák insert/remove/replace lifecycle-ja lezárult. A Forge socketet választ,
+  previewt, költséget és SHIFT megerősítést mutat; replace egyetlen old→new mutation,
+  nem két crash-érzékeny lépés. Mindhárom művelet whole-inventory WAL-on fut, az item UUID,
+  provenance, ascension és másik rúna megmarad. A régi rúna explicit `destroy` sink.
+- A CombatPower equipment polling megszűnt. Inventory/equipment események és a plugin saját
+  item mutation, craft, market, crate, invsee és admin-give útjai explicit owner-thread
+  refresh hookot használnak. A set transient modifierek stabil kulccsal remove-before-add
+  lifecycle-t követnek; duplicate UUID és invalid slot továbbra is fail-closed.
+- Új behavioral regresszió védi a Target Frame generáció/clear/metadata/range szerződését,
+  a rune insert/remove/replace identity/receipt/recovery útját, továbbá a CombatPower,
+  set, world-boss cleanup, reward witness, contribution anti-padding és 2048-as atomic
+  ability-bound hardeninget.
+- A `100 000` mintás progression harness továbbra is statistical/Monte Carlo formula-
+  és balance-regresszió, nem multiplayer load test. Valódi Folia process-kill, full inventory,
+  disconnect, 50–60 játékos, TTK/healing/telegraph és mining/economy walkthrough külön
+  **STAGING REQUIRED**; ezekre a CI nem ad PASS minősítést.
+
+### Itemization 2.0 Phase 5.5 hardening
+
+- A mutation journal most hard-bounded és egy játékoshoz egyszerre egy pending műveletet
+  enged. Restartkor csak exact-before → abort és exact-after → commit automatikus;
+  mixed vagy azonos before/after állapot fail-closed kézi review.
+- A process-kill/retry regresszió bizonyítja, hogy az újrapróbálás nem duplikál, a
+  Profile v2 restart-regresszió pedig a 32 elemű soft-diversity sorrendjét, a mining
+  napi budget rolloverét és a corrupt-state tiltást ellenőrzi.
+- A survival vertical slice authority változatlan: az item UUID, provenance, roll quality,
+  rúna, reroll count és ascension stage az itemmel utazik; a playerhez tartozó pity/budget
+  marad a PlayerProfile v2-ben.
+- A katalógus 48 authored template-re, 15 tényleges Signature fogyasztóra, 3 szettre,
+  7 ascendelhető tárgyra és 10 rúnára bővült. A profession katalógus 15 canonical
+  gear receptet tartalmaz; a céltemplate craft előtt ismert.
+- Az öt ritka mining-anyag dimension/depth/block policyt, közös Profile v2 napi 6-os
+  budgetet és Silk Touch/regen/AFK/protection/full-inventory tiltást használ.
+
+### Mob/Encounter 2.0 pilot
+
+- A normál survival progression Lv. 1–50, a földrajzi/event bónuszokkal elérhető hard
+  cap Lv. 70. Encounter/authored hely/MobTemplate elsőbbséget élvez a territory,
+  biome/dimension, mélység, távolság és Vérhold fallback fölött; 70 fölötti display
+  level csak explicit authored bossnál lehet.
+- A HP és damage külön, monoton, bounded görbét kapott. Default HP: `1+(level-1)×0.08`
+  legfeljebb 8×; damage: `1+(level-1)×0.025` legfeljebb 3×, további abszolút cappal.
+- A canonical katalógus 18 MobTemplate-et, 6 registry abilityt, 7 rankot, 12 archetype-ot
+  és 7 Elite affixet ad. Egy elit spawnkor legfeljebb két valid affixet kap; a veszélyes
+  ability vanilla partikula/hang telegráfja megelőzi a sebzést.
+- Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rank-scalinget
+  használnak. A Target Frame runtime producere canonical template ID-t, levelt, rankot,
+  HP-t és rövid affix státuszt vetít; a Bestiary authored template ID-t ismer fel,
+  vanilla fallback megmarad.
+- A világboss startkor diminishing player-count snapshotot készít, ezért a HP nem
+  ugrál late join/death/disconnect miatt. A snapshot a hat felszerelési slot owner-threaden
+  frissített, bounded CombatPower-cache-ét használja, nem rarityt vagy neutral referenciát
+  nevez ki kizárólagos authoritynak. A bounded contribution ledger sebzést, tankolást,
+  Monk/Paladin ally-healt és shieldet, valamint telegráf-kitérés objective-et kezel;
+  self/pre-combat paddinget tilt.
+  Az érdemi résztvevők PlayerProfile receipt-alapú személyes ascension komponenst
+  kapnak, full inventorynál world drop nélkül, reconnect/restart recoveryvel.
+- A dependency-free kapuk mellett a 100 000 mintás deterministic balance harness a
+  roll/amplifier eloszlást, promotion-sűrűséget, reroll capet, mining faucetet,
+  encounter görbét és 2048-as runtime-state capet ellenőrzi. A feature branch minden
+  forrásváltozását exact commiton futó Java 21 Gradle CI ellenőrzi. A
+  productionközeli Folia/process-kill és multiplayer balance külön staging gate marad.
+- A runtime source-contract már nem a régi, hatdarabos pilotot rögzíti: a recovery
+  többes receipt-witnesst fail-closed kezel, a systemic mobkatalógust pedig a reviewolt
+  15–25-ös tartományban tartja.
+
+### Itemization 2.0 Phase 4–5 — survival economy pilot
+
+- Az authored katalógus fölött elkészült a controlled reroll: Full Reforge, egyetlen
+  authored Stat Lock, Quality Amplifier, Stability Seal, bounded és itemmel utazó
+  költséglépcső.
+- Az explicit ascension stage-ek nem rerollolnak: a normalizált qualityt viszik át az
+  új roll-range-re, az UUID/provenance/rúnák megtartásával. A Glatziendorfi Jégvért
+  BASE→AWAKENED→ASCENDED pilotot és valós Signature-tier scalinget kapott.
+- A veszteséges salvage legacy/admin/account-bound/forbidden itemnél fail-closed;
+  outputja a reroll/rúna ökoszisztémába tér vissza, a gépi invariant pedig tiltja, hogy
+  a becsült output meghaladja a konzervatív inputértéket.
+- A Bányász vanilla deepslate érctörésből, protection/regen/AFK és napi Profile v2
+  budget mellett Sarkfény-cseppkövet találhat. Három profession gear recept már
+  közvetlenül canonical `ItemTemplate → ItemInstance`, bounded crafter provenance-szel.
+- A követett világboss személyes Fekete Villám Szilánkot ad az ascensionhöz. A market
+  megőrzi a teljes instance-et és elutasítja a malformed/duplicate/policy-sértő itemet.
+  A crate authored template rewardot támogat, és a bundled config többé nem oszt
+  legacy random-affix geart.
+- A `/profession forge` előnézeti GUI minden költséget és irreverzibilis következményt
+  mutat, SHIFT megerősítést kér. A szűk item-mutation WAL exact before/after snapshotból
+  recoveryzik; mixed állapotnál fail-closed admin review marad.
+
+> A pure-domain regresszió és a consistency/YAML kapuk lokálisan futnak. A lokális
+> Java 17-es izolált környezet helyett a feature branch exact commitos Java 21 Gradle
+> CI-je a build authority; a Folia process-kill/runtime acceptance továbbra is staging gate.
+
 A júliusi tartalom fölé egy nagy technikai és felületi hullám érkezett, egyben:
 
 - **Kaszt-kifizetés visszajelzés:** a kaszt-magok eddig is emelték a képességek

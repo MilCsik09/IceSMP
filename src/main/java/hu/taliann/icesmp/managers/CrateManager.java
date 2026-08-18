@@ -21,6 +21,7 @@ import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileCrateStore;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -84,6 +85,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         COMMAND,
         CURRENCY,
         UNIQUE_ITEM,
+        TEMPLATE,
         RECIPE_ITEM,
         BLUEPRINT,
         RANDOM_BLUEPRINT,
@@ -248,6 +250,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
     private final ProfessionRecipeBookListener recipeBuilder;
     private final BlueprintItemFactory blueprintFactory;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentity;
     private final File storageFile;
     private final File auditFile;
 
@@ -271,7 +274,8 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                         final ProfessionRecipeCatalog recipeCatalog,
                         final ProfessionRecipeBookListener recipeBuilder,
                         final BlueprintItemFactory blueprintFactory,
-                        final MessageManager messageManager) {
+                        final MessageManager messageManager,
+                        final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentity) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.currencyManager = currencyManager;
@@ -281,6 +285,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         this.recipeBuilder = recipeBuilder;
         this.blueprintFactory = blueprintFactory;
         this.messageManager = messageManager;
+        this.itemIdentity = itemIdentity;
         this.storageFile = new File(plugin.getDataFolder(), "crates-data.yml");
         this.auditFile = new File(new File(plugin.getDataFolder(), "logs"), "crate-openings.log");
         this.auditWriter = new CrateAuditWriter(auditFile.toPath(), AUDIT_ROTATE_BYTES);
@@ -488,11 +493,32 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 yield new RewardEntry(weight, type, id, amount, null, 0.0D,
                         null, description, icon.getType(), null);
             }
+            case TEMPLATE -> {
+                final String id = normalizedReference(raw.get("id"), "id");
+                final hu.taliann.icesmp.itemization.ItemTemplate template;
+                try {
+                    template = itemIdentity.template(id);
+                } catch (final IllegalArgumentException missing) {
+                    throw new IllegalArgumentException("ismeretlen authored template: " + id);
+                }
+                if (!"true".equalsIgnoreCase(template.encounterMetadata()
+                        .getOrDefault("crate-eligible", "false"))
+                        || template.bindPolicy() == hu.taliann.icesmp.itemization.ItemTemplate.BindPolicy.ACCOUNT
+                        || template.rarity() == hu.taliann.icesmp.itemization.ItemRarity.MYTHIC) {
+                    throw new IllegalArgumentException("crate-ben tiltott authored template: " + id);
+                }
+                final Material material = Material.matchMaterial(template.material());
+                yield new RewardEntry(weight, type, id, 1, null, 0.0D,
+                        null, description, material == null ? Material.BARRIER : material, null);
+            }
             case RECIPE_ITEM -> {
                 final String id = normalizedReference(raw.get("id"), "id");
                 final ProfessionRecipeCatalog.Recipe recipe = recipeCatalog.get(id);
                 if (recipe == null || recipe.result() == Material.ELYTRA) {
                     throw new IllegalArgumentException("ismeretlen profession recipe: " + id);
+                }
+                if (recipe.affixTier() != null && recipe.templateId() == null) {
+                    throw new IllegalArgumentException("legacy random-affix gear nem lehet crate reward: " + id);
                 }
                 final int amount = CrateRules.boundedPositiveInt(raw.get("amount"), 1,
                         CrateRules.MAX_RECIPE_REWARD_AMOUNT, "amount");
@@ -654,6 +680,8 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
             case COMMAND -> new ItemStack(Material.COMMAND_BLOCK);
             case CURRENCY -> new ItemStack(Material.EMERALD);
             case UNIQUE_ITEM -> uniqueMaterialFactory.create(reward.value(), 1);
+            case TEMPLATE -> itemIdentity.create(reward.value(), "crate:preview",
+                    "crate-preview", null);
             case RECIPE_ITEM -> {
                 final ProfessionRecipeCatalog.Recipe recipe = recipeCatalog.get(reward.value());
                 if (recipe == null) {
@@ -688,6 +716,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         final String model = switch (reward.type()) {
             case UNIQUE_ITEM -> configManager.getString(
                     "profession-materials." + reward.value() + ".item-model", "");
+            case TEMPLATE -> "";
             case RECIPE_ITEM -> configManager.getString(
                     "profession-recipes." + reward.value() + ".result.item-model", "");
             case BLUEPRINT, RANDOM_BLUEPRINT -> "icesmp:blueprint";
@@ -1707,6 +1736,8 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
                 final ItemStack base = uniqueMaterialFactory.create(reward.value(), 1);
                 yield base == null ? List.of() : split(base, reward.amount());
             }
+            case TEMPLATE -> List.of(itemIdentity.create(reward.value(), "crate:authored",
+                    pending.crateId, null));
             case RECIPE_ITEM -> {
                 final ProfessionRecipeCatalog.Recipe recipe = recipeCatalog.get(reward.value());
                 if (recipe == null) {
@@ -1781,6 +1812,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
         }
         player.getInventory().addItem(item).values().forEach(left ->
                 player.getWorld().dropItemNaturally(player.getLocation(), left));
+        EquippedCombatPowerService.refreshAfterMutation(player);
     }
 
     private void giveRecoveryKeys(final Player player, final CrateRecoveryLedger.Recovery recovery) {
@@ -2161,6 +2193,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
             case COMMAND -> "&dParancs-jutalom";
             case CURRENCY -> reward.currencyAmount() + " " + reward.currency().getDisplayName();
             case UNIQUE_ITEM -> "&bEgyedi tárgy: " + reward.value() + " ×" + reward.amount();
+            case TEMPLATE -> "&9Authored tárgy: " + reward.value();
             case RECIPE_ITEM -> "&6Recepttárgy: " + reward.value() + " ×" + reward.amount();
             case BLUEPRINT -> "&bTervrajz: " + reward.value() + " ×" + reward.amount();
             case RANDOM_BLUEPRINT -> "&bVéletlenszerű tervrajz ×" + reward.amount();

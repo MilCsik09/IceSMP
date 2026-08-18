@@ -3,11 +3,16 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ResourceManager;
+import hu.taliann.icesmp.hud.TargetFrameTracker;
+import hu.taliann.icesmp.hud.TargetFrameMetadataPolicy;
 import hu.taliann.icesmp.hud.TargetHudState;
+import hu.taliann.icesmp.pve.MobTemplate;
+import hu.taliann.icesmp.pve.MobTemplateRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Color;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -26,16 +31,19 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.RayTraceResult;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -70,31 +78,24 @@ public final class DamageIndicatorListener implements Listener {
     private final JobManager jobManager;
     private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();
     // Attacker UUID -> az utolsó célpontja (a HUD célpont-sorához).
-    private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();
-    /** A target frame teljes, owner-threaden rögzített célpont-pillanatképe. */
-    public record LastTarget(UUID targetId, String targetName, TargetHudState.Kind kind,
-                             TargetHudState.Rank rank, int level,
-                             double health, double maximumHealth,
-                             String className, String resourceName,
-                             int resource, int resourceMaximum, long atMillis) {
-        public boolean player() {
-            return kind == TargetHudState.Kind.PLAYER;
-        }
-    }
+    private final TargetFrameTracker targetFrames = new TargetFrameTracker();
+    private final MobTemplateRegistry mobTemplates;
 
     public DamageIndicatorListener(final JavaPlugin plugin, final ConfigManager configManager,
                                     final AbilityCatalystListener catalystListener) {
-        this(plugin, configManager, catalystListener, null, null);
+        this(plugin, configManager, catalystListener, null, null, null);
     }
 
     public DamageIndicatorListener(final JavaPlugin plugin, final ConfigManager configManager,
                                     final AbilityCatalystListener catalystListener,
-                                    final ResourceManager resourceManager, final JobManager jobManager) {
+                                    final ResourceManager resourceManager, final JobManager jobManager,
+                                    final MobTemplateRegistry mobTemplates) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.catalystListener = catalystListener;
         this.resourceManager = resourceManager;
         this.jobManager = jobManager;
+        this.mobTemplates = mobTemplates;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -122,38 +123,87 @@ public final class DamageIndicatorListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(final EntityDeathEvent event) {
         final UUID dead = event.getEntity().getUniqueId();
-        lastTargets.remove(dead);
-        lastTargets.entrySet().removeIf(entry -> entry.getValue().targetId().equals(dead));
+        targetFrames.invalidateTarget(dead);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerDeath(final PlayerDeathEvent event) {
+        targetFrames.clear(event.getPlayer().getUniqueId());
+        targetFrames.invalidateTarget(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRemoved(final EntityRemoveEvent event) {
+        targetFrames.invalidateTarget(event.getEntity().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onWorldChange(final PlayerChangedWorldEvent event) {
+        targetFrames.clear(event.getPlayer().getUniqueId());
+        targetFrames.invalidateTarget(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(final PlayerQuitEvent event) {
         final UUID playerId = event.getPlayer().getUniqueId();
-        lastTargets.remove(playerId);
-        lastTargets.entrySet().removeIf(entry -> entry.getValue().targetId().equals(playerId));
+        targetFrames.clear(playerId);
+        targetFrames.invalidateTarget(playerId);
+    }
+
+    /** Player-owner-thread sampler; the selected entity publishes its own immutable snapshot. */
+    public void sampleTarget(final Player viewer) {
+        if (viewer == null || !viewer.isOnline()
+                || !configManager.getBoolean("hud.icesmp-hud.target-frame.enabled", true)) {
+            if (viewer != null) targetFrames.clear(viewer.getUniqueId());
+            return;
+        }
+        final double range = TargetFrameTracker.boundedRange(configManager.getDouble(
+                "hud.icesmp-hud.target-frame.range", 24.0D));
+        final RayTraceResult trace = viewer.getWorld().rayTrace(viewer.getEyeLocation(),
+                viewer.getEyeLocation().getDirection(), range, FluidCollisionMode.NEVER,
+                true, 0.2D,
+                entity -> entity instanceof LivingEntity && !entity.equals(viewer)
+                        && !(entity instanceof Display));
+        final Entity target = trace == null ? null : trace.getHitEntity();
+        if (!(target instanceof LivingEntity)) {
+            targetFrames.clear(viewer.getUniqueId());
+            return;
+        }
+        final UUID viewerId = viewer.getUniqueId();
+        final long generation = targetFrames.beginSample(viewerId);
+        if (generation < 0L) {
+            targetFrames.clear(viewerId);
+            return;
+        }
+        target.getScheduler().run(plugin,
+                task -> publishSnapshot(viewerId, generation, target, 0.0D, false),
+                () -> targetFrames.clearIfSelected(viewerId, generation));
     }
 
     /** Eltárolja az attacker utolsó megütött célpontját (HUD célpont-sor). */
     private void recordLastTarget(final UUID attackerId, final Entity victim,
                                   final double finalDamage) {
-        final String name = targetName(victim);
-        if (lastTargets.size() > MAX_TRACKED_ENTITIES) {
-            // Ugyanaz a leak-védelem, mint a lastShownAt-nál: nincs természetes cleanup-hook mobokra.
-            lastTargets.clear();
+        final long generation = targetFrames.begin(attackerId, victim.getUniqueId());
+        if (generation >= 0L) publishSnapshot(attackerId, generation, victim, finalDamage, true);
+    }
+
+    private void publishSnapshot(final UUID viewerId, final long generation,
+                                 final Entity victim, final double pendingDamage,
+                                 final boolean subtractPendingDamage) {
+        if (!(victim instanceof LivingEntity living) || !victim.isValid() || victim.isDead()) {
+            targetFrames.clearIfSelected(viewerId, generation);
+            return;
         }
-        final LivingEntity living = victim instanceof LivingEntity value ? value : null;
-        final AttributeInstance maximumAttribute = living == null
-                ? null : living.getAttribute(Attribute.MAX_HEALTH);
+        final AttributeInstance maximumAttribute = living.getAttribute(Attribute.MAX_HEALTH);
         final double maximumHealth = Math.max(1.0D,
                 maximumAttribute == null ? 20.0D : maximumAttribute.getValue());
-        final double health = living == null ? maximumHealth
-                : Math.max(0.0D, Math.min(maximumHealth, living.getHealth() - finalDamage));
-        final Integer storedLevel = mobLevel(victim);
-        final int level = storedLevel == null ? 0 : Math.max(0, storedLevel);
-        final boolean worldBoss = isWorldBoss(victim);
-        final TargetHudState.Rank rank = worldBoss ? TargetHudState.Rank.BOSS
-                : level >= 20 || maximumHealth >= 80.0D
-                ? TargetHudState.Rank.ELITE : TargetHudState.Rank.NORMAL;
+        final double health = Math.max(0.0D, Math.min(maximumHealth,
+                living.getHealth() - (subtractPendingDamage ? pendingDamage : 0.0D)));
+        final MobTemplate template = mobTemplate(victim);
+        final String name = template == null ? targetName(victim) : template.displayName();
+        final int level = mobLevel(victim);
+        final TargetHudState.Rank rank = mobRank(victim);
+        final String mobStatus = mobStatus(victim, template);
         final TargetHudState.Kind kind = targetKind(victim);
         String className = "";
         String resourceName = "";
@@ -171,18 +221,30 @@ public final class DamageIndicatorListener implements Listener {
                 resourceMaximum = resourceManager.resourceMax(targetPlayer);
             }
         }
-        lastTargets.put(attackerId, new LastTarget(victim.getUniqueId(), name, kind, rank,
-                level, health, maximumHealth, className, resourceName,
+        targetFrames.publish(viewerId, generation, new TargetFrameTracker.Snapshot(
+                victim.getUniqueId(), victim.getWorld().getUID(),
+                template == null ? "" : template.mobId(), name, kind, rank,
+                level, mobStatus, health, maximumHealth, className, resourceName,
                 resource, resourceMaximum, System.currentTimeMillis()));
     }
 
     /** Mob-only presentation metadata; player state is never read from PDC. */
-    private Integer mobLevel(final Entity entity) {
+    private int mobLevel(final Entity entity) {
         if (entity instanceof Player) {
-            return null;
+            return 0;
         }
-        return entity.getPersistentDataContainer().get(
+        final Integer stored = entity.getPersistentDataContainer().get(
                 new NamespacedKey(plugin, "mob_level"), PersistentDataType.INTEGER);
+        return TargetFrameMetadataPolicy.level(stored);
+    }
+
+    private MobTemplate mobTemplate(final Entity entity) {
+        if (entity instanceof Player || mobTemplates == null) return null;
+        final String raw = entity.getPersistentDataContainer().get(
+                new NamespacedKey(plugin, "mob_template"), PersistentDataType.STRING);
+        final String templateId = TargetFrameMetadataPolicy.templateId(raw,
+                id -> mobTemplates.find(id).isPresent());
+        return templateId.isBlank() ? null : mobTemplates.find(templateId).orElse(null);
     }
 
     /** Mob-only rank markers; player rank/class data comes from the live HUD snapshot. */
@@ -194,6 +256,26 @@ public final class DamageIndicatorListener implements Listener {
                 new NamespacedKey(plugin, "world_boss"), PersistentDataType.BYTE)
                 || entity.getPersistentDataContainer().has(
                 new NamespacedKey(plugin, "dungeon_boss"), PersistentDataType.STRING);
+    }
+
+    private TargetHudState.Rank mobRank(final Entity entity) {
+        if (entity instanceof Player) return TargetHudState.Rank.NORMAL;
+        final String stored = entity.getPersistentDataContainer().get(
+                new NamespacedKey(plugin, "mob_rank"), PersistentDataType.STRING);
+        return TargetFrameMetadataPolicy.rank(stored, isWorldBoss(entity));
+    }
+
+    private String mobStatus(final Entity entity, final MobTemplate template) {
+        if (entity instanceof Player) return "";
+        final String affixes = entity.getPersistentDataContainer().get(
+                new NamespacedKey(plugin, "mob_affixes"), PersistentDataType.STRING);
+        final String affixStatus = TargetFrameMetadataPolicy.affixStatus(affixes);
+        if (!affixStatus.isBlank()) return affixStatus;
+        if (template != null) return TargetFrameMetadataPolicy.archetypeStatus(
+                template.archetype().name());
+        final String archetype = entity.getPersistentDataContainer().get(
+                new NamespacedKey(plugin, "mob_archetype"), PersistentDataType.STRING);
+        return TargetFrameMetadataPolicy.archetypeStatus(archetype);
     }
 
     private static String targetName(final Entity victim) {
@@ -215,26 +297,14 @@ public final class DamageIndicatorListener implements Listener {
         return TargetHudState.Kind.NEUTRAL;
     }
 
-    /**
-     * Az attacker legutóbb megütött célpontja, vagy null, ha nincs ilyen / a
-     * bejegyzés a konfigurált célpont-időkorlátnál régebbi (a lejárt bejegyzést lustán törli).
-     */
-    public LastTarget lastTarget(final UUID attackerId) {
-        if (attackerId == null) {
-            return null;
-        }
-        final LastTarget target = lastTargets.get(attackerId);
-        if (target == null) {
-            return null;
-        }
+    /** Owner-thread read of the last entity-owned target snapshot. */
+    public TargetFrameTracker.Snapshot lastTarget(final Player viewer) {
+        if (viewer == null) return null;
         final long configuredSeconds = Math.max(1L, Math.min(30L, configManager.getLong(
                 "hud.icesmp-hud.target-frame.expire-seconds",
                 DEFAULT_LAST_TARGET_TTL_MILLIS / 1000L)));
-        if (System.currentTimeMillis() - target.atMillis() > configuredSeconds * 1000L) {
-            lastTargets.remove(attackerId);
-            return null;
-        }
-        return target;
+        return targetFrames.current(viewer.getUniqueId(), viewer.getWorld().getUID(),
+                System.currentTimeMillis(), configuredSeconds * 1000L);
     }
 
     /**

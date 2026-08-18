@@ -197,7 +197,9 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
                         if ((result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_REVISION
                                 || result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_GENERATION)
                                 && attempts > 1) {
-                            repository.invalidate(id);
+                            // The repository's CAS failure path has already installed the newest durable
+                            // snapshot in its cache. Keep that read authority live and retry against it;
+                            // invalidating here creates a synchronous ProfileNotReady storm under contention.
                             return mutateSection(id, sectionId, type, mutation, attempts - 1);
                         }
                         return CompletableFuture.failedFuture(
@@ -242,7 +244,8 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
                         if ((result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_REVISION
                                 || result.status() == PlayerProfileRepository.SectionSaveResult.Status.STALE_GENERATION)
                                 && attempts > 1) {
-                            repository.invalidate(id);
+                            // Same CAS contract as mutateSection: retain the repository-installed latest
+                            // cache generation so sync consumers remain readable while this bounded retry runs.
                             return mutateSectionConditional(id, sectionId, type, mutation, attempts - 1);
                         }
                         return CompletableFuture.failedFuture(

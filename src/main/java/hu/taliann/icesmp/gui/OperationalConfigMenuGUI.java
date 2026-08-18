@@ -65,6 +65,8 @@ public final class OperationalConfigMenuGUI {
                 ConfigMenuGUI.Entry.integer("hud.icesmp-hud.survival.refresh-ticks",
                         "Survival HUD frissítése (tick)", 1, 1, 20),
                 ConfigMenuGUI.Entry.toggle("hud.icesmp-hud.target-frame.enabled", "Target Frame"),
+                ConfigMenuGUI.Entry.number("hud.icesmp-hud.target-frame.range",
+                        "Target távolság", 1.0D, 3.0D, 64.0D),
                 ConfigMenuGUI.Entry.integer("hud.icesmp-hud.target-frame.expire-seconds",
                         "Target Frame eltűnése (mp)", 1, 1, 30),
                 ConfigMenuGUI.Entry.toggle("hud.sidebar-enabled", "Scoreboard-oldalsáv"),

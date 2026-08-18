@@ -9,6 +9,7 @@ import hu.taliann.icesmp.gui.SkillTreeGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -129,6 +130,7 @@ public final class JobGUIListener implements Listener {
         jobManager.setPrimaryJobV2(player, selectedJob)
                 .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
                     if (failure == null && Boolean.TRUE.equals(selected)) {
+                        EquippedCombatPowerService.refreshAfterMutation(player);
                         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP,
                                 1.0F, 1.0F);
                         player.sendMessage(messageManager.getComponent(

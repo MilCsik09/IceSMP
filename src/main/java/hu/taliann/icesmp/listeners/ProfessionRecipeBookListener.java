@@ -6,6 +6,7 @@ import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.ItemRarityService;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -74,6 +75,12 @@ public final class ProfessionRecipeBookListener implements Listener {
     /** I14 — „a mester keze alól kikerülő mű a nevét is viseli" (kódex VIII.): készítő + időpont. */
     private final NamespacedKey craftedByKey;
     private final NamespacedKey craftedAtKey;
+    private volatile hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
+
+    public void setItemIdentityService(
+            final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService) {
+        this.itemIdentityService = itemIdentityService;
+    }
 
     public ProfessionRecipeBookListener(final JavaPlugin plugin,
                                         final ProfessionManager professionManager, final ProfessionRecipeCatalog catalog,
@@ -187,6 +194,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), overflow);
         }
+        EquippedCombatPowerService.refreshAfterMutation(player);
         // WoW-stílusú skill-up: a craft szakma-XP-t ad — a szintedhez közeli recept a teljes
         // értéket, a rég kinőtt („szürke”) recept semmit (fele-út: fél XP). Élő kulcsok.
         final int playerLevel = professionManager.getLevel(player, recipe.profession());
@@ -306,6 +314,47 @@ public final class ProfessionRecipeBookListener implements Listener {
 
     private ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe,
                                   final boolean awardMasterwork) {
+        if (recipe.templateId() != null) {
+            final hu.taliann.icesmp.itemization.ItemIdentityService identity = itemIdentityService;
+            if (identity == null) {
+                plugin.getLogger().severe("Canonical profession craft unavailable: ItemIdentityService missing");
+                return null;
+            }
+            try {
+                final hu.taliann.icesmp.itemization.ItemTemplate template =
+                        identity.template(recipe.templateId());
+                final long now = System.currentTimeMillis();
+                final hu.taliann.icesmp.itemization.ItemInstance instance;
+                if (awardMasterwork) {
+                    final double baseFloor = clamp01(configManager.getDouble(
+                            "itemization.crafting.base-minimum-quality", 0.10D));
+                    final double levelContribution = Math.min(clamp01(configManager.getDouble(
+                                    "itemization.crafting.maximum-level-contribution", 0.20D)),
+                            professionManager.getLevel(player, recipe.profession())
+                                    * Math.max(0.0D, configManager.getDouble(
+                                    "itemization.crafting.quality-per-profession-level", 0.003D)));
+                    final double blueprintBonus = recipe.blueprint() ? Math.max(0.0D,
+                            configManager.getDouble("itemization.crafting.blueprint-quality-bonus", 0.05D)) : 0.0D;
+                    final double masterworkBonus = recipe.masterwork() ? Math.max(0.0D,
+                            configManager.getDouble("itemization.crafting.masterwork-quality-bonus", 0.15D)) : 0.0D;
+                    final double minimumQuality = clamp01(baseFloor + levelContribution
+                            + blueprintBonus + masterworkBonus);
+                    instance = identity.rollCraftedInstance(template, java.util.UUID.randomUUID(),
+                            player.getUniqueId(), player.getName(), recipe.profession().getId(),
+                            locationSnapshot(player), recipe.masterwork(), now, minimumQuality,
+                            () -> java.util.concurrent.ThreadLocalRandom.current().nextDouble());
+                } else {
+                    instance = identity.rollInstance(template, java.util.UUID.randomUUID(),
+                            "crate:authored", recipe.id(), null, "", now,
+                            () -> java.util.concurrent.ThreadLocalRandom.current().nextDouble());
+                }
+                return identity.render(template, instance);
+            } catch (final RuntimeException invalid) {
+                plugin.getLogger().severe("Canonical profession result failed for " + recipe.id()
+                        + ": " + invalid.getMessage());
+                return null;
+            }
+        }
         ItemStack result = recipe.uniqueResult() != null
                 ? uniqueMaterials.create(recipe.uniqueResult(), recipe.resultAmount())
                 : new ItemStack(recipe.result(), recipe.resultAmount());
@@ -538,6 +587,17 @@ public final class ProfessionRecipeBookListener implements Listener {
                     (float) cooldownSection.getDouble("seconds", 1.0D));
         }
         return result;
+    }
+
+    private static double clamp01(final double value) {
+        if (!Double.isFinite(value)) return 0.0D;
+        return Math.max(0.0D, Math.min(1.0D, value));
+    }
+
+    private static String locationSnapshot(final Player player) {
+        final org.bukkit.Location location = player.getLocation();
+        return location.getWorld().getName() + ':' + location.getBlockX() + ','
+                + location.getBlockY() + ',' + location.getBlockZ();
     }
 
     /** Fires the milestone only after a deferred item has crossed its real delivery boundary. */

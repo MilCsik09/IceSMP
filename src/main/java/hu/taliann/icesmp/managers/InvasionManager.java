@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TransientEntities;
 import org.bukkit.Bukkit;
@@ -224,13 +225,17 @@ public final class InvasionManager {
             final EntityType type = horde.randomMob();
             plugin.getServer().getRegionScheduler().run(
                     plugin, new Location(world, x, 0, z), task ->
-                            spawnAt(topOf(world, x, z), type, level, "invasion-wave"));
+                            spawnAt(topOf(world, x, z), type, level, "invasion-wave",
+                                    MobRank.VETERAN, null, archetypeFor(type)));
         }
 
         final int bossBonus = Math.max(0, configManager.getInt(
                 "world-events.invasion.mini-boss-level-bonus", 6));
+        final String championTemplate = horde.miniBoss == EntityType.RAVAGER
+                ? "glacier_champion" : null;
         final Mob champion = spawnAt(topOf(world, center.getBlockX(),
-                center.getBlockZ()), horde.miniBoss, level + bossBonus, "invasion");
+                center.getBlockZ()), horde.miniBoss, level + bossBonus, "invasion",
+                MobRank.CHAMPION, championTemplate, archetypeFor(horde.miniBoss));
         if (champion != null) {
             champion.customName(net.kyori.adventure.text.Component.text(
                     "☠ " + horde.displayName + " Bajnoka",
@@ -252,7 +257,8 @@ public final class InvasionManager {
     }
 
     private Mob spawnAt(final Location spot, final EntityType type,
-                        final int level, final String eventKey) {
+                        final int level, final String eventKey, final MobRank rank,
+                        final String templateId, final String archetypeId) {
         final Class<? extends Entity> entityClass = type.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)
                 || spot.getWorld() == null) {
@@ -270,7 +276,7 @@ public final class InvasionManager {
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
         mob.setPersistent(false);
-        mobScalingManager.forceLevel(mob, level);
+        mobScalingManager.forceRankedLevel(mob, level, rank, templateId, archetypeId);
         TransientEntities.register(plugin, mob);
         activeMobs.add(mob.getUniqueId());
         final long lifespanTicks = Math.max(0L, configManager.getLong(
@@ -291,6 +297,16 @@ public final class InvasionManager {
             }, lifespanTicks);
         }
         return mob;
+    }
+
+    private static String archetypeFor(final EntityType type) {
+        return switch (type) {
+            case SKELETON, STRAY, PILLAGER, BLAZE -> "RANGED";
+            case SPIDER, CAVE_SPIDER, VEX -> "SKIRMISHER";
+            case WITCH, EVOKER -> "CONTROLLER";
+            case RAVAGER, PIGLIN_BRUTE -> "CHARGER";
+            default -> "BRUISER";
+        };
     }
 
     private void startChampionTick(final Mob champion) {
