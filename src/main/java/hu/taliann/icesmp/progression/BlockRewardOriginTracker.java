@@ -53,6 +53,11 @@ public final class BlockRewardOriginTracker {
         }, 1L);
     }
 
+    /** Existing consumer name retained; semantics now clear either non-natural witness. */
+    public static void clearPlayerPlacedAfterBreak(final Block block) {
+        clearAfterBreak(block);
+    }
+
     public static boolean isSynthetic(final Block block) {
         if (block == null || !trackable(block)) return true;
         return containsOrCorrupt(block.getChunk().getPersistentDataContainer()
