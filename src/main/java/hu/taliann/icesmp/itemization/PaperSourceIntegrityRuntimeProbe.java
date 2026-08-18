@@ -10,10 +10,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,10 +29,12 @@ public final class PaperSourceIntegrityRuntimeProbe {
 
     private PaperSourceIntegrityRuntimeProbe() { }
 
-    public static void maybeRun(final JavaPlugin plugin,
-                                final ItemIdentityService identity,
-                                final ProfessionRecipeCatalog catalog) {
+    public static void maybeRun(final JavaPlugin plugin, final Object assembledCore) {
         if (!Boolean.getBoolean(PROPERTY)) return;
+        final ItemIdentityService identity = readField(assembledCore,
+                "itemIdentityService", ItemIdentityService.class);
+        final ProfessionRecipeCatalog catalog = readField(assembledCore,
+                "professionRecipeCatalog", ProfessionRecipeCatalog.class);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
             try {
                 verifyExplicitEmptyAttributes();
@@ -47,6 +49,16 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 Bukkit.shutdown();
             }
         }, 1L);
+    }
+
+    private static <T> T readField(final Object target, final String name, final Class<T> type) {
+        try {
+            final Field field = target.getClass().getDeclaredField(name);
+            field.setAccessible(true);
+            return type.cast(field.get(target));
+        } catch (final ReflectiveOperationException failure) {
+            throw new IllegalStateException("runtime probe cannot read assembled core field: " + name, failure);
+        }
     }
 
     private static void verifyExplicitEmptyAttributes() {
@@ -90,7 +102,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final boolean failed = AtomicCursorRehome.rehome(adapter(protectedInventory, cursor,
                 new AtomicInteger(), false), cursor.get());
         check(!failed, "atomic rehome must reject partial-stack plus otherwise-full inventory");
-        check(Arrays.equals(serialize(before), serialize(protectedInventory.getStorageContents())),
+        check(Arrays.deepEquals(serialize(before), serialize(protectedInventory.getStorageContents())),
                 "failed atomic rehome must preserve exact storage state");
         check(cursor.get() != null && cursor.get().getAmount() == 64,
                 "failed atomic rehome must preserve exact cursor state");
@@ -113,7 +125,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         check(!AtomicCursorRehome.rehome(adapter(rollback, rollbackCursor, rollbackPersists, true),
                         rollbackCursor.get()),
                 "persistence exception must fail cursor rehome");
-        check(Arrays.equals(serialize(rollbackBefore), serialize(rollback.getStorageContents())),
+        check(Arrays.deepEquals(serialize(rollbackBefore), serialize(rollback.getStorageContents())),
                 "persistence exception must restore exact storage snapshot");
         check(rollbackCursor.get() != null && rollbackCursor.get().getAmount() == 64,
                 "persistence exception must restore cursor snapshot");
@@ -146,9 +158,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
     }
 
     private static void verifyMutationPhysicalState(final ItemIdentityService identity) {
-        final String templateId = identity.template("glatziendorfi_jegvert") != null
-                ? "glatziendorfi_jegvert" : "item2_borostyan_tarnavert";
-        final ItemStack previous = identity.create(templateId, "runtime:probe", "paper", null);
+        final ItemStack previous = identity.create("glatziendorfi_jegvert",
+                "runtime:probe", "paper", null);
         final ItemIdentityService.Inspection inspection = identity.inspect(previous);
         check(inspection.status() == ItemIdentityService.Status.VALID,
                 "runtime probe canonical item must start VALID");
@@ -156,6 +167,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         check(oldMeta instanceof Damageable, "runtime probe template must use a damageable backing material");
         final Damageable damageable = (Damageable) oldMeta;
         damageable.setDamage(Math.min(17, Math.max(1, previous.getType().getMaxDurability() - 1)));
+        final int expectedDamage = damageable.getDamage();
         oldMeta.setUnbreakable(true);
         oldMeta.lore(List.of(net.kyori.adventure.text.Component.text("STALE_RUNTIME_PROBE_LORE")));
         previous.setItemMeta(oldMeta);
@@ -164,7 +176,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final ItemStack preserved = CanonicalPhysicalState.preserve(previous, fresh);
         final var preservedMeta = preserved.getItemMeta();
         check(preservedMeta instanceof Damageable
-                        && ((Damageable) preservedMeta).getDamage() == damageable.getDamage(),
+                        && ((Damageable) preservedMeta).getDamage() == expectedDamage,
                 "mutation render must preserve exact physical durability damage");
         check(!preservedMeta.isUnbreakable(),
                 "mutation render must not launder non-authoritative unbreakable metadata");
