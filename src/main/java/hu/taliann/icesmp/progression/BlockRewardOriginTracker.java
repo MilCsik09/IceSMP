@@ -36,9 +36,11 @@ public final class BlockRewardOriginTracker {
 
     /**
      * Delay cleanup until every MONITOR block-break consumer observed the same durable pre-state.
-     * Entity/world access remains on the block's owning Folia region.
+     * Both placed and regenerated provenance are one physical-block witnesses: once that block was
+     * successfully consumed, the coordinate may become natural again. A later regeneration marks
+     * its replacement synthetic again.
      */
-    public static void clearPlayerPlacedAfterBreak(final Block block) {
+    public static void clearAfterBreak(final Block block) {
         if (block == null || !trackable(block)) return;
         final int x = block.getX();
         final int y = block.getY();
@@ -47,6 +49,7 @@ public final class BlockRewardOriginTracker {
         block.getWorld().getRegionScheduler().runDelayed(plugin, block.getLocation(), task -> {
             final Block current = block.getWorld().getBlockAt(x, y, z);
             remove(current, PLACED);
+            remove(current, SYNTHETIC);
         }, 1L);
     }
 
@@ -60,7 +63,7 @@ public final class BlockRewardOriginTracker {
         if (block == null || !trackable(block)) return;
         final PersistentDataContainer pdc = block.getChunk().getPersistentDataContainer();
         final byte[] encoded = pdc.get(key, PersistentDataType.BYTE_ARRAY);
-        if (corrupt(encoded)) return; // fail closed; never launder a damaged origin record.
+        if (corrupt(encoded)) return;
         final int packed = pack(block);
         final int[] values = decode(encoded);
         if (Arrays.binarySearch(values, packed) >= 0) return;
